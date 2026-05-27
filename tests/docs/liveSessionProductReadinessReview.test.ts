@@ -33,7 +33,7 @@ describe('live session product readiness review', () => {
   it('captures the real table flow from host startup through reconnect recovery', () => {
     for (const phrase of [
       'The GM starts Rotom Table with session hosting enabled',
-      '**Attach current map to live session**',
+      'uses the normal `/maps/<map-slug>` route',
       'Players join from the lobby with display names',
       '**Assign map tokens**',
       '**Assign control**',
@@ -52,7 +52,6 @@ describe('live session product readiness review', () => {
     const expectedDocs = [
       'docs/live-session-roadmap.md',
       'docs/live-session-glossary.md',
-      'docs/live-session-map-attachment.md',
       'docs/live-session-lobby.md',
       'docs/live-session-client-integration.md',
       'docs/live-session-protocol.md',
@@ -61,7 +60,6 @@ describe('live session product readiness review', () => {
       'docs/live-session-validation-matrix.md',
       'docs/live-session-implementation-maintenance.md',
       'docs/live-session-readiness-summary.md',
-      'docs/live-session-real-flow-smoke.md',
       'docs/live-session-deployment-smoke-checklist.md',
       'docs/live-session-concurrency-benchmark-notes.md',
       'docs/live-session-local-mode-maintenance.md',
@@ -81,7 +79,6 @@ describe('live session product readiness review', () => {
       'tests/server/sessionUnauthorizedPlayerControlFlow.test.ts',
       'tests/composables/sessionLobbyMapFlowIntegration.test.ts',
       'tests/composables/localFirstEditingNoRegression.test.ts',
-      'tests/scripts/sessionRealFlowSmoke.test.ts',
       'tests/docs/productTerminologyGuard.test.ts',
     ]
 
@@ -94,20 +91,11 @@ describe('live session product readiness review', () => {
   it('records the current product verification checkpoint', () => {
     for (const phrase of [
       '## Current verification checkpoint',
-      'session-host runtime gate enabled for a loopback dev server',
-      'ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3100',
-      'npm run smoke:session:real-flow -- --base-url http://127.0.0.1:3100 --timeout-ms 12000',
-      'npm test -- tests/docs/productTerminologyGuard.test.ts',
-      'product terminology guard passed for tracked filenames and content',
+      'removed real-flow smoke helper and session map attachment endpoint are no longer part of the verification path',
+      'product terminology guard passes for tracked filenames and content',
       'stale external-process and review-management wording',
-      'start, attaching a saved smoke map, joining Player A and Player B',
-      'assigning one map token',
-      'authenticating three session sockets',
-      "accepting Player A's `moveToken` command",
-      'fanning out same-session patches',
-      'reconnecting Player B with a filtered snapshot',
-      'removing generated smoke data',
-      'repository scan found no old external-process or review-workflow statements',
+      'Automated session command tests use seeded session map state',
+      'repository scan finds no old external-process or review-workflow statements',
     ]) {
       expect(review).toContain(phrase)
     }
@@ -119,8 +107,8 @@ describe('live session product readiness review', () => {
       'live-session readiness criteria are satisfied',
       'Product vocabulary and repository-hygiene scans pass for tracked filenames and content',
       'Typecheck, automated tests, and the production build pass',
-      'server-owned attach/assign/session-command flow',
-      'No product-level blockers are recorded for the GM start → attach map → join → assign token → session command → reconnect snapshot flow',
+      'server-owned assignment/session-command flow',
+      'No product-level blockers are recorded for the GM start → join → assign token → session command → reconnect snapshot flow',
       'Local-first map and sheet editing remains the default outside explicit session mode',
     ]) {
       expect(review).toContain(phrase)

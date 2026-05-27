@@ -50,7 +50,7 @@ Recommended checks before a real game:
 
 1. GM starts the intended host path (`npm run dev:session:lan` for LAN, or `npm run dev:session:tunnel` plus `cloudflared tunnel run` for a named tunnel) and opens `/sessions` through the same URL players will use.
 2. Safety banner shows hosting enabled and the expected exposure (`LAN/private` or the deliberate remote/tunnel path) before any join code is shared.
-3. GM starts the session, attaches the saved map, and confirms it is selected and visible to intended players.
+3. GM starts the session and confirms any legacy session map is selected and visible to intended players.
 4. Two player browser identities/devices join with safe display names, refresh **Visible session maps**, and open `/maps/<map-slug>?session=1`.
 5. GM assigns at least one map token with **Assign map tokens** / **Assign control**; the assigned player sends a move or turn command and all clients see the same server-accepted result.
 6. A view-only player tries the same token and sees no-token-assigned guidance or a safe unauthorized rejection.
@@ -109,7 +109,7 @@ When a GM wants environment-specific numbers, record only generic, no-secret obs
 
 1. Start with `npm run dev:session:lan` or `npm run dev:session:tunnel` plus the named `cloudflared tunnel run` command.
 2. Use one GM browser and at least two separate player browser identities/devices.
-3. Attach the saved map, assign at least one current map token, open `/maps/<map-slug>?session=1` for all clients, and perform a short sequence: token move, token turn, HP/condition change, initiative change, reconnect, and stale/conflict rejection.
+3. Verify the session map, assign at least one current map token, open `/maps/<map-slug>?session=1` for all clients, and perform a short sequence: token move, token turn, HP/condition change, initiative change, reconnect, and stale/conflict rejection.
 4. Record rough user-visible timing buckets rather than secrets, for example: `<250ms`, `250-1000ms`, `1-3s`, or `>3s` from action to all clients showing the authoritative result.
 5. Note whether any browser shows reconnect/stale banners, console errors, visible render jank, repeated rejected heartbeats, or slow snapshot recovery.
 6. Check `git status --short` and remove local `data/sessions/` artifacts before committing docs or code.
@@ -124,6 +124,6 @@ Use placeholders such as `Player A`, `Player B`, `table.example.com`, `<private-
 - [x] Reconnect snapshot fallback is server-authoritative and actor-filtered when event replay is unavailable.
 - [x] Expected LAN behaviour is documented as small-table, low-jitter, no-SLA behaviour that still depends on device, Wi-Fi, filesystem, and map/render load.
 - [x] Expected named-tunnel behaviour is documented as the same server-authoritative path with extra Cloudflare, TLS/WebSocket proxy, edge-policy, and network-jitter variables.
-- [x] Recommended before-game GM/player smoke checks cover start, attach, join, assign, move, unauthorized/view-only rejection, reconnect snapshot recovery, timing buckets, and cleanup hygiene.
+- [x] Recommended before-game GM/player smoke checks cover start, join, assign, move, unauthorized/view-only rejection, reconnect snapshot recovery, timing buckets, and cleanup hygiene.
 - [x] LAN browser smoke observed session start/join, WebSocket hello/presence, reconnect snapshot fallback, and no recorded browser console/page errors.
 - [x] Known latency and scaling limitations are documented without adding public auth, SaaS hosting, cloud databases, Quick Tunnel campaign hosting, or browser-owned whole-map autosave.

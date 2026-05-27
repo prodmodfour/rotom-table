@@ -20,7 +20,7 @@ Current product readiness: ready for trusted-table live-session rehearsal and pl
 ## Real user flow
 
 1. The GM starts Rotom Table with session hosting enabled and opens `/sessions`.
-2. The GM starts a live session, opens a saved map, and uses **Attach current map to live session** so session hosting owns the authoritative session map.
+2. The GM starts a live session, opens a saved map, and uses the normal `/maps/<map-slug>` route so session hosting owns the authoritative session map.
 3. Players join from the lobby with display names and the GM-provided join code.
 4. The GM uses **Assign map tokens** and **Assign control** for each player who should move a visible token.
 5. Players open **Visible session maps**, which links to `/maps/<map-slug>?session=1`.
@@ -40,36 +40,29 @@ npm run build
 
 Focused coverage includes:
 
-- `tests/server/sessionAcceptedPlayerMoveFlow.test.ts` for start, attach map, join, assign, authenticate sockets, accepted movement, patch fanout, and cross-session isolation.
+- `tests/server/sessionAcceptedPlayerMoveFlow.test.ts` for start, session map seeding, join, assign, authenticate sockets, accepted movement, patch fanout, and cross-session isolation.
 - `tests/server/sessionUnauthorizedPlayerControlFlow.test.ts` for visible-but-unassigned player rejection without revision advance, snapshot write, or patch fanout.
-- `tests/composables/sessionLobbyMapFlowIntegration.test.ts` for remembered GM attach/assignment and player visible-map navigation.
+- `tests/composables/sessionLobbyMapFlowIntegration.test.ts` for remembered GM assignment and player visible-map navigation.
 - `tests/composables/localFirstEditingNoRegression.test.ts` for plain local map/sheet editing, legacy realtime boundaries, and non-session navigation.
-- `tests/scripts/sessionRealFlowSmoke.test.ts` plus `npm run smoke:session:real-flow` for an operator smoke helper that exercises start, attach, join, assign, session socket movement, reconnect snapshot, and cleanup against a running host.
 - `tests/docs/productTerminologyGuard.test.ts` and related docs tests for product vocabulary, current links, secret hygiene, and operator runbook coverage.
 
 ## Current verification checkpoint
 
-The current product/developer verification pass was run on 2026-05-26 with the session-host runtime gate enabled for a loopback dev server:
+The current product/developer verification pass should use the standard validation commands plus focused session and profile tests. The removed real-flow smoke helper and session map attachment endpoint are no longer part of the verification path.
 
-```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3100
-npm run smoke:session:real-flow -- --base-url http://127.0.0.1:3100 --timeout-ms 12000
-npm test -- tests/docs/productTerminologyGuard.test.ts
-```
+Result expectations:
 
-Result:
-
-- The product terminology guard passed for tracked filenames and content, including stale external-process and review-management wording.
-- The real-flow smoke passed through start, attaching a saved smoke map, joining Player A and Player B, assigning one map token, authenticating three session sockets, accepting Player A's `moveToken` command, fanning out same-session patches, reconnecting Player B with a filtered snapshot, and removing generated smoke data.
-- A repository scan found no old external-process or review-workflow statements in tracked files.
+- The product terminology guard passes for tracked filenames and content, including stale external-process and review-management wording.
+- Automated session command tests use seeded session map state instead of the removed attach endpoint.
+- A repository scan finds no old external-process or review-workflow statements in tracked files.
 
 ## Readiness confirmation
 
 For this source revision, the live-session readiness criteria are satisfied:
 
 - Product vocabulary and repository-hygiene scans pass for tracked filenames and content.
-- Typecheck, automated tests, and the production build pass for the server-owned attach/assign/session-command flow described above.
-- No product-level blockers are recorded for the GM start → attach map → join → assign token → session command → reconnect snapshot flow.
+- Typecheck, automated tests, and the production build pass for the server-owned assignment/session-command flow described above.
+- No product-level blockers are recorded for the GM start → join → assign token → session command → reconnect snapshot flow.
 - Local-first map and sheet editing remains the default outside explicit session mode.
 
 ## Known limits to keep visible
@@ -87,8 +80,8 @@ For this source revision, the live-session readiness criteria are satisfied:
 
 - Start from the intended runbook: [LAN hosting](live-session-lan-hosting.md) for same-Wi-Fi play or [named Cloudflare Tunnel hosting](live-session-cloudflare-tunnel-hosting.md) for remote players.
 - Confirm the session-host safety banner and public exposure state before sharing a join code.
-- Attach the saved map to the active live session before players open the session map.
-- Join from at least one real player device, open **Visible session maps**, and verify `/maps/<map-slug>?session=1` loads a server-owned attached map.
+- Verify any legacy session map is visible before players open the session map; normal profile-based play uses `/maps/<slug>` without session attachment.
+- Join from at least one real player device, open **Visible session maps**, and verify `/maps/<map-slug>?session=1` loads a server-owned session map.
 - Assign each player the correct visible/controllable map token and verify unassigned players see a helpful rejection or disabled state.
 - Move one assigned token, confirm the GM and other players receive the patch, then reconnect a player and confirm snapshot recovery.
 - Keep local-first editing expectations clear: plain map and sheet routes remain local; live table actions belong in session mode.
@@ -97,8 +90,8 @@ For this source revision, the live-session readiness criteria are satisfied:
 ## Current documentation map
 
 - [Live session roadmap](live-session-roadmap.md) and [glossary](live-session-glossary.md) for scope, vocabulary, and non-goals.
-- [Live session map attachment flow](live-session-map-attachment.md), [lobby guide](live-session-lobby.md), and [client integration guide](live-session-client-integration.md) for the user path.
+- [lobby guide](live-session-lobby.md), and [client integration guide](live-session-client-integration.md) for the user path.
 - [Live session protocol](live-session-protocol.md), [session socket protocol](live-session-socket-protocol.md), and [table action commands](live-session-table-action-commands.md) for command contracts.
 - [Live session validation matrix](live-session-validation-matrix.md), [implementation maintenance](live-session-implementation-maintenance.md), and [readiness summary](live-session-readiness-summary.md) for maintainer evidence.
-- [Live session real-flow smoke script](live-session-real-flow-smoke.md), [deployment smoke checklist](live-session-deployment-smoke-checklist.md), and [concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for smoke and latency expectations.
+- [deployment smoke checklist](live-session-deployment-smoke-checklist.md) and [concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for smoke and latency expectations.
 - [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md), [persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md), and [security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) for no-regression, data, and safety boundaries.

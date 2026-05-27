@@ -47,9 +47,9 @@ describe('Live session LAN hosting runbook', () => {
     expect(runbook).toContain('actual phones, tablets, or laptops players expect to use at the table')
     expect(runbook).toContain('do not rely only on tabs on the GM machine')
     expect(runbook).toContain('fix that device/network issue before play')
-    expect(runbook).toContain('No-map-attached recovery')
+    expect(runbook).toContain('No session map recovery')
     expect(runbook).toContain('No-token-assigned recovery')
-    expect(runbook).toContain('presses **Attach current map to live session** with player visibility')
+    expect(runbook).toContain('uses the normal `/maps/<map-slug>` route with profile-linked characters')
     expect(runbook).toContain('GM uses **Assign map tokens** and **Assign control**')
   })
 

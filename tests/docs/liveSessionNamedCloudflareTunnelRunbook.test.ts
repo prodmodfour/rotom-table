@@ -33,15 +33,15 @@ describe('Live session named Cloudflare Tunnel runbook', () => {
     expect(runbook).toContain('session hosting enabled and a deliberate remote/tunnel exposure')
   })
 
-  it('documents a remote-player rehearsal with attached maps and assignments', () => {
+  it('documents a remote-player rehearsal with session maps and assignments', () => {
     expect(runbook).toContain('## Remote-player rehearsal before play')
     expect(runbook).toContain('actual remote player browser or device')
-    expect(runbook).toContain('Attach current map to live session')
+    expect(runbook).toContain('uses the normal `/maps/<map-slug>` route with profile-linked characters')
     expect(runbook).toContain('Visible session maps')
     expect(runbook).toContain('Assign map tokens')
     expect(runbook).toContain('Assign control')
     expect(runbook).toContain('/maps/<map-slug>?session=1')
-    expect(runbook).toContain('No-map-attached recovery')
+    expect(runbook).toContain('No session map recovery')
     expect(runbook).toContain('No-token-assigned recovery')
   })
 

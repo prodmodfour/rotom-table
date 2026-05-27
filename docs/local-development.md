@@ -26,7 +26,7 @@ Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and
 
 Plain `npm run dev` is local-first mode. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` save local JSON through autosave and keep using legacy `/api/events` realtime updates for same-machine or trusted-LAN local editing.
 
-Live-session mode is an explicit opt-in. The GM must start session hosting with `ROTOM_ENABLE_SESSION_HOST=1` through one of the guarded helpers, attach a saved map to the active live session, and open the map with `?session=1` before table actions use session commands and the session socket. Leaving `?session=1` off is the intended local-first editing path and does not attach browser-owned map changes to live-session authority.
+Normal map play now uses the saved map document at `/maps/<slug>` with profile-linked token control. Legacy live-session hosting remains behind `ROTOM_ENABLE_SESSION_HOST=1` for session lobby/socket experiments, but the map-attachment endpoint has been removed and normal play no longer requires attaching a saved map to a session.
 
 For the automated and source-level no-regression evidence around local map autosave, sheet autosave, legacy local sync, and non-session navigation, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
 
@@ -55,14 +55,6 @@ See [live session host runtime scripts](live-session-host-runtime.md) for helper
 ```bash
 npm run smoke:session:multi-tab -- --map <map-slug>
 ```
-
-For an automated same-machine pass through start, attach, join, assign, session socket token movement, reconnect snapshot fallback, and cleanup, use:
-
-```bash
-npm run smoke:session:real-flow
-```
-
-See [Live session real-flow smoke script](live-session-real-flow-smoke.md) for options such as `--map <map-slug> --token <token-id>`, dry-run output, secret redaction, and cleanup behaviour.
 
 The existing local GM/player picker remains a trust switch for local use, not public authentication. For the live-session maintenance checks for plain `npm run dev`, `/maps/<slug>`, sheet autosave, and legacy SSE local-mode behaviour, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
 

@@ -11,8 +11,6 @@ Related runbooks:
 - [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) for stable remote hostname setup, WebSocket considerations, and rollback.
 - [live session host runtime scripts](live-session-host-runtime.md) for `npm run dev:session:lan` and `npm run dev:session:tunnel` helper details.
 - [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) for local tab helpers and focused automated token/client checks.
-- [Live session real-flow smoke script](live-session-real-flow-smoke.md) for an automated same-machine start, attach, join, assign, session socket token move, reconnect snapshot, and cleanup pass.
-- [Live session map attachment flow](live-session-map-attachment.md) for attaching saved maps to server-owned session state before players open session maps.
 - [Live session security boundaries](live-session-security-boundaries.md) for trust boundaries, join-code limits, tunnel exposure risks, and incident response.
 - [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare assumptions.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations, operator timing buckets, and known performance limits.
@@ -22,8 +20,8 @@ Related runbooks:
 Run the same functional scenario in each deployment mode you plan to use:
 
 1. GM starts a guarded session.
-2. GM attaches the saved map to server-owned session state.
-3. Two players join from separate browser identities and can see the attached map.
+2. GM verifies any legacy session map is available in server-owned session state.
+3. Two players join from separate browser identities and can see the session map.
 4. GM assigns controllable resources needed for player actions with **Assign map tokens**.
 5. GM and both players open the explicit session map route.
 6. A token move propagates to all clients as a small authoritative patch.
@@ -55,9 +53,9 @@ Use generic names in notes such as `GM`, `Player A`, `Player B`, `table.example.
 
 A deployment smoke should prove the happy path and that common recovery paths are understandable:
 
-- **Host flag disabled** — starting without `ROTOM_ENABLE_SESSION_HOST=1` must leave `/sessions`, attach-map, assignment, and session socket behaviour fail-closed.
-- **No map attached** — players may join, but **Visible session maps** remains empty and the session map route must not claim authoritative readiness until the GM attaches the saved map.
-- **No token assigned** — a player who can see the attached map but lacks a token assignment receives disabled controls or an unauthorized rejection instead of moving the authoritative token.
+- **Host flag disabled** — starting without `ROTOM_ENABLE_SESSION_HOST=1` must leave `/sessions`, assignment and session socket behaviour fail-closed.
+- **No session map** — players may join, but **Visible session maps** remains empty and the session map route must not claim authoritative readiness until a legacy session map is available.
+- **No token assigned** — a player who can see the session map but lacks a token assignment receives disabled controls or an unauthorized rejection instead of moving the authoritative token.
 - **Stale revision** — a command sent from an older revision is rejected safely and does not advance the accepted session revision.
 - **Disconnected socket** — reload or network interruption shows reconnect/disconnected UI and recovers through replay or an actor-scoped snapshot without whole-map autosave.
 
@@ -127,11 +125,11 @@ Run this scenario after completing either the LAN lane or the named-tunnel lane.
 - [ ] GM browser: open `<base-url>/login` and confirm **GM Login** is active.
 - [ ] GM browser: open `<base-url>/sessions#gm-lobby-title` and press **Start GM session**.
 - [ ] GM browser: confirm a session ID, current revision, and player join code appear; the GM key is not shown in page chrome or copied into shared chat.
-- [ ] GM browser: open `<base-url>/maps/<map-slug>`, press **Attach current map to live session**, and confirm the selected map is available for session mode.
+- [ ] GM browser: open `<base-url>/maps/<map-slug>`, use the normal `/maps/<map-slug>` route with profile-linked characters, and confirm the selected map is available for session mode.
 - [ ] Player A browser: join from `<base-url>/sessions#player-lobby-title` with the join code and a safe display name such as `Player A`.
 - [ ] Player B browser: join from the same URL with a separate display name such as `Player B`.
 - [ ] GM browser: press **Refresh lobby** and verify both players appear exactly once.
-- [ ] Player browsers: refresh remembered session state and verify each player sees only their own identity, assignment summary, current revision, safe session status, and the attached map in **Visible session maps**.
+- [ ] Player browsers: refresh remembered session state and verify each player sees only their own identity, assignment summary, current revision, safe session status, and the session map in **Visible session maps**.
 - [ ] GM browser: use the map navigation rail **Assign map tokens** panel to assign at least one current map token to Player A. Leave another visible player without that token assignment if you want to verify the no token assigned rejection path.
 
 ### 2. Open session map and verify presence
@@ -140,7 +138,7 @@ Run this scenario after completing either the LAN lane or the named-tunnel lane.
 - [ ] Player A browser: open `<base-url>/maps/<map-slug>?session=1`.
 - [ ] Player B browser: open `<base-url>/maps/<map-slug>?session=1`.
 - [ ] The session/presence panel shows the current session and three connected browser identities: GM, Player A, and Player B.
-- [ ] The plain `<base-url>/maps/<map-slug>` route remains local-first and is not used for the live smoke actions after attachment.
+- [ ] The plain `<base-url>/maps/<map-slug>` route remains local-first and is not used for the live smoke actions after session-map visibility is confirmed.
 
 ### 3. Token move propagation
 

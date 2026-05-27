@@ -112,7 +112,7 @@ describe('Live session local-mode maintenance checks', () => {
     const localDevelopment = readText('docs/local-development.md')
     expect(localDevelopment).toContain('Local-first versus live-session mode')
     expect(localDevelopment).toContain('Plain `npm run dev` is local-first mode')
-    expect(localDevelopment).toContain('Leaving `?session=1` off is the intended local-first editing path')
+    expect(localDevelopment).toContain('Normal map play now uses the saved map document at `/maps/<slug>` with profile-linked token control')
     expect(localDevelopment).toContain('live-session-local-mode-maintenance.md')
     expect(readText('docs/live-session-roadmap.md')).toContain('live-session-local-mode-maintenance.md')
     expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-local-mode-maintenance.md')

@@ -2,7 +2,7 @@
 
 This runbook is the supported remote-player hosting path for live sessions. The GM still runs Rotom Table on a machine they control; a named Cloudflare Tunnel gives trusted remote players a stable HTTPS hostname that forwards to that private server.
 
-Use the [Live session LAN hosting runbook](live-session-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For attaching the saved map to server-owned session state before players open it, see the [Live session map attachment flow](live-session-map-attachment.md). For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Live session public exposure checks](live-session-public-exposure-checks.md). For the fuller two-player deployment smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). For expected concurrency and latency behaviour, see the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md). For the current-assumptions and safety-warning checklist for this guide, see the [Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md). For private snapshot/event-log backup and restore procedures before or after remote play, see [Live session backup and recovery](live-session-backup-recovery.md). For trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, see the [Live session security boundaries](live-session-security-boundaries.md). For dependency inventory, Node/Nitro compatibility, and Cloudflare tunnel assumptions, see the [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md).
+Use the [Live session LAN hosting runbook](live-session-lan-hosting.md) first when everyone is on the same network. Use this guide only when players are remote and the GM intentionally wants to publish a stable hostname such as `https://table.example.com` for a campaign session. For the no-secret safety banner checks that catch remote exposure before a session-local GM key, join code, and authoritative state are ready, see [Live session public exposure checks](live-session-public-exposure-checks.md). For the fuller two-player deployment smoke covering reconnect, token movement, initiative, and conflict rejection, see the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md). For expected concurrency and latency behaviour, see the [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md). For the current-assumptions and safety-warning checklist for this guide, see the [Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md). For private snapshot/event-log backup and restore procedures before or after remote play, see [Live session backup and recovery](live-session-backup-recovery.md). For trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas, see the [Live session security boundaries](live-session-security-boundaries.md). For dependency inventory, Node/Nitro compatibility, and Cloudflare tunnel assumptions, see the [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md).
 
 Named tunnel hosting keeps the locked Live session architecture intact: one GM-hosted server owns session authority, live clients use `WebSocket /api/sessions/socket`, commands are acknowledged or rejected by the server, state is persisted as local JSON snapshots/event logs, and browsers must not autosave whole maps as the live session concurrency mechanism.
 
@@ -40,7 +40,7 @@ Preflight checklist:
 - [ ] The GM has chosen a stable hostname that is safe to share with trusted players.
 - [ ] The GM machine can stay awake, online, and plugged in for the whole session.
 - [ ] At least one actual remote player browser or device can rehearse the flow before play; do not rely only on tabs on the GM machine.
-- [ ] A saved map with the tokens needed for the session is ready to attach to the live session.
+- [ ] A saved map with the tokens needed for normal profile-based play is ready and player-visible when appropriate.
 - [ ] Optional Cloudflare Access/WAF/cache policies have been reviewed so they do not cache session pages or interrupt the session socket.
 - [ ] The working tree is clean enough that generated session files or private campaign data will be easy to spot before committing.
 - [ ] The GM understands that publishing a tunnel exposes the normal Rotom Table origin, not only one lobby page.
@@ -152,7 +152,7 @@ Use the same stable public hostname players will use during the game, for exampl
 1. GM starts Rotom Table with `npm run dev:session:tunnel`, starts `cloudflared tunnel run rotom-table`, and opens `/sessions#gm-lobby-title` through the public hostname.
 2. The safety banner reports session hosting enabled and the expected remote/tunnel exposure before the GM shares any join code.
 3. A remote player browser opens `/sessions#player-lobby-title`, completes any optional Cloudflare Access check, joins with a safe display name, and confirms the remembered player summary loads without using the GM browser profile.
-4. GM opens the saved map on `/maps/<map-slug>`, presses **Attach current map to live session**, and refreshes the lobby.
+4. GM opens the saved map on `/maps/<map-slug>`, uses the normal `/maps/<map-slug>` route with profile-linked characters, and refreshes the lobby.
 5. The remote player refreshes the remembered session and confirms the map appears under **Visible session maps**.
 6. GM uses **Assign map tokens** and **Assign control** for the token the remote player should test.
 7. GM and the remote player open `/maps/<map-slug>?session=1` and verify the session socket connects, reconnects after a page reload, and shows the same server-authoritative map state.
@@ -163,7 +163,7 @@ If a remote player cannot load `/sessions`, complete an optional edge check, con
 
 ### Rehearsal recovery drills
 
-- **No-map-attached recovery** — before the GM attaches a map, remote players can join but should not see a usable session map link. The GM opens the saved map on the plain route, presses **Attach current map to live session** with player visibility, then players refresh the remembered session until the map appears under **Visible session maps**.
+- **No session map recovery** — before a legacy session map is available, remote players can join but should not see a usable session map link. The GM opens the saved map on the plain route, uses the normal `/maps/<map-slug>` route with profile-linked characters, then players refresh the remembered session until the map appears under **Visible session maps**.
 - **No-token-assigned recovery** — after the map is visible, leave one remote player unassigned briefly and confirm token controls are disabled or unauthorized. The GM uses **Assign map tokens** and **Assign control** for the relevant current map token or sheet; the player refreshes/reconnects the session map and retries only after the assignment appears.
 
 ## Remote latency and concurrency expectations
@@ -183,8 +183,8 @@ Before play, run the remote-player rehearsal above or the [Live session deployme
 5. Confirm the safety banner reports session hosting enabled and a deliberate remote/tunnel exposure. If it reports disabled, stop and restart Rotom Table with the runtime flag. If it reports a surprising host, do not share the join code until the tunnel/DNS path is understood. A remote/no-active-session warning is expected before step 6; missing credentials, missing authoritative state, or unknown readiness after startup are blockers.
 6. Press **Start GM session**.
 7. Confirm the lobby shows a session ID, revision, and player join code, and that safety readiness no longer warns about missing session-local credentials or authoritative state. The GM key must not be copied into chat or shown in screenshots.
-8. Open the saved map on the plain `/maps/<map-slug>` route, confirm intended edits are saved, and press **Attach current map to live session** in the map navigation rail.
-9. Confirm the attached map is selected and available for session mode.
+8. Open the saved map on the plain `/maps/<map-slug>` route, confirm intended edits are saved, and use the normal `/maps/<map-slug>` route with profile-linked characters in the map navigation rail.
+9. Confirm the session map is selected and available for session mode.
 10. Share only the stable player URL and join code with trusted players, for example:
 
    ```text
@@ -206,7 +206,7 @@ Players should use a separate browser profile, browser container, or private/inc
 3. Enter the join code and a display name.
 4. Press **Join session**.
 5. Confirm the player summary shows the expected display name, active session status, and current revision.
-6. Refresh the remembered session and open the attached map from **Visible session maps**, or use the explicit session map URL after the GM confirms attachment, for example `https://table.example.com/maps/viridian-gym?session=1`.
+6. Refresh the remembered session and open the session map from **Visible session maps**, or use the explicit session map URL after the GM confirms visibility, for example `https://table.example.com/maps/viridian-gym?session=1`.
 7. If a command is rejected as unauthorized, ask the GM to assign the relevant token or sheet. If it is rejected as stale/conflicting, use the in-app refresh/reconnect guidance before retrying. If the session socket is disconnected, wait for reconnect or refresh the session map rather than using the plain local-first map as authority.
 
 Players should not receive GM keys, raw snapshots, local session files, private maps/sheets, Cloudflare credentials, tunnel tokens, or the GM's Cloudflare account access.
@@ -217,7 +217,7 @@ Before sharing a join code over the remote hostname, confirm all of these sessio
 
 - `/sessions#gm-lobby-title` reports session hosting enabled and the expected remote/tunnel exposure.
 - A GM session exists, the lobby shows a session ID/revision/join code, and readiness no longer warns about missing session-local credentials or missing authoritative state.
-- The saved map is attached, selected, and visible to the intended players before they open `/maps/<map-slug>?session=1`.
+- Any legacy session map is selected and visible to the intended players before they open `/maps/<map-slug>?session=1`; normal profile-based play uses `/maps/<map-slug>`.
 - `wss://table.example.com/api/sessions/socket` reaches the app through the same origin, with no Cloudflare cache rule or Access challenge interrupting session socket upgrades.
 - Player token assignments have been made with **Assign map tokens** for any token or sheet they should control.
 
@@ -249,8 +249,8 @@ Use this quick pass before relying on a named tunnel for play. For the expanded 
 - [ ] `cloudflared tunnel run rotom-table` connects without errors.
 - [ ] `https://table.example.com/sessions#gm-lobby-title` loads from the GM browser through the public hostname.
 - [ ] The safety banner reports hosting enabled and expected remote/tunnel exposure.
-- [ ] GM starts a session, sees a join code without exposing the GM key, attaches the saved map from `/maps/<map-slug>`, and confirms it is available as the selected session map.
-- [ ] A player on a different network opens `https://table.example.com/sessions#player-lobby-title`, joins with a display name, sees the attached map in **Visible session maps** after refresh, and appears in the GM lobby.
+- [ ] GM starts a session, sees a join code without exposing the GM key, and confirms any legacy session map is available as the selected session map.
+- [ ] A player on a different network opens `https://table.example.com/sessions#player-lobby-title`, joins with a display name, sees the session map in **Visible session maps** after refresh, and appears in the GM lobby.
 - [ ] GM uses the **Assign map tokens** panel to assign any token/sheet resources the player should control; the player sees no token assigned guidance until assignment exists.
 - [ ] GM and player open `https://table.example.com/maps/<map-slug>?session=1`.
 - [ ] A basic token move/turn or other supported session command propagates through the session view without a whole-map autosave.
@@ -261,8 +261,8 @@ Use this quick pass before relying on a named tunnel for play. For the expanded 
 
 Resolve these before play; they are expected operator states, not reasons to bypass session mode.
 
-- **Host flag disabled** — `/sessions` reports hosting disabled, or attach/join/session socket calls fail closed. Stop Nuxt and restart with `ROTOM_ENABLE_SESSION_HOST=1`, preferably through `npm run dev:session:tunnel`.
-- **No map attached** — players can join but no **Visible session maps** link appears. The GM opens the saved map on the plain route and presses **Attach current map to live session** with player visibility.
+- **Host flag disabled** — `/sessions` reports hosting disabled, or join/assignment/session socket calls fail closed. Stop Nuxt and restart with `ROTOM_ENABLE_SESSION_HOST=1`, preferably through `npm run dev:session:tunnel`.
+- **No session map** — players can join but no **Visible session maps** link appears. The GM opens the saved map on the plain route and uses the normal `/maps/<map-slug>` route with profile-linked characters.
 - **No token assigned** — a player can see the selected session map but token controls are disabled or commands reject as unauthorized. The GM uses **Assign map tokens** to grant control for the relevant current map token or sheet.
 - **Stale revision** — a command was built from an older table revision after another accepted command changed the same resource. Use the in-app refresh/reconnect action, inspect the current state, then retry only if the action still makes sense.
 - **Disconnected socket** — the session map banner reports disconnected or reconnecting. Keep the GM host and named tunnel awake, verify the WebSocket path and cache rules, and refresh the session map snapshot instead of sending local-first edits.
@@ -287,7 +287,7 @@ The helper remains a browser/tab aid; this runbook remains the source for named-
 | Safety banner says no active session, missing credentials, or missing authoritative state | The tunnel is public before GM startup, or session startup state is incomplete | Start the GM session before sharing a code. If credentials/state are missing after start, stop the tunnel, unset the runtime flag, and start a fresh session or recover from a trusted private snapshot. |
 | Player blocked before the lobby | Cloudflare Access/WAF/DNS policy or browser security prompt | Confirm the player is allowed by the optional edge policy; remember Access is extra protection, not Rotom Table session auth. |
 | WebSocket stays disconnected/reconnecting | Tunnel or browser closed the socket, laptop slept, cached/proxied path, or Access challenge interrupted the socket | Keep the GM host awake, disable aggressive cache rules for session paths, verify `wss://table.example.com/api/sessions/socket` reaches the app, then reload or use the reconnect/snapshot banner. |
-| Player joined but has no session map link | The GM has not attached a saved map, attached it GM-only, or the player has not refreshed after attachment | Attach the saved map with player visibility, then have the player refresh the remembered session. |
+| Player joined but has no session map link | The session map is not visible to the player or the player has not refreshed after visibility changed | Verify the session map with player visibility, then have the player refresh the remembered session. |
 | Player can join but cannot move a token | Player has not been assigned that token/sheet or the command is GM-only | The GM must assign controllable resources for player commands; GM-only commands remain GM-only. |
 | Command rejected as stale/conflict | Another accepted command changed the same resource first | Refresh the session snapshot, inspect current state, and retry from the latest table state. |
 | Local files changed after the smoke | Session snapshots/event logs are local runtime data | `data/sessions/` is ignored/private. Do not commit session files, generated private sheets, tunnel credentials, GM keys, join codes, screenshots with secrets, or real `.env` files. |

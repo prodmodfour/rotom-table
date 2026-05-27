@@ -10,7 +10,7 @@ Current maintenance baseline: the checked local-first boundaries remain intact. 
 
 - **Local-first mode is the default.** Plain `npm run dev`, `/maps/<slug>`, `/sheets`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` use filesystem-backed JSON, local autosave, and legacy `/api/events` realtime updates without requiring session hosting.
 - **Live-session mode is explicit.** Session hosting requires the documented runtime opt-in, and a map becomes a session map only when opened through the live-session flow or with `?session=1` on the map URL.
-- **Local and session state do not share write authority.** Leaving `?session=1` off means edits save to the local campaign files; adding it means table actions use session commands against the server-owned attached map state.
+- **Local and session state do not share write authority.** Leaving `?session=1` off means edits save to the local campaign files; adding it means table actions use session commands against the server-owned session map state.
 
 ## Scope
 

@@ -42,8 +42,7 @@ npm run build
 - [docs/live-session-protocol.md](docs/live-session-protocol.md) — shared live session protocol types, message flow, and accepted/rejected command examples.
 - [docs/live-session-socket-protocol.md](docs/live-session-socket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [docs/live-session-table-action-commands.md](docs/live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
-- [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
-- [docs/live-session-map-attachment.md](docs/live-session-map-attachment.md) — GM flow for attaching saved maps to server-owned live session state before players open session maps.
+- [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — legacy live-session client boundaries, including disconnect and conflict recovery guidance.
 - [docs/live-session-lobby.md](docs/live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
 - [docs/live-session-host-runtime.md](docs/live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [docs/live-session-public-exposure-checks.md](docs/live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
@@ -51,7 +50,6 @@ npm run build
 - [docs/live-session-cloudflare-tunnel-hosting.md](docs/live-session-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, session socket considerations, safety warnings, and rollback steps.
 - [docs/live-session-named-tunnel-maintenance.md](docs/live-session-named-tunnel-maintenance.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [docs/live-session-deployment-smoke-checklist.md](docs/live-session-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
-- [docs/live-session-real-flow-smoke.md](docs/live-session-real-flow-smoke.md) — automated start, attach, join, assign, session socket, token move, reconnect snapshot, and cleanup smoke helper.
 - [docs/live-session-lan-manual-smoke-results.md](docs/live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [docs/live-session-command-flow-maintenance.md](docs/live-session-command-flow-maintenance.md) — integrated multi-client command-flow coverage covering accepted commands, reconnect, permissions, and stale conflicts.
 - [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — expected LAN/named-tunnel concurrency behaviour, latency-sensitive paths, replay/snapshot fallback, and before-game smoke checks.
@@ -188,7 +186,6 @@ Saved sheets and maps are edited by the app itself. Live session snapshots and o
 | `npm test` | Run the Vitest test suite once. |
 | `npm run test:watch` | Run Vitest in watch mode. |
 | `npm run smoke:session:multi-tab` | Open/print local live session GM/player smoke URLs and run focused token/client smoke checks. |
-| `npm run smoke:session:real-flow` | Exercise start, attach, join, assign, session socket token move, reconnect snapshot, and smoke cleanup against a running session host. |
 | `npm run check:move-automation` | Check move automation coverage. |
 | `npm run sync:item-sprites` | Sync item sprite assets. |
 | `npm run refactor:loop` | Run the refactor loop helper script. |

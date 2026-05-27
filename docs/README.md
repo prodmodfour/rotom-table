@@ -16,8 +16,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session protocol](live-session-protocol.md) — shared identity, command envelope, result, session socket message, ack/reject, duplicate, and reconnect contracts.
 - [Live session socket protocol](live-session-socket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [Live session table action commands](live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
-- [Live session client integration](live-session-client-integration.md) — local mode versus explicit session mode, optimistic UX, disconnect recovery, and conflict/retry guidance.
-- [Live session map attachment flow](live-session-map-attachment.md) — GM flow for attaching saved maps to server-owned live session state before players open session maps.
+- [Live session client integration](live-session-client-integration.md) — legacy live-session client boundaries, optimistic UX, disconnect recovery, and conflict/retry guidance.
 - [live session lobby and manual QA](live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
 - [live session host runtime scripts](live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [Live session public exposure checks](live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
@@ -25,7 +24,6 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, session socket considerations, safety warnings, and rollback steps.
 - [Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) — LAN and named-tunnel smoke steps for two players, reconnect, token movement, initiative, conflict rejection, and cleanup evidence.
-- [Live session real-flow smoke script](live-session-real-flow-smoke.md) — automated start, attach, join, assign, session socket, token move, reconnect snapshot, and cleanup helper for a running dev server.
 - [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [Live session command-flow maintenance](live-session-command-flow-maintenance.md) — automated multi-client command-flow coverage covering accepted commands, reconnect, permissions, and stale conflicts.
 - [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — expected LAN/named-tunnel concurrency behaviour, latency-sensitive paths, replay/snapshot fallback, and before-game smoke checks.
