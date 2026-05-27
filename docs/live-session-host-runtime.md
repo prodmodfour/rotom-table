@@ -1,129 +1,50 @@
-# live session host runtime scripts
+# Legacy live-session host runtime scripts
 
-This guide documents the npm helpers for starting a guarded live session host during local development and table smoke testing. The helpers do not change the Live session architecture: a GM-controlled Rotom Table process remains the authoritative session server, clients use `WebSocket /api/sessions/socket`, live table actions flow through server-authoritative command envelopes instead of whole-map autosave, and normal profile-based map play no longer uses session map session-map visibility before clients act on maps.
+The `dev:session:*` scripts are retained for direct maintenance of the old guarded session endpoints and socket. They are not required for normal profile-based play.
 
-Use the mode that matches the supported hosting path:
-
-| Mode | Command | Binding | Use for |
-| --- | --- | --- | --- |
-| LAN / same Wi-Fi | `npm run dev:session:lan` | `0.0.0.0:3000` | Trusted players on the same private network. |
-| Named Cloudflare Tunnel | `npm run dev:session:tunnel` | `127.0.0.1:3000` | Remote players through a stable named tunnel hostname. |
-
-The plain `npm run dev` script remains local-first development and does not enable session hosting by itself.
-
-## What the helpers set
-
-Both helpers run the existing Nuxt development server with the explicit runtime gate set for the child process:
+For normal play, run:
 
 ```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host <safe-host> --port 3000
+npm run dev
 ```
 
-They do **not** write `.env` files, create accounts, mint public authentication, start Cloudflare, expose tunnel credentials, generate join codes by themselves, use session maps, or commit snapshots. Session IDs, GM keys, join codes, player IDs, client IDs, and session maps are still created only through the guarded live-session flows after the server starts.
+Then use **GM Login**, `/player-profiles`, **Player Login**, and regular `/maps/<slug>` pages. Players can browse Pokédex and PTU reference pages without session hosting.
 
-The helpers print the resolved command and safety reminders before starting Nuxt. To inspect the command without starting the server:
+## Legacy helper commands
 
-```bash
-npm run dev:session:lan -- --print-only
-npm run dev:session:tunnel -- --print-only
-```
-
-To use another port, pass it to the helper and include that port in player URLs:
-
-```bash
-npm run dev:session:lan -- --port 3001
-npm run dev:session:tunnel -- --port 3001
-```
-
-## LAN mode
-
-Use LAN mode when every participant is on the same trusted private network:
+LAN maintenance host:
 
 ```bash
 npm run dev:session:lan
 ```
 
-This is equivalent to:
-
-```bash
-ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000
-```
-
-`--host 0.0.0.0` is intentional for LAN play: it lets player browsers reach the Nuxt server through the GM machine's private IP address. It is not public authentication and should not be combined with router port forwarding or improvised public exposure.
-
-After startup, open `/sessions` through the player-facing private URL, for example:
-
-```text
-http://192.168.1.42:3000/sessions#gm-lobby-title
-http://192.168.1.42:3000/sessions#player-lobby-title
-```
-
-Then use explicit session map URLs such as:
-
-```text
-http://192.168.1.42:3000/maps/<map-slug>?session=1
-```
-
-See the [Live session LAN hosting runbook](live-session-lan-hosting.md) for IP discovery, firewall troubleshooting, smoke checks, and cleanup. See [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) for the recorded browser-client pass. See the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) for the expanded two-player LAN/named-tunnel pass covering reconnect, token movement, initiative, and conflict rejection. See [Live session public exposure checks](live-session-public-exposure-checks.md) for the safety banner warnings that appear when the host is reachable before an active session-local GM key, join code, and authoritative state are ready.
-
-## Named tunnel mode
-
-Use named tunnel mode when trusted remote players connect through a stable Cloudflare Tunnel hostname:
+Named-tunnel maintenance host with loopback binding:
 
 ```bash
 npm run dev:session:tunnel
 ```
 
-This is equivalent to:
+Manual equivalents:
 
 ```bash
+ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000
 ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000
 ```
 
-`--host 127.0.0.1` keeps Nuxt on loopback so the intended public path is the named tunnel, not an extra LAN listener. Start the tunnel in another terminal, for example:
+Useful options:
 
 ```bash
-cloudflared tunnel run rotom-table
+npm run dev:session:lan -- --port 3001
+npm run dev:session:lan -- --print-only
 ```
 
-Players use the stable public hostname and the same app paths:
+The helpers set the explicit `ROTOM_ENABLE_SESSION_HOST=1` runtime gate for the Nuxt child process. They do **not** write `.env` files, create public accounts, create share links, expose GM keys in documentation, or make live sessions public authentication.
 
-```text
-https://table.example.com/sessions#player-lobby-title
-https://table.example.com/maps/<map-slug>?session=1
-wss://table.example.com/api/sessions/socket
-```
+## Safety boundaries
 
-See the [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) for setup, ingress config, WebSocket considerations, safety warnings, and rollback steps. See the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) for the two-player named-tunnel pass after the stable hostname is working. See [Live session public exposure checks](live-session-public-exposure-checks.md) before sharing a remote URL if the safety banner reports missing credentials, no active session, or unknown readiness.
+- Use these helpers only for `/sessions` and `/api/sessions/*` maintenance smoke checks.
+- Keep generated `data/sessions/` snapshots/event logs, GM keys, join codes, tunnel credentials, private maps/sheets, screenshots with secrets, and real `.env` files out of git.
+- Quick Tunnel remains temporary development smoke-test only.
+- The remaining session socket uses `WebSocket /api/sessions/socket` and server-side validation; do not replace profile-based play with session-owned map authority.
 
-## Safe operating boundaries
-
-- Session hosting remains disabled unless the runtime flag is present in the process that runs Nuxt.
-- The `/login` GM/player role picker remains a trust-based local UI switch, not public auth.
-- Share only the player-facing base URL and join code with trusted players; never share GM keys, local session files, raw snapshots, tunnel credentials, real `.env` files, or private campaign data.
-- LAN and named Cloudflare Tunnel are the supported live session hosting paths. Quick Tunnel remains temporary development smoke-test only; see the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md).
-- Normal profile-based play uses `/maps/<slug>` without session session-map visibility. Legacy live-session clients that use `/maps/<slug>?session=1` still require a server-owned session snapshot before commands are authority; any browser-local seed shown before a snapshot is not command authority.
-- Before committing, run `git status --short` and confirm generated `data/sessions/` snapshots/event logs, join codes, GM keys, screenshots with secrets, and private campaign JSON are not staged.
-- For private session archives and restores after hosting, use the [Live session backup and recovery runbook](live-session-backup-recovery.md); do not turn backups into a cloud database or public shared drive.
-- For the full trust-boundary review, join-code limits, tunnel exposure risks, incident response, and non-hardened areas, see the [Live session security boundaries](live-session-security-boundaries.md).
-- For dependency inventory, exact runtime flag expectations, Node/Nitro WebSocket compatibility, and Cloudflare tunnel assumptions, see the [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md).
-
-## Shutdown
-
-1. Ask players to stop sending commands and close session-map tabs.
-2. Use **Forget in this browser** in GM/player browser profiles that should not remember session-local identity.
-3. Stop the Nuxt process with `Ctrl+C`.
-4. Stop `cloudflared tunnel run ...` if named tunnel mode was used.
-5. If you manually exported `ROTOM_ENABLE_SESSION_HOST` in the shell, unset it:
-
-   ```bash
-   unset ROTOM_ENABLE_SESSION_HOST
-   ```
-
-   PowerShell:
-
-   ```powershell
-   Remove-Item Env:ROTOM_ENABLE_SESSION_HOST
-   ```
-
-6. Check the working tree before committing.
+See [Player profiles and linked character control](player-profiles.md), [Local development](local-development.md), [Live session LAN hosting runbook](live-session-lan-hosting.md), and [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md).

@@ -16,7 +16,8 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 
 | Route | Why it matters |
 | --- | --- |
-| `/login` | Shows the trust-based GM/Player session model. |
+| `/login` | Shows the trust-based GM/Player role picker and player profile selection flow. |
+| `/player-profiles` | GM-only profile list plus Pokémon/trainer sheet link management. |
 | `/maps` | Local map library and folder management. |
 | `/maps/:slug` | Main isometric table, terrain editing, token placement, initiative, field effects, and automation controls. |
 | `/sheets` | Pokémon and trainer sheet library. |
@@ -59,7 +60,7 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 ## What the project demonstrates
 
 - A long-running personal tool with real users/workflows rather than a small sample app.
-- Product thinking: GM/player modes, route organisation, local data safety, autosave, search, libraries, editors, and dense tabletop controls.
+- Product thinking: GM/player modes, persistent player profiles, linked-character control, route organisation, local data safety, autosave, search, libraries, editors, and dense tabletop controls.
 - TypeScript/Nuxt structure across pages, composables, utilities, server routes, shared helpers, and tests.
 - Interactive UI complexity: Three.js isometric map rendering, token interactions, initiative, field effects, hazards, and sheet-driven map state.
 - Domain modelling for 3D tabletop maps, Pokémon sheets, trainer sheets, encounter tables, app-owned PTU reference content, and generated wild sheets.
@@ -67,7 +68,7 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 
 ## Intentionally not production-grade
 
-- **Authentication** — the GM/Player picker is trust-based and cookie-backed. It is appropriate for a local table, not a public identity system.
+- **Authentication** — the GM/Player picker and persistent player profiles are trust-based local-table conveniences. They are appropriate for a local table, not a public identity system.
 - **Persistence** — data is written to the repository filesystem in local development. A hosted version should replace this with an explicit persistence design.
 - **Production writes** — several mutating API routes are disabled in production mode by design.
 - **Multi-tenancy/collaboration** — this is not a SaaS app, public VTT, or shared database platform.

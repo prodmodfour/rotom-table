@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -9,42 +9,60 @@ const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
-describe('Live session client integration documentation', () => {
-  const guide = readText('docs/live-session-client-integration.md')
+const collectMarkdown = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = resolve(directory, entry.name)
 
-  it('documents the explicit local-mode and session-mode boundary', () => {
-    expect(guide).toContain('`/maps/<slug>`')
-    expect(guide).toContain('`/maps/<slug>?session=1`')
-    expect(guide).toContain('useEditableMap')
-    expect(guide).toContain('useSessionMapEditorState')
-    expect(guide).toContain('GET /api/events')
-    expect(guide).toContain('WebSocket /api/sessions/socket')
-    expect(guide).toContain('does not mutate the local autosaved map ref')
+    if (entry.isDirectory()) return collectMarkdown(path)
+
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : []
   })
 
-  it('documents player-safe disconnect and conflict recovery', () => {
-    expect(guide).toContain('Recovering from disconnects')
-    expect(guide).toContain('Refresh the session snapshot')
-    expect(guide).toContain('Recovered snapshot')
-    expect(guide).toContain('Recovering from conflicts and rejections')
-    expect(guide).toContain('`stale`')
-    expect(guide).toContain('`conflict`')
-    expect(guide).toContain('`unauthorized`')
-    expect(guide).toContain('Do not switch to plain `/maps/<slug>`')
+const docsMarkdown = (): string[] => [
+  'README.md',
+  ...collectMarkdown(resolve(repoRoot, 'docs')).map((path) => relative(repoRoot, path)),
+]
+
+describe('profile-based play documentation boundaries', () => {
+  it('documents current player-profile play and legacy live-session isolation', () => {
+    const profileGuide = readText('docs/player-profiles.md')
+
+    expect(profileGuide).toContain('persistent player profiles')
+    expect(profileGuide).toContain('players normally open the relevant player-visible map')
+    expect(profileGuide).toContain('Pokédex')
+    expect(profileGuide).toContain('PTU reference pages')
+    expect(profileGuide).toContain('Players do not need `/sessions`')
+    expect(profileGuide).toContain('share link')
+    expect(profileGuide).toContain('per-map invite')
+
+    expect(readText('README.md')).toContain('docs/player-profiles.md')
+    expect(readText('docs/README.md')).toContain('player-profiles.md')
+    expect(readText('docs/live-session-product-readiness-review.md')).toContain('no longer the normal Rotom Table play guide')
+    expect(readText('docs/live-session-lobby.md')).toContain('It does not describe normal map play')
   })
 
-  it('keeps the Live session safety and architecture boundaries visible', () => {
-    expect(guide).toContain('ROTOM_ENABLE_SESSION_HOST=1')
-    expect(guide).toContain('not public authentication')
-    expect(guide).toContain('does not add accounts')
-    expect(guide).toContain('does not add a database')
-    expect(guide).toContain('Session clients must not use whole-map autosave as the live concurrency mechanism')
-  })
+  it('keeps obsolete live-session-as-normal-play instructions out of docs', () => {
+    const matches: string[] = []
+    const forbidden = [
+      /\?session=1/,
+      /Visible session maps/,
+      /Assign map tokens/,
+      /Assign control/,
+      /ready for trusted-table live-session rehearsal and play/i,
+      /live-session map attachment doc/i,
+    ]
 
-  it('is linked from primary documentation indexes', () => {
-    expect(readText('README.md')).toContain('docs/live-session-client-integration.md')
-    expect(readText('docs/README.md')).toContain('live-session-client-integration.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-client-integration.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-client-integration.md')
+    for (const path of docsMarkdown()) {
+      const text = readText(path)
+      const lines = text.split('\n')
+
+      lines.forEach((line, index) => {
+        for (const pattern of forbidden) {
+          if (pattern.test(line)) matches.push(`${path}:${index + 1}: ${line}`)
+        }
+      })
+    }
+
+    expect(matches).toEqual([])
   })
 })

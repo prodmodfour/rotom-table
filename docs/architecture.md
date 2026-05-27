@@ -16,7 +16,7 @@ Rotom Table is a Nuxt 3 application with the app source under `src/`.
 
 The `server/` directory holds Nitro API routes and server-side application logic.
 
-- `server/api/` exposes endpoints for maps, sheets, encounters, Pokédex data, trainer sprites, and realtime events.
+- `server/api/` exposes endpoints for maps, sheets, player profiles, encounters, Pokédex data, trainer sprites, and realtime events.
 - `server/useCases/` keeps core behaviours separate from HTTP route handlers.
 - `server/utils/` contains filesystem paths, JSON read/write helpers, storage adapters, policies, and runtime wrappers.
 
@@ -27,6 +27,7 @@ This structure keeps route handlers thin and makes persistence-heavy behaviours 
 Rotom Table is local-first. Campaign state is stored as JSON in the repository tree rather than in a hosted database.
 
 - Maps live under `data/maps/`.
+- Persistent player profiles live under `data/player-profiles/`.
 - Pokémon sheets live under `data/sheets/`.
 - Trainer sheets live under `data/trainers/`.
 - Encounter tables live under `encounter_tables/`.
@@ -38,15 +39,15 @@ This makes data easy to inspect, back up, diff, and repair while developing or r
 
 The `shared/` directory contains small helpers used by both app and server code, such as auth role values, path validation, sheet kinds, realtime message shapes, and encounter-table normalization. Keeping these definitions shared reduces drift between browser and server assumptions.
 
-## GM/player trust-based session model
+## GM/player trust-based access and player profiles
 
 The app uses a simple role picker:
 
-- **GM** sessions can access editing and encounter-management tools.
-- **Player** sessions see player-visible maps/sheets and player-safe controls.
+- **GM** sessions can access editing, player profile management, and encounter-management tools.
+- **Player** sessions select a persistent player profile, see player-visible maps, public/linked sheets, Pokédex pages, and PTU reference pages, and control tokens through linked characters.
 - **Guest** sessions are redirected to login.
 
-The selected role is stored in a cookie and checked by client navigation and server routes. This is a local table trust model, not hardened public authentication.
+The selected role is stored in a cookie and checked by client navigation and server routes. Player-specific authority comes from the selected persistent profile's linked Pokémon/trainer sheet refs, not from map shares or live-session assignments. This is a local table trust model, not hardened public authentication. See [Player profiles and linked character control](player-profiles.md) for the current play model.
 
 ## Three.js/isometric map area
 
@@ -58,7 +59,7 @@ The map table combines Vue controls with a Three.js-rendered isometric scene.
 
 The scene uses dirty render scheduling: Vue watchers, pointer interactions, async texture loads, resize/camera events, and document visibility lifecycle events request focused invalidation reasons, while active animation sources keep frames alive only while visual work is still changing. See [Isometric render scheduler architecture](render-scheduler-architecture.md) for the current dirty-rendering flow and extension checklist.
 
-Maps persist sparse terrain voxels, token placements, hazards, field effects, lights, initiative state, and metadata as JSON.
+Maps persist sparse terrain voxels, token placements, hazards, field effects, lights, initiative state, and metadata as JSON. Player token control is derived at runtime by matching a placement's `sheetKind`/`sheetSlug` to the selected player profile's linked character refs.
 
 ## Encounter tooling
 

@@ -11,14 +11,14 @@ A map stores the state the tabletop needs to render and run a scene:
 - identity: slug, name, optional folder, timestamps, and metadata
 - dimensions and ground-level information
 - sparse terrain voxels with material IDs and optional colour/blocking overrides
-- token placements linked to Pokémon or trainer sheets
+- token placements linked to Pokémon or trainer sheets by `sheetKind` and `sheetSlug`
 - player visibility flags
 - battlefield hazards such as Spikes, Toxic Spikes, Sticky Web, Stealth Rock, and Fire
 - field effects such as weather, terrain, and rooms
 - light placements
 - initiative round/current-turn state
 
-The map renderer and map editor treat the JSON document as the source of truth for the local table.
+The map renderer and map editor treat the JSON document as the source of truth for the local table. During player play, token control is derived from the selected player profile: a player can act with placements whose `sheetKind` and `sheetSlug` match a linked character sheet on that profile.
 
 ## Sheets
 
@@ -39,6 +39,20 @@ Generated or curated examples can live in subfolders, and generated wild sheets 
 Trainer sheets live under `data/trainers/` as JSON documents.
 
 Trainer sheets model a PTU trainer workbook: core trainer identity, stats, skills, AP, features, edges, classes, combat capabilities, movelist, orders, inventory, equipment, Pokémon links, portrait/sprite data, and campaign notes. Like Pokémon sheets, most fields are optional so the UI can render a new sheet from a small starting document.
+
+## Player profiles
+
+Persistent player profiles live under `data/player-profiles/` as private campaign JSON.
+
+A profile stores a stable local profile ID, a display name, a schema version, and linked character refs. Linked character refs point at existing Pokémon or trainer sheets by `sheetKind` and `sheetSlug`; they do not copy sheet data into the profile.
+
+The selected player profile is the source of player-specific control:
+
+- linked sheets can be loaded and saved by that player through normal sheet editors;
+- matching map token placements can be moved, turned, and used for token-scoped table actions;
+- unrelated private sheets and unlinked map tokens remain outside that player's control.
+
+See [Player profiles and linked character control](player-profiles.md) for the product flow.
 
 ## Encounter tables
 
@@ -87,9 +101,9 @@ The browser `/generate` page can also preview or write generated results dependi
 
 The repository is configured for local campaign ownership:
 
-- personal maps, sheets, trainer files, live session snapshots, and optional event logs should not be committed by default
+- personal maps, player profiles, sheets, trainer files, legacy live session snapshots, and optional event logs should not be committed by default
 - curated example sheets can remain trackable for review/demo purposes
 - generated wild sheets should be reviewed before committing, if they are ever meant to be examples
 - JSON should stay readable and inspectable rather than hidden behind opaque binary formats
 
-Before publishing or sharing a branch, check `git status` and make sure private campaign notes, player information, unreleased story material, session files, and one-off local data are not included. See [live session storage](live-session-storage.md) for session snapshot/event-log backup and recovery guidance.
+Before publishing or sharing a branch, check `git status` and make sure private campaign notes, player profile data, player information, unreleased story material, session files, and one-off local data are not included. See [Player profiles and linked character control](player-profiles.md) for current profile behaviour and [live session storage](live-session-storage.md) for legacy session snapshot/event-log backup and recovery guidance.

@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -8,157 +8,61 @@ const testDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
-const readJson = <T>(relativePath: string): T => JSON.parse(readText(relativePath)) as T
 
-interface PackageJson {
-  readonly scripts: Record<string, string>
-  readonly dependencies?: Record<string, string>
-  readonly devDependencies?: Record<string, string>
-}
+const collectMarkdown = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = resolve(directory, entry.name)
 
-interface PackageLockJson {
-  readonly packages?: Record<string, { readonly version?: string }>
-}
+    if (entry.isDirectory()) return collectMarkdown(path)
 
-const directPackageNames = (pkg: PackageJson): Set<string> =>
-  new Set([...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {})])
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : []
+  })
 
-const lockHasPackage = (lock: PackageLockJson, packageName: string): boolean =>
-  Object.hasOwn(lock.packages ?? {}, `node_modules/${packageName}`)
-
-const forbiddenDirectDependencies = [
-  'ws',
-  'socket.io',
-  'yjs',
-  '@hocuspocus/server',
-  'sharedb',
-  'redis',
-  'ioredis',
-  'pg',
-  'postgres',
-  '@neondatabase/serverless',
-  'cloudflare',
-  'wrangler',
-  'miniflare',
-  '@cloudflare/workers-types',
+const docsMarkdown = (): string[] => [
+  'README.md',
+  ...collectMarkdown(resolve(repoRoot, 'docs')).map((path) => relative(repoRoot, path)),
 ]
 
-describe('Live session dependency and runtime maintenance', () => {
-  const review = readText('docs/live-session-dependency-runtime-maintenance.md')
-  const pkg = readJson<PackageJson>('package.json')
-  const lock = readJson<PackageLockJson>('package-lock.json')
-  const nuxtConfig = readText('nuxt.config.ts')
-  const sessionHostScript = readText('scripts/session-host-dev.mjs')
+describe('profile-based play documentation boundaries', () => {
+  it('documents current player-profile play and legacy live-session isolation', () => {
+    const profileGuide = readText('docs/player-profiles.md')
 
-  it('documents the dependency outcome without changing the locked architecture', () => {
-    expect(review).toContain('No new direct runtime dependency is required for live session hosting')
-    expect(review).toContain('existing Nuxt/Nitro app')
-    expect(review).toContain('browser `WebSocket`')
-    expect(review).toContain('Node built-ins')
-    expect(review).toContain('No hosted persistence package is imported, configured, or required by Rotom Table')
-    expect(review).toContain('local JSON snapshots plus the optional local JSON-lines event log')
-    expect(review).toContain('cloudflared` is an external operator tool, not an npm dependency')
-    expect(review).toContain('does not require a package, a database, a cloud service, a public auth provider, or a new deployment target')
-    expect(review).not.toContain('Quick Tunnel is the supported')
+    expect(profileGuide).toContain('persistent player profiles')
+    expect(profileGuide).toContain('players normally open the relevant player-visible map')
+    expect(profileGuide).toContain('Pokédex')
+    expect(profileGuide).toContain('PTU reference pages')
+    expect(profileGuide).toContain('Players do not need `/sessions`')
+    expect(profileGuide).toContain('share link')
+    expect(profileGuide).toContain('per-map invite')
+
+    expect(readText('README.md')).toContain('docs/player-profiles.md')
+    expect(readText('docs/README.md')).toContain('player-profiles.md')
+    expect(readText('docs/live-session-product-readiness-review.md')).toContain('no longer the normal Rotom Table play guide')
+    expect(readText('docs/live-session-lobby.md')).toContain('It does not describe normal map play')
   })
 
-  it('records the current Nuxt/Nitro dependency inventory and optional transitive boundary', () => {
-    expect(review).toContain('| App/server framework | `nuxt`')
-    expect(review).toContain('| Nitro WebSocket support | `nitro.experimental.websocket = true`')
-    expect(review).toContain('Nuxt/Nitro transitive packages include Nitro/H3/CrossWS')
-    expect(review).toContain('| Optional transitive packages | Nuxt/Nitro/devtools may place packages such as `ws` or `ioredis`')
-    expect(review).toContain('not direct Rotom Table dependencies')
-    expect(review).toContain('| Renderer | `three` plus `@types/three`')
-    expect(review).toContain('| Node built-ins | `node:fs`, `node:path`, `node:crypto`, `node:child_process`, `node:process`')
-    expect(lockHasPackage(lock, 'nuxt')).toBe(true)
-    expect(lockHasPackage(lock, 'nitropack')).toBe(true)
-    expect(lockHasPackage(lock, 'h3')).toBe(true)
-    expect(lockHasPackage(lock, 'crossws')).toBe(true)
-  })
+  it('keeps obsolete live-session-as-normal-play instructions out of docs', () => {
+    const matches: string[] = []
+    const forbidden = [
+      /\?session=1/,
+      /Visible session maps/,
+      /Assign map tokens/,
+      /Assign control/,
+      /ready for trusted-table live-session rehearsal and play/i,
+      /live-session map attachment doc/i,
+    ]
 
-  it('keeps forbidden realtime/database/cloud packages out of direct dependencies', () => {
-    const directDeps = directPackageNames(pkg)
+    for (const path of docsMarkdown()) {
+      const text = readText(path)
+      const lines = text.split('\n')
 
-    expect(directDeps.has('nuxt')).toBe(true)
-    expect(directDeps.has('three')).toBe(true)
-
-    for (const packageName of forbiddenDirectDependencies) {
-      expect(directDeps.has(packageName), `${packageName} should not be a direct dependency`).toBe(false)
+      lines.forEach((line, index) => {
+        for (const pattern of forbidden) {
+          if (pattern.test(line)) matches.push(`${path}:${index + 1}: ${line}`)
+        }
+      })
     }
 
-    expect([...directDeps].some((packageName) => packageName.startsWith('@cloudflare/'))).toBe(false)
-  })
-
-  it('documents and validates the exact runtime gate plus safe helper scripts', () => {
-    expect(review).toContain('ROTOM_ENABLE_SESSION_HOST=1')
-    expect(review).toContain('Values such as `true`, `yes`, `on`, an empty string')
-    expect(review).toContain('Plain `npm run dev` keeps session endpoints and `/api/sessions/socket` fail-closed')
-    expect(review).toContain('npm run dev:session:lan')
-    expect(review).toContain('ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000')
-    expect(review).toContain('npm run dev:session:tunnel')
-    expect(review).toContain('ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000')
-    expect(review).toContain('support `--port <port>` and `--print-only`')
-
-    expect(pkg.scripts.dev).toBe('nuxt dev')
-    expect(pkg.scripts['dev:session:lan']).toBe('node scripts/session-host-dev.mjs --mode lan')
-    expect(pkg.scripts['dev:session:tunnel']).toBe('node scripts/session-host-dev.mjs --mode tunnel')
-    expect(pkg.scripts['smoke:session:multi-tab']).toBe('node scripts/session-multi-tab-smoke.mjs')
-    expect(sessionHostScript).toContain("export const SESSION_HOST_ENABLE_ENV = 'ROTOM_ENABLE_SESSION_HOST'")
-    expect(sessionHostScript).toContain("export const SESSION_HOST_ENABLE_VALUE = '1'")
-    expect(sessionHostScript).toContain("host: '0.0.0.0'")
-    expect(sessionHostScript).toContain("host: '127.0.0.1'")
-  })
-
-  it('documents Node/Nitro compatibility and non-reviewed hosting targets', () => {
-    expect(review).toContain('Node 20 or newer is the documented floor')
-    expect(review).toContain('@types/node` 20.x')
-    expect(review).toContain('normal Node/Nuxt/Nitro server process')
-    expect(review).toContain('Static hosting, edge/serverless adapters, Cloudflare Workers, Durable Objects, or serverless functions are not supported live-session hosts')
-    expect(review).toContain('nuxt.config.ts` intentionally enables `nitro.experimental.websocket = true')
-    expect(review).toContain('A read-only deployment is not a supported live-session host')
-    expect(nuxtConfig).toContain('nitro: {')
-    expect(nuxtConfig).toContain('experimental: {')
-    expect(nuxtConfig).toContain('websocket: true')
-  })
-
-  it('documents Cloudflare named tunnel assumptions without adding Cloudflare as an app dependency', () => {
-    expect(review).toContain('named Cloudflare Tunnel with a stable hostname')
-    expect(review).toContain('service: http://localhost:3000')
-    expect(review).toContain('wss://table.example.com/api/sessions/socket')
-    expect(review).toContain('/api/sessions/socket` must preserve WebSocket upgrade behaviour')
-    expect(review).toContain('must not cache `/sessions`, `/maps/*`, `/api/sessions/*`, WebSocket responses')
-    expect(review).toContain('Cloudflare Access, WAF rules, or IP restrictions may be used as optional outer protection only')
-    expect(review).toContain('Quick Tunnel and temporary `trycloudflare.com` hostnames remain development smoke-test only')
-    expect(review).toContain('cert.pem`, tunnel credentials JSON, tokens, Access/WAF config, private keys, real `.env` files')
-    expect(directPackageNames(pkg).has('cloudflare')).toBe(false)
-    expect([...directPackageNames(pkg)].some((packageName) => packageName.startsWith('@cloudflare/'))).toBe(false)
-  })
-
-  it('provides a dependency/runtime verification checklist and known limits', () => {
-    expect(review).toContain('`package.json` and `package-lock.json` were checked')
-    expect(review).toContain('npm run dev:session:lan -- --print-only')
-    expect(review).toContain('npm run dev:session:tunnel -- --print-only')
-    expect(review).toContain('The full validation passes: `npm run typecheck`, `npm test`, and `npm run build`')
-    expect(review).toContain('no generated `data/sessions/` files')
-    expect(review).toContain('Nitro WebSocket support is still explicitly enabled through an experimental configuration flag')
-    expect(review).toContain('Legacy `/api/events` SSE remains only for local-first non-session paths')
-  })
-
-  it('is linked from primary live session hosting, protocol, and review docs', () => {
-    expect(readText('README.md')).toContain('docs/live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/README.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('SECURITY.md')).toContain('docs/live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/local-development.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-public-exposure-checks.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-quick-tunnel-caveat.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-security-boundaries.md')).toContain('live-session-dependency-runtime-maintenance.md')
-    expect(readText('docs/live-session-deployment-smoke-checklist.md')).toContain('live-session-dependency-runtime-maintenance.md')
+    expect(matches).toEqual([])
   })
 })

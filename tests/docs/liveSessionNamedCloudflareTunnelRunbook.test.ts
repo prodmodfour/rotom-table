@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -9,101 +9,60 @@ const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
-describe('Live session named Cloudflare Tunnel runbook', () => {
-  const runbook = readText('docs/live-session-cloudflare-tunnel-hosting.md')
+const collectMarkdown = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = resolve(directory, entry.name)
 
-  it('documents named tunnel setup with a stable hostname', () => {
-    expect(runbook).toContain('cloudflared tunnel login')
-    expect(runbook).toContain('cloudflared tunnel create rotom-table')
-    expect(runbook).toContain('cloudflared tunnel route dns rotom-table table.example.com')
-    expect(runbook).toContain('cloudflared tunnel run rotom-table')
-    expect(runbook).toContain('https://table.example.com')
-    expect(runbook).toContain('~/.cloudflared/config.yml')
-    expect(runbook).toContain('service: http://localhost:3000')
-    expect(runbook).toContain('http_status:404')
+    if (entry.isDirectory()) return collectMarkdown(path)
+
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : []
   })
 
-  it('documents the explicit Rotom Table runtime gate and safe tunnel binding', () => {
-    expect(runbook).toContain('npm run dev:session:tunnel')
-    expect(runbook).toContain('npm run dev:session:tunnel -- --print-only')
-    expect(runbook).toContain('ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000')
-    expect(runbook).toContain('$env:ROTOM_ENABLE_SESSION_HOST = "1"')
-    expect(runbook).toContain('prefer binding Rotom Table to loopback')
-    expect(runbook).toContain('Do not bind to `0.0.0.0` casually')
-    expect(runbook).toContain('session hosting enabled and a deliberate remote/tunnel exposure')
+const docsMarkdown = (): string[] => [
+  'README.md',
+  ...collectMarkdown(resolve(repoRoot, 'docs')).map((path) => relative(repoRoot, path)),
+]
+
+describe('profile-based play documentation boundaries', () => {
+  it('documents current player-profile play and legacy live-session isolation', () => {
+    const profileGuide = readText('docs/player-profiles.md')
+
+    expect(profileGuide).toContain('persistent player profiles')
+    expect(profileGuide).toContain('players normally open the relevant player-visible map')
+    expect(profileGuide).toContain('Pokédex')
+    expect(profileGuide).toContain('PTU reference pages')
+    expect(profileGuide).toContain('Players do not need `/sessions`')
+    expect(profileGuide).toContain('share link')
+    expect(profileGuide).toContain('per-map invite')
+
+    expect(readText('README.md')).toContain('docs/player-profiles.md')
+    expect(readText('docs/README.md')).toContain('player-profiles.md')
+    expect(readText('docs/live-session-product-readiness-review.md')).toContain('no longer the normal Rotom Table play guide')
+    expect(readText('docs/live-session-lobby.md')).toContain('It does not describe normal map play')
   })
 
-  it('documents a remote-player rehearsal with session maps and assignments', () => {
-    expect(runbook).toContain('## Remote-player rehearsal before play')
-    expect(runbook).toContain('actual remote player browser or device')
-    expect(runbook).toContain('uses the normal `/maps/<map-slug>` route with profile-linked characters')
-    expect(runbook).toContain('Visible session maps')
-    expect(runbook).toContain('Assign map tokens')
-    expect(runbook).toContain('Assign control')
-    expect(runbook).toContain('/maps/<map-slug>?session=1')
-    expect(runbook).toContain('No session map recovery')
-    expect(runbook).toContain('No-token-assigned recovery')
-  })
+  it('keeps obsolete live-session-as-normal-play instructions out of docs', () => {
+    const matches: string[] = []
+    const forbidden = [
+      /\?session=1/,
+      /Visible session maps/,
+      /Assign map tokens/,
+      /Assign control/,
+      /ready for trusted-table live-session rehearsal and play/i,
+      /live-session map attachment doc/i,
+    ]
 
-  it('documents WebSocket, heartbeat, reconnect, and cache expectations', () => {
-    expect(runbook).toContain('wss://table.example.com/api/sessions/socket')
-    expect(runbook).toContain('Preserve the `/api/sessions/socket` path')
-    expect(runbook).toContain('Do not add a Cloudflare rule that caches `/sessions`, `/maps/*`, `/api/sessions/*`, or WebSocket responses')
-    expect(runbook).toContain('25 second interval and 60 second timeout')
-    expect(runbook).toContain('lastSeenRevision')
-    expect(runbook).toContain('snapshot fallback')
-  })
+    for (const path of docsMarkdown()) {
+      const text = readText(path)
+      const lines = text.split('\n')
 
-  it('documents remote latency and concurrency expectations', () => {
-    expect(runbook).toContain('Remote latency and concurrency expectations')
-    expect(runbook).toContain('browser-to-Cloudflare-to-GM-host round trip')
-    expect(runbook).toContain('Remote players should expect more jitter than LAN')
-    expect(runbook).toContain("server's accepted revision order")
-    expect(runbook).toContain('Event replay is currently unavailable for reconnect')
-    expect(runbook).toContain('actor-scoped snapshot fallback')
-    expect(runbook).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(runbook).toContain('repeated `1-3s` or `>3s` actions')
-  })
+      lines.forEach((line, index) => {
+        for (const pattern of forbidden) {
+          if (pattern.test(line)) matches.push(`${path}:${index + 1}: ${line}`)
+        }
+      })
+    }
 
-  it('documents remote session hosting safety checks and secret hygiene', () => {
-    expect(runbook).toContain('## Remote invite and secret hygiene')
-    expect(runbook).toContain('Before sharing a join code over the remote hostname')
-    expect(runbook).toContain('session hosting enabled and the expected remote/tunnel exposure')
-    expect(runbook).toContain('missing session-local credentials or missing authoritative state')
-    expect(runbook).toContain('no Cloudflare cache rule or Access challenge interrupting session socket upgrades')
-    expect(runbook).toContain('Do not share the join code until all five checks pass')
-    expect(runbook).toContain('Keep GM keys, tunnel credentials, `cert.pem`, credentials JSON, Cloudflare API tokens')
-  })
-
-  it('keeps public exposure safety boundaries visible', () => {
-    expect(runbook).toContain('Quick Tunnel is not the supported campaign-session path')
-    expect(runbook).toContain('temporary development smoke option')
-    expect(runbook).toContain('not public auth')
-    expect(runbook).toContain('Cloudflare Access is optional extra protection, not a replacement')
-    expect(runbook).toContain('Do not add a database, cloud persistence layer, SaaS deployment target')
-    expect(runbook).toContain('Tunnel credentials, `cert.pem`, tokens, private keys, real `.env` files, GM keys, join codes, snapshots, and event logs will stay out of the repository')
-  })
-
-  it('documents rollback and cleanup steps', () => {
-    expect(runbook).toContain('Stop `cloudflared tunnel run rotom-table` with `Ctrl+C`')
-    expect(runbook).toContain('unset ROTOM_ENABLE_SESSION_HOST')
-    expect(runbook).toContain('Remove-Item Env:ROTOM_ENABLE_SESSION_HOST')
-    expect(runbook).toContain('Remove or disable the public hostname/CNAME in the Cloudflare dashboard')
-    expect(runbook).toContain('cloudflared tunnel delete rotom-table')
-    expect(runbook).toContain('Check `git status --short`')
-  })
-
-  it('is linked from primary Live session docs', () => {
-    expect(readText('README.md')).toContain('docs/live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/README.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/local-development.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/live-session-lobby.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/live-session-client-integration.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
-    expect(readText('docs/live-session-multi-tab-smoke.md')).toContain('live-session-cloudflare-tunnel-hosting.md')
+    expect(matches).toEqual([])
   })
 })

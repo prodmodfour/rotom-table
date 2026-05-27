@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -9,43 +9,60 @@ const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
-describe('Live session public exposure checks documentation', () => {
-  const guide = readText('docs/live-session-public-exposure-checks.md')
+const collectMarkdown = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = resolve(directory, entry.name)
 
-  it('documents the no-secret safety endpoint fields and startup issue codes', () => {
-    expect(guide).toContain('GET /api/sessions/safety')
-    expect(guide).toContain('activeSessionCount')
-    expect(guide).toContain('credentialedSessionCount')
-    expect(guide).toContain('stateBackedSessionCount')
-    expect(guide).toContain('host-enabled-without-active-session')
-    expect(guide).toContain('remote-exposure-before-session-start')
-    expect(guide).toContain('host-enabled-without-session-secrets')
-    expect(guide).toContain('host-enabled-without-authoritative-state')
-    expect(guide).toContain('host-enabled-session-readiness-unknown')
+    if (entry.isDirectory()) return collectMarkdown(path)
+
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : []
   })
 
-  it('keeps public exposure response guidance aligned with Live session boundaries', () => {
-    expect(guide).toContain('session-local GM key')
-    expect(guide).toContain('player join code')
-    expect(guide).toContain('named Cloudflare Tunnel')
-    expect(guide).toContain('Quick Tunnel remains development-smoke-test only')
-    expect(guide).toContain('not public authentication')
-    expect(guide).toContain('WebSocket /api/sessions/socket')
-    expect(guide).toContain('server-authoritative commands')
-    expect(guide).toContain('No cloud database, SaaS deployment, public account provider')
-    expect(guide).not.toContain('gmKey=')
-    expect(guide).not.toContain('joinCode=')
+const docsMarkdown = (): string[] => [
+  'README.md',
+  ...collectMarkdown(resolve(repoRoot, 'docs')).map((path) => relative(repoRoot, path)),
+]
+
+describe('profile-based play documentation boundaries', () => {
+  it('documents current player-profile play and legacy live-session isolation', () => {
+    const profileGuide = readText('docs/player-profiles.md')
+
+    expect(profileGuide).toContain('persistent player profiles')
+    expect(profileGuide).toContain('players normally open the relevant player-visible map')
+    expect(profileGuide).toContain('Pokédex')
+    expect(profileGuide).toContain('PTU reference pages')
+    expect(profileGuide).toContain('Players do not need `/sessions`')
+    expect(profileGuide).toContain('share link')
+    expect(profileGuide).toContain('per-map invite')
+
+    expect(readText('README.md')).toContain('docs/player-profiles.md')
+    expect(readText('docs/README.md')).toContain('player-profiles.md')
+    expect(readText('docs/live-session-product-readiness-review.md')).toContain('no longer the normal Rotom Table play guide')
+    expect(readText('docs/live-session-lobby.md')).toContain('It does not describe normal map play')
   })
 
-  it('links the public exposure checks from primary Live session docs and runbooks', () => {
-    expect(readText('README.md')).toContain('docs/live-session-public-exposure-checks.md')
-    expect(readText('docs/README.md')).toContain('live-session-public-exposure-checks.md')
-    expect(readText('docs/local-development.md')).toContain('live-session-public-exposure-checks.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-public-exposure-checks.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-public-exposure-checks.md')
-    expect(readText('docs/live-session-lobby.md')).toContain('live-session-public-exposure-checks.md')
-    expect(readText('docs/live-session-host-runtime.md')).toContain('live-session-public-exposure-checks.md')
-    expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-public-exposure-checks.md')
-    expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-public-exposure-checks.md')
+  it('keeps obsolete live-session-as-normal-play instructions out of docs', () => {
+    const matches: string[] = []
+    const forbidden = [
+      /\?session=1/,
+      /Visible session maps/,
+      /Assign map tokens/,
+      /Assign control/,
+      /ready for trusted-table live-session rehearsal and play/i,
+      /live-session map attachment doc/i,
+    ]
+
+    for (const path of docsMarkdown()) {
+      const text = readText(path)
+      const lines = text.split('\n')
+
+      lines.forEach((line, index) => {
+        for (const pattern of forbidden) {
+          if (pattern.test(line)) matches.push(`${path}:${index + 1}: ${line}`)
+        }
+      })
+    }
+
+    expect(matches).toEqual([])
   })
 })

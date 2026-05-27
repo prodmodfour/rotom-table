@@ -11,10 +11,10 @@ For guarded startup helpers, see the [live session host runtime scripts](live-se
 - `POST /api/sessions/start` creates a session-local GM identity, join code, initial authoritative state, and local JSON snapshot when session hosting is explicitly enabled.
 - `POST /api/sessions/join` creates a session-local player ID/client ID/display name from a valid join code.
 - `POST /api/sessions/manage` lets the GM refresh the read-only lobby summary with joined players, connected-client presence records, assignment counts, selected-map details, session-map summaries, and the join code.
-- `POST /api/sessions/player-state` lets a joined player refresh only their own identity, assignments, and visible session map summary.
+- `POST /api/sessions/player-state` lets a joined player refresh only their own identity, assignments, and visible legacy session map summary.
 - `POST /api/sessions/assignments` remains the GM-only assignment endpoint for legacy session token/sheet resources.
 
-The removed `/api/sessions/maps/attach` route is not part of the product flow. GMs should not instruct players to use the lobby or session maps for normal play; players normally open the relevant player-visible map and act with profile-linked characters.
+The removed `/api/sessions/maps/attach` route is not part of the product flow. GMs should not instruct players to use the lobby or legacy session maps for normal play; players normally open the relevant player-visible map and act with profile-linked characters.
 
 ## Safety and identity rules
 
@@ -55,6 +55,6 @@ Use one GM browser and one separate player browser/profile. Do not commit any ge
 - **The start button is disabled:** choose **GM Login** in the existing local `/login` route first.
 - **Player cannot reach the LAN URL:** verify the GM used `--host 0.0.0.0`, both devices are on the same network, and the firewall permits the dev-server port.
 - **Player join fails:** re-check the code from the GM lobby, make sure the session is still active, and refresh the GM lobby to confirm the session did not end.
-- **No visible session map:** verify session map visibility or use normal `/maps/<slug>` profile-based play instead of trying to verify a session map to the session.
-- **No token assigned:** the player may see a legacy session map but cannot control that token; the GM should use **Assign map tokens** and the player should refresh/retry from the latest state.
+- **No visible legacy session map:** verify legacy session map visibility or use normal `/maps/<slug>` profile-based play instead of trying to verify a legacy session map to the session.
+- **No token assigned:** the player may see a legacy session map but cannot control that token; the GM should use **Link character sheets** in `/player-profiles` and the player should refresh/retry from the latest state.
 - **Session files appeared locally:** `data/sessions/` is ignored/private runtime data. Back it up only when needed and do not commit it.

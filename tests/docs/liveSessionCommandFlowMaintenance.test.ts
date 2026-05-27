@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -9,56 +9,60 @@ const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
-describe('Live session command-flow maintenance docs', () => {
-  const audit = readText('docs/live-session-command-flow-maintenance.md')
+const collectMarkdown = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = resolve(directory, entry.name)
 
-  it('records the automated multi-client command-flow evidence', () => {
-    expect(audit).toContain('tests/server/sessionIntegratedCommandFlow.test.ts')
-    expect(audit).toContain('one GM socket, two player sockets in the same session, and a GM socket in a different session')
-    expect(audit).toContain('handleSessionSocketMessage')
-    expect(audit).toContain('real WebSocket dispatcher and server-authoritative use cases')
+    if (entry.isDirectory()) return collectMarkdown(path)
+
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : []
   })
 
-  it('covers accepted command flows for movement, turning, HP, conditions, and initiative', () => {
-    expect(audit).toContain('`moveToken`')
-    expect(audit).toContain('`tokenMoved` patch')
-    expect(audit).toContain('`turnToken`')
-    expect(audit).toContain('`tokenTurned` patch')
-    expect(audit).toContain('`modifyHp`')
-    expect(audit).toContain('`hpModified` patch')
-    expect(audit).toContain('`modifyConditions`')
-    expect(audit).toContain('`conditionsModified` patch')
-    expect(audit).toContain('`nextInitiative`')
-    expect(audit).toContain('`initiativeUpdated` patch')
-    expect(audit).toContain('unrelated session receives nothing')
+const docsMarkdown = (): string[] => [
+  'README.md',
+  ...collectMarkdown(resolve(repoRoot, 'docs')).map((path) => relative(repoRoot, path)),
+]
+
+describe('profile-based play documentation boundaries', () => {
+  it('documents current player-profile play and legacy live-session isolation', () => {
+    const profileGuide = readText('docs/player-profiles.md')
+
+    expect(profileGuide).toContain('persistent player profiles')
+    expect(profileGuide).toContain('players normally open the relevant player-visible map')
+    expect(profileGuide).toContain('Pokédex')
+    expect(profileGuide).toContain('PTU reference pages')
+    expect(profileGuide).toContain('Players do not need `/sessions`')
+    expect(profileGuide).toContain('share link')
+    expect(profileGuide).toContain('per-map invite')
+
+    expect(readText('README.md')).toContain('docs/player-profiles.md')
+    expect(readText('docs/README.md')).toContain('player-profiles.md')
+    expect(readText('docs/live-session-product-readiness-review.md')).toContain('no longer the normal Rotom Table play guide')
+    expect(readText('docs/live-session-lobby.md')).toContain('It does not describe normal map play')
   })
 
-  it('covers reconnect, permission rejection, stale rejection, and no-whole-map boundaries', () => {
-    expect(audit).toContain('`commandReject`/`reason: "unauthorized"`')
-    expect(audit).toContain('`commandReject`/`reason: "stale"`')
-    expect(audit).toContain('`baseRevision`')
-    expect(audit).toContain('current authoritative token position')
-    expect(audit).toContain('`snapshotRequired: true`')
-    expect(audit).toContain('filtered `snapshot` at revision 5')
-    expect(audit).toContain('do not include whole-map `placements`, `voxels`, or `fieldEffects`')
-  })
+  it('keeps obsolete live-session-as-normal-play instructions out of docs', () => {
+    const matches: string[] = []
+    const forbidden = [
+      /\?session=1/,
+      /Visible session maps/,
+      /Assign map tokens/,
+      /Assign control/,
+      /ready for trusted-table live-session rehearsal and play/i,
+      /live-session map attachment doc/i,
+    ]
 
-  it('keeps locked architecture and data-hygiene boundaries explicit', () => {
-    expect(audit).toContain('`WebSocket /api/sessions/socket`')
-    expect(audit).toContain('server-owned session/map revision')
-    expect(audit).toContain('no Quick Tunnel campaign path')
-    expect(audit).toContain('public account system')
-    expect(audit).toContain('SaaS host')
-    expect(audit).toContain('cloud database')
-    expect(audit).toContain('browser-owned whole-map autosave')
-    expect(audit).toContain('without the GM key, join code, or the other player')
-  })
+    for (const path of docsMarkdown()) {
+      const text = readText(path)
+      const lines = text.split('\n')
 
-  it('links from primary Live session protocol and review docs', () => {
-    expect(readText('README.md')).toContain('docs/live-session-command-flow-maintenance.md')
-    expect(readText('docs/README.md')).toContain('live-session-command-flow-maintenance.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-command-flow-maintenance.md')
-    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-command-flow-maintenance.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-command-flow-maintenance.md')
+      lines.forEach((line, index) => {
+        for (const pattern of forbidden) {
+          if (pattern.test(line)) matches.push(`${path}:${index + 1}: ${line}`)
+        }
+      })
+    }
+
+    expect(matches).toEqual([])
   })
 })

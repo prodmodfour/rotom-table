@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -8,87 +8,61 @@ const testDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
-const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, relativePath))
 
-describe('live session readiness summary', () => {
-  const summary = readText('docs/live-session-readiness-summary.md')
+const collectMarkdown = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = resolve(directory, entry.name)
 
-  it('records product readiness scope and standard validation', () => {
-    expect(summary).toContain('# Live session readiness summary')
-    expect(summary).toContain('Last checked: 2026-05-26')
-    expect(summary).toContain('Current readiness baseline: ready for trusted-table live-session smoke testing')
-    expect(summary).toContain('Session hosting remains opt-in')
-    expect(summary).toContain('`ROTOM_ENABLE_SESSION_HOST=1`')
-    expect(summary).toContain('`npm run typecheck`, `npm test`, and `npm run build`')
-    expect(summary).toContain('No maintenance-only notes, private/generated maps or sheets')
-    expect(summary).toContain('documented limitations remain product limitations')
+    if (entry.isDirectory()) return collectMarkdown(path)
+
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : []
   })
 
-  it('keeps locked architecture and non-goals explicit', () => {
-    expect(summary).toContain('GM-hosted table sessions')
-    expect(summary).toContain('LAN / same Wi-Fi remains the primary hosting path')
-    expect(summary).toContain('named Cloudflare Tunnel with a stable hostname')
-    expect(summary).toContain('Quick Tunnel remains a temporary development smoke-test option only')
-    expect(summary).toContain('`WebSocket /api/sessions/socket`')
-    expect(summary).toContain('server-authoritative command envelopes')
-    expect(summary).toContain('Identity remains session-local')
-    expect(summary).toContain('Persistence remains local-first JSON')
-    expect(summary).toContain('Plain `/maps/<slug>` and sheet editors remain local-first')
-    expect(summary).toContain('live session clients do not become authoritative by autosaving whole maps')
+const docsMarkdown = (): string[] => [
+  'README.md',
+  ...collectMarkdown(resolve(repoRoot, 'docs')).map((path) => relative(repoRoot, path)),
+]
 
-    expect(summary).not.toContain('Quick Tunnel is the supported campaign')
-    expect(summary).not.toContain('Postgres is required')
-    expect(summary).not.toContain('public multi-tenant app')
-    expect(summary).not.toContain('gmKey=')
-    expect(summary).not.toContain('joinCode=')
+describe('profile-based play documentation boundaries', () => {
+  it('documents current player-profile play and legacy live-session isolation', () => {
+    const profileGuide = readText('docs/player-profiles.md')
+
+    expect(profileGuide).toContain('persistent player profiles')
+    expect(profileGuide).toContain('players normally open the relevant player-visible map')
+    expect(profileGuide).toContain('Pokédex')
+    expect(profileGuide).toContain('PTU reference pages')
+    expect(profileGuide).toContain('Players do not need `/sessions`')
+    expect(profileGuide).toContain('share link')
+    expect(profileGuide).toContain('per-map invite')
+
+    expect(readText('README.md')).toContain('docs/player-profiles.md')
+    expect(readText('docs/README.md')).toContain('player-profiles.md')
+    expect(readText('docs/live-session-product-readiness-review.md')).toContain('no longer the normal Rotom Table play guide')
+    expect(readText('docs/live-session-lobby.md')).toContain('It does not describe normal map play')
   })
 
-  it('links readiness evidence and target tests that exist', () => {
-    const expectedDocPaths = [
-      'docs/live-session-product-readiness-review.md',
-      'docs/live-session-implementation-maintenance.md',
-      'docs/live-session-command-flow-maintenance.md',
-      'docs/live-session-lan-manual-smoke-results.md',
-      'docs/live-session-named-tunnel-maintenance.md',
-      'docs/live-session-local-mode-maintenance.md',
-      'docs/live-session-security-secret-hygiene-readiness.md',
-      'docs/live-session-persistence-recovery-maintenance.md',
-      'docs/live-session-concurrency-benchmark-notes.md',
+  it('keeps obsolete live-session-as-normal-play instructions out of docs', () => {
+    const matches: string[] = []
+    const forbidden = [
+      /\?session=1/,
+      /Visible session maps/,
+      /Assign map tokens/,
+      /Assign control/,
+      /ready for trusted-table live-session rehearsal and play/i,
+      /live-session map attachment doc/i,
     ]
 
-    for (const path of expectedDocPaths) {
-      expect(summary).toContain(path.replace('docs/', ''))
-      expect(exists(path)).toBe(true)
+    for (const path of docsMarkdown()) {
+      const text = readText(path)
+      const lines = text.split('\n')
+
+      lines.forEach((line, index) => {
+        for (const pattern of forbidden) {
+          if (pattern.test(line)) matches.push(`${path}:${index + 1}: ${line}`)
+        }
+      })
     }
 
-    const expectedTestPaths = [
-      'tests/server/sessionIntegratedCommandFlow.test.ts',
-      'tests/server/sessionWebSocketTransport.test.ts',
-      'tests/server/sessionHostingHardening.test.ts',
-      'tests/composables/map-editor/sessionClientIntegration.test.ts',
-      'tests/docs/liveSessionDocsMaintenance.test.ts',
-      'tests/docs/liveSessionReadinessSummary.test.ts',
-      'tests/docs/liveSessionProductReadinessReview.test.ts',
-      'tests/docs/productTerminologyGuard.test.ts',
-    ]
-
-    for (const path of expectedTestPaths) {
-      expect(summary).toContain(path)
-      expect(exists(path)).toBe(true)
-    }
-  })
-
-  it('is linked from primary live-session review entry points', () => {
-    for (const path of [
-      'README.md',
-      'docs/README.md',
-      'docs/live-session-roadmap.md',
-      'docs/live-session-validation-matrix.md',
-      'docs/live-session-implementation-maintenance.md',
-    ]) {
-      expect(readText(path), `${path} should link the readiness summary`).toContain(
-        'live-session-readiness-summary.md',
-      )
-    }
+    expect(matches).toEqual([])
   })
 })
