@@ -2,19 +2,21 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapMoveUsage } from '~/utils/moveUsage'
+import { sameJsonValue } from '~/utils/serialization'
 import type { AuthRole } from '#shared/auth'
+import type { PlayerProfile } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
 import { relativeToProjectRoot } from '../utils/fsPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { folderFromPath } from '../utils/mapPaths'
 import { summarizeMap } from '../utils/mapSummaries'
 import { normalizeMapGroundLevelY } from '../utils/mapNormalization'
-import { sheetIsPlayerAccessible } from '../utils/sheetStorage'
 import {
   applyPlayerMapSavePolicy,
   canSaveMap,
   type SheetAccessPredicate,
 } from '../policies/mapPolicy'
+import { playerProfileTokenControlSheetPredicate } from '../policies/playerProfileTokenControlPolicy'
 
 export class SaveMapUseCaseError extends UseCaseHttpError<400 | 403 | 404> {}
 
@@ -23,10 +25,16 @@ export interface SaveMapInput {
   slug: string
   map: TabletopMap
   clientId?: string
+  playerProfile?: PlayerProfile | null
 }
 
 export interface SaveMapDependencies {
+  /** @deprecated Player map saves derive token control from SaveMapInput.playerProfile. */
   canControlSheet?: SheetAccessPredicate
+  findMapPath?: (slug: string) => string | null
+  readMap?: (filePath: string) => TabletopMap
+  writeMap?: (filePath: string, map: TabletopMap) => void
+  relativePath?: (filePath: string) => string
   now?: () => number
 }
 
@@ -78,10 +86,15 @@ export const saveMapUseCase = (
     )
   }
 
-  const filePath = findMapFile(input.slug)
+  const findMapPath = dependencies.findMapPath ?? findMapFile
+  const readMap = dependencies.readMap ?? readMapFile
+  const writeMap = dependencies.writeMap ?? writeMapFile
+  const relativePath = dependencies.relativePath ?? relativeToProjectRoot
+
+  const filePath = findMapPath(input.slug)
   if (!filePath) throw new SaveMapUseCaseError(404, `Map ${input.slug}.json not found`)
 
-  const existing = readMapFile(filePath)
+  const existing = readMap(filePath)
   if (!canSaveMap(input.role, existing)) {
     throw new SaveMapUseCaseError(403, 'Map is not player visible')
   }
@@ -90,19 +103,28 @@ export const saveMapUseCase = (
     ? applyPlayerMapSavePolicy(
       existing,
       input.map,
-      dependencies.canControlSheet ?? sheetIsPlayerAccessible,
+      playerProfileTokenControlSheetPredicate(input.playerProfile),
     )
     : input.map
   const sourceWithMoveUsage = Object.prototype.hasOwnProperty.call(source, 'moveUsage') || !existing.moveUsage
     ? source
     : { ...source, moveUsage: existing.moveUsage }
 
+  if (input.role === 'player' && sameJsonValue(sourceWithMoveUsage, existing)) {
+    return {
+      ok: true,
+      path: relativePath(filePath),
+      map: existing,
+      events: [],
+    }
+  }
+
   const persisted = toPersistedMap(sourceWithMoveUsage, filePath, dependencies.now?.() ?? Date.now())
-  writeMapFile(filePath, persisted)
+  writeMap(filePath, persisted)
 
   return {
     ok: true,
-    path: relativeToProjectRoot(filePath),
+    path: relativePath(filePath),
     map: persisted,
     events: [
       {

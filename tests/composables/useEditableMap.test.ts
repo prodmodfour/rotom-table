@@ -2,6 +2,7 @@ import { nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { useEditableMap } from '~/composables/useEditableMap'
+import { parsePlayerProfileId } from '#shared/playerProfiles'
 import type { RealtimeEvent } from '#shared/realtime'
 import type { TabletopMap } from '~/types/map'
 
@@ -95,6 +96,26 @@ describe('useEditableMap autosave boundary', () => {
     })
     expect(editable.status.value).toBe('saved')
     expect(editable.map.value?.updatedAt).toBe(200)
+  })
+
+  it('includes the selected player profile id in whole-map save requests when available', async () => {
+    const playerProfileId = ref(parsePlayerProfileId('profile_ash00000'))
+    const editable = useEditableMap('arena-map', { debounceMs: 10, playerProfileId })
+    await flushPromises()
+
+    editable.map.value!.placements[0]!.position = { x: 2, y: 0, z: 1 }
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.save, {
+      slug: 'arena-map',
+      map: expect.objectContaining({
+        placements: [expect.objectContaining({ position: { x: 2, y: 0, z: 1 } })],
+      }),
+      clientId: 'ssr',
+      profileId: 'profile_ash00000',
+    })
   })
 
   it('pauses whole-map autosave in session mode and resumes it for local-first editing', async () => {

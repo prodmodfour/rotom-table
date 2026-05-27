@@ -29,9 +29,14 @@ import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { clonePersistableMapPayload, stablePersistableMapJson } from '~/utils/maps/persistence'
 import { useApiClient } from './useApiClient'
 import { useRealtimeChannel } from './useRealtime'
+import type { PlayerProfileId } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
 
 export type MapSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error' | 'not-found'
+
+interface ReadonlyValueRef<T> {
+  readonly value: T
+}
 
 interface BooleanRef {
   readonly value: boolean
@@ -46,6 +51,7 @@ export interface UseEditableMapOptions {
    * browser-owned map saves.
    */
   readonly autosaveEnabled?: BooleanRef
+  readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
 }
 
 export interface UseEditableMapReturn {
@@ -60,17 +66,22 @@ export interface UseEditableMapReturn {
 
 const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pick<UseEditableMapOptions, 'debounceMs'>> & {
   readonly autosaveEnabled?: BooleanRef
+  readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
 } => (
   typeof options === 'number'
     ? { debounceMs: options }
-    : { debounceMs: options.debounceMs ?? 200, autosaveEnabled: options.autosaveEnabled }
+    : {
+        debounceMs: options.debounceMs ?? 200,
+        autosaveEnabled: options.autosaveEnabled,
+        playerProfileId: options.playerProfileId,
+      }
 )
 
 export const useEditableMap = (
   slug: string,
   options: number | UseEditableMapOptions = 200,
 ): UseEditableMapReturn => {
-  const { debounceMs, autosaveEnabled: autosaveEnabledRef } = normalizeOptions(options)
+  const { debounceMs, autosaveEnabled: autosaveEnabledRef, playerProfileId: playerProfileIdRef } = normalizeOptions(options)
   const autosaveEnabled = computed(() => autosaveEnabledRef?.value ?? true)
   const map = ref<TabletopMap | null>(null)
   const status = ref<MapSaveStatus>('loading')
@@ -152,11 +163,17 @@ export const useEditableMap = (
   const performSave = async () => {
     if (!autosaveEnabled.value || !map.value) return
     const snapshot = clonePersistableMapPayload(map.value)
+    const playerProfileId = playerProfileIdRef?.value ?? null
 
     await runLatestAutosave({
       guard: autosave.guard,
       status: autosave.statusController,
-      save: () => postJson<{ map: TabletopMap }>(MAP_API_PATHS.save, { slug, map: snapshot, clientId }),
+      save: () => postJson<{ map: TabletopMap }>(MAP_API_PATHS.save, {
+        slug,
+        map: snapshot,
+        clientId,
+        ...(playerProfileId ? { profileId: playerProfileId } : {}),
+      }),
       onSuccess: (result, { latest }) => {
         if (!latest) return
         // Adopt the persisted version (server stamps `updatedAt`).

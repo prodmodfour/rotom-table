@@ -62,6 +62,13 @@ const router = useRouter()
 const { role, isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
 const sessionMoveTokenEnabled = computed(() => isSessionModeQueryEnabled(route.query.session))
+const {
+  selectedProfile,
+  selectedProfileId,
+  loadRememberedProfile,
+  reloadProfiles,
+  lastError: playerProfileError,
+} = usePlayerProfiles()
 
 const {
   map: localEditableMap,
@@ -70,16 +77,10 @@ const {
   renamedTo,
 } = useEditableMap(slug, {
   autosaveEnabled: computed(() => !sessionMoveTokenEnabled.value),
+  playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
 })
 const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
 const { postJson } = useApiClient()
-const {
-  selectedProfile,
-  selectedProfileId,
-  loadRememberedProfile,
-  reloadProfiles,
-  lastError: playerProfileError,
-} = usePlayerProfiles()
 
 watch(renamedTo, (newSlug) => {
   if (newSlug) router.replace(mapEditorPath(newSlug))
