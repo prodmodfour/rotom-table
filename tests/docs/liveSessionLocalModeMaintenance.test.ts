@@ -62,12 +62,17 @@ describe('Live session local-mode maintenance checks', () => {
     }
   })
 
-  it('keeps source-level local/session route boundaries locked', () => {
+  it('keeps source-level normal map route boundaries locked', () => {
     const mapRoute = readText('src/pages/maps/[slug].vue')
+    expect(mapRoute).toContain('key: (route) => `map-${routeSlugParam(route.params)}`')
     expect(mapRoute).toContain('useEditableMap(slug, {')
-    expect(mapRoute).toContain('autosaveEnabled: computed(() => !sessionMoveTokenEnabled.value)')
-    expect(mapRoute).toContain('isSessionModeQueryEnabled(route.query.session)')
-    expect(mapRoute).toContain('if (sessionMoveTokenEnabled.value)')
+    expect(mapRoute).toContain('playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null))')
+    expect(mapRoute).not.toContain('route.query.session')
+    expect(mapRoute).not.toContain('isSessionModeQueryEnabled')
+    expect(mapRoute).not.toContain('useSessionMap(')
+    expect(mapRoute).not.toContain('useSessionMoveTokenDispatch')
+    expect(mapRoute).not.toContain('useSessionMapSceneCommands')
+    expect(mapRoute).not.toContain('sessionMoveTokenEnabled')
     expect(mapRoute).toContain('deletePlacement(id)')
     expect(mapRoute).toContain('await modifyHp(payload, options)')
     expect(mapRoute).toContain('nextInitiative()')

@@ -28,23 +28,8 @@ import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPane
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
-import { useSessionMap } from '~/composables/map-editor/useSessionMap'
-import { useSessionMapSceneCommands } from '~/composables/map-editor/useSessionMapSceneCommands'
-import {
-  useSessionMoveTokenDispatch,
-  isSessionModeQueryEnabled,
-  type SessionMoveTokenSocket,
-} from '~/composables/map-editor/useSessionMoveTokenDispatch'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
-import type { AuthoritativeSessionState } from '#shared/sessionState'
 import { buildClientPlayerProfileTokenControlModel } from '~/utils/playerProfileTokenControl'
-import { buildSessionTokenControlModel } from '~/utils/sessionTokenControl'
-import {
-  formatSessionCommandRejectionNotice,
-  runSessionCommandRejectionRefreshAction,
-} from '~/utils/sessionCommandRejectionUi'
-import { buildSessionConnectionStatusNotice } from '~/utils/sessionConnectionStatusUi'
-import { buildSessionPresencePanelModel } from '~/utils/sessionPresencePanel'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { isSameAnchor } from '~/utils/gridGeometry'
@@ -63,7 +48,6 @@ const route = useRoute()
 const router = useRouter()
 const { role, isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
-const sessionMoveTokenEnabled = computed(() => isSessionModeQueryEnabled(route.query.session))
 const {
   selectedProfile,
   selectedProfileId,
@@ -73,13 +57,12 @@ const {
 } = usePlayerProfiles()
 
 const {
-  map: localEditableMap,
+  map,
   status,
   error,
   renamedTo,
   applyPersistedMap,
 } = useEditableMap(slug, {
-  autosaveEnabled: computed(() => !sessionMoveTokenEnabled.value),
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
 })
 const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
@@ -103,47 +86,12 @@ const documentTokenActions = useDocumentMapTokenActions({
 watch(renamedTo, (newSlug) => {
   if (newSlug) router.replace(mapEditorPath(newSlug))
 })
-const sessionMap = useSessionMap({
-  enabled: sessionMoveTokenEnabled,
-  localMap: localEditableMap,
-  mapSlug: slug,
-})
-const sessionMoveTokenDispatch = useSessionMoveTokenDispatch({
-  enabled: sessionMoveTokenEnabled,
-  mapSlug: slug,
-  socket: sessionMap.socket as unknown as SessionMoveTokenSocket,
-  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState,
-})
-const map = sessionMap.map
-const sessionSceneCommands = useSessionMapSceneCommands({
-  enabled: sessionMoveTokenEnabled,
-  map,
-  mapSlug: slug,
-  session: sessionMap,
-})
-const mapStatus = computed(() => (
-  sessionMoveTokenEnabled.value && map.value
-    ? 'idle'
-    : status.value
-))
-const sessionSnapshotState = computed(() => (
-  sessionMap.socket.lastSnapshot.value?.snapshot as AuthoritativeSessionState<TabletopMap> | undefined
-) ?? null)
-const sessionTokenControlModel = computed(() => buildSessionTokenControlModel({
-  enabled: sessionMoveTokenEnabled.value,
-  identity: sessionMap.identity.value,
-  mapSlug: slug,
-  placements: map.value?.placements ?? [],
-  assignments: sessionSnapshotState.value?.assignments,
-  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState.value,
-}))
 const playerProfileTokenControlModel = computed(() => buildClientPlayerProfileTokenControlModel({
   role: role.value,
   profile: selectedProfile.value,
   placements: map.value?.placements ?? [],
 }))
 const tokenControlNotice = computed(() => {
-  if (sessionMoveTokenEnabled.value) return sessionTokenControlModel.value.notice
   if (isPlayer.value && documentTokenActions.lastError.value) {
     return `Token action failed: ${documentTokenActions.lastError.value}`
   }
@@ -152,17 +100,6 @@ const tokenControlNotice = computed(() => {
   }
   return playerProfileTokenControlModel.value.notice
 })
-const sessionMapReadyForCommands = computed(() => sessionMap.mapState.hasAuthoritativeSessionState.value)
-const canUseSessionTokenSendOut = computed(() => (
-  sessionMoveTokenEnabled.value
-    ? sessionMap.identity.value !== null && sessionMapReadyForCommands.value
-    : canSpawnTokens.value
-))
-const canUseSessionTokenDelete = computed(() => (
-  sessionMoveTokenEnabled.value
-    ? sessionMap.identity.value?.role === 'gm' && sessionMapReadyForCommands.value
-    : isGm.value
-))
 
 useHead(() => ({
   title: map.value ? `${map.value.name} · Maps` : 'Maps · Rotom Table',
@@ -188,33 +125,12 @@ const syncPlayerProfileForMapControl = async () => {
 }
 
 onMounted(() => {
-  if (sessionMoveTokenEnabled.value) sessionMap.loadSessionSnapshot()
-  sessionMoveTokenDispatch.loadRememberedIdentity()
   void syncPlayerProfileForMapControl()
-})
-
-watch(sessionMoveTokenEnabled, (enabled) => {
-  if (!enabled) return
-  sessionMap.loadSessionSnapshot()
-  sessionMoveTokenDispatch.loadRememberedIdentity()
 })
 
 watch(isPlayer, (nextIsPlayer) => {
   if (nextIsPlayer) void syncPlayerProfileForMapControl()
 })
-
-watch(
-  [
-    sessionMoveTokenEnabled,
-    () => sessionMap.identity.value,
-    () => sessionMap.mapState.sessionRevision.value,
-  ],
-  ([enabled, identity]) => {
-    if (!enabled || identity?.role !== 'player') return
-    void reloadRuntimeSheets()
-  },
-  { immediate: true },
-)
 
 const {
   canEditMap,
@@ -225,8 +141,6 @@ const {
   map,
   isGm,
   isPlayer,
-  sessionModeEnabled: sessionMoveTokenEnabled,
-  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState,
   redirectHiddenPlayerMap: () => router.replace(mapLibraryPath()),
 })
 
@@ -265,16 +179,9 @@ const {
   mapGroundLevelY,
   canSpawnTokens,
   canControlAllTokens: isGm,
-  canDeleteTokens: canUseSessionTokenDelete,
-  canSendOutTokens: canUseSessionTokenSendOut,
   tokenControl: {
-    enabled: computed(() => !sessionMoveTokenEnabled.value),
+    enabled: computed(() => true),
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
-  },
-  sessionMoveTokenDispatcher: sessionMoveTokenDispatch,
-  sessionTokenControl: {
-    enabled: sessionMoveTokenEnabled,
-    controllablePlacementIds: computed(() => sessionTokenControlModel.value.controllablePlacementIds),
   },
 })
 
@@ -283,14 +190,9 @@ const selectPokemon = (id: string | null) => {
   selectPlacement(id)
 }
 const deletePokemon = (id: string) => {
-  if (sessionMoveTokenEnabled.value) {
-    const result = sessionSceneCommands.dispatchDeletePokemon(id)
-    if (result.dispatched) clearSelection()
-    return
-  }
   deletePlacement(id)
 }
-const shouldUseDocumentTokenActions = () => isPlayer.value && !sessionMoveTokenEnabled.value
+const shouldUseDocumentTokenActions = () => isPlayer.value
 
 const turnPokemon = (id: string) => {
   if (shouldUseDocumentTokenActions()) {
@@ -462,20 +364,12 @@ const orderTimelinePoint = () => ({
 
 const previousInitiativeAndExpireAoo = () => {
   attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchPreviousInitiative()
-    return
-  }
   previousInitiative()
 }
 
 const nextInitiativeAndExpireAoo = () => {
   const before = orderTimelinePoint()
   attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchNextInitiative()
-    return
-  }
   nextInitiative()
   expireActiveOrdersAfterInitiativeAdvance({ before, after: orderTimelinePoint() })
 }
@@ -494,26 +388,14 @@ const {
 })
 
 const modifyHpFromScene: typeof modifyHp = async (payload, options) => {
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchModifyHp(payload)
-    return
-  }
   await modifyHp(payload, options)
 }
 
 const modifyCombatStagesFromScene: typeof modifyCombatStages = async (payload, options) => {
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchModifyCombatStages(payload)
-    return
-  }
   await modifyCombatStages(payload, options)
 }
 
 const modifyConditionsFromScene: typeof modifyConditions = async (payload, options) => {
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchModifyConditions(payload)
-    return
-  }
   await modifyConditions(payload, options)
 }
 
@@ -550,15 +432,6 @@ const applyRecordedSheetUsage = (response: RecordMoveUsageResponse) => {
 }
 
 const recordMoveUsage = async (request: { placementId: string; moveName: string }) => {
-  if (sessionMoveTokenEnabled.value) {
-    const result = sessionSceneCommands.dispatchUseMove({
-      id: request.placementId,
-      moveName: request.moveName,
-    })
-    if (!result.dispatched) throw new Error(result.message)
-    return
-  }
-
   const response = await postJson<RecordMoveUsageResponse>(MAP_API_PATHS.useMove, {
     slug,
     placementId: request.placementId,
@@ -571,51 +444,26 @@ const recordMoveUsage = async (request: { placementId: string; moveName: string 
 }
 
 const applyMoveFieldEffectFromScene: typeof applyMoveFieldEffect = (effect) => {
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchApplyFieldEffect(effect)
-    return
-  }
   applyMoveFieldEffect(effect)
 }
 
 const placeHazardFromScene: typeof placeHazard = (hazard) => {
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchPlaceHazard(hazard)
-    return
-  }
   placeHazard(hazard)
 }
 
 const removeHazardFromScene: typeof removeHazard = (cell) => {
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchRemoveHazard(cell)
-    return
-  }
   removeHazard(cell)
 }
 
 const placeVoxelFromScene: typeof placeVoxel = (voxel) => {
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchPlaceVoxel(voxel)
-    return
-  }
   placeVoxel(voxel)
 }
 
 const removeVoxelFromScene: typeof removeVoxel = (cell) => {
-  if (sessionMoveTokenEnabled.value) {
-    sessionSceneCommands.dispatchRemoveVoxel(cell)
-    return
-  }
   removeVoxel(cell)
 }
 
 const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {
-  if (sessionMoveTokenEnabled.value) {
-    const result = sessionSceneCommands.dispatchSendOutPokemon(payload)
-    if (result.dispatched) clearSelection()
-    return
-  }
   sendOutPokemon(payload)
 }
 
@@ -700,13 +548,6 @@ const {
   modifyConditions: modifyConditionsFromScene,
   modifyAbilityActivation,
   dispatchAbilityUse: (event) => {
-    if (sessionMoveTokenEnabled.value) {
-      return sessionSceneCommands.dispatchUseAbility({
-        id: event.userId,
-        abilityName: event.abilityName,
-        targetTokenId: event.targetTokenId,
-      }).dispatched
-    }
     if (!shouldUseDocumentTokenActions()) return undefined
     void documentTokenActions.useAbility({
       placementId: event.userId,
@@ -732,13 +573,6 @@ const {
   trainerBySlug,
   canControlPlacement,
   dispatchManeuverUse: (event) => {
-    if (sessionMoveTokenEnabled.value) {
-      return sessionSceneCommands.dispatchUseManeuver({
-        id: event.userId,
-        maneuverName: event.maneuverName,
-        targetTokenId: event.targetTokenId,
-      }).dispatched
-    }
     if (!shouldUseDocumentTokenActions()) return undefined
     void documentTokenActions.useManeuver({
       placementId: event.userId,
@@ -758,13 +592,6 @@ const orderActionPanel = useOrderActionPanel({
   trainerBySlug,
   canControlPlacement,
   dispatchOrderUse: (event) => {
-    if (sessionMoveTokenEnabled.value) {
-      return sessionSceneCommands.dispatchUseOrder({
-        id: event.userId,
-        orderName: event.orderName,
-        targetTokenId: event.targetTokenId,
-      }).dispatched
-    }
     if (!shouldUseDocumentTokenActions()) return undefined
     void documentTokenActions.useOrder({
       placementId: event.userId,
@@ -792,57 +619,6 @@ const actionAutomationTargeting = computed(() =>
   ?? maneuverActionTargeting.value
   ?? orderActionTargeting.value,
 )
-
-const dismissedSessionCommandRejectionOpId = ref<string | null>(null)
-const sessionCommandRejectionNotice = computed(() => {
-  if (!sessionMoveTokenEnabled.value) return null
-  const rejectMessage = sessionMap.lastCommandReject.value
-  if (rejectMessage === null) return null
-  if (dismissedSessionCommandRejectionOpId.value === rejectMessage.result.opId) return null
-  return formatSessionCommandRejectionNotice(rejectMessage)
-})
-
-const sessionPresencePanel = computed(() => {
-  if (!sessionMoveTokenEnabled.value) return null
-  return buildSessionPresencePanelModel({
-    identity: sessionMap.identity.value,
-    presence: sessionMap.lastPresence.value,
-    snapshot: sessionMap.socket.lastSnapshot.value,
-  })
-})
-
-const sessionConnectionStatusNotice = computed(() => buildSessionConnectionStatusNotice({
-  enabled: sessionMoveTokenEnabled.value,
-  status: sessionMap.status.value,
-  socketStatus: sessionMap.socket.status.value,
-  helloStatus: sessionMap.socket.helloStatus.value,
-  heartbeatStatus: sessionMap.socket.heartbeatStatus.value,
-  reconnectStatus: sessionMap.socket.reconnectStatus.value,
-  snapshotStatus: sessionMap.snapshotStatus.value,
-  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState.value,
-  lastKnownRevision: sessionMap.socket.lastKnownRevision.value,
-  lastSnapshot: sessionMap.socket.lastSnapshot.value,
-  lastError: sessionMap.socket.lastError.value,
-}))
-
-watch(
-  () => sessionMap.lastCommandReject.value?.result.opId ?? null,
-  (opId, previousOpId) => {
-    if (opId !== previousOpId) dismissedSessionCommandRejectionOpId.value = null
-  },
-)
-
-const dismissSessionCommandRejection = () => {
-  const opId = sessionMap.lastCommandReject.value?.result.opId
-  if (opId !== undefined) dismissedSessionCommandRejectionOpId.value = opId
-}
-
-const refreshSessionSnapshotAfterRejection = () => runSessionCommandRejectionRefreshAction({
-  resetDismissal: () => {
-    dismissedSessionCommandRejectionOpId.value = null
-  },
-  refreshSessionSnapshot: sessionMap.refreshSessionSnapshot,
-})
 
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
   cancelAbilityAutomationTargeting()
@@ -888,15 +664,9 @@ const selectActionAutomationTarget = (targetId: string) => {
   if (orderActionTargeting.value) selectOrderActionTarget(targetId)
 }
 
-const sceneActionError = computed(() => {
-  if (!sessionMoveTokenEnabled.value) {
-    return documentTokenActions.lastError.value ?? tokenSheetMutationError.value ?? moveUsageError.value
-  }
-  const tokenDispatchError = sessionMap.lastCommandReject.value === null
-    ? sessionMoveTokenDispatch.lastError.value
-    : null
-  return sessionSceneCommands.lastError.value ?? tokenDispatchError ?? moveUsageError.value
-})
+const sceneActionError = computed(() => (
+  documentTokenActions.lastError.value ?? tokenSheetMutationError.value ?? moveUsageError.value
+))
 
 const cancelActionAutomationTargeting = () => {
   if (moveAutomationTargeting.value) {
@@ -951,7 +721,7 @@ useMapDimensionReconciliation({
         ref="gridRef"
         :map="map"
         :can-view-map="canViewMap"
-        :status="mapStatus"
+        :status="status"
         :error="error"
         :slug="slug"
         :spawned-pokemon="spawnedPokemon"
@@ -975,7 +745,7 @@ useMapDimensionReconciliation({
         :hazard-mode="hazardMode && canEditMap"
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
-        :can-delete-tokens="canUseSessionTokenDelete"
+        :can-delete-tokens="isGm"
         :token-control-notice="tokenControlNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
@@ -991,9 +761,6 @@ useMapDimensionReconciliation({
         :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-order-options-by-id="tokenOrderOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
-        :session-command-rejection="sessionCommandRejectionNotice"
-        :session-connection-status="sessionConnectionStatusNotice"
-        :session-presence="sessionPresencePanel"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
         @previous-initiative="previousInitiativeAndExpireAoo"
@@ -1030,8 +797,6 @@ useMapDimensionReconciliation({
         @dismiss-celebrate-trigger="dismissCelebrateTriggerPrompt"
         @apply-celebrate-trigger="applyCelebrateTriggerPrompt"
         @use-attack-of-opportunity="useAttackOfOpportunity"
-        @refresh-session-snapshot="refreshSessionSnapshotAfterRejection"
-        @dismiss-session-command-rejection="dismissSessionCommandRejection"
       />
     </template>
 
