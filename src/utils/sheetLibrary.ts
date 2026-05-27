@@ -121,6 +121,9 @@ export const buildSheetLibraryItems = (options: BuildSheetLibraryItemsOptions): 
   return [...pokes, ...trainers]
 }
 
+const isPlayerVisibleSheet = (sheet: { player?: unknown; sessionPlayerAccessible?: unknown }): boolean =>
+  sheet.player === true || sheet.sessionPlayerAccessible === true
+
 export const applySheetLibraryOverrides = (
   baseItems: ReadonlyArray<SheetLibraryItem>,
   options: SheetLibraryOverrideOptions,
@@ -128,7 +131,7 @@ export const applySheetLibraryOverrides = (
   const out: SheetLibraryItem[] = []
 
   for (const item of baseItems) {
-    if (options.playerOnly && item.sheet.player !== true) continue
+    if (options.playerOnly && !isPlayerVisibleSheet(item.sheet)) continue
     if (options.deletedSheets.has(sheetLibraryKey(item.kind, item.slug))) continue
 
     const folder = resolveSheetLibraryFolder(item, options.sheetOverrides, options.folderRenames)

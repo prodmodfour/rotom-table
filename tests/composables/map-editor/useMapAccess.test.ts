@@ -83,6 +83,34 @@ describe('useMapAccess', () => {
     await nextTick()
     expect(redirectHiddenPlayerMap).toHaveBeenCalledTimes(1)
   })
+
+  it('lets visible live-session snapshots bypass persisted playerVisible redirects', async () => {
+    const map = ref<TabletopMap | null>(makeMap({ playerVisible: false }))
+    const isGm = ref(false)
+    const isPlayer = ref(true)
+    const sessionModeEnabled = ref(true)
+    const hasAuthoritativeSessionState = ref(false)
+    const redirectHiddenPlayerMap = vi.fn()
+
+    const access = useMapAccess({
+      map,
+      isGm,
+      isPlayer,
+      sessionModeEnabled,
+      hasAuthoritativeSessionState,
+      redirectHiddenPlayerMap,
+    })
+
+    await nextTick()
+    expect(redirectHiddenPlayerMap).not.toHaveBeenCalled()
+    expect(access.canViewMap.value).toBe(false)
+
+    hasAuthoritativeSessionState.value = true
+    await nextTick()
+
+    expect(access.canViewMap.value).toBe(true)
+    expect(redirectHiddenPlayerMap).not.toHaveBeenCalled()
+  })
 })
 
 describe('useMapGmModeGuard', () => {

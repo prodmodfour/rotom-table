@@ -42,4 +42,17 @@ describe('list sheets use case', () => {
       trainerSheets: [trainer()],
     })
   })
+
+  it('includes live-session granted sheets for players', () => {
+    const listPokemonSheets = vi.fn(() => [pokemon({ player: false }), pokemon({ slug: 'hidden-mon', player: false })])
+    const listTrainerSheets = vi.fn(() => [trainer({ player: false })])
+
+    expect(listSheetsUseCase({
+      role: 'player',
+      canAccessPlayerSheet: (kind, slug) => kind === 'pokemon' && slug === 'pika',
+    }, { listPokemonSheets, listTrainerSheets })).toEqual({
+      pokemonSheets: [pokemon({ player: false })],
+      trainerSheets: [],
+    })
+  })
 })

@@ -70,7 +70,7 @@ const {
 } = useEditableMap(slug, {
   autosaveEnabled: computed(() => !sessionMoveTokenEnabled.value),
 })
-const { pokemonBySlug, trainerBySlug } = useLiveSheets()
+const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
 const { postJson } = useApiClient()
 
 watch(renamedTo, (newSlug) => {
@@ -150,6 +150,19 @@ watch(sessionMoveTokenEnabled, (enabled) => {
   sessionMoveTokenDispatch.loadRememberedIdentity()
 })
 
+watch(
+  [
+    sessionMoveTokenEnabled,
+    () => sessionMap.identity.value,
+    () => sessionMap.mapState.sessionRevision.value,
+  ],
+  ([enabled, identity]) => {
+    if (!enabled || identity?.role !== 'player') return
+    void reloadRuntimeSheets()
+  },
+  { immediate: true },
+)
+
 const {
   canEditMap,
   canManageInitiative,
@@ -159,6 +172,8 @@ const {
   map,
   isGm,
   isPlayer,
+  sessionModeEnabled: sessionMoveTokenEnabled,
+  hasAuthoritativeSessionState: sessionMap.mapState.hasAuthoritativeSessionState,
   redirectHiddenPlayerMap: () => router.replace(mapLibraryPath()),
 })
 

@@ -9,10 +9,17 @@ export class LoadSheetUseCaseError extends UseCaseHttpError<403 | 404> {}
 
 export type LoadedSheet = CharacterSheet | TrainerSheet
 
+export type PlayerSheetLoadAccessPredicate = (
+  kind: SheetKind,
+  slug: string,
+  sheet: LoadedSheet,
+) => boolean
+
 export interface LoadSheetInput {
   role: AuthRole
   kind: SheetKind
   slug: string
+  canAccessPlayerSheet?: PlayerSheetLoadAccessPredicate
 }
 
 export interface LoadSheetDependencies {
@@ -34,7 +41,11 @@ export const loadSheetUseCase = (
   const result = readSheet(input.kind, input.slug)
 
   if (!result) throw new LoadSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
-  if (input.role === 'player' && result.sheet.player !== true) {
+  if (
+    input.role === 'player' &&
+    result.sheet.player !== true &&
+    input.canAccessPlayerSheet?.(input.kind, input.slug, result.sheet) !== true
+  ) {
     throw new LoadSheetUseCaseError(403, 'Sheet is not marked as player accessible')
   }
 

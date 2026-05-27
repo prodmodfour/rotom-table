@@ -9,6 +9,8 @@ export interface UseMapAccessOptions {
   map: Ref<TabletopMap | null>
   isGm: BooleanRef
   isPlayer: BooleanRef
+  sessionModeEnabled?: BooleanRef
+  hasAuthoritativeSessionState?: BooleanRef
   redirectHiddenPlayerMap?: () => unknown
 }
 
@@ -38,16 +40,24 @@ export const useMapAccess = ({
   map,
   isGm,
   isPlayer,
+  sessionModeEnabled,
+  hasAuthoritativeSessionState,
   redirectHiddenPlayerMap,
 }: UseMapAccessOptions): UseMapAccessResult => {
   const canEditMap = computed(() => isGm.value)
   const canManageInitiative = computed(() => isGm.value)
   const canSpawnTokens = computed(() => isGm.value)
-  const canViewMap = computed(() => canPlayerViewMap(map.value, isPlayer.value))
+  const isAuthoritativeSessionView = computed(() => (
+    sessionModeEnabled?.value === true && hasAuthoritativeSessionState?.value === true
+  ))
+  const canViewMap = computed(() => (
+    isAuthoritativeSessionView.value || canPlayerViewMap(map.value, isPlayer.value)
+  ))
 
   watch(
-    [() => map.value?.slug, () => isPlayer.value],
+    [() => map.value?.slug, () => isPlayer.value, () => sessionModeEnabled?.value === true],
     () => {
+      if (sessionModeEnabled?.value === true) return
       if (map.value && isPlayer.value && map.value.playerVisible !== true) {
         void redirectHiddenPlayerMap?.()
       }

@@ -23,7 +23,11 @@ export function useEditableSheetResource<TSheet extends { slug: string; player?:
   options: EditableSheetResourceOptions<TSheet>,
 ): EditableSheetResource<TSheet> {
   const canAccessBaseSheet = computed(() => Boolean(
-    options.baseSheet && (!options.isPlayer.value || options.baseSheet.player === true),
+    options.baseSheet && (
+      !options.isPlayer.value ||
+      options.baseSheet.player === true ||
+      (options.baseSheet as { sessionPlayerAccessible?: unknown }).sessionPlayerAccessible === true
+    ),
   ))
 
   const initialClone = canAccessBaseSheet.value && options.baseSheet

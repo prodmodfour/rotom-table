@@ -79,7 +79,16 @@ describe('sheetLibrary helpers', () => {
 
   it('applies player/deleted/name/folder overrides without mutating base items', () => {
     const baseItems = buildSheetLibraryItems({
-      pokemonSheets: [pokemon(), pokemon({ slug: 'hidden', nickname: 'Hidden', player: false })],
+      pokemonSheets: [
+        pokemon(),
+        pokemon({ slug: 'hidden', nickname: 'Hidden', player: false }),
+        pokemon({
+          slug: 'session-granted',
+          nickname: 'Session Granted',
+          player: false,
+          sessionPlayerAccessible: true,
+        } as Partial<CharacterSheet>),
+      ],
       trainerSheets: [trainer()],
       speciesTypesFor: () => [],
       spriteUrlFor: () => null,
@@ -94,8 +103,9 @@ describe('sheetLibrary helpers', () => {
       deletedFolders: new Set(['team/beta/live/archive']),
     })
 
-    expect(items).toHaveLength(1)
+    expect(items).toHaveLength(2)
     expect(items[0]).toMatchObject({ folder: 'team/beta/live', sortKey: 'sparky' })
+    expect(items[1]).toMatchObject({ slug: 'session-granted', sortKey: 'session granted' })
     expect(displaySheetLibraryName(items[0])).toBe('Sparky')
     expect(displaySheetLibraryName(baseItems[0])).toBe('Bolt')
   })

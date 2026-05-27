@@ -15,11 +15,23 @@ const props = withDefaults(defineProps<{
 })
 
 const expanded = ref(false)
+const pointerExpanded = ref(false)
+const focusExpanded = ref(false)
 const railRef = ref<HTMLElement | null>(null)
 const navigationContentId = 'map-navigation-rail-content'
 
 const expandNavigation = () => {
   expanded.value = true
+}
+
+const expandNavigationFromPointer = () => {
+  if (!expanded.value) pointerExpanded.value = true
+  expandNavigation()
+}
+
+const expandNavigationFromFocus = () => {
+  if (!expanded.value) focusExpanded.value = true
+  expandNavigation()
 }
 
 const focusedElementIsInsideRail = () => {
@@ -28,18 +40,28 @@ const focusedElementIsInsideRail = () => {
 }
 
 const collapseNavigation = () => {
+  pointerExpanded.value = false
   if (focusedElementIsInsideRail()) return
+  focusExpanded.value = false
   expanded.value = false
 }
 
 const toggleNavigation = () => {
-  expanded.value = !expanded.value
+  if (!expanded.value || pointerExpanded.value || focusExpanded.value) {
+    expanded.value = true
+    pointerExpanded.value = false
+    focusExpanded.value = false
+    return
+  }
+
+  expanded.value = false
 }
 
 const handleFocusOut = (event: FocusEvent) => {
   const nextTarget = event.relatedTarget as Node | null
   if (nextTarget && railRef.value?.contains(nextTarget)) return
 
+  focusExpanded.value = false
   expanded.value = false
 }
 </script>
@@ -53,9 +75,9 @@ const handleFocusOut = (event: FocusEvent) => {
       'map-navigation-rail--collapsed': !expanded,
     }"
     aria-label="Map navigation"
-    @pointerenter="expandNavigation"
+    @pointerenter="expandNavigationFromPointer"
     @pointerleave="collapseNavigation"
-    @focusin="expandNavigation"
+    @focusin="expandNavigationFromFocus"
     @focusout="handleFocusOut"
   >
     <button

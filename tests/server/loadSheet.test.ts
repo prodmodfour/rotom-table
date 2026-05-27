@@ -34,6 +34,21 @@ describe('load sheet use case', () => {
       .toThrow(new LoadSheetUseCaseError(403, 'Sheet is not marked as player accessible'))
   })
 
+  it('allows players to load sheets granted by a live-session assignment', () => {
+    const sheet = { slug: 'locked', name: 'Locked', level: 1, player: false }
+
+    expect(loadSheetUseCase({
+      role: 'player',
+      kind: 'trainer',
+      slug: 'locked',
+      canAccessPlayerSheet: (kind, slug) => kind === 'trainer' && slug === 'locked',
+    }, { readSheet: () => ({ sheet }) })).toEqual({
+      kind: 'trainer',
+      slug: 'locked',
+      sheet,
+    })
+  })
+
   it('returns a not-found error when storage cannot find the sheet', () => {
     expect(() => loadSheetUseCase({
       role: 'gm',

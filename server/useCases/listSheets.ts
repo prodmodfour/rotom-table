@@ -1,10 +1,18 @@
 import type { AuthRole } from '#shared/auth'
+import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { listSheetFilesWithFolders } from '../utils/sheetStorage'
 
+export type PlayerSheetAccessPredicate = (
+  kind: SheetKind,
+  slug: string,
+  sheet: CharacterSheet | TrainerSheet,
+) => boolean
+
 export interface ListSheetsInput {
   role: AuthRole
+  canAccessPlayerSheet?: PlayerSheetAccessPredicate
 }
 
 export interface ListSheetsDependencies {
@@ -18,6 +26,12 @@ export interface ListSheetsResult {
 }
 
 const isPlayerAccessible = (sheet: { player?: unknown }): boolean => sheet.player === true
+
+const canListPlayerSheet = <TSheet extends CharacterSheet | TrainerSheet>(
+  kind: SheetKind,
+  sheet: TSheet,
+  canAccessPlayerSheet?: PlayerSheetAccessPredicate,
+): boolean => isPlayerAccessible(sheet) || canAccessPlayerSheet?.(kind, sheet.slug, sheet) === true
 
 export const listSheetsUseCase = (
   input: ListSheetsInput,
@@ -33,8 +47,8 @@ export const listSheetsUseCase = (
 
   if (input.role === 'player') {
     return {
-      pokemonSheets: pokemonSheets.filter(isPlayerAccessible),
-      trainerSheets: trainerSheets.filter(isPlayerAccessible),
+      pokemonSheets: pokemonSheets.filter((sheet) => canListPlayerSheet('pokemon', sheet, input.canAccessPlayerSheet)),
+      trainerSheets: trainerSheets.filter((sheet) => canListPlayerSheet('trainer', sheet, input.canAccessPlayerSheet)),
     }
   }
 

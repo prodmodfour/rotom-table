@@ -31,6 +31,7 @@ import { subscribeChannel } from './useRealtime'
 interface LiveSheetsApi {
   pokemonBySlug: Ref<Map<string, CharacterSheet>>
   trainerBySlug: Ref<Map<string, TrainerSheet>>
+  reloadRuntimeSheets: () => Promise<void>
 }
 
 let cached: LiveSheetsApi | null = null
@@ -60,7 +61,12 @@ export const useLiveSheets = (): LiveSheetsApi => {
   const pokemonBySlug = ref<Map<string, CharacterSheet>>(reactive(initial.pokemonBySlug) as Map<string, CharacterSheet>)
   const trainerBySlug = ref<Map<string, TrainerSheet>>(reactive(initial.trainerBySlug) as Map<string, TrainerSheet>)
 
-  cached = { pokemonBySlug, trainerBySlug }
+  const reloadRuntimeSheets = async (): Promise<void> => {
+    if (!cached) return
+    await hydrateRuntimeSheets(cached)
+  }
+
+  cached = { pokemonBySlug, trainerBySlug, reloadRuntimeSheets }
 
   if (typeof window !== 'undefined') {
     const liveMaps = {
