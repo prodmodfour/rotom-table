@@ -108,7 +108,7 @@ describe('save sheet use case', () => {
     })
   })
 
-  it('allows player saves for linked private profile sheets without making them public', () => {
+  it('allows player saves for linked private profile sheets without making them public or renaming resources', () => {
     const { deps, writes } = createDeps()
     deps.isPlayerAccessible.mockReturnValue(false)
     const depsWithExisting = {
@@ -120,7 +120,15 @@ describe('save sheet use case', () => {
       role: 'player',
       kind: 'trainer',
       slug: 'brock',
-      sheet: { slug: 'brock', name: 'Brock', level: 6, folder: 'gm/private', player: true },
+      sheet: {
+        slug: 'brock',
+        name: 'Brock Prime',
+        level: 6,
+        folder: 'gm/private',
+        player: true,
+        playerProfileAccessible: true,
+        sessionPlayerAccessible: true,
+      },
       playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'brock' }]),
     }, depsWithExisting)
 
@@ -129,13 +137,13 @@ describe('save sheet use case', () => {
     expect(writes).toEqual([
       {
         path: '/repo/data/sheets/brock.json',
-        sheet: { slug: 'brock', name: 'Brock', level: 6, player: false },
+        sheet: { slug: 'brock', name: 'Brock Prime', level: 6, player: false },
       },
     ])
     expect(result.events[0]?.data).toEqual({
       kind: 'trainer',
       slug: 'brock',
-      sheet: { slug: 'brock', name: 'Brock', level: 6, player: false },
+      sheet: { slug: 'brock', name: 'Brock Prime', level: 6, player: false },
     })
   })
 

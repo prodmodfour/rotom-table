@@ -5,13 +5,16 @@ import { usePokemonSheetCsvFields } from '~/composables/sheets/usePokemonSheetCs
 import { usePokemonSheetRowActions } from '~/composables/sheets/usePokemonSheetRowActions'
 import { usePokemonNatureControls } from '~/composables/sheets/usePokemonNatureControls'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { SheetEditorCapabilities } from '~/utils/sheetEditorCapabilities'
 
 const props = defineProps<{
   sheet: CharacterSheet
-  isGm: boolean
+  capabilities: SheetEditorCapabilities
 }>()
 
 const sheet = computed<CharacterSheet>(() => props.sheet)
+const canEditSheet = computed(() => props.capabilities.canEditSheet)
+const canManagePlayerAccess = computed(() => props.capabilities.canManagePlayerAccess)
 
 const {
   spriteUrl,
@@ -93,7 +96,8 @@ const {
     :nature-options="natureOptions"
     :nature-plus-display="naturePlusDisplay"
     :nature-minus-display="natureMinusDisplay"
-    :is-gm="props.isGm"
+    :can-edit-sheet="canEditSheet"
+    :can-manage-player-access="canManagePlayerAccess"
   />
 
   <!-- ============ Stats + Combat strip ============ -->

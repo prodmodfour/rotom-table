@@ -43,12 +43,24 @@ describe('sheet storage helpers', () => {
     expect(sheet).toEqual({ slug: 'new-trainer-1', name: 'New Trainer', level: 1 })
   })
 
-  it('strips derived folder fields without mutating the input sheet', () => {
-    const sheet = { slug: 'example', folder: 'party/a', level: 5 }
+  it('strips derived runtime fields without mutating the input sheet', () => {
+    const sheet = {
+      slug: 'example',
+      folder: 'party/a',
+      level: 5,
+      sessionPlayerAccessible: true,
+      playerProfileAccessible: true,
+    }
     const persisted = stripDerivedSheetFields(sheet)
 
     expect(persisted).toEqual({ slug: 'example', level: 5 })
-    expect(sheet).toEqual({ slug: 'example', folder: 'party/a', level: 5 })
+    expect(sheet).toEqual({
+      slug: 'example',
+      folder: 'party/a',
+      level: 5,
+      sessionPlayerAccessible: true,
+      playerProfileAccessible: true,
+    })
   })
 
   it('picks a random trainer sprite URL from available sprite options', () => {

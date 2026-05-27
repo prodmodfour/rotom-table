@@ -56,7 +56,15 @@ interface SheetSaveTarget {
   path: string
 }
 
+const CLIENT_ONLY_SHEET_ACCESS_FIELDS = ['sessionPlayerAccessible', 'playerProfileAccessible'] as const
+
 const trimmedString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+
+const stripClientOnlySheetAccessFields = (sheet: Record<string, unknown>): Record<string, unknown> => {
+  const payload = { ...sheet }
+  for (const field of CLIENT_ONLY_SHEET_ACCESS_FIELDS) delete payload[field]
+  return payload
+}
 
 const resolveSheetSaveTarget = (
   input: Pick<SaveSheetInput, 'kind' | 'slug' | 'sheet'>,
@@ -127,14 +135,17 @@ export const saveSheetUseCase = (
   }
 
   const existingSheet = readExistingSheet(path)
-  const target = resolveSheetSaveTarget(input, path, {
-    findSlugPath,
-    pathExists,
-    renameSheetPath,
-    allocateSlug,
-  })
+  const canRenameSheetResource = input.role === 'gm' || playerPublicAccess
+  const target = canRenameSheetResource
+    ? resolveSheetSaveTarget(input, path, {
+        findSlugPath,
+        pathExists,
+        renameSheetPath,
+        allocateSlug,
+      })
+    : { slug: input.slug, path }
 
-  const sheet = stripDerivedFields(input.sheet)
+  const sheet = stripClientOnlySheetAccessFields(stripDerivedFields(input.sheet))
   if (!Object.prototype.hasOwnProperty.call(input.sheet, 'moveUsage') && existingSheet.moveUsage !== undefined) {
     sheet.moveUsage = existingSheet.moveUsage
   }

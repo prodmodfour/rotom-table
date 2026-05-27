@@ -31,6 +31,8 @@ interface TestSheet {
   slug: string
   nickname: string
   level: number
+  playerProfileAccessible?: boolean
+  sessionPlayerAccessible?: boolean
 }
 
 const flushPromises = async () => {
@@ -54,10 +56,16 @@ describe('useEditableSheet profile-aware requests', () => {
     vi.useRealTimers()
   })
 
-  it('includes the selected player profile id on sheet autosaves', async () => {
+  it('includes the selected player profile id on linked sheet autosaves without persisting runtime access flags', async () => {
     const profileId = parsePlayerProfileId('profile_ash00000')
     const editable = useEditableSheet<TestSheet>(
-      { slug: 'pikachu', nickname: 'Pikachu', level: 5 },
+      {
+        slug: 'pikachu',
+        nickname: 'Pikachu',
+        level: 5,
+        playerProfileAccessible: true,
+        sessionPlayerAccessible: true,
+      },
       'pokemon',
       {
         debounceMs: 10,

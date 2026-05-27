@@ -45,6 +45,8 @@ export interface UseEditableSheetOptions {
   profileContext?: () => SheetApiProfileContext
   /** Require a selected profile before saving profile-linked private sheets. */
   requiresSelectedPlayerProfile?: () => boolean
+  /** Allow display-name edits to rename the underlying sheet resource slug. */
+  allowSlugSync?: () => boolean
 }
 
 export interface UseEditableSheetReturn<T> {
@@ -86,7 +88,9 @@ export function useEditableSheet<T extends { slug: string }>(
     const displayName = kind === 'pokemon' ? record.nickname : record.name
     return typeof displayName === 'string' ? displayName.trim() : ''
   }
+  const canSyncSlug = (): boolean => options.allowSlugSync?.() !== false
   const needsSlugSync = (value: T): boolean => {
+    if (!canSyncSlug()) return false
     const desiredSlug = slugify(displayNameFor(value))
     return Boolean(desiredSlug && desiredSlug !== value.slug)
   }

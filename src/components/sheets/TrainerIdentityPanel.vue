@@ -8,7 +8,7 @@ defineProps<{
   maxHp: number
   fullMaxHp: number
   maxAp: number
-  isGm: boolean
+  canManagePlayerAccess: boolean
 }>()
 
 const emit = defineEmits<{
@@ -62,7 +62,7 @@ const emit = defineEmits<{
         Played by
         <strong><EditableCell v-model="sheet.playedBy" placeholder="—" /></strong>
       </p>
-      <label v-if="isGm" class="player-toggle" :class="{ active: sheet.player }" title="Player">
+      <label v-if="canManagePlayerAccess" class="player-toggle" :class="{ active: sheet.player }" title="Player">
         <input v-model="sheet.player" type="checkbox" /> Player
       </label>
       <span v-else-if="sheet.player" class="player-toggle active">Player</span>

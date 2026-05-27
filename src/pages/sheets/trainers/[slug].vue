@@ -47,6 +47,7 @@ const { data: runtimeSheetResult, error: runtimeSheetError } = await useFetch<{ 
 const baseSheet = runtimeSheetResult.value?.sheet ?? (import.meta.dev ? null : staticBaseSheet)
 const {
   sheet,
+  editorCapabilities,
   saveStatus,
   saveError,
   renamedTo,
@@ -54,6 +55,7 @@ const {
   baseSheet,
   kind: 'trainer',
   isPlayer,
+  isGm,
   normalize: normalizeTrainerSheet,
   profileContext: currentSheetProfileContext,
 })
@@ -96,7 +98,7 @@ useHead(() => ({
     <TrainerSheetEditor
       v-if="sheet"
       :sheet="sheet"
-      :is-gm="isGm"
+      :capabilities="editorCapabilities"
     />
 
     <template #not-found>
