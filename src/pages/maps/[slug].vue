@@ -126,12 +126,6 @@ const mapStatus = computed(() => (
     ? 'idle'
     : status.value
 ))
-const sessionAssignmentTokens = computed(() => (map.value?.placements ?? []).map((placement) => ({
-  tokenId: placement.id,
-  mapSlug: slug,
-  sheetKind: placement.sheetKind,
-  sheetSlug: placement.sheetSlug,
-})))
 const sessionSnapshotState = computed(() => (
   sessionMap.socket.lastSnapshot.value?.snapshot as AuthoritativeSessionState<TabletopMap> | undefined
 ) ?? null)
@@ -949,11 +943,7 @@ useMapDimensionReconciliation({
 <template>
   <MapEditorLayout>
     <template #nav>
-      <MapNavigationRail
-        :map-slug="slug"
-        :session-mode-enabled="sessionMoveTokenEnabled"
-        :map-tokens="sessionAssignmentTokens"
-      />
+      <MapNavigationRail />
     </template>
 
     <template #scene>
