@@ -31,42 +31,23 @@ npm test
 npm run build
 ```
 
-## Reviewer starting points
 
-- [docs/review-guide.md](docs/review-guide.md) — fastest path through the project for recruiters and reviewers.
-- [docs/architecture.md](docs/architecture.md) — high-level Nuxt, Nitro, local data, and Three.js architecture.
-- [docs/data-model.md](docs/data-model.md) — maps, sheets, trainers, player profiles, encounter tables, app-owned PTU reference data, and generated sheets.
-- [docs/player-profiles.md](docs/player-profiles.md) — normal profile-based player login, GM character linking, linked sheet editing, and linked-token control.
-- [docs/live-session-roadmap.md](docs/live-session-roadmap.md) — legacy GM-hosted live session scope, lifecycle, and non-goals; not the normal profile-based play path.
-- [docs/live-session-glossary.md](docs/live-session-glossary.md) — shared live session vocabulary for identity, commands, revisions, reconnect, and safety.
-- [docs/live-session-validation-matrix.md](docs/live-session-validation-matrix.md) — legacy live-session implementation maintenance checks and safety reviews.
-- [docs/live-session-protocol.md](docs/live-session-protocol.md) — legacy live-session protocol types, message flow, and accepted/rejected command examples.
-- [docs/live-session-socket-protocol.md](docs/live-session-socket-protocol.md) — legacy live-session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
-- [docs/live-session-table-action-commands.md](docs/live-session-table-action-commands.md) — legacy HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
-- [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — legacy live-session client boundary notes; old session-map client helpers are removed and normal play uses player profiles.
-- [docs/live-session-lobby.md](docs/live-session-lobby.md) — direct-only legacy session identity/socket lobby boundaries and smoke checklist; not normal profile-based play.
-- [docs/live-session-host-runtime.md](docs/live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
-- [docs/live-session-public-exposure-checks.md](docs/live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
-- [docs/live-session-lan-hosting.md](docs/live-session-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
-- [docs/live-session-cloudflare-tunnel-hosting.md](docs/live-session-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, session socket considerations, safety warnings, and rollback steps.
-- [docs/live-session-named-tunnel-maintenance.md](docs/live-session-named-tunnel-maintenance.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
-- [docs/live-session-deployment-smoke-checklist.md](docs/live-session-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
-- [docs/live-session-lan-manual-smoke-results.md](docs/live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
-- [docs/live-session-command-flow-maintenance.md](docs/live-session-command-flow-maintenance.md) — integrated multi-client command-flow coverage covering accepted commands, reconnect, permissions, and stale conflicts.
-- [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — legacy session socket benchmark notes; current profile play uses saved-map realtime and linked-token tests.
-- [docs/live-session-implementation-maintenance.md](docs/live-session-implementation-maintenance.md) — implementation maintenance guide linking product docs, source areas, validation evidence, and known limitations.
-- [docs/live-session-product-readiness-review.md](docs/live-session-product-readiness-review.md) — concise product/developer readiness review for architecture, table flow, validation, limits, and operator checks.
-- [docs/live-session-readiness-summary.md](docs/live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
-- [docs/live-session-local-mode-maintenance.md](docs/live-session-local-mode-maintenance.md) — local-mode maintenance checks for plain map/sheet workflows, profile play, and legacy session isolation.
-- [docs/live-session-quick-tunnel-caveat.md](docs/live-session-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
-- [docs/live-session-storage.md](docs/live-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
-- [docs/live-session-backup-recovery.md](docs/live-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
-- [docs/live-session-persistence-recovery-maintenance.md](docs/live-session-persistence-recovery-maintenance.md) — persistence/recovery maintenance for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
-- [docs/live-session-security-boundaries.md](docs/live-session-security-boundaries.md) — trust boundaries, join-code limits, tunnel exposure risks, non-hardened areas, and live session security non-goals.
-- [docs/live-session-security-secret-hygiene-readiness.md](docs/live-session-security-secret-hygiene-readiness.md) — security and secret-hygiene readiness maintenance for auth/session/cookie/permission boundaries, public exposure warnings, committed-data hygiene, and remaining non-goals.
-- [docs/live-session-dependency-runtime-maintenance.md](docs/live-session-dependency-runtime-maintenance.md) — live session dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
-- [docs/local-development.md](docs/local-development.md) — local setup, scripts, and filesystem persistence notes.
-- [docs/fan-project-notice.md](docs/fan-project-notice.md) — fan project and ownership boundaries.
+## npm scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Nuxt development server without enabling live session hosting. |
+| `npm run dev:session:lan` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and LAN binding (`0.0.0.0:3000`). |
+| `npm run dev:session:tunnel` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and loopback binding (`127.0.0.1:3000`) for a named tunnel. |
+| `npm run build` | Build the Nuxt app. |
+| `npm run preview` | Preview the built app. |
+| `npm run typecheck` | Run Nuxt/Vue TypeScript checks. |
+| `npm test` | Run the Vitest test suite once. |
+| `npm run test:watch` | Run Vitest in watch mode. |
+| `npm run check:move-automation` | Check move automation coverage. |
+| `npm run sync:item-sprites` | Sync item sprite assets. |
+| `npm run generate:profile-sprites` | Generate rectangular Pokémon/trainer profile portraits under `public/profile-sprites/` from front-facing sprite assets. |
+
 
 ## Features
 
@@ -78,41 +59,7 @@ npm run build
 - **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes; Player Login asks for a persistent player profile before continuing, and linked characters grant sheet editing plus map-token control.
 - **Filesystem-backed data** — maps, sheets, trainers, player profiles, and encounter tables are stored as JSON in the repository tree for easy inspection, backup, and diffing.
 
-## Suggested review path
 
-### 5-minute reviewer path
-
-1. Read the project positioning above and the fan/auth caveats.
-2. Skim [docs/review-guide.md](docs/review-guide.md).
-3. Inspect the route list in this README, then open `/maps`, `/sheets`, `/pokedex`, and `/generate` locally as GM.
-4. Look at `src/pages/`, `src/components/map/`, `src/utils/isometric/`, `server/useCases/`, and `tests/` to see the product surface area.
-
-### 15-minute reviewer path
-
-1. Run `npm run typecheck`, `npm test`, and `npm run build`.
-2. Review [docs/architecture.md](docs/architecture.md) and [docs/data-model.md](docs/data-model.md).
-3. Trace one local-first workflow end-to-end: edit a sheet, place it on a map, save the map JSON, and inspect the corresponding `data/` file.
-4. Trace one encounter workflow: inspect `encounter_tables/`, open `/encounter-tables`, then use `/generate` or `just encounter ... preview`.
-5. Browse a few tests under `tests/server`, `tests/composables`, and `tests/utils` to see behaviour coverage around persistence, routing, and domain helpers.
-
-### What the project demonstrates
-
-- Product thinking around a real tabletop workflow instead of a thin demo.
-- Frontend complexity: searchable libraries, editors, autosave, role-aware navigation, and dense control panels.
-- Domain modelling for maps, sheets, trainers, move data, encounter tables, and app-owned PTU reference content.
-- Local-first persistence with human-readable JSON and `.gitignore` boundaries for personal campaign data.
-- Long-term ownership: broad test coverage, refactoring-oriented structure, and supporting documentation.
-
-### Intentionally out of scope
-
-- Hardened public authentication, accounts, permissions, or multi-tenant hosting.
-- Cloud persistence or collaborative database infrastructure.
-- Claiming official status, commercial distribution, or ownership of Pokémon/PTU names, images, or concepts.
-- A generic virtual tabletop; this is specifically shaped around one PTU campaign workflow.
-
-## Screenshots
-
-No screenshot files are committed in this presentation pass. See [docs/screenshots.md](docs/screenshots.md) for the capture checklist to add later without inventing or linking missing images.
 
 ## Tech stack
 
@@ -174,22 +121,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 
 Saved sheets, maps, and player profiles are edited by the app itself. Legacy live session snapshots and optional event logs live under `data/sessions/` only when the legacy session host is used for maintenance smoke checks. In development, Nuxt/Vite ignores changes under `data/sheets`, `data/trainers`, `data/player-profiles`, and `data/maps` so autosaves do not force a full page reload. `.gitignore` is configured to keep personal campaign data and session runtime files out of the repository while allowing curated examples to remain inspectable.
 
-## npm scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the Nuxt development server without enabling live session hosting. |
-| `npm run dev:session:lan` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and LAN binding (`0.0.0.0:3000`). |
-| `npm run dev:session:tunnel` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and loopback binding (`127.0.0.1:3000`) for a named tunnel. |
-| `npm run build` | Build the Nuxt app. |
-| `npm run preview` | Preview the built app. |
-| `npm run typecheck` | Run Nuxt/Vue TypeScript checks. |
-| `npm test` | Run the Vitest test suite once. |
-| `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run check:move-automation` | Check move automation coverage. |
-| `npm run sync:item-sprites` | Sync item sprite assets. |
-| `npm run generate:profile-sprites` | Generate rectangular Pokémon/trainer profile portraits under `public/profile-sprites/` from front-facing sprite assets. |
-| `npm run refactor:loop` | Run the refactor loop helper script. |
 
 ## Optional `just` commands
 
