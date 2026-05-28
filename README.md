@@ -121,7 +121,7 @@ No screenshot files are committed in this presentation pass. See [docs/screensho
 - Vitest
 - Three.js
 - npm
-- Optional Python/`just` helper scripts for PTU reference lookup and encounter generation
+- Optional Python/`just` helper scripts for PTU reference lookup, encounter generation, and sprite-profile asset generation
 
 ## Architecture at a glance
 
@@ -165,7 +165,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | `data/reference/` | App-owned PTU reference JSON used by runtime pages, sheets, lookup helpers, and automation. |
 | `books/markdown/` | Markdown source/reference content. |
 | `ptu-data/` | Documentary upstream PTU parsing/source helpers; not the runtime source of truth. |
-| `public/` | Public static assets. |
+| `public/` | Public static assets, including generated profile portraits under `public/profile-sprites/`. |
 | `trainer_sizes/sprites/` | Trainer sprite assets served by Nitro at `/trainer-sprites`. |
 | `src/` | Nuxt app source: pages, components, composables, assets, and utilities. |
 | `server/` | Nitro API routes and filesystem persistence helpers. |
@@ -188,6 +188,7 @@ Saved sheets, maps, and player profiles are edited by the app itself. Legacy liv
 | `npm run test:watch` | Run Vitest in watch mode. |
 | `npm run check:move-automation` | Check move automation coverage. |
 | `npm run sync:item-sprites` | Sync item sprite assets. |
+| `npm run generate:profile-sprites` | Generate rectangular Pokémon/trainer profile portraits under `public/profile-sprites/` from front-facing sprite assets. |
 | `npm run refactor:loop` | Run the refactor loop helper script. |
 
 ## Optional `just` commands
