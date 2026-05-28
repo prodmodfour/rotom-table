@@ -27,6 +27,7 @@
 .library-card-meta-list :slotted(.library-card-meta-list__badges) {
   display: inline-flex;
   align-items: center;
+  flex-basis: 100%;
   flex-wrap: wrap;
   gap: 0.22rem;
   padding: 0;
