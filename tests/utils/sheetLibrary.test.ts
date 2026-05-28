@@ -89,7 +89,7 @@ describe('sheetLibrary helpers', () => {
 
     expect(sheetLibraryKey('pokemon', 'bolt')).toBe('pokemon:bolt')
     expect(displaySheetLibraryName(item)).toBe('Bolt')
-    expect(sheetLibraryAccessBadge(item)).toMatchObject({ label: 'Player accessible', variant: 'accent' })
+    expect(sheetLibraryAccessBadge(item)).toBeNull()
     expect(sheetLibraryAccessBadge(linkedItem)).toMatchObject({ label: 'Linked profile', variant: 'success' })
     expect(sheetLibraryAccessBadge(privateItem)).toBeNull()
     expect(applyFolderRenames('team/alpha/deep', [{ from: 'team/alpha', to: 'team/beta' }])).toBe('team/beta/deep')

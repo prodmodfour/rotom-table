@@ -76,22 +76,6 @@ export const sheetLibraryAccessBadge = (item: SheetLibraryItem): SheetLibraryAcc
     }
   }
 
-  if (item.sheet.player === true) {
-    return {
-      label: 'Player accessible',
-      variant: 'accent',
-      title: 'This character sheet is broadly visible to players.',
-    }
-  }
-
-  if (item.sheet.sessionPlayerAccessible === true) {
-    return {
-      label: 'Player accessible',
-      variant: 'accent',
-      title: 'This private character sheet is currently available to players.',
-    }
-  }
-
   return null
 }
 
