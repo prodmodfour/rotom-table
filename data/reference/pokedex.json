@@ -4790,8 +4790,9 @@
       },
       {
         "stage": 2,
-        "species": "Chansey Holding",
-        "min_level": 10
+        "species": "Chansey",
+        "min_level": 10,
+        "condition": "Holding Oval Stone"
       },
       {
         "stage": 3,
@@ -4799,8 +4800,8 @@
         "min_level": 40
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 2,
+    "evolutions_remaining": 1,
     "size": "Medium",
     "weight": 3,
     "genderless": false,
@@ -13170,8 +13171,9 @@
       },
       {
         "stage": 3,
-        "species": "Electivire Holding Electrizer",
-        "min_level": 40
+        "species": "Electivire",
+        "min_level": 40,
+        "condition": "Holding Electrizer"
       }
     ],
     "evolution_stage": 2,
@@ -22275,8 +22277,9 @@
       },
       {
         "stage": 3,
-        "species": "Kingdra Holding",
-        "min_level": 40
+        "species": "Kingdra",
+        "min_level": 40,
+        "condition": "Holding Dragon Scale"
       }
     ],
     "evolution_stage": 1,
@@ -30274,8 +30277,9 @@
       },
       {
         "stage": 3,
-        "species": "Magmortar Holding",
-        "min_level": 40
+        "species": "Magmortar",
+        "min_level": 40,
+        "condition": "Holding Magmarizer"
       }
     ],
     "evolution_stage": 2,
@@ -39358,8 +39362,9 @@
       },
       {
         "stage": 2,
-        "species": "Steelix Holding",
-        "min_level": 35
+        "species": "Steelix",
+        "min_level": 35,
+        "condition": "Holding Metal Coat"
       }
     ],
     "evolution_stage": 1,
@@ -42887,13 +42892,14 @@
       },
       {
         "stage": 3,
-        "species": "Poliwrath MInimum 30",
-        "min_level": 0
+        "species": "Poliwrath",
+        "min_level": 30
       },
       {
         "stage": 3,
-        "species": "Politoed Holding King’s Rock",
-        "min_level": 30
+        "species": "Politoed",
+        "min_level": 30,
+        "condition": "Holding King’s Rock"
       }
     ],
     "evolution_stage": 1,
@@ -43228,8 +43234,9 @@
       },
       {
         "stage": 3,
-        "species": "Politoed Holding King’s Rock",
-        "min_level": 30
+        "species": "Politoed",
+        "min_level": 30,
+        "condition": "Holding King’s Rock"
       }
     ],
     "evolution_stage": 2,
@@ -44418,13 +44425,15 @@
       },
       {
         "stage": 2,
-        "species": "Porygon2 Holding UpGrade",
-        "min_level": 10
+        "species": "Porygon2",
+        "min_level": 10,
+        "condition": "Holding UpGrade"
       },
       {
         "stage": 3,
-        "species": "Porygon-Z Holding",
-        "min_level": 25
+        "species": "Porygon-Z",
+        "min_level": 25,
+        "condition": "Holding Dubious Disc"
       }
     ],
     "evolution_stage": 1,
@@ -47431,8 +47440,9 @@
       },
       {
         "stage": 3,
-        "species": "Rhyperior Holding",
-        "min_level": 45
+        "species": "Rhyperior",
+        "min_level": 45,
+        "condition": "Holding Protector"
       }
     ],
     "evolution_stage": 2,
@@ -47980,8 +47990,9 @@
       },
       {
         "stage": 3,
-        "species": "Rhyperior Holding",
-        "min_level": 50
+        "species": "Rhyperior",
+        "min_level": 50,
+        "condition": "Holding Protector"
       }
     ],
     "evolution_stage": 1,
@@ -49293,8 +49304,9 @@
       },
       {
         "stage": 2,
-        "species": "Scizor Holding",
-        "min_level": 30
+        "species": "Scizor",
+        "min_level": 30,
+        "condition": "Holding Metal Coat"
       }
     ],
     "evolution_stage": 1,
@@ -49690,8 +49702,9 @@
       },
       {
         "stage": 3,
-        "species": "Kingdra Holding",
-        "min_level": 40
+        "species": "Kingdra",
+        "min_level": 40,
+        "condition": "Holding Dragon Scale"
       }
     ],
     "evolution_stage": 2,
@@ -51546,8 +51559,9 @@
       },
       {
         "stage": 2,
-        "species": "Slowking Holding King’s Rock",
-        "min_level": 35
+        "species": "Slowking",
+        "min_level": 35,
+        "condition": "Holding King’s Rock"
       }
     ],
     "evolution_stage": 1,
@@ -63949,8 +63963,9 @@
       },
       {
         "stage": 2,
-        "species": "Chansey Holding",
-        "min_level": 10
+        "species": "Chansey",
+        "min_level": 10,
+        "condition": "Holding Oval Stone"
       },
       {
         "stage": 3,
@@ -69046,8 +69061,9 @@
       },
       {
         "stage": 3,
-        "species": "Electivire Holding Electrizer",
-        "min_level": 40
+        "species": "Electivire",
+        "min_level": 40,
+        "condition": "Holding Electrizer"
       }
     ],
     "evolution_stage": 1,
@@ -72497,8 +72513,9 @@
       },
       {
         "stage": 2,
-        "species": "Gliscor Holding",
-        "min_level": 25
+        "species": "Gliscor",
+        "min_level": 25,
+        "condition": "Holding Razor Fang"
       }
     ],
     "evolution_stage": 1,
@@ -77246,12 +77263,13 @@
       },
       {
         "stage": 3,
-        "species": "Kingdra Holding",
-        "min_level": 40
+        "species": "Kingdra",
+        "min_level": 40,
+        "condition": "Holding Dragon Scale"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 3,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 5,
     "genderless": false,
@@ -79746,8 +79764,9 @@
       },
       {
         "stage": 3,
-        "species": "Magmortar Holding",
-        "min_level": 40
+        "species": "Magmortar",
+        "min_level": 40,
+        "condition": "Holding Magmarizer"
       }
     ],
     "evolution_stage": 1,
@@ -86187,12 +86206,13 @@
       },
       {
         "stage": 3,
-        "species": "Politoed Holding King’s Rock",
-        "min_level": 30
+        "species": "Politoed",
+        "min_level": 30,
+        "condition": "Holding King’s Rock"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 3,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 3,
     "genderless": false,
@@ -86643,17 +86663,19 @@
       },
       {
         "stage": 2,
-        "species": "Porygon2 Holding UpGrade",
-        "min_level": 10
+        "species": "Porygon2",
+        "min_level": 10,
+        "condition": "Holding UpGrade"
       },
       {
         "stage": 3,
-        "species": "Porygon-Z Holding",
-        "min_level": 25
+        "species": "Porygon-Z",
+        "min_level": 25,
+        "condition": "Holding Dubious Disc"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 2,
+    "evolutions_remaining": 1,
     "size": "Small",
     "weight": 3,
     "genderless": true,
@@ -89480,12 +89502,13 @@
       },
       {
         "stage": 2,
-        "species": "Scizor Holding",
-        "min_level": 30
+        "species": "Scizor",
+        "min_level": 30,
+        "condition": "Holding Metal Coat"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 5,
     "genderless": false,
@@ -91584,12 +91607,13 @@
       },
       {
         "stage": 2,
-        "species": "Slowking Holding King’s Rock",
-        "min_level": 35
+        "species": "Slowking",
+        "min_level": 35,
+        "condition": "Holding King’s Rock"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 4,
     "genderless": false,
@@ -93094,8 +93118,9 @@
       },
       {
         "stage": 2,
-        "species": "Weavile Holding",
-        "min_level": 30
+        "species": "Weavile",
+        "min_level": 30,
+        "condition": "Holding Razor Claw"
       }
     ],
     "evolution_stage": 1,
@@ -94910,12 +94935,13 @@
       },
       {
         "stage": 2,
-        "species": "Steelix Holding",
-        "min_level": 35
+        "species": "Steelix",
+        "min_level": 35,
+        "condition": "Holding Metal Coat"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
     "size": "Gigantic",
     "weight": 6,
     "genderless": false,
@@ -111749,13 +111775,15 @@
       },
       {
         "stage": 2,
-        "species": "Huntail Holding Deepseatooth",
-        "min_level": 20
+        "species": "Huntail",
+        "min_level": 20,
+        "condition": "Holding Deepseatooth"
       },
       {
         "stage": 2,
-        "species": "Gorebyss Holding Deepseascale",
-        "min_level": 20
+        "species": "Gorebyss",
+        "min_level": 20,
+        "condition": "Holding Deepseascale"
       }
     ],
     "evolution_stage": 1,
@@ -116842,8 +116870,9 @@
       },
       {
         "stage": 3,
-        "species": "Dusknoir Holding",
-        "min_level": 40
+        "species": "Dusknoir",
+        "min_level": 40,
+        "condition": "Holding Reaper Cloth"
       }
     ],
     "evolution_stage": 2,
@@ -117354,8 +117383,9 @@
       },
       {
         "stage": 3,
-        "species": "Dusknoir Holding",
-        "min_level": 40
+        "species": "Dusknoir",
+        "min_level": 40,
+        "condition": "Holding Reaper Cloth"
       }
     ],
     "evolution_stage": 1,
@@ -120683,12 +120713,13 @@
       },
       {
         "stage": 2,
-        "species": "Gorebyss Holding Deepseascale",
-        "min_level": 20
+        "species": "Gorebyss",
+        "min_level": 20,
+        "condition": "Holding Deepseascale"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 2,
     "genderless": false,
@@ -123325,12 +123356,13 @@
       },
       {
         "stage": 2,
-        "species": "Huntail Holding Deepseatooth",
-        "min_level": 20
+        "species": "Huntail",
+        "min_level": 20,
+        "condition": "Holding Deepseatooth"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 3,
     "genderless": false,
@@ -172460,12 +172492,13 @@
       },
       {
         "stage": 3,
-        "species": "Dusknoir Holding",
-        "min_level": 40
+        "species": "Dusknoir",
+        "min_level": 40,
+        "condition": "Holding Reaper Cloth"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 3,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 5,
     "genderless": false,
@@ -172978,12 +173011,13 @@
       },
       {
         "stage": 3,
-        "species": "Electivire Holding Electrizer",
-        "min_level": 40
+        "species": "Electivire",
+        "min_level": 40,
+        "condition": "Holding Electrizer"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 3,
+    "evolutions_remaining": 0,
     "size": "Large",
     "weight": 5,
     "genderless": false,
@@ -178967,12 +179001,13 @@
       },
       {
         "stage": 2,
-        "species": "Gliscor Holding",
-        "min_level": 25
+        "species": "Gliscor",
+        "min_level": 25,
+        "condition": "Holding Razor Fang"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 3,
     "genderless": false,
@@ -179798,8 +179833,9 @@
       },
       {
         "stage": 2,
-        "species": "Chansey Holding",
-        "min_level": 10
+        "species": "Chansey",
+        "min_level": 10,
+        "condition": "Holding Oval Stone"
       },
       {
         "stage": 3,
@@ -185552,12 +185588,13 @@
       },
       {
         "stage": 3,
-        "species": "Magmortar Holding",
-        "min_level": 40
+        "species": "Magmortar",
+        "min_level": 40,
+        "condition": "Holding Magmarizer"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 3,
+    "evolutions_remaining": 0,
     "size": "Large",
     "weight": 4,
     "genderless": false,
@@ -191821,17 +191858,19 @@
       },
       {
         "stage": 2,
-        "species": "Porygon2 Holding UpGrade",
-        "min_level": 10
+        "species": "Porygon2",
+        "min_level": 10,
+        "condition": "Holding UpGrade"
       },
       {
         "stage": 3,
-        "species": "Porygon-Z Holding",
-        "min_level": 25
+        "species": "Porygon-Z",
+        "min_level": 25,
+        "condition": "Holding Dubious Disc"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 3,
+    "evolutions_remaining": 0,
     "size": "Small",
     "weight": 3,
     "genderless": true,
@@ -194373,12 +194412,13 @@
       },
       {
         "stage": 3,
-        "species": "Rhyperior Holding",
-        "min_level": 45
+        "species": "Rhyperior",
+        "min_level": 45,
+        "condition": "Holding Protector"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
+    "evolution_stage": 3,
+    "evolutions_remaining": 0,
     "size": "Large",
     "weight": 6,
     "genderless": false,
@@ -204368,12 +204408,13 @@
       },
       {
         "stage": 2,
-        "species": "Weavile Holding",
-        "min_level": 30
+        "species": "Weavile",
+        "min_level": 30,
+        "condition": "Holding Razor Claw"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
     "size": "Medium",
     "weight": 3,
     "genderless": false,
@@ -270131,12 +270172,13 @@
       },
       {
         "stage": 2,
-        "species": "Aromatisse Holding Sachet",
-        "min_level": 20
+        "species": "Aromatisse",
+        "min_level": 20,
+        "condition": "Holding Sachet"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
     "size": "Small",
     "weight": 2,
     "genderless": false,
@@ -292844,12 +292886,13 @@
       },
       {
         "stage": 2,
-        "species": "Slurpuff Holding Whipped Dream",
-        "min_level": 20
+        "species": "Slurpuff",
+        "min_level": 20,
+        "condition": "Holding Whipped Dream"
       }
     ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
     "size": "Small",
     "weight": 1,
     "genderless": false,
@@ -293319,8 +293362,9 @@
       },
       {
         "stage": 2,
-        "species": "Aromatisse Holding Sachet",
-        "min_level": 20
+        "species": "Aromatisse",
+        "min_level": 20,
+        "condition": "Holding Sachet"
       }
     ],
     "evolution_stage": 1,
@@ -293685,8 +293729,9 @@
       },
       {
         "stage": 2,
-        "species": "Slurpuff Holding Whipped Dream",
-        "min_level": 20
+        "species": "Slurpuff",
+        "min_level": 20,
+        "condition": "Holding Whipped Dream"
       }
     ],
     "evolution_stage": 1,

@@ -108,6 +108,15 @@ def format_bullets(values: list[str]) -> str:
     return "\n".join(f"  - {value}" for value in values if value)
 
 
+def format_evolution(evolution: dict) -> str:
+    parts = [f"Stage {evolution['stage']} - {evolution['species']}"]
+    if evolution.get("condition"):
+        parts.append(str(evolution["condition"]))
+    if evolution.get("min_level"):
+        parts.append(f"(Minimum {evolution['min_level']})")
+    return " ".join(parts)
+
+
 def format_move(move: dict) -> str:
     lines = [f"# {move['name']}"]
     if move.get("type"):
@@ -271,10 +280,7 @@ def format_pokemon(entry: dict) -> str:
         lines.extend([
             "",
             "## Evolution",
-            format_bullets([
-                f"Stage {e['stage']} - {e['species']}{f' (Minimum {e['min_level']})' if e.get('min_level') else ''}"
-                for e in evolutions
-            ]),
+            format_bullets([format_evolution(e) for e in evolutions]),
         ])
 
     capabilities = entry.get("capabilities") or {}

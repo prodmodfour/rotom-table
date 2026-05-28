@@ -30,6 +30,7 @@ export interface PokedexEvolution {
   stage: number
   species: string
   min_level?: number
+  condition?: string
 }
 
 export interface PokedexCapabilities {

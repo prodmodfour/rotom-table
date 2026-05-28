@@ -38,7 +38,7 @@ describe('usePokedexBrowser helpers', () => {
     species: 'Bulbasaur',
     slug: 'bulbasaur',
     evolutions: [
-      { stage: 2, species: 'Ivysaur', min_level: 16 },
+      { stage: 2, species: 'Ivysaur', min_level: 16, condition: 'Holding Miracle Seed' },
       { stage: 1, species: 'Bulbasaur' },
       { stage: 3, species: 'Missingno' },
     ],
@@ -65,7 +65,7 @@ describe('usePokedexBrowser helpers', () => {
 
   it('builds display evolutions with self links suppressed', () => {
     expect(buildDisplayedPokedexEvolutions(bulbasaur, bulbasaur.id, entryBySlug)).toEqual([
-      { stage: 2, species: 'Ivysaur', min_level: 16, href: '/pokedex/ivysaur' },
+      { stage: 2, species: 'Ivysaur', min_level: 16, condition: 'Holding Miracle Seed', href: '/pokedex/ivysaur' },
       { stage: 1, species: 'Bulbasaur', href: null },
       { stage: 3, species: 'Missingno', href: null },
     ])

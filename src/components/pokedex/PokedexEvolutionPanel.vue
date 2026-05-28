@@ -20,7 +20,7 @@ defineProps<{
         :to="evolution.href"
         class="evolution-link"
         prefetch-on="interaction"
-      >{{ evolution.species }}</NuxtLink><span v-else>{{ evolution.species }}</span><template v-if="evolution.min_level && evolution.min_level > 0"> Minimum {{ evolution.min_level }}</template>
+      >{{ evolution.species }}</NuxtLink><span v-else>{{ evolution.species }}</span><template v-if="evolution.condition"> {{ evolution.condition }}</template><template v-if="evolution.min_level && evolution.min_level > 0"> Minimum {{ evolution.min_level }}</template>
     </p>
   </section>
 </template>

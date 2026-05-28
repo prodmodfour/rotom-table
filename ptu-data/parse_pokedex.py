@@ -315,15 +315,54 @@ def parse_abilities(text: str) -> dict:
     return result
 
 
-# Common evolution condition keywords to strip from species names
+# Common evolution condition keywords to strip from species names. Held-item
+# requirements are captured separately so the UI can show them instead of
+# folding ``Holding Metal Coat`` into the linked species name.
 EVO_CONDITIONS = [
     "Water Stone", "Fire Stone", "Leaf Stone", "Thunder Stone", "Moon Stone",
     "Sun Stone", "Dusk Stone", "Dawn Stone", "Shiny Stone", "Ice Stone",
-    "Oval Stone", "King's Rock", "Metal Coat", "Dragon Scale", "Up-Grade",
-    "Dubious Disc", "Electirizer", "Magmarizer", "Protector", "Reaper Cloth",
+    "Oval Stone", "King's Rock", "King’s Rock", "Metal Coat", "Dragon Scale", "Up-Grade",
+    "UpGrade", "Dubious Disc", "Electirizer", "Electrizer", "Magmarizer", "Protector", "Reaper Cloth",
     "Razor Claw", "Razor Fang", "Prism Scale", "Deep Sea Tooth", "Deep Sea Scale",
-    "Link Cable", "Trade", "Happiness", "Shedinja",
+    "Deepseatooth", "Deepseascale", "Link Cable", "Trade", "Happiness", "Shedinja",
 ]
+
+
+MINIMUM_LEVEL_RE = re.compile(r"\bminimum\s+(\d+)", re.IGNORECASE)
+MINIMUM_LEVEL_TEXT_RE = re.compile(r"\s*,?\s*\bminimum\s+\d+\b", re.IGNORECASE)
+TRAILING_MINIMUM_LABEL_RE = re.compile(r"\s*,?\s*\bminimum\b\s*$", re.IGNORECASE)
+HELD_ITEM_RE = re.compile(r"\s+Holding\s+(.+)$", re.IGNORECASE)
+
+
+def parse_evolution_details(raw: str) -> tuple[str, int, str | None]:
+    """Return (species, min_level, condition) for one evolution line body.
+
+    The source pokedex writes held-item evolutions inline, e.g.
+    ``Scizor Holding Metal Coat Minimum 30``. Older parsing stripped the item
+    (or left a dangling ``Holding``) and the displayed evolution lost the
+    requirement. Preserve held items as an explicit condition while keeping the
+    species name clean for links/search.
+    """
+    ml = MINIMUM_LEVEL_RE.search(raw)
+    min_level = int(ml.group(1)) if ml else 0
+    body = MINIMUM_LEVEL_TEXT_RE.sub("", raw).strip()
+    body = TRAILING_MINIMUM_LABEL_RE.sub("", body).strip()
+
+    condition: str | None = None
+    held = HELD_ITEM_RE.search(body)
+    if held:
+        held_item = held.group(1).strip().rstrip(",")
+        body = body[:held.start()].strip()
+        if held_item:
+            condition = f"Holding {held_item}"
+
+    # Strip non-held evolution condition keywords from species names. These
+    # aren't displayed yet, but removing them prevents broken links such as
+    # ``Ninetales Fire Stone``.
+    for cond in EVO_CONDITIONS:
+        body = re.sub(rf"\s+{re.escape(cond)}\b", "", body, flags=re.IGNORECASE).strip()
+
+    return body, min_level, condition
 
 
 def parse_evolution(text: str) -> list[dict]:
@@ -338,15 +377,11 @@ def parse_evolution(text: str) -> list[dict]:
             m = re.match(r"(\d+)\s*-\s*(.+)", line)
             if m:
                 stage = int(m.group(1))
-                rest = m.group(2).strip()
-                # Parse min level if present
-                ml = re.search(r"Minimum\s+(\d+)", rest)
-                min_level = int(ml.group(1)) if ml else 0
-                species = re.sub(r"\s*Minimum\s+\d+", "", rest).strip()
-                # Strip evolution condition keywords from species name
-                for cond in EVO_CONDITIONS:
-                    species = re.sub(rf"\s+{re.escape(cond)}\b", "", species, flags=re.IGNORECASE).strip()
-                evos.append({"stage": stage, "species": species, "min_level": min_level})
+                species, min_level, condition = parse_evolution_details(m.group(2).strip())
+                evolution = {"stage": stage, "species": species, "min_level": min_level}
+                if condition:
+                    evolution["condition"] = condition
+                evos.append(evolution)
             elif evos:
                 # Line after evo block
                 break
