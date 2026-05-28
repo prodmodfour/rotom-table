@@ -8,7 +8,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { sheetEditorPath, sheetKindLabel } from '~/utils/sheetRoutes'
 
 export const PLAYER_PROFILE_MANAGEMENT_EMPTY_TEXT =
-  'No player profiles exist yet. Players can create one from Player Login.'
+  'No player profiles exist yet. Create one here as the GM.'
 export const PLAYER_PROFILE_MANAGEMENT_NO_SELECTION_TEXT =
   'Select a player profile to review its linked characters.'
 export const PLAYER_PROFILE_MANAGEMENT_NO_LINKS_TEXT =

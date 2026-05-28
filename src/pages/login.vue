@@ -23,11 +23,9 @@ const {
   lastNotice: profileNotice,
   reloadProfiles,
   rememberProfile,
-  createProfile,
 } = usePlayerProfiles()
 
 const playerProfilePickerRequested = ref(false)
-const newProfileDisplayName = ref('')
 
 const redirectTarget = (nextRole: AuthRole) =>
   resolveLoginRedirectTarget(route.query.redirect, nextRole)
@@ -37,11 +35,6 @@ const showPlayerProfilePicker = computed(() => (
 ))
 const playerProfileGuardNotice = computed(() => profileRequiredLoginNotice(
   route.query[PLAYER_PROFILE_REQUIRED_QUERY_KEY],
-))
-
-const trimmedNewProfileDisplayName = computed(() => newProfileDisplayName.value.trim())
-const canCreatePlayerProfile = computed(() => (
-  trimmedNewProfileDisplayName.value.length > 0 && !profilesBusy.value
 ))
 
 const loadPlayerProfilesForLogin = async () => {
@@ -71,19 +64,6 @@ const continueAsSelectedProfile = async () => {
 const chooseExistingProfile = async (profile: PlayerProfile) => {
   rememberProfile(profile)
   await continueAsSelectedProfile()
-}
-
-const createAndContinue = async () => {
-  const displayName = trimmedNewProfileDisplayName.value
-  if (!displayName) return
-
-  try {
-    await createProfile(displayName)
-    newProfileDisplayName.value = ''
-    await continueAsSelectedProfile()
-  } catch {
-    // The composable records a safe player-facing error; keep the form editable.
-  }
 }
 
 const isSelectedProfile = (profile: PlayerProfile) => selectedProfileId.value === profile.id
@@ -121,7 +101,7 @@ onMounted(() => {
           @click="choosePlayerLogin"
         >
           <span>Player Login</span>
-          <small>Choose or create your player profile for player-visible maps and sheets</small>
+          <small>Choose your GM-created player profile for player-visible maps and sheets</small>
         </button>
       </div>
 
@@ -147,7 +127,7 @@ onMounted(() => {
         </div>
 
         <p class="profile-picker__copy">
-          Pick an existing persistent profile or create a new one. The selected
+          Pick an existing persistent profile created by the GM. The selected
           profile is remembered in this browser for future player logins.
         </p>
 
@@ -189,26 +169,9 @@ onMounted(() => {
         </ul>
 
         <p v-else class="profile-empty">
-          No player profiles exist yet. Create one below to continue as a player.
+          No player profiles exist yet. Ask the GM to create your player profile, then refresh this list.
         </p>
 
-        <form class="profile-create-form" @submit.prevent="createAndContinue">
-          <label for="new-player-profile-name">Create a new player profile</label>
-          <div class="profile-create-form__row">
-            <input
-              id="new-player-profile-name"
-              v-model="newProfileDisplayName"
-              type="text"
-              name="displayName"
-              maxlength="64"
-              autocomplete="nickname"
-              placeholder="Display name"
-            >
-            <button type="submit" class="continue-button" :disabled="!canCreatePlayerProfile">
-              Create profile
-            </button>
-          </div>
-        </form>
       </section>
 
       <p v-if="role" class="current-role">
@@ -455,39 +418,6 @@ h2 {
   text-transform: uppercase;
 }
 
-.profile-create-form {
-  display: grid;
-  gap: 0.55rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--rule);
-}
-
-.profile-create-form label {
-  color: var(--ink-bright);
-  font-weight: 700;
-}
-
-.profile-create-form__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.6rem;
-}
-
-.profile-create-form input {
-  min-width: 0;
-  border: 1px solid var(--rule-soft);
-  border-radius: 12px;
-  background: var(--paper);
-  color: var(--ink-bright);
-  padding: 0.7rem 0.75rem;
-}
-
-.profile-create-form input:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-
 .current-role {
   margin: 1rem 0 0;
   color: var(--ink-muted);
@@ -499,8 +429,7 @@ h2 {
 
 @media (max-width: 560px) {
   .profile-picker__header,
-  .remembered-profile,
-  .profile-create-form__row {
+  .remembered-profile {
     grid-template-columns: 1fr;
   }
 

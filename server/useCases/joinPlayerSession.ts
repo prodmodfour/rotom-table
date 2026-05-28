@@ -47,9 +47,9 @@ export interface JoinPlayerSessionInput {
    * running active session on this server.
    */
   readonly joinCode?: unknown
-  /** Display name for creating a new player profile. */
+  /** Display name for creating a legacy session-local player identity. */
   readonly displayName?: unknown
-  /** Existing player profile to pick in the currently running session. */
+  /** Existing session-local player identity to pick in the currently running session. */
   readonly playerId?: unknown
 }
 

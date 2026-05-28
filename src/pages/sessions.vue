@@ -308,8 +308,8 @@ onMounted(() => {
         </div>
         <p class="card-copy">
           This legacy join flow creates or reuses a session-local player identity
-          for the currently running live session on this server. It does not replace
-          the persistent player profile picker used for normal maps and sheets.
+          for the currently running live session on this server. It does not create
+          persistent player profiles for normal maps and sheets.
         </p>
 
         <dl class="detail-list" aria-label="Current player lobby session">
@@ -336,7 +336,7 @@ onMounted(() => {
 
         <form class="join-form" @submit.prevent="handleJoinSession">
           <label>
-            <span>New profile display name</span>
+            <span>New session display name</span>
             <input
               v-model="displayName"
               autocomplete="nickname"
@@ -346,17 +346,17 @@ onMounted(() => {
             >
           </label>
           <button type="submit" class="primary-button" :disabled="!canJoin">
-            Create profile and join
+            Join with new session identity
           </button>
         </form>
 
         <section class="mini-section" aria-labelledby="existing-player-profiles-title">
-          <h3 id="existing-player-profiles-title">Existing player profiles</h3>
+          <h3 id="existing-player-profiles-title">Existing session players</h3>
           <p v-if="!playerProfileSession" class="empty-text">
             Ask the GM to start the live session. This lobby will use it automatically once it is running.
           </p>
           <p v-else-if="playerProfiles.length === 0" class="empty-text">
-            No player profiles have been created for this live session yet.
+            No session player identities have been created for this live session yet.
           </p>
           <ul v-else class="profile-list">
             <li v-for="profile in playerProfiles" :key="profile.playerId">

@@ -8,7 +8,7 @@ Rotom Table's normal player workflow uses persistent player profiles, not live-s
 2. The GM chooses **GM Login** on `/login`.
 3. The GM prepares sheets and a player-visible saved map as normal.
 4. The GM opens `/players`, creates or selects player profiles, and links the existing Pokémon or trainer sheets each player should control.
-5. Each player chooses **Player Login**, selects or creates their persistent profile, then opens the relevant player-visible map from `/maps` or directly at `/maps/<slug>`.
+5. Each player chooses **Player Login**, selects their GM-created persistent profile, then opens the relevant player-visible map from `/maps` or directly at `/maps/<slug>`.
 6. Players act with tokens whose placement `sheetKind` and `sheetSlug` match one of their profile's linked characters.
 
 In short, players normally open the relevant player-visible map and act with linked characters; they do not enter a separate session map flow.
@@ -17,7 +17,7 @@ Players do not need `/sessions`, a join code, a map attachment step, a special s
 
 ## Player login and remembered profiles
 
-**Player Login** opens the profile picker. Players can choose an existing profile or create a new profile with a display name. The browser remembers only the selected profile summary separately from the `rotom-role` cookie, so switching from GM to player does not create accounts, passwords, OAuth state, or real public authentication.
+**Player Login** opens the profile picker. Players can choose an existing GM-created profile, but profile creation itself stays GM-only. The browser remembers only the selected profile summary separately from the `rotom-role` cookie, so switching from GM to player does not create accounts, passwords, OAuth state, or real public authentication.
 
 If a remembered profile is missing or invalid, the app clears that remembered selection and asks the player to choose again. Players without a selected profile can still reach the login/profile picker, map and sheet libraries, Pokédex, reference pages, and informational routes.
 
@@ -26,6 +26,7 @@ If a remembered profile is missing or invalid, the app clears that remembered se
 The `/players` route is GM-only. GMs can:
 
 - list persistent player profiles;
+- create new persistent player profiles;
 - view the profile ID, display name, and linked characters;
 - link existing Pokémon and trainer sheets from the current sheet libraries;
 - unlink character sheets that should no longer be controlled by that profile.
@@ -55,7 +56,7 @@ These browsing routes do not require a live session or map-specific invitation.
 
 ## What remains GM-only
 
-Players cannot create maps, delete maps, create sheets, delete sheets, manage encounter tables, generate encounter sheets, manage player profile links, or use GM-only map-building/admin controls such as terrain building, hazards, field effects, token spawning/deletion, or resource library file management.
+Players cannot create player profiles, create maps, delete maps, create sheets, delete sheets, manage encounter tables, generate encounter sheets, manage player profile links, or use GM-only map-building/admin controls such as terrain building, hazards, field effects, token spawning/deletion, or resource library file management.
 
 The role picker remains a trust-based local-table convenience. It is not hardened public authentication and should not be exposed as a public multi-user service without a separate security design.
 

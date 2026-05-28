@@ -39,8 +39,8 @@ const normalizePlayerProfileListResponse = (response: unknown): PlayerProfile[] 
   return response.profiles.map((profile, index) => normalizePlayerProfile(profile, `profiles[${index}]`))
 }
 
-const normalizePlayerProfileUpdateResponse = (response: unknown): PlayerProfile => {
-  if (!isRecord(response)) throw new Error('Player profile update response must be an object.')
+const normalizePlayerProfileMutationResponse = (response: unknown): PlayerProfile => {
+  if (!isRecord(response)) throw new Error('Player profile mutation response must be an object.')
   return normalizePlayerProfile(response.profile, 'profile')
 }
 
@@ -120,6 +120,7 @@ export const useGmPlayerProfileManagement = (
   const linkableCharacterOptions = ref<LinkableCharacterSheetOption[]>([])
   const loading = ref(false)
   const loadingLinkableCharacters = ref(false)
+  const creatingProfile = ref(false)
   const savingProfileLinks = ref(false)
   const lastError = ref<string | null>(null)
   const lastNotice = ref<string | null>(null)
@@ -208,6 +209,26 @@ export const useGmPlayerProfileManagement = (
     }
   }
 
+  const createProfile = async (displayName: unknown): Promise<PlayerProfile> => {
+    creatingProfile.value = true
+    lastError.value = null
+    lastNotice.value = null
+
+    try {
+      const response = await apiClient.postJson<unknown>(PLAYER_PROFILE_API_PATHS.create, { displayName })
+      const profile = normalizePlayerProfileMutationResponse(response)
+      profiles.value = upsertPlayerProfileForManagement(profiles.value, profile)
+      selectedProfileId.value = profile.id
+      lastNotice.value = `Created player profile ${profile.displayName}.`
+      return profile
+    } catch (error) {
+      recordFailure(error)
+      throw error
+    } finally {
+      creatingProfile.value = false
+    }
+  }
+
   const selectedProfileForLinkUpdate = (): PlayerProfile => {
     const profile = selectedProfile.value
     if (profile === null) throw new Error('Select a player profile before editing character links.')
@@ -237,7 +258,7 @@ export const useGmPlayerProfileManagement = (
       profileId: profile.id,
       linkedCharacters,
     })
-    return replaceProfileAfterLinkUpdate(normalizePlayerProfileUpdateResponse(response))
+    return replaceProfileAfterLinkUpdate(normalizePlayerProfileMutationResponse(response))
   }
 
   const linkCharacterToSelectedProfile = async (refInput: unknown): Promise<PlayerProfile> => {
@@ -302,12 +323,14 @@ export const useGmPlayerProfileManagement = (
     availableLinkOptions,
     loading,
     loadingLinkableCharacters,
+    creatingProfile,
     savingProfileLinks,
     lastError,
     lastNotice,
     loadProfiles,
     reloadProfiles: loadProfiles,
     loadLinkableCharacters,
+    createProfile,
     reloadLinkableCharacters: loadLinkableCharacters,
     selectProfile,
     linkCharacterToSelectedProfile,

@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose or create the persistent player profile for this browser. GMs can open `/players` to link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping map/sheet libraries, Pokédex, and reference pages available; direct map-control and editable sheet routes ask profileless players to choose a profile before continuing. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map, session-map management controls, or the legacy session lobby.
+Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose the GM-created persistent player profile for this browser. GMs can open `/players` to create profiles and link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping map/sheet libraries, Pokédex, and reference pages available; direct map-control and editable sheet routes ask profileless players to choose a profile before continuing. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map, session-map management controls, or the legacy session lobby.
 
 Recommended verification commands:
 
@@ -85,7 +85,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | Route | Purpose |
 | --- | --- |
 | `/` | Redirects to the map library. |
-| `/login` | Choose the local GM role or select/create the persistent player profile for Player Login. |
+| `/login` | Choose the local GM role or select a GM-created persistent player profile for Player Login. |
 | `/sessions` | Direct-only legacy live-session identity/socket lobby for maintenance smoke checks; not linked from normal app navigation or required for profile-based play. |
 | `/players` | GM-only player profile list plus Pokémon/trainer sheet link and unlink management. |
 | `/maps` | Map library and folders; players see player-visible maps only. |
@@ -165,7 +165,7 @@ Rotom Table currently uses a trust-based role picker, not password authenticatio
 - **Player** — player-facing view with player-visible maps, public/linked sheets, Pokédex, reference pages, and linked-character token control.
 - **Guest** — redirected to `/login`.
 
-Players choose or create a persistent player profile after Player Login. The selected profile's linked Pokémon/trainer sheets are the source of player-specific sheet editing and map-token control. Server routes also check the session role and selected profile for protected actions. See [docs/player-profiles.md](docs/player-profiles.md) for the full player profile flow. Treat this as a local/campaign-table workflow, not a hardened public authentication system.
+Players choose a GM-created persistent player profile after Player Login. The selected profile's linked Pokémon/trainer sheets are the source of player-specific sheet editing and map-token control. Server routes also check the session role and selected profile for protected actions. See [docs/player-profiles.md](docs/player-profiles.md) for the full player profile flow. Treat this as a local/campaign-table workflow, not a hardened public authentication system.
 
 
 ## Contributing, security, and notices

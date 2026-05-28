@@ -30,17 +30,20 @@ const {
   availableLinkOptions,
   loading,
   loadingLinkableCharacters,
+  creatingProfile,
   savingProfileLinks,
   lastError,
   lastNotice,
   loadProfiles,
   loadLinkableCharacters,
+  createProfile,
   selectProfile,
   linkCharacterToSelectedProfile,
   unlinkCharacterFromSelectedProfile,
 } = useGmPlayerProfileManagement()
 
 const linkCandidateKey = ref('')
+const newProfileDisplayName = ref('')
 const selectedProfileDetail = computed(() => buildPlayerProfileManagementDetail(
   selectedProfile.value,
   linkableCharacterOptions.value,
@@ -51,6 +54,10 @@ const selectedLinkCandidate = computed(() => (
     ? linkableCharacterOptionByKey(availableLinkOptions.value, linkCandidateKey.value)
     : null
 ))
+const trimmedNewProfileDisplayName = computed(() => newProfileDisplayName.value.trim())
+const canCreatePlayerProfile = computed(() => (
+  isGm.value && trimmedNewProfileDisplayName.value.length > 0 && !loading.value && !creatingProfile.value
+))
 
 const refreshProfiles = async () => {
   await Promise.allSettled([loadProfiles(), loadLinkableCharacters()])
@@ -59,6 +66,19 @@ const refreshProfiles = async () => {
 const refreshLinkableCharacters = async () => {
   try {
     await loadLinkableCharacters()
+  } catch {
+    // The composable stores a user-safe error message for this page.
+  }
+}
+
+const createNewProfile = async () => {
+  const displayName = trimmedNewProfileDisplayName.value
+  if (!displayName || !canCreatePlayerProfile.value) return
+
+  try {
+    await createProfile(displayName)
+    newProfileDisplayName.value = ''
+    linkCandidateKey.value = ''
   } catch {
     // The composable stores a user-safe error message for this page.
   }
@@ -158,6 +178,26 @@ onMounted(() => {
             Refresh
           </button>
         </div>
+
+        <form class="profile-create-form" aria-label="Create player profile" @submit.prevent="createNewProfile">
+          <label for="new-gm-player-profile-name">Create player profile</label>
+          <div class="profile-create-controls">
+            <input
+              id="new-gm-player-profile-name"
+              v-model="newProfileDisplayName"
+              type="text"
+              name="displayName"
+              maxlength="64"
+              autocomplete="nickname"
+              placeholder="Display name"
+              :disabled="creatingProfile"
+            >
+            <button type="submit" class="secondary-button" :disabled="!canCreatePlayerProfile">
+              Create
+            </button>
+          </div>
+          <p class="state-text">Only GMs can create player profiles.</p>
+        </form>
 
         <p v-if="loading" class="state-text">Loading player profiles…</p>
         <p v-else-if="profiles.length === 0" class="state-text">
@@ -425,6 +465,7 @@ h3 {
 .secondary-button,
 .profile-list-button,
 .linked-character-card,
+.profile-create-controls input,
 .link-character-controls select {
   border: 1px solid var(--rule-soft);
   background: var(--paper);
@@ -452,6 +493,8 @@ h3 {
 .profile-list-button:focus-visible,
 .linked-character-card:hover,
 .linked-character-card:focus-visible,
+.profile-create-controls input:hover,
+.profile-create-controls input:focus-visible,
 .link-character-controls select:hover,
 .link-character-controls select:focus-visible {
   border-color: var(--accent);
@@ -460,6 +503,7 @@ h3 {
 }
 
 .secondary-button:disabled,
+.profile-create-controls input:disabled,
 .link-character-controls select:disabled {
   cursor: not-allowed;
   opacity: 0.58;
@@ -529,6 +573,7 @@ h3 {
 }
 
 .linked-characters-heading,
+.profile-create-controls,
 .link-character-controls,
 .linked-character-row {
   display: flex;
@@ -537,6 +582,7 @@ h3 {
   justify-content: space-between;
 }
 
+.profile-create-form,
 .link-character-form {
   display: grid;
   gap: 0.45rem;
@@ -546,16 +592,22 @@ h3 {
   background: var(--paper-inset);
 }
 
+.profile-create-form label,
 .link-character-form label {
   color: var(--ink-bright);
   font-weight: 800;
 }
 
+.profile-create-controls input,
 .link-character-controls select {
   flex: 1 1 18rem;
   min-height: 2.35rem;
   padding: 0.5rem 0.65rem;
   font: inherit;
+}
+
+.profile-create-controls input {
+  min-width: 0;
 }
 
 .linked-character-card {
@@ -575,6 +627,7 @@ h3 {
   .panel-heading,
   .panel-heading--detail,
   .linked-characters-heading,
+  .profile-create-controls,
   .link-character-controls,
   .linked-character-row {
     display: grid;

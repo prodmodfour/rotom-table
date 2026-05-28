@@ -60,18 +60,29 @@ describe('player profile API routes', () => {
     })
   })
 
-  it('creates profiles for authenticated players from request bodies', async () => {
+  it('creates profiles for authenticated GMs from request bodies', async () => {
     const response = { profile: { id: 'profile_may00000', displayName: 'May' } }
     mocks.createPlayerProfileUseCase.mockReturnValue(response)
 
     await expect(invokeRoute(createRoute, {
-      role: 'player',
+      role: 'gm',
       body: { displayName: 'May' },
     })).resolves.toBe(response)
     expect(mocks.createPlayerProfileUseCase).toHaveBeenCalledWith({
       displayName: 'May',
-      role: 'player',
+      role: 'gm',
     })
+  })
+
+  it('blocks player profile creation before the use case for non-GM requests', async () => {
+    await expect(invokeRoute(createRoute, {
+      role: 'player',
+      body: { displayName: 'May' },
+    })).rejects.toMatchObject({
+      statusCode: 403,
+      statusMessage: 'GM login required',
+    })
+    expect(mocks.createPlayerProfileUseCase).not.toHaveBeenCalled()
   })
 
   it('maps profile use-case errors to API errors', async () => {
@@ -80,7 +91,7 @@ describe('player profile API routes', () => {
     })
 
     await expect(invokeRoute(createRoute, {
-      role: 'player',
+      role: 'gm',
       body: { displayName: '   ' },
     })).rejects.toMatchObject({
       statusCode: 400,

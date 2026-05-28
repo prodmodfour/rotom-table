@@ -1,5 +1,5 @@
 import { defineEventHandler } from 'h3'
-import { requireAuthRole } from '../../utils/auth'
+import { requireGm } from '../../utils/auth'
 import { readObjectBody } from '../../utils/http'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { createPlayerProfileUseCase } from '../../useCases/createPlayerProfile'
@@ -10,7 +10,7 @@ interface CreateBody {
 }
 
 export default defineEventHandler(async (event) => {
-  const role = requireAuthRole(event)
+  const role = requireGm(event)
   const body = await readObjectBody<CreateBody>(event)
 
   try {

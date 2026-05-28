@@ -4,8 +4,8 @@ This roadmap is retained as historical/maintenance context for the guarded live-
 
 The current product direction is profile-based play:
 
-- players choose or create a persistent profile after **Player Login**;
-- GMs link existing Pokémon/trainer sheets to profiles from `/players`;
+- players choose a GM-created persistent profile after **Player Login**;
+- GMs create profiles and link existing Pokémon/trainer sheets to them from `/players`;
 - players navigate to normal player-visible maps at `/maps/<slug>`;
 - linked character refs grant sheet editing and map-token control;
 - players can browse Pokédex and PTU reference pages without live-session identity;

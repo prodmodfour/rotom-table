@@ -6,7 +6,7 @@ import {
 } from '../utils/playerProfileStorage'
 import {
   PlayerProfileUseCaseError,
-  assertAuthenticatedProfileRequest,
+  assertGmProfileRequest,
   assertPlayerProfileRequestObject,
   hasOwn,
   messageFromError,
@@ -36,7 +36,7 @@ export const createPlayerProfileUseCase = (
   dependencies: CreatePlayerProfileDependencies = {},
 ): CreatePlayerProfileResult => {
   const request = assertPlayerProfileRequestObject(input, 'Player profile create input')
-  assertAuthenticatedProfileRequest(request.role)
+  assertGmProfileRequest(request.role)
 
   if (hasOwn(request, 'linkedCharacters')) {
     throw new PlayerProfileUseCaseError(

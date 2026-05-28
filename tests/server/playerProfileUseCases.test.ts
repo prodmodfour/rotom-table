@@ -66,7 +66,7 @@ describe('player profile use cases', () => {
     )
   })
 
-  it('creates a profile from a sanitized display name without linked characters', () => {
+  it('creates a profile from a sanitized display name without linked characters for GM requests', () => {
     const created = makeProfile('profile_ash-ketchum', 'Ash Ketchum')
     const createProfile = vi.fn((input: CreateStoredPlayerProfileInput) => {
       expect(input).toEqual({ displayName: 'Ash Ketchum' })
@@ -74,28 +74,33 @@ describe('player profile use cases', () => {
     })
 
     expect(createPlayerProfileUseCase({
-      role: 'player',
+      role: 'gm',
       displayName: '  Ash\n<Ketchum>\t ',
     }, { createProfile })).toEqual({ profile: created })
     expect(createProfile).toHaveBeenCalledOnce()
   })
 
-  it('rejects malformed profile creation requests with safe HTTP errors', () => {
+  it('rejects unauthorized or malformed profile creation requests before storage mutation', () => {
     const createProfile = vi.fn(() => makeProfile('profile_unused00', 'Unused'))
 
     expectUseCaseError(
-      () => createPlayerProfileUseCase({ role: 'player', displayName: '  ' }, { createProfile }),
+      () => createPlayerProfileUseCase({ role: 'player', displayName: 'Ash' }, { createProfile }),
+      403,
+      'GM login required',
+    )
+    expectUseCaseError(
+      () => createPlayerProfileUseCase({ role: 'gm', displayName: '  ' }, { createProfile }),
       400,
       'displayName is required',
     )
     expectUseCaseError(
-      () => createPlayerProfileUseCase({ role: 'player', displayName: 42 }, { createProfile }),
+      () => createPlayerProfileUseCase({ role: 'gm', displayName: 42 }, { createProfile }),
       400,
       'displayName must be a string',
     )
     expectUseCaseError(
       () => createPlayerProfileUseCase({
-        role: 'player',
+        role: 'gm',
         displayName: 'Ash',
         linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }],
       }, { createProfile }),
@@ -111,7 +116,7 @@ describe('player profile use cases', () => {
     })
 
     expectUseCaseError(
-      () => createPlayerProfileUseCase({ role: 'player', displayName: 'Ash' }, { createProfile }),
+      () => createPlayerProfileUseCase({ role: 'gm', displayName: 'Ash' }, { createProfile }),
       409,
       'Player profile profile_ash00000 already exists',
     )

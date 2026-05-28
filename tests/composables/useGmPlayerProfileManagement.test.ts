@@ -23,6 +23,13 @@ const mistyProfile: PlayerProfile = {
   linkedCharacters: [],
 }
 
+const brockProfile: PlayerProfile = {
+  schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
+  id: parsePlayerProfileId('profile_brock000'),
+  displayName: parsePlayerProfileDisplayName('Brock'),
+  linkedCharacters: [],
+}
+
 const makeApiClient = (handlers: Record<string, (body?: unknown) => unknown | Promise<unknown>>) => {
   const calls: { request: string; method: 'GET' | 'POST'; body?: unknown }[] = []
   const apiClient: ApiClient = {
@@ -86,6 +93,31 @@ describe('useGmPlayerProfileManagement', () => {
     expect(management.hasProfiles.value).toBe(false)
     expect(management.profileCount.value).toBe(0)
     expect(management.lastNotice.value).toBe('No player profiles found.')
+  })
+
+  it('creates a profile through the GM-only profile creation API and selects it', async () => {
+    const { apiClient, calls } = makeApiClient({
+      [PLAYER_PROFILE_API_PATHS.list]: () => ({ profiles: [ashProfile] }),
+      [PLAYER_PROFILE_API_PATHS.create]: (body) => {
+        expect(body).toEqual({ displayName: '  Brock  ' })
+        return { profile: brockProfile }
+      },
+    })
+    const management = useGmPlayerProfileManagement({ apiClient })
+
+    await management.loadProfiles()
+    await expect(management.createProfile('  Brock  ')).resolves.toEqual(brockProfile)
+
+    expect(calls).toEqual([
+      { request: PLAYER_PROFILE_API_PATHS.list, method: 'GET' },
+      { request: PLAYER_PROFILE_API_PATHS.create, method: 'POST', body: { displayName: '  Brock  ' } },
+    ])
+    expect(management.profiles.value).toEqual([ashProfile, brockProfile])
+    expect(management.selectedProfileId.value).toBe(brockProfile.id)
+    expect(management.selectedProfile.value).toEqual(brockProfile)
+    expect(management.lastNotice.value).toBe('Created player profile Brock.')
+    expect(management.lastError.value).toBeNull()
+    expect(management.creatingProfile.value).toBe(false)
   })
 
   it('clears a stale detail selection after profiles are reloaded', async () => {
