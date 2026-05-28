@@ -167,29 +167,6 @@ Rotom Table currently uses a trust-based role picker, not password authenticatio
 
 Players choose or create a persistent player profile after Player Login. The selected profile's linked Pokémon/trainer sheets are the source of player-specific sheet editing and map-token control. Server routes also check the session role and selected profile for protected actions. Treat this as a local/campaign-table workflow, not a hardened public authentication system.
 
-## Production notes
-
-This project is strongest as a local development/table tool because many workflows persist JSON directly into the repository tree. Several mutating API routes are guarded against production mode, so use `npm run dev` when you need browser-based editing, autosave, encounter generation, or filesystem-backed management.
-
-For a hosted deployment, decide which data should be static, which data should be persisted elsewhere, and whether to replace the trust-based role picker with real authentication.
-
-## Portfolio framing
-
-Rotom Table complements backend/platform repositories by showing a different set of engineering strengths: frontend/product complexity, UI state management, interactive graphics, typed domain modelling, data stewardship, and the maintenance habits required for a long-lived personal tool.
-
-## Troubleshooting
-
-**I am redirected to login.**  
-Choose GM or Player on `/login`. The chosen role is stored in the `rotom-role` cookie.
-
-**Browser edits are not visible immediately.**  
-Most app pages update through local state and realtime events. If you generated or edited files outside the browser, refresh the page or restart the dev server.
-
-**Write actions fail in production.**  
-Run the app with `npm run dev`. Production mode intentionally disables several filesystem-mutating endpoints.
-
-**Generated wild sheets do not show up.**  
-Check that generated JSON files landed under `data/sheets/`, usually `data/sheets/wild/...`, and refresh the `/sheets` page.
 
 ## Contributing, security, and notices
 
