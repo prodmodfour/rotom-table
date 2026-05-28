@@ -57,7 +57,6 @@ Supported helper scripts:
 | `npm run dev` | Nuxt default local dev binding | Local-first development; live session hosting disabled. |
 | `npm run dev:session:lan` | `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000` | Trusted same-Wi-Fi/LAN sessions. |
 | `npm run dev:session:tunnel` | `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000` | Named Cloudflare Tunnel sessions through a stable hostname. |
-| `npm run smoke:session:multi-tab` | Opens/prints local browser URLs and runs focused checks | Local tab smoke only; not a LAN/named-tunnel replacement. |
 
 Both session-host helpers support `--port <port>` and `--print-only`. They set the flag for the Nuxt child process only and do not write `.env` files, mint credentials, start `cloudflared`, or commit runtime data.
 

@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -8,160 +8,61 @@ const testDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
-const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, relativePath))
 
-describe('live session product readiness review', () => {
-  const review = readText('docs/live-session-product-readiness-review.md')
+const collectMarkdown = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = resolve(directory, entry.name)
 
-  it('summarizes the product readiness outcome and locked architecture', () => {
-    expect(review).toContain('# Live session product readiness review')
-    expect(review).toContain('Last checked: 2026-05-26')
-    expect(review).toContain('Current product readiness: ready for trusted-table live-session rehearsal and play within the documented limits')
-    expect(review).toContain('Live sessions are GM-hosted table sessions')
-    expect(review).toContain('LAN / same-Wi-Fi hosting is the primary path')
-    expect(review).toContain('named Cloudflare Tunnel with a stable hostname')
-    expect(review).toContain('`ROTOM_ENABLE_SESSION_HOST=1`')
-    expect(review).toContain('`WebSocket /api/sessions/socket`')
-    expect(review).toContain('Commands carry `opId`, `baseRevision`')
-    expect(review).toContain('Identity is session-local')
-    expect(review).toContain('Persistence stays local-first')
-    expect(review).toContain('No database, hosted persistence service, Redis, Postgres, Durable Objects, or multi-tenant cloud layer is required')
-    expect(review).toContain('Plain `/maps/<slug>` and sheet routes remain local-first')
-    expect(review).toContain('session-mode clients do not gain authority by autosaving whole maps')
+    if (entry.isDirectory()) return collectMarkdown(path)
+
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : []
   })
 
-  it('captures the real table flow from host startup through reconnect recovery', () => {
-    for (const phrase of [
-      'The GM starts Rotom Table with session hosting enabled',
-      '**Attach current map to live session**',
-      'Players join from the lobby with display names',
-      '**Assign map tokens**',
-      '**Assign control**',
-      '**Visible session maps**',
-      '`/maps/<map-slug>?session=1`',
-      'Player movement and table actions are sent as session commands',
-      'broadcasts same-session patches',
-      'receive filtered snapshots',
-      'private runtime data',
-    ]) {
-      expect(review).toContain(phrase)
-    }
+const docsMarkdown = (): string[] => [
+  'README.md',
+  ...collectMarkdown(resolve(repoRoot, 'docs')).map((path) => relative(repoRoot, path)),
+]
+
+describe('profile-based play documentation boundaries', () => {
+  it('documents current player-profile play and legacy live-session isolation', () => {
+    const profileGuide = readText('docs/player-profiles.md')
+
+    expect(profileGuide).toContain('persistent player profiles')
+    expect(profileGuide).toContain('players normally open the relevant player-visible map')
+    expect(profileGuide).toContain('Pokédex')
+    expect(profileGuide).toContain('PTU reference pages')
+    expect(profileGuide).toContain('Players do not need `/sessions`')
+    expect(profileGuide).toContain('share link')
+    expect(profileGuide).toContain('per-map invite')
+
+    expect(readText('README.md')).toContain('docs/player-profiles.md')
+    expect(readText('docs/README.md')).toContain('player-profiles.md')
+    expect(readText('docs/live-session-product-readiness-review.md')).toContain('no longer the normal Rotom Table play guide')
+    expect(readText('docs/live-session-lobby.md')).toContain('It does not describe normal map play')
   })
 
-  it('links current product documentation and existing validation evidence', () => {
-    const expectedDocs = [
-      'docs/live-session-roadmap.md',
-      'docs/live-session-glossary.md',
-      'docs/live-session-map-attachment.md',
-      'docs/live-session-lobby.md',
-      'docs/live-session-client-integration.md',
-      'docs/live-session-protocol.md',
-      'docs/live-session-socket-protocol.md',
-      'docs/live-session-table-action-commands.md',
-      'docs/live-session-validation-matrix.md',
-      'docs/live-session-implementation-maintenance.md',
-      'docs/live-session-readiness-summary.md',
-      'docs/live-session-real-flow-smoke.md',
-      'docs/live-session-deployment-smoke-checklist.md',
-      'docs/live-session-concurrency-benchmark-notes.md',
-      'docs/live-session-local-mode-maintenance.md',
-      'docs/live-session-persistence-recovery-maintenance.md',
-      'docs/live-session-security-secret-hygiene-readiness.md',
-      'docs/live-session-lan-hosting.md',
-      'docs/live-session-cloudflare-tunnel-hosting.md',
+  it('keeps obsolete live-session-as-normal-play instructions out of docs', () => {
+    const matches: string[] = []
+    const forbidden = [
+      /\?session=1/,
+      /Visible session maps/,
+      /Assign map tokens/,
+      /Assign control/,
+      /ready for trusted-table live-session rehearsal and play/i,
+      /live-session map attachment doc/i,
     ]
 
-    for (const path of expectedDocs) {
-      expect(review).toContain(path.replace('docs/', ''))
-      expect(exists(path)).toBe(true)
+    for (const path of docsMarkdown()) {
+      const text = readText(path)
+      const lines = text.split('\n')
+
+      lines.forEach((line, index) => {
+        for (const pattern of forbidden) {
+          if (pattern.test(line)) matches.push(`${path}:${index + 1}: ${line}`)
+        }
+      })
     }
 
-    const expectedTests = [
-      'tests/server/sessionAcceptedPlayerMoveFlow.test.ts',
-      'tests/server/sessionUnauthorizedPlayerControlFlow.test.ts',
-      'tests/composables/sessionLobbyMapFlowIntegration.test.ts',
-      'tests/composables/localFirstEditingNoRegression.test.ts',
-      'tests/scripts/sessionRealFlowSmoke.test.ts',
-      'tests/docs/productTerminologyGuard.test.ts',
-    ]
-
-    for (const path of expectedTests) {
-      expect(review).toContain(path)
-      expect(exists(path)).toBe(true)
-    }
-  })
-
-  it('records the current product verification checkpoint', () => {
-    for (const phrase of [
-      '## Current verification checkpoint',
-      'session-host runtime gate enabled for a loopback dev server',
-      'ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3100',
-      'npm run smoke:session:real-flow -- --base-url http://127.0.0.1:3100 --timeout-ms 12000',
-      'npm test -- tests/docs/productTerminologyGuard.test.ts',
-      'product terminology guard passed for tracked filenames and content',
-      'stale external-process and review-management wording',
-      'start, attaching a saved smoke map, joining Player A and Player B',
-      'assigning one map token',
-      'authenticating three session sockets',
-      "accepting Player A's `moveToken` command",
-      'fanning out same-session patches',
-      'reconnecting Player B with a filtered snapshot',
-      'removing generated smoke data',
-      'repository scan found no old external-process or review-workflow statements',
-    ]) {
-      expect(review).toContain(phrase)
-    }
-  })
-
-  it('records the readiness confirmation for the current source revision', () => {
-    for (const phrase of [
-      '## Readiness confirmation',
-      'live-session readiness criteria are satisfied',
-      'Product vocabulary and repository-hygiene scans pass for tracked filenames and content',
-      'Typecheck, automated tests, and the production build pass',
-      'server-owned attach/assign/session-command flow',
-      'No product-level blockers are recorded for the GM start → attach map → join → assign token → session command → reconnect snapshot flow',
-      'Local-first map and sheet editing remains the default outside explicit session mode',
-    ]) {
-      expect(review).toContain(phrase)
-    }
-  })
-
-  it('keeps limitations and the operator checklist visible', () => {
-    for (const phrase of [
-      'Live sessions assume trusted table participants',
-      'They are not hardened public authentication',
-      'Join codes and GM keys are session-local secrets',
-      'Presence, connected peers, and recent duplicate-`opId` memory are process-local',
-      'Event replay is unavailable for reconnect',
-      'No WAN load/soak benchmark is recorded',
-      'Quick Tunnel remains a temporary development smoke-test option',
-      'must stay out of committed files',
-      'Confirm the session-host safety banner',
-      'Join from at least one real player device',
-      'Move one assigned token',
-      'Keep local-first editing expectations clear',
-    ]) {
-      expect(review).toContain(phrase)
-    }
-
-    expect(review).not.toContain('Quick Tunnel is the supported campaign')
-    expect(review).not.toContain('Postgres is required')
-    expect(review).not.toContain('gmKey=')
-    expect(review).not.toContain('joinCode=')
-  })
-
-  it('is linked from primary product and developer entry points', () => {
-    for (const path of [
-      'README.md',
-      'docs/README.md',
-      'docs/live-session-readiness-summary.md',
-      'docs/live-session-implementation-maintenance.md',
-      'docs/live-session-validation-matrix.md',
-    ]) {
-      expect(readText(path), `${path} should link the product readiness review`).toContain(
-        'live-session-product-readiness-review.md',
-      )
-    }
+    expect(matches).toEqual([])
   })
 })

@@ -4,7 +4,7 @@ import { mapChannel, sheetChannel } from '#shared/realtime'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useEditableSheet } from '~/composables/useEditableSheet'
 import { MAP_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
-import { mapEditorPath, mapEditorSessionPath, mapLibraryPath } from '~/utils/mapRoutes'
+import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { sheetEditorPath, sheetLibraryPath } from '~/utils/sheetRoutes'
 import type { TabletopMap } from '~/types/map'
 
@@ -156,7 +156,7 @@ describe('local-first editing no-regression boundaries', () => {
     )
   })
 
-  it('keeps non-session navigation separate from explicit session-mode map links', () => {
+  it('keeps normal map and sheet navigation free of session query links', () => {
     expect(mapLibraryPath()).toBe('/maps')
     expect(mapEditorPath('table map')).toBe('/maps/table%20map')
     expect(sheetLibraryPath()).toBe('/sheets')
@@ -165,6 +165,5 @@ describe('local-first editing no-regression boundaries', () => {
 
     expect(mapEditorPath('table map')).not.toContain('?session=1')
     expect(sheetEditorPath('pokemon', 'pika chu')).not.toContain('?session=1')
-    expect(mapEditorSessionPath('table map')).toBe('/maps/table%20map?session=1')
   })
 })

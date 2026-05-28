@@ -5,6 +5,12 @@ import {
   recordMoveUsageUseCase,
 } from '../../server/useCases/recordMoveUsage'
 import { MAPS_ROOT } from '../../server/utils/mapPaths'
+import {
+  PLAYER_PROFILE_SCHEMA_VERSION,
+  type PlayerProfile,
+  type PlayerProfileDisplayName,
+  type PlayerProfileId,
+} from '../../shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
 import type { SheetKind } from '#shared/sheets'
 
@@ -33,10 +39,16 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   ...overrides,
 })
 
+const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
+  schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
+  id: 'profile_pika0000' as PlayerProfileId,
+  displayName: 'Pika Player' as PlayerProfileDisplayName,
+  linkedCharacters,
+})
+
 const createDeps = (options: {
   map?: TabletopMap
   sheet?: Record<string, unknown>
-  canControlSheet?: (kind: SheetKind, slug: string) => boolean
   now?: number
 } = {}) => {
   const mapPath = join(MAPS_ROOT, 'arena.json')
@@ -58,7 +70,6 @@ const createDeps = (options: {
     writeSheet: vi.fn((path: string, persistedSheet: Record<string, unknown>) => {
       sheetWrites.push({ path, sheet: persistedSheet })
     }),
-    canControlSheet: vi.fn(options.canControlSheet ?? (() => true)),
     now: vi.fn(() => options.now ?? 1000),
     relativePath: vi.fn((path: string) => path.replace('/repo/', '')),
   }
@@ -207,14 +218,13 @@ describe('record move usage use case', () => {
     expect(sheetWrites).toEqual([])
   })
 
-  it('allows players to record usage only for accessible sheets on visible maps', () => {
+  it('allows players to record usage only for linked profile tokens on visible maps', () => {
     const { deps, mapWrites } = createDeps({
       sheet: {
         slug: 'pika',
         nickname: 'Pika',
         movelist: [{ name: 'Custom Scene Move', frequency: 'Scene' }],
       },
-      canControlSheet: () => false,
     })
 
     expect(() => recordMoveUsageUseCase({
@@ -222,8 +232,19 @@ describe('record move usage use case', () => {
       slug: 'arena',
       placementId: 'token-1',
       moveName: 'Custom Scene Move',
-    }, deps)).toThrow('Sheet is not marked as player accessible')
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'other' }]),
+    }, deps)).toThrow('Token is not linked to selected player profile')
     expect(mapWrites).toEqual([])
+
+    const result = recordMoveUsageUseCase({
+      role: 'player',
+      slug: 'arena',
+      placementId: 'token-1',
+      moveName: 'Custom Scene Move',
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pika' }]),
+    }, deps)
+    expect(result.usage.tracking).toBe('map')
+    expect(mapWrites).toHaveLength(1)
   })
 
   it('does not write for untracked At-Will moves', () => {

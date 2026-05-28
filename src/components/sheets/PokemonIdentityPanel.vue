@@ -21,7 +21,8 @@ const props = defineProps<{
   natureOptions: readonly string[]
   naturePlusDisplay?: string
   natureMinusDisplay?: string
-  isGm: boolean
+  canEditSheet: boolean
+  canManagePlayerAccess: boolean
 }>()
 
 const pokedexPath = computed(() => pokedexEntryPathForSpecies(props.sheet.species))
@@ -85,7 +86,7 @@ const loyaltyModel = computed({
               :readonly="levelIsExperienceDerived"
             />
           </span>
-          <label v-if="isGm" class="badge player-toggle" :class="{ player: sheet.player }" title="Player">
+          <label v-if="canManagePlayerAccess" class="badge player-toggle" :class="{ player: sheet.player }" title="Player">
             <input v-model="sheet.player" type="checkbox" /> Player
           </label>
           <span v-else-if="sheet.player" class="badge player-toggle player">Player</span>
@@ -121,7 +122,7 @@ const loyaltyModel = computed({
             />
           </dd>
         </div>
-        <div v-if="isGm" title="GM-only PTU Loyalty rank">
+        <div v-if="canEditSheet" title="PTU Loyalty rank">
           <dt>Loyalty</dt>
           <dd>
             <EditableCell

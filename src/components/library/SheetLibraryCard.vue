@@ -1,17 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import LibraryCardBadge from '~/components/library/LibraryCardBadge.vue'
 import LibraryCardMedia from '~/components/library/LibraryCardMedia.vue'
 import LibraryCardMetaList from '~/components/library/LibraryCardMetaList.vue'
 import LibraryCardShell from '~/components/library/LibraryCardShell.vue'
 import LibraryCardText from '~/components/library/LibraryCardText.vue'
-import type { SheetLibraryItem } from '~/utils/sheetLibrary'
+import { sheetLibraryAccessBadge, type SheetLibraryItem } from '~/utils/sheetLibrary'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
 
-defineProps<{
+const props = defineProps<{
   item: SheetLibraryItem
   canDrag: boolean
   isDraggingSelf: boolean
 }>()
+
+const accessBadge = computed(() => sheetLibraryAccessBadge(props.item))
 
 const emit = defineEmits<{
   contextmenu: [event: MouseEvent, item: SheetLibraryItem]
@@ -57,6 +60,14 @@ const emit = defineEmits<{
             />
           </li>
         </LibraryCardMetaList>
+        <LibraryCardBadge
+          v-if="accessBadge"
+          :variant="accessBadge.variant"
+          spacing="stacked"
+          :title="accessBadge.title"
+        >
+          {{ accessBadge.label }}
+        </LibraryCardBadge>
       </LibraryCardText>
     </template>
 
@@ -79,6 +90,14 @@ const emit = defineEmits<{
           <li v-if="item.sheet.sex">{{ item.sheet.sex }}</li>
           <li v-if="item.sheet.playedBy">PB: {{ item.sheet.playedBy }}</li>
         </LibraryCardMetaList>
+        <LibraryCardBadge
+          v-if="accessBadge"
+          :variant="accessBadge.variant"
+          spacing="stacked"
+          :title="accessBadge.title"
+        >
+          {{ accessBadge.label }}
+        </LibraryCardBadge>
       </LibraryCardText>
     </template>
   </LibraryCardShell>

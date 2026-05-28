@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join as joinPath } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -34,6 +34,8 @@ import {
   parseSessionRevision,
 } from '#shared/sessionRevisions'
 import {
+  createAuthoritativeSessionMapState,
+  createAuthoritativeSessionState,
   getSessionMapState,
   type AuthoritativeSessionState,
 } from '#shared/sessionState'
@@ -47,7 +49,6 @@ import {
   SESSION_HOST_ENABLE_ENV,
   SESSION_HOST_ENABLE_VALUE,
 } from '~~/server/utils/sessionHosting'
-import { readMapFile } from '~~/server/utils/mapStorage'
 import {
   SESSION_SNAPSHOT_TEMP_FILE_PREFIX,
   writeSessionSnapshot,
@@ -63,7 +64,6 @@ import {
   type SessionSocketPeerLike,
 } from '~~/server/utils/sessionWebSocketServer'
 import { createInMemorySessionSocketPeerRegistry } from '~~/server/utils/sessionWebSocketFanout'
-import { attachSessionMapUseCase } from '~~/server/useCases/attachSessionMap'
 import { joinPlayerSessionUseCase } from '~~/server/useCases/joinPlayerSession'
 import { startGmSessionUseCase } from '~~/server/useCases/startGmSession'
 
@@ -85,12 +85,12 @@ const mapSlug = 'visible-unassigned-player-map'
 const tokenId = 'token-pidgey'
 
 const startedAt = '2026-05-26T18:00:00.000Z'
-const attachedAt = '2026-05-26T18:01:00.000Z'
+const sessionMapSeededAt = '2026-05-26T18:01:00.000Z'
 const joinedAt = '2026-05-26T18:02:00.000Z'
 const otherStartedAt = '2026-05-26T18:03:00.000Z'
 const rejectedAt = '2026-05-26T18:04:00.000Z'
 
-const revisionAfterAttach = parseSessionRevision(1)
+const revisionAfterSessionMapSeed = parseSessionRevision(1)
 const revisionAfterJoin = parseSessionRevision(2)
 
 const tokenResource = {
@@ -274,11 +274,8 @@ afterEach(() => {
 })
 
 describe('unauthorized player control live session flow', () => {
-  it('rejects movement from a player who can see the attached map but is not assigned the token', () => {
-    const mapRoot = tempRoot()
+  it('rejects movement from a player who can see the session map but is not assigned the token', () => {
     const snapshotRoot = joinPath(tempRoot(), 'sessions')
-    const mapPath = joinPath(mapRoot, `${mapSlug}.json`)
-    writeFileSync(mapPath, JSON.stringify(createPersistedMap(), null, 2), 'utf8')
 
     const store = createInMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>()
     const snapshotWrites: AuthoritativeSessionState<TabletopMapV2>[] = []
@@ -296,25 +293,29 @@ describe('unauthorized player control live session flow', () => {
     })
     expect(start.session.revision).toBe(0)
 
-    const attach = attachSessionMapUseCase<TabletopMapV2>({
+    const sessionMapState = createAuthoritativeSessionState<TabletopMapV2>({
       sessionId,
-      gmKey,
-      gmClientId,
-      mapSlug,
-    }, {
-      env: enabledEnv,
-      store,
-      clock: () => attachedAt,
-      findMapPath: (requestedSlug) => requestedSlug === mapSlug ? mapPath : null,
-      readMap: readMapFile,
-      writeSnapshot,
+      revision: revisionAfterSessionMapSeed,
+      selectedMapSlug: mapSlug,
+      maps: [
+        createAuthoritativeSessionMapState<TabletopMapV2>({
+          mapSlug,
+          revision: INITIAL_MAP_REVISION,
+          playerVisibleByDefault: true,
+          document: createPersistedMap(),
+        }),
+      ],
+      connectedClients: start.state.connectedClients,
+      players: start.state.players,
+      assignments: start.state.assignments,
+      createdAt: start.state.createdAt,
+      updatedAt: sessionMapSeededAt,
     })
-    expect(attach.session.revision).toBe(revisionAfterAttach)
-    expect(attach.map).toEqual({
-      mapSlug,
-      revision: INITIAL_MAP_REVISION,
-      selected: true,
-    })
+    expect(store.setState(sessionId, sessionMapState, {
+      revision: revisionAfterSessionMapSeed,
+      updatedAt: sessionMapSeededAt,
+    })?.revision).toBe(revisionAfterSessionMapSeed)
+    writeSnapshot(sessionMapState, { clock: () => sessionMapSeededAt })
 
     const join = joinPlayerSessionUseCase<TabletopMapV2>({ joinCode, displayName: playerDisplayName }, {
       env: enabledEnv,

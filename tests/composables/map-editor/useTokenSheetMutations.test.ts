@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { parsePlayerProfileId } from '#shared/playerProfiles'
 import { describe, expect, it, vi } from 'vitest'
 import {
   useTokenSheetMutations,
@@ -34,6 +35,7 @@ const pokemon = (): CharacterSheet => ({
 
 const makeMutations = (options: {
   canControl?: boolean
+  profileId?: ReturnType<typeof parsePlayerProfileId> | null
   saveSheet?: (request: SavePlacedSheetRequest) => Promise<void>
   logError?: (label: string, error: unknown) => void
 } = {}) => {
@@ -54,6 +56,7 @@ const makeMutations = (options: {
       map,
       sheetLookup: computed(() => ({ pokemon: pokemonSheets, trainer: trainerSheets })),
       canControlPlacement: () => options.canControl ?? true,
+      playerProfileId: ref(options.profileId),
       getClientId: () => 'client-1',
       saveSheet,
       logError: options.logError,
@@ -62,8 +65,10 @@ const makeMutations = (options: {
 }
 
 describe('useTokenSheetMutations', () => {
-  it('optimistically updates a placed sheet and persists a folder-free payload', async () => {
-    const { mutations, pokemonSheets, saved } = makeMutations()
+  it('optimistically updates a placed sheet and persists a folder-free profile-aware payload', async () => {
+    const { mutations, pokemonSheets, saved } = makeMutations({
+      profileId: parsePlayerProfileId('profile_ash00000'),
+    })
 
     const ok = await mutations.updatePlacedSheet(
       'token-1',
@@ -78,6 +83,7 @@ describe('useTokenSheetMutations', () => {
       kind: 'pokemon',
       slug: 'bolt',
       clientId: 'client-1',
+      profileId: 'profile_ash00000',
     })
     expect(saved[0].sheet).not.toHaveProperty('folder')
     expect(saved[0].sheet).toMatchObject({ slug: 'bolt' })
@@ -103,7 +109,11 @@ describe('useTokenSheetMutations', () => {
     await mutations.modifyConditions({ id: 'token-1', conditions: ['Burned'] })
 
     expect(pokemonSheets.get('bolt')?.combat?.conditions).toEqual([])
+    expect(mutations.lastError.value).toBe('save failed')
     expect(logError).toHaveBeenCalledWith('modifyConditions', failure)
+
+    mutations.clearError()
+    expect(mutations.lastError.value).toBeNull()
   })
 
   it('honors token control by default but allows move automation to update any target', async () => {

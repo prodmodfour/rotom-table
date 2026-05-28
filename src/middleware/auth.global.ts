@@ -1,19 +1,22 @@
-import { HOME_PATH, LOGIN_PATH } from '~/utils/appRoutes'
-import { DEFAULT_LOGIN_REDIRECT, isPlayerBlockedRedirectPath } from '~/utils/loginRedirect'
+import { playerProfileSelectionStorage } from '~/utils/playerProfileSelectionStorage'
+import {
+  resolveProfileAwareRouteGuard,
+} from '~/utils/playerProfileRouteGuards'
 
 export default defineNuxtRouteMiddleware((to) => {
-  if (to.path === LOGIN_PATH) return
-
   const { role, isPlayer } = useAuth()
+  const hasSelectedPlayerProfile = import.meta.client && isPlayer.value
+    ? playerProfileSelectionStorage.load() !== null
+    : null
 
-  if (!role.value) {
-    return navigateTo({
-      path: LOGIN_PATH,
-      query: { redirect: to.fullPath && to.fullPath !== HOME_PATH ? to.fullPath : DEFAULT_LOGIN_REDIRECT },
-    })
-  }
+  const decision = resolveProfileAwareRouteGuard({
+    path: to.path,
+    fullPath: to.fullPath,
+    hasRole: role.value !== null,
+    isPlayer: isPlayer.value,
+    hasSelectedPlayerProfile,
+  })
 
-  if (isPlayer.value && isPlayerBlockedRedirectPath(to.path)) {
-    return navigateTo(DEFAULT_LOGIN_REDIRECT)
-  }
+  if (decision.type === 'login') return navigateTo(decision.location)
+  if (decision.type === 'redirect') return navigateTo(decision.location)
 })

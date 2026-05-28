@@ -3,6 +3,7 @@ import {
   API_EVENTS_PATH,
   ENCOUNTER_API_PATHS,
   MAP_API_PATHS,
+  PLAYER_PROFILE_API_PATHS,
   POKEDEX_API_PATHS,
   SESSION_API_PATHS,
   SHEET_API_PATHS,
@@ -22,8 +23,15 @@ describe('API route constants', () => {
       manage: '/api/sessions/manage',
       playerState: '/api/sessions/player-state',
       assignments: '/api/sessions/assignments',
-      attachMap: '/api/sessions/maps/attach',
       socket: '/api/sessions/socket',
+    })
+  })
+
+  it('exposes persistent player profile API paths', () => {
+    expect(PLAYER_PROFILE_API_PATHS).toEqual({
+      list: '/api/player-profiles/list',
+      create: '/api/player-profiles/create',
+      update: '/api/player-profiles/update',
     })
   })
 
@@ -34,6 +42,11 @@ describe('API route constants', () => {
       load: '/api/maps/load',
       save: '/api/maps/save',
       useMove: '/api/maps/use-move',
+      moveToken: '/api/maps/tokens/move',
+      turnToken: '/api/maps/tokens/turn',
+      useManeuver: '/api/maps/tokens/use-maneuver',
+      useAbility: '/api/maps/tokens/use-ability',
+      useOrder: '/api/maps/tokens/use-order',
       create: '/api/maps/create',
       createFolder: '/api/maps/create-folder',
       move: '/api/maps/move',

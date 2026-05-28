@@ -2,8 +2,10 @@ import { existsSync, renameSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import type { AuthRole } from '#shared/auth'
+import type { PlayerProfile } from '#shared/playerProfiles'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { SheetKind } from '#shared/sheets'
+import { playerProfileCanAccessSheet } from '../policies/playerProfilePolicy'
 import { relativeToProjectRoot } from '../utils/fsPaths'
 import {
   allocateSheetSlug,
@@ -25,6 +27,7 @@ export interface SaveSheetInput {
   slug: string
   sheet: Record<string, unknown>
   clientId?: string
+  playerProfile?: PlayerProfile | null
 }
 
 export interface SaveSheetDependencies {
@@ -53,7 +56,15 @@ interface SheetSaveTarget {
   path: string
 }
 
+const CLIENT_ONLY_SHEET_ACCESS_FIELDS = ['sessionPlayerAccessible', 'playerProfileAccessible'] as const
+
 const trimmedString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
+
+const stripClientOnlySheetAccessFields = (sheet: Record<string, unknown>): Record<string, unknown> => {
+  const payload = { ...sheet }
+  for (const field of CLIENT_ONLY_SHEET_ACCESS_FIELDS) delete payload[field]
+  return payload
+}
 
 const resolveSheetSaveTarget = (
   input: Pick<SaveSheetInput, 'kind' | 'slug' | 'sheet'>,
@@ -109,24 +120,37 @@ export const saveSheetUseCase = (
   const path = findSheetPath(input.kind, input.slug)
   if (!path) throw new SaveSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
 
-  if (input.role === 'player' && !isPlayerAccessible(input.kind, input.slug)) {
-    throw new SaveSheetUseCaseError(403, 'Sheet is not marked as player accessible')
+  const playerPublicAccess = input.role === 'player'
+    ? isPlayerAccessible(input.kind, input.slug)
+    : false
+  const playerLinkedProfileAccess = input.role === 'player'
+    ? playerProfileCanAccessSheet(input.playerProfile, input.kind, input.slug)
+    : false
+
+  if (input.role === 'player' && !playerPublicAccess && !playerLinkedProfileAccess) {
+    throw new SaveSheetUseCaseError(
+      403,
+      'Sheet is not marked as player accessible or linked to the selected player profile',
+    )
   }
 
   const existingSheet = readExistingSheet(path)
-  const target = resolveSheetSaveTarget(input, path, {
-    findSlugPath,
-    pathExists,
-    renameSheetPath,
-    allocateSlug,
-  })
+  const canRenameSheetResource = input.role === 'gm' || playerPublicAccess
+  const target = canRenameSheetResource
+    ? resolveSheetSaveTarget(input, path, {
+        findSlugPath,
+        pathExists,
+        renameSheetPath,
+        allocateSlug,
+      })
+    : { slug: input.slug, path }
 
-  const sheet = stripDerivedFields(input.sheet)
+  const sheet = stripClientOnlySheetAccessFields(stripDerivedFields(input.sheet))
   if (!Object.prototype.hasOwnProperty.call(input.sheet, 'moveUsage') && existingSheet.moveUsage !== undefined) {
     sheet.moveUsage = existingSheet.moveUsage
   }
   sheet.slug = target.slug
-  if (input.role === 'player') sheet.player = true
+  if (input.role === 'player') sheet.player = playerPublicAccess || existingSheet.player === true
   writeSheet(target.path, sheet)
 
   const data = { kind: input.kind, slug: target.slug, sheet }

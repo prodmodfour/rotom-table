@@ -37,7 +37,7 @@ This glossary defines the vocabulary used by the GM-hosted live session roadmap,
 | Term | Meaning |
 | --- | --- |
 | Authoritative state | The server-owned session state that determines the real current map/session values during session mode. |
-| Session map state | The authoritative map-related state for a session, including selected map, tokens, terrain, hazards, field effects, initiative, and revision data as those features land. |
+| Legacy session map state | The authoritative map-related state for a session, including selected map, tokens, terrain, hazards, field effects, initiative, and revision data as those features land. |
 | Snapshot | JSON representation of the latest authoritative session state, written locally for recovery and reconnect fallback. |
 | Atomic snapshot write | Persistence strategy that writes a temporary file and renames it into place so partial snapshot writes are avoided. |
 | Event log | Optional append-only JSON-lines record of accepted commands/events. It supports audit/replay where available but is not a cloud database. |

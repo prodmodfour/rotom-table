@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import type { MapEditorMode } from '#shared/mapEditor'
 import type { LayerVisibility } from '~/types/map'
@@ -41,8 +41,15 @@ export const useMapEditorUiState = ({
   const sheetsMenuOpen = computed(() => activeMapMenu.value === 'sheets')
   const initiativeMenuOpen = computed(() => activeMapMenu.value === 'initiative')
 
-  const openMapMenu = (menu: MapEditorMenu) => {
+  const canOpenMapMenu = (menu: MapEditorMenu): boolean => {
+    if (menu === 'sheets') return canEditMap.value
+    return true
+  }
+
+  const openMapMenu = (menu: MapEditorMenu): boolean => {
+    if (!canOpenMapMenu(menu)) return false
     activeMapMenu.value = menu
+    return true
   }
 
   const closeMapMenu = () => {
@@ -53,8 +60,10 @@ export const useMapEditorUiState = ({
     if (activeMapMenu.value === menu) closeMapMenu()
   }
 
-  const toggleMapMenu = (menu: MapEditorMenu) => {
+  const toggleMapMenu = (menu: MapEditorMenu): boolean => {
+    if (!canOpenMapMenu(menu)) return false
     activeMapMenu.value = activeMapMenu.value === menu ? null : menu
+    return true
   }
 
   const openFieldEffectsMenu = () => openMapMenu('fieldEffects')
@@ -84,6 +93,11 @@ export const useMapEditorUiState = ({
   const setLayerVisibility = (layer: MapLayerVisibilityKey, value: boolean) => {
     layerVisibility.value[layer] = value
   }
+
+  watch(() => canEditMap.value, (nextCanEditMap) => {
+    if (nextCanEditMap) return
+    if (activeMapMenu.value === 'sheets') closeMapMenu()
+  })
 
   const handleBuildShortcut = (event: KeyboardEvent) => {
     if (!canEditMap.value || !isCtrlLetter(event, 'b')) return
@@ -156,6 +170,7 @@ export const useMapEditorUiState = ({
     initiativeMenuOpen,
     layerVisibility,
     layerOptions: MAP_LAYER_OPTIONS,
+    canOpenMapMenu,
     openMapMenu,
     closeMapMenu,
     toggleMapMenu,

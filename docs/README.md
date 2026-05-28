@@ -6,35 +6,33 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 
 - [Review guide](review-guide.md) — what to inspect first, key routes, source areas, scripts, and production caveats.
 - [Architecture](architecture.md) — high-level Nuxt/Nitro/local-first architecture.
-- [Data model](data-model.md) — maps, sheets, trainers, encounter tables, app-owned PTU reference content, generated sheets, and local data hygiene.
+- [Data model](data-model.md) — maps, sheets, trainers, player profiles, encounter tables, app-owned PTU reference content, generated sheets, and local data hygiene.
+- [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
 - [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.
 - [Map rendering performance roadmap](map-rendering-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
-- [Live session roadmap](live-session-roadmap.md) — locked GM-hosted live session scope, lifecycle, concurrency model, roadmap phases, and non-goals.
+- [Live session roadmap](live-session-roadmap.md) — legacy GM-hosted live session scope, lifecycle, concurrency model, roadmap phases, and non-goals; not the normal profile-based play path.
 - [Live session glossary](live-session-glossary.md) — shared vocabulary for session identity, commands, revisions, session socket flow, persistence, and safety boundaries.
-- [Live session validation matrix](live-session-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for live-session implementation areas.
+- [Live session validation matrix](live-session-validation-matrix.md) — current profile-play validation areas plus isolated legacy session maintenance checks.
 - [Live session protocol](live-session-protocol.md) — shared identity, command envelope, result, session socket message, ack/reject, duplicate, and reconnect contracts.
 - [Live session socket protocol](live-session-socket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
 - [Live session table action commands](live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
-- [Live session client integration](live-session-client-integration.md) — local mode versus explicit session mode, optimistic UX, disconnect recovery, and conflict/retry guidance.
-- [Live session map attachment flow](live-session-map-attachment.md) — GM flow for attaching saved maps to server-owned live session state before players open session maps.
-- [live session lobby and manual QA](live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
+- [Live session client integration](live-session-client-integration.md) — legacy live-session client boundary notes; normal play uses player profiles on `/maps/<slug>` and old session-map client helpers have been removed.
+- [live session lobby and manual QA](live-session-lobby.md) — direct-only legacy session identity/socket lobby boundaries and two-browser smoke checklist; not normal profile-based play.
 - [live session host runtime scripts](live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [Live session public exposure checks](live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [Live session LAN hosting runbook](live-session-lan-hosting.md) — same-Wi-Fi/LAN setup commands, IP discovery, player join URLs, smoke checks, and troubleshooting.
 - [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) — stable-hostname remote setup, session socket considerations, safety warnings, and rollback steps.
 - [Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
-- [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) — LAN and named-tunnel smoke steps for two players, reconnect, token movement, initiative, conflict rejection, and cleanup evidence.
-- [Live session real-flow smoke script](live-session-real-flow-smoke.md) — automated start, attach, join, assign, session socket, token move, reconnect snapshot, and cleanup helper for a running dev server.
+- [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) — legacy session lobby/socket smoke notes; not normal profile-based play.
 - [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [Live session command-flow maintenance](live-session-command-flow-maintenance.md) — automated multi-client command-flow coverage covering accepted commands, reconnect, permissions, and stale conflicts.
-- [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — expected LAN/named-tunnel concurrency behaviour, latency-sensitive paths, replay/snapshot fallback, and before-game smoke checks.
+- [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) — legacy session socket benchmark notes; current profile play uses saved-map realtime and linked-token tests.
 - [Live session implementation maintenance](live-session-implementation-maintenance.md) — product docs, source areas, validation evidence, and known limitations.
 - [Live session product readiness review](live-session-product-readiness-review.md) — concise product/developer readiness review for architecture, table flow, validation, limits, and operator checks.
 - [Live session readiness summary](live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
-- [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md) — local-first maintenance checks for plain map/sheet workflows, legacy SSE, and explicit session-mode opt-in boundaries.
+- [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md) — local-first maintenance checks for plain map/sheet workflows, profile play, legacy SSE, and legacy session isolation.
 - [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) — temporary development smoke-test boundary, campaign-session rejection, and legacy SSE limitations.
-- [Live session multi-tab local smoke script](live-session-multi-tab-smoke.md) — local GM/player session-mode tab helper and token propagation checklist.
 - [live session storage](live-session-storage.md) — default snapshot/event-log paths, ignored/private data boundaries, backup guidance, cleanup behaviour, and recovery limitations.
 - [Live session backup and recovery](live-session-backup-recovery.md) — private backup/restore runbook for snapshots, optional event logs, referenced campaign data, and local-only recovery limits.
 - [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) — snapshots, optional event logs, backup/restore docs, cleanup, and local data hygiene.

@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -8,126 +8,61 @@ const testDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
-const exists = (relativePath: string): boolean => existsSync(resolve(repoRoot, relativePath))
 
-describe('Live session concurrency benchmark notes', () => {
-  const notes = readText('docs/live-session-concurrency-benchmark-notes.md')
+const collectMarkdown = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = resolve(directory, entry.name)
 
-  it('records the current scope, outcome, and measurement caveats', () => {
-    expect(notes).toContain('This note records')
-    expect(notes).toContain('Last checked: 2026-05-26')
-    expect(notes).toContain('Current maintenance baseline: the locked live-session small-table concurrency posture is ready')
-    expect(notes).toContain('not a load test, WAN benchmark, browser FPS benchmark, or numeric latency SLA')
-    expect(notes).toContain('No millisecond latency target is claimed')
-    expect(notes).toContain('separate Chromium contexts through a private LAN URL')
-    expect(notes).toContain('No live named Cloudflare Tunnel')
+    if (entry.isDirectory()) return collectMarkdown(path)
+
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : []
   })
 
-  it('documents expected LAN and named-tunnel behaviour plus before-game checks', () => {
-    expect(notes).toContain('Expected behaviour for LAN and named-tunnel play')
-    expect(notes).toContain('LAN expectation')
-    expect(notes).toContain('one GM plus a few players')
-    expect(notes).toContain('near-immediate after the local optimistic preview')
-    expect(notes).toContain('Named-tunnel expectation')
-    expect(notes).toContain('browser-to-Cloudflare-to-GM-host round trip')
-    expect(notes).toContain('more jitter than LAN')
-    expect(notes).toContain('stable named tunnel tested with actual players')
-    expect(notes).toContain('Before-game GM/player smoke checks')
-    expect(notes).toContain('**Visible session maps**')
-    expect(notes).toContain('**Assign map tokens** / **Assign control**')
-    expect(notes).toContain('no-token-assigned guidance or a safe unauthorized rejection')
-    expect(notes).toContain('`<250ms`, `250-1000ms`, `1-3s`, or `>3s`')
+const docsMarkdown = (): string[] => [
+  'README.md',
+  ...collectMarkdown(resolve(repoRoot, 'docs')).map((path) => relative(repoRoot, path)),
+]
+
+describe('profile-based play documentation boundaries', () => {
+  it('documents current player-profile play and legacy live-session isolation', () => {
+    const profileGuide = readText('docs/player-profiles.md')
+
+    expect(profileGuide).toContain('persistent player profiles')
+    expect(profileGuide).toContain('players normally open the relevant player-visible map')
+    expect(profileGuide).toContain('Pokédex')
+    expect(profileGuide).toContain('PTU reference pages')
+    expect(profileGuide).toContain('Players do not need `/sessions`')
+    expect(profileGuide).toContain('share link')
+    expect(profileGuide).toContain('per-map invite')
+
+    expect(readText('README.md')).toContain('docs/player-profiles.md')
+    expect(readText('docs/README.md')).toContain('player-profiles.md')
+    expect(readText('docs/live-session-product-readiness-review.md')).toContain('no longer the normal Rotom Table play guide')
+    expect(readText('docs/live-session-lobby.md')).toContain('It does not describe normal map play')
   })
 
-  it('summarizes multi-client command, fanout, permission, stale, and reconnect behaviour evidence', () => {
-    const expectedEvidence = [
-      'tests/server/sessionIntegratedCommandFlow.test.ts',
-      'tests/server/sessionTokenCommandTwoClientSmoke.test.ts',
-      'tests/server/sessionWebSocketTransport.test.ts',
-      'tests/server/applyMoveTokenCommand.test.ts',
-      'tests/composables/map-editor/sessionClientIntegration.test.ts',
+  it('keeps obsolete live-session-as-normal-play instructions out of docs', () => {
+    const matches: string[] = []
+    const forbidden = [
+      /\?session=1/,
+      /Visible session maps/,
+      /Assign map tokens/,
+      /Assign control/,
+      /ready for trusted-table live-session rehearsal and play/i,
+      /live-session map attachment doc/i,
     ]
 
-    for (const evidencePath of expectedEvidence) {
-      expect(notes).toContain(evidencePath)
-      expect(exists(evidencePath)).toBe(true)
+    for (const path of docsMarkdown()) {
+      const text = readText(path)
+      const lines = text.split('\n')
+
+      lines.forEach((line, index) => {
+        for (const pattern of forbidden) {
+          if (pattern.test(line)) matches.push(`${path}:${index + 1}: ${line}`)
+        }
+      })
     }
-    expect(notes).toContain('live-session-lan-manual-smoke-results.md')
-    expect(exists('docs/live-session-lan-manual-smoke-results.md')).toBe(true)
 
-    expect(notes).toContain('One GM socket, two same-session player sockets, and one unrelated-session socket')
-    expect(notes).toContain('Accepted commands advanced revisions 1 through 5')
-    expect(notes).toContain('same-session peers while the unrelated session received nothing')
-    expect(notes).toContain('rejected as `unauthorized`')
-    expect(notes).toContain('rejected as `stale` with current authoritative token state')
-    expect(notes).toContain('`snapshotRequired: true`')
-    expect(notes).toContain('`GM browser`, `Player A browser`, `Player B browser`')
-    expect(notes).toContain('no page errors or warning/error console messages')
-  })
-
-  it('locks the latency-sensitive command path and heartbeat/reconnect boundaries to current source', () => {
-    expect(notes).toContain('The local filesystem snapshot write is on the accepted-command path')
-    expect(notes).toContain('commandAck')
-    expect(notes).toContain('small `patch` message')
-    expect(notes).toContain('25 second heartbeat interval')
-    expect(notes).toContain('60 second stale timeout')
-    expect(notes).toContain('`replayAvailable: false`')
-    expect(notes).toContain('event replay is not available for reconnect')
-    expect(notes).toContain('stale reconnects use snapshot fallback unless a future validated replay implementation updates these docs and tests')
-
-    const socketServer = readText('server/utils/sessionWebSocketServer.ts')
-    expect(socketServer).toContain('SESSION_SOCKET_HEARTBEAT_INTERVAL_MS = 25_000')
-    expect(socketServer).toContain('SESSION_SOCKET_HEARTBEAT_TIMEOUT_MS = 60_000')
-    expect(socketServer).toContain('SESSION_SOCKET_REPLAY_AVAILABLE = false')
-    expect(socketServer).toContain('handleSessionSocketMessage')
-
-    const snapshots = readText('server/utils/sessionSnapshots.ts')
-    expect(snapshots).toContain('writeSessionSnapshot')
-
-    const fanout = readText('server/utils/sessionWebSocketFanout.ts')
-    expect(fanout).toContain('fanoutSessionServerMessage')
-    expect(fanout).toContain('connection.sessionId !== sessionId')
-  })
-
-  it('keeps known performance limitations and locked architecture boundaries explicit', () => {
-    expect(notes).toContain('trusted small table, not a public high-concurrency service')
-    expect(notes).toContain('not a soak test for dozens of players')
-    expect(notes).toContain('No real WAN/named-tunnel latency measurement is recorded here')
-    expect(notes).toContain('WebSocket peer state, connected-client presence, and recent duplicate-`opId` tracking are process-local')
-    expect(notes).toContain('Accepted command handlers persist local JSON snapshots')
-    expect(notes).toContain('Map renderer performance still matters')
-    expect(notes).toContain('Quick Tunnel remains development smoke-test only')
-    expect(notes).toContain('cloud databases')
-    expect(notes).toContain('browser-owned whole-map autosave')
-    expect(notes).not.toContain('Quick Tunnel is the supported campaign')
-    expect(notes).not.toContain('Postgres is required')
-    expect(notes).not.toContain('gmKey=')
-    expect(notes).not.toContain('joinCode=')
-  })
-
-  it('provides a no-secret operator benchmark checklist', () => {
-    expect(notes).toContain('Operator benchmark checklist')
-    expect(notes).toContain('`npm run dev:session:lan`')
-    expect(notes).toContain('`npm run dev:session:tunnel`')
-    expect(notes).toContain('`cloudflared tunnel run`')
-    expect(notes).toContain('`/maps/<map-slug>?session=1`')
-    expect(notes).toContain('`<250ms`, `250-1000ms`, `1-3s`, or `>3s`')
-    expect(notes).toContain('Do not paste real join codes, GM keys')
-    expect(notes).toContain('`git status --short`')
-  })
-
-  it('is linked from primary Live session docs and smoke/audit references', () => {
-    expect(readText('README.md')).toContain('docs/live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/README.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/local-development.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-protocol.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-command-flow-maintenance.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-lan-hosting.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-cloudflare-tunnel-hosting.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-deployment-smoke-checklist.md')).toContain('live-session-concurrency-benchmark-notes.md')
-    expect(readText('docs/live-session-lan-manual-smoke-results.md')).toContain('live-session-concurrency-benchmark-notes.md')
+    expect(matches).toEqual([])
   })
 })

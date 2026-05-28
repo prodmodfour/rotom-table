@@ -17,6 +17,7 @@ import { characterSheets } from '~~/data/characterSheets'
 import { trainerSheets } from '~~/data/trainerSheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { PlayerProfileId } from '#shared/playerProfiles'
 import { sheetsChannel } from '#shared/realtime'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import {
@@ -28,21 +29,32 @@ import {
 import { useApiClient } from './useApiClient'
 import { subscribeChannel } from './useRealtime'
 
+export interface ReloadRuntimeSheetsOptions {
+  readonly profileId?: PlayerProfileId | null
+}
+
 interface LiveSheetsApi {
   pokemonBySlug: Ref<Map<string, CharacterSheet>>
   trainerBySlug: Ref<Map<string, TrainerSheet>>
-  reloadRuntimeSheets: () => Promise<void>
+  reloadRuntimeSheets: (options?: ReloadRuntimeSheetsOptions) => Promise<void>
 }
 
 let cached: LiveSheetsApi | null = null
 let unsubscribe: (() => void) | null = null
 let runtimeLoadStarted = false
+let runtimeLoadSequence = 0
 
 const buildInitial = () => buildLiveSheetMaps(characterSheets, trainerSheets)
 
-const hydrateRuntimeSheets = async (api: LiveSheetsApi): Promise<void> => {
+const hydrateRuntimeSheets = async (
+  api: LiveSheetsApi,
+  options: ReloadRuntimeSheetsOptions = {},
+): Promise<void> => {
+  const loadSequence = ++runtimeLoadSequence
   try {
-    const payload = await useApiClient().getJson<LiveSheetListPayload>(SHEET_API_PATHS.list)
+    const requestOptions = options.profileId ? { params: { profileId: options.profileId } } : undefined
+    const payload = await useApiClient().getJson<LiveSheetListPayload>(SHEET_API_PATHS.list, requestOptions)
+    if (loadSequence !== runtimeLoadSequence) return
     replaceLiveSheetMaps({
       pokemonBySlug: api.pokemonBySlug.value,
       trainerBySlug: api.trainerBySlug.value,
@@ -61,9 +73,9 @@ export const useLiveSheets = (): LiveSheetsApi => {
   const pokemonBySlug = ref<Map<string, CharacterSheet>>(reactive(initial.pokemonBySlug) as Map<string, CharacterSheet>)
   const trainerBySlug = ref<Map<string, TrainerSheet>>(reactive(initial.trainerBySlug) as Map<string, TrainerSheet>)
 
-  const reloadRuntimeSheets = async (): Promise<void> => {
+  const reloadRuntimeSheets = async (options: ReloadRuntimeSheetsOptions = {}): Promise<void> => {
     if (!cached) return
-    await hydrateRuntimeSheets(cached)
+    await hydrateRuntimeSheets(cached, options)
   }
 
   cached = { pokemonBySlug, trainerBySlug, reloadRuntimeSheets }
@@ -98,4 +110,5 @@ export const teardownLiveSheets = (): void => {
   }
   cached = null
   runtimeLoadStarted = false
+  runtimeLoadSequence = 0
 }

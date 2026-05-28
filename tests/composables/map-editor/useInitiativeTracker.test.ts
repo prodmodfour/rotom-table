@@ -237,4 +237,33 @@ describe('useInitiativeTracker', () => {
 
     expect(map.value?.placements[0].initiative).toBe(row.baseInitiative)
   })
+
+  it('does not mutate initiative state without manage permission', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'player-token', sheetKind: 'pokemon', sheetSlug: 'player-token', position: { x: 0, y: 0, z: 0 }, initiative: 12 },
+    ]))
+    map.value!.initiative = { activeId: null, round: 1 }
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'player-token', sheetSlug: 'player-token', species: 'Player Token' }),
+      ]),
+      pokemonBySlug: ref(new Map([['player-token', sheet('player-token')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => false),
+    })
+
+    tracker.setActiveInitiative('player-token')
+    tracker.setInitiativeInput('player-token', inputEvent('99'))
+    tracker.setInitiativeFromSpeed('player-token', 30)
+    tracker.setInitiativeRound(inputEvent('5'))
+    tracker.fillInitiativeFromSpeed()
+    tracker.clearInitiativeValues()
+    tracker.clearActiveInitiative()
+    tracker.nextInitiative()
+    tracker.previousInitiative()
+
+    expect(map.value?.placements[0].initiative).toBe(12)
+    expect(map.value?.initiative).toEqual({ activeId: null, round: 1 })
+  })
 })

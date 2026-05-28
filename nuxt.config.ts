@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 
 const isDev = process.env.NODE_ENV !== 'production'
-const persistedDataWatchIgnored = [/(?:^|[\\/])data[\\/](?:sheets|trainers|maps)(?:[\\/]|$)/]
+const persistedDataWatchIgnored = [/(?:^|[\\/])data[\\/](?:sheets|trainers|maps|player-profiles)(?:[\\/]|$)/]
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-04-22',

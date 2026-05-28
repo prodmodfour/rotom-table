@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** for the shared player-facing view.
+Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose or create the persistent player profile for this browser. GMs can open `/player-profiles` to link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping map/sheet libraries, Pokédex, and reference pages available; direct map-control and editable sheet routes ask profileless players to choose a profile before continuing. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map, session-map management controls, or the legacy session lobby.
 
 Recommended verification commands:
 
@@ -35,32 +35,30 @@ npm run build
 
 - [docs/review-guide.md](docs/review-guide.md) — fastest path through the project for recruiters and reviewers.
 - [docs/architecture.md](docs/architecture.md) — high-level Nuxt, Nitro, local data, and Three.js architecture.
-- [docs/data-model.md](docs/data-model.md) — maps, sheets, trainers, encounter tables, app-owned PTU reference data, and generated sheets.
-- [docs/live-session-roadmap.md](docs/live-session-roadmap.md) — GM-hosted live session scope, lifecycle, and non-goals.
+- [docs/data-model.md](docs/data-model.md) — maps, sheets, trainers, player profiles, encounter tables, app-owned PTU reference data, and generated sheets.
+- [docs/player-profiles.md](docs/player-profiles.md) — normal profile-based player login, GM character linking, linked sheet editing, and linked-token control.
+- [docs/live-session-roadmap.md](docs/live-session-roadmap.md) — legacy GM-hosted live session scope, lifecycle, and non-goals; not the normal profile-based play path.
 - [docs/live-session-glossary.md](docs/live-session-glossary.md) — shared live session vocabulary for identity, commands, revisions, reconnect, and safety.
-- [docs/live-session-validation-matrix.md](docs/live-session-validation-matrix.md) — expected tests, smoke checks, docs, and safety reviews for live-session implementation areas.
-- [docs/live-session-protocol.md](docs/live-session-protocol.md) — shared live session protocol types, message flow, and accepted/rejected command examples.
-- [docs/live-session-socket-protocol.md](docs/live-session-socket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
-- [docs/live-session-table-action-commands.md](docs/live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
-- [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — how local map mode and explicit session mode coexist, including disconnect and conflict recovery guidance.
-- [docs/live-session-map-attachment.md](docs/live-session-map-attachment.md) — GM flow for attaching saved maps to server-owned live session state before players open session maps.
-- [docs/live-session-lobby.md](docs/live-session-lobby.md) — GM/player join flow, expected LAN usage, and two-browser lobby smoke checklist.
+- [docs/live-session-validation-matrix.md](docs/live-session-validation-matrix.md) — legacy live-session implementation maintenance checks and safety reviews.
+- [docs/live-session-protocol.md](docs/live-session-protocol.md) — legacy live-session protocol types, message flow, and accepted/rejected command examples.
+- [docs/live-session-socket-protocol.md](docs/live-session-socket-protocol.md) — legacy live-session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
+- [docs/live-session-table-action-commands.md](docs/live-session-table-action-commands.md) — legacy HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
+- [docs/live-session-client-integration.md](docs/live-session-client-integration.md) — legacy live-session client boundary notes; old session-map client helpers are removed and normal play uses player profiles.
+- [docs/live-session-lobby.md](docs/live-session-lobby.md) — direct-only legacy session identity/socket lobby boundaries and smoke checklist; not normal profile-based play.
 - [docs/live-session-host-runtime.md](docs/live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
 - [docs/live-session-public-exposure-checks.md](docs/live-session-public-exposure-checks.md) — no-secret safety banner checks for unsafe public/LAN startup states before sharing join codes.
 - [docs/live-session-lan-hosting.md](docs/live-session-lan-hosting.md) — same-Wi-Fi/LAN hosting runbook with startup commands, IP discovery, player URLs, and troubleshooting.
 - [docs/live-session-cloudflare-tunnel-hosting.md](docs/live-session-cloudflare-tunnel-hosting.md) — named Cloudflare Tunnel runbook with stable hostname setup, session socket considerations, safety warnings, and rollback steps.
 - [docs/live-session-named-tunnel-maintenance.md](docs/live-session-named-tunnel-maintenance.md) — named-tunnel doc accuracy, current Cloudflare assumptions, and safety warnings.
 - [docs/live-session-deployment-smoke-checklist.md](docs/live-session-deployment-smoke-checklist.md) — LAN and named-tunnel deployment smoke checklist for two players, reconnect, token movement, initiative, and conflict rejection.
-- [docs/live-session-real-flow-smoke.md](docs/live-session-real-flow-smoke.md) — automated start, attach, join, assign, session socket, token move, reconnect snapshot, and cleanup smoke helper.
 - [docs/live-session-lan-manual-smoke-results.md](docs/live-session-lan-manual-smoke-results.md) — recorded LAN browser-client smoke results for guarded startup, two-player join, session socket presence, reconnect, and cleanup.
 - [docs/live-session-command-flow-maintenance.md](docs/live-session-command-flow-maintenance.md) — integrated multi-client command-flow coverage covering accepted commands, reconnect, permissions, and stale conflicts.
-- [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — expected LAN/named-tunnel concurrency behaviour, latency-sensitive paths, replay/snapshot fallback, and before-game smoke checks.
+- [docs/live-session-concurrency-benchmark-notes.md](docs/live-session-concurrency-benchmark-notes.md) — legacy session socket benchmark notes; current profile play uses saved-map realtime and linked-token tests.
 - [docs/live-session-implementation-maintenance.md](docs/live-session-implementation-maintenance.md) — implementation maintenance guide linking product docs, source areas, validation evidence, and known limitations.
 - [docs/live-session-product-readiness-review.md](docs/live-session-product-readiness-review.md) — concise product/developer readiness review for architecture, table flow, validation, limits, and operator checks.
 - [docs/live-session-readiness-summary.md](docs/live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
-- [docs/live-session-local-mode-maintenance.md](docs/live-session-local-mode-maintenance.md) — local-mode maintenance checks for plain map/sheet workflows, legacy SSE, and session-mode opt-in boundaries.
+- [docs/live-session-local-mode-maintenance.md](docs/live-session-local-mode-maintenance.md) — local-mode maintenance checks for plain map/sheet workflows, profile play, and legacy session isolation.
 - [docs/live-session-quick-tunnel-caveat.md](docs/live-session-quick-tunnel-caveat.md) — Quick Tunnel caveats for temporary development smoke tests only, including legacy SSE limitations.
-- [docs/live-session-multi-tab-smoke.md](docs/live-session-multi-tab-smoke.md) — local multi-tab helper for GM/player session-mode token propagation smoke checks.
 - [docs/live-session-storage.md](docs/live-session-storage.md) — local session snapshot/event-log paths, privacy boundaries, backup guidance, and recovery limits.
 - [docs/live-session-backup-recovery.md](docs/live-session-backup-recovery.md) — private session backup/restore runbook for snapshots, optional event logs, and referenced campaign data.
 - [docs/live-session-persistence-recovery-maintenance.md](docs/live-session-persistence-recovery-maintenance.md) — persistence/recovery maintenance for snapshots, optional event logs, backup docs, cleanup, and local data hygiene.
@@ -72,13 +70,13 @@ npm run build
 
 ## Features
 
-- **Isometric map table** — create map folders, edit maps, build voxel terrain, place hazards, manage field effects, spawn Pokémon and trainer tokens, move/turn tokens, track initiative, and use move/ability automation.
-- **Sheet library** — create, organise, rename, edit, and autosave Pokémon and trainer sheets from the browser.
+- **Isometric map table** — create map folders, edit maps, build voxel terrain, place hazards, manage field effects, spawn Pokémon and trainer tokens, move/turn tokens, track initiative, and use move/ability automation. Players browse GM-marked player-visible maps and control tokens through linked character sheets.
+- **Sheet library** — create, organise, rename, edit, and autosave Pokémon and trainer sheets from the browser. GMs manage library files; players browse public sheets plus sheets linked to their selected profile.
 - **Pokédex browser** — search and filter Pokémon entries, view sprites and detail panes, and jump directly to Pokémon-specific pages.
 - **Reference library** — browse moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges.
 - **Encounter tools** — manage JSON encounter tables, roll previews, and generate wild Pokémon sheets into the sheet library.
-- **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes.
-- **Filesystem-backed data** — maps, sheets, trainers, and encounter tables are stored as JSON in the repository tree for easy inspection, backup, and diffing.
+- **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes; Player Login asks for a persistent player profile before continuing, and linked characters grant sheet editing plus map-token control.
+- **Filesystem-backed data** — maps, sheets, trainers, player profiles, and encounter tables are stored as JSON in the repository tree for easy inspection, backup, and diffing.
 
 ## Suggested review path
 
@@ -140,11 +138,12 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | Route | Purpose |
 | --- | --- |
 | `/` | Redirects to the map library. |
-| `/login` | Choose the local GM or Player role. |
-| `/sessions` | Live session lobby for session hosting, GM start/manage, and player join flows. |
-| `/maps` | Map library and folders. |
-| `/maps/:slug` | Map editor/table view. |
-| `/sheets` | Pokémon and trainer sheet library. |
+| `/login` | Choose the local GM role or select/create the persistent player profile for Player Login. |
+| `/sessions` | Direct-only legacy live-session identity/socket lobby for maintenance smoke checks; not linked from normal app navigation or required for profile-based play. |
+| `/player-profiles` | GM-only player profile list plus Pokémon/trainer sheet link and unlink management. |
+| `/maps` | Map library and folders; players see player-visible maps only. |
+| `/maps/:slug` | Map editor/table view with profile-linked player token control. |
+| `/sheets` | Pokémon and trainer sheet library; players see public and selected-profile-linked sheets. |
 | `/sheets/:slug` | Pokémon sheet editor. |
 | `/sheets/trainers/:slug` | Trainer sheet editor. |
 | `/pokedex` | Searchable Pokédex browser. |
@@ -158,7 +157,8 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | Path | What it contains |
 | --- | --- |
 | `data/maps/` | Saved map JSON and map-adjacent local files. |
-| `data/sessions/` | Live session snapshots and optional event logs; ignored/private runtime data. |
+| `data/player-profiles/` | Persistent player profile JSON with linked Pokémon/trainer character refs; ignored/private campaign data. |
+| `data/sessions/` | Legacy live session snapshots and optional event logs; ignored/private runtime data. |
 | `data/sheets/` | Pokémon character-sheet JSON, including generated wild sheets. |
 | `data/trainers/` | Trainer sheet JSON. |
 | `encounter_tables/` | Encounter-table JSON, grouped by folder/region. |
@@ -172,7 +172,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | `shared/` | Shared auth/path/sheet helpers used by both app and server. |
 | `tests/` | Vitest coverage for shared logic, utilities, composables, and server helpers. |
 
-Saved sheets and maps are edited by the app itself. Live session snapshots and optional event logs live under `data/sessions/` when session hosting is used. In development, Nuxt/Vite ignores changes under `data/sheets`, `data/trainers`, and `data/maps` so autosaves do not force a full page reload. `.gitignore` is configured to keep personal campaign data and session runtime files out of the repository while allowing curated examples to remain inspectable.
+Saved sheets, maps, and player profiles are edited by the app itself. Legacy live session snapshots and optional event logs live under `data/sessions/` only when the legacy session host is used for maintenance smoke checks. In development, Nuxt/Vite ignores changes under `data/sheets`, `data/trainers`, `data/player-profiles`, and `data/maps` so autosaves do not force a full page reload. `.gitignore` is configured to keep personal campaign data and session runtime files out of the repository while allowing curated examples to remain inspectable.
 
 ## npm scripts
 
@@ -186,8 +186,6 @@ Saved sheets and maps are edited by the app itself. Live session snapshots and o
 | `npm run typecheck` | Run Nuxt/Vue TypeScript checks. |
 | `npm test` | Run the Vitest test suite once. |
 | `npm run test:watch` | Run Vitest in watch mode. |
-| `npm run smoke:session:multi-tab` | Open/print local live session GM/player smoke URLs and run focused token/client smoke checks. |
-| `npm run smoke:session:real-flow` | Exercise start, attach, join, assign, session socket token move, reconnect snapshot, and smoke cleanup against a running session host. |
 | `npm run check:move-automation` | Check move automation coverage. |
 | `npm run sync:item-sprites` | Sync item sprite assets. |
 | `npm run refactor:loop` | Run the refactor loop helper script. |
@@ -231,10 +229,10 @@ The `/generate` page rolls from those tables and can either preview generated sh
 Rotom Table currently uses a trust-based role picker, not password authentication:
 
 - **GM** — full map, sheet, encounter, and control-panel access.
-- **Player** — shared player view with player-visible maps and sheets.
+- **Player** — player-facing view with player-visible maps, public/linked sheets, Pokédex, reference pages, and linked-character token control.
 - **Guest** — redirected to `/login`.
 
-Server routes also check the session role for protected actions. Treat this as a local/campaign-table workflow, not a hardened public authentication system.
+Players choose or create a persistent player profile after Player Login. The selected profile's linked Pokémon/trainer sheets are the source of player-specific sheet editing and map-token control. Server routes also check the session role and selected profile for protected actions. Treat this as a local/campaign-table workflow, not a hardened public authentication system.
 
 ## Production notes
 

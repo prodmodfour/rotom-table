@@ -4,7 +4,6 @@ import { resolve } from 'node:path'
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import assignmentsRoute from '~~/server/api/sessions/assignments.post'
-import attachMapRoute from '~~/server/api/sessions/maps/attach.post'
 import joinRoute from '~~/server/api/sessions/join.post'
 import manageRoute from '~~/server/api/sessions/manage.post'
 import playerStateRoute from '~~/server/api/sessions/player-state.post'
@@ -101,12 +100,6 @@ const guardedSessionRoutes = [
     name: 'assignments',
     source: 'server/api/sessions/assignments.post.ts',
     handler: assignmentsRoute,
-    laterCall: 'await readBody',
-  },
-  {
-    name: 'maps/attach',
-    source: 'server/api/sessions/maps/attach.post.ts',
-    handler: attachMapRoute,
     laterCall: 'await readBody',
   },
 ] as const

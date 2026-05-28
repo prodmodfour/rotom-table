@@ -29,9 +29,14 @@ import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { clonePersistableMapPayload, stablePersistableMapJson } from '~/utils/maps/persistence'
 import { useApiClient } from './useApiClient'
 import { useRealtimeChannel } from './useRealtime'
+import type { PlayerProfileId } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
 
 export type MapSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error' | 'not-found'
+
+interface ReadonlyValueRef<T> {
+  readonly value: T
+}
 
 interface BooleanRef {
   readonly value: boolean
@@ -41,11 +46,11 @@ export interface UseEditableMapOptions {
   readonly debounceMs?: number
   /**
    * Controls whether mutations to this persisted map ref may write through the
-   * local-first whole-map autosave route. Session-mode map views pass `false`
-   * so live play uses session commands and server-owned snapshots instead of
-   * browser-owned map saves.
+   * local-first whole-map autosave route. External document actions can pause
+   * autosave while they adopt server-persisted map responses.
    */
   readonly autosaveEnabled?: BooleanRef
+  readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
 }
 
 export interface UseEditableMapReturn {
@@ -56,21 +61,27 @@ export interface UseEditableMapReturn {
   renamedTo: Ref<string | null>
   saveNow: () => Promise<void>
   reload: () => Promise<void>
+  applyPersistedMap: (incoming: TabletopMap) => void
 }
 
 const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pick<UseEditableMapOptions, 'debounceMs'>> & {
   readonly autosaveEnabled?: BooleanRef
+  readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
 } => (
   typeof options === 'number'
     ? { debounceMs: options }
-    : { debounceMs: options.debounceMs ?? 200, autosaveEnabled: options.autosaveEnabled }
+    : {
+        debounceMs: options.debounceMs ?? 200,
+        autosaveEnabled: options.autosaveEnabled,
+        playerProfileId: options.playerProfileId,
+      }
 )
 
 export const useEditableMap = (
   slug: string,
   options: number | UseEditableMapOptions = 200,
 ): UseEditableMapReturn => {
-  const { debounceMs, autosaveEnabled: autosaveEnabledRef } = normalizeOptions(options)
+  const { debounceMs, autosaveEnabled: autosaveEnabledRef, playerProfileId: playerProfileIdRef } = normalizeOptions(options)
   const autosaveEnabled = computed(() => autosaveEnabledRef?.value ?? true)
   const map = ref<TabletopMap | null>(null)
   const status = ref<MapSaveStatus>('loading')
@@ -149,16 +160,51 @@ export const useEditableMap = (
     assignIfChanged(target, 'updatedAt', next.updatedAt)
   }
 
+  const mapUpdatedAt = (candidate: TabletopMap | null | undefined): number | null => {
+    const value = candidate?.updatedAt
+    return typeof value === 'number' && Number.isFinite(value) ? value : null
+  }
+
+  const isStalePersistedMap = (incoming: TabletopMap): boolean => {
+    const incomingUpdatedAt = mapUpdatedAt(incoming)
+    const currentUpdatedAt = mapUpdatedAt(map.value)
+    return incomingUpdatedAt !== null && currentUpdatedAt !== null && incomingUpdatedAt < currentUpdatedAt
+  }
+
+  const applyPersistedMap = (incoming: TabletopMap) => {
+    if (isStalePersistedMap(incoming)) return
+    // A full persisted map response/event is authoritative. Cancel any
+    // queued whole-map write so adopting another tab/device's update or a
+    // document-backed token action does not echo the same state back through
+    // `/api/maps/save` a debounce later.
+    autosave.cancelPendingSave()
+    autosave.snapshot.markClean(incoming)
+    applyServerMap(incoming)
+    status.value = 'idle'
+    error.value = null
+  }
+
   const performSave = async () => {
     if (!autosaveEnabled.value || !map.value) return
+    if (autosave.snapshot.isClean(map.value)) {
+      if (status.value === 'saving') autosave.statusController.markSaved()
+      return
+    }
+
     const snapshot = clonePersistableMapPayload(map.value)
+    const playerProfileId = playerProfileIdRef?.value ?? null
 
     await runLatestAutosave({
       guard: autosave.guard,
       status: autosave.statusController,
-      save: () => postJson<{ map: TabletopMap }>(MAP_API_PATHS.save, { slug, map: snapshot, clientId }),
+      save: () => postJson<{ map: TabletopMap }>(MAP_API_PATHS.save, {
+        slug,
+        map: snapshot,
+        clientId,
+        ...(playerProfileId ? { profileId: playerProfileId } : {}),
+      }),
       onSuccess: (result, { latest }) => {
-        if (!latest) return
+        if (!latest || isStalePersistedMap(result.map)) return
         // Adopt the persisted version (server stamps `updatedAt`).
         autosave.snapshot.markClean(result.map)
         // Splice in the new updatedAt without disturbing other fields the
@@ -182,9 +228,7 @@ export const useEditableMap = (
     error.value = null
     try {
       const data = await getJson<{ map: TabletopMap }>(MAP_API_PATHS.load, { params: { slug } })
-      autosave.snapshot.markClean(data.map)
-      applyServerMap(data.map)
-      status.value = 'idle'
+      applyPersistedMap(data.map)
     } catch (err: unknown) {
       const e = err as { statusCode?: number; statusMessage?: string; message?: string }
       if (e?.statusCode === 404) {
@@ -217,9 +261,7 @@ export const useEditableMap = (
     if (isRealtimeEcho(event, clientId)) return
     if (event.type === 'updated' && event.data) {
       const incoming = event.data as TabletopMap
-      autosave.snapshot.markClean(incoming)
-      applyServerMap(incoming)
-      status.value = 'idle'
+      applyPersistedMap(incoming)
     } else if (event.type === 'deleted') {
       status.value = 'not-found'
       map.value = null
@@ -230,8 +272,7 @@ export const useEditableMap = (
       // gone) and let the page navigate to the new URL.
       autosave.cancelPendingSave()
       if (payload.map) {
-        autosave.snapshot.markClean(payload.map)
-        applyServerMap(payload.map)
+        applyPersistedMap(payload.map)
       }
       status.value = 'idle'
       renamedTo.value = payload.newSlug
@@ -242,9 +283,8 @@ export const useEditableMap = (
     if (!autosave.task.hasPending()) return
     // Skip flushing the pending save when the slug was renamed away
     // from us — the old filename no longer exists on disk. Also cancel
-    // pending local-first writes while the map view is in session mode;
-    // session clients must send explicit session commands instead of a
-    // browser-owned whole-map save.
+    // pending local-first writes while autosave is intentionally paused
+    // so external document actions can remain the write authority.
     if (renamedTo.value || !autosaveEnabled.value) {
       autosave.cancelPendingSave()
       return
@@ -254,5 +294,5 @@ export const useEditableMap = (
 
   void reload()
 
-  return { map, status, error, renamedTo, saveNow, reload }
+  return { map, status, error, renamedTo, saveNow, reload, applyPersistedMap }
 }

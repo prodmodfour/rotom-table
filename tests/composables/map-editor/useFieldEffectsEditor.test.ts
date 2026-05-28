@@ -74,4 +74,32 @@ describe('useFieldEffectsEditor', () => {
     editor.applyMoveFieldEffect({ kind: 'room', value: 'magic' })
     expect(map.value.fieldEffects?.rooms).toMatchObject([{ kind: 'magic', source: 'Move automation' }])
   })
+
+  it('does not mutate field effects without edit permission', () => {
+    const map = ref(mapFixture())
+    map.value.fieldEffects = {
+      weather: [{ kind: 'rainy', rounds: 2 }],
+      terrains: [{ kind: 'grassy', rounds: 3 }],
+      rooms: [{ kind: 'trick', rounds: 4 }],
+    }
+    const editor = useFieldEffectsEditor({
+      map,
+      canEditMap: computed(() => false),
+      confirmClearAll: () => true,
+    })
+    const original = JSON.parse(JSON.stringify(map.value.fieldEffects))
+
+    editor.setWeather('sunny')
+    editor.removeWeather('rainy')
+    editor.clearWeather()
+    editor.toggleTerrain('electric')
+    editor.removeTerrain('grassy')
+    editor.toggleRoom('magic')
+    editor.removeRoom('trick')
+    editor.tickFieldEffectDurations()
+    editor.clearAllFieldEffects()
+    editor.applyMoveFieldEffect({ kind: 'weather', value: 'hail' })
+
+    expect(map.value.fieldEffects).toEqual(original)
+  })
 })

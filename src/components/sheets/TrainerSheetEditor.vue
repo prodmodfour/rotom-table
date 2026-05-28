@@ -13,13 +13,15 @@ import type {
   TrainerSheet,
   TrainerSkillKey,
 } from '~/types/trainerSheet'
+import type { SheetEditorCapabilities } from '~/utils/sheetEditorCapabilities'
 
 const props = defineProps<{
   sheet: TrainerSheet
-  isGm: boolean
+  capabilities: SheetEditorCapabilities
 }>()
 
 const sheet = computed<TrainerSheet>(() => props.sheet)
+const canManagePlayerAccess = computed(() => props.capabilities.canManagePlayerAccess)
 const SKILL_KEYS: TrainerSkillKey[] = TRAINER_SKILL_ORDER.map(([key]) => key)
 const RANK_OPTIONS: SkillRank[] = ['Pathetic', 'Untrained', 'Novice', 'Adept', 'Expert', 'Master']
 
@@ -102,7 +104,7 @@ const {
       :max-hp="maxHp"
       :full-max-hp="fullMaxHp"
       :max-ap="maxAp"
-      :is-gm="props.isGm"
+      :can-manage-player-access="canManagePlayerAccess"
       @open-portrait-picker="openPortraitPicker"
       @clear-portrait="clearPortrait"
       @set-current-hp="setCurrentHp"

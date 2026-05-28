@@ -1,0 +1,335 @@
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
+import { afterEach, describe, expect, it } from 'vitest'
+import { createPlayerProfileUseCase } from '~~/server/useCases/createPlayerProfile'
+import { loadMapUseCase } from '~~/server/useCases/loadMap'
+import { loadSheetUseCase, type LoadedSheet } from '~~/server/useCases/loadSheet'
+import { moveMapTokenUseCase } from '~~/server/useCases/applyMapTokenAction'
+import { saveSheetUseCase } from '~~/server/useCases/saveSheet'
+import { updatePlayerProfileUseCase } from '~~/server/useCases/updatePlayerProfile'
+import {
+  createPlayerProfile as createStoredPlayerProfile,
+  listPlayerProfiles,
+  updatePlayerProfile as updateStoredPlayerProfile,
+} from '~~/server/utils/playerProfileStorage'
+import createMapRoute from '~~/server/api/maps/create.post'
+import createSheetRoute from '~~/server/api/sheets/create.post'
+import type { ApiClient } from '~/utils/apiClient'
+import { PLAYER_PROFILE_API_PATHS } from '~/utils/apiRoutes'
+import type { PlayerProfileSelectionStorage } from '~/utils/playerProfileSelectionStorage'
+import { usePlayerProfiles } from '~/composables/usePlayerProfiles'
+import type { SheetKind } from '#shared/sheets'
+import type {
+  PlayerProfile,
+  RememberedPlayerProfileSelection,
+} from '#shared/playerProfiles'
+import type { TabletopMap } from '~/types/map'
+
+type PostRouteHandler = EventHandler<EventHandlerRequest, unknown>
+
+const tempRoots: string[] = []
+
+const createTempRoot = (): string => {
+  const root = mkdtempSync(join(tmpdir(), 'rotom-profile-play-smoke-'))
+  tempRoots.push(root)
+  return root
+}
+
+const sheetKey = (kind: SheetKind, slug: string): `${SheetKind}:${string}` => `${kind}:${slug}`
+
+const invokePostRoute = async (
+  handler: PostRouteHandler,
+  options: { role?: 'gm' | 'player'; body?: unknown } = {},
+): Promise<unknown> => {
+  const headers: Record<string, string> = {}
+  if (options.role) headers.cookie = `rotom-role=${options.role}`
+  if (options.body !== undefined) headers['content-type'] = 'application/json'
+
+  return handler({
+    method: 'POST',
+    node: {
+      req: {
+        headers,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      },
+    },
+  } as unknown as H3Event)
+}
+
+const createSelectionStorage = () => {
+  let selected: RememberedPlayerProfileSelection | null = null
+  const storage: PlayerProfileSelectionStorage = {
+    remember: (selection) => {
+      selected = selection
+      return true
+    },
+    load: () => selected,
+    clear: () => {
+      selected = null
+      return true
+    },
+  }
+
+  return {
+    storage,
+    current: () => selected,
+  }
+}
+
+const createPlayerProfileApiClient = (profileRoot: string): ApiClient => ({
+  getJson: async <T = unknown>(request: string): Promise<T> => {
+    if (request !== PLAYER_PROFILE_API_PATHS.list) {
+      throw new Error(`Unexpected profile GET request: ${request}`)
+    }
+    return { profiles: listPlayerProfiles({ rootDir: profileRoot }) } as T
+  },
+  postJson: async <T = unknown>(request: string): Promise<T> => {
+    throw new Error(`Unexpected profile POST request: ${request}`)
+  },
+})
+
+const createArenaMap = (): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'arena',
+  name: 'Arena',
+  dimensions: { x: 6, y: 2, z: 6 },
+  groundLevelY: 0,
+  playerVisible: true,
+  voxels: [],
+  hazards: [],
+  fieldEffects: { weather: [], terrains: [], rooms: [] },
+  placements: [
+    {
+      id: 'linked-token',
+      sheetKind: 'pokemon',
+      sheetSlug: 'pikachu',
+      position: { x: 1, y: 0, z: 1 },
+      facing: 'south-east',
+      turned: false,
+    },
+    {
+      id: 'unlinked-token',
+      sheetKind: 'pokemon',
+      sheetSlug: 'eevee',
+      position: { x: 3, y: 0, z: 3 },
+      facing: 'north-west',
+      turned: true,
+    },
+  ],
+  lights: [],
+  initiative: { activeId: null, round: 1 },
+  metadata: {},
+  createdAt: 100,
+  updatedAt: 100,
+})
+
+afterEach(() => {
+  for (const root of tempRoots) rmSync(root, { recursive: true, force: true })
+  tempRoots.length = 0
+})
+
+describe('profile-based play smoke flow', () => {
+  it('lets a selected profile play linked characters while blocking unlinked control and resource creation', async () => {
+    const profileRoot = createTempRoot()
+    const sheets = new Map<`${SheetKind}:${string}`, Record<string, unknown>>([
+      [sheetKey('pokemon', 'pikachu'), {
+        slug: 'pikachu',
+        nickname: 'Pika',
+        species: 'Pikachu',
+        level: 5,
+        player: false,
+      }],
+      [sheetKey('pokemon', 'eevee'), {
+        slug: 'eevee',
+        nickname: 'Eevee',
+        species: 'Eevee',
+        level: 5,
+        player: false,
+      }],
+    ])
+    const sheetPaths = new Map<`${SheetKind}:${string}`, string>([
+      [sheetKey('pokemon', 'pikachu'), '/memory/sheets/pokemon/pikachu.json'],
+      [sheetKey('pokemon', 'eevee'), '/memory/sheets/pokemon/eevee.json'],
+    ])
+
+    const createdProfile = createPlayerProfileUseCase({
+      role: 'gm',
+      displayName: 'Ash Ketchum',
+    }, {
+      createProfile: (input) => createStoredPlayerProfile(input, { rootDir: profileRoot }),
+    }).profile
+
+    const linkedProfile = updatePlayerProfileUseCase({
+      role: 'gm',
+      profileId: createdProfile.id,
+      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }],
+    }, {
+      updateProfile: (profileId, input) => updateStoredPlayerProfile(profileId, input, { rootDir: profileRoot }),
+      sheetExists: (ref) => sheets.has(sheetKey(ref.sheetKind, ref.sheetSlug)),
+    }).profile
+
+    expect(linkedProfile.linkedCharacters).toEqual([
+      { sheetKind: 'pokemon', sheetSlug: 'pikachu' },
+    ])
+
+    const selection = createSelectionStorage()
+    const playerProfiles = usePlayerProfiles({
+      apiClient: createPlayerProfileApiClient(profileRoot),
+      selectionStorage: selection.storage,
+      clock: () => '2026-05-27T12:00:00.000Z',
+    })
+
+    await expect(playerProfiles.reloadProfiles()).resolves.toEqual([linkedProfile])
+    const rememberedProfile = playerProfiles.rememberProfileById(linkedProfile.id)
+
+    expect(selection.current()).toEqual(rememberedProfile)
+    expect(playerProfiles.selectedProfile.value).toEqual(linkedProfile)
+    expect(playerProfiles.selectedLinkedCharacters.value).toEqual(linkedProfile.linkedCharacters)
+
+    const selectedProfile = playerProfiles.selectedProfile.value as PlayerProfile
+    let storedMap = createArenaMap()
+    const mapPath = '/memory/maps/arena.json'
+    const mapWrites: TabletopMap[] = []
+    const mapDeps = {
+      findMapPath: (slug: string) => (slug === storedMap.slug ? mapPath : null),
+      readMap: () => storedMap,
+      writeMap: (_path: string, map: TabletopMap) => {
+        storedMap = map
+        mapWrites.push(map)
+      },
+      readSheet: (kind: SheetKind, slug: string) => {
+        const sheet = sheets.get(sheetKey(kind, slug))
+        return sheet ? { sheet } : null
+      },
+      now: () => 1_700_000_000_000,
+      relativePath: () => 'data/maps/arena.json',
+    }
+
+    expect(loadMapUseCase({
+      role: 'player',
+      slug: 'arena',
+    }, mapDeps).map).toEqual(storedMap)
+
+    const moveResult = moveMapTokenUseCase({
+      role: 'player',
+      slug: 'arena',
+      placementId: 'linked-token',
+      position: { x: 4, y: 0, z: 2 },
+      pathLength: 3,
+      clientId: 'player-client',
+      playerProfile: selectedProfile,
+    }, mapDeps)
+
+    expect(moveResult.path).toBe('data/maps/arena.json')
+    expect(moveResult.placement).toMatchObject({
+      id: 'linked-token',
+      position: { x: 4, y: 0, z: 2 },
+    })
+    expect(storedMap.placements.find((placement) => placement.id === 'linked-token')).toMatchObject({
+      position: { x: 4, y: 0, z: 2 },
+    })
+    expect(storedMap.placements.find((placement) => placement.id === 'unlinked-token')).toMatchObject({
+      position: { x: 3, y: 0, z: 3 },
+    })
+    expect(moveResult.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
+
+    const linkedSheetLoad = loadSheetUseCase({
+      role: 'player',
+      kind: 'pokemon',
+      slug: 'pikachu',
+      playerProfile: selectedProfile,
+    }, {
+      readSheet: (kind, slug) => {
+        const sheet = sheets.get(sheetKey(kind, slug))
+        return sheet ? { sheet: sheet as unknown as LoadedSheet } : null
+      },
+    })
+
+    expect(linkedSheetLoad.sheet).toMatchObject({ nickname: 'Pika', player: false })
+
+    const sheetWrites: Array<{ path: string; sheet: Record<string, unknown> }> = []
+    const savedSheet = saveSheetUseCase({
+      role: 'player',
+      kind: 'pokemon',
+      slug: 'pikachu',
+      sheet: {
+        ...linkedSheetLoad.sheet,
+        nickname: 'Sparky',
+        playerProfileAccessible: true,
+      },
+      playerProfile: selectedProfile,
+      clientId: 'player-client',
+    }, {
+      findSheetPath: (kind, slug) => sheetPaths.get(sheetKey(kind, slug)) ?? null,
+      isPlayerAccessible: (kind, slug) => sheets.get(sheetKey(kind, slug))?.player === true,
+      stripDerivedFields: (sheet) => {
+        const stripped = { ...sheet }
+        delete stripped.folder
+        return stripped
+      },
+      readExistingSheet: (path) => {
+        const entry = [...sheetPaths.entries()].find(([, entryPath]) => entryPath === path)
+        return entry ? { ...sheets.get(entry[0]) } : {}
+      },
+      writeSheet: (path, sheet) => {
+        sheetWrites.push({ path, sheet })
+        const entry = [...sheetPaths.entries()].find(([, entryPath]) => entryPath === path)
+        if (entry) sheets.set(entry[0], sheet)
+      },
+      relativePath: (path) => path.replace('/memory/', 'data/'),
+    })
+
+    expect(savedSheet).toMatchObject({
+      ok: true,
+      slug: 'pikachu',
+      sheet: {
+        slug: 'pikachu',
+        nickname: 'Sparky',
+        species: 'Pikachu',
+        level: 5,
+        player: false,
+      },
+    })
+    expect(sheetWrites).toEqual([
+      {
+        path: '/memory/sheets/pokemon/pikachu.json',
+        sheet: {
+          slug: 'pikachu',
+          nickname: 'Sparky',
+          species: 'Pikachu',
+          level: 5,
+          player: false,
+        },
+      },
+    ])
+
+    expect(() => moveMapTokenUseCase({
+      role: 'player',
+      slug: 'arena',
+      placementId: 'unlinked-token',
+      position: { x: 5, y: 0, z: 5 },
+      playerProfile: selectedProfile,
+    }, mapDeps)).toThrow('Token is not linked to selected player profile')
+    expect(mapWrites).toHaveLength(1)
+    expect(storedMap.placements.find((placement) => placement.id === 'unlinked-token')).toMatchObject({
+      position: { x: 3, y: 0, z: 3 },
+    })
+
+    await expect(invokePostRoute(createMapRoute, {
+      role: 'player',
+      body: { name: 'Player-built map' },
+    })).rejects.toMatchObject({
+      statusCode: 403,
+      statusMessage: 'GM login required',
+    })
+    await expect(invokePostRoute(createSheetRoute, {
+      role: 'player',
+      body: { kind: 'pokemon', folder: '' },
+    })).rejects.toMatchObject({
+      statusCode: 403,
+      statusMessage: 'GM login required',
+    })
+  })
+})

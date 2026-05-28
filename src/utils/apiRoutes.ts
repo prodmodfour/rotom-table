@@ -8,8 +8,13 @@ export const SESSION_API_PATHS = {
   manage: '/api/sessions/manage',
   playerState: '/api/sessions/player-state',
   assignments: '/api/sessions/assignments',
-  attachMap: '/api/sessions/maps/attach',
   socket: '/api/sessions/socket',
+} as const
+
+export const PLAYER_PROFILE_API_PATHS = {
+  list: '/api/player-profiles/list',
+  create: '/api/player-profiles/create',
+  update: '/api/player-profiles/update',
 } as const
 
 export const MAP_API_PATHS = {
@@ -18,6 +23,11 @@ export const MAP_API_PATHS = {
   load: '/api/maps/load',
   save: '/api/maps/save',
   useMove: '/api/maps/use-move',
+  moveToken: '/api/maps/tokens/move',
+  turnToken: '/api/maps/tokens/turn',
+  useManeuver: '/api/maps/tokens/use-maneuver',
+  useAbility: '/api/maps/tokens/use-ability',
+  useOrder: '/api/maps/tokens/use-order',
   create: '/api/maps/create',
   createFolder: '/api/maps/create-folder',
   move: '/api/maps/move',

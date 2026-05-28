@@ -164,12 +164,12 @@ export const useOrderActionPanel = ({
     if (!map.value || !canControlPlacement(user.id)) return false
 
     onBeforeOrderAction?.({ userId: user.id, orderName: order.name })
-    const sessionDispatchResult = dispatchOrderUse?.({
+    const dispatchResult = dispatchOrderUse?.({
       userId: user.id,
       orderName: order.name,
       ...(target === null ? {} : { targetTokenId: target.id }),
     })
-    if (sessionDispatchResult !== undefined) return sessionDispatchResult
+    if (dispatchResult !== undefined) return dispatchResult
 
     const activeEffect = createActiveOrderEffect({
       user,

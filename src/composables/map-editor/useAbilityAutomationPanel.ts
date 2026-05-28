@@ -155,8 +155,8 @@ export const useAbilityAutomationPanel = ({
     option: TokenAbilityMenuOption,
   ) => {
     onBeforeNonImmediateAction?.({ userId: user.id, abilityName: option.name })
-    const sessionDispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: option.name })
-    if (sessionDispatchResult !== undefined) return
+    const dispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: option.name })
+    if (dispatchResult !== undefined) return
 
     await modifyAbilityActivation({
       id: user.id,
@@ -178,8 +178,8 @@ export const useAbilityAutomationPanel = ({
     user: SpawnedPokemon,
     option: TokenAbilityMenuOption,
   ) => {
-    const sessionDispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: option.name })
-    if (sessionDispatchResult !== undefined) {
+    const dispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: option.name })
+    if (dispatchResult !== undefined) {
       onBeforeNonImmediateAction?.({ userId: user.id, abilityName: option.name })
       return
     }
@@ -246,8 +246,8 @@ export const useAbilityAutomationPanel = ({
     if (!user || !target) return
 
     activeAbilityTargeting.value = null
-    const sessionDispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: request.abilityName, targetTokenId: target.id })
-    if (sessionDispatchResult !== undefined) {
+    const dispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: request.abilityName, targetTokenId: target.id })
+    if (dispatchResult !== undefined) {
       onBeforeNonImmediateAction?.({ userId: user.id, abilityName: request.abilityName })
       return
     }

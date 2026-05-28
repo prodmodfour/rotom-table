@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
@@ -9,91 +9,60 @@ const repoRoot = resolve(testDir, '../..')
 
 const readText = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
-describe('Live session named-tunnel maintenance checklist', () => {
-  const review = readText('docs/live-session-named-tunnel-maintenance.md')
-  const runbook = readText('docs/live-session-cloudflare-tunnel-hosting.md')
+const collectMarkdown = (directory: string): string[] => readdirSync(directory, { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = resolve(directory, entry.name)
 
-  it('records the named-tunnel maintenance baseline and scope', () => {
-    expect(review).toContain('This maintenance checklist records')
-    expect(review).toContain('Current baseline as of 2026-05-26')
-    expect(review).toContain('source/reference check, not a live remote smoke result')
-    expect(review).toContain('No real Cloudflare account, hostname, tunnel token, join code, GM key, snapshot, event log')
-    expect(review).toContain('This maintenance check does not run a live public tunnel')
-    expect(review).toContain('requires a real Cloudflare account, DNS zone, and stable hostname')
+    if (entry.isDirectory()) return collectMarkdown(path)
+
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : []
   })
 
-  it('captures current Cloudflare named-tunnel command and config assumptions', () => {
-    expect(review).toContain('cloudflared tunnel login')
-    expect(review).toContain('cloudflared tunnel create')
-    expect(review).toContain('cloudflared tunnel route dns')
-    expect(review).toContain('cloudflared tunnel run')
-    expect(review).toContain('~/.cloudflared/config.yml')
-    expect(review).toContain('tunnel')
-    expect(review).toContain('credentials-file')
-    expect(review).toContain('service: http://localhost:3000')
-    expect(review).toContain('service: http_status:404')
-    expect(review).toContain('dashboard-managed tunnels only when they preserve the same stable hostname')
+const docsMarkdown = (): string[] => [
+  'README.md',
+  ...collectMarkdown(resolve(repoRoot, 'docs')).map((path) => relative(repoRoot, path)),
+]
+
+describe('profile-based play documentation boundaries', () => {
+  it('documents current player-profile play and legacy live-session isolation', () => {
+    const profileGuide = readText('docs/player-profiles.md')
+
+    expect(profileGuide).toContain('persistent player profiles')
+    expect(profileGuide).toContain('players normally open the relevant player-visible map')
+    expect(profileGuide).toContain('Pokédex')
+    expect(profileGuide).toContain('PTU reference pages')
+    expect(profileGuide).toContain('Players do not need `/sessions`')
+    expect(profileGuide).toContain('share link')
+    expect(profileGuide).toContain('per-map invite')
+
+    expect(readText('README.md')).toContain('docs/player-profiles.md')
+    expect(readText('docs/README.md')).toContain('player-profiles.md')
+    expect(readText('docs/live-session-product-readiness-review.md')).toContain('no longer the normal Rotom Table play guide')
+    expect(readText('docs/live-session-lobby.md')).toContain('It does not describe normal map play')
   })
 
-  it('locks WebSocket, cache, optional edge protection, and credential safety warnings', () => {
-    expect(review).toContain('wss://<stable-hostname>/api/sessions/socket')
-    expect(review).toContain('wss://table.example.com/api/sessions/socket')
-    expect(review).toContain('Cloudflare Tunnel supports WebSockets')
-    expect(review).toContain('no caching for session paths and WebSocket traffic')
-    expect(review).toContain('not to cache `/sessions`, `/maps/*`, `/api/sessions/*`, WebSocket responses, patches, snapshots, or lobby state')
-    expect(review).toContain('Cloudflare Access, WAF rules, and IP restrictions')
-    expect(review).toContain('optional outer protection')
-    expect(review).toContain('`cert.pem` and tunnel credentials JSON files are credentials')
-    expect(review).toContain('Tunnel credentials, `cert.pem`, tokens, private keys, real `.env` files')
-  })
+  it('keeps obsolete live-session-as-normal-play instructions out of docs', () => {
+    const matches: string[] = []
+    const forbidden = [
+      /\?session=1/,
+      /Visible session maps/,
+      /Assign map tokens/,
+      /Assign control/,
+      /ready for trusted-table live-session rehearsal and play/i,
+      /live-session map attachment doc/i,
+    ]
 
-  it('keeps the locked Live session architecture boundaries explicit', () => {
-    expect(review).toContain('LAN remains the primary supported hosting path; a named Cloudflare Tunnel with a stable hostname remains the supported remote path')
-    expect(review).toContain('ROTOM_ENABLE_SESSION_HOST=1')
-    expect(review).toContain('server-authoritative WebSocket commands')
-    expect(review).toContain('Quick Tunnel and temporary `trycloudflare.com` URLs remain development-smoke-test only')
-    expect(review).toContain('does not make Rotom Table a SaaS app, Cloudflare-hosted app, public multi-tenant service, or cloud database deployment')
-    expect(review).toContain('browser-owned whole-map live autosave')
-    expect(review).not.toContain('Quick Tunnel is the supported campaign-session path')
-  })
+    for (const path of docsMarkdown()) {
+      const text = readText(path)
+      const lines = text.split('\n')
 
-  it('provides a pass/fail cross-check and operator checklist for named-tunnel docs', () => {
-    expect(review).toContain('## Runbook cross-check')
-    expect(review).toContain('| Stable remote hostname |')
-    expect(review).toContain('| Local host binding |')
-    expect(review).toContain('| WebSocket route |')
-    expect(review).toContain('| Rollback/shutdown |')
-    expect(review).toContain('| Architecture lock |')
-    expect(review).toContain('## Operator checklist before a named-tunnel game')
-    expect(review).toContain('cloudflared --version')
-    expect(review).toContain('npm run dev:session:tunnel -- --print-only')
-    expect(review).toContain('git status --short')
-  })
+      lines.forEach((line, index) => {
+        for (const pattern of forbidden) {
+          if (pattern.test(line)) matches.push(`${path}:${index + 1}: ${line}`)
+        }
+      })
+    }
 
-  it('records the official documentation sources used for the review', () => {
-    expect(review).toContain('tunnel-useful-commands')
-    expect(review).toContain('configuration-file')
-    expect(review).toContain('developers.cloudflare.com/tunnel/routing')
-    expect(review).toContain('cloudflare-one/faq/cloudflare-tunnels-faq')
-    expect(review).toContain('cache/how-to/cache-rules/settings')
-    expect(review).toContain('tunnel-permissions')
-    expect(review).toContain('Live session ADRs, roadmap, runtime, WebSocket, security, dependency, backup, and deployment smoke docs')
-  })
-
-  it('updates the named tunnel runbook with the review status', () => {
-    expect(runbook).toContain('Reference check status')
-    expect(runbook).toContain('checked on 2026-05-26 against official Cloudflare docs')
-    expect(runbook).toContain('Live session named-tunnel maintenance checklist](live-session-named-tunnel-maintenance.md)')
-    expect(runbook).toContain('This maintenance check does not run a live public tunnel')
-    expect(runbook).toContain('Use the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md)')
-  })
-
-  it('is linked from primary Live session docs', () => {
-    expect(readText('README.md')).toContain('docs/live-session-named-tunnel-maintenance.md')
-    expect(readText('docs/README.md')).toContain('live-session-named-tunnel-maintenance.md')
-    expect(readText('docs/live-session-roadmap.md')).toContain('live-session-named-tunnel-maintenance.md')
-    expect(readText('docs/live-session-validation-matrix.md')).toContain('live-session-named-tunnel-maintenance.md')
-    expect(readText('docs/live-session-socket-protocol.md')).toContain('live-session-named-tunnel-maintenance.md')
-    expect(runbook).toContain('live-session-named-tunnel-maintenance.md')
+    expect(matches).toEqual([])
   })
 })

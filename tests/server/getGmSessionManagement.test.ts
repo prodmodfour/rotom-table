@@ -201,7 +201,7 @@ describe('getGmSessionManagementUseCase', () => {
     expect(result.maps).toEqual([])
   })
 
-  it('returns GM management status, join code, attached maps, players, clients, and assignments', () => {
+  it('returns GM management status, join code, session maps, players, clients, and assignments', () => {
     const state = createManagedState()
     const store = createStoreWithSession({ state })
 

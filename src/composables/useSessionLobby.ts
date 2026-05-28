@@ -1,10 +1,4 @@
 import { computed, ref } from 'vue'
-import type {
-  AttachSessionMapInput,
-  AttachSessionMapResult,
-  SessionMapAttachmentSelectedMapBehavior,
-  SessionMapAttachmentVisibilityBehavior,
-} from '#shared/sessionMapAttachment'
 import {
   SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
   updateSessionClientIdentityRevision,
@@ -22,11 +16,8 @@ import type { SessionSafetyStatus } from '#shared/sessionSafety'
 import type {
   PlayerAssignmentRecord,
   PlayerSessionActor,
-  SessionControllableResourceRef,
-  SessionTokenResourceRef,
 } from '#shared/sessionPermissions'
 import type { MapRevision, SessionRevision } from '#shared/sessionRevisions'
-import type { SheetKind } from '#shared/sheets'
 import type {
   SelectedSessionMapSlug,
   SessionConnectedClientRecord,
@@ -40,10 +31,6 @@ import {
   type SessionClientIdentityStorage,
 } from '~/utils/sessionClientIdentityStorage'
 import { useApiClient } from '~/composables/useApiClient'
-import {
-  buildSessionMapTokenResource,
-  normalizeSessionTokenAssignmentText,
-} from '~/utils/sessionTokenAssignmentResources'
 
 export type SessionLobbyLifecycleStatus = 'active' | 'ended'
 export type SessionLobbyClock = () => string
@@ -156,42 +143,6 @@ export interface JoinPlayerSessionForm {
   readonly playerId?: PlayerId | string
 }
 
-export interface AttachSessionMapForm {
-  readonly mapSlug: string
-  readonly selectedMapBehavior?: SessionMapAttachmentSelectedMapBehavior
-  readonly visibilityBehavior?: SessionMapAttachmentVisibilityBehavior
-}
-
-export type UpdatePlayerAssignmentAction = 'assign' | 'unassign'
-
-export interface UpdatePlayerAssignmentForm {
-  readonly playerId: PlayerId
-  readonly action: UpdatePlayerAssignmentAction
-  readonly resources: readonly SessionControllableResourceRef[]
-}
-
-export interface UpdatePlayerMapTokenAssignmentForm {
-  readonly playerId: PlayerId
-  readonly tokenId: string
-  readonly mapSlug?: string | null
-  readonly sheetKind?: SheetKind | null
-  readonly sheetSlug?: string | null
-}
-
-export interface UpdatePlayerAssignmentResponse {
-  readonly session: SessionLobbySessionSummary
-  readonly player: SessionPlayerRecord
-  readonly assignment: PlayerAssignmentRecord
-  readonly change: {
-    readonly action: UpdatePlayerAssignmentAction
-    readonly resources: readonly SessionControllableResourceRef[]
-  }
-  readonly snapshot: {
-    readonly writtenAt: string
-    readonly revision: SessionRevision
-  }
-}
-
 export interface UseSessionLobbyOptions {
   readonly apiClient?: ApiClient
   readonly identityStorage?: SessionClientIdentityStorage
@@ -233,8 +184,6 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
   const joinedPlayerSession = ref<JoinPlayerSessionResponse | null>(null)
   const playerState = ref<PlayerSessionStateResponse | null>(null)
   const playerProfileLobby = ref<PlayerSessionProfilesResponse | null>(null)
-  const lastAttachedSessionMap = ref<AttachSessionMapResult | null>(null)
-  const lastUpdatedPlayerAssignment = ref<UpdatePlayerAssignmentResponse | null>(null)
   const safetyStatus = ref<SessionSafetyStatus | null>(null)
   const safetyError = ref<string | null>(null)
   const busy = ref(false)
@@ -299,8 +248,6 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     playerState.value = response
     gmManagement.value = null
     startedGmSession.value = null
-    lastAttachedSessionMap.value = null
-    lastUpdatedPlayerAssignment.value = null
     rememberIdentityRevision(playerIdentityValue, response.session.revision)
     return response
   }
@@ -340,8 +287,6 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     try {
       const response = await apiClient.postJson<StartGmSessionResponse>(SESSION_API_PATHS.start, {})
       startedGmSession.value = response
-      lastAttachedSessionMap.value = null
-      lastUpdatedPlayerAssignment.value = null
       const nextIdentity: Extract<SessionClientIdentity, { role: 'gm' }> = {
         schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
         role: 'gm',
@@ -379,8 +324,6 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
 
       const response = await apiClient.postJson<JoinPlayerSessionResponse>(SESSION_API_PATHS.join, requestBody)
       joinedPlayerSession.value = response
-      lastAttachedSessionMap.value = null
-      lastUpdatedPlayerAssignment.value = null
       const nextIdentity: Extract<SessionClientIdentity, { role: 'player' }> = {
         schemaVersion: SESSION_CLIENT_IDENTITY_SCHEMA_VERSION,
         role: 'player',
@@ -402,159 +345,6 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
       busy.value = false
     }
   }
-
-  const attachMapToSession = async (form: AttachSessionMapForm): Promise<AttachSessionMapResult> => {
-    busy.value = true
-    lastError.value = null
-    lastNotice.value = null
-
-    try {
-      const currentIdentity = identity.value ?? identityStorage.load()
-      if (identity.value === null && currentIdentity !== null) {
-        identity.value = currentIdentity
-      }
-      if (currentIdentity?.role !== 'gm') {
-        throw new Error('A remembered GM live session is required before attaching a session map.')
-      }
-
-      const requestBody: AttachSessionMapInput = {
-        sessionId: currentIdentity.sessionId,
-        gmKey: currentIdentity.gmKey,
-        gmClientId: currentIdentity.clientId,
-        mapSlug: form.mapSlug.trim(),
-        ...(form.selectedMapBehavior === undefined
-          ? {}
-          : { selectedMapBehavior: form.selectedMapBehavior }),
-        ...(form.visibilityBehavior === undefined
-          ? {}
-          : { visibilityBehavior: form.visibilityBehavior }),
-      }
-
-      const response = await apiClient.postJson<AttachSessionMapResult>(
-        SESSION_API_PATHS.attachMap,
-        requestBody,
-      )
-      lastAttachedSessionMap.value = response
-      lastUpdatedPlayerAssignment.value = null
-      const refreshedIdentity = rememberIdentityRevision(currentIdentity, response.session.revision)
-      await fetchGmManagement(refreshedIdentity)
-      lastNotice.value = `Attached ${response.map.mapSlug} to the live session map.`
-      return response
-    } catch (error) {
-      recordFailure(error)
-      throw error
-    } finally {
-      busy.value = false
-    }
-  }
-
-  const selectedMapSlugForTokenAssignment = (): string | null => {
-    const selectedMap = gmManagement.value?.selectedMap
-    if (selectedMap?.availableForSessionMode === true) return selectedMap.mapSlug
-
-    const session = gmManagement.value?.session
-    if (
-      session?.selectedMapAttached === true &&
-      session.sessionMapAvailable === true &&
-      session.selectedMapSlug !== null
-    ) {
-      return session.selectedMapSlug
-    }
-
-    return lastAttachedSessionMap.value?.map.mapSlug ?? null
-  }
-
-  const mapTokenResourceForAssignment = (
-    form: UpdatePlayerMapTokenAssignmentForm,
-  ): SessionTokenResourceRef => {
-    const fallbackMapSlug = selectedMapSlugForTokenAssignment()
-    const requestedMapSlug = normalizeSessionTokenAssignmentText(form.mapSlug)
-    const resource = buildSessionMapTokenResource({
-      tokenId: form.tokenId,
-      mapSlug: requestedMapSlug,
-      sheetKind: form.sheetKind,
-      sheetSlug: form.sheetSlug,
-    }, {
-      fallbackMapSlug,
-    })
-
-    if (resource === null) {
-      throw new Error('Choose a token on an attached live session map before assigning player token control.')
-    }
-
-    return resource
-  }
-
-  const updatePlayerAssignment = async (
-    form: UpdatePlayerAssignmentForm,
-  ): Promise<UpdatePlayerAssignmentResponse> => {
-    busy.value = true
-    lastError.value = null
-    lastNotice.value = null
-
-    try {
-      const currentIdentity = identity.value ?? identityStorage.load()
-      if (identity.value === null && currentIdentity !== null) {
-        identity.value = currentIdentity
-      }
-      if (currentIdentity?.role !== 'gm') {
-        throw new Error('A remembered GM live session is required before assigning player tokens.')
-      }
-
-      const response = await apiClient.postJson<UpdatePlayerAssignmentResponse>(
-        SESSION_API_PATHS.assignments,
-        {
-          sessionId: currentIdentity.sessionId,
-          gmKey: currentIdentity.gmKey,
-          gmClientId: currentIdentity.clientId,
-          playerId: form.playerId,
-          action: form.action,
-          resources: form.resources,
-        },
-      )
-      lastUpdatedPlayerAssignment.value = response
-      const refreshedIdentity = rememberIdentityRevision(currentIdentity, response.session.revision)
-      await fetchGmManagement(refreshedIdentity)
-      const resourceCount = response.change.resources.length
-      const resourceLabel = resourceCount === 1 ? 'token resource' : 'token resources'
-      lastNotice.value = `${response.change.action === 'assign' ? 'Assigned' : 'Unassigned'} ${resourceCount} ${resourceLabel} for ${response.player.displayName}.`
-      return response
-    } catch (error) {
-      recordFailure(error)
-      throw error
-    } finally {
-      busy.value = false
-    }
-  }
-
-  const updatePlayerMapTokenAssignment = async (
-    action: UpdatePlayerAssignmentAction,
-    form: UpdatePlayerMapTokenAssignmentForm,
-  ): Promise<UpdatePlayerAssignmentResponse> => {
-    let resource: SessionTokenResourceRef
-    try {
-      resource = mapTokenResourceForAssignment(form)
-    } catch (error) {
-      recordFailure(error)
-      throw error
-    }
-
-    return await updatePlayerAssignment({
-      playerId: form.playerId,
-      action,
-      resources: [resource],
-    })
-  }
-
-  const assignSessionMapTokenToPlayer = async (
-    form: UpdatePlayerMapTokenAssignmentForm,
-  ): Promise<UpdatePlayerAssignmentResponse> =>
-    await updatePlayerMapTokenAssignment('assign', form)
-
-  const unassignSessionMapTokenFromPlayer = async (
-    form: UpdatePlayerMapTokenAssignmentForm,
-  ): Promise<UpdatePlayerAssignmentResponse> =>
-    await updatePlayerMapTokenAssignment('unassign', form)
 
   const refreshSessionSummary = async (): Promise<
     GmSessionManagementResponse | PlayerSessionStateResponse | null
@@ -608,8 +398,6 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     gmManagement.value = null
     joinedPlayerSession.value = null
     playerState.value = null
-    lastAttachedSessionMap.value = null
-    lastUpdatedPlayerAssignment.value = null
     lastError.value = null
     lastNotice.value = 'Cleared the remembered live session identity for this browser.'
   }
@@ -621,8 +409,6 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     joinedPlayerSession,
     playerState,
     playerProfileLobby,
-    lastAttachedSessionMap,
-    lastUpdatedPlayerAssignment,
     safetyStatus,
     safetyError,
     busy,
@@ -640,10 +426,6 @@ export const useSessionLobby = (options: UseSessionLobbyOptions = {}) => {
     loadPlayerProfiles,
     startGmSession,
     joinPlayerSession,
-    attachMapToSession,
-    updatePlayerAssignment,
-    assignSessionMapTokenToPlayer,
-    unassignSessionMapTokenFromPlayer,
     refreshSessionSummary,
     loadRememberedIdentity,
     clearRememberedIdentity,

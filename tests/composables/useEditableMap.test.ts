@@ -2,6 +2,7 @@ import { nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { useEditableMap } from '~/composables/useEditableMap'
+import { parsePlayerProfileId } from '#shared/playerProfiles'
 import type { RealtimeEvent } from '#shared/realtime'
 import type { TabletopMap } from '~/types/map'
 
@@ -97,7 +98,165 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.map.value?.updatedAt).toBe(200)
   })
 
-  it('pauses whole-map autosave in session mode and resumes it for local-first editing', async () => {
+  it('includes the selected player profile id in whole-map save requests when available', async () => {
+    const playerProfileId = ref(parsePlayerProfileId('profile_ash00000'))
+    const editable = useEditableMap('arena-map', { debounceMs: 10, playerProfileId })
+    await flushPromises()
+
+    editable.map.value!.placements[0]!.position = { x: 2, y: 0, z: 1 }
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.save, {
+      slug: 'arena-map',
+      map: expect.objectContaining({
+        placements: [expect.objectContaining({ position: { x: 2, y: 0, z: 1 } })],
+      }),
+      clientId: 'ssr',
+      profileId: 'profile_ash00000',
+    })
+  })
+
+  it('adopts document-backed token action responses without scheduling another whole-map save', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    editable.applyPersistedMap(mapFixture({
+      placements: [
+        {
+          id: 'token-pikachu',
+          sheetKind: 'pokemon',
+          sheetSlug: 'pikachu',
+          position: { x: 3, y: 0, z: 2 },
+          facing: 'south-east',
+          turned: false,
+        },
+      ],
+      updatedAt: 250,
+    }))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(editable.map.value?.placements[0]?.position).toEqual({ x: 3, y: 0, z: 2 })
+    expect(editable.map.value?.updatedAt).toBe(250)
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    expect(editable.status.value).toBe('idle')
+  })
+
+  it('applies non-echo realtime map updates without echo-saving through whole-map autosave', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: 'updated',
+      clientId: 'other-tab',
+      timestamp: 300,
+      data: mapFixture({
+        placements: [
+          {
+            id: 'token-pikachu',
+            sheetKind: 'pokemon',
+            sheetSlug: 'pikachu',
+            position: { x: 4, y: 0, z: 2 },
+            facing: 'north-west',
+            turned: true,
+          },
+        ],
+        updatedAt: 300,
+      }),
+    })
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(editable.map.value?.placements[0]).toMatchObject({
+      position: { x: 4, y: 0, z: 2 },
+      facing: 'north-west',
+      turned: true,
+    })
+    expect(editable.map.value?.updatedAt).toBe(300)
+    expect(editable.status.value).toBe('idle')
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('drops own realtime echoes so a local tab does not overwrite itself', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: 'updated',
+      clientId: 'ssr',
+      timestamp: 300,
+      data: mapFixture({ name: 'Echoed Arena', updatedAt: 300 }),
+    })
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(editable.map.value?.name).toBe('Arena Map')
+    expect(editable.map.value?.updatedAt).toBe(100)
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('cancels pending dirty saves when another viewer publishes an authoritative map update', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    editable.map.value!.name = 'Locally queued rename'
+    await nextTick()
+    expect(editable.status.value).toBe('saving')
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: 'updated',
+      clientId: 'other-tab',
+      timestamp: 400,
+      data: mapFixture({ name: 'Remote authoritative rename', updatedAt: 400 }),
+    })
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(editable.map.value?.name).toBe('Remote authoritative rename')
+    expect(editable.map.value?.updatedAt).toBe(400)
+    expect(editable.status.value).toBe('idle')
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('ignores stale realtime map updates that arrive after a newer saved map', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: 'updated',
+      clientId: 'other-tab',
+      timestamp: 500,
+      data: mapFixture({ name: 'Newer Arena', updatedAt: 500 }),
+    })
+    await nextTick()
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: 'updated',
+      clientId: 'other-tab',
+      timestamp: 450,
+      data: mapFixture({ name: 'Older Arena', updatedAt: 450 }),
+    })
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(editable.map.value?.name).toBe('Newer Arena')
+    expect(editable.map.value?.updatedAt).toBe(500)
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('pauses whole-map autosave while disabled and resumes it for local-first editing', async () => {
     const autosaveEnabled = ref(false)
     const editable = useEditableMap('arena-map', { debounceMs: 10, autosaveEnabled })
     await flushPromises()

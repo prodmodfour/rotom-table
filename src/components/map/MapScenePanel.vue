@@ -4,9 +4,6 @@ import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
-import SessionCommandRejectionBanner from '~/components/map/SessionCommandRejectionBanner.vue'
-import SessionConnectionStatusBanner from '~/components/map/SessionConnectionStatusBanner.vue'
-import SessionPresencePanel from '~/components/map/SessionPresencePanel.vue'
 import MapCombatLog from '~/components/map/MapCombatLog.vue'
 import type { BuildTool } from '#shared/mapEditor'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -40,9 +37,6 @@ import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
-import type { SessionCommandRejectionNotice } from '~/utils/sessionCommandRejectionUi'
-import type { SessionConnectionStatusNotice } from '~/utils/sessionConnectionStatusUi'
-import type { SessionPresencePanelModel } from '~/utils/sessionPresencePanel'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 import type { PreviewState } from '~/utils/gridPreview'
 
@@ -92,10 +86,7 @@ const props = defineProps<{
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
-  sessionTokenControlNotice?: string | null
-  sessionCommandRejection?: SessionCommandRejectionNotice | null
-  sessionConnectionStatus?: SessionConnectionStatusNotice | null
-  sessionPresence?: SessionPresencePanelModel | null
+  tokenControlNotice?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -135,8 +126,6 @@ const emit = defineEmits<{
   (event: 'dismiss-celebrate-trigger', id: string): void
   (event: 'apply-celebrate-trigger', id: string): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
-  (event: 'refresh-session-snapshot'): void
-  (event: 'dismiss-session-command-rejection'): void
 }>()
 
 const COMBAT_LOG_MESSAGE_LIMIT = 24
@@ -222,24 +211,13 @@ defineExpose({ focusPokemon })
         @next="emit('next-initiative')"
       />
 
-      <SessionPresencePanel
-        v-if="props.map && canViewMap && props.sessionPresence"
-        :model="props.sessionPresence"
-      />
-
-      <SessionConnectionStatusBanner
-        v-if="props.map && canViewMap && props.sessionConnectionStatus"
-        :notice="props.sessionConnectionStatus"
-        @refresh-session="emit('refresh-session-snapshot')"
-      />
-
       <div
-        v-if="props.map && canViewMap && props.sessionTokenControlNotice"
-        class="session-token-control-notice"
+        v-if="props.map && canViewMap && props.tokenControlNotice"
+        class="token-control-notice"
         role="status"
         aria-live="polite"
       >
-        {{ props.sessionTokenControlNotice }}
+        {{ props.tokenControlNotice }}
       </div>
 
       <MapCombatLog
@@ -247,14 +225,7 @@ defineExpose({ focusPokemon })
         :messages="combatLogMessages"
       />
 
-      <SessionCommandRejectionBanner
-        v-if="props.sessionCommandRejection"
-        :notice="props.sessionCommandRejection"
-        @refresh-session="emit('refresh-session-snapshot')"
-        @dismiss="emit('dismiss-session-command-rejection')"
-      />
-
-      <div v-else-if="props.moveUsageError" class="move-usage-error" role="status">
+      <div v-if="props.moveUsageError" class="move-usage-error" role="status">
         {{ props.moveUsageError }}
       </div>
 
@@ -297,7 +268,7 @@ defineExpose({ focusPokemon })
   background: var(--paper);
 }
 
-.session-token-control-notice {
+.token-control-notice {
   position: absolute;
   z-index: 6;
   top: calc(var(--map-overlay-gutter, 0.75rem) + 6.8rem);
@@ -335,7 +306,7 @@ defineExpose({ focusPokemon })
 }
 
 @media (max-width: 840px) {
-  .session-token-control-notice {
+  .token-control-notice {
     left: var(--map-overlay-gutter, 0.75rem);
     width: min(30rem, calc(100vw - 1.5rem));
   }

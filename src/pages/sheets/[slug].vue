@@ -6,7 +6,13 @@ import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetR
 import { useSheetRenameUrlSync } from '~/composables/sheets/useSheetRenameUrlSync'
 import { syncNatureModForSheet } from '~/composables/sheets/usePokemonNatureControls'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
+import { getErrorMessage } from '~/utils/errorMessages'
 import { routeSlugParam } from '~/utils/routeParams'
+import {
+  buildSheetLoadQuery,
+  PLAYER_PROFILE_REQUIRED_FOR_LINKED_SHEET_MESSAGE,
+  sheetApiProfileContext,
+} from '~/utils/sheetApiRequests'
 import type { CharacterSheet } from '~/types/characterSheet'
 
 // ---------------------------------------------------------------------------
@@ -24,17 +30,28 @@ definePageMeta({
 
 const route = useRoute()
 const { isGm, isPlayer } = useAuth()
+const { selectedProfileId, loadRememberedProfile } = usePlayerProfiles()
+if (import.meta.client && isPlayer.value) loadRememberedProfile()
+
 const slug = routeSlugParam(route.params)
 const staticBaseSheet = characterSheetsBySlug.get(slug) ?? null
-const { data: runtimeSheetResult } = await useFetch<{ sheet: CharacterSheet } | null>(SHEET_API_PATHS.load, {
+const currentSheetProfileContext = () => sheetApiProfileContext(isPlayer.value, selectedProfileId.value)
+const sheetLoadQuery = computed(() => buildSheetLoadQuery({
+  kind: 'pokemon',
+  slug,
+  profileContext: currentSheetProfileContext(),
+}))
+const { data: runtimeSheetResult, error: runtimeSheetError } = await useFetch<{ sheet: CharacterSheet } | null>(SHEET_API_PATHS.load, {
   default: () => null,
   immediate: import.meta.dev,
   key: `pokemon-sheet-${slug}`,
-  query: { kind: 'pokemon', slug },
+  query: sheetLoadQuery,
+  server: !isPlayer.value,
 })
 const baseSheet = runtimeSheetResult.value?.sheet ?? (import.meta.dev ? null : staticBaseSheet)
 const {
   sheet,
+  editorCapabilities,
   saveStatus,
   saveError,
   renamedTo,
@@ -42,8 +59,10 @@ const {
   baseSheet,
   kind: 'pokemon',
   isPlayer,
+  isGm,
   normalize: normalizeCharacterSheet,
   prepareInitial: syncNatureModForSheet,
+  profileContext: currentSheetProfileContext,
 })
 
 useSheetRenameUrlSync({
@@ -53,6 +72,15 @@ useSheetRenameUrlSync({
 })
 
 const sheetFolder = computed(() => sheet.value?.folder ?? '')
+const sheetLoadErrorMessage = computed(() => {
+  if (!runtimeSheetError.value) return null
+  const message = getErrorMessage(runtimeSheetError.value)
+  if (isPlayer.value && !selectedProfileId.value && message.includes('linked to the selected player profile')) {
+    return PLAYER_PROFILE_REQUIRED_FOR_LINKED_SHEET_MESSAGE
+  }
+  return message
+})
+const sheetNotFoundMessage = computed(() => sheetLoadErrorMessage.value ?? 'No sheet exists for slug')
 const sheetPathLabel = computed(() => {
   if (!sheet.value) return null
   return sheet.value.nickname || sheet.value.slug
@@ -77,13 +105,13 @@ useHead(() => ({
     <PokemonSheetEditor
       v-if="sheet"
       :sheet="sheet"
-      :is-gm="isGm"
+      :capabilities="editorCapabilities"
     />
 
     <template #not-found>
       <SheetNotFoundCard
         title="Sheet not found"
-        message="No sheet exists for slug"
+        :message="sheetNotFoundMessage"
         :slug="slug"
       />
     </template>

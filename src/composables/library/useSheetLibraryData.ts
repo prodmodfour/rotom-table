@@ -7,6 +7,10 @@ import { useApiClient } from '~/composables/useApiClient'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import {
+  buildSheetListFetchOptions,
+  type SheetApiProfileContext,
+} from '~/utils/sheetApiRequests'
+import {
   applySheetLibraryOverrides,
   buildSheetFolderSet,
   buildSheetLibraryItems,
@@ -32,6 +36,7 @@ export interface UseSheetLibraryDataOptions {
   autoLoadFoldersOnMounted?: boolean
   fetchFolders?: () => Promise<SheetLibraryFolderFetchResult>
   fetchSheets?: () => Promise<SheetLibraryListFetchResult>
+  sheetProfileContext?: () => SheetApiProfileContext
   pokemonSheets?: ReadonlyArray<CharacterSheet>
   trainerSheets?: ReadonlyArray<TrainerSheet>
   speciesTypesFor?: (species: string) => string[] | undefined
@@ -41,8 +46,13 @@ export interface UseSheetLibraryDataOptions {
 const defaultFetchFolders = (): Promise<SheetLibraryFolderFetchResult> =>
   useApiClient().getJson<SheetLibraryFolderFetchResult>(SHEET_API_PATHS.folders)
 
-const defaultFetchSheets = (): Promise<SheetLibraryListFetchResult> =>
-  useApiClient().getJson<SheetLibraryListFetchResult>(SHEET_API_PATHS.list)
+const defaultFetchSheets = (
+  profileContext?: SheetApiProfileContext,
+): Promise<SheetLibraryListFetchResult> =>
+  useApiClient().getJson<SheetLibraryListFetchResult>(
+    SHEET_API_PATHS.list,
+    buildSheetListFetchOptions(profileContext),
+  )
 
 export const useSheetLibraryData = (options: UseSheetLibraryDataOptions) => {
   const sheetOverrides = reactive<Record<string, string>>({})
@@ -57,7 +67,7 @@ export const useSheetLibraryData = (options: UseSheetLibraryDataOptions) => {
   const runtimeTrainerSheets = ref<ReadonlyArray<TrainerSheet> | null>(null)
 
   const fetchFolders = options.fetchFolders ?? defaultFetchFolders
-  const fetchSheets = options.fetchSheets ?? defaultFetchSheets
+  const fetchSheets = options.fetchSheets ?? (() => defaultFetchSheets(options.sheetProfileContext?.()))
   const speciesTypesFor = options.speciesTypesFor ?? ((species: string) => getPokedexEntry(species)?.types)
   const spriteUrlFor = options.spriteUrlFor ?? getSpriteUrl
   const canUseDefaultSheetFetch = options.pokemonSheets === undefined && options.trainerSheets === undefined

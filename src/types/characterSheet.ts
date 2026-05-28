@@ -165,8 +165,12 @@ export interface CharacterSheet {
   /** PTU Loyalty rank, normally tracked by the GM, from 0 to 6. */
   loyalty?: number
   shiny?: boolean
-  /** Marks this sheet as a player-controlled character. */
+  /** Marks this sheet as broadly visible to players. */
   player?: boolean
+  /** Runtime API marker: this private sheet is linked to the selected player profile. */
+  playerProfileAccessible?: boolean
+  /** Runtime API marker: this private sheet is visible through a legacy session grant. */
+  sessionPlayerAccessible?: boolean
 
   /** PTU nature name, e.g. ``"Hardy"``, ``"Modest"``. */
   nature?: string

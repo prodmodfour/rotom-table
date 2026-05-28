@@ -20,19 +20,21 @@ npm install
 npm run dev
 ```
 
-Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and choose **GM Login** or **Player Login**. The selected role is stored in the `rotom-role` cookie.
+Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and choose **GM Login** or **Player Login**. The selected role is stored in the `rotom-role` cookie. Player Login then opens the persistent player profile picker for this browser.
 
-## Local-first versus live-session mode
+## Local-first profile play and legacy live-session hosting
 
 Plain `npm run dev` is local-first mode. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` save local JSON through autosave and keep using legacy `/api/events` realtime updates for same-machine or trusted-LAN local editing.
 
-Live-session mode is an explicit opt-in. The GM must start session hosting with `ROTOM_ENABLE_SESSION_HOST=1` through one of the guarded helpers, attach a saved map to the active live session, and open the map with `?session=1` before table actions use session commands and the session socket. Leaving `?session=1` off is the intended local-first editing path and does not attach browser-owned map changes to live-session authority.
+Normal map play uses the saved map document at `/maps/<slug>` with profile-linked token control. GMs manage profile links at `/player-profiles`; players select a profile after Player Login, then navigate to the relevant player-visible map and act with linked characters. Players can also browse Pokédex, sheet-library, and PTU reference routes without joining a live session.
+
+Legacy live-session hosting remains behind `ROTOM_ENABLE_SESSION_HOST=1` for direct-only session lobby/socket maintenance, but the map-attachment endpoint and session-owned normal map path have been removed. Normal play no longer requires `/sessions`, a join code, attaching a saved map, or a special session query on map URLs. See [Player profiles and linked character control](player-profiles.md) for the current product flow.
 
 For the automated and source-level no-regression evidence around local map autosave, sheet autosave, legacy local sync, and non-session navigation, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
 
-## Live session lobby smoke testing
+## Legacy live session lobby smoke testing
 
-Session hosting is disabled by default. Plain `npm run dev` keeps live session endpoints and sockets fail-closed. Use the guarded helper that matches the smoke path:
+The legacy session lobby is a direct-only maintenance/smoke surface, not a normal play requirement. Session hosting is disabled by default. Plain `npm run dev` keeps live session endpoints and sockets fail-closed. Use the guarded helper that matches the smoke path:
 
 ```bash
 npm run dev:session:lan
@@ -50,21 +52,9 @@ The manual LAN equivalent remains:
 ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000
 ```
 
-See [live session host runtime scripts](live-session-host-runtime.md) for helper options, safe defaults, and shutdown notes. See [Live session public exposure checks](live-session-public-exposure-checks.md) for no-secret safety banner warnings around public/LAN startup before session-local credentials and authoritative state are ready. See [Live session LAN hosting runbook](live-session-lan-hosting.md) for same-Wi-Fi setup, IP discovery, player browser URLs, and troubleshooting. See [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md) for stable-hostname remote setup, WebSocket considerations, safety warnings, and rollback steps. See [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) for the two-player LAN/named-tunnel pass covering reconnect, token movement, initiative, and conflict rejection, [Live session LAN manual smoke results](live-session-lan-manual-smoke-results.md) for the recorded browser-client LAN pass, and [Live session concurrency benchmark notes](live-session-concurrency-benchmark-notes.md) for latency-sensitive behaviour observations and known performance limits. See [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) before using any temporary `trycloudflare.com` URL; Quick Tunnel is development smoke-test only and does not make legacy SSE a supported session transport. See [Live session security boundaries](live-session-security-boundaries.md) for trust boundaries, join-code limits, tunnel exposure risks, and non-hardened areas. See [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for the checked package/runtime boundaries, exact session-host flag, Node/Nitro compatibility, and Cloudflare assumptions. See [live session lobby and manual QA](live-session-lobby.md) for the GM/player join flow, safety boundaries, and two-browser checklist. For the client-integration smoke that opens GM/player session-map tabs and checks basic token command propagation, use:
+See [live session host runtime scripts](live-session-host-runtime.md) for helper options, safe defaults, and shutdown notes. See [Live session public exposure checks](live-session-public-exposure-checks.md) for no-secret safety banner warnings around public/LAN startup before session-local credentials and authoritative state are ready. See [Live session LAN hosting runbook](live-session-lan-hosting.md), [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), and [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) only when maintaining the legacy lobby/socket surfaces; they are not instructions for normal profile-based play. See [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), [Live session security boundaries](live-session-security-boundaries.md), and [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for the checked legacy boundaries. See [live session lobby and manual QA](live-session-lobby.md) for the direct-only legacy lobby checklist.
 
-```bash
-npm run smoke:session:multi-tab -- --map <map-slug>
-```
-
-For an automated same-machine pass through start, attach, join, assign, session socket token movement, reconnect snapshot fallback, and cleanup, use:
-
-```bash
-npm run smoke:session:real-flow
-```
-
-See [Live session real-flow smoke script](live-session-real-flow-smoke.md) for options such as `--map <map-slug> --token <token-id>`, dry-run output, secret redaction, and cleanup behaviour.
-
-The existing local GM/player picker remains a trust switch for local use, not public authentication. For the live-session maintenance checks for plain `npm run dev`, `/maps/<slug>`, sheet autosave, and legacy SSE local-mode behaviour, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
+The existing local GM/player picker remains a trust switch for local use, not public authentication. For the maintenance checks for plain `npm run dev`, `/maps/<slug>`, sheet autosave, profile-linked control, and legacy SSE local-mode behaviour, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
 
 ## Checks
 
@@ -122,14 +112,15 @@ Encounter generation without `preview` writes generated Pokémon sheets under `d
 The app edits local JSON files during development:
 
 - maps: `data/maps/`
-- live session snapshots and optional event logs: `data/sessions/`
+- player profiles: `data/player-profiles/`
+- legacy live session snapshots and optional event logs: `data/sessions/`
 - Pokémon sheets: `data/sheets/`
 - trainer sheets: `data/trainers/`
 - encounter tables: `encounter_tables/`
 
 Nuxt/Vite are configured to ignore app-written sheet/map data changes so autosaves do not trigger full page reloads while editing. If you edit files outside the browser, refresh the relevant page or restart the dev server if the UI does not reflect the change.
 
-`.gitignore` is configured to keep personal campaign data and Live session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [live session storage](live-session-storage.md) for snapshot/event-log layout details, [Live session backup and recovery](live-session-backup-recovery.md) for private archive/restore guidance, [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) for the snapshot/event-log and hygiene review, and [Live session security boundaries](live-session-security-boundaries.md) for no-secret data-handling boundaries.
+`.gitignore` is configured to keep personal campaign data, player profiles, and legacy live session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [Player profiles and linked character control](player-profiles.md) for profile behaviour, [live session storage](live-session-storage.md) for legacy snapshot/event-log layout details, [Live session backup and recovery](live-session-backup-recovery.md) for private archive/restore guidance, [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) for the snapshot/event-log and hygiene review, and [Live session security boundaries](live-session-security-boundaries.md) for no-secret data-handling boundaries.
 
 ## Production write limitations
 

@@ -257,8 +257,12 @@ export interface TrainerSheet {
    */
   folder?: string
   name: string
-  /** Marks this sheet as a player-controlled character. */
+  /** Marks this sheet as broadly visible to players. */
   player?: boolean
+  /** Runtime API marker: this private sheet is linked to the selected player profile. */
+  playerProfileAccessible?: boolean
+  /** Runtime API marker: this private sheet is visible through a legacy session grant. */
+  sessionPlayerAccessible?: boolean
   /** Player handle / portrait alt. */
   playedBy?: string
   age?: string | number

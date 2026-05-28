@@ -1,8 +1,9 @@
-import { HOME_PATH, SESSION_LOBBY_PATH, isHomePath } from '~/utils/appRoutes'
+import { HOME_PATH, isHomePath } from '~/utils/appRoutes'
 import { ENCOUNTER_GENERATOR_PATH, ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { isLegacyGridPath } from '~/utils/legacyGridRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
+import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import { referenceIndexPath } from '~/utils/reference/routes'
 import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
 
@@ -14,9 +15,9 @@ export interface AppNavItem {
 
 export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: MAP_LIBRARY_PATH, label: 'Maps' },
-  { path: SESSION_LOBBY_PATH, label: 'Live session' },
   { path: POKEDEX_PATH, label: 'Pokédex' },
   { path: SHEET_LIBRARY_PATH, label: 'Sheets' },
+  { path: PLAYER_PROFILE_MANAGEMENT_PATH, label: 'Player profiles', gmOnly: true },
   { path: ENCOUNTER_GENERATOR_PATH, label: 'Generate', gmOnly: true },
 ]
 

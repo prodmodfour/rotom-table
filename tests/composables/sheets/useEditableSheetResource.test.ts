@@ -5,6 +5,8 @@ import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetR
 interface TestSheet {
   slug: string
   player?: boolean
+  sessionPlayerAccessible?: boolean
+  playerProfileAccessible?: boolean
   nested?: { value: number }
   prepared?: boolean
 }
@@ -23,6 +25,11 @@ describe('useEditableSheetResource', () => {
     expect(resource.sheet.value).toEqual({ slug: 'sheet-a', nested: { value: 2 }, prepared: true })
     expect(resource.sheet.value).not.toBe(baseSheet)
     expect(resource.sheet.value?.nested).not.toBe(baseSheet.nested)
+    expect(resource.editorCapabilities.value).toMatchObject({
+      accessMode: 'gm',
+      canEditSheet: true,
+      canManagePlayerAccess: true,
+    })
     expect(resource.saveStatus.value).toBe('idle')
     expect(resource.saveError.value).toBeNull()
   })
@@ -37,6 +44,11 @@ describe('useEditableSheetResource', () => {
 
     expect(resource.editor).toBeNull()
     expect(resource.sheet.value).toBeNull()
+    expect(resource.editorCapabilities.value).toMatchObject({
+      accessMode: 'none',
+      canEditSheet: false,
+      canManagePlayerAccess: false,
+    })
     expect(resource.saveStatus.value).toBe('idle')
   })
 
@@ -49,5 +61,26 @@ describe('useEditableSheetResource', () => {
     })
 
     expect(resource.sheet.value?.slug).toBe('player-sheet')
+    expect(resource.editorCapabilities.value).toMatchObject({
+      accessMode: 'player-accessible',
+      canEditSheet: true,
+      canManagePlayerAccess: false,
+    })
+  })
+
+  it('allows profile-linked sheets marked by the sheet load API for player sessions', () => {
+    const resource = useEditableSheetResource<TestSheet>({
+      baseSheet: { slug: 'linked-sheet', playerProfileAccessible: true } as TestSheet,
+      kind: 'pokemon',
+      isPlayer: computed(() => true),
+      normalize: (sheet) => sheet,
+    })
+
+    expect(resource.sheet.value?.slug).toBe('linked-sheet')
+    expect(resource.editorCapabilities.value).toMatchObject({
+      accessMode: 'profile-linked',
+      canEditSheet: true,
+      canManagePlayerAccess: false,
+    })
   })
 })
