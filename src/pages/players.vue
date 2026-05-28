@@ -11,7 +11,7 @@ import {
 } from '~/utils/playerProfileManagement'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
 
-useHead({ title: 'Player profiles · Rotom Table' })
+useHead({ title: 'Players · Rotom Table' })
 
 definePageMeta({
   middleware: () => {
@@ -103,7 +103,7 @@ onMounted(() => {
     <section class="profile-hero panel-card" aria-labelledby="player-profile-management-title">
       <div>
         <p class="eyebrow">GM tools</p>
-        <h1 id="player-profile-management-title">Player profiles</h1>
+        <h1 id="player-profile-management-title">Players</h1>
         <p class="hero-copy">
           Review persistent player profiles and the Pokémon or trainer sheets
           linked to each profile. These links drive player sheet editing and

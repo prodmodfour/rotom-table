@@ -8,7 +8,7 @@ For normal play, run:
 npm run dev
 ```
 
-Then use **GM Login**, `/player-profiles`, **Player Login**, and regular `/maps/<slug>` pages. Players can browse Pokédex and PTU reference pages without session hosting.
+Then use **GM Login**, `/players`, **Player Login**, and regular `/maps/<slug>` pages. Players can browse Pokédex and PTU reference pages without session hosting.
 
 ## Legacy helper commands
 

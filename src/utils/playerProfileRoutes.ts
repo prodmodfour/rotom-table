@@ -1,4 +1,4 @@
-export const PLAYER_PROFILE_MANAGEMENT_PATH = '/player-profiles' as const
+export const PLAYER_PROFILE_MANAGEMENT_PATH = '/players' as const
 
 export const PLAYER_PROFILE_GM_ONLY_PATH_PREFIXES = [
   PLAYER_PROFILE_MANAGEMENT_PATH,

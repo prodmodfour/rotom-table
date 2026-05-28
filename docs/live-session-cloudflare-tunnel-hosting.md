@@ -2,7 +2,7 @@
 
 This runbook is retained for maintaining the old guarded session lobby/socket surfaces over a stable tunnel. It is not the normal remote-player setup for profile-based play.
 
-Normal play still uses persistent player profiles and the regular app routes. If a trusted remote table uses a tunnel to reach the GM-hosted app, players should choose **Player Login**, select their profile, browse `/maps`, `/pokedex`, and PTU reference pages, and open the relevant player-visible map at `/maps/<slug>`. The GM links character sheets from `/player-profiles`. Do not use live-session join codes, map attachment, session-owned map copies, share links, or special map URLs for normal play.
+Normal play still uses persistent player profiles and the regular app routes. If a trusted remote table uses a tunnel to reach the GM-hosted app, players should choose **Player Login**, select their profile, browse `/maps`, `/pokedex`, and PTU reference pages, and open the relevant player-visible map at `/maps/<slug>`. The GM links character sheets from `/players`. Do not use live-session join codes, map attachment, session-owned map copies, share links, or special map URLs for normal play.
 
 ## When this legacy runbook applies
 

@@ -2,7 +2,7 @@
 
 This checklist is retained only for maintaining the guarded legacy session lobby/socket surfaces. It is not a before-game checklist for normal Rotom Table play.
 
-Normal profile-based play uses `/login`, `/player-profiles`, `/maps`, `/maps/<slug>`, `/sheets`, Pokédex pages, and PTU reference pages. Players select persistent profiles and act with linked characters on regular player-visible maps. Do not ask players to join `/sessions`, use a join code, attach a map, or open a special session map URL for normal play.
+Normal profile-based play uses `/login`, `/players`, `/maps`, `/maps/<slug>`, `/sheets`, Pokédex pages, and PTU reference pages. Players select persistent profiles and act with linked characters on regular player-visible maps. Do not ask players to join `/sessions`, use a join code, attach a map, or open a special session map URL for normal play.
 
 ## Prefer the current profile-play smoke
 
@@ -10,7 +10,7 @@ For the supported product flow, verify:
 
 - [ ] GM chooses **GM Login**.
 - [ ] GM prepares an existing Pokémon or trainer sheet and a player-visible saved map with a matching token placement.
-- [ ] GM opens `/player-profiles` and links that sheet to the intended player profile.
+- [ ] GM opens `/players` and links that sheet to the intended player profile.
 - [ ] Player chooses **Player Login**, selects that profile, and opens `/maps/<map-slug>`.
 - [ ] Player can move or act with the linked token.
 - [ ] Player can edit a linked sheet field.

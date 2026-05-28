@@ -7,7 +7,7 @@ Rotom Table's normal player workflow uses persistent player profiles, not live-s
 1. The GM starts the app with the usual local development command, such as `npm run dev`.
 2. The GM chooses **GM Login** on `/login`.
 3. The GM prepares sheets and a player-visible saved map as normal.
-4. The GM opens `/player-profiles`, creates or selects player profiles, and links the existing Pokémon or trainer sheets each player should control.
+4. The GM opens `/players`, creates or selects player profiles, and links the existing Pokémon or trainer sheets each player should control.
 5. Each player chooses **Player Login**, selects or creates their persistent profile, then opens the relevant player-visible map from `/maps` or directly at `/maps/<slug>`.
 6. Players act with tokens whose placement `sheetKind` and `sheetSlug` match one of their profile's linked characters.
 
@@ -23,7 +23,7 @@ If a remembered profile is missing or invalid, the app clears that remembered se
 
 ## GM profile management
 
-The `/player-profiles` route is GM-only. GMs can:
+The `/players` route is GM-only. GMs can:
 
 - list persistent player profiles;
 - view the profile ID, display name, and linked characters;
@@ -63,5 +63,5 @@ The role picker remains a trust-based local-table convenience. It is not hardene
 
 - **A player cannot control a token:** confirm the player selected the intended profile, the token placement references the linked sheet's current `sheetKind` and `sheetSlug`, and the map is player-visible.
 - **A player cannot save a sheet:** confirm the sheet is linked to the selected profile or is otherwise public/player-accessible.
-- **A profile-linked sheet disappeared from a player library:** refresh the profile selection from `/login`, then ask the GM to verify the link in `/player-profiles`.
+- **A profile-linked sheet disappeared from a player library:** refresh the profile selection from `/login`, then ask the GM to verify the link in `/players`.
 - **A player sees GM-only controls:** check the browser role on `/login`; players should use **Player Login** and a selected profile.

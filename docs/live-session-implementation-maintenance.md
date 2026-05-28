@@ -16,7 +16,7 @@ The removed session map attachment endpoint, attach-current-map UI, session-owne
 ## Current product boundaries
 
 - Players select persistent profiles after **Player Login**.
-- GMs link existing Pokémon/trainer sheets from `/player-profiles`.
+- GMs link existing Pokémon/trainer sheets from `/players`.
 - Players normally navigate to player-visible maps and act with linked characters.
 - Players can browse Pokédex, sheet-library, and PTU reference routes.
 - Players cannot create/delete maps or sheets, manage profile links, or use GM-only map-building/admin tools.

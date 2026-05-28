@@ -23,7 +23,7 @@ describe('app navigation helpers', () => {
     ])
     expect(PRIMARY_APP_NAV_ITEMS.some((item) => item.path === '/sessions')).toBe(false)
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).some((item) => item.path === '/sessions')).toBe(false)
-    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).some((item) => item.path === PLAYER_PROFILE_MANAGEMENT_PATH)).toBe(true)
+    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === PLAYER_PROFILE_MANAGEMENT_PATH)?.label).toBe('Players')
     expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
       '/moves',
       '/maneuvers',
@@ -49,8 +49,8 @@ describe('app navigation helpers', () => {
   it('uses exact matching for the home route and prefix matching otherwise', () => {
     expect(isAppNavItemActive('/', '/')).toBe(true)
     expect(isAppNavItemActive('/maps', '/')).toBe(false)
-    expect(isAppNavItemActive('/player-profiles', '/player-profiles')).toBe(true)
-    expect(isAppNavItemActive('/player-profiles/profile_ash00000', '/player-profiles')).toBe(true)
+    expect(isAppNavItemActive('/players', '/players')).toBe(true)
+    expect(isAppNavItemActive('/players/profile_ash00000', '/players')).toBe(true)
     expect(isAppNavItemActive('/moves/tackle', '/moves')).toBe(true)
     expect(isAppNavItemActive('/abilities', '/moves')).toBe(false)
   })

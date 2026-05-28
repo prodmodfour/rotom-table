@@ -2,7 +2,7 @@
 
 Quick Tunnel remains a temporary development smoke-test option for legacy session endpoint/socket maintenance only. It is not a supported campaign play path.
 
-Normal profile-based play does not require a tunnel-specific live-session flow. Players use **Player Login**, select persistent profiles, browse Pokédex/reference pages, and open regular player-visible maps at `/maps/<slug>`. GMs link characters from `/player-profiles`.
+Normal profile-based play does not require a tunnel-specific live-session flow. Players use **Player Login**, select persistent profiles, browse Pokédex/reference pages, and open regular player-visible maps at `/maps/<slug>`. GMs link characters from `/players`.
 
 ## If you use Quick Tunnel for legacy smoke
 

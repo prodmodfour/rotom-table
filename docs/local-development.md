@@ -26,7 +26,7 @@ Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and
 
 Plain `npm run dev` is local-first mode. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` save local JSON through autosave and keep using legacy `/api/events` realtime updates for same-machine or trusted-LAN local editing.
 
-Normal map play uses the saved map document at `/maps/<slug>` with profile-linked token control. GMs manage profile links at `/player-profiles`; players select a profile after Player Login, then navigate to the relevant player-visible map and act with linked characters. Players can also browse Pokédex, sheet-library, and PTU reference routes without joining a live session.
+Normal map play uses the saved map document at `/maps/<slug>` with profile-linked token control. GMs manage profile links at `/players`; players select a profile after Player Login, then navigate to the relevant player-visible map and act with linked characters. Players can also browse Pokédex, sheet-library, and PTU reference routes without joining a live session.
 
 Legacy live-session hosting remains behind `ROTOM_ENABLE_SESSION_HOST=1` for direct-only session lobby/socket maintenance, but the map-attachment endpoint and session-owned normal map path have been removed. Normal play no longer requires `/sessions`, a join code, attaching a saved map, or a special session query on map URLs. See [Player profiles and linked character control](player-profiles.md) for the current product flow.
 

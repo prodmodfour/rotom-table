@@ -2,7 +2,7 @@
 
 This runbook is retained for direct-only legacy session lobby/socket maintenance. It is not the normal LAN play setup for Rotom Table.
 
-For normal table play on a trusted LAN, start the app with `npm run dev`, have the GM choose **GM Login**, link character sheets to persistent player profiles at `/player-profiles`, and have players choose **Player Login** before opening player-visible maps at `/maps/<slug>`. Players can browse Pokédex and PTU reference pages directly. No `/sessions` lobby, join code, session map attachment, session-owned map copy, or special map URL is required.
+For normal table play on a trusted LAN, start the app with `npm run dev`, have the GM choose **GM Login**, link character sheets to persistent player profiles at `/players`, and have players choose **Player Login** before opening player-visible maps at `/maps/<slug>`. Players can browse Pokédex and PTU reference pages directly. No `/sessions` lobby, join code, session map attachment, session-owned map copy, or special map URL is required.
 
 ## When to use this legacy runbook
 

@@ -7,7 +7,7 @@ Current product direction: normal play uses persistent player profiles, linked c
 ## Current normal play flow
 
 1. GM starts Rotom Table normally, chooses **GM Login**, and prepares maps/sheets.
-2. GM opens `/player-profiles` and links existing Pokémon/trainer sheets to player profiles.
+2. GM opens `/players` and links existing Pokémon/trainer sheets to player profiles.
 3. Players choose **Player Login**, select or create their persistent profile, then open the relevant player-visible map at `/maps/<slug>`.
 4. Linked players move, turn, and use supported token-scoped actions through document-backed map actions.
 5. Linked players edit linked sheets through the normal sheet editor; unlinked private sheets and GM-only resource actions remain blocked.

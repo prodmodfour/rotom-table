@@ -54,5 +54,5 @@ Use one GM browser and one separate player browser/profile. Do not commit any ge
 - **The start button is disabled:** choose **GM Login** in the existing local `/login` route first.
 - **Player cannot reach the LAN URL:** verify the GM used `--host 0.0.0.0`, both devices are on the same network, and the firewall permits the dev-server port.
 - **Player join fails:** re-check the code from the GM lobby, make sure the session is still active, and refresh the GM lobby to confirm the session did not end.
-- **No map or token controls:** this is expected. Use normal `/maps/<slug>` profile-based play and **Link character sheets** in `/player-profiles` for current map control.
+- **No map or token controls:** this is expected. Use normal `/maps/<slug>` profile-based play and **Link character sheets** in `/players` for current map control.
 - **Session files appeared locally:** `data/sessions/` is ignored/private runtime data. Back it up only when needed and do not commit it.

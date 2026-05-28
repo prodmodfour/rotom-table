@@ -7,7 +7,7 @@ This summary is retained for legacy live-session maintenance. It no longer descr
 Profile-based play is the supported product path:
 
 - players choose or create a persistent player profile after **Player Login**;
-- GMs link existing Pokémon/trainer sheets to profiles from `/player-profiles`;
+- GMs link existing Pokémon/trainer sheets to profiles from `/players`;
 - players browse player-visible maps, linked/public sheets, Pokédex pages, and PTU reference pages;
 - players open the normal `/maps/<slug>` route and act with linked-character tokens;
 - players do not use live-session map attachment, session-owned map copies, join codes, invite links, or per-map sharing semantics for normal play.
