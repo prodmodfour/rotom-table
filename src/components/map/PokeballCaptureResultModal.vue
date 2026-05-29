@@ -193,15 +193,15 @@ onBeforeUnmount(clearTimers)
 }
 
 .capture-modal__portrait {
-  display: grid;
-  min-height: 13rem;
+  display: inline-grid;
+  width: fit-content;
+  height: fit-content;
   place-items: center;
-  border: 1px solid var(--rule);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  justify-self: center;
 }
 
 .capture-modal__portrait img {
+  display: block;
   max-width: min(100%, 18rem);
   max-height: 13rem;
   object-fit: contain;
