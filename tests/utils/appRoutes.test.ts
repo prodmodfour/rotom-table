@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
+  GM_ONLY_PATH_PREFIXES,
+  GM_PATH,
   HOME_PATH,
   LOGIN_PATH,
   SESSION_LOBBY_GM_SECTION_ID,
   SESSION_LOBBY_PATH,
   SESSION_LOBBY_PLAYER_SECTION_ID,
   SESSION_LOBBY_REMEMBERED_SECTION_ID,
+  gmPath,
   homePath,
+  isGmPath,
   isHomePath,
   loginPath,
   sessionLobbyJoinPath,
@@ -17,11 +21,14 @@ import {
 } from '~/utils/appRoutes'
 
 describe('app route helpers', () => {
-  it('exposes canonical home, login, and session lobby routes', () => {
+  it('exposes canonical home, login, GM, and session lobby routes', () => {
     expect(HOME_PATH).toBe('/')
     expect(homePath()).toBe('/')
     expect(LOGIN_PATH).toBe('/login')
     expect(loginPath()).toBe('/login')
+    expect(GM_PATH).toBe('/gm')
+    expect(gmPath()).toBe('/gm')
+    expect(GM_ONLY_PATH_PREFIXES).toEqual(['/gm'])
     expect(SESSION_LOBBY_PATH).toBe('/sessions')
     expect(sessionLobbyPath()).toBe('/sessions')
   })
@@ -36,9 +43,12 @@ describe('app route helpers', () => {
     expect(sessionLobbyRememberedPath()).toBe('/sessions#remembered-session-title')
   })
 
-  it('recognizes only the exact home path', () => {
+  it('recognizes only the exact home path and exact-or-nested GM paths', () => {
     expect(isHomePath('/')).toBe(true)
     expect(isHomePath('/maps')).toBe(false)
     expect(isHomePath('/?redirect=/maps')).toBe(false)
+    expect(isGmPath('/gm')).toBe(true)
+    expect(isGmPath('/gm/campaign')).toBe(true)
+    expect(isGmPath('/gm-tools')).toBe(false)
   })
 })
