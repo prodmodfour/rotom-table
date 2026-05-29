@@ -380,6 +380,12 @@ Move VFX use wall-clock event lifetimes while the document is hidden. When the b
 
 The map page also prunes expired `useMoveAnimationQueue()` entries on `visibilitychange` resume so renderer input does not retain stale wall-clock-expired events. If the tab was hidden only briefly and an effect has not expired, it resumes from its normal elapsed wall-clock progress on the scheduler's `hidden-tab-resume` frame. This policy keeps transient animations from getting stuck after a hidden-tab pause without adding persistence, gameplay mutations, renderer quality changes, or independent timers.
 
+### Unmount disposal for VFX-029
+
+`src/components/IsometricGrid.client.vue` now includes the move VFX renderer in the same unmount resource cleanup path as the other isometric renderer-owned resources. `disposeIsometricRendererResources()` calls `moveVfxRenderer.dispose()` before token render objects and WebGL/CSS3D renderer references are released, so leaving the map scene removes the dedicated `move-vfx-root` group, clears active VFX instances, and disposes primitive-owned Three.js children through the renderer's existing idempotent disposal path.
+
+This cleanup remains runtime-only. It does not clear or save map data, mutate token placement, change move automation outcomes, add timers, or affect renderer quality; it only guarantees transient VFX resources are detached when the grid unmounts.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

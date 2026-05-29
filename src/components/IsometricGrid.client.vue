@@ -1616,6 +1616,7 @@ onBeforeUnmount(() => {
     hazardRenderer,
     fieldEffectRenderer,
     voxelRenderer,
+    moveVfxRenderer,
     renderObjects,
     disposeRenderObject,
     gridRenderer,

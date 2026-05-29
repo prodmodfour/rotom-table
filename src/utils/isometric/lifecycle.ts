@@ -109,6 +109,7 @@ export interface IsometricRendererResourceDisposalOptions<TRenderObject> {
   hazardRenderer: DisposableResourceLike
   fieldEffectRenderer: DisposableResourceLike
   voxelRenderer: DisposableResourceLike
+  moveVfxRenderer: DisposableResourceLike
   renderObjects: Map<string, TRenderObject>
   disposeRenderObject: (renderObject: TRenderObject) => void
   gridRenderer: DisposableResourceLike
@@ -125,6 +126,7 @@ export const disposeIsometricRendererResources = <TRenderObject>({
   hazardRenderer,
   fieldEffectRenderer,
   voxelRenderer,
+  moveVfxRenderer,
   renderObjects,
   disposeRenderObject,
   gridRenderer,
@@ -139,6 +141,7 @@ export const disposeIsometricRendererResources = <TRenderObject>({
   hazardRenderer.dispose()
   fieldEffectRenderer.dispose()
   voxelRenderer.dispose()
+  moveVfxRenderer.dispose()
   disposeIsometricSharedCaches()
 
   for (const renderObject of renderObjects.values()) {
