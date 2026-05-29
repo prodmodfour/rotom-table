@@ -43,6 +43,7 @@ import {
   POKEBALL_THROW_RANGE_SQUARES,
   type TokenSendOutOption,
 } from '~/utils/mapTokenSendOut'
+import type { TokenPokeballOption } from '~/utils/pokeballCapture'
 import {
   DEFAULT_FACING_DIRECTION,
   alignCameraToGrid as alignIsometricCameraToGrid,
@@ -182,6 +183,7 @@ const props = defineProps<{
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
+  tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
@@ -200,6 +202,7 @@ const emit = defineEmits<{
   (event: 'use-ability', payload: { id: string; abilityName?: string | null }): void
   (event: 'use-order', payload: { id: string; orderName?: string | null }): void
   (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
+  (event: 'throw-pokeball', payload: { id: string; pokeballName: string }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
   (event: 'preview-change', preview: PreviewState): void
@@ -327,6 +330,7 @@ const {
   handleContextUseAbility,
   handleContextUseOrder,
   handleContextSendOutPokemon,
+  handleContextThrowPokeball,
   handleContextViewSheet,
   handleContextViewPokedex,
   handleContextDealDamage,
@@ -353,6 +357,7 @@ const {
     useAbility: (payload) => emit('use-ability', payload),
     useOrder: (payload) => emit('use-order', payload),
     sendOutPokemon: beginSendOutPlacement,
+    throwPokeball: (payload) => emit('throw-pokeball', payload),
     viewSheet: (id) => emit('view-sheet', id),
     viewPokedex: (id) => emit('view-pokedex', id),
   },
@@ -1359,7 +1364,7 @@ const targetReticleButtonTitle = (button: TargetReticleButton): string => {
 
 const targetReticleButtonLabel = (button: TargetReticleButton): string => {
   if (!button.showsReticle) return button.selected ? 'Exclude move target' : 'Include move target'
-  return button.hitChance ? `Select move target (${button.hitChance.label} to hit)` : 'Select move target'
+  return button.hitChance ? `Select target (${button.hitChance.label})` : 'Select move target'
 }
 
 const updateMoveAutomationOverlays = (): boolean => {
@@ -1807,6 +1812,7 @@ useIsometricSceneWatchers({
       :abilities="props.tokenAbilityOptionsById?.[contextMenu.id] ?? []"
       :orders="props.tokenOrderOptionsById?.[contextMenu.id] ?? []"
       :send-out-options="sendOutOptionsForToken(contextMenu.id)"
+      :pokeballs="props.tokenPokeballOptionsById?.[contextMenu.id] ?? []"
       @view-sheet="handleContextViewSheet"
       @view-pokedex="handleContextViewPokedex"
       @turn="handleContextTurn"
@@ -1818,6 +1824,7 @@ useIsometricSceneWatchers({
       @use-ability="handleContextUseAbility"
       @use-order="handleContextUseOrder"
       @send-out-pokemon="handleContextSendOutPokemon"
+      @throw-pokeball="handleContextThrowPokeball"
       @deal-damage="handleContextDealDamage"
       @delete="handleContextDelete"
     />

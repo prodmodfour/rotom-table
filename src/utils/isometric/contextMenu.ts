@@ -4,6 +4,7 @@ export interface TokenContextMenuCapabilities {
   canTurn: boolean
   canViewPokedex: boolean
   canUseOrders: boolean
+  canThrowPokeball: boolean
 }
 
 export interface TokenContextMenuState extends TokenContextMenuCapabilities {
@@ -50,6 +51,7 @@ export const getTokenContextMenuCapabilities = (pokemon: SpawnedPokemon): TokenC
   canTurn: Boolean(pokemon.entityKind === 'pokemon' && pokemon.backSpriteUrl),
   canViewPokedex: pokemon.sheetKind === 'pokemon',
   canUseOrders: pokemon.sheetKind === 'trainer',
+  canThrowPokeball: pokemon.sheetKind === 'trainer',
 })
 
 export const getTokenContextMenuButtonCount = (options: TokenContextMenuCapabilities & {
@@ -61,6 +63,7 @@ export const getTokenContextMenuButtonCount = (options: TokenContextMenuCapabili
   (options.canTurn ? 1 : 0) +
   (options.canUseOrders ? 1 : 0) +
   (options.canSendOut ? 1 : 0) +
+  (options.canThrowPokeball ? 1 : 0) +
   (options.canDeleteTokens ? 1 : 0)
 
 export const getTokenContextMenuHeight = (buttonCount: number): number =>

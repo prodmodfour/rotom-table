@@ -15,6 +15,7 @@ import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import { buildTokenOrderTooltipDetail } from '~/utils/mapTokenOrderTooltips'
 import type { RefTooltipDetail } from '~/utils/refLinks'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
+import type { TokenPokeballOption } from '~/utils/pokeballCapture'
 
 const props = defineProps<{
   menu: TokenContextMenuState
@@ -24,6 +25,7 @@ const props = defineProps<{
   abilities?: TokenAbilityMenuOption[]
   orders?: TokenOrderMenuOption[]
   sendOutOptions?: TokenSendOutOption[]
+  pokeballs?: TokenPokeballOption[]
 }>()
 
 const emit = defineEmits<{
@@ -38,11 +40,12 @@ const emit = defineEmits<{
   (event: 'use-ability', abilityName?: string | null): void
   (event: 'use-order', orderName?: string | null): void
   (event: 'send-out-pokemon', pokemonSlug: string): void
+  (event: 'throw-pokeball', pokeballName: string): void
   (event: 'deal-damage'): void
   (event: 'delete'): void
 }>()
 
-type ActiveContextPanel = 'main' | 'moves' | 'maneuvers' | 'abilities' | 'orders' | 'sendOut'
+type ActiveContextPanel = 'main' | 'moves' | 'maneuvers' | 'abilities' | 'orders' | 'sendOut' | 'pokeballs'
 
 interface NamedMenuItem {
   name: string
@@ -55,6 +58,7 @@ const maneuvers = computed(() => props.maneuvers ?? [])
 const abilities = computed(() => props.abilities ?? [])
 const orders = computed(() => props.orders ?? [])
 const sendOutOptions = computed(() => props.sendOutOptions ?? [])
+const pokeballs = computed(() => props.pokeballs ?? [])
 
 const {
   damageDisplayMode,
@@ -252,6 +256,11 @@ const openSendOutPanel = () => {
   activePanel.value = 'sendOut'
 }
 
+const openPokeballPanel = () => {
+  hideSubmenuTooltips()
+  activePanel.value = 'pokeballs'
+}
+
 watch(() => props.menu.id, () => resetContextPanel())
 
 watch(moves, (nextMoves) => {
@@ -338,6 +347,17 @@ watch(orders, (nextOrders) => {
           @click.stop="openSendOutPanel"
         >
           <span>Send Out Pokémon</span>
+          <span class="context-menu__chevron">›</span>
+        </button>
+
+        <button
+          v-if="props.menu.canThrowPokeball"
+          type="button"
+          class="context-menu__button context-menu__button--submenu"
+          aria-haspopup="menu"
+          @click.stop="openPokeballPanel"
+        >
+          <span>Throw Poké Ball</span>
           <span class="context-menu__chevron">›</span>
         </button>
 
@@ -705,6 +725,41 @@ watch(orders, (nextOrders) => {
           </div>
         </div>
       </template>
+
+      <template v-else-if="activePanel === 'pokeballs'">
+        <button
+          type="button"
+          class="context-menu__button context-menu__button--back"
+          @click.stop="resetContextPanel"
+        >
+          <span class="context-menu__back-icon" aria-hidden="true">‹</span>
+          <span>Back</span>
+        </button>
+
+        <p class="context-menu__submenu-title">Throw Poké Ball</p>
+
+        <div class="pokeball-submenu" role="menu" aria-label="Poké Balls">
+          <button
+            v-for="ball in pokeballs"
+            :key="ball.name"
+            type="button"
+            class="pokeball-submenu__item"
+            role="menuitem"
+            :title="ball.description"
+            @click.stop="emit('throw-pokeball', ball.name)"
+          >
+            <ItemSprite :item="ball.name" size="sm" />
+            <span class="pokeball-submenu__text">
+              <strong>{{ ball.name }}</strong>
+              <small>Qty {{ ball.quantity }} · Mod {{ ball.modifierLabel }}</small>
+            </span>
+          </button>
+
+          <div v-if="!pokeballs.length" class="context-menu__empty">
+            This trainer has no Poké Balls in inventory.
+          </div>
+        </div>
+      </template>
     </div>
   </Teleport>
 </template>
@@ -771,6 +826,7 @@ watch(orders, (nextOrders) => {
 .context-menu__button + .context-menu__submenu-heading,
 .context-menu__submenu-title + .action-submenu,
 .context-menu__submenu-title + .sendout-submenu,
+.context-menu__submenu-title + .pokeball-submenu,
 .context-menu__submenu-heading + .action-submenu {
   margin-top: 0.3rem;
 }
@@ -849,7 +905,8 @@ watch(orders, (nextOrders) => {
 }
 
 .action-submenu__list,
-.sendout-submenu {
+.sendout-submenu,
+.pokeball-submenu {
   max-height: min(42vh, 18rem);
   overflow: auto;
   padding: 0.35rem;
@@ -876,7 +933,8 @@ watch(orders, (nextOrders) => {
   grid-auto-columns: 16rem;
 }
 
-.sendout-submenu {
+.sendout-submenu,
+.pokeball-submenu {
   max-height: min(70vh, 24rem);
 }
 
@@ -897,7 +955,9 @@ watch(orders, (nextOrders) => {
 .action-submenu__item:focus-visible:not(:disabled),
 .action-submenu__item.is-active:not(:disabled),
 .sendout-submenu__item:hover,
-.sendout-submenu__item:focus-visible {
+.sendout-submenu__item:focus-visible,
+.pokeball-submenu__item:hover,
+.pokeball-submenu__item:focus-visible {
   border-color: var(--accent);
   background:
     linear-gradient(90deg, rgba(255, 31, 45, 0.16), rgba(255, 255, 255, 0.06)),
@@ -910,7 +970,8 @@ watch(orders, (nextOrders) => {
   opacity: 0.72;
 }
 
-.sendout-submenu__item {
+.sendout-submenu__item,
+.pokeball-submenu__item {
   display: grid;
   grid-template-columns: 2.4rem minmax(0, 1fr);
   gap: 0.55rem;
@@ -932,20 +993,24 @@ watch(orders, (nextOrders) => {
   image-rendering: pixelated;
 }
 
-.sendout-submenu__text {
+.sendout-submenu__text,
+.pokeball-submenu__text {
   display: grid;
   gap: 0.12rem;
   min-width: 0;
 }
 
 .sendout-submenu__text strong,
-.sendout-submenu__text small {
+.sendout-submenu__text small,
+.pokeball-submenu__text strong,
+.pokeball-submenu__text small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sendout-submenu__text small {
+.sendout-submenu__text small,
+.pokeball-submenu__text small {
   color: var(--ink-muted);
   font-size: 0.74rem;
   font-weight: 800;

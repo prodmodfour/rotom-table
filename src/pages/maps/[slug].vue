@@ -6,6 +6,7 @@ import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
 import MapEditorLayout from '~/components/map/MapEditorLayout.vue'
 import MapNavigationRail from '~/components/map/MapNavigationRail.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
+import PokeballCaptureResultModal from '~/components/map/PokeballCaptureResultModal.vue'
 import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
@@ -25,6 +26,7 @@ import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAu
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActionPanel'
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
+import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
@@ -32,8 +34,10 @@ import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { buildClientPlayerProfileTokenControlModel } from '~/utils/playerProfileTokenControl'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
+import { applyPokeballCaptureOutcomeToTrainerSheet } from '~/utils/pokeballCapture'
 import { isSameAnchor } from '~/utils/gridGeometry'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
+import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -380,6 +384,7 @@ const {
   modifyCombatStages,
   modifyConditions,
   modifyAbilityActivation,
+  updatePlacedSheet,
 } = useTokenSheetMutations({
   map,
   sheetLookup,
@@ -618,22 +623,66 @@ const {
 } = orderActionPanel
 expireActiveOrdersAfterInitiativeAdvance = orderActionPanel.expireActiveOrdersAfterInitiativeAdvance
 
+const applyPokeballCaptureOutcome = async (event: Parameters<typeof applyPokeballCaptureOutcomeToTrainerSheet>[1] & { trainerId: string; targetId: string }) => {
+  const sheetUpdated = await updatePlacedSheet(
+    event.trainerId,
+    (kind, sheet) => {
+      if (kind !== 'trainer') return sheet
+      const updated = deepCloneJson(sheet as TrainerSheet)
+      applyPokeballCaptureOutcomeToTrainerSheet(updated, event)
+      return updated
+    },
+    'throwPokeball',
+  )
+
+  if (sheetUpdated && event.result.success && isGm.value) deletePlacement(event.targetId)
+}
+
+const {
+  pokeballCaptureTargeting,
+  pokeballCaptureResult,
+  pokeballCaptureError,
+  tokenPokeballOptionsById,
+  openPokeballCapture,
+  selectPokeballCaptureTarget,
+  cancelPokeballCaptureTargeting,
+  dismissPokeballCaptureResult,
+} = usePokeballCapturePanel({
+  map,
+  spawnedPokemon,
+  pokemonBySlug,
+  trainerBySlug,
+  canControlPlacement,
+  applyCaptureOutcome: applyPokeballCaptureOutcome,
+})
+
 const actionAutomationTargeting = computed(() =>
   moveAutomationTargeting.value
+  ?? pokeballCaptureTargeting.value
   ?? abilityAutomationTargeting.value
   ?? maneuverActionTargeting.value
   ?? orderActionTargeting.value,
 )
 
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
+  cancelPokeballCaptureTargeting()
   cancelAbilityAutomationTargeting()
   cancelManeuverActionTargeting()
   cancelOrderActionTargeting()
   openMoveAutomation(payload)
 }
 
+const openPokeballCaptureFromContext = (payload: { id: string; pokeballName: string }) => {
+  cancelMoveAutomationTargeting()
+  cancelAbilityAutomationTargeting()
+  cancelManeuverActionTargeting()
+  cancelOrderActionTargeting()
+  openPokeballCapture(payload)
+}
+
 const useManeuverFromContext = (payload: { id: string; maneuverName?: string | null }) => {
   cancelMoveAutomationTargeting()
+  cancelPokeballCaptureTargeting()
   cancelAbilityAutomationTargeting()
   cancelOrderActionTargeting()
   useManeuver(payload)
@@ -641,6 +690,7 @@ const useManeuverFromContext = (payload: { id: string; maneuverName?: string | n
 
 const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: string | null }) => {
   cancelMoveAutomationTargeting()
+  cancelPokeballCaptureTargeting()
   cancelManeuverActionTargeting()
   cancelOrderActionTargeting()
   void openAbilityAutomation(payload)
@@ -648,6 +698,7 @@ const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: s
 
 const useOrderFromContext = (payload: { id: string; orderName?: string | null }) => {
   cancelMoveAutomationTargeting()
+  cancelPokeballCaptureTargeting()
   cancelManeuverActionTargeting()
   cancelAbilityAutomationTargeting()
   useOrder(payload)
@@ -656,6 +707,10 @@ const useOrderFromContext = (payload: { id: string; orderName?: string | null })
 const selectActionAutomationTarget = (targetId: string) => {
   if (moveAutomationTargeting.value) {
     selectMoveAutomationTarget(targetId)
+    return
+  }
+  if (pokeballCaptureTargeting.value) {
+    selectPokeballCaptureTarget(targetId)
     return
   }
   if (abilityAutomationTargeting.value) {
@@ -670,12 +725,16 @@ const selectActionAutomationTarget = (targetId: string) => {
 }
 
 const sceneActionError = computed(() => (
-  documentTokenActions.lastError.value ?? tokenSheetMutationError.value ?? moveUsageError.value
+  documentTokenActions.lastError.value ?? tokenSheetMutationError.value ?? pokeballCaptureError.value ?? moveUsageError.value
 ))
 
 const cancelActionAutomationTargeting = () => {
   if (moveAutomationTargeting.value) {
     cancelMoveAutomationTargeting()
+    return
+  }
+  if (pokeballCaptureTargeting.value) {
+    cancelPokeballCaptureTargeting()
     return
   }
   if (abilityAutomationTargeting.value) {
@@ -766,6 +825,7 @@ useMapDimensionReconciliation({
         :token-ability-options-by-id="tokenAbilityOptionsById"
         :token-order-options-by-id="tokenOrderOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
+        :token-pokeball-options-by-id="tokenPokeballOptionsById"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
         @previous-initiative="previousInitiativeAndExpireAoo"
@@ -781,6 +841,7 @@ useMapDimensionReconciliation({
         @use-ability="openAbilityAutomationFromContext"
         @use-order="useOrderFromContext"
         @send-out-pokemon="sendOutPokemonFromScene"
+        @throw-pokeball="openPokeballCaptureFromContext"
         @view-sheet="viewSheet"
         @view-pokedex="viewPokedex"
         @preview-change="updatePreview"
@@ -806,6 +867,12 @@ useMapDimensionReconciliation({
     </template>
 
     <template #modals>
+      <PokeballCaptureResultModal
+        v-if="pokeballCaptureResult"
+        :result="pokeballCaptureResult"
+        @close="dismissPokeballCaptureResult"
+      />
+
       <FieldEffectsMenuModal
         v-if="map && canViewMap && fieldEffectsMenuOpen"
         :can-edit-map="canEditMap"

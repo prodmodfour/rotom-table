@@ -27,6 +27,7 @@ import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
 import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
+import type { TokenPokeballOption } from '~/utils/pokeballCapture'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
@@ -58,6 +59,7 @@ defineProps<{
   tokenAbilityOptionsById?: Record<string, TokenAbilityMenuOption[]>
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
+  tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
@@ -76,6 +78,7 @@ const emit = defineEmits<{
   (event: 'use-ability', payload: { id: string; abilityName?: string | null }): void
   (event: 'use-order', payload: { id: string; orderName?: string | null }): void
   (event: 'send-out-pokemon', payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): void
+  (event: 'throw-pokeball', payload: { id: string; pokeballName: string }): void
   (event: 'view-sheet', id: string): void
   (event: 'view-pokedex', id: string): void
   (event: 'preview-change', preview: PreviewState): void
@@ -124,6 +127,7 @@ defineExpose({ focusPokemon })
     :token-ability-options-by-id="tokenAbilityOptionsById"
     :token-order-options-by-id="tokenOrderOptionsById"
     :token-send-out-options-by-id="tokenSendOutOptionsById"
+    :token-pokeball-options-by-id="tokenPokeballOptionsById"
     :move-automation-targeting="moveAutomationTargeting"
     :move-automation-feedback="moveAutomationFeedback"
     :attack-of-opportunity-prompts="attackOfOpportunityPrompts ?? []"
@@ -139,6 +143,7 @@ defineExpose({ focusPokemon })
     @use-ability="emit('use-ability', $event)"
     @use-order="emit('use-order', $event)"
     @send-out-pokemon="emit('send-out-pokemon', $event)"
+    @throw-pokeball="emit('throw-pokeball', $event)"
     @view-sheet="emit('view-sheet', $event)"
     @view-pokedex="emit('view-pokedex', $event)"
     @preview-change="emit('preview-change', $event)"
