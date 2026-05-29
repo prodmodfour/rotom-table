@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MOVE_VFX_KIND } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { GridAnchor } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
@@ -405,6 +405,152 @@ describe('generic move animation planner', () => {
       MOVE_VFX_KIND.areaPulse,
     ])
     expect(burstEvents[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Dragon)
+  })
+
+  it('no-ops safely when the user token is missing', () => {
+    expect(planGenericMoveAnimations(selfInput({ user: null }))).toEqual([])
+    expect(planGenericMoveAnimations(baseInput({ user: null }))).toEqual([])
+    expect(planGenericMoveAnimations(areaInput([{ x: 1, y: 0, z: 0 }], { user: null }))).toEqual([])
+  })
+
+  it('uses neutral user fallbacks for missing target IDs and empty area cells', () => {
+    const missingTargetEvents = planGenericMoveAnimations(baseInput({
+      targets: [],
+      selectedTargetIds: [],
+      script: script({
+        moveName: 'Missing Target Metadata',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Electric',
+        range: 'Range 6, 1 Target',
+      }),
+    }))
+    const emptyAreaEvents = planGenericMoveAnimations(areaInput([], {
+      script: script({
+        moveName: 'Empty Area Metadata',
+        targetMode: 'multi-target',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Fire',
+        areaTemplates: [{ kind: 'burst', size: 2, label: 'Burst 2' }],
+      }),
+    }))
+
+    expect(missingTargetEvents).toEqual([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.selfPulse,
+        originCell: { x: 0, y: 0, z: 0 },
+        palette: MOVE_VFX_TONE_COLORS.neutral,
+      }),
+    ])
+    expect(emptyAreaEvents).toEqual([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.selfPulse,
+        originCell: { x: 0, y: 0, z: 0 },
+        palette: MOVE_VFX_TONE_COLORS.neutral,
+      }),
+    ])
+  })
+
+  it('keeps target-id-only events safe when the target token snapshot is missing', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      targets: [],
+      selectedTargetIds: ['missing-target'],
+      script: script({
+        moveName: 'Missing Target Snapshot',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Water',
+        range: 'Range 6, 1 Target',
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        targetId: 'missing-target',
+        targetCell: undefined,
+      }),
+    ]))
+  })
+
+  it('falls back to the neutral palette for unknown damaging move types', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Unknown Type Metadata',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Starlight',
+        range: 'Range 6, 1 Target',
+      }),
+    }))
+
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.projectile,
+      palette: MOVE_VFX_TONE_COLORS.neutral,
+    })
+  })
+
+  it('normalizes malformed override events with missing durations', () => {
+    const input = baseInput({
+      script: script({
+        moveName: 'Malformed Override Duration',
+      }),
+    })
+    const planner = createMoveAnimationPlanner({
+      logPlanningWarnings: false,
+      overrideRegistry: {
+        [canonicalMoveAnimationOverrideKey('Malformed Override Duration')]: {
+          preset: {
+            id: 'test-only-missing-duration',
+            plan: (overrideInput) => [{
+              id: 'missing-duration-event',
+              moveName: '',
+              userId: '',
+              createdAtMs: Number.NaN,
+              kind: MOVE_VFX_KIND.selfPulse,
+              originCell: overrideInput.user?.position,
+            } as unknown as MoveAnimationEvent],
+          },
+        },
+      },
+    })
+
+    expect(planner(input)).toEqual([
+      expect.objectContaining({
+        id: 'missing-duration-event',
+        moveName: 'Malformed Override Duration',
+        userId: 'user-token',
+        createdAtMs: 1234,
+        durationMs: MOVE_VFX_DEFAULT_DURATIONS_MS.normal,
+        kind: MOVE_VFX_KIND.selfPulse,
+      }),
+    ])
+  })
+
+  it('catches planner failures and returns a safe fallback instead of throwing', () => {
+    const planner = createMoveAnimationPlanner({
+      logPlanningWarnings: false,
+      fallbackPlanner: () => {
+        throw new Error('planner failed')
+      },
+    })
+
+    expect(() => planner(baseInput())).not.toThrow()
+    expect(planner(baseInput())).toEqual([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.selfPulse,
+        originCell: { x: 0, y: 0, z: 0 },
+        palette: MOVE_VFX_TONE_COLORS.neutral,
+      }),
+    ])
   })
 
   it('returns a neutral fallback event for unusual scripts without targetable metadata', () => {

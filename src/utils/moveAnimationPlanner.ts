@@ -213,6 +213,8 @@ export const MOVE_ANIMATION_OVERRIDE_REGISTRY: MoveAnimationOverrideRegistry = O
 export interface CreateMoveAnimationPlannerOptions {
   readonly overrideRegistry?: MoveAnimationOverrideRegistry
   readonly fallbackPlanner?: MoveAnimationPlanner
+  /** Optional development-only diagnostics when a planner branch has to fall back safely. */
+  readonly logPlanningWarnings?: boolean
 }
 
 type GenericMoveSemanticIntent =
@@ -222,6 +224,106 @@ type GenericMoveSemanticIntent =
   | { readonly kind: 'neutral'; readonly tone: typeof MOVE_VFX_TONE.neutral }
 
 type PlannerEventIdFactory = (kind: MoveVfxKind, targetId?: string) => string
+
+interface MoveAnimationPlannerImportMetaEnvironment {
+  readonly dev?: boolean
+  readonly env?: {
+    readonly DEV?: unknown
+    readonly MODE?: unknown
+  }
+}
+
+interface MoveAnimationPlannerProcessEnvironment {
+  readonly dev?: unknown
+  readonly env?: {
+    readonly NODE_ENV?: unknown
+  }
+}
+
+const UNKNOWN_MOVE_ANIMATION_MOVE_NAME = 'Unknown Move'
+const UNKNOWN_MOVE_ANIMATION_USER_ID = 'unknown-user'
+const MOVE_VFX_KIND_VALUES = new Set<string>(Object.values(MOVE_VFX_KIND))
+
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null
+)
+
+const isMoveVfxKind = (value: unknown): value is MoveVfxKind => (
+  typeof value === 'string' && MOVE_VFX_KIND_VALUES.has(value)
+)
+
+const stringOrUndefined = (value: unknown): string | undefined => (
+  typeof value === 'string' ? value : undefined
+)
+
+const nonEmptyStringOrUndefined = (value: unknown): string | undefined => {
+  const trimmed = stringOrUndefined(value)?.trim()
+  return trimmed ? trimmed : undefined
+}
+
+const arrayOrEmpty = <T>(value: readonly T[] | null | undefined): readonly T[] => (
+  Array.isArray(value) ? value : []
+)
+
+const stringArrayOrEmpty = (value: readonly unknown[] | null | undefined): readonly string[] => (
+  arrayOrEmpty(value).filter((item): item is string => typeof item === 'string')
+)
+
+const gridAnchorOrUndefined = (value: unknown): GridAnchor | undefined => {
+  if (!isRecord(value)) return undefined
+
+  const { x, y, z } = value
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return undefined
+
+  return { x: x as number, y: y as number, z: z as number }
+}
+
+const gridAnchorsOrEmpty = (value: readonly unknown[] | null | undefined): readonly GridAnchor[] => (
+  arrayOrEmpty(value)
+    .map(gridAnchorOrUndefined)
+    .filter((anchor): anchor is GridAnchor => Boolean(anchor))
+)
+
+const finiteNumberOrZero = (value: unknown): number => (
+  typeof value === 'number' && Number.isFinite(value) ? value : 0
+)
+
+const safePlannerDurationMs = (value: unknown): number => (
+  typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : MOVE_VFX_DEFAULT_DURATIONS_MS.normal
+)
+
+const timingForInput = (input: MoveAnimationPlanInput): MoveAnimationPlanTimingContext => {
+  const timing: Record<string, unknown> = isRecord(input.timing) ? input.timing : {}
+
+  return {
+    nowMs: finiteNumberOrZero(timing.nowMs),
+    animationIdBase: nonEmptyStringOrUndefined(timing.animationIdBase),
+    baseDelayMs: finiteNumberOrZero(timing.baseDelayMs),
+    impactDelayMs: finiteNumberOrZero(timing.impactDelayMs),
+  }
+}
+
+const moveNameForInput = (input: MoveAnimationPlanInput): string => (
+  nonEmptyStringOrUndefined(input.script?.moveName)
+  ?? nonEmptyStringOrUndefined(input.transaction?.moveName)
+  ?? UNKNOWN_MOVE_ANIMATION_MOVE_NAME
+)
+
+const userIdForInput = (input: MoveAnimationPlanInput): string => (
+  nonEmptyStringOrUndefined(input.user?.id)
+  ?? nonEmptyStringOrUndefined(input.transaction?.userId)
+  ?? UNKNOWN_MOVE_ANIMATION_USER_ID
+)
+
+const userTokenForInput = (input: MoveAnimationPlanInput): MoveAnimationPlanToken | null => (
+  isRecord(input.user) ? input.user as MoveAnimationPlanToken : null
+)
+
+const positionForToken = (token: MoveAnimationPlanToken | null | undefined): GridAnchor | undefined => (
+  gridAnchorOrUndefined(token?.position)
+)
 
 const sanitizePlannerIdPart = (value: unknown): string => {
   const normalized = String(value ?? '')
@@ -233,8 +335,8 @@ const sanitizePlannerIdPart = (value: unknown): string => {
   return normalized || 'event'
 }
 
-export const canonicalMoveAnimationOverrideKey = (moveName: string): MoveAnimationOverrideKey => {
-  const normalized = moveName
+export const canonicalMoveAnimationOverrideKey = (moveName: unknown): MoveAnimationOverrideKey => {
+  const normalized = String(moveName ?? '')
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
@@ -246,11 +348,10 @@ export const canonicalMoveAnimationOverrideKey = (moveName: string): MoveAnimati
   return normalized || 'unknown-move'
 }
 
-const finiteNumberOrZero = (value: number): number => (Number.isFinite(value) ? value : 0)
-
 const createPlannerEventIdFactory = (input: MoveAnimationPlanInput): PlannerEventIdFactory => {
-  const baseSeed = input.timing.animationIdBase?.trim()
-    || `${input.script.moveName}-${finiteNumberOrZero(input.timing.nowMs)}`
+  const timing = timingForInput(input)
+  const baseSeed = timing.animationIdBase
+    ?? `${moveNameForInput(input)}-${timing.nowMs}`
   const base = sanitizePlannerIdPart(baseSeed)
   let nextSequence = 1
 
@@ -265,7 +366,7 @@ const targetIdFromEventExtras = <K extends MoveVfxKind>(
   extras: Partial<MoveAnimationEventByKind[K]>,
 ): string | undefined => {
   if (!('targetId' in extras)) return undefined
-  return typeof extras.targetId === 'string' ? extras.targetId : undefined
+  return nonEmptyStringOrUndefined(extras.targetId)
 }
 
 const createPlannerEvent = <K extends MoveVfxKind>(
@@ -277,26 +378,110 @@ const createPlannerEvent = <K extends MoveVfxKind>(
   palette?: MoveVfxPaletteEntry,
 ): MoveAnimationEventByKind[K] => ({
   id: nextId(kind, targetIdFromEventExtras(extras)),
-  moveName: input.script.moveName,
-  userId: input.user?.id ?? input.transaction?.userId ?? 'unknown-user',
-  createdAtMs: finiteNumberOrZero(input.timing.nowMs),
-  durationMs,
+  moveName: moveNameForInput(input),
+  userId: userIdForInput(input),
+  createdAtMs: timingForInput(input).nowMs,
+  durationMs: safePlannerDurationMs(durationMs),
   palette,
   kind,
   ...extras,
 } as MoveAnimationEventByKind[K])
+
+/**
+ * VFX-017 fallback policy:
+ * - if the user/source token is missing, return an empty plan because there is
+ *   no trustworthy anchor for a visual-only effect;
+ * - if a single-target move has no usable target id, show a neutral self pulse
+ *   on the user instead of inventing a target;
+ * - if a target id exists but its token snapshot/cell is missing, keep the
+ *   target-id-only event so a later renderer can resolve the live token or skip
+ *   the effect without planner failure;
+ * - if area cells are empty or invalid, fall back to the same neutral user
+ *   pulse instead of creating an empty area primitive;
+ * - unknown/custom move types use the neutral palette via the palette helper;
+ * - invalid or missing event durations are normalized to the normal timing tier;
+ * - unexpected override/generic-planner failures are caught by the public
+ *   planner and become this neutral fallback or a no-op, with optional dev logs.
+ */
+const createNeutralPlannerFallback = (input: MoveAnimationPlanInput): MoveAnimationEvent[] => {
+  const user = userTokenForInput(input)
+  if (!user) return []
+
+  return [createPlannerEvent(input, createPlannerEventIdFactory(input), MOVE_VFX_KIND.selfPulse, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
+    originCell: positionForToken(user),
+  }, moveVfxColorForTone(MOVE_VFX_TONE.neutral))]
+}
+
+const normalizePlannerOutput = (
+  input: MoveAnimationPlanInput,
+  output: MoveAnimationPlanOutput,
+): MoveAnimationEvent[] => {
+  if (!Array.isArray(output)) return []
+
+  const nextId = createPlannerEventIdFactory(input)
+  const timing = timingForInput(input)
+
+  return output.flatMap((event) => {
+    if (!isRecord(event) || !isMoveVfxKind(event.kind)) return []
+
+    const targetId = nonEmptyStringOrUndefined(event.targetId)
+    return [{
+      ...event,
+      id: nonEmptyStringOrUndefined(event.id) ?? nextId(event.kind, targetId),
+      moveName: nonEmptyStringOrUndefined(event.moveName) ?? moveNameForInput(input),
+      userId: nonEmptyStringOrUndefined(event.userId) ?? userIdForInput(input),
+      createdAtMs: finiteNumberOrZero(event.createdAtMs) || timing.nowMs,
+      durationMs: safePlannerDurationMs(event.durationMs),
+      kind: event.kind,
+    } as MoveAnimationEvent]
+  })
+}
+
+const isMoveAnimationPlannerDevelopmentEnvironment = (): boolean => {
+  const meta = import.meta as MoveAnimationPlannerImportMetaEnvironment
+  const processDebug = globalThis.process as MoveAnimationPlannerProcessEnvironment | undefined
+
+  return (
+    meta.dev === true
+    || meta.env?.DEV === true
+    || meta.env?.DEV === 'true'
+    || meta.env?.MODE === 'development'
+    || processDebug?.dev === true
+    || processDebug?.env?.NODE_ENV === 'development'
+  )
+}
+
+const warnMoveAnimationPlannerFallback = (
+  enabled: boolean,
+  reason: string,
+  error: unknown,
+): void => {
+  if (!enabled) return
+  console.warn(`[move-vfx] ${reason}; using safe fallback.`, error)
+}
 
 const includesNormalizedWord = (haystack: string, words: readonly string[]): boolean => {
   const normalized = haystack.toLowerCase()
   return words.some((word) => new RegExp(`(^|[^a-z0-9])${word}([^a-z0-9]|$)`, 'i').test(normalized))
 }
 
+const keywordsForScript = (script: MoveAnimationPlanScript): readonly string[] => (
+  stringArrayOrEmpty(script.keywords)
+)
+
+const areaTemplatesForScript = (script: MoveAnimationPlanScript) => (
+  Array.isArray(script.areaTemplates) ? script.areaTemplates : []
+)
+
 const moveClassificationText = (script: MoveAnimationPlanScript): string => [
-  script.range,
-  script.effect,
-  script.special ?? '',
-  ...script.keywords,
-  ...(script.areaTemplates?.map((template) => `${template.kind} ${template.label}`) ?? []),
+  stringOrUndefined(script.range) ?? '',
+  stringOrUndefined(script.effect) ?? '',
+  stringOrUndefined(script.special) ?? '',
+  ...keywordsForScript(script),
+  ...areaTemplatesForScript(script).map((template) => {
+    if (!isRecord(template)) return ''
+    return `${stringOrUndefined(template.kind) ?? ''} ${stringOrUndefined(template.label) ?? ''}`
+  }),
 ]
   .filter(Boolean)
   .join(' ')
@@ -304,28 +489,28 @@ const moveClassificationText = (script: MoveAnimationPlanScript): string => [
 const hasHealingSuggestion = (
   script: MoveAnimationPlanScript,
   recipient?: MoveAutomationRecipient,
-): boolean => script.hpSuggestions.some((suggestion) => (
+): boolean => arrayOrEmpty(script.hpSuggestions).some((suggestion) => (
   (!recipient || suggestion.recipient === recipient)
-  && suggestion.mode.startsWith('heal')
+  && (stringOrUndefined(suggestion.mode)?.startsWith('heal') ?? false)
 ))
 
 const stageDirectionForRecipient = (
   script: MoveAnimationPlanScript,
   recipient?: MoveAutomationRecipient,
 ): 'buff' | 'debuff' | null => {
-  const stageSuggestions = script.stageSuggestions.filter((suggestion) => (
+  const stageSuggestions = arrayOrEmpty(script.stageSuggestions).filter((suggestion) => (
     !recipient || suggestion.recipient === recipient
   ))
 
-  if (stageSuggestions.some((suggestion) => suggestion.delta > 0)) return 'buff'
-  if (stageSuggestions.some((suggestion) => suggestion.delta < 0)) return 'debuff'
+  if (stageSuggestions.some((suggestion) => typeof suggestion.delta === 'number' && suggestion.delta > 0)) return 'buff'
+  if (stageSuggestions.some((suggestion) => typeof suggestion.delta === 'number' && suggestion.delta < 0)) return 'debuff'
   return null
 }
 
 const hasStatusSuggestion = (
   script: MoveAnimationPlanScript,
   recipient?: MoveAutomationRecipient,
-): boolean => script.conditionSuggestions.some((suggestion) => (
+): boolean => arrayOrEmpty(script.conditionSuggestions).some((suggestion) => (
   !recipient || suggestion.recipient === recipient
 ))
 
@@ -357,13 +542,17 @@ const paletteForSemanticIntent = (intent: GenericMoveSemanticIntent): MoveVfxPal
   moveVfxColorForTone(intent.tone)
 )
 
-const targetIdForToken = (target: MoveAnimationPlanToken | undefined): string | undefined => target?.id
+const targetIdForToken = (target: MoveAnimationPlanToken | undefined): string | undefined => (
+  nonEmptyStringOrUndefined(target?.id)
+)
 
 const firstKnownTargetId = (input: MoveAnimationSingleTargetPlanInput): string | undefined => (
-  input.feedback?.targetId
-  ?? input.targetOutcomes?.[0]?.targetId
-  ?? input.selectedTargetIds[0]
-  ?? targetIdForToken(input.targets[0])
+  nonEmptyStringOrUndefined(input.feedback?.targetId)
+  ?? arrayOrEmpty(input.targetOutcomes)
+    .map((outcome) => nonEmptyStringOrUndefined(outcome.targetId))
+    .find(Boolean)
+  ?? stringArrayOrEmpty(input.selectedTargetIds)[0]
+  ?? targetIdForToken(arrayOrEmpty(input.targets)[0])
 )
 
 const targetForId = (
@@ -371,7 +560,7 @@ const targetForId = (
   targetId: string | undefined,
 ): MoveAnimationPlanToken | undefined => {
   if (!targetId) return undefined
-  return input.targets.find((target) => target.id === targetId)
+  return arrayOrEmpty(input.targets).find((target) => target.id === targetId)
 }
 
 const feedbackToTargetOutcome = (
@@ -379,16 +568,20 @@ const feedbackToTargetOutcome = (
 ): MoveAnimationPlanTargetOutcome | null => {
   if (!feedback) return null
 
+  const targetId = nonEmptyStringOrUndefined(feedback.targetId)
+  if (!targetId) return null
+
   return {
-    targetId: feedback.targetId,
-    hit: feedback.hit,
-    crit: feedback.crit,
-    damageResolved: feedback.damageResolved,
-    damageLoss: feedback.damageLoss,
+    targetId,
+    hit: feedback.hit === true,
+    crit: feedback.crit === true,
+    damageResolved: feedback.damageResolved === true,
+    damageLoss: typeof feedback.damageLoss === 'number' ? feedback.damageLoss : undefined,
     effectiveness: feedback.effectiveness,
-    conditions: feedback.conditions
+    conditions: arrayOrEmpty(feedback.conditions)
       .filter((condition) => condition.applied)
-      .map((condition) => condition.condition),
+      .map((condition) => condition.condition)
+      .filter((condition): condition is string => typeof condition === 'string'),
   }
 }
 
@@ -396,7 +589,7 @@ const targetOutcomeForId = (
   input: MoveAnimationSingleTargetPlanInput,
   targetId: string | undefined,
 ): MoveAnimationPlanTargetOutcome | null => {
-  const explicitOutcome = input.targetOutcomes?.find((outcome) => outcome.targetId === targetId)
+  const explicitOutcome = arrayOrEmpty(input.targetOutcomes).find((outcome) => outcome.targetId === targetId)
   if (explicitOutcome) return explicitOutcome
 
   const feedbackOutcome = feedbackToTargetOutcome(input.feedback)
@@ -409,8 +602,12 @@ const damagingPaletteForScript = (script: MoveAnimationPlanScript): MoveVfxPalet
   moveVfxColorForType(script.type)
 )
 
+const scriptHasDamageVisual = (script: MoveAnimationPlanScript): boolean => (
+  script.damaging === true || Boolean(script.directHpLoss)
+)
+
 const isMeleeDamagingMove = (script: MoveAnimationPlanScript): boolean => {
-  if (!script.damaging && !script.directHpLoss) return false
+  if (!scriptHasDamageVisual(script)) return false
 
   const classificationText = moveClassificationText(script)
   const mentionsMelee = includesNormalizedWord(classificationText, ['melee', 'close'])
@@ -458,7 +655,9 @@ const areaSweepKindForScript = (script: MoveAnimationPlanScript):
   | typeof MOVE_VFX_KIND.lineSweep
   | typeof MOVE_VFX_KIND.coneSweep
   | null => {
-  const templateKinds = script.areaTemplates?.map((template) => template.kind) ?? []
+  const templateKinds = areaTemplatesForScript(script)
+    .map((template) => isRecord(template) ? stringOrUndefined(template.kind) : undefined)
+    .filter((kind): kind is string => Boolean(kind))
   const classificationText = moveClassificationText(script)
 
   if (templateKinds.includes('line') || includesNormalizedWord(classificationText, ['line'])) {
@@ -476,12 +675,13 @@ const planSelfMoveAnimations = (
   input: MoveAnimationSelfPlanInput,
   nextId: PlannerEventIdFactory,
 ): MoveAnimationEvent[] => {
-  if (!input.user) return []
+  const user = userTokenForInput(input)
+  if (!user) return []
 
   const semanticIntent = semanticIntentForScript(input.script, 'user')
   const palette = paletteForSemanticIntent(semanticIntent)
-  const targetId = input.user.id
-  const targetCell = input.user.position
+  const targetId = targetIdForToken(user)
+  const targetCell = positionForToken(user)
 
   if (semanticIntent.kind === 'healing') {
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.healing, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
@@ -506,7 +706,7 @@ const planSelfMoveAnimations = (
   }
 
   return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.selfPulse, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
-    originCell: input.user.position,
+    originCell: targetCell,
   }, palette)]
 }
 
@@ -516,7 +716,7 @@ const planTargetSemanticAnimations = (
   targetId: string,
 ): MoveAnimationEvent[] => {
   const target = targetForId(input, targetId)
-  const targetCell = target?.position
+  const targetCell = positionForToken(target)
   const semanticIntent = semanticIntentForScript(input.script, 'target')
   const palette = paletteForSemanticIntent(semanticIntent)
 
@@ -552,21 +752,23 @@ const planSingleTargetMoveAnimations = (
   input: MoveAnimationSingleTargetPlanInput,
   nextId: PlannerEventIdFactory,
 ): MoveAnimationEvent[] => {
-  if (!input.user) return []
+  const user = userTokenForInput(input)
+  if (!user) return []
 
+  const userCell = positionForToken(user)
   const targetId = firstKnownTargetId(input)
   if (!targetId) {
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.selfPulse, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
-      originCell: input.user.position,
+      originCell: userCell,
     }, moveVfxColorForTone(MOVE_VFX_TONE.neutral))]
   }
 
-  if (!input.script.damaging && !input.script.directHpLoss) {
+  if (!scriptHasDamageVisual(input.script)) {
     return planTargetSemanticAnimations(input, nextId, targetId)
   }
 
   const target = targetForId(input, targetId)
-  const targetCell = target?.position
+  const targetCell = positionForToken(target)
   const outcome = targetOutcomeForId(input, targetId)
   const hit = outcome?.hit ?? true
   const crit = outcome?.crit ?? false
@@ -575,14 +777,14 @@ const planSingleTargetMoveAnimations = (
 
   if (isMeleeDamagingMove(input.script)) {
     events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.meleeLunge, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
-      originCell: input.user.position,
+      originCell: userCell,
       targetId,
       targetCell,
     }, palette))
   } else {
     const launchKind = rangedLaunchKindForScript(input.script)
     events.push(createPlannerEvent(input, nextId, launchKind, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
-      originCell: input.user.position,
+      originCell: userCell,
       targetId,
       targetCell,
     }, palette))
@@ -615,32 +817,35 @@ const planAreaMoveAnimations = (
   input: MoveAnimationAreaPlanInput,
   nextId: PlannerEventIdFactory,
 ): MoveAnimationEvent[] => {
-  if (!input.user) return []
+  const user = userTokenForInput(input)
+  if (!user) return []
 
+  const userCell = positionForToken(user)
+  const areaCells = gridAnchorsOrEmpty(input.areaCells)
   const semanticIntent = semanticIntentForScript(input.script)
-  const palette = input.script.damaging || input.script.directHpLoss
+  const palette = scriptHasDamageVisual(input.script)
     ? damagingPaletteForScript(input.script)
     : paletteForSemanticIntent(semanticIntent)
   const events: MoveAnimationEvent[] = []
 
-  if (input.areaCells.length > 0) {
+  if (areaCells.length > 0) {
     events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.areaPulse, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
-      areaCells: input.areaCells,
-      areaOrigin: input.user.position,
+      areaCells,
+      areaOrigin: userCell,
     }, palette))
 
     const sweepKind = areaSweepKindForScript(input.script)
     if (sweepKind === MOVE_VFX_KIND.lineSweep) {
       events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.lineSweep, MOVE_VFX_DEFAULT_DURATIONS_MS.long, {
-        originCell: input.user.position,
-        areaCells: input.areaCells,
-        areaOrigin: input.user.position,
+        originCell: userCell,
+        areaCells,
+        areaOrigin: userCell,
       }, palette))
     } else if (sweepKind === MOVE_VFX_KIND.coneSweep) {
       events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.coneSweep, MOVE_VFX_DEFAULT_DURATIONS_MS.long, {
-        originCell: input.user.position,
-        areaCells: input.areaCells,
-        areaOrigin: input.user.position,
+        originCell: userCell,
+        areaCells,
+        areaOrigin: userCell,
       }, palette))
     }
   }
@@ -648,7 +853,7 @@ const planAreaMoveAnimations = (
   if (events.length > 0) return events
 
   return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.selfPulse, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
-    originCell: input.user.position,
+    originCell: userCell,
   }, moveVfxColorForTone(MOVE_VFX_TONE.neutral))]
 }
 
@@ -659,17 +864,21 @@ const planAreaMoveAnimations = (
  * and authored suggestions choose reusable effect families only.
  */
 export const planGenericMoveAnimations: MoveAnimationPlanner = (input) => {
-  const nextId = createPlannerEventIdFactory(input)
+  try {
+    const nextId = createPlannerEventIdFactory(input)
 
-  switch (input.resolution) {
-    case MOVE_ANIMATION_PLAN_RESOLUTION.self:
-      return planSelfMoveAnimations(input, nextId)
-    case MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget:
-      return planSingleTargetMoveAnimations(input, nextId)
-    case MOVE_ANIMATION_PLAN_RESOLUTION.area:
-      return planAreaMoveAnimations(input, nextId)
-    default:
-      return []
+    switch (input.resolution) {
+      case MOVE_ANIMATION_PLAN_RESOLUTION.self:
+        return planSelfMoveAnimations(input, nextId)
+      case MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget:
+        return planSingleTargetMoveAnimations(input, nextId)
+      case MOVE_ANIMATION_PLAN_RESOLUTION.area:
+        return planAreaMoveAnimations(input, nextId)
+      default:
+        return createNeutralPlannerFallback(input)
+    }
+  } catch {
+    return createNeutralPlannerFallback(input)
   }
 }
 
@@ -684,20 +893,30 @@ export const planGenericMoveAnimations: MoveAnimationPlanner = (input) => {
 export const createMoveAnimationPlanner = ({
   overrideRegistry = MOVE_ANIMATION_OVERRIDE_REGISTRY,
   fallbackPlanner = planGenericMoveAnimations,
+  logPlanningWarnings = isMoveAnimationPlannerDevelopmentEnvironment(),
 }: CreateMoveAnimationPlannerOptions = {}): MoveAnimationPlanner => (input) => {
-  const canonicalMoveName = canonicalMoveAnimationOverrideKey(input.script.moveName)
+  const canonicalMoveName = canonicalMoveAnimationOverrideKey(input.script?.moveName)
   const override = overrideRegistry[canonicalMoveName]
 
   if (override && !override.disabled) {
-    const overridePlan = override.preset.plan(input, {
-      canonicalMoveName,
-      fallbackPlanner,
-    })
+    try {
+      const overridePlan = override.preset.plan(input, {
+        canonicalMoveName,
+        fallbackPlanner,
+      })
 
-    if (overridePlan != null) return overridePlan
+      if (overridePlan != null) return normalizePlannerOutput(input, overridePlan)
+    } catch (error) {
+      warnMoveAnimationPlannerFallback(logPlanningWarnings, `Move animation override '${canonicalMoveName}' failed`, error)
+    }
   }
 
-  return fallbackPlanner(input)
+  try {
+    return normalizePlannerOutput(input, fallbackPlanner(input))
+  } catch (error) {
+    warnMoveAnimationPlannerFallback(logPlanningWarnings, 'Generic move animation planner failed', error)
+    return createNeutralPlannerFallback(input)
+  }
 }
 
 /** Public planner entry point for move automation integration. */

@@ -290,6 +290,21 @@ Planner-created events may carry a palette entry from `src/utils/moveAnimationPa
 
 Future bespoke per-move work should fill the registry only in a later milestone with focused review, tests, fan-project asset-boundary checks, and a preference for reusing the generic primitives before adding new choreography.
 
+### Safe no-op and fallback behaviour for VFX-017
+
+The planner is hardened so incomplete animation data cannot break move resolution. The public `planMoveAnimations()` pipeline catches override and generic-planner failures, optionally logs a development warning, and returns a safe fallback plan instead of throwing.
+
+Current fallback rules:
+
+- missing user/source token: return an empty plan because there is no trustworthy visual anchor;
+- missing single-target id: return a neutral self pulse on the user rather than inventing a target;
+- selected target id with no target token snapshot: keep a target-id-only event with no `targetCell`, allowing the renderer to resolve the live token later or skip safely;
+- empty or invalid area cells: return a neutral self pulse on the user;
+- unknown/custom move type: use the neutral readable palette;
+- missing or invalid event duration: normalize to the normal timing tier.
+
+These fallbacks are visual-only. They do not change hit/miss, targeting, HP, status, placement, logs, permissions, or persisted data.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
