@@ -33,6 +33,7 @@ import type {
   MoveAutomationTargetHitChance,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
+import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { BuildTool } from '#shared/mapEditor'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
@@ -114,7 +115,7 @@ import {
 } from '~/utils/isometric/lifecycle'
 import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
 import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
-import type { MoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
+import { createMoveVfxRenderer, type MoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import {
   createIsometricLayerVisibilityApplicator,
   setIsometricGridVisibility,
@@ -189,6 +190,7 @@ const props = defineProps<{
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  moveAnimations?: MoveAnimationEvent[]
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
@@ -462,7 +464,7 @@ const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({
 const moveTargetingReticleRenderer = createMoveTargetingReticleRenderer(scene)
 const moveAreaTemplateRenderer = createMoveAreaTemplateRenderer(scene)
 const moveAutomationFeedbackRenderer = createMoveAutomationFeedbackRenderer(scene)
-let moveVfxRenderer: MoveVfxRenderer | null = null
+const moveVfxRenderer: MoveVfxRenderer = createMoveVfxRenderer(scene)
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
 let camera: THREE.OrthographicCamera | null = null
@@ -1205,6 +1207,14 @@ watch([() => props.buildMode, () => props.hazardMode], ([buildActive, hazardActi
   sendOutInteraction.cancel()
 })
 
+const syncMoveVfxRendererState = () => {
+  moveVfxRenderer.sync(props.moveAnimations ?? [], { renderObjects })
+}
+
+const requestMoveVfxRenderFrame = () => {
+  requestScheduledSceneFrame({ reasons: 'scene-state', dirtyLayers: 'webgl' })
+}
+
 watch(() => props.moveAutomationTargeting, (targeting) => {
   moveAreaDirectionUpdateThrottle.syncCurrentDirection(targeting?.areaDirection)
   if (!targeting) return
@@ -1229,6 +1239,16 @@ watch(
   () => {
     if (!renderer) return
     requestScheduledSceneFrame('targeting')
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.moveAnimations,
+  () => {
+    syncMoveVfxRendererState()
+    if (!renderer) return
+    requestMoveVfxRenderFrame()
   },
   { deep: true },
 )
@@ -1528,6 +1548,7 @@ onMounted(() => {
   syncRendererSize()
   buildGrid()
   syncPokemonObjects()
+  syncMoveVfxRendererState()
   syncVoxelMeshes()
   syncFieldEffectMeshes()
   syncHazardMeshes()

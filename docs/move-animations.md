@@ -350,6 +350,12 @@ This preserves idle performance because no move VFX source is reported for absen
 
 The current move VFX path is pure WebGL: stepping the renderer does not mark CSS3D dirty, and `CSS3DRenderer.render()` still runs only when the existing dirty tracker reports CSS-visible changes. If a future primitive uses CSS3D badges or labels, that primitive must add an explicit CSS dirty signal instead of relying on the WebGL-only move VFX continuation source.
 
+### Isometric grid prop bridge for VFX-024
+
+`src/components/IsometricGrid.client.vue` now accepts an optional `moveAnimations?: MoveAnimationEvent[]` prop and owns a `createMoveVfxRenderer(scene)` instance alongside the existing targeting, area-template, and feedback renderers. The prop remains optional so existing map callers can omit it until `MapSceneRenderer.vue` and the map page are wired in later tickets.
+
+When the prop changes, the grid syncs the event list into the renderer with the live token render-object map, then requests one WebGL-only scheduled frame using the broad `scene-state` debug reason. The renderer's `needsAnimationFrame()` signal is still the only way active move VFX keeps subsequent frames alive, so adding or removing events wakes the existing dirty scheduler without adding any independent RAF loop or CSS3D work.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
