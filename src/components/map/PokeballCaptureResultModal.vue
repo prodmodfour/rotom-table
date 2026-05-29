@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ItemSprite from '~/components/ItemSprite.vue'
 import {
   playPokeballFailSound,
@@ -34,18 +34,6 @@ const rollModifierLineValueClass = (line: PokeballCaptureBreakdownLine): string 
   if (line.value > 0) return 'is-bad'
   return ''
 }
-
-const accuracyFormula = computed(() => {
-  const check = props.result.accuracyCheck == null ? '—' : props.result.accuracyCheck
-  return `${props.result.accuracyRoll}${props.result.userAccuracy ? ` ${signedValue(props.result.userAccuracy)}` : ''} = ${props.result.modifiedAccuracyRoll} vs AC ${check}`
-})
-
-const captureFormula = computed(() => {
-  if (props.result.captureRoll == null || props.result.adjustedCaptureRoll == null) return 'No Capture Roll was made.'
-  const natural = props.result.naturalCaptureSuccess ? ' · Natural 100 captures automatically' : ''
-  const nat20 = props.result.naturalTwentyCaptureBonus ? ` ${signedValue(props.result.naturalTwentyCaptureBonus)} Natural 20 bonus` : ''
-  return `${props.result.captureRoll} ${signedValue(props.result.breakdown.rollModifier)} modifiers${nat20} = ${props.result.adjustedCaptureRoll} vs Capture Rate ${props.result.captureRate}${natural}`
-})
 
 const clearTimers = () => {
   while (timers.length) {
@@ -114,40 +102,6 @@ onBeforeUnmount(clearTimers)
             <p class="capture-modal__ball-label">{{ result.pokeballName }}</p>
           </div>
         </div>
-
-        <div class="capture-modal__shakes" aria-label="Poké Ball shakes">
-          <span
-            v-for="shake in 3"
-            :key="shake"
-            class="capture-modal__shake-dot"
-            :class="{
-              'is-active': currentShake === shake && !done,
-              'is-complete': currentShake >= shake,
-              'is-success': result.success && done && shake <= result.shakeCount,
-              'is-failure': !result.success && done && shake <= result.shakeCount,
-            }"
-          >{{ shake }}</span>
-        </div>
-
-        <div class="capture-modal__summary">
-          <div class="capture-modal__pill">
-            <span>Hit</span>
-            <strong>{{ result.hit ? 'Yes' : 'No' }}</strong>
-          </div>
-          <div class="capture-modal__pill">
-            <span>Capture Rate</span>
-            <strong>{{ result.captureRate }}</strong>
-          </div>
-          <div class="capture-modal__pill">
-            <span>Combined Chance</span>
-            <strong>{{ result.breakdown.combinedChanceLabel }}</strong>
-          </div>
-        </div>
-
-        <section class="capture-modal__rolls" aria-label="Roll results">
-          <p><strong>Accuracy:</strong> {{ accuracyFormula }}</p>
-          <p><strong>Capture:</strong> {{ captureFormula }}</p>
-        </section>
 
         <div class="capture-modal__breakdown-grid">
           <section class="capture-modal__breakdown">
@@ -303,86 +257,6 @@ onBeforeUnmount(clearTimers)
 .capture-modal__stage.is-success .capture-modal__ball,
 .capture-modal__stage.is-failure .capture-modal__ball {
   animation: capture-ball-pop 0.35s ease-out;
-}
-
-.capture-modal__shakes,
-.capture-modal__summary {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0 1.25rem 1rem;
-}
-
-.capture-modal__shake-dot,
-.capture-modal__pill {
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--paper-accent);
-}
-
-.capture-modal__shake-dot {
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  place-items: center;
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 950;
-}
-
-.capture-modal__shake-dot.is-active,
-.capture-modal__shake-dot.is-complete {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.capture-modal__shake-dot.is-success {
-  border-color: var(--good);
-  color: var(--good);
-}
-
-.capture-modal__shake-dot.is-failure {
-  border-color: var(--bad);
-  color: var(--bad);
-}
-
-.capture-modal__pill {
-  display: grid;
-  min-width: 8rem;
-  gap: 0.15rem;
-  padding: 0.45rem 0.75rem;
-  text-align: center;
-}
-
-.capture-modal__pill span {
-  color: var(--muted);
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.capture-modal__pill strong {
-  color: var(--ink-bright);
-}
-
-.capture-modal__rolls {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0 1.25rem 1rem;
-  padding: 0.75rem;
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: rgba(0, 0, 0, 0.18);
-}
-
-.capture-modal__rolls p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.86rem;
-}
-
-.capture-modal__rolls strong {
-  color: var(--ink);
 }
 
 .capture-modal__breakdown-grid {
