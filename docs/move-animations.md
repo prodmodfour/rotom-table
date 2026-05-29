@@ -227,6 +227,20 @@ Out of scope:
 
 Any future proposal to add an animation package must document bundle/runtime impact, scheduler integration, pause/resume/disposal behaviour, and why internal helpers are insufficient. That proposal should include any `package.json`/lockfile changes in the same reviewed product change.
 
+### Anchor geometry helpers for VFX-010
+
+The shared world-space anchor implementation lives in `src/utils/isometric/moveVfxAnchors.ts`. Primitive and renderer code should import these helpers instead of duplicating token-height or cell-centre math.
+
+Coordinate assumptions:
+
+- map `x`/`z` form the horizontal grid plane, and `y` is elevation;
+- token foot anchors use `PokemonRenderObject.currentCenter`, which is the footprint centre at the token's current elevation;
+- token horizontal centres already reflect footprint `base`; token body-anchor heights derive from the render object's sprite `height` and occupied `clearance` rather than saved move data;
+- grid-cell anchors use the centre of the unit cell in `x`/`z` while keeping `y` at the cell elevation so ground effects sit on the same plane as area overlays;
+- missing token render objects resolve to an explicit fallback cell or `null`, letting VFX callers skip incomplete effects without throwing.
+
+Available helpers cover token foot, center, chest, head, and above-head anchors; single-cell centres; area centroids; and a shared start/end resolver for projectile-like and beam-like effects.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
