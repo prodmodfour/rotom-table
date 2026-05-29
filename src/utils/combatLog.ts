@@ -1,3 +1,5 @@
+import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
+
 export type CombatLogSource = 'move' | 'ability' | 'order' | 'maneuver' | 'movement'
 
 export interface CombatLogMessage {
@@ -8,10 +10,17 @@ export interface CombatLogMessage {
   actionName: string
   title: string
   details: string[]
+  accentColor?: string
+}
+
+export interface CombatLogActorAccent {
+  id: string
+  accentColor?: string | null
 }
 
 export interface CombatLogBuildOptions {
   maxMessages?: number
+  actorAccents?: Iterable<CombatLogActorAccent>
 }
 
 interface CombatLogSourceConfig {
@@ -28,6 +37,7 @@ interface CombatLogEntry {
   entryIndex: number
   userName: string
   actionName: string
+  accentColor?: string
   lines: string[]
 }
 
@@ -83,6 +93,7 @@ const readEntriesForSource = (
   metadata: Record<string, unknown>,
   config: CombatLogSourceConfig,
   sourceOrder: number,
+  actorAccentById: ReadonlyMap<string, string>,
 ): CombatLogEntry[] => {
   const rawEntries = metadata[config.metadataKey]
   if (!Array.isArray(rawEntries)) return []
@@ -93,6 +104,9 @@ const readEntriesForSource = (
     const lines = readLogLines(rawEntry.lines)
     if (!lines.length) return []
 
+    const userId = stringOrFallback(rawEntry.userId, '')
+    const accentColor = normalizeTrainerAccentColor(rawEntry.accentColor) ?? actorAccentById.get(userId)
+
     return [{
       at: numberOrFallback(rawEntry.at, 0),
       source: config.source,
@@ -100,6 +114,7 @@ const readEntriesForSource = (
       entryIndex,
       userName: stringOrFallback(rawEntry.userName, 'Unknown'),
       actionName: stringOrFallback(rawEntry[config.actionKey], config.fallbackActionName),
+      ...(accentColor ? { accentColor } : {}),
       lines,
     }]
   })
@@ -146,6 +161,7 @@ const toMessage = (entry: CombatLogEntry): SortableCombatLogMessage => {
     actionName: entry.actionName,
     title,
     details,
+    ...(entry.accentColor ? { accentColor: entry.accentColor } : {}),
   }
 }
 
@@ -169,14 +185,31 @@ const applyMessageLimit = (
   return messages.slice(-Math.floor(maxMessages))
 }
 
+const buildActorAccentMap = (
+  actors: Iterable<CombatLogActorAccent> | undefined,
+): ReadonlyMap<string, string> => {
+  const accentById = new Map<string, string>()
+  if (!actors) return accentById
+
+  for (const actor of actors) {
+    const id = actor.id.trim()
+    if (!id) continue
+    const accentColor = normalizeTrainerAccentColor(actor.accentColor)
+    if (accentColor) accentById.set(id, accentColor)
+  }
+
+  return accentById
+}
+
 export const buildCombatLogMessages = (
   metadata: Record<string, unknown> | null | undefined,
   options: CombatLogBuildOptions = {},
 ): CombatLogMessage[] => {
   if (!metadata) return []
 
+  const actorAccentById = buildActorAccentMap(options.actorAccents)
   const sortedMessages = COMBAT_LOG_SOURCES
-    .flatMap((source, sourceOrder) => readEntriesForSource(metadata, source, sourceOrder))
+    .flatMap((source, sourceOrder) => readEntriesForSource(metadata, source, sourceOrder, actorAccentById))
     .map(toMessage)
     .sort(sortMessages)
 

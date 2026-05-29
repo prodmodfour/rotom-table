@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CombatLogMessage } from '~/utils/combatLog'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 
 const props = defineProps<{
   messages: CombatLogMessage[]
@@ -24,6 +25,9 @@ const messageDate = (message: CombatLogMessage): Date => new Date(message.at)
 
 const formatMessageTime = (message: CombatLogMessage): string =>
   timeFormatter.format(messageDate(message))
+
+const messageTitleStyle = (message: CombatLogMessage): Record<string, string> | undefined =>
+  message.accentColor ? trainerAccentCssVariables(message.accentColor) : undefined
 
 const scrollToBottom = () => {
   const viewport = scrollViewportRef.value
@@ -87,7 +91,7 @@ onBeforeUnmount(() => {
           :title="`${message.userName} · ${message.actionName}`"
         >
           <span class="combat-log__meta">
-            <strong class="combat-log__title">{{ message.title }}</strong>
+            <strong class="combat-log__title" :style="messageTitleStyle(message)">{{ message.title }}</strong>
             <time class="combat-log__time" :datetime="messageDate(message).toISOString()">
               {{ formatMessageTime(message) }}
             </time>

@@ -91,6 +91,23 @@ describe('buildCombatLogMessages', () => {
     expect(messages[0]?.details).toEqual(['three'])
   })
 
+  it('adds normalized actor accent colours when available', () => {
+    const messages = buildCombatLogMessages({
+      moveLog: [
+        { at: 100, userId: 'token-1', userName: 'Foil', moveName: 'Ember', lines: ['Foil used Ember.'] },
+        { at: 200, userId: 'token-2', userName: 'Doug', moveName: 'Leer', accentColor: '#ABCDEF', lines: ['Doug used Leer.'] },
+        { at: 300, userId: 'token-3', userName: 'Lux', moveName: 'Growl', lines: ['Lux used Growl.'] },
+      ],
+    }, {
+      actorAccents: [
+        { id: 'token-1', accentColor: '#12AB34' },
+        { id: 'token-3', accentColor: 'not a color' },
+      ],
+    })
+
+    expect(messages.map((message) => message.accentColor)).toEqual(['#12ab34', '#abcdef', undefined])
+  })
+
   it('ignores malformed entries, blank lines, and internal implementation lines', () => {
     const messages = buildCombatLogMessages({
       moveLog: [

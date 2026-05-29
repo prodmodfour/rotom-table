@@ -135,7 +135,10 @@ const COMBAT_LOG_MESSAGE_LIMIT = 24
 
 const rendererRef = ref<MapSceneRendererHandle | null>(null)
 const combatLogMessages = computed(() =>
-  buildCombatLogMessages(props.map?.metadata, { maxMessages: COMBAT_LOG_MESSAGE_LIMIT }),
+  buildCombatLogMessages(props.map?.metadata, {
+    maxMessages: COMBAT_LOG_MESSAGE_LIMIT,
+    actorAccents: props.spawnedPokemon,
+  }),
 )
 
 const focusPokemon = (id: string): boolean => rendererRef.value?.focusPokemon(id) ?? false
