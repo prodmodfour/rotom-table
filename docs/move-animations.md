@@ -320,9 +320,15 @@ These fallbacks are visual-only. They do not change hit/miss, targeting, HP, sta
 
 The initial renderer shell lives in `src/utils/isometric/moveVfxRenderer.ts`. It exports `createMoveVfxRenderer(scene)` and `createMoveVfxRenderer({ scene, group })`, creating a dedicated `THREE.Group` named `move-vfx-root` for all future move VFX objects.
 
-The shell exposes the renderer contract needed by later integration tickets: `sync(events, context)`, `animate(frameContext)`, `needsAnimationFrame()`, `activeCount()`, and `dispose()`. It intentionally creates no primitive meshes yet and `needsAnimationFrame()` returns `false` until later lifecycle/primitive tickets add real per-effect instances. This preserves the dirty-scheduler guardrail: VFX renderer work must be advanced by the existing isometric render loop and must not add a separate RAF or timer loop.
+The shell exposes the renderer contract needed by later integration tickets: `sync(events, context)`, `animate(frameContext)`, `needsAnimationFrame()`, `activeCount()`, and `dispose()`. This preserves the dirty-scheduler guardrail: VFX renderer work must be advanced by the existing isometric render loop and must not add a separate RAF or timer loop.
 
-Disposing the shell removes the dedicated group from the scene and is safe to call more than once. Future primitive tickets should add all transient meshes, materials, geometries, and optional CSS3D objects under that group and dispose them through the renderer lifecycle rather than leaking objects into the root scene.
+### Renderer lifecycle for VFX-020
+
+The renderer now tracks one lifecycle instance root group per active `MoveAnimationEvent.id` under `move-vfx-root`. These groups are intentionally empty until later primitive tickets add meshes, materials, geometries, or CSS3D elements, but they establish the resource ownership boundary: primitives should attach their objects to the per-event group and let renderer lifecycle cleanup remove them.
+
+`sync(events, context)` creates lifecycle groups for new event ids, keeps existing groups for repeated ids, and disposes groups whose ids are no longer present. `animate(frameContext)` uses scheduler-provided frame time with the shared timing helper to dispose completed events. Completed ids are not recreated while the same expired event remains in the synced input; once an id disappears from input, a future event can reuse that id normally. `needsAnimationFrame()` reports whether any lifecycle instance is still active; the renderer itself still does not schedule frames until a later render-loop ticket connects this signal to the scheduler continuation source.
+
+Disposing the renderer removes every active per-event group, then removes the dedicated root group from the scene, and is safe to call more than once. Cleanup uses the shared `disposeObject3D()` helper so primitive-owned Three.js children are detached and their owned geometries/materials are disposed when an event is removed, completes, or the map scene unmounts.
 
 ## Implementation labels, milestones, and ticket ordering
 

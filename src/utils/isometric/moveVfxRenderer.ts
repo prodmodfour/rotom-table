@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
+import { animationProgress } from './moveVfxTiming'
 import { disposeObject3D } from './resourceDisposal'
 
 export interface MoveVfxRendererSyncContext {
@@ -41,6 +42,15 @@ export interface MoveVfxRenderer {
 }
 
 const MOVE_VFX_GROUP_NAME = 'move-vfx-root'
+const MOVE_VFX_INSTANCE_GROUP_PREFIX = 'move-vfx-instance'
+
+interface MoveVfxLifecycleInstance {
+  id: string
+  event: MoveAnimationEvent
+  group: THREE.Group
+  disposed: boolean
+  dispose(): void
+}
 
 const normalizeOptions = (
   sceneOrOptions: THREE.Scene | MoveVfxRendererOptions,
@@ -51,9 +61,10 @@ const normalizeOptions = (
 /**
  * Creates the isolated Three.js owner for transient move animation VFX.
  *
- * This shell intentionally does not create primitive meshes yet. Future tickets
- * will add per-event instances inside the dedicated group and drive them from
- * the existing isometric render scheduler through `animate()` and
+ * This shell intentionally does not create primitive meshes yet. It creates
+ * only per-event lifecycle groups under the dedicated root so future primitive
+ * builders can attach their objects to owned containers and be driven from the
+ * existing isometric render scheduler through `animate()` and
  * `needsAnimationFrame()` rather than creating an independent RAF loop.
  */
 export const createMoveVfxRenderer = (
@@ -70,10 +81,62 @@ export const createMoveVfxRenderer = (
   }
 
   let disposed = false
-  let syncedEventCount = 0
+  let lastVisible = true
+  const activeInstances = new Map<string, MoveVfxLifecycleInstance>()
+  const completedEventIds = new Set<string>()
 
-  const applyVisibility = (visible = true) => {
-    group.visible = !disposed && visible && syncedEventCount > 0
+  const applyVisibility = () => {
+    group.visible = !disposed && lastVisible && activeInstances.size > 0
+  }
+
+  const createLifecycleInstance = (event: MoveAnimationEvent): MoveVfxLifecycleInstance => {
+    const instanceGroup = new THREE.Group()
+    instanceGroup.name = `${MOVE_VFX_INSTANCE_GROUP_PREFIX}:${event.id}`
+    group.add(instanceGroup)
+
+    const instance: MoveVfxLifecycleInstance = {
+      id: event.id,
+      event,
+      group: instanceGroup,
+      disposed: false,
+      dispose() {
+        if (instance.disposed) return
+
+        instance.disposed = true
+        disposeObject3D(instance.group)
+      },
+    }
+
+    return instance
+  }
+
+  const disposeInstance = (id: string) => {
+    const instance = activeInstances.get(id)
+    if (!instance) return
+
+    activeInstances.delete(id)
+    instance.dispose()
+  }
+
+  const disposeAllInstances = () => {
+    for (const id of [...activeInstances.keys()]) disposeInstance(id)
+  }
+
+  const completeInstance = (id: string) => {
+    completedEventIds.add(id)
+    disposeInstance(id)
+  }
+
+  const pruneCompletedInstances = (frameNowMs: number) => {
+    for (const instance of [...activeInstances.values()]) {
+      const progress = animationProgress(
+        frameNowMs,
+        instance.event.createdAtMs,
+        instance.event.durationMs,
+      )
+
+      if (progress.complete) completeInstance(instance.id)
+    }
   }
 
   return {
@@ -82,28 +145,48 @@ export const createMoveVfxRenderer = (
     sync(events, context = {}) {
       if (disposed) return
 
-      syncedEventCount = events.length
-      applyVisibility(context.visible ?? true)
+      lastVisible = context.visible ?? true
+
+      const incomingIds = new Set(events.map((event) => event.id))
+      for (const id of [...activeInstances.keys()]) {
+        if (!incomingIds.has(id)) disposeInstance(id)
+      }
+      for (const id of [...completedEventIds]) {
+        if (!incomingIds.has(id)) completedEventIds.delete(id)
+      }
+
+      for (const event of events) {
+        if (!activeInstances.has(event.id) && !completedEventIds.has(event.id)) {
+          activeInstances.set(event.id, createLifecycleInstance(event))
+        }
+      }
+
+      applyVisibility()
     },
 
-    animate(_frameContext) {
-      // Primitive instances are intentionally deferred to later VFX tickets.
+    animate(frameContext) {
+      if (disposed) return
+
+      lastVisible = frameContext.visible ?? lastVisible
+      pruneCompletedInstances(frameContext.frameNowMs)
+      applyVisibility()
     },
 
     needsAnimationFrame() {
-      // The shell owns no animated instances yet, so it never keeps the scheduler alive.
-      return false
+      return !disposed && activeInstances.size > 0
     },
 
     activeCount() {
-      return disposed ? 0 : syncedEventCount
+      return disposed ? 0 : activeInstances.size
     },
 
     dispose() {
       if (disposed) return
 
       disposed = true
-      syncedEventCount = 0
+      group.visible = false
+      completedEventIds.clear()
+      disposeAllInstances()
       disposeObject3D(group)
     },
   }
