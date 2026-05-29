@@ -70,6 +70,70 @@ Area moves should keep the existing map-native area confirmation workflow. After
 
 Moves with pass/dash destination data may add a path or afterimage cue, but actual placement remains controlled by the existing move automation transaction logic. The VFX must never save a temporary offset as token placement.
 
+## Visual quality and style guardrails
+
+Move VFX should look like part of the existing dark tactical map: luminous, concise, semi-transparent, and world-anchored. Effects should support the token sprites, cages, HP bars, targeting reticles, area templates, roll feedback, weather, hazards, and field effects instead of competing with them.
+
+### Default timing tiers
+
+Use these tiers as the initial implementation defaults. Individual primitives may tune within the ranges, but a normal move resolution should usually settle within about 1.2 seconds and should not linger just to feel more dramatic.
+
+| Tier | Default range | Use for |
+| --- | ---: | --- |
+| **Quick** | 180-320 ms | Target flashes, impact rings, miss puffs, crit accents, one-shot semantic pulses. |
+| **Medium** | 450-700 ms | Projectiles, beams, arcs/lobs, melee lunges, self auras, healing/status/buff pulses, area cell pulses. |
+| **Long** | 850-1200 ms | Multi-target stagger sequences, dash/pass afterimages, line/cone sweeps, larger radial bursts, and combined launch-plus-follow-up sequences. |
+
+Long effects should still feel table-snappy. Prefer short start offsets and capped staggering over extending every target effect. Follow-up semantic effects should be delayed only enough to read after the launch/impact cue.
+
+### Opacity, scale, glow, and render order
+
+- **Opacity:** Use transparent VFX materials by default. Most broad ground/cell overlays should peak around 18-40% opacity; body flashes and rings around 35-70%; projectile cores may be brighter but should remain small; trails, puffs, and afterimages should fade through 15-45%. Avoid full-screen or fully opaque effects.
+- **Scale:** Scale to map space, not to a move name. Projectile cores should be small relative to a grid cell, beams should stay narrow enough to show the target beneath, target rings should start near the token footprint and expand modestly, and area overlays should stay inside or just within each affected cell. Large tokens may scale effects from token footprint/height, but the effect should not cover adjacent unrelated tokens by default.
+- **Glow:** Prefer simple emissive colours, additive-looking transparent layers, or duplicated soft shells over expensive post-processing. Glow should improve readability on dark terrain without washing out token sprites, HP bars, status glass, targeting reticles, or roll feedback.
+- **Render order:** Keep VFX in predictable layers. Ground/cell effects should render above terrain, hazards, and field-effect surfaces but below or behind CSS3D HUD/feedback. Body, projectile, and beam effects may render above token geometry for readability, with `depthTest` enabled where practical and `depthWrite` disabled for transparent materials. Use named render-order constants when implemented; do not scatter magic numbers through primitives. If active targeting or roll feedback would be obscured, lower opacity, sequence the VFX after confirmation, or shorten the effect rather than hiding existing UI.
+- **Pointer behaviour:** VFX objects are visual only and must not intercept map pointer interactions, targeting clicks, context menus, or camera controls.
+
+### Type-coloured versus neutral or semantic colour
+
+Use type colour when it helps players connect a damaging or typed move to the effect without bespoke art. Use semantic or neutral colour when type colour would mislead the outcome.
+
+| Situation | Colour rule |
+| --- | --- |
+| Damaging projectile, beam, arc, melee impact, or damaging area pulse | Use the move type colour as the primary hue, with a neutral outline/core if contrast needs help. |
+| Healing or HP restoration | Prefer the healing semantic palette even if the move has a type, unless a future explicit override asks for type emphasis. |
+| Buffs, debuffs, combat-stage changes, and status/condition effects | Prefer semantic buff/debuff/status colours so the outcome reads correctly. |
+| Misses, avoided targets, cancelled/failed flows | Use neutral understated styling; do not show damaging impact colours. |
+| Critical hits | Add a brief crit accent that can sit on top of the type-coloured hit without replacing it. |
+| Unknown, custom, or low-contrast types | Fall back to the neutral readable palette rather than throwing or producing a near-invisible effect. |
+
+The palette added in later implementation tickets should be tuned for readability on dark map backgrounds, not for exact official type-colour purity.
+
+### Token layer visibility
+
+Move VFX should follow the token layer by default because most effects are anchored to token users, targets, token HUD context, or token-derived outcomes. If the token layer is hidden:
+
+- new token-anchored move VFX should be skipped or hidden rather than revealing action around hidden tokens;
+- active VFX should become invisible immediately, continue aging, and dispose normally instead of freezing until the layer is shown again;
+- restoring the token layer should not resurrect completed effects;
+- area-only confirmation effects should also remain hidden for this basic move-animation phase unless a later ticket explicitly gives non-token field/hazard confirmations their own visibility rule.
+
+### Reduced-motion alternatives
+
+Reduced-motion mode should preserve outcome readability while removing fast travel, large displacement, repeated oscillation, and shake.
+
+| Effect family | Default animation | Reduced-motion alternative |
+| --- | --- | --- |
+| Projectile / arc / lob | Object travels from user to target, optionally with a small trail or bounded arc. | Skip travel; show a brief source flash followed by a target or miss pulse. |
+| Beam | Line appears, holds briefly, then fades with modest thickness animation. | Show a static short fade or replace with target pulse if the line would feel too active. |
+| Melee lunge / dash / pass afterimage | Visual offset, streak, or afterimage moves along a path. | Disable displacement/path motion; use a small contact flash or destination pulse. |
+| Target flash / impact ring / miss puff / crit burst | Scale and opacity pulse around the target or nearby miss point. | Keep a single low-amplitude fade/pulse with reduced scale expansion. |
+| Self aura / healing / buff / debuff / status | Rings, particles, motes, or clouds rise/orbit/pulse around the token. | Use one soft opacity pulse or short-lived ring; avoid orbiting/rising particle motion. |
+| Area pulse / radial burst / line-cone sweep | Cells pulse, burst outward, or light sequentially through the area. | Fade affected cells in and out together; avoid directional sweep or large radial expansion. |
+| Shake / repeated afterimages | Subtle impact shake or repeated ghost images. | Disable entirely. |
+
+Reduced-motion variants should use the same semantic colour choices and should still complete through the same transient VFX lifecycle as default animations.
+
 ## Visual-only rule
 
 Move animations are display-only. They may make an already-resolved or currently resolving move easier to read, but they must not be the source of truth for mechanics. In particular:
@@ -125,9 +189,9 @@ The exact file list may evolve as implementation details are discovered, but pro
 
 ## Follow-up documents and decisions
 
-Later tickets should refine this brief with:
+This brief now records the initial scope and visual style guardrails. Later tickets should refine it with:
 
-- visual style, duration, render-order, and reduced-motion guardrails;
 - an explicit dependency decision for tweening versus internal math helpers;
 - final implemented API details once types, planner, renderer, and settings exist;
+- timing, colour, render-order, and reduced-motion adjustments discovered during playable review;
 - a manual QA checklist and future bespoke per-move animation backlog.
