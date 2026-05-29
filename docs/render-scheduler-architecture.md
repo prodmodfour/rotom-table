@@ -38,7 +38,7 @@ Important behaviours:
 - A settled scene has no compatibility continuous loop. With no dirty reasons and no active animation, the scheduler intentionally stops requesting RAF callbacks.
 - Hidden tabs call `pause()`, which cancels pending RAF work without clearing dirty reasons or active-animation state. When visible again, the scene calls `resume()` and requests `hidden-tab-resume` so the next visible frame is fresh.
 - Pointermove handling keeps click-distance tracking immediate, then runs hover picking, build/hazard previews, targeting updates, and movement-preview pathfinding from the latest queued pointer event at most once per animation frame. Pending pointermove work is flushed before pointer-up/wheel actions and cancelled on leave/unmount to avoid stale previews.
-- CSS3D dirty tracking starts dirty for initial paint, consumes the scheduler's CSS3D dirty-layer state for camera/resize/HUD/targeting/pointer-related invalidations, and marks token-motion animation frames because token HUD transforms follow moving/lifting tokens. Same-frame HUD and targeting overlay update helpers also report output changes for HP bars, elevation badges, reticles, feedback, and attack-of-opportunity buttons before the CSS dirty state is consumed. WebGL-only animation frames such as weather, field effects, sprite animation, texture-loading, debug, or the synthetic `animation` reason skip `CSS3DRenderer.render()` when no CSS-visible state is dirty.
+- CSS3D dirty tracking starts dirty for initial paint, consumes the scheduler's CSS3D dirty-layer state for camera/resize/HUD/targeting/pointer-related invalidations, and marks token-motion animation frames because token HUD transforms follow moving/lifting tokens. Same-frame HUD and targeting overlay update helpers also report output changes for HP bars, elevation badges, reticles, feedback, and attack-of-opportunity buttons before the CSS dirty state is consumed. WebGL-only animation frames such as weather, field effects, sprite animation, texture-loading, move VFX, debug, or the synthetic `animation` reason skip `CSS3DRenderer.render()` when no CSS-visible state is dirty.
 - Unmount calls `dispose()`, then renderer resource cleanup. New invalidations after disposal are ignored by the disposed scheduler snapshot.
 
 ## Render dirty layers
@@ -93,6 +93,8 @@ Animation continuation sources answer a different question from dirty reasons: a
 | `move-vfx-animation` | The transient move VFX renderer has active effect instances that still need scheduler-driven frames. |
 
 Add an active source only for time-dependent work that must continue after the current frame. Do not use active animation as a substitute for a missing dirty reason; non-animated state changes should request a one-shot render instead. Pure WebGL animation sources such as move VFX do not dirty CSS3D unless a later CSS3D primitive explicitly reports changed CSS output.
+
+During a scheduled frame, `stepIsometricAnimationFrame()` advances the move VFX renderer only when a renderer is present and reports active work. It receives the same frame timestamp, delta, elapsed clock time, camera, and optional token-render-object map as the rest of the isometric animation path, then completion pruning happens before the WebGL render. The scheduler still settles after the renderer's `needsAnimationFrame()` returns false.
 
 ## Adding a future invalidation reason
 

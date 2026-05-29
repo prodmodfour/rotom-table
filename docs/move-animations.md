@@ -342,6 +342,14 @@ A factory switch maps every current `MOVE_VFX_KIND` to a per-kind builder. These
 
 This preserves idle performance because no move VFX source is reported for absent, disposed, or inactive renderers, and the source participates in the same validation and first-seen dedupe path as token motion, sprite animation, movement preview, and field-effect animation. Move VFX remains WebGL-only for CSS3D dirty tracking until a later CSS3D primitive explicitly needs CSS output invalidation.
 
+### Scheduler frame stepping for VFX-023
+
+`src/utils/isometric/animationFrame.ts` now accepts an optional move VFX renderer frame hook. When a renderer is present and `needsAnimationFrame()` reports active work, `stepIsometricAnimationFrame()` calls `moveVfxRenderer.animate(...)` before the WebGL render with the scheduler's `frameNowMs`, clamped `delta`, clock `elapsedTime`, active camera, optional live token render-object map, and optional visibility flag.
+
+`src/components/IsometricGrid.client.vue` includes the dormant move VFX renderer slot in both `resolveSceneAnimationContinuation()` and the per-frame call into `stepIsometricAnimationFrame()`. Until the later prop-plumbing ticket instantiates and syncs the renderer, the slot is `null` and produces no continuation source or animation work. This keeps VFX advancement on the existing dirty-scheduled frame path without introducing an independent RAF loop.
+
+The current move VFX path is pure WebGL: stepping the renderer does not mark CSS3D dirty, and `CSS3DRenderer.render()` still runs only when the existing dirty tracker reports CSS-visible changes. If a future primitive uses CSS3D badges or labels, that primitive must add an explicit CSS dirty signal instead of relying on the WebGL-only move VFX continuation source.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

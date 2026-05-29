@@ -114,6 +114,7 @@ import {
 } from '~/utils/isometric/lifecycle'
 import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
 import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
+import type { MoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import {
   createIsometricLayerVisibilityApplicator,
   setIsometricGridVisibility,
@@ -148,6 +149,7 @@ import {
 import {
   createIsometricAnimationContinuation,
   resolveIsometricFieldEffectAnimationContinuationSources,
+  resolveIsometricMoveVfxAnimationContinuationSources,
   resolveIsometricMovementPreviewAnimationContinuationSources,
   resolveIsometricSpriteAnimationContinuationSources,
   resolveIsometricTokenMotionContinuationSources,
@@ -460,6 +462,7 @@ const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({
 const moveTargetingReticleRenderer = createMoveTargetingReticleRenderer(scene)
 const moveAreaTemplateRenderer = createMoveAreaTemplateRenderer(scene)
 const moveAutomationFeedbackRenderer = createMoveAutomationFeedbackRenderer(scene)
+let moveVfxRenderer: MoveVfxRenderer | null = null
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
 let camera: THREE.OrthographicCamera | null = null
@@ -1417,6 +1420,7 @@ function resolveSceneAnimationContinuation() {
     ...resolveIsometricSpriteAnimationContinuationSources(renderObjects.values()),
     ...resolveIsometricMovementPreviewAnimationContinuationSources(tokenMovePreviewRenderer),
     ...resolveIsometricFieldEffectAnimationContinuationSources(fieldEffectRenderer),
+    ...resolveIsometricMoveVfxAnimationContinuationSources(moveVfxRenderer),
   ])
 }
 
@@ -1456,6 +1460,8 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     controls,
     fieldEffectRenderer,
     tokenMovePreviewRenderer,
+    moveVfxRenderer,
+    moveVfxRenderObjects: renderObjects,
     selectedPokemon: sendOutInteraction.activePokemon() ?? selectedPokemon.value,
     previewPositionY: activeSendOutRequest.value ? sendOutInteraction.previewPositionY() : movementInteraction.previewPositionY(),
     camera,
