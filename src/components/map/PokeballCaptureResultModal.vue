@@ -19,10 +19,14 @@ const emit = defineEmits<{
   (event: 'close'): void
 }>()
 
+const BALL_POP_ANIMATION_MS = 350
+
 const modalAccentStyle = computed(() => trainerAccentCssVariables(props.accentColor))
+const outcomeLabel = computed(() => (props.result.success ? 'Caught!' : 'Escaped...'))
 
 const currentShake = ref(0)
 const done = ref(false)
+const resultVisible = ref(false)
 const timers: Array<ReturnType<typeof setTimeout>> = []
 
 const clearTimers = () => {
@@ -41,12 +45,16 @@ const startAnimation = () => {
   clearTimers()
   currentShake.value = 0
   done.value = false
+  resultVisible.value = false
   void playPokeballThrowSound()
 
   if (!props.result.hit || props.result.shakeCount <= 0) {
     schedule(() => {
       done.value = true
       void playPokeballFailSound()
+      schedule(() => {
+        resultVisible.value = true
+      }, BALL_POP_ANIMATION_MS)
     }, 620)
     return
   }
@@ -61,6 +69,9 @@ const startAnimation = () => {
   schedule(() => {
     done.value = true
     void (props.result.success ? playPokeballSuccessSound() : playPokeballFailSound())
+    schedule(() => {
+      resultVisible.value = true
+    }, BALL_POP_ANIMATION_MS)
   }, 520 + (props.result.shakeCount * 720))
 }
 
@@ -78,6 +89,12 @@ onBeforeUnmount(clearTimers)
           <div class="capture-modal__portrait">
             <img v-if="result.targetSpriteUrl" :src="result.targetSpriteUrl" :alt="result.targetName" loading="lazy">
             <span v-else>{{ result.targetSpecies }}</span>
+            <span
+              v-if="resultVisible"
+              class="capture-modal__outcome-label"
+              :class="result.success ? 'is-success' : 'is-failure'"
+              aria-live="polite"
+            >{{ outcomeLabel }}</span>
           </div>
 
           <div class="capture-modal__ball-wrap" :key="currentShake">
@@ -89,8 +106,12 @@ onBeforeUnmount(clearTimers)
         </div>
 
         <div class="capture-modal__roll-summary">
-          <span>Capture Roll <strong class="capture-modal__roll-number" :class="result.success ? 'is-success' : 'is-failure'">{{ result.adjustedCaptureRoll ?? '—' }}</strong></span>
           <span>Capture Rate <strong class="capture-modal__rate-number">{{ result.captureRate }}</strong></span>
+          <span
+            class="capture-modal__roll-row"
+            :class="{ 'is-visible': resultVisible }"
+            :aria-hidden="resultVisible ? undefined : 'true'"
+          >Capture Roll <strong class="capture-modal__roll-number" :class="result.success ? 'is-success' : 'is-failure'">{{ result.adjustedCaptureRoll ?? '—' }}</strong></span>
         </div>
 
         <div class="capture-modal__actions">
@@ -138,6 +159,7 @@ onBeforeUnmount(clearTimers)
 }
 
 .capture-modal__portrait {
+  position: relative;
   display: inline-grid;
   width: fit-content;
   height: fit-content;
@@ -152,6 +174,38 @@ onBeforeUnmount(clearTimers)
   object-fit: contain;
   image-rendering: pixelated;
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
+}
+
+.capture-modal__outcome-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  padding: 0.18rem 0.55rem 0.24rem;
+  border-radius: 999px;
+  background: rgba(5, 6, 8, 0.62);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  font-size: clamp(1.2rem, 8vw, 2.25rem);
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.82);
+  transform: translate(-50%, -50%) rotate(-4deg);
+  white-space: nowrap;
+}
+
+.capture-modal__outcome-label.is-success {
+  color: var(--good);
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.82),
+    0 0 14px color-mix(in srgb, var(--good) 72%, transparent);
+}
+
+.capture-modal__outcome-label.is-failure {
+  color: var(--bad);
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.82),
+    0 0 14px color-mix(in srgb, var(--bad) 72%, transparent);
 }
 
 .capture-modal__ball-wrap {
@@ -199,10 +253,10 @@ onBeforeUnmount(clearTimers)
 }
 
 .capture-modal__roll-summary {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   justify-content: center;
-  gap: 0.85rem 1.25rem;
+  justify-items: center;
+  gap: 0.55rem;
   padding: 0 1.25rem 1.25rem;
   color: var(--ink-bright);
   font-weight: 800;
@@ -210,6 +264,14 @@ onBeforeUnmount(clearTimers)
 
 .capture-modal__roll-summary strong {
   font-weight: 950;
+}
+
+.capture-modal__roll-row {
+  visibility: hidden;
+}
+
+.capture-modal__roll-row.is-visible {
+  visibility: visible;
 }
 
 .capture-modal__actions {
