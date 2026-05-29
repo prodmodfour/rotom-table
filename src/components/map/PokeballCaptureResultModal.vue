@@ -186,9 +186,10 @@ onBeforeUnmount(clearTimers)
 
 .capture-modal__stage {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.8fr);
+  grid-template-columns: 1fr;
   gap: 1rem;
   align-items: center;
+  justify-items: center;
   padding: 1.25rem;
 }
 
