@@ -209,7 +209,7 @@ The existing app already depends on Three.js directly, and the render loop alrea
 
 ### Internal helper scope for VFX-009
 
-The dependency-free helper layer should be intentionally tiny and live near the isometric renderer code, currently expected as `src/utils/isometric/moveVfxTiming.ts`.
+The dependency-free helper layer should be intentionally tiny and live near the isometric renderer code. The shared implementation lives in `src/utils/isometric/moveVfxTiming.ts`; primitive and renderer code should import its easing, interpolation, progress, and default-duration helpers instead of inventing per-primitive math.
 
 In scope:
 
