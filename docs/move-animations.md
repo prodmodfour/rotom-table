@@ -253,6 +253,12 @@ The shared queue policy implementation lives in `src/composables/map-editor/move
 
 This policy keeps transient VFX one-shot per move resolution by default while still allowing deliberate batches such as launch + impact + crit events.
 
+### Queue composable for VFX-012
+
+The per-map reactive queue implementation lives in `src/composables/map-editor/useMoveAnimationQueue.ts`. Each map page should create its own queue instance and pass the returned enqueue functions to later move-automation integration; the module owns no global state and imports no renderer or move-rule code.
+
+The composable exposes `activeMoveAnimations` as a readonly computed array plus `enqueueMoveAnimation`, `enqueueMoveAnimations`, `removeMoveAnimation`, `clearMoveAnimations`, and `pruneExpiredMoveAnimations`. Enqueue helpers fill missing `id` and `createdAtMs` fields from the per-queue id generator and injected clock, then apply the VFX-011 duplicate policy. Expiration pruning uses event `createdAtMs`/`durationMs` through the shared timing helpers and is opportunistic only; it does not create timers, a RAF loop, or persistence hooks.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
