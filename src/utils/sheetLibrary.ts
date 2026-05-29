@@ -220,6 +220,14 @@ export const matchesSheetLibraryQuery = (item: SheetLibraryItem, query: string):
   return haystacks.some((value) => normalizeSearchText(value).includes(query))
 }
 
+const sheetLibraryKindPriority = (kind: SheetLibraryKind): number => kind === 'trainer' ? 0 : 1
+
+const compareSheetLibraryItems = (a: SheetLibraryItem, b: SheetLibraryItem): number => {
+  const kindOrder = sheetLibraryKindPriority(a.kind) - sheetLibraryKindPriority(b.kind)
+  if (kindOrder !== 0) return kindOrder
+  return a.sortKey.localeCompare(b.sortKey)
+}
+
 export const filterVisibleSheetLibraryItems = ({
   items,
   currentPath,
@@ -233,7 +241,7 @@ export const filterVisibleSheetLibraryItems = ({
   const pool = items.filter((item) => isInsideFolder(item.folder, currentPath))
   const matched = query ? pool.filter((item) => matchesSheetLibraryQuery(item, query)) : pool
   const scoped = query ? matched : matched.filter((item) => item.folder === currentPath)
-  return [...scoped].sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+  return [...scoped].sort(compareSheetLibraryItems)
 }
 
 export const countFilteredSheetLibraryItems = (

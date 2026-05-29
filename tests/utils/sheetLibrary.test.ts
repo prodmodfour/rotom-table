@@ -204,19 +204,25 @@ describe('sheetLibrary helpers', () => {
     })].sort()).toEqual(['npcs/gm', 'team/alpha'])
   })
 
-  it('filters visible sheets by current folder, subtree search, and sort keys', () => {
+  it('filters visible sheets by current folder, subtree search, and trainer-first sort keys', () => {
     const items = buildSheetLibraryItems({
       pokemonSheets: [
         pokemon({ slug: 'root-b', nickname: 'B Root', folder: '' }),
         pokemon({ slug: 'root-a', nickname: 'A Root', folder: '' }),
         pokemon({ slug: 'child', nickname: 'Wild Child', folder: 'team/alpha' }),
       ],
-      trainerSheets: [trainer({ slug: 'deep', name: 'Deep Trainer', folder: 'team/alpha/deep' })],
+      trainerSheets: [
+        trainer({ slug: 'z-trainer', name: 'Z Trainer', folder: '' }),
+        trainer({ slug: 'a-trainer', name: 'A Trainer', folder: '' }),
+        trainer({ slug: 'deep', name: 'Deep Trainer', folder: 'team/alpha/deep' }),
+      ],
       speciesTypesFor: () => ['Electric'],
       spriteUrlFor: () => null,
     })
 
     expect(filterVisibleSheetLibraryItems({ items, currentPath: '', searchTerm: '' }).map((item) => item.slug)).toEqual([
+      'a-trainer',
+      'z-trainer',
       'root-a',
       'root-b',
     ])

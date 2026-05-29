@@ -76,6 +76,14 @@ export const matchesSheetBrowserQuery = (item: SheetBrowserItem, query: string):
   [item.displayName, item.meta, item.folder]
     .some((value) => normalizeSearchText(value).includes(query))
 
+const sheetBrowserKindPriority = (kind: SheetKind): number => kind === 'trainer' ? 0 : 1
+
+const compareSheetBrowserItems = (a: SheetBrowserItem, b: SheetBrowserItem): number => {
+  const kindOrder = sheetBrowserKindPriority(a.kind) - sheetBrowserKindPriority(b.kind)
+  if (kindOrder !== 0) return kindOrder
+  return a.sortKey.localeCompare(b.sortKey)
+}
+
 export const filterSheetBrowserItems = (
   items: readonly SheetBrowserItem[],
   currentPath: string,
@@ -85,7 +93,7 @@ export const filterSheetBrowserItems = (
   const pool = items.filter((item) => isInsideFolder(item.folder, currentPath))
   const matched = query ? pool.filter((item) => matchesSheetBrowserQuery(item, query)) : pool
   const visible = query ? matched : matched.filter((item) => item.folder === currentPath)
-  return [...visible].sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+  return [...visible].sort(compareSheetBrowserItems)
 }
 
 export const buildSheetBrowserFolderTiles = (

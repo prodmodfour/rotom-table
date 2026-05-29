@@ -88,6 +88,27 @@ describe('sheet browser helpers', () => {
     expect(filterSheetBrowserItems(items, '', 'ace trainer').map((item) => item.slug)).toEqual(['misty'])
   })
 
+  it('orders trainer sheets before Pokémon sheets while preserving name sort within each kind', () => {
+    const items = buildSheetBrowserItems({
+      pokemonSheets: [
+        pokemon({ slug: 'a-pokemon', nickname: 'A Pokémon', folder: '' }),
+        pokemon({ slug: 'z-pokemon', nickname: 'Z Pokémon', folder: '' }),
+      ],
+      trainerSheets: [
+        trainer({ slug: 'z-trainer', name: 'Z Trainer', folder: '' }),
+        trainer({ slug: 'b-trainer', name: 'B Trainer', folder: '' }),
+      ],
+      spriteUrlForSpecies: () => null,
+    })
+
+    expect(filterSheetBrowserItems(items, '', '').map((item) => item.slug)).toEqual([
+      'b-trainer',
+      'z-trainer',
+      'a-pokemon',
+      'z-pokemon',
+    ])
+  })
+
   it('returns selection payloads without exposing component branching', () => {
     const [pokemonItem, trainerItem] = buildSheetBrowserItems({
       pokemonSheets: [pokemon()],
