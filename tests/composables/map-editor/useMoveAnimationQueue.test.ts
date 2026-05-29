@@ -76,6 +76,32 @@ describe('useMoveAnimationQueue', () => {
     ])
   })
 
+  it('dedupes duplicate ids inside one batch without changing event order', () => {
+    const queue = useMoveAnimationQueue({ now: () => 1000 })
+
+    const result = queue.enqueueMoveAnimations([
+      createInput({ id: 'same-resolution', moveName: 'Original Pulse' }),
+      createInput({ id: 'same-resolution', moveName: 'Duplicate Pulse' }),
+      createInput({ id: 'follow-up-resolution', moveName: 'Follow-Up Pulse' }),
+    ])
+
+    expect(result.results.map(({ action, index }) => ({ action, index }))).toEqual([
+      { action: 'added', index: 0 },
+      { action: 'ignored-duplicate', index: 0 },
+      { action: 'added', index: 1 },
+    ])
+    expect(result.results[1]?.existingEvent).toEqual(expect.objectContaining({
+      moveName: 'Original Pulse',
+    }))
+    expect(result.results[1]?.incomingEvent).toEqual(expect.objectContaining({
+      moveName: 'Duplicate Pulse',
+    }))
+    expect(queue.activeMoveAnimations.value.map(({ id, moveName }) => ({ id, moveName }))).toEqual([
+      { id: 'same-resolution', moveName: 'Original Pulse' },
+      { id: 'follow-up-resolution', moveName: 'Follow-Up Pulse' },
+    ])
+  })
+
   it('uses duplicate-id ignore by default and replacement only when explicitly requested', () => {
     const queue = useMoveAnimationQueue({ now: () => 1000 })
     const original = createInput({ id: 'stable-resolution', moveName: 'Original Pulse' })
@@ -93,6 +119,35 @@ describe('useMoveAnimationQueue', () => {
     }).action).toBe('replaced')
     expect(queue.activeMoveAnimations.value).toEqual([
       expect.objectContaining({ moveName: 'Replacement Pulse' }),
+    ])
+  })
+
+  it('honors queue-level duplicate replacement while allowing enqueue overrides', () => {
+    const queue = useMoveAnimationQueue({
+      now: () => 1000,
+      duplicatePolicy: MOVE_ANIMATION_DUPLICATE_POLICY.replace,
+    })
+
+    expect(queue.enqueueMoveAnimation(createInput({
+      id: 'configurable-resolution',
+      moveName: 'Original Pulse',
+    })).action).toBe('added')
+    expect(queue.enqueueMoveAnimation(createInput({
+      id: 'configurable-resolution',
+      moveName: 'Queue-Level Replacement',
+    })).action).toBe('replaced')
+    expect(queue.activeMoveAnimations.value).toEqual([
+      expect.objectContaining({ moveName: 'Queue-Level Replacement' }),
+    ])
+
+    expect(queue.enqueueMoveAnimation(createInput({
+      id: 'configurable-resolution',
+      moveName: 'Ignored Per-Call Duplicate',
+    }), {
+      duplicatePolicy: MOVE_ANIMATION_DUPLICATE_POLICY.ignore,
+    }).action).toBe('ignored-duplicate')
+    expect(queue.activeMoveAnimations.value).toEqual([
+      expect.objectContaining({ moveName: 'Queue-Level Replacement' }),
     ])
   })
 
@@ -131,5 +186,27 @@ describe('useMoveAnimationQueue', () => {
     queue.enqueueMoveAnimation(createInput({ id: 'new-pulse' }))
 
     expect(queue.activeMoveAnimations.value.map((event) => event.id)).toEqual(['new-pulse'])
+  })
+
+  it('keeps expired events until explicit pruning when enqueue pruning is disabled', () => {
+    let nowMs = 1000
+    const queue = useMoveAnimationQueue({
+      now: () => nowMs,
+      pruneExpiredOnEnqueue: false,
+    })
+
+    queue.enqueueMoveAnimation(createInput({ id: 'short-lived', durationMs: 50 }))
+    nowMs = 5000
+    queue.enqueueMoveAnimation(createInput({ id: 'new-event' }))
+
+    expect(queue.activeMoveAnimations.value.map((event) => event.id)).toEqual([
+      'short-lived',
+      'new-event',
+    ])
+
+    const pruned = queue.pruneExpiredMoveAnimations(nowMs)
+
+    expect(pruned.removedEvents.map((event) => event.id)).toEqual(['short-lived'])
+    expect(pruned.activeEvents.map((event) => event.id)).toEqual(['new-event'])
   })
 })
