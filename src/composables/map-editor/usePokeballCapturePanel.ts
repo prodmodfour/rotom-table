@@ -130,6 +130,7 @@ export const usePokeballCapturePanel = ({
 
   const openPokeballCapture = (payload: { id: string; pokeballName?: string | null }) => {
     pokeballCaptureError.value = null
+    pokeballCaptureResult.value = null
     if (!canControlPlacement(payload.id)) return
 
     const user = findToken(payload.id)
@@ -184,8 +185,8 @@ export const usePokeballCapturePanel = ({
     })
 
     activePokeballCapture.value = null
-    pokeballCaptureResult.value = result
-    pokeballCaptureError.value = null
+    pokeballCaptureResult.value = result.hit ? result : null
+    pokeballCaptureError.value = result.hit ? null : (result.failureReason ?? 'The Poké Ball missed.')
 
     if (applyCaptureOutcome) {
       void Promise.resolve(applyCaptureOutcome({
