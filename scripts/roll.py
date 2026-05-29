@@ -7,7 +7,7 @@ Usage:
     roll.py <region>                   # list tables in a region
     roll.py                            # list regions
 
-Tables are JSON files in encounter_tables/<region>/<table>.json with shape:
+Tables are JSON files in encounter_tables/<region>/<table>.json under ROTOM_CAMPAIGN_ROOT when set, otherwise under the app checkout, with shape:
     {
       "name": str,
       "min_level": int,
@@ -24,11 +24,25 @@ Legacy entries are also accepted:
 """
 
 import json
+import os
 import random
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent / "encounter_tables"
+APP_ROOT = Path(__file__).resolve().parent.parent
+
+
+def configured_campaign_root():
+    raw = os.environ.get("ROTOM_CAMPAIGN_ROOT", "").strip()
+    if not raw:
+        return APP_ROOT
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = APP_ROOT / path
+    return path.resolve()
+
+
+ROOT = configured_campaign_root() / "encounter_tables"
 
 
 def list_regions():

@@ -16,7 +16,7 @@ defineProps<{
   </div>
 
   <p class="sidebar-copy">
-    Browse encounter tables from
+    Browse encounter tables from the campaign
     <code>encounter_tables/&lt;region&gt;/&lt;table&gt;.json</code>.
     Use the <NuxtLink :to="ENCOUNTER_GENERATOR_PATH" class="inline-link">Generate</NuxtLink>
     page to roll on a table and produce stat blocks.

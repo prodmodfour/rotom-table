@@ -105,22 +105,23 @@ just encounter <region>
 just encounter <region> <table> <count> preview
 ```
 
-Encounter generation without `preview` writes generated Pokémon sheets under `data/sheets/wild/<table>_<count>/` by default.
+Encounter generation without `preview` writes generated Pokémon sheets under `data/sheets/wild/<table>_<count>/` by default, resolved under `ROTOM_CAMPAIGN_ROOT` when that variable is set.
 
 ## Local data behaviour
 
-The app edits local JSON files during development:
+The app edits local JSON files during development. By default the campaign paths below are in the app checkout; set `ROTOM_CAMPAIGN_ROOT=/path/to/private-campaign-repo` before `npm run dev` to resolve them under a separate campaign repository instead. See [Campaign repositories](campaign-repositories.md).
 
 - maps: `data/maps/`
 - player profiles: `data/player-profiles/`
-- legacy live session snapshots and optional event logs: `data/sessions/`
 - Pokémon sheets: `data/sheets/`
 - trainer sheets: `data/trainers/`
 - encounter tables: `encounter_tables/`
 
-Nuxt/Vite are configured to ignore app-written sheet/map data changes so autosaves do not trigger full page reloads while editing. If you edit files outside the browser, refresh the relevant page or restart the dev server if the UI does not reflect the change.
+Legacy session runtime files, if that maintenance surface is used, remain app-local under `data/sessions/` and are not part of the campaign repository root switch.
 
-`.gitignore` is configured to keep personal campaign data, player profiles, and legacy live session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [Player profiles and linked character control](player-profiles.md) for profile behaviour, [live session storage](live-session-storage.md) for legacy snapshot/event-log layout details, [Live session backup and recovery](live-session-backup-recovery.md) for private archive/restore guidance, [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) for the snapshot/event-log and hygiene review, and [Live session security boundaries](live-session-security-boundaries.md) for no-secret data-handling boundaries.
+Nuxt/Vite are configured to ignore app-written sheet/map data changes so autosaves do not trigger full page reloads while editing. If you edit files outside the browser, refresh the relevant page or restart the dev server if the UI does not reflect the change. Restart Nuxt after changing `ROTOM_CAMPAIGN_ROOT`.
+
+`.gitignore` is configured to keep personal campaign data, player profiles, new local encounter-table folders, and legacy live session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [Player profiles and linked character control](player-profiles.md) for profile behaviour, [live session storage](live-session-storage.md) for legacy snapshot/event-log layout details, [Live session backup and recovery](live-session-backup-recovery.md) for private archive/restore guidance, [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) for the snapshot/event-log and hygiene review, and [Live session security boundaries](live-session-security-boundaries.md) for no-secret data-handling boundaries.
 
 ## Production write limitations
 

@@ -17,7 +17,7 @@ defineProps<{
       Roll on an encounter table and stat the results with the same pipeline
       as <code>just encounter &lt;region&gt; &lt;table&gt; &lt;count&gt;</code>.
       Output lands in <code>&lt;outRoot&gt;/&lt;table&gt;_&lt;count&gt;/</code>
-      as <code>CharacterSheet</code> JSON files — drop them under
+      as <code>CharacterSheet</code> JSON files — put them under the campaign
       <code>data/sheets/</code> (the default) and they show up immediately
       on the <NuxtLink class="inline-link" :to="SHEET_LIBRARY_PATH">Sheets</NuxtLink>
       page. Browse all available tables on the

@@ -8,10 +8,10 @@ import {
 import { dirname } from 'node:path'
 import { sanitizeFolderPath } from '#shared/paths'
 import type { SheetKind } from '#shared/sheets'
+import { campaignPathLabel } from './campaignPaths'
 import {
   joinSafeUnderRoot,
   pruneEmptyParents,
-  relativeToProjectRoot,
 } from './fsPaths'
 import { walkDirectories } from './jsonFiles'
 import { sheetRootFor, sheetRoots } from './sheetPaths'
@@ -41,7 +41,7 @@ export const createSheetFolder = (
   const dest = joinSafeUnderRoot(root, folder)
   const existed = existsSync(dest)
   mkdirSync(dest, { recursive: true })
-  return { created: !existed, path: relativeToProjectRoot(dest), folder }
+  return { created: !existed, path: campaignPathLabel(dest), folder }
 }
 
 export const deleteSheetFolder = (folderInput: string): DeleteFolderResult | null => {
@@ -53,7 +53,7 @@ export const deleteSheetFolder = (folderInput: string): DeleteFolderResult | nul
     if (!statSync(dir).isDirectory()) continue
     rmSync(dir, { recursive: true, force: true })
     pruneEmptyParents(dir, root)
-    removed.push(relativeToProjectRoot(dir))
+    removed.push(campaignPathLabel(dir))
   }
   if (removed.length === 0) return null
   return { count: removed.length, removed }
@@ -72,7 +72,7 @@ export const moveSheetFolder = (fromInput: string, toInput: string): MoveFolderR
     if (!existsSync(src)) continue
     if (!statSync(src).isDirectory()) continue
     const dst = joinSafeUnderRoot(root, to)
-    if (existsSync(dst)) throw new Error(`Destination already exists in ${relativeToProjectRoot(root)}`)
+    if (existsSync(dst)) throw new Error(`Destination already exists in ${campaignPathLabel(root)}`)
     moves.push({ src, dst, root })
   }
 

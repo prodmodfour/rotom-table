@@ -43,7 +43,7 @@ const emit = defineEmits<{
     <LibraryIntroCopy>
       Trainers and Pokémon character sheets, modelled on the PTU
       <code>pokesheet</code> / <code>trainer</code> spreadsheets. Drop a
-      new JSON file into <code>data/sheets/</code> for a Pokémon, or
+      new JSON file into the campaign <code>data/sheets/</code> for a Pokémon, or
       <code>data/trainers/</code> for a trainer. Use subdirectories
       (e.g. <code>data/sheets/team-alpha/</code>) to group sheets into
       folders — the directory name is shown exactly as the folder string.

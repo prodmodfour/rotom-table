@@ -6,10 +6,10 @@ import {
   statSync,
 } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import { campaignPathLabel } from './campaignPaths'
 import {
   joinSafeUnderRoot,
   pruneEmptyParents,
-  relativeToProjectRoot,
 } from './fsPaths'
 import { walkDirectories } from './jsonFiles'
 import { MAPS_ROOT } from './mapPaths'
@@ -38,7 +38,7 @@ export const createMapFolder = (folder: string, root = MAPS_ROOT): CreateMapFold
 
   return {
     created: !existed,
-    path: relativeToProjectRoot(destination),
+    path: campaignPathLabel(destination),
     folder,
   }
 }
@@ -75,5 +75,5 @@ export const deleteMapFolder = (folder: string, root = MAPS_ROOT): DeleteMapFold
   rmSync(dir, { recursive: true, force: true })
   pruneEmptyParents(dir, resolvedRoot)
 
-  return { removed: relativeToProjectRoot(dir) }
+  return { removed: campaignPathLabel(dir) }
 }

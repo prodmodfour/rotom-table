@@ -24,7 +24,7 @@ This structure keeps route handlers thin and makes persistence-heavy behaviours 
 
 ## Local filesystem-backed JSON data
 
-Rotom Table is local-first. Campaign state is stored as JSON in the repository tree rather than in a hosted database.
+Rotom Table is local-first. Campaign state is stored as JSON on the local filesystem rather than in a hosted database. By default those files live in the app checkout; `ROTOM_CAMPAIGN_ROOT` can point campaign-owned paths at a separate private campaign repository.
 
 - Maps live under `data/maps/`.
 - Persistent player profiles live under `data/player-profiles/`.

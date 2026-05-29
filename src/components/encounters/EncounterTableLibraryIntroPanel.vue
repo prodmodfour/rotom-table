@@ -33,7 +33,7 @@ const emit = defineEmits<{
     :badge="`${filteredCount} of ${totalCount}`"
   >
     <LibraryIntroCopy>
-      Browse encounter-table JSON files under <code>encounter_tables/</code>.
+      Browse encounter-table JSON files under the campaign <code>encounter_tables/</code>.
       Folders can represent regions, routes, or adventure arcs; each table can
       be rolled from the <NuxtLink :to="ENCOUNTER_GENERATOR_PATH" class="inline-link">Generate</NuxtLink>
       page to produce wild Pokémon sheets.

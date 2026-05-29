@@ -23,6 +23,14 @@ npm run dev
 
 Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose the GM-created persistent player profile for this browser. GMs can open `/players` to create profiles and link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping map/sheet libraries, Pokédex, and reference pages available; direct map-control and editable sheet routes ask profileless players to choose a profile before continuing. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map, session-map management controls, or the legacy session lobby.
 
+To keep private campaign JSON in a separate Git repository, start Nuxt with a campaign root:
+
+```bash
+ROTOM_CAMPAIGN_ROOT=../my-rotom-campaign npm run dev
+```
+
+See [Campaign repositories](docs/campaign-repositories.md) for the expected layout.
+
 Recommended verification commands:
 
 ```bash
@@ -57,7 +65,7 @@ npm run build
 - **Reference library** — browse moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges.
 - **Encounter tools** — manage JSON encounter tables, roll previews, and generate wild Pokémon sheets into the sheet library.
 - **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes; Player Login asks for a persistent player profile before continuing, and linked characters grant sheet editing plus map-token control.
-- **Filesystem-backed data** — maps, sheets, trainers, player profiles, and encounter tables are stored as JSON in the repository tree for easy inspection, backup, and diffing.
+- **Filesystem-backed data** — maps, sheets, trainers, player profiles, and encounter tables are stored as JSON in the app checkout by default, or under `ROTOM_CAMPAIGN_ROOT` when using a separate private campaign repo, for easy inspection, backup, and diffing.
 
 
 
@@ -75,7 +83,7 @@ npm run build
 - `src/` contains the Nuxt app: pages, components, composables, assets, and browser-side utilities.
 - `server/` contains Nitro API routes, use cases, and filesystem persistence helpers.
 - `shared/` contains auth, path, realtime, sheet, and encounter helpers shared by app and server code.
-- `data/` and `encounter_tables/` hold app-owned JSON/TypeScript data consumed at runtime; `ptu-data/` is documentary upstream/source material and parser tooling.
+- `data/reference/` holds app-owned PTU JSON/TypeScript data consumed at runtime; campaign-owned `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, and `encounter_tables/` can live in the app checkout or under `ROTOM_CAMPAIGN_ROOT`; `ptu-data/` is documentary upstream/source material and parser tooling.
 - `tests/` contains Vitest coverage across server use cases, composables, shared helpers, and domain utilities.
 
 See [docs/architecture.md](docs/architecture.md) for more detail.
@@ -101,14 +109,15 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 
 ## Data layout
 
+Campaign-owned paths (`data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, and `encounter_tables/`) are resolved under `ROTOM_CAMPAIGN_ROOT` when set; otherwise they use the app checkout.
+
 | Path | What it contains |
 | --- | --- |
-| `data/maps/` | Saved map JSON and map-adjacent local files. |
+| `data/maps/` | Saved map JSON and map-adjacent local files. Resolved under `ROTOM_CAMPAIGN_ROOT` when set. |
 | `data/player-profiles/` | Persistent player profile JSON with linked Pokémon/trainer character refs; ignored/private campaign data. |
-| `data/sessions/` | Legacy live session snapshots and optional event logs; ignored/private runtime data. |
 | `data/sheets/` | Pokémon character-sheet JSON, including generated wild sheets. |
 | `data/trainers/` | Trainer sheet JSON. |
-| `encounter_tables/` | Encounter-table JSON, grouped by folder/region. |
+| `encounter_tables/` | Encounter-table JSON, grouped by folder/region. Resolved under `ROTOM_CAMPAIGN_ROOT` when set. |
 | `data/reference/` | App-owned PTU reference JSON used by runtime pages, sheets, lookup helpers, and automation. |
 | `books/markdown/` | Markdown source/reference content. |
 | `ptu-data/` | Documentary upstream PTU parsing/source helpers; not the runtime source of truth. |

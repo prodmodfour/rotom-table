@@ -2,7 +2,7 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { unlinkSync } from 'node:fs'
 import { sep } from 'node:path'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
-import { relativeToProjectRoot } from '../utils/fsPaths'
+import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile } from '../utils/mapStorage'
 import { MAPS_ROOT, SLUG_RE, pruneEmptyMapParents } from '../utils/mapPaths'
 
@@ -43,7 +43,7 @@ export const deleteMapUseCase = (
   const findMapPath = dependencies.findMapPath ?? findMapFile
   const removeMapFile = dependencies.removeMapFile ?? unlinkSync
   const pruneEmptyParents = dependencies.pruneEmptyParents ?? pruneEmptyMapParents
-  const relativePath = dependencies.relativePath ?? relativeToProjectRoot
+  const relativePath = dependencies.relativePath ?? campaignPathLabel
 
   const slug = normalizeDeleteMapSlug(input.slug)
   const mapPath = findMapPath(slug)

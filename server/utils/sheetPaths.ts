@@ -1,6 +1,6 @@
-import { relative, resolve, sep } from 'node:path'
+import { relative, sep } from 'node:path'
 import { SHEET_KINDS, type SheetKind } from '#shared/sheets'
-import { PROJECT_ROOT } from './fsPaths'
+import { CAMPAIGN_POKEMON_SHEETS_ROOT, CAMPAIGN_TRAINER_SHEETS_ROOT } from './campaignPaths'
 
 export { SHEET_KINDS, isSheetKind, type SheetKind } from '#shared/sheets'
 
@@ -14,13 +14,13 @@ export interface SheetKindConfig {
 export const SHEET_KIND_CONFIG: Record<SheetKind, SheetKindConfig> = {
   pokemon: {
     kind: 'pokemon',
-    root: resolve(PROJECT_ROOT, 'data/sheets'),
+    root: CAMPAIGN_POKEMON_SHEETS_ROOT,
     defaultBaseSlug: 'new-pokemon',
     displayName: 'Pokémon',
   },
   trainer: {
     kind: 'trainer',
-    root: resolve(PROJECT_ROOT, 'data/trainers'),
+    root: CAMPAIGN_TRAINER_SHEETS_ROOT,
     defaultBaseSlug: 'new-trainer',
     displayName: 'Trainer',
   },

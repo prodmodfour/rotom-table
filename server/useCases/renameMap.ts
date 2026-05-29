@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { existsSync, renameSync } from 'node:fs'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { TabletopMap } from '~/types/map'
-import { relativeToProjectRoot } from '../utils/fsPaths'
+import { campaignPathLabel } from '../utils/campaignPaths'
 import { allocateSlug, findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { SLUG_RE, slugify } from '../utils/mapPaths'
 import { summarizeMap } from '../utils/mapSummaries'
@@ -66,7 +66,7 @@ export const renameMapUseCase = (
   const renameMapPath = dependencies.renameMapPath ?? renameSync
   const slugifyName = dependencies.slugifyName ?? slugify
   const allocateMapSlug = dependencies.allocateMapSlug ?? allocateSlug
-  const relativePath = dependencies.relativePath ?? relativeToProjectRoot
+  const relativePath = dependencies.relativePath ?? campaignPathLabel
   const now = dependencies.now ?? Date.now
 
   const slug = normalizeRenameMapSlug(input.slug)

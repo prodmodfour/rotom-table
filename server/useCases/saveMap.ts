@@ -6,7 +6,7 @@ import { sameJsonValue } from '~/utils/serialization'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
-import { relativeToProjectRoot } from '../utils/fsPaths'
+import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { folderFromPath } from '../utils/mapPaths'
 import { summarizeMap } from '../utils/mapSummaries'
@@ -89,7 +89,7 @@ export const saveMapUseCase = (
   const findMapPath = dependencies.findMapPath ?? findMapFile
   const readMap = dependencies.readMap ?? readMapFile
   const writeMap = dependencies.writeMap ?? writeMapFile
-  const relativePath = dependencies.relativePath ?? relativeToProjectRoot
+  const relativePath = dependencies.relativePath ?? campaignPathLabel
 
   const filePath = findMapPath(input.slug)
   if (!filePath) throw new SaveMapUseCaseError(404, `Map ${input.slug}.json not found`)

@@ -7,6 +7,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Review guide](review-guide.md) — what to inspect first, key routes, source areas, scripts, and production caveats.
 - [Architecture](architecture.md) — high-level Nuxt/Nitro/local-first architecture.
 - [Data model](data-model.md) — maps, sheets, trainers, player profiles, encounter tables, app-owned PTU reference content, generated sheets, and local data hygiene.
+- [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON in a separate Git repository.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
 - [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.

@@ -8,13 +8,16 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join as joinPath, resolve as resolvePath } from 'node:path'
+import { CAMPAIGN_ROOT } from './campaignPaths'
 import type { UniqueEncounterOutputDir } from './encounterOutput'
+import { PROJECT_ROOT } from './fsPaths'
 import { runPokegenScript, type RunPokegen } from './pokegenRunner'
 
 export interface GenerateEncountersRuntimeOverrides {
   projectRoot?: string
   encounterRoot?: string
   pokegenScript?: string
+  pokegenProjectRoot?: string
   now?: () => number
   random?: () => number
   pathExists?: (path: string) => boolean
@@ -42,17 +45,19 @@ export interface GenerateEncountersRuntime {
   runPokegen: RunPokegen
 }
 
-export const DEFAULT_ENCOUNTER_GENERATION_PROJECT_ROOT = resolvePath(process.cwd())
+export const DEFAULT_ENCOUNTER_GENERATION_PROJECT_ROOT = CAMPAIGN_ROOT
 
 export const resolveGenerateEncountersRuntime = (
   overrides: GenerateEncountersRuntimeOverrides = {},
 ): GenerateEncountersRuntime => {
   const projectRoot = overrides.projectRoot ?? DEFAULT_ENCOUNTER_GENERATION_PROJECT_ROOT
   const encounterRoot = overrides.encounterRoot ?? resolvePath(projectRoot, 'encounter_tables')
+  const pokegenProjectRoot = overrides.pokegenProjectRoot
+    ?? (overrides.projectRoot === undefined ? PROJECT_ROOT : projectRoot)
   const runPokegen = overrides.runPokegen
     ?? ((species: string, level: number, outputDir: string, slugPrefix: string) =>
       runPokegenScript(species, level, outputDir, slugPrefix, {
-        projectRoot,
+        projectRoot: pokegenProjectRoot,
         pokegenScript: overrides.pokegenScript,
       }))
 

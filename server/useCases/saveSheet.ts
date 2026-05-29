@@ -6,7 +6,7 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { SheetKind } from '#shared/sheets'
 import { playerProfileCanAccessSheet } from '../policies/playerProfilePolicy'
-import { relativeToProjectRoot } from '../utils/fsPaths'
+import { campaignPathLabel } from '../utils/campaignPaths'
 import {
   allocateSheetSlug,
   findPersistedSheetFile,
@@ -107,7 +107,7 @@ export const saveSheetUseCase = (
   const pathExists = dependencies.pathExists ?? existsSync
   const renameSheetPath = dependencies.renameSheetPath ?? renameSync
   const allocateSlug = dependencies.allocateSlug ?? allocateSheetSlug
-  const relativePath = dependencies.relativePath ?? relativeToProjectRoot
+  const relativePath = dependencies.relativePath ?? campaignPathLabel
 
   const payloadSlug = String(input.sheet.slug ?? '')
   if (payloadSlug !== input.slug) {

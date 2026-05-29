@@ -7,10 +7,10 @@ import {
 import { dirname, join } from 'node:path'
 import { sanitizeFolderPath, slugify, validateSlug } from '#shared/paths'
 import { stripDerivedSheetFolder } from '~/utils/sheets/persistence'
+import { campaignPathLabel } from './campaignPaths'
 import {
   joinSafeUnderRoot,
   pruneEmptyParents,
-  relativeToProjectRoot,
 } from './fsPaths'
 import {
   findFileByName,
@@ -182,7 +182,7 @@ export const createSheetFile = (kind: SheetKind, folderInput = ''): CreateSheetF
     folder,
     sheet,
     filePath,
-    relativePath: relativeToProjectRoot(filePath),
+    relativePath: campaignPathLabel(filePath),
   }
 }
 
@@ -232,7 +232,7 @@ export const moveSheetFile = (
     moved,
     folder,
     filePath: destPath,
-    relativePath: relativeToProjectRoot(destPath),
+    relativePath: campaignPathLabel(destPath),
   }
 }
 
@@ -271,7 +271,7 @@ export const renameSheetFile = (
     name,
     sheet: stripDerivedSheetFields(json),
     filePath: newPath,
-    relativePath: relativeToProjectRoot(newPath),
+    relativePath: campaignPathLabel(newPath),
   }
 }
 
@@ -282,5 +282,5 @@ export const deleteSheetFile = (kind: SheetKind, slugInput: string): SheetFileRe
   if (!path) return null
   unlinkSync(path)
   pruneEmptyParents(path, root)
-  return { filePath: path, relativePath: relativeToProjectRoot(path) }
+  return { filePath: path, relativePath: campaignPathLabel(path) }
 }

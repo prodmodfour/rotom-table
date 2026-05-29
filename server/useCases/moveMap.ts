@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { TabletopMap } from '~/types/map'
-import { relativeToProjectRoot } from '../utils/fsPaths'
+import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { MAPS_ROOT, SLUG_RE, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapPaths'
 import { summarizeMap } from '../utils/mapSummaries'
@@ -70,7 +70,7 @@ export const moveMapUseCase = (
   const pruneEmptyParents = dependencies.pruneEmptyParents ?? pruneEmptyMapParents
   const readMap = dependencies.readMap ?? readMapFile
   const writeMap = dependencies.writeMap ?? writeMapFile
-  const relativePath = dependencies.relativePath ?? relativeToProjectRoot
+  const relativePath = dependencies.relativePath ?? campaignPathLabel
   const now = dependencies.now ?? Date.now
 
   const slug = normalizeMoveMapSlug(input.slug)

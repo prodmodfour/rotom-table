@@ -8,7 +8,7 @@ import type { CombatStageMap } from '~/types/combatStages'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { AbilityAutomationCategory } from '~/types/abilityAutomation'
-import { relativeToProjectRoot } from '../utils/fsPaths'
+import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { summarizeMap } from '../utils/mapSummaries'
 import { canSaveMap } from '../policies/mapPolicy'
@@ -193,7 +193,7 @@ const actionDependencies = (dependencies: MapTokenTableActionDependencies) => ({
   writeSheet: dependencies.writeSheet ?? writeSheetFile,
   now: dependencies.now ?? Date.now,
   idFactory: dependencies.idFactory,
-  relativePath: dependencies.relativePath ?? relativeToProjectRoot,
+  relativePath: dependencies.relativePath ?? campaignPathLabel,
 })
 
 const findPlacement = (map: TabletopMap, placementId: string): SheetPlacement | null =>

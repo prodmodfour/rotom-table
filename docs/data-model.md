@@ -1,6 +1,6 @@
 # Data model
 
-Rotom Table is built around local, inspectable data. The app edits JSON in the repository tree during local development so campaign data can be backed up, reviewed in Git, and repaired manually when needed.
+Rotom Table is built around local, inspectable data. By default the app edits JSON in the application checkout during local development so campaign data can be backed up, reviewed in Git, and repaired manually when needed. Set `ROTOM_CAMPAIGN_ROOT` to point those campaign-owned paths at a separate private campaign repository; see [Campaign repositories](campaign-repositories.md).
 
 ## Maps
 
@@ -99,10 +99,12 @@ The browser `/generate` page can also preview or write generated results dependi
 
 ## Local campaign data and `.gitignore`
 
-The repository is configured for local campaign ownership:
+The repository is configured for local campaign ownership. If `ROTOM_CAMPAIGN_ROOT` is unset, campaign paths are under the app checkout. If it is set, maps, profiles, sheets, trainers, and encounter tables are resolved under that campaign root instead.
 
-- personal maps, player profiles, sheets, trainer files, legacy live session snapshots, and optional event logs should not be committed by default
-- curated example sheets can remain trackable for review/demo purposes
+The default app repository hygiene is:
+
+- personal maps, player profiles, sheets, trainer files, encounter tables, legacy live session snapshots, and optional event logs should not be committed by default
+- curated example sheets and public sample encounter tables can remain trackable for review/demo purposes
 - generated wild sheets should be reviewed before committing, if they are ever meant to be examples
 - JSON should stay readable and inspectable rather than hidden behind opaque binary formats
 

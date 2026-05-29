@@ -11,7 +11,7 @@ import {
   tokenFacingStoresLegacyTurned,
   tokenFacingTowardPoint,
 } from '~/utils/tokenFacing'
-import { relativeToProjectRoot } from '../utils/fsPaths'
+import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { readSheetFile } from '../utils/sheetStorage'
 import { summarizeMap } from '../utils/mapSummaries'
@@ -194,7 +194,7 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
   writeMap: dependencies.writeMap ?? writeMapFile,
   readSheet: dependencies.readSheet ?? readDefaultSheet,
   now: dependencies.now ?? Date.now,
-  relativePath: dependencies.relativePath ?? relativeToProjectRoot,
+  relativePath: dependencies.relativePath ?? campaignPathLabel,
   maxMovementLogEntries: dependencies.maxMovementLogEntries,
 })
 

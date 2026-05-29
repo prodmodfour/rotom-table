@@ -19,9 +19,10 @@ import {
   type PlayerProfileDisplayName,
   type PlayerProfileId,
 } from '#shared/playerProfiles'
-import { joinSafeUnderRoot, PROJECT_ROOT } from './fsPaths'
+import { CAMPAIGN_PLAYER_PROFILES_ROOT } from './campaignPaths'
+import { joinSafeUnderRoot } from './fsPaths'
 
-export const PLAYER_PROFILE_STORAGE_ROOT = resolve(PROJECT_ROOT, 'data/player-profiles')
+export const PLAYER_PROFILE_STORAGE_ROOT = CAMPAIGN_PLAYER_PROFILES_ROOT
 export const PLAYER_PROFILE_FILE_EXTENSION = '.json'
 export const PLAYER_PROFILE_ID_BODY_MIN_LENGTH = 8
 export const PLAYER_PROFILE_ID_BODY_MAX_LENGTH = 64

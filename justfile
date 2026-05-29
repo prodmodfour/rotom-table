@@ -21,7 +21,7 @@ default:
       '' \
       '  just encounter <region> <table> <count>' \
       '      Roll encounters and generate PTU CharacterSheet JSON.' \
-      '      Files land in data/sheets/wild/<table>_<count>/ and show up' \
+      '      Files land in the campaign data/sheets/wild/<table>_<count>/ and show up' \
       '      on the /sheets page automatically.' \
       '' \
       '  just encounter <region> <table> <count> preview' \
@@ -43,6 +43,9 @@ default:
       '  just rule "<rule name>"' \
       '      Lookup app-owned PTU reference data.' \
       '' \
+      '  ROTOM_CAMPAIGN_ROOT=/path/to/campaign-repo npm run dev' \
+      '      Read/write maps, sheets, profiles, sessions, and encounter tables from a separate campaign repo.' \
+      '' \
       '  just rebuild-ptu-data-cache' \
       '      Rebuild documentary ptu-data parser output (not app runtime reference).' 
 
@@ -53,8 +56,8 @@ trainer +name:
     @python3 scripts/trainer_lookup.py {{quote(name)}}
     
 # Roll on an encounter table and generate PTU CharacterSheet JSON into a
-# dedicated folder under data/sheets/ (the Nuxt /sheets page reads that
-# tree recursively, so the rolled mons appear there immediately).
+# dedicated folder under the campaign data/sheets/ (the Nuxt /sheets page reads
+# that tree recursively, so the rolled mons appear there immediately).
 # Usage:
 #   just encounter                                          # list regions
 #   just encounter <region>                                 # list tables in region
@@ -70,11 +73,21 @@ encounter region="" table="" count="" preview="" out_root="data/sheets/wild":
     #!/usr/bin/env bash
     set -euo pipefail
 
+    campaign_root="${ROTOM_CAMPAIGN_ROOT:-.}"
+    campaign_root="${campaign_root%/}"
+    resolve_campaign_path() {
+        case "$1" in
+            /*) printf '%s\n' "$1" ;;
+            *) printf '%s/%s\n' "$campaign_root" "$1" ;;
+        esac
+    }
+
     # --clear: wipe generated subfolders from an out_root.
     # Second positional (normally <table>) overrides the target root.
     if [ "{{region}}" = "--clear" ]; then
         target="{{table}}"
         [ -z "$target" ] && target="data/sheets/wild"
+        target=$(resolve_campaign_path "$target")
         if [ ! -d "$target" ]; then
             echo "Nothing to clear: '$target' does not exist."
             exit 0
@@ -116,7 +129,8 @@ encounter region="" table="" count="" preview="" out_root="data/sheets/wild":
         echo ">>> Rolling {{count}}x on {{region}}/{{table}} (preview, no files written)"
     else
         # Pick a unique output folder so repeat runs don't clobber.
-        base="{{out_root}}/{{table}}_{{count}}"
+        out_root_path=$(resolve_campaign_path "{{out_root}}")
+        base="$out_root_path/{{table}}_{{count}}"
         dir="$base"
         n=2
         while [ -e "$dir" ]; do
@@ -130,7 +144,8 @@ encounter region="" table="" count="" preview="" out_root="data/sheets/wild":
         # Slug prefix derived from the per-run path under data/sheets so each
         # generated sheet's slug stays globally unique. Strip the data/sheets/
         # prefix when present so the slug doesn't get a redundant ``data-sheets-``.
-        rel="${dir#./}"
+        rel="${dir#$campaign_root/}"
+        rel="${rel#./}"
         rel="${rel#data/sheets/}"
         slug_prefix=$(printf '%s' "$rel" | tr '/_' '-' | tr -cd 'a-zA-Z0-9-' | tr 'A-Z' 'a-z')
         echo ">>> Rolling {{count}}x on {{region}}/{{table}} → $dir"

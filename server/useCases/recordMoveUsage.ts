@@ -18,7 +18,7 @@ import {
   recordMapMoveUsage,
   recordSheetDailyMoveUsage,
 } from '~/utils/moveUsage'
-import { relativeToProjectRoot } from '../utils/fsPaths'
+import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { summarizeMap } from '../utils/mapSummaries'
 import { canSaveMap } from '../policies/mapPolicy'
@@ -349,7 +349,7 @@ export const recordMoveUsageUseCase = (
   const readSheet = dependencies.readSheet ?? ((kind: SheetKind, slug: string) => readSheetFile<Record<string, unknown>>(kind, slug))
   const writeSheet = dependencies.writeSheet ?? writeSheetFile
   const now = dependencies.now ?? Date.now
-  const relativePath = dependencies.relativePath ?? relativeToProjectRoot
+  const relativePath = dependencies.relativePath ?? campaignPathLabel
 
   const mapPath = findMapPath(input.slug)
   if (!mapPath) throw new RecordMoveUsageUseCaseError(404, `Map ${input.slug}.json not found`)

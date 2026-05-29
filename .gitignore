@@ -17,7 +17,8 @@ temp/
 !.env.example
 
 # Local campaign content
-# Keep generated example sheets trackable while ignoring personal/campaign sheets.
+# Keep generated example sheets and curated sample encounter tables trackable while
+# ignoring personal/campaign maps, sheets, trainers, profiles, sessions, and tables.
 data/maps/
 data/player-profiles/
 data/sessions/
@@ -25,3 +26,12 @@ data/sheets/*
 !data/sheets/examples/
 !data/sheets/examples/**
 data/trainers/
+encounter_tables/*
+!encounter_tables/spire-city/
+encounter_tables/spire-city/*
+!encounter_tables/spire-city/streets.json
+!encounter_tables/thickerby_vale/
+encounter_tables/thickerby_vale/*
+!encounter_tables/thickerby_vale/cave.json
+!encounter_tables/thickerby_vale/forest.json
+!encounter_tables/thickerby_vale/riverbank.json

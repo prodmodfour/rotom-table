@@ -10,16 +10,15 @@ import {
 import { basename, dirname, relative, resolve, sep } from 'node:path'
 import { SAFE_FOLDER_SEGMENT_RE, slugify as sharedSlugify } from '#shared/paths'
 import type { EncounterTable, EncounterTableEntry } from '~/types/encounterTable'
+import { CAMPAIGN_ENCOUNTER_TABLES_ROOT, campaignPathLabel } from './campaignPaths'
 import {
   joinSafeUnderRoot,
-  PROJECT_ROOT,
   pruneEmptyParents,
-  relativeToProjectRoot,
   sanitizeFolderPath,
 } from './fsPaths'
 import { walkDirectories, walkFiles, writeJsonFile } from './jsonFiles'
 
-export const ENCOUNTER_TABLES_ROOT = resolve(PROJECT_ROOT, 'encounter_tables')
+export const ENCOUNTER_TABLES_ROOT = CAMPAIGN_ENCOUNTER_TABLES_ROOT
 
 export interface EncounterTableStorageResult {
   entry: EncounterTableEntry
@@ -81,8 +80,7 @@ export const encounterTableFolderFromPath = (
 export const encounterTableKeyFromPath = (filePath: string): string =>
   basename(filePath).replace(/\.json$/i, '')
 
-export const encounterTablePathLabel = (filePath: string): string =>
-  filePath.startsWith(PROJECT_ROOT + sep) ? filePath.slice(PROJECT_ROOT.length + 1) : filePath
+export const encounterTablePathLabel = (filePath: string): string => campaignPathLabel(filePath)
 
 const readEncounterTableJsonFile = (filePath: string): EncounterTable =>
   JSON.parse(readFileSync(filePath, 'utf8')) as EncounterTable
@@ -100,7 +98,7 @@ export const readEncounterTableStorageFile = (
       key,
       table: readEncounterTableJsonFile(filePath),
     },
-    path: relativeToProjectRoot(filePath),
+    path: campaignPathLabel(filePath),
   }
 }
 
@@ -166,7 +164,7 @@ export const createEncounterTableFile = (
   writeJsonFile(filePath, table)
   return {
     entry: { region: folder, key, table },
-    path: relativeToProjectRoot(filePath),
+    path: campaignPathLabel(filePath),
   }
 }
 
@@ -179,7 +177,7 @@ export const createEncounterTableFolder = (
   mkdirSync(destination, { recursive: true })
   return {
     created: !existed,
-    path: relativeToProjectRoot(destination),
+    path: campaignPathLabel(destination),
     folder,
   }
 }
@@ -205,7 +203,7 @@ export const moveEncounterTableFile = (
 
   return {
     entry: { region: toFolder, key, table: readEncounterTableJsonFile(destinationPath) },
-    path: relativeToProjectRoot(destinationPath),
+    path: campaignPathLabel(destinationPath),
   }
 }
 
@@ -220,7 +218,7 @@ export const writeEncounterTableStorageFile = (
   writeJsonFile(filePath, table)
   return {
     entry: { region: folder, key, table },
-    path: relativeToProjectRoot(filePath),
+    path: campaignPathLabel(filePath),
   }
 }
 
@@ -254,7 +252,7 @@ export const renameEncounterTableFile = (
 
   return {
     entry: { region: folder, key: nextKey, table },
-    path: relativeToProjectRoot(destinationPath),
+    path: campaignPathLabel(destinationPath),
   }
 }
 
@@ -270,7 +268,7 @@ export const deleteEncounterTableFile = (
   pruneEmptyParents(filePath, root)
   return {
     entry: { region: folder, key, table },
-    path: relativeToProjectRoot(filePath),
+    path: campaignPathLabel(filePath),
   }
 }
 
@@ -309,7 +307,7 @@ export const deleteEncounterTableFolder = (
   rmSync(dir, { recursive: true, force: true })
   pruneEmptyParents(dir, resolvedRoot)
 
-  return { removed: relativeToProjectRoot(dir) }
+  return { removed: campaignPathLabel(dir) }
 }
 
 export const pruneEmptyEncounterTableParents = (path: string, root = ENCOUNTER_TABLES_ROOT): void => {
