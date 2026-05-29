@@ -146,6 +146,52 @@ Move animations are display-only. They may make an already-resolved or currently
 
 Move usage logs may continue to mention the move and its mechanical results through existing logging paths. The transient VFX event itself is not a log entry.
 
+## Technical guardrails and non-regression rules
+
+Renderer, scheduler, primitive, and move-automation integration tickets must reference this section in their implementation notes before changing map rendering code. These rules are guardrails for the entire move VFX layer, not polish preferences.
+
+### Scheduler integration
+
+- Move VFX must use the existing dirty isometric render scheduler documented in `docs/render-scheduler-architecture.md`.
+- Do not add a separate always-on `requestAnimationFrame`, `setInterval`, timeout loop, or component-local animation loop for move animations.
+- Adding, removing, or syncing VFX events should request a focused scheduled scene frame through the same invalidation path used by other map renderer changes.
+- Active VFX may keep frames alive only by participating in the existing animation-continuation model. The planned renderer contract should expose whether it still needs another frame, for example through `needsAnimationFrame()` or an equivalent resolver used by `resolveSceneAnimationContinuation()`.
+- The continuation source must become inactive as soon as all VFX instances are complete, hidden-and-aged-out, removed, or disposed so an idle map returns to one-shot rendering.
+- VFX that only changes WebGL objects should not force CSS3D renders. If a later badge or CSS3D primitive is added, it must mark CSS3D dirty only when that CSS output changes.
+
+### Renderer quality and map behaviour
+
+- Renderer quality must not be degraded to pay for move VFX. Do not lower device pixel ratio caps, canvas resolution, antialiasing, renderer precision, shadow/lighting assumptions, terrain visibility, token quality, weather, hazards, field effects, targeting overlays, or HUD behaviour.
+- Performance work should reduce duplicate work, allocations, or idle frames; it must not hide existing visuals or disable map features.
+- VFX objects are decorative and must not intercept pointer picking, map editing, camera controls, targeting clicks, context menus, or token controls.
+- Existing permission, visibility, targeting, roll-feedback, movement-preview, field-effect, weather, and layer-visibility behaviours remain authoritative. If VFX conflicts visually, tune opacity, duration, render order, or sequencing rather than weakening existing UI.
+
+### Lifecycle and disposal
+
+- Every VFX instance must own or explicitly share its Three.js resources with a documented disposal policy.
+- Meshes, groups, geometries, materials, textures, CSS3D elements, and event listeners created for VFX must be disposed or detached when the effect completes, when its event is removed from the active queue, when the map scene unmounts, and when map data changes or the scene rebuilds.
+- Disposal must be idempotent: repeated completion, removal, unmount, or scene-reset cleanup should be safe and should not throw.
+- Hidden-tab pause/resume and layer-hidden cases must not freeze VFX forever. Effects should either age out or resume under a documented policy and then release their resources.
+- Development metrics may expose active counts or snapshots, but production animation paths should avoid per-frame debug allocations unless debug mode is explicitly enabled.
+
+### Data and mechanics boundary
+
+- `MoveAnimationEvent` objects are transient client-side display requests. They must not be serialized into map JSON, sheet JSON, trainer JSON, campaign/session state, local runtime state, or server API payloads unless a future ticket explicitly changes the architecture.
+- VFX code must not directly mutate saved token placement, HP, combat stages, statuses, hazards, weather, field effects, move usage logs, or permissions.
+- The only allowed saved-state mutations during an animated move are the existing move automation transactions and logging paths that would have run without VFX.
+- Temporary visual offsets such as melee lunges, shakes, dash afterimages, or impact pulses must reset every frame or live in VFX-owned overlay objects; they must never be persisted as token placement.
+- Animation planning and rendering failures must be no-op safe. A bad palette lookup, missing token render object, deleted target, empty area cell list, or renderer disposal race must not prevent the move automation flow from resolving.
+
+### Implementation note checklist for later tickets
+
+For each later renderer or integration ticket, include a brief note in code comments, tests, docs, or the PR summary confirming:
+
+1. which scheduler invalidation or continuation path the change uses;
+2. how the renderer reports whether another animation frame is needed;
+3. why renderer quality and existing map visuals are unchanged;
+4. when created VFX resources are disposed;
+5. why no saved map, sheet, session, or campaign data is mutated by the VFX layer.
+
 ## Architecture direction
 
 The implementation should follow this one-way data flow:
@@ -189,7 +235,7 @@ The exact file list may evolve as implementation details are discovered, but pro
 
 ## Follow-up documents and decisions
 
-This brief now records the initial scope and visual style guardrails. Later tickets should refine it with:
+This brief now records the initial scope, visual style guardrails, and technical non-regression rules. Later tickets should refine it with:
 
 - an explicit dependency decision for tweening versus internal math helpers;
 - final implemented API details once types, planner, renderer, and settings exist;
