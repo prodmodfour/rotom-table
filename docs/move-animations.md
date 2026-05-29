@@ -330,6 +330,12 @@ The renderer now tracks one lifecycle instance root group per active `MoveAnimat
 
 Disposing the renderer removes every active per-event group, then removes the dedicated root group from the scene, and is safe to call more than once. Cleanup uses the shared `disposeObject3D()` helper so primitive-owned Three.js children are detached and their owned geometries/materials are disposed when an event is removed, completes, or the map scene unmounts.
 
+### Per-effect renderer instance abstraction for VFX-021
+
+`src/utils/isometric/moveVfxRenderer.ts` now has an internal `MoveVfxInstance` seam with an owned group, `animate(frameContext)`, `complete`, and idempotent `dispose()` for each active event. The top-level renderer only reconciles ids, delegates frame advancement to active instances, prunes completed instances, and reports `needsAnimationFrame()`; primitive-specific animation math belongs in per-kind builders instead of the sync loop.
+
+A factory switch maps every current `MOVE_VFX_KIND` to a per-kind builder. These builders intentionally return safe no-op placeholder instances until the primitive tickets add visible projectile, beam, flash, pulse, and area implementations. Unknown runtime effect kinds also fall back to the same no-op instance, so malformed or future events do not crash production rendering. The placeholders still age out from scheduler-provided frame time and release their groups through `disposeObject3D()`, preserving the lifecycle and no-independent-RAF guardrails.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

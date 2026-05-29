@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 
 const selfPulseEvent = (id = 'move-vfx-test'): MoveAnimationEvent => ({
@@ -11,6 +11,11 @@ const selfPulseEvent = (id = 'move-vfx-test'): MoveAnimationEvent => ({
   durationMs: 560,
   kind: MOVE_VFX_KIND.selfPulse,
 })
+
+const eventForKind = (kind: MoveVfxKind, id = `move-vfx-${kind}`): MoveAnimationEvent => ({
+  ...selfPulseEvent(id),
+  kind,
+}) as MoveAnimationEvent
 
 const attachDisposableMesh = (group: THREE.Object3D) => {
   const geometry = new THREE.BoxGeometry(1, 1, 1)
@@ -77,6 +82,46 @@ describe('move VFX renderer shell', () => {
     expect(renderer.activeCount()).toBe(1)
     expect(renderer.group.visible).toBe(false)
     expect(renderer.needsAnimationFrame()).toBe(true)
+  })
+
+  it('creates a safe placeholder instance through the factory for every registered effect kind', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const kinds = Object.values(MOVE_VFX_KIND) as MoveVfxKind[]
+    const events = kinds.map((kind) => eventForKind(kind))
+
+    expect(() => renderer.sync(events)).not.toThrow()
+
+    expect(renderer.activeCount()).toBe(kinds.length)
+    expect(renderer.group.children).toHaveLength(kinds.length)
+    expect(renderer.needsAnimationFrame()).toBe(true)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016 })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+  })
+
+  it('falls back to a safe no-op instance for unknown runtime effect kinds', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const unknownEvent = {
+      ...selfPulseEvent('move-vfx-unknown'),
+      kind: 'future-effect',
+    } as unknown as MoveAnimationEvent
+
+    expect(() => renderer.sync([unknownEvent])).not.toThrow()
+
+    expect(renderer.activeCount()).toBe(1)
+    expect(renderer.group.children).toHaveLength(1)
+    expect(renderer.group.children[0].name).toBe('move-vfx-instance:move-vfx-unknown')
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016 })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
   })
 
   it('does not duplicate a lifecycle instance when the same event id is synced repeatedly', () => {
