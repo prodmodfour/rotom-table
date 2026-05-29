@@ -109,8 +109,7 @@ onBeforeUnmount(clearTimers)
   display: grid;
   place-items: center;
   padding: 1.25rem;
-  background: rgba(0, 0, 0, 0.56);
-  backdrop-filter: blur(6px);
+  background: transparent;
 }
 
 .capture-modal {
@@ -118,13 +117,15 @@ onBeforeUnmount(clearTimers)
   max-height: min(92vh, 920px);
   position: relative;
   overflow: auto;
-  border: 1px solid var(--rule-strong);
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.14), transparent 32%),
-    color-mix(in srgb, var(--paper) 96%, black 4%);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: rgba(5, 6, 8, 0.42);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
   color: var(--ink);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
 }
 
 .capture-modal__stage {
