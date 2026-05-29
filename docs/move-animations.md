@@ -368,6 +368,12 @@ The prop remains a transient runtime bridge only. `MapSceneRenderer.vue` does no
 
 The queue remains page-local runtime state. The map page clears active move animations when the route map slug changes and during unmount/navigation cleanup, preventing stale events from following users between maps. These cleanup hooks do not create timers, persistence hooks, server payloads, gameplay mutations, or an independent animation loop.
 
+### Layer visibility handling for VFX-027
+
+Move VFX follow the resolved token layer. `src/utils/isometric/layerVisibility.ts` exposes `resolveMoveVfxLayerVisibility(layers)`, and `src/components/IsometricGrid.client.vue` passes that result into `moveVfxRenderer.sync(...)` and each scheduled animation frame. The policy is intentionally conservative for this basic phase: hiding tokens also hides token-anchored VFX and area-only move confirmations so VFX cannot reveal or imply action around hidden tokens.
+
+Hidden VFX still keep their normal transient lifecycle. The renderer retains active event instances while `visible` is false, advances them from scheduler frame time, disposes completed instances, and does not recreate completed ids just because the token layer becomes visible again. Layer visibility changes request the existing `layer-visibility` render invalidation and do not add any independent timers, persistence, gameplay mutations, or renderer-quality reductions.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

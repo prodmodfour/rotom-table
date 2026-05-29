@@ -5,6 +5,7 @@ import {
   createIsometricLayerVisibilityApplicator,
   isSameIsometricLayerVisibilityState,
   resolveIsometricLayerVisibilityState,
+  resolveMoveVfxLayerVisibility,
   setIsometricGridVisibility,
 } from '~/utils/isometric/layerVisibility'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -62,6 +63,11 @@ describe('isometric layer visibility', () => {
     })
 
     expect(gridRenderer.setVisible).toHaveBeenCalledWith({ grid: true, movement: true })
+  })
+
+  it('resolves move VFX visibility from the token layer', () => {
+    expect(resolveMoveVfxLayerVisibility({ tokens: true })).toBe(true)
+    expect(resolveMoveVfxLayerVisibility({ tokens: false })).toBe(false)
   })
 
   it('applies layer visibility to render subsystems and token objects', () => {

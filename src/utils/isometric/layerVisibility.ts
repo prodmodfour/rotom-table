@@ -70,6 +70,14 @@ export const isSameIsometricLayerVisibilityState = (
   && left.hazards === right.hazards
   && left.fieldEffects === right.fieldEffects
 
+/**
+ * Basic move VFX follow token-layer visibility because current events are
+ * anchored to move users, targets, token HUD context, or token-derived area
+ * outcomes. Hiding the token layer should hide VFX without stopping their
+ * scheduler-driven aging/disposal lifecycle.
+ */
+export const resolveMoveVfxLayerVisibility = (layers: Pick<LayerVisibility, 'tokens'>): boolean => layers.tokens
+
 const cloneIsometricLayerVisibilityState = (
   state: ResolvedIsometricLayerVisibilityState,
 ): ResolvedIsometricLayerVisibilityState => ({ ...state })

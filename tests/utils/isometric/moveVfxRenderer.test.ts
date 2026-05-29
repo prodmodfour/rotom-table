@@ -84,6 +84,27 @@ describe('move VFX renderer shell', () => {
     expect(renderer.needsAnimationFrame()).toBe(true)
   })
 
+  it('ages out hidden events without resurrecting completed effects when made visible again', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const event = selfPulseEvent()
+
+    renderer.sync([event], { visible: false })
+    renderer.animate({ frameNowMs: 659, delta: 0.016, visible: false })
+
+    expect(renderer.activeCount()).toBe(1)
+    expect(renderer.group.visible).toBe(false)
+    expect(renderer.needsAnimationFrame()).toBe(true)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, visible: false })
+    renderer.sync([event], { visible: true })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.group.visible).toBe(false)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+  })
+
   it('creates a safe placeholder instance through the factory for every registered effect kind', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)

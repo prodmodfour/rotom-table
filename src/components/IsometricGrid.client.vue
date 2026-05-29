@@ -118,6 +118,7 @@ import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
 import { createMoveVfxRenderer, type MoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import {
   createIsometricLayerVisibilityApplicator,
+  resolveMoveVfxLayerVisibility,
   setIsometricGridVisibility,
 } from '~/utils/isometric/layerVisibility'
 import { createIsometricBuildInteractionController } from '~/utils/isometric/buildInteraction'
@@ -222,6 +223,7 @@ const emit = defineEmits<{
 }>()
 
 const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibility)
+const moveVfxVisible = () => resolveMoveVfxLayerVisibility(visibleLayers())
 
 const normalizedGroundLevelY = () => clampIsometricGroundLevelY(props.dimensions, props.groundLevelY)
 
@@ -780,7 +782,7 @@ const applyLayerVisibility = (options: { force?: boolean } = {}) => {
     layerVisibilityApplicator.invalidate()
   }
 
-  return layerVisibilityApplicator.apply({
+  const changed = layerVisibilityApplicator.apply({
     layers: visibleLayers(),
     hasSelectedPokemon: Boolean(selectedPokemon.value),
     buildMode: props.buildMode,
@@ -792,6 +794,9 @@ const applyLayerVisibility = (options: { force?: boolean } = {}) => {
     renderObjects: renderObjects.values(),
     setTokenLayerVisibility: setPokemonRenderObjectLayerVisibility,
   })
+
+  if (changed) syncMoveVfxRendererState()
+  return changed
 }
 
 const ensureBuildGhost = () => buildGhostRenderer.ensure()
@@ -1208,7 +1213,10 @@ watch([() => props.buildMode, () => props.hazardMode], ([buildActive, hazardActi
 })
 
 const syncMoveVfxRendererState = () => {
-  moveVfxRenderer.sync(props.moveAnimations ?? [], { renderObjects })
+  moveVfxRenderer.sync(props.moveAnimations ?? [], {
+    renderObjects,
+    visible: moveVfxVisible(),
+  })
 }
 
 const requestMoveVfxRenderFrame = () => {
@@ -1482,6 +1490,7 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     tokenMovePreviewRenderer,
     moveVfxRenderer,
     moveVfxRenderObjects: renderObjects,
+    moveVfxVisible: moveVfxVisible(),
     selectedPokemon: sendOutInteraction.activePokemon() ?? selectedPokemon.value,
     previewPositionY: activeSendOutRequest.value ? sendOutInteraction.previewPositionY() : movementInteraction.previewPositionY(),
     camera,
