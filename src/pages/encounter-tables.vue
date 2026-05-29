@@ -18,8 +18,6 @@ const {
   visibleTables,
   visibleFolders,
   hasAnything,
-  totalCount,
-  filteredCount,
   currentPath,
   breadcrumbs,
   goToFolder,
@@ -68,8 +66,6 @@ const {
 
       <EncounterTableLibraryIntroPanel
         v-model:search-term="searchTerm"
-        :filtered-count="filteredCount"
-        :total-count="totalCount"
         :can-manage="canManage"
         :creating="creating"
         :load-error="loadError"

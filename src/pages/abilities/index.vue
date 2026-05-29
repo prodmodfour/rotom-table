@@ -13,11 +13,7 @@ const filtered = computed(() => filterAbilitiesForIndex(abilities, { searchTerm:
 
 <template>
   <div class="ref-index">
-    <ReferenceIndexHeader title="Abilities" :count="filtered.length" :total="abilities.length">
-      <p class="ref-copy">
-        PTU ability list from
-        <code>data/reference/abilities.json</code>.
-      </p>
+    <ReferenceIndexHeader>
       <ReferenceSearchField
         v-model="searchTerm"
         label="Search abilities"

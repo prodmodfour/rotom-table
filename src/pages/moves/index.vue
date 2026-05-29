@@ -19,12 +19,7 @@ const filtered = computed(() => filterMovesForIndex(moves, {
 
 <template>
   <div class="ref-index">
-    <ReferenceIndexHeader title="Moves" :count="filtered.length" :total="moves.length">
-      <p class="ref-copy">
-        PTU move list from
-        <code>data/reference/moves.json</code>.
-      </p>
-
+    <ReferenceIndexHeader>
       <div class="moves-controls">
         <ReferenceSearchField
           v-model="searchTerm"

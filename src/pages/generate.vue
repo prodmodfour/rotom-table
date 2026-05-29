@@ -9,7 +9,6 @@ useHead({
 const route = useRoute()
 const router = useRouter()
 const encounterTableData = useEncounterTableLibraryData()
-const tableCount = computed(() => encounterTableData.items.value.length)
 
 const {
   region,
@@ -41,8 +40,6 @@ const {
   <div class="generate-layout">
     <header class="generate-header">
       <AppNavigation />
-
-      <EncounterGenerateIntroCard :table-count="tableCount" />
     </header>
 
     <main class="generate-main">

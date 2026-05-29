@@ -35,12 +35,7 @@ const toggleCategory = (category: string) => {
 
 <template>
   <div class="ref-index">
-    <ReferenceIndexHeader title="Rules" :count="filtered.length" :total="rules.length">
-      <p class="ref-copy">
-        PTU rules and table rulings from <code>data/reference/rules.json</code>.
-        Pick a category to filter, or search by name, source, or rule text.
-      </p>
-
+    <ReferenceIndexHeader>
       <ReferenceFilterChips
         :chips="categoryChips"
         :active-key="categoryFilter"

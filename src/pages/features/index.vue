@@ -33,12 +33,7 @@ const toggleTag = (tag: string) => {
 
 <template>
   <div class="ref-index">
-    <ReferenceIndexHeader title="Features" :count="filtered.length" :total="features.length">
-      <p class="ref-copy">
-        PTU Trainer Features from <code>data/reference/features.json</code>.
-        Class Features are tagged <code>Class</code>; pick a tag below to filter.
-      </p>
-
+    <ReferenceIndexHeader>
       <ReferenceFilterChips
         :chips="tagChips"
         :active-key="tagFilter"

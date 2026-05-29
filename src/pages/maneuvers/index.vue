@@ -19,12 +19,7 @@ const filtered = computed(() => filterManeuversForIndex(maneuvers, {
 
 <template>
   <div class="ref-index">
-    <ReferenceIndexHeader title="Maneuvers" :count="filtered.length" :total="maneuvers.length">
-      <p class="ref-copy">
-        PTU combat maneuvers from
-        <code>data/reference/maneuvers.json</code>.
-      </p>
-
+    <ReferenceIndexHeader>
       <div class="maneuvers-controls">
         <ReferenceSearchField
           v-model="searchTerm"
