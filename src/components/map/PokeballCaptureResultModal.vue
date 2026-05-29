@@ -99,7 +99,6 @@ onBeforeUnmount(clearTimers)
               <ItemSprite :item="result.pokeballName" :alt="result.pokeballName" size="xl" />
               <span class="capture-modal__fallback-ball" aria-hidden="true" />
             </div>
-            <p class="capture-modal__ball-label">{{ result.pokeballName }}</p>
           </div>
         </div>
 
@@ -131,9 +130,6 @@ onBeforeUnmount(clearTimers)
         </div>
 
         <footer class="capture-modal__footer">
-          <p>
-            {{ result.breakdown.hitChance.title }}
-          </p>
           <button class="capture-modal__button" type="button" @click="emit('close')">Close</button>
         </footer>
       </section>
@@ -249,12 +245,6 @@ onBeforeUnmount(clearTimers)
   animation: capture-ball-shake 0.42s ease-in-out;
 }
 
-.capture-modal__ball-label {
-  margin: 0;
-  color: var(--ink-bright);
-  font-weight: 900;
-}
-
 .capture-modal__stage.is-success .capture-modal__ball,
 .capture-modal__stage.is-failure .capture-modal__ball {
   animation: capture-ball-pop 0.35s ease-out;
@@ -320,16 +310,10 @@ onBeforeUnmount(clearTimers)
 .capture-modal__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
   padding: 0.9rem 1.25rem 1.15rem;
   border-top: 1px solid var(--rule);
-}
-
-.capture-modal__footer p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.78rem;
 }
 
 .capture-modal__button {
