@@ -114,7 +114,7 @@ onBeforeUnmount(clearTimers)
 }
 
 .capture-modal {
-  width: min(860px, 100%);
+  width: min(16rem, 100%);
   max-height: min(92vh, 920px);
   position: relative;
   overflow: auto;
