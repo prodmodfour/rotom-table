@@ -81,7 +81,10 @@ const materializeMoveAnimationEvent = (
  * The queue deliberately has no module-level state, timers, persistence hooks,
  * renderer imports, or gameplay knowledge. Map pages can create one instance,
  * move automation can enqueue typed VFX requests, and renderer integration can
- * consume/remove/clear events without creating circular dependencies.
+ * consume/remove/clear events without creating circular dependencies. Its
+ * `activeMoveAnimations` output is runtime renderer input only; do not copy it
+ * into map save bodies, sheet save bodies, move usage logs, live-session
+ * payloads, localStorage, or schema migrations.
  */
 export const useMoveAnimationQueue = (options: UseMoveAnimationQueueOptions = {}) => {
   const now = options.now ?? Date.now
@@ -92,6 +95,8 @@ export const useMoveAnimationQueue = (options: UseMoveAnimationQueueOptions = {}
   const defaultDuplicatePolicy = options.duplicatePolicy
     ?? MOVE_ANIMATION_DUPLICATE_POLICY.ignore
   const pruneExpiredOnEnqueue = options.pruneExpiredOnEnqueue ?? true
+  // Runtime-only queue contents. Keep this private so persistence code cannot
+  // accidentally serialize active VFX as map, sheet, session, or log data.
   const activeEvents = ref<readonly MoveAnimationEvent[]>([])
 
   const activeMoveAnimations = computed<readonly MoveAnimationEvent[]>(() => activeEvents.value)

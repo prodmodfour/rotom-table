@@ -146,6 +146,15 @@ Move animations are display-only. They may make an already-resolved or currently
 
 Move usage logs may continue to mention the move and its mechanical results through existing logging paths. The transient VFX event itself is not a log entry.
 
+### Persistence, JSON, and logs boundary
+
+Move animation events exist only in the runtime chain `planMoveAnimations()` -> `useMoveAnimationQueue()` -> the map renderer. They are not part of `SavedMap`, spawned Pokémon, trainer sheets, move automation transactions, live-session state, or any storage payload.
+
+- Do not add `moveAnimations`, `activeMoveAnimations`, queue snapshots, `move-vfx-*` ids, palette data, VFX timings, or renderer debug snapshots to persisted map JSON, sheet JSON, campaign/session state, local storage, realtime payloads, or server API payloads.
+- Do not introduce a map/schema migration for basic move animations; renderer/page integration should create a fresh per-map queue at runtime and clear it on navigation, unmount, or map reset.
+- Existing move automation transactions and movement/action logs may still be saved or displayed when they would have been saved without VFX. Those records describe mechanical results; they should not store VFX ids, durations, palette data, or renderer lifecycle state.
+- Manual verification for integration tickets: after resolving a move and saving/exporting/reloading a map, inspect the generated JSON for absence of `moveAnimations`, `activeMoveAnimations`, `move-vfx`, VFX `kind`, VFX `durationMs`, or palette fields outside normal move metadata.
+
 ## Technical guardrails and non-regression rules
 
 Renderer, scheduler, primitive, and move-automation integration tickets must reference this section in their implementation notes before changing map rendering code. These rules are guardrails for the entire move VFX layer, not polish preferences.
@@ -258,6 +267,8 @@ This policy keeps transient VFX one-shot per move resolution by default while st
 The per-map reactive queue implementation lives in `src/composables/map-editor/useMoveAnimationQueue.ts`. Each map page should create its own queue instance and pass the returned enqueue functions to later move-automation integration; the module owns no global state and imports no renderer or move-rule code.
 
 The composable exposes `activeMoveAnimations` as a readonly computed array plus `enqueueMoveAnimation`, `enqueueMoveAnimations`, `removeMoveAnimation`, `clearMoveAnimations`, and `pruneExpiredMoveAnimations`. Enqueue helpers fill missing `id` and `createdAtMs` fields from the per-queue id generator and injected clock, then apply the VFX-011 duplicate policy. Expiration pruning uses event `createdAtMs`/`durationMs` through the shared timing helpers and is opportunistic only; it does not create timers, a RAF loop, or persistence hooks.
+
+Because the queue is runtime state, `activeMoveAnimations` should flow only into renderer-facing props and lifecycle cleanup. Do not pass queue contents to `useEditableMap`, sheet save helpers, move usage log builders, live-session payload builders, local-storage helpers, or schema migrations. Logs may mention that a move happened through the existing transaction/log paths, but they should not embed animation event ids, palettes, durations, or queue snapshots.
 
 ### Planner contracts for VFX-014
 
