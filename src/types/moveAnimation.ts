@@ -11,6 +11,9 @@ export type { MoveAnimationEffectKind, MoveVfxKind } from './moveVfx'
  */
 export type MoveAnimationEventKind = MoveVfxKind
 
+/** Stable transient queue/renderer id for a single move VFX request. */
+export type MoveAnimationId = string
+
 /**
  * Optional token target metadata used by the renderer or planner to resolve
  * visual anchors. Target ids identify current map placements only; they are not
@@ -57,8 +60,16 @@ export type MoveAnimationBuffDebuffDirection = 'buff' | 'debuff'
  * placement, HP, conditions, combat stages, permissions, or visibility rules.
  */
 export interface MoveAnimationEventBase<K extends MoveVfxKind = MoveVfxKind> {
-  /** Stable queue/renderer id for this visual request. */
-  id: string
+  /**
+   * Stable queue/renderer id for this visual request.
+   *
+   * The per-map move animation queue generates ids with the deterministic
+   * `move-vfx` prefix and a monotonic suffix when callers do not provide one.
+   * Enqueueing the same id twice is ignored by default so repeated watchers do
+   * not replay the same resolution moment; use a distinct id for intentional
+   * multi-effect sequences.
+   */
+  id: MoveAnimationId
   /** Display name of the move that caused the VFX request. */
   moveName: string
   /** Map placement id for the user/source token at the time of the request. */

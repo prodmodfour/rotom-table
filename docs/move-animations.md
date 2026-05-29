@@ -241,6 +241,18 @@ Coordinate assumptions:
 
 Available helpers cover token foot, center, chest, head, and above-head anchors; single-cell centres; area centroids; and a shared start/end resolver for projectile-like and beam-like effects.
 
+### Queue id and dedupe policy for VFX-011
+
+The shared queue policy implementation lives in `src/composables/map-editor/moveAnimationQueuePolicy.ts`. The future `useMoveAnimationQueue` composable should use these helpers instead of inventing id or duplicate handling locally.
+
+- Queue-owned ids use the deterministic `move-vfx` prefix and a monotonically increasing, zero-padded suffix such as `move-vfx-000001`.
+- Id generators are per queue instance, not module-global state, so map pages, tests, and SSR/client setup do not leak counters across sessions.
+- Move automation or planner code may still provide a caller-stable id when it can identify a specific resolution moment. Reusing that id is how repeated watchers avoid replaying the same visual event.
+- The default duplicate-id policy is **ignore**: enqueueing an event whose id is already active keeps the original active event and does not append, restart, or replace it.
+- Intentional multi-effect sequences must use distinct ids. Replacement is available only as an explicit corrective policy for future queue callers that need to update an active event in place.
+
+This policy keeps transient VFX one-shot per move resolution by default while still allowing deliberate batches such as launch + impact + crit events.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
@@ -324,7 +336,7 @@ This brief changes only documentation. As the feature tickets land, the first im
 | --- | --- |
 | Documentation | `docs/move-animations.md`, later updates to `docs/render-scheduler-architecture.md` when scheduler hooks are added |
 | Domain types | `src/types/moveAnimation.ts` |
-| Queue/state | `src/composables/map-editor/useMoveAnimationQueue.ts` |
+| Queue/state | `src/composables/map-editor/moveAnimationQueuePolicy.ts`, `src/composables/map-editor/useMoveAnimationQueue.ts` |
 | Planner and palettes | `src/utils/moveAnimationPlanner.ts`, `src/utils/moveAnimationPalette.ts` |
 | Timing and anchors | `src/utils/isometric/moveVfxTiming.ts`, `src/utils/isometric/moveVfxAnchors.ts` |
 | Renderer | `src/utils/isometric/moveVfxRenderer.ts` plus primitive helpers under `src/utils/isometric/` if split out |
