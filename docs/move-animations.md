@@ -192,6 +192,39 @@ For each later renderer or integration ticket, include a brief note in code comm
 4. when created VFX resources are disposed;
 5. why no saved map, sheet, session, or campaign data is mutated by the VFX layer.
 
+## Animation dependency decision
+
+**Decision:** the initial move VFX implementation stays dependency-free and uses Three.js plus small internal math helpers. Do not add GSAP, Anime.js, `@tweenjs/tween.js`, or another direct tweening dependency for the basic move-animation phase.
+
+### Evaluation
+
+| Option | Benefits | Costs / risks | Decision |
+| --- | --- | --- | --- |
+| Internal helpers with Three.js | No new bundle or maintenance surface; deterministic pure functions are easy to unit-test; progress can be driven from the existing scheduler's frame time; no global ticker or hidden RAF loop; lifecycle remains owned by the VFX renderer instances. | Agents must implement a few easing, interpolation, delay, and duration helpers instead of using a timeline DSL; complex bespoke choreography may require more utility code later. | **Use for this phase.** The planned generic projectiles, beams, pulses, rings, sweeps, and afterimages are simple enough for local helpers. |
+| Direct tweening package | Convenient easing presets, timelines, staggering, and callbacks; could speed a future bespoke choreography-heavy milestone. | Adds direct dependency and package-lock churn; increases bundle/API surface for a visual-only feature; may introduce a library-managed ticker or mutable timeline lifecycle that must be carefully bridged back into the dirty scheduler; adds SSR, disposal, pause/resume, and testing considerations. | **Do not add now.** Revisit only through a later ADR/ticket if future per-move animation work proves local helpers are insufficient. |
+
+The existing app already depends on Three.js directly, and the render loop already supplies frame time, delta, and continuation state. Move VFX should compute progress from those values instead of delegating timing to an external ticker.
+
+### Internal helper scope for VFX-009
+
+The dependency-free helper layer should be intentionally tiny and live near the isometric renderer code, currently expected as `src/utils/isometric/moveVfxTiming.ts`.
+
+In scope:
+
+- pure easing helpers: `clamp01`, `linear`, `easeOutCubic`, `easeInOutCubic`, `easeOutBack`, and `pulse01`;
+- `animationProgress(nowMs, startMs, durationMs)` or equivalent progress state that returns clamped progress and completion information, with safe zero/negative-duration handling;
+- small interpolation helpers only when a primitive would otherwise duplicate math repeatedly, such as number lerp or bounded arc-height helpers;
+- shared duration constants for quick, normal/medium, long, and linger effects;
+- support for event start offsets/delays by deriving a per-instance effective start time, not by scheduling timers.
+
+Out of scope:
+
+- a global timeline registry, independent animation clock, always-on RAF loop, or timer queue;
+- importing a tweening library through a direct package dependency;
+- mutable helper state that survives map unmount unless explicitly owned and disposed by the VFX renderer.
+
+Any future proposal to add an animation package must document bundle/runtime impact, scheduler integration, pause/resume/disposal behaviour, and why internal helpers are insufficient. That proposal should include any `package.json`/lockfile changes in the same reviewed product change.
+
 ## Architecture direction
 
 The implementation should follow this one-way data flow:
@@ -237,7 +270,7 @@ The exact file list may evolve as implementation details are discovered, but pro
 
 This brief now records the initial scope, visual style guardrails, and technical non-regression rules. Later tickets should refine it with:
 
-- an explicit dependency decision for tweening versus internal math helpers;
+- any future ADR that reopens the dependency-free decision for bespoke per-move animation work;
 - final implemented API details once types, planner, renderer, and settings exist;
 - timing, colour, render-order, and reduced-motion adjustments discovered during playable review;
 - a manual QA checklist and future bespoke per-move animation backlog.
