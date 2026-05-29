@@ -356,6 +356,12 @@ The current move VFX path is pure WebGL: stepping the renderer does not mark CSS
 
 When the prop changes, the grid syncs the event list into the renderer with the live token render-object map, then requests one WebGL-only scheduled frame using the broad `scene-state` debug reason. The renderer's `needsAnimationFrame()` signal is still the only way active move VFX keeps subsequent frames alive, so adding or removing events wakes the existing dirty scheduler without adding any independent RAF loop or CSS3D work.
 
+### Map scene prop bridge for VFX-025
+
+`src/components/map/MapSceneRenderer.vue` now accepts the same optional `moveAnimations?: MoveAnimationEvent[]` prop and forwards `moveAnimations ?? []` to `IsometricGrid.client.vue`. This keeps the wrapper backward-compatible for existing callers while exposing the renderer-facing event list to later page-level queue wiring.
+
+The prop remains a transient runtime bridge only. `MapSceneRenderer.vue` does not own, serialize, mutate, or persist animation events; it simply forwards caller-owned active events into the existing isometric grid scheduler path added by VFX-024.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

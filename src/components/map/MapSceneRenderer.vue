@@ -9,6 +9,7 @@ import type {
   MoveAutomationHpUpdate,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
+import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type {
   GridAnchor,
   LayerVisibility,
@@ -62,6 +63,7 @@ defineProps<{
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  moveAnimations?: MoveAnimationEvent[]
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
@@ -130,6 +132,7 @@ defineExpose({ focusPokemon })
     :token-pokeball-options-by-id="tokenPokeballOptionsById"
     :move-automation-targeting="moveAutomationTargeting"
     :move-automation-feedback="moveAutomationFeedback"
+    :move-animations="moveAnimations ?? []"
     :attack-of-opportunity-prompts="attackOfOpportunityPrompts ?? []"
     @select-pokemon="emit('select-pokemon', $event)"
     @move-pokemon="emit('move-pokemon', $event)"
