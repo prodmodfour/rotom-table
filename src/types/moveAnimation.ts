@@ -1,27 +1,15 @@
 import type { GridAnchor } from './map'
+import { MOVE_VFX_KIND } from './moveVfx'
+import type { MoveVfxKind } from './moveVfx'
+
+export { MOVE_VFX_KIND } from './moveVfx'
+export type { MoveAnimationEffectKind, MoveVfxKind } from './moveVfx'
 
 /**
- * Generic visual effect families supported by the move animation event model.
- *
- * These strings describe renderer concepts only. They are not move script kinds,
- * move names, or gameplay rule branches.
+ * Backwards-compatible event-kind alias. Prefer `MoveVfxKind` or
+ * `MoveAnimationEffectKind` when categorizing generic visual effects.
  */
-export type MoveAnimationEventKind =
-  | 'projectile'
-  | 'beam'
-  | 'arc'
-  | 'melee-lunge'
-  | 'self-pulse'
-  | 'target-flash'
-  | 'area-pulse'
-  | 'line-sweep'
-  | 'cone-sweep'
-  | 'dash'
-  | 'miss'
-  | 'crit'
-  | 'status'
-  | 'healing'
-  | 'buff-debuff'
+export type MoveAnimationEventKind = MoveVfxKind
 
 /**
  * Optional token target metadata used by the renderer or planner to resolve
@@ -58,12 +46,17 @@ export type MoveAnimationBuffDebuffDirection = 'buff' | 'debuff'
 /**
  * Base fields shared by every transient move animation event.
  *
+ * The `kind` discriminant uses `MoveVfxKind`, the generic renderer effect-kind
+ * catalog from `moveVfx.ts`. It is intentionally independent from move scripts
+ * so moves, abilities, maneuvers, orders, manual triggers, and future per-move
+ * overrides can reuse the same visual categories without coupling VFX to rules.
+ *
  * Move animation events are client-side VFX requests. They must never be saved
  * into map JSON, sheet JSON, campaign/session state, move usage logs, or server
  * payloads. They are visual-only and must not change move mechanics, token
  * placement, HP, conditions, combat stages, permissions, or visibility rules.
  */
-export interface MoveAnimationEventBase<K extends MoveAnimationEventKind = MoveAnimationEventKind> {
+export interface MoveAnimationEventBase<K extends MoveVfxKind = MoveVfxKind> {
   /** Stable queue/renderer id for this visual request. */
   id: string
   /** Display name of the move that caused the VFX request. */
@@ -78,87 +71,94 @@ export interface MoveAnimationEventBase<K extends MoveAnimationEventKind = MoveA
 }
 
 export interface MoveProjectileAnimationEvent
-  extends MoveAnimationEventBase<'projectile'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.projectile>,
     MoveAnimationOriginMetadata,
     MoveAnimationTargetMetadata {}
 
 export interface MoveBeamAnimationEvent
-  extends MoveAnimationEventBase<'beam'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.beam>,
     MoveAnimationOriginMetadata,
     MoveAnimationTargetMetadata {}
 
 export interface MoveArcAnimationEvent
-  extends MoveAnimationEventBase<'arc'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.arc>,
     MoveAnimationOriginMetadata,
     MoveAnimationTargetMetadata {}
 
 export interface MoveMeleeLungeAnimationEvent
-  extends MoveAnimationEventBase<'melee-lunge'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.meleeLunge>,
     MoveAnimationOriginMetadata,
     MoveAnimationTargetMetadata {}
 
 export interface MoveSelfPulseAnimationEvent
-  extends MoveAnimationEventBase<'self-pulse'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.selfPulse>,
     MoveAnimationOriginMetadata {}
 
 export interface MoveTargetFlashAnimationEvent
-  extends MoveAnimationEventBase<'target-flash'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.targetFlash>,
     MoveAnimationTargetMetadata {}
 
 export interface MoveAreaPulseAnimationEvent
-  extends MoveAnimationEventBase<'area-pulse'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.areaPulse>,
     MoveAnimationAreaMetadata {}
 
 export interface MoveLineSweepAnimationEvent
-  extends MoveAnimationEventBase<'line-sweep'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.lineSweep>,
     MoveAnimationOriginMetadata,
     MoveAnimationAreaMetadata {}
 
 export interface MoveConeSweepAnimationEvent
-  extends MoveAnimationEventBase<'cone-sweep'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.coneSweep>,
     MoveAnimationOriginMetadata,
     MoveAnimationAreaMetadata {}
 
 export interface MoveDashAnimationEvent
-  extends MoveAnimationEventBase<'dash'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.dash>,
     MoveAnimationOriginMetadata,
     MoveAnimationPathMetadata {}
 
 export interface MoveMissAnimationEvent
-  extends MoveAnimationEventBase<'miss'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.miss>,
     MoveAnimationTargetMetadata {}
 
 export interface MoveCritAnimationEvent
-  extends MoveAnimationEventBase<'crit'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.crit>,
     MoveAnimationTargetMetadata {}
 
 export interface MoveStatusAnimationEvent
-  extends MoveAnimationEventBase<'status'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.status>,
     MoveAnimationTargetMetadata {}
 
 export interface MoveHealingAnimationEvent
-  extends MoveAnimationEventBase<'healing'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.healing>,
     MoveAnimationTargetMetadata {}
 
 export interface MoveBuffDebuffAnimationEvent
-  extends MoveAnimationEventBase<'buff-debuff'>,
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.buffDebuff>,
     MoveAnimationTargetMetadata {
   direction?: MoveAnimationBuffDebuffDirection
 }
 
-export type MoveAnimationEvent =
-  | MoveProjectileAnimationEvent
-  | MoveBeamAnimationEvent
-  | MoveArcAnimationEvent
-  | MoveMeleeLungeAnimationEvent
-  | MoveSelfPulseAnimationEvent
-  | MoveTargetFlashAnimationEvent
-  | MoveAreaPulseAnimationEvent
-  | MoveLineSweepAnimationEvent
-  | MoveConeSweepAnimationEvent
-  | MoveDashAnimationEvent
-  | MoveMissAnimationEvent
-  | MoveCritAnimationEvent
-  | MoveStatusAnimationEvent
-  | MoveHealingAnimationEvent
-  | MoveBuffDebuffAnimationEvent
+/**
+ * Mapping from the shared visual kind catalog to its concrete event variant.
+ * Indexing by `MoveVfxKind` keeps variant coverage tied to the single kind list.
+ */
+export interface MoveAnimationEventByKind {
+  [MOVE_VFX_KIND.projectile]: MoveProjectileAnimationEvent
+  [MOVE_VFX_KIND.beam]: MoveBeamAnimationEvent
+  [MOVE_VFX_KIND.arc]: MoveArcAnimationEvent
+  [MOVE_VFX_KIND.meleeLunge]: MoveMeleeLungeAnimationEvent
+  [MOVE_VFX_KIND.selfPulse]: MoveSelfPulseAnimationEvent
+  [MOVE_VFX_KIND.targetFlash]: MoveTargetFlashAnimationEvent
+  [MOVE_VFX_KIND.areaPulse]: MoveAreaPulseAnimationEvent
+  [MOVE_VFX_KIND.lineSweep]: MoveLineSweepAnimationEvent
+  [MOVE_VFX_KIND.coneSweep]: MoveConeSweepAnimationEvent
+  [MOVE_VFX_KIND.dash]: MoveDashAnimationEvent
+  [MOVE_VFX_KIND.miss]: MoveMissAnimationEvent
+  [MOVE_VFX_KIND.crit]: MoveCritAnimationEvent
+  [MOVE_VFX_KIND.status]: MoveStatusAnimationEvent
+  [MOVE_VFX_KIND.healing]: MoveHealingAnimationEvent
+  [MOVE_VFX_KIND.buffDebuff]: MoveBuffDebuffAnimationEvent
+}
+
+export type MoveAnimationEvent = MoveAnimationEventByKind[MoveVfxKind]

@@ -177,6 +177,7 @@ Renderer, scheduler, primitive, and move-automation integration tickets must ref
 ### Data and mechanics boundary
 
 - `MoveAnimationEvent` objects are transient client-side display requests. Their foundational TypeScript contract lives in `src/types/moveAnimation.ts`, and they must not be serialized into map JSON, sheet JSON, trainer JSON, campaign/session state, local runtime state, or server API payloads unless a future ticket explicitly changes the architecture.
+- Generic visual effect kinds are centralized in `src/types/moveVfx.ts` as `MOVE_VFX_KIND`, `MoveVfxKind`, and `MoveAnimationEffectKind`. These are renderer/VFX categories, not move script kinds or move names; future per-move overrides should select from this generic catalog before adding bespoke choreography in a later milestone.
 - VFX code must not directly mutate saved token placement, HP, combat stages, statuses, hazards, weather, field effects, move usage logs, or permissions.
 - The only allowed saved-state mutations during an animated move are the existing move automation transactions and logging paths that would have run without VFX.
 - Temporary visual offsets such as melee lunges, shakes, dash afterimages, or impact pulses must reset every frame or live in VFX-owned overlay objects; they must never be persisted as token placement.
