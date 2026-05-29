@@ -225,6 +225,59 @@ Out of scope:
 
 Any future proposal to add an animation package must document bundle/runtime impact, scheduler integration, pause/resume/disposal behaviour, and why internal helpers are insufficient. That proposal should include any `package.json`/lockfile changes in the same reviewed product change.
 
+## Implementation labels, milestones, and ticket ordering
+
+Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
+
+### Suggested labels
+
+| Label | Use for |
+| --- | --- |
+| `move-vfx` | All work for basic move animations and the reusable VFX layer. |
+| `docs` | Scope, architecture, QA, release-note, and future-follow-up documentation. |
+| `renderer` | Isometric grid, Three.js renderer utilities, primitive objects, render order, disposal, and scheduler hooks. |
+| `move-automation` | Planner inputs, move automation enqueue callbacks, targeting/result integration, and transaction-derived semantic effects. |
+| `testing` | Unit, integration, render-loop, lifecycle, and manual QA checklist work. |
+| `accessibility` | Reduced-motion behaviour and animation enable/disable controls. |
+| `performance` | Dirty-scheduler continuation, metrics, active-count diagnostics, allocation review, and bundle/runtime checks. |
+
+### Milestones and hard ordering
+
+| Milestone / section | Tickets | Primary labels | Hard ordering and exit criteria |
+| --- | --- | --- | --- |
+| **Foundations** | VFX-006 through VFX-018 | `move-vfx`, `docs`, `testing` | Start with `MoveAnimationEvent` contracts in VFX-006. After the event type exists, palette, anchors, ID policy, and planner contracts may proceed in parallel with VFX-009 timing helpers, but the queue must wait for the event, timing, and dedupe policy. Exit when typed events, palette/timing/anchor helpers, queue, planner contracts, generic classification, fallback/no-op behaviour, and non-persistence notes are present and tested where required. |
+| **Renderer** | VFX-019 through VFX-030 | `move-vfx`, `renderer`, `performance` | Start with the `createMoveVfxRenderer` shell. Lifecycle/disposal, instance abstraction, scheduler continuation, frame stepping, prop plumbing, queue-to-page wiring, layer visibility, hidden-tab behaviour, unmount disposal, and optional metrics should land in that order or behind safe no-op guards. Exit when the renderer can receive events, animate only through the existing scheduler, and dispose cleanly. |
+| **Primitives** | VFX-031 through VFX-054 | `move-vfx`, `renderer`, `accessibility` | Build a minimum visible set first: projectile, target flash, self aura, area pulse, shared material factory, render-order tuning, and reduced-motion variants. Richer effects such as trails, beams, arcs, lunge, miss, crit, healing, buff/debuff, status, radial/line/cone/dash, shake, badges, and the dev harness may follow once the primitive factory and lifecycle patterns are stable. Exit when common self, single-target, and area moves have reusable visual building blocks. |
+| **Integration** | VFX-055 through VFX-068 | `move-vfx`, `move-automation`, `testing` | Add the enqueue callback before any automation path emits events. Then wire self, single-target hit/miss/no-accuracy, area, pass/dash, semantic transaction follow-up, field/hazard confirmations, cancellation guards, timing alignment, permission review, future non-move helper notes, debug logs, and map-reset cleanup. Exit when actual move automation can enqueue VFX without changing mechanics or permissions. |
+| **Polish** | VFX-069 through VFX-075 | `move-vfx`, `accessibility`, `performance`, `docs` | Add the enable/disable control and automatic reduced-motion handling before final timing/heuristic/color/readability polish. Keep this milestone focused on behaviour visible to users and reviewers, not new mechanics. Exit when users can reduce or disable motion and the visuals are tuned enough for QA. |
+| **QA and release readiness** | VFX-076 through VFX-086 | `move-vfx`, `testing`, `docs`, `performance` | Planner, renderer, continuation, and automation integration tests should land before the full verification pass. Manual QA, performance review, final architecture docs, future bespoke-animation backlog, PR checklist, and follow-up issue list close the phase. Exit when typecheck, tests, build, docs, and manual review notes all match the shipped implementation. |
+
+### Tickets that can run in parallel
+
+Parallel work is safe only after its shared contracts are merged. When in doubt, prefer the lowest-numbered dependency ticket and keep follow-up branches rebased on it.
+
+- After VFX-006 lands, VFX-008 palette helpers, VFX-010 anchor helpers, VFX-011 ID policy, and VFX-014 planner contracts can be split into separate PRs. VFX-009 can proceed in parallel because its dependency is the VFX-004 dependency decision.
+- After VFX-009 and VFX-011 land, VFX-012 queue work can proceed; VFX-013 should remain paired with or immediately after the queue implementation.
+- After VFX-014 and VFX-008 land, VFX-015 planner classification can proceed; VFX-016 extension contracts and VFX-017 fallback rules should wait for the planner shape.
+- After VFX-019, VFX-020, VFX-021, and VFX-010 establish renderer lifecycle, instance, and anchor contracts, independent primitive PRs may be split by effect family. Shared material/render-order tickets should stay early so primitive PRs do not duplicate low-level material settings.
+- After VFX-024 through VFX-026 complete prop plumbing and page queue wiring, layer visibility, hidden-tab handling, unmount disposal, and development metrics can be reviewed independently if they do not change the renderer contract.
+- After VFX-055 adds the automation callback and VFX-015 supplies planner output, self, single-target, no-accuracy, and area integration paths can be tested in focused PRs as long as cancellation/record-failure guards remain intact.
+- QA documentation can be drafted early, but VFX-080 through VFX-086 should be finalized only against the playable implementation that reviewers will actually test.
+
+### Recommended PR batches
+
+| Batch | Tickets | Review focus |
+| --- | --- | --- |
+| **PR 1: Foundations and contracts** | VFX-006 through VFX-018 | Types, palette, timing, anchors, queue, planner contracts, generic classification, fallback/no-op behaviour, and transient/non-persisted data boundary. |
+| **PR 2: Renderer integration** | VFX-019 through VFX-030 | Renderer shell, lifecycle, instance abstraction, scheduler continuation, frame stepping, Vue prop plumbing, page queue wiring, layer visibility, pause/resume, unmount disposal, and metrics. |
+| **PR 3: Minimum visible primitives** | VFX-031, VFX-036, VFX-040, VFX-044, VFX-049, VFX-050, VFX-052 | Projectile, target flash, self aura, area pulse, shared materials, depth/render-order tuning, and reduced-motion variants. |
+| **PR 4: Move automation integration** | VFX-055 through VFX-064 | Enqueue callback, self/single-target/no-accuracy/area animation triggers, pass/dash handoff, semantic transaction effects, field/hazard confirmations, cancellation guards, and timing alignment. |
+| **PR 5: Richer primitives and sequencing** | VFX-032 through VFX-048, VFX-051, VFX-053, VFX-054 | Trails, beams, arcs, lunge, miss, crit, heal, buff/debuff, status, radial/line/cone/dash effects, optional shake/badge, multi-target staggering, and dev harness. |
+| **PR 6: Controls, polish, and verification** | VFX-069 through VFX-082 | Enable/disable and reduced-motion controls, duration/classification/color/overlay polish, help text, planner/renderer/render-loop/automation tests, QA checklist, full verification, and performance review. |
+| **PR 7: Final docs and future follow-up** | VFX-083 through VFX-086 | Implemented architecture docs, future bespoke per-move animation backlog, reusable PR checklist, and first-playtest follow-up issues. |
+
+Do not merge a later batch ahead of a hard dependency unless the PR explicitly no-ops without the dependency and documents that temporary state. Avoid mixing unrelated batches in one PR; visual polish should not be bundled with foundation type changes unless required to fix the same ticket.
+
 ## Architecture direction
 
 The implementation should follow this one-way data flow:
