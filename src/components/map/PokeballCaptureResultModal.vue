@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ItemSprite from '~/components/ItemSprite.vue'
 import {
   playPokeballFailSound,
@@ -8,14 +8,18 @@ import {
   playPokeballThrowSound,
 } from '~/utils/pokeballSoundEffects'
 import type { PokeballCaptureAttemptResult } from '~/utils/pokeballCapture'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 
 const props = defineProps<{
   result: PokeballCaptureAttemptResult
+  accentColor?: string | null
 }>()
 
 const emit = defineEmits<{
   (event: 'close'): void
 }>()
+
+const modalAccentStyle = computed(() => trainerAccentCssVariables(props.accentColor))
 
 const currentShake = ref(0)
 const done = ref(false)
@@ -69,9 +73,7 @@ onBeforeUnmount(clearTimers)
 <template>
   <Teleport to="body">
     <div class="capture-modal-backdrop" @click.self="emit('close')">
-      <section class="capture-modal" role="dialog" aria-modal="true" aria-label="Poké Ball capture result">
-        <button class="capture-modal__close" type="button" aria-label="Close" @click="emit('close')">×</button>
-
+      <section class="capture-modal" :style="modalAccentStyle" role="dialog" aria-modal="true" aria-label="Poké Ball capture result">
         <div class="capture-modal__stage" :class="{ 'is-done': done, 'is-success': result.success && done, 'is-failure': !result.success && done }">
           <div class="capture-modal__portrait">
             <img v-if="result.targetSpriteUrl" :src="result.targetSpriteUrl" :alt="result.targetName" loading="lazy">
@@ -89,6 +91,10 @@ onBeforeUnmount(clearTimers)
         <div class="capture-modal__roll-summary">
           <span>Capture Roll <strong class="capture-modal__roll-number" :class="result.success ? 'is-success' : 'is-failure'">{{ result.adjustedCaptureRoll ?? '—' }}</strong></span>
           <span>Capture Rate <strong class="capture-modal__rate-number">{{ result.captureRate }}</strong></span>
+        </div>
+
+        <div class="capture-modal__actions">
+          <button class="capture-modal__dismiss" type="button" @click="emit('close')">Close</button>
         </div>
       </section>
     </div>
@@ -121,27 +127,13 @@ onBeforeUnmount(clearTimers)
   color: var(--ink);
 }
 
-.capture-modal__close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 1;
-  width: 2.1rem;
-  height: 2.1rem;
-  border: 1px solid var(--rule-strong);
-  border-radius: 999px;
-  background: var(--paper-accent);
-  color: var(--ink);
-  cursor: pointer;
-}
-
 .capture-modal__stage {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
   align-items: center;
   justify-items: center;
-  padding: 3.25rem 1.25rem 1.25rem;
+  padding: 2rem 1.25rem 1.25rem;
 }
 
 .capture-modal__portrait {
@@ -217,6 +209,38 @@ onBeforeUnmount(clearTimers)
 
 .capture-modal__roll-summary strong {
   font-weight: 950;
+}
+
+.capture-modal__actions {
+  display: flex;
+  justify-content: center;
+  padding: 0 1.25rem 1.5rem;
+}
+
+.capture-modal__dismiss {
+  min-width: 9rem;
+  border: 1px solid rgba(var(--accent-rgb), 0.72);
+  padding: 0.75rem 1.45rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 32%),
+    linear-gradient(135deg, var(--accent), var(--accent-muted));
+  color: var(--ink-bright);
+  cursor: pointer;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+.capture-modal__dismiss:hover,
+.capture-modal__dismiss:focus-visible {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.capture-modal__dismiss:focus-visible {
+  outline: 2px solid rgba(var(--accent-rgb), 0.82);
+  outline-offset: 3px;
 }
 
 .capture-modal__roll-number.is-success {

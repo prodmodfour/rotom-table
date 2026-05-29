@@ -657,6 +657,19 @@ const {
   applyCaptureOutcome: applyPokeballCaptureOutcome,
 })
 
+const pokeballCaptureTrainerAccentColor = computed(() => {
+  const result = pokeballCaptureResult.value
+  if (!result) return null
+
+  const trainerToken = spawnedPokemon.value.find((pokemon) => pokemon.id === result.trainerId)
+  if (!trainerToken) return null
+  if (trainerToken.accentColor) return trainerToken.accentColor
+
+  return trainerToken.sheetKind === 'trainer'
+    ? trainerBySlug.value.get(trainerToken.sheetSlug)?.accentColor ?? null
+    : null
+})
+
 const actionAutomationTargeting = computed(() =>
   moveAutomationTargeting.value
   ?? pokeballCaptureTargeting.value
@@ -872,6 +885,7 @@ useMapDimensionReconciliation({
       <PokeballCaptureResultModal
         v-if="pokeballCaptureResult"
         :result="pokeballCaptureResult"
+        :accent-color="pokeballCaptureTrainerAccentColor"
         @close="dismissPokeballCaptureResult"
       />
 
