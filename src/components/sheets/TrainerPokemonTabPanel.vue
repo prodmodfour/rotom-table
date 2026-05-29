@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { getSpriteUrl } from '~~/data/characterSheets'
 import TrainerPokemonBrowser from './TrainerPokemonBrowser.vue'
 import TrainerPokemonCard from './TrainerPokemonCard.vue'
@@ -8,6 +8,7 @@ import {
   addPokemonToTrainerTeam,
   boxPokemonForTrainer,
   buildTrainerPokemonBrowserEntries,
+  moveTrainerPokemonLink,
   normalizePokemonSlugList,
   resolveTrainerPokemonLinks,
   trainerTeamSlotCount,
@@ -16,10 +17,18 @@ import {
 } from '~/utils/trainerPokemonLinks'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { TrainerPokemonRosterKind } from '~/utils/trainerPokemonLinks'
 
 const props = defineProps<{
   sheet: TrainerSheet
 }>()
+
+interface TrainerPokemonDragPayload {
+  slug: string
+  sourceRoster: TrainerPokemonRosterKind
+}
+
+const TRAINER_POKEMON_LINK_DRAG_TYPE = 'application/x-rotom-trainer-pokemon-link'
 
 const { pokemonBySlug } = useLiveSheets()
 const EMPTY_POKEMON_BY_SLUG: ReadonlyMap<string, CharacterSheet> = new Map()
@@ -65,6 +74,93 @@ const extraTeamSlugs = computed(() => (
   normalizePokemonSlugList(props.sheet.currentTeam).slice(TRAINER_TEAM_LIMIT)
 ))
 
+const draggedPokemon = ref<TrainerPokemonDragPayload | null>(null)
+const dragOverRoster = ref<TrainerPokemonRosterKind | null>(null)
+
+const canDropPokemonOnRoster = (
+  payload: TrainerPokemonDragPayload | null,
+  targetRoster: TrainerPokemonRosterKind,
+): boolean => {
+  if (!payload) return false
+  if (targetRoster === 'team' && payload.sourceRoster !== 'team' && teamIsFull.value) return false
+  return true
+}
+
+const readTrainerPokemonDragPayload = (event: DragEvent): TrainerPokemonDragPayload | null => {
+  if (draggedPokemon.value) return draggedPokemon.value
+
+  const rawPayload = event.dataTransfer?.getData(TRAINER_POKEMON_LINK_DRAG_TYPE)
+  if (!rawPayload) return null
+
+  try {
+    const parsed = JSON.parse(rawPayload) as Partial<TrainerPokemonDragPayload>
+    const sourceRoster = parsed.sourceRoster === 'team' || parsed.sourceRoster === 'box'
+      ? parsed.sourceRoster
+      : null
+    const slug = typeof parsed.slug === 'string' ? parsed.slug : ''
+    return sourceRoster && slug ? { slug, sourceRoster } : null
+  } catch {
+    return null
+  }
+}
+
+const clearPokemonDragState = () => {
+  draggedPokemon.value = null
+  dragOverRoster.value = null
+}
+
+const handlePokemonDragStart = (
+  event: DragEvent,
+  slug: string,
+  sourceRoster: TrainerPokemonRosterKind,
+) => {
+  const payload: TrainerPokemonDragPayload = { slug, sourceRoster }
+  draggedPokemon.value = payload
+  dragOverRoster.value = null
+
+  if (!event.dataTransfer) return
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData(TRAINER_POKEMON_LINK_DRAG_TYPE, JSON.stringify(payload))
+  event.dataTransfer.setData('text/plain', slug)
+}
+
+const handlePokemonDragEnd = () => {
+  clearPokemonDragState()
+}
+
+const handleRosterDragOver = (event: DragEvent, targetRoster: TrainerPokemonRosterKind) => {
+  if (!canDropPokemonOnRoster(draggedPokemon.value, targetRoster)) {
+    dragOverRoster.value = null
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'none'
+    return
+  }
+
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  dragOverRoster.value = targetRoster
+}
+
+const handlePokemonCardDragOver = (event: DragEvent, targetRoster: TrainerPokemonRosterKind) => {
+  event.stopPropagation()
+  handleRosterDragOver(event, targetRoster)
+}
+
+const handlePokemonDrop = (
+  event: DragEvent,
+  targetRoster: TrainerPokemonRosterKind,
+  targetIndex?: number,
+) => {
+  const payload = readTrainerPokemonDragPayload(event)
+  if (!payload) return
+
+  event.preventDefault()
+  event.stopPropagation()
+  if (canDropPokemonOnRoster(payload, targetRoster)) {
+    moveTrainerPokemonLink(props.sheet, payload.slug, targetRoster, targetIndex)
+  }
+  clearPokemonDragState()
+}
+
 const addToTeam = (slug: string) => {
   addPokemonToTrainerTeam(props.sheet, slug)
 }
@@ -81,7 +177,13 @@ const unlink = (slug: string) => {
 <template>
   <section class="trainer-pokemon-tab tab-panel">
     <div class="trainer-pokemon-layout">
-      <section class="pokemon-box-panel" aria-labelledby="trainer-pokemon-box-title">
+      <section
+        class="pokemon-box-panel"
+        :class="{ 'is-pokemon-drop-target': dragOverRoster === 'box' }"
+        aria-labelledby="trainer-pokemon-box-title"
+        @dragover="handleRosterDragOver($event, 'box')"
+        @drop="handlePokemonDrop($event, 'box')"
+      >
         <header class="pokemon-panel-heading">
           <div>
             <h2 id="trainer-pokemon-box-title">Box</h2>
@@ -92,19 +194,29 @@ const unlink = (slug: string) => {
 
         <div v-if="boxedMembers.length" class="pokemon-box-grid">
           <TrainerPokemonCard
-            v-for="member in boxedMembers"
+            v-for="(member, index) in boxedMembers"
             :key="member.slug"
             :member="member"
             variant="box"
             :can-move-to-team="!teamIsFull"
             @move-to-team="addToTeam"
             @unlink="unlink"
+            @drag-start="handlePokemonDragStart"
+            @drag-end="handlePokemonDragEnd"
+            @drag-over="(event) => handlePokemonCardDragOver(event, 'box')"
+            @drop="(event) => handlePokemonDrop(event, 'box', index)"
           />
         </div>
         <p v-else class="pokemon-empty-state">No boxed Pokémon linked yet. Use the browser below to add one.</p>
       </section>
 
-      <aside class="pokemon-team-strip" aria-labelledby="trainer-pokemon-team-title">
+      <aside
+        class="pokemon-team-strip"
+        :class="{ 'is-pokemon-drop-target': dragOverRoster === 'team' }"
+        aria-labelledby="trainer-pokemon-team-title"
+        @dragover="handleRosterDragOver($event, 'team')"
+        @drop="handlePokemonDrop($event, 'team')"
+      >
         <header class="pokemon-team-strip__header">
           <h2 id="trainer-pokemon-team-title">Team</h2>
           <span class="pokemon-panel-badge">{{ teamCount }}/{{ TRAINER_TEAM_LIMIT }}</span>
@@ -112,12 +224,16 @@ const unlink = (slug: string) => {
 
         <div class="pokemon-team-strip__list">
           <TrainerPokemonCard
-            v-for="member in teamMembers"
+            v-for="(member, index) in teamMembers"
             :key="member.slug"
             :member="member"
             variant="team"
             @move-to-box="addToBox"
             @unlink="unlink"
+            @drag-start="handlePokemonDragStart"
+            @drag-end="handlePokemonDragEnd"
+            @drag-over="(event) => handlePokemonCardDragOver(event, 'team')"
+            @drop="(event) => handlePokemonDrop(event, 'team', index)"
           />
 
           <div
@@ -165,6 +281,13 @@ const unlink = (slug: string) => {
   border-radius: 14px;
   background: var(--paper-inset);
   padding: 0.85rem;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.pokemon-box-panel.is-pokemon-drop-target,
+.pokemon-team-strip.is-pokemon-drop-target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18), 0 12px 28px rgba(5, 6, 8, 0.28);
 }
 
 .pokemon-panel-heading,

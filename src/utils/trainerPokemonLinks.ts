@@ -76,6 +76,10 @@ const hasSlug = (list: readonly string[] | undefined, slug: string): boolean => 
   normalizePokemonSlugList(list).includes(slug)
 )
 
+const findSlugIndex = (list: readonly string[], slug: string): number => (
+  list.findIndex((value) => normalizePokemonSlug(value) === slug)
+)
+
 const removeSlug = (list: string[], slug: string): boolean => {
   let removed = false
   for (let i = list.length - 1; i >= 0; i -= 1) {
@@ -85,6 +89,11 @@ const removeSlug = (list: string[], slug: string): boolean => {
     }
   }
   return removed
+}
+
+const normalizeInsertIndex = (index: number | undefined, fallback: number, length: number): number => {
+  if (index == null || !Number.isInteger(index)) return fallback
+  return Math.min(Math.max(index, 0), length)
 }
 
 const ensureTeam = (sheet: TrainerSheet): string[] => {
@@ -209,6 +218,43 @@ export const boxPokemonForTrainer = (sheet: TrainerSheet, slugInput: string): bo
   if (hasSlug(box, slug)) return removedFromTeam
 
   box.push(slug)
+  return true
+}
+
+export const moveTrainerPokemonLink = (
+  sheet: TrainerSheet,
+  slugInput: string,
+  targetRoster: TrainerPokemonRosterKind,
+  targetIndex?: number,
+  limit = TRAINER_TEAM_LIMIT,
+): boolean => {
+  const slug = normalizePokemonSlug(slugInput)
+  if (!slug) return false
+
+  const team = ensureTeam(sheet)
+  const box = ensureBox(sheet)
+  const sourceRoster: TrainerPokemonRosterKind | null = hasSlug(team, slug)
+    ? 'team'
+    : hasSlug(box, slug)
+      ? 'box'
+      : null
+  if (!sourceRoster) return false
+  if (targetRoster === 'team' && sourceRoster !== 'team' && !trainerTeamHasOpenSlot(sheet, limit)) {
+    return false
+  }
+
+  const sourceList = sourceRoster === 'team' ? team : box
+  const targetList = targetRoster === 'team' ? team : box
+  const sourceIndex = findSlugIndex(sourceList, slug)
+  let insertIndex = normalizeInsertIndex(targetIndex, targetList.length, targetList.length)
+  if (sourceList === targetList && sourceIndex >= 0 && sourceIndex < insertIndex) insertIndex -= 1
+
+  removeSlug(team, slug)
+  removeSlug(box, slug)
+
+  const updatedTargetList = targetRoster === 'team' ? team : box
+  const boundedInsertIndex = normalizeInsertIndex(insertIndex, updatedTargetList.length, updatedTargetList.length)
+  updatedTargetList.splice(boundedInsertIndex, 0, slug)
   return true
 }
 

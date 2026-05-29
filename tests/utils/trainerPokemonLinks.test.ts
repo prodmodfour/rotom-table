@@ -6,6 +6,7 @@ import {
   filterTrainerPokemonBrowserEntries,
   isExamplePokemonFolder,
   isTrainerPokemonBrowserCandidate,
+  moveTrainerPokemonLink,
   normalizePokemonSlugList,
   resolveTrainerPokemonLinks,
   trainerTeamHasOpenSlot,
@@ -151,5 +152,28 @@ describe('trainerPokemonLinks', () => {
     expect(unlinkPokemonFromTrainer(trainer, 'ember')).toBe(true)
     expect(trainer.currentTeam).toEqual([])
     expect(trainer.boxedPokemon).toEqual(['bolt'])
+  })
+
+  it('moves dragged Pokémon links between rosters and reorders them', () => {
+    const trainer = makeTrainer()
+    trainer.currentTeam = ['bolt', 'moss']
+    trainer.boxedPokemon = ['ember', 'aqua']
+
+    expect(moveTrainerPokemonLink(trainer, 'ember', 'team', 1)).toBe(true)
+    expect(trainer.currentTeam).toEqual(['bolt', 'ember', 'moss'])
+    expect(trainer.boxedPokemon).toEqual(['aqua'])
+
+    expect(moveTrainerPokemonLink(trainer, 'bolt', 'team', 2)).toBe(true)
+    expect(trainer.currentTeam).toEqual(['ember', 'bolt', 'moss'])
+
+    expect(moveTrainerPokemonLink(trainer, 'moss', 'box', 0)).toBe(true)
+    expect(trainer.currentTeam).toEqual(['ember', 'bolt'])
+    expect(trainer.boxedPokemon).toEqual(['moss', 'aqua'])
+
+    trainer.currentTeam = ['a', 'b', 'c', 'd', 'e', 'f']
+    trainer.boxedPokemon = ['ember']
+    expect(moveTrainerPokemonLink(trainer, 'ember', 'team')).toBe(false)
+    expect(trainer.currentTeam).toEqual(['a', 'b', 'c', 'd', 'e', 'f'])
+    expect(trainer.boxedPokemon).toEqual(['ember'])
   })
 })

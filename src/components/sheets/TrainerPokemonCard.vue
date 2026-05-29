@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
-import type { ResolvedTrainerPokemonLink } from '~/utils/trainerPokemonLinks'
+import type { ResolvedTrainerPokemonLink, TrainerPokemonRosterKind } from '~/utils/trainerPokemonLinks'
 
 const props = withDefaults(defineProps<{
   member: ResolvedTrainerPokemonLink
-  variant?: 'box' | 'team'
+  variant?: TrainerPokemonRosterKind
   canMoveToTeam?: boolean
 }>(), {
   variant: 'box',
@@ -16,6 +16,10 @@ const emit = defineEmits<{
   moveToTeam: [slug: string]
   moveToBox: [slug: string]
   unlink: [slug: string]
+  dragStart: [event: DragEvent, slug: string, sourceRoster: TrainerPokemonRosterKind]
+  dragEnd: []
+  dragOver: [event: DragEvent, targetSlug: string]
+  drop: [event: DragEvent, targetSlug: string]
 }>()
 
 const pokemonPath = computed(() => (
@@ -29,10 +33,32 @@ const levelLabel = computed(() => (
 const metaLabel = computed(() => (
   props.member.species ? `${props.member.species} · ${levelLabel.value}` : levelLabel.value
 ))
+
+const startDrag = (event: DragEvent) => {
+  emit('dragStart', event, props.member.slug, props.variant)
+}
 </script>
 
 <template>
-  <article class="pokemon-link-card" :class="`pokemon-link-card--${props.variant}`">
+  <article
+    class="pokemon-link-card"
+    :class="`pokemon-link-card--${props.variant}`"
+    @dragover="emit('dragOver', $event, member.slug)"
+    @drop="emit('drop', $event, member.slug)"
+  >
+    <button
+      type="button"
+      class="pokemon-link-card__drag-handle"
+      draggable="true"
+      :aria-label="`Drag ${member.displayName} between team and box`"
+      :title="`Drag ${member.displayName} between team and box`"
+      @click.prevent
+      @dragstart="startDrag"
+      @dragend="emit('dragEnd')"
+    >
+      <span aria-hidden="true">⋮⋮</span>
+    </button>
+
     <NuxtLink
       v-if="member.sheet"
       class="pokemon-link-card__sprite-link"
@@ -83,10 +109,10 @@ const metaLabel = computed(() => (
 <style scoped>
 .pokemon-link-card {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-columns: 18px 56px minmax(0, 1fr);
   grid-template-areas:
-    "sprite body"
-    "sprite actions";
+    "drag sprite body"
+    "drag sprite actions";
   gap: 0.45rem 0.6rem;
   align-items: center;
   min-width: 0;
@@ -97,9 +123,41 @@ const metaLabel = computed(() => (
 }
 
 .pokemon-link-card--team {
-  grid-template-columns: 50px minmax(0, 1fr);
+  grid-template-columns: 18px 50px minmax(0, 1fr);
   padding: 0.5rem;
   background: linear-gradient(135deg, rgba(255, 31, 45, 0.1), var(--paper));
+}
+
+.pokemon-link-card__drag-handle {
+  grid-area: drag;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper-inset);
+  color: var(--ink-faint);
+  padding: 0;
+  cursor: grab;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: -0.2em;
+  line-height: 1;
+  touch-action: none;
+  user-select: none;
+}
+
+.pokemon-link-card__drag-handle:hover,
+.pokemon-link-card__drag-handle:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.pokemon-link-card__drag-handle:active {
+  cursor: grabbing;
 }
 
 .pokemon-link-card__sprite-link {
