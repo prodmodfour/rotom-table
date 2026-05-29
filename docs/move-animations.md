@@ -316,6 +316,14 @@ Current fallback rules:
 
 These fallbacks are visual-only. They do not change hit/miss, targeting, HP, status, placement, logs, permissions, or persisted data.
 
+### Renderer shell for VFX-019
+
+The initial renderer shell lives in `src/utils/isometric/moveVfxRenderer.ts`. It exports `createMoveVfxRenderer(scene)` and `createMoveVfxRenderer({ scene, group })`, creating a dedicated `THREE.Group` named `move-vfx-root` for all future move VFX objects.
+
+The shell exposes the renderer contract needed by later integration tickets: `sync(events, context)`, `animate(frameContext)`, `needsAnimationFrame()`, `activeCount()`, and `dispose()`. It intentionally creates no primitive meshes yet and `needsAnimationFrame()` returns `false` until later lifecycle/primitive tickets add real per-effect instances. This preserves the dirty-scheduler guardrail: VFX renderer work must be advanced by the existing isometric render loop and must not add a separate RAF or timer loop.
+
+Disposing the shell removes the dedicated group from the scene and is safe to call more than once. Future primitive tickets should add all transient meshes, materials, geometries, and optional CSS3D objects under that group and dispose them through the renderer lifecycle rather than leaking objects into the root scene.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
