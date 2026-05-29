@@ -69,7 +69,7 @@ defineExpose({ rootEl })
 <style scoped>
 .ref-tooltip {
   position: fixed;
-  z-index: 10000;
+  z-index: 12000;
   width: min(28rem, calc(100vw - 1.5rem));
   max-height: min(28rem, calc(100vh - 1.5rem));
   overflow: auto;
