@@ -20,7 +20,7 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { MoveAutomationScript, MoveAutomationTargetHitChance } from '~/types/moveAutomation'
 import type { PokedexRecord, SpawnedPokemon } from '~/types/pokemon'
-import type { InventoryEntry, TrainerSheet } from '~/types/trainerSheet'
+import type { InventoryEntry, TrainerInventory, TrainerSheet } from '~/types/trainerSheet'
 import type { PtuItem } from '~/types/ptuReference'
 
 export const POKEBALL_THROW_AC = 6
@@ -109,6 +109,15 @@ const signed = (value: number): string => (value > 0 ? `+${value}` : String(valu
 
 const ballKey = (name: string): string => toSlug(name)
 
+const POKEBALL_INVENTORY_SECTION_ORDER = [
+  'pokeBalls',
+  'keyItems',
+  'pokemonItems',
+  'medicalKit',
+  'foodStuff',
+  'equipment',
+] as const satisfies readonly (keyof TrainerInventory)[]
+
 const finiteNumber = (value: unknown): number | null => {
   const numeric = Number(value)
   return Number.isFinite(numeric) ? numeric : null
@@ -158,14 +167,35 @@ const normalizeQuantity = (value: unknown): number => {
   return Math.max(0, Math.floor(numeric))
 }
 
+const pokeballItemNameCandidates = (name: string): string[] => {
+  const candidates = new Set<string>([name])
+  const singularBall = name.replace(/\bBalls\b/gi, 'Ball').trim()
+  if (singularBall) candidates.add(singularBall)
+
+  const compact = name.replace(/[\s-]+/g, '').toLowerCase()
+  if (/^pok[eé]?balls?$/.test(compact)) candidates.add('Poké Ball')
+
+  return [...candidates]
+}
+
 export const resolvePokeballItem = (name: string | null | undefined): PtuItem | null => {
   const trimmed = name?.trim()
   if (!trimmed) return null
-  return findItem(trimmed)
+  for (const candidate of pokeballItemNameCandidates(trimmed)) {
+    const item = findItem(candidate)
+    if (item) return item
+  }
+  return null
+}
+
+const trainerInventoryEntriesForPokeballs = (sheet: TrainerSheet | null | undefined): InventoryEntry[] => {
+  const inventory = sheet?.inventory
+  if (!inventory) return []
+  return POKEBALL_INVENTORY_SECTION_ORDER.flatMap((section) => inventory[section] ?? [])
 }
 
 export const buildTrainerPokeballOptions = (sheet: TrainerSheet | null | undefined): TokenPokeballOption[] => {
-  const entries = sheet?.inventory?.pokeBalls ?? []
+  const entries = trainerInventoryEntriesForPokeballs(sheet)
   const merged = new Map<string, TokenPokeballOption>()
 
   for (const entry of entries) {
@@ -621,7 +651,7 @@ export const applyPokeballCaptureOutcomeToTrainerSheet = (
   sheet: TrainerSheet,
   event: Pick<PokeballCaptureOutcomeEvent, 'pokeballName' | 'targetSlug' | 'result'>,
 ): PokeballCaptureOutcomeApplyResult => {
-  const entries = sheet.inventory?.pokeBalls ?? []
+  const entries = trainerInventoryEntriesForPokeballs(sheet)
   const entry = entries.find((candidate) => entryMatchesPokeballName(candidate, event.pokeballName) && normalizeQuantity(candidate.qty) > 0)
   let consumed = false
   if (entry) {
