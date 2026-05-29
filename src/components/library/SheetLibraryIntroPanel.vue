@@ -3,7 +3,6 @@ import { PhPlus } from '@phosphor-icons/vue'
 import LibraryIntroActionButton from '~/components/library/LibraryIntroActionButton.vue'
 import LibraryIntroActionRow from '~/components/library/LibraryIntroActionRow.vue'
 import LibraryIntroControls from '~/components/library/LibraryIntroControls.vue'
-import LibraryIntroCopy from '~/components/library/LibraryIntroCopy.vue'
 import LibraryIntroErrors from '~/components/library/LibraryIntroErrors.vue'
 import LibraryIntroPanelCard from '~/components/library/LibraryIntroPanelCard.vue'
 import LibraryIntroSearchField from '~/components/library/LibraryIntroSearchField.vue'
@@ -11,11 +10,6 @@ import SheetLibraryNewSheetMenu from '~/components/library/SheetLibraryNewSheetM
 import type { SheetLibraryKind } from '~/utils/sheetLibrary'
 
 defineProps<{
-  filteredCount: number
-  totalCount: number
-  isGm: boolean
-  isPlayer: boolean
-  selectedProfileName: string | null
   canDrag: boolean
   searchTerm: string
   creating: boolean
@@ -36,46 +30,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <LibraryIntroPanelCard
-    title="Character Sheets"
-    :badge="`${filteredCount} of ${totalCount}`"
-  >
-    <LibraryIntroCopy>
-      Trainers and Pokémon character sheets, modelled on the PTU
-      <code>pokesheet</code> / <code>trainer</code> spreadsheets. Drop a
-      new JSON file into the campaign <code>data/sheets/</code> for a Pokémon, or
-      <code>data/trainers/</code> for a trainer. Use subdirectories
-      (e.g. <code>data/sheets/team-alpha/</code>) to group sheets into
-      folders — the directory name is shown exactly as the folder string.
-      <template #hint>
-        <template v-if="isGm">
-          <template v-if="canDrag">
-            Tip: click a folder to open it. Drag a card or folder onto
-            another folder (or breadcrumb) to move it. Right-click anything
-            for Move / Rename / Delete — changes are written straight back
-            to disk.
-          </template>
-          <template v-else>
-            You are viewing all character sheets. Management controls are
-            GM-only and only appear when the sheet file APIs are available.
-          </template>
-        </template>
-        <template v-else-if="isPlayer">
-          <template v-if="selectedProfileName">
-            You are seeing player-accessible sheets plus private character
-            sheets linked to {{ selectedProfileName }}.
-          </template>
-          <template v-else>
-            You are seeing player-accessible sheets. Choose a player profile
-            from Login to include linked private character sheets.
-          </template>
-        </template>
-        <template v-else>
-          Log in as GM or player to browse character sheets.
-        </template>
-      </template>
-    </LibraryIntroCopy>
-
+  <LibraryIntroPanelCard>
     <LibraryIntroControls>
       <LibraryIntroSearchField
         :model-value="searchTerm"

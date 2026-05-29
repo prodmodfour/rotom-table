@@ -14,15 +14,12 @@ useHead({
 const {
   isGm,
   isPlayer,
-  selectedProfileDisplayName,
   hasSelectedProfile,
   canDrag,
   searchTerm,
   visibleSheets,
   visibleFolders,
   hasAnything,
-  totalCount,
-  filteredCount,
   currentPath,
   breadcrumbs,
   goToFolder,
@@ -67,11 +64,6 @@ const {
 
       <SheetLibraryIntroPanel
         v-model:search-term="searchTerm"
-        :filtered-count="filteredCount"
-        :total-count="totalCount"
-        :is-gm="isGm"
-        :is-player="isPlayer"
-        :selected-profile-name="selectedProfileDisplayName"
         :can-drag="canDrag"
         :creating="creating"
         :creating-sheet="creatingSheet"

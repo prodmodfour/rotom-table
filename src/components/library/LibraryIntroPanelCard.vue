@@ -1,15 +1,15 @@
 <script setup lang="ts">
 defineProps<{
-  title: string
-  badge: string
+  title?: string
+  badge?: string
 }>()
 </script>
 
 <template>
   <section class="library-intro-panel">
-    <div class="library-intro-panel__heading">
-      <h1>{{ title }}</h1>
-      <span class="library-intro-panel__badge">{{ badge }}</span>
+    <div v-if="title || badge" class="library-intro-panel__heading">
+      <h1 v-if="title">{{ title }}</h1>
+      <span v-if="badge" class="library-intro-panel__badge">{{ badge }}</span>
     </div>
     <slot />
   </section>
