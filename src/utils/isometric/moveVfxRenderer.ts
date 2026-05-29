@@ -38,6 +38,12 @@ export interface MoveVfxRenderer {
   animate(frameContext: MoveVfxRendererFrameContext): void
   needsAnimationFrame(): boolean
   activeCount(): number
+  /**
+   * Wall-clock hidden-tab expiry hook. Hidden tabs pause the scheduler, but
+   * move VFX remain transient; expired instances are disposed before the first
+   * resumed render so they do not jump to a final catch-up frame.
+   */
+  expireCompleted(nowMs: number): number
   dispose(): void
 }
 
@@ -183,6 +189,7 @@ export const createMoveVfxRenderer = (
   let disposed = false
   let lastVisible = true
   const activeInstances = new Map<string, MoveVfxInstance>()
+  const activeEvents = new Map<string, MoveAnimationEvent>()
   const completedEventIds = new Set<string>()
 
   const applyVisibility = () => {
@@ -209,6 +216,7 @@ export const createMoveVfxRenderer = (
     if (!instance) return
 
     activeInstances.delete(id)
+    activeEvents.delete(id)
     instance.dispose()
   }
 
@@ -247,6 +255,7 @@ export const createMoveVfxRenderer = (
 
       for (const event of events) {
         if (!activeInstances.has(event.id) && !completedEventIds.has(event.id)) {
+          activeEvents.set(event.id, event)
           activeInstances.set(event.id, createInstance(event, context))
         }
       }
@@ -268,6 +277,21 @@ export const createMoveVfxRenderer = (
 
     activeCount() {
       return disposed ? 0 : activeInstances.size
+    },
+
+    expireCompleted(nowMs) {
+      if (disposed) return 0
+
+      let expiredCount = 0
+      for (const [id, event] of [...activeEvents.entries()]) {
+        if (!animationProgress(nowMs, event.createdAtMs, event.durationMs).complete) continue
+
+        completeInstance(id)
+        expiredCount += 1
+      }
+
+      if (expiredCount > 0) applyVisibility()
+      return expiredCount
     },
 
     dispose() {

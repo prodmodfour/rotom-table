@@ -120,6 +120,7 @@ const {
   activeMoveAnimations,
   enqueueMoveAnimations,
   clearMoveAnimations,
+  pruneExpiredMoveAnimations,
 } = useMoveAnimationQueue()
 
 watch(
@@ -129,7 +130,11 @@ watch(
   },
 )
 
+let cleanupMoveAnimationVisibilityChange: (() => void) | null = null
+
 onBeforeUnmount(() => {
+  cleanupMoveAnimationVisibilityChange?.()
+  cleanupMoveAnimationVisibilityChange = null
   clearMoveAnimations()
 })
 
@@ -147,6 +152,21 @@ const syncPlayerProfileForMapControl = async () => {
 }
 
 onMounted(() => {
+  if (import.meta.client) {
+    const handleMoveAnimationVisibilityChange = () => {
+      if (document.hidden) return
+
+      // Hidden tabs age move VFX by wall-clock time. Prune expired queue
+      // entries on resume so renderer input cannot retain stale events after
+      // the isometric scheduler wakes for its hidden-tab-resume frame.
+      pruneExpiredMoveAnimations(Date.now())
+    }
+    document.addEventListener('visibilitychange', handleMoveAnimationVisibilityChange)
+    cleanupMoveAnimationVisibilityChange = () => {
+      document.removeEventListener('visibilitychange', handleMoveAnimationVisibilityChange)
+    }
+  }
+
   void syncPlayerProfileForMapControl()
 })
 

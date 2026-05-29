@@ -105,6 +105,36 @@ describe('move VFX renderer shell', () => {
     expect(renderer.needsAnimationFrame()).toBe(false)
   })
 
+  it('expires wall-clock-completed hidden-tab instances before a resumed render frame', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const shortEvent = selfPulseEvent('move-vfx-short')
+    const lingeringEvent = selfPulseEvent('move-vfx-linger')
+
+    renderer.sync([
+      shortEvent,
+      { ...lingeringEvent, durationMs: 1200 },
+    ], { visible: true })
+
+    expect(renderer.expireCompleted(659)).toBe(0)
+    expect(renderer.activeCount()).toBe(2)
+    expect(renderer.group.visible).toBe(true)
+
+    expect(renderer.expireCompleted(660)).toBe(1)
+    expect(renderer.activeCount()).toBe(1)
+    expect(renderer.group.children.map((child) => child.name)).toEqual([
+      'move-vfx-instance:move-vfx-linger',
+    ])
+    expect(renderer.needsAnimationFrame()).toBe(true)
+
+    renderer.sync([shortEvent, lingeringEvent], { visible: true })
+
+    expect(renderer.activeCount()).toBe(1)
+    expect(renderer.group.children.map((child) => child.name)).toEqual([
+      'move-vfx-instance:move-vfx-linger',
+    ])
+  })
+
   it('creates a safe placeholder instance through the factory for every registered effect kind', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)

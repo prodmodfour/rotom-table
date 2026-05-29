@@ -374,6 +374,12 @@ Move VFX follow the resolved token layer. `src/utils/isometric/layerVisibility.t
 
 Hidden VFX still keep their normal transient lifecycle. The renderer retains active event instances while `visible` is false, advances them from scheduler frame time, disposes completed instances, and does not recreate completed ids just because the token layer becomes visible again. Layer visibility changes request the existing `layer-visibility` render invalidation and do not add any independent timers, persistence, gameplay mutations, or renderer-quality reductions.
 
+### Hidden-tab pause/resume for VFX-028
+
+Move VFX use wall-clock event lifetimes while the document is hidden. When the browser hides the tab, `IsometricGrid.client.vue` continues to pause the dirty render scheduler through the existing document visibility lifecycle hook; no move VFX RAF, timer, or synthetic catch-up loop runs in the background. When the tab becomes visible again, the grid asks `moveVfxRenderer.expireCompleted(Date.now())` to dispose any effects whose `createdAtMs + durationMs` elapsed while hidden before the first resumed render frame. This prevents expired effects from briefly jumping to a final catch-up visual.
+
+The map page also prunes expired `useMoveAnimationQueue()` entries on `visibilitychange` resume so renderer input does not retain stale wall-clock-expired events. If the tab was hidden only briefly and an effect has not expired, it resumes from its normal elapsed wall-clock progress on the scheduler's `hidden-tab-resume` frame. This policy keeps transient animations from getting stuck after a hidden-tab pause without adding persistence, gameplay mutations, renderer quality changes, or independent timers.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

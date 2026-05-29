@@ -1468,6 +1468,10 @@ const pauseScheduledRenderLoopForHiddenTab = () => {
 }
 
 const resumeScheduledRenderLoopFromHiddenTab = () => {
+  // Move VFX use wall-clock event lifetimes, not a paused animation timeline.
+  // Expiring completed instances before the first visible frame prevents a tab
+  // that was hidden past an effect's duration from rendering a catch-up burst.
+  moveVfxRenderer.expireCompleted(Date.now())
   renderScheduler?.resume()
   requestScheduledSceneFrame('hidden-tab-resume')
 }
