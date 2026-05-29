@@ -7,7 +7,7 @@ import {
   playPokeballSuccessSound,
   playPokeballThrowSound,
 } from '~/utils/pokeballSoundEffects'
-import type { PokeballCaptureAttemptResult, PokeballCaptureBreakdownLine } from '~/utils/pokeballCapture'
+import type { PokeballCaptureAttemptResult } from '~/utils/pokeballCapture'
 
 const props = defineProps<{
   result: PokeballCaptureAttemptResult
@@ -20,20 +20,6 @@ const emit = defineEmits<{
 const currentShake = ref(0)
 const done = ref(false)
 const timers: Array<ReturnType<typeof setTimeout>> = []
-
-const signedValue = (value: number): string => value > 0 ? `+${value}` : String(value)
-
-const captureRateLineValueClass = (line: PokeballCaptureBreakdownLine): string => {
-  if (line.value > 0) return 'is-good'
-  if (line.value < 0) return 'is-bad'
-  return ''
-}
-
-const rollModifierLineValueClass = (line: PokeballCaptureBreakdownLine): string => {
-  if (line.value < 0) return 'is-good'
-  if (line.value > 0) return 'is-bad'
-  return ''
-}
 
 const clearTimers = () => {
   while (timers.length) {
@@ -102,31 +88,9 @@ onBeforeUnmount(clearTimers)
           </div>
         </div>
 
-        <div class="capture-modal__breakdown-grid">
-          <section class="capture-modal__breakdown">
-            <h3>Capture Rate Breakdown</h3>
-            <dl>
-              <template v-for="(line, index) in result.breakdown.captureRateLines" :key="`${line.label}-${line.value}-${index}`">
-                <dt>{{ line.label }}</dt>
-                <dd :class="captureRateLineValueClass(line)">{{ signedValue(line.value) }}</dd>
-                <dd v-if="line.detail" class="capture-modal__detail">{{ line.detail }}</dd>
-              </template>
-            </dl>
-          </section>
-
-          <section class="capture-modal__breakdown">
-            <h3>Capture Roll Modifiers</h3>
-            <dl>
-              <template v-for="(line, index) in result.breakdown.rollModifierLines" :key="`${line.label}-${line.value}-${index}`">
-                <dt>{{ line.label }}</dt>
-                <dd :class="rollModifierLineValueClass(line)">{{ signedValue(line.value) }}</dd>
-                <dd v-if="line.detail" class="capture-modal__detail">{{ line.detail }}</dd>
-              </template>
-            </dl>
-            <p v-if="result.breakdown.notes.length" class="capture-modal__note">
-              {{ result.breakdown.notes.join(' ') }}
-            </p>
-          </section>
+        <div class="capture-modal__roll-summary">
+          <span>Capture Roll <strong class="capture-modal__roll-number" :class="result.success ? 'is-success' : 'is-failure'">{{ result.adjustedCaptureRoll ?? '—' }}</strong></span>
+          <span>Capture Rate <strong class="capture-modal__rate-number">{{ result.captureRate }}</strong></span>
         </div>
 
         <footer class="capture-modal__footer">
@@ -250,61 +214,30 @@ onBeforeUnmount(clearTimers)
   animation: capture-ball-pop 0.35s ease-out;
 }
 
-.capture-modal__breakdown-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
+.capture-modal__roll-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.85rem 1.25rem;
   padding: 0 1.25rem 1rem;
-}
-
-.capture-modal__breakdown {
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.capture-modal__breakdown h3 {
-  margin: 0 0 0.55rem;
   color: var(--ink-bright);
-  font-size: 0.92rem;
+  font-weight: 800;
 }
 
-.capture-modal__breakdown dl {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.35rem 0.7rem;
-  margin: 0;
-  font-size: 0.8rem;
+.capture-modal__roll-summary strong {
+  font-weight: 950;
 }
 
-.capture-modal__breakdown dt {
-  color: var(--muted);
-}
-
-.capture-modal__breakdown dd {
-  margin: 0;
-  color: var(--ink);
-  font-weight: 900;
-}
-
-.capture-modal__breakdown dd.is-good {
+.capture-modal__roll-number.is-success {
   color: var(--good);
 }
 
-.capture-modal__breakdown dd.is-bad {
+.capture-modal__roll-number.is-failure {
   color: var(--bad);
 }
 
-.capture-modal__detail,
-.capture-modal__note {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-
-.capture-modal__note {
-  margin: 0.65rem 0 0;
+.capture-modal__rate-number {
+  color: #b56cff;
 }
 
 .capture-modal__footer {
@@ -340,8 +273,7 @@ onBeforeUnmount(clearTimers)
 }
 
 @media (max-width: 720px) {
-  .capture-modal__stage,
-  .capture-modal__breakdown-grid {
+  .capture-modal__stage {
     grid-template-columns: 1fr;
   }
 
