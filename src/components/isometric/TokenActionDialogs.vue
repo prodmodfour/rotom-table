@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import TokenCombatStagesDialog from '~/components/isometric/TokenCombatStagesDialog.vue'
 import TokenConditionsDialog from '~/components/isometric/TokenConditionsDialog.vue'
 import TokenDamageDialog from '~/components/isometric/TokenDamageDialog.vue'
@@ -16,6 +16,7 @@ import type {
   DamageDialogMultiplierTone,
   DamageDialogState,
 } from '~/utils/isometric/tokenDamageDialog'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 
 type DamageDialogAttackerOption = Pick<SpawnedPokemon, 'id' | 'species' | 'atk' | 'satk'>
 
@@ -68,59 +69,70 @@ const focusDamageAmount = () => {
   damageDialogComponent.value?.focusAmount()
 }
 
+const activeAccentColor = computed(() => (
+  props.hpDialog?.accentColor ??
+  props.combatStagesDialog?.accentColor ??
+  props.conditionsDialog?.accentColor ??
+  props.damageDialog?.accentColor ??
+  null
+))
+const actionDialogStyle = computed(() => activeAccentColor.value ? trainerAccentCssVariables(activeAccentColor.value) : undefined)
+
 defineExpose({ focusHpAmount, focusDamageAmount })
 </script>
 
 <template>
-  <TokenHpDialog
-    v-if="props.hpDialog"
-    ref="hpDialogComponent"
-    :dialog="props.hpDialog"
-    :delta="props.hpDialogDelta"
-    :preview="props.hpDialogPreview"
-    :preview-max-hp="props.hpDialogPreviewMaxHp"
-    :injury-result="props.hpDialogInjuryResult"
-    @close="emit('close-hp')"
-    @submit="emit('submit-hp')"
-  />
+  <div class="token-action-dialog-scope" :style="actionDialogStyle">
+    <TokenHpDialog
+      v-if="props.hpDialog"
+      ref="hpDialogComponent"
+      :dialog="props.hpDialog"
+      :delta="props.hpDialogDelta"
+      :preview="props.hpDialogPreview"
+      :preview-max-hp="props.hpDialogPreviewMaxHp"
+      :injury-result="props.hpDialogInjuryResult"
+      @close="emit('close-hp')"
+      @submit="emit('submit-hp')"
+    />
 
-  <TokenCombatStagesDialog
-    v-if="props.combatStagesDialog"
-    :dialog="props.combatStagesDialog"
-    :changed="props.combatStagesDialogChanged"
-    @close="emit('close-combat-stages')"
-    @submit="emit('submit-combat-stages')"
-  />
+    <TokenCombatStagesDialog
+      v-if="props.combatStagesDialog"
+      :dialog="props.combatStagesDialog"
+      :changed="props.combatStagesDialogChanged"
+      @close="emit('close-combat-stages')"
+      @submit="emit('submit-combat-stages')"
+    />
 
-  <TokenConditionsDialog
-    v-if="props.conditionsDialog"
-    :dialog="props.conditionsDialog"
-    :changed="props.conditionsDialogChanged"
-    :available-moves="props.conditionMoveOptions ?? []"
-    :available-crushes="props.conditionCrushOptions ?? []"
-    @close="emit('close-conditions')"
-    @submit="emit('submit-conditions')"
-  />
+    <TokenConditionsDialog
+      v-if="props.conditionsDialog"
+      :dialog="props.conditionsDialog"
+      :changed="props.conditionsDialogChanged"
+      :available-moves="props.conditionMoveOptions ?? []"
+      :available-crushes="props.conditionCrushOptions ?? []"
+      @close="emit('close-conditions')"
+      @submit="emit('submit-conditions')"
+    />
 
-  <TokenDamageDialog
-    v-if="props.damageDialog"
-    ref="damageDialogComponent"
-    :dialog="props.damageDialog"
-    :db-def="props.damageDialogDbDef"
-    :raw-amount="props.damageDialogRawAmount"
-    :defense="props.damageDialogDefense"
-    :attacker-options="props.damageDialogAttackerOptions"
-    :attack-bonus="props.damageDialogAttackBonus"
-    :multiplier="props.damageDialogMultiplier"
-    :hp-loss="props.damageDialogHpLoss"
-    :preview="props.damageDialogPreview"
-    :preview-max-hp="props.damageDialogPreviewMaxHp"
-    :injury-result="props.damageDialogInjuryResult"
-    :multiplier-tone="props.damageDialogMultiplierTone"
-    :multiplier-label="props.damageDialogMultiplierLabel"
-    @close="emit('close-damage')"
-    @submit="emit('submit-damage')"
-  />
+    <TokenDamageDialog
+      v-if="props.damageDialog"
+      ref="damageDialogComponent"
+      :dialog="props.damageDialog"
+      :db-def="props.damageDialogDbDef"
+      :raw-amount="props.damageDialogRawAmount"
+      :defense="props.damageDialogDefense"
+      :attacker-options="props.damageDialogAttackerOptions"
+      :attack-bonus="props.damageDialogAttackBonus"
+      :multiplier="props.damageDialogMultiplier"
+      :hp-loss="props.damageDialogHpLoss"
+      :preview="props.damageDialogPreview"
+      :preview-max-hp="props.damageDialogPreviewMaxHp"
+      :injury-result="props.damageDialogInjuryResult"
+      :multiplier-tone="props.damageDialogMultiplierTone"
+      :multiplier-label="props.damageDialogMultiplierLabel"
+      @close="emit('close-damage')"
+      @submit="emit('submit-damage')"
+    />
+  </div>
 </template>
 
 <style src="./tokenActionDialog.css"></style>

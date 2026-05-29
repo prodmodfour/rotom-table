@@ -216,7 +216,7 @@ const canAddToTeam = (entry: TrainerPokemonBrowserEntry): boolean => (
 
 .pokemon-browser__search input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
 }
 
 .pokemon-browser__grid {
@@ -244,7 +244,7 @@ const canAddToTeam = (entry: TrainerPokemonBrowserEntry): boolean => (
 }
 
 .pokemon-browser__card.is-linked-team {
-  border-color: rgba(255, 31, 45, 0.48);
+  border-color: rgba(var(--accent-rgb), 0.48);
 }
 
 .pokemon-browser__card.is-linked-box {

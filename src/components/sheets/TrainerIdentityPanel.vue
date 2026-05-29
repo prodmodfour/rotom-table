@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { PhX } from '@phosphor-icons/vue'
+import { DEFAULT_TRAINER_ACCENT_COLOR, normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
-defineProps<{
+const props = defineProps<{
   sheet: TrainerSheet
   currentHp: number
   maxHp: number
@@ -15,7 +17,16 @@ const emit = defineEmits<{
   'open-portrait-picker': []
   'clear-portrait': []
   'set-current-hp': [value: unknown]
+  'set-accent-color': [value: unknown]
 }>()
+
+const accentColorValue = computed(() => normalizeTrainerAccentColor(props.sheet.accentColor) ?? DEFAULT_TRAINER_ACCENT_COLOR)
+
+const setAccentColorFromEvent = (event: Event) => {
+  const target = event.target
+  if (!(target instanceof HTMLInputElement)) return
+  emit('set-accent-color', target.value)
+}
 </script>
 
 <template>
@@ -62,10 +73,21 @@ const emit = defineEmits<{
         Played by
         <strong><EditableCell v-model="sheet.playedBy" placeholder="—" /></strong>
       </p>
-      <label v-if="canManagePlayerAccess" class="player-toggle" :class="{ active: sheet.player }" title="Player">
-        <input v-model="sheet.player" type="checkbox" /> Player
-      </label>
-      <span v-else-if="sheet.player" class="player-toggle active">Player</span>
+      <div class="identity-controls">
+        <label class="accent-picker" title="Trainer accent colour">
+          <span>Accent colour</span>
+          <input
+            type="color"
+            :value="accentColorValue"
+            aria-label="Trainer accent colour"
+            @input="setAccentColorFromEvent"
+          />
+        </label>
+        <label v-if="canManagePlayerAccess" class="player-toggle" :class="{ active: sheet.player }" title="Player">
+          <input v-model="sheet.player" type="checkbox" /> Player
+        </label>
+        <span v-else-if="sheet.player" class="player-toggle active">Player</span>
+      </div>
     </div>
     <div class="identity-vitals">
       <div class="vital">
@@ -145,7 +167,7 @@ const emit = defineEmits<{
   border-color: var(--accent);
   background: var(--paper-hover);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.2);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 }
 
 .portrait-tile--empty {
@@ -214,11 +236,41 @@ const emit = defineEmits<{
   font-size: 0.85rem;
 }
 
+.identity-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.accent-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  background: rgba(221, 210, 176, 0.16);
+  color: var(--ink-bright);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  user-select: none;
+}
+
+.accent-picker input {
+  width: 1.35rem;
+  height: 1.1rem;
+  padding: 0;
+  border: 1px solid var(--rule-soft);
+  background: transparent;
+  cursor: pointer;
+}
+
 .player-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin-top: 0.45rem;
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
   padding: 0.22rem 0.65rem;

@@ -16,6 +16,7 @@ import { buildTokenOrderTooltipDetail } from '~/utils/mapTokenOrderTooltips'
 import type { RefTooltipDetail } from '~/utils/refLinks'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { TokenPokeballOption } from '~/utils/pokeballCapture'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 
 const props = defineProps<{
   menu: TokenContextMenuState
@@ -59,6 +60,11 @@ const abilities = computed(() => props.abilities ?? [])
 const orders = computed(() => props.orders ?? [])
 const sendOutOptions = computed(() => props.sendOutOptions ?? [])
 const pokeballs = computed(() => props.pokeballs ?? [])
+const contextMenuStyle = computed(() => ({
+  left: `${props.menu.x}px`,
+  top: `${props.menu.y}px`,
+  ...(props.menu.accentColor ? trainerAccentCssVariables(props.menu.accentColor) : {}),
+}))
 
 const {
   damageDisplayMode,
@@ -293,7 +299,7 @@ watch(orders, (nextOrders) => {
     <div
       class="context-menu"
       :class="{ 'context-menu--move-panel': activePanel === 'moves' || activePanel === 'maneuvers' }"
-      :style="{ left: `${props.menu.x}px`, top: `${props.menu.y}px` }"
+      :style="contextMenuStyle"
       @contextmenu.prevent
       @pointerdown.stop
     >
@@ -769,10 +775,10 @@ watch(orders, (nextOrders) => {
   --paper: rgba(5, 6, 8, 0.48);
   --paper-soft: rgba(12, 14, 18, 0.68);
   --paper-hover: rgba(255, 255, 255, 0.11);
-  --paper-active: rgba(255, 31, 45, 0.20);
+  --paper-active: rgba(var(--accent-rgb), 0.20);
   --paper-inset: rgba(5, 6, 8, 0.38);
   --rule-soft: rgba(255, 255, 255, 0.26);
-  --rule-strong: rgba(255, 31, 45, 0.58);
+  --rule-strong: rgba(var(--accent-rgb), 0.58);
   --shadow-card:
     0 18px 52px rgba(0, 0, 0, 0.38),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
@@ -835,7 +841,7 @@ watch(orders, (nextOrders) => {
 .context-menu__button:focus-visible {
   border-color: var(--accent);
   background:
-    linear-gradient(90deg, rgba(255, 31, 45, 0.22), rgba(255, 255, 255, 0.08)),
+    linear-gradient(90deg, rgba(var(--accent-rgb), 0.22), rgba(255, 255, 255, 0.08)),
     var(--paper-hover);
   color: var(--ink-bright);
 }
@@ -960,7 +966,7 @@ watch(orders, (nextOrders) => {
 .pokeball-submenu__item:focus-visible {
   border-color: var(--accent);
   background:
-    linear-gradient(90deg, rgba(255, 31, 45, 0.16), rgba(255, 255, 255, 0.06)),
+    linear-gradient(90deg, rgba(var(--accent-rgb), 0.16), rgba(255, 255, 255, 0.06)),
     var(--paper-hover);
   color: var(--ink-bright);
 }

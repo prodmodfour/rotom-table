@@ -276,6 +276,8 @@ export interface TrainerSheet {
 
   /** Optional URL of a portrait image to drop into the silhouette frame. */
   portraitUrl?: string
+  /** Optional per-trainer UI accent colour (`#rrggbb`). Defaults to Rotom red when omitted. */
+  accentColor?: string
 
   stats?: Partial<Record<TrainerStatKey, TrainerStatRow>>
   /** Legacy/manual Max HP. Renderer ignores this and derives Max HP from PTU formulas. */

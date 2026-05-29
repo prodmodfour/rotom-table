@@ -276,7 +276,7 @@ const loyaltyModel = computed({
 
 .pokedex-link {
   border: 1px solid color-mix(in srgb, var(--accent) 70%, var(--rule-soft));
-  background: rgba(255, 31, 45, 0.18);
+  background: rgba(var(--accent-rgb), 0.18);
   color: var(--ink-bright);
   font-weight: 800;
   text-decoration: none;
@@ -286,7 +286,7 @@ const loyaltyModel = computed({
 .pokedex-link:hover,
 .pokedex-link:focus-visible {
   border-color: var(--accent);
-  background: rgba(255, 31, 45, 0.28);
+  background: rgba(var(--accent-rgb), 0.28);
   color: var(--ink-bright);
 }
 

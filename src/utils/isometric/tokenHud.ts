@@ -9,6 +9,11 @@ import {
   hpTierForRatio,
 } from '~/utils/hpBarDisplay'
 import {
+  clearTrainerAccentCssVariables,
+  normalizeTrainerAccentColor,
+  setTrainerAccentCssVariables,
+} from '~/utils/trainerAccent'
+import {
   ELEVATION_BADGE_PIXELS_PER_METRE,
   TOKEN_STATUS_HEAD_GAP_EXTRA,
   TOKEN_STATUS_CSS_WIDTH_PX,
@@ -37,6 +42,7 @@ export const buildElevationBadge = (ghost = false) => {
 interface ElevationBadgeRenderState {
   visible: boolean
   textContent: string
+  accentColor: string
   x: number
   y: number
   z: number
@@ -51,6 +57,7 @@ const elevationBadgeRenderState = (badge: CSS3DSprite): ElevationBadgeRenderStat
   const maybeState = state as Partial<ElevationBadgeRenderState>
   return typeof maybeState.visible === 'boolean'
     && typeof maybeState.textContent === 'string'
+    && typeof maybeState.accentColor === 'string'
     && typeof maybeState.x === 'number'
     && typeof maybeState.y === 'number'
     && typeof maybeState.z === 'number'
@@ -74,6 +81,7 @@ const setElevationBadgeHidden = (badge: CSS3DSprite): boolean => {
   rememberElevationBadgeRenderState(badge, {
     visible: false,
     textContent: badge.element.textContent ?? '',
+    accentColor: previous?.accentColor ?? '',
     x: badge.position.x,
     y: badge.position.y,
     z: badge.position.z,
@@ -87,6 +95,7 @@ const sameElevationBadgeRenderState = (
 ): boolean => Boolean(previous
   && previous.visible === next.visible
   && previous.textContent === next.textContent
+  && previous.accentColor === next.accentColor
   && previous.x === next.x
   && previous.y === next.y
   && previous.z === next.z)
@@ -98,6 +107,7 @@ export const updateElevationBadge = ({
   elevation,
   groundLevelY,
   camera,
+  accentColor,
   show = true,
 }: {
   badge: CSS3DSprite
@@ -106,6 +116,7 @@ export const updateElevationBadge = ({
   elevation: number
   groundLevelY: number
   camera: THREE.Camera | null
+  accentColor?: string
   show?: boolean
 }): boolean => {
   const localY = mapSpecificY(elevation, groundLevelY)
@@ -114,9 +125,11 @@ export const updateElevationBadge = ({
   }
 
   const offset = getElevationBadgeOffset(center, base, camera)
+  const normalizedAccentColor = normalizeTrainerAccentColor(accentColor) ?? ''
   const nextState: ElevationBadgeRenderState = {
     visible: true,
     textContent: formatElevationDelta(localY),
+    accentColor: normalizedAccentColor,
     x: center.x + offset.x,
     y: center.y + 0.08,
     z: center.z + offset.z,
@@ -129,6 +142,11 @@ export const updateElevationBadge = ({
   badge.position.set(nextState.x, nextState.y, nextState.z)
   if (badge.element.textContent !== nextState.textContent) {
     badge.element.textContent = nextState.textContent
+  }
+  const badgeStyle = badge.element.style
+  if (badgeStyle) {
+    if (normalizedAccentColor) setTrainerAccentCssVariables(badgeStyle, normalizedAccentColor)
+    else clearTrainerAccentCssVariables(badgeStyle)
   }
   badge.visible = true
   rememberElevationBadgeRenderState(badge, nextState)
@@ -293,6 +311,7 @@ interface TokenStatusRenderState {
   conditionsKey: string
   tokenItemsKey: string
   activeTurn: boolean
+  accentColor: string
   x: number
   y: number
   z: number
@@ -317,6 +336,7 @@ const tokenStatusRenderState = (bar: CSS3DSprite): TokenStatusRenderState | null
     && typeof maybeState.conditionsKey === 'string'
     && typeof maybeState.tokenItemsKey === 'string'
     && typeof maybeState.activeTurn === 'boolean'
+    && typeof maybeState.accentColor === 'string'
     && typeof maybeState.x === 'number'
     && typeof maybeState.y === 'number'
     && typeof maybeState.z === 'number'
@@ -347,6 +367,7 @@ const sameTokenStatusRenderState = (
   && previous.conditionsKey === next.conditionsKey
   && previous.tokenItemsKey === next.tokenItemsKey
   && previous.activeTurn === next.activeTurn
+  && previous.accentColor === next.accentColor
   && previous.x === next.x
   && previous.y === next.y
   && previous.z === next.z)
@@ -370,6 +391,7 @@ const setTokenStatusHidden = (bar: CSS3DSprite): boolean => {
     conditionsKey: previous?.conditionsKey ?? '',
     tokenItemsKey: previous?.tokenItemsKey ?? '',
     activeTurn: previous?.activeTurn ?? false,
+    accentColor: previous?.accentColor ?? '',
     x: bar.position.x,
     y: bar.position.y,
     z: bar.position.z,
@@ -382,6 +404,7 @@ export const buildHpBar = (pokemon: SpawnedPokemon) => {
   wrapper.className = 'token-status'
   wrapper.setAttribute('aria-hidden', 'true')
   wrapper.style.pointerEvents = 'none'
+  if (pokemon.accentColor) setTrainerAccentCssVariables(wrapper.style, pokemon.accentColor)
 
   const turnChevron = document.createElement('div')
   turnChevron.className = 'token-status__turn-chevron'
@@ -453,6 +476,7 @@ export const updateHpBar = ({
   conditions,
   tokenItems,
   activeTurn,
+  accentColor,
   show = true,
 }: {
   bar: CSS3DSprite
@@ -467,6 +491,7 @@ export const updateHpBar = ({
   conditions: readonly string[]
   tokenItems: readonly string[]
   activeTurn: boolean
+  accentColor?: string
   show?: boolean
 }): boolean => {
   const hpMetrics = getHpBarDisplayMetrics({ currentHp, maxHp, fullMaxHp })
@@ -491,6 +516,7 @@ export const updateHpBar = ({
   const hpTier = hpTierForRatio(hpMetrics.currentRatio)
   const injuryBlocked = hpMetrics.blockedRatio > 0
   const title = injuryBlocked ? formatInjuryBlockTitle(injuries, hpMetrics.blockedRatio) : ''
+  const normalizedAccentColor = normalizeTrainerAccentColor(accentColor) ?? ''
   const nextState: TokenStatusRenderState = {
     visible: true,
     fillWidth,
@@ -504,6 +530,7 @@ export const updateHpBar = ({
     conditionsKey: tokenStatusConditionKey(conditions),
     tokenItemsKey: tokenStatusItemKey(tokenItems),
     activeTurn,
+    accentColor: normalizedAccentColor,
     x: center.x,
     y: center.y + spriteHeight + overlayHalfHeight + headGap,
     z: center.z,
@@ -546,6 +573,8 @@ export const updateHpBar = ({
       track.removeAttribute('title')
     }
   }
+  if (normalizedAccentColor) setTrainerAccentCssVariables(bar.element.style, normalizedAccentColor)
+  else clearTrainerAccentCssVariables(bar.element.style)
   updateTokenStatusLabel(bar.element, displayName, level)
   updateTokenConditions(bar.element, conditions)
   updateTokenItems(bar.element, tokenItems)

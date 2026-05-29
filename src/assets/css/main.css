@@ -45,10 +45,11 @@
   --rule:          rgba(255, 255, 255, 0.10);
   --rule-soft:     rgba(255, 255, 255, 0.18);
   --rule-strong:   rgba(255, 255, 255, 0.34);
-  --rule-active:   rgba(255, 31, 45, 0.68);
+  --rule-active:   rgba(var(--accent-rgb), 0.68);
 
   --accent:        var(--pokemon-red);
-  --accent-soft:   rgba(255, 31, 45, 0.16);
+  --accent-rgb:    255, 31, 45;
+  --accent-soft:   rgba(var(--accent-rgb), 0.16);
   --accent-muted:  var(--pokemon-red-dark);
 
   /* Keep semantic/gameplay colors readable and distinct. */
@@ -117,7 +118,7 @@ samp {
 }
 
 ::selection {
-  background: rgba(255, 31, 45, 0.35);
+  background: rgba(var(--accent-rgb), 0.35);
   color: var(--ink-bright);
 }
 
@@ -444,7 +445,7 @@ samp {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
   box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.42),
-    0 0 10px rgba(255, 31, 45, 0.35);
+    0 0 10px rgba(var(--accent-rgb), 0.35);
 }
 
 .move-automation-roll.is-rolling {
@@ -478,7 +479,7 @@ samp {
   color: var(--accent);
   box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.45),
-    0 0 16px rgba(255, 31, 45, 0.78);
+    0 0 16px rgba(var(--accent-rgb), 0.78);
 }
 
 @keyframes move-automation-d20-roll {
@@ -521,7 +522,7 @@ samp {
   line-height: 0.7;
   text-shadow:
     0 1px 1px rgba(0, 0, 0, 0.96),
-    0 0 6px rgba(255, 31, 45, 0.72);
+    0 0 6px rgba(var(--accent-rgb), 0.72);
   -webkit-text-stroke: 0.55px rgba(0, 0, 0, 0.82);
   paint-order: stroke fill;
 }

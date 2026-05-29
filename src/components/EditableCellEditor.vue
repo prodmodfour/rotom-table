@@ -137,7 +137,7 @@ defineExpose({ focusInput })
   background: var(--paper, #fff);
   padding: 0.1em 0.35em;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
 }
 
 .editable-cell__input--textarea {

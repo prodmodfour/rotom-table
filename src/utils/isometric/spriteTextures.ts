@@ -52,10 +52,10 @@ export const getSpriteHaloTexture = (): THREE.CanvasTexture => {
   if (!ctx) throw new Error('2d canvas context unavailable')
   const center = size / 2
   const gradient = ctx.createRadialGradient(center, center, 0, center, center, center)
-  gradient.addColorStop(0, 'rgba(255, 31, 45, 0.46)')
-  gradient.addColorStop(0.45, 'rgba(255, 31, 45, 0.22)')
-  gradient.addColorStop(0.82, 'rgba(255, 31, 45, 0.04)')
-  gradient.addColorStop(1, 'rgba(255, 31, 45, 0)')
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.46)')
+  gradient.addColorStop(0.45, 'rgba(255, 255, 255, 0.22)')
+  gradient.addColorStop(0.82, 'rgba(255, 255, 255, 0.04)')
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, size, size)
   const texture = new THREE.CanvasTexture(canvas)

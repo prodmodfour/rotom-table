@@ -155,8 +155,8 @@ const {
 }
 
 .editable-cell:hover:not(.editable-cell--readonly):not(.editable-cell--editing) {
-  background: rgba(255, 31, 45, 0.08);
-  box-shadow: inset 0 -1px 0 rgba(255, 31, 45, 0.45);
+  background: rgba(var(--accent-rgb), 0.08);
+  box-shadow: inset 0 -1px 0 rgba(var(--accent-rgb), 0.45);
 }
 
 .editable-cell--editing {

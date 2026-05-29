@@ -7,6 +7,11 @@ import type {
   MoveAutomationTargetHitChance,
 } from '~/types/moveAutomation'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
+import {
+  clearTrainerAccentCssVariables,
+  normalizeTrainerAccentColor,
+  setTrainerAccentCssVariables,
+} from '~/utils/trainerAccent'
 
 const RETICLE_CSS_SIZE_PX = 72
 const FEEDBACK_CSS_WIDTH_PX = 180
@@ -345,6 +350,7 @@ const feedbackY = (renderObject: PokemonRenderObject): number =>
 interface MoveAutomationFeedbackRenderState {
   visible: boolean
   feedbackKey: string
+  accentColor: string
   x: number
   y: number
   z: number
@@ -380,6 +386,7 @@ const moveAutomationFeedbackRenderState = (
   const maybeState = state as Partial<MoveAutomationFeedbackRenderState>
   return typeof maybeState.visible === 'boolean'
     && typeof maybeState.feedbackKey === 'string'
+    && typeof maybeState.accentColor === 'string'
     && typeof maybeState.x === 'number'
     && typeof maybeState.y === 'number'
     && typeof maybeState.z === 'number'
@@ -400,6 +407,7 @@ const sameMoveAutomationFeedbackRenderState = (
 ): boolean => Boolean(previous
   && previous.visible === next.visible
   && previous.feedbackKey === next.feedbackKey
+  && previous.accentColor === next.accentColor
   && previous.x === next.x
   && previous.y === next.y
   && previous.z === next.z)
@@ -413,6 +421,7 @@ const setMoveAutomationFeedbackHidden = (sprite: CSS3DSprite): boolean => {
   rememberMoveAutomationFeedbackRenderState(sprite, {
     visible: false,
     feedbackKey: previous?.feedbackKey ?? '',
+    accentColor: previous?.accentColor ?? '',
     x: sprite.position.x,
     y: sprite.position.y,
     z: sprite.position.z,
@@ -540,9 +549,11 @@ export const createMoveAutomationFeedbackRenderer = (scene: THREE.Scene) => {
     const visible = Boolean(options.show && feedback && renderObject)
     if (!visible || !feedback || !renderObject) return setMoveAutomationFeedbackHidden(sprite)
 
+    const accentColor = normalizeTrainerAccentColor(renderObject.accentColor) ?? ''
     const nextState: MoveAutomationFeedbackRenderState = {
       visible: true,
       feedbackKey: moveAutomationFeedbackKey(feedback),
+      accentColor,
       x: renderObject.currentCenter.x,
       y: feedbackY(renderObject),
       z: renderObject.currentCenter.z,
@@ -552,6 +563,8 @@ export const createMoveAutomationFeedbackRenderer = (scene: THREE.Scene) => {
       return false
     }
 
+    if (accentColor) setTrainerAccentCssVariables(sprite.element.style, accentColor)
+    else clearTrainerAccentCssVariables(sprite.element.style)
     updateFeedbackElement(sprite.element, feedback)
     sprite.position.set(nextState.x, nextState.y, nextState.z)
     sprite.visible = true

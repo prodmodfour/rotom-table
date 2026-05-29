@@ -36,6 +36,7 @@ export interface PokemonRenderSpawnState {
   combatStages: CombatStageMap
   conditions: string[]
   tokenItems: string[]
+  accentColor?: string
 }
 
 export interface PokemonPickDimensions {
@@ -89,6 +90,7 @@ export const pokemonRenderSpawnState = (pokemon: SpawnedPokemon): PokemonRenderS
     combatStages: normalizeCombatStages(pokemon.combatStages),
     conditions: normalizeConditionNames(pokemon.conditions),
     tokenItems: [...pokemon.tokenItems],
+    accentColor: pokemon.accentColor,
   }
 }
 

@@ -11,6 +11,7 @@ import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 import type { TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
+import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 
 const STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
 const TRAINER_STAT_KEYS: TrainerStatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
@@ -78,6 +79,9 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
 
 export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   if (typeof sheet.player !== 'boolean') sheet.player = false
+  const accentColor = normalizeTrainerAccentColor(sheet.accentColor)
+  if (accentColor) sheet.accentColor = accentColor
+  else delete sheet.accentColor
 
   const stats = ensureObj<NonNullable<TrainerSheet['stats']>>(sheet, 'stats')
   for (const key of TRAINER_STAT_KEYS) {

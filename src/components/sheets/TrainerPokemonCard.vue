@@ -125,7 +125,7 @@ const startDrag = (event: DragEvent) => {
 .pokemon-link-card--team {
   grid-template-columns: 18px 50px minmax(0, 1fr);
   padding: 0.5rem;
-  background: linear-gradient(135deg, rgba(255, 31, 45, 0.1), var(--paper));
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.1), var(--paper));
 }
 
 .pokemon-link-card__drag-handle {
@@ -257,8 +257,8 @@ const startDrag = (event: DragEvent) => {
 }
 
 .pokemon-link-card__action--danger:hover:not(:disabled) {
-  border-color: rgba(255, 31, 45, 0.62);
+  border-color: rgba(var(--accent-rgb), 0.62);
   color: var(--bad);
-  background: rgba(255, 31, 45, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 </style>

@@ -154,6 +154,7 @@ import {
   toIsometricRenderSchedulerFrameResult,
 } from '~/utils/isometric/renderLoop'
 import { createCss3DRenderDirtyTracker } from '~/utils/isometric/css3DRenderDirtyTracker'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 
 export type { BuildTool } from '#shared/mapEditor'
 
@@ -366,6 +367,11 @@ const {
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
+const moveTargetingAccentStyle = computed(() => {
+  const userId = props.moveAutomationTargeting?.userId
+  const accentColor = userId ? props.pokemons.find((pokemon) => pokemon.id === userId)?.accentColor : null
+  return accentColor ? trainerAccentCssVariables(accentColor) : undefined
+})
 
 const emptyMovementPreview = (): PreviewState => ({ position: null, reachable: false, pathLength: 0 })
 const movementPreviewState = ref<PreviewState>(emptyMovementPreview())
@@ -1663,7 +1669,12 @@ useIsometricSceneWatchers({
       </small>
     </div>
 
-    <div v-if="props.moveAutomationTargeting" class="move-targeting-hud" @contextmenu.prevent>
+    <div
+      v-if="props.moveAutomationTargeting"
+      class="move-targeting-hud"
+      :style="moveTargetingAccentStyle"
+      @contextmenu.prevent
+    >
       <div class="move-targeting-hud__copy">
         <strong>{{ props.moveAutomationTargeting.moveName }}</strong>
         <template v-if="props.moveAutomationTargeting.mode === 'area-confirmation'">

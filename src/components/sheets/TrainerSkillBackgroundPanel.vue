@@ -122,7 +122,7 @@ defineProps<{
 .bg-tag.novice {
   background: var(--accent-soft);
   color: var(--accent);
-  border-color: rgba(255, 31, 45, 0.4);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .bg-tag.pathetic {

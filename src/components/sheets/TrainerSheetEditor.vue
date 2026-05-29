@@ -8,6 +8,7 @@ import { useTrainerPortraitPicker } from '~/composables/sheets/useTrainerPortrai
 import { useTrainerSheetCsvFields } from '~/composables/sheets/useTrainerSheetCsvFields'
 import { useTrainerSheetRowActions } from '~/composables/sheets/useTrainerSheetRowActions'
 import { useTrainerSheetTabs } from '~/composables/sheets/useTrainerSheetTabs'
+import { normalizeTrainerAccentColor, trainerAccentCssVariables } from '~/utils/trainerAccent'
 import type {
   SkillRank,
   TrainerSheet,
@@ -22,6 +23,12 @@ const props = defineProps<{
 
 const sheet = computed<TrainerSheet>(() => props.sheet)
 const canManagePlayerAccess = computed(() => props.capabilities.canManagePlayerAccess)
+const trainerAccentStyle = computed(() => trainerAccentCssVariables(sheet.value.accentColor))
+const setTrainerAccentColor = (value: unknown) => {
+  const accentColor = normalizeTrainerAccentColor(value)
+  if (accentColor) sheet.value.accentColor = accentColor
+  else delete sheet.value.accentColor
+}
 const SKILL_KEYS: TrainerSkillKey[] = TRAINER_SKILL_ORDER.map(([key]) => key)
 const RANK_OPTIONS: SkillRank[] = ['Pathetic', 'Untrained', 'Novice', 'Adept', 'Expert', 'Master']
 
@@ -96,7 +103,7 @@ const {
 </script>
 
 <template>
-  <article class="sheet-card">
+  <article class="sheet-card" :style="trainerAccentStyle">
     <!-- ===== Identity strip ===== -->
     <TrainerIdentityPanel
       :sheet="sheet"
@@ -108,6 +115,7 @@ const {
       @open-portrait-picker="openPortraitPicker"
       @clear-portrait="clearPortrait"
       @set-current-hp="setCurrentHp"
+      @set-accent-color="setTrainerAccentColor"
     />
 
     <SheetTabNav
@@ -229,6 +237,7 @@ const {
     v-model:query="portraitQuery"
     :options="filteredPortraitOptions"
     :selected-url="sheet?.portraitUrl"
+    :style="trainerAccentStyle"
     @close="closePortraitPicker"
     @select="selectPortrait"
   />

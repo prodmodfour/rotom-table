@@ -4,17 +4,20 @@ import { usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDeri
 import { usePokemonSheetCsvFields } from '~/composables/sheets/usePokemonSheetCsvFields'
 import { usePokemonSheetRowActions } from '~/composables/sheets/usePokemonSheetRowActions'
 import { usePokemonNatureControls } from '~/composables/sheets/usePokemonNatureControls'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetEditorCapabilities } from '~/utils/sheetEditorCapabilities'
 
 const props = defineProps<{
   sheet: CharacterSheet
   capabilities: SheetEditorCapabilities
+  accentColor?: string | null
 }>()
 
 const sheet = computed<CharacterSheet>(() => props.sheet)
 const canEditSheet = computed(() => props.capabilities.canEditSheet)
 const canManagePlayerAccess = computed(() => props.capabilities.canManagePlayerAccess)
+const pokemonAccentStyle = computed(() => props.accentColor ? trainerAccentCssVariables(props.accentColor) : undefined)
 
 const {
   spriteUrl,
@@ -83,110 +86,118 @@ const {
 </script>
 
 <template>
-  <!-- ============ Identity strip ============ -->
-  <PokemonIdentityPanel
-    v-model:egg-groups-csv="eggGroupsAsCsv"
-    :sheet="sheet"
-    :sprite-url="spriteUrl"
-    :sheet-types="sheetTypes"
-    :level-from-experience="levelFromExperience"
-    :level-is-experience-derived="levelIsExperienceDerived"
-    :experience-to-next-level="experienceToNextLevel"
-    :gender-options="genderOptions"
-    :nature-options="natureOptions"
-    :nature-plus-display="naturePlusDisplay"
-    :nature-minus-display="natureMinusDisplay"
-    :can-edit-sheet="canEditSheet"
-    :can-manage-player-access="canManagePlayerAccess"
-  />
-
-  <!-- ============ Stats + Combat strip ============ -->
-  <div class="row two-col">
-    <PokemonStatsPanel
-      :stats="stats"
-      :stat-points-left="statPointsLeft"
-      :stat-points-spent="statPointsSpent"
-      :stat-points-budget="statPointsBudget"
-      :base-relation-violations="baseRelationViolations"
-      :visible-base-relation-violations="visibleBaseRelationViolations"
-      :remaining-base-relation-violation-count="remainingBaseRelationViolationCount"
-      @set-stat="setStat"
-    />
-
-    <PokemonCombatPanel
+  <article class="pokemon-sheet" :style="pokemonAccentStyle">
+    <!-- ============ Identity strip ============ -->
+    <PokemonIdentityPanel
+      v-model:egg-groups-csv="eggGroupsAsCsv"
       :sheet="sheet"
-      :current-hp="currentHp"
-      :max-hp="maxHp"
-      :full-max-hp="fullMaxHp"
-      :tick-value="tickValue"
-      :hp-thresholds="hpThresholds"
-      :speed-total="speedTotal"
-      :initiative="initiative"
-      :initiative-training-bonus="initiativeTrainingBonus"
-      :pokemon-accuracy="pokemonAccuracy"
-      :pokemon-evasion="pokemonEvasion"
-      :condition-effects="conditionEffects"
-      @set-current-hp="setCurrentHp"
-      @set-evasion-bonus="setEvasionBonus"
-      @set-accuracy-stage="setAccuracyStage"
+      :sprite-url="spriteUrl"
+      :sheet-types="sheetTypes"
+      :level-from-experience="levelFromExperience"
+      :level-is-experience-derived="levelIsExperienceDerived"
+      :experience-to-next-level="experienceToNextLevel"
+      :gender-options="genderOptions"
+      :nature-options="natureOptions"
+      :nature-plus-display="naturePlusDisplay"
+      :nature-minus-display="natureMinusDisplay"
+      :can-edit-sheet="canEditSheet"
+      :can-manage-player-access="canManagePlayerAccess"
     />
-  </div>
 
-  <!-- ============ Items / Weapon ============ -->
-  <PokemonEquipmentPanel
-    :sheet="sheet"
-    :held-item-name="heldItemName"
-    :held-item-reference="heldItemReference"
-    @set-held-item-name="setHeldItemName"
-  />
+    <!-- ============ Stats + Combat strip ============ -->
+    <div class="row two-col">
+      <PokemonStatsPanel
+        :stats="stats"
+        :stat-points-left="statPointsLeft"
+        :stat-points-spent="statPointsSpent"
+        :stat-points-budget="statPointsBudget"
+        :base-relation-violations="baseRelationViolations"
+        :visible-base-relation-violations="visibleBaseRelationViolations"
+        :remaining-base-relation-violation-count="remainingBaseRelationViolationCount"
+        @set-stat="setStat"
+      />
 
-  <!-- ============ Tutor pts + Active Training Feature + Skill bg + Inherited ============ -->
-  <PokemonTrainingPanel
-    v-model:skill-bg-raised-csv="skillBgRaisedCsv"
-    v-model:skill-bg-lowered-csv="skillBgLoweredCsv"
-    :sheet="sheet"
-    :tutor-points-left="tutorPointsLeft"
-    @set-inherited-move="setInheritedMove"
-  />
+      <PokemonCombatPanel
+        :sheet="sheet"
+        :current-hp="currentHp"
+        :max-hp="maxHp"
+        :full-max-hp="fullMaxHp"
+        :tick-value="tickValue"
+        :hp-thresholds="hpThresholds"
+        :speed-total="speedTotal"
+        :initiative="initiative"
+        :initiative-training-bonus="initiativeTrainingBonus"
+        :pokemon-accuracy="pokemonAccuracy"
+        :pokemon-evasion="pokemonEvasion"
+        :condition-effects="conditionEffects"
+        @set-current-hp="setCurrentHp"
+        @set-evasion-bonus="setEvasionBonus"
+        @set-accuracy-stage="setAccuracyStage"
+      />
+    </div>
 
-  <!-- ============ Movelist ============ -->
-  <PokemonMovesPanel
-    :move-rows="moveRows"
-    @add-move="addMove"
-    @remove-move="removeMove"
-    @reorder-move="reorderMove"
-  />
+    <!-- ============ Items / Weapon ============ -->
+    <PokemonEquipmentPanel
+      :sheet="sheet"
+      :held-item-name="heldItemName"
+      :held-item-reference="heldItemReference"
+      @set-held-item-name="setHeldItemName"
+    />
 
-  <!-- ============ Type Effectiveness ============ -->
-  <PokemonTypeEffectivenessPanel
-    :rows="typeEffectivenessRows"
-  />
+    <!-- ============ Tutor pts + Active Training Feature + Skill bg + Inherited ============ -->
+    <PokemonTrainingPanel
+      v-model:skill-bg-raised-csv="skillBgRaisedCsv"
+      v-model:skill-bg-lowered-csv="skillBgLoweredCsv"
+      :sheet="sheet"
+      :tutor-points-left="tutorPointsLeft"
+      @set-inherited-move="setInheritedMove"
+    />
 
-  <!-- ============ Capabilities ============ -->
-  <PokemonCapabilitiesPanel
-    v-model:other-caps-csv="otherCapsCsv"
-    :sheet="sheet"
-  />
+    <!-- ============ Movelist ============ -->
+    <PokemonMovesPanel
+      :move-rows="moveRows"
+      @add-move="addMove"
+      @remove-move="removeMove"
+      @reorder-move="reorderMove"
+    />
 
-  <!-- ============ Abilities + Edges ============ -->
-  <PokemonAbilitiesEdgesPanel
-    :sheet="sheet"
-    :ability-rows="abilityRows"
-    @add-ability="addAbility"
-    @remove-ability="removeAbility"
-    @toggle-ability-activation="toggleAbilityActivation"
-    @add-edge="addEdge"
-    @remove-edge="removeEdge"
-  />
+    <!-- ============ Type Effectiveness ============ -->
+    <PokemonTypeEffectivenessPanel
+      :rows="typeEffectivenessRows"
+    />
 
-  <!-- ============ Pokémon Skills ============ -->
-  <PokemonSkillsPanel
-    :sheet="sheet"
-    :skills="skills"
-  />
+    <!-- ============ Capabilities ============ -->
+    <PokemonCapabilitiesPanel
+      v-model:other-caps-csv="otherCapsCsv"
+      :sheet="sheet"
+    />
+
+    <!-- ============ Abilities + Edges ============ -->
+    <PokemonAbilitiesEdgesPanel
+      :sheet="sheet"
+      :ability-rows="abilityRows"
+      @add-ability="addAbility"
+      @remove-ability="removeAbility"
+      @toggle-ability-activation="toggleAbilityActivation"
+      @add-edge="addEdge"
+      @remove-edge="removeEdge"
+    />
+
+    <!-- ============ Pokémon Skills ============ -->
+    <PokemonSkillsPanel
+      :sheet="sheet"
+      :skills="skills"
+    />
+  </article>
 </template>
 
 <style scoped>
+.pokemon-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
 .row {
   display: grid;
   gap: 0.85rem;

@@ -14,11 +14,12 @@ export interface HpDialogState {
   maxHp: number
   fullMaxHp?: number
   injuries?: number
+  accentColor?: string
   mode: HpDialogMode
   amount: string
 }
 
-type HpDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'currentHp' | 'maxHp' | 'fullMaxHp' | 'injuries'>
+type HpDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'currentHp' | 'maxHp' | 'fullMaxHp' | 'injuries' | 'accentColor'>
 
 const parsePositiveInteger = (value: string): number => {
   const parsed = Number.parseInt(value, 10)
@@ -40,6 +41,7 @@ export const createHpDialogState = (pokemon: HpDialogPokemon): HpDialogState => 
   currentHp: pokemon.currentHp,
   maxHp: pokemon.maxHp,
   ...maybeHpMetadata(pokemon),
+  ...(pokemon.accentColor ? { accentColor: pokemon.accentColor } : {}),
   mode: 'damage',
   amount: '',
 })
@@ -92,4 +94,5 @@ export const updateHpDialogFromPokemon = (
   currentHp: pokemon.currentHp,
   maxHp: pokemon.maxHp,
   ...maybeHpMetadata(pokemon),
+  accentColor: pokemon.accentColor,
 })

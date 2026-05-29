@@ -219,6 +219,8 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   sheetSlug: string
   /** Display level copied from the source sheet. */
   level: number
+  /** Per-trainer accent colour copied from the source trainer, or the trainer linked to this Pokémon. */
+  accentColor?: string
   /** Gender/sex copied from the source sheet, used by attraction-based automation. */
   gender?: string
   /** PTU Loyalty rank copied from the source Pokémon sheet, used by Return and Frustration. */

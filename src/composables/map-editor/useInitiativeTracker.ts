@@ -56,6 +56,8 @@ export interface InitiativeRow {
   initiativeItemBonus: number
   /** Initiative bonus supplied by active Training Features such as Agility Training. */
   initiativeTrainingBonus: number
+  /** Per-trainer accent colour for this token, if one is assigned. */
+  accentColor?: string
   /** Final initiative after applying conditions such as Paralysis and Flinch. */
   initiativeScore: number
 }
@@ -199,6 +201,7 @@ export const useInitiativeTracker = ({
         baseInitiative,
         initiativeItemBonus,
         initiativeTrainingBonus,
+        ...(pokemon.accentColor ? { accentColor: pokemon.accentColor } : {}),
         initiativeScore: conditionAdjustedInitiative(
           initiative ?? baseInitiative,
           pokemon.conditions,

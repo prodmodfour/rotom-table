@@ -46,6 +46,7 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     material: spriteMaterial,
     halo,
     haloMaterial,
+    haloColor: 0xff1f2d,
     texture: null,
     releaseTexture: null,
     assetKey: null,

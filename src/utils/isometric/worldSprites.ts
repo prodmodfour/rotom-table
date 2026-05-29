@@ -27,6 +27,7 @@ import {
   WORLD_SPRITE_HALO_COLOR,
   WORLD_SPRITE_HALO_MIN_ALPHA,
 } from '~/utils/isometric/worldSpriteLighting'
+import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 
 export {
   WORLD_SPRITE_HALO_MAX_ALPHA,
@@ -36,6 +37,11 @@ export {
 export const nowMs = () => (typeof performance === 'undefined' ? Date.now() : performance.now())
 
 export const applyAnimationFrame = applyWorldSpriteAnimationFrame
+
+export const worldSpriteHaloColorForAccent = (accentColor: unknown): number => {
+  const normalized = normalizeTrainerAccentColor(accentColor)
+  return normalized ? Number.parseInt(normalized.slice(1), 16) : WORLD_SPRITE_HALO_COLOR
+}
 
 export type WorldSpriteTextureLoadCompleteCallback = () => void
 
@@ -145,7 +151,7 @@ export const updateWorldSpriteLighting = (
   } else {
     state.material.color.setScalar(style.materialColor.value)
   }
-  state.haloMaterial.color.setHex(style.haloColor)
+  state.haloMaterial.color.setHex(!state.ghost && !state.invalid ? state.haloColor : style.haloColor)
   state.haloMaterial.opacity = style.haloOpacity
 }
 
@@ -204,6 +210,7 @@ export const buildWorldSprite = (
     material,
     halo,
     haloMaterial,
+    haloColor: worldSpriteHaloColorForAccent(pokemon.accentColor),
     texture: null,
     releaseTexture: null,
     assetKey: null,

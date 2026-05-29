@@ -305,14 +305,14 @@ onBeforeUnmount(() => {
   padding: 0.1rem 0.45rem;
   text-align: left;
   cursor: pointer;
-  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.12);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.12);
 }
 
 .held-item-select__trigger:hover,
 .held-item-select__trigger:focus-visible {
   background: var(--paper-hover, #1b2028);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.2);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 }
 
 .held-item-select__trigger--empty {
@@ -375,7 +375,7 @@ onBeforeUnmount(() => {
 
 .held-item-select__search:focus {
   border-color: var(--accent, #ff1f2d);
-  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.14);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.14);
 }
 
 .held-item-select__list {
@@ -406,8 +406,8 @@ onBeforeUnmount(() => {
 }
 
 .held-item-select__option--selected {
-  border-color: rgba(255, 31, 45, 0.55);
-  background: rgba(255, 31, 45, 0.09);
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.09);
 }
 
 .held-item-select__option--empty .held-item-select__option-label {

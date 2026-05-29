@@ -16,6 +16,7 @@ import {
 } from '~/utils/sheetSpawn'
 import { sheetAbilityNames } from '~/utils/sheetAbilities'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
+import { normalizeTrainerAccentColor, trainerAccentColorForPokemonSlug } from '~/utils/trainerAccent'
 import {
   tokenFacingForPlacement,
   tokenFacingStoresLegacyTurned,
@@ -51,6 +52,7 @@ export const placementToSpawned = (
     if (!catalog) return null
     const hp = pokemonHpSnapshot(sheet)
     const abilityNames = pokemonTokenAbilityNames(sheet)
+    const accentColor = trainerAccentColorForPokemonSlug(sheets.trainer.values(), sheet.slug)
     return {
       ...catalog,
       species: sheet.nickname,
@@ -61,6 +63,7 @@ export const placementToSpawned = (
       sheetKind: 'pokemon',
       sheetSlug: sheet.slug,
       level: sheet.level,
+      ...(accentColor ? { accentColor } : {}),
       ...(sheet.gender ? { gender: sheet.gender } : {}),
       ...(hp.loyalty != null ? { loyalty: hp.loyalty } : {}),
       currentHp: hp.currentHp,
@@ -92,6 +95,7 @@ export const placementToSpawned = (
   if (!catalog) return null
   const hp = trainerHpSnapshot(sheet)
   const abilityNames = trainerTokenAbilityNames(sheet)
+  const accentColor = normalizeTrainerAccentColor(sheet.accentColor)
   return {
     ...catalog,
     species: sheet.name,
@@ -102,6 +106,7 @@ export const placementToSpawned = (
     sheetKind: 'trainer',
     sheetSlug: sheet.slug,
     level: sheet.level,
+    ...(accentColor ? { accentColor } : {}),
     ...(sheet.sex ? { gender: sheet.sex } : {}),
     currentHp: hp.currentHp,
     maxHp: hp.maxHp,

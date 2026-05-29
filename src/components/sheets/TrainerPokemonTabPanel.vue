@@ -287,7 +287,7 @@ const unlink = (slug: string) => {
 .pokemon-box-panel.is-pokemon-drop-target,
 .pokemon-team-strip.is-pokemon-drop-target {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18), 0 12px 28px rgba(5, 6, 8, 0.28);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18), 0 12px 28px rgba(5, 6, 8, 0.28);
 }
 
 .pokemon-panel-heading,
@@ -350,7 +350,7 @@ const unlink = (slug: string) => {
 
 .pokemon-team-strip {
   background:
-    linear-gradient(180deg, rgba(255, 31, 45, 0.08), transparent 40%),
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.08), transparent 40%),
     var(--paper-inset);
 }
 

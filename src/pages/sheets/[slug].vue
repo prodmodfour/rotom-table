@@ -6,6 +6,7 @@ import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetR
 import { useSheetRenameUrlSync } from '~/composables/sheets/useSheetRenameUrlSync'
 import { syncNatureModForSheet } from '~/composables/sheets/usePokemonNatureControls'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
+import { trainerAccentColorForPokemonSheet } from '~/utils/trainerAccent'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { routeSlugParam } from '~/utils/routeParams'
 import {
@@ -85,6 +86,11 @@ const sheetPathLabel = computed(() => {
   if (!sheet.value) return null
   return sheet.value.nickname || sheet.value.slug
 })
+const { trainerBySlug } = useLiveSheets()
+const linkedTrainerAccentColor = computed(() => trainerAccentColorForPokemonSheet(
+  trainerBySlug.value.values(),
+  sheet.value,
+))
 
 useHead(() => ({
   title: sheet.value
@@ -106,6 +112,7 @@ useHead(() => ({
       v-if="sheet"
       :sheet="sheet"
       :capabilities="editorCapabilities"
+      :accent-color="linkedTrainerAccentColor"
     />
 
     <template #not-found>

@@ -143,8 +143,8 @@ const onKeydown = (event: KeyboardEvent) => {
 
 .inventory-name-cell__display:hover,
 .inventory-name-cell__display:focus-visible {
-  background: rgba(255, 31, 45, 0.08);
-  box-shadow: inset 0 -1px 0 rgba(255, 31, 45, 0.45);
+  background: rgba(var(--accent-rgb), 0.08);
+  box-shadow: inset 0 -1px 0 rgba(var(--accent-rgb), 0.45);
   outline: none;
 }
 
@@ -181,6 +181,6 @@ const onKeydown = (event: KeyboardEvent) => {
   padding: 0.1em 0.35em;
   font: inherit;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
 }
 </style>

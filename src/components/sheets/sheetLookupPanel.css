@@ -102,7 +102,7 @@
 .move-row--drag-over {
   outline: 1px dashed var(--accent);
   outline-offset: -3px;
-  background: rgba(255, 31, 45, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .move-reorder-heading,
@@ -138,7 +138,7 @@
 .move-drag-handle:hover,
 .move-drag-handle:focus-visible {
   border-color: var(--accent);
-  background: rgba(255, 31, 45, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
   color: var(--accent);
   outline: none;
 }

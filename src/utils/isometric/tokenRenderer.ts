@@ -32,6 +32,7 @@ import {
   setWorldSpriteSize,
   updateSpriteFacing,
   updateWorldSpriteLighting,
+  worldSpriteHaloColorForAccent,
 } from '~/utils/isometric/worldSprites'
 
 export type ShadowSurfaceResolver = (
@@ -371,6 +372,7 @@ export const createPokemonRenderObject = (
     combatStages: spawnState.combatStages,
     conditions: spawnState.conditions,
     tokenItems: spawnState.tokenItems,
+    accentColor: spawnState.accentColor,
     liftFactor: 0,
     liftTarget: 0,
   }
@@ -403,6 +405,8 @@ export const updatePokemonRenderObjectFromSpawn = (
   renderObject.combatStages = spawnState.combatStages
   renderObject.conditions = spawnState.conditions
   renderObject.tokenItems = spawnState.tokenItems
+  renderObject.accentColor = spawnState.accentColor
+  renderObject.spriteState.haloColor = worldSpriteHaloColorForAccent(spawnState.accentColor)
 }
 
 export const applyPokemonRenderObjectPosition = (
@@ -456,6 +460,7 @@ export const applyPokemonRenderObjectPosition = (
     elevation: renderObject.elevation,
     groundLevelY: options.groundLevelY,
     camera: options.camera,
+    accentColor: renderObject.accentColor,
     show: options.hoveredPokemonId === renderObject.id && options.layers.tokens,
   }) || cssHudChanged
   updateTokenCombatStageGlass({
@@ -480,6 +485,7 @@ export const applyPokemonRenderObjectPosition = (
     conditions: renderObject.conditions,
     tokenItems: renderObject.tokenItems,
     activeTurn: options.activeTurnId === renderObject.id,
+    accentColor: renderObject.accentColor,
     show: options.layers.tokens,
   }) || cssHudChanged
 

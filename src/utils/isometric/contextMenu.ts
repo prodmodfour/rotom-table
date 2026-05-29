@@ -11,6 +11,7 @@ export interface TokenContextMenuState extends TokenContextMenuCapabilities {
   id: string
   x: number
   y: number
+  accentColor?: string
   canSendOut?: boolean
 }
 
@@ -106,6 +107,7 @@ export const createTokenContextMenuState = (options: {
   return {
     id: options.pokemon.id,
     ...capabilities,
+    ...(options.pokemon.accentColor ? { accentColor: options.pokemon.accentColor } : {}),
     ...(options.canSendOut ? { canSendOut: true } : {}),
     ...getTokenContextMenuPosition({
       ...capabilities,

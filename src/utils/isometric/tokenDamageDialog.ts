@@ -27,6 +27,7 @@ export interface DamageDialogState {
   maxHp: number
   fullMaxHp?: number
   injuries?: number
+  accentColor?: string
   def: number
   sdef: number
   defenderTypes: string[]
@@ -43,7 +44,7 @@ export interface DamageDialogState {
 
 type DamageDialogPokemon = Pick<
   SpawnedPokemon,
-  'id' | 'species' | 'currentHp' | 'maxHp' | 'fullMaxHp' | 'injuries' | 'def' | 'sdef' | 'defenderTypes' | 'defenderCapabilities' | 'abilityNames'
+  'id' | 'species' | 'currentHp' | 'maxHp' | 'fullMaxHp' | 'injuries' | 'accentColor' | 'def' | 'sdef' | 'defenderTypes' | 'defenderCapabilities' | 'abilityNames'
 >
 
 type DamageDialogAttacker = Pick<SpawnedPokemon, 'id' | 'species' | 'atk' | 'satk'>
@@ -70,6 +71,7 @@ export const createDamageDialogState = (pokemon: DamageDialogPokemon): DamageDia
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
     ...maybeHpMetadata(pokemon),
+    ...(pokemon.accentColor ? { accentColor: pokemon.accentColor } : {}),
     def: pokemon.def,
     sdef: pokemon.sdef,
     defenderTypes: [...pokemon.defenderTypes],
@@ -207,6 +209,7 @@ export const updateDamageDialogFromPokemon = (
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
     ...maybeHpMetadata(pokemon),
+    accentColor: pokemon.accentColor,
     def: pokemon.def,
     sdef: pokemon.sdef,
     defenderTypes: [...pokemon.defenderTypes],

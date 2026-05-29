@@ -12,6 +12,7 @@ export interface WorldSpriteState {
   material: THREE.SpriteMaterial
   halo: THREE.Sprite
   haloMaterial: THREE.SpriteMaterial
+  haloColor: number
   texture: THREE.Texture | null
   releaseTexture: (() => void) | null
   assetKey: string | null
@@ -70,6 +71,7 @@ export interface PokemonRenderObject {
   combatStages: CombatStageMap
   conditions: string[]
   tokenItems: string[]
+  accentColor?: string
   /** Eased 0→1 selection-lift factor; target flips on selection state. */
   liftFactor: number
   liftTarget: number

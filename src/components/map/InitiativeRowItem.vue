@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatCombatStage } from '~/utils/combatStageStats'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import InitiativeScoreEditor from '~/components/map/InitiativeScoreEditor.vue'
 import InitiativeTokenSprite from '~/components/map/InitiativeTokenSprite.vue'
 import InitiativeVitals from '~/components/map/InitiativeVitals.vue'
@@ -23,6 +24,7 @@ const emit = defineEmits<{
 
 const isActive = computed(() => props.activeId === props.entry.id)
 const isSelected = computed(() => props.selectedId === props.entry.id)
+const rowAccentStyle = computed(() => props.entry.accentColor ? trainerAccentCssVariables(props.entry.accentColor) : undefined)
 const isFainted = computed(() => props.entry.currentHp <= 0)
 </script>
 
@@ -34,6 +36,7 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
       'is-selected': isSelected,
       'is-fainted': isFainted,
     }"
+    :style="rowAccentStyle"
   >
     <button
       type="button"
@@ -100,8 +103,8 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
 
 .initiative-row.is-active {
   border-color: var(--accent);
-  background: linear-gradient(135deg, rgba(255, 31, 45, 0.15), rgba(12, 14, 18, 0.92));
-  box-shadow: 0 0 0 1px rgba(255, 31, 45, 0.15);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.15), rgba(12, 14, 18, 0.92));
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.15);
 }
 
 .initiative-row.is-selected:not(.is-active) {
@@ -164,7 +167,7 @@ const isFainted = computed(() => props.entry.currentHp <= 0)
 }
 
 .initiative-row__body:focus-visible {
-  outline: 2px solid rgba(255, 31, 45, 0.35);
+  outline: 2px solid rgba(var(--accent-rgb), 0.35);
   outline-offset: 3px;
 }
 

@@ -6,6 +6,7 @@ import { normalizeConditionNames } from '~/utils/statusConditions'
 export interface CombatStagesDialogState {
   id: string
   species: string
+  accentColor?: string
   originalStages: CombatStageMap
   stages: CombatStageMap
 }
@@ -13,12 +14,13 @@ export interface CombatStagesDialogState {
 export interface ConditionsDialogState {
   id: string
   species: string
+  accentColor?: string
   originalConditions: string[]
   conditions: string[]
 }
 
-type CombatDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'combatStages'>
-type ConditionsDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'conditions'>
+type CombatDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'combatStages' | 'accentColor'>
+type ConditionsDialogPokemon = Pick<SpawnedPokemon, 'id' | 'species' | 'conditions' | 'accentColor'>
 
 export const createCombatStagesDialogState = (
   pokemon: CombatDialogPokemon,
@@ -27,6 +29,7 @@ export const createCombatStagesDialogState = (
   return {
     id: pokemon.id,
     species: pokemon.species,
+    ...(pokemon.accentColor ? { accentColor: pokemon.accentColor } : {}),
     originalStages: { ...stages },
     stages: { ...stages },
   }
@@ -59,6 +62,7 @@ export const createConditionsDialogState = (
   return {
     id: pokemon.id,
     species: pokemon.species,
+    ...(pokemon.accentColor ? { accentColor: pokemon.accentColor } : {}),
     originalConditions: [...conditions],
     conditions: [...conditions],
   }
@@ -80,5 +84,6 @@ export const updateConditionsDialogFromPokemon = (
 ): ConditionsDialogState => ({
   ...dialog,
   species: pokemon.species,
+  accentColor: pokemon.accentColor,
   originalConditions: normalizeConditionNames(pokemon.conditions),
 })
