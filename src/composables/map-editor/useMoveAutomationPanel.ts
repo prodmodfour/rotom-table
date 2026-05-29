@@ -87,6 +87,7 @@ import type {
   MoveAutomationTargetingOverlayState,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
+import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -131,6 +132,12 @@ export interface UseMoveAutomationPanelOptions {
   applyMoveFieldEffect: (effect: MoveAutomationFieldEffectApply) => MaybePromise<void>
   placeHazard: (hazard: MapHazardV2) => MaybePromise<void>
   recordMoveUsage?: MoveUsageRecordHandler
+  /**
+   * Renderer-agnostic sink for transient move VFX requests owned by the map page.
+   * VFX integration tickets decide when to call it; the panel must not import
+   * Three.js renderer utilities or persist queued animation events.
+   */
+  enqueueMoveAnimations?: (events: readonly MoveAnimationEvent[]) => MaybePromise<unknown>
   onBeforeNonImmediateAction?: (event: MoveAutomationNonImmediateActionEvent) => void
   onRangedAttackOfOpportunity?: (event: MoveAutomationRangedAttackOfOpportunityEvent) => void
   now?: () => number

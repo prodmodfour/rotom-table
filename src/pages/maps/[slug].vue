@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
@@ -23,6 +23,7 @@ import {
 import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
+import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActionPanel'
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
@@ -114,6 +115,23 @@ interface MapScenePanelHandle {
 }
 
 const gridRef = ref<MapScenePanelHandle | null>(null)
+
+const {
+  activeMoveAnimations,
+  enqueueMoveAnimations,
+  clearMoveAnimations,
+} = useMoveAnimationQueue()
+
+watch(
+  () => routeSlugParam(route.params),
+  (nextSlug, previousSlug) => {
+    if (nextSlug !== previousSlug) clearMoveAnimations()
+  },
+)
+
+onBeforeUnmount(() => {
+  clearMoveAnimations()
+})
 
 if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
@@ -515,6 +533,7 @@ const {
   applyMoveFieldEffect: applyMoveFieldEffectFromScene,
   placeHazard: placeHazardFromScene,
   recordMoveUsage,
+  enqueueMoveAnimations,
   onBeforeNonImmediateAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
@@ -828,6 +847,7 @@ useMapDimensionReconciliation({
         :token-control-notice="tokenControlNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="actionAutomationFeedback"
+        :move-animations="activeMoveAnimations"
         :move-usage-error="sceneActionError"
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"

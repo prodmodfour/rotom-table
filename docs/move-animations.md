@@ -362,6 +362,12 @@ When the prop changes, the grid syncs the event list into the renderer with the 
 
 The prop remains a transient runtime bridge only. `MapSceneRenderer.vue` does not own, serialize, mutate, or persist animation events; it simply forwards caller-owned active events into the existing isometric grid scheduler path added by VFX-024.
 
+### Map page queue wiring for VFX-026
+
+`src/pages/maps/[slug].vue` now creates one `useMoveAnimationQueue()` instance for the mounted map page. Its `activeMoveAnimations` computed value is passed through `src/components/map/MapScenePanel.vue` into `MapSceneRenderer.vue`, then onward to `IsometricGrid.client.vue` and the scheduler-owned move VFX renderer. The page also passes the queue's `enqueueMoveAnimations` function into `useMoveAutomationPanel` through a renderer-agnostic typed option so later move automation tickets can request VFX without importing Three.js or renderer utilities.
+
+The queue remains page-local runtime state. The map page clears active move animations when the route map slug changes and during unmount/navigation cleanup, preventing stale events from following users between maps. These cleanup hooks do not create timers, persistence hooks, server payloads, gameplay mutations, or an independent animation loop.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

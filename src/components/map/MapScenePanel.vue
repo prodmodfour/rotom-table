@@ -28,6 +28,7 @@ import type {
   MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
+import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
@@ -75,6 +76,7 @@ const props = defineProps<{
   canDeleteTokens: boolean
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  moveAnimations?: readonly MoveAnimationEvent[]
   moveUsageError?: string | null
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
   cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
@@ -180,6 +182,7 @@ defineExpose({ focusPokemon })
         :token-pokeball-options-by-id="tokenPokeballOptionsById"
         :move-automation-targeting="moveAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
+        :move-animations="moveAnimations ?? []"
         :attack-of-opportunity-prompts="props.attackOfOpportunityPrompts ?? []"
         @select-pokemon="emit('select-pokemon', $event)"
         @move-pokemon="emit('move-pokemon', $event)"

@@ -63,7 +63,7 @@ defineProps<{
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
-  moveAnimations?: MoveAnimationEvent[]
+  moveAnimations?: readonly MoveAnimationEvent[]
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
