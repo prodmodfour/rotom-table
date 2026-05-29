@@ -392,6 +392,14 @@ This cleanup remains runtime-only. It does not clear or save map data, mutate to
 
 When the map route is opened in development with `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render`, `src/components/isometric/RenderMetricsOverlay.vue` now includes a **Move VFX** section. Use **Active VFX** and **Keeps scheduler active** to confirm whether transient move animations are responsible for continued `animation` frames; after effects complete, both should return to `0`/`no` and the idle scheduler should settle. The overlay samples this only behind the existing render-debug gate and does not alter visual output, persistence, move mechanics, renderer quality, or scheduling policy.
 
+### Projectile primitive for VFX-031
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the projectile placeholder with a lightweight visible primitive. Projectile events resolve and lock a start/end anchor when the renderer instance is created, using the user's chest anchor and the target's chest anchor or explicit grid-cell fallbacks. Locking endpoints keeps an in-flight projectile stable if another renderer update moves the target token before the projectile completes.
+
+The primitive attaches a small palette-coloured core sphere plus a translucent glow sphere to the event-owned lifecycle group, scales the radius from the available user/target token dimensions with a bounded default fallback, and advances position, pulse scale, and opacity from scheduler-provided frame time only. There is no projectile trail yet; VFX-032 owns that follow-up. Missing anchors fall back to the existing no-op instance so move resolution and renderer scheduling remain safe.
+
+Projectile geometry and materials are owned by the event instance and are disposed through the existing `disposeObject3D()` cleanup path when the event is removed, completes, or the map scene unmounts. The primitive adds no timers, no independent RAF loop, no persistence, no gameplay mutation, no renderer-quality reduction, and no new dependencies.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

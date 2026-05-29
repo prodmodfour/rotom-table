@@ -1,7 +1,9 @@
 import * as THREE from 'three'
-import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveProjectileAnimationEvent } from '~/types/moveAnimation'
+import { DEFAULT_MOVE_VFX_COLOR, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
-import { animationProgress } from './moveVfxTiming'
+import { MOVE_VFX_TOKEN_ANCHOR, resolveMoveVfxAnchorPair } from './moveVfxAnchors'
+import { animationProgress, clamp01, easeInOutCubic, pulse01 } from './moveVfxTiming'
 import { disposeObject3D } from './resourceDisposal'
 
 export interface MoveVfxRendererSyncContext {
@@ -70,6 +72,17 @@ export interface MoveVfxRenderer {
 
 const MOVE_VFX_GROUP_NAME = 'move-vfx-root'
 const MOVE_VFX_INSTANCE_GROUP_PREFIX = 'move-vfx-instance'
+const MOVE_VFX_PROJECTILE_CORE_NAME = 'move-vfx-projectile-core'
+const MOVE_VFX_PROJECTILE_GLOW_NAME = 'move-vfx-projectile-glow'
+const MOVE_VFX_PROJECTILE_RENDER_ORDER = 34
+const MOVE_VFX_PROJECTILE_MIN_RADIUS = 0.12
+const MOVE_VFX_PROJECTILE_DEFAULT_RADIUS = 0.16
+const MOVE_VFX_PROJECTILE_MAX_RADIUS = 0.36
+const MOVE_VFX_PROJECTILE_RADIUS_SCALE = 0.14
+const MOVE_VFX_PROJECTILE_FADE_IN_PROGRESS = 0.12
+const MOVE_VFX_PROJECTILE_FADE_OUT_START = 0.78
+
+const EMPTY_RENDER_OBJECTS = new Map<string, PokemonRenderObject>()
 
 interface MoveVfxInstance {
   readonly id: string
@@ -91,6 +104,90 @@ const normalizeOptions = (
   sceneOrOptions: THREE.Scene | MoveVfxRendererOptions,
 ): MoveVfxRendererOptions => (
   sceneOrOptions instanceof THREE.Scene ? { scene: sceneOrOptions } : sceneOrOptions
+)
+
+const clampNumber = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value))
+
+const finitePositiveNumber = (value: number | undefined): number | null => (
+  typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
+)
+
+const projectileRadiusForRenderObjects = (
+  userRenderObject: PokemonRenderObject | undefined,
+  targetRenderObject: PokemonRenderObject | undefined,
+): number => {
+  const dimensions = [
+    userRenderObject?.base,
+    userRenderObject?.width,
+    userRenderObject?.height,
+    userRenderObject?.clearance,
+    targetRenderObject?.base,
+    targetRenderObject?.width,
+    targetRenderObject?.height,
+    targetRenderObject?.clearance,
+  ].map(finitePositiveNumber).filter((value): value is number => value !== null)
+
+  if (!dimensions.length) return MOVE_VFX_PROJECTILE_DEFAULT_RADIUS
+
+  const tokenScale = Math.max(...dimensions)
+  return clampNumber(
+    tokenScale * MOVE_VFX_PROJECTILE_RADIUS_SCALE,
+    MOVE_VFX_PROJECTILE_MIN_RADIUS,
+    MOVE_VFX_PROJECTILE_MAX_RADIUS,
+  )
+}
+
+const createProjectileMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  toneMapped: false,
+})
+
+const createProjectileMesh = (
+  name: string,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), material)
+  mesh.name = name
+  mesh.renderOrder = MOVE_VFX_PROJECTILE_RENDER_ORDER
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const applyProjectileVisualState = (options: {
+  group: THREE.Group
+  core: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  glow: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  start: THREE.Vector3
+  end: THREE.Vector3
+  radius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const travelProgress = easeInOutCubic(progress)
+  const pulse = pulse01(progress)
+  const fadeIn = Math.max(0.35, clamp01(progress / MOVE_VFX_PROJECTILE_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_PROJECTILE_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_PROJECTILE_FADE_OUT_START))
+  const opacityMultiplier = Math.min(fadeIn, fadeOut)
+
+  options.group.position.lerpVectors(options.start, options.end, travelProgress)
+  options.core.scale.setScalar(options.radius * (0.95 + (pulse * 0.16)))
+  options.glow.scale.setScalar(options.radius * (1.85 + (pulse * 0.28)))
+  options.core.material.opacity = 0.95 * opacityMultiplier
+  options.glow.material.opacity = 0.32 * opacityMultiplier
+}
+
+const firstProjectileTargetId = (event: MoveProjectileAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
 )
 
 /**
@@ -131,7 +228,93 @@ const createNoopMoveVfxInstance: MoveVfxInstanceBuilder = ({ event, group }) => 
   return instance
 }
 
-const createProjectileMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+const createProjectileMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveProjectileAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const targetId = firstProjectileTargetId(event)
+  const anchors = resolveMoveVfxAnchorPair({
+    renderObjects,
+    userId: event.userId,
+    targetId,
+    originCell: event.originCell,
+    targetCell: event.targetCell,
+    userAnchor: MOVE_VFX_TOKEN_ANCHOR.chest,
+    targetAnchor: MOVE_VFX_TOKEN_ANCHOR.chest,
+  })
+
+  if (!anchors) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const radius = projectileRadiusForRenderObjects(
+    renderObjects.get(event.userId),
+    targetId ? renderObjects.get(targetId) : undefined,
+  )
+
+  // Projectile endpoints are locked at creation time. This keeps the visual
+  // stable if the target token is moved by another renderer update while the
+  // transient projectile is already in flight.
+  const start = anchors.start.clone()
+  const end = anchors.end.clone()
+  const glow = createProjectileMesh(
+    MOVE_VFX_PROJECTILE_GLOW_NAME,
+    createProjectileMaterial(palette.primary, 0.32),
+  )
+  const core = createProjectileMesh(
+    MOVE_VFX_PROJECTILE_CORE_NAME,
+    createProjectileMaterial(palette.accent, 0.95),
+  )
+
+  context.group.add(glow, core)
+  applyProjectileVisualState({
+    group: context.group,
+    core,
+    glow,
+    start,
+    end,
+    radius,
+    progress: 0,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyProjectileVisualState({
+        group: context.group,
+        core,
+        glow,
+        start,
+        end,
+        radius,
+        progress: progress.progress,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createArcMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
