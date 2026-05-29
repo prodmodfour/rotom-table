@@ -279,6 +279,17 @@ Current classifications are intentionally broad:
 
 Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so future primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, miss, and crit effects without re-reading move automation rules. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.
 
+### Future per-move override contract for VFX-016
+
+`src/utils/moveAnimationPlanner.ts` now exposes a future per-move extension contract without adding any bespoke production choreography:
+
+- `MoveAnimationPreset` describes an optional future planner hook that can return a renderer-ready event list, return an empty list to intentionally suppress VFX, or return `null`/`undefined` to fall back to generic planning.
+- `MoveAnimationOverrideRegistry` is keyed by `canonicalMoveAnimationOverrideKey(moveName)`, for example `Solar Beam` becomes `solar-beam`.
+- `MOVE_ANIMATION_OVERRIDE_REGISTRY` is the production registry and is deliberately empty for this phase. No canonical move receives unique choreography in the basic move-animation implementation.
+- `createMoveAnimationPlanner()` and the public `planMoveAnimations()` entry point check the registry first and then fall back to `planGenericMoveAnimations()`.
+
+Future bespoke per-move work should fill the registry only in a later milestone with focused review, tests, fan-project asset-boundary checks, and a preference for reusing the generic primitives before adding new choreography.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

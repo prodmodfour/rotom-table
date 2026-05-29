@@ -5,8 +5,12 @@ import type { GridAnchor } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import {
+  MOVE_ANIMATION_OVERRIDE_REGISTRY,
   MOVE_ANIMATION_PLAN_RESOLUTION,
+  canonicalMoveAnimationOverrideKey,
+  createMoveAnimationPlanner,
   planGenericMoveAnimations,
+  planMoveAnimations,
   type MoveAnimationPlanInput,
 } from '~/utils/moveAnimationPlanner'
 import {
@@ -108,6 +112,63 @@ const areaInput = (
 })
 
 describe('generic move animation planner', () => {
+  it('keeps the production per-move override registry empty and falls back to generic planning', () => {
+    expect(Object.keys(MOVE_ANIMATION_OVERRIDE_REGISTRY)).toEqual([])
+
+    const input = baseInput({
+      script: script({
+        moveName: 'Canonical Future Move Without Production Override',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Water',
+        range: 'Range 6, 1 Target',
+      }),
+    })
+
+    expect(planMoveAnimations(input)).toEqual(planGenericMoveAnimations(input))
+  })
+
+  it('checks an injected test override before generic classification without production entries', () => {
+    const input = baseInput({
+      script: script({
+        moveName: 'Demo Future Override Move',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Fire',
+        range: 'Range 6, 1 Target',
+      }),
+    })
+    const planner = createMoveAnimationPlanner({
+      overrideRegistry: {
+        [canonicalMoveAnimationOverrideKey('Demo Future Override Move')]: {
+          preset: {
+            id: 'test-only-demo-preset',
+            description: 'Test-only override proving the future extension point.',
+            plan: (_overrideInput, context) => [{
+              id: `${context.canonicalMoveName}-override-event`,
+              moveName: _overrideInput.script.moveName,
+              userId: _overrideInput.user?.id ?? 'unknown-user',
+              createdAtMs: _overrideInput.timing.nowMs,
+              durationMs: MOVE_VFX_DEFAULT_DURATIONS_MS.quick,
+              kind: MOVE_VFX_KIND.selfPulse,
+              originCell: _overrideInput.user?.position,
+              palette: MOVE_VFX_TONE_COLORS.neutral,
+            }],
+          },
+        },
+      },
+    })
+
+    expect(planner(input)).toEqual([
+      expect.objectContaining({
+        id: 'demo-future-override-move-override-event',
+        kind: MOVE_VFX_KIND.selfPulse,
+      }),
+    ])
+  })
+
   it('classifies self healing moves as semantic healing pulses', () => {
     const events = planGenericMoveAnimations(selfInput({
       script: script({

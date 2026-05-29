@@ -153,6 +153,68 @@ export type MoveAnimationPlan = MoveAnimationPlanOutput
  */
 export type MoveAnimationPlanner = (input: MoveAnimationPlanInput) => MoveAnimationPlanOutput
 
+/** Canonical, normalized move-name key used by future per-move override registries. */
+export type MoveAnimationOverrideKey = string
+
+/**
+ * Context supplied to future bespoke override planners.
+ *
+ * Real per-move choreography is intentionally deferred to a later milestone;
+ * overrides should call `fallbackPlanner` when they cannot fully own a move's
+ * visual plan, and production code should keep the default registry empty for
+ * the basic generic-animation phase.
+ */
+export interface MoveAnimationOverrideContext {
+  readonly canonicalMoveName: MoveAnimationOverrideKey
+  readonly fallbackPlanner: MoveAnimationPlanner
+}
+
+/**
+ * Optional future preset contract for bespoke per-move animation choreography.
+ *
+ * A preset may return a concrete event list, return an empty array to
+ * intentionally suppress VFX, or return `null`/`undefined` to let the generic
+ * metadata-driven planner handle the move. Do not add canonical production move
+ * presets during the basic move-VFX phase; this hook exists for a later
+ * per-move animation milestone.
+ */
+export interface MoveAnimationPreset {
+  readonly id: string
+  readonly description?: string
+  readonly plan: (
+    input: MoveAnimationPlanInput,
+    context: MoveAnimationOverrideContext,
+  ) => MoveAnimationPlanOutput | null | undefined
+}
+
+/** Registry entry for a future per-move preset. Disabled entries fall back to generic planning. */
+export interface MoveAnimationOverride {
+  readonly preset: MoveAnimationPreset
+  readonly disabled?: boolean
+  readonly notes?: string
+}
+
+/**
+ * Registry shape keyed by `canonicalMoveAnimationOverrideKey(moveName)`.
+ *
+ * The production registry below is deliberately empty: no canonical move gets
+ * bespoke choreography in this implementation phase.
+ */
+export type MoveAnimationOverrideRegistry = Readonly<Record<MoveAnimationOverrideKey, MoveAnimationOverride | undefined>>
+
+/**
+ * Production registry for future per-move presets.
+ *
+ * Keep this empty until a future bespoke per-move animation milestone approves
+ * specific choreography, review scope, tests, and fan-project asset boundaries.
+ */
+export const MOVE_ANIMATION_OVERRIDE_REGISTRY: MoveAnimationOverrideRegistry = Object.freeze({})
+
+export interface CreateMoveAnimationPlannerOptions {
+  readonly overrideRegistry?: MoveAnimationOverrideRegistry
+  readonly fallbackPlanner?: MoveAnimationPlanner
+}
+
 type GenericMoveSemanticIntent =
   | { readonly kind: 'healing'; readonly tone: typeof MOVE_VFX_TONE.healing }
   | { readonly kind: 'status'; readonly tone: typeof MOVE_VFX_TONE.status }
@@ -169,6 +231,19 @@ const sanitizePlannerIdPart = (value: unknown): string => {
     .replace(/^-+|-+$/g, '')
 
   return normalized || 'event'
+}
+
+export const canonicalMoveAnimationOverrideKey = (moveName: string): MoveAnimationOverrideKey => {
+  const normalized = moveName
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return normalized || 'unknown-move'
 }
 
 const finiteNumberOrZero = (value: number): number => (Number.isFinite(value) ? value : 0)
@@ -597,3 +672,33 @@ export const planGenericMoveAnimations: MoveAnimationPlanner = (input) => {
       return []
   }
 }
+
+/**
+ * Creates the public planner pipeline: future per-move override first, generic
+ * metadata classification second.
+ *
+ * The default production override registry is intentionally empty for the basic
+ * move-VFX phase, so this behaves exactly like `planGenericMoveAnimations()`
+ * unless tests or a future milestone inject an explicit registry entry.
+ */
+export const createMoveAnimationPlanner = ({
+  overrideRegistry = MOVE_ANIMATION_OVERRIDE_REGISTRY,
+  fallbackPlanner = planGenericMoveAnimations,
+}: CreateMoveAnimationPlannerOptions = {}): MoveAnimationPlanner => (input) => {
+  const canonicalMoveName = canonicalMoveAnimationOverrideKey(input.script.moveName)
+  const override = overrideRegistry[canonicalMoveName]
+
+  if (override && !override.disabled) {
+    const overridePlan = override.preset.plan(input, {
+      canonicalMoveName,
+      fallbackPlanner,
+    })
+
+    if (overridePlan != null) return overridePlan
+  }
+
+  return fallbackPlanner(input)
+}
+
+/** Public planner entry point for move automation integration. */
+export const planMoveAnimations: MoveAnimationPlanner = createMoveAnimationPlanner()
