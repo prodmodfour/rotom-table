@@ -38,6 +38,14 @@ describe('move VFX renderer shell', () => {
     expect(renderer.group.visible).toBe(false)
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.needsAnimationFrame()).toBe(false)
+    expect(renderer.debugSnapshot()).toEqual({
+      activeCount: 0,
+      instanceGroupCount: 0,
+      needsAnimationFrame: false,
+      visible: false,
+      layerVisible: true,
+      disposed: false,
+    })
   })
 
   it('can use a caller-provided group', () => {
@@ -82,6 +90,14 @@ describe('move VFX renderer shell', () => {
     expect(renderer.activeCount()).toBe(1)
     expect(renderer.group.visible).toBe(false)
     expect(renderer.needsAnimationFrame()).toBe(true)
+    expect(renderer.debugSnapshot()).toEqual({
+      activeCount: 1,
+      instanceGroupCount: 1,
+      needsAnimationFrame: true,
+      visible: false,
+      layerVisible: false,
+      disposed: false,
+    })
   })
 
   it('ages out hidden events without resurrecting completed effects when made visible again', () => {
@@ -281,6 +297,14 @@ describe('move VFX renderer shell', () => {
     expect(firstResources.materialDispose).toHaveBeenCalledOnce()
     expect(secondResources.geometryDispose).toHaveBeenCalledOnce()
     expect(secondResources.materialDispose).toHaveBeenCalledOnce()
+    expect(renderer.debugSnapshot()).toEqual({
+      activeCount: 0,
+      instanceGroupCount: 0,
+      needsAnimationFrame: false,
+      visible: false,
+      layerVisible: false,
+      disposed: true,
+    })
 
     expect(() => {
       renderer.sync([selfPulseEvent('move-vfx-after-dispose')])

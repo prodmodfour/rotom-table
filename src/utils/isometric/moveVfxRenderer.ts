@@ -31,6 +31,21 @@ export interface MoveVfxRendererOptions {
   group?: THREE.Group
 }
 
+export interface MoveVfxDebugSnapshot {
+  /** Active lifecycle instances that can keep the scheduler alive. */
+  activeCount: number
+  /** Root child groups owned by active instances; useful for spotting cleanup drift. */
+  instanceGroupCount: number
+  /** Whether the renderer currently reports the move-vfx continuation source as needed. */
+  needsAnimationFrame: boolean
+  /** Current root-group visibility after layer and lifecycle rules are applied. */
+  visible: boolean
+  /** Last resolved layer-visibility input supplied by the grid. */
+  layerVisible: boolean
+  /** Whether the renderer has been disposed. */
+  disposed: boolean
+}
+
 export interface MoveVfxRenderer {
   /** Dedicated root object for all transient move VFX render objects. */
   readonly group: THREE.Group
@@ -38,6 +53,12 @@ export interface MoveVfxRenderer {
   animate(frameContext: MoveVfxRendererFrameContext): void
   needsAnimationFrame(): boolean
   activeCount(): number
+  /**
+   * Cheap, allocation-on-demand developer snapshot for render metrics and dev
+   * console inspection. Production frame paths should avoid calling this unless
+   * explicit render-debug instrumentation is enabled.
+   */
+  debugSnapshot(): MoveVfxDebugSnapshot
   /**
    * Wall-clock hidden-tab expiry hook. Hidden tabs pause the scheduler, but
    * move VFX remain transient; expired instances are disposed before the first
@@ -192,9 +213,20 @@ export const createMoveVfxRenderer = (
   const activeEvents = new Map<string, MoveAnimationEvent>()
   const completedEventIds = new Set<string>()
 
+  const hasActiveInstances = () => !disposed && activeInstances.size > 0
+
   const applyVisibility = () => {
-    group.visible = !disposed && lastVisible && activeInstances.size > 0
+    group.visible = hasActiveInstances() && lastVisible
   }
+
+  const createDebugSnapshot = (): MoveVfxDebugSnapshot => ({
+    activeCount: disposed ? 0 : activeInstances.size,
+    instanceGroupCount: group.children.length,
+    needsAnimationFrame: hasActiveInstances(),
+    visible: group.visible,
+    layerVisible: !disposed && lastVisible,
+    disposed,
+  })
 
   const createInstance = (
     event: MoveAnimationEvent,
@@ -272,11 +304,15 @@ export const createMoveVfxRenderer = (
     },
 
     needsAnimationFrame() {
-      return !disposed && activeInstances.size > 0
+      return hasActiveInstances()
     },
 
     activeCount() {
       return disposed ? 0 : activeInstances.size
+    },
+
+    debugSnapshot() {
+      return createDebugSnapshot()
     },
 
     expireCompleted(nowMs) {

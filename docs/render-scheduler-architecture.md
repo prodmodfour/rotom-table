@@ -16,7 +16,7 @@ This page documents the render-scheduler model for future map performance work. 
 | Scene watchers | `src/composables/isometric/useIsometricSceneWatchers.ts` | Syncs renderer objects after Vue state changes and requests focused render reasons. |
 | Lifecycle helpers | `src/utils/isometric/lifecycle.ts` | Binds renderer DOM events, resize observation, visibility pause/resume, and resource cleanup. |
 | Pointer interaction coalescing | `src/utils/isometric/pointerInteraction.ts`, `src/utils/isometric/pointerEventCoalescer.ts` | Tracks pointer travel immediately for click semantics while coalescing hover/preview/pathfinding pointermove work to the latest event per animation frame. |
-| Debug metrics | `src/utils/isometric/frameTimingSampler.ts`, `src/utils/isometric/renderMetrics.ts`, `src/components/isometric/RenderMetricsOverlay.vue` | Records scheduler frame timing/reasons and sampled WebGL renderer info only when render debug is explicitly enabled. |
+| Debug metrics | `src/utils/isometric/frameTimingSampler.ts`, `src/utils/isometric/renderMetrics.ts`, `src/components/isometric/RenderMetricsOverlay.vue` | Records scheduler frame timing/reasons, sampled WebGL renderer info, pointer metrics, and optional move VFX snapshots only when render debug is explicitly enabled. |
 
 ## Dirty rendering flow
 
@@ -94,7 +94,7 @@ Animation continuation sources answer a different question from dirty reasons: a
 
 Add an active source only for time-dependent work that must continue after the current frame. Do not use active animation as a substitute for a missing dirty reason; non-animated state changes should request a one-shot render instead. Pure WebGL animation sources such as move VFX do not dirty CSS3D unless a later CSS3D primitive explicitly reports changed CSS output.
 
-During a scheduled frame, `stepIsometricAnimationFrame()` advances the move VFX renderer only when a renderer is present and reports active work. It receives the same frame timestamp, delta, elapsed clock time, camera, and optional token-render-object map as the rest of the isometric animation path, then completion pruning happens before the WebGL render. The scheduler still settles after the renderer's `needsAnimationFrame()` returns false.
+During a scheduled frame, `stepIsometricAnimationFrame()` advances the move VFX renderer only when a renderer is present and reports active work. It receives the same frame timestamp, delta, elapsed clock time, camera, and optional token-render-object map as the rest of the isometric animation path, then completion pruning happens before the WebGL render. The scheduler still settles after the renderer's `needsAnimationFrame()` returns false. When the render debug overlay is explicitly enabled, the grid samples the renderer's `debugSnapshot()` so developers can inspect active move VFX count and whether that source is keeping scheduler frames alive; this sampling is skipped on normal production paths.
 
 ## Adding a future invalidation reason
 

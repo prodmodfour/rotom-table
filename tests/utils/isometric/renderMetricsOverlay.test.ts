@@ -23,6 +23,10 @@ describe('render metrics overlay view model', () => {
     ]))
     expect(viewModel.lastReasonLabels).toEqual([])
     expect(viewModel.reasonRows).toEqual([])
+    expect(viewModel.hasMoveVfxInfo).toBe(false)
+    expect(viewModel.moveVfxRows).toEqual([
+      { key: 'move-vfx-info', label: 'Move VFX', value: 'pending' },
+    ])
     expect(viewModel.pointerRows).toEqual(expect.arrayContaining([
       { key: 'pointer-move-events', label: 'Pointermove events', value: '0' },
       { key: 'raycasts', label: 'Raycasts', value: '0' },
@@ -67,6 +71,30 @@ describe('render metrics overlay view model', () => {
       { key: 'resize', label: 'Renderer resize', value: '2' },
       { key: 'animation', label: 'Active animation frame', value: '1' },
     ])
+  })
+
+  it('shows move VFX summaries when optional metrics are supplied', () => {
+    const viewModel = createRenderMetricsOverlayViewModel({
+      ...createEmptyIsometricRenderMetricsSnapshot(160),
+      moveVfx: {
+        activeCount: 3,
+        instanceGroupCount: 3,
+        needsAnimationFrame: true,
+        visible: true,
+        layerVisible: false,
+        disposed: false,
+      },
+    })
+
+    expect(viewModel.hasMoveVfxInfo).toBe(true)
+    expect(viewModel.moveVfxRows).toEqual(expect.arrayContaining([
+      { key: 'move-vfx-active', label: 'Active VFX', value: '3' },
+      { key: 'move-vfx-instance-groups', label: 'Instance groups', value: '3' },
+      { key: 'move-vfx-needs-frame', label: 'Keeps scheduler active', value: 'yes' },
+      { key: 'move-vfx-visible', label: 'Root visible', value: 'yes' },
+      { key: 'move-vfx-layer-visible', label: 'Layer visible', value: 'no' },
+      { key: 'move-vfx-disposed', label: 'Renderer disposed', value: 'no' },
+    ]))
   })
 
   it('shows pointer interaction summaries when optional metrics are supplied', () => {

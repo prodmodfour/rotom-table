@@ -7,6 +7,7 @@ import {
   createEmptyRenderFrameTimingMetrics,
   createEmptySampledWebGLRendererInfo,
   createIsometricRenderMetricsSnapshotWithFrameTiming,
+  createIsometricRenderMetricsSnapshotWithMoveVfx,
   createIsometricRenderMetricsSnapshotWithPointerInteractions,
   createIsometricRenderMetricsSnapshotWithRendererInfo,
   createRenderFrameReasonCounts,
@@ -123,6 +124,7 @@ describe('isometric render metrics model', () => {
     expect(snapshot.devOnly).toBe(true)
     expect(snapshot.sampledAtMs).toBe(42)
     expect(snapshot.rendererInfo).toBeNull()
+    expect(snapshot.moveVfx).toBeNull()
     expect(snapshot.frames.frameCount).toBe(0)
     expect(snapshot.frames.lastFrameReasons).toEqual([])
     expect(snapshot.pointerInteractions.pointerMoveEventCount).toBe(0)
@@ -171,6 +173,31 @@ describe('isometric render metrics model', () => {
     expect(updated.rendererInfo).not.toBe(rendererInfo)
     expect(updated.rendererInfo?.memory).not.toBe(rendererInfo.memory)
     expect(createIsometricRenderMetricsSnapshotWithRendererInfo(snapshot, null)).toBe(snapshot)
+  })
+
+  it('adds move VFX metrics to an existing metrics snapshot without mutating it', () => {
+    const snapshot = createEmptyIsometricRenderMetricsSnapshot(42)
+    const moveVfx = {
+      activeCount: 2,
+      instanceGroupCount: 2,
+      needsAnimationFrame: true,
+      visible: true,
+      layerVisible: true,
+      disposed: false,
+    }
+
+    const updated = createIsometricRenderMetricsSnapshotWithMoveVfx(snapshot, moveVfx, 512)
+
+    expect(snapshot.moveVfx).toBeNull()
+    expect(updated).not.toBe(snapshot)
+    expect(updated.devOnly).toBe(true)
+    expect(updated.sampledAtMs).toBe(512)
+    expect(updated.frames).toBe(snapshot.frames)
+    expect(updated.rendererInfo).toBeNull()
+    expect(updated.pointerInteractions).toBe(snapshot.pointerInteractions)
+    expect(updated.moveVfx).toEqual(moveVfx)
+    expect(updated.moveVfx).not.toBe(moveVfx)
+    expect(createIsometricRenderMetricsSnapshotWithMoveVfx(updated, null).moveVfx).toBeNull()
   })
 
   it('adds pointer interaction metrics to an existing metrics snapshot without mutating it', () => {

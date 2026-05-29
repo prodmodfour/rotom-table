@@ -80,6 +80,7 @@ The overlay counters are cumulative for the current map mount. Prefer start/end 
 | Scene invariants | Fixture name, map dimensions, token count, hazards/effects/weather, camera/zoom, selected token/tool, layer state, and viewport size. | Confirms both branches measured the same scene. |
 | Idle frame work | `Frames`, `Renders`, `Animated frames`, `Active animation`, average/max/last frame duration, and frame reason deltas. | Shows whether settled scenes stop duplicate RAF/render work. |
 | Renderer counters | Draw calls, triangles, lines, points, renderer frame, geometries, textures, programs, and auto-reset state. | Tracks WebGL workload and resource counts for the same visible scene. |
+| Move VFX | Active VFX, instance groups, `Keeps scheduler active`, root visibility, layer visibility, and disposed state when testing move animations. | Shows whether transient move VFX are intentionally responsible for continued animation frames and whether they settle back to idle. |
 | Pointer work | Pointermove events, processed pointer frames, coalesced move events, last pointer frame events, total raycasts, and raycasts by kind. | Verifies pointer-heavy work is coalesced and cached. |
 | Pathfinding work | Pathfinding requests, path cache hits, and path cache misses for repeated movement-preview anchors. | Verifies duplicate movement previews reuse cached path results. |
 | Visual equivalence | Antialiasing, DPR, sprites, shadows, cages, HP/status overlays, elevation badges, terrain, hazards, weather/effects, targeting, and tools. | Ensures performance wins did not come from degraded output or removed behaviour. |
@@ -111,6 +112,17 @@ Useful signals:
 - repeated `pointer`, `movement-preview`, `build-preview`, `hazard-preview`, or `targeting` during a pointer sweep are expected, but should not continue while idle;
 - repeated `resize` or `camera` while nothing is changing can indicate redundant DOM bounds, size, or controls work;
 - broad `scene-state` reasons should be rare when a more focused reason exists.
+
+### Move VFX
+
+The **Move VFX** section appears when the map route uses the render-debug flag. It samples the move VFX renderer only through the dev overlay path:
+
+- **Active VFX** is the number of transient VFX lifecycle instances currently owned by the renderer.
+- **Instance groups** is the number of root child groups under `move-vfx-root`; it should normally match Active VFX and return to `0` after effects complete.
+- **Keeps scheduler active** reports whether move VFX currently contributes the `move-vfx-animation` continuation source.
+- **Root visible** and **Layer visible** distinguish an active hidden-layer effect from a visible effect.
+
+Expected idle result: after move VFX complete or are cleared, Active VFX and Instance groups should be `0`, and Keeps scheduler active should be `no`. If frame reasons continue to show `animation`, check visible weather, field effects, animated sprites, token motion, movement previews, texture loading, and the move VFX rows to identify the active source.
 
 ### Renderer
 

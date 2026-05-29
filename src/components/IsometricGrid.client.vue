@@ -136,6 +136,7 @@ import { createRenderFrameTimingSampler } from '~/utils/isometric/frameTimingSam
 import {
   createEmptyIsometricRenderMetricsSnapshot,
   createIsometricRenderMetricsSnapshotWithFrameTiming,
+  createIsometricRenderMetricsSnapshotWithMoveVfx,
   createIsometricRenderMetricsSnapshotWithPointerInteractions,
   createIsometricRenderMetricsSnapshotWithRendererInfo,
   type IsometricPointerRaycastKind,
@@ -529,6 +530,18 @@ const sampleRendererInfoForMetricsOverlay = () => {
   renderMetricsOverlaySnapshot.value = createIsometricRenderMetricsSnapshotWithRendererInfo(
     renderMetricsOverlaySnapshot.value,
     rendererInfo,
+  )
+}
+
+const syncMoveVfxMetricsForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  renderMetricsOverlaySnapshot.value = createIsometricRenderMetricsSnapshotWithMoveVfx(
+    renderMetricsOverlaySnapshot.value,
+    moveVfxRenderer.debugSnapshot(),
+    readRenderMetricsNowMs(),
   )
 }
 
@@ -1217,6 +1230,7 @@ const syncMoveVfxRendererState = () => {
     renderObjects,
     visible: moveVfxVisible(),
   })
+  syncMoveVfxMetricsForMetricsOverlay()
 }
 
 const requestMoveVfxRenderFrame = () => {
@@ -1472,6 +1486,7 @@ const resumeScheduledRenderLoopFromHiddenTab = () => {
   // Expiring completed instances before the first visible frame prevents a tab
   // that was hidden past an effect's duration from rendering a catch-up burst.
   moveVfxRenderer.expireCompleted(Date.now())
+  syncMoveVfxMetricsForMetricsOverlay()
   renderScheduler?.resume()
   requestScheduledSceneFrame('hidden-tab-resume')
 }
@@ -1506,6 +1521,7 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     css3DRenderDirtyTracker,
   })
   recordScheduledFrameForMetricsOverlay(frame)
+  syncMoveVfxMetricsForMetricsOverlay()
   sampleRendererInfoForMetricsOverlay()
 
   return true

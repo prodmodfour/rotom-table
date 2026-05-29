@@ -386,6 +386,12 @@ The map page also prunes expired `useMoveAnimationQueue()` entries on `visibilit
 
 This cleanup remains runtime-only. It does not clear or save map data, mutate token placement, change move automation outcomes, add timers, or affect renderer quality; it only guarantees transient VFX resources are detached when the grid unmounts.
 
+### Development metrics for VFX-030
+
+`src/utils/isometric/moveVfxRenderer.ts` exposes `activeCount()` for the cheap hot-path count and `debugSnapshot()` for opt-in diagnostics. The snapshot reports the active VFX count, instance root-group count, whether move VFX is currently keeping the scheduler active, root/layer visibility, and disposal state. It intentionally avoids event-id arrays or per-frame renderer walks so normal production animation paths do not allocate debug data.
+
+When the map route is opened in development with `?debug=render`, `?debug=render-metrics`, or `?debug=isometric-render`, `src/components/isometric/RenderMetricsOverlay.vue` now includes a **Move VFX** section. Use **Active VFX** and **Keeps scheduler active** to confirm whether transient move animations are responsible for continued `animation` frames; after effects complete, both should return to `0`/`no` and the idle scheduler should settle. The overlay samples this only behind the existing render-debug gate and does not alter visual output, persistence, move mechanics, renderer quality, or scheduling policy.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

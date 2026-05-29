@@ -78,6 +78,23 @@ const viewModel = computed(() => createRenderMetricsOverlayViewModel(metricsSnap
       </p>
     </section>
 
+    <section class="render-metrics-overlay__section" aria-label="Move VFX metrics">
+      <h3>Move VFX</h3>
+      <p v-if="!viewModel.hasMoveVfxInfo" class="render-metrics-overlay__muted">
+        Waiting for the next move VFX debug sample.
+      </p>
+      <dl class="render-metrics-overlay__grid">
+        <div
+          v-for="row in viewModel.moveVfxRows"
+          :key="row.key"
+          class="render-metrics-overlay__row"
+        >
+          <dt>{{ row.label }}</dt>
+          <dd>{{ row.value }}</dd>
+        </div>
+      </dl>
+    </section>
+
     <section class="render-metrics-overlay__section" aria-label="Pointer interaction metrics">
       <h3>Pointer</h3>
       <dl class="render-metrics-overlay__grid">

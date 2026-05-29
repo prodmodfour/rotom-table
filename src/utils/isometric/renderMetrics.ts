@@ -4,6 +4,7 @@ import {
   isRenderInvalidationReason,
   type RenderInvalidationReason,
 } from './renderInvalidation'
+import type { MoveVfxDebugSnapshot } from './moveVfxRenderer'
 
 /**
  * Developer-only data model for isometric render instrumentation.
@@ -96,6 +97,8 @@ export interface IsometricRenderMetricsSnapshot {
   frames: RenderFrameTimingMetrics
   rendererInfo: SampledWebGLRendererInfo | null
   pointerInteractions: PointerInteractionMetrics
+  /** Optional move VFX state, sampled only when render debug instrumentation is enabled. */
+  moveVfx: MoveVfxDebugSnapshot | null
 }
 
 export const isRenderFrameReason = isRenderInvalidationReason
@@ -186,6 +189,7 @@ export const createEmptyIsometricRenderMetricsSnapshot = (
   frames: createEmptyRenderFrameTimingMetrics(),
   rendererInfo: null,
   pointerInteractions: createEmptyPointerInteractionMetrics(),
+  moveVfx: null,
 })
 
 const copyRenderFrameTimingMetrics = (
@@ -224,6 +228,17 @@ const copySampledWebGLRendererInfo = (
   },
 })
 
+const copyMoveVfxDebugSnapshot = (
+  moveVfx: MoveVfxDebugSnapshot,
+): MoveVfxDebugSnapshot => ({
+  activeCount: moveVfx.activeCount,
+  instanceGroupCount: moveVfx.instanceGroupCount,
+  needsAnimationFrame: moveVfx.needsAnimationFrame,
+  visible: moveVfx.visible,
+  layerVisible: moveVfx.layerVisible,
+  disposed: moveVfx.disposed,
+})
+
 export const createIsometricRenderMetricsSnapshotWithFrameTiming = (
   snapshot: IsometricRenderMetricsSnapshot,
   frames: RenderFrameTimingMetrics,
@@ -258,3 +273,13 @@ export const createIsometricRenderMetricsSnapshotWithRendererInfo = (
     rendererInfo: copySampledWebGLRendererInfo(rendererInfo),
   }
 }
+
+export const createIsometricRenderMetricsSnapshotWithMoveVfx = (
+  snapshot: IsometricRenderMetricsSnapshot,
+  moveVfx: MoveVfxDebugSnapshot | null,
+  sampledAtMs = snapshot.sampledAtMs,
+): IsometricRenderMetricsSnapshot => ({
+  ...snapshot,
+  sampledAtMs,
+  moveVfx: moveVfx ? copyMoveVfxDebugSnapshot(moveVfx) : null,
+})
