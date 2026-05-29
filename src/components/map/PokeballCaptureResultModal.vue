@@ -70,9 +70,7 @@ onBeforeUnmount(clearTimers)
   <Teleport to="body">
     <div class="capture-modal-backdrop" @click.self="emit('close')">
       <section class="capture-modal" role="dialog" aria-modal="true" aria-label="Poké Ball capture result">
-        <header class="capture-modal__header">
-          <button class="capture-modal__close" type="button" aria-label="Close" @click="emit('close')">×</button>
-        </header>
+        <button class="capture-modal__close" type="button" aria-label="Close" @click="emit('close')">×</button>
 
         <div class="capture-modal__stage" :class="{ 'is-done': done, 'is-success': result.success && done, 'is-failure': !result.success && done }">
           <div class="capture-modal__portrait">
@@ -92,10 +90,6 @@ onBeforeUnmount(clearTimers)
           <span>Capture Roll <strong class="capture-modal__roll-number" :class="result.success ? 'is-success' : 'is-failure'">{{ result.adjustedCaptureRoll ?? '—' }}</strong></span>
           <span>Capture Rate <strong class="capture-modal__rate-number">{{ result.captureRate }}</strong></span>
         </div>
-
-        <footer class="capture-modal__footer">
-          <button class="capture-modal__button" type="button" @click="emit('close')">Close</button>
-        </footer>
       </section>
     </div>
   </Teleport>
@@ -116,6 +110,7 @@ onBeforeUnmount(clearTimers)
 .capture-modal {
   width: min(860px, 100%);
   max-height: min(92vh, 920px);
+  position: relative;
   overflow: auto;
   border: 1px solid var(--rule-strong);
   border-radius: 22px;
@@ -126,15 +121,11 @@ onBeforeUnmount(clearTimers)
   color: var(--ink);
 }
 
-.capture-modal__header {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.15rem 1.25rem 0.75rem;
-  border-bottom: 1px solid var(--rule);
-}
-
 .capture-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1;
   width: 2.1rem;
   height: 2.1rem;
   border: 1px solid var(--rule-strong);
@@ -150,7 +141,7 @@ onBeforeUnmount(clearTimers)
   gap: 1rem;
   align-items: center;
   justify-items: center;
-  padding: 1.25rem;
+  padding: 3.25rem 1.25rem 1.25rem;
 }
 
 .capture-modal__portrait {
@@ -219,7 +210,7 @@ onBeforeUnmount(clearTimers)
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.85rem 1.25rem;
-  padding: 0 1.25rem 1rem;
+  padding: 0 1.25rem 1.25rem;
   color: var(--ink-bright);
   font-weight: 800;
 }
@@ -240,25 +231,6 @@ onBeforeUnmount(clearTimers)
   color: #b56cff;
 }
 
-.capture-modal__footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding: 0.9rem 1.25rem 1.15rem;
-  border-top: 1px solid var(--rule);
-}
-
-.capture-modal__button {
-  border: 1px solid var(--rule-strong);
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--ink-bright);
-  padding: 0.5rem 0.85rem;
-  font-weight: 900;
-  cursor: pointer;
-}
-
 @keyframes capture-ball-shake {
   0%, 100% { transform: translateX(0) rotate(0deg); }
   20% { transform: translateX(-0.45rem) rotate(-16deg); }
@@ -275,11 +247,6 @@ onBeforeUnmount(clearTimers)
 @media (max-width: 720px) {
   .capture-modal__stage {
     grid-template-columns: 1fr;
-  }
-
-  .capture-modal__footer {
-    align-items: stretch;
-    flex-direction: column;
   }
 }
 </style>
