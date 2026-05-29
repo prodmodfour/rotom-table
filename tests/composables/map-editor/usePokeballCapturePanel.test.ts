@@ -60,8 +60,9 @@ const trainerSheet = (): TrainerSheet => ({
 
 const buildPanel = (applyCaptureOutcome = vi.fn()) => {
   const trainer = trainerSheet()
+  const map = ref(mapDoc())
   const panel = usePokeballCapturePanel({
-    map: ref(mapDoc()),
+    map,
     spawnedPokemon: computed(() => [
       token({ id: 'trainer', species: 'Lenora', entityKind: 'trainer', sheetKind: 'trainer', sheetSlug: 'lenora' }),
       token({ id: 'pidgey', species: 'Pidgey', sheetSlug: 'pidgey', position: { x: 1, y: 0, z: 0 } }),
@@ -73,7 +74,7 @@ const buildPanel = (applyCaptureOutcome = vi.fn()) => {
     now: () => 100,
   })
 
-  return { panel, applyCaptureOutcome }
+  return { panel, applyCaptureOutcome, map }
 }
 
 describe('usePokeballCapturePanel', () => {
@@ -85,7 +86,7 @@ describe('usePokeballCapturePanel', () => {
   it('visually rolls the hit d20 before reporting a Poké Ball miss', () => {
     vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)
-    const { panel, applyCaptureOutcome } = buildPanel()
+    const { panel, applyCaptureOutcome, map } = buildPanel()
 
     panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
     expect(panel.pokeballCaptureTargeting.value?.candidateIds).toEqual(['pidgey'])
@@ -112,6 +113,16 @@ describe('usePokeballCapturePanel', () => {
     expect(panel.pokeballCaptureFeedback.value).toBeNull()
     expect(panel.pokeballCaptureResult.value).toBeNull()
     expect(panel.pokeballCaptureError.value).toBe('The Poké Ball missed.')
+    expect(map.value.metadata?.captureLog).toMatchObject([
+      {
+        hit: false,
+        success: false,
+        lines: expect.arrayContaining([
+          'Lenora threw Basic Ball at Pidgey.',
+          'Result: The Poké Ball missed.',
+        ]),
+      },
+    ])
     expect(applyCaptureOutcome).toHaveBeenCalledWith(expect.objectContaining({
       trainerId: 'trainer',
       targetId: 'pidgey',
@@ -148,5 +159,38 @@ describe('usePokeballCapturePanel', () => {
       pokeballName: 'Basic Ball',
     })
     expect(panel.pokeballCaptureError.value).toBeNull()
+  })
+
+  it('appends every resolved capture attempt to map metadata for the combat log', () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random')
+      .mockReturnValueOnce(0.99)
+      .mockReturnValueOnce(0)
+    const { panel, map } = buildPanel()
+
+    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
+    panel.selectPokeballCaptureTarget('pidgey')
+
+    expect(map.value.metadata?.captureLog).toBeUndefined()
+
+    vi.advanceTimersByTime(2100)
+
+    expect(map.value.metadata?.captureLog).toMatchObject([
+      {
+        at: 100,
+        userId: 'trainer',
+        userName: 'Lenora',
+        actionName: 'Throw Basic Ball',
+        pokeballName: 'Basic Ball',
+        targetId: 'pidgey',
+        targetName: 'Pidgey',
+        success: true,
+        hit: true,
+        lines: expect.arrayContaining([
+          'Lenora threw Basic Ball at Pidgey.',
+          'Result: Pidgey was captured!',
+        ]),
+      },
+    ])
   })
 })

@@ -105,7 +105,85 @@ export interface PokeballCaptureOutcomeEvent {
   result: PokeballCaptureAttemptResult
 }
 
+export interface PokeballCaptureLogEntry {
+  at: number
+  userId: string
+  userName: string
+  actionName: string
+  pokeballName: string
+  targetId: string
+  targetName: string
+  success: boolean
+  hit: boolean
+  lines: string[]
+}
+
+export const DEFAULT_POKEBALL_CAPTURE_LOG_ENTRIES = 100
+
 const signed = (value: number): string => (value > 0 ? `+${value}` : String(value))
+
+const shakeLabel = (count: number): string => `${count} shake${count === 1 ? '' : 's'}`
+
+const captureAccuracyLogLine = (result: PokeballCaptureAttemptResult): string => {
+  const check = result.accuracyCheck ?? POKEBALL_THROW_AC
+  const modified = result.modifiedAccuracyRoll === result.accuracyRoll
+    ? ''
+    : ` → ${result.modifiedAccuracyRoll}`
+  return `Accuracy: d20 ${result.accuracyRoll}${modified} vs AC ${check} (${result.hit ? 'hit' : 'miss'}).`
+}
+
+const captureRollLogLine = (result: PokeballCaptureAttemptResult): string | null => {
+  if (result.captureRoll === null || result.adjustedCaptureRoll === null) return null
+  const modifiers = [
+    result.breakdown.rollModifier ? `${signed(result.breakdown.rollModifier)} modifier` : null,
+    result.naturalTwentyCaptureBonus ? `${signed(result.naturalTwentyCaptureBonus)} natural 20 bonus` : null,
+  ].filter((line): line is string => Boolean(line))
+  const modifierText = modifiers.length ? ` ${modifiers.join(' ')}` : ''
+  return `Capture: d100 ${result.captureRoll}${modifierText} = ${result.adjustedCaptureRoll} vs rate ${result.captureRate}.`
+}
+
+const captureResultLogLine = (result: PokeballCaptureAttemptResult): string => {
+  if (result.success) return `Result: ${result.targetName} was captured!`
+
+  const reason = result.failureReason ?? (result.hit ? 'The Pokémon broke free.' : 'The Poké Ball missed.')
+  if (result.hit && result.shakeCount > 0) return `Result: ${reason} (${shakeLabel(result.shakeCount)}).`
+  return `Result: ${reason}`
+}
+
+export const buildPokeballCaptureLogLines = (event: PokeballCaptureOutcomeEvent): string[] => {
+  const { result } = event
+  const captureLine = captureRollLogLine(result)
+  return [
+    `${result.trainerName} threw ${result.pokeballName} at ${result.targetName}.`,
+    captureAccuracyLogLine(result),
+    ...(captureLine ? [captureLine] : []),
+    ...(result.naturalCaptureSuccess ? ['Natural 100: automatic capture.'] : []),
+    captureResultLogLine(result),
+  ]
+}
+
+export const appendPokeballCaptureLogEntry = (
+  metadata: Record<string, unknown> | undefined,
+  event: PokeballCaptureOutcomeEvent,
+  options: { now?: () => number; maxLogEntries?: number } = {},
+): Record<string, unknown> => {
+  const next = { ...(metadata ?? {}) }
+  const previous = Array.isArray(next.captureLog) ? next.captureLog : []
+  const entry: PokeballCaptureLogEntry = {
+    at: options.now?.() ?? Date.now(),
+    userId: event.trainerId,
+    userName: event.result.trainerName,
+    actionName: `Throw ${event.pokeballName}`,
+    pokeballName: event.pokeballName,
+    targetId: event.targetId,
+    targetName: event.result.targetName,
+    success: event.result.success,
+    hit: event.result.hit,
+    lines: buildPokeballCaptureLogLines(event),
+  }
+  next.captureLog = [...previous, entry].slice(-(options.maxLogEntries ?? DEFAULT_POKEBALL_CAPTURE_LOG_ENTRIES))
+  return next
+}
 
 const ballKey = (name: string): string => toSlug(name)
 

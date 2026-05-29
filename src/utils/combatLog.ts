@@ -1,6 +1,6 @@
 import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 
-export type CombatLogSource = 'move' | 'ability' | 'order' | 'maneuver' | 'movement'
+export type CombatLogSource = 'move' | 'ability' | 'order' | 'maneuver' | 'movement' | 'capture'
 
 export interface CombatLogMessage {
   id: string
@@ -57,6 +57,7 @@ const COMBAT_LOG_SOURCES: readonly CombatLogSourceConfig[] = [
   { source: 'order', metadataKey: 'orderLog', actionKey: 'orderName', fallbackActionName: 'Order' },
   { source: 'maneuver', metadataKey: 'maneuverLog', actionKey: 'maneuverName', fallbackActionName: 'Maneuver' },
   { source: 'movement', metadataKey: 'movementLog', actionKey: 'actionName', fallbackActionName: 'Movement' },
+  { source: 'capture', metadataKey: 'captureLog', actionKey: 'actionName', fallbackActionName: 'Capture' },
 ]
 
 const HIDDEN_LOG_LINE_PATTERNS: readonly RegExp[] = [

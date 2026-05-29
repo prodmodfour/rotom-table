@@ -78,6 +78,33 @@ describe('buildCombatLogMessages', () => {
     expect(messages[5]?.details).toEqual(['Crockefeller: 9 damage.'])
   })
 
+  it('includes Poké Ball capture attempts', () => {
+    const messages = buildCombatLogMessages({
+      captureLog: [
+        {
+          at: 123,
+          userId: 'trainer',
+          userName: 'Lenora',
+          actionName: 'Throw Basic Ball',
+          pokeballName: 'Basic Ball',
+          lines: ['Lenora threw Basic Ball at Pidgey.', 'Result: Pidgey was captured!'],
+        },
+      ],
+    })
+
+    expect(messages).toEqual([
+      {
+        id: 'capture-123-0',
+        at: 123,
+        source: 'capture',
+        userName: 'Lenora',
+        actionName: 'Throw Basic Ball',
+        title: 'Lenora threw Basic Ball at Pidgey.',
+        details: ['Result: Pidgey was captured!'],
+      },
+    ])
+  })
+
   it('returns the newest limited action messages while keeping display order', () => {
     const messages = buildCombatLogMessages({
       moveLog: [

@@ -1,5 +1,6 @@
 import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from 'vue'
 import {
+  appendPokeballCaptureLogEntry,
   buildPokeballCaptureBreakdown,
   buildTrainerPokeballOptions,
   linkedPokemonSlugSet,
@@ -32,6 +33,7 @@ export interface UsePokeballCapturePanelOptions {
   canControlPlacement: (id: string) => boolean
   applyCaptureOutcome?: (event: PokeballCaptureOutcomeEvent) => MaybePromise<void>
   now?: () => number
+  maxLogEntries?: number
 }
 
 interface ActivePokeballCaptureRequest {
@@ -48,6 +50,7 @@ export const usePokeballCapturePanel = ({
   canControlPlacement,
   applyCaptureOutcome,
   now,
+  maxLogEntries,
 }: UsePokeballCapturePanelOptions) => {
   const activePokeballCapture = ref<ActivePokeballCaptureRequest | null>(null)
   const pokeballCaptureResult = ref<PokeballCaptureAttemptResult | null>(null)
@@ -116,7 +119,16 @@ export const usePokeballCapturePanel = ({
     conditions: [],
   })
 
+  const appendPokeballCaptureLog = (event: PokeballCaptureOutcomeEvent) => {
+    if (!map.value) return
+    map.value.metadata = appendPokeballCaptureLogEntry(map.value.metadata, event, {
+      now,
+      maxLogEntries,
+    })
+  }
+
   const revealPokeballCaptureResult = (event: PokeballCaptureOutcomeEvent) => {
+    appendPokeballCaptureLog(event)
     pokeballCaptureResult.value = event.result.hit ? event.result : null
     pokeballCaptureError.value = event.result.hit ? null : (event.result.failureReason ?? 'The Poké Ball missed.')
 
