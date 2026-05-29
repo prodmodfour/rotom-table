@@ -259,6 +259,12 @@ The per-map reactive queue implementation lives in `src/composables/map-editor/u
 
 The composable exposes `activeMoveAnimations` as a readonly computed array plus `enqueueMoveAnimation`, `enqueueMoveAnimations`, `removeMoveAnimation`, `clearMoveAnimations`, and `pruneExpiredMoveAnimations`. Enqueue helpers fill missing `id` and `createdAtMs` fields from the per-queue id generator and injected clock, then apply the VFX-011 duplicate policy. Expiration pruning uses event `createdAtMs`/`durationMs` through the shared timing helpers and is opportunistic only; it does not create timers, a RAF loop, or persistence hooks.
 
+### Planner contracts for VFX-014
+
+The pure planner contract lives in `src/utils/moveAnimationPlanner.ts`. It defines discriminated `MoveAnimationPlanInput` variants for self, single-target, and confirmed area move resolutions, plus `MoveAnimationPlanOutput` as a readonly array of transient `MoveAnimationEvent` objects.
+
+Planner inputs carry readonly move-automation data only: the user token snapshot, target token snapshots, explicit `MoveAutomationScript`, optional transaction and roll-feedback snapshots, selected target ids, optional area cells/direction/pass destination, target hit/miss/crit summaries, and caller-supplied timing/id context. The planner boundary must stay renderer-agnostic and side-effect free: no Vue refs, DOM nodes, WebGL or Three.js objects, renderer instances, timers, scheduler ownership, or mutations to map/sheet/token/transaction state. This keeps future generic classification unit-testable without DOM or WebGL and prevents the renderer from learning move-rule concepts directly.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
