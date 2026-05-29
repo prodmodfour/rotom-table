@@ -35,18 +35,6 @@ const rollModifierLineValueClass = (line: PokeballCaptureBreakdownLine): string 
   return ''
 }
 
-const resultTitle = computed(() => {
-  if (!props.result.hit) return 'The throw missed!'
-  if (props.result.success) return 'Gotcha!'
-  return props.result.failureReason ?? 'Oh no!'
-})
-
-const resultSubtitle = computed(() => {
-  if (!props.result.hit) return `${props.result.pokeballName} sailed past ${props.result.targetName}.`
-  if (props.result.success) return `${props.result.targetName} was caught.`
-  return `${props.result.targetName} broke free.`
-})
-
 const accuracyFormula = computed(() => {
   const check = props.result.accuracyCheck == null ? '—' : props.result.accuracyCheck
   return `${props.result.accuracyRoll}${props.result.userAccuracy ? ` ${signedValue(props.result.userAccuracy)}` : ''} = ${props.result.modifiedAccuracyRoll} vs AC ${check}`
@@ -107,13 +95,8 @@ onBeforeUnmount(clearTimers)
 <template>
   <Teleport to="body">
     <div class="capture-modal-backdrop" @click.self="emit('close')">
-      <section class="capture-modal" role="dialog" aria-modal="true" aria-labelledby="capture-modal-title">
+      <section class="capture-modal" role="dialog" aria-modal="true" aria-label="Poké Ball capture result">
         <header class="capture-modal__header">
-          <div>
-            <p class="capture-modal__eyebrow">Poké Ball Capture</p>
-            <h2 id="capture-modal-title">{{ resultTitle }}</h2>
-            <p>{{ resultSubtitle }}</p>
-          </div>
           <button class="capture-modal__close" type="button" aria-label="Close" @click="emit('close')">×</button>
         </header>
 
@@ -231,29 +214,10 @@ onBeforeUnmount(clearTimers)
 
 .capture-modal__header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
   padding: 1.15rem 1.25rem 0.75rem;
   border-bottom: 1px solid var(--rule);
-}
-
-.capture-modal__eyebrow,
-.capture-modal__header p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
-.capture-modal__eyebrow {
-  color: var(--accent);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.capture-modal__header h2 {
-  margin: 0.15rem 0;
-  color: var(--ink-bright);
 }
 
 .capture-modal__close {
