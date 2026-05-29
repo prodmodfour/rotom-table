@@ -107,7 +107,7 @@ Use type colour when it helps players connect a damaging or typed move to the ef
 | Critical hits | Add a brief crit accent that can sit on top of the type-coloured hit without replacing it. |
 | Unknown, custom, or low-contrast types | Fall back to the neutral readable palette rather than throwing or producing a near-invisible effect. |
 
-The palette added in later implementation tickets should be tuned for readability on dark map backgrounds, not for exact official type-colour purity.
+The shared palette lives in `src/utils/moveAnimationPalette.ts`. It is tuned for readability on dark map backgrounds, not for exact official type-colour purity, and renderer primitives should use `moveVfxColorForType()` or `moveVfxColorForTone()` instead of duplicating hue tables.
 
 ### Token layer visibility
 
@@ -178,6 +178,7 @@ Renderer, scheduler, primitive, and move-automation integration tickets must ref
 
 - `MoveAnimationEvent` objects are transient client-side display requests. Their foundational TypeScript contract lives in `src/types/moveAnimation.ts`, and they must not be serialized into map JSON, sheet JSON, trainer JSON, campaign/session state, local runtime state, or server API payloads unless a future ticket explicitly changes the architecture.
 - Generic visual effect kinds are centralized in `src/types/moveVfx.ts` as `MOVE_VFX_KIND`, `MoveVfxKind`, and `MoveAnimationEffectKind`. These are renderer/VFX categories, not move script kinds or move names; future per-move overrides should select from this generic catalog before adding bespoke choreography in a later milestone.
+- Generic type and semantic VFX colours are centralized in `src/utils/moveAnimationPalette.ts`. Unknown or custom move types fall back to the neutral readable palette; healing, status, buff, debuff, miss, and crit outcomes should use semantic tone helpers when type colour would be misleading.
 - VFX code must not directly mutate saved token placement, HP, combat stages, statuses, hazards, weather, field effects, move usage logs, or permissions.
 - The only allowed saved-state mutations during an animated move are the existing move automation transactions and logging paths that would have run without VFX.
 - Temporary visual offsets such as melee lunges, shakes, dash afterimages, or impact pulses must reset every frame or live in VFX-owned overlay objects; they must never be persisted as token placement.
