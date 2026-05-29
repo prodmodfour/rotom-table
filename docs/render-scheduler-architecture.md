@@ -90,8 +90,9 @@ Animation continuation sources answer a different question from dirty reasons: a
 | `sprite-texture-loading` | A visible token sprite texture is still loading/decoding and should keep the scene alive until the first visible texture frame can render. |
 | `movement-preview-animation` | A visible movement/send-out preview ghost has animated sprite work or pending texture work. |
 | `field-effect-animation` | Visible field-effect/weather renderers have active animators. |
+| `move-vfx-animation` | The transient move VFX renderer has active effect instances that still need scheduler-driven frames. |
 
-Add an active source only for time-dependent work that must continue after the current frame. Do not use active animation as a substitute for a missing dirty reason; non-animated state changes should request a one-shot render instead.
+Add an active source only for time-dependent work that must continue after the current frame. Do not use active animation as a substitute for a missing dirty reason; non-animated state changes should request a one-shot render instead. Pure WebGL animation sources such as move VFX do not dirty CSS3D unless a later CSS3D primitive explicitly reports changed CSS output.
 
 ## Adding a future invalidation reason
 

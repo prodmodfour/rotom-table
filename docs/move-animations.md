@@ -326,7 +326,7 @@ The shell exposes the renderer contract needed by later integration tickets: `sy
 
 The renderer now tracks one lifecycle instance root group per active `MoveAnimationEvent.id` under `move-vfx-root`. These groups are intentionally empty until later primitive tickets add meshes, materials, geometries, or CSS3D elements, but they establish the resource ownership boundary: primitives should attach their objects to the per-event group and let renderer lifecycle cleanup remove them.
 
-`sync(events, context)` creates lifecycle groups for new event ids, keeps existing groups for repeated ids, and disposes groups whose ids are no longer present. `animate(frameContext)` uses scheduler-provided frame time with the shared timing helper to dispose completed events. Completed ids are not recreated while the same expired event remains in the synced input; once an id disappears from input, a future event can reuse that id normally. `needsAnimationFrame()` reports whether any lifecycle instance is still active; the renderer itself still does not schedule frames until a later render-loop ticket connects this signal to the scheduler continuation source.
+`sync(events, context)` creates lifecycle groups for new event ids, keeps existing groups for repeated ids, and disposes groups whose ids are no longer present. `animate(frameContext)` uses scheduler-provided frame time with the shared timing helper to dispose completed events. Completed ids are not recreated while the same expired event remains in the synced input; once an id disappears from input, a future event can reuse that id normally. `needsAnimationFrame()` reports whether any lifecycle instance is still active; the renderer itself never schedules frames directly and exposes this signal to the existing render-loop continuation model.
 
 Disposing the renderer removes every active per-event group, then removes the dedicated root group from the scene, and is safe to call more than once. Cleanup uses the shared `disposeObject3D()` helper so primitive-owned Three.js children are detached and their owned geometries/materials are disposed when an event is removed, completes, or the map scene unmounts.
 
@@ -335,6 +335,12 @@ Disposing the renderer removes every active per-event group, then removes the de
 `src/utils/isometric/moveVfxRenderer.ts` now has an internal `MoveVfxInstance` seam with an owned group, `animate(frameContext)`, `complete`, and idempotent `dispose()` for each active event. The top-level renderer only reconciles ids, delegates frame advancement to active instances, prunes completed instances, and reports `needsAnimationFrame()`; primitive-specific animation math belongs in per-kind builders instead of the sync loop.
 
 A factory switch maps every current `MOVE_VFX_KIND` to a per-kind builder. These builders intentionally return safe no-op placeholder instances until the primitive tickets add visible projectile, beam, flash, pulse, and area implementations. Unknown runtime effect kinds also fall back to the same no-op instance, so malformed or future events do not crash production rendering. The placeholders still age out from scheduler-provided frame time and release their groups through `disposeObject3D()`, preserving the lifecycle and no-independent-RAF guardrails.
+
+### Render-loop continuation source for VFX-022
+
+`src/utils/isometric/renderLoop.ts` includes the `move-vfx-animation` continuation source and the `resolveIsometricMoveVfxAnimationContinuationSources(renderer)` helper. The helper is intentionally small: it returns the source only when a move VFX renderer exists and its `needsAnimationFrame()` method reports active work.
+
+This preserves idle performance because no move VFX source is reported for absent, disposed, or inactive renderers, and the source participates in the same validation and first-seen dedupe path as token motion, sprite animation, movement preview, and field-effect animation. Move VFX remains WebGL-only for CSS3D dirty tracking until a later CSS3D primitive explicitly needs CSS output invalidation.
 
 ## Implementation labels, milestones, and ticket ordering
 
