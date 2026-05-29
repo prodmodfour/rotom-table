@@ -78,10 +78,12 @@ const buildPanel = (applyCaptureOutcome = vi.fn()) => {
 
 describe('usePokeballCapturePanel', () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
-  it('does not expose a capture portrait result modal when the Poké Ball misses', () => {
+  it('visually rolls the hit d20 before reporting a Poké Ball miss', () => {
+    vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)
     const { panel, applyCaptureOutcome } = buildPanel()
 
@@ -90,6 +92,24 @@ describe('usePokeballCapturePanel', () => {
 
     panel.selectPokeballCaptureTarget('pidgey')
 
+    expect(panel.pokeballCaptureFeedback.value).toMatchObject({
+      phase: 'rolling',
+      naturalRoll: 1,
+      hit: false,
+      moveName: 'Throw Basic Ball',
+    })
+    expect(panel.pokeballCaptureResult.value).toBeNull()
+    expect(panel.pokeballCaptureError.value).toBeNull()
+    expect(applyCaptureOutcome).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(650)
+    expect(panel.pokeballCaptureFeedback.value?.phase).toBe('hit-roll')
+
+    vi.advanceTimersByTime(850)
+    expect(panel.pokeballCaptureFeedback.value?.phase).toBe('outcome')
+
+    vi.advanceTimersByTime(600)
+    expect(panel.pokeballCaptureFeedback.value).toBeNull()
     expect(panel.pokeballCaptureResult.value).toBeNull()
     expect(panel.pokeballCaptureError.value).toBe('The Poké Ball missed.')
     expect(applyCaptureOutcome).toHaveBeenCalledWith(expect.objectContaining({
@@ -100,7 +120,8 @@ describe('usePokeballCapturePanel', () => {
     }))
   })
 
-  it('exposes the capture result modal once the Poké Ball hits', () => {
+  it('exposes the capture result modal once the Poké Ball hit roll finishes', () => {
+    vi.useFakeTimers()
     vi.spyOn(Math, 'random')
       .mockReturnValueOnce(0.99)
       .mockReturnValueOnce(0)
@@ -109,6 +130,17 @@ describe('usePokeballCapturePanel', () => {
     panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
     panel.selectPokeballCaptureTarget('pidgey')
 
+    expect(panel.pokeballCaptureFeedback.value).toMatchObject({
+      phase: 'rolling',
+      naturalRoll: 20,
+      hit: true,
+      moveName: 'Throw Basic Ball',
+    })
+    expect(panel.pokeballCaptureResult.value).toBeNull()
+
+    vi.advanceTimersByTime(2100)
+
+    expect(panel.pokeballCaptureFeedback.value).toBeNull()
     expect(panel.pokeballCaptureResult.value).toMatchObject({
       hit: true,
       success: true,

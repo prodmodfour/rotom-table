@@ -641,6 +641,7 @@ const applyPokeballCaptureOutcome = async (event: Parameters<typeof applyPokebal
 const {
   pokeballCaptureTargeting,
   pokeballCaptureResult,
+  pokeballCaptureFeedback,
   pokeballCaptureError,
   tokenPokeballOptionsById,
   openPokeballCapture,
@@ -663,6 +664,7 @@ const actionAutomationTargeting = computed(() =>
   ?? maneuverActionTargeting.value
   ?? orderActionTargeting.value,
 )
+const actionAutomationFeedback = computed(() => moveAutomationFeedback.value ?? pokeballCaptureFeedback.value)
 
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
   cancelPokeballCaptureTargeting()
@@ -812,7 +814,7 @@ useMapDimensionReconciliation({
         :can-delete-tokens="isGm"
         :token-control-notice="tokenControlNotice"
         :move-automation-targeting="actionAutomationTargeting"
-        :move-automation-feedback="moveAutomationFeedback"
+        :move-automation-feedback="actionAutomationFeedback"
         :move-usage-error="sceneActionError"
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"

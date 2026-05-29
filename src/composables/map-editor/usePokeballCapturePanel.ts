@@ -1,4 +1,4 @@
-import { computed, ref, type ComputedRef, type Ref } from 'vue'
+import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from 'vue'
 import {
   buildPokeballCaptureBreakdown,
   buildTrainerPokeballOptions,
@@ -12,13 +12,17 @@ import {
 } from '~/utils/pokeballCapture'
 import { getErrorMessage } from '~/utils/errorMessages'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
+import type { MoveAutomationFeedbackState, MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
 type MaybePromise<T> = T | Promise<T>
+
+const D20_ROLL_ANIMATION_MS = 650
+const HIT_ROLL_VISIBLE_MS = 850
+const HIT_RESULT_VISIBLE_MS = 600
 
 export interface UsePokeballCapturePanelOptions {
   map: Ref<TabletopMap | null>
@@ -47,7 +51,10 @@ export const usePokeballCapturePanel = ({
 }: UsePokeballCapturePanelOptions) => {
   const activePokeballCapture = ref<ActivePokeballCaptureRequest | null>(null)
   const pokeballCaptureResult = ref<PokeballCaptureAttemptResult | null>(null)
+  const pokeballCaptureFeedback = ref<MoveAutomationFeedbackState | null>(null)
   const pokeballCaptureError = ref<string | null>(null)
+  const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
+  let pendingCaptureOutcomeApplier: (() => void) | null = null
 
   const findToken = (id: string | null | undefined): SpawnedPokemon | null => (
     id ? spawnedPokemon.value.find((token) => token.id === id) ?? null : null
@@ -81,6 +88,95 @@ export const usePokeballCapturePanel = ({
   }
 
   const linkedSlugs = computed(() => linkedPokemonSlugSet(trainerBySlug.value?.values() ?? []))
+
+  const clearFeedbackTimers = () => {
+    while (feedbackTimers.length) {
+      const timer = feedbackTimers.pop()
+      if (timer) clearTimeout(timer)
+    }
+  }
+
+  const pokeballCaptureFeedbackForResult = (result: PokeballCaptureAttemptResult): MoveAutomationFeedbackState => ({
+    id: result.id,
+    userId: result.trainerId,
+    targetId: result.targetId,
+    moveName: `Throw ${result.pokeballName}`,
+    phase: 'rolling',
+    naturalRoll: result.accuracyRoll,
+    modifiedRoll: result.modifiedAccuracyRoll,
+    accuracyCheck: result.accuracyCheck,
+    userAccuracy: result.userAccuracy,
+    targetEvasion: result.targetEvasion,
+    targetEvasionLabel: result.targetEvasionLabel,
+    hit: result.hit,
+    crit: false,
+    effectiveness: null,
+    damageResolved: false,
+    damageLoss: 0,
+    conditions: [],
+  })
+
+  const revealPokeballCaptureResult = (event: PokeballCaptureOutcomeEvent) => {
+    pokeballCaptureResult.value = event.result.hit ? event.result : null
+    pokeballCaptureError.value = event.result.hit ? null : (event.result.failureReason ?? 'The Poké Ball missed.')
+
+    if (applyCaptureOutcome) {
+      void Promise.resolve(applyCaptureOutcome(event)).catch((error) => {
+        pokeballCaptureError.value = getErrorMessage(error, { fallback: 'Poké Ball inventory update failed' })
+      })
+    }
+  }
+
+  const flushPendingCaptureOutcome = () => {
+    const apply = pendingCaptureOutcomeApplier
+    pendingCaptureOutcomeApplier = null
+    apply?.()
+  }
+
+  const showPokeballCaptureResolution = (event: PokeballCaptureOutcomeEvent) => {
+    flushPendingCaptureOutcome()
+    clearFeedbackTimers()
+
+    const feedback = pokeballCaptureFeedbackForResult(event.result)
+    let outcomeApplied = false
+    const feedbackStillCurrent = () => pokeballCaptureFeedback.value?.id === feedback.id
+    const setFeedbackPhase = (phase: MoveAutomationFeedbackState['phase']): boolean => {
+      if (!feedbackStillCurrent()) return false
+      pokeballCaptureFeedback.value = { ...feedback, phase }
+      return true
+    }
+    const applyOutcomeOnce = () => {
+      if (outcomeApplied) return
+      outcomeApplied = true
+      pendingCaptureOutcomeApplier = null
+      clearFeedbackTimers()
+      pokeballCaptureFeedback.value = null
+      revealPokeballCaptureResult(event)
+    }
+    const scheduleFeedbackStep = (delay: number, step: () => void) => {
+      feedbackTimers.push(setTimeout(step, delay))
+    }
+
+    pendingCaptureOutcomeApplier = applyOutcomeOnce
+    pokeballCaptureFeedback.value = feedback
+    scheduleFeedbackStep(D20_ROLL_ANIMATION_MS, () => {
+      setFeedbackPhase('hit-roll')
+    })
+
+    const outcomeDelay = D20_ROLL_ANIMATION_MS + HIT_ROLL_VISIBLE_MS
+    scheduleFeedbackStep(outcomeDelay, () => {
+      setFeedbackPhase('outcome')
+    })
+    scheduleFeedbackStep(outcomeDelay + HIT_RESULT_VISIBLE_MS, () => {
+      if (feedbackStillCurrent()) applyOutcomeOnce()
+    })
+  }
+
+  const clearPokeballCaptureFeedback = () => {
+    flushPendingCaptureOutcome()
+    clearFeedbackTimers()
+    pokeballCaptureFeedback.value = null
+  }
 
   const targetsForRequest = (request: ActivePokeballCaptureRequest | null): SpawnedPokemon[] => {
     if (!request) return []
@@ -129,6 +225,7 @@ export const usePokeballCapturePanel = ({
   })
 
   const openPokeballCapture = (payload: { id: string; pokeballName?: string | null }) => {
+    clearPokeballCaptureFeedback()
     pokeballCaptureError.value = null
     pokeballCaptureResult.value = null
     if (!canControlPlacement(payload.id)) return
@@ -185,29 +282,30 @@ export const usePokeballCapturePanel = ({
     })
 
     activePokeballCapture.value = null
-    pokeballCaptureResult.value = result.hit ? result : null
-    pokeballCaptureError.value = result.hit ? null : (result.failureReason ?? 'The Poké Ball missed.')
-
-    if (applyCaptureOutcome) {
-      void Promise.resolve(applyCaptureOutcome({
-        trainerId: request.trainerId,
-        targetId,
-        targetSlug: target.sheetSlug,
-        pokeballName: livePokeball.name,
-        result,
-      })).catch((error) => {
-        pokeballCaptureError.value = getErrorMessage(error, { fallback: 'Poké Ball inventory update failed' })
-      })
-    }
+    pokeballCaptureResult.value = null
+    pokeballCaptureError.value = null
+    showPokeballCaptureResolution({
+      trainerId: request.trainerId,
+      targetId,
+      targetSlug: target.sheetSlug,
+      pokeballName: livePokeball.name,
+      result,
+    })
   }
 
   const dismissPokeballCaptureResult = () => {
     pokeballCaptureResult.value = null
   }
 
+  onBeforeUnmount(() => {
+    flushPendingCaptureOutcome()
+    clearFeedbackTimers()
+  })
+
   return {
     pokeballCaptureTargeting,
     pokeballCaptureResult,
+    pokeballCaptureFeedback,
     pokeballCaptureError,
     tokenPokeballOptionsById,
     openPokeballCapture,
