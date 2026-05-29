@@ -1,6 +1,7 @@
 import type { GridAnchor } from './map'
 import { MOVE_VFX_KIND } from './moveVfx'
 import type { MoveVfxKind } from './moveVfx'
+import type { MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 
 export { MOVE_VFX_KIND } from './moveVfx'
 export type { MoveAnimationEffectKind, MoveVfxKind } from './moveVfx'
@@ -78,6 +79,8 @@ export interface MoveAnimationEventBase<K extends MoveVfxKind = MoveVfxKind> {
   createdAtMs: number
   /** Intended visual lifetime in milliseconds. */
   durationMs: number
+  /** Optional planner-selected colour palette for renderer primitives. */
+  palette?: MoveVfxPaletteEntry
   kind: K
 }
 

@@ -1,0 +1,371 @@
+import { describe, expect, it } from 'vitest'
+import { MOVE_VFX_KIND } from '~/types/moveAnimation'
+import type { CombatStageMap } from '~/types/combatStages'
+import type { GridAnchor } from '~/types/map'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
+import type { SpawnedPokemon } from '~/types/pokemon'
+import {
+  MOVE_ANIMATION_PLAN_RESOLUTION,
+  planGenericMoveAnimations,
+  type MoveAnimationPlanInput,
+} from '~/utils/moveAnimationPlanner'
+import {
+  MOVE_VFX_TONE_COLORS,
+  MOVE_VFX_TYPE_COLORS,
+} from '~/utils/moveAnimationPalette'
+import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
+
+const stages: CombatStageMap = { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 }
+
+const token = (
+  overrides: Partial<SpawnedPokemon> & Pick<SpawnedPokemon, 'id' | 'species'>,
+): SpawnedPokemon => {
+  const { id, species, ...rest } = overrides
+  return {
+    id,
+    species,
+    slug: species.toLowerCase(),
+    size: 'Small',
+    width: 1,
+    height: 1,
+    base: 1,
+    clearance: 1,
+    spriteUrl: '/sprite.png',
+    entityKind: 'pokemon',
+    position: { x: 0, y: 0, z: 0 },
+    sheetKind: 'pokemon',
+    sheetSlug: species.toLowerCase(),
+    level: 10,
+    currentHp: 40,
+    maxHp: 40,
+    atk: 5,
+    satk: 10,
+    def: 5,
+    sdef: 5,
+    spd: 5,
+    evasion: { physical: 0, special: 0, speed: 0 },
+    defenderTypes: ['Normal'],
+    combatStages: stages,
+    conditions: [],
+    tokenItems: [],
+    ...rest,
+  }
+}
+
+const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Generic Test Move',
+  version: 1,
+  targetMode: 'one-target',
+  targetCount: 1,
+  damaging: false,
+  requiresAccuracy: false,
+  damageBase: null,
+  damageClass: 'Status',
+  type: 'Normal',
+  ac: null,
+  range: '',
+  effect: '',
+  keywords: [],
+  criticalRange: null,
+  conditionSuggestions: [],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+  ...overrides,
+})
+
+const baseInput = (overrides: Partial<MoveAnimationPlanInput> = {}): MoveAnimationPlanInput => ({
+  resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
+  user: token({ id: 'user-token', species: 'Caster' }),
+  targets: [token({ id: 'target-token', species: 'Target', position: { x: 3, y: 0, z: 1 } })],
+  selectedTargetIds: ['target-token'],
+  script: script(),
+  timing: {
+    nowMs: 1234,
+    animationIdBase: 'test-plan',
+  },
+  ...overrides,
+} as MoveAnimationPlanInput)
+
+const selfInput = (overrides: Partial<MoveAnimationPlanInput> = {}): MoveAnimationPlanInput => baseInput({
+  resolution: MOVE_ANIMATION_PLAN_RESOLUTION.self,
+  targets: [],
+  selectedTargetIds: [],
+  ...overrides,
+})
+
+const areaInput = (
+  areaCells: readonly GridAnchor[],
+  overrides: Partial<MoveAnimationPlanInput> = {},
+): MoveAnimationPlanInput => baseInput({
+  resolution: MOVE_ANIMATION_PLAN_RESOLUTION.area,
+  selectedTargetIds: [],
+  areaCells,
+  ...overrides,
+})
+
+describe('generic move animation planner', () => {
+  it('classifies self healing moves as semantic healing pulses', () => {
+    const events = planGenericMoveAnimations(selfInput({
+      script: script({
+        moveName: 'Self Healing Metadata',
+        targetMode: 'self',
+        hpSuggestions: [{ recipient: 'user', mode: 'heal-percent-max', percent: 50, label: 'Restore HP' }],
+      }),
+    }))
+
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.healing,
+      userId: 'user-token',
+      targetId: 'user-token',
+      durationMs: MOVE_VFX_DEFAULT_DURATIONS_MS.normal,
+      palette: MOVE_VFX_TONE_COLORS.healing,
+    })
+  })
+
+  it('classifies self stage changes as buff/debuff pulses with semantic colours', () => {
+    const [buff] = planGenericMoveAnimations(selfInput({
+      script: script({
+        moveName: 'Self Buff Metadata',
+        targetMode: 'self',
+        stageSuggestions: [{ recipient: 'user', key: 'atk', delta: 1, label: '+1 Attack' }],
+      }),
+    }))
+
+    expect(buff).toMatchObject({
+      kind: MOVE_VFX_KIND.buffDebuff,
+      direction: 'buff',
+      targetId: 'user-token',
+      palette: MOVE_VFX_TONE_COLORS.buff,
+    })
+
+    const [debuff] = planGenericMoveAnimations(selfInput({
+      script: script({
+        moveName: 'Self Debuff Metadata',
+        targetMode: 'self',
+        stageSuggestions: [{ recipient: 'user', key: 'def', delta: -1, label: '-1 Defense' }],
+      }),
+    }))
+
+    expect(debuff).toMatchObject({
+      kind: MOVE_VFX_KIND.buffDebuff,
+      direction: 'debuff',
+      targetId: 'user-token',
+      palette: MOVE_VFX_TONE_COLORS.debuff,
+    })
+  })
+
+  it('classifies melee damaging hits as lunge plus type-coloured impact flash', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Melee Damage',
+        damaging: true,
+        damageBase: 5,
+        damageClass: 'Physical',
+        type: 'Fighting',
+        range: 'Melee, 1 Target',
+      }),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.meleeLunge,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.meleeLunge,
+        originCell: { x: 0, y: 0, z: 0 },
+        targetId: 'target-token',
+        targetCell: { x: 3, y: 0, z: 1 },
+        palette: MOVE_VFX_TYPE_COLORS.Fighting,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'target-token',
+        palette: MOVE_VFX_TYPE_COLORS.Fighting,
+      }),
+    ]))
+  })
+
+  it('classifies ranged damaging metadata as projectile, beam, or arc launch events', () => {
+    const projectileEvents = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Ranged Damage',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Physical',
+        type: 'Water',
+        range: 'Range 6, 1 Target',
+      }),
+    }))
+    const beamEvents = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Beam Metadata',
+        damaging: true,
+        damageBase: 8,
+        damageClass: 'Special',
+        type: 'Electric',
+        range: 'Range 8, 1 Target',
+        keywords: ['Beam'],
+      }),
+    }))
+    const arcEvents = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Arc Metadata',
+        damaging: true,
+        damageBase: 4,
+        damageClass: 'Physical',
+        type: 'Rock',
+        range: 'Range 6, 1 Target',
+        keywords: ['Thrown'],
+      }),
+    }))
+
+    expect(projectileEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(projectileEvents[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Water)
+    expect(beamEvents[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.beam,
+      palette: MOVE_VFX_TYPE_COLORS.Electric,
+    })
+    expect(arcEvents[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.arc,
+      palette: MOVE_VFX_TYPE_COLORS.Rock,
+    })
+  })
+
+  it('classifies miss outcomes as launch plus neutral miss puff without impact flash', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Ranged Miss',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Fire',
+        range: 'Range 6, 1 Target',
+      }),
+      targetOutcomes: [{ targetId: 'target-token', hit: false }],
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.miss,
+    ])
+    expect(events[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Fire)
+    expect(events[1]).toMatchObject({
+      kind: MOVE_VFX_KIND.miss,
+      targetId: 'target-token',
+      palette: MOVE_VFX_TONE_COLORS.miss,
+    })
+  })
+
+  it('adds crit emphasis for critical hit outcomes', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Critical Hit',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Psychic',
+        range: 'Range 6, 1 Target',
+      }),
+      targetOutcomes: [{ targetId: 'target-token', hit: true, crit: true }],
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.crit,
+    ])
+    expect(events[2]).toMatchObject({
+      kind: MOVE_VFX_KIND.crit,
+      targetId: 'target-token',
+      palette: MOVE_VFX_TONE_COLORS.crit,
+    })
+  })
+
+  it('classifies confirmed area moves as area pulses with optional line or cone sweeps', () => {
+    const cells = [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }]
+    const lineEvents = planGenericMoveAnimations(areaInput(cells, {
+      script: script({
+        moveName: 'Generic Line Area',
+        targetMode: 'multi-target',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Ice',
+        areaTemplates: [{ kind: 'line', size: 4, label: 'Line 4' }],
+      }),
+    }))
+    const coneEvents = planGenericMoveAnimations(areaInput(cells, {
+      script: script({
+        moveName: 'Generic Cone Area',
+        targetMode: 'multi-target',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Fire',
+        areaTemplates: [{ kind: 'cone', size: 3, label: 'Cone 3' }],
+      }),
+    }))
+    const burstEvents = planGenericMoveAnimations(areaInput(cells, {
+      script: script({
+        moveName: 'Generic Burst Area',
+        targetMode: 'multi-target',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Dragon',
+        areaTemplates: [{ kind: 'burst', size: 2, label: 'Burst 2' }],
+      }),
+    }))
+
+    expect(lineEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.lineSweep,
+    ])
+    expect(lineEvents[0]).toMatchObject({
+      areaCells: cells,
+      palette: MOVE_VFX_TYPE_COLORS.Ice,
+    })
+    expect(coneEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.coneSweep,
+    ])
+    expect(coneEvents[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Fire)
+    expect(burstEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+    ])
+    expect(burstEvents[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Dragon)
+  })
+
+  it('returns a neutral fallback event for unusual scripts without targetable metadata', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      targets: [],
+      selectedTargetIds: [],
+      script: script({
+        moveName: 'Unusual Metadata',
+        targetMode: 'none',
+        damaging: false,
+        damageClass: null,
+        type: 'Custom',
+      }),
+    }))
+
+    expect(events).toEqual([
+      expect.objectContaining({
+        id: 'test-plan-self-pulse-01',
+        kind: MOVE_VFX_KIND.selfPulse,
+        originCell: { x: 0, y: 0, z: 0 },
+        palette: MOVE_VFX_TONE_COLORS.neutral,
+      }),
+    ])
+  })
+})

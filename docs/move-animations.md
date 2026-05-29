@@ -265,6 +265,20 @@ The pure planner contract lives in `src/utils/moveAnimationPlanner.ts`. It defin
 
 Planner inputs carry readonly move-automation data only: the user token snapshot, target token snapshots, explicit `MoveAutomationScript`, optional transaction and roll-feedback snapshots, selected target ids, optional area cells/direction/pass destination, target hit/miss/crit summaries, and caller-supplied timing/id context. The planner boundary must stay renderer-agnostic and side-effect free: no Vue refs, DOM nodes, WebGL or Three.js objects, renderer instances, timers, scheduler ownership, or mutations to map/sheet/token/transaction state. This keeps future generic classification unit-testable without DOM or WebGL and prevents the renderer from learning move-rule concepts directly.
 
+### Generic classification rules for VFX-015
+
+The initial generic planner implementation lives in `planGenericMoveAnimations()` in `src/utils/moveAnimationPlanner.ts`. It is metadata-driven and deliberately avoids per-move-name choreography: target mode, damaging flags, range text, keywords, area template kinds, authored HP/stage/condition suggestions, and hit/miss/crit outcomes select reusable VFX families.
+
+Current classifications are intentionally broad:
+
+- self or immediate moves choose a healing pulse, buff/debuff particles, status cloud, or neutral self pulse from script suggestions and damage class;
+- single-target damaging melee moves produce a melee lunge plus type-coloured target flash on hits;
+- single-target damaging ranged moves choose a projectile, beam, or arc from range/keyword/area-template hints, then add type-coloured impact, neutral miss puff, and crit accent events as outcome data requires;
+- confirmed area moves produce an area pulse, with line and cone area templates adding matching sweep events;
+- unusual scripts with enough user context fall back to a neutral self pulse instead of throwing.
+
+Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so future primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, miss, and crit effects without re-reading move automation rules. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
