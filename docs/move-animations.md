@@ -72,6 +72,14 @@ A synthetic move-VFX harness is available on existing map pages for local visual
 
 The harness is intentionally hidden from normal player/GM workflows: it requires the explicit debug query and is dev-gated by default. Preview buttons only emit from the currently selected controllable token, so a player cannot use the harness to synthesize gameplay-looking VFX around tokens they do not control. Buttons enqueue transient `MoveAnimationEvent` inputs through the existing per-map queue, so previews use the same renderer, scheduler continuation source, layer-visibility handling, and disposal path as real move animations. The harness never writes map JSON, sheet data, campaign/session state, move logs, local storage, server payloads, or gameplay mutations; clearing the panel only clears the runtime VFX queue.
 
+### Development VFX planning logs
+
+During local development, append `?debug=move-vfx-planning` to a map URL to enable one-shot console summaries from `planMoveAnimations()` when real move automation asks for VFX. Aliases are `move-vfx-plan`, `vfx-planning`, and `vfx-plan`, and the values may be combined in the existing comma/space-separated `debug` query field.
+
+Each log line is labelled `[move-vfx:planner]` and contains only planning-level fields: move name, resolution flow, script target mode, selected generic VFX kinds, event count, and understandable fallback reasons such as missing target ids, missing user/source anchors, empty area geometry, disabled/failed future overrides, or safe generic fallback. The logs intentionally omit user ids, target ids, token names, HP values, map coordinates, transactions, and per-frame renderer snapshots.
+
+The planning log gate is development-only by default; production player sessions stay quiet even if a debug query is present. These logs are for diagnosing why a move did or did not produce an animation and must not become persisted move logs, map data, sheet data, campaign/session state, local storage, server payloads, realtime messages, or per-frame renderer telemetry.
+
 ### Self and immediate moves
 
 Self-targeting or immediately resolving moves should not require a fake target just to animate. They should use a self-centred aura, healing pulse, buff/debuff particles, status cloud, or neutral pulse according to the move metadata and transaction outcome. These animations should be brief enough that immediate move use still feels fast.

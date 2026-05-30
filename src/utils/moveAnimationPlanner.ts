@@ -223,6 +223,8 @@ export interface CreateMoveAnimationPlannerOptions {
   readonly fallbackPlanner?: MoveAnimationPlanner
   /** Optional development-only diagnostics when a planner branch has to fall back safely. */
   readonly logPlanningWarnings?: boolean
+  /** Optional development-only one-shot summary logs for move VFX planning decisions. */
+  readonly logPlanningDebug?: boolean
 }
 
 type GenericMoveSemanticIntent =
@@ -246,6 +248,39 @@ interface MoveAnimationPlannerProcessEnvironment {
   readonly env?: {
     readonly NODE_ENV?: unknown
   }
+}
+
+export const MOVE_ANIMATION_PLANNING_DEBUG_QUERY_KEY = 'debug'
+
+export const MOVE_ANIMATION_PLANNING_DEBUG_QUERY_VALUES = [
+  'move-vfx-planning',
+  'move-vfx-plan',
+  'vfx-planning',
+  'vfx-plan',
+] as const
+
+export type MoveAnimationPlanningDebugQueryValue = typeof MOVE_ANIMATION_PLANNING_DEBUG_QUERY_VALUES[number]
+
+export type MoveAnimationPlanningDebugQuerySource =
+  | string
+  | URLSearchParams
+  | Record<string, unknown>
+  | null
+  | undefined
+
+export interface MoveAnimationPlanningDebugLocationLike {
+  readonly search?: string | null
+}
+
+export interface MoveAnimationPlanningDebugFlagOptions {
+  /** Explicit query source, such as Nuxt route.query or window.location.search. */
+  readonly query?: MoveAnimationPlanningDebugQuerySource
+  /** Injectable client location for callers that do not already have route query state. */
+  readonly location?: MoveAnimationPlanningDebugLocationLike | null
+  /** Injectable environment gate for tests and SSR-safe callers. Defaults to the Vite/Nuxt dev flag. */
+  readonly isDev?: boolean
+  /** Keep planning logs dev-safe by default; opt in only for explicit local diagnostics. */
+  readonly allowProduction?: boolean
 }
 
 const UNKNOWN_MOVE_ANIMATION_MOVE_NAME = 'Unknown Move'
@@ -493,6 +528,95 @@ const isMoveAnimationPlannerDevelopmentEnvironment = (): boolean => {
     || processDebug?.dev === true
     || processDebug?.env?.NODE_ENV === 'development'
   )
+}
+
+const MOVE_ANIMATION_PLANNING_DEBUG_TOKEN_SEPARATOR = /[\s,]+/
+const MOVE_ANIMATION_PLANNING_DEBUG_QUERY_KEYS = new Set([
+  MOVE_ANIMATION_PLANNING_DEBUG_QUERY_KEY,
+  `${MOVE_ANIMATION_PLANNING_DEBUG_QUERY_KEY}[]`,
+])
+const MOVE_ANIMATION_PLANNING_DEBUG_QUERY_VALUE_SET = new Set<string>(MOVE_ANIMATION_PLANNING_DEBUG_QUERY_VALUES)
+
+const normalizeMoveAnimationPlanningDebugToken = (value: string): string => value.trim().toLowerCase()
+
+const splitMoveAnimationPlanningDebugTokens = (value: string): string[] => (
+  value
+    .split(MOVE_ANIMATION_PLANNING_DEBUG_TOKEN_SEPARATOR)
+    .map(normalizeMoveAnimationPlanningDebugToken)
+    .filter(Boolean)
+)
+
+const appendMoveAnimationPlanningDebugStringValues = (values: string[], value: unknown): void => {
+  if (Array.isArray(value)) {
+    for (const item of value) appendMoveAnimationPlanningDebugStringValues(values, item)
+    return
+  }
+
+  if (typeof value === 'string') values.push(value)
+}
+
+const moveAnimationPlanningDebugQueryStringToSearchParams = (query: string): URLSearchParams => {
+  const trimmed = query.trim()
+  const withoutHash = trimmed.includes('#') ? trimmed.slice(0, trimmed.indexOf('#')) : trimmed
+  const queryStartIndex = withoutHash.indexOf('?')
+  const search = queryStartIndex >= 0 ? withoutHash.slice(queryStartIndex + 1) : withoutHash.replace(/^\?/, '')
+
+  return new URLSearchParams(search)
+}
+
+const collectMoveAnimationPlanningDebugQueryValues = (query: MoveAnimationPlanningDebugQuerySource): string[] => {
+  if (!query) return []
+
+  if (typeof query === 'string') {
+    return collectMoveAnimationPlanningDebugQueryValues(moveAnimationPlanningDebugQueryStringToSearchParams(query))
+  }
+
+  const values: string[] = []
+
+  if (query instanceof URLSearchParams) {
+    for (const key of MOVE_ANIMATION_PLANNING_DEBUG_QUERY_KEYS) values.push(...query.getAll(key))
+    return values
+  }
+
+  for (const [key, value] of Object.entries(query)) {
+    if (MOVE_ANIMATION_PLANNING_DEBUG_QUERY_KEYS.has(key)) appendMoveAnimationPlanningDebugStringValues(values, value)
+  }
+
+  return values
+}
+
+const readGlobalMoveAnimationPlanningDebugLocationSearch = (): string => {
+  const location = globalThis.location as MoveAnimationPlanningDebugLocationLike | undefined
+
+  return typeof location?.search === 'string' ? location.search : ''
+}
+
+export const hasMoveAnimationPlanningDebugQueryFlag = (
+  query: MoveAnimationPlanningDebugQuerySource,
+): boolean => (
+  collectMoveAnimationPlanningDebugQueryValues(query).some((value) => (
+    splitMoveAnimationPlanningDebugTokens(value).some((token) => MOVE_ANIMATION_PLANNING_DEBUG_QUERY_VALUE_SET.has(token))
+  ))
+)
+
+/**
+ * Client-safe gate for one-shot move VFX planning diagnostics. It requires an
+ * explicit query flag and is dev-only by default so production players cannot
+ * accidentally enable move-name or planning-branch console output.
+ */
+export const isMoveAnimationPlanningDebugEnabled = ({
+  query,
+  location,
+  isDev = isMoveAnimationPlannerDevelopmentEnvironment(),
+  allowProduction = false,
+}: MoveAnimationPlanningDebugFlagOptions = {}): boolean => {
+  const requested = hasMoveAnimationPlanningDebugQueryFlag(
+    query ?? location?.search ?? readGlobalMoveAnimationPlanningDebugLocationSearch(),
+  )
+
+  if (!requested) return false
+
+  return allowProduction || isDev
 }
 
 const warnMoveAnimationPlannerFallback = (
@@ -1509,6 +1633,113 @@ const planAreaMoveAnimations = (
   }, moveVfxColorForTone(MOVE_VFX_TONE.neutral))]
 }
 
+type MoveAnimationPlanningDebugSource = 'generic' | 'override' | 'safe-fallback'
+
+interface MoveAnimationPlanningDebugSummary {
+  readonly devOnly: true
+  readonly moveName: string
+  readonly resolution: string
+  readonly scriptTargetMode: string | null
+  readonly plannerSource: MoveAnimationPlanningDebugSource
+  readonly selectedVfxKinds: readonly MoveVfxKind[]
+  readonly eventCount: number
+  readonly fallbackReasons: readonly string[]
+}
+
+const uniqueDebugStrings = (values: readonly string[]): string[] => {
+  const seen = new Set<string>()
+  const out: string[] = []
+
+  for (const value of values) {
+    if (seen.has(value)) continue
+    seen.add(value)
+    out.push(value)
+  }
+
+  return out
+}
+
+const moveAnimationDebugEventKinds = (events: readonly MoveAnimationEvent[]): MoveVfxKind[] => (
+  events.map((event) => event.kind)
+)
+
+const isNeutralSelfPulseFallback = (events: readonly MoveAnimationEvent[]): boolean => {
+  const [event] = events
+  return events.length === 1
+    && event?.kind === MOVE_VFX_KIND.selfPulse
+    && event.palette?.key === MOVE_VFX_TONE.neutral
+}
+
+const describeMoveAnimationPlanningFallbackReasons = (
+  input: MoveAnimationPlanInput,
+  events: readonly MoveAnimationEvent[],
+  extraReasons: readonly string[] = [],
+): string[] => {
+  const reasons: string[] = [...extraReasons]
+
+  if (!userTokenForInput(input)) {
+    reasons.push('missing user/source token; no trustworthy VFX anchor')
+  }
+
+  switch (input.resolution) {
+    case MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget: {
+      const targetId = firstKnownTargetId(input)
+      if (!targetId) {
+        reasons.push('single-target flow had no target id; used neutral self-pulse fallback when possible')
+      } else if (!targetForId(input, targetId)) {
+        reasons.push('target token snapshot missing; renderer will resolve or skip target-id-only VFX')
+      }
+      break
+    }
+    case MOVE_ANIMATION_PLAN_RESOLUTION.area: {
+      const areaCells = gridAnchorsOrEmpty(input.areaCells)
+      if (areaCells.length === 0 && !passDestinationForInput(input)) {
+        reasons.push('area flow had no usable cells or pass destination; used transaction confirmation or neutral fallback')
+      }
+      break
+    }
+    case MOVE_ANIMATION_PLAN_RESOLUTION.self:
+      break
+    default:
+      reasons.push('unknown planner resolution; used neutral fallback')
+  }
+
+  if (events.length === 0) {
+    reasons.push('planner returned no renderer-ready VFX events')
+  } else if (isNeutralSelfPulseFallback(events) && reasons.length === 0) {
+    reasons.push('generic metadata did not select a specific effect; used neutral self-pulse fallback')
+  }
+
+  return uniqueDebugStrings(reasons)
+}
+
+const shouldLogMoveAnimationPlanningDebug = (enabled: boolean | undefined): boolean => (
+  enabled ?? isMoveAnimationPlanningDebugEnabled()
+)
+
+const logMoveAnimationPlanningDebug = (
+  enabled: boolean,
+  input: MoveAnimationPlanInput,
+  events: readonly MoveAnimationEvent[],
+  plannerSource: MoveAnimationPlanningDebugSource,
+  extraFallbackReasons: readonly string[] = [],
+): void => {
+  if (!enabled) return
+
+  const summary: MoveAnimationPlanningDebugSummary = {
+    devOnly: true,
+    moveName: moveNameForInput(input),
+    resolution: String(input.resolution),
+    scriptTargetMode: nonEmptyStringOrUndefined(input.script?.targetMode) ?? null,
+    plannerSource,
+    selectedVfxKinds: moveAnimationDebugEventKinds(events),
+    eventCount: events.length,
+    fallbackReasons: describeMoveAnimationPlanningFallbackReasons(input, events, extraFallbackReasons),
+  }
+
+  console.info('[move-vfx:planner]', summary)
+}
+
 /**
  * Generic metadata-driven planner used before any bespoke per-move animation
  * override system exists. It intentionally avoids move-name-specific branches:
@@ -1546,9 +1777,16 @@ export const createMoveAnimationPlanner = ({
   overrideRegistry = MOVE_ANIMATION_OVERRIDE_REGISTRY,
   fallbackPlanner = planGenericMoveAnimations,
   logPlanningWarnings = isMoveAnimationPlannerDevelopmentEnvironment(),
+  logPlanningDebug,
 }: CreateMoveAnimationPlannerOptions = {}): MoveAnimationPlanner => (input) => {
   const canonicalMoveName = canonicalMoveAnimationOverrideKey(input.script?.moveName)
   const override = overrideRegistry[canonicalMoveName]
+  const debugLoggingEnabled = shouldLogMoveAnimationPlanningDebug(logPlanningDebug)
+  const fallbackReasons: string[] = []
+
+  if (override?.disabled) {
+    fallbackReasons.push(`per-move override '${canonicalMoveName}' is disabled; used generic planner`)
+  }
 
   if (override && !override.disabled) {
     try {
@@ -1557,17 +1795,31 @@ export const createMoveAnimationPlanner = ({
         fallbackPlanner,
       })
 
-      if (overridePlan != null) return normalizePlannerOutput(input, overridePlan)
+      if (overridePlan != null) {
+        const events = normalizePlannerOutput(input, overridePlan)
+        logMoveAnimationPlanningDebug(debugLoggingEnabled, input, events, 'override', fallbackReasons)
+        return events
+      }
+
+      fallbackReasons.push(`per-move override '${canonicalMoveName}' returned no plan; used generic planner`)
     } catch (error) {
       warnMoveAnimationPlannerFallback(logPlanningWarnings, `Move animation override '${canonicalMoveName}' failed`, error)
+      fallbackReasons.push(`per-move override '${canonicalMoveName}' failed; used generic planner`)
     }
   }
 
   try {
-    return normalizePlannerOutput(input, fallbackPlanner(input))
+    const events = normalizePlannerOutput(input, fallbackPlanner(input))
+    logMoveAnimationPlanningDebug(debugLoggingEnabled, input, events, 'generic', fallbackReasons)
+    return events
   } catch (error) {
     warnMoveAnimationPlannerFallback(logPlanningWarnings, 'Generic move animation planner failed', error)
-    return createNeutralPlannerFallback(input)
+    const events = createNeutralPlannerFallback(input)
+    logMoveAnimationPlanningDebug(debugLoggingEnabled, input, events, 'safe-fallback', [
+      ...fallbackReasons,
+      'generic planner failed; used safe neutral fallback',
+    ])
+    return events
   }
 }
 

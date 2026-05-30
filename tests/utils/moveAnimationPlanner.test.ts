@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { GridAnchor } from '~/types/map'
@@ -9,6 +9,8 @@ import {
   MOVE_ANIMATION_PLAN_RESOLUTION,
   canonicalMoveAnimationOverrideKey,
   createMoveAnimationPlanner,
+  hasMoveAnimationPlanningDebugQueryFlag,
+  isMoveAnimationPlanningDebugEnabled,
   planGenericMoveAnimations,
   planMoveAnimations,
   type MoveAnimationPlanInput,
@@ -124,6 +126,10 @@ const areaInput = (
   selectedTargetIds: [],
   areaCells,
   ...overrides,
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 describe('generic move animation planner', () => {
@@ -1090,6 +1096,93 @@ describe('generic move animation planner', () => {
         palette: MOVE_VFX_TONE_COLORS.neutral,
       }),
     ])
+  })
+
+  it('gates move VFX planning debug logs behind explicit dev-only query flags', () => {
+    expect(hasMoveAnimationPlanningDebugQueryFlag('?debug=move-vfx-planning')).toBe(true)
+    expect(hasMoveAnimationPlanningDebugQueryFlag({ debug: ['render', 'vfx-plan'] })).toBe(true)
+    expect(hasMoveAnimationPlanningDebugQueryFlag('?debug=render')).toBe(false)
+
+    expect(isMoveAnimationPlanningDebugEnabled({
+      query: '?debug=move-vfx-planning',
+      isDev: true,
+    })).toBe(true)
+    expect(isMoveAnimationPlanningDebugEnabled({
+      query: '?debug=move-vfx-planning',
+      isDev: false,
+    })).toBe(false)
+    expect(isMoveAnimationPlanningDebugEnabled({
+      query: '?debug=move-vfx-planning',
+      isDev: false,
+      allowProduction: true,
+    })).toBe(true)
+  })
+
+  it('logs a development planning summary without token identifiers when debug logging is enabled', () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const planner = createMoveAnimationPlanner({
+      logPlanningWarnings: false,
+      logPlanningDebug: true,
+    })
+
+    const events = planner(baseInput({
+      script: script({
+        moveName: 'Generic Debug Damage',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Water',
+        range: 'Range 6, 1 Target',
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(info).toHaveBeenCalledTimes(1)
+    expect(info.mock.calls[0]?.[0]).toBe('[move-vfx:planner]')
+    expect(info.mock.calls[0]?.[1]).toMatchObject({
+      devOnly: true,
+      moveName: 'Generic Debug Damage',
+      resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
+      scriptTargetMode: 'one-target',
+      plannerSource: 'generic',
+      selectedVfxKinds: [MOVE_VFX_KIND.projectile, MOVE_VFX_KIND.targetFlash],
+      eventCount: 2,
+      fallbackReasons: [],
+    })
+    expect(JSON.stringify(info.mock.calls[0]?.[1])).not.toContain('user-token')
+    expect(JSON.stringify(info.mock.calls[0]?.[1])).not.toContain('target-token')
+  })
+
+  it('includes understandable fallback reasons in planning debug summaries', () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const planner = createMoveAnimationPlanner({
+      logPlanningWarnings: false,
+      logPlanningDebug: true,
+    })
+
+    planner(baseInput({
+      targets: [],
+      selectedTargetIds: [],
+      script: script({
+        moveName: 'Missing Target Debug Metadata',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Electric',
+        range: 'Range 6, 1 Target',
+      }),
+    }))
+
+    expect(info.mock.calls[0]?.[1]).toMatchObject({
+      moveName: 'Missing Target Debug Metadata',
+      selectedVfxKinds: [MOVE_VFX_KIND.selfPulse],
+      fallbackReasons: [
+        'single-target flow had no target id; used neutral self-pulse fallback when possible',
+      ],
+    })
   })
 
   it('returns a neutral fallback event for unusual scripts without targetable metadata', () => {
