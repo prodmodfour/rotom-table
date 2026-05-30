@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -151,6 +151,19 @@ const healingEvent = (overrides: Partial<MoveHealingAnimationEvent> = {}): MoveA
   durationMs: 560,
   kind: MOVE_VFX_KIND.healing,
   targetId: 'target-1',
+  ...overrides,
+}) as MoveAnimationEvent
+
+const buffDebuffEvent = (overrides: Partial<MoveBuffDebuffAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-buff-debuff',
+  moveName: 'Swords Dance',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 560,
+  kind: MOVE_VFX_KIND.buffDebuff,
+  targetId: 'target-1',
+  tone: 'buff',
+  direction: 'buff',
   ...overrides,
 }) as MoveAnimationEvent
 
@@ -327,6 +340,22 @@ const healingMoteMeshes = (
   const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-healing-mote-'))
   expect(meshes).toHaveLength(6)
   return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+}
+
+const buffDebuffRingNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-buff-debuff-ring')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const buffDebuffParticleMeshes = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>[] => {
+  const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-buff-debuff-particle-'))
+  expect(meshes).toHaveLength(5)
+  return meshes as THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>[]
 }
 
 const attachDisposableMesh = (group: THREE.Object3D) => {
@@ -752,6 +781,148 @@ describe('move VFX renderer shell', () => {
     const renderer = createMoveVfxRenderer(scene)
 
     renderer.sync([healingEvent({ userId: 'missing-user', targetId: undefined })], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders buff and debuff events as distinguishable particles around locked affected targets', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const targetBuff = makeRenderObject({
+      id: 'target-1',
+      currentCenter: new THREE.Vector3(4, 1, 0),
+      base: 2,
+      width: 1.5,
+      height: 3,
+      clearance: 2.4,
+    })
+    const targetDebuff = makeRenderObject({
+      id: 'target-2',
+      currentCenter: new THREE.Vector3(-2, 0, 3),
+      base: 1.2,
+      width: 1.2,
+      height: 1.6,
+      clearance: 1.4,
+    })
+    const renderObjects = new Map([
+      [targetBuff.id, targetBuff],
+      [targetDebuff.id, targetDebuff],
+    ])
+
+    renderer.sync([
+      buffDebuffEvent({ id: 'move-vfx-buff', targetId: 'target-1', tone: 'buff', direction: 'buff', palette: undefined }),
+      buffDebuffEvent({ id: 'move-vfx-debuff', moveName: 'Leer', targetId: 'target-2', tone: 'debuff', direction: 'debuff', palette: undefined }),
+    ], { renderObjects })
+
+    const buffGroup = renderer.group.children[0]
+    const debuffGroup = renderer.group.children[1]
+    const buffRing = buffDebuffRingNamed(buffGroup)
+    const debuffRing = buffDebuffRingNamed(debuffGroup)
+    const buffParticles = buffDebuffParticleMeshes(buffGroup)
+    const debuffParticles = buffDebuffParticleMeshes(debuffGroup)
+    const initialBuffParticleY = buffParticles[0]?.position.y ?? 0
+    const initialDebuffParticleY = debuffParticles[0]?.position.y ?? 0
+
+    expect(renderer.activeCount()).toBe(2)
+    expect(buffGroup.children).toHaveLength(6)
+    expect(debuffGroup.children).toHaveLength(6)
+    expectVectorClose(buffGroup.position, [4, 1, 0])
+    expectVectorClose(debuffGroup.position, [-2, 0, 3])
+    expect(buffRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.buff.glow.slice(1))
+    expect(debuffRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.debuff.glow.slice(1))
+    expect(buffParticles[0]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.buff.accent.slice(1))
+    expect(buffParticles[1]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.buff.primary.slice(1))
+    expect(debuffParticles[0]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.debuff.accent.slice(1))
+    expect(buffRing.material.transparent).toBe(true)
+    expect(buffRing.material.depthTest).toBe(true)
+    expect(buffRing.material.depthWrite).toBe(false)
+    expect(buffParticles[0]?.material.depthWrite).toBe(false)
+    expect(buffRing.renderOrder).toBe(38)
+    expect(debuffRing.renderOrder).toBe(38)
+    expect(buffParticles.every((particle) => particle.renderOrder === 39)).toBe(true)
+    expect(debuffParticles.every((particle) => particle.renderOrder === 39)).toBe(true)
+    expect(buffRing.rotation.x).toBeCloseTo(-Math.PI / 2)
+    expect(debuffRing.position.y).toBeGreaterThan(buffRing.position.y)
+    expect(buffParticles[0]?.rotation.x).toBeCloseTo(0)
+    expect(debuffParticles[0]?.rotation.x).toBeCloseTo(Math.PI)
+    expect(buffParticles.every((particle) => particle.visible)).toBe(true)
+    expect(debuffParticles.every((particle) => particle.visible)).toBe(true)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects })
+
+    expect(buffParticles[0]?.position.y).toBeGreaterThan(initialBuffParticleY)
+    expect(debuffParticles[0]?.position.y).toBeLessThan(initialDebuffParticleY)
+    expect(buffParticles[0]?.material.opacity).toBeGreaterThan(0)
+    expect(debuffParticles[0]?.material.opacity).toBeGreaterThan(0)
+
+    const lockedBuffPoint = buffGroup.position.clone()
+    const buffMeshes = [buffRing, ...buffParticles]
+    const debuffMeshes = [debuffRing, ...debuffParticles]
+    const geometryDisposeSpies = [...buffMeshes, ...debuffMeshes].map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = [...buffMeshes, ...debuffMeshes].map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    targetBuff.currentCenter.set(10, 4, 0)
+    renderer.animate({ frameNowMs: 520, delta: 0.016, renderObjects })
+
+    expect(buffGroup.position.equals(lockedBuffPoint)).toBe(true)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses target-cell fallback, palette overrides, and reduced motion for buff/debuff events', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      buffDebuffEvent({
+        id: 'move-vfx-buff-debuff-cell',
+        targetId: 'missing-target',
+        targetCell: { x: 5, y: 2, z: 2 },
+        tone: undefined,
+        direction: 'debuff',
+        palette: projectilePalette,
+      }),
+    ], { renderObjects: new Map(), reducedMotion: true })
+
+    const instanceGroup = renderer.group.children[0]
+    const ring = buffDebuffRingNamed(instanceGroup)
+    const particles = buffDebuffParticleMeshes(instanceGroup)
+    const initialRingScale = ring.scale.x
+
+    expect(renderer.activeCount()).toBe(1)
+    expectVectorClose(instanceGroup.position, [5.5, 2, 2.5])
+    expect(ring.material.color.getHexString()).toBe(projectilePalette.glow.slice(1))
+    expect(ring.visible).toBe(true)
+    expect(particles.every((particle) => !particle.visible)).toBe(true)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects: new Map(), reducedMotion: true })
+
+    expect(ring.visible).toBe(true)
+    expect(ring.scale.x).toBeGreaterThan(initialRingScale)
+    expect(ring.material.opacity).toBeGreaterThan(0)
+    expect(particles.every((particle) => !particle.visible && particle.material.opacity === 0)).toBe(true)
+  })
+
+  it('falls back to a no-op buff/debuff effect when no affected anchor can be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      buffDebuffEvent({ userId: 'missing-user', targetId: undefined, targetCell: undefined }),
+    ], { renderObjects: new Map() })
 
     const instanceGroup = renderer.group.children[0]
     expect(instanceGroup.children).toHaveLength(0)

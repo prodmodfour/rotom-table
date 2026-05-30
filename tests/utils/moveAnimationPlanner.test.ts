@@ -199,6 +199,7 @@ describe('generic move animation planner', () => {
 
     expect(buff).toMatchObject({
       kind: MOVE_VFX_KIND.buffDebuff,
+      tone: 'buff',
       direction: 'buff',
       targetId: 'user-token',
       palette: MOVE_VFX_TONE_COLORS.buff,
@@ -214,8 +215,27 @@ describe('generic move animation planner', () => {
 
     expect(debuff).toMatchObject({
       kind: MOVE_VFX_KIND.buffDebuff,
+      tone: 'debuff',
       direction: 'debuff',
       targetId: 'user-token',
+      palette: MOVE_VFX_TONE_COLORS.debuff,
+    })
+  })
+
+  it('classifies target combat-stage changes as affected-token buff/debuff events', () => {
+    const [event] = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Target Debuff Metadata',
+        targetMode: 'one-target',
+        stageSuggestions: [{ recipient: 'target', key: 'def', delta: -1, label: '-1 Defense' }],
+      }),
+    }))
+
+    expect(event).toMatchObject({
+      kind: MOVE_VFX_KIND.buffDebuff,
+      tone: 'debuff',
+      direction: 'debuff',
+      targetId: 'target-token',
       palette: MOVE_VFX_TONE_COLORS.debuff,
     })
   })

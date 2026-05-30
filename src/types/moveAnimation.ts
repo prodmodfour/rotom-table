@@ -176,6 +176,9 @@ export interface MoveHealingAnimationEvent
 export interface MoveBuffDebuffAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.buffDebuff>,
     MoveAnimationTargetMetadata {
+  /** Semantic tone hint used by the renderer; omitted values infer from direction or palette. */
+  tone?: MoveAnimationBuffDebuffDirection
+  /** Upward positive-stage read or sinking negative-stage read. */
   direction?: MoveAnimationBuffDebuffDirection
 }
 

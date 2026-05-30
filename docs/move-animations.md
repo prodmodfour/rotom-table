@@ -480,6 +480,14 @@ Each healing instance owns two horizontal ring meshes plus six small swirl motes
 
 Healing VFX remain visual-only runtime resources. They do not decide or apply HP changes, mutate token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives ring expansion, a short upward ring, mote swirl/rise, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint already swaps the swirl into a single soft fade/pulse ring; the app/OS preference wiring for reduced motion remains scoped to the later accessibility tickets.
 
+### Buff/debuff particles primitive for VFX-042
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the `buff-debuff` placeholder with a semantic combat-stage-style primitive. Buff/debuff events resolve the first `targetId`/`targetIds` entry to the affected token foot anchor, fall back to `targetCell` when the token render object is unavailable, and use the move user as the anchor only when no target id is supplied. Anchors are locked when the instance is created so the brief effect stays tied to the affected token/cell rather than stretching if live token motion updates.
+
+Each buff/debuff instance owns one horizontal ring plus five constant-count cone particles. `tone`/`direction: "buff"` uses the shared semantic buff palette with rising particles; `tone`/`direction: "debuff"` uses the debuff palette with inverted sinking particles. Explicit palettes remain available for future override/debug events, but planner-created combat-stage events now carry both `tone` and `direction` so the renderer can distinguish positive and negative non-damage outcomes without per-stat icons or external assets.
+
+Buff/debuff VFX remain visual-only runtime resources. They do not decide or apply combat-stage changes, mutate token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives particle motion, ring opacity/scale, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint swaps the moving particles into a single soft fade/pulse ring; app/OS reduced-motion wiring remains scoped to the later accessibility tickets.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

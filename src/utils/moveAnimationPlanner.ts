@@ -694,6 +694,7 @@ const planSelfMoveAnimations = (
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.buffDebuff, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
       targetId,
       targetCell,
+      tone: semanticIntent.direction,
       direction: semanticIntent.direction,
     }, palette)]
   }
@@ -731,6 +732,7 @@ const planTargetSemanticAnimations = (
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.buffDebuff, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
       targetId,
       targetCell,
+      tone: semanticIntent.direction,
       direction: semanticIntent.direction,
     }, palette)]
   }

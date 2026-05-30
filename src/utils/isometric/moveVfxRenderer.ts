@@ -4,6 +4,7 @@ import {
   type MoveAnimationEvent,
   type MoveArcAnimationEvent,
   type MoveBeamAnimationEvent,
+  type MoveBuffDebuffAnimationEvent,
   type MoveCritAnimationEvent,
   type MoveHealingAnimationEvent,
   type MoveImpactRingAnimationEvent,
@@ -221,6 +222,39 @@ const MOVE_VFX_HEALING_MOTE_ORBIT_END_SCALE = 0.74
 const MOVE_VFX_HEALING_REDUCED_RING_MAX_OPACITY = 0.34
 const MOVE_VFX_HEALING_REDUCED_RING_START_SCALE = 0.88
 const MOVE_VFX_HEALING_REDUCED_RING_END_SCALE = 1.12
+const MOVE_VFX_BUFF_DEBUFF_RING_NAME = 'move-vfx-buff-debuff-ring'
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_PREFIX = 'move-vfx-buff-debuff-particle'
+const MOVE_VFX_BUFF_DEBUFF_RING_RENDER_ORDER = 38
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_RENDER_ORDER = 39
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_COUNT = 5
+const MOVE_VFX_BUFF_DEBUFF_MIN_RADIUS = 0.36
+const MOVE_VFX_BUFF_DEBUFF_DEFAULT_RADIUS = 0.68
+const MOVE_VFX_BUFF_DEBUFF_MAX_RADIUS = 1.45
+const MOVE_VFX_BUFF_DEBUFF_RADIUS_SCALE = 0.56
+const MOVE_VFX_BUFF_DEBUFF_MIN_HEIGHT = 0.62
+const MOVE_VFX_BUFF_DEBUFF_DEFAULT_HEIGHT = 1.0
+const MOVE_VFX_BUFF_DEBUFF_MAX_HEIGHT = 2.4
+const MOVE_VFX_BUFF_DEBUFF_HEIGHT_SCALE = 0.64
+const MOVE_VFX_BUFF_DEBUFF_RING_Y_OFFSET = 0.06
+const MOVE_VFX_BUFF_DEBUFF_FADE_IN_PROGRESS = 0.16
+const MOVE_VFX_BUFF_DEBUFF_FADE_OUT_START = 0.74
+const MOVE_VFX_BUFF_DEBUFF_RING_MAX_OPACITY = 0.38
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_MAX_OPACITY = 0.54
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_RADIUS_RATIO = 0.08
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_MIN_RADIUS = 0.045
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_MAX_RADIUS = 0.13
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_HEIGHT_RATIO = 0.18
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_MIN_HEIGHT = 0.12
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_MAX_HEIGHT = 0.3
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_ORBIT_START_SCALE = 0.38
+const MOVE_VFX_BUFF_DEBUFF_PARTICLE_ORBIT_END_SCALE = 0.68
+const MOVE_VFX_BUFF_DEBUFF_BUFF_START_HEIGHT_RATIO = 0.14
+const MOVE_VFX_BUFF_DEBUFF_BUFF_END_HEIGHT_RATIO = 0.9
+const MOVE_VFX_BUFF_DEBUFF_DEBUFF_START_HEIGHT_RATIO = 0.86
+const MOVE_VFX_BUFF_DEBUFF_DEBUFF_END_HEIGHT_RATIO = 0.16
+const MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_MAX_OPACITY = 0.32
+const MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_START_SCALE = 0.9
+const MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_END_SCALE = 1.12
 const MOVE_VFX_TARGET_FLASH_SHELL_NAME = 'move-vfx-target-flash-shell'
 const MOVE_VFX_TARGET_FLASH_RING_NAME = 'move-vfx-target-flash-ring'
 const MOVE_VFX_TARGET_FLASH_SHELL_RENDER_ORDER = 38
@@ -553,6 +587,10 @@ const firstCritTargetId = (event: MoveCritAnimationEvent): string | undefined =>
 )
 
 const firstHealingTargetId = (event: MoveHealingAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
+const firstBuffDebuffTargetId = (event: MoveBuffDebuffAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
 )
 
@@ -1286,6 +1324,272 @@ const applyHealingVisualState = (options: {
     mote.scale.setScalar(options.moteRadius * (0.86 + (pulse * 0.24) + (phase * 0.12)))
     mote.material.opacity = moteOpacity
     mote.visible = moteOpacity > 0.005
+  })
+}
+
+type BuffDebuffResolvedDirection = typeof MOVE_VFX_TONE.buff | typeof MOVE_VFX_TONE.debuff
+
+const normalizeBuffDebuffDirection = (event: MoveBuffDebuffAnimationEvent): BuffDebuffResolvedDirection => {
+  const tone = typeof event.tone === 'string' ? event.tone.trim().toLowerCase() : ''
+  if (tone === MOVE_VFX_TONE.debuff) return MOVE_VFX_TONE.debuff
+  if (tone === MOVE_VFX_TONE.buff) return MOVE_VFX_TONE.buff
+
+  const direction = typeof event.direction === 'string' ? event.direction.trim().toLowerCase() : ''
+  if (direction === MOVE_VFX_TONE.debuff) return MOVE_VFX_TONE.debuff
+  if (direction === MOVE_VFX_TONE.buff) return MOVE_VFX_TONE.buff
+
+  if (event.palette?.key === MOVE_VFX_TONE.debuff) return MOVE_VFX_TONE.debuff
+  return MOVE_VFX_TONE.buff
+}
+
+const buffDebuffPaletteForEvent = (
+  event: MoveBuffDebuffAnimationEvent,
+  direction: BuffDebuffResolvedDirection,
+): MoveVfxPaletteEntry => {
+  const tone = typeof event.tone === 'string' ? event.tone.trim().toLowerCase() : ''
+  if (tone === MOVE_VFX_TONE.buff || tone === MOVE_VFX_TONE.debuff) return moveVfxColorForTone(direction)
+
+  return event.palette ?? moveVfxColorForTone(direction)
+}
+
+const buffDebuffDimensionsForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): { radius: number, bodyHeight: number, particleRadius: number, particleHeight: number } => {
+  const footprint = Math.max(
+    finitePositiveNumber(renderObject?.base) ?? 0,
+    finitePositiveNumber(renderObject?.width) ?? 0,
+  )
+  const tokenHeight = Math.max(
+    finitePositiveNumber(renderObject?.height) ?? 0,
+    finitePositiveNumber(renderObject?.clearance) ?? 0,
+  )
+  const radius = footprint > 0
+    ? clampNumber(
+      footprint * MOVE_VFX_BUFF_DEBUFF_RADIUS_SCALE,
+      MOVE_VFX_BUFF_DEBUFF_MIN_RADIUS,
+      MOVE_VFX_BUFF_DEBUFF_MAX_RADIUS,
+    )
+    : MOVE_VFX_BUFF_DEBUFF_DEFAULT_RADIUS
+  const bodyHeight = tokenHeight > 0
+    ? clampNumber(
+      tokenHeight * MOVE_VFX_BUFF_DEBUFF_HEIGHT_SCALE,
+      MOVE_VFX_BUFF_DEBUFF_MIN_HEIGHT,
+      MOVE_VFX_BUFF_DEBUFF_MAX_HEIGHT,
+    )
+    : MOVE_VFX_BUFF_DEBUFF_DEFAULT_HEIGHT
+
+  return {
+    radius,
+    bodyHeight,
+    particleRadius: clampNumber(
+      radius * MOVE_VFX_BUFF_DEBUFF_PARTICLE_RADIUS_RATIO,
+      MOVE_VFX_BUFF_DEBUFF_PARTICLE_MIN_RADIUS,
+      MOVE_VFX_BUFF_DEBUFF_PARTICLE_MAX_RADIUS,
+    ),
+    particleHeight: clampNumber(
+      bodyHeight * MOVE_VFX_BUFF_DEBUFF_PARTICLE_HEIGHT_RATIO,
+      MOVE_VFX_BUFF_DEBUFF_PARTICLE_MIN_HEIGHT,
+      MOVE_VFX_BUFF_DEBUFF_PARTICLE_MAX_HEIGHT,
+    ),
+  }
+}
+
+const resolveBuffDebuffAnchor = (
+  event: MoveBuffDebuffAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): { foot: THREE.Vector3, radius: number, bodyHeight: number, particleRadius: number, particleHeight: number } | null => {
+  const targetId = firstBuffDebuffTargetId(event)
+  const anchorTokenId = targetId ?? event.userId
+  const renderObject = renderObjects.get(anchorTokenId)
+  const foot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: anchorTokenId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.targetCell,
+  })
+
+  return foot
+    ? { foot: foot.clone(), ...buffDebuffDimensionsForRenderObject(renderObject) }
+    : null
+}
+
+const createBuffDebuffMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createBuffDebuffRingMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 40), material)
+  mesh.name = MOVE_VFX_BUFF_DEBUFF_RING_NAME
+  mesh.renderOrder = MOVE_VFX_BUFF_DEBUFF_RING_RENDER_ORDER
+  mesh.rotation.x = -Math.PI / 2
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const buffDebuffParticleName = (index: number): string => `${MOVE_VFX_BUFF_DEBUFF_PARTICLE_PREFIX}-${index + 1}`
+
+const createBuffDebuffParticleMesh = (
+  index: number,
+  direction: BuffDebuffResolvedDirection,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 4), material)
+  mesh.name = buffDebuffParticleName(index)
+  mesh.renderOrder = MOVE_VFX_BUFF_DEBUFF_PARTICLE_RENDER_ORDER
+  mesh.rotation.x = direction === MOVE_VFX_TONE.debuff ? Math.PI : 0
+  mesh.rotation.y = (index / MOVE_VFX_BUFF_DEBUFF_PARTICLE_COUNT) * Math.PI * 0.5
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createBuffDebuffParticleMeshes = (
+  palette: MoveVfxPaletteEntry,
+  direction: BuffDebuffResolvedDirection,
+): THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>[] => Array.from(
+  { length: MOVE_VFX_BUFF_DEBUFF_PARTICLE_COUNT },
+  (_, index) => createBuffDebuffParticleMesh(
+    index,
+    direction,
+    createBuffDebuffMaterial(index % 2 === 0 ? palette.accent : palette.primary, 0),
+  ),
+)
+
+const buffDebuffOpacityMultiplier = (progress: number): number => {
+  const fadeIn = Math.max(0.24, clamp01(progress / MOVE_VFX_BUFF_DEBUFF_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_BUFF_DEBUFF_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_BUFF_DEBUFF_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const hideBuffDebuffParticles = (
+  particles: readonly THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>[],
+) => {
+  for (const particle of particles) {
+    particle.material.opacity = 0
+    particle.visible = false
+  }
+}
+
+const applyReducedMotionBuffDebuffVisualState = (options: {
+  group: THREE.Group
+  ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  particles: readonly THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>[]
+  foot: THREE.Vector3
+  radius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacity = MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_MAX_OPACITY
+    * buffDebuffOpacityMultiplier(progress)
+    * (0.72 + (pulse * 0.28))
+    * Math.max(0, 1 - (progress * 0.42))
+
+  options.group.position.copy(options.foot)
+  options.ring.position.set(0, MOVE_VFX_BUFF_DEBUFF_RING_Y_OFFSET, 0)
+  options.ring.scale.setScalar(options.radius * (
+    MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_START_SCALE
+    + ((MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_END_SCALE - MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_START_SCALE) * expansion)
+  ))
+  options.ring.material.opacity = opacity
+  options.ring.visible = opacity > 0.005
+  hideBuffDebuffParticles(options.particles)
+}
+
+const applyBuffDebuffVisualState = (options: {
+  group: THREE.Group
+  ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  particles: readonly THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>[]
+  direction: BuffDebuffResolvedDirection
+  foot: THREE.Vector3
+  radius: number
+  bodyHeight: number
+  particleRadius: number
+  particleHeight: number
+  progress: number
+  reducedMotion?: boolean
+}) => {
+  if (options.reducedMotion) {
+    applyReducedMotionBuffDebuffVisualState(options)
+    return
+  }
+
+  const progress = clamp01(options.progress)
+  const isBuff = options.direction === MOVE_VFX_TONE.buff
+  const expansion = easeOutCubic(progress)
+  const travelProgress = easeInOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacityMultiplier = buffDebuffOpacityMultiplier(progress)
+  const ringStartScale = isBuff ? 0.58 : 1.18
+  const ringEndScale = isBuff ? 1.24 : 0.64
+  const ringStartHeightRatio = isBuff ? 0 : 0.74
+  const ringEndHeightRatio = isBuff ? 0 : 0.22
+  const ringOpacity = MOVE_VFX_BUFF_DEBUFF_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * (isBuff ? 0.48 : 0.58)))
+  const orbitRadius = options.radius * (
+    MOVE_VFX_BUFF_DEBUFF_PARTICLE_ORBIT_START_SCALE
+    + ((MOVE_VFX_BUFF_DEBUFF_PARTICLE_ORBIT_END_SCALE - MOVE_VFX_BUFF_DEBUFF_PARTICLE_ORBIT_START_SCALE) * expansion)
+  )
+  const startHeightRatio = isBuff
+    ? MOVE_VFX_BUFF_DEBUFF_BUFF_START_HEIGHT_RATIO
+    : MOVE_VFX_BUFF_DEBUFF_DEBUFF_START_HEIGHT_RATIO
+  const endHeightRatio = isBuff
+    ? MOVE_VFX_BUFF_DEBUFF_BUFF_END_HEIGHT_RATIO
+    : MOVE_VFX_BUFF_DEBUFF_DEBUFF_END_HEIGHT_RATIO
+  const particleCount = Math.max(1, options.particles.length)
+
+  options.group.position.copy(options.foot)
+  options.ring.position.set(
+    0,
+    MOVE_VFX_BUFF_DEBUFF_RING_Y_OFFSET + (options.bodyHeight * (
+      ringStartHeightRatio + ((ringEndHeightRatio - ringStartHeightRatio) * travelProgress)
+    )),
+    0,
+  )
+  options.ring.scale.setScalar(options.radius * (ringStartScale + ((ringEndScale - ringStartScale) * expansion)))
+  options.ring.material.opacity = ringOpacity
+  options.ring.visible = ringOpacity > 0.005
+
+  options.particles.forEach((particle, index) => {
+    const phase = index / particleCount
+    const particleProgress = easeInOutCubic(clamp01((progress * 0.86) + (phase * 0.14)))
+    const angle = (phase * Math.PI * 2) + (progress * Math.PI * (isBuff ? 0.85 : -0.55))
+    const heightRatio = startHeightRatio + ((endHeightRatio - startHeightRatio) * particleProgress)
+    const shimmer = 0.82 + (Math.sin((phase * Math.PI * 2) + (progress * Math.PI * 1.6)) * 0.12)
+    const particleOpacity = MOVE_VFX_BUFF_DEBUFF_PARTICLE_MAX_OPACITY
+      * opacityMultiplier
+      * shimmer
+      * Math.max(0, 1 - (progress * (isBuff ? 0.52 : 0.64)))
+    const particleScale = options.particleRadius * (0.88 + (pulse * 0.22) + (phase * 0.08))
+    const particleHeight = options.particleHeight * (0.84 + (pulse * 0.16))
+
+    particle.position.set(
+      Math.cos(angle) * orbitRadius,
+      options.bodyHeight * heightRatio,
+      Math.sin(angle) * orbitRadius,
+    )
+    particle.scale.set(particleScale, particleHeight, particleScale)
+    particle.rotation.y = angle + (isBuff ? 0 : Math.PI / 4)
+    particle.material.opacity = particleOpacity
+    particle.visible = particleOpacity > 0.005
   })
 }
 
@@ -2689,7 +2993,74 @@ const createCritMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 const createStatusMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
-const createBuffDebuffMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+
+const createBuffDebuffMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveBuffDebuffAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchor = resolveBuffDebuffAnchor(event, renderObjects)
+
+  if (!anchor) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const direction = normalizeBuffDebuffDirection(event)
+  const palette = buffDebuffPaletteForEvent(event, direction)
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
+  const ring = createBuffDebuffRingMesh(createBuffDebuffMaterial(palette.glow, 0))
+  const particles = createBuffDebuffParticleMeshes(palette, direction)
+
+  // Buff/debuff particles are semantic follow-up VFX for combat-stage-style
+  // outcomes. They lock the affected token/cell anchor at creation, use a
+  // constant small particle count, and never mutate combat stages, placement,
+  // token render objects, permissions, persistence, or scheduler ownership.
+  context.group.add(ring, ...particles)
+  applyBuffDebuffVisualState({
+    group: context.group,
+    ring,
+    particles,
+    direction,
+    ...anchor,
+    progress: 0,
+    reducedMotion: defaultReducedMotion,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyBuffDebuffVisualState({
+        group: context.group,
+        ring,
+        particles,
+        direction,
+        ...anchor,
+        progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
 
 const selectMoveVfxInstanceBuilder = (kind: string): MoveVfxInstanceBuilder => {
   switch (kind) {
