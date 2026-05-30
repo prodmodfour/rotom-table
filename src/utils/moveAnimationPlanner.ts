@@ -834,6 +834,10 @@ const isMeleeDamagingMove = (script: MoveAnimationPlanScript): boolean => {
   return mentionsMelee && !mentionsRanged
 }
 
+const damageClassForScript = (script: MoveAnimationPlanScript): string => (
+  stringOrUndefined(script.damageClass)?.trim().toLowerCase() ?? ''
+)
+
 const rangedLaunchKindForScript = (script: MoveAnimationPlanScript):
   | typeof MOVE_VFX_KIND.projectile
   | typeof MOVE_VFX_KIND.beam
@@ -843,14 +847,19 @@ const rangedLaunchKindForScript = (script: MoveAnimationPlanScript):
   if (includesNormalizedWord(classificationText, [
     'arc',
     'lob',
+    'lobbed',
     'thrown',
     'throw',
     'toss',
+    'shot',
     'seed',
     'spore',
     'powder',
     'bomb',
     'rock',
+    'stone',
+    'sludge',
+    'gunk',
   ])) {
     return MOVE_VFX_KIND.arc
   }
@@ -862,7 +871,17 @@ const rangedLaunchKindForScript = (script: MoveAnimationPlanScript):
     'pulse',
     'blast',
     'wave',
+    'aura',
+    'sonic',
+    'stream',
+    'fountain',
+    'threaded',
+    'whip',
   ])) {
+    return MOVE_VFX_KIND.beam
+  }
+
+  if (damageClassForScript(script) === 'special') {
     return MOVE_VFX_KIND.beam
   }
 
@@ -895,8 +914,8 @@ const shouldPlanRadialBurstForScript = (script: MoveAnimationPlanScript): boolea
   const templateKinds = areaTemplateKindsForScript(script)
   const classificationText = moveClassificationText(script)
 
-  return templateKinds.some((kind) => kind === 'burst' || kind.endsWith('blast'))
-    || includesNormalizedWord(classificationText, ['burst', 'blast'])
+  return templateKinds.some((kind) => kind === 'burst' || kind.endsWith('blast') || kind === 'cardinally-adjacent')
+    || includesNormalizedWord(classificationText, ['burst', 'blast', 'cardinally', 'adjacent'])
 }
 
 type TransactionSemanticEventKind =

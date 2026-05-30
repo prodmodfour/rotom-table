@@ -20,6 +20,7 @@ import {
   MOVE_VFX_TYPE_COLORS,
 } from '~/utils/moveAnimationPalette'
 import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
+import { explicitScriptForMove } from '~/utils/moveAutomation'
 
 const stages: CombatStageMap = { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 }
 
@@ -82,6 +83,12 @@ const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationSc
   automationNotes: [],
   ...overrides,
 })
+
+const reviewedScript = (moveName: string): MoveAutomationScript => {
+  const found = explicitScriptForMove(moveName)
+  if (!found) throw new Error(`Expected reviewed move automation script for ${moveName}`)
+  return found
+}
 
 const transaction = (overrides: Partial<MoveAutomationTransaction> = {}): MoveAutomationTransaction => ({
   userId: 'user-token',
@@ -456,7 +463,7 @@ describe('generic move animation planner', () => {
     }))
 
     expect(events.map((event) => event.kind)).toEqual([
-      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
       MOVE_VFX_KIND.targetFlash,
       MOVE_VFX_KIND.healing,
       MOVE_VFX_KIND.status,
@@ -548,14 +555,24 @@ describe('generic move animation planner', () => {
     ]))
   })
 
-  it('classifies ranged damaging metadata as projectile, beam, or arc launch events', () => {
+  it('classifies ranged damaging metadata as projectile, special beam, explicit beam, or arc launch events', () => {
     const projectileEvents = planGenericMoveAnimations(baseInput({
       script: script({
-        moveName: 'Generic Ranged Damage',
+        moveName: 'Generic Physical Ranged Damage',
         damaging: true,
         damageBase: 6,
         damageClass: 'Physical',
         type: 'Water',
+        range: 'Range 6, 1 Target',
+      }),
+    }))
+    const specialDefaultEvents = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Special Ranged Damage',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Electric',
         range: 'Range 6, 1 Target',
       }),
     }))
@@ -564,7 +581,7 @@ describe('generic move animation planner', () => {
         moveName: 'Generic Beam Metadata',
         damaging: true,
         damageBase: 8,
-        damageClass: 'Special',
+        damageClass: 'Physical',
         type: 'Electric',
         range: 'Range 8, 1 Target',
         keywords: ['Beam'],
@@ -587,6 +604,11 @@ describe('generic move animation planner', () => {
       MOVE_VFX_KIND.targetFlash,
     ])
     expect(projectileEvents[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Water)
+    expect(specialDefaultEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(specialDefaultEvents[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Electric)
     expect(beamEvents[0]).toMatchObject({
       kind: MOVE_VFX_KIND.beam,
       palette: MOVE_VFX_TYPE_COLORS.Electric,
@@ -595,6 +617,58 @@ describe('generic move animation planner', () => {
       kind: MOVE_VFX_KIND.arc,
       palette: MOVE_VFX_TYPE_COLORS.Rock,
     })
+  })
+
+  it('documents representative reviewed move metadata classifications after visual heuristic tuning', () => {
+    expect(planGenericMoveAnimations(baseInput({
+      script: reviewedScript('Tackle'),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.meleeLunge,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+
+    expect(planGenericMoveAnimations(baseInput({
+      script: reviewedScript('Rock Throw'),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+
+    expect(planGenericMoveAnimations(baseInput({
+      script: reviewedScript('Water Gun'),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+
+    expect(planGenericMoveAnimations(baseInput({
+      script: reviewedScript('Will-O-Wisp'),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.status,
+    ])
+
+    expect(planGenericMoveAnimations(selfInput({
+      script: reviewedScript('Synthesis'),
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.healing,
+    ])
+
+    expect(planGenericMoveAnimations(selfInput({
+      script: reviewedScript('Swords Dance'),
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.buffDebuff,
+    ])
+
+    expect(planGenericMoveAnimations(areaInput([{ x: 1, y: 0, z: 0 }], {
+      script: reviewedScript('Discharge'),
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.radialBurst,
+    ])
   })
 
   it('classifies miss outcomes as launch plus neutral miss puff without impact flash', () => {
@@ -611,7 +685,7 @@ describe('generic move animation planner', () => {
     }))
 
     expect(events.map((event) => event.kind)).toEqual([
-      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
       MOVE_VFX_KIND.miss,
     ])
     expect(events[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Fire)
@@ -642,7 +716,7 @@ describe('generic move animation planner', () => {
     }))
 
     expect(events.map((event) => event.kind)).toEqual([
-      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
       MOVE_VFX_KIND.targetFlash,
     ])
     expect(events[0]).toMatchObject({ startOffsetMs: 120 })
@@ -674,7 +748,7 @@ describe('generic move animation planner', () => {
     }))
 
     expect(events.map((event) => event.kind)).toEqual([
-      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
       MOVE_VFX_KIND.targetFlash,
       MOVE_VFX_KIND.healing,
       MOVE_VFX_KIND.status,
@@ -751,7 +825,7 @@ describe('generic move animation planner', () => {
     }))
 
     expect(criticalEvents.map((event) => event.kind)).toEqual([
-      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
       MOVE_VFX_KIND.targetFlash,
       MOVE_VFX_KIND.crit,
     ])
@@ -761,7 +835,7 @@ describe('generic move animation planner', () => {
       palette: MOVE_VFX_TYPE_COLORS.Psychic,
     })
     expect(ordinaryHitEvents.map((event) => event.kind)).toEqual([
-      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
       MOVE_VFX_KIND.targetFlash,
     ])
   })
@@ -1014,7 +1088,7 @@ describe('generic move animation planner', () => {
     }))
 
     expect(events.map((event) => event.kind)).toEqual([
-      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
       MOVE_VFX_KIND.targetFlash,
     ])
     expect(events).toEqual(expect.arrayContaining([
@@ -1038,7 +1112,7 @@ describe('generic move animation planner', () => {
     }))
 
     expect(events[0]).toMatchObject({
-      kind: MOVE_VFX_KIND.projectile,
+      kind: MOVE_VFX_KIND.beam,
       palette: MOVE_VFX_TONE_COLORS.neutral,
     })
   })
@@ -1137,7 +1211,7 @@ describe('generic move animation planner', () => {
     }))
 
     expect(events.map((event) => event.kind)).toEqual([
-      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
       MOVE_VFX_KIND.targetFlash,
     ])
     expect(info).toHaveBeenCalledTimes(1)
@@ -1148,7 +1222,7 @@ describe('generic move animation planner', () => {
       resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
       scriptTargetMode: 'one-target',
       plannerSource: 'generic',
-      selectedVfxKinds: [MOVE_VFX_KIND.projectile, MOVE_VFX_KIND.targetFlash],
+      selectedVfxKinds: [MOVE_VFX_KIND.beam, MOVE_VFX_KIND.targetFlash],
       eventCount: 2,
       fallbackReasons: [],
     })

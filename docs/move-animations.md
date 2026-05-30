@@ -357,12 +357,36 @@ Current classifications are intentionally broad:
 
 - self or immediate moves choose a healing pulse, buff/debuff particles, status cloud, or neutral self pulse from script suggestions and damage class;
 - single-target damaging melee moves produce a melee lunge plus type-coloured target flash on hits;
-- single-target damaging ranged moves choose a projectile, beam, or arc from range/keyword/area-template hints, then add type-coloured impact, neutral miss puff, and type-coloured crit accent events as outcome data requires;
+- single-target damaging ranged moves choose a projectile, beam, or arc from damage class, range/keyword, and area-template hints, then add type-coloured impact, neutral miss puff, and type-coloured crit accent events as outcome data requires;
 - confirmed area moves produce an area pulse, with burst/blast templates adding a radial burst, line/cone templates adding matching sweep events, and selected affected targets receiving bounded staggered target flashes or miss puffs;
 - confirmed pass/dash area moves that provide `passDestination` also produce a transient `dash` event with destination/path metadata before the area impact timing, while saved token placement still changes only through the existing move automation placement path;
 - unusual scripts with enough user context fall back to a neutral self pulse instead of throwing.
 
 Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so future primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, and miss effects without re-reading move automation rules. Critical-hit events carry the damaging move palette so the renderer can layer that type colour with its semantic crit accent. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.
+
+### VFX-072 heuristic polish sample review
+
+The first visual review pass kept classification metadata-driven and did not add production per-move override entries. The tuned generic rules use damage class, range text, authored range keywords, special/effect text, and area-template kinds:
+
+- special damaging single-target ranged moves default to `beam` after more specific lob/throw hints are checked, so generic energy/stream reads such as **Water Gun** are less likely to look like physical pellets;
+- physical damaging ranged moves without stronger hints remain `projectile`, while lobbed/solid text hints such as `thrown`, `toss`, `shot`, `seed`, `powder`, `bomb`, `rock`, `stone`, `sludge`, or `gunk` choose `arc`;
+- line-like hints such as `beam`, `ray`, `pulse`, `blast`, `wave`, `aura`, `sonic`, `stream`, `fountain`, `threaded`, or `whip` choose `beam`, including physical tether-style metadata when present;
+- `cardinally-adjacent` area templates now receive the same `area-pulse` plus `radial-burst` treatment as burst/blast-style confirmations, while line and cone templates keep their directional sweeps;
+- semantic non-damage planning remains suggestion-led: healing HP suggestions produce healing pulses, combat-stage suggestions produce buff/debuff particles, and condition/status suggestions produce status clouds.
+
+Representative reviewed-move samples locked by planner tests:
+
+| Category | Sample metadata | Expected generic VFX |
+| --- | --- | --- |
+| Physical melee | **Tackle** (`Melee, 1 Target`) | `melee-lunge` + `target-flash` |
+| Physical ranged | **Rock Throw** (`Physical`, ranged single target) | `projectile` + `target-flash` |
+| Special ranged | **Water Gun** (`Special`, ranged single target) | `beam` + `target-flash` |
+| Status | **Will-O-Wisp** (target condition suggestion) | `status` |
+| Healing | **Synthesis** (user HP restore suggestion) | `healing` |
+| Buff/debuff | **Swords Dance** (user combat-stage suggestion) | `buff-debuff` |
+| Area | **Discharge** (`cardinally-adjacent` template) | `area-pulse` + `radial-burst` |
+
+These examples document intended broad classifications only. They are not bespoke choreography, and future exact move-specific animation still belongs in the deferred per-move override milestone.
 
 ### Multi-target sequencing helper for VFX-051
 
