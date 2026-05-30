@@ -1139,7 +1139,7 @@ describe('useMoveAutomationPanel', () => {
     expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Helping Hand', scriptKind: 'explicit' }])
   })
 
-  it('opens cannot-miss damaging moves with targeting overlay and applies damage directly', async () => {
+  it('opens cannot-miss damaging moves with targeting overlay, enqueues hit VFX, and applies damage directly', async () => {
     const map = ref({
       ...mapFixture(),
       placements: [
@@ -1155,6 +1155,9 @@ describe('useMoveAutomationPanel', () => {
       movelist: [{ name: 'Magical Leaf' }],
     } as CharacterSheet
     const calls: string[] = []
+    const enqueueMoveAnimations = vi.fn((events: readonly MoveAnimationEvent[]) => {
+      calls.push(`vfx:${events.length}`)
+    })
     const panel = useMoveAutomationPanel({
       map,
       spawnedPokemon: computed(() => [
@@ -1170,6 +1173,8 @@ describe('useMoveAutomationPanel', () => {
       modifyConditions: () => undefined,
       applyMoveFieldEffect: () => undefined,
       placeHazard: () => undefined,
+      enqueueMoveAnimations,
+      now: () => 12000,
     })
 
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Magical Leaf' })
@@ -1189,7 +1194,31 @@ describe('useMoveAutomationPanel', () => {
     }
 
     expect(panel.moveAutomationFeedback.value).toBeNull()
-    expect(calls).toEqual(['hp:target-token:18'])
+    expect(calls).toEqual(['vfx:2', 'hp:target-token:18'])
+    expect(enqueueMoveAnimations).toHaveBeenCalledTimes(1)
+    const events = enqueueMoveAnimations.mock.calls[0]?.[0] ?? []
+    expect(events.map((event) => event.kind)).toEqual(expect.arrayContaining([
+      MOVE_VFX_KIND.targetFlash,
+    ]))
+    expect([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.arc,
+      MOVE_VFX_KIND.meleeLunge,
+    ]).toContain(events[0]?.kind)
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: expect.stringContaining('magical-leaf'),
+        kind: MOVE_VFX_KIND.targetFlash,
+        moveName: 'Magical Leaf',
+        userId: 'user-token',
+        createdAtMs: 12000,
+        targetId: 'target-token',
+        targetCell: { x: 2, y: 0, z: 0 },
+        shake: true,
+      }),
+    ]))
+    expect(events.every((event) => event.startOffsetMs == null)).toBe(true)
     expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Magical Leaf', scriptKind: 'explicit' }])
   })
 

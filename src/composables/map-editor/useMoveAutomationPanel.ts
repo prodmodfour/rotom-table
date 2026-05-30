@@ -657,6 +657,49 @@ export const useMoveAutomationPanel = ({
       .map((condition) => condition.condition),
   }]
 
+  const confirmedTargetOutcomeForTransaction = (
+    target: SpawnedPokemon,
+    transaction: MoveAutomationTransaction,
+  ): MoveAnimationPlanTargetOutcome => {
+    const hpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
+    const damageLoss = hpUpdate ? Math.max(0, target.currentHp - hpUpdate.currentHp) : undefined
+    const conditionUpdate = transaction.conditionUpdates.find((update) => update.id === target.id)
+    const hitTargetIds = transaction.hitTargetIds
+
+    return {
+      targetId: target.id,
+      hit: !hitTargetIds || hitTargetIds.includes(target.id),
+      damageResolved: Boolean(hpUpdate),
+      ...(damageLoss && damageLoss > 0 ? { damageLoss } : {}),
+      ...(conditionUpdate?.conditions.length ? { conditions: conditionUpdate.conditions } : {}),
+    }
+  }
+
+  const planAndEnqueueConfirmedSingleTargetMoveAnimations = (options: {
+    script: MoveAutomationScript
+    user: SpawnedPokemon
+    target: SpawnedPokemon
+    transaction: MoveAutomationTransaction
+  }) => {
+    try {
+      enqueuePlannedMoveAnimations(planMoveAnimations({
+        resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
+        user: options.user,
+        targets: [options.target],
+        selectedTargetIds: [options.target.id],
+        script: options.script,
+        targetOutcomes: [confirmedTargetOutcomeForTransaction(options.target, options.transaction)],
+        transaction: options.transaction,
+        timing: {
+          nowMs: moveAnimationNowMs(),
+          animationIdBase: nextMoveAnimationPlanIdBase('single-target-confirmed', options.script, options.user),
+        },
+      }))
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('planning', error)
+    }
+  }
+
   const planAndEnqueueSingleTargetMoveAnimations = (options: {
     script: MoveAutomationScript
     user: SpawnedPokemon
@@ -1136,6 +1179,12 @@ export const useMoveAutomationPanel = ({
       })
       prependTransactionLogLine(transaction, options.logLine)
       activeMoveTargeting.value = null
+      planAndEnqueueConfirmedSingleTargetMoveAnimations({
+        script: request.script,
+        user,
+        target,
+        transaction,
+      })
       await applyMoveAutomation(transaction, { script: request.script })
       return true
     }
