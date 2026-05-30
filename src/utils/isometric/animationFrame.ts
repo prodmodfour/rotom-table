@@ -17,13 +17,14 @@ export interface IsometricAnimationFrameResult {
 }
 
 export interface IsometricCss3DRenderDirtyTrackerLike {
-  markDirty?: (reason?: 'camera' | 'targeting' | 'token-style') => void
+  markDirty?: (reason?: 'camera' | 'targeting' | 'token-style' | 'manual') => void
   consumeDirty: () => boolean
 }
 
 export interface IsometricMoveVfxAnimationFrameRenderer {
   animate: (frameContext: MoveVfxRendererFrameContext) => void
   needsAnimationFrame?: () => boolean
+  needsCss3DFrame?: () => boolean
 }
 
 export interface IsometricAnimationFrameOptions {
@@ -125,6 +126,9 @@ export const stepIsometricAnimationFrame = (
       visible: options.moveVfxVisible,
       reducedMotion: options.moveVfxReducedMotion === true,
     })
+    if (options.moveVfxRenderer.needsCss3DFrame?.() === true) {
+      options.css3DRenderDirtyTracker?.markDirty?.('manual')
+    }
   }
 
   if (options.beforeRender?.() === true) {

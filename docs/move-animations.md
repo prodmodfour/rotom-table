@@ -24,6 +24,7 @@ The initial VFX library may use the following reusable effect families. These ar
 - **Healing pulse:** a semantic healing effect for HP restoration.
 - **Buff/debuff particles:** simple rising/falling particles or rings for combat-stage and similar effects.
 - **Status cloud:** a generic condition/status visual that does not require condition-specific art.
+- **Optional text/symbol badge:** a restrained CSS3D label such as `Buff`, `Status`, `Heal`, or a compact condition name only when a planner/event explicitly asks for one.
 - **Area pulse:** a short pulse over affected grid cells after area confirmation.
 - **Radial burst:** a center-out ring/ray accent for burst or blast-style area confirmations.
 - **Line/cone sweep:** a directional cell sequence for line-like and cone-like area moves.
@@ -58,6 +59,12 @@ A user should select and resolve a target through the existing move automation f
 6. Healing, status, buff, or debuff outcomes use semantic follow-up effects when transaction data supports that classification.
 
 The existing roll feedback and targeting overlays must remain readable; animation should enhance the flow, not replace the current feedback UI.
+
+### Optional badge evaluation
+
+Existing roll feedback, target flashes, status clouds, buff/debuff particles, healing pulses, HP/status HUD, and combat-stage glass provide the primary read for most non-damage outcomes. Text badges therefore remain disabled by default to avoid cluttering crowded tactical maps. The renderer supports a lightweight badge primitive only for future planners or overrides that explicitly request a short `badge` event with a readable label. Empty labels, missing DOM support, and missing anchors no-op safely.
+
+Badge labels are normalized to one compact line, capped at 12 glyphs, rendered as CSS3D sprites with `pointer-events: none`, and anchored above the affected token or target cell. They use the semantic/palette colours supplied by the event and live inside the same transient VFX lifecycle as every other primitive. Because badges are the only CSS3D move VFX, the renderer reports `needsCss3DFrame()` only while badge instances are active; generic WebGL move VFX still skip CSS3D rendering.
 
 ### Self and immediate moves
 
@@ -186,7 +193,7 @@ Renderer, scheduler, primitive, and move-automation integration tickets must ref
 - Adding, removing, or syncing VFX events should request a focused scheduled scene frame through the same invalidation path used by other map renderer changes.
 - Active VFX may keep frames alive only by participating in the existing animation-continuation model. The planned renderer contract should expose whether it still needs another frame, for example through `needsAnimationFrame()` or an equivalent resolver used by `resolveSceneAnimationContinuation()`.
 - The continuation source must become inactive as soon as all VFX instances are complete, hidden-and-aged-out, removed, or disposed so an idle map returns to one-shot rendering.
-- VFX that only changes WebGL objects should not force CSS3D renders. If a later badge or CSS3D primitive is added, it must mark CSS3D dirty only when that CSS output changes.
+- VFX that only changes WebGL objects should not force CSS3D renders. The optional badge primitive is CSS3D-only and reports CSS output through `MoveVfxRenderer.needsCss3DFrame()` so `stepIsometricAnimationFrame()` marks CSS3D dirty only while an active badge can change or hide CSS output.
 
 ### Renderer quality and map behaviour
 

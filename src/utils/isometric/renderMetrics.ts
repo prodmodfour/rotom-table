@@ -235,6 +235,7 @@ const copyMoveVfxDebugSnapshot = (
   instanceGroupCount: moveVfx.instanceGroupCount,
   needsAnimationFrame: moveVfx.needsAnimationFrame,
   visible: moveVfx.visible,
+  css3DActive: moveVfx.css3DActive,
   layerVisible: moveVfx.layerVisible,
   disposed: moveVfx.disposed,
 })

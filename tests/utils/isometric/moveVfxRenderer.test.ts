@@ -1,9 +1,75 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveConeSweepAnimationEvent, type MoveCritAnimationEvent, type MoveDashAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveLineSweepAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveRadialBurstAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBadgeAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveConeSweepAnimationEvent, type MoveCritAnimationEvent, type MoveDashAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveLineSweepAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveRadialBurstAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, MOVE_VFX_TYPE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
+
+class FakeBadgeElement {
+  readonly tagName: string
+  readonly style: Record<string, string> = {}
+  readonly attributes = new Map<string, string>()
+  readonly dataset: Record<string, string> = {}
+  readonly children: FakeBadgeElement[] = []
+  className = ''
+  textContent = ''
+  parentNode: FakeBadgeElement | null = null
+  ownerDocument: FakeBadgeDocument
+  removed = false
+
+  constructor(tagName: string, ownerDocument: FakeBadgeDocument) {
+    this.tagName = tagName.toUpperCase()
+    this.ownerDocument = ownerDocument
+  }
+
+  setAttribute(name: string, value: string | boolean) {
+    this.attributes.set(name, String(value))
+  }
+
+  getAttribute(name: string): string | null {
+    return this.attributes.get(name) ?? null
+  }
+
+  appendChild(child: FakeBadgeElement): FakeBadgeElement {
+    child.parentNode = this
+    this.children.push(child)
+    return child
+  }
+
+  remove() {
+    this.removed = true
+    if (!this.parentNode) return
+
+    const index = this.parentNode.children.indexOf(this)
+    if (index >= 0) this.parentNode.children.splice(index, 1)
+    this.parentNode = null
+  }
+
+  cloneNode(): FakeBadgeElement {
+    const clone = new FakeBadgeElement(this.tagName, this.ownerDocument)
+    clone.className = this.className
+    clone.textContent = this.textContent
+    Object.assign(clone.style, this.style)
+    Object.assign(clone.dataset, this.dataset)
+    for (const [key, value] of this.attributes) clone.attributes.set(key, value)
+    return clone
+  }
+}
+
+interface FakeBadgeDocument {
+  defaultView: { Element: typeof FakeBadgeElement }
+  createElement: (tagName: string) => FakeBadgeElement
+}
+
+const installFakeBadgeDocument = () => {
+  const fakeDocument: FakeBadgeDocument = {
+    defaultView: { Element: FakeBadgeElement },
+    createElement: (tagName: string) => new FakeBadgeElement(tagName, fakeDocument),
+  }
+  vi.stubGlobal('document', fakeDocument)
+  vi.stubGlobal('HTMLElement', FakeBadgeElement)
+  return () => vi.unstubAllGlobals()
+}
 
 const selfPulseEvent = (
   idOrOverrides: string | (Partial<Omit<MoveSelfPulseAnimationEvent, 'palette' | 'tone'>> & {
@@ -247,6 +313,19 @@ const statusEvent = (overrides: Partial<MoveStatusAnimationEvent> = {}): MoveAni
   durationMs: 560,
   kind: MOVE_VFX_KIND.status,
   targetId: 'target-1',
+  ...overrides,
+}) as MoveAnimationEvent
+
+const badgeEvent = (overrides: Partial<MoveBadgeAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-badge',
+  moveName: 'Thunder Wave',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 560,
+  kind: MOVE_VFX_KIND.badge,
+  targetId: 'target-1',
+  label: 'Status',
+  tone: 'status',
   ...overrides,
 }) as MoveAnimationEvent
 
@@ -566,6 +645,7 @@ describe('move VFX renderer shell', () => {
       instanceGroupCount: 0,
       needsAnimationFrame: false,
       visible: false,
+      css3DActive: false,
       layerVisible: true,
       disposed: false,
     })
@@ -618,6 +698,7 @@ describe('move VFX renderer shell', () => {
       instanceGroupCount: 1,
       needsAnimationFrame: true,
       visible: false,
+      css3DActive: false,
       layerVisible: false,
       disposed: false,
     })
@@ -1337,6 +1418,90 @@ describe('move VFX renderer shell', () => {
     expect(missingGroup.children).toHaveLength(0)
 
     renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders explicit badge events as short non-interactive CSS3D labels above affected anchors', () => {
+    const cleanup = installFakeBadgeDocument()
+
+    try {
+      const scene = new THREE.Scene()
+      const renderer = createMoveVfxRenderer(scene)
+      const target = makeRenderObject({
+        id: 'target-1',
+        currentCenter: new THREE.Vector3(3, 1, 2),
+        base: 1.5,
+        width: 1.5,
+        height: 2,
+        clearance: 2,
+      })
+      const renderObjects = new Map([[target.id, target]])
+
+      renderer.sync([
+        badgeEvent({
+          label: 'Badly Poisoned Status',
+          tone: 'debuff',
+          palette: undefined,
+        }),
+      ], { renderObjects })
+
+      const instanceGroup = renderer.group.children[0]
+      const badge = instanceGroup.children.find((child) => child.name === 'move-vfx-badge') as (THREE.Object3D & { element: FakeBadgeElement }) | undefined
+      expect(badge).toBeDefined()
+      expect(renderer.activeCount()).toBe(1)
+      expect(renderer.needsAnimationFrame()).toBe(true)
+      expect(renderer.needsCss3DFrame()).toBe(true)
+      expect(renderer.debugSnapshot().css3DActive).toBe(true)
+      expectVectorClose(instanceGroup.position, [3, 3.35, 2])
+      expect(instanceGroup.children).toHaveLength(1)
+      expect(badge?.element.textContent).toBe('Badly Poiso…')
+      expect(badge?.element.getAttribute('aria-hidden')).toBe('true')
+      expect(badge?.element.getAttribute('role')).toBe('presentation')
+      expect(badge?.element.style.pointerEvents).toBe('none')
+      expect(badge?.element.style.userSelect).toBe('none')
+      expect(badge?.element.style.color).toBe(MOVE_VFX_TONE_COLORS.debuff.accent)
+      expect(badge?.userData.moveVfxBadgeLabel).toBe('Badly Poiso…')
+
+      renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects })
+
+      expect(badge?.visible).toBe(true)
+      expect(Number(badge?.element.style.opacity)).toBeGreaterThan(0)
+      expect(badge?.scale.x).toBeGreaterThan(0)
+
+      target.currentCenter.set(12, 4, 8)
+      renderer.animate({ frameNowMs: 520, delta: 0.016, renderObjects })
+
+      expectVectorClose(instanceGroup.position, [3, 3.35, 2])
+
+      renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects })
+
+      expect(renderer.activeCount()).toBe(0)
+      expect(renderer.needsCss3DFrame()).toBe(false)
+      expect(renderer.group.children).toHaveLength(0)
+      expect(badge?.element.removed).toBe(true)
+    } finally {
+      cleanup()
+    }
+  })
+
+  it('keeps badge events as no-ops without an explicit readable label or DOM support', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      badgeEvent({ id: 'move-vfx-empty-badge', label: '   ' }),
+      badgeEvent({ id: 'move-vfx-no-dom-badge', label: 'Heal', targetCell: { x: 2, y: 1, z: 3 } }),
+    ], { renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(2)
+    expect(renderer.needsAnimationFrame()).toBe(true)
+    expect(renderer.needsCss3DFrame()).toBe(false)
+    expect(renderer.group.children[0]?.children).toHaveLength(0)
+    expect(renderer.group.children[1]?.children).toHaveLength(0)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects: new Map() })
 
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.group.children).toHaveLength(0)
@@ -3053,6 +3218,7 @@ describe('move VFX renderer shell', () => {
       instanceGroupCount: 0,
       needsAnimationFrame: false,
       visible: false,
+      css3DActive: false,
       layerVisible: false,
       disposed: true,
     })

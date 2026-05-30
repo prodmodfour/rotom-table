@@ -202,6 +202,16 @@ export interface MoveBuffDebuffAnimationEvent
   direction?: MoveAnimationBuffDebuffDirection
 }
 
+export interface MoveBadgeAnimationEvent
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.badge>,
+    MoveAnimationOriginMetadata,
+    MoveAnimationTargetMetadata {
+  /** Short explicit label requested by the planner or future override. Empty labels are ignored. */
+  label: string
+  /** Optional semantic colour hint for labels such as Buff, Debuff, Heal, or Status. */
+  tone?: MoveVfxTone
+}
+
 /**
  * Mapping from the shared visual kind catalog to its concrete event variant.
  * Indexing by `MoveVfxKind` keeps variant coverage tied to the single kind list.
@@ -224,6 +234,7 @@ export interface MoveAnimationEventByKind {
   [MOVE_VFX_KIND.status]: MoveStatusAnimationEvent
   [MOVE_VFX_KIND.healing]: MoveHealingAnimationEvent
   [MOVE_VFX_KIND.buffDebuff]: MoveBuffDebuffAnimationEvent
+  [MOVE_VFX_KIND.badge]: MoveBadgeAnimationEvent
 }
 
 export type MoveAnimationEvent = MoveAnimationEventByKind[MoveVfxKind]

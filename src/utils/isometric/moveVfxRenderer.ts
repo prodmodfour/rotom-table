@@ -1,10 +1,12 @@
 import * as THREE from 'three'
+import { CSS3DSprite } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridAnchor } from '~/types/map'
 import {
   MOVE_VFX_KIND,
   type MoveAnimationEvent,
   type MoveAreaPulseAnimationEvent,
   type MoveArcAnimationEvent,
+  type MoveBadgeAnimationEvent,
   type MoveBeamAnimationEvent,
   type MoveBuffDebuffAnimationEvent,
   type MoveConeSweepAnimationEvent,
@@ -80,6 +82,8 @@ export interface MoveVfxDebugSnapshot {
   needsAnimationFrame: boolean
   /** Current root-group visibility after layer and lifecycle rules are applied. */
   visible: boolean
+  /** Whether any active instance owns CSS3D output that needs CSS renderer frames. */
+  css3DActive: boolean
   /** Last resolved layer-visibility input supplied by the grid. */
   layerVisible: boolean
   /** Whether the renderer has been disposed. */
@@ -92,6 +96,8 @@ export interface MoveVfxRenderer {
   sync(events: readonly MoveAnimationEvent[], context?: MoveVfxRendererSyncContext): void
   animate(frameContext: MoveVfxRendererFrameContext): void
   needsAnimationFrame(): boolean
+  /** True only while optional CSS3D badge instances may change CSS output. */
+  needsCss3DFrame(): boolean
   activeCount(): number
   /**
    * Cheap, allocation-on-demand developer snapshot for render metrics and dev
@@ -326,6 +332,16 @@ const MOVE_VFX_STATUS_CLOUD_ORBIT_END_SCALE = 0.62
 const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_MAX_OPACITY = 0.3
 const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_START_SCALE = 0.9
 const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_END_SCALE = 1.1
+const MOVE_VFX_BADGE_NAME = 'move-vfx-badge'
+const MOVE_VFX_BADGE_RENDER_STATE_KEY = 'moveVfxBadgeRenderState'
+const MOVE_VFX_BADGE_LABEL_USER_DATA_KEY = 'moveVfxBadgeLabel'
+const MOVE_VFX_BADGE_PIXELS_PER_METRE = 48
+const MOVE_VFX_BADGE_MAX_LABEL_LENGTH = 12
+const MOVE_VFX_BADGE_CELL_Y_OFFSET = 1.15
+const MOVE_VFX_BADGE_FADE_IN_PROGRESS = 0.18
+const MOVE_VFX_BADGE_FADE_OUT_START = 0.72
+const MOVE_VFX_BADGE_START_SCALE = 0.92
+const MOVE_VFX_BADGE_END_SCALE = 1.04
 const MOVE_VFX_AREA_PULSE_CELLS_NAME = 'move-vfx-area-pulse-cells'
 const MOVE_VFX_AREA_PULSE_RENDER_ORDER = MOVE_VFX_RENDER_ORDER_GROUND
 const MOVE_VFX_AREA_PULSE_CELL_INSET = 0.14
@@ -528,6 +544,7 @@ interface MoveVfxInstance {
   readonly id: string
   readonly group: THREE.Group
   readonly complete: boolean
+  readonly css3D?: boolean
   animate(context: MoveVfxRendererFrameContext): void
   dispose(): void
 }
@@ -825,6 +842,129 @@ const firstHealingTargetId = (event: MoveHealingAnimationEvent): string | undefi
 const firstBuffDebuffTargetId = (event: MoveBuffDebuffAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
 )
+
+const firstBadgeTargetId = (event: MoveBadgeAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
+const normalizeMoveVfxBadgeLabel = (label: unknown): string => {
+  if (typeof label !== 'string') return ''
+
+  const compact = label.trim().replace(/\s+/g, ' ')
+  if (!compact) return ''
+
+  const glyphs = Array.from(compact)
+  return glyphs.length > MOVE_VFX_BADGE_MAX_LABEL_LENGTH
+    ? `${glyphs.slice(0, MOVE_VFX_BADGE_MAX_LABEL_LENGTH - 1).join('')}…`
+    : compact
+}
+
+const moveVfxCssColorWithAlpha = (color: string, alpha: number): string => {
+  const normalized = color.trim()
+  const match = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(normalized)
+  if (!match) return normalized
+
+  const [, red, green, blue] = match
+  return `rgba(${parseInt(red, 16)}, ${parseInt(green, 16)}, ${parseInt(blue, 16)}, ${clamp01(alpha)})`
+}
+
+const moveVfxBadgePaletteForEvent = (event: MoveBadgeAnimationEvent): MoveVfxPaletteEntry => (
+  event.palette ?? moveVfxColorForTone(event.tone ?? MOVE_VFX_TONE.neutral)
+)
+
+const resolveBadgeAnchor = (
+  event: MoveBadgeAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): THREE.Vector3 | null => {
+  const targetId = firstBadgeTargetId(event) ?? event.userId
+  const tokenAnchor = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: targetId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.aboveHead,
+  })
+  if (tokenAnchor) return tokenAnchor
+
+  const fallbackCell = event.targetCell ?? event.originCell
+  if (!fallbackCell) return null
+
+  return moveVfxGridCellCenterAnchor(fallbackCell).add(new THREE.Vector3(0, MOVE_VFX_BADGE_CELL_Y_OFFSET, 0))
+}
+
+const createMoveVfxBadgeElement = (
+  event: MoveBadgeAnimationEvent,
+  palette: MoveVfxPaletteEntry,
+): HTMLElement | null => {
+  const label = normalizeMoveVfxBadgeLabel(event.label)
+  if (!label || typeof document === 'undefined' || typeof document.createElement !== 'function') return null
+
+  const element = document.createElement('div')
+  element.className = 'move-vfx-badge'
+  element.textContent = label
+  element.setAttribute('aria-hidden', 'true')
+  element.setAttribute('role', 'presentation')
+  element.style.pointerEvents = 'none'
+  element.style.userSelect = 'none'
+  element.style.whiteSpace = 'nowrap'
+  element.style.display = 'inline-flex'
+  element.style.alignItems = 'center'
+  element.style.justifyContent = 'center'
+  element.style.minWidth = '2.2rem'
+  element.style.maxWidth = '5.75rem'
+  element.style.padding = '0.08rem 0.32rem'
+  element.style.borderRadius = '999px'
+  element.style.border = `1px solid ${moveVfxCssColorWithAlpha(palette.accent, 0.82)}`
+  element.style.background = `linear-gradient(135deg, ${moveVfxCssColorWithAlpha(palette.glow, 0.76)}, ${moveVfxCssColorWithAlpha('#111827', 0.84)})`
+  element.style.boxShadow = `0 0 10px ${moveVfxCssColorWithAlpha(palette.glow, 0.42)}`
+  element.style.color = palette.accent
+  element.style.font = '700 10px/1.1 Atkinson Hyperlegible, Inter, system-ui, sans-serif'
+  element.style.letterSpacing = '0.02em'
+  element.style.textShadow = `0 1px 2px rgba(0, 0, 0, 0.9), 0 0 8px ${moveVfxCssColorWithAlpha(palette.glow, 0.6)}`
+  element.style.opacity = '0'
+  element.style.willChange = 'opacity, transform'
+  element.dataset.moveVfxBadge = 'true'
+  element.dataset.moveVfxBadgeLabel = label
+
+  return element
+}
+
+const createMoveVfxBadgeSprite = (
+  event: MoveBadgeAnimationEvent,
+  palette: MoveVfxPaletteEntry,
+): CSS3DSprite | null => {
+  const element = createMoveVfxBadgeElement(event, palette)
+  if (!element) return null
+
+  const sprite = new CSS3DSprite(element)
+  sprite.name = MOVE_VFX_BADGE_NAME
+  sprite.element.style.pointerEvents = 'none'
+  sprite.scale.setScalar(1 / MOVE_VFX_BADGE_PIXELS_PER_METRE)
+  sprite.visible = false
+  sprite.userData[MOVE_VFX_BADGE_LABEL_USER_DATA_KEY] = element.dataset.moveVfxBadgeLabel ?? ''
+  return sprite
+}
+
+const applyMoveVfxBadgeVisualState = (options: {
+  sprite: CSS3DSprite
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const fadeIn = clamp01(progress / MOVE_VFX_BADGE_FADE_IN_PROGRESS)
+  const fadeOut = progress <= MOVE_VFX_BADGE_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_BADGE_FADE_OUT_START))
+  const opacity = Math.min(fadeIn, fadeOut)
+  const scale = MOVE_VFX_BADGE_START_SCALE
+    + ((MOVE_VFX_BADGE_END_SCALE - MOVE_VFX_BADGE_START_SCALE) * easeOutCubic(progress))
+
+  options.sprite.scale.setScalar((1 / MOVE_VFX_BADGE_PIXELS_PER_METRE) * scale)
+  options.sprite.element.style.opacity = opacity.toFixed(3)
+  options.sprite.visible = opacity > 0.005
+  options.sprite.userData[MOVE_VFX_BADGE_RENDER_STATE_KEY] = {
+    opacity,
+    scale,
+    visible: options.sprite.visible,
+  }
+}
 
 const beamRadiusForRenderObjects = (
   userRenderObject: PokemonRenderObject | undefined,
@@ -4770,6 +4910,54 @@ const createBuffDebuffMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
+const createBadgeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveBadgeAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchor = resolveBadgeAnchor(event, renderObjects)
+  const palette = moveVfxBadgePaletteForEvent(event)
+  const badge = createMoveVfxBadgeSprite(event, palette)
+
+  if (!anchor || !badge) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+
+  // Badge VFX are intentionally opt-in CSS3D labels for ambiguous semantic
+  // outcomes. The planner must request the short label explicitly; the badge is
+  // non-interactive, short-lived, scheduler-driven, and never mutates gameplay
+  // state or token placement. It is CSS3D so the grid can dirty CSS only while
+  // this instance is active instead of forcing CSS passes for all move VFX.
+  context.group.position.copy(anchor)
+  context.group.add(badge)
+  applyMoveVfxBadgeVisualState({ sprite: badge, progress: 0 })
+
+  return {
+    id: event.id,
+    group: context.group,
+    css3D: true,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyMoveVfxBadgeVisualState({ sprite: badge, progress: progress.progress })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const selectMoveVfxInstanceBuilder = (kind: string): MoveVfxInstanceBuilder => {
   switch (kind) {
     case MOVE_VFX_KIND.projectile:
@@ -4806,6 +4994,8 @@ const selectMoveVfxInstanceBuilder = (kind: string): MoveVfxInstanceBuilder => {
       return createHealingMoveVfxInstance
     case MOVE_VFX_KIND.buffDebuff:
       return createBuffDebuffMoveVfxInstance
+    case MOVE_VFX_KIND.badge:
+      return createBadgeMoveVfxInstance
     default:
       return createNoopMoveVfxInstance
   }
@@ -4841,6 +5031,14 @@ export const createMoveVfxRenderer = (
   const completedEventIds = new Set<string>()
 
   const hasActiveInstances = () => !disposed && activeInstances.size > 0
+  const hasActiveCss3DInstances = () => {
+    if (disposed) return false
+
+    for (const instance of activeInstances.values()) {
+      if (instance.css3D === true) return true
+    }
+    return false
+  }
 
   const applyVisibility = () => {
     group.visible = hasActiveInstances() && lastVisible
@@ -4851,6 +5049,7 @@ export const createMoveVfxRenderer = (
     instanceGroupCount: group.children.length,
     needsAnimationFrame: hasActiveInstances(),
     visible: group.visible,
+    css3DActive: hasActiveCss3DInstances(),
     layerVisible: !disposed && lastVisible,
     disposed,
   })
@@ -4940,6 +5139,10 @@ export const createMoveVfxRenderer = (
 
     needsAnimationFrame() {
       return hasActiveInstances()
+    },
+
+    needsCss3DFrame() {
+      return hasActiveCss3DInstances()
     },
 
     activeCount() {

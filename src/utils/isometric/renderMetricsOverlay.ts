@@ -119,6 +119,7 @@ export const createRenderMetricsMoveVfxRows = (
     { key: 'move-vfx-active', label: 'Active VFX', value: formatRenderMetricCount(moveVfx.activeCount) },
     { key: 'move-vfx-instance-groups', label: 'Instance groups', value: formatRenderMetricCount(moveVfx.instanceGroupCount) },
     { key: 'move-vfx-needs-frame', label: 'Keeps scheduler active', value: formatRenderMetricBoolean(moveVfx.needsAnimationFrame) },
+    { key: 'move-vfx-css3d-active', label: 'CSS3D badge active', value: formatRenderMetricBoolean(moveVfx.css3DActive) },
     { key: 'move-vfx-visible', label: 'Root visible', value: formatRenderMetricBoolean(moveVfx.visible) },
     { key: 'move-vfx-layer-visible', label: 'Layer visible', value: formatRenderMetricBoolean(moveVfx.layerVisible) },
     { key: 'move-vfx-disposed', label: 'Renderer disposed', value: formatRenderMetricBoolean(moveVfx.disposed) },

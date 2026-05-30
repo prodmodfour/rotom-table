@@ -182,6 +182,7 @@ describe('isometric render metrics model', () => {
       instanceGroupCount: 2,
       needsAnimationFrame: true,
       visible: true,
+      css3DActive: false,
       layerVisible: true,
       disposed: false,
     }

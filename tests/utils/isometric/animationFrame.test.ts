@@ -121,6 +121,52 @@ describe('isometric animation frame', () => {
     expect(result.cssRendered).toBe(false)
   })
 
+  it('marks CSS3D dirty only when active move VFX reports CSS badge output', () => {
+    const camera = new THREE.OrthographicCamera()
+    const scene = new THREE.Scene()
+    const moveVfxRenderer = {
+      needsAnimationFrame: vi.fn(() => true),
+      needsCss3DFrame: vi.fn(() => true),
+      animate: vi.fn(),
+    }
+    const renderer = { render: vi.fn() }
+    const cssRenderer = { render: vi.fn() }
+    let dirty = false
+    const css3DRenderDirtyTracker = {
+      markDirty: vi.fn((reason?: string) => {
+        if (reason === 'manual') dirty = true
+      }),
+      consumeDirty: vi.fn(() => dirty),
+    }
+
+    const result = stepIsometricAnimationFrame({
+      clock: { getDelta: () => 0.016, elapsedTime: 1 },
+      renderObjects: [],
+      applyRenderObjectPosition: vi.fn(),
+      controls: { target: new THREE.Vector3(), update: vi.fn() },
+      fieldEffectRenderer: { update: vi.fn(), needsAnimationFrame: vi.fn(() => false) },
+      tokenMovePreviewRenderer: { animate: vi.fn() },
+      moveVfxRenderer,
+      selectedPokemon: null,
+      previewPositionY: null,
+      camera,
+      renderer,
+      cssRenderer,
+      scene,
+      facingDirection: new THREE.Vector2(1, 0),
+      frameNowMs: 1,
+      animateRenderObject: vi.fn(),
+      css3DRenderDirtyTracker,
+    })
+
+    expect(moveVfxRenderer.animate).toHaveBeenCalledOnce()
+    expect(moveVfxRenderer.needsCss3DFrame).toHaveBeenCalledOnce()
+    expect(css3DRenderDirtyTracker.markDirty).toHaveBeenCalledWith('manual')
+    expect(renderer.render).toHaveBeenCalledWith(scene, camera)
+    expect(cssRenderer.render).toHaveBeenCalledWith(scene, camera)
+    expect(result.cssRendered).toBe(true)
+  })
+
   it('skips idle move VFX animation work while still rendering the scheduled frame', () => {
     const camera = new THREE.OrthographicCamera()
     const scene = new THREE.Scene()
