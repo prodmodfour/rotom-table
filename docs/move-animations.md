@@ -60,6 +60,12 @@ A user should select and resolve a target through the existing move automation f
 
 The existing roll feedback and targeting overlays must remain readable; animation should enhance the flow, not replace the current feedback UI.
 
+### Targeting and roll-feedback overlay polish
+
+Targeting UI stays authoritative and on top of the move flow. Single-target and cannot-miss move handlers clear the targeting request before enqueueing VFX, and confirmed area moves now clear the area-confirmation state before area VFX are planned. This lets the reticle click layer, hit-chance badges, and area-template confirmation UI leave the scene before impact or area pulses begin; no extra timer is needed beyond Vue's normal batched prop update.
+
+Accuracy-based VFX continue to synchronize with roll-feedback phases: launch/contact cues may begin immediately, hit/miss/crit impacts wait for the outcome phase, and semantic HP/status/stage follow-ups wait for the final damage/result phase. CSS3D overlay stacking is reserved so optional VFX badges sit below target reticles and roll-feedback labels, and every VFX DOM/WebGL object is pointer-transparent. Move VFX must never intercept targeting clicks, context menus, camera controls, or token interaction raycasts.
+
 ### Optional badge evaluation
 
 Existing roll feedback, target flashes, status clouds, buff/debuff particles, healing pulses, HP/status HUD, and combat-stage glass provide the primary read for most non-damage outcomes. Text badges therefore remain disabled by default to avoid cluttering crowded tactical maps. The renderer supports a lightweight badge primitive only for future planners or overrides that explicitly request a short `badge` event with a readable label. Empty labels, missing DOM support, and missing anchors no-op safely.
@@ -142,7 +148,7 @@ Timing-specific manual review scenarios for this pass:
 - **Scale:** Scale to map space, not to a move name. Projectile cores should be small relative to a grid cell, beams should stay narrow enough to show the target beneath, target rings should start near the token footprint and expand modestly, and area overlays should stay inside or just within each affected cell. Large tokens may scale effects from token footprint/height, but the effect should not cover adjacent unrelated tokens by default.
 - **Glow:** Prefer simple emissive colours, additive-looking transparent layers, or duplicated soft shells over expensive post-processing. Glow should improve readability on dark terrain without washing out token sprites, HP bars, status glass, targeting reticles, or roll feedback.
 - **Render order:** Keep VFX in predictable layers. Ground/cell effects should render above terrain, hazards, and field-effect surfaces but below or behind CSS3D HUD/feedback. Body, projectile, and beam effects may render above token geometry for readability, with `depthTest` enabled where practical and `depthWrite` disabled for transparent materials. Use named render-order constants when implemented; do not scatter magic numbers through primitives. If active targeting or roll feedback would be obscured, lower opacity, sequence the VFX after confirmation, or shorten the effect rather than hiding existing UI.
-- **Pointer behaviour:** VFX objects are visual only and must not intercept map pointer interactions, targeting clicks, context menus, or camera controls.
+- **Pointer behaviour:** VFX objects are visual only and must not intercept map pointer interactions, targeting clicks, context menus, or camera controls. The renderer marks each transient VFX object tree with a no-op raycast handler, and CSS3D VFX labels use `pointer-events: none`, so future broad scene raycasts should still ignore VFX.
 
 ### Type-coloured versus neutral or semantic colour
 

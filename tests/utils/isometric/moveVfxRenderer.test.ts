@@ -663,6 +663,28 @@ describe('move VFX renderer shell', () => {
     expect(group.name).toBe('custom-move-vfx-group')
   })
 
+  it('marks all VFX objects pointer-transparent for map raycasts', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const renderObjects = new Map([
+      ['user-1', makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })],
+      ['target-1', makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(2, 0, 0) })],
+    ])
+
+    renderer.sync([projectileEvent()], { renderObjects })
+
+    const traversed: THREE.Object3D[] = []
+    renderer.group.traverse((object) => traversed.push(object))
+    expect(traversed.length).toBeGreaterThan(1)
+    expect(traversed.every((object) => object.userData.moveVfxPointerTransparent === true)).toBe(true)
+
+    const raycaster = new THREE.Raycaster(
+      new THREE.Vector3(1, 0.6, 4),
+      new THREE.Vector3(0, 0, -1).normalize(),
+    )
+    expect(raycaster.intersectObject(renderer.group, true)).toEqual([])
+  })
+
   it('tracks synced events as disposable lifecycle instance groups', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)
@@ -1494,6 +1516,7 @@ describe('move VFX renderer shell', () => {
       expect(badge?.element.getAttribute('role')).toBe('presentation')
       expect(badge?.element.style.pointerEvents).toBe('none')
       expect(badge?.element.style.userSelect).toBe('none')
+      expect(badge?.element.style.zIndex).toBe('10')
       expect(badge?.element.style.color).toBe(MOVE_VFX_TONE_COLORS.debuff.accent)
       expect(badge?.userData.moveVfxBadgeLabel).toBe('Badly Poiso…')
 

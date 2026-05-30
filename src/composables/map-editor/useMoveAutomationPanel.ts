@@ -1403,6 +1403,7 @@ export const useMoveAutomationPanel = ({
     })
     const destinationLogLine = passDestinationLogLine(user, request.passDestination)
     if (destinationLogLine) transaction.logLines.push(destinationLogLine)
+    activeMoveTargeting.value = null
     planAndEnqueueAreaMoveAnimations({
       script: request.script,
       user,
@@ -1414,7 +1415,6 @@ export const useMoveAutomationPanel = ({
       ...(request.passDestination ? { passDestination: request.passDestination } : {}),
       transaction,
     })
-    activeMoveTargeting.value = null
     await applyMoveAutomation(transaction, { updateFacing: !request.direction, script: request.script })
     moveTokenToPassDestination(request.userId, request.passDestination)
   }

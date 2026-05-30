@@ -1631,6 +1631,61 @@ describe('useMoveAutomationPanel', () => {
     ])
   })
 
+  it('clears area targeting overlays before enqueueing confirmed area VFX', async () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 8, y: 2, z: 8 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 3, y: 0, z: 4 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Growl' }],
+    } as CharacterSheet
+    let targetingDuringVfxEnqueue: unknown = 'not-called'
+    let panel!: ReturnType<typeof useMoveAutomationPanel>
+    const enqueueMoveAnimations = vi.fn((_events: readonly MoveAnimationEvent[]) => {
+      targetingDuringVfxEnqueue = panel.moveAutomationTargeting.value
+    })
+    panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 3, y: 0, z: 4 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      enqueueMoveAnimations,
+      now: () => 14500,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Growl' })
+    expect(panel.moveAutomationTargeting.value).toMatchObject({ mode: 'area-confirmation', moveName: 'Growl' })
+
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    try {
+      await panel.selectMoveAutomationTarget('user-token')
+    } finally {
+      random.mockRestore()
+    }
+
+    expect(enqueueMoveAnimations).toHaveBeenCalledTimes(1)
+    expect(targetingDuringVfxEnqueue).toBeNull()
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+  })
+
   it('opens Scratch as a Pass confirmation, hits crossed targets, and moves to the end square', async () => {
     const map = ref({
       ...mapFixture(),

@@ -539,6 +539,17 @@ const MOVE_VFX_WORLD_UP = new THREE.Vector3(0, 1, 0)
 const MOVE_VFX_WORLD_FORWARD = new THREE.Vector3(0, 0, 1)
 
 const EMPTY_RENDER_OBJECTS = new Map<string, PokemonRenderObject>()
+const MOVE_VFX_POINTER_TRANSPARENT_USER_DATA_KEY = 'moveVfxPointerTransparent'
+const noopMoveVfxRaycast: THREE.Object3D['raycast'] = () => {}
+
+const markMoveVfxObjectPointerTransparent = (object: THREE.Object3D) => {
+  object.userData[MOVE_VFX_POINTER_TRANSPARENT_USER_DATA_KEY] = true
+  object.raycast = noopMoveVfxRaycast
+}
+
+const markMoveVfxTreePointerTransparent = (object: THREE.Object3D) => {
+  object.traverse(markMoveVfxObjectPointerTransparent)
+}
 
 interface MoveVfxInstance {
   readonly id: string
@@ -948,6 +959,7 @@ const createMoveVfxBadgeElement = (
   element.setAttribute('role', 'presentation')
   element.style.pointerEvents = 'none'
   element.style.userSelect = 'none'
+  element.style.zIndex = '10'
   element.style.whiteSpace = 'nowrap'
   element.style.display = 'inline-flex'
   element.style.alignItems = 'center'
@@ -981,6 +993,7 @@ const createMoveVfxBadgeSprite = (
   const sprite = new CSS3DSprite(element)
   sprite.name = MOVE_VFX_BADGE_NAME
   sprite.element.style.pointerEvents = 'none'
+  sprite.element.style.zIndex = '10'
   sprite.scale.setScalar(1 / MOVE_VFX_BADGE_PIXELS_PER_METRE)
   sprite.visible = false
   sprite.userData[MOVE_VFX_BADGE_LABEL_USER_DATA_KEY] = element.dataset.moveVfxBadgeLabel ?? ''
@@ -5062,6 +5075,7 @@ export const createMoveVfxRenderer = (
   const group = options.group ?? new THREE.Group()
   group.name = group.name || MOVE_VFX_GROUP_NAME
   group.visible = false
+  markMoveVfxTreePointerTransparent(group)
 
   if (group.parent !== options.scene) {
     group.parent?.remove(group)
@@ -5108,11 +5122,13 @@ export const createMoveVfxRenderer = (
     instanceGroup.visible = hasMoveAnimationEventStarted(event, event.createdAtMs)
     group.add(instanceGroup)
 
-    return selectMoveVfxInstanceBuilder(event.kind)({
+    const instance = selectMoveVfxInstanceBuilder(event.kind)({
       event,
       group: instanceGroup,
       syncContext,
     })
+    markMoveVfxTreePointerTransparent(instance.group)
+    return instance
   }
 
   const disposeInstance = (id: string) => {

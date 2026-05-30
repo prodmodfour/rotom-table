@@ -22,6 +22,7 @@ const createTargetReticleElement = (label: string): HTMLElement => {
   element.className = 'move-target-reticle-anchor'
   element.setAttribute('aria-label', label)
   element.style.pointerEvents = 'none'
+  element.style.zIndex = '20'
 
   const hitChance = document.createElement('div')
   hitChance.className = 'move-target-hit-chance'
@@ -171,6 +172,8 @@ export const createMoveTargetingReticleRenderer = (scene: THREE.Scene) => {
     if (reticle) return reticle
 
     reticle = new CSS3DSprite(createTargetReticleElement('Move target'))
+    reticle.element.style.pointerEvents = 'none'
+    reticle.element.style.zIndex = '20'
     reticle.visible = false
     scene.add(reticle)
     reticles.set(id, reticle)
@@ -252,6 +255,7 @@ const createFeedbackElement = (): HTMLElement => {
   const element = document.createElement('div')
   element.className = 'move-automation-roll-anchor'
   element.style.pointerEvents = 'none'
+  element.style.zIndex = '30'
 
   const body = document.createElement('div')
   body.className = 'move-automation-roll'
@@ -535,6 +539,8 @@ export const createMoveAreaTemplateRenderer = (scene: THREE.Scene) => {
 
 export const createMoveAutomationFeedbackRenderer = (scene: THREE.Scene) => {
   const sprite = new CSS3DSprite(createFeedbackElement())
+  sprite.element.style.pointerEvents = 'none'
+  sprite.element.style.zIndex = '30'
   sprite.visible = false
   sprite.scale.setScalar(FEEDBACK_WORLD_WIDTH / FEEDBACK_CSS_WIDTH_PX)
   scene.add(sprite)
