@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveProjectileAnimationEvent } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent } from '~/types/moveAnimation'
 import { DEFAULT_MOVE_VFX_COLOR, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import {
@@ -120,7 +120,31 @@ const MOVE_VFX_BEAM_IMPACT_MIN_RADIUS = 0.28
 const MOVE_VFX_BEAM_IMPACT_MAX_RADIUS = 0.72
 const MOVE_VFX_BEAM_IMPACT_START_PROGRESS = 0.16
 const MOVE_VFX_BEAM_IMPACT_MAX_OPACITY = 0.42
+const MOVE_VFX_MELEE_LUNGE_GHOST_NAME = 'move-vfx-melee-lunge-ghost'
+const MOVE_VFX_MELEE_LUNGE_STREAK_NAME = 'move-vfx-melee-lunge-streak'
+const MOVE_VFX_MELEE_LUNGE_IMPACT_RING_NAME = 'move-vfx-melee-lunge-impact-ring'
+const MOVE_VFX_MELEE_LUNGE_RENDER_ORDER = 36
+const MOVE_VFX_MELEE_LUNGE_STREAK_RENDER_ORDER = MOVE_VFX_MELEE_LUNGE_RENDER_ORDER - 1
+const MOVE_VFX_MELEE_LUNGE_IMPACT_RENDER_ORDER = MOVE_VFX_MELEE_LUNGE_RENDER_ORDER + 1
+const MOVE_VFX_MELEE_LUNGE_MIN_TARGET_DISTANCE = 0.08
+const MOVE_VFX_MELEE_LUNGE_MIN_DISTANCE = 0.18
+const MOVE_VFX_MELEE_LUNGE_MAX_DISTANCE = 0.85
+const MOVE_VFX_MELEE_LUNGE_DISTANCE_RATIO = 0.42
+const MOVE_VFX_MELEE_LUNGE_MAX_DISTANCE_RATIO = 0.48
+const MOVE_VFX_MELEE_LUNGE_FADE_IN_PROGRESS = 0.12
+const MOVE_VFX_MELEE_LUNGE_FADE_OUT_START = 0.82
+const MOVE_VFX_MELEE_LUNGE_STREAK_MIN_LENGTH = 0.035
+const MOVE_VFX_MELEE_LUNGE_GHOST_MAX_OPACITY = 0.36
+const MOVE_VFX_MELEE_LUNGE_STREAK_MAX_OPACITY = 0.28
+const MOVE_VFX_MELEE_LUNGE_IMPACT_START_PROGRESS = 0.38
+const MOVE_VFX_MELEE_LUNGE_IMPACT_DURATION_PROGRESS = 0.42
+const MOVE_VFX_MELEE_LUNGE_IMPACT_MAX_OPACITY = 0.48
+const MOVE_VFX_MELEE_LUNGE_GHOST_RADIUS_MULTIPLIER = 1.45
+const MOVE_VFX_MELEE_LUNGE_GHOST_HEIGHT_MULTIPLIER = 1.9
+const MOVE_VFX_MELEE_LUNGE_STREAK_RADIUS_MULTIPLIER = 0.45
+const MOVE_VFX_MELEE_LUNGE_IMPACT_RADIUS_MULTIPLIER = 2.5
 const MOVE_VFX_WORLD_UP = new THREE.Vector3(0, 1, 0)
+const MOVE_VFX_WORLD_FORWARD = new THREE.Vector3(0, 0, 1)
 
 const EMPTY_RENDER_OBJECTS = new Map<string, PokemonRenderObject>()
 
@@ -348,6 +372,10 @@ const firstBeamTargetId = (event: MoveBeamAnimationEvent): string | undefined =>
   event.targetId ?? event.targetIds?.[0]
 )
 
+const firstMeleeLungeTargetId = (event: MoveMeleeLungeAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
 const beamRadiusForRenderObjects = (
   userRenderObject: PokemonRenderObject | undefined,
   targetRenderObject: PokemonRenderObject | undefined,
@@ -475,6 +503,197 @@ const applyBeamVisualState = (options: {
     options.impactRing.material.opacity = impactOpacity
     options.impactRing.visible = impactOpacity > 0.005
   }
+}
+
+const meleeLungeRadiusForRenderObjects = (
+  userRenderObject: PokemonRenderObject | undefined,
+  targetRenderObject: PokemonRenderObject | undefined,
+): {
+  ghostRadius: number
+  ghostHeight: number
+  streakRadius: number
+  impactRadius: number
+} => {
+  const baseRadius = projectileRadiusForRenderObjects(userRenderObject, targetRenderObject)
+
+  return {
+    ghostRadius: clampNumber(baseRadius * MOVE_VFX_MELEE_LUNGE_GHOST_RADIUS_MULTIPLIER, 0.18, 0.56),
+    ghostHeight: clampNumber(baseRadius * MOVE_VFX_MELEE_LUNGE_GHOST_HEIGHT_MULTIPLIER, 0.24, 0.78),
+    streakRadius: clampNumber(baseRadius * MOVE_VFX_MELEE_LUNGE_STREAK_RADIUS_MULTIPLIER, 0.05, 0.18),
+    impactRadius: clampNumber(baseRadius * MOVE_VFX_MELEE_LUNGE_IMPACT_RADIUS_MULTIPLIER, 0.32, 0.86),
+  }
+}
+
+const createMeleeLungeMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createMeleeLungeGhostMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 8), material)
+  mesh.name = MOVE_VFX_MELEE_LUNGE_GHOST_NAME
+  mesh.renderOrder = MOVE_VFX_MELEE_LUNGE_RENDER_ORDER
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createMeleeLungeStreakMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12, 1, false), material)
+  mesh.name = MOVE_VFX_MELEE_LUNGE_STREAK_NAME
+  mesh.renderOrder = MOVE_VFX_MELEE_LUNGE_STREAK_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createMeleeLungeImpactRingMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.74, 1, 28), material)
+  mesh.name = MOVE_VFX_MELEE_LUNGE_IMPACT_RING_NAME
+  mesh.renderOrder = MOVE_VFX_MELEE_LUNGE_IMPACT_RENDER_ORDER
+  mesh.rotation.x = -Math.PI / 2
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const meleeLungeOpacityMultiplier = (progress: number): number => {
+  const fadeIn = clamp01(progress / MOVE_VFX_MELEE_LUNGE_FADE_IN_PROGRESS)
+  const fadeOut = progress <= MOVE_VFX_MELEE_LUNGE_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_MELEE_LUNGE_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const resolveMeleeLungeAnchors = (
+  event: MoveMeleeLungeAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): {
+  start: THREE.Vector3
+  impact: THREE.Vector3
+  direction: THREE.Vector3
+  directionQuaternion: THREE.Quaternion
+  lungeDistance: number
+} | null => {
+  const targetId = firstMeleeLungeTargetId(event)
+  const anchors = resolveMoveVfxAnchorPair({
+    renderObjects,
+    userId: event.userId,
+    targetId,
+    originCell: event.originCell,
+    targetCell: event.targetCell,
+    userAnchor: MOVE_VFX_TOKEN_ANCHOR.chest,
+    targetAnchor: MOVE_VFX_TOKEN_ANCHOR.chest,
+  })
+
+  if (!anchors) return null
+
+  const horizontalDirection = new THREE.Vector3(
+    anchors.end.x - anchors.start.x,
+    0,
+    anchors.end.z - anchors.start.z,
+  )
+  const targetDistance = horizontalDirection.length()
+  if (targetDistance < MOVE_VFX_MELEE_LUNGE_MIN_TARGET_DISTANCE) return null
+
+  const direction = horizontalDirection.multiplyScalar(1 / targetDistance)
+  const lungeDistance = Math.min(
+    clampNumber(
+      targetDistance * MOVE_VFX_MELEE_LUNGE_DISTANCE_RATIO,
+      MOVE_VFX_MELEE_LUNGE_MIN_DISTANCE,
+      MOVE_VFX_MELEE_LUNGE_MAX_DISTANCE,
+    ),
+    targetDistance * MOVE_VFX_MELEE_LUNGE_MAX_DISTANCE_RATIO,
+  )
+  const impact = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: targetId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.targetCell,
+  }) ?? anchors.end
+
+  return {
+    start: anchors.start.clone(),
+    impact: impact.clone(),
+    direction: direction.clone(),
+    directionQuaternion: new THREE.Quaternion().setFromUnitVectors(MOVE_VFX_WORLD_FORWARD, direction),
+    lungeDistance,
+  }
+}
+
+const applyMeleeLungeVisualState = (options: {
+  ghost: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  streak: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  impactRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  start: THREE.Vector3
+  impact: THREE.Vector3
+  direction: THREE.Vector3
+  directionQuaternion: THREE.Quaternion
+  lungeDistance: number
+  ghostRadius: number
+  ghostHeight: number
+  streakRadius: number
+  impactRadius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const opacityMultiplier = meleeLungeOpacityMultiplier(progress)
+  const lungeProgress = Math.sin(progress * Math.PI)
+  const pulse = pulse01(progress)
+  const travelDistance = options.lungeDistance * lungeProgress
+
+  options.ghost.position.copy(options.start).addScaledVector(options.direction, travelDistance)
+  options.ghost.quaternion.copy(options.directionQuaternion)
+  options.ghost.scale.set(
+    options.ghostRadius * (1 + (pulse * 0.1)),
+    options.ghostHeight * (0.9 + (lungeProgress * 0.16)),
+    options.ghostRadius * (0.72 + (lungeProgress * 0.35)),
+  )
+  options.ghost.material.opacity = MOVE_VFX_MELEE_LUNGE_GHOST_MAX_OPACITY
+    * opacityMultiplier
+    * (0.32 + (lungeProgress * 0.68))
+  options.ghost.visible = options.ghost.material.opacity > 0.005
+
+  if (travelDistance > MOVE_VFX_MELEE_LUNGE_STREAK_MIN_LENGTH) {
+    options.streak.position.copy(options.start).addScaledVector(options.direction, travelDistance * 0.5)
+    options.streak.quaternion.copy(options.directionQuaternion)
+    options.streak.scale.set(options.streakRadius, travelDistance, options.streakRadius)
+    options.streak.material.opacity = MOVE_VFX_MELEE_LUNGE_STREAK_MAX_OPACITY * opacityMultiplier * lungeProgress
+    options.streak.visible = options.streak.material.opacity > 0.005
+  } else {
+    options.streak.material.opacity = 0
+    options.streak.visible = false
+  }
+
+  const rawImpactProgress = clamp01(
+    (progress - MOVE_VFX_MELEE_LUNGE_IMPACT_START_PROGRESS)
+    / MOVE_VFX_MELEE_LUNGE_IMPACT_DURATION_PROGRESS,
+  )
+  const impactProgress = easeOutCubic(rawImpactProgress)
+  const impactFadeIn = clamp01(rawImpactProgress / 0.18)
+  const impactOpacity = MOVE_VFX_MELEE_LUNGE_IMPACT_MAX_OPACITY
+    * impactFadeIn
+    * (1 - rawImpactProgress)
+
+  options.impactRing.position.copy(options.impact)
+  options.impactRing.scale.setScalar(options.impactRadius * (0.58 + (impactProgress * 0.88)))
+  options.impactRing.material.opacity = impactOpacity
+  options.impactRing.visible = impactOpacity > 0.005
 }
 
 /**
@@ -794,7 +1013,75 @@ const createArcMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     },
   }
 }
-const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+
+const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveMeleeLungeAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const targetId = firstMeleeLungeTargetId(event)
+  const anchors = resolveMeleeLungeAnchors(event, renderObjects)
+
+  if (!anchors) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const userRenderObject = renderObjects.get(event.userId)
+  const targetRenderObject = targetId ? renderObjects.get(targetId) : undefined
+  const scales = meleeLungeRadiusForRenderObjects(userRenderObject, targetRenderObject)
+  const ghost = createMeleeLungeGhostMesh(createMeleeLungeMaterial(palette.primary, 0))
+  const streak = createMeleeLungeStreakMesh(createMeleeLungeMaterial(palette.glow, 0))
+  const impactRing = createMeleeLungeImpactRingMesh(createMeleeLungeMaterial(palette.accent, 0))
+
+  // Melee lunges are deliberately VFX-owned overlay geometry. They never offset
+  // the token render object or saved placement; the translucent ghost moves out
+  // and back while the actual token remains controlled by the normal map state.
+  context.group.add(streak, ghost, impactRing)
+  applyMeleeLungeVisualState({
+    ghost,
+    streak,
+    impactRing,
+    ...anchors,
+    ...scales,
+    progress: 0,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyMeleeLungeVisualState({
+        ghost,
+        streak,
+        impactRing,
+        ...anchors,
+        ...scales,
+        progress: progress.progress,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createAreaPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance

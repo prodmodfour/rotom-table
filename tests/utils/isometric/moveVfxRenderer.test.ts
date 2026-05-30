@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveProjectileAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import type { MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -63,6 +63,18 @@ const beamEvent = (overrides: Partial<MoveBeamAnimationEvent> = {}): MoveAnimati
   ...overrides,
 }) as MoveAnimationEvent
 
+const meleeLungeEvent = (overrides: Partial<MoveMeleeLungeAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-melee-lunge',
+  moveName: 'Tackle',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 1000,
+  kind: MOVE_VFX_KIND.meleeLunge,
+  targetId: 'target-1',
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
 const makeRenderObject = (overrides: Partial<PokemonRenderObject> = {}): PokemonRenderObject => ({
   id: 'user-1',
   currentCenter: new THREE.Vector3(0, 0, 0),
@@ -119,6 +131,30 @@ const beamRingNamed = (
   name: string,
 ): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
   const mesh = group.children.find((child) => child.name === name)
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const meleeLungeGhostNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-melee-lunge-ghost')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+}
+
+const meleeLungeStreakNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-melee-lunge-streak')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+}
+
+const meleeLungeImpactRingNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-melee-lunge-impact-ring')
   expect(mesh).toBeInstanceOf(THREE.Mesh)
   return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
 }
@@ -658,6 +694,142 @@ describe('move VFX renderer shell', () => {
 
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders melee lunge events as VFX-owned overlay motion without moving token placement', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+    const userPlacement = user.currentCenter.clone()
+    const targetPlacement = target.currentCenter.clone()
+
+    renderer.sync([meleeLungeEvent()], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const streak = meleeLungeStreakNamed(instanceGroup)
+    const ghost = meleeLungeGhostNamed(instanceGroup)
+    const impactRing = meleeLungeImpactRingNamed(instanceGroup)
+    expect(instanceGroup.children).toHaveLength(3)
+    expectVectorClose(instanceGroup.position, [0, 0, 0])
+    expect(ghost.material.color.getHexString()).toBe('123456')
+    expect(streak.material.color.getHexString()).toBe('aa3300')
+    expect(impactRing.material.color.getHexString()).toBe('ffeeaa')
+    expect(ghost.material.transparent).toBe(true)
+    expect(ghost.material.depthWrite).toBe(false)
+    expect(ghost.renderOrder).toBe(36)
+    expect(streak.renderOrder).toBe(35)
+    expect(impactRing.renderOrder).toBe(37)
+    expect(ghost.visible).toBe(false)
+    expect(streak.visible).toBe(false)
+    expect(impactRing.visible).toBe(false)
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
+
+    expectVectorClose(ghost.position, [0.85, 1.16, 0])
+    expectVectorClose(streak.position, [0.425, 1.16, 0])
+    expectVectorClose(impactRing.position, [4, 0, 0])
+    expect(ghost.visible).toBe(true)
+    expect(streak.visible).toBe(true)
+    expect(impactRing.visible).toBe(true)
+    expect(streak.scale.y).toBeCloseTo(0.85)
+    expect(impactRing.material.opacity).toBeGreaterThan(0)
+    expect(user.currentCenter.equals(userPlacement)).toBe(true)
+    expect(target.currentCenter.equals(targetPlacement)).toBe(true)
+
+    const meleeMeshes = [streak, ghost, impactRing] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>[]
+    const geometryDisposeSpies = meleeMeshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = meleeMeshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    target.currentCenter.set(12, 0, 0)
+    renderer.animate({ frameNowMs: 601, delta: 0.016, renderObjects })
+
+    expect(ghost.position.x).toBeLessThan(0.86)
+    expect(user.currentCenter.equals(userPlacement)).toBe(true)
+
+    renderer.animate({ frameNowMs: 1100, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses grid-cell fallbacks for melee lunge targets when the token render object is missing', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([
+      meleeLungeEvent({
+        targetId: 'missing-target',
+        targetCell: { x: 5, y: 0, z: 2 },
+      }),
+    ], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const ghost = meleeLungeGhostNamed(instanceGroup)
+    const impactRing = meleeLungeImpactRingNamed(instanceGroup)
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
+
+    expect(ghost.position.x).toBeGreaterThan(0.7)
+    expect(ghost.position.z).toBeGreaterThan(0.3)
+    expectVectorClose(impactRing.position, [5.5, 0, 2.5])
+  })
+
+  it('falls back to a no-op melee lunge when anchors cannot be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1' })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([meleeLungeEvent({ targetId: 'missing-target' })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 1100, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('disposes melee lunge resources when the event is removed mid-lunge', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+    const userPlacement = user.currentCenter.clone()
+
+    renderer.sync([meleeLungeEvent()], { renderObjects })
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const meshes = instanceGroup.children as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>[]
+    expect(meshes).toHaveLength(3)
+    const geometryDisposeSpies = meshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = meshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    renderer.sync([])
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(user.currentCenter.equals(userPlacement)).toBe(true)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
   })
 
   it('does not duplicate a lifecycle instance when the same event id is synced repeatedly', () => {

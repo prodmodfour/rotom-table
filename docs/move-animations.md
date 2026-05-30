@@ -414,6 +414,14 @@ Arc motion uses the existing projectile core/glow material helpers and constant-
 
 Arc meshes, materials, and trail segments are owned by the same event lifecycle group and dispose through `disposeObject3D()` on completion, removal, or map unmount. The primitive is visual-only: it adds no timers, no independent RAF loop, no persistence, no gameplay/placement mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
 
+### Melee lunge primitive for VFX-035
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the melee-lunge placeholder with a short VFX-owned contact motion for generic melee attacks. Melee lunge events resolve and lock the user's chest anchor plus the first target's chest/foot anchors at instance creation, with the same grid-cell fallback policy used by other primitives. The effect derives a bounded horizontal lunge distance from the locked user-to-target direction so it reads as a forward-and-back contact cue without crossing the target or stretching if either token moves during the animation.
+
+The primitive intentionally does **not** offset the real token sprite, render object, placement, or saved map data. Instead, it renders a translucent palette-coloured ghost/afterimage, a short glow streak, and a small target-foot impact ring inside the event-owned VFX group. Scheduler frame time drives their position, scale, opacity, and completion; clearing the event or unmounting the grid disposes all owned geometry/materials through `disposeObject3D()` and leaves token placement untouched.
+
+Melee lunge VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay/placement mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
+
 ### Beam primitive for VFX-033
 
 `src/utils/isometric/moveVfxRenderer.ts` now replaces the beam placeholder with a lightweight straight-line energy primitive. Beam events lock their user chest anchor and target chest anchor at creation time, with existing grid-cell fallbacks and an area-cell centroid fallback when no target token is supplied. This makes a beam stable for the event lifetime even if token render objects move before the VFX completes.
