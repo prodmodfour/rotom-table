@@ -74,13 +74,20 @@ const MOVE_VFX_GROUP_NAME = 'move-vfx-root'
 const MOVE_VFX_INSTANCE_GROUP_PREFIX = 'move-vfx-instance'
 const MOVE_VFX_PROJECTILE_CORE_NAME = 'move-vfx-projectile-core'
 const MOVE_VFX_PROJECTILE_GLOW_NAME = 'move-vfx-projectile-glow'
+const MOVE_VFX_PROJECTILE_TRAIL_SEGMENT_PREFIX = 'move-vfx-projectile-trail'
 const MOVE_VFX_PROJECTILE_RENDER_ORDER = 34
+const MOVE_VFX_PROJECTILE_TRAIL_RENDER_ORDER = MOVE_VFX_PROJECTILE_RENDER_ORDER - 1
 const MOVE_VFX_PROJECTILE_MIN_RADIUS = 0.12
 const MOVE_VFX_PROJECTILE_DEFAULT_RADIUS = 0.16
 const MOVE_VFX_PROJECTILE_MAX_RADIUS = 0.36
 const MOVE_VFX_PROJECTILE_RADIUS_SCALE = 0.14
 const MOVE_VFX_PROJECTILE_FADE_IN_PROGRESS = 0.12
 const MOVE_VFX_PROJECTILE_FADE_OUT_START = 0.78
+const MOVE_VFX_PROJECTILE_TRAIL_SEGMENT_COUNT = 4
+const MOVE_VFX_PROJECTILE_TRAIL_PROGRESS_SPACING = 0.055
+const MOVE_VFX_PROJECTILE_TRAIL_MAX_OPACITY = 0.28
+const MOVE_VFX_PROJECTILE_TRAIL_NEAR_SCALE = 0.7
+const MOVE_VFX_PROJECTILE_TRAIL_FAR_SCALE = 0.34
 
 const EMPTY_RENDER_OBJECTS = new Map<string, PokemonRenderObject>()
 
@@ -153,18 +160,33 @@ const createProjectileMaterial = (
 const createProjectileMesh = (
   name: string,
   material: THREE.MeshBasicMaterial,
+  renderOrder = MOVE_VFX_PROJECTILE_RENDER_ORDER,
 ): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), material)
   mesh.name = name
-  mesh.renderOrder = MOVE_VFX_PROJECTILE_RENDER_ORDER
+  mesh.renderOrder = renderOrder
   mesh.raycast = () => {}
   return mesh
 }
+
+const projectileTrailSegmentName = (index: number): string => `${MOVE_VFX_PROJECTILE_TRAIL_SEGMENT_PREFIX}-${index + 1}`
+
+const createProjectileTrailSegments = (
+  color: THREE.ColorRepresentation,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => Array.from(
+  { length: MOVE_VFX_PROJECTILE_TRAIL_SEGMENT_COUNT },
+  (_, index) => createProjectileMesh(
+    projectileTrailSegmentName(index),
+    createProjectileMaterial(color, 0),
+    MOVE_VFX_PROJECTILE_TRAIL_RENDER_ORDER,
+  ),
+)
 
 const applyProjectileVisualState = (options: {
   group: THREE.Group
   core: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
   glow: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  trailSegments: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
   start: THREE.Vector3
   end: THREE.Vector3
   radius: number
@@ -184,6 +206,25 @@ const applyProjectileVisualState = (options: {
   options.glow.scale.setScalar(options.radius * (1.85 + (pulse * 0.28)))
   options.core.material.opacity = 0.95 * opacityMultiplier
   options.glow.material.opacity = 0.32 * opacityMultiplier
+
+  const trailScaleDivisor = Math.max(1, options.trailSegments.length - 1)
+  options.trailSegments.forEach((segment, index) => {
+    const rawTrailProgress = progress - ((index + 1) * MOVE_VFX_PROJECTILE_TRAIL_PROGRESS_SPACING)
+    const visibleProgress = clamp01(rawTrailProgress / MOVE_VFX_PROJECTILE_TRAIL_PROGRESS_SPACING)
+    const scaleT = index / trailScaleDivisor
+    const scaleMultiplier = MOVE_VFX_PROJECTILE_TRAIL_NEAR_SCALE
+      + ((MOVE_VFX_PROJECTILE_TRAIL_FAR_SCALE - MOVE_VFX_PROJECTILE_TRAIL_NEAR_SCALE) * scaleT)
+    const distanceFade = 1 - (index / (options.trailSegments.length + 1))
+    const opacity = MOVE_VFX_PROJECTILE_TRAIL_MAX_OPACITY * opacityMultiplier * visibleProgress * distanceFade
+
+    segment.position
+      .copy(options.start)
+      .lerp(options.end, easeInOutCubic(clamp01(rawTrailProgress)))
+      .sub(options.group.position)
+    segment.scale.setScalar(options.radius * scaleMultiplier)
+    segment.material.opacity = opacity
+    segment.visible = opacity > 0.005
+  })
 }
 
 const firstProjectileTargetId = (event: MoveProjectileAnimationEvent): string | undefined => (
@@ -265,12 +306,14 @@ const createProjectileMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     MOVE_VFX_PROJECTILE_CORE_NAME,
     createProjectileMaterial(palette.accent, 0.95),
   )
+  const trailSegments = createProjectileTrailSegments(palette.glow)
 
-  context.group.add(glow, core)
+  context.group.add(...trailSegments, glow, core)
   applyProjectileVisualState({
     group: context.group,
     core,
     glow,
+    trailSegments,
     start,
     end,
     radius,
@@ -300,6 +343,7 @@ const createProjectileMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         group: context.group,
         core,
         glow,
+        trailSegments,
         start,
         end,
         radius,

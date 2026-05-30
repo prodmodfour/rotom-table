@@ -396,9 +396,15 @@ When the map route is opened in development with `?debug=render`, `?debug=render
 
 `src/utils/isometric/moveVfxRenderer.ts` now replaces the projectile placeholder with a lightweight visible primitive. Projectile events resolve and lock a start/end anchor when the renderer instance is created, using the user's chest anchor and the target's chest anchor or explicit grid-cell fallbacks. Locking endpoints keeps an in-flight projectile stable if another renderer update moves the target token before the projectile completes.
 
-The primitive attaches a small palette-coloured core sphere plus a translucent glow sphere to the event-owned lifecycle group, scales the radius from the available user/target token dimensions with a bounded default fallback, and advances position, pulse scale, and opacity from scheduler-provided frame time only. There is no projectile trail yet; VFX-032 owns that follow-up. Missing anchors fall back to the existing no-op instance so move resolution and renderer scheduling remain safe.
+The primitive attaches a small palette-coloured core sphere plus a translucent glow sphere to the event-owned lifecycle group, scales the radius from the available user/target token dimensions with a bounded default fallback, and advances position, pulse scale, and opacity from scheduler-provided frame time only. Missing anchors fall back to the existing no-op instance so move resolution and renderer scheduling remain safe.
 
 Projectile geometry and materials are owned by the event instance and are disposed through the existing `disposeObject3D()` cleanup path when the event is removed, completes, or the map scene unmounts. The primitive adds no timers, no independent RAF loop, no persistence, no gameplay mutation, no renderer-quality reduction, and no new dependencies.
+
+### Projectile trail rendering for VFX-032
+
+Projectile events now include a lightweight chained-sphere trail. Each projectile instance creates exactly four small glow-coloured trail segments at construction time, keeps them as children of the same event-owned lifecycle group as the projectile core/glow, and updates only their transforms, scale, visibility, and material opacity during scheduler-driven animation frames. The segment count is constant and no trail geometry is created per frame.
+
+The trail follows the same locked start/end anchors as the projectile, staggers each segment slightly behind the current eased travel point, and fades with the projectile's normal fade-in/fade-out window so the motion direction is easier to read without adding a bespoke asset or extra animation loop. Trail geometries and materials are disposed by the existing `disposeObject3D()` path when the projectile completes, is removed, or the map scene unmounts.
 
 ## Implementation labels, milestones, and ticket ordering
 

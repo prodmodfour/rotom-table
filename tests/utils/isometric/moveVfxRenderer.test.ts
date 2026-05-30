@@ -65,6 +65,14 @@ const projectileMeshNamed = (
   return mesh as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
 }
 
+const projectileTrailMeshes = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => {
+  const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-projectile-trail-'))
+  expect(meshes).toHaveLength(4)
+  return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+}
+
 const attachDisposableMesh = (group: THREE.Object3D) => {
   const geometry = new THREE.BoxGeometry(1, 1, 1)
   const material = new THREE.MeshBasicMaterial()
@@ -254,20 +262,38 @@ describe('move VFX renderer shell', () => {
     const instanceGroup = renderer.group.children[0]
     const core = projectileMeshNamed(instanceGroup, 'move-vfx-projectile-core')
     const glow = projectileMeshNamed(instanceGroup, 'move-vfx-projectile-glow')
+    const trailSegments = projectileTrailMeshes(instanceGroup)
 
     expect(instanceGroup).toBeInstanceOf(THREE.Group)
-    expect(instanceGroup.children).toHaveLength(2)
+    expect(instanceGroup.children).toHaveLength(6)
     expectVectorClose(instanceGroup.position, [0, 1.16, 0])
     expect(core.material.color.getHexString()).toBe('ffeeaa')
     expect(glow.material.color.getHexString()).toBe('123456')
     expect(core.material.transparent).toBe(true)
     expect(core.material.depthWrite).toBe(false)
     expect(core.renderOrder).toBe(34)
+    expect(trailSegments.map((segment) => segment.name)).toEqual([
+      'move-vfx-projectile-trail-1',
+      'move-vfx-projectile-trail-2',
+      'move-vfx-projectile-trail-3',
+      'move-vfx-projectile-trail-4',
+    ])
+    expect(trailSegments[0].material.color.getHexString()).toBe('aa3300')
+    expect(trailSegments[0].renderOrder).toBe(33)
+    expect(trailSegments.every((segment) => segment.material.opacity === 0)).toBe(true)
     expect(core.scale.x).toBeCloseTo(0.266)
 
     renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
 
     expectVectorClose(instanceGroup.position, [2, 1.16, 0])
+    expect(trailSegments[0].visible).toBe(true)
+    expect(trailSegments[0].position.x).toBeLessThan(0)
+    expect(trailSegments[3].position.x).toBeLessThan(trailSegments[0].position.x)
+    expect(trailSegments[0].material.opacity).toBeGreaterThan(trailSegments[3].material.opacity)
+
+    const projectileMeshes = [core, glow, ...trailSegments]
+    const geometryDisposeSpies = projectileMeshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = projectileMeshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
 
     target.currentCenter.set(12, 0, 0)
     renderer.animate({ frameNowMs: 1099, delta: 0.016, renderObjects })
@@ -280,6 +306,8 @@ describe('move VFX renderer shell', () => {
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.group.children).toHaveLength(0)
     expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
   })
 
   it('uses grid-cell fallbacks for projectile targets when the token render object is missing', () => {
@@ -296,7 +324,8 @@ describe('move VFX renderer shell', () => {
     ], { renderObjects })
 
     const instanceGroup = renderer.group.children[0]
-    expect(instanceGroup.children).toHaveLength(2)
+    expect(instanceGroup.children).toHaveLength(6)
+    expect(projectileTrailMeshes(instanceGroup)).toHaveLength(4)
 
     renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
 
@@ -335,6 +364,7 @@ describe('move VFX renderer shell', () => {
 
     const instanceGroup = renderer.group.children[0]
     const meshes = instanceGroup.children as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+    expect(meshes).toHaveLength(6)
     const geometryDisposeSpies = meshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
     const materialDisposeSpies = meshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
 
