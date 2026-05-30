@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { GridAnchor } from '~/types/map'
-import type { MoveAutomationScript } from '~/types/moveAutomation'
+import type { MoveAutomationScript, MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import {
   MOVE_ANIMATION_OVERRIDE_REGISTRY,
@@ -78,6 +78,21 @@ const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationSc
   fieldSuggestions: [],
   hazardSuggestions: [],
   automationNotes: [],
+  ...overrides,
+})
+
+const transaction = (overrides: Partial<MoveAutomationTransaction> = {}): MoveAutomationTransaction => ({
+  userId: 'user-token',
+  userName: 'Caster',
+  moveName: 'Generic Test Move',
+  scriptKind: 'explicit',
+  scriptVersion: 1,
+  hpUpdates: [],
+  conditionUpdates: [],
+  combatStageUpdates: [],
+  hazardsToAdd: [],
+  fieldEffectsToApply: [],
+  logLines: [],
   ...overrides,
 })
 
@@ -272,6 +287,147 @@ describe('generic move animation planner', () => {
       targetId: 'target-token',
       conditionNames: ['Poisoned'],
       palette: MOVE_VFX_TONE_COLORS.status,
+    })
+  })
+
+  it('derives healing follow-up VFX from HP increases in the move transaction', () => {
+    const healedTarget = token({
+      id: 'target-token',
+      species: 'Target',
+      currentHp: 12,
+      maxHp: 40,
+      position: { x: 3, y: 0, z: 1 },
+    })
+    const events = planGenericMoveAnimations(baseInput({
+      targets: [healedTarget],
+      transaction: transaction({
+        hpUpdates: [{ id: 'target-token', currentHp: 30 }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([MOVE_VFX_KIND.healing])
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.healing,
+      targetId: 'target-token',
+      targetCell: { x: 3, y: 0, z: 1 },
+      palette: MOVE_VFX_TONE_COLORS.healing,
+    })
+  })
+
+  it('derives buff/debuff follow-up VFX from combat-stage transaction deltas', () => {
+    const targetStages = { ...stages, def: 1 }
+    const events = planGenericMoveAnimations(baseInput({
+      targets: [token({ id: 'target-token', species: 'Target', combatStages: targetStages })],
+      transaction: transaction({
+        combatStageUpdates: [{ id: 'target-token', stages: { ...stages, def: -1 } }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([MOVE_VFX_KIND.buffDebuff])
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.buffDebuff,
+      tone: 'debuff',
+      direction: 'debuff',
+      targetId: 'target-token',
+      palette: MOVE_VFX_TONE_COLORS.debuff,
+    })
+  })
+
+  it('derives status follow-up VFX from condition transaction changes', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      targets: [token({ id: 'target-token', species: 'Target', conditions: ['Burned'] })],
+      transaction: transaction({
+        conditionUpdates: [{ id: 'target-token', conditions: ['Burned', 'Poisoned'] }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([MOVE_VFX_KIND.status])
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.status,
+      targetId: 'target-token',
+      conditionNames: ['Poisoned'],
+      palette: MOVE_VFX_TONE_COLORS.status,
+    })
+  })
+
+  it('adds transaction semantic follow-ups after damaging impact without treating HP loss as healing', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      user: token({ id: 'user-token', species: 'Caster', currentHp: 20, maxHp: 40 }),
+      targets: [token({ id: 'target-token', species: 'Target', currentHp: 35, maxHp: 40 })],
+      script: script({
+        moveName: 'Generic Damaging Drain Status',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Grass',
+        range: 'Range 6, 1 Target',
+      }),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+      transaction: transaction({
+        hpUpdates: [
+          { id: 'target-token', currentHp: 21 },
+          { id: 'user-token', currentHp: 28 },
+        ],
+        conditionUpdates: [{ id: 'target-token', conditions: ['Poisoned'] }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.healing,
+      MOVE_VFX_KIND.status,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'target-token',
+        palette: MOVE_VFX_TYPE_COLORS.Grass,
+        shake: true,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.healing,
+        targetId: 'user-token',
+        palette: MOVE_VFX_TONE_COLORS.healing,
+        startOffsetMs: 120,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.status,
+        targetId: 'target-token',
+        conditionNames: ['Poisoned'],
+        palette: MOVE_VFX_TONE_COLORS.status,
+        startOffsetMs: 120,
+      }),
+    ]))
+  })
+
+  it('bounds and merges transaction semantic follow-ups for large area transactions', () => {
+    const targets = Array.from({ length: 20 }, (_item, index) => token({
+      id: `target-${index}`,
+      species: `Target ${index}`,
+      position: { x: index + 1, y: 0, z: 0 },
+    }))
+    const events = planGenericMoveAnimations(areaInput([{ x: 1, y: 0, z: 0 }], {
+      targets,
+      selectedTargetIds: targets.map((target) => target.id),
+      script: script({
+        moveName: 'Generic Large Status Area',
+        targetMode: 'multi-target',
+        damageClass: 'Status',
+      }),
+      transaction: transaction({
+        conditionUpdates: targets.map((target) => ({ id: target.id, conditions: ['Burned', 'Poisoned'] })),
+      }),
+    }))
+
+    const semanticEvents = events.filter((event) => event.kind === MOVE_VFX_KIND.status)
+    expect(events[0]).toMatchObject({ kind: MOVE_VFX_KIND.areaPulse })
+    expect(semanticEvents).toHaveLength(12)
+    expect(events.some((event) => event.kind === MOVE_VFX_KIND.targetFlash)).toBe(false)
+    expect(semanticEvents[0]).toMatchObject({
+      targetId: 'target-0',
+      conditionNames: ['Burned', 'Poisoned'],
+      startOffsetMs: 180,
     })
   })
 

@@ -21,6 +21,7 @@ import {
   moveVfxColorForType,
 } from '~/utils/moveAnimationPalette'
 import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
+import { COMBAT_STAGE_KEYS } from '~/utils/combatStages'
 import {
   MOVE_ANIMATION_TARGET_SEQUENCE_ORDER,
   applyMoveAnimationTargetStartOffsets,
@@ -250,6 +251,9 @@ const UNKNOWN_MOVE_ANIMATION_USER_ID = 'unknown-user'
 const AREA_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 180
 const AREA_PASS_DASH_IMPACT_OFFSET_MS = 120
 const AREA_PASS_DASH_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 260
+const TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS = 120
+const TRANSACTION_SEMANTIC_SAME_TOKEN_STEP_MS = 80
+const MAX_TRANSACTION_SEMANTIC_EVENTS = 12
 const MOVE_VFX_KIND_VALUES = new Set<string>(Object.values(MOVE_VFX_KIND))
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
@@ -745,6 +749,303 @@ const shouldPlanRadialBurstForScript = (script: MoveAnimationPlanScript): boolea
     || includesNormalizedWord(classificationText, ['burst', 'blast'])
 }
 
+type TransactionSemanticEventKind =
+  | typeof MOVE_VFX_KIND.healing
+  | typeof MOVE_VFX_KIND.buffDebuff
+  | typeof MOVE_VFX_KIND.status
+
+type MoveAnimationPlanHpUpdate = MoveAnimationPlanTransaction['hpUpdates'][number]
+type MoveAnimationPlanConditionUpdate = MoveAnimationPlanTransaction['conditionUpdates'][number]
+type MoveAnimationPlanCombatStageUpdate = MoveAnimationPlanTransaction['combatStageUpdates'][number]
+
+interface TransactionSemanticAnimationDraft {
+  readonly targetId: string
+  readonly targetCell?: GridAnchor
+  readonly kind: TransactionSemanticEventKind
+  readonly conditionNames?: readonly string[]
+  readonly direction?: 'buff' | 'debuff'
+  readonly priority: number
+  readonly targetOrder: number
+}
+
+interface PlanTransactionSemanticAnimationOptions {
+  /** Candidate ids whose transaction updates are allowed to produce semantic VFX. */
+  readonly targetIds: readonly string[]
+  /** Base start offset for the first semantic event before same-token cascading or target staggering. */
+  readonly startOffsetMs?: number
+  /** Optional source cell used to stagger multi-target semantic follow-ups from near to far. */
+  readonly staggerOrigin?: GridAnchor
+}
+
+const uniqueNonEmptyStrings = (values: readonly unknown[]): string[] => {
+  const seen = new Set<string>()
+  const out: string[] = []
+
+  for (const value of values) {
+    const item = nonEmptyStringOrUndefined(value)
+    if (!item) continue
+    const key = item.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(item)
+  }
+
+  return out
+}
+
+const semanticComparisonKey = (value: unknown): string => String(value ?? '')
+  .trim()
+  .toLowerCase()
+  .replace(/\s+/g, ' ')
+
+const uniquePlannerTargetIds = (targetIds: readonly unknown[]): string[] => uniqueNonEmptyStrings(targetIds)
+
+const tokenForId = (
+  input: MoveAnimationPlanInput,
+  targetId: string | undefined,
+): MoveAnimationPlanToken | undefined => {
+  if (!targetId) return undefined
+
+  const user = userTokenForInput(input)
+  if (user?.id === targetId) return user
+
+  return arrayOrEmpty(input.targets).find((target) => target.id === targetId)
+}
+
+const targetCellForId = (input: MoveAnimationPlanInput, targetId: string): GridAnchor | undefined => (
+  positionForToken(tokenForId(input, targetId))
+)
+
+const hpDeltaForTransactionUpdate = (
+  input: MoveAnimationPlanInput,
+  update: MoveAnimationPlanHpUpdate,
+): number | null => {
+  const targetId = nonEmptyStringOrUndefined(update.id)
+  if (!targetId) return null
+
+  const token = tokenForId(input, targetId)
+  if (!token) return null
+
+  const beforeHp = token.currentHp
+  const afterHp = update.currentHp
+  if (!Number.isFinite(beforeHp) || !Number.isFinite(afterHp)) return null
+
+  return afterHp - beforeHp
+}
+
+const stageDirectionForTransactionUpdate = (
+  input: MoveAnimationPlanInput,
+  update: MoveAnimationPlanCombatStageUpdate,
+): 'buff' | 'debuff' | null => {
+  const targetId = nonEmptyStringOrUndefined(update.id)
+  if (!targetId) return null
+
+  const token = tokenForId(input, targetId)
+  let positiveMagnitude = 0
+  let negativeMagnitude = 0
+
+  for (const key of COMBAT_STAGE_KEYS) {
+    const after = finiteNumberOrZero(update.stages?.[key])
+    const before = token ? finiteNumberOrZero(token.combatStages?.[key]) : 0
+    const delta = after - before
+    if (delta > 0) positiveMagnitude += delta
+    else if (delta < 0) negativeMagnitude += Math.abs(delta)
+  }
+
+  if (positiveMagnitude <= 0 && negativeMagnitude <= 0) return null
+  return positiveMagnitude >= negativeMagnitude ? 'buff' : 'debuff'
+}
+
+const changedConditionNamesForTransactionUpdate = (
+  input: MoveAnimationPlanInput,
+  update: MoveAnimationPlanConditionUpdate,
+): readonly string[] => {
+  const targetId = nonEmptyStringOrUndefined(update.id)
+  if (!targetId) return []
+
+  const nextConditions = uniqueNonEmptyStrings(update.conditions)
+  const token = tokenForId(input, targetId)
+  if (!token) return nextConditions
+
+  const previousConditions = uniqueNonEmptyStrings(token.conditions)
+  const previousKeys = new Set(previousConditions.map(semanticComparisonKey))
+  const nextKeys = new Set(nextConditions.map(semanticComparisonKey))
+  const addedConditions = nextConditions.filter((condition) => !previousKeys.has(semanticComparisonKey(condition)))
+  if (addedConditions.length > 0) return addedConditions
+
+  const removedConditions = previousConditions.filter((condition) => !nextKeys.has(semanticComparisonKey(condition)))
+  if (removedConditions.length > 0) return removedConditions
+
+  return []
+}
+
+const addTransactionSemanticDraft = (
+  draftsByTargetId: Map<string, TransactionSemanticAnimationDraft[]>,
+  draft: TransactionSemanticAnimationDraft,
+): void => {
+  const existingDrafts = draftsByTargetId.get(draft.targetId) ?? []
+  const existingIndex = existingDrafts.findIndex((item) => item.kind === draft.kind)
+
+  if (existingIndex === -1) {
+    draftsByTargetId.set(draft.targetId, [...existingDrafts, draft])
+    return
+  }
+
+  const existing = existingDrafts[existingIndex]
+  if (!existing || draft.kind !== MOVE_VFX_KIND.status) return
+
+  const merged: TransactionSemanticAnimationDraft = {
+    ...existing,
+    conditionNames: uniqueNonEmptyStrings([
+      ...arrayOrEmpty(existing.conditionNames),
+      ...arrayOrEmpty(draft.conditionNames),
+    ]),
+  }
+  draftsByTargetId.set(draft.targetId, existingDrafts.map((item, index) => index === existingIndex ? merged : item))
+}
+
+const eventTargetId = (event: MoveAnimationEvent): string | undefined => {
+  if (!('targetId' in event)) return undefined
+  return nonEmptyStringOrUndefined(event.targetId)
+}
+
+const targetIdsWithEvents = (events: readonly MoveAnimationEvent[]): Set<string> => new Set(
+  events
+    .map(eventTargetId)
+    .filter((targetId): targetId is string => Boolean(targetId)),
+)
+
+const hasTransactionSemanticUpdateForTarget = (
+  input: MoveAnimationPlanInput,
+  targetId: string,
+): boolean => {
+  const transaction = input.transaction
+  if (!transaction) return false
+
+  return arrayOrEmpty(transaction.hpUpdates).some((update) => update.id === targetId && (hpDeltaForTransactionUpdate(input, update) ?? 0) > 0)
+    || arrayOrEmpty(transaction.combatStageUpdates).some((update) => update.id === targetId && Boolean(stageDirectionForTransactionUpdate(input, update)))
+    || arrayOrEmpty(transaction.conditionUpdates).some((update) => update.id === targetId && changedConditionNamesForTransactionUpdate(input, update).length > 0)
+}
+
+const planTransactionSemanticAnimations = (
+  input: MoveAnimationPlanInput,
+  nextId: PlannerEventIdFactory,
+  options: PlanTransactionSemanticAnimationOptions,
+): MoveAnimationEvent[] => {
+  const transaction = input.transaction
+  if (!transaction) return []
+
+  const allowedTargetIds = uniquePlannerTargetIds(options.targetIds)
+  if (allowedTargetIds.length === 0) return []
+
+  const targetOrderById = new Map(allowedTargetIds.map((targetId, index) => [targetId, index]))
+  const draftsByTargetId = new Map<string, TransactionSemanticAnimationDraft[]>()
+
+  const addDraft = (
+    targetId: string | undefined,
+    draft: Omit<TransactionSemanticAnimationDraft, 'targetId' | 'targetCell' | 'targetOrder'>,
+  ): void => {
+    const normalizedTargetId = nonEmptyStringOrUndefined(targetId)
+    if (!normalizedTargetId || !targetOrderById.has(normalizedTargetId)) return
+
+    addTransactionSemanticDraft(draftsByTargetId, {
+      ...draft,
+      targetId: normalizedTargetId,
+      targetCell: targetCellForId(input, normalizedTargetId),
+      targetOrder: targetOrderById.get(normalizedTargetId) ?? targetOrderById.size,
+    })
+  }
+
+  for (const update of arrayOrEmpty(transaction.hpUpdates)) {
+    const delta = hpDeltaForTransactionUpdate(input, update)
+    if (delta == null || delta <= 0) continue
+
+    addDraft(update.id, {
+      kind: MOVE_VFX_KIND.healing,
+      priority: 0,
+    })
+  }
+
+  for (const update of arrayOrEmpty(transaction.combatStageUpdates)) {
+    const direction = stageDirectionForTransactionUpdate(input, update)
+    if (!direction) continue
+
+    addDraft(update.id, {
+      kind: MOVE_VFX_KIND.buffDebuff,
+      direction,
+      priority: direction === 'buff' ? 1 : 2,
+    })
+  }
+
+  for (const update of arrayOrEmpty(transaction.conditionUpdates)) {
+    const conditionNames = changedConditionNamesForTransactionUpdate(input, update)
+    if (conditionNames.length === 0) continue
+
+    addDraft(update.id, {
+      kind: MOVE_VFX_KIND.status,
+      conditionNames,
+      priority: 3,
+    })
+  }
+
+  const drafts = Array.from(draftsByTargetId.values())
+    .flatMap((targetDrafts) => targetDrafts)
+    .sort((left, right) => (
+      left.targetOrder - right.targetOrder
+      || left.priority - right.priority
+      || left.kind.localeCompare(right.kind)
+    ))
+    .slice(0, MAX_TRANSACTION_SEMANTIC_EVENTS)
+
+  if (drafts.length === 0) return []
+
+  const baseStartOffsetMs = Math.max(0, finiteNumberOrZero(options.startOffsetMs))
+  const eventCountByTargetId = new Map<string, number>()
+  const events = drafts.map((draft): MoveAnimationEvent => {
+    const sameTokenIndex = eventCountByTargetId.get(draft.targetId) ?? 0
+    eventCountByTargetId.set(draft.targetId, sameTokenIndex + 1)
+    const startOffset = baseStartOffsetMs + (sameTokenIndex * TRANSACTION_SEMANTIC_SAME_TOKEN_STEP_MS)
+    const baseMetadata = {
+      targetId: draft.targetId,
+      targetCell: draft.targetCell,
+      ...startOffsetMetadata(startOffset),
+    }
+
+    if (draft.kind === MOVE_VFX_KIND.healing) {
+      return createPlannerEvent(input, nextId, MOVE_VFX_KIND.healing, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, baseMetadata, moveVfxColorForTone(MOVE_VFX_TONE.healing))
+    }
+
+    if (draft.kind === MOVE_VFX_KIND.buffDebuff) {
+      const direction = draft.direction ?? 'buff'
+      return createPlannerEvent(input, nextId, MOVE_VFX_KIND.buffDebuff, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
+        ...baseMetadata,
+        tone: direction,
+        direction,
+      }, moveVfxColorForTone(direction === 'buff' ? MOVE_VFX_TONE.buff : MOVE_VFX_TONE.debuff))
+    }
+
+    return createPlannerEvent(input, nextId, MOVE_VFX_KIND.status, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
+      ...baseMetadata,
+      ...(draft.conditionNames?.length ? { conditionNames: draft.conditionNames } : {}),
+    }, moveVfxColorForTone(MOVE_VFX_TONE.status))
+  })
+
+  if (!options.staggerOrigin) return events
+
+  const offsets = createMoveAnimationTargetStartOffsets(
+    uniquePlannerTargetIds(events.map(eventTargetId)).map((targetId) => ({
+      targetId,
+      position: targetCellForId(input, targetId),
+    })),
+    {
+      order: MOVE_ANIMATION_TARGET_SEQUENCE_ORDER.distanceFromOrigin,
+      origin: options.staggerOrigin,
+    },
+  )
+
+  return [...applyMoveAnimationTargetStartOffsets(events, offsets, { mode: 'add' })]
+}
+
 const planSelfMoveAnimations = (
   input: MoveAnimationSelfPlanInput,
   nextId: PlannerEventIdFactory,
@@ -756,6 +1057,10 @@ const planSelfMoveAnimations = (
   const palette = paletteForSemanticIntent(semanticIntent)
   const targetId = targetIdForToken(user)
   const targetCell = positionForToken(user)
+  const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
+    targetIds: targetId ? [targetId] : [],
+  })
+  if (transactionSemanticEvents.length > 0) return transactionSemanticEvents
 
   if (semanticIntent.kind === 'healing') {
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.healing, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
@@ -856,20 +1161,35 @@ const planSingleTargetMoveAnimations = (
   const timing = timingForInput(input)
   const launchStartOffset = startOffsetMetadata(timing.baseDelayMs)
   const impactStartOffset = startOffsetMetadata(timing.impactDelayMs)
+  const semanticTargetIds = uniquePlannerTargetIds([user.id, targetId])
 
   if (!scriptHasDamageVisual(input.script)) {
+    const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
+      targetIds: semanticTargetIds,
+      startOffsetMs: timing.impactDelayMs ?? 0,
+    })
+
     if (!hit) {
-      return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
-        targetId,
-        targetCell,
-        ...impactStartOffset,
-      }, moveVfxColorForTone(MOVE_VFX_TONE.miss))]
+      return [
+        createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+          targetId,
+          targetCell,
+          ...impactStartOffset,
+        }, moveVfxColorForTone(MOVE_VFX_TONE.miss)),
+        ...transactionSemanticEvents,
+      ]
     }
+
+    if (transactionSemanticEvents.length > 0) return transactionSemanticEvents
 
     return planTargetSemanticAnimations(input, nextId, targetId)
   }
 
   const palette = damagingPaletteForScript(input.script)
+  const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
+    targetIds: semanticTargetIds,
+    startOffsetMs: (timing.impactDelayMs ?? 0) + TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS,
+  })
   const events: MoveAnimationEvent[] = []
 
   if (isMeleeDamagingMove(input.script)) {
@@ -895,6 +1215,7 @@ const planSingleTargetMoveAnimations = (
       targetCell,
       ...impactStartOffset,
     }, moveVfxColorForTone(MOVE_VFX_TONE.miss)))
+    events.push(...transactionSemanticEvents)
     return events
   }
 
@@ -913,6 +1234,7 @@ const planSingleTargetMoveAnimations = (
     }, palette))
   }
 
+  events.push(...transactionSemanticEvents)
   return events
 }
 
@@ -927,7 +1249,14 @@ const planAreaTargetFollowUpAnimations = (
   },
 ): MoveAnimationEvent[] => {
   const targetIds = selectedAreaTargetIdsForInput(input)
-  if (targetIds.length === 0) return []
+  const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
+    targetIds: uniquePlannerTargetIds([userIdForInput(input), ...targetIds]),
+    startOffsetMs: options.baseOffsetMs + (options.damaging ? TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS : 0),
+    staggerOrigin: options.userCell,
+  })
+  const semanticTargetIds = targetIdsWithEvents(transactionSemanticEvents)
+
+  if (targetIds.length === 0) return transactionSemanticEvents
 
   const offsets = createMoveAnimationTargetStartOffsets(
     targetIds.map((targetId) => ({
@@ -941,27 +1270,32 @@ const planAreaTargetFollowUpAnimations = (
     },
   )
 
-  const targetEvents = targetIds.map((targetId): MoveAnimationEvent => {
+  const targetEvents = targetIds.flatMap((targetId): MoveAnimationEvent[] => {
     const target = targetForId(input, targetId)
     const targetCell = positionForToken(target)
     const outcome = explicitTargetOutcomeForId(input, targetId)
     const hit = outcome?.hit ?? true
 
     if (!hit) {
-      return createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+      return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
         targetId,
         targetCell,
-      }, moveVfxColorForTone(MOVE_VFX_TONE.miss))
+      }, moveVfxColorForTone(MOVE_VFX_TONE.miss))]
     }
 
-    return createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+    if (!options.damaging && (semanticTargetIds.has(targetId) || hasTransactionSemanticUpdateForTarget(input, targetId))) return []
+
+    return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
       targetId,
       targetCell,
       ...(options.damaging ? { shake: true } : {}),
-    }, options.palette)
+    }, options.palette)]
   })
 
-  return [...applyMoveAnimationTargetStartOffsets(targetEvents, offsets, { mode: 'replace' })]
+  return [
+    ...applyMoveAnimationTargetStartOffsets(targetEvents, offsets, { mode: 'replace' }),
+    ...transactionSemanticEvents,
+  ]
 }
 
 const planAreaMoveAnimations = (

@@ -952,8 +952,16 @@ describe('useMoveAutomationPanel', () => {
           targetCell: { x: 2, y: 0, z: 0 },
         })
         expect(events[0]?.startOffsetMs, scenario.label).toBeUndefined()
+        const semanticFollowUpKinds = new Set<MoveAnimationEvent['kind']>([
+          MOVE_VFX_KIND.healing,
+          MOVE_VFX_KIND.buffDebuff,
+          MOVE_VFX_KIND.status,
+        ])
         for (const event of events.slice(1)) {
-          expect(event.startOffsetMs, `${scenario.label}:${event.kind}`).toBe(MOVE_FEEDBACK_OUTCOME_MS)
+          const expectedStartOffset = semanticFollowUpKinds.has(event.kind)
+            ? MOVE_FEEDBACK_OUTCOME_MS + 120
+            : MOVE_FEEDBACK_OUTCOME_MS
+          expect(event.startOffsetMs, `${scenario.label}:${event.kind}`).toBe(expectedStartOffset)
         }
 
         if (scenario.label === 'hit') {
@@ -1533,7 +1541,7 @@ describe('useMoveAutomationPanel', () => {
     expect(events.map((event) => event.kind)).toEqual([
       MOVE_VFX_KIND.areaPulse,
       MOVE_VFX_KIND.radialBurst,
-      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.buffDebuff,
     ])
     expect(events).toEqual(expect.arrayContaining([
       expect.objectContaining({
@@ -1544,9 +1552,11 @@ describe('useMoveAutomationPanel', () => {
         areaCells: expect.any(Array),
       }),
       expect.objectContaining({
-        kind: MOVE_VFX_KIND.targetFlash,
+        kind: MOVE_VFX_KIND.buffDebuff,
         targetId: 'foe-token',
         targetCell: { x: 4, y: 0, z: 3 },
+        tone: 'debuff',
+        direction: 'debuff',
         startOffsetMs: 180,
       }),
     ]))
