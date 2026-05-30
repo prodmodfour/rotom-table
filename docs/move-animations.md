@@ -159,6 +159,18 @@ Use type colour when it helps players connect a damaging or typed move to the ef
 
 The shared palette lives in `src/utils/moveAnimationPalette.ts`. It is tuned for readability on dark map backgrounds, not for exact official type-colour purity, and renderer primitives should use `moveVfxColorForType()` or `moveVfxColorForTone()` instead of duplicating hue tables.
 
+### VFX-073 type-colour readability pass
+
+The first colour-polish pass reviews every damaging type palette plus the neutral/healing/status/buff/debuff/miss/crit semantic palettes against representative dark or saturated map surfaces: airship hull dark, cage floor shadow, cave shadow stone, wetland peat muck, deep water, engineering floor metal, biosecure poison floor, and cave stone. The corresponding review swatches are exported as `MOVE_VFX_DARK_MAP_REVIEW_BACKGROUNDS`, and `tests/utils/moveAnimationPalette.test.ts` locks a code-assisted contrast floor for each primary, accent, and glow colour.
+
+Intentional deviations from common Pokémon palette purity:
+
+- Fire, Fighting, Ground, and Rock are lifted toward peach/gold highlights instead of darker brick/brown tones so warm effects do not disappear on green-brown terrain.
+- Poison, Ghost, Psychic, Fairy, and Dragon use brighter lavender/magenta variants so purple effects remain distinguishable from cave and poison-floor backgrounds.
+- Water, Ice, and Flying bias toward brighter cyan/sky accents so blue effects remain visible over deep-water and metal-floor surfaces.
+- Dark, Steel, and Normal are intentionally silver/blue-grey rather than deep charcoal or muted steel, because the official-like darker hues were too close to common shadowed map surfaces.
+- Healing, status, buff, debuff, miss, and crit remain semantic palettes instead of type palettes. Unknown or custom move types continue to use the neutral readable palette rather than an official-looking but low-contrast fallback.
+
 ### Token layer visibility
 
 Move VFX should follow the token layer by default because most effects are anchored to token users, targets, token HUD context, or token-derived outcomes. If the token layer is hidden:

@@ -27,137 +27,162 @@ export const MOVE_VFX_TONE = {
 
 export type MoveVfxTone = (typeof MOVE_VFX_TONE)[keyof typeof MOVE_VFX_TONE]
 
+export interface MoveVfxPaletteReviewBackground {
+  readonly key: string
+  readonly label: string
+  readonly color: MoveVfxHexColor
+}
+
+/**
+ * Representative dark or saturated map surfaces used for VFX-073 palette review.
+ * These swatches mirror common terrain/cage colours without importing renderer
+ * material modules into the palette helper.
+ */
+export const MOVE_VFX_DARK_MAP_REVIEW_BACKGROUNDS = [
+  { key: 'airship-hull-dark', label: 'Airship hull dark', color: '#2f3542' },
+  { key: 'cage-floor-shadow', label: 'Cage floor shadow', color: '#29303a' },
+  { key: 'cave-shadow-stone', label: 'Cave shadow stone', color: '#4f5058' },
+  { key: 'wetland-peat-muck', label: 'Wetland peat muck', color: '#4f4537' },
+  { key: 'deep-water', label: 'Deep water', color: '#2376a8' },
+  { key: 'engineering-floor', label: 'Engineering floor metal', color: '#5e6570' },
+  { key: 'biosecure-poison-floor', label: 'Biosecure poison floor', color: '#5f7d42' },
+  { key: 'cave-stone', label: 'Cave stone', color: '#64656b' },
+] as const satisfies readonly MoveVfxPaletteReviewBackground[]
+
 /**
  * Type colours are intentionally VFX-specific readability colours for the dark
- * tactical map, not exact official palette reproductions. Keep generic
- * primitive files pointed at this table instead of duplicating type hues.
+ * tactical map, not exact official palette reproductions. The VFX-073 pass
+ * lifts low-luminance official-like hues into brighter in-game variants so
+ * primary, accent, and glow layers stay visible over the review backgrounds
+ * above. Keep generic primitive files pointed at this table instead of
+ * duplicating type hues.
  */
 export const MOVE_VFX_TYPE_COLORS = {
   Normal: {
     key: 'Normal',
     label: 'Normal',
-    primary: '#d6d2c4',
-    accent: '#fff7df',
-    glow: '#8b8796',
+    primary: '#e2ded2',
+    accent: '#fff9e8',
+    glow: '#b8b2c4',
   },
   Fighting: {
     key: 'Fighting',
     label: 'Fighting',
-    primary: '#ff8655',
-    accent: '#ffd0a6',
-    glow: '#b84732',
+    primary: '#ffa06f',
+    accent: '#ffe0c2',
+    glow: '#ff704d',
   },
   Flying: {
     key: 'Flying',
     label: 'Flying',
-    primary: '#9bdcff',
-    accent: '#effbff',
-    glow: '#6aa7ff',
+    primary: '#aee6ff',
+    accent: '#f4fdff',
+    glow: '#82c0ff',
   },
   Poison: {
     key: 'Poison',
     label: 'Poison',
-    primary: '#c77dff',
-    accent: '#f0c5ff',
-    glow: '#7a4ac7',
+    primary: '#e0a0ff',
+    accent: '#f6d8ff',
+    glow: '#b96cff',
   },
   Ground: {
     key: 'Ground',
     label: 'Ground',
-    primary: '#d99a62',
-    accent: '#ffd8a8',
-    glow: '#8c613a',
+    primary: '#e6aa73',
+    accent: '#ffe3bd',
+    glow: '#c98045',
   },
   Rock: {
     key: 'Rock',
     label: 'Rock',
-    primary: '#c8b96f',
-    accent: '#fff1a8',
-    glow: '#85743e',
+    primary: '#d8cb82',
+    accent: '#fff5bd',
+    glow: '#b09a54',
   },
   Bug: {
     key: 'Bug',
     label: 'Bug',
-    primary: '#b7e35f',
-    accent: '#eaff9b',
-    glow: '#759d35',
+    primary: '#c9f06d',
+    accent: '#f0ffb5',
+    glow: '#9fcb45',
   },
   Ghost: {
     key: 'Ghost',
     label: 'Ghost',
-    primary: '#a98cff',
-    accent: '#dfd4ff',
-    glow: '#5e4ac7',
+    primary: '#c3aeff',
+    accent: '#e9e0ff',
+    glow: '#8870ff',
   },
   Steel: {
     key: 'Steel',
     label: 'Steel',
-    primary: '#a9c5d6',
-    accent: '#e6f4ff',
-    glow: '#647e91',
+    primary: '#bdd4e4',
+    accent: '#edf8ff',
+    glow: '#8fa8bb',
   },
   Fire: {
     key: 'Fire',
     label: 'Fire',
-    primary: '#ff6b35',
-    accent: '#ffd166',
-    glow: '#bf2f1f',
+    primary: '#ffa566',
+    accent: '#ffe08a',
+    glow: '#ff6645',
   },
   Water: {
     key: 'Water',
     label: 'Water',
-    primary: '#4da3ff',
-    accent: '#bde7ff',
-    glow: '#1f5fbf',
+    primary: '#82c9ff',
+    accent: '#d4f2ff',
+    glow: '#4baeff',
   },
   Grass: {
     key: 'Grass',
     label: 'Grass',
-    primary: '#62d36b',
-    accent: '#c6f59a',
-    glow: '#2d8b4f',
+    primary: '#78e27f',
+    accent: '#d6f7aa',
+    glow: '#48bd68',
   },
   Electric: {
     key: 'Electric',
     label: 'Electric',
-    primary: '#ffd84d',
-    accent: '#fff6a8',
-    glow: '#d99100',
+    primary: '#ffdf5c',
+    accent: '#fff8b8',
+    glow: '#f0af16',
   },
   Psychic: {
     key: 'Psychic',
     label: 'Psychic',
-    primary: '#ff6fae',
-    accent: '#ffc3de',
-    glow: '#b83775',
+    primary: '#ff9bcb',
+    accent: '#ffd5e9',
+    glow: '#ff5aa8',
   },
   Ice: {
     key: 'Ice',
     label: 'Ice',
-    primary: '#74e4ff',
-    accent: '#dcfbff',
-    glow: '#3aa7c7',
+    primary: '#90edff',
+    accent: '#e6fdff',
+    glow: '#58cbe5',
   },
   Dragon: {
     key: 'Dragon',
     label: 'Dragon',
-    primary: '#8d90ff',
-    accent: '#d6d8ff',
-    glow: '#474ad6',
+    primary: '#b4b8ff',
+    accent: '#e2e4ff',
+    glow: '#777dff',
   },
   Dark: {
     key: 'Dark',
     label: 'Dark',
-    primary: '#9aa3b2',
-    accent: '#d7deea',
-    glow: '#4a5266',
+    primary: '#b8c4d6',
+    accent: '#f1f5ff',
+    glow: '#7e8da4',
   },
   Fairy: {
     key: 'Fairy',
     label: 'Fairy',
-    primary: '#ff9ee7',
-    accent: '#ffe0f6',
-    glow: '#c94a9d',
+    primary: '#ffacec',
+    accent: '#ffe4f8',
+    glow: '#e46abd',
   },
 } as const satisfies Record<PokemonType, MoveVfxPaletteEntry>
 
@@ -166,51 +191,51 @@ export const MOVE_VFX_TONE_COLORS = {
   neutral: {
     key: MOVE_VFX_TONE.neutral,
     label: 'Neutral',
-    primary: '#c8d3e0',
+    primary: '#d7e2ee',
     accent: '#ffffff',
-    glow: '#6c7a8f',
+    glow: '#92a2b7',
   },
   healing: {
     key: MOVE_VFX_TONE.healing,
     label: 'Healing',
-    primary: '#68e39d',
-    accent: '#d7ffe8',
-    glow: '#2ea86f',
+    primary: '#7cf2b0',
+    accent: '#e2fff0',
+    glow: '#3dd58a',
   },
   status: {
     key: MOVE_VFX_TONE.status,
     label: 'Status',
-    primary: '#b486ff',
-    accent: '#ead8ff',
-    glow: '#6d4fc2',
+    primary: '#cfa2ff',
+    accent: '#f1ddff',
+    glow: '#9c72ff',
   },
   buff: {
     key: MOVE_VFX_TONE.buff,
     label: 'Buff',
-    primary: '#70e6ff',
-    accent: '#d7fbff',
-    glow: '#259fbd',
+    primary: '#8bf2ff',
+    accent: '#defdff',
+    glow: '#39cde8',
   },
   debuff: {
     key: MOVE_VFX_TONE.debuff,
     label: 'Debuff',
-    primary: '#ff7a90',
-    accent: '#ffd6de',
-    glow: '#b93a55',
+    primary: '#ff90a3',
+    accent: '#ffe0e7',
+    glow: '#ff5874',
   },
   miss: {
     key: MOVE_VFX_TONE.miss,
     label: 'Miss',
-    primary: '#9ca8b8',
-    accent: '#e2e8f0',
-    glow: '#566170',
+    primary: '#b5c1d0',
+    accent: '#edf2f7',
+    glow: '#7c8798',
   },
   crit: {
     key: MOVE_VFX_TONE.crit,
     label: 'Critical hit',
     primary: '#ffea70',
     accent: '#ffffff',
-    glow: '#ff9f1c',
+    glow: '#ffb238',
   },
 } as const satisfies Record<MoveVfxTone, MoveVfxPaletteEntry>
 
