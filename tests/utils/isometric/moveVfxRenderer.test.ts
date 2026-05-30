@@ -872,6 +872,35 @@ describe('move VFX renderer shell', () => {
     expect(healingRing.material).not.toBe(unknownRing.material)
   })
 
+  it('uses a simple fade pulse for reduced-motion self aura events', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(2, 0, 1) })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([selfPulseEvent({ id: 'move-vfx-self-pulse-reduced', palette: projectilePalette })], { renderObjects, reducedMotion: true })
+
+    const instanceGroup = renderer.group.children[0]
+    const baseRing = selfPulseRingNamed(instanceGroup, 'move-vfx-self-pulse-base-ring')
+    const risingRing = selfPulseRingNamed(instanceGroup, 'move-vfx-self-pulse-rising-ring')
+    const shell = selfPulseShellNamed(instanceGroup)
+    const initialBaseScale = baseRing.scale.x
+
+    expect(baseRing.visible).toBe(true)
+    expect(risingRing.visible).toBe(false)
+    expect(risingRing.material.opacity).toBe(0)
+    expect(shell.visible).toBe(false)
+    expect(shell.material.opacity).toBe(0)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects, reducedMotion: true })
+
+    expect(baseRing.visible).toBe(true)
+    expect(baseRing.scale.x).toBeGreaterThan(initialBaseScale)
+    expect(baseRing.scale.x).toBeLessThan(initialBaseScale * 1.3)
+    expect(risingRing.visible).toBe(false)
+    expect(shell.visible).toBe(false)
+  })
+
   it('falls back to a no-op self pulse when no user anchor can be resolved', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)
@@ -1376,6 +1405,50 @@ describe('move VFX renderer shell', () => {
     for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
   })
 
+  it('uses reduced-motion target pulses for projectile and arc events without travel or trails', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+
+    renderer.sync([
+      projectileEvent({ id: 'move-vfx-projectile-reduced' }),
+      arcEvent({ id: 'move-vfx-arc-reduced', arcHeight: 1.2 }),
+    ], { renderObjects, reducedMotion: true })
+
+    const projectileGroup = renderer.group.children[0]
+    const arcGroup = renderer.group.children[1]
+    const projectileCore = projectileMeshNamed(projectileGroup, 'move-vfx-projectile-core')
+    const projectileGlow = projectileMeshNamed(projectileGroup, 'move-vfx-projectile-glow')
+    const projectileTrails = projectileTrailMeshes(projectileGroup)
+    const arcCore = projectileMeshNamed(arcGroup, 'move-vfx-arc-core')
+    const arcTrails = arcTrailMeshes(arcGroup)
+    const projectileInitialScale = projectileCore.scale.x
+    const arcInitialScale = arcCore.scale.x
+
+    expectVectorClose(projectileGroup.position, [4, 1.16, 0])
+    expectVectorClose(arcGroup.position, [4, 1.16, 0])
+    expect(projectileCore.visible).toBe(true)
+    expect(projectileGlow.visible).toBe(true)
+    expect(projectileTrails.every((segment) => !segment.visible && segment.material.opacity === 0)).toBe(true)
+    expect(arcTrails.every((segment) => !segment.visible && segment.material.opacity === 0)).toBe(true)
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects, reducedMotion: true })
+
+    expectVectorClose(projectileGroup.position, [4, 1.16, 0])
+    expectVectorClose(arcGroup.position, [4, 1.16, 0])
+    expect(projectileCore.scale.x).toBeGreaterThan(projectileInitialScale)
+    expect(projectileCore.scale.x).toBeLessThan(projectileInitialScale * 1.35)
+    expect(arcCore.scale.x).toBeGreaterThan(arcInitialScale)
+    expect(arcCore.scale.x).toBeLessThan(arcInitialScale * 1.35)
+    expect(projectileTrails.every((segment) => !segment.visible && segment.material.opacity === 0)).toBe(true)
+    expect(arcTrails.every((segment) => !segment.visible && segment.material.opacity === 0)).toBe(true)
+  })
+
   it('uses grid-cell fallbacks for projectile targets when the token render object is missing', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)
@@ -1592,6 +1665,42 @@ describe('move VFX renderer shell', () => {
     for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
   })
 
+  it('uses a reduced-motion target pulse instead of an animated beam line', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+
+    renderer.sync([beamEvent({ id: 'move-vfx-beam-reduced' })], { renderObjects, reducedMotion: true })
+
+    const instanceGroup = renderer.group.children[0]
+    const glow = beamCylinderNamed(instanceGroup, 'move-vfx-beam-glow')
+    const core = beamCylinderNamed(instanceGroup, 'move-vfx-beam-core')
+    const ring = beamRingNamed(instanceGroup, 'move-vfx-beam-impact-ring')
+    const initialRingScale = ring.scale.x
+
+    expect(instanceGroup.children).toHaveLength(3)
+    expectVectorClose(instanceGroup.position, [2, 1.16, 0])
+    expect(glow.visible).toBe(false)
+    expect(core.visible).toBe(false)
+    expect(glow.material.opacity).toBe(0)
+    expect(core.material.opacity).toBe(0)
+    expect(ring.visible).toBe(true)
+    expect(ring.position.y).toBeCloseTo(2)
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects, reducedMotion: true })
+
+    expect(glow.visible).toBe(false)
+    expect(core.visible).toBe(false)
+    expect(ring.visible).toBe(true)
+    expect(ring.scale.x).toBeGreaterThan(initialRingScale)
+    expect(ring.scale.x).toBeLessThan(initialRingScale * 1.4)
+  })
+
   it('uses area-cell centroid targets for beam events when no target token is provided', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)
@@ -1738,6 +1847,39 @@ describe('move VFX renderer shell', () => {
     expect(renderer.needsAnimationFrame()).toBe(false)
     for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
     for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses a reduced-motion contact pulse for melee lunges without ghost travel', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+
+    renderer.sync([meleeLungeEvent({ id: 'move-vfx-melee-lunge-reduced' })], { renderObjects, reducedMotion: true })
+
+    const instanceGroup = renderer.group.children[0]
+    const streak = meleeLungeStreakNamed(instanceGroup)
+    const ghost = meleeLungeGhostNamed(instanceGroup)
+    const impactRing = meleeLungeImpactRingNamed(instanceGroup)
+
+    expect(ghost.visible).toBe(false)
+    expect(streak.visible).toBe(false)
+    expect(impactRing.visible).toBe(false)
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects, reducedMotion: true })
+
+    expect(ghost.visible).toBe(false)
+    expect(ghost.material.opacity).toBe(0)
+    expect(streak.visible).toBe(false)
+    expect(streak.material.opacity).toBe(0)
+    expect(impactRing.visible).toBe(true)
+    expectVectorClose(impactRing.position, [4, 0, 0])
+    expect(impactRing.scale.x).toBeGreaterThan(0.3)
+    expect(impactRing.scale.x).toBeLessThan(1.1)
   })
 
   it('uses grid-cell fallbacks for melee lunge targets when the token render object is missing', () => {
@@ -2035,6 +2177,60 @@ describe('move VFX renderer shell', () => {
 
     expectVectorClose(reducedGroup.position, [4, 0, 0])
     expectVectorClose(target.currentCenter, [4, 0, 0])
+  })
+
+  it('keeps reduced-motion target outcome accents readable without shake, clouds, or starburst spokes', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+
+    renderer.sync([
+      targetFlashEvent({ id: 'move-vfx-target-flash-reduced', tone: 'hit', shake: true }),
+      impactRingEvent({ id: 'move-vfx-impact-ring-reduced', tone: 'hit' }),
+      missEvent({ id: 'move-vfx-miss-reduced' }),
+      critEvent({ id: 'move-vfx-crit-reduced' }),
+    ], { renderObjects, reducedMotion: true })
+
+    const targetFlashGroup = renderer.group.children[0]
+    const impactGroup = renderer.group.children[1]
+    const missGroup = renderer.group.children[2]
+    const critGroup = renderer.group.children[3]
+    const targetRing = targetFlashRingNamed(targetFlashGroup)
+    const targetShell = targetFlashShellNamed(targetFlashGroup)
+    const impactRing = impactRingNamed(impactGroup)
+    const missRing = missPuffRingNamed(missGroup)
+    const missClouds = missPuffCloudMeshes(missGroup)
+    const critInnerRing = critBurstRingNamed(critGroup, 'move-vfx-crit-burst-inner-ring')
+    const critOuterRing = critBurstRingNamed(critGroup, 'move-vfx-crit-burst-outer-ring')
+    const critSpokes = critBurstSpokeMeshes(critGroup)
+    const targetInitialScale = targetRing.scale.x
+    const impactInitialScale = impactRing.scale.x
+
+    expectVectorClose(targetFlashGroup.position, [4, 0, 0])
+    expect(targetShell.visible).toBe(true)
+    expect(targetRing.visible).toBe(true)
+    expect(missClouds.every((cloud) => !cloud.visible && cloud.material.opacity === 0)).toBe(true)
+    expect(critSpokes.every((spoke) => !spoke.visible && spoke.material.opacity === 0)).toBe(true)
+
+    renderer.animate({ frameNowMs: 190, delta: 0.016, renderObjects, reducedMotion: true })
+
+    expectVectorClose(targetFlashGroup.position, [4, 0, 0])
+    expect(targetRing.scale.x).toBeGreaterThan(targetInitialScale)
+    expect(targetRing.scale.x).toBeLessThan(targetInitialScale * 1.3)
+    expect(targetShell.material.opacity).toBeGreaterThan(0)
+    expect(impactRing.visible).toBe(true)
+    expect(impactRing.scale.x).toBeGreaterThan(impactInitialScale)
+    expect(impactRing.scale.x).toBeLessThan(impactInitialScale * 1.4)
+    expect(missRing.visible).toBe(true)
+    expect(missClouds.every((cloud) => !cloud.visible && cloud.material.opacity === 0)).toBe(true)
+    expect(critInnerRing.visible).toBe(true)
+    expect(critOuterRing.visible).toBe(true)
+    expect(critSpokes.every((spoke) => !spoke.visible && spoke.material.opacity === 0)).toBe(true)
   })
 
   it('uses semantic target flash tones and independent materials for simultaneous flashes', () => {

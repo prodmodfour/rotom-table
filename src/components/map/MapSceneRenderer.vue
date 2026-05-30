@@ -64,6 +64,7 @@ defineProps<{
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
+  moveAnimationsReducedMotion?: boolean
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
@@ -133,6 +134,7 @@ defineExpose({ focusPokemon })
     :move-automation-targeting="moveAutomationTargeting"
     :move-automation-feedback="moveAutomationFeedback"
     :move-animations="moveAnimations ?? []"
+    :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
     :attack-of-opportunity-prompts="attackOfOpportunityPrompts ?? []"
     @select-pokemon="emit('select-pokemon', $event)"
     @move-pokemon="emit('move-pokemon', $event)"

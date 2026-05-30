@@ -139,6 +139,21 @@ Reduced-motion mode should preserve outcome readability while removing fast trav
 
 Reduced-motion variants should use the same semantic colour choices and should still complete through the same transient VFX lifecycle as default animations.
 
+### Primitive-level reduced-motion implementation
+
+`src/utils/isometric/moveVfxRenderer.ts` accepts a `reducedMotion` hint during `sync()` and each scheduler-driven `animate()` call. The Vue bridge exposes this as an optional `moveAnimationsReducedMotion` prop on `IsometricGrid.client.vue`, `MapSceneRenderer.vue`, and `MapScenePanel.vue`, so later app settings or `prefers-reduced-motion` wiring can opt into the variants without changing the primitive API.
+
+Current primitive behaviour in reduced-motion mode:
+
+- projectile and arc/lob effects skip travel and trails, then show one compact type-coloured pulse at the target/cell anchor;
+- beam effects hide the animated line and use a target-end pulse ring;
+- melee lunge and dash/pass effects hide ghost/streak/afterimage travel and keep only contact or destination pulses;
+- target flash, impact ring, miss puff, and crit burst keep low-amplitude fade/pulse feedback while disabling shake, drifting clouds, and starburst spokes;
+- self aura, healing, buff/debuff, and status effects collapse rising/orbiting particles into a single soft ring pulse;
+- area pulse, radial burst, and line/cone sweep avoid directional or large outward motion by using all-at-once smaller cell/ring pulses.
+
+Default animations remain unchanged when `reducedMotion` is false or omitted. The automatic OS preference hook and any user-facing enable/disable setting remain scoped to later controls/accessibility tickets; this ticket establishes the primitive variants and typed prop path only.
+
 ## Visual-only rule
 
 Move animations are display-only. They may make an already-resolved or currently resolving move easier to read, but they must not be the source of truth for mechanics. In particular:
@@ -491,7 +506,7 @@ Self aura VFX remain visual-only runtime resources. They are VFX-owned overlay g
 
 Each healing instance owns two horizontal ring meshes plus six small swirl motes. The default palette is the shared semantic healing palette from `src/utils/moveAnimationPalette.ts`; an explicit event palette can override it for future planner/override cases. The renderer scales the rings and motes from the affected token footprint and body height/clearance with bounded grid-cell defaults, keeping particle count constant and avoiding per-frame geometry allocation.
 
-Healing VFX remain visual-only runtime resources. They do not decide or apply HP changes, mutate token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives ring expansion, a short upward ring, mote swirl/rise, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint already swaps the swirl into a single soft fade/pulse ring; the app/OS preference wiring for reduced motion remains scoped to the later accessibility tickets.
+Healing VFX remain visual-only runtime resources. They do not decide or apply HP changes, mutate token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives ring expansion, a short upward ring, mote swirl/rise, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint swaps the swirl into a single soft fade/pulse ring; the prop path is available now, while automatic app/OS preference wiring remains scoped to later controls/accessibility tickets.
 
 ### Buff/debuff particles primitive for VFX-042
 
@@ -499,7 +514,7 @@ Healing VFX remain visual-only runtime resources. They do not decide or apply HP
 
 Each buff/debuff instance owns one horizontal ring plus five constant-count cone particles. `tone`/`direction: "buff"` uses the shared semantic buff palette with rising particles; `tone`/`direction: "debuff"` uses the debuff palette with inverted sinking particles. Explicit palettes remain available for future override/debug events, but planner-created combat-stage events now carry both `tone` and `direction` so the renderer can distinguish positive and negative non-damage outcomes without per-stat icons or external assets.
 
-Buff/debuff VFX remain visual-only runtime resources. They do not decide or apply combat-stage changes, mutate token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives particle motion, ring opacity/scale, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint swaps the moving particles into a single soft fade/pulse ring; app/OS reduced-motion wiring remains scoped to the later accessibility tickets.
+Buff/debuff VFX remain visual-only runtime resources. They do not decide or apply combat-stage changes, mutate token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives particle motion, ring opacity/scale, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint swaps the moving particles into a single soft fade/pulse ring; the prop path is available now, while automatic app/OS reduced-motion wiring remains scoped to later controls/accessibility tickets.
 
 ### Status cloud primitive for VFX-043
 
@@ -507,7 +522,7 @@ Buff/debuff VFX remain visual-only runtime resources. They do not decide or appl
 
 Each status instance owns one low ground ring, one soft body cloud shell, and five constant-count orbiting motes. Optional `conditionName`/`conditionNames` fields on `MoveStatusAnimationEvent` are colour hints only: known condition families such as Burned, Poisoned, Paralysis, Frozen, Sleep, and Confused may tint the generic cloud through `src/utils/moveAnimationStatusPalette.ts`, while unknown/custom condition names fall back to the shared semantic status palette. The renderer still creates one compact combined status cloud per event rather than one noisy effect per condition, and it does not add text badges or condition-specific choreography in this phase.
 
-Status VFX remain visual-only runtime resources. They do not decide or apply conditions, mutate HP/combat stages/token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives ring expansion, cloud/mote opacity, orbiting motion, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint swaps the orbiting cloud into a single soft fade/pulse ring; app/OS reduced-motion wiring remains scoped to the later accessibility tickets.
+Status VFX remain visual-only runtime resources. They do not decide or apply conditions, mutate HP/combat stages/token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives ring expansion, cloud/mote opacity, orbiting motion, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint swaps the orbiting cloud into a single soft fade/pulse ring; the prop path is available now, while automatic app/OS reduced-motion wiring remains scoped to later controls/accessibility tickets.
 
 ### Area cell pulse primitive for VFX-044
 
@@ -515,7 +530,7 @@ Status VFX remain visual-only runtime resources. They do not decide or apply con
 
 Each area pulse instance owns one `THREE.InstancedMesh` named `move-vfx-area-pulse-cells` with a constant plane geometry/material and one instance per affected cell. Scheduler frame time updates only instance transforms, shared material opacity, and visibility; the primitive does not rebuild geometry per frame and does not create timers or an independent RAF loop. The overlay uses the event palette supplied by the planner, which may be move-type coloured for damaging areas or semantic for non-damage area confirmations, with the neutral palette as a fallback.
 
-Area pulse VFX remain visual-only runtime resources. They do not re-run area targeting, decide who was affected, mutate terrain/token placement/HP/status/combat stages, change permissions, persist data, lower renderer quality, add dependencies, or alter existing map overlays. Completion, event removal, layer-hidden aging, hidden-tab expiry, and map unmount all dispose the owned instanced mesh through the existing move VFX lifecycle. A primitive-level reduced-motion hint keeps the same cells readable with a smaller fade/pulse while app/OS preference wiring remains scoped to the later accessibility tickets.
+Area pulse VFX remain visual-only runtime resources. They do not re-run area targeting, decide who was affected, mutate terrain/token placement/HP/status/combat stages, change permissions, persist data, lower renderer quality, add dependencies, or alter existing map overlays. Completion, event removal, layer-hidden aging, hidden-tab expiry, and map unmount all dispose the owned instanced mesh through the existing move VFX lifecycle. A primitive-level reduced-motion hint keeps the same cells readable with a smaller fade/pulse; the prop path is available now, while automatic app/OS preference wiring remains scoped to later controls/accessibility tickets.
 
 ### Radial burst primitive for VFX-045
 

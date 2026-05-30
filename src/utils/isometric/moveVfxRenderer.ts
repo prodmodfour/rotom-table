@@ -45,7 +45,7 @@ export interface MoveVfxRendererSyncContext {
   renderObjects?: ReadonlyMap<string, PokemonRenderObject>
   /** Resolved VFX visibility. Later tickets will connect this to map layer state. */
   visible?: boolean
-  /** Optional primitive-level reduced-motion hint. App/OS wiring lands in later accessibility tickets. */
+  /** Optional primitive-level reduced-motion hint supplied by app settings or OS preference wiring. */
   reducedMotion?: boolean
 }
 
@@ -62,7 +62,7 @@ export interface MoveVfxRendererFrameContext {
   renderObjects?: ReadonlyMap<string, PokemonRenderObject>
   /** Resolved VFX visibility for the current frame. */
   visible?: boolean
-  /** Optional primitive-level reduced-motion hint. App/OS wiring lands in later accessibility tickets. */
+  /** Optional primitive-level reduced-motion hint supplied by app settings or OS preference wiring. */
   reducedMotion?: boolean
 }
 
@@ -141,6 +141,9 @@ const MOVE_VFX_PROJECTILE_TRAIL_PROGRESS_SPACING = 0.055
 const MOVE_VFX_PROJECTILE_TRAIL_MAX_OPACITY = 0.28
 const MOVE_VFX_PROJECTILE_TRAIL_NEAR_SCALE = 0.7
 const MOVE_VFX_PROJECTILE_TRAIL_FAR_SCALE = 0.34
+const MOVE_VFX_PROJECTILE_REDUCED_PULSE_MAX_OPACITY = 0.42
+const MOVE_VFX_PROJECTILE_REDUCED_PULSE_START_SCALE = 0.88
+const MOVE_VFX_PROJECTILE_REDUCED_PULSE_END_SCALE = 1.14
 const MOVE_VFX_ARC_CORE_NAME = 'move-vfx-arc-core'
 const MOVE_VFX_ARC_GLOW_NAME = 'move-vfx-arc-glow'
 const MOVE_VFX_ARC_TRAIL_SEGMENT_PREFIX = 'move-vfx-arc-trail'
@@ -168,6 +171,9 @@ const MOVE_VFX_BEAM_IMPACT_MIN_RADIUS = 0.28
 const MOVE_VFX_BEAM_IMPACT_MAX_RADIUS = 0.72
 const MOVE_VFX_BEAM_IMPACT_START_PROGRESS = 0.16
 const MOVE_VFX_BEAM_IMPACT_MAX_OPACITY = 0.42
+const MOVE_VFX_BEAM_REDUCED_RING_MAX_OPACITY = 0.34
+const MOVE_VFX_BEAM_REDUCED_RING_START_SCALE = 0.82
+const MOVE_VFX_BEAM_REDUCED_RING_END_SCALE = 1.14
 const MOVE_VFX_MELEE_LUNGE_GHOST_NAME = 'move-vfx-melee-lunge-ghost'
 const MOVE_VFX_MELEE_LUNGE_STREAK_NAME = 'move-vfx-melee-lunge-streak'
 const MOVE_VFX_MELEE_LUNGE_IMPACT_RING_NAME = 'move-vfx-melee-lunge-impact-ring'
@@ -191,6 +197,9 @@ const MOVE_VFX_MELEE_LUNGE_GHOST_RADIUS_MULTIPLIER = 1.45
 const MOVE_VFX_MELEE_LUNGE_GHOST_HEIGHT_MULTIPLIER = 1.9
 const MOVE_VFX_MELEE_LUNGE_STREAK_RADIUS_MULTIPLIER = 0.45
 const MOVE_VFX_MELEE_LUNGE_IMPACT_RADIUS_MULTIPLIER = 2.5
+const MOVE_VFX_MELEE_LUNGE_REDUCED_IMPACT_MAX_OPACITY = 0.34
+const MOVE_VFX_MELEE_LUNGE_REDUCED_IMPACT_START_SCALE = 0.82
+const MOVE_VFX_MELEE_LUNGE_REDUCED_IMPACT_END_SCALE = 1.16
 const MOVE_VFX_SELF_PULSE_BASE_RING_NAME = 'move-vfx-self-pulse-base-ring'
 const MOVE_VFX_SELF_PULSE_RISING_RING_NAME = 'move-vfx-self-pulse-rising-ring'
 const MOVE_VFX_SELF_PULSE_SHELL_NAME = 'move-vfx-self-pulse-shell'
@@ -217,6 +226,9 @@ const MOVE_VFX_SELF_PULSE_BASE_RING_START_SCALE = 0.62
 const MOVE_VFX_SELF_PULSE_BASE_RING_END_SCALE = 1.38
 const MOVE_VFX_SELF_PULSE_RISING_RING_START_SCALE = 0.5
 const MOVE_VFX_SELF_PULSE_RISING_RING_END_SCALE = 1.16
+const MOVE_VFX_SELF_PULSE_REDUCED_RING_MAX_OPACITY = 0.34
+const MOVE_VFX_SELF_PULSE_REDUCED_RING_START_SCALE = 0.88
+const MOVE_VFX_SELF_PULSE_REDUCED_RING_END_SCALE = 1.12
 const MOVE_VFX_HEALING_BASE_RING_NAME = 'move-vfx-healing-base-ring'
 const MOVE_VFX_HEALING_RISING_RING_NAME = 'move-vfx-healing-rising-ring'
 const MOVE_VFX_HEALING_MOTE_PREFIX = 'move-vfx-healing-mote'
@@ -426,6 +438,12 @@ const MOVE_VFX_TARGET_FLASH_SHAKE_MAX_OFFSET = 0.08
 const MOVE_VFX_TARGET_FLASH_SHAKE_END_PROGRESS = 0.62
 const MOVE_VFX_TARGET_FLASH_SHAKE_RAMP_PROGRESS = 0.08
 const MOVE_VFX_TARGET_FLASH_SHAKE_OSCILLATIONS = 3.5
+const MOVE_VFX_TARGET_FLASH_REDUCED_SHELL_MAX_OPACITY = 0.18
+const MOVE_VFX_TARGET_FLASH_REDUCED_RING_MAX_OPACITY = 0.34
+const MOVE_VFX_TARGET_FLASH_REDUCED_SHELL_START_SCALE = 0.9
+const MOVE_VFX_TARGET_FLASH_REDUCED_SHELL_END_SCALE = 1.08
+const MOVE_VFX_TARGET_FLASH_REDUCED_RING_START_SCALE = 0.9
+const MOVE_VFX_TARGET_FLASH_REDUCED_RING_END_SCALE = 1.12
 const MOVE_VFX_IMPACT_RING_NAME = 'move-vfx-impact-ring'
 const MOVE_VFX_IMPACT_RING_RENDER_ORDER = MOVE_VFX_RENDER_ORDER_PATH_AND_IMPACT
 const MOVE_VFX_IMPACT_RING_MIN_RADIUS = 0.34
@@ -438,6 +456,9 @@ const MOVE_VFX_IMPACT_RING_FADE_OUT_START = 0.42
 const MOVE_VFX_IMPACT_RING_MAX_OPACITY = 0.58
 const MOVE_VFX_IMPACT_RING_START_SCALE = 0.58
 const MOVE_VFX_IMPACT_RING_END_SCALE = 1.58
+const MOVE_VFX_IMPACT_RING_REDUCED_MAX_OPACITY = 0.36
+const MOVE_VFX_IMPACT_RING_REDUCED_START_SCALE = 0.88
+const MOVE_VFX_IMPACT_RING_REDUCED_END_SCALE = 1.16
 const MOVE_VFX_MISS_PUFF_RING_NAME = 'move-vfx-miss-puff-ring'
 const MOVE_VFX_MISS_PUFF_CLOUD_PREFIX = 'move-vfx-miss-puff-cloud'
 const MOVE_VFX_MISS_PUFF_RING_RENDER_ORDER = MOVE_VFX_RENDER_ORDER_GROUND_ACCENT
@@ -456,6 +477,9 @@ const MOVE_VFX_MISS_PUFF_RING_MAX_OPACITY = 0.3
 const MOVE_VFX_MISS_PUFF_CLOUD_MAX_OPACITY = 0.22
 const MOVE_VFX_MISS_PUFF_RING_START_SCALE = 0.46
 const MOVE_VFX_MISS_PUFF_RING_END_SCALE = 1.28
+const MOVE_VFX_MISS_PUFF_REDUCED_RING_MAX_OPACITY = 0.24
+const MOVE_VFX_MISS_PUFF_REDUCED_RING_START_SCALE = 0.88
+const MOVE_VFX_MISS_PUFF_REDUCED_RING_END_SCALE = 1.12
 const MOVE_VFX_MISS_PUFF_CLOUD_LAYOUT = [
   { x: 0, y: 0.38, z: 0, scale: 0.44, opacity: 1 },
   { x: 0.34, y: 0.48, z: -0.18, scale: 0.32, opacity: 0.72 },
@@ -491,6 +515,10 @@ const MOVE_VFX_CRIT_BURST_SPOKE_THICKNESS_RATIO = 0.035
 const MOVE_VFX_CRIT_BURST_SPOKE_MIN_THICKNESS = 0.018
 const MOVE_VFX_CRIT_BURST_SPOKE_MAX_THICKNESS = 0.055
 const MOVE_VFX_CRIT_BURST_SPOKE_TWIST_RADIANS = Math.PI / 14
+const MOVE_VFX_CRIT_BURST_REDUCED_INNER_RING_MAX_OPACITY = 0.38
+const MOVE_VFX_CRIT_BURST_REDUCED_OUTER_RING_MAX_OPACITY = 0.24
+const MOVE_VFX_CRIT_BURST_REDUCED_START_SCALE = 0.88
+const MOVE_VFX_CRIT_BURST_REDUCED_END_SCALE = 1.14
 const MOVE_VFX_WORLD_UP = new THREE.Vector3(0, 1, 0)
 const MOVE_VFX_WORLD_FORWARD = new THREE.Vector3(0, 0, 1)
 
@@ -582,6 +610,45 @@ const createProjectileTrailSegments = (
   ),
 )
 
+const hideProjectileTrailSegments = (
+  trailSegments: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[],
+) => {
+  for (const segment of trailSegments) {
+    segment.material.opacity = 0
+    segment.visible = false
+  }
+}
+
+const applyReducedMotionProjectileVisualState = (options: {
+  group: THREE.Group
+  core: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  glow: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  trailSegments: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  end: THREE.Vector3
+  radius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const fadeIn = Math.max(0.28, clamp01(progress / MOVE_VFX_PROJECTILE_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_PROJECTILE_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_PROJECTILE_FADE_OUT_START))
+  const opacityMultiplier = Math.min(fadeIn, fadeOut) * Math.max(0, 1 - (progress * 0.32))
+  const pulseScale = MOVE_VFX_PROJECTILE_REDUCED_PULSE_START_SCALE
+    + ((MOVE_VFX_PROJECTILE_REDUCED_PULSE_END_SCALE - MOVE_VFX_PROJECTILE_REDUCED_PULSE_START_SCALE) * expansion)
+
+  options.group.position.copy(options.end)
+  options.core.scale.setScalar(options.radius * (pulseScale + (pulse * 0.04)))
+  options.glow.scale.setScalar(options.radius * ((pulseScale * 1.72) + (pulse * 0.08)))
+  options.core.material.opacity = MOVE_VFX_PROJECTILE_REDUCED_PULSE_MAX_OPACITY * opacityMultiplier
+  options.glow.material.opacity = MOVE_VFX_PROJECTILE_REDUCED_PULSE_MAX_OPACITY * 0.44 * opacityMultiplier
+  options.core.visible = options.core.material.opacity > 0.005
+  options.glow.visible = options.glow.material.opacity > 0.005
+  hideProjectileTrailSegments(options.trailSegments)
+}
+
 const applyProjectileVisualState = (options: {
   group: THREE.Group
   core: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
@@ -591,7 +658,13 @@ const applyProjectileVisualState = (options: {
   end: THREE.Vector3
   radius: number
   progress: number
+  reducedMotion?: boolean
 }) => {
+  if (options.reducedMotion) {
+    applyReducedMotionProjectileVisualState(options)
+    return
+  }
+
   const progress = clamp01(options.progress)
   const travelProgress = easeInOutCubic(progress)
   const pulse = pulse01(progress)
@@ -606,6 +679,8 @@ const applyProjectileVisualState = (options: {
   options.glow.scale.setScalar(options.radius * (1.85 + (pulse * 0.28)))
   options.core.material.opacity = 0.95 * opacityMultiplier
   options.glow.material.opacity = 0.32 * opacityMultiplier
+  options.core.visible = options.core.material.opacity > 0.005
+  options.glow.visible = options.glow.material.opacity > 0.005
 
   const trailScaleDivisor = Math.max(1, options.trailSegments.length - 1)
   options.trailSegments.forEach((segment, index) => {
@@ -660,7 +735,13 @@ const applyArcProjectileVisualState = (options: {
   radius: number
   arcHeight: number
   progress: number
+  reducedMotion?: boolean
 }) => {
+  if (options.reducedMotion) {
+    applyReducedMotionProjectileVisualState(options)
+    return
+  }
+
   const progress = clamp01(options.progress)
   const travelProgress = easeInOutCubic(progress)
   const pulse = pulse01(progress)
@@ -676,6 +757,8 @@ const applyArcProjectileVisualState = (options: {
   options.glow.scale.setScalar(options.radius * (1.85 + (pulse * 0.28)))
   options.core.material.opacity = 0.95 * opacityMultiplier
   options.glow.material.opacity = 0.32 * opacityMultiplier
+  options.core.visible = options.core.material.opacity > 0.005
+  options.glow.visible = options.glow.material.opacity > 0.005
 
   const trailScaleDivisor = Math.max(1, options.trailSegments.length - 1)
   options.trailSegments.forEach((segment, index) => {
@@ -834,7 +917,17 @@ const beamOpacityMultiplier = (progress: number): number => {
   return Math.min(fadeIn, fadeOut)
 }
 
-const applyBeamVisualState = (options: {
+const hideBeamLineMeshes = (options: {
+  core: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  glow: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+}) => {
+  options.core.material.opacity = 0
+  options.glow.material.opacity = 0
+  options.core.visible = false
+  options.glow.visible = false
+}
+
+const applyReducedMotionBeamVisualState = (options: {
   group: THREE.Group
   core: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
   glow: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
@@ -846,6 +939,47 @@ const applyBeamVisualState = (options: {
   impactRadius: number
   progress: number
 }) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacity = MOVE_VFX_BEAM_REDUCED_RING_MAX_OPACITY
+    * Math.max(0.26, beamOpacityMultiplier(progress))
+    * (0.72 + (pulse * 0.28))
+    * Math.max(0, 1 - (progress * 0.42))
+
+  options.group.position.copy(options.midpoint)
+  options.group.quaternion.copy(options.quaternion)
+  hideBeamLineMeshes(options)
+
+  if (!options.impactRing) return
+
+  options.impactRing.position.set(0, options.length / 2, 0)
+  options.impactRing.scale.setScalar(options.impactRadius * (
+    MOVE_VFX_BEAM_REDUCED_RING_START_SCALE
+    + ((MOVE_VFX_BEAM_REDUCED_RING_END_SCALE - MOVE_VFX_BEAM_REDUCED_RING_START_SCALE) * expansion)
+  ))
+  options.impactRing.material.opacity = opacity
+  options.impactRing.visible = opacity > 0.005
+}
+
+const applyBeamVisualState = (options: {
+  group: THREE.Group
+  core: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  glow: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  impactRing?: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  midpoint: THREE.Vector3
+  quaternion: THREE.Quaternion
+  length: number
+  radius: number
+  impactRadius: number
+  progress: number
+  reducedMotion?: boolean
+}) => {
+  if (options.reducedMotion) {
+    applyReducedMotionBeamVisualState(options)
+    return
+  }
+
   const progress = clamp01(options.progress)
   const opacityMultiplier = beamOpacityMultiplier(progress)
   const pulse = pulse01(progress)
@@ -859,6 +993,8 @@ const applyBeamVisualState = (options: {
   options.glow.scale.set(glowRadius, options.length, glowRadius)
   options.core.material.opacity = MOVE_VFX_BEAM_MAX_CORE_OPACITY * opacityMultiplier
   options.glow.material.opacity = MOVE_VFX_BEAM_MAX_GLOW_OPACITY * opacityMultiplier
+  options.core.visible = options.core.material.opacity > 0.005
+  options.glow.visible = options.glow.material.opacity > 0.005
 
   if (options.impactRing) {
     const impactProgress = easeOutCubic(clamp01(
@@ -987,6 +1123,42 @@ const resolveMeleeLungeAnchors = (
   }
 }
 
+const hideMeleeLungeTravelMeshes = (options: {
+  ghost: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  streak: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+}) => {
+  options.ghost.material.opacity = 0
+  options.ghost.visible = false
+  options.streak.material.opacity = 0
+  options.streak.visible = false
+}
+
+const applyReducedMotionMeleeLungeVisualState = (options: {
+  ghost: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  streak: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  impactRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  impact: THREE.Vector3
+  impactRadius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacity = MOVE_VFX_MELEE_LUNGE_REDUCED_IMPACT_MAX_OPACITY
+    * meleeLungeOpacityMultiplier(progress)
+    * (0.72 + (pulse * 0.28))
+    * Math.max(0, 1 - (progress * 0.42))
+
+  hideMeleeLungeTravelMeshes(options)
+  options.impactRing.position.copy(options.impact)
+  options.impactRing.scale.setScalar(options.impactRadius * (
+    MOVE_VFX_MELEE_LUNGE_REDUCED_IMPACT_START_SCALE
+    + ((MOVE_VFX_MELEE_LUNGE_REDUCED_IMPACT_END_SCALE - MOVE_VFX_MELEE_LUNGE_REDUCED_IMPACT_START_SCALE) * expansion)
+  ))
+  options.impactRing.material.opacity = opacity
+  options.impactRing.visible = opacity > 0.005
+}
+
 const applyMeleeLungeVisualState = (options: {
   ghost: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
   streak: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
@@ -1001,7 +1173,13 @@ const applyMeleeLungeVisualState = (options: {
   streakRadius: number
   impactRadius: number
   progress: number
+  reducedMotion?: boolean
 }) => {
+  if (options.reducedMotion) {
+    applyReducedMotionMeleeLungeVisualState(options)
+    return
+  }
+
   const progress = clamp01(options.progress)
   const opacityMultiplier = meleeLungeOpacityMultiplier(progress)
   const lungeProgress = Math.sin(progress * Math.PI)
@@ -1134,6 +1312,44 @@ const selfPulseOpacityMultiplier = (progress: number): number => {
   return Math.min(fadeIn, fadeOut)
 }
 
+const hideSelfPulseMotionAccents = (options: {
+  risingRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  shell: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+}) => {
+  options.risingRing.material.opacity = 0
+  options.risingRing.visible = false
+  options.shell.material.opacity = 0
+  options.shell.visible = false
+}
+
+const applyReducedMotionSelfPulseVisualState = (options: {
+  group: THREE.Group
+  baseRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  risingRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  shell: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  foot: THREE.Vector3
+  radius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacity = MOVE_VFX_SELF_PULSE_REDUCED_RING_MAX_OPACITY
+    * selfPulseOpacityMultiplier(progress)
+    * (0.72 + (pulse * 0.28))
+    * Math.max(0, 1 - (progress * 0.42))
+
+  options.group.position.copy(options.foot)
+  options.baseRing.position.set(0, MOVE_VFX_SELF_PULSE_RING_Y_OFFSET, 0)
+  options.baseRing.scale.setScalar(options.radius * (
+    MOVE_VFX_SELF_PULSE_REDUCED_RING_START_SCALE
+    + ((MOVE_VFX_SELF_PULSE_REDUCED_RING_END_SCALE - MOVE_VFX_SELF_PULSE_REDUCED_RING_START_SCALE) * expansion)
+  ))
+  options.baseRing.material.opacity = opacity
+  options.baseRing.visible = opacity > 0.005
+  hideSelfPulseMotionAccents(options)
+}
+
 const applySelfPulseVisualState = (options: {
   group: THREE.Group
   baseRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
@@ -1143,7 +1359,13 @@ const applySelfPulseVisualState = (options: {
   radius: number
   shellHeight: number
   progress: number
+  reducedMotion?: boolean
 }) => {
+  if (options.reducedMotion) {
+    applyReducedMotionSelfPulseVisualState(options)
+    return
+  }
+
   const progress = clamp01(options.progress)
   const expansion = easeOutCubic(progress)
   const risingProgress = easeInOutCubic(progress)
@@ -2067,13 +2289,22 @@ const applyTargetFlashVisualState = (options: {
   const expansion = easeOutCubic(progress)
   const pulse = pulse01(progress)
   const opacityMultiplier = targetFlashOpacityMultiplier(progress)
-  const shellRadiusScale = options.radius * (0.86 + (expansion * 0.28) + (pulse * 0.12))
-  const shellOpacity = MOVE_VFX_TARGET_FLASH_SHELL_MAX_OPACITY
+  const reducedMotion = options.reducedMotion === true
+  const shellScale = reducedMotion
+    ? MOVE_VFX_TARGET_FLASH_REDUCED_SHELL_START_SCALE
+      + ((MOVE_VFX_TARGET_FLASH_REDUCED_SHELL_END_SCALE - MOVE_VFX_TARGET_FLASH_REDUCED_SHELL_START_SCALE) * expansion)
+    : 0.86 + (expansion * 0.28) + (pulse * 0.12)
+  const ringScale = reducedMotion
+    ? MOVE_VFX_TARGET_FLASH_REDUCED_RING_START_SCALE
+      + ((MOVE_VFX_TARGET_FLASH_REDUCED_RING_END_SCALE - MOVE_VFX_TARGET_FLASH_REDUCED_RING_START_SCALE) * expansion)
+    : 0.72 + (expansion * 0.68)
+  const shellRadiusScale = options.radius * shellScale
+  const shellOpacity = (reducedMotion ? MOVE_VFX_TARGET_FLASH_REDUCED_SHELL_MAX_OPACITY : MOVE_VFX_TARGET_FLASH_SHELL_MAX_OPACITY)
     * opacityMultiplier
-    * (0.65 + (pulse * 0.35))
-  const ringOpacity = MOVE_VFX_TARGET_FLASH_RING_MAX_OPACITY
+    * (reducedMotion ? Math.max(0, 1 - (progress * 0.28)) : 0.65 + (pulse * 0.35))
+  const ringOpacity = (reducedMotion ? MOVE_VFX_TARGET_FLASH_REDUCED_RING_MAX_OPACITY : MOVE_VFX_TARGET_FLASH_RING_MAX_OPACITY)
     * opacityMultiplier
-    * Math.max(0, 1 - (progress * 0.45))
+    * Math.max(0, 1 - (progress * (reducedMotion ? 0.32 : 0.45)))
 
   if (options.shake === true && options.reducedMotion !== true && progress < MOVE_VFX_TARGET_FLASH_SHAKE_END_PROGRESS) {
     const shakeProgress = clamp01(progress / MOVE_VFX_TARGET_FLASH_SHAKE_END_PROGRESS)
@@ -2104,7 +2335,7 @@ const applyTargetFlashVisualState = (options: {
   options.shell.visible = shellOpacity > 0.005
 
   options.ring.position.set(0, MOVE_VFX_TARGET_FLASH_RING_Y_OFFSET, 0)
-  options.ring.scale.setScalar(options.radius * (0.72 + (expansion * 0.68)))
+  options.ring.scale.setScalar(options.radius * ringScale)
   options.ring.material.opacity = ringOpacity
   options.ring.visible = ringOpacity > 0.005
 }
@@ -2170,18 +2401,22 @@ const applyImpactRingVisualState = (options: {
   foot: THREE.Vector3
   radius: number
   progress: number
+  reducedMotion?: boolean
 }) => {
   const progress = clamp01(options.progress)
   const expansion = easeOutCubic(progress)
-  const opacity = MOVE_VFX_IMPACT_RING_MAX_OPACITY
+  const reducedMotion = options.reducedMotion === true
+  const maxOpacity = reducedMotion ? MOVE_VFX_IMPACT_RING_REDUCED_MAX_OPACITY : MOVE_VFX_IMPACT_RING_MAX_OPACITY
+  const startScale = reducedMotion ? MOVE_VFX_IMPACT_RING_REDUCED_START_SCALE : MOVE_VFX_IMPACT_RING_START_SCALE
+  const endScale = reducedMotion ? MOVE_VFX_IMPACT_RING_REDUCED_END_SCALE : MOVE_VFX_IMPACT_RING_END_SCALE
+  const opacity = maxOpacity
     * impactRingOpacityMultiplier(progress)
-    * Math.max(0, 1 - (progress * 0.72))
+    * Math.max(0, 1 - (progress * (reducedMotion ? 0.38 : 0.72)))
 
   options.group.position.copy(options.foot)
   options.ring.position.set(0, MOVE_VFX_IMPACT_RING_Y_OFFSET, 0)
   options.ring.scale.setScalar(options.radius * (
-    MOVE_VFX_IMPACT_RING_START_SCALE
-    + ((MOVE_VFX_IMPACT_RING_END_SCALE - MOVE_VFX_IMPACT_RING_START_SCALE) * expansion)
+    startScale + ((endScale - startScale) * expansion)
   ))
   options.ring.material.opacity = opacity
   options.ring.visible = opacity > 0.005
@@ -3040,6 +3275,15 @@ const missPuffOpacityMultiplier = (progress: number): number => {
   return Math.min(fadeIn, fadeOut)
 }
 
+const hideMissPuffClouds = (
+  clouds: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[],
+) => {
+  for (const cloud of clouds) {
+    cloud.material.opacity = 0
+    cloud.visible = false
+  }
+}
+
 const applyMissPuffVisualState = (options: {
   group: THREE.Group
   ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
@@ -3047,22 +3291,30 @@ const applyMissPuffVisualState = (options: {
   foot: THREE.Vector3
   radius: number
   progress: number
+  reducedMotion?: boolean
 }) => {
   const progress = clamp01(options.progress)
   const expansion = easeOutCubic(progress)
   const opacityMultiplier = missPuffOpacityMultiplier(progress)
-  const ringOpacity = MOVE_VFX_MISS_PUFF_RING_MAX_OPACITY
+  const reducedMotion = options.reducedMotion === true
+  const ringOpacity = (reducedMotion ? MOVE_VFX_MISS_PUFF_REDUCED_RING_MAX_OPACITY : MOVE_VFX_MISS_PUFF_RING_MAX_OPACITY)
     * opacityMultiplier
-    * Math.max(0, 1 - (progress * 0.58))
+    * Math.max(0, 1 - (progress * (reducedMotion ? 0.36 : 0.58)))
+  const ringStartScale = reducedMotion ? MOVE_VFX_MISS_PUFF_REDUCED_RING_START_SCALE : MOVE_VFX_MISS_PUFF_RING_START_SCALE
+  const ringEndScale = reducedMotion ? MOVE_VFX_MISS_PUFF_REDUCED_RING_END_SCALE : MOVE_VFX_MISS_PUFF_RING_END_SCALE
 
   options.group.position.copy(options.foot)
   options.ring.position.set(0, MOVE_VFX_MISS_PUFF_RING_Y_OFFSET, 0)
   options.ring.scale.setScalar(options.radius * (
-    MOVE_VFX_MISS_PUFF_RING_START_SCALE
-    + ((MOVE_VFX_MISS_PUFF_RING_END_SCALE - MOVE_VFX_MISS_PUFF_RING_START_SCALE) * expansion)
+    ringStartScale + ((ringEndScale - ringStartScale) * expansion)
   ))
   options.ring.material.opacity = ringOpacity
   options.ring.visible = ringOpacity > 0.005
+
+  if (reducedMotion) {
+    hideMissPuffClouds(options.clouds)
+    return
+  }
 
   options.clouds.forEach((cloud, index) => {
     const layout = MOVE_VFX_MISS_PUFF_CLOUD_LAYOUT[index] ?? MOVE_VFX_MISS_PUFF_CLOUD_LAYOUT[0]
@@ -3199,6 +3451,15 @@ const critBurstOpacityMultiplier = (progress: number): number => {
   return Math.min(fadeIn, fadeOut)
 }
 
+const hideCritBurstSpokes = (
+  spokes: readonly THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>[],
+) => {
+  for (const spoke of spokes) {
+    spoke.material.opacity = 0
+    spoke.visible = false
+  }
+}
+
 const applyCritBurstVisualState = (options: {
   group: THREE.Group
   innerRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
@@ -3208,10 +3469,38 @@ const applyCritBurstVisualState = (options: {
   centerOffset: THREE.Vector3
   radius: number
   progress: number
+  reducedMotion?: boolean
 }) => {
   const progress = clamp01(options.progress)
   const expansion = easeOutCubic(progress)
   const opacityMultiplier = critBurstOpacityMultiplier(progress)
+
+  options.group.position.copy(options.foot)
+  options.innerRing.position.set(0, MOVE_VFX_CRIT_BURST_RING_Y_OFFSET, 0)
+  options.outerRing.position.set(0, MOVE_VFX_CRIT_BURST_RING_Y_OFFSET * 1.35, 0)
+
+  if (options.reducedMotion) {
+    const scale = options.radius * (
+      MOVE_VFX_CRIT_BURST_REDUCED_START_SCALE
+      + ((MOVE_VFX_CRIT_BURST_REDUCED_END_SCALE - MOVE_VFX_CRIT_BURST_REDUCED_START_SCALE) * expansion)
+    )
+    const innerOpacity = MOVE_VFX_CRIT_BURST_REDUCED_INNER_RING_MAX_OPACITY
+      * opacityMultiplier
+      * Math.max(0, 1 - (progress * 0.42))
+    const outerOpacity = MOVE_VFX_CRIT_BURST_REDUCED_OUTER_RING_MAX_OPACITY
+      * opacityMultiplier
+      * Math.max(0, 1 - (progress * 0.48))
+
+    options.innerRing.scale.setScalar(scale)
+    options.outerRing.scale.setScalar(scale * 1.04)
+    options.innerRing.material.opacity = innerOpacity
+    options.outerRing.material.opacity = outerOpacity
+    options.innerRing.visible = innerOpacity > 0.005
+    options.outerRing.visible = outerOpacity > 0.005
+    hideCritBurstSpokes(options.spokes)
+    return
+  }
+
   const innerOpacity = MOVE_VFX_CRIT_BURST_INNER_RING_MAX_OPACITY
     * opacityMultiplier
     * Math.max(0, 1 - (progress * 0.62))
@@ -3219,8 +3508,6 @@ const applyCritBurstVisualState = (options: {
     * opacityMultiplier
     * Math.max(0, 1 - (progress * 0.78))
 
-  options.group.position.copy(options.foot)
-  options.innerRing.position.set(0, MOVE_VFX_CRIT_BURST_RING_Y_OFFSET, 0)
   options.innerRing.scale.setScalar(options.radius * (
     MOVE_VFX_CRIT_BURST_INNER_RING_START_SCALE
     + ((MOVE_VFX_CRIT_BURST_INNER_RING_END_SCALE - MOVE_VFX_CRIT_BURST_INNER_RING_START_SCALE) * expansion)
@@ -3228,7 +3515,6 @@ const applyCritBurstVisualState = (options: {
   options.innerRing.material.opacity = innerOpacity
   options.innerRing.visible = innerOpacity > 0.005
 
-  options.outerRing.position.set(0, MOVE_VFX_CRIT_BURST_RING_Y_OFFSET * 1.35, 0)
   options.outerRing.scale.setScalar(options.radius * (
     MOVE_VFX_CRIT_BURST_OUTER_RING_START_SCALE
     + ((MOVE_VFX_CRIT_BURST_OUTER_RING_END_SCALE - MOVE_VFX_CRIT_BURST_OUTER_RING_START_SCALE) * expansion)
@@ -3317,6 +3603,7 @@ const createProjectileMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   let disposed = false
   let complete = false
   const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
   const radius = projectileRadiusForRenderObjects(
     renderObjects.get(event.userId),
     targetId ? renderObjects.get(targetId) : undefined,
@@ -3347,6 +3634,7 @@ const createProjectileMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     end,
     radius,
     progress: 0,
+    reducedMotion: defaultReducedMotion,
   })
 
   return {
@@ -3373,6 +3661,7 @@ const createProjectileMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         end,
         radius,
         progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
       })
     },
     dispose() {
@@ -3397,6 +3686,7 @@ const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   let disposed = false
   let complete = false
   const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
   const radius = beamRadiusForRenderObjects(
     renderObjects.get(event.userId),
     targetId ? renderObjects.get(targetId) : undefined,
@@ -3420,7 +3710,7 @@ const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     MOVE_VFX_BEAM_GLOW_NAME,
     createBeamMaterial(palette.primary, MOVE_VFX_BEAM_MAX_GLOW_OPACITY),
   )
-  const impactRing = event.impact
+  const impactRing = event.impact || defaultReducedMotion
     ? createBeamImpactRingMesh(createImpactRingMaterial(palette.accent, 0))
     : undefined
 
@@ -3438,6 +3728,7 @@ const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     radius,
     impactRadius,
     progress: 0,
+    reducedMotion: defaultReducedMotion,
   })
 
   return {
@@ -3466,6 +3757,7 @@ const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         radius,
         impactRadius,
         progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
       })
     },
     dispose() {
@@ -3496,6 +3788,7 @@ const createArcMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   let disposed = false
   let complete = false
   const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
   const radius = projectileRadiusForRenderObjects(
     renderObjects.get(event.userId),
     targetId ? renderObjects.get(targetId) : undefined,
@@ -3528,6 +3821,7 @@ const createArcMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     radius,
     arcHeight,
     progress: 0,
+    reducedMotion: defaultReducedMotion,
   })
 
   return {
@@ -3555,6 +3849,7 @@ const createArcMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         radius,
         arcHeight,
         progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
       })
     },
     dispose() {
@@ -3577,6 +3872,7 @@ const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   let disposed = false
   let complete = false
   const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
   const userRenderObject = renderObjects.get(event.userId)
   const targetRenderObject = targetId ? renderObjects.get(targetId) : undefined
   const scales = meleeLungeRadiusForRenderObjects(userRenderObject, targetRenderObject)
@@ -3595,6 +3891,7 @@ const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     ...anchors,
     ...scales,
     progress: 0,
+    reducedMotion: defaultReducedMotion,
   })
 
   return {
@@ -3619,6 +3916,7 @@ const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         ...anchors,
         ...scales,
         progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
       })
     },
     dispose() {
@@ -3640,6 +3938,7 @@ const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   let disposed = false
   let complete = false
   const palette = selfPulsePaletteForEvent(event)
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
   const baseRing = createSelfPulseRingMesh(
     MOVE_VFX_SELF_PULSE_BASE_RING_NAME,
     createSelfPulseMaterial(palette.accent, 0),
@@ -3664,6 +3963,7 @@ const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     shell,
     ...anchor,
     progress: 0,
+    reducedMotion: defaultReducedMotion,
   })
 
   return {
@@ -3688,6 +3988,7 @@ const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         shell,
         ...anchor,
         progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
       })
     },
     dispose() {
@@ -3846,6 +4147,7 @@ const createImpactRingMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   let disposed = false
   let complete = false
   const palette = impactRingPaletteForEvent(event)
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
   const ring = createImpactRingMesh(
     MOVE_VFX_IMPACT_RING_NAME,
     createImpactRingMaterial(palette.accent, 0),
@@ -3860,6 +4162,7 @@ const createImpactRingMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     ring,
     ...anchor,
     progress: 0,
+    reducedMotion: defaultReducedMotion,
   })
 
   return {
@@ -3882,6 +4185,7 @@ const createImpactRingMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         ring,
         ...anchor,
         progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
       })
     },
     dispose() {
@@ -4214,6 +4518,7 @@ const createMissMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   let disposed = false
   let complete = false
   const palette = moveVfxColorForTone(MOVE_VFX_TONE.miss)
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
   const ring = createMissPuffRingMesh(createMissPuffMaterial(palette.accent, 0))
   const clouds = MOVE_VFX_MISS_PUFF_CLOUD_LAYOUT.map((_, index) => createMissPuffCloudMesh(
     index,
@@ -4230,6 +4535,7 @@ const createMissMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     clouds,
     ...anchor,
     progress: 0,
+    reducedMotion: defaultReducedMotion,
   })
 
   return {
@@ -4253,6 +4559,7 @@ const createMissMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         clouds,
         ...anchor,
         progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
       })
     },
     dispose() {
@@ -4275,6 +4582,7 @@ const createCritMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   let complete = false
   const critPalette = moveVfxColorForTone(MOVE_VFX_TONE.crit)
   const basePalette = event.palette ?? critPalette
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
   const baseIsCritPalette = basePalette.key === MOVE_VFX_TONE.crit
   const innerRing = createCritBurstRingMesh(
     MOVE_VFX_CRIT_BURST_INNER_RING_NAME,
@@ -4298,6 +4606,7 @@ const createCritMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     spokes,
     ...anchor,
     progress: 0,
+    reducedMotion: defaultReducedMotion,
   })
 
   return {
@@ -4322,6 +4631,7 @@ const createCritMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         spokes,
         ...anchor,
         progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
       })
     },
     dispose() {

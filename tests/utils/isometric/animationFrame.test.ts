@@ -90,6 +90,7 @@ describe('isometric animation frame', () => {
       moveVfxRenderer,
       moveVfxRenderObjects: renderObjects,
       moveVfxVisible: false,
+      moveVfxReducedMotion: true,
       selectedPokemon: null,
       previewPositionY: null,
       camera,
@@ -110,6 +111,7 @@ describe('isometric animation frame', () => {
       camera,
       renderObjects,
       visible: false,
+      reducedMotion: true,
     })
     expect(moveVfxRenderer.animate.mock.invocationCallOrder[0]).toBeLessThan(
       renderer.render.mock.invocationCallOrder[0],

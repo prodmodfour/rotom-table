@@ -48,6 +48,7 @@ export interface IsometricAnimationFrameOptions {
   moveVfxRenderer?: IsometricMoveVfxAnimationFrameRenderer | null
   moveVfxRenderObjects?: ReadonlyMap<string, PokemonRenderObject>
   moveVfxVisible?: boolean
+  moveVfxReducedMotion?: boolean
   selectedPokemon: SpawnedPokemon | null
   previewPositionY: number | null
   camera: THREE.Camera
@@ -122,6 +123,7 @@ export const stepIsometricAnimationFrame = (
       camera: options.camera,
       renderObjects: options.moveVfxRenderObjects,
       visible: options.moveVfxVisible,
+      reducedMotion: options.moveVfxReducedMotion === true,
     })
   }
 

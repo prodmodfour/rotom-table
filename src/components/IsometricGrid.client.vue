@@ -193,6 +193,7 @@ const props = defineProps<{
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
+  moveAnimationsReducedMotion?: boolean
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
@@ -1229,6 +1230,7 @@ const syncMoveVfxRendererState = () => {
   moveVfxRenderer.sync(props.moveAnimations ?? [], {
     renderObjects,
     visible: moveVfxVisible(),
+    reducedMotion: props.moveAnimationsReducedMotion === true,
   })
   syncMoveVfxMetricsForMetricsOverlay()
 }
@@ -1266,7 +1268,7 @@ watch(
 )
 
 watch(
-  () => props.moveAnimations,
+  [() => props.moveAnimations, () => props.moveAnimationsReducedMotion],
   () => {
     syncMoveVfxRendererState()
     if (!renderer) return
@@ -1510,6 +1512,7 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     moveVfxRenderer,
     moveVfxRenderObjects: renderObjects,
     moveVfxVisible: moveVfxVisible(),
+    moveVfxReducedMotion: props.moveAnimationsReducedMotion === true,
     selectedPokemon: sendOutInteraction.activePokemon() ?? selectedPokemon.value,
     previewPositionY: activeSendOutRequest.value ? sendOutInteraction.previewPositionY() : movementInteraction.previewPositionY(),
     camera,
