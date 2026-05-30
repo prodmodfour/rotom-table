@@ -4,6 +4,7 @@ import {
   appendMoveAutomationLogEntry,
   useMoveAutomationPanel,
 } from '~/composables/map-editor/useMoveAutomationPanel'
+import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { MoveAutomationTransaction } from '~/types/moveAutomation'
@@ -798,6 +799,100 @@ describe('useMoveAutomationPanel', () => {
 
     expect(calls).toEqual(['usage:user-token:Swords Dance', 'stages:user-token:3'])
     expect(panel.moveUsageError.value).toBeNull()
+  })
+
+  it('enqueues generic self-centered VFX for self-resolving moves before applying mechanics', async () => {
+    const map = ref(mapFixture())
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Swords Dance' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const enqueueMoveAnimations = vi.fn((events: readonly MoveAnimationEvent[]) => {
+      calls.push(`vfx:${events[0]?.kind}`)
+    })
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned({ combatStages: { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } })]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      recordMoveUsage: async (request) => { calls.push(`usage:${request.placementId}:${request.moveName}`) },
+      enqueueMoveAnimations,
+      now: () => 5000,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Swords Dance' })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(calls).toEqual(['usage:user-token:Swords Dance', 'vfx:buff-debuff', 'stages:user-token:3'])
+    expect(enqueueMoveAnimations).toHaveBeenCalledTimes(1)
+    const events = enqueueMoveAnimations.mock.calls[0]?.[0] ?? []
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchObject({
+      id: expect.stringContaining('swords-dance'),
+      kind: MOVE_VFX_KIND.buffDebuff,
+      moveName: 'Swords Dance',
+      userId: 'user-token',
+      createdAtMs: 5000,
+      targetId: 'user-token',
+      targetCell: { x: 0, y: 0, z: 0 },
+      tone: 'buff',
+      direction: 'buff',
+    })
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+    expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Swords Dance', scriptKind: 'explicit' }])
+  })
+
+  it('still applies self-resolving move mechanics when VFX enqueue fails', async () => {
+    const map = ref(mapFixture())
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Swords Dance' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned({ combatStages: { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } })]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      enqueueMoveAnimations: () => { throw new Error('VFX queue unavailable') },
+      now: () => 5000,
+    })
+
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Swords Dance' })
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+    } finally {
+      warn.mockRestore()
+    }
+
+    expect(calls).toEqual(['stages:user-token:3'])
+    expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Swords Dance', scriptKind: 'explicit' }])
   })
 
   it('does not apply a move when tracked usage recording fails', async () => {

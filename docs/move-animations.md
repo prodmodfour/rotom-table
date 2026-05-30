@@ -415,6 +415,12 @@ The queue remains page-local runtime state. The map page clears active move anim
 
 The panel imports only shared animation types for this bridge. It does not import the Three.js move VFX renderer, queue internals, scheduler helpers, or persistence code, so move automation can later hand planned events to the map page without taking ownership of rendering or saved state.
 
+### Self-resolving move integration for VFX-056
+
+Self or immediate moves that resolve inside `beginSeamlessMoveTargeting()` now plan a generic self-resolution VFX batch after tracked move usage succeeds and after the self transaction is created, then enqueue it before applying the transaction. The planner receives the script, user token, transaction, and a per-resolution animation id seed, so self heals, buffs/debuffs, status changes, and neutral self pulses use the existing generic classifications without bespoke per-move choreography.
+
+This integration remains best-effort and visual-only. Planning or enqueue failures are caught and logged, and the move transaction still applies through the existing automation path. The panel still does not persist VFX events, change mechanics, add renderer loops, or import renderer/queue internals; it only calls the renderer-agnostic enqueue sink provided by the map page.
+
 ### Layer visibility handling for VFX-027
 
 Move VFX follow the resolved token layer. `src/utils/isometric/layerVisibility.ts` exposes `resolveMoveVfxLayerVisibility(layers)`, and `src/components/IsometricGrid.client.vue` passes that result into `moveVfxRenderer.sync(...)` and each scheduled animation frame. The policy is intentionally conservative for this basic phase: hiding tokens also hides token-anchored VFX and area-only move confirmations so VFX cannot reveal or imply action around hidden tokens.

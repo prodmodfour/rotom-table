@@ -28,6 +28,10 @@ import {
   resolveInstantSelfMoveAutomation,
   resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
+import {
+  MOVE_ANIMATION_PLAN_RESOLUTION,
+  planMoveAnimations,
+} from '~/utils/moveAnimationPlanner'
 import { moveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import {
   setTokenFacingOnPlacement,
@@ -106,6 +110,12 @@ type MoveUsageRecordRequest = { placementId: string; moveName: string }
 type MoveUsageRecordHandler = (request: MoveUsageRecordRequest) => MaybePromise<void>
 
 const noopEnqueueMoveAnimations: MoveAnimationEnqueueHandler = () => undefined
+
+const defaultMoveAnimationNowMs = (): number => {
+  const performanceNow = globalThis.performance?.now
+  if (typeof performanceNow === 'function') return performanceNow.call(globalThis.performance)
+  return Date.now()
+}
 
 export interface MoveAutomationNonImmediateActionEvent {
   userId: string
@@ -234,6 +244,7 @@ export const useMoveAutomationPanel = ({
   const celebrateTriggerPrompts = ref<MoveAutomationCelebratePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
   let pendingFeedbackTransactionApplier: (() => void) | null = null
+  let moveAnimationPlanSequence = 0
 
   const sheetLookup = () => ({
     pokemon: pokemonBySlug.value,
@@ -579,6 +590,59 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const moveAnimationNowMs = (): number => {
+    const nowMs = now?.() ?? defaultMoveAnimationNowMs()
+    return Number.isFinite(nowMs) ? nowMs : 0
+  }
+
+  const nextMoveAnimationPlanIdBase = (
+    resolution: string,
+    script: MoveAutomationScript,
+    user: SpawnedPokemon,
+  ): string => {
+    moveAnimationPlanSequence += 1
+    return `use-move-${resolution}-${script.moveName}-${user.id}-${String(moveAnimationPlanSequence).padStart(6, '0')}`
+  }
+
+  const warnMoveAnimationEmissionFailure = (stage: string, error: unknown) => {
+    console.warn(`[useMoveAutomationPanel] move animation ${stage} failed`, error)
+  }
+
+  const enqueuePlannedMoveAnimations = (events: readonly MoveAnimationEvent[]) => {
+    if (events.length === 0) return
+
+    try {
+      void Promise.resolve(enqueueMoveAnimations(events)).catch((error) => {
+        warnMoveAnimationEmissionFailure('enqueue', error)
+      })
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('enqueue', error)
+    }
+  }
+
+  const planAndEnqueueSelfMoveAnimations = (options: {
+    script: MoveAutomationScript
+    user: SpawnedPokemon
+    transaction: MoveAutomationTransaction
+  }) => {
+    try {
+      enqueuePlannedMoveAnimations(planMoveAnimations({
+        resolution: MOVE_ANIMATION_PLAN_RESOLUTION.self,
+        user: options.user,
+        targets: [],
+        selectedTargetIds: [],
+        script: options.script,
+        transaction: options.transaction,
+        timing: {
+          nowMs: moveAnimationNowMs(),
+          animationIdBase: nextMoveAnimationPlanIdBase('self', options.script, options.user),
+        },
+      }))
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('planning', error)
+    }
+  }
+
   const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
     const user = findSpawnedPokemon(id)
     if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
@@ -627,11 +691,13 @@ export const useMoveAutomationPanel = ({
           frequency,
           rangeMeters: 0,
         })
-        await applyMoveAutomation(resolveInstantSelfMoveAutomation({
+        const transaction = resolveInstantSelfMoveAutomation({
           script,
           user,
           fieldEffects: map.value?.fieldEffects,
-        }), { script })
+        })
+        planAndEnqueueSelfMoveAnimations({ script, user, transaction })
+        await applyMoveAutomation(transaction, { script })
       })()
       return true
     }
