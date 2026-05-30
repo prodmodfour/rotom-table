@@ -15,6 +15,7 @@ import type {
   MoveAnimationEventByKind,
   MoveAnimationId,
   MoveVfxKind,
+  MoveVfxSourceKind,
 } from '~/types/moveAnimation'
 import { moveAnimationEventProgress } from '~/utils/moveAnimationSequencing'
 
@@ -32,6 +33,55 @@ type OptionalQueueManagedFields<T extends MoveAnimationEvent> = Omit<T, 'id' | '
 export type MoveAnimationQueueInput = {
   [Kind in MoveVfxKind]: OptionalQueueManagedFields<MoveAnimationEventByKind[Kind]>
 }[MoveVfxKind]
+
+/**
+ * Generic input for future tactical VFX systems that are not move automation.
+ *
+ * The underlying event contract still carries `moveName` for existing move
+ * integration compatibility, but callers such as abilities, maneuvers, orders,
+ * or manual tools should provide a neutral `sourceKind`/`sourceLabel` pair and
+ * let this helper materialize the legacy label field.
+ */
+export type TacticalVfxQueueInput = {
+  [Kind in MoveVfxKind]: Omit<Extract<MoveAnimationQueueInput, { kind: Kind }>, 'moveName' | 'sourceKind' | 'sourceLabel'> & {
+    readonly kind: Kind
+    readonly sourceKind: MoveVfxSourceKind
+    readonly sourceLabel: string
+    readonly moveName?: string
+  }
+}[MoveVfxKind]
+
+const DEFAULT_TACTICAL_VFX_SOURCE_LABEL = 'Tactical VFX'
+
+const normalizeTacticalVfxSourceLabel = (
+  sourceLabel: string,
+  moveName?: string,
+): string => {
+  const trimmedSourceLabel = sourceLabel.trim()
+  if (trimmedSourceLabel) return trimmedSourceLabel
+
+  const trimmedMoveName = moveName?.trim()
+  return trimmedMoveName || DEFAULT_TACTICAL_VFX_SOURCE_LABEL
+}
+
+/**
+ * Converts a generic tactical VFX request into the current queue input shape.
+ *
+ * This keeps future non-move callers from coupling to `moveName` while the
+ * current renderer/page bridge continues to consume the established
+ * `MoveAnimationEvent` contract.
+ */
+export const createTacticalVfxQueueInput = (
+  input: TacticalVfxQueueInput,
+): MoveAnimationQueueInput => {
+  const sourceLabel = normalizeTacticalVfxSourceLabel(input.sourceLabel, input.moveName)
+
+  return {
+    ...input,
+    sourceLabel,
+    moveName: input.moveName?.trim() || sourceLabel,
+  } as MoveAnimationQueueInput
+}
 
 export interface UseMoveAnimationQueueOptions extends MoveAnimationIdGeneratorOptions {
   /** Injected clock for deterministic tests and future renderer/page pruning. */
@@ -175,12 +225,34 @@ export const useMoveAnimationQueue = (options: UseMoveAnimationQueueOptions = {}
     return result
   }
 
+  const enqueueTacticalVfx = (
+    input: TacticalVfxQueueInput,
+    enqueueOptions: EnqueueMoveAnimationOptions = {},
+  ): EnqueueMoveAnimationResult => enqueueMoveAnimation(
+    createTacticalVfxQueueInput(input),
+    enqueueOptions,
+  )
+
+  const enqueueTacticalVfxBatch = (
+    inputs: readonly TacticalVfxQueueInput[],
+    enqueueOptions: EnqueueMoveAnimationOptions = {},
+  ): EnqueueMoveAnimationsResult => enqueueMoveAnimations(
+    inputs.map(createTacticalVfxQueueInput),
+    enqueueOptions,
+  )
+
   return {
     activeMoveAnimations,
+    activeTacticalVfx: activeMoveAnimations,
     enqueueMoveAnimation,
     enqueueMoveAnimations,
+    enqueueTacticalVfx,
+    enqueueTacticalVfxBatch,
     clearMoveAnimations,
+    clearTacticalVfx: clearMoveAnimations,
     removeMoveAnimation,
+    removeTacticalVfx: removeMoveAnimation,
     pruneExpiredMoveAnimations,
+    pruneExpiredTacticalVfx: pruneExpiredMoveAnimations,
   }
 }

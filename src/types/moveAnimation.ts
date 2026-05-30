@@ -1,11 +1,11 @@
 import type { GridAnchor } from './map'
 import type { MoveAutomationAreaDirection } from './moveAutomation'
 import { MOVE_VFX_KIND } from './moveVfx'
-import type { MoveVfxKind } from './moveVfx'
+import type { MoveVfxKind, MoveVfxSourceKind } from './moveVfx'
 import type { MoveVfxPaletteEntry, MoveVfxTone } from '~/utils/moveAnimationPalette'
 
-export { MOVE_VFX_KIND } from './moveVfx'
-export type { MoveAnimationEffectKind, MoveVfxKind } from './moveVfx'
+export { MOVE_VFX_KIND, MOVE_VFX_SOURCE_KIND } from './moveVfx'
+export type { MoveAnimationEffectKind, MoveVfxKind, MoveVfxSourceKind } from './moveVfx'
 
 /**
  * Backwards-compatible event-kind alias. Prefer `MoveVfxKind` or
@@ -74,7 +74,19 @@ export interface MoveAnimationEventBase<K extends MoveVfxKind = MoveVfxKind> {
    * multi-effect sequences.
    */
   id: MoveAnimationId
-  /** Display name of the move that caused the VFX request. */
+  /**
+   * Optional category for the system that requested the transient VFX.
+   * Existing move automation events may omit this for backwards compatibility;
+   * future ability, maneuver, order, or manual triggers should set it through
+   * the tactical VFX queue helper rather than inventing a parallel event shape.
+   */
+  sourceKind?: MoveVfxSourceKind
+  /**
+   * Generic display label for the source action. Non-move callers should use
+   * this instead of treating `moveName` as a rules concept.
+   */
+  sourceLabel?: string
+  /** Display name of the move that caused the VFX request, kept for current move integration compatibility. */
   moveName: string
   /** Map placement id for the user/source token at the time of the request. */
   userId: string

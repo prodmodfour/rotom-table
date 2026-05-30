@@ -183,9 +183,9 @@ Move usage logs may continue to mention the move and its mechanical results thro
 
 ### Persistence, JSON, and logs boundary
 
-Move animation events exist only in the runtime chain `planMoveAnimations()` -> `useMoveAnimationQueue()` -> the map renderer. They are not part of `SavedMap`, spawned Pokémon, trainer sheets, move automation transactions, live-session state, or any storage payload.
+Move animation events exist only in the runtime chain `planMoveAnimations()` -> `useMoveAnimationQueue()` -> the map renderer. They are not part of `SavedMap`, spawned Pokémon, trainer sheets, move automation transactions, live-session state, or any storage payload. Optional VFX source metadata such as `sourceKind` and `sourceLabel` follows the same transient-only rule.
 
-- Do not add `moveAnimations`, `activeMoveAnimations`, queue snapshots, `move-vfx-*` ids, palette data, VFX timings, or renderer debug snapshots to persisted map JSON, sheet JSON, campaign/session state, local storage, realtime payloads, or server API payloads.
+- Do not add `moveAnimations`, `activeMoveAnimations`, queue snapshots, `move-vfx-*` ids, `sourceKind`/`sourceLabel`, palette data, VFX timings, or renderer debug snapshots to persisted map JSON, sheet JSON, campaign/session state, local storage, realtime payloads, or server API payloads.
 - Do not introduce a map/schema migration for basic move animations; renderer/page integration should create a fresh per-map queue at runtime and clear it on navigation, unmount, or map reset.
 - Existing move automation transactions and movement/action logs may still be saved or displayed when they would have been saved without VFX. Those records describe mechanical results; they should not store VFX ids, durations, palette data, or renderer lifecycle state.
 - Manual verification for integration tickets: after resolving a move and saving/exporting/reloading a map, inspect the generated JSON for absence of `moveAnimations`, `activeMoveAnimations`, `move-vfx`, VFX `kind`, VFX `durationMs`, or palette fields outside normal move metadata.
@@ -304,6 +304,14 @@ The per-map reactive queue implementation lives in `src/composables/map-editor/u
 The composable exposes `activeMoveAnimations` as a readonly computed array plus `enqueueMoveAnimation`, `enqueueMoveAnimations`, `removeMoveAnimation`, `clearMoveAnimations`, and `pruneExpiredMoveAnimations`. Enqueue helpers fill missing `id` and `createdAtMs` fields from the per-queue id generator and injected clock, then apply the VFX-011 duplicate policy. The default queue clock uses `performance.now()` in browsers so event timestamps share the renderer frame-time clock, falling back to `Date.now()` only when the Performance API is unavailable. Expiration pruning uses event `createdAtMs`/`durationMs` through the shared timing helpers and is opportunistic only; it does not create timers, a RAF loop, or persistence hooks.
 
 Because the queue is runtime state, `activeMoveAnimations` should flow only into renderer-facing props and lifecycle cleanup. Do not pass queue contents to `useEditableMap`, sheet save helpers, move usage log builders, live-session payload builders, local-storage helpers, or schema migrations. Logs may mention that a move happened through the existing transaction/log paths, but they should not embed animation event ids, palettes, durations, or queue snapshots.
+
+### Generic tactical VFX helper for VFX-066
+
+`src/types/moveVfx.ts` now defines reusable VFX source categories as `MOVE_VFX_SOURCE_KIND`: `move`, `ability`, `maneuver`, `order`, and `manual`. `MoveAnimationEvent` accepts optional `sourceKind` and `sourceLabel` fields so future non-move systems can identify their visual requests without inventing another renderer event type.
+
+`useMoveAnimationQueue()` remains the current per-map queue used by move automation, but it also exposes generic aliases (`activeTacticalVfx`, `enqueueTacticalVfx`, `enqueueTacticalVfxBatch`, `clearTacticalVfx`, `removeTacticalVfx`, and `pruneExpiredTacticalVfx`) plus `createTacticalVfxQueueInput()`. Future ability, maneuver, order, or manual tooling should call those generic helpers with `sourceKind`/`sourceLabel`; the helper fills the existing compatibility `moveName` label so the renderer bridge and current move integration do not need a second queue.
+
+This ticket does not add ability, maneuver, order, or manual animation behaviour. It only keeps the runtime queue and event shape reusable. All tactical VFX requests remain transient, visual-only, permission-bound to their caller, scheduler-owned by the existing map render loop, and excluded from saved map/sheet/session/log/server payloads.
 
 ### Planner contracts for VFX-014
 

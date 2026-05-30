@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { MOVE_ANIMATION_DUPLICATE_POLICY } from '~/composables/map-editor/moveAnimationQueuePolicy'
 import {
+  createTacticalVfxQueueInput,
   useMoveAnimationQueue,
   type MoveAnimationQueueInput,
 } from '~/composables/map-editor/useMoveAnimationQueue'
-import { MOVE_VFX_KIND } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, MOVE_VFX_SOURCE_KIND } from '~/types/moveAnimation'
 
 const createInput = (
   overrides: Partial<MoveAnimationQueueInput> = {},
@@ -229,5 +230,53 @@ describe('useMoveAnimationQueue', () => {
 
     expect(pruned.removedEvents.map((event) => event.id)).toEqual(['short-lived'])
     expect(pruned.activeEvents.map((event) => event.id)).toEqual(['new-event'])
+  })
+
+  it('materializes generic tactical VFX input without requiring non-move callers to provide a move name', () => {
+    const input = createTacticalVfxQueueInput({
+      sourceKind: MOVE_VFX_SOURCE_KIND.ability,
+      sourceLabel: 'Intimidate',
+      userId: 'user-token',
+      durationMs: 320,
+      kind: MOVE_VFX_KIND.selfPulse,
+    })
+
+    expect(input).toEqual({
+      sourceKind: MOVE_VFX_SOURCE_KIND.ability,
+      sourceLabel: 'Intimidate',
+      moveName: 'Intimidate',
+      userId: 'user-token',
+      durationMs: 320,
+      kind: MOVE_VFX_KIND.selfPulse,
+    })
+  })
+
+  it('exposes generic enqueue aliases for future non-move VFX triggers', () => {
+    const queue = useMoveAnimationQueue({ now: () => 2500 })
+
+    const result = queue.enqueueTacticalVfx({
+      id: 'manual-vfx',
+      sourceKind: MOVE_VFX_SOURCE_KIND.manual,
+      sourceLabel: 'Manual ping',
+      userId: 'user-token',
+      durationMs: 400,
+      kind: MOVE_VFX_KIND.targetFlash,
+      targetId: 'target-token',
+    })
+
+    expect(result.action).toBe('added')
+    expect(queue.activeTacticalVfx.value).toEqual([
+      {
+        id: 'manual-vfx',
+        sourceKind: MOVE_VFX_SOURCE_KIND.manual,
+        sourceLabel: 'Manual ping',
+        moveName: 'Manual ping',
+        userId: 'user-token',
+        createdAtMs: 2500,
+        durationMs: 400,
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'target-token',
+      },
+    ])
   })
 })

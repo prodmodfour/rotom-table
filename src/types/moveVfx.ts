@@ -30,5 +30,25 @@ export const MOVE_VFX_KIND = {
 /** Generic renderer effect category, independent from move rule/script kinds. */
 export type MoveVfxKind = (typeof MOVE_VFX_KIND)[keyof typeof MOVE_VFX_KIND]
 
+/**
+ * Reusable source categories for transient tactical VFX requests.
+ *
+ * Current production events are created by move automation. The same renderer
+ * event contract can later describe ability, maneuver, order, or manual table
+ * cues without adding a second VFX pipeline or coupling those systems to move
+ * script concepts.
+ */
+export const MOVE_VFX_SOURCE_KIND = {
+  move: 'move',
+  ability: 'ability',
+  maneuver: 'maneuver',
+  order: 'order',
+  manual: 'manual',
+} as const
+
+export type MoveVfxSourceKind = (
+  typeof MOVE_VFX_SOURCE_KIND
+)[keyof typeof MOVE_VFX_SOURCE_KIND]
+
 /** Alias used by animation planners and future override registries. */
 export type MoveAnimationEffectKind = MoveVfxKind
