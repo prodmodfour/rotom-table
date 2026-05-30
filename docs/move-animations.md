@@ -472,6 +472,14 @@ Each self aura instance owns two horizontal ring meshes plus a translucent body 
 
 Self aura VFX remain visual-only runtime resources. They are VFX-owned overlay geometry and do not alter token selection, hover, sprite, placement, permissions, or saved state. Scheduler frame time drives ring expansion, a short rising-ring pulse, shell opacity/scale, completion, and disposal through the existing move VFX lifecycle. The primitive adds no timers, no independent RAF loop, no persistence, no gameplay mutation, no token placement mutation, no renderer-quality reduction, no external assets, and no new dependencies.
 
+### Healing pulse/swirl primitive for VFX-041
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the healing placeholder with a distinct semantic HP-restoration primitive. Healing events resolve the first `targetId`/`targetIds` entry to a token-foot anchor, fall back to `targetCell` when a target render object is unavailable, and use the move user as the anchor when no target id is supplied for self-healing events. The anchor is locked when the instance is created so token movement during the brief effect does not stretch or reassign the visual.
+
+Each healing instance owns two horizontal ring meshes plus six small swirl motes. The default palette is the shared semantic healing palette from `src/utils/moveAnimationPalette.ts`; an explicit event palette can override it for future planner/override cases. The renderer scales the rings and motes from the affected token footprint and body height/clearance with bounded grid-cell defaults, keeping particle count constant and avoiding per-frame geometry allocation.
+
+Healing VFX remain visual-only runtime resources. They do not decide or apply HP changes, mutate token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives ring expansion, a short upward ring, mote swirl/rise, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint already swaps the swirl into a single soft fade/pulse ring; the app/OS preference wiring for reduced motion remains scoped to the later accessibility tickets.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

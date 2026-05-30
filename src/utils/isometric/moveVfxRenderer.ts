@@ -5,6 +5,7 @@ import {
   type MoveArcAnimationEvent,
   type MoveBeamAnimationEvent,
   type MoveCritAnimationEvent,
+  type MoveHealingAnimationEvent,
   type MoveImpactRingAnimationEvent,
   type MoveMeleeLungeAnimationEvent,
   type MoveMissAnimationEvent,
@@ -28,6 +29,8 @@ export interface MoveVfxRendererSyncContext {
   renderObjects?: ReadonlyMap<string, PokemonRenderObject>
   /** Resolved VFX visibility. Later tickets will connect this to map layer state. */
   visible?: boolean
+  /** Optional primitive-level reduced-motion hint. App/OS wiring lands in later accessibility tickets. */
+  reducedMotion?: boolean
 }
 
 export interface MoveVfxRendererFrameContext {
@@ -43,6 +46,8 @@ export interface MoveVfxRendererFrameContext {
   renderObjects?: ReadonlyMap<string, PokemonRenderObject>
   /** Resolved VFX visibility for the current frame. */
   visible?: boolean
+  /** Optional primitive-level reduced-motion hint. App/OS wiring lands in later accessibility tickets. */
+  reducedMotion?: boolean
 }
 
 export interface MoveVfxRendererOptions {
@@ -181,6 +186,41 @@ const MOVE_VFX_SELF_PULSE_BASE_RING_START_SCALE = 0.62
 const MOVE_VFX_SELF_PULSE_BASE_RING_END_SCALE = 1.38
 const MOVE_VFX_SELF_PULSE_RISING_RING_START_SCALE = 0.5
 const MOVE_VFX_SELF_PULSE_RISING_RING_END_SCALE = 1.16
+const MOVE_VFX_HEALING_BASE_RING_NAME = 'move-vfx-healing-base-ring'
+const MOVE_VFX_HEALING_RISING_RING_NAME = 'move-vfx-healing-rising-ring'
+const MOVE_VFX_HEALING_MOTE_PREFIX = 'move-vfx-healing-mote'
+const MOVE_VFX_HEALING_BASE_RING_RENDER_ORDER = 37
+const MOVE_VFX_HEALING_RISING_RING_RENDER_ORDER = 38
+const MOVE_VFX_HEALING_MOTE_RENDER_ORDER = 39
+const MOVE_VFX_HEALING_MOTE_COUNT = 6
+const MOVE_VFX_HEALING_MIN_RADIUS = 0.38
+const MOVE_VFX_HEALING_DEFAULT_RADIUS = 0.68
+const MOVE_VFX_HEALING_MAX_RADIUS = 1.45
+const MOVE_VFX_HEALING_RADIUS_SCALE = 0.58
+const MOVE_VFX_HEALING_MIN_HEIGHT = 0.6
+const MOVE_VFX_HEALING_DEFAULT_HEIGHT = 1.05
+const MOVE_VFX_HEALING_MAX_HEIGHT = 2.45
+const MOVE_VFX_HEALING_HEIGHT_SCALE = 0.62
+const MOVE_VFX_HEALING_RING_Y_OFFSET = 0.055
+const MOVE_VFX_HEALING_RISING_RING_MIN_HEIGHT_RATIO = 0.18
+const MOVE_VFX_HEALING_RISING_RING_MAX_HEIGHT_RATIO = 0.92
+const MOVE_VFX_HEALING_FADE_IN_PROGRESS = 0.18
+const MOVE_VFX_HEALING_FADE_OUT_START = 0.74
+const MOVE_VFX_HEALING_BASE_RING_MAX_OPACITY = 0.4
+const MOVE_VFX_HEALING_RISING_RING_MAX_OPACITY = 0.34
+const MOVE_VFX_HEALING_MOTE_MAX_OPACITY = 0.46
+const MOVE_VFX_HEALING_BASE_RING_START_SCALE = 0.64
+const MOVE_VFX_HEALING_BASE_RING_END_SCALE = 1.28
+const MOVE_VFX_HEALING_RISING_RING_START_SCALE = 0.44
+const MOVE_VFX_HEALING_RISING_RING_END_SCALE = 1.04
+const MOVE_VFX_HEALING_MOTE_RADIUS_RATIO = 0.075
+const MOVE_VFX_HEALING_MOTE_MIN_RADIUS = 0.045
+const MOVE_VFX_HEALING_MOTE_MAX_RADIUS = 0.13
+const MOVE_VFX_HEALING_MOTE_ORBIT_START_SCALE = 0.46
+const MOVE_VFX_HEALING_MOTE_ORBIT_END_SCALE = 0.74
+const MOVE_VFX_HEALING_REDUCED_RING_MAX_OPACITY = 0.34
+const MOVE_VFX_HEALING_REDUCED_RING_START_SCALE = 0.88
+const MOVE_VFX_HEALING_REDUCED_RING_END_SCALE = 1.12
 const MOVE_VFX_TARGET_FLASH_SHELL_NAME = 'move-vfx-target-flash-shell'
 const MOVE_VFX_TARGET_FLASH_RING_NAME = 'move-vfx-target-flash-ring'
 const MOVE_VFX_TARGET_FLASH_SHELL_RENDER_ORDER = 38
@@ -509,6 +549,10 @@ const firstMissTargetId = (event: MoveMissAnimationEvent): string | undefined =>
 )
 
 const firstCritTargetId = (event: MoveCritAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
+const firstHealingTargetId = (event: MoveHealingAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
 )
 
@@ -1007,6 +1051,242 @@ const applySelfPulseVisualState = (options: {
   )
   options.shell.material.opacity = shellOpacity
   options.shell.visible = shellOpacity > 0.005
+}
+
+const healingPaletteForEvent = (event: MoveHealingAnimationEvent): MoveVfxPaletteEntry => (
+  event.palette ?? moveVfxColorForTone(MOVE_VFX_TONE.healing)
+)
+
+const healingDimensionsForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): { radius: number, bodyHeight: number, moteRadius: number } => {
+  const footprint = Math.max(
+    finitePositiveNumber(renderObject?.base) ?? 0,
+    finitePositiveNumber(renderObject?.width) ?? 0,
+  )
+  const bodyHeight = Math.max(
+    finitePositiveNumber(renderObject?.height) ?? 0,
+    finitePositiveNumber(renderObject?.clearance) ?? 0,
+  )
+  const radius = footprint > 0
+    ? clampNumber(
+      footprint * MOVE_VFX_HEALING_RADIUS_SCALE,
+      MOVE_VFX_HEALING_MIN_RADIUS,
+      MOVE_VFX_HEALING_MAX_RADIUS,
+    )
+    : MOVE_VFX_HEALING_DEFAULT_RADIUS
+
+  return {
+    radius,
+    bodyHeight: bodyHeight > 0
+      ? clampNumber(
+        bodyHeight * MOVE_VFX_HEALING_HEIGHT_SCALE,
+        MOVE_VFX_HEALING_MIN_HEIGHT,
+        MOVE_VFX_HEALING_MAX_HEIGHT,
+      )
+      : MOVE_VFX_HEALING_DEFAULT_HEIGHT,
+    moteRadius: clampNumber(
+      radius * MOVE_VFX_HEALING_MOTE_RADIUS_RATIO,
+      MOVE_VFX_HEALING_MOTE_MIN_RADIUS,
+      MOVE_VFX_HEALING_MOTE_MAX_RADIUS,
+    ),
+  }
+}
+
+const resolveHealingPulseAnchor = (
+  event: MoveHealingAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): { foot: THREE.Vector3, radius: number, bodyHeight: number, moteRadius: number } | null => {
+  const targetId = firstHealingTargetId(event)
+  const anchorTokenId = targetId ?? event.userId
+  const renderObject = renderObjects.get(anchorTokenId)
+  const foot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: anchorTokenId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.targetCell,
+  })
+
+  return foot
+    ? { foot: foot.clone(), ...healingDimensionsForRenderObject(renderObject) }
+    : null
+}
+
+const createHealingMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createHealingRingMesh = (
+  name: string,
+  material: THREE.MeshBasicMaterial,
+  renderOrder: number,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 48), material)
+  mesh.name = name
+  mesh.renderOrder = renderOrder
+  mesh.rotation.x = -Math.PI / 2
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createHealingMoteMesh = (
+  index: number,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), material)
+  mesh.name = `${MOVE_VFX_HEALING_MOTE_PREFIX}-${index + 1}`
+  mesh.renderOrder = MOVE_VFX_HEALING_MOTE_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createHealingMoteMeshes = (
+  palette: MoveVfxPaletteEntry,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => Array.from(
+  { length: MOVE_VFX_HEALING_MOTE_COUNT },
+  (_, index) => createHealingMoteMesh(
+    index,
+    createHealingMaterial(index % 2 === 0 ? palette.accent : palette.primary, 0),
+  ),
+)
+
+const healingOpacityMultiplier = (progress: number): number => {
+  const fadeIn = Math.max(0.24, clamp01(progress / MOVE_VFX_HEALING_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_HEALING_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_HEALING_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const hideHealingMotionAccents = (options: {
+  risingRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  motes: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+}) => {
+  options.risingRing.material.opacity = 0
+  options.risingRing.visible = false
+  for (const mote of options.motes) {
+    mote.material.opacity = 0
+    mote.visible = false
+  }
+}
+
+const applyReducedMotionHealingVisualState = (options: {
+  group: THREE.Group
+  baseRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  risingRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  motes: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  foot: THREE.Vector3
+  radius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacity = MOVE_VFX_HEALING_REDUCED_RING_MAX_OPACITY
+    * healingOpacityMultiplier(progress)
+    * (0.72 + (pulse * 0.28))
+    * Math.max(0, 1 - (progress * 0.42))
+
+  options.group.position.copy(options.foot)
+  options.baseRing.position.set(0, MOVE_VFX_HEALING_RING_Y_OFFSET, 0)
+  options.baseRing.scale.setScalar(options.radius * (
+    MOVE_VFX_HEALING_REDUCED_RING_START_SCALE
+    + ((MOVE_VFX_HEALING_REDUCED_RING_END_SCALE - MOVE_VFX_HEALING_REDUCED_RING_START_SCALE) * expansion)
+  ))
+  options.baseRing.material.opacity = opacity
+  options.baseRing.visible = opacity > 0.005
+  hideHealingMotionAccents(options)
+}
+
+const applyHealingVisualState = (options: {
+  group: THREE.Group
+  baseRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  risingRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  motes: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  foot: THREE.Vector3
+  radius: number
+  bodyHeight: number
+  moteRadius: number
+  progress: number
+  reducedMotion?: boolean
+}) => {
+  if (options.reducedMotion) {
+    applyReducedMotionHealingVisualState(options)
+    return
+  }
+
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const risingProgress = easeInOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacityMultiplier = healingOpacityMultiplier(progress)
+  const baseOpacity = MOVE_VFX_HEALING_BASE_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.48))
+  const risingOpacity = MOVE_VFX_HEALING_RISING_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.62))
+  const risingHeight = options.bodyHeight * (
+    MOVE_VFX_HEALING_RISING_RING_MIN_HEIGHT_RATIO
+    + ((MOVE_VFX_HEALING_RISING_RING_MAX_HEIGHT_RATIO - MOVE_VFX_HEALING_RISING_RING_MIN_HEIGHT_RATIO) * risingProgress)
+  )
+
+  options.group.position.copy(options.foot)
+
+  options.baseRing.position.set(0, MOVE_VFX_HEALING_RING_Y_OFFSET, 0)
+  options.baseRing.scale.setScalar(options.radius * (
+    MOVE_VFX_HEALING_BASE_RING_START_SCALE
+    + ((MOVE_VFX_HEALING_BASE_RING_END_SCALE - MOVE_VFX_HEALING_BASE_RING_START_SCALE) * expansion)
+  ))
+  options.baseRing.material.opacity = baseOpacity
+  options.baseRing.visible = baseOpacity > 0.005
+
+  options.risingRing.position.set(0, MOVE_VFX_HEALING_RING_Y_OFFSET + risingHeight, 0)
+  options.risingRing.scale.setScalar(options.radius * (
+    MOVE_VFX_HEALING_RISING_RING_START_SCALE
+    + ((MOVE_VFX_HEALING_RISING_RING_END_SCALE - MOVE_VFX_HEALING_RISING_RING_START_SCALE) * expansion)
+  ))
+  options.risingRing.material.opacity = risingOpacity
+  options.risingRing.visible = risingOpacity > 0.005
+
+  const orbitRadius = options.radius * (
+    MOVE_VFX_HEALING_MOTE_ORBIT_START_SCALE
+    + ((MOVE_VFX_HEALING_MOTE_ORBIT_END_SCALE - MOVE_VFX_HEALING_MOTE_ORBIT_START_SCALE) * expansion)
+  )
+  const moteCount = Math.max(1, options.motes.length)
+
+  options.motes.forEach((mote, index) => {
+    const phase = index / moteCount
+    const angle = (phase * Math.PI * 2) + (progress * Math.PI * 1.7)
+    const verticalProgress = easeInOutCubic(clamp01((progress * 0.84) + (phase * 0.16)))
+    const shimmer = 0.78 + (Math.sin(angle + (progress * Math.PI)) * 0.12)
+    const moteOpacity = MOVE_VFX_HEALING_MOTE_MAX_OPACITY
+      * opacityMultiplier
+      * shimmer
+      * Math.max(0, 1 - (progress * 0.58))
+
+    mote.position.set(
+      Math.cos(angle) * orbitRadius,
+      options.bodyHeight * (0.16 + (verticalProgress * 0.76)),
+      Math.sin(angle) * orbitRadius,
+    )
+    mote.scale.setScalar(options.moteRadius * (0.86 + (pulse * 0.24) + (phase * 0.12)))
+    mote.material.opacity = moteOpacity
+    mote.visible = moteOpacity > 0.005
+  })
 }
 
 type TargetFlashResolvedTone = 'hit'
@@ -2069,6 +2349,82 @@ const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
+const createHealingMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveHealingAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchor = resolveHealingPulseAnchor(event, renderObjects)
+
+  if (!anchor) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette = healingPaletteForEvent(event)
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
+  const baseRing = createHealingRingMesh(
+    MOVE_VFX_HEALING_BASE_RING_NAME,
+    createHealingMaterial(palette.accent, 0),
+    MOVE_VFX_HEALING_BASE_RING_RENDER_ORDER,
+  )
+  const risingRing = createHealingRingMesh(
+    MOVE_VFX_HEALING_RISING_RING_NAME,
+    createHealingMaterial(palette.glow, 0),
+    MOVE_VFX_HEALING_RISING_RING_RENDER_ORDER,
+  )
+  const motes = createHealingMoteMeshes(palette)
+
+  // Healing pulses are event-owned semantic VFX. They default to the healing
+  // palette, resolve either a target token/cell or the user for self-heals, lock
+  // that anchor for the lifetime of the effect, and never alter HP, placement,
+  // token style, permissions, or saved map/sheet state.
+  context.group.add(baseRing, risingRing, ...motes)
+  applyHealingVisualState({
+    group: context.group,
+    baseRing,
+    risingRing,
+    motes,
+    ...anchor,
+    progress: 0,
+    reducedMotion: defaultReducedMotion,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyHealingVisualState({
+        group: context.group,
+        baseRing,
+        risingRing,
+        motes,
+        ...anchor,
+        progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   const event = context.event as MoveTargetFlashAnimationEvent
   const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
@@ -2333,7 +2689,6 @@ const createCritMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 const createStatusMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
-const createHealingMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createBuffDebuffMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 
 const selectMoveVfxInstanceBuilder = (kind: string): MoveVfxInstanceBuilder => {

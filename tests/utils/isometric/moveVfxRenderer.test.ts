@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveCritAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -140,6 +140,17 @@ const critEvent = (overrides: Partial<MoveCritAnimationEvent> = {}): MoveAnimati
   kind: MOVE_VFX_KIND.crit,
   targetId: 'target-1',
   palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const healingEvent = (overrides: Partial<MoveHealingAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-healing',
+  moveName: 'Recover',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 560,
+  kind: MOVE_VFX_KIND.healing,
+  targetId: 'target-1',
   ...overrides,
 }) as MoveAnimationEvent
 
@@ -299,6 +310,23 @@ const selfPulseShellNamed = (
   const mesh = group.children.find((child) => child.name === 'move-vfx-self-pulse-shell')
   expect(mesh).toBeInstanceOf(THREE.Mesh)
   return mesh as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+}
+
+const healingRingNamed = (
+  group: THREE.Object3D,
+  name: string,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === name)
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const healingMoteMeshes = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => {
+  const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-healing-mote-'))
+  expect(meshes).toHaveLength(6)
+  return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
 }
 
 const attachDisposableMesh = (group: THREE.Object3D) => {
@@ -585,6 +613,145 @@ describe('move VFX renderer shell', () => {
     const renderer = createMoveVfxRenderer(scene)
 
     renderer.sync([selfPulseEvent({ userId: 'missing-user' })], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders healing events as semantic rising rings and motes around a locked target anchor', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const target = makeRenderObject({
+      id: 'target-1',
+      currentCenter: new THREE.Vector3(4, 1, 0),
+      base: 2,
+      width: 1.5,
+      height: 3,
+      clearance: 2.4,
+    })
+    const renderObjects = new Map([[target.id, target]])
+
+    renderer.sync([healingEvent({ palette: undefined })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const baseRing = healingRingNamed(instanceGroup, 'move-vfx-healing-base-ring')
+    const risingRing = healingRingNamed(instanceGroup, 'move-vfx-healing-rising-ring')
+    const motes = healingMoteMeshes(instanceGroup)
+    const initialRisingY = risingRing.position.y
+    const initialBaseScale = baseRing.scale.x
+
+    expect(instanceGroup.children).toHaveLength(8)
+    expectVectorClose(instanceGroup.position, [4, 1, 0])
+    expectVectorClose(baseRing.position, [0, 0.055, 0])
+    expect(baseRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.accent.slice(1))
+    expect(risingRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.glow.slice(1))
+    expect(motes[0]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.accent.slice(1))
+    expect(motes[1]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.primary.slice(1))
+    expect(baseRing.material.transparent).toBe(true)
+    expect(baseRing.material.depthTest).toBe(true)
+    expect(baseRing.material.depthWrite).toBe(false)
+    expect(baseRing.renderOrder).toBe(37)
+    expect(risingRing.renderOrder).toBe(38)
+    expect(motes.every((mote) => mote.renderOrder === 39)).toBe(true)
+    expect(baseRing.rotation.x).toBeCloseTo(-Math.PI / 2)
+    expect(baseRing.visible).toBe(true)
+    expect(risingRing.visible).toBe(true)
+    expect(motes.every((mote) => mote.visible)).toBe(true)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects })
+
+    expect(baseRing.scale.x).toBeGreaterThan(initialBaseScale)
+    expect(risingRing.position.y).toBeGreaterThan(initialRisingY)
+    expect(motes[0]?.position.y).toBeGreaterThan(0)
+    expect(motes[0]?.material.opacity).toBeGreaterThan(0)
+
+    const lockedHealingPoint = instanceGroup.position.clone()
+    const healingMeshes = [baseRing, risingRing, ...motes]
+    const geometryDisposeSpies = healingMeshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = healingMeshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    target.currentCenter.set(12, 3, 0)
+    renderer.animate({ frameNowMs: 520, delta: 0.016, renderObjects })
+
+    expect(instanceGroup.position.equals(lockedHealingPoint)).toBe(true)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses user anchors for self healing and target-cell fallbacks with palette overrides', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(2, 0, 1), base: 1 })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([
+      healingEvent({ id: 'move-vfx-healing-self', targetId: undefined, targetCell: undefined, palette: undefined }),
+      healingEvent({
+        id: 'move-vfx-healing-cell',
+        targetId: 'missing-target',
+        targetCell: { x: 5, y: 2, z: 2 },
+        palette: projectilePalette,
+      }),
+    ], { renderObjects })
+
+    const selfGroup = renderer.group.children[0]
+    const cellGroup = renderer.group.children[1]
+    const selfRing = healingRingNamed(selfGroup, 'move-vfx-healing-base-ring')
+    const cellRing = healingRingNamed(cellGroup, 'move-vfx-healing-base-ring')
+
+    expect(renderer.activeCount()).toBe(2)
+    expectVectorClose(selfGroup.position, [2, 0, 1])
+    expectVectorClose(cellGroup.position, [5.5, 2, 2.5])
+    expect(selfRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.accent.slice(1))
+    expect(cellRing.material.color.getHexString()).toBe(projectilePalette.accent.slice(1))
+    expect(selfRing.material).not.toBe(cellRing.material)
+  })
+
+  it('uses a simple fade pulse for reduced-motion healing events', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([[target.id, target]])
+
+    renderer.sync([healingEvent({ palette: undefined })], { renderObjects, reducedMotion: true })
+
+    const instanceGroup = renderer.group.children[0]
+    const baseRing = healingRingNamed(instanceGroup, 'move-vfx-healing-base-ring')
+    const risingRing = healingRingNamed(instanceGroup, 'move-vfx-healing-rising-ring')
+    const motes = healingMoteMeshes(instanceGroup)
+    const initialBaseScale = baseRing.scale.x
+
+    expect(baseRing.visible).toBe(true)
+    expect(risingRing.visible).toBe(false)
+    expect(motes.every((mote) => !mote.visible)).toBe(true)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects, reducedMotion: true })
+
+    expect(baseRing.visible).toBe(true)
+    expect(baseRing.material.opacity).toBeGreaterThan(0)
+    expect(baseRing.scale.x).toBeGreaterThan(initialBaseScale)
+    expect(risingRing.visible).toBe(false)
+    expect(risingRing.material.opacity).toBe(0)
+    expect(motes.every((mote) => !mote.visible && mote.material.opacity === 0)).toBe(true)
+  })
+
+  it('falls back to a no-op healing pulse when no target or user anchor can be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([healingEvent({ userId: 'missing-user', targetId: undefined })], { renderObjects: new Map() })
 
     const instanceGroup = renderer.group.children[0]
     expect(instanceGroup.children).toHaveLength(0)
