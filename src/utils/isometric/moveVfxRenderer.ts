@@ -399,6 +399,12 @@ const MOVE_VFX_TARGET_FLASH_FADE_IN_PROGRESS = 0.14
 const MOVE_VFX_TARGET_FLASH_FADE_OUT_START = 0.68
 const MOVE_VFX_TARGET_FLASH_SHELL_MAX_OPACITY = 0.24
 const MOVE_VFX_TARGET_FLASH_RING_MAX_OPACITY = 0.48
+const MOVE_VFX_TARGET_FLASH_SHAKE_MAX_OFFSET_RATIO = 0.055
+const MOVE_VFX_TARGET_FLASH_SHAKE_MIN_OFFSET = 0.018
+const MOVE_VFX_TARGET_FLASH_SHAKE_MAX_OFFSET = 0.08
+const MOVE_VFX_TARGET_FLASH_SHAKE_END_PROGRESS = 0.62
+const MOVE_VFX_TARGET_FLASH_SHAKE_RAMP_PROGRESS = 0.08
+const MOVE_VFX_TARGET_FLASH_SHAKE_OSCILLATIONS = 3.5
 const MOVE_VFX_IMPACT_RING_NAME = 'move-vfx-impact-ring'
 const MOVE_VFX_IMPACT_RING_RENDER_ORDER = 37
 const MOVE_VFX_IMPACT_RING_MIN_RADIUS = 0.34
@@ -2021,6 +2027,10 @@ const targetFlashPaletteForEvent = (event: MoveTargetFlashAnimationEvent): MoveV
     : moveVfxColorForTone(tone)
 }
 
+const targetFlashShakeEnabledForEvent = (event: MoveTargetFlashAnimationEvent): boolean => (
+  event.shake === true && (event.tone == null || normalizeTargetFlashTone(event.tone) === 'hit')
+)
+
 const targetFlashDimensionsForRenderObject = (
   renderObject: PokemonRenderObject | undefined,
 ): { radius: number, shellHeight: number } => {
@@ -2136,6 +2146,8 @@ const applyTargetFlashVisualState = (options: {
   radius: number
   shellHeight: number
   progress: number
+  shake?: boolean
+  reducedMotion?: boolean
 }) => {
   const progress = clamp01(options.progress)
   const expansion = easeOutCubic(progress)
@@ -2149,7 +2161,25 @@ const applyTargetFlashVisualState = (options: {
     * opacityMultiplier
     * Math.max(0, 1 - (progress * 0.45))
 
-  options.group.position.copy(options.foot)
+  if (options.shake === true && options.reducedMotion !== true && progress < MOVE_VFX_TARGET_FLASH_SHAKE_END_PROGRESS) {
+    const shakeProgress = clamp01(progress / MOVE_VFX_TARGET_FLASH_SHAKE_END_PROGRESS)
+    const shakeRamp = clamp01(progress / MOVE_VFX_TARGET_FLASH_SHAKE_RAMP_PROGRESS)
+    const shakeAmplitude = clampNumber(
+      options.radius * MOVE_VFX_TARGET_FLASH_SHAKE_MAX_OFFSET_RATIO,
+      MOVE_VFX_TARGET_FLASH_SHAKE_MIN_OFFSET,
+      MOVE_VFX_TARGET_FLASH_SHAKE_MAX_OFFSET,
+    ) * shakeRamp * (1 - shakeProgress)
+    const shakeAngle = shakeProgress * MOVE_VFX_TARGET_FLASH_SHAKE_OSCILLATIONS * Math.PI * 2
+
+    options.group.position.set(
+      options.foot.x + (Math.sin(shakeAngle) * shakeAmplitude),
+      options.foot.y,
+      options.foot.z + (Math.cos(shakeAngle * 0.83) * shakeAmplitude * 0.72),
+    )
+  } else {
+    options.group.position.copy(options.foot)
+  }
+
   options.shell.position.copy(options.shellCenter).sub(options.foot)
   options.shell.scale.set(
     shellRadiusScale,
@@ -3925,12 +3955,16 @@ const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   let disposed = false
   let complete = false
   const palette = targetFlashPaletteForEvent(event)
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
+  const shake = targetFlashShakeEnabledForEvent(event)
   const ring = createTargetFlashRingMesh(createTargetFlashMaterial(palette.accent, 0))
   const shell = createTargetFlashShellMesh(createTargetFlashMaterial(palette.primary, 0))
 
   // Target flashes lock their token/cell anchors at creation time so the brief
   // readability pulse stays attached to the resolution moment rather than
   // stretching if normal token movement updates before the effect completes.
+  // Optional hit shake is deliberately applied to this VFX-owned group only;
+  // the real token render object and saved placement are never offset.
   context.group.add(ring, shell)
   applyTargetFlashVisualState({
     group: context.group,
@@ -3938,6 +3972,8 @@ const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     shell,
     ...anchors,
     progress: 0,
+    shake,
+    reducedMotion: defaultReducedMotion,
   })
 
   return {
@@ -3965,6 +4001,8 @@ const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
         shell,
         ...anchors,
         progress: progress.progress,
+        shake,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
       })
     },
     dispose() {

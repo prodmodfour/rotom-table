@@ -18,7 +18,7 @@ The initial VFX library may use the following reusable effect families. These ar
 - **Beam:** a short-lived straight-line energy effect between user and target or area centroid.
 - **Arc/lob:** a projectile variant with a bounded vertical arc for thrown or lob-like moves.
 - **Melee lunge:** a brief visual nudge toward a target that resets without changing placement.
-- **Target flash:** a pulse around an affected target for hit, heal, buff, debuff, status, or neutral outcomes.
+- **Target flash:** a pulse around an affected target for hit, heal, buff, debuff, status, or neutral outcomes; damaging hit flashes may opt into a subtle VFX-owned shake cue.
 - **Impact ring:** an expanding ring at the target or affected cell for impact readability.
 - **Self aura:** a pulse centred on the move user for self-originating moves.
 - **Healing pulse:** a semantic healing effect for HP restoration.
@@ -70,6 +70,10 @@ Area moves should keep the existing map-native area confirmation workflow. After
 ### Movement-like outcomes
 
 Moves with pass/dash destination data may add a path or afterimage cue, but actual placement remains controlled by the existing move automation transaction logic. The VFX must never save a temporary offset as token placement.
+
+### Optional target shake
+
+Damaging hit target flashes can request `shake: true` for a short impact cue. The renderer implements this as a tiny offset on the VFX-owned target-flash group only; it never moves the actual token render object, saved placement, targeting state, HP/status HUD, or map data. Multiple simultaneous shake requests therefore remain isolated per VFX instance, and reduced-motion rendering disables the shake while keeping the normal target flash.
 
 ## Visual quality and style guardrails
 

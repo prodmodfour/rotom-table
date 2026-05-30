@@ -825,6 +825,7 @@ const planSingleTargetMoveAnimations = (
   events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
     targetId,
     targetCell,
+    shake: true,
   }, palette))
 
   if (crit) {

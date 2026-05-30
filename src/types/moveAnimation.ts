@@ -130,6 +130,8 @@ export interface MoveTargetFlashAnimationEvent
     MoveAnimationTargetMetadata {
   /** Semantic colour hint for generic target flashes; unknown runtime tones fall back to neutral. */
   tone?: MoveTargetFlashTone
+  /** Optional VFX-only impact shake for damaging hit flashes; ignored by reduced-motion rendering. */
+  shake?: boolean
 }
 
 export type MoveImpactRingTone = 'hit' | 'damage' | 'damaging' | 'heal' | MoveVfxTone

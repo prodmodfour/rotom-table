@@ -304,6 +304,7 @@ describe('generic move animation planner', () => {
         kind: MOVE_VFX_KIND.targetFlash,
         targetId: 'target-token',
         palette: MOVE_VFX_TYPE_COLORS.Fighting,
+        shake: true,
       }),
     ]))
   })

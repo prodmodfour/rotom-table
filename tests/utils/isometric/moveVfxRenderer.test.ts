@@ -1952,6 +1952,38 @@ describe('move VFX renderer shell', () => {
     for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
   })
 
+  it('applies optional target flash shake as VFX-only overlay motion and disables it for reduced motion', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([[target.id, target]])
+
+    renderer.sync([targetFlashEvent({ id: 'move-vfx-target-flash-shake', tone: 'hit', shake: true })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    expectVectorClose(instanceGroup.position, [4, 0, 0])
+
+    renderer.animate({ frameNowMs: 160, delta: 0.016, renderObjects })
+
+    expect(instanceGroup.position.distanceTo(target.currentCenter)).toBeGreaterThan(0.005)
+    expect(instanceGroup.position.distanceTo(target.currentCenter)).toBeLessThan(0.09)
+    expectVectorClose(target.currentCenter, [4, 0, 0])
+
+    renderer.dispose()
+    expectVectorClose(target.currentCenter, [4, 0, 0])
+
+    const reducedRenderer = createMoveVfxRenderer(new THREE.Scene())
+    reducedRenderer.sync([
+      targetFlashEvent({ id: 'move-vfx-target-flash-reduced-shake', tone: 'hit', shake: true }),
+    ], { renderObjects, reducedMotion: true })
+
+    const reducedGroup = reducedRenderer.group.children[0]
+    reducedRenderer.animate({ frameNowMs: 160, delta: 0.016, renderObjects })
+
+    expectVectorClose(reducedGroup.position, [4, 0, 0])
+    expectVectorClose(target.currentCenter, [4, 0, 0])
+  })
+
   it('uses semantic target flash tones and independent materials for simultaneous flashes', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)
