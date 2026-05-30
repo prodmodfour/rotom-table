@@ -7,10 +7,12 @@ import {
   type MoveArcAnimationEvent,
   type MoveBeamAnimationEvent,
   type MoveBuffDebuffAnimationEvent,
+  type MoveConeSweepAnimationEvent,
   type MoveCritAnimationEvent,
   type MoveHealingAnimationEvent,
   type MoveImpactRingAnimationEvent,
   type MoveMeleeLungeAnimationEvent,
+  type MoveLineSweepAnimationEvent,
   type MoveMissAnimationEvent,
   type MoveProjectileAnimationEvent,
   type MoveRadialBurstAnimationEvent,
@@ -302,6 +304,18 @@ const MOVE_VFX_AREA_PULSE_END_SCALE = 1.04
 const MOVE_VFX_AREA_PULSE_REDUCED_MAX_OPACITY = 0.26
 const MOVE_VFX_AREA_PULSE_REDUCED_START_SCALE = 0.9
 const MOVE_VFX_AREA_PULSE_REDUCED_END_SCALE = 1.02
+const MOVE_VFX_AREA_SWEEP_CELLS_NAME = 'move-vfx-area-sweep-cells'
+const MOVE_VFX_AREA_SWEEP_RENDER_ORDER = MOVE_VFX_AREA_PULSE_RENDER_ORDER + 1
+const MOVE_VFX_AREA_SWEEP_CELL_INSET = 0.1
+const MOVE_VFX_AREA_SWEEP_Y_OFFSET = 0.058
+const MOVE_VFX_AREA_SWEEP_FADE_IN_PROGRESS = 0.12
+const MOVE_VFX_AREA_SWEEP_FADE_OUT_START = 0.74
+const MOVE_VFX_AREA_SWEEP_MAX_OPACITY = 0.42
+const MOVE_VFX_AREA_SWEEP_START_SCALE = 0.42
+const MOVE_VFX_AREA_SWEEP_END_SCALE = 1.08
+const MOVE_VFX_AREA_SWEEP_SEQUENCE_SPREAD_PROGRESS = 0.56
+const MOVE_VFX_AREA_SWEEP_CELL_WINDOW_PROGRESS = 0.34
+const MOVE_VFX_AREA_SWEEP_MIN_PENDING_SCALE = 0.001
 const MOVE_VFX_RADIAL_BURST_INNER_RING_NAME = 'move-vfx-radial-burst-inner-ring'
 const MOVE_VFX_RADIAL_BURST_OUTER_RING_NAME = 'move-vfx-radial-burst-outer-ring'
 const MOVE_VFX_RADIAL_BURST_RAY_PREFIX = 'move-vfx-radial-burst-ray'
@@ -433,6 +447,8 @@ interface MoveVfxInstanceBuildContext {
 }
 
 type MoveVfxInstanceBuilder = (context: MoveVfxInstanceBuildContext) => MoveVfxInstance
+
+type MoveAreaSweepAnimationEvent = MoveLineSweepAnimationEvent | MoveConeSweepAnimationEvent
 
 const normalizeOptions = (
   sceneOrOptions: THREE.Scene | MoveVfxRendererOptions,
@@ -2282,6 +2298,231 @@ const applyAreaPulseVisualState = (options: {
   options.mesh.instanceMatrix.needsUpdate = true
 }
 
+interface AreaSweepDirectionDefinition {
+  dx: number
+  dy: number
+  dz: number
+}
+
+interface AreaSweepOrderedCell {
+  cell: GridAnchor
+  center: THREE.Vector3
+  order: number
+  sequenceProgress: number
+}
+
+const AREA_SWEEP_DIRECTION_DEFINITIONS: Readonly<Record<string, AreaSweepDirectionDefinition>> = Object.freeze({
+  north: { dx: 0, dy: 0, dz: -1 },
+  'north-east': { dx: 1, dy: 0, dz: -1 },
+  east: { dx: 1, dy: 0, dz: 0 },
+  'south-east': { dx: 1, dy: 0, dz: 1 },
+  south: { dx: 0, dy: 0, dz: 1 },
+  'south-west': { dx: -1, dy: 0, dz: 1 },
+  west: { dx: -1, dy: 0, dz: 0 },
+  'north-west': { dx: -1, dy: 0, dz: -1 },
+  up: { dx: 0, dy: 1, dz: 0 },
+  down: { dx: 0, dy: -1, dz: 0 },
+})
+
+const areaSweepDirectionForEvent = (event: MoveAreaSweepAnimationEvent): AreaSweepDirectionDefinition | null => {
+  const rawDirection = typeof event.areaDirection === 'string' ? event.areaDirection.trim().toLowerCase() : ''
+  const direction = AREA_SWEEP_DIRECTION_DEFINITIONS[rawDirection]
+  if (!direction) return null
+
+  const length = Math.hypot(direction.dx, direction.dy, direction.dz)
+  return length > 0
+    ? { dx: direction.dx / length, dy: direction.dy / length, dz: direction.dz / length }
+    : null
+}
+
+const areaSweepOriginForEvent = (event: MoveAreaSweepAnimationEvent): GridAnchor | null => (
+  isFiniteGridAnchor(event.areaOrigin)
+    ? event.areaOrigin
+    : isFiniteGridAnchor(event.originCell)
+      ? event.originCell
+      : null
+)
+
+const areaSweepProjection = (
+  cell: GridAnchor,
+  origin: GridAnchor | null,
+  direction: AreaSweepDirectionDefinition,
+): number => {
+  const originX = origin?.x ?? 0
+  const originY = origin?.y ?? 0
+  const originZ = origin?.z ?? 0
+
+  return ((cell.x - originX) * direction.dx)
+    + ((cell.y - originY) * direction.dy)
+    + ((cell.z - originZ) * direction.dz)
+}
+
+const areaSweepLateralDistance = (
+  cell: GridAnchor,
+  origin: GridAnchor | null,
+  direction: AreaSweepDirectionDefinition,
+  projection: number,
+): number => {
+  const originX = origin?.x ?? 0
+  const originY = origin?.y ?? 0
+  const originZ = origin?.z ?? 0
+  const dx = cell.x - originX
+  const dy = cell.y - originY
+  const dz = cell.z - originZ
+  const distanceSquared = (dx * dx) + (dy * dy) + (dz * dz)
+  return Math.max(0, distanceSquared - (projection * projection))
+}
+
+const compareAreaSweepCells = (left: AreaSweepOrderedCell, right: AreaSweepOrderedCell): number => (
+  (left.order - right.order)
+  || (left.cell.y - right.cell.y)
+  || (left.cell.x - right.cell.x)
+  || (left.cell.z - right.cell.z)
+)
+
+const orderedAreaSweepCellsForEvent = (
+  event: MoveAreaSweepAnimationEvent,
+  cells: readonly GridAnchor[],
+): { cells: AreaSweepOrderedCell[], directional: boolean } => {
+  const direction = areaSweepDirectionForEvent(event)
+  const centers = cells.map(moveVfxGridCellCenterAnchor)
+
+  if (!direction) {
+    return {
+      directional: false,
+      cells: cells.map((cell, index) => ({
+        cell,
+        center: centers[index] ?? moveVfxGridCellCenterAnchor(cell),
+        order: 0,
+        sequenceProgress: 0,
+      })),
+    }
+  }
+
+  const origin = areaSweepOriginForEvent(event)
+  const projectedCells = cells.map((cell, index) => {
+    const projection = areaSweepProjection(cell, origin, direction)
+    const lateralDistance = areaSweepLateralDistance(cell, origin, direction, projection)
+
+    return {
+      cell,
+      center: centers[index] ?? moveVfxGridCellCenterAnchor(cell),
+      order: projection,
+      lateralDistance,
+      sequenceProgress: 0,
+    }
+  })
+
+  const minOrder = projectedCells.reduce((min, item) => Math.min(min, item.order), Number.POSITIVE_INFINITY)
+  const maxOrder = projectedCells.reduce((max, item) => Math.max(max, item.order), Number.NEGATIVE_INFINITY)
+  const orderSpan = Number.isFinite(minOrder) && Number.isFinite(maxOrder) ? maxOrder - minOrder : 0
+
+  return {
+    directional: true,
+    cells: projectedCells
+      .map((item) => ({
+        cell: item.cell,
+        center: item.center,
+        order: item.order,
+        sequenceProgress: orderSpan > 0 ? (item.order - minOrder) / orderSpan : 0,
+        lateralDistance: item.lateralDistance,
+      }))
+      .sort((left, right) => (
+        (left.order - right.order)
+        || (left.lateralDistance - right.lateralDistance)
+        || compareAreaSweepCells(left, right)
+      ))
+      .map((item): AreaSweepOrderedCell => ({
+        cell: item.cell,
+        center: item.center,
+        order: item.order,
+        sequenceProgress: item.sequenceProgress,
+      })),
+  }
+}
+
+const createAreaSweepCellsMesh = (
+  count: number,
+  material: THREE.MeshBasicMaterial,
+): THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.InstancedMesh(
+    new THREE.PlaneGeometry(1 - MOVE_VFX_AREA_SWEEP_CELL_INSET, 1 - MOVE_VFX_AREA_SWEEP_CELL_INSET),
+    material,
+    Math.max(1, count),
+  )
+  mesh.name = MOVE_VFX_AREA_SWEEP_CELLS_NAME
+  mesh.count = Math.max(0, count)
+  mesh.renderOrder = MOVE_VFX_AREA_SWEEP_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const areaSweepOpacityMultiplier = (progress: number): number => {
+  const fadeIn = Math.max(0.2, clamp01(progress / MOVE_VFX_AREA_SWEEP_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_AREA_SWEEP_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_AREA_SWEEP_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const applyAreaSweepVisualState = (options: {
+  mesh: THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
+  orderedCells: readonly AreaSweepOrderedCell[]
+  cellCenters: readonly THREE.Vector3[]
+  directional: boolean
+  progress: number
+  reducedMotion?: boolean
+  scratchMatrix: THREE.Matrix4
+  scratchPosition: THREE.Vector3
+  scratchQuaternion: THREE.Quaternion
+  scratchScale: THREE.Vector3
+}) => {
+  if (options.reducedMotion || !options.directional) {
+    applyAreaPulseVisualState({
+      mesh: options.mesh,
+      cellCenters: options.cellCenters,
+      progress: options.progress,
+      reducedMotion: options.reducedMotion,
+      scratchMatrix: options.scratchMatrix,
+      scratchPosition: options.scratchPosition,
+      scratchQuaternion: options.scratchQuaternion,
+      scratchScale: options.scratchScale,
+    })
+    return
+  }
+
+  const progress = clamp01(options.progress)
+  const opacity = MOVE_VFX_AREA_SWEEP_MAX_OPACITY
+    * areaSweepOpacityMultiplier(progress)
+    * Math.max(0, 1 - (progress * 0.18))
+
+  options.mesh.count = options.orderedCells.length
+  options.mesh.material.opacity = opacity
+  options.mesh.visible = options.orderedCells.length > 0 && opacity > 0.005
+
+  options.orderedCells.forEach((item, index) => {
+    const startProgress = item.sequenceProgress * MOVE_VFX_AREA_SWEEP_SEQUENCE_SPREAD_PROGRESS
+    const reached = progress >= startProgress
+    const localProgress = reached
+      ? easeOutCubic((progress - startProgress) / MOVE_VFX_AREA_SWEEP_CELL_WINDOW_PROGRESS)
+      : 0
+    const pulse = pulse01(localProgress)
+    const scale = reached
+      ? MOVE_VFX_AREA_SWEEP_START_SCALE
+        + ((MOVE_VFX_AREA_SWEEP_END_SCALE - MOVE_VFX_AREA_SWEEP_START_SCALE) * localProgress)
+        + (pulse * 0.08)
+      : MOVE_VFX_AREA_SWEEP_MIN_PENDING_SCALE
+
+    options.scratchPosition.set(item.center.x, item.center.y + MOVE_VFX_AREA_SWEEP_Y_OFFSET, item.center.z)
+    options.scratchScale.set(scale, scale, 1)
+    options.scratchMatrix.compose(options.scratchPosition, options.scratchQuaternion, options.scratchScale)
+    options.mesh.setMatrixAt(index, options.scratchMatrix)
+  })
+  options.mesh.instanceMatrix.needsUpdate = true
+}
+
 const gridAnchorMatches = (left: GridAnchor | null | undefined, right: GridAnchor | null | undefined): boolean => (
   isFiniteGridAnchor(left)
   && isFiniteGridAnchor(right)
@@ -3643,8 +3884,90 @@ const createRadialBurstMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
-const createLineSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
-const createConeSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+const createAreaSweepMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveAreaSweepAnimationEvent
+  const cells = areaPulseCellsForEvent(event)
+
+  if (!cells.length) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
+  const ordered = orderedAreaSweepCellsForEvent(event, cells)
+  const cellCenters = ordered.cells.map((cell) => cell.center)
+  const cellsMesh = createAreaSweepCellsMesh(
+    ordered.cells.length,
+    createAreaPulseMaterial(palette.accent, 0),
+  )
+  const scratchMatrix = new THREE.Matrix4()
+  const scratchPosition = new THREE.Vector3()
+  const scratchQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0))
+  const scratchScale = new THREE.Vector3(1, 1, 1)
+
+  // Line and cone sweeps are one event-owned instanced ground overlay. The
+  // confirmed cells are locked at creation and ordered from the supplied area
+  // direction so scheduler frames can reveal them from the user outward without
+  // rebuilding geometry, re-running targeting, mutating map state, or creating
+  // an independent timer/RAF loop. Missing direction data intentionally falls
+  // back to the all-at-once area-pulse transform path.
+  context.group.add(cellsMesh)
+  applyAreaSweepVisualState({
+    mesh: cellsMesh,
+    orderedCells: ordered.cells,
+    cellCenters,
+    directional: ordered.directional,
+    progress: 0,
+    reducedMotion: defaultReducedMotion,
+    scratchMatrix,
+    scratchPosition,
+    scratchQuaternion,
+    scratchScale,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyAreaSweepVisualState({
+        mesh: cellsMesh,
+        orderedCells: ordered.cells,
+        cellCenters,
+        directional: ordered.directional,
+        progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
+        scratchMatrix,
+        scratchPosition,
+        scratchQuaternion,
+        scratchScale,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
+const createLineSweepMoveVfxInstance: MoveVfxInstanceBuilder = createAreaSweepMoveVfxInstance
+const createConeSweepMoveVfxInstance: MoveVfxInstanceBuilder = createAreaSweepMoveVfxInstance
 const createDashMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 
 const createMissMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {

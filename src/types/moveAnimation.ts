@@ -1,4 +1,5 @@
 import type { GridAnchor } from './map'
+import type { MoveAutomationAreaDirection } from './moveAutomation'
 import { MOVE_VFX_KIND } from './moveVfx'
 import type { MoveVfxKind } from './moveVfx'
 import type { MoveVfxPaletteEntry, MoveVfxTone } from '~/utils/moveAnimationPalette'
@@ -36,6 +37,8 @@ export interface MoveAnimationOriginMetadata {
 export interface MoveAnimationAreaMetadata {
   areaCells?: readonly GridAnchor[]
   areaOrigin?: GridAnchor
+  /** Optional confirmed area-template direction used only to order sweep VFX from the user outward. */
+  areaDirection?: MoveAutomationAreaDirection
 }
 
 /** Optional destination/path metadata for movement-like visual effects. */

@@ -425,6 +425,7 @@ describe('generic move animation planner', () => {
   it('classifies confirmed area moves as area pulses with optional radial, line, or cone effects', () => {
     const cells = [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }]
     const lineEvents = planGenericMoveAnimations(areaInput(cells, {
+      areaDirection: 'east',
       script: script({
         moveName: 'Generic Line Area',
         targetMode: 'multi-target',
@@ -436,6 +437,7 @@ describe('generic move animation planner', () => {
       }),
     }))
     const coneEvents = planGenericMoveAnimations(areaInput(cells, {
+      areaDirection: 'north',
       script: script({
         moveName: 'Generic Cone Area',
         targetMode: 'multi-target',
@@ -477,11 +479,20 @@ describe('generic move animation planner', () => {
       areaCells: cells,
       palette: MOVE_VFX_TYPE_COLORS.Ice,
     })
+    expect(lineEvents[1]).toMatchObject({
+      areaCells: cells,
+      areaDirection: 'east',
+      palette: MOVE_VFX_TYPE_COLORS.Ice,
+    })
     expect(coneEvents.map((event) => event.kind)).toEqual([
       MOVE_VFX_KIND.areaPulse,
       MOVE_VFX_KIND.coneSweep,
     ])
     expect(coneEvents[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Fire)
+    expect(coneEvents[1]).toMatchObject({
+      areaDirection: 'north',
+      palette: MOVE_VFX_TYPE_COLORS.Fire,
+    })
     expect(burstEvents.map((event) => event.kind)).toEqual([
       MOVE_VFX_KIND.areaPulse,
       MOVE_VFX_KIND.radialBurst,

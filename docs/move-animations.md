@@ -515,6 +515,16 @@ Each radial burst instance owns two ground-plane rings plus eight lightweight ou
 
 Radial burst VFX remain visual-only runtime resources. They do not re-run area targeting, decide affected tokens, mutate terrain/token placement/HP/status/combat stages, change permissions, persist data, reduce renderer quality, add dependencies, or alter existing targeting/roll-feedback overlays. Completion, event removal, hidden-tab expiry, layer-hidden aging, and map unmount dispose all owned ring/ray geometry and materials through the existing VFX lifecycle.
 
+### Line and cone sweep primitives for VFX-046
+
+`src/types/moveAnimation.ts` now lets area-based animation events carry optional `areaDirection` metadata from the area confirmation flow. The generic planner copies that direction onto metadata-driven `line-sweep` and `cone-sweep` events while still emitting the baseline `area-pulse`, so line/cone moves can resolve through one shared directional primitive without move-name-specific choreography.
+
+`src/utils/isometric/moveVfxRenderer.ts` replaces the line/cone placeholders with one instanced ground-cell sweep primitive. The renderer filters invalid cells, locks the confirmed cell centers at instance creation, orders cells by projecting them along the supplied direction from the user/origin cell, and reveals them outward over the existing long VFX duration. If direction metadata is missing or invalid, the primitive safely falls back to an all-at-once area-pulse-style cell overlay instead of failing the move animation.
+
+Each sweep instance owns one `THREE.InstancedMesh` named `move-vfx-area-sweep-cells` with constant plane geometry/material, disabled raycasting, transparent additive material settings, and render order just above area pulses. Scheduler frames update only instance transforms, shared material opacity, visibility, completion, and disposal; there is no geometry rebuild per frame, timer, independent RAF loop, or map/targeting recomputation. The primitive-level reduced-motion hint also uses the all-at-once pulse variant so users do not get a directional sweep while still seeing the confirmed area outcome.
+
+Line/cone sweep VFX remain visual-only runtime resources. They do not decide affected cells/targets, mutate terrain/token placement/HP/status/combat stages, change permissions, persist data, lower renderer quality, add dependencies, or alter existing targeting/roll-feedback overlays. Completion, event removal, hidden-tab expiry, layer-hidden aging, and map unmount dispose the owned instanced geometry and material through the existing VFX lifecycle.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

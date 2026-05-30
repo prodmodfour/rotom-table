@@ -867,18 +867,16 @@ const planAreaMoveAnimations = (
     }
 
     const sweepKind = areaSweepKindForScript(input.script)
+    const sweepMetadata = {
+      originCell: userCell,
+      areaCells,
+      areaOrigin: userCell,
+      ...(input.areaDirection ? { areaDirection: input.areaDirection } : {}),
+    }
     if (sweepKind === MOVE_VFX_KIND.lineSweep) {
-      events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.lineSweep, MOVE_VFX_DEFAULT_DURATIONS_MS.long, {
-        originCell: userCell,
-        areaCells,
-        areaOrigin: userCell,
-      }, palette))
+      events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.lineSweep, MOVE_VFX_DEFAULT_DURATIONS_MS.long, sweepMetadata, palette))
     } else if (sweepKind === MOVE_VFX_KIND.coneSweep) {
-      events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.coneSweep, MOVE_VFX_DEFAULT_DURATIONS_MS.long, {
-        originCell: userCell,
-        areaCells,
-        areaOrigin: userCell,
-      }, palette))
+      events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.coneSweep, MOVE_VFX_DEFAULT_DURATIONS_MS.long, sweepMetadata, palette))
     }
   }
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveRadialBurstAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveConeSweepAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveLineSweepAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveRadialBurstAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, MOVE_VFX_TYPE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -144,6 +144,36 @@ const radialBurstEvent = (overrides: Partial<MoveRadialBurstAnimationEvent> = {}
   areaCells: [
     { x: 1, y: 0, z: 0 },
     { x: 2, y: 0, z: 1 },
+  ],
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const lineSweepEvent = (overrides: Partial<MoveLineSweepAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-line-sweep',
+  moveName: 'Ice Beam Line',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 960,
+  kind: MOVE_VFX_KIND.lineSweep,
+  areaCells: [
+    { x: 1, y: 0, z: 0 },
+    { x: 2, y: 0, z: 0 },
+  ],
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const coneSweepEvent = (overrides: Partial<MoveConeSweepAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-cone-sweep',
+  moveName: 'Flame Cone',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 960,
+  kind: MOVE_VFX_KIND.coneSweep,
+  areaCells: [
+    { x: 0, y: 0, z: -1 },
+    { x: 1, y: 0, z: -2 },
   ],
   palette: projectilePalette,
   ...overrides,
@@ -320,6 +350,14 @@ const areaPulseCellsMeshNamed = (
   group: THREE.Object3D,
 ): THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> => {
   const mesh = group.children.find((child) => child.name === 'move-vfx-area-pulse-cells')
+  expect(mesh).toBeInstanceOf(THREE.InstancedMesh)
+  return mesh as THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
+}
+
+const areaSweepCellsMeshNamed = (
+  group: THREE.Object3D,
+): THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-area-sweep-cells')
   expect(mesh).toBeInstanceOf(THREE.InstancedMesh)
   return mesh as THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
 }
@@ -2123,6 +2161,117 @@ describe('move VFX renderer shell', () => {
     expect(rays.every((ray) => !ray.visible && ray.material.opacity === 0)).toBe(true)
 
     renderer.animate({ frameNowMs: 660, delta: 0.016, reducedMotion: true })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders line sweep events as directional instanced cell reveals from the user outward', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const cells = [
+      { x: 3, y: 0, z: 0 },
+      { x: 1, y: 0, z: 0 },
+      { x: 2, y: 0, z: 0 },
+    ]
+
+    renderer.sync([lineSweepEvent({
+      areaCells: cells,
+      areaOrigin: { x: 0, y: 0, z: 0 },
+      originCell: { x: 0, y: 0, z: 0 },
+      areaDirection: 'east',
+    })])
+
+    const instanceGroup = renderer.group.children[0]
+    const mesh = areaSweepCellsMeshNamed(instanceGroup)
+    const firstInitialScale = instanceMatrixScale(mesh, 0).x
+    const secondInitialScale = instanceMatrixScale(mesh, 1).x
+    const thirdInitialScale = instanceMatrixScale(mesh, 2).x
+    const firstInitialOpacity = mesh.material.opacity
+
+    expect(instanceGroup.children).toHaveLength(1)
+    expect(mesh.count).toBe(3)
+    expect(mesh.geometry).toBeInstanceOf(THREE.PlaneGeometry)
+    expect(mesh.material.color.getHexString()).toBe(projectilePalette.accent.slice(1))
+    expect(mesh.material.transparent).toBe(true)
+    expect(mesh.material.depthTest).toBe(true)
+    expect(mesh.material.depthWrite).toBe(false)
+    expect(mesh.material.side).toBe(THREE.DoubleSide)
+    expect(mesh.material.blending).toBe(THREE.AdditiveBlending)
+    expect(mesh.renderOrder).toBe(36)
+    expect(mesh.visible).toBe(true)
+    expectVectorClose(instanceMatrixPosition(mesh, 0), [1.5, 0.058, 0.5])
+    expectVectorClose(instanceMatrixPosition(mesh, 1), [2.5, 0.058, 0.5])
+    expectVectorClose(instanceMatrixPosition(mesh, 2), [3.5, 0.058, 0.5])
+    expect(firstInitialScale).toBeCloseTo(0.42)
+    expect(secondInitialScale).toBeLessThan(0.01)
+    expect(thirdInitialScale).toBeLessThan(0.01)
+    expect(firstInitialOpacity).toBeGreaterThan(0)
+
+    renderer.animate({ frameNowMs: 580, delta: 0.016 })
+
+    expect(instanceMatrixScale(mesh, 0).x).toBeGreaterThan(firstInitialScale)
+    expect(instanceMatrixScale(mesh, 1).x).toBeGreaterThan(0.4)
+    expect(instanceMatrixScale(mesh, 2).x).toBeLessThan(0.01)
+    expect(mesh.material.opacity).toBeGreaterThan(firstInitialOpacity)
+
+    const geometryDispose = vi.spyOn(mesh.geometry, 'dispose')
+    const materialDispose = vi.spyOn(mesh.material, 'dispose')
+
+    renderer.animate({ frameNowMs: 1060, delta: 0.016 })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    expect(geometryDispose).toHaveBeenCalledOnce()
+    expect(materialDispose).toHaveBeenCalledOnce()
+  })
+
+  it('uses the same sweep primitive for cones and falls back to all-at-once pulses when direction is missing', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const cells = [
+      { x: 0, y: 0, z: -1 },
+      { x: 1, y: 0, z: -2 },
+      { x: Number.NaN, y: 0, z: -3 },
+    ]
+
+    renderer.sync([
+      coneSweepEvent({
+        id: 'move-vfx-cone-no-direction',
+        areaCells: cells,
+        palette: undefined,
+      }),
+      lineSweepEvent({
+        id: 'move-vfx-line-empty',
+        areaCells: [],
+      }),
+    ], { reducedMotion: true })
+
+    const coneGroup = renderer.group.children[0]
+    const emptyGroup = renderer.group.children[1]
+    const mesh = areaSweepCellsMeshNamed(coneGroup)
+    const firstScale = instanceMatrixScale(mesh, 0).x
+    const secondScale = instanceMatrixScale(mesh, 1).x
+
+    expect(renderer.activeCount()).toBe(2)
+    expect(mesh.count).toBe(2)
+    expect(mesh.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.neutral.accent.slice(1))
+    expect(mesh.visible).toBe(true)
+    expect(firstScale).toBeCloseTo(secondScale)
+    expect(firstScale).toBeCloseTo(0.9)
+    expectVectorClose(instanceMatrixPosition(mesh, 0), [0.5, 0.032, -0.5])
+    expectVectorClose(instanceMatrixPosition(mesh, 1), [1.5, 0.032, -1.5])
+    expect(emptyGroup.children).toHaveLength(0)
+
+    renderer.animate({ frameNowMs: 580, delta: 0.016, reducedMotion: true })
+
+    expect(instanceMatrixScale(mesh, 0).x).toBeGreaterThan(firstScale)
+    expect(instanceMatrixScale(mesh, 0).x).toBeLessThan(1.03)
+    expect(instanceMatrixScale(mesh, 1).x).toBeCloseTo(instanceMatrixScale(mesh, 0).x)
+    expect(mesh.material.opacity).toBeGreaterThan(0)
+
+    renderer.animate({ frameNowMs: 1060, delta: 0.016, reducedMotion: true })
 
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.group.children).toHaveLength(0)
