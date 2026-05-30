@@ -426,7 +426,9 @@ The prop remains a transient runtime bridge only. `MapSceneRenderer.vue` does no
 
 `src/pages/maps/[slug].vue` now creates one `useMoveAnimationQueue()` instance for the mounted map page. Its `activeMoveAnimations` computed value is passed through `src/components/map/MapScenePanel.vue` into `MapSceneRenderer.vue`, then onward to `IsometricGrid.client.vue` and the scheduler-owned move VFX renderer. The page also passes the queue's `enqueueMoveAnimations` function into `useMoveAutomationPanel` through a renderer-agnostic typed option so later move automation tickets can request VFX without importing Three.js or renderer utilities.
 
-The queue remains page-local runtime state. The map page clears active move animations when the route map slug changes and during unmount/navigation cleanup, preventing stale events from following users between maps. These cleanup hooks do not create timers, persistence hooks, server payloads, gameplay mutations, or an independent animation loop.
+The queue remains page-local runtime state. The map page clears active move animations when the route map slug changes, when `useEditableMap` reports that an authoritative persisted map payload was adopted or cleared, when map dimensions trigger a major scene rebuild, and during unmount/navigation cleanup. `useEditableMap` exposes this as a runtime-only map-data revision so VFX cleanup follows reloads, realtime replacements, document-backed token-action responses, renames, and deletes without treating ordinary autosave timestamp updates as a full map reset.
+
+Transient VFX are cleared instead of carried across map reloads because their anchors point at the previous scene's placement ids, token render objects, dimensions, and renderer-owned resources. Carrying those one-shot events into a replacement map could reveal hidden/removed tokens or leave effects floating at old coordinates, while clearing them preserves the visual-only boundary and lets fresh move resolutions enqueue new VFX. These cleanup hooks do not create timers, persistence hooks, server payloads, gameplay mutations, or an independent animation loop.
 
 ### Move automation enqueue callback for VFX-055
 

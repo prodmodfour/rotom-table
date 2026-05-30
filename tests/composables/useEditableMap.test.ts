@@ -98,6 +98,26 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.map.value?.updatedAt).toBe(200)
   })
 
+  it('increments a map data revision for full persisted replacements without treating autosave as a reload', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    expect(editable.mapDataRevision.value).toBe(1)
+
+    editable.map.value!.name = 'Autosaved Arena'
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(editable.map.value?.updatedAt).toBe(200)
+    expect(editable.mapDataRevision.value).toBe(1)
+
+    editable.applyPersistedMap(mapFixture({ name: 'Document-backed Arena', updatedAt: 250 }))
+
+    expect(editable.map.value?.name).toBe('Document-backed Arena')
+    expect(editable.mapDataRevision.value).toBe(2)
+  })
+
   it('includes the selected player profile id in whole-map save requests when available', async () => {
     const playerProfileId = ref(parsePlayerProfileId('profile_ash00000'))
     const editable = useEditableMap('arena-map', { debounceMs: 10, playerProfileId })

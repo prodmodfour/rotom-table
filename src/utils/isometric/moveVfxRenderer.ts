@@ -565,6 +565,50 @@ const normalizeOptions = (
   sceneOrOptions instanceof THREE.Scene ? { scene: sceneOrOptions } : sceneOrOptions
 )
 
+type MoveVfxEventTokenRefs = MoveAnimationEvent & {
+  readonly targetId?: string
+  readonly targetIds?: readonly string[]
+}
+
+const addTrackedRenderObject = (
+  trackedObjects: Map<string, PokemonRenderObject>,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+  id: string | null | undefined,
+) => {
+  if (!id) return
+  const renderObject = renderObjects.get(id)
+  if (!renderObject) return
+  trackedObjects.set(id, renderObject)
+}
+
+const trackedRenderObjectsForEvent = (
+  event: MoveAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): ReadonlyMap<string, PokemonRenderObject> => {
+  const refs = event as MoveVfxEventTokenRefs
+  const trackedObjects = new Map<string, PokemonRenderObject>()
+
+  addTrackedRenderObject(trackedObjects, renderObjects, refs.userId)
+  addTrackedRenderObject(trackedObjects, renderObjects, refs.targetId)
+  for (const targetId of refs.targetIds ?? []) {
+    addTrackedRenderObject(trackedObjects, renderObjects, targetId)
+  }
+
+  return trackedObjects
+}
+
+const trackedRenderObjectsAreStillLive = (
+  trackedObjects: ReadonlyMap<string, PokemonRenderObject> | undefined,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject> | undefined,
+): boolean => {
+  if (!trackedObjects?.size || !renderObjects) return true
+
+  for (const [id, renderObject] of trackedObjects) {
+    if (renderObjects.get(id) !== renderObject) return false
+  }
+  return true
+}
+
 const clampNumber = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value))
 
 const finitePositiveNumber = (value: number | undefined): number | null => (
@@ -5028,6 +5072,7 @@ export const createMoveVfxRenderer = (
   let lastVisible = true
   const activeInstances = new Map<string, MoveVfxInstance>()
   const activeEvents = new Map<string, MoveAnimationEvent>()
+  const activeInstanceRenderObjects = new Map<string, ReadonlyMap<string, PokemonRenderObject>>()
   const completedEventIds = new Set<string>()
 
   const hasActiveInstances = () => !disposed && activeInstances.size > 0
@@ -5076,6 +5121,7 @@ export const createMoveVfxRenderer = (
 
     activeInstances.delete(id)
     activeEvents.delete(id)
+    activeInstanceRenderObjects.delete(id)
     instance.dispose()
   }
 
@@ -5113,7 +5159,14 @@ export const createMoveVfxRenderer = (
 
       const incomingIds = new Set(events.map((event) => event.id))
       for (const id of [...activeInstances.keys()]) {
-        if (!incomingIds.has(id)) disposeInstance(id)
+        if (!incomingIds.has(id)) {
+          disposeInstance(id)
+          continue
+        }
+
+        if (!trackedRenderObjectsAreStillLive(activeInstanceRenderObjects.get(id), context.renderObjects)) {
+          completeInstance(id)
+        }
       }
       for (const id of [...completedEventIds]) {
         if (!incomingIds.has(id)) completedEventIds.delete(id)
@@ -5122,6 +5175,10 @@ export const createMoveVfxRenderer = (
       for (const event of events) {
         if (!activeInstances.has(event.id) && !completedEventIds.has(event.id)) {
           activeEvents.set(event.id, event)
+          activeInstanceRenderObjects.set(
+            event.id,
+            trackedRenderObjectsForEvent(event, context.renderObjects ?? EMPTY_RENDER_OBJECTS),
+          )
           activeInstances.set(event.id, createInstance(event, context))
         }
       }

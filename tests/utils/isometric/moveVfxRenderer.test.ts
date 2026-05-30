@@ -684,6 +684,39 @@ describe('move VFX renderer shell', () => {
     expect(renderer.needsAnimationFrame()).toBe(false)
   })
 
+  it('disposes active instances when their tracked render objects disappear during sync', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(3, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+    const event = projectileEvent()
+
+    renderer.sync([event], { renderObjects })
+    const instanceGroup = renderer.group.children[0]
+    const core = projectileMeshNamed(instanceGroup, 'move-vfx-projectile-core')
+    const geometryDispose = vi.spyOn(core.geometry, 'dispose')
+    const materialDispose = vi.spyOn(core.material, 'dispose')
+
+    renderer.sync([event], { renderObjects: new Map([[user.id, user]]) })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    expect(geometryDispose).toHaveBeenCalledOnce()
+    expect(materialDispose).toHaveBeenCalledOnce()
+
+    renderer.sync([event], { renderObjects: new Map([[user.id, user]]) })
+    expect(renderer.activeCount()).toBe(0)
+
+    renderer.sync([], { renderObjects })
+    renderer.sync([event], { renderObjects })
+    expect(renderer.activeCount()).toBe(1)
+  })
+
   it('respects shell-level visibility while retaining synced event count', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)

@@ -764,6 +764,7 @@ const syncPokemonObjects = () => {
   })
 
   refreshPokemonStyles()
+  syncMoveVfxRendererState()
 }
 
 const syncVoxelMeshes = () => {

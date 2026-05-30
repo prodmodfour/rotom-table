@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
@@ -71,6 +71,7 @@ const {
   status,
   error,
   renamedTo,
+  mapDataRevision,
   applyPersistedMap,
 } = useEditableMap(slug, {
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
@@ -134,6 +135,25 @@ watch(
   () => routeSlugParam(route.params),
   (nextSlug, previousSlug) => {
     if (nextSlug !== previousSlug) clearMoveAnimations()
+  },
+)
+
+// `useEditableMap` keeps the map object stable during authoritative reloads,
+// realtime replacements, document-backed token actions, and rename/delete
+// events. Watch its explicit data-revision signal so transient VFX are cleared
+// when the rendered scene adopts a new persisted map without tying cleanup to
+// ordinary local autosave timestamp updates.
+watch(mapDataRevision, () => {
+  clearMoveAnimations()
+})
+
+watch(
+  () => {
+    const dimensions = map.value?.dimensions
+    return dimensions ? `${dimensions.x}:${dimensions.y}:${dimensions.z}` : 'no-map'
+  },
+  (nextDimensionsKey, previousDimensionsKey) => {
+    if (nextDimensionsKey !== previousDimensionsKey) clearMoveAnimations()
   },
 )
 
