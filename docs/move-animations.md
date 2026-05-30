@@ -406,6 +406,14 @@ Projectile events now include a lightweight chained-sphere trail. Each projectil
 
 The trail follows the same locked start/end anchors as the projectile, staggers each segment slightly behind the current eased travel point, and fades with the projectile's normal fade-in/fade-out window so the motion direction is easier to read without adding a bespoke asset or extra animation loop. Trail geometries and materials are disposed by the existing `disposeObject3D()` path when the projectile completes, is removed, or the map scene unmounts.
 
+### Arc/lob primitive for VFX-034
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the arc placeholder with a projectile-style lob primitive for thrown, rock, seed, blob, or other arcing generic moves. Arc events resolve the same user chest and target chest/grid-cell fallback anchors as projectiles, then lock those endpoints for the event lifetime so target movement during the scheduler-driven animation does not stretch the visual.
+
+Arc motion uses the existing projectile core/glow material helpers and constant-count trail segments, but samples the projectile path along a bounded vertical sine offset. `MoveArcAnimationEvent.arcHeight` may request a lob height in world units; the renderer clamps unsafe values and otherwise derives a deterministic default from horizontal distance with a hard maximum so long-range attacks do not arc absurdly high above the tactical scene.
+
+Arc meshes, materials, and trail segments are owned by the same event lifecycle group and dispose through `disposeObject3D()` on completion, removal, or map unmount. The primitive is visual-only: it adds no timers, no independent RAF loop, no persistence, no gameplay/placement mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
+
 ### Beam primitive for VFX-033
 
 `src/utils/isometric/moveVfxRenderer.ts` now replaces the beam placeholder with a lightweight straight-line energy primitive. Beam events lock their user chest anchor and target chest anchor at creation time, with existing grid-cell fallbacks and an area-cell centroid fallback when no target token is supplied. This makes a beam stable for the event lifetime even if token render objects move before the VFX completes.

@@ -101,7 +101,10 @@ export interface MoveBeamAnimationEvent
 export interface MoveArcAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.arc>,
     MoveAnimationOriginMetadata,
-    MoveAnimationTargetMetadata {}
+    MoveAnimationTargetMetadata {
+  /** Optional requested lob height in world units. The renderer clamps unsafe values. */
+  arcHeight?: number
+}
 
 export interface MoveMeleeLungeAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.meleeLunge>,

@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveBeamAnimationEvent, type MoveProjectileAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveProjectileAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import type { MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -34,6 +34,18 @@ const projectileEvent = (overrides: Partial<MoveProjectileAnimationEvent> = {}):
   createdAtMs: 100,
   durationMs: 1000,
   kind: MOVE_VFX_KIND.projectile,
+  targetId: 'target-1',
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const arcEvent = (overrides: Partial<MoveArcAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-arc',
+  moveName: 'Rock Throw',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 1000,
+  kind: MOVE_VFX_KIND.arc,
   targetId: 'target-1',
   palette: projectilePalette,
   ...overrides,
@@ -81,6 +93,14 @@ const projectileTrailMeshes = (
   group: THREE.Object3D,
 ): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => {
   const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-projectile-trail-'))
+  expect(meshes).toHaveLength(4)
+  return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+}
+
+const arcTrailMeshes = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => {
+  const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-arc-trail-'))
   expect(meshes).toHaveLength(4)
   return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
 }
@@ -405,6 +425,106 @@ describe('move VFX renderer shell', () => {
     expect(instanceGroup.children).toHaveLength(0)
     for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
     for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('renders arc events as palette-coloured lob projectiles along a locked vertical curve', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+
+    renderer.sync([arcEvent({ arcHeight: 1.2 })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const core = projectileMeshNamed(instanceGroup, 'move-vfx-arc-core')
+    const glow = projectileMeshNamed(instanceGroup, 'move-vfx-arc-glow')
+    const trailSegments = arcTrailMeshes(instanceGroup)
+
+    expect(instanceGroup).toBeInstanceOf(THREE.Group)
+    expect(instanceGroup.children).toHaveLength(6)
+    expectVectorClose(instanceGroup.position, [0, 1.16, 0])
+    expect(core.material.color.getHexString()).toBe('ffeeaa')
+    expect(glow.material.color.getHexString()).toBe('123456')
+    expect(core.material.transparent).toBe(true)
+    expect(core.material.depthWrite).toBe(false)
+    expect(core.renderOrder).toBe(34)
+    expect(trailSegments.map((segment) => segment.name)).toEqual([
+      'move-vfx-arc-trail-1',
+      'move-vfx-arc-trail-2',
+      'move-vfx-arc-trail-3',
+      'move-vfx-arc-trail-4',
+    ])
+    expect(trailSegments[0].material.color.getHexString()).toBe('aa3300')
+    expect(trailSegments.every((segment) => segment.material.opacity === 0)).toBe(true)
+    expect(core.scale.x).toBeCloseTo(0.266)
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
+
+    expectVectorClose(instanceGroup.position, [2, 2.36, 0])
+    expect(trailSegments[0].visible).toBe(true)
+    expect(trailSegments[0].position.x).toBeLessThan(0)
+    expect(trailSegments[0].position.y).toBeLessThan(0)
+    expect(trailSegments[3].position.x).toBeLessThan(trailSegments[0].position.x)
+    expect(trailSegments[0].material.opacity).toBeGreaterThan(trailSegments[3].material.opacity)
+
+    const arcMeshes = [core, glow, ...trailSegments]
+    const geometryDisposeSpies = arcMeshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = arcMeshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    target.currentCenter.set(12, 0, 0)
+    renderer.animate({ frameNowMs: 1099, delta: 0.016, renderObjects })
+
+    expect(instanceGroup.position.x).toBeGreaterThan(3.9)
+    expect(instanceGroup.position.x).toBeLessThan(4.01)
+    expect(instanceGroup.position.y).toBeGreaterThan(1.15)
+    expect(instanceGroup.position.y).toBeLessThan(1.18)
+
+    renderer.animate({ frameNowMs: 1100, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('clamps requested arc event heights to keep long lobs bounded', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(20, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+
+    renderer.sync([arcEvent({ arcHeight: 99 })], { renderObjects })
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    expectVectorClose(instanceGroup.position, [10, 3.56, 0])
+  })
+
+  it('falls back to a no-op arc when anchors cannot be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1' })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([arcEvent({ targetId: 'missing-target' })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 1100, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
   })
 
   it('renders beam events as palette-coloured cylinders between locked token anchors', () => {

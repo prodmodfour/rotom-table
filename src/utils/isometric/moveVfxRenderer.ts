@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveBeamAnimationEvent, type MoveProjectileAnimationEvent } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveProjectileAnimationEvent } from '~/types/moveAnimation'
 import { DEFAULT_MOVE_VFX_COLOR, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import {
@@ -93,6 +93,13 @@ const MOVE_VFX_PROJECTILE_TRAIL_PROGRESS_SPACING = 0.055
 const MOVE_VFX_PROJECTILE_TRAIL_MAX_OPACITY = 0.28
 const MOVE_VFX_PROJECTILE_TRAIL_NEAR_SCALE = 0.7
 const MOVE_VFX_PROJECTILE_TRAIL_FAR_SCALE = 0.34
+const MOVE_VFX_ARC_CORE_NAME = 'move-vfx-arc-core'
+const MOVE_VFX_ARC_GLOW_NAME = 'move-vfx-arc-glow'
+const MOVE_VFX_ARC_TRAIL_SEGMENT_PREFIX = 'move-vfx-arc-trail'
+const MOVE_VFX_ARC_MIN_HEIGHT = 0.35
+const MOVE_VFX_ARC_DEFAULT_HEIGHT = 0.8
+const MOVE_VFX_ARC_DISTANCE_HEIGHT_RATIO = 0.28
+const MOVE_VFX_ARC_MAX_HEIGHT = 2.4
 const MOVE_VFX_BEAM_CORE_NAME = 'move-vfx-beam-core'
 const MOVE_VFX_BEAM_GLOW_NAME = 'move-vfx-beam-glow'
 const MOVE_VFX_BEAM_IMPACT_RING_NAME = 'move-vfx-beam-impact-ring'
@@ -195,14 +202,18 @@ const createProjectileMesh = (
   return mesh
 }
 
-const projectileTrailSegmentName = (index: number): string => `${MOVE_VFX_PROJECTILE_TRAIL_SEGMENT_PREFIX}-${index + 1}`
+const projectileTrailSegmentName = (
+  index: number,
+  prefix = MOVE_VFX_PROJECTILE_TRAIL_SEGMENT_PREFIX,
+): string => `${prefix}-${index + 1}`
 
 const createProjectileTrailSegments = (
   color: THREE.ColorRepresentation,
+  prefix = MOVE_VFX_PROJECTILE_TRAIL_SEGMENT_PREFIX,
 ): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => Array.from(
   { length: MOVE_VFX_PROJECTILE_TRAIL_SEGMENT_COUNT },
   (_, index) => createProjectileMesh(
-    projectileTrailSegmentName(index),
+    projectileTrailSegmentName(index, prefix),
     createProjectileMaterial(color, 0),
     MOVE_VFX_PROJECTILE_TRAIL_RENDER_ORDER,
   ),
@@ -253,7 +264,83 @@ const applyProjectileVisualState = (options: {
   })
 }
 
+const horizontalDistanceBetween = (start: THREE.Vector3, end: THREE.Vector3): number => Math.hypot(
+  end.x - start.x,
+  end.z - start.z,
+)
+
+const arcHeightForDistance = (distance: number, requestedHeight?: number): number => {
+  const requested = finitePositiveNumber(requestedHeight)
+  if (requested !== null) {
+    return clampNumber(requested, MOVE_VFX_ARC_MIN_HEIGHT, MOVE_VFX_ARC_MAX_HEIGHT)
+  }
+
+  const safeDistance = Number.isFinite(distance) ? Math.max(0, distance) : 0
+  return clampNumber(
+    Math.max(MOVE_VFX_ARC_DEFAULT_HEIGHT, safeDistance * MOVE_VFX_ARC_DISTANCE_HEIGHT_RATIO),
+    MOVE_VFX_ARC_MIN_HEIGHT,
+    MOVE_VFX_ARC_MAX_HEIGHT,
+  )
+}
+
+const arcVerticalOffset = (travelProgress: number, arcHeight: number): number => (
+  Math.sin(clamp01(travelProgress) * Math.PI) * arcHeight
+)
+
+const applyArcProjectileVisualState = (options: {
+  group: THREE.Group
+  core: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  glow: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  trailSegments: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  start: THREE.Vector3
+  end: THREE.Vector3
+  radius: number
+  arcHeight: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const travelProgress = easeInOutCubic(progress)
+  const pulse = pulse01(progress)
+  const fadeIn = Math.max(0.35, clamp01(progress / MOVE_VFX_PROJECTILE_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_PROJECTILE_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_PROJECTILE_FADE_OUT_START))
+  const opacityMultiplier = Math.min(fadeIn, fadeOut)
+
+  options.group.position.lerpVectors(options.start, options.end, travelProgress)
+  options.group.position.y += arcVerticalOffset(travelProgress, options.arcHeight)
+  options.core.scale.setScalar(options.radius * (0.95 + (pulse * 0.16)))
+  options.glow.scale.setScalar(options.radius * (1.85 + (pulse * 0.28)))
+  options.core.material.opacity = 0.95 * opacityMultiplier
+  options.glow.material.opacity = 0.32 * opacityMultiplier
+
+  const trailScaleDivisor = Math.max(1, options.trailSegments.length - 1)
+  options.trailSegments.forEach((segment, index) => {
+    const rawTrailProgress = progress - ((index + 1) * MOVE_VFX_PROJECTILE_TRAIL_PROGRESS_SPACING)
+    const visibleProgress = clamp01(rawTrailProgress / MOVE_VFX_PROJECTILE_TRAIL_PROGRESS_SPACING)
+    const scaleT = index / trailScaleDivisor
+    const scaleMultiplier = MOVE_VFX_PROJECTILE_TRAIL_NEAR_SCALE
+      + ((MOVE_VFX_PROJECTILE_TRAIL_FAR_SCALE - MOVE_VFX_PROJECTILE_TRAIL_NEAR_SCALE) * scaleT)
+    const distanceFade = 1 - (index / (options.trailSegments.length + 1))
+    const opacity = MOVE_VFX_PROJECTILE_TRAIL_MAX_OPACITY * opacityMultiplier * visibleProgress * distanceFade
+    const segmentTravelProgress = easeInOutCubic(clamp01(rawTrailProgress))
+
+    segment.position
+      .copy(options.start)
+      .lerp(options.end, segmentTravelProgress)
+    segment.position.y += arcVerticalOffset(segmentTravelProgress, options.arcHeight)
+    segment.position.sub(options.group.position)
+    segment.scale.setScalar(options.radius * scaleMultiplier)
+    segment.material.opacity = opacity
+    segment.visible = opacity > 0.005
+  })
+}
+
 const firstProjectileTargetId = (event: MoveProjectileAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
+const firstArcTargetId = (event: MoveArcAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
 )
 
@@ -615,7 +702,98 @@ const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
-const createArcMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+const createArcMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveArcAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const targetId = firstArcTargetId(event)
+  const anchors = resolveMoveVfxAnchorPair({
+    renderObjects,
+    userId: event.userId,
+    targetId,
+    originCell: event.originCell,
+    targetCell: event.targetCell,
+    userAnchor: MOVE_VFX_TOKEN_ANCHOR.chest,
+    targetAnchor: MOVE_VFX_TOKEN_ANCHOR.chest,
+  })
+
+  if (!anchors) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const radius = projectileRadiusForRenderObjects(
+    renderObjects.get(event.userId),
+    targetId ? renderObjects.get(targetId) : undefined,
+  )
+
+  // Arc/lob endpoints are locked like regular projectiles, while the vertical
+  // offset is deterministic and bounded so long-range throws do not leave the
+  // tactical map's readable scale.
+  const start = anchors.start.clone()
+  const end = anchors.end.clone()
+  const arcHeight = arcHeightForDistance(horizontalDistanceBetween(start, end), event.arcHeight)
+  const glow = createProjectileMesh(
+    MOVE_VFX_ARC_GLOW_NAME,
+    createProjectileMaterial(palette.primary, 0.32),
+  )
+  const core = createProjectileMesh(
+    MOVE_VFX_ARC_CORE_NAME,
+    createProjectileMaterial(palette.accent, 0.95),
+  )
+  const trailSegments = createProjectileTrailSegments(palette.glow, MOVE_VFX_ARC_TRAIL_SEGMENT_PREFIX)
+
+  context.group.add(...trailSegments, glow, core)
+  applyArcProjectileVisualState({
+    group: context.group,
+    core,
+    glow,
+    trailSegments,
+    start,
+    end,
+    radius,
+    arcHeight,
+    progress: 0,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyArcProjectileVisualState({
+        group: context.group,
+        core,
+        glow,
+        trailSegments,
+        start,
+        end,
+        radius,
+        arcHeight,
+        progress: progress.progress,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
 const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
