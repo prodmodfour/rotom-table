@@ -98,10 +98,14 @@ interface BooleanRef {
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
 type MaybePromise<T> = T | Promise<T>
 
+export type MoveAnimationEnqueueHandler = (events: readonly MoveAnimationEvent[]) => MaybePromise<unknown>
+
 type SheetUpdateOptions = { allowAnyTarget?: boolean }
 
 type MoveUsageRecordRequest = { placementId: string; moveName: string }
 type MoveUsageRecordHandler = (request: MoveUsageRecordRequest) => MaybePromise<void>
+
+const noopEnqueueMoveAnimations: MoveAnimationEnqueueHandler = () => undefined
 
 export interface MoveAutomationNonImmediateActionEvent {
   userId: string
@@ -137,7 +141,7 @@ export interface UseMoveAutomationPanelOptions {
    * VFX integration tickets decide when to call it; the panel must not import
    * Three.js renderer utilities or persist queued animation events.
    */
-  enqueueMoveAnimations?: (events: readonly MoveAnimationEvent[]) => MaybePromise<unknown>
+  enqueueMoveAnimations?: MoveAnimationEnqueueHandler
   onBeforeNonImmediateAction?: (event: MoveAutomationNonImmediateActionEvent) => void
   onRangedAttackOfOpportunity?: (event: MoveAutomationRangedAttackOfOpportunityEvent) => void
   now?: () => number
@@ -214,6 +218,7 @@ export const useMoveAutomationPanel = ({
   applyMoveFieldEffect,
   placeHazard,
   recordMoveUsage,
+  enqueueMoveAnimations = noopEnqueueMoveAnimations,
   onBeforeNonImmediateAction,
   onRangedAttackOfOpportunity,
   now,

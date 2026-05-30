@@ -409,6 +409,12 @@ The prop remains a transient runtime bridge only. `MapSceneRenderer.vue` does no
 
 The queue remains page-local runtime state. The map page clears active move animations when the route map slug changes and during unmount/navigation cleanup, preventing stale events from following users between maps. These cleanup hooks do not create timers, persistence hooks, server payloads, gameplay mutations, or an independent animation loop.
 
+### Move automation enqueue callback for VFX-055
+
+`UseMoveAutomationPanelOptions` now accepts an optional `enqueueMoveAnimations` callback typed as a renderer-agnostic sink for transient `MoveAnimationEvent` batches. The composable defaults the callback to a no-op so existing move automation callers and tests do not need to provide it, and actual VFX emission remains scoped to the later self, target, and area integration tickets.
+
+The panel imports only shared animation types for this bridge. It does not import the Three.js move VFX renderer, queue internals, scheduler helpers, or persistence code, so move automation can later hand planned events to the map page without taking ownership of rendering or saved state.
+
 ### Layer visibility handling for VFX-027
 
 Move VFX follow the resolved token layer. `src/utils/isometric/layerVisibility.ts` exposes `resolveMoveVfxLayerVisibility(layers)`, and `src/components/IsometricGrid.client.vue` passes that result into `moveVfxRenderer.sync(...)` and each scheduled animation frame. The policy is intentionally conservative for this basic phase: hiding tokens also hides token-anchored VFX and area-only move confirmations so VFX cannot reveal or imply action around hidden tokens.

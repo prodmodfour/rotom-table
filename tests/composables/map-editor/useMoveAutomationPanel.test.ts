@@ -106,6 +106,38 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Teleport')?.hasAutomationScript).toBe(false)
   })
 
+  it('accepts a renderer-agnostic move animation enqueue callback without changing existing no-op flows', () => {
+    const map = ref(mapFixture())
+    const enqueueMoveAnimations = vi.fn()
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Teleport' }],
+    } as CharacterSheet
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned()]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      enqueueMoveAnimations,
+    })
+
+    panel.openMoveAutomation('blocked-token')
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Teleport' })
+
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+    expect(enqueueMoveAnimations).not.toHaveBeenCalled()
+  })
+
   it('omits Disabled moves from automation while leaving them visible in the token menu', () => {
     const map = ref(mapFixture())
     const pokemonSheet = {
