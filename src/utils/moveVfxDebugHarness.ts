@@ -165,6 +165,8 @@ export interface CreateMoveVfxDebugPreviewEventsOptions {
   readonly selectedId: string | null | undefined
   /** Current runtime token snapshots from the map page; never mutated or persisted. */
   readonly tokens: readonly MoveVfxDebugPreviewToken[]
+  /** Optional selected-token permission allow-list; a selected token outside it returns no preview events. */
+  readonly controllablePlacementIds?: readonly string[]
   /** Optional map bounds for choosing synthetic target, path, and area cells. */
   readonly dimensions?: GridDimensions | null
   /** Optional base offset for the first synthetic event. */
@@ -390,8 +392,10 @@ const firstDistinctOffsetAnchor = (
 const selectedDebugToken = (
   tokens: readonly MoveVfxDebugPreviewToken[],
   selectedId: string | null | undefined,
+  controllablePlacementIds?: readonly string[],
 ): MoveVfxDebugPreviewToken | null => {
   if (!selectedId) return null
+  if (controllablePlacementIds && !controllablePlacementIds.includes(selectedId)) return null
   return tokens.find((token) => token.id === selectedId && isFiniteAnchor(token.position)) ?? null
 }
 
@@ -683,11 +687,12 @@ export const createMoveVfxDebugPreviewEvents = ({
   kind,
   selectedId,
   tokens,
+  controllablePlacementIds,
   dimensions,
   startOffsetMs,
   staggerMs = MOVE_VFX_DEBUG_ALL_PREVIEW_STAGGER_MS,
 }: CreateMoveVfxDebugPreviewEventsOptions): readonly MoveVfxDebugPreviewEvent[] => {
-  const user = selectedDebugToken(tokens, selectedId)
+  const user = selectedDebugToken(tokens, selectedId, controllablePlacementIds)
   if (!user) return []
 
   const context = createDebugPreviewContext(user, tokens, dimensions)

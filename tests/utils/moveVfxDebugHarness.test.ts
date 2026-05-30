@@ -88,6 +88,22 @@ describe('move VFX debug harness', () => {
       dimensions: { x: 8, y: 2, z: 8 },
     })).toEqual([])
 
+    expect(createMoveVfxDebugPreviewEvents({
+      kind: MOVE_VFX_KIND.projectile,
+      selectedId: 'user-token',
+      tokens: debugTokens,
+      controllablePlacementIds: ['target-token'],
+      dimensions: { x: 8, y: 2, z: 8 },
+    })).toEqual([])
+
+    expect(createMoveVfxDebugPreviewEvents({
+      kind: MOVE_VFX_KIND.projectile,
+      selectedId: 'user-token',
+      tokens: debugTokens,
+      controllablePlacementIds: ['user-token'],
+      dimensions: { x: 8, y: 2, z: 8 },
+    })).toHaveLength(1)
+
     const [projectile] = createMoveVfxDebugPreviewEvents({
       kind: MOVE_VFX_KIND.projectile,
       selectedId: 'solo-token',

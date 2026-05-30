@@ -235,10 +235,14 @@ const {
 })
 
 const enqueueMoveVfxDebugPreview = (kind: MoveVfxKind | 'all') => {
+  const selectedTokenId = selectedId.value
+  if (!selectedTokenId || !canControlPlacement(selectedTokenId)) return
+
   const events = createMoveVfxDebugPreviewEvents({
     kind,
-    selectedId: selectedId.value,
+    selectedId: selectedTokenId,
     tokens: spawnedPokemon.value,
+    controllablePlacementIds: controllablePlacementIds.value,
     dimensions: map.value?.dimensions ?? null,
   })
 

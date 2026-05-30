@@ -70,7 +70,7 @@ Badge labels are normalized to one compact line, capped at 12 glyphs, rendered a
 
 A synthetic move-VFX harness is available on existing map pages for local visual review. Start the Nuxt dev server, open a map with `?debug=move-vfx` (aliases: `?debug=vfx` or `?debug=move-vfx-harness`), and select a token. A bottom-right dev panel then exposes one button for every generic primitive plus a staggered **Play all primitives** pass. Targeted previews use another token when present or a nearby synthetic cell when the selected token is alone.
 
-The harness is intentionally hidden from normal player/GM workflows: it requires the explicit debug query and is dev-gated by default. Buttons enqueue transient `MoveAnimationEvent` inputs through the existing per-map queue, so previews use the same renderer, scheduler continuation source, layer-visibility handling, and disposal path as real move animations. The harness never writes map JSON, sheet data, campaign/session state, move logs, local storage, server payloads, or gameplay mutations; clearing the panel only clears the runtime VFX queue.
+The harness is intentionally hidden from normal player/GM workflows: it requires the explicit debug query and is dev-gated by default. Preview buttons only emit from the currently selected controllable token, so a player cannot use the harness to synthesize gameplay-looking VFX around tokens they do not control. Buttons enqueue transient `MoveAnimationEvent` inputs through the existing per-map queue, so previews use the same renderer, scheduler continuation source, layer-visibility handling, and disposal path as real move animations. The harness never writes map JSON, sheet data, campaign/session state, move logs, local storage, server payloads, or gameplay mutations; clearing the panel only clears the runtime VFX queue.
 
 ### Self and immediate moves
 
@@ -467,6 +467,12 @@ Self-resolving moves use the same record-before-plan order: if usage recording f
 Accuracy-roll move VFX now derive their `startOffsetMs` values from the same phase durations used by `useMoveAutomationPanel` feedback timers: 650 ms for the rolling d20, 850 ms for the visible hit-roll formula, 600 ms for the hit/miss result, and 700 ms for the optional effectiveness phase. Launch/contact events keep a zero offset so they start promptly after target selection. Hit flashes, miss puffs, and crit bursts use the outcome offset at 1500 ms, matching the phase where the overlay first shows Hit, Miss, or Critical Hit.
 
 Semantic transaction follow-ups use a separate planner timing hint from the impact offset. If the feedback has a damage/condition final phase, healing, status, buff/debuff, and map-confirmation follow-ups wait for that final visual resolution: 2100 ms without an effectiveness phase or 2800 ms when effectiveness is shown. If the feedback has no final resolution phase, semantic follow-ups use the outcome offset. These offsets remain transient VFX hints only; they add no timers, persistence, gameplay changes, permission changes, or renderer loops, and the existing feedback transaction application remains authoritative.
+
+### Permission and visibility invariants for VFX-065
+
+Move VFX follows the same GM/player token-control checks as move automation. The map page only gives `useMoveAutomationPanel` the runtime VFX enqueue sink; the panel emits events only from successful move-use paths that already passed `canControlPlacement`, the relevant move availability checks, and any tracked move-usage recording. Async paths re-check token control before planning/enqueueing VFX so a stale target/area request or a permission change while usage recording is in flight cannot produce a gameplay-looking animation without permission.
+
+VFX event payloads remain deliberately small and display-only: move name, user/target placement ids, grid cells, generic outcome tones, palette, and transient timing hints. They do not carry GM-private log text, sheet data, hidden automation branches, or a separate permission authority, and the renderer never uses an event as evidence that a move was allowed or that mechanics changed. Debug preview controls are dev-gated and additionally require a controllable selected token before enqueuing synthetic events.
 
 ### Layer visibility handling for VFX-027
 

@@ -251,6 +251,7 @@ defineExpose({ focusPokemon })
         v-if="props.map && canViewMap && props.moveVfxDebugHarnessEnabled"
         :selected-id="selectedId"
         :spawned-pokemon="spawnedPokemon"
+        :controllable-placement-ids="controllablePlacementIds"
         :active-count="(props.moveAnimations ?? []).length"
         @preview-kind="emit('preview-move-vfx', $event)"
         @preview-all="emit('preview-all-move-vfx')"

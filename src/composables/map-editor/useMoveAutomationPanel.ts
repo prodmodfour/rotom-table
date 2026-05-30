@@ -659,8 +659,19 @@ export const useMoveAutomationPanel = ({
     console.warn(`[useMoveAutomationPanel] move animation ${stage} failed`, error)
   }
 
-  const enqueuePlannedMoveAnimations = (events: readonly MoveAnimationEvent[]) => {
-    if (events.length === 0) return
+  const clearMoveAutomationTargetingForUser = (userId: string) => {
+    if (activeMoveTargeting.value?.userId === userId) activeMoveTargeting.value = null
+  }
+
+  const canContinueMoveAutomationForUser = (userId: string): boolean => {
+    if (canControlPlacement(userId)) return true
+
+    clearMoveAutomationTargetingForUser(userId)
+    return false
+  }
+
+  const enqueuePlannedMoveAnimations = (userId: string, events: readonly MoveAnimationEvent[]) => {
+    if (events.length === 0 || !canControlPlacement(userId)) return
 
     try {
       void Promise.resolve(enqueueMoveAnimations(events)).catch((error) => {
@@ -677,7 +688,7 @@ export const useMoveAutomationPanel = ({
     transaction: MoveAutomationTransaction
   }) => {
     try {
-      enqueuePlannedMoveAnimations(planMoveAnimations({
+      enqueuePlannedMoveAnimations(options.user.id, planMoveAnimations({
         resolution: MOVE_ANIMATION_PLAN_RESOLUTION.self,
         user: options.user,
         targets: [],
@@ -731,7 +742,7 @@ export const useMoveAutomationPanel = ({
     transaction: MoveAutomationTransaction
   }) => {
     try {
-      enqueuePlannedMoveAnimations(planMoveAnimations({
+      enqueuePlannedMoveAnimations(options.user.id, planMoveAnimations({
         resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
         user: options.user,
         targets: [options.target],
@@ -759,7 +770,7 @@ export const useMoveAutomationPanel = ({
     const feedbackVfxTiming = moveAutomationFeedbackVfxTiming(options.feedback)
 
     try {
-      enqueuePlannedMoveAnimations(planMoveAnimations({
+      enqueuePlannedMoveAnimations(options.user.id, planMoveAnimations({
         resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
         user: options.user,
         targets: [options.target],
@@ -793,7 +804,7 @@ export const useMoveAutomationPanel = ({
     transaction: MoveAutomationTransaction
   }) => {
     try {
-      enqueuePlannedMoveAnimations(planMoveAnimations({
+      enqueuePlannedMoveAnimations(options.user.id, planMoveAnimations({
         resolution: MOVE_ANIMATION_PLAN_RESOLUTION.area,
         user: options.user,
         targets: options.targets,
@@ -852,8 +863,9 @@ export const useMoveAutomationPanel = ({
       activeMoveTargeting.value = null
       const frequency = frequencyForEntry(entry)
       void (async () => {
+        if (!canContinueMoveAutomationForUser(id)) return
         const recorded = await recordMoveUseIfTracked({ placementId: id, moveName: script.moveName }, frequency)
-        if (!recorded) return
+        if (!recorded || !canContinueMoveAutomationForUser(id)) return
         notifyMoveActionTaken({
           kind: 'single-target',
           userId: id,
@@ -1235,6 +1247,7 @@ export const useMoveAutomationPanel = ({
     targetId: string,
     options: { skipActionNotifications?: boolean; logLine?: string; requireActiveTargeting?: boolean } = {},
   ): Promise<boolean> => {
+    if (!canContinueMoveAutomationForUser(request.userId)) return false
     const user = findSpawnedPokemon(request.userId)
     const target = findSpawnedPokemon(targetId)
     if (!user || !target) return false
@@ -1243,7 +1256,7 @@ export const useMoveAutomationPanel = ({
       { placementId: request.userId, moveName: request.moveName },
       request.frequency,
     )
-    if (!recorded) return false
+    if (!recorded || !canContinueMoveAutomationForUser(request.userId)) return false
     if (options.requireActiveTargeting && !moveTargetingRequestIsStillActive(request)) return false
 
     if (!options.skipActionNotifications) {
@@ -1364,13 +1377,14 @@ export const useMoveAutomationPanel = ({
   }
 
   const confirmMoveAutomationArea = async (request: ActiveAreaConfirmationRequest) => {
+    if (!canContinueMoveAutomationForUser(request.userId)) return
     const user = findSpawnedPokemon(request.userId)
     if (!user) return
     const recorded = await recordMoveUseIfTracked(
       { placementId: request.userId, moveName: request.moveName },
       request.frequency,
     )
-    if (!recorded) return
+    if (!recorded || !canContinueMoveAutomationForUser(request.userId)) return
     if (!moveTargetingRequestIsStillActive(request)) return
     notifyMoveActionTaken(request)
     const selectedTargetIds = selectedAreaTargetIds(request)
@@ -1411,6 +1425,7 @@ export const useMoveAutomationPanel = ({
     if (!request) return
 
     if (request.kind === 'area-confirmation') {
+      if (!overlay) return
       if (canToggleAreaTargets(request.script) && request.targetIds.includes(targetId)) {
         toggleMoveAutomationAreaTarget(request, targetId)
         return

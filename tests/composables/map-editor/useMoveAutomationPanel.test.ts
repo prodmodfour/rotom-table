@@ -846,6 +846,104 @@ describe('useMoveAutomationPanel', () => {
     expect(map.value.metadata?.moveLog).toBeUndefined()
   })
 
+  it('does not enqueue self-resolving VFX when token control is revoked during usage recording', async () => {
+    const map = ref(mapFixture())
+    const canControlUser = ref(true)
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Swords Dance' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const enqueueMoveAnimations = vi.fn((_events: readonly MoveAnimationEvent[]) => undefined)
+    let resolveUsage!: () => void
+    const recordMoveUsage = vi.fn(() => new Promise<void>((resolve) => {
+      resolveUsage = resolve
+    }))
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned({ combatStages: { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } })]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token' && canControlUser.value,
+      modifyHp: () => undefined,
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      recordMoveUsage,
+      enqueueMoveAnimations,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Swords Dance' })
+    expect(recordMoveUsage).toHaveBeenCalledTimes(1)
+
+    canControlUser.value = false
+    resolveUsage()
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(calls).toEqual([])
+    expect(enqueueMoveAnimations).not.toHaveBeenCalled()
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+    expect(panel.moveAutomationFeedback.value).toBeNull()
+    expect(map.value.metadata?.moveLog).toBeUndefined()
+  })
+
+  it('does not confirm area VFX when token control is revoked before confirmation', async () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 8, y: 2, z: 8 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 3, y: 0, z: 4 } },
+      ],
+    })
+    const canControlUser = ref(true)
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Growl' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const enqueueMoveAnimations = vi.fn((_events: readonly MoveAnimationEvent[]) => undefined)
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', sheetSlug: 'bolt', position: { x: 3, y: 0, z: 3 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 3, y: 0, z: 4 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token' && canControlUser.value,
+      modifyHp: () => undefined,
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      enqueueMoveAnimations,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Growl' })
+    expect(panel.moveAutomationTargeting.value).toMatchObject({ mode: 'area-confirmation', moveName: 'Growl' })
+
+    canControlUser.value = false
+    await panel.selectMoveAutomationTarget('user-token')
+
+    expect(calls).toEqual([])
+    expect(enqueueMoveAnimations).not.toHaveBeenCalled()
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+    expect(panel.moveAutomationFeedback.value).toBeNull()
+    expect(map.value.metadata?.moveLog).toBeUndefined()
+  })
+
   it('enqueues generic self-centered VFX for self-resolving moves before applying mechanics', async () => {
     const map = ref(mapFixture())
     const pokemonSheet = {

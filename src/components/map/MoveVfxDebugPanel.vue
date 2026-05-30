@@ -10,6 +10,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 const props = defineProps<{
   selectedId: string | null
   spawnedPokemon: SpawnedPokemon[]
+  controllablePlacementIds?: readonly string[]
   activeCount?: number
 }>()
 
@@ -21,12 +22,22 @@ const emit = defineEmits<{
 
 const selectedToken = computed(() => props.spawnedPokemon.find((pokemon) => pokemon.id === props.selectedId) ?? null)
 const hasSelection = computed(() => Boolean(selectedToken.value))
+const selectedTokenIsControllable = computed(() => (
+  Boolean(props.selectedId)
+  && (props.controllablePlacementIds?.includes(props.selectedId ?? '') ?? true)
+))
+const canPreviewSelection = computed(() => hasSelection.value && selectedTokenIsControllable.value)
 const previewOptions = computed<readonly MoveVfxDebugPreviewOption[]>(() => MOVE_VFX_DEBUG_PREVIEW_OPTIONS)
 const selectedTokenLabel = computed(() => {
   const token = selectedToken.value
   if (!token) return 'No token selected'
 
   return token.species || token.sheetSlug || token.id
+})
+const previewStatusText = computed(() => {
+  if (!hasSelection.value) return 'Select a token on the map to enable synthetic previews.'
+  if (!selectedTokenIsControllable.value) return `Selected token ${selectedTokenLabel.value} is not controllable, so previews are disabled.`
+  return `Previewing from ${selectedTokenLabel.value}`
 })
 </script>
 
@@ -54,15 +65,15 @@ const selectedTokenLabel = computed(() => {
       </button>
     </header>
 
-    <p class="move-vfx-debug-panel__status" :class="{ 'is-missing': !hasSelection }">
-      {{ hasSelection ? `Previewing from ${selectedTokenLabel}` : 'Select a token on the map to enable synthetic previews.' }}
+    <p class="move-vfx-debug-panel__status" :class="{ 'is-missing': !canPreviewSelection }">
+      {{ previewStatusText }}
       <span v-if="activeCount"> · {{ activeCount }} active</span>
     </p>
 
     <button
       class="move-vfx-debug-panel__all"
       type="button"
-      :disabled="!hasSelection"
+      :disabled="!canPreviewSelection"
       @click="emit('preview-all')"
     >
       Play all primitives
@@ -74,7 +85,7 @@ const selectedTokenLabel = computed(() => {
         :key="option.kind"
         class="move-vfx-debug-panel__button"
         type="button"
-        :disabled="!hasSelection"
+        :disabled="!canPreviewSelection"
         :title="option.description"
         @click="emit('preview-kind', option.kind)"
       >
