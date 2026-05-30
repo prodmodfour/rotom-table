@@ -32,6 +32,7 @@ describe('moveVfxMaterials', () => {
     expect(material.blending).toBe(THREE.AdditiveBlending)
     expect(material.side).toBe(THREE.FrontSide)
     expect(material.toneMapped).toBe(false)
+    expect(material.polygonOffset).toBe(false)
   })
 
   it('creates double-sided translucent and ring mesh materials', () => {
@@ -48,9 +49,19 @@ describe('moveVfxMaterials', () => {
       expect(material.toneMapped).toBe(false)
     }
 
+    expect(translucent.polygonOffset).toBe(false)
+    expect(ring.polygonOffset).toBe(true)
+    expect(ring.polygonOffsetFactor).toBe(-1)
+    expect(ring.polygonOffsetUnits).toBe(-2)
     expect(translucent.color.getHexString()).toBe('123456')
     expect(ring.color.getHexString()).toBe('3366ff')
     expect(translucent).not.toBe(ring)
+  })
+
+  it('allows ring materials to opt out of the ground-surface polygon offset', () => {
+    const ring = createMoveVfxRingMaterial({ color: '#3366ff', opacity: 0.25, polygonOffset: false })
+
+    expect(ring.polygonOffset).toBe(false)
   })
 
   it('creates line and sprite-like materials with the same transparency and depth policy', () => {

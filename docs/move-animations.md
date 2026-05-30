@@ -539,9 +539,17 @@ Dash meshes and materials are runtime-only resources owned by the event lifecycl
 
 ### Shared material factory for VFX-049
 
-`src/utils/isometric/moveVfxMaterials.ts` centralizes material creation for move VFX primitives. It provides fresh per-call factories for solid mesh cores, translucent overlay meshes, ring/line-style surfaces, future `THREE.Line` materials, and future sprite-like materials. All default to transparent additive styling with `depthTest: true`, `depthWrite: false`, and `toneMapped: false`; ring/translucent helpers default to double-sided rendering while solid projectile-style cores remain front-sided.
+`src/utils/isometric/moveVfxMaterials.ts` centralizes material creation for move VFX primitives. It provides fresh per-call factories for solid mesh cores, translucent overlay meshes, ring/line-style surfaces, future `THREE.Line` materials, and future sprite-like materials. All default to transparent additive styling with `depthTest: true`, `depthWrite: false`, and `toneMapped: false`; ring/translucent helpers default to double-sided rendering while solid projectile-style cores remain front-sided. Ring/ground-surface materials also default to a small negative polygon offset so flat VFX decals read above terrain, field-effect surfaces, and hazard decals while keeping depth testing enabled against raised geometry.
 
 The material factory intentionally does not cache or share material instances. Each primitive owns the materials it creates inside its event lifecycle group, so `disposeObject3D()` can dispose geometries and materials once when an effect completes, is removed, expires while hidden, or the map unmounts. Future primitives should import these helpers instead of duplicating low-level `THREE.MeshBasicMaterial`, `THREE.LineBasicMaterial`, or `THREE.SpriteMaterial` configuration, and should document any deliberate override of the default transparency/depth policy.
+
+### Render order and depth tuning for VFX-050
+
+`src/utils/isometric/moveVfxRenderer.ts` now uses named render-order bands instead of independent per-primitive magic numbers. The reviewed WebGL stack is: terrain/voxel meshes at orders 0-8, field-effect and hazard surfaces around 9-18, weather/previews up to 30, move VFX ground/path/body effects at 32-36, and crit/above-token accents at 38-39. CSS3D HP bars, targeting reticles, and roll feedback remain in the existing CSS3D overlay rather than being reordered by move VFX.
+
+Ground and cell effects use slightly higher world-space y offsets than hazards and field-effect decals, plus the ring-material polygon offset, so flat maps and raised terrain avoid most z-fighting without turning off `depthTest`. Projectile, beam, lunge, shell, mote, and afterimage materials keep `depthTest: true` and `depthWrite: false` so they stay world-space and do not create transparent-depth occlusion for tokens, HUDs, or later VFX in the same frame.
+
+This tuning remains visual-only: it adds no scheduler source, timer, persistence hook, map/schema change, gameplay mutation, pointer target, dependency, or renderer quality reduction. Manual browser review should still cover flat maps, raised terrain, crowded tokens, active hazards/field effects, targeting overlays, and roll feedback, but the focused material/renderer tests now lock the default ring depth policy, render-order bands, and raised y offsets.
 
 ## Implementation labels, milestones, and ticket ordering
 

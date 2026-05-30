@@ -9,6 +9,9 @@ export interface MoveVfxMaterialOptions {
   blending?: THREE.Blending
   side?: THREE.Side
   toneMapped?: boolean
+  polygonOffset?: boolean
+  polygonOffsetFactor?: number
+  polygonOffsetUnits?: number
 }
 
 const MOVE_VFX_DEFAULT_TRANSPARENT = true
@@ -16,6 +19,9 @@ const MOVE_VFX_DEFAULT_DEPTH_TEST = true
 const MOVE_VFX_DEFAULT_DEPTH_WRITE = false
 const MOVE_VFX_DEFAULT_BLENDING = THREE.AdditiveBlending
 const MOVE_VFX_DEFAULT_TONE_MAPPED = false
+const MOVE_VFX_RING_POLYGON_OFFSET = true
+const MOVE_VFX_RING_POLYGON_OFFSET_FACTOR = -1
+const MOVE_VFX_RING_POLYGON_OFFSET_UNITS = -2
 
 const isMoveVfxMaterialOptions = (
   input: THREE.ColorRepresentation | MoveVfxMaterialOptions,
@@ -44,10 +50,10 @@ const createSharedMoveVfxMaterialParameters = (
   input: THREE.ColorRepresentation | MoveVfxMaterialOptions,
   opacity: number | undefined,
   side?: THREE.Side,
+  defaults: Partial<Pick<MoveVfxMaterialOptions, 'polygonOffset' | 'polygonOffsetFactor' | 'polygonOffsetUnits'>> = {},
 ): THREE.MeshBasicMaterialParameters => {
   const options = resolveMoveVfxMaterialOptions(input, opacity)
-
-  return {
+  const parameters: THREE.MeshBasicMaterialParameters = {
     color: options.color,
     opacity: normalizeMoveVfxOpacity(options.opacity),
     transparent: options.transparent ?? MOVE_VFX_DEFAULT_TRANSPARENT,
@@ -57,6 +63,13 @@ const createSharedMoveVfxMaterialParameters = (
     side: options.side ?? side,
     toneMapped: options.toneMapped ?? MOVE_VFX_DEFAULT_TONE_MAPPED,
   }
+  const polygonOffset = options.polygonOffset ?? defaults.polygonOffset
+  const polygonOffsetFactor = options.polygonOffsetFactor ?? defaults.polygonOffsetFactor
+  const polygonOffsetUnits = options.polygonOffsetUnits ?? defaults.polygonOffsetUnits
+  if (polygonOffset !== undefined) parameters.polygonOffset = polygonOffset
+  if (polygonOffsetFactor !== undefined) parameters.polygonOffsetFactor = polygonOffsetFactor
+  if (polygonOffsetUnits !== undefined) parameters.polygonOffsetUnits = polygonOffsetUnits
+  return parameters
 }
 
 const createSharedMoveVfxLineParameters = (
@@ -64,8 +77,7 @@ const createSharedMoveVfxLineParameters = (
   opacity?: number,
 ): THREE.LineBasicMaterialParameters => {
   const options = resolveMoveVfxMaterialOptions(input, opacity)
-
-  return {
+  const parameters: THREE.LineBasicMaterialParameters = {
     color: options.color,
     opacity: normalizeMoveVfxOpacity(options.opacity),
     transparent: options.transparent ?? MOVE_VFX_DEFAULT_TRANSPARENT,
@@ -74,6 +86,10 @@ const createSharedMoveVfxLineParameters = (
     blending: options.blending ?? MOVE_VFX_DEFAULT_BLENDING,
     toneMapped: options.toneMapped ?? MOVE_VFX_DEFAULT_TONE_MAPPED,
   }
+  if (options.polygonOffset !== undefined) parameters.polygonOffset = options.polygonOffset
+  if (options.polygonOffsetFactor !== undefined) parameters.polygonOffsetFactor = options.polygonOffsetFactor
+  if (options.polygonOffsetUnits !== undefined) parameters.polygonOffsetUnits = options.polygonOffsetUnits
+  return parameters
 }
 
 const createSharedMoveVfxSpriteParameters = (
@@ -81,8 +97,7 @@ const createSharedMoveVfxSpriteParameters = (
   opacity?: number,
 ): THREE.SpriteMaterialParameters => {
   const options = resolveMoveVfxMaterialOptions(input, opacity)
-
-  return {
+  const parameters: THREE.SpriteMaterialParameters = {
     color: options.color,
     opacity: normalizeMoveVfxOpacity(options.opacity),
     transparent: options.transparent ?? MOVE_VFX_DEFAULT_TRANSPARENT,
@@ -91,6 +106,10 @@ const createSharedMoveVfxSpriteParameters = (
     blending: options.blending ?? MOVE_VFX_DEFAULT_BLENDING,
     toneMapped: options.toneMapped ?? MOVE_VFX_DEFAULT_TONE_MAPPED,
   }
+  if (options.polygonOffset !== undefined) parameters.polygonOffset = options.polygonOffset
+  if (options.polygonOffsetFactor !== undefined) parameters.polygonOffsetFactor = options.polygonOffsetFactor
+  if (options.polygonOffsetUnits !== undefined) parameters.polygonOffsetUnits = options.polygonOffsetUnits
+  return parameters
 }
 
 /**
@@ -134,7 +153,10 @@ export function createMoveVfxTranslucentMaterial(
  * Creates a fresh material for ground rings, area cell planes, and other flat
  * line-like VFX surfaces. Defaults are the same transparent additive,
  * depth-tested, depth-write-disabled settings as other move VFX materials, with
- * double-sided rendering so horizontal rings remain visible from above.
+ * double-sided rendering so horizontal rings remain visible from above. Ring
+ * surfaces also use a small negative polygon offset by default to keep flat VFX
+ * readable above terrain, field surfaces, and hazard decals without disabling
+ * depth testing against raised map geometry.
  */
 export function createMoveVfxRingMaterial(
   color: THREE.ColorRepresentation,
@@ -145,7 +167,16 @@ export function createMoveVfxRingMaterial(
   input: THREE.ColorRepresentation | MoveVfxMaterialOptions,
   opacity?: number,
 ): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial(createSharedMoveVfxMaterialParameters(input, opacity, THREE.DoubleSide))
+  return new THREE.MeshBasicMaterial(createSharedMoveVfxMaterialParameters(
+    input,
+    opacity,
+    THREE.DoubleSide,
+    {
+      polygonOffset: MOVE_VFX_RING_POLYGON_OFFSET,
+      polygonOffsetFactor: MOVE_VFX_RING_POLYGON_OFFSET_FACTOR,
+      polygonOffsetUnits: MOVE_VFX_RING_POLYGON_OFFSET_UNITS,
+    },
+  ))
 }
 
 /**
