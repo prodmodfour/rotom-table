@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveProjectileAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveBeamAnimationEvent, type MoveProjectileAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import type { MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -39,6 +39,18 @@ const projectileEvent = (overrides: Partial<MoveProjectileAnimationEvent> = {}):
   ...overrides,
 }) as MoveAnimationEvent
 
+const beamEvent = (overrides: Partial<MoveBeamAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-beam',
+  moveName: 'Psybeam',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 1000,
+  kind: MOVE_VFX_KIND.beam,
+  targetId: 'target-1',
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
 const makeRenderObject = (overrides: Partial<PokemonRenderObject> = {}): PokemonRenderObject => ({
   id: 'user-1',
   currentCenter: new THREE.Vector3(0, 0, 0),
@@ -71,6 +83,24 @@ const projectileTrailMeshes = (
   const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-projectile-trail-'))
   expect(meshes).toHaveLength(4)
   return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+}
+
+const beamCylinderNamed = (
+  group: THREE.Object3D,
+  name: string,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === name)
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+}
+
+const beamRingNamed = (
+  group: THREE.Object3D,
+  name: string,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === name)
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
 }
 
 const attachDisposableMesh = (group: THREE.Object3D) => {
@@ -375,6 +405,139 @@ describe('move VFX renderer shell', () => {
     expect(instanceGroup.children).toHaveLength(0)
     for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
     for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('renders beam events as palette-coloured cylinders between locked token anchors', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+
+    renderer.sync([beamEvent()], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const glow = beamCylinderNamed(instanceGroup, 'move-vfx-beam-glow')
+    const core = beamCylinderNamed(instanceGroup, 'move-vfx-beam-core')
+    expect(instanceGroup.children).toHaveLength(2)
+    expectVectorClose(instanceGroup.position, [2, 1.16, 0])
+    expect(glow.material.color.getHexString()).toBe('123456')
+    expect(core.material.color.getHexString()).toBe('ffeeaa')
+    expect(core.material.transparent).toBe(true)
+    expect(core.material.depthWrite).toBe(false)
+    expect(core.renderOrder).toBe(35)
+    expect(core.scale.y).toBeCloseTo(4)
+    expect(core.material.opacity).toBe(0)
+
+    const geometryDisposeSpies = [glow, core].map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = [glow, core].map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
+
+    expect(core.material.opacity).toBeCloseTo(0.86)
+    expect(glow.material.opacity).toBeCloseTo(0.3)
+    expect(core.scale.x).toBeGreaterThan(0.12)
+
+    target.currentCenter.set(12, 0, 0)
+    renderer.animate({ frameNowMs: 900, delta: 0.016, renderObjects })
+
+    expectVectorClose(instanceGroup.position, [2, 1.16, 0])
+    expect(core.scale.y).toBeCloseTo(4)
+
+    renderer.animate({ frameNowMs: 1100, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses area-cell centroid targets for beam events when no target token is provided', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([
+      beamEvent({
+        targetId: undefined,
+        areaCells: [
+          { x: 2, y: 0, z: 0 },
+          { x: 4, y: 0, z: 2 },
+        ],
+      }),
+    ], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(2)
+    expectVectorClose(instanceGroup.position, [1.75, 0.58, 0.75])
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
+
+    const core = beamCylinderNamed(instanceGroup, 'move-vfx-beam-core')
+    expect(core.material.opacity).toBeGreaterThan(0)
+    expect(core.scale.y).toBeGreaterThan(3.95)
+    expect(core.scale.y).toBeLessThan(4.05)
+  })
+
+  it('adds an optional target-end impact ring for beam events that request it', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+
+    renderer.sync([beamEvent({ impact: true })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const ring = beamRingNamed(instanceGroup, 'move-vfx-beam-impact-ring')
+    expect(instanceGroup.children).toHaveLength(3)
+    expect(ring.material.color.getHexString()).toBe('ffeeaa')
+    expect(ring.renderOrder).toBe(36)
+    expect(ring.position.y).toBeCloseTo(2)
+    expect(ring.visible).toBe(false)
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
+
+    expect(ring.visible).toBe(true)
+    expect(ring.material.opacity).toBeGreaterThan(0)
+    expect(ring.scale.x).toBeGreaterThan(0.4)
+
+    const meshes = instanceGroup.children as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>[]
+    const geometryDisposeSpies = meshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = meshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    renderer.sync([])
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(instanceGroup.children).toHaveLength(0)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('falls back to a no-op beam when anchors cannot be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1' })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([beamEvent({ targetId: 'missing-target' })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 1100, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
   })
 
   it('does not duplicate a lifecycle instance when the same event id is synced repeatedly', () => {

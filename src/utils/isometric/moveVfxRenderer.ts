@@ -1,9 +1,14 @@
 import * as THREE from 'three'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveProjectileAnimationEvent } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveBeamAnimationEvent, type MoveProjectileAnimationEvent } from '~/types/moveAnimation'
 import { DEFAULT_MOVE_VFX_COLOR, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
-import { MOVE_VFX_TOKEN_ANCHOR, resolveMoveVfxAnchorPair } from './moveVfxAnchors'
-import { animationProgress, clamp01, easeInOutCubic, pulse01 } from './moveVfxTiming'
+import {
+  MOVE_VFX_TOKEN_ANCHOR,
+  moveVfxAreaCentroidAnchor,
+  resolveMoveVfxAnchorPair,
+  resolveMoveVfxTokenAnchor,
+} from './moveVfxAnchors'
+import { animationProgress, clamp01, easeInOutCubic, easeOutCubic, pulse01 } from './moveVfxTiming'
 import { disposeObject3D } from './resourceDisposal'
 
 export interface MoveVfxRendererSyncContext {
@@ -88,6 +93,27 @@ const MOVE_VFX_PROJECTILE_TRAIL_PROGRESS_SPACING = 0.055
 const MOVE_VFX_PROJECTILE_TRAIL_MAX_OPACITY = 0.28
 const MOVE_VFX_PROJECTILE_TRAIL_NEAR_SCALE = 0.7
 const MOVE_VFX_PROJECTILE_TRAIL_FAR_SCALE = 0.34
+const MOVE_VFX_BEAM_CORE_NAME = 'move-vfx-beam-core'
+const MOVE_VFX_BEAM_GLOW_NAME = 'move-vfx-beam-glow'
+const MOVE_VFX_BEAM_IMPACT_RING_NAME = 'move-vfx-beam-impact-ring'
+const MOVE_VFX_BEAM_RENDER_ORDER = 35
+const MOVE_VFX_BEAM_IMPACT_RENDER_ORDER = MOVE_VFX_BEAM_RENDER_ORDER + 1
+const MOVE_VFX_BEAM_MIN_RADIUS = 0.045
+const MOVE_VFX_BEAM_DEFAULT_RADIUS = 0.075
+const MOVE_VFX_BEAM_MAX_RADIUS = 0.16
+const MOVE_VFX_BEAM_RADIUS_PROJECTILE_SCALE = 0.42
+const MOVE_VFX_BEAM_GLOW_RADIUS_MULTIPLIER = 2.65
+const MOVE_VFX_BEAM_MIN_LENGTH = 0.05
+const MOVE_VFX_BEAM_FADE_IN_PROGRESS = 0.14
+const MOVE_VFX_BEAM_FADE_OUT_START = 0.64
+const MOVE_VFX_BEAM_MAX_CORE_OPACITY = 0.86
+const MOVE_VFX_BEAM_MAX_GLOW_OPACITY = 0.3
+const MOVE_VFX_BEAM_IMPACT_BASE_RADIUS_MULTIPLIER = 4.2
+const MOVE_VFX_BEAM_IMPACT_MIN_RADIUS = 0.28
+const MOVE_VFX_BEAM_IMPACT_MAX_RADIUS = 0.72
+const MOVE_VFX_BEAM_IMPACT_START_PROGRESS = 0.16
+const MOVE_VFX_BEAM_IMPACT_MAX_OPACITY = 0.42
+const MOVE_VFX_WORLD_UP = new THREE.Vector3(0, 1, 0)
 
 const EMPTY_RENDER_OBJECTS = new Map<string, PokemonRenderObject>()
 
@@ -231,6 +257,139 @@ const firstProjectileTargetId = (event: MoveProjectileAnimationEvent): string | 
   event.targetId ?? event.targetIds?.[0]
 )
 
+const firstBeamTargetId = (event: MoveBeamAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
+const beamRadiusForRenderObjects = (
+  userRenderObject: PokemonRenderObject | undefined,
+  targetRenderObject: PokemonRenderObject | undefined,
+): number => clampNumber(
+  projectileRadiusForRenderObjects(userRenderObject, targetRenderObject) * MOVE_VFX_BEAM_RADIUS_PROJECTILE_SCALE,
+  MOVE_VFX_BEAM_MIN_RADIUS,
+  MOVE_VFX_BEAM_MAX_RADIUS,
+)
+
+const createBeamMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createBeamCylinderMesh = (
+  name: string,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 16, 1, false), material)
+  mesh.name = name
+  mesh.renderOrder = MOVE_VFX_BEAM_RENDER_ORDER
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createBeamImpactRingMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.76, 1, 32), material)
+  mesh.name = MOVE_VFX_BEAM_IMPACT_RING_NAME
+  mesh.renderOrder = MOVE_VFX_BEAM_IMPACT_RENDER_ORDER
+  mesh.rotation.x = -Math.PI / 2
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const resolveBeamAnchorPair = (
+  event: MoveBeamAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): { start: THREE.Vector3, end: THREE.Vector3 } | null => {
+  const targetId = firstBeamTargetId(event)
+  const start = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: event.userId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.chest,
+    fallbackCell: event.originCell,
+  })
+  let end = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: targetId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.chest,
+    fallbackCell: event.targetCell,
+  })
+
+  if (!end) {
+    end = moveVfxAreaCentroidAnchor(event.areaCells, event.areaOrigin ?? event.targetCell)
+  }
+
+  return start && end ? { start, end } : null
+}
+
+const createBeamTransform = (start: THREE.Vector3, end: THREE.Vector3) => {
+  const direction = new THREE.Vector3().subVectors(end, start)
+  const length = direction.length()
+  if (length < MOVE_VFX_BEAM_MIN_LENGTH) return null
+
+  return {
+    midpoint: new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5),
+    quaternion: new THREE.Quaternion().setFromUnitVectors(MOVE_VFX_WORLD_UP, direction.clone().normalize()),
+    length,
+  }
+}
+
+const beamOpacityMultiplier = (progress: number): number => {
+  const fadeIn = clamp01(progress / MOVE_VFX_BEAM_FADE_IN_PROGRESS)
+  const fadeOut = progress <= MOVE_VFX_BEAM_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_BEAM_FADE_OUT_START))
+  return Math.min(fadeIn, fadeOut)
+}
+
+const applyBeamVisualState = (options: {
+  group: THREE.Group
+  core: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  glow: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  impactRing?: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  midpoint: THREE.Vector3
+  quaternion: THREE.Quaternion
+  length: number
+  radius: number
+  impactRadius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const opacityMultiplier = beamOpacityMultiplier(progress)
+  const pulse = pulse01(progress)
+  const thicknessPulse = 0.82 + (pulse * 0.34)
+  const coreRadius = options.radius * thicknessPulse
+  const glowRadius = options.radius * MOVE_VFX_BEAM_GLOW_RADIUS_MULTIPLIER * (0.9 + (pulse * 0.24))
+
+  options.group.position.copy(options.midpoint)
+  options.group.quaternion.copy(options.quaternion)
+  options.core.scale.set(coreRadius, options.length, coreRadius)
+  options.glow.scale.set(glowRadius, options.length, glowRadius)
+  options.core.material.opacity = MOVE_VFX_BEAM_MAX_CORE_OPACITY * opacityMultiplier
+  options.glow.material.opacity = MOVE_VFX_BEAM_MAX_GLOW_OPACITY * opacityMultiplier
+
+  if (options.impactRing) {
+    const impactProgress = easeOutCubic(clamp01(
+      (progress - MOVE_VFX_BEAM_IMPACT_START_PROGRESS) / (1 - MOVE_VFX_BEAM_IMPACT_START_PROGRESS),
+    ))
+    const impactOpacity = MOVE_VFX_BEAM_IMPACT_MAX_OPACITY * opacityMultiplier * (1 - impactProgress)
+    options.impactRing.position.set(0, options.length / 2, 0)
+    options.impactRing.scale.setScalar(options.impactRadius * (0.65 + (impactProgress * 1.25)))
+    options.impactRing.material.opacity = impactOpacity
+    options.impactRing.visible = impactOpacity > 0.005
+  }
+}
+
 /**
  * Safe placeholder for effect kinds whose visible primitive has not landed yet.
  *
@@ -359,7 +518,103 @@ const createProjectileMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
-const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveBeamAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const targetId = firstBeamTargetId(event)
+  const anchors = resolveBeamAnchorPair(event, renderObjects)
+  if (!anchors) return createNoopMoveVfxInstance(context)
+
+  const transform = createBeamTransform(anchors.start, anchors.end)
+  if (!transform) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const radius = beamRadiusForRenderObjects(
+    renderObjects.get(event.userId),
+    targetId ? renderObjects.get(targetId) : undefined,
+  ) || MOVE_VFX_BEAM_DEFAULT_RADIUS
+  const impactRadius = clampNumber(
+    radius * MOVE_VFX_BEAM_IMPACT_BASE_RADIUS_MULTIPLIER,
+    MOVE_VFX_BEAM_IMPACT_MIN_RADIUS,
+    MOVE_VFX_BEAM_IMPACT_MAX_RADIUS,
+  )
+
+  // Beam endpoints are locked at creation for the same reason projectiles are:
+  // the transient visual should not bend or stretch if token placement changes
+  // while the scheduler is animating the existing effect instance.
+  const midpoint = transform.midpoint.clone()
+  const quaternion = transform.quaternion.clone()
+  const core = createBeamCylinderMesh(
+    MOVE_VFX_BEAM_CORE_NAME,
+    createBeamMaterial(palette.accent, MOVE_VFX_BEAM_MAX_CORE_OPACITY),
+  )
+  const glow = createBeamCylinderMesh(
+    MOVE_VFX_BEAM_GLOW_NAME,
+    createBeamMaterial(palette.primary, MOVE_VFX_BEAM_MAX_GLOW_OPACITY),
+  )
+  const impactRing = event.impact
+    ? createBeamImpactRingMesh(createBeamMaterial(palette.accent, 0))
+    : undefined
+
+  context.group.add(glow, core)
+  if (impactRing) context.group.add(impactRing)
+
+  applyBeamVisualState({
+    group: context.group,
+    core,
+    glow,
+    impactRing,
+    midpoint,
+    quaternion,
+    length: transform.length,
+    radius,
+    impactRadius,
+    progress: 0,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyBeamVisualState({
+        group: context.group,
+        core,
+        glow,
+        impactRing,
+        midpoint,
+        quaternion,
+        length: transform.length,
+        radius,
+        impactRadius,
+        progress: progress.progress,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const createArcMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance

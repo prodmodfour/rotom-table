@@ -406,6 +406,14 @@ Projectile events now include a lightweight chained-sphere trail. Each projectil
 
 The trail follows the same locked start/end anchors as the projectile, staggers each segment slightly behind the current eased travel point, and fades with the projectile's normal fade-in/fade-out window so the motion direction is easier to read without adding a bespoke asset or extra animation loop. Trail geometries and materials are disposed by the existing `disposeObject3D()` path when the projectile completes, is removed, or the map scene unmounts.
 
+### Beam primitive for VFX-033
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the beam placeholder with a lightweight straight-line energy primitive. Beam events lock their user chest anchor and target chest anchor at creation time, with existing grid-cell fallbacks and an area-cell centroid fallback when no target token is supplied. This makes a beam stable for the event lifetime even if token render objects move before the VFX completes.
+
+Each beam instance owns two transparent additive cylinder meshes: a bright accent-coloured core and a wider primary-coloured glow. Scheduler frame time drives only opacity and thickness pulsing, so the beam appears quickly, holds briefly, fades, and then disposes through the same event-owned lifecycle group as other primitives. Beam events may also set `impact: true` to add a small target-end ring owned by the beam instance; the broader reusable impact-ring primitive remains a later ticket.
+
+Beam VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

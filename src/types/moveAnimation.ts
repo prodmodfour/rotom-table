@@ -92,7 +92,11 @@ export interface MoveProjectileAnimationEvent
 export interface MoveBeamAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.beam>,
     MoveAnimationOriginMetadata,
-    MoveAnimationTargetMetadata {}
+    MoveAnimationTargetMetadata,
+    MoveAnimationAreaMetadata {
+  /** Optional beam-local impact accent at the target end. Generic impact-ring primitives land later. */
+  impact?: boolean
+}
 
 export interface MoveArcAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.arc>,
