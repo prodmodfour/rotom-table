@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
-import { MOVE_VFX_TONE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_TONE_COLORS, MOVE_VFX_TYPE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 
@@ -164,6 +164,17 @@ const buffDebuffEvent = (overrides: Partial<MoveBuffDebuffAnimationEvent> = {}):
   targetId: 'target-1',
   tone: 'buff',
   direction: 'buff',
+  ...overrides,
+}) as MoveAnimationEvent
+
+const statusEvent = (overrides: Partial<MoveStatusAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-status',
+  moveName: 'Thunder Wave',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 560,
+  kind: MOVE_VFX_KIND.status,
+  targetId: 'target-1',
   ...overrides,
 }) as MoveAnimationEvent
 
@@ -356,6 +367,30 @@ const buffDebuffParticleMeshes = (
   const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-buff-debuff-particle-'))
   expect(meshes).toHaveLength(5)
   return meshes as THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>[]
+}
+
+const statusCloudRingNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-status-cloud-ring')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const statusCloudShellNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-status-cloud-shell')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+}
+
+const statusCloudMoteMeshes = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => {
+  const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-status-cloud-mote-'))
+  expect(meshes).toHaveLength(5)
+  return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
 }
 
 const attachDisposableMesh = (group: THREE.Object3D) => {
@@ -929,6 +964,150 @@ describe('move VFX renderer shell', () => {
     expect(renderer.activeCount()).toBe(1)
 
     renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders status events as condition-coloured clouds around locked affected targets', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const target = makeRenderObject({
+      id: 'target-1',
+      currentCenter: new THREE.Vector3(4, 1, 0),
+      base: 2,
+      width: 1.5,
+      height: 3,
+      clearance: 2.4,
+    })
+    const renderObjects = new Map([[target.id, target]])
+
+    renderer.sync([statusEvent({ conditionNames: ['Burned'] })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const ring = statusCloudRingNamed(instanceGroup)
+    const shell = statusCloudShellNamed(instanceGroup)
+    const motes = statusCloudMoteMeshes(instanceGroup)
+    const initialRingScale = ring.scale.x
+    const initialMoteX = motes[0]?.position.x ?? 0
+
+    expect(renderer.activeCount()).toBe(1)
+    expect(instanceGroup.children).toHaveLength(7)
+    expectVectorClose(instanceGroup.position, [4, 1, 0])
+    expectVectorClose(ring.position, [0, 0.07, 0])
+    expect(ring.material.color.getHexString()).toBe(MOVE_VFX_TYPE_COLORS.Fire.accent.slice(1))
+    expect(shell.material.color.getHexString()).toBe(MOVE_VFX_TYPE_COLORS.Fire.primary.slice(1))
+    expect(motes[0]?.material.color.getHexString()).toBe(MOVE_VFX_TYPE_COLORS.Fire.primary.slice(1))
+    expect(motes[1]?.material.color.getHexString()).toBe(MOVE_VFX_TYPE_COLORS.Fire.glow.slice(1))
+    expect(ring.material.transparent).toBe(true)
+    expect(ring.material.depthTest).toBe(true)
+    expect(ring.material.depthWrite).toBe(false)
+    expect(shell.material.depthWrite).toBe(false)
+    expect(motes[0]?.material.depthWrite).toBe(false)
+    expect(ring.renderOrder).toBe(38)
+    expect(shell.renderOrder).toBe(39)
+    expect(motes.every((mote) => mote.renderOrder === 40)).toBe(true)
+    expect(ring.rotation.x).toBeCloseTo(-Math.PI / 2)
+    expect(ring.visible).toBe(true)
+    expect(shell.visible).toBe(true)
+    expect(motes.every((mote) => mote.visible)).toBe(true)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects })
+
+    expect(ring.scale.x).toBeGreaterThan(initialRingScale)
+    expect(motes[0]?.position.x).not.toBeCloseTo(initialMoteX)
+    expect(motes[0]?.position.y).toBeGreaterThan(0)
+    expect(motes[0]?.material.opacity).toBeGreaterThan(0)
+    expect(shell.material.opacity).toBeGreaterThan(0)
+
+    const lockedStatusPoint = instanceGroup.position.clone()
+    const statusMeshes = [ring, shell, ...motes]
+    const geometryDisposeSpies = statusMeshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = statusMeshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    target.currentCenter.set(10, 4, 0)
+    renderer.animate({ frameNowMs: 520, delta: 0.016, renderObjects })
+
+    expect(instanceGroup.position.equals(lockedStatusPoint)).toBe(true)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses combined condition hints, target-cell fallbacks, palette overrides, and reduced motion for status clouds', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      statusEvent({
+        id: 'move-vfx-status-cell',
+        targetId: 'missing-target',
+        targetCell: { x: 5, y: 2, z: 2 },
+        conditionNames: ['Unknown haze', 'Paralysis'],
+        palette: undefined,
+      }),
+      statusEvent({
+        id: 'move-vfx-status-palette',
+        targetId: 'missing-target-2',
+        targetCell: { x: 6, y: 0, z: 3 },
+        conditionName: 'Poisoned',
+        palette: projectilePalette,
+      }),
+    ], { renderObjects: new Map(), reducedMotion: true })
+
+    const cellGroup = renderer.group.children[0]
+    const paletteGroup = renderer.group.children[1]
+    const cellRing = statusCloudRingNamed(cellGroup)
+    const cellShell = statusCloudShellNamed(cellGroup)
+    const cellMotes = statusCloudMoteMeshes(cellGroup)
+    const paletteRing = statusCloudRingNamed(paletteGroup)
+    const initialRingScale = cellRing.scale.x
+
+    expect(renderer.activeCount()).toBe(2)
+    expectVectorClose(cellGroup.position, [5.5, 2, 2.5])
+    expectVectorClose(paletteGroup.position, [6.5, 0, 3.5])
+    expect(cellRing.material.color.getHexString()).toBe(MOVE_VFX_TYPE_COLORS.Electric.accent.slice(1))
+    expect(paletteRing.material.color.getHexString()).toBe(projectilePalette.accent.slice(1))
+    expect(cellRing.visible).toBe(true)
+    expect(cellShell.visible).toBe(false)
+    expect(cellMotes.every((mote) => !mote.visible)).toBe(true)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects: new Map(), reducedMotion: true })
+
+    expect(cellRing.visible).toBe(true)
+    expect(cellRing.scale.x).toBeGreaterThan(initialRingScale)
+    expect(cellRing.material.opacity).toBeGreaterThan(0)
+    expect(cellShell.visible).toBe(false)
+    expect(cellShell.material.opacity).toBe(0)
+    expect(cellMotes.every((mote) => !mote.visible && mote.material.opacity === 0)).toBe(true)
+  })
+
+  it('falls back to a generic status cloud for unknown conditions and no-ops when no affected anchor can be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(1, 0, 2) })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([
+      statusEvent({ id: 'move-vfx-status-unknown', targetId: undefined, conditionName: 'Mystery Fog', palette: undefined }),
+      statusEvent({ id: 'move-vfx-status-missing', userId: 'missing-user', targetId: undefined, targetCell: undefined }),
+    ], { renderObjects })
+
+    const unknownGroup = renderer.group.children[0]
+    const missingGroup = renderer.group.children[1]
+    const unknownRing = statusCloudRingNamed(unknownGroup)
+
+    expect(renderer.activeCount()).toBe(2)
+    expectVectorClose(unknownGroup.position, [1, 0, 2])
+    expect(unknownRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.status.accent.slice(1))
+    expect(missingGroup.children).toHaveLength(0)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects })
 
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.group.children).toHaveLength(0)

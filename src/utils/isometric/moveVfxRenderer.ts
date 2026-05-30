@@ -12,9 +12,11 @@ import {
   type MoveMissAnimationEvent,
   type MoveProjectileAnimationEvent,
   type MoveSelfPulseAnimationEvent,
+  type MoveStatusAnimationEvent,
   type MoveTargetFlashAnimationEvent,
 } from '~/types/moveAnimation'
 import { DEFAULT_MOVE_VFX_COLOR, MOVE_VFX_TONE, moveVfxColorForTone, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
+import { moveVfxStatusPaletteForConditions } from '~/utils/moveAnimationStatusPalette'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import {
   MOVE_VFX_TOKEN_ANCHOR,
@@ -255,6 +257,35 @@ const MOVE_VFX_BUFF_DEBUFF_DEBUFF_END_HEIGHT_RATIO = 0.16
 const MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_MAX_OPACITY = 0.32
 const MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_START_SCALE = 0.9
 const MOVE_VFX_BUFF_DEBUFF_REDUCED_RING_END_SCALE = 1.12
+const MOVE_VFX_STATUS_CLOUD_RING_NAME = 'move-vfx-status-cloud-ring'
+const MOVE_VFX_STATUS_CLOUD_SHELL_NAME = 'move-vfx-status-cloud-shell'
+const MOVE_VFX_STATUS_CLOUD_MOTE_PREFIX = 'move-vfx-status-cloud-mote'
+const MOVE_VFX_STATUS_CLOUD_RING_RENDER_ORDER = 38
+const MOVE_VFX_STATUS_CLOUD_SHELL_RENDER_ORDER = 39
+const MOVE_VFX_STATUS_CLOUD_MOTE_RENDER_ORDER = 40
+const MOVE_VFX_STATUS_CLOUD_MOTE_COUNT = 5
+const MOVE_VFX_STATUS_CLOUD_MIN_RADIUS = 0.38
+const MOVE_VFX_STATUS_CLOUD_DEFAULT_RADIUS = 0.7
+const MOVE_VFX_STATUS_CLOUD_MAX_RADIUS = 1.45
+const MOVE_VFX_STATUS_CLOUD_RADIUS_SCALE = 0.56
+const MOVE_VFX_STATUS_CLOUD_MIN_HEIGHT = 0.58
+const MOVE_VFX_STATUS_CLOUD_DEFAULT_HEIGHT = 1.05
+const MOVE_VFX_STATUS_CLOUD_MAX_HEIGHT = 2.2
+const MOVE_VFX_STATUS_CLOUD_HEIGHT_SCALE = 0.58
+const MOVE_VFX_STATUS_CLOUD_RING_Y_OFFSET = 0.07
+const MOVE_VFX_STATUS_CLOUD_FADE_IN_PROGRESS = 0.18
+const MOVE_VFX_STATUS_CLOUD_FADE_OUT_START = 0.72
+const MOVE_VFX_STATUS_CLOUD_RING_MAX_OPACITY = 0.34
+const MOVE_VFX_STATUS_CLOUD_SHELL_MAX_OPACITY = 0.16
+const MOVE_VFX_STATUS_CLOUD_MOTE_MAX_OPACITY = 0.42
+const MOVE_VFX_STATUS_CLOUD_MOTE_RADIUS_RATIO = 0.095
+const MOVE_VFX_STATUS_CLOUD_MOTE_MIN_RADIUS = 0.05
+const MOVE_VFX_STATUS_CLOUD_MOTE_MAX_RADIUS = 0.15
+const MOVE_VFX_STATUS_CLOUD_ORBIT_START_SCALE = 0.34
+const MOVE_VFX_STATUS_CLOUD_ORBIT_END_SCALE = 0.62
+const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_MAX_OPACITY = 0.3
+const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_START_SCALE = 0.9
+const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_END_SCALE = 1.1
 const MOVE_VFX_TARGET_FLASH_SHELL_NAME = 'move-vfx-target-flash-shell'
 const MOVE_VFX_TARGET_FLASH_RING_NAME = 'move-vfx-target-flash-ring'
 const MOVE_VFX_TARGET_FLASH_SHELL_RENDER_ORDER = 38
@@ -583,6 +614,10 @@ const firstMissTargetId = (event: MoveMissAnimationEvent): string | undefined =>
 )
 
 const firstCritTargetId = (event: MoveCritAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
+const firstStatusTargetId = (event: MoveStatusAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
 )
 
@@ -1590,6 +1625,261 @@ const applyBuffDebuffVisualState = (options: {
     particle.rotation.y = angle + (isBuff ? 0 : Math.PI / 4)
     particle.material.opacity = particleOpacity
     particle.visible = particleOpacity > 0.005
+  })
+}
+
+const statusConditionNamesForEvent = (event: MoveStatusAnimationEvent): readonly string[] => {
+  const names: string[] = []
+  if (typeof event.conditionName === 'string' && event.conditionName.trim()) {
+    names.push(event.conditionName.trim())
+  }
+  if (Array.isArray(event.conditionNames)) {
+    for (const conditionName of event.conditionNames) {
+      if (typeof conditionName === 'string' && conditionName.trim()) names.push(conditionName.trim())
+    }
+  }
+  return names
+}
+
+const statusPaletteForEvent = (event: MoveStatusAnimationEvent): MoveVfxPaletteEntry => (
+  moveVfxStatusPaletteForConditions(statusConditionNamesForEvent(event), event.palette)
+)
+
+const statusCloudDimensionsForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): { radius: number, bodyHeight: number, moteRadius: number } => {
+  const footprint = Math.max(
+    finitePositiveNumber(renderObject?.base) ?? 0,
+    finitePositiveNumber(renderObject?.width) ?? 0,
+  )
+  const tokenHeight = Math.max(
+    finitePositiveNumber(renderObject?.height) ?? 0,
+    finitePositiveNumber(renderObject?.clearance) ?? 0,
+  )
+  const radius = footprint > 0
+    ? clampNumber(
+      footprint * MOVE_VFX_STATUS_CLOUD_RADIUS_SCALE,
+      MOVE_VFX_STATUS_CLOUD_MIN_RADIUS,
+      MOVE_VFX_STATUS_CLOUD_MAX_RADIUS,
+    )
+    : MOVE_VFX_STATUS_CLOUD_DEFAULT_RADIUS
+
+  return {
+    radius,
+    bodyHeight: tokenHeight > 0
+      ? clampNumber(
+        tokenHeight * MOVE_VFX_STATUS_CLOUD_HEIGHT_SCALE,
+        MOVE_VFX_STATUS_CLOUD_MIN_HEIGHT,
+        MOVE_VFX_STATUS_CLOUD_MAX_HEIGHT,
+      )
+      : MOVE_VFX_STATUS_CLOUD_DEFAULT_HEIGHT,
+    moteRadius: clampNumber(
+      radius * MOVE_VFX_STATUS_CLOUD_MOTE_RADIUS_RATIO,
+      MOVE_VFX_STATUS_CLOUD_MOTE_MIN_RADIUS,
+      MOVE_VFX_STATUS_CLOUD_MOTE_MAX_RADIUS,
+    ),
+  }
+}
+
+const resolveStatusCloudAnchor = (
+  event: MoveStatusAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): { foot: THREE.Vector3, radius: number, bodyHeight: number, moteRadius: number } | null => {
+  const targetId = firstStatusTargetId(event)
+  const anchorTokenId = targetId ?? event.userId
+  const renderObject = renderObjects.get(anchorTokenId)
+  const foot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: anchorTokenId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.targetCell,
+  })
+
+  return foot
+    ? { foot: foot.clone(), ...statusCloudDimensionsForRenderObject(renderObject) }
+    : null
+}
+
+const createStatusCloudMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createStatusCloudRingMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 40), material)
+  mesh.name = MOVE_VFX_STATUS_CLOUD_RING_NAME
+  mesh.renderOrder = MOVE_VFX_STATUS_CLOUD_RING_RENDER_ORDER
+  mesh.rotation.x = -Math.PI / 2
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createStatusCloudShellMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8), material)
+  mesh.name = MOVE_VFX_STATUS_CLOUD_SHELL_NAME
+  mesh.renderOrder = MOVE_VFX_STATUS_CLOUD_SHELL_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const statusCloudMoteName = (index: number): string => `${MOVE_VFX_STATUS_CLOUD_MOTE_PREFIX}-${index + 1}`
+
+const createStatusCloudMoteMesh = (
+  index: number,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), material)
+  mesh.name = statusCloudMoteName(index)
+  mesh.renderOrder = MOVE_VFX_STATUS_CLOUD_MOTE_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createStatusCloudMoteMeshes = (
+  palette: MoveVfxPaletteEntry,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => Array.from(
+  { length: MOVE_VFX_STATUS_CLOUD_MOTE_COUNT },
+  (_, index) => createStatusCloudMoteMesh(
+    index,
+    createStatusCloudMaterial(index % 2 === 0 ? palette.primary : palette.glow, 0),
+  ),
+)
+
+const statusCloudOpacityMultiplier = (progress: number): number => {
+  const fadeIn = Math.max(0.22, clamp01(progress / MOVE_VFX_STATUS_CLOUD_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_STATUS_CLOUD_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_STATUS_CLOUD_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const hideStatusCloudMotionAccents = (options: {
+  shell: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  motes: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+}) => {
+  options.shell.material.opacity = 0
+  options.shell.visible = false
+  for (const mote of options.motes) {
+    mote.material.opacity = 0
+    mote.visible = false
+  }
+}
+
+const applyReducedMotionStatusCloudVisualState = (options: {
+  group: THREE.Group
+  ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  shell: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  motes: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  foot: THREE.Vector3
+  radius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacity = MOVE_VFX_STATUS_CLOUD_REDUCED_RING_MAX_OPACITY
+    * statusCloudOpacityMultiplier(progress)
+    * (0.72 + (pulse * 0.28))
+    * Math.max(0, 1 - (progress * 0.42))
+
+  options.group.position.copy(options.foot)
+  options.ring.position.set(0, MOVE_VFX_STATUS_CLOUD_RING_Y_OFFSET, 0)
+  options.ring.scale.setScalar(options.radius * (
+    MOVE_VFX_STATUS_CLOUD_REDUCED_RING_START_SCALE
+    + ((MOVE_VFX_STATUS_CLOUD_REDUCED_RING_END_SCALE - MOVE_VFX_STATUS_CLOUD_REDUCED_RING_START_SCALE) * expansion)
+  ))
+  options.ring.material.opacity = opacity
+  options.ring.visible = opacity > 0.005
+  hideStatusCloudMotionAccents(options)
+}
+
+const applyStatusCloudVisualState = (options: {
+  group: THREE.Group
+  ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  shell: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  motes: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  foot: THREE.Vector3
+  radius: number
+  bodyHeight: number
+  moteRadius: number
+  progress: number
+  reducedMotion?: boolean
+}) => {
+  if (options.reducedMotion) {
+    applyReducedMotionStatusCloudVisualState(options)
+    return
+  }
+
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const orbitProgress = easeInOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacityMultiplier = statusCloudOpacityMultiplier(progress)
+  const ringOpacity = MOVE_VFX_STATUS_CLOUD_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.48))
+  const shellOpacity = MOVE_VFX_STATUS_CLOUD_SHELL_MAX_OPACITY
+    * opacityMultiplier
+    * (0.72 + (pulse * 0.28))
+    * Math.max(0, 1 - (progress * 0.5))
+
+  options.group.position.copy(options.foot)
+
+  options.ring.position.set(0, MOVE_VFX_STATUS_CLOUD_RING_Y_OFFSET, 0)
+  options.ring.scale.setScalar(options.radius * (0.68 + (expansion * 0.62)))
+  options.ring.material.opacity = ringOpacity
+  options.ring.visible = ringOpacity > 0.005
+
+  options.shell.position.set(0, options.bodyHeight * 0.48, 0)
+  options.shell.scale.set(
+    options.radius * (0.64 + (pulse * 0.12)),
+    options.bodyHeight * (0.48 + (pulse * 0.08)),
+    options.radius * (0.64 + (pulse * 0.12)),
+  )
+  options.shell.material.opacity = shellOpacity
+  options.shell.visible = shellOpacity > 0.005
+
+  const orbitRadius = options.radius * (
+    MOVE_VFX_STATUS_CLOUD_ORBIT_START_SCALE
+    + ((MOVE_VFX_STATUS_CLOUD_ORBIT_END_SCALE - MOVE_VFX_STATUS_CLOUD_ORBIT_START_SCALE) * expansion)
+  )
+  const moteCount = Math.max(1, options.motes.length)
+
+  options.motes.forEach((mote, index) => {
+    const phase = index / moteCount
+    const angle = (phase * Math.PI * 2) + (orbitProgress * Math.PI * 0.9)
+    const bob = Math.sin((phase * Math.PI * 2) + (progress * Math.PI * 1.6))
+    const shimmer = 0.82 + (Math.cos(angle + (progress * Math.PI * 0.8)) * 0.12)
+    const moteOpacity = MOVE_VFX_STATUS_CLOUD_MOTE_MAX_OPACITY
+      * opacityMultiplier
+      * shimmer
+      * Math.max(0, 1 - (progress * 0.58))
+
+    mote.position.set(
+      Math.cos(angle) * orbitRadius,
+      options.bodyHeight * (0.26 + (phase * 0.34) + (bob * 0.08)),
+      Math.sin(angle) * orbitRadius,
+    )
+    mote.scale.setScalar(options.moteRadius * (0.9 + (pulse * 0.2) + (phase * 0.08)))
+    mote.material.opacity = moteOpacity
+    mote.visible = moteOpacity > 0.005
   })
 }
 
@@ -2992,7 +3282,73 @@ const createCritMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     },
   }
 }
-const createStatusMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+const createStatusMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveStatusAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchor = resolveStatusCloudAnchor(event, renderObjects)
+
+  if (!anchor) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette = statusPaletteForEvent(event)
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
+  const ring = createStatusCloudRingMesh(createStatusCloudMaterial(palette.accent, 0))
+  const shell = createStatusCloudShellMesh(createStatusCloudMaterial(palette.primary, 0))
+  const motes = createStatusCloudMoteMeshes(palette)
+
+  // Status clouds are generic semantic VFX for conditions/afflictions. Optional
+  // condition names only tint this one compact cloud; they never create
+  // condition-specific art, labels, gameplay state, permissions changes, or
+  // persisted status mutations.
+  context.group.add(ring, shell, ...motes)
+  applyStatusCloudVisualState({
+    group: context.group,
+    ring,
+    shell,
+    motes,
+    ...anchor,
+    progress: 0,
+    reducedMotion: defaultReducedMotion,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyStatusCloudVisualState({
+        group: context.group,
+        ring,
+        shell,
+        motes,
+        ...anchor,
+        progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
 
 const createBuffDebuffMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   const event = context.event as MoveBuffDebuffAnimationEvent

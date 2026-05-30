@@ -167,7 +167,12 @@ export interface MoveCritAnimationEvent
 
 export interface MoveStatusAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.status>,
-    MoveAnimationTargetMetadata {}
+    MoveAnimationTargetMetadata {
+  /** Optional primary condition name used only for generic status-cloud colour hints. */
+  conditionName?: string
+  /** Optional combined condition names; renderer chooses one compact status-cloud hint instead of noisy per-condition art. */
+  conditionNames?: readonly string[]
+}
 
 export interface MoveHealingAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.healing>,

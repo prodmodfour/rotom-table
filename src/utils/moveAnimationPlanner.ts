@@ -514,6 +514,14 @@ const hasStatusSuggestion = (
   !recipient || suggestion.recipient === recipient
 ))
 
+const conditionSuggestionNamesForScript = (
+  script: MoveAnimationPlanScript,
+  recipient?: MoveAutomationRecipient,
+): readonly string[] => arrayOrEmpty(script.conditionSuggestions)
+  .filter((suggestion) => !recipient || suggestion.recipient === recipient)
+  .map((suggestion) => nonEmptyStringOrUndefined(suggestion.condition))
+  .filter((condition): condition is string => Boolean(condition))
+
 const semanticIntentForScript = (
   script: MoveAnimationPlanScript,
   recipient?: MoveAutomationRecipient,
@@ -700,9 +708,11 @@ const planSelfMoveAnimations = (
   }
 
   if (semanticIntent.kind === 'status') {
+    const conditionNames = conditionSuggestionNamesForScript(input.script, 'user')
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.status, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
       targetId,
       targetCell,
+      ...(conditionNames.length ? { conditionNames } : {}),
     }, palette)]
   }
 
@@ -738,9 +748,11 @@ const planTargetSemanticAnimations = (
   }
 
   if (semanticIntent.kind === 'status') {
+    const conditionNames = conditionSuggestionNamesForScript(input.script, 'target')
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.status, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
       targetId,
       targetCell,
+      ...(conditionNames.length ? { conditionNames } : {}),
     }, palette)]
   }
 

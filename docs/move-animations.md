@@ -488,6 +488,14 @@ Each buff/debuff instance owns one horizontal ring plus five constant-count cone
 
 Buff/debuff VFX remain visual-only runtime resources. They do not decide or apply combat-stage changes, mutate token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives particle motion, ring opacity/scale, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint swaps the moving particles into a single soft fade/pulse ring; app/OS reduced-motion wiring remains scoped to the later accessibility tickets.
 
+### Status cloud primitive for VFX-043
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the `status` placeholder with a generic condition/status cloud primitive. Status events resolve the first `targetId`/`targetIds` entry to the affected token foot anchor, fall back to `targetCell` when the token render object is unavailable, and use the move user only when no target id is supplied. The anchor is locked at instance creation so the brief status read stays tied to the affected token or cell instead of stretching if live token motion updates.
+
+Each status instance owns one low ground ring, one soft body cloud shell, and five constant-count orbiting motes. Optional `conditionName`/`conditionNames` fields on `MoveStatusAnimationEvent` are colour hints only: known condition families such as Burned, Poisoned, Paralysis, Frozen, Sleep, and Confused may tint the generic cloud through `src/utils/moveAnimationStatusPalette.ts`, while unknown/custom condition names fall back to the shared semantic status palette. The renderer still creates one compact combined status cloud per event rather than one noisy effect per condition, and it does not add text badges or condition-specific choreography in this phase.
+
+Status VFX remain visual-only runtime resources. They do not decide or apply conditions, mutate HP/combat stages/token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives ring expansion, cloud/mote opacity, orbiting motion, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint swaps the orbiting cloud into a single soft fade/pulse ring; app/OS reduced-motion wiring remains scoped to the later accessibility tickets.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

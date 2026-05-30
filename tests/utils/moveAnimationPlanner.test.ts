@@ -240,6 +240,41 @@ describe('generic move animation planner', () => {
     })
   })
 
+  it('carries condition-name hints on generic status events without creating per-condition choreography', () => {
+    const [selfStatus] = planGenericMoveAnimations(selfInput({
+      script: script({
+        moveName: 'Self Status Metadata',
+        targetMode: 'self',
+        conditionSuggestions: [{ recipient: 'user', condition: 'Sleep', label: 'Sleep' }],
+      }),
+    }))
+
+    expect(selfStatus).toMatchObject({
+      kind: MOVE_VFX_KIND.status,
+      targetId: 'user-token',
+      conditionNames: ['Sleep'],
+      palette: MOVE_VFX_TONE_COLORS.status,
+    })
+
+    const [targetStatus] = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Target Status Metadata',
+        targetMode: 'one-target',
+        conditionSuggestions: [
+          { recipient: 'target', condition: 'Poisoned', label: 'Poisoned' },
+          { recipient: 'user', condition: 'Rage', label: 'Enraged' },
+        ],
+      }),
+    }))
+
+    expect(targetStatus).toMatchObject({
+      kind: MOVE_VFX_KIND.status,
+      targetId: 'target-token',
+      conditionNames: ['Poisoned'],
+      palette: MOVE_VFX_TONE_COLORS.status,
+    })
+  })
+
   it('classifies melee damaging hits as lunge plus type-coloured impact flash', () => {
     const events = planGenericMoveAnimations(baseInput({
       script: script({
