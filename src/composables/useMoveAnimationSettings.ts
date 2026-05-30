@@ -1,11 +1,14 @@
-import { computed, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import {
   DEFAULT_MOVE_ANIMATIONS_ENABLED,
+  DEFAULT_MOVE_ANIMATIONS_REDUCED_MOTION,
   MOVE_ANIMATIONS_ENABLED_STORAGE_KEY,
   moveAnimationsEnabledLabel,
   moveAnimationsEnabledTitle,
   parseMoveAnimationsEnabled,
+  readPrefersReducedMotion,
   serializeMoveAnimationsEnabled,
+  subscribePrefersReducedMotion,
 } from '~/utils/moveAnimationSettings'
 
 const readStoredMoveAnimationsEnabled = (): boolean | null => {
@@ -29,11 +32,27 @@ export const useMoveAnimationSettings = () => {
     'move-animations-enabled',
     () => DEFAULT_MOVE_ANIMATIONS_ENABLED,
   )
+  const moveAnimationsReducedMotion = useState<boolean>(
+    'move-animations-reduced-motion',
+    () => DEFAULT_MOVE_ANIMATIONS_REDUCED_MOTION,
+  )
+
+  let cleanupPrefersReducedMotion: (() => void) | null = null
 
   if (import.meta.client) {
     onMounted(() => {
       const stored = readStoredMoveAnimationsEnabled()
       if (stored !== null) moveAnimationsEnabled.value = stored
+
+      moveAnimationsReducedMotion.value = readPrefersReducedMotion()
+      cleanupPrefersReducedMotion = subscribePrefersReducedMotion((reducedMotion) => {
+        moveAnimationsReducedMotion.value = reducedMotion
+      })
+    })
+
+    onBeforeUnmount(() => {
+      cleanupPrefersReducedMotion?.()
+      cleanupPrefersReducedMotion = null
     })
 
     watch(moveAnimationsEnabled, (enabled) => {
@@ -57,6 +76,7 @@ export const useMoveAnimationSettings = () => {
 
   return {
     moveAnimationsEnabled,
+    moveAnimationsReducedMotion,
     moveAnimationsStatusLabel,
     moveAnimationsStatusTitle,
     moveAnimationsToggleLabel,

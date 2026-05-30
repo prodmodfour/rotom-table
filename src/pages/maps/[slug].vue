@@ -125,6 +125,7 @@ const gridRef = ref<MapScenePanelHandle | null>(null)
 
 const {
   moveAnimationsEnabled,
+  moveAnimationsReducedMotion,
   moveAnimationsStatusTitle,
   moveAnimationsToggleLabel,
   toggleMoveAnimationsEnabled,
@@ -932,6 +933,7 @@ useMapDimensionReconciliation({
         :move-automation-feedback="actionAutomationFeedback"
         :move-animations="visibleMoveAnimations"
         :move-animations-enabled="moveAnimationsEnabled"
+        :move-animations-reduced-motion="moveAnimationsReducedMotion"
         :move-animations-status-title="moveAnimationsStatusTitle"
         :move-animations-toggle-label="moveAnimationsToggleLabel"
         :move-vfx-debug-harness-enabled="moveVfxDebugHarnessEnabled"
