@@ -21,6 +21,11 @@ import {
   moveVfxColorForType,
 } from '~/utils/moveAnimationPalette'
 import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
+import {
+  MOVE_ANIMATION_TARGET_SEQUENCE_ORDER,
+  applyMoveAnimationTargetStartOffsets,
+  createMoveAnimationTargetStartOffsets,
+} from '~/utils/moveAnimationSequencing'
 
 /** Resolution flows that can request generic move VFX plans. */
 export const MOVE_ANIMATION_PLAN_RESOLUTION = {
@@ -242,6 +247,7 @@ interface MoveAnimationPlannerProcessEnvironment {
 
 const UNKNOWN_MOVE_ANIMATION_MOVE_NAME = 'Unknown Move'
 const UNKNOWN_MOVE_ANIMATION_USER_ID = 'unknown-user'
+const AREA_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 180
 const MOVE_VFX_KIND_VALUES = new Set<string>(Object.values(MOVE_VFX_KIND))
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
@@ -599,17 +605,38 @@ const feedbackToTargetOutcome = (
   }
 }
 
+const explicitTargetOutcomeForId = (
+  input: MoveAnimationPlanInput,
+  targetId: string | undefined,
+): MoveAnimationPlanTargetOutcome | null => (
+  arrayOrEmpty(input.targetOutcomes).find((outcome) => outcome.targetId === targetId) ?? null
+)
+
 const targetOutcomeForId = (
   input: MoveAnimationSingleTargetPlanInput,
   targetId: string | undefined,
 ): MoveAnimationPlanTargetOutcome | null => {
-  const explicitOutcome = arrayOrEmpty(input.targetOutcomes).find((outcome) => outcome.targetId === targetId)
+  const explicitOutcome = explicitTargetOutcomeForId(input, targetId)
   if (explicitOutcome) return explicitOutcome
 
   const feedbackOutcome = feedbackToTargetOutcome(input.feedback)
   if (feedbackOutcome && (!targetId || feedbackOutcome.targetId === targetId)) return feedbackOutcome
 
   return null
+}
+
+const selectedAreaTargetIdsForInput = (input: MoveAnimationAreaPlanInput): string[] => {
+  const excludedTargetIds = new Set(stringArrayOrEmpty(input.excludedTargetIds))
+  const seen = new Set<string>()
+  const selectedTargetIds: string[] = []
+
+  for (const targetId of stringArrayOrEmpty(input.selectedTargetIds)) {
+    if (excludedTargetIds.has(targetId) || seen.has(targetId)) continue
+    seen.add(targetId)
+    selectedTargetIds.push(targetId)
+  }
+
+  return selectedTargetIds
 }
 
 const damagingPaletteForScript = (script: MoveAnimationPlanScript): MoveVfxPaletteEntry => (
@@ -866,6 +893,55 @@ const planSingleTargetMoveAnimations = (
   return events
 }
 
+const planAreaTargetFollowUpAnimations = (
+  input: MoveAnimationAreaPlanInput,
+  nextId: PlannerEventIdFactory,
+  options: {
+    readonly userCell?: GridAnchor
+    readonly palette: MoveVfxPaletteEntry
+    readonly damaging: boolean
+  },
+): MoveAnimationEvent[] => {
+  const targetIds = selectedAreaTargetIdsForInput(input)
+  if (targetIds.length === 0) return []
+
+  const timing = timingForInput(input)
+  const followUpBaseOffsetMs = timing.impactDelayMs || AREA_TARGET_FOLLOW_UP_BASE_OFFSET_MS
+  const offsets = createMoveAnimationTargetStartOffsets(
+    targetIds.map((targetId) => ({
+      targetId,
+      position: positionForToken(targetForId(input, targetId)),
+    })),
+    {
+      order: MOVE_ANIMATION_TARGET_SEQUENCE_ORDER.distanceFromOrigin,
+      origin: options.userCell,
+      baseOffsetMs: followUpBaseOffsetMs,
+    },
+  )
+
+  const targetEvents = targetIds.map((targetId): MoveAnimationEvent => {
+    const target = targetForId(input, targetId)
+    const targetCell = positionForToken(target)
+    const outcome = explicitTargetOutcomeForId(input, targetId)
+    const hit = outcome?.hit ?? true
+
+    if (!hit) {
+      return createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+        targetId,
+        targetCell,
+      }, moveVfxColorForTone(MOVE_VFX_TONE.miss))
+    }
+
+    return createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+      targetId,
+      targetCell,
+      ...(options.damaging ? { shake: true } : {}),
+    }, options.palette)
+  })
+
+  return [...applyMoveAnimationTargetStartOffsets(targetEvents, offsets, { mode: 'replace' })]
+}
+
 const planAreaMoveAnimations = (
   input: MoveAnimationAreaPlanInput,
   nextId: PlannerEventIdFactory,
@@ -876,7 +952,8 @@ const planAreaMoveAnimations = (
   const userCell = positionForToken(user)
   const areaCells = gridAnchorsOrEmpty(input.areaCells)
   const semanticIntent = semanticIntentForScript(input.script)
-  const palette = scriptHasDamageVisual(input.script)
+  const damaging = scriptHasDamageVisual(input.script)
+  const palette = damaging
     ? damagingPaletteForScript(input.script)
     : paletteForSemanticIntent(semanticIntent)
   const events: MoveAnimationEvent[] = []
@@ -907,6 +984,12 @@ const planAreaMoveAnimations = (
     } else if (sweepKind === MOVE_VFX_KIND.coneSweep) {
       events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.coneSweep, MOVE_VFX_DEFAULT_DURATIONS_MS.long, sweepMetadata, palette))
     }
+
+    events.push(...planAreaTargetFollowUpAnimations(input, nextId, {
+      userCell,
+      palette,
+      damaging,
+    }))
   }
 
   if (events.length > 0) return events

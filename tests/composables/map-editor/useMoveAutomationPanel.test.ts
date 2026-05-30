@@ -1436,6 +1436,9 @@ describe('useMoveAutomationPanel', () => {
       movelist: [{ name: 'Growl' }],
     } as CharacterSheet
     const calls: string[] = []
+    const enqueueMoveAnimations = vi.fn((events: readonly MoveAnimationEvent[]) => {
+      calls.push(`vfx:${events.length}`)
+    })
     const panel = useMoveAutomationPanel({
       map,
       spawnedPokemon: computed(() => [
@@ -1452,6 +1455,8 @@ describe('useMoveAutomationPanel', () => {
       modifyConditions: () => undefined,
       applyMoveFieldEffect: () => undefined,
       placeHazard: () => undefined,
+      enqueueMoveAnimations,
+      now: () => 14000,
     })
 
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Growl' })
@@ -1480,7 +1485,30 @@ describe('useMoveAutomationPanel', () => {
       random.mockRestore()
     }
 
-    expect(calls).toEqual(['stages:foe-token:-1'])
+    expect(calls).toEqual(['vfx:3', 'stages:foe-token:-1'])
+    expect(enqueueMoveAnimations).toHaveBeenCalledTimes(1)
+    const events = enqueueMoveAnimations.mock.calls[0]?.[0] ?? []
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.radialBurst,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.areaPulse,
+        moveName: 'Growl',
+        userId: 'user-token',
+        createdAtMs: 14000,
+        areaCells: expect.any(Array),
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'foe-token',
+        targetCell: { x: 4, y: 0, z: 3 },
+        startOffsetMs: 180,
+      }),
+    ]))
+    expect(events.some((event) => 'targetId' in event && event.targetId === 'ally-token')).toBe(false)
     expect(panel.moveAutomationTargeting.value).toBeNull()
     expect(map.value.metadata?.moveLog).toMatchObject([
       { moveName: 'Growl', scriptKind: 'explicit' },

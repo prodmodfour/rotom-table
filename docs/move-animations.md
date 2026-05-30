@@ -78,7 +78,7 @@ Self-targeting or immediately resolving moves should not require a fake target j
 
 ### Area moves
 
-Area moves should keep the existing map-native area confirmation workflow. After confirmation, affected cells should receive an area pulse or directional sweep, and affected tokens may receive follow-up target flashes or semantic effects. The VFX layer should not imply that excluded or unaffected targets were hit unless the planner intentionally marks them as affected.
+Area moves should keep the existing map-native area confirmation workflow. After confirmation, affected cells should receive an area pulse or directional sweep, and affected tokens may receive staggered follow-up target flashes, miss puffs, or later semantic effects. The VFX layer should not imply that excluded or unaffected targets were hit unless the planner intentionally marks them as affected.
 
 ### Movement-like outcomes
 
@@ -318,7 +318,7 @@ Current classifications are intentionally broad:
 - self or immediate moves choose a healing pulse, buff/debuff particles, status cloud, or neutral self pulse from script suggestions and damage class;
 - single-target damaging melee moves produce a melee lunge plus type-coloured target flash on hits;
 - single-target damaging ranged moves choose a projectile, beam, or arc from range/keyword/area-template hints, then add type-coloured impact, neutral miss puff, and type-coloured crit accent events as outcome data requires;
-- confirmed area moves produce an area pulse, with line and cone area templates adding matching sweep events;
+- confirmed area moves produce an area pulse, with burst/blast templates adding a radial burst, line/cone templates adding matching sweep events, and selected affected targets receiving bounded staggered target flashes or miss puffs;
 - unusual scripts with enough user context fall back to a neutral self pulse instead of throwing.
 
 Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so future primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, and miss effects without re-reading move automation rules. Critical-hit events carry the damaging move palette so the renderer can layer that type colour with its semantic crit accent. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.
@@ -432,6 +432,12 @@ Launch events start when the roll feedback begins, while target flashes, miss pu
 Single-target moves that bypass accuracy rolls now plan and enqueue generic VFX after their direct target transaction is created and before that transaction is applied. The planner receives the user, selected target, script, transaction, and a confirmed hit-like target outcome, so cannot-miss damaging moves get the normal launch plus target-flash impact while no artificial roll-feedback state is introduced.
 
 This branch remains best-effort and visual-only like the accuracy-roll path: planning/enqueue failures are logged without blocking damage, conditions, combat stages, move logs, permissions, persistence, or scheduler ownership. The order is intentionally VFX enqueue first and mechanics application second for direct no-feedback resolutions, but the existing move automation transaction remains the only source of gameplay changes.
+
+### Confirmed area move integration for VFX-059
+
+Confirmed area moves now plan and enqueue generic VFX inside `confirmMoveAutomationArea()` after tracked move usage succeeds and after `resolveInstantAreaMoveAutomation()` returns its transaction. The planner receives the user, selected target snapshots and ids, excluded Friendly target ids, confirmed area cells, area direction, optional pass destination, script, transaction, and distilled per-target hit/miss outcomes.
+
+Area plans enqueue the existing cell pulse/radial/sweep events plus bounded staggered target follow-ups for selected affected tokens. Hits receive a target flash, misses receive the neutral miss puff, and excluded Friendly targets are omitted from `selectedTargetIds`/follow-up planning so they do not get target-impact VFX. Planning/enqueue remains best-effort and visual-only: failures are logged without blocking HP, conditions, combat stages, pass movement, move logs, permissions, persistence, or scheduler ownership.
 
 ### Layer visibility handling for VFX-027
 

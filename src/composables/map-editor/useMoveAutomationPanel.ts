@@ -728,6 +728,40 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const planAndEnqueueAreaMoveAnimations = (options: {
+    script: MoveAutomationScript
+    user: SpawnedPokemon
+    targets: readonly SpawnedPokemon[]
+    selectedTargetIds: readonly string[]
+    excludedTargetIds: readonly string[]
+    areaCells: readonly GridAnchor[]
+    areaDirection?: MoveAutomationAreaDirection
+    passDestination?: GridAnchor
+    transaction: MoveAutomationTransaction
+  }) => {
+    try {
+      enqueuePlannedMoveAnimations(planMoveAnimations({
+        resolution: MOVE_ANIMATION_PLAN_RESOLUTION.area,
+        user: options.user,
+        targets: options.targets,
+        selectedTargetIds: options.selectedTargetIds,
+        script: options.script,
+        transaction: options.transaction,
+        targetOutcomes: options.targets.map((target) => confirmedTargetOutcomeForTransaction(target, options.transaction)),
+        areaCells: options.areaCells,
+        ...(options.areaDirection ? { areaDirection: options.areaDirection } : {}),
+        ...(options.excludedTargetIds.length ? { excludedTargetIds: options.excludedTargetIds } : {}),
+        ...(options.passDestination ? { passDestination: options.passDestination } : {}),
+        timing: {
+          nowMs: moveAnimationNowMs(),
+          animationIdBase: nextMoveAnimationPlanIdBase('area', options.script, options.user),
+        },
+      }))
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('planning', error)
+    }
+  }
+
   const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
     const user = findSpawnedPokemon(id)
     if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
@@ -1287,7 +1321,8 @@ export const useMoveAutomationPanel = ({
     )
     if (!recorded) return
     notifyMoveActionTaken(request)
-    const targetSet = new Set(selectedAreaTargetIds(request))
+    const selectedTargetIds = selectedAreaTargetIds(request)
+    const targetSet = new Set(selectedTargetIds)
     const targets = spawnedPokemon.value.filter((token) => targetSet.has(token.id))
     if (request.direction) faceTokenTowardAreaDirection(user, request.direction)
     else faceTokenTowardNearestTarget(user, targets)
@@ -1302,6 +1337,17 @@ export const useMoveAutomationPanel = ({
     })
     const destinationLogLine = passDestinationLogLine(user, request.passDestination)
     if (destinationLogLine) transaction.logLines.push(destinationLogLine)
+    planAndEnqueueAreaMoveAnimations({
+      script: request.script,
+      user,
+      targets,
+      selectedTargetIds,
+      excludedTargetIds: request.excludedTargetIds,
+      areaCells: request.cells,
+      ...(request.direction ? { areaDirection: request.direction } : {}),
+      ...(request.passDestination ? { passDestination: request.passDestination } : {}),
+      transaction,
+    })
     activeMoveTargeting.value = null
     await applyMoveAutomation(transaction, { updateFacing: !request.direction, script: request.script })
     moveTokenToPassDestination(request.userId, request.passDestination)

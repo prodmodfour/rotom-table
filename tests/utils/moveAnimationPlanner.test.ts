@@ -567,6 +567,56 @@ describe('generic move animation planner', () => {
     expect(blastEvents[1]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Water)
   })
 
+  it('adds staggered target follow-ups for selected area targets without flashing excluded targets', () => {
+    const cells = [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }]
+    const events = planGenericMoveAnimations(areaInput(cells, {
+      targets: [
+        token({ id: 'target-a', species: 'Target A', position: { x: 1, y: 0, z: 0 } }),
+        token({ id: 'target-b', species: 'Target B', position: { x: 2, y: 0, z: 0 } }),
+        token({ id: 'excluded-ally', species: 'Excluded Ally', position: { x: 1, y: 0, z: 1 } }),
+      ],
+      selectedTargetIds: ['target-a', 'target-b', 'excluded-ally'],
+      excludedTargetIds: ['excluded-ally'],
+      targetOutcomes: [
+        { targetId: 'target-a', hit: true },
+        { targetId: 'target-b', hit: false },
+        { targetId: 'excluded-ally', hit: true },
+      ],
+      script: script({
+        moveName: 'Generic Burst Follow-Up',
+        targetMode: 'multi-target',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Electric',
+        areaTemplates: [{ kind: 'burst', size: 2, label: 'Burst 2' }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.radialBurst,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.miss,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'target-a',
+        targetCell: { x: 1, y: 0, z: 0 },
+        shake: true,
+        startOffsetMs: 180,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.miss,
+        targetId: 'target-b',
+        targetCell: { x: 2, y: 0, z: 0 },
+        startOffsetMs: 260,
+      }),
+    ]))
+    expect(events.some((event) => 'targetId' in event && event.targetId === 'excluded-ally')).toBe(false)
+  })
+
   it('no-ops safely when the user token is missing', () => {
     expect(planGenericMoveAnimations(selfInput({ user: null }))).toEqual([])
     expect(planGenericMoveAnimations(baseInput({ user: null }))).toEqual([])
