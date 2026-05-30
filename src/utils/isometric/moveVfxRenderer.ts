@@ -31,6 +31,11 @@ import {
   resolveMoveVfxAnchorPair,
   resolveMoveVfxTokenAnchor,
 } from './moveVfxAnchors'
+import {
+  createMoveVfxRingMaterial,
+  createMoveVfxSolidMaterial,
+  createMoveVfxTranslucentMaterial,
+} from './moveVfxMaterials'
 import { animationProgress, clamp01, easeInOutCubic, easeOutCubic, pulse01 } from './moveVfxTiming'
 import { disposeObject3D } from './resourceDisposal'
 
@@ -530,18 +535,7 @@ const projectileRadiusForRenderObjects = (
   )
 }
 
-const createProjectileMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  toneMapped: false,
-})
+const createProjectileMaterial = createMoveVfxSolidMaterial
 
 const createProjectileMesh = (
   name: string,
@@ -742,19 +736,7 @@ const beamRadiusForRenderObjects = (
   MOVE_VFX_BEAM_MAX_RADIUS,
 )
 
-const createBeamMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createBeamMaterial = createMoveVfxTranslucentMaterial
 
 const createBeamCylinderMesh = (
   name: string,
@@ -767,19 +749,7 @@ const createBeamCylinderMesh = (
   return mesh
 }
 
-const createImpactRingMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createImpactRingMaterial = createMoveVfxRingMaterial
 
 const createImpactRingMesh = (
   name: string,
@@ -905,19 +875,7 @@ const meleeLungeRadiusForRenderObjects = (
   }
 }
 
-const createMeleeLungeMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createMeleeLungeMaterial = createMoveVfxTranslucentMaterial
 
 const createMeleeLungeGhostMesh = (
   material: THREE.MeshBasicMaterial,
@@ -1126,19 +1084,7 @@ const resolveSelfPulseAnchor = (
     : null
 }
 
-const createSelfPulseMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createSelfPulseMaterial = createMoveVfxTranslucentMaterial
 
 const createSelfPulseRingMesh = (
   name: string,
@@ -1289,19 +1235,7 @@ const resolveHealingPulseAnchor = (
     : null
 }
 
-const createHealingMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createHealingMaterial = createMoveVfxTranslucentMaterial
 
 const createHealingRingMesh = (
   name: string,
@@ -1552,19 +1486,7 @@ const resolveBuffDebuffAnchor = (
     : null
 }
 
-const createBuffDebuffMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createBuffDebuffMaterial = createMoveVfxTranslucentMaterial
 
 const createBuffDebuffRingMesh = (
   material: THREE.MeshBasicMaterial,
@@ -1804,19 +1726,7 @@ const resolveStatusCloudAnchor = (
     : null
 }
 
-const createStatusCloudMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createStatusCloudMaterial = createMoveVfxTranslucentMaterial
 
 const createStatusCloudRingMesh = (
   material: THREE.MeshBasicMaterial,
@@ -2093,19 +2003,7 @@ const resolveTargetFlashAnchors = (
   }
 }
 
-const createTargetFlashMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createTargetFlashMaterial = createMoveVfxTranslucentMaterial
 
 const createTargetFlashShellMesh = (
   material: THREE.MeshBasicMaterial,
@@ -2284,19 +2182,7 @@ const areaPulseCellsForEvent = (event: { areaCells?: readonly GridAnchor[] }): G
   Array.isArray(event.areaCells) ? event.areaCells.filter(isFiniteGridAnchor) : []
 )
 
-const createAreaPulseMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createAreaPulseMaterial = createMoveVfxRingMaterial
 
 const createAreaPulseCellsMesh = (
   count: number,
@@ -2670,19 +2556,7 @@ const resolveDashPath = (
   }
 }
 
-const createDashMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createDashMaterial = createMoveVfxTranslucentMaterial
 
 const createDashStreakMesh = (
   material: THREE.MeshBasicMaterial,
@@ -2879,19 +2753,7 @@ const gridAnchorMatches = (left: GridAnchor | null | undefined, right: GridAncho
   && left.z === right.z
 )
 
-const createRadialBurstMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createRadialBurstMaterial = createMoveVfxTranslucentMaterial
 
 const createRadialBurstRingMesh = (
   name: string,
@@ -3127,19 +2989,7 @@ const resolveMissPuffAnchor = (
   return { foot, radius }
 }
 
-const createMissPuffMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createMissPuffMaterial = createMoveVfxTranslucentMaterial
 
 const createMissPuffRingMesh = (
   material: THREE.MeshBasicMaterial,
@@ -3286,19 +3136,7 @@ const resolveCritBurstAnchor = (
   }
 }
 
-const createCritBurstMaterial = (
-  color: THREE.ColorRepresentation,
-  opacity: number,
-): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
-  color,
-  transparent: true,
-  opacity,
-  depthTest: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-  side: THREE.DoubleSide,
-  toneMapped: false,
-})
+const createCritBurstMaterial = createMoveVfxTranslucentMaterial
 
 const createCritBurstRingMesh = (
   name: string,

@@ -537,6 +537,12 @@ Dash VFX deliberately do not move, offset, or mutate the real token render objec
 
 Dash meshes and materials are runtime-only resources owned by the event lifecycle group and disposed through `disposeObject3D()` on completion, event removal, hidden-tab expiry, layer-hidden aging, or map unmount. Scheduler frame time drives reveal, opacity, completion, and reduced-motion handling; no independent RAF/timer loop, persistence, gameplay mutation, permission change, renderer-quality reduction, external asset, or new dependency is introduced.
 
+### Shared material factory for VFX-049
+
+`src/utils/isometric/moveVfxMaterials.ts` centralizes material creation for move VFX primitives. It provides fresh per-call factories for solid mesh cores, translucent overlay meshes, ring/line-style surfaces, future `THREE.Line` materials, and future sprite-like materials. All default to transparent additive styling with `depthTest: true`, `depthWrite: false`, and `toneMapped: false`; ring/translucent helpers default to double-sided rendering while solid projectile-style cores remain front-sided.
+
+The material factory intentionally does not cache or share material instances. Each primitive owns the materials it creates inside its event lifecycle group, so `disposeObject3D()` can dispose geometries and materials once when an effect completes, is removed, expires while hidden, or the map unmounts. Future primitives should import these helpers instead of duplicating low-level `THREE.MeshBasicMaterial`, `THREE.LineBasicMaterial`, or `THREE.SpriteMaterial` configuration, and should document any deliberate override of the default transparency/depth policy.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
