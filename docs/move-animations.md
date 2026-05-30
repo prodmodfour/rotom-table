@@ -430,6 +430,14 @@ Each beam instance owns two transparent additive cylinder meshes: a bright accen
 
 Beam VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
 
+### Target flash primitive for VFX-036
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the target-flash placeholder with a compact target readability primitive. Target flash events resolve the first `targetId`/`targetIds` entry to token foot and body-center anchors, with `targetCell` fallback support when a token render object is unavailable. The anchors are locked when the instance is created so the short flash stays tied to the move-resolution moment if the token moves before the effect completes.
+
+Each target flash instance owns a translucent body shell plus a small footprint ring. Scheduler frame time drives only opacity and scale pulses; multiple target-flash events therefore create independent geometry/materials and can run in the same frame without shared mutable material state. `MoveTargetFlashAnimationEvent.tone` supports `hit`, `heal`/`healing`, `buff`, `debuff`, `status`, and `neutral` styling, with unknown runtime tones falling back to the neutral palette. If no tone is supplied, the renderer uses the event palette so damaging hits can remain type-coloured.
+
+Target flash VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

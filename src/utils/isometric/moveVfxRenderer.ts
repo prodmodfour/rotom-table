@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent } from '~/types/moveAnimation'
-import { DEFAULT_MOVE_VFX_COLOR, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent } from '~/types/moveAnimation'
+import { DEFAULT_MOVE_VFX_COLOR, MOVE_VFX_TONE, moveVfxColorForTone, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import {
   MOVE_VFX_TOKEN_ANCHOR,
@@ -143,6 +143,23 @@ const MOVE_VFX_MELEE_LUNGE_GHOST_RADIUS_MULTIPLIER = 1.45
 const MOVE_VFX_MELEE_LUNGE_GHOST_HEIGHT_MULTIPLIER = 1.9
 const MOVE_VFX_MELEE_LUNGE_STREAK_RADIUS_MULTIPLIER = 0.45
 const MOVE_VFX_MELEE_LUNGE_IMPACT_RADIUS_MULTIPLIER = 2.5
+const MOVE_VFX_TARGET_FLASH_SHELL_NAME = 'move-vfx-target-flash-shell'
+const MOVE_VFX_TARGET_FLASH_RING_NAME = 'move-vfx-target-flash-ring'
+const MOVE_VFX_TARGET_FLASH_SHELL_RENDER_ORDER = 38
+const MOVE_VFX_TARGET_FLASH_RING_RENDER_ORDER = MOVE_VFX_TARGET_FLASH_SHELL_RENDER_ORDER - 1
+const MOVE_VFX_TARGET_FLASH_MIN_RADIUS = 0.38
+const MOVE_VFX_TARGET_FLASH_DEFAULT_RADIUS = 0.62
+const MOVE_VFX_TARGET_FLASH_MAX_RADIUS = 1.45
+const MOVE_VFX_TARGET_FLASH_RADIUS_SCALE = 0.62
+const MOVE_VFX_TARGET_FLASH_MIN_HEIGHT = 0.48
+const MOVE_VFX_TARGET_FLASH_DEFAULT_HEIGHT = 0.72
+const MOVE_VFX_TARGET_FLASH_MAX_HEIGHT = 2.4
+const MOVE_VFX_TARGET_FLASH_HEIGHT_SCALE = 0.52
+const MOVE_VFX_TARGET_FLASH_RING_Y_OFFSET = 0.035
+const MOVE_VFX_TARGET_FLASH_FADE_IN_PROGRESS = 0.14
+const MOVE_VFX_TARGET_FLASH_FADE_OUT_START = 0.68
+const MOVE_VFX_TARGET_FLASH_SHELL_MAX_OPACITY = 0.24
+const MOVE_VFX_TARGET_FLASH_RING_MAX_OPACITY = 0.48
 const MOVE_VFX_WORLD_UP = new THREE.Vector3(0, 1, 0)
 const MOVE_VFX_WORLD_FORWARD = new THREE.Vector3(0, 0, 1)
 
@@ -373,6 +390,10 @@ const firstBeamTargetId = (event: MoveBeamAnimationEvent): string | undefined =>
 )
 
 const firstMeleeLungeTargetId = (event: MoveMeleeLungeAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
+const firstTargetFlashTargetId = (event: MoveTargetFlashAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
 )
 
@@ -694,6 +715,190 @@ const applyMeleeLungeVisualState = (options: {
   options.impactRing.scale.setScalar(options.impactRadius * (0.58 + (impactProgress * 0.88)))
   options.impactRing.material.opacity = impactOpacity
   options.impactRing.visible = impactOpacity > 0.005
+}
+
+type TargetFlashResolvedTone = 'hit'
+  | typeof MOVE_VFX_TONE.healing
+  | typeof MOVE_VFX_TONE.status
+  | typeof MOVE_VFX_TONE.buff
+  | typeof MOVE_VFX_TONE.debuff
+  | typeof MOVE_VFX_TONE.neutral
+
+const normalizeTargetFlashTone = (tone: unknown): TargetFlashResolvedTone => {
+  const normalized = typeof tone === 'string' ? tone.trim().toLowerCase() : ''
+
+  switch (normalized) {
+    case 'hit':
+    case 'damage':
+    case 'damaging':
+      return 'hit'
+    case 'heal':
+    case 'healing':
+      return MOVE_VFX_TONE.healing
+    case 'buff':
+      return MOVE_VFX_TONE.buff
+    case 'debuff':
+      return MOVE_VFX_TONE.debuff
+    case 'status':
+      return MOVE_VFX_TONE.status
+    case 'neutral':
+      return MOVE_VFX_TONE.neutral
+    default:
+      return MOVE_VFX_TONE.neutral
+  }
+}
+
+const targetFlashPaletteForEvent = (event: MoveTargetFlashAnimationEvent): MoveVfxPaletteEntry => {
+  if (event.tone == null) return event.palette ?? DEFAULT_MOVE_VFX_COLOR
+
+  const tone = normalizeTargetFlashTone(event.tone)
+  return tone === 'hit'
+    ? event.palette ?? DEFAULT_MOVE_VFX_COLOR
+    : moveVfxColorForTone(tone)
+}
+
+const targetFlashDimensionsForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): { radius: number, shellHeight: number } => {
+  const footprint = Math.max(
+    finitePositiveNumber(renderObject?.base) ?? 0,
+    finitePositiveNumber(renderObject?.width) ?? 0,
+  )
+  const bodyHeight = Math.max(
+    finitePositiveNumber(renderObject?.height) ?? 0,
+    finitePositiveNumber(renderObject?.clearance) ?? 0,
+  )
+
+  return {
+    radius: footprint > 0
+      ? clampNumber(
+        footprint * MOVE_VFX_TARGET_FLASH_RADIUS_SCALE,
+        MOVE_VFX_TARGET_FLASH_MIN_RADIUS,
+        MOVE_VFX_TARGET_FLASH_MAX_RADIUS,
+      )
+      : MOVE_VFX_TARGET_FLASH_DEFAULT_RADIUS,
+    shellHeight: bodyHeight > 0
+      ? clampNumber(
+        bodyHeight * MOVE_VFX_TARGET_FLASH_HEIGHT_SCALE,
+        MOVE_VFX_TARGET_FLASH_MIN_HEIGHT,
+        MOVE_VFX_TARGET_FLASH_MAX_HEIGHT,
+      )
+      : MOVE_VFX_TARGET_FLASH_DEFAULT_HEIGHT,
+  }
+}
+
+const resolveTargetFlashAnchors = (
+  event: MoveTargetFlashAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): { foot: THREE.Vector3, shellCenter: THREE.Vector3, radius: number, shellHeight: number } | null => {
+  const targetId = firstTargetFlashTargetId(event)
+  const targetRenderObject = targetId ? renderObjects.get(targetId) : undefined
+  const dimensions = targetFlashDimensionsForRenderObject(targetRenderObject)
+  const foot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: targetId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.targetCell,
+  })
+
+  if (!foot) return null
+
+  const tokenCenter = targetRenderObject
+    ? resolveMoveVfxTokenAnchor({
+      renderObjects,
+      tokenId: targetId,
+      anchor: MOVE_VFX_TOKEN_ANCHOR.center,
+    })
+    : null
+  const shellCenter = tokenCenter ?? foot.clone().add(new THREE.Vector3(0, dimensions.shellHeight, 0))
+
+  return {
+    foot: foot.clone(),
+    shellCenter: shellCenter.clone(),
+    ...dimensions,
+  }
+}
+
+const createTargetFlashMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createTargetFlashShellMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 10), material)
+  mesh.name = MOVE_VFX_TARGET_FLASH_SHELL_NAME
+  mesh.renderOrder = MOVE_VFX_TARGET_FLASH_SHELL_RENDER_ORDER
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createTargetFlashRingMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 40), material)
+  mesh.name = MOVE_VFX_TARGET_FLASH_RING_NAME
+  mesh.renderOrder = MOVE_VFX_TARGET_FLASH_RING_RENDER_ORDER
+  mesh.rotation.x = -Math.PI / 2
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const targetFlashOpacityMultiplier = (progress: number): number => {
+  const fadeIn = Math.max(0.32, clamp01(progress / MOVE_VFX_TARGET_FLASH_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_TARGET_FLASH_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_TARGET_FLASH_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const applyTargetFlashVisualState = (options: {
+  group: THREE.Group
+  shell: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  foot: THREE.Vector3
+  shellCenter: THREE.Vector3
+  radius: number
+  shellHeight: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacityMultiplier = targetFlashOpacityMultiplier(progress)
+  const shellRadiusScale = options.radius * (0.86 + (expansion * 0.28) + (pulse * 0.12))
+  const shellOpacity = MOVE_VFX_TARGET_FLASH_SHELL_MAX_OPACITY
+    * opacityMultiplier
+    * (0.65 + (pulse * 0.35))
+  const ringOpacity = MOVE_VFX_TARGET_FLASH_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.45))
+
+  options.group.position.copy(options.foot)
+  options.shell.position.copy(options.shellCenter).sub(options.foot)
+  options.shell.scale.set(
+    shellRadiusScale,
+    options.shellHeight * (0.92 + (pulse * 0.1)),
+    shellRadiusScale,
+  )
+  options.shell.material.opacity = shellOpacity
+  options.shell.visible = shellOpacity > 0.005
+
+  options.ring.position.set(0, MOVE_VFX_TARGET_FLASH_RING_Y_OFFSET, 0)
+  options.ring.scale.setScalar(options.radius * (0.72 + (expansion * 0.68)))
+  options.ring.material.opacity = ringOpacity
+  options.ring.visible = ringOpacity > 0.005
 }
 
 /**
@@ -1083,7 +1288,68 @@ const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
 }
 
 const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
-const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+
+const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveTargetFlashAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchors = resolveTargetFlashAnchors(event, renderObjects)
+
+  if (!anchors) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette = targetFlashPaletteForEvent(event)
+  const ring = createTargetFlashRingMesh(createTargetFlashMaterial(palette.accent, 0))
+  const shell = createTargetFlashShellMesh(createTargetFlashMaterial(palette.primary, 0))
+
+  // Target flashes lock their token/cell anchors at creation time so the brief
+  // readability pulse stays attached to the resolution moment rather than
+  // stretching if normal token movement updates before the effect completes.
+  context.group.add(ring, shell)
+  applyTargetFlashVisualState({
+    group: context.group,
+    ring,
+    shell,
+    ...anchors,
+    progress: 0,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyTargetFlashVisualState({
+        group: context.group,
+        ring,
+        shell,
+        ...anchors,
+        progress: progress.progress,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const createAreaPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createLineSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createConeSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance

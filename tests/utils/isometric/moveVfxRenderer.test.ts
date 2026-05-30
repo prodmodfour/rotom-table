@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
-import type { MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_TONE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 
@@ -70,6 +70,23 @@ const meleeLungeEvent = (overrides: Partial<MoveMeleeLungeAnimationEvent> = {}):
   createdAtMs: 100,
   durationMs: 1000,
   kind: MOVE_VFX_KIND.meleeLunge,
+  targetId: 'target-1',
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const targetFlashEvent = (
+  overrides: Partial<Omit<MoveTargetFlashAnimationEvent, 'palette' | 'tone'>> & {
+    palette?: MoveVfxPaletteEntry | undefined
+    tone?: unknown
+  } = {},
+): MoveAnimationEvent => ({
+  id: 'move-vfx-target-flash',
+  moveName: 'Thunder Wave',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 240,
+  kind: MOVE_VFX_KIND.targetFlash,
   targetId: 'target-1',
   palette: projectilePalette,
   ...overrides,
@@ -155,6 +172,22 @@ const meleeLungeImpactRingNamed = (
   group: THREE.Object3D,
 ): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
   const mesh = group.children.find((child) => child.name === 'move-vfx-melee-lunge-impact-ring')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const targetFlashShellNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-target-flash-shell')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+}
+
+const targetFlashRingNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-target-flash-ring')
   expect(mesh).toBeInstanceOf(THREE.Mesh)
   return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
 }
@@ -830,6 +863,128 @@ describe('move VFX renderer shell', () => {
     expect(user.currentCenter.equals(userPlacement)).toBe(true)
     for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
     for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('renders target flash events as per-target palette-coloured shells and footprint rings', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([[target.id, target]])
+
+    renderer.sync([targetFlashEvent({ tone: 'hit' })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const ring = targetFlashRingNamed(instanceGroup)
+    const shell = targetFlashShellNamed(instanceGroup)
+    expect(instanceGroup.children).toHaveLength(2)
+    expectVectorClose(instanceGroup.position, [4, 0, 0])
+    expectVectorClose(shell.position, [0, 1, 0])
+    expectVectorClose(ring.position, [0, 0.035, 0])
+    expect(shell.material.color.getHexString()).toBe('123456')
+    expect(ring.material.color.getHexString()).toBe('ffeeaa')
+    expect(shell.material.transparent).toBe(true)
+    expect(shell.material.depthWrite).toBe(false)
+    expect(shell.renderOrder).toBe(38)
+    expect(ring.renderOrder).toBe(37)
+    expect(shell.visible).toBe(true)
+    expect(ring.visible).toBe(true)
+    expect(shell.scale.x).toBeGreaterThan(1)
+    expect(ring.scale.x).toBeGreaterThan(0.8)
+
+    const initialShellScale = shell.scale.x
+    const initialRingOpacity = ring.material.opacity
+    const geometryDisposeSpies = [ring, shell].map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = [ring, shell].map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    renderer.animate({ frameNowMs: 220, delta: 0.016, renderObjects })
+
+    expect(shell.scale.x).toBeGreaterThan(initialShellScale)
+    expect(ring.material.opacity).toBeGreaterThan(initialRingOpacity)
+
+    target.currentCenter.set(12, 0, 0)
+    renderer.animate({ frameNowMs: 300, delta: 0.016, renderObjects })
+
+    expectVectorClose(instanceGroup.position, [4, 0, 0])
+
+    renderer.animate({ frameNowMs: 340, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses semantic target flash tones and independent materials for simultaneous flashes', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const firstTarget = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(2, 0, 0) })
+    const secondTarget = makeRenderObject({ id: 'target-2', currentCenter: new THREE.Vector3(6, 0, 1) })
+    const renderObjects = new Map([
+      [firstTarget.id, firstTarget],
+      [secondTarget.id, secondTarget],
+    ])
+
+    renderer.sync([
+      targetFlashEvent({ id: 'move-vfx-target-flash-heal', palette: undefined, tone: 'heal', targetId: 'target-1' }),
+      targetFlashEvent({ id: 'move-vfx-target-flash-unknown', palette: undefined, tone: 'mystery', targetId: 'target-2' }),
+    ], { renderObjects })
+
+    const healGroup = renderer.group.children[0]
+    const unknownGroup = renderer.group.children[1]
+    const healShell = targetFlashShellNamed(healGroup)
+    const healRing = targetFlashRingNamed(healGroup)
+    const unknownShell = targetFlashShellNamed(unknownGroup)
+    const unknownRing = targetFlashRingNamed(unknownGroup)
+
+    expect(renderer.activeCount()).toBe(2)
+    expectVectorClose(healGroup.position, [2, 0, 0])
+    expectVectorClose(unknownGroup.position, [6, 0, 1])
+    expect(healShell.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.primary.slice(1))
+    expect(healRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.accent.slice(1))
+    expect(unknownShell.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.neutral.primary.slice(1))
+    expect(unknownRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.neutral.accent.slice(1))
+    expect(healShell.material).not.toBe(unknownShell.material)
+    expect(healRing.material).not.toBe(unknownRing.material)
+  })
+
+  it('uses grid-cell fallback anchors for target flashes when the target token is missing', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      targetFlashEvent({
+        targetId: 'missing-target',
+        targetCell: { x: 5, y: 0, z: 2 },
+        palette: undefined,
+        tone: 'status',
+      }),
+    ], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    const shell = targetFlashShellNamed(instanceGroup)
+    const ring = targetFlashRingNamed(instanceGroup)
+
+    expect(instanceGroup.children).toHaveLength(2)
+    expectVectorClose(instanceGroup.position, [5.5, 0, 2.5])
+    expectVectorClose(shell.position, [0, 0.72, 0])
+    expect(ring.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.status.accent.slice(1))
+  })
+
+  it('falls back to a no-op target flash when no target anchor can be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([targetFlashEvent({ targetId: 'missing-target' })], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 340, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
   })
 
   it('does not duplicate a lifecycle instance when the same event id is synced repeatedly', () => {

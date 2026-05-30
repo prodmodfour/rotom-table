@@ -1,7 +1,7 @@
 import type { GridAnchor } from './map'
 import { MOVE_VFX_KIND } from './moveVfx'
 import type { MoveVfxKind } from './moveVfx'
-import type { MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
+import type { MoveVfxPaletteEntry, MoveVfxTone } from '~/utils/moveAnimationPalette'
 
 export { MOVE_VFX_KIND } from './moveVfx'
 export type { MoveAnimationEffectKind, MoveVfxKind } from './moveVfx'
@@ -115,9 +115,14 @@ export interface MoveSelfPulseAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.selfPulse>,
     MoveAnimationOriginMetadata {}
 
+export type MoveTargetFlashTone = 'hit' | 'heal' | MoveVfxTone
+
 export interface MoveTargetFlashAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.targetFlash>,
-    MoveAnimationTargetMetadata {}
+    MoveAnimationTargetMetadata {
+  /** Semantic colour hint for generic target flashes; unknown runtime tones fall back to neutral. */
+  tone?: MoveTargetFlashTone
+}
 
 export interface MoveAreaPulseAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.areaPulse>,
