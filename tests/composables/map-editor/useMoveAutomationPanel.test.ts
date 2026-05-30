@@ -855,6 +855,120 @@ describe('useMoveAutomationPanel', () => {
     expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Swords Dance', scriptKind: 'explicit' }])
   })
 
+  it('enqueues hit, miss, and crit VFX for accuracy-based single-target roll feedback', async () => {
+    vi.useFakeTimers()
+    const scenarios: Array<{
+      label: string
+      random: number
+      expectedFollowUps: Array<MoveAnimationEvent['kind']>
+      rejectedFollowUps: Array<MoveAnimationEvent['kind']>
+    }> = [
+      {
+        label: 'hit',
+        random: 0.5,
+        expectedFollowUps: [MOVE_VFX_KIND.targetFlash],
+        rejectedFollowUps: [MOVE_VFX_KIND.miss, MOVE_VFX_KIND.crit],
+      },
+      {
+        label: 'miss',
+        random: 0,
+        expectedFollowUps: [MOVE_VFX_KIND.miss],
+        rejectedFollowUps: [MOVE_VFX_KIND.targetFlash, MOVE_VFX_KIND.crit],
+      },
+      {
+        label: 'crit',
+        random: 0.99,
+        expectedFollowUps: [MOVE_VFX_KIND.targetFlash, MOVE_VFX_KIND.crit],
+        rejectedFollowUps: [MOVE_VFX_KIND.miss],
+      },
+    ]
+
+    try {
+      for (const scenario of scenarios) {
+        const map = ref({
+          ...mapFixture(),
+          placements: [
+            { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } },
+            { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 0 } },
+          ],
+        })
+        const pokemonSheet = {
+          slug: 'attacker',
+          nickname: 'Attacker',
+          species: 'Charmander',
+          level: 5,
+          movelist: [{ name: 'Ember' }],
+        } as CharacterSheet
+        const hpCalls: MoveAutomationTransaction['hpUpdates'] = []
+        const enqueueMoveAnimations = vi.fn((_events: readonly MoveAnimationEvent[]) => undefined)
+        const panel = useMoveAutomationPanel({
+          map,
+          spawnedPokemon: computed(() => [
+            spawned({ id: 'user-token', species: 'Attacker', sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } }),
+            spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 40, maxHp: 40, defenderTypes: ['Grass'], position: { x: 2, y: 0, z: 0 } }),
+          ]),
+          pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+          trainerBySlug: ref(new Map<string, TrainerSheet>()),
+          canEditMap: computed(() => false),
+          canControlPlacement: (id) => id === 'user-token',
+          modifyHp: (update) => { hpCalls.push(update) },
+          modifyCombatStages: () => undefined,
+          modifyConditions: () => undefined,
+          applyMoveFieldEffect: () => undefined,
+          placeHazard: () => undefined,
+          enqueueMoveAnimations,
+          now: () => 9000,
+        })
+        const random = vi.spyOn(Math, 'random').mockReturnValue(scenario.random)
+
+        try {
+          panel.openMoveAutomation({ id: 'user-token', moveName: 'Ember' })
+          await panel.selectMoveAutomationTarget('target-token')
+        } finally {
+          random.mockRestore()
+        }
+
+        expect(enqueueMoveAnimations, scenario.label).toHaveBeenCalledTimes(1)
+        const events = enqueueMoveAnimations.mock.calls[0]?.[0] ?? []
+        const eventKinds = events.map((event) => event.kind)
+        expect([
+          MOVE_VFX_KIND.projectile,
+          MOVE_VFX_KIND.beam,
+          MOVE_VFX_KIND.arc,
+          MOVE_VFX_KIND.meleeLunge,
+        ], scenario.label).toContain(events[0]?.kind)
+        for (const expectedKind of scenario.expectedFollowUps) {
+          expect(eventKinds, scenario.label).toContain(expectedKind)
+        }
+        for (const rejectedKind of scenario.rejectedFollowUps) {
+          expect(eventKinds, scenario.label).not.toContain(rejectedKind)
+        }
+        expect(events[0], scenario.label).toMatchObject({
+          moveName: 'Ember',
+          userId: 'user-token',
+          createdAtMs: 9000,
+          targetId: 'target-token',
+          originCell: { x: 0, y: 0, z: 0 },
+          targetCell: { x: 2, y: 0, z: 0 },
+        })
+        expect(events[0]?.startOffsetMs, scenario.label).toBeUndefined()
+        for (const event of events.slice(1)) {
+          expect(event.startOffsetMs, `${scenario.label}:${event.kind}`).toBe(MOVE_FEEDBACK_OUTCOME_MS)
+        }
+
+        if (scenario.label === 'hit') {
+          expect(hpCalls).toEqual([])
+          await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_EFFECTIVE_FINAL_MS)
+          expect(hpCalls.length).toBeGreaterThan(0)
+        }
+
+        vi.clearAllTimers()
+      }
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('still applies self-resolving move mechanics when VFX enqueue fails', async () => {
     const map = ref(mapFixture())
     const pokemonSheet = {

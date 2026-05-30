@@ -31,6 +31,7 @@ import {
 import {
   MOVE_ANIMATION_PLAN_RESOLUTION,
   planMoveAnimations,
+  type MoveAnimationPlanTargetOutcome,
 } from '~/utils/moveAnimationPlanner'
 import { moveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import {
@@ -164,6 +165,7 @@ const HIT_ROLL_VISIBLE_MS = 850
 const HIT_RESULT_VISIBLE_MS = 600
 const EFFECTIVENESS_VISIBLE_MS = 700
 const FINAL_RESULT_VISIBLE_MS = 1100
+const SINGLE_TARGET_MOVE_VFX_IMPACT_DELAY_MS = D20_ROLL_ANIMATION_MS + HIT_ROLL_VISIBLE_MS
 
 interface ActiveSingleTargetingRequest {
   kind: 'single-target'
@@ -643,6 +645,46 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const targetOutcomesForFeedback = (feedback: MoveAutomationFeedbackState): readonly MoveAnimationPlanTargetOutcome[] => [{
+    targetId: feedback.targetId,
+    hit: feedback.hit,
+    crit: feedback.crit,
+    damageResolved: feedback.damageResolved,
+    damageLoss: feedback.damageLoss,
+    effectiveness: feedback.effectiveness,
+    conditions: feedback.conditions
+      .filter((condition) => condition.applied)
+      .map((condition) => condition.condition),
+  }]
+
+  const planAndEnqueueSingleTargetMoveAnimations = (options: {
+    script: MoveAutomationScript
+    user: SpawnedPokemon
+    target: SpawnedPokemon
+    feedback: MoveAutomationFeedbackState
+    transaction: MoveAutomationTransaction
+  }) => {
+    try {
+      enqueuePlannedMoveAnimations(planMoveAnimations({
+        resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
+        user: options.user,
+        targets: [options.target],
+        selectedTargetIds: [options.target.id],
+        script: options.script,
+        feedback: options.feedback,
+        targetOutcomes: targetOutcomesForFeedback(options.feedback),
+        transaction: options.transaction,
+        timing: {
+          nowMs: moveAnimationNowMs(),
+          animationIdBase: nextMoveAnimationPlanIdBase('single-target', options.script, options.user),
+          impactDelayMs: SINGLE_TARGET_MOVE_VFX_IMPACT_DELAY_MS,
+        },
+      }))
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('planning', error)
+    }
+  }
+
   const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
     const user = findSpawnedPokemon(id)
     if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
@@ -1108,6 +1150,13 @@ export const useMoveAutomationPanel = ({
     })
     prependTransactionLogLine(result.transaction, options.logLine)
     activeMoveTargeting.value = null
+    planAndEnqueueSingleTargetMoveAnimations({
+      script: request.script,
+      user,
+      target,
+      feedback: result.feedback,
+      transaction: result.transaction,
+    })
     showMoveAutomationResolution(result.feedback, result.transaction, { script: request.script })
     return true
   }

@@ -387,6 +387,12 @@ const createPlannerEvent = <K extends MoveVfxKind>(
   ...extras,
 } as MoveAnimationEventByKind[K])
 
+const startOffsetMetadata = (startOffsetMs: number | undefined): { readonly startOffsetMs?: number } => (
+  typeof startOffsetMs === 'number' && Number.isFinite(startOffsetMs) && startOffsetMs > 0
+    ? { startOffsetMs }
+    : {}
+)
+
 /**
  * VFX-017 fallback policy:
  * - if the user/source token is missing, return an empty plan because there is
@@ -740,11 +746,13 @@ const planTargetSemanticAnimations = (
   const targetCell = positionForToken(target)
   const semanticIntent = semanticIntentForScript(input.script, 'target')
   const palette = paletteForSemanticIntent(semanticIntent)
+  const impactStartOffset = startOffsetMetadata(timingForInput(input).impactDelayMs)
 
   if (semanticIntent.kind === 'healing') {
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.healing, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
       targetId,
       targetCell,
+      ...impactStartOffset,
     }, palette)]
   }
 
@@ -754,6 +762,7 @@ const planTargetSemanticAnimations = (
       targetCell,
       tone: semanticIntent.direction,
       direction: semanticIntent.direction,
+      ...impactStartOffset,
     }, palette)]
   }
 
@@ -763,12 +772,14 @@ const planTargetSemanticAnimations = (
       targetId,
       targetCell,
       ...(conditionNames.length ? { conditionNames } : {}),
+      ...impactStartOffset,
     }, palette)]
   }
 
   return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
     targetId,
     targetCell,
+    ...impactStartOffset,
   }, palette)]
 }
 
@@ -787,15 +798,27 @@ const planSingleTargetMoveAnimations = (
     }, moveVfxColorForTone(MOVE_VFX_TONE.neutral))]
   }
 
-  if (!scriptHasDamageVisual(input.script)) {
-    return planTargetSemanticAnimations(input, nextId, targetId)
-  }
-
   const target = targetForId(input, targetId)
   const targetCell = positionForToken(target)
   const outcome = targetOutcomeForId(input, targetId)
   const hit = outcome?.hit ?? true
   const crit = outcome?.crit ?? false
+  const timing = timingForInput(input)
+  const launchStartOffset = startOffsetMetadata(timing.baseDelayMs)
+  const impactStartOffset = startOffsetMetadata(timing.impactDelayMs)
+
+  if (!scriptHasDamageVisual(input.script)) {
+    if (!hit) {
+      return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+        targetId,
+        targetCell,
+        ...impactStartOffset,
+      }, moveVfxColorForTone(MOVE_VFX_TONE.miss))]
+    }
+
+    return planTargetSemanticAnimations(input, nextId, targetId)
+  }
+
   const palette = damagingPaletteForScript(input.script)
   const events: MoveAnimationEvent[] = []
 
@@ -804,6 +827,7 @@ const planSingleTargetMoveAnimations = (
       originCell: userCell,
       targetId,
       targetCell,
+      ...launchStartOffset,
     }, palette))
   } else {
     const launchKind = rangedLaunchKindForScript(input.script)
@@ -811,6 +835,7 @@ const planSingleTargetMoveAnimations = (
       originCell: userCell,
       targetId,
       targetCell,
+      ...launchStartOffset,
     }, palette))
   }
 
@@ -818,6 +843,7 @@ const planSingleTargetMoveAnimations = (
     events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
       targetId,
       targetCell,
+      ...impactStartOffset,
     }, moveVfxColorForTone(MOVE_VFX_TONE.miss)))
     return events
   }
@@ -826,12 +852,14 @@ const planSingleTargetMoveAnimations = (
     targetId,
     targetCell,
     shake: true,
+    ...impactStartOffset,
   }, palette))
 
   if (crit) {
     events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.crit, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
       targetId,
       targetCell,
+      ...impactStartOffset,
     }, palette))
   }
 

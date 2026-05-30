@@ -383,6 +383,61 @@ describe('generic move animation planner', () => {
     })
   })
 
+  it('applies caller timing offsets to launch and accuracy outcome follow-up events', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Timed Accuracy Hit',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Fire',
+        range: 'Range 6, 1 Target',
+      }),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+      timing: {
+        nowMs: 1234,
+        animationIdBase: 'timed-plan',
+        baseDelayMs: 120,
+        impactDelayMs: 1500,
+      },
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(events[0]).toMatchObject({ startOffsetMs: 120 })
+    expect(events[1]).toMatchObject({ startOffsetMs: 1500 })
+  })
+
+  it('uses miss puff instead of status follow-up for missed non-damaging accuracy outcomes', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Status Miss',
+        requiresAccuracy: true,
+        damageClass: 'Status',
+        range: 'Range 6, 1 Target',
+        conditionSuggestions: [{ recipient: 'target', condition: 'Burned', label: 'Burned' }],
+      }),
+      targetOutcomes: [{ targetId: 'target-token', hit: false }],
+      timing: {
+        nowMs: 1234,
+        animationIdBase: 'status-miss-plan',
+        impactDelayMs: 1500,
+      },
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.miss,
+    ])
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.miss,
+      targetId: 'target-token',
+      startOffsetMs: 1500,
+      palette: MOVE_VFX_TONE_COLORS.miss,
+    })
+  })
+
   it('adds type-coloured crit emphasis only for critical hit outcomes', () => {
     const criticalEvents = planGenericMoveAnimations(baseInput({
       script: script({

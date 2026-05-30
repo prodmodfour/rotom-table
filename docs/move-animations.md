@@ -421,6 +421,12 @@ Self or immediate moves that resolve inside `beginSeamlessMoveTargeting()` now p
 
 This integration remains best-effort and visual-only. Planning or enqueue failures are caught and logged, and the move transaction still applies through the existing automation path. The panel still does not persist VFX events, change mechanics, add renderer loops, or import renderer/queue internals; it only calls the renderer-agnostic enqueue sink provided by the map page.
 
+### Accuracy-roll single-target move integration for VFX-057
+
+Single-target moves that resolve through `resolveInstantMoveAutomation()` now plan and enqueue generic VFX immediately after the roll feedback and transaction are available. The planner input includes the user, selected target, script, transaction, feedback snapshot, and distilled target outcome so hit, miss, and crit visuals reflect the same automation result shown by the existing roll-feedback overlay.
+
+Launch events start when the roll feedback begins, while target flashes, miss puffs, and crit bursts use a transient `startOffsetMs` aligned with the feedback outcome phase. Enqueue/planning remains best-effort and visual-only: failures are logged without blocking feedback timers, transaction application, logs, HP/status/combat-stage updates, permissions, persistence, or renderer scheduling.
+
 ### Layer visibility handling for VFX-027
 
 Move VFX follow the resolved token layer. `src/utils/isometric/layerVisibility.ts` exposes `resolveMoveVfxLayerVisibility(layers)`, and `src/components/IsometricGrid.client.vue` passes that result into `moveVfxRenderer.sync(...)` and each scheduled animation frame. The policy is intentionally conservative for this basic phase: hiding tokens also hides token-anchored VFX and area-only move confirmations so VFX cannot reveal or imply action around hidden tokens.
