@@ -1722,18 +1722,18 @@ describe('useMoveAutomationPanel', () => {
     })
     expect(events[1]).toMatchObject({
       kind: MOVE_VFX_KIND.areaPulse,
-      startOffsetMs: 120,
+      startOffsetMs: 100,
     })
     expect(events).toEqual(expect.arrayContaining([
       expect.objectContaining({
         kind: MOVE_VFX_KIND.targetFlash,
         targetId: 'first-token',
-        startOffsetMs: 260,
+        startOffsetMs: 220,
       }),
       expect.objectContaining({
         kind: MOVE_VFX_KIND.targetFlash,
         targetId: 'second-token',
-        startOffsetMs: 340,
+        startOffsetMs: 280,
       }),
     ]))
     expect(map.value.placements.find((placement) => placement.id === 'user-token')?.position).toEqual({ x: 4, y: 0, z: 1 })
@@ -1834,7 +1834,7 @@ describe('useMoveAutomationPanel', () => {
         targetCell: { x: 4, y: 0, z: 3 },
         tone: 'debuff',
         direction: 'debuff',
-        startOffsetMs: 180,
+        startOffsetMs: 140,
       }),
     ]))
     expect(events.some((event) => 'targetId' in event && event.targetId === 'ally-token')).toBe(false)

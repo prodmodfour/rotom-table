@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
 import {
   MOVE_ANIMATION_TARGET_SEQUENCE_ORDER,
+  MOVE_ANIMATION_TARGET_STAGGER_MAX_TOTAL_MS,
+  MOVE_ANIMATION_TARGET_STAGGER_STEP_MS,
   applyMoveAnimationTargetStartOffsets,
   createMoveAnimationTargetStartOffsets,
   hasMoveAnimationEventStarted,
@@ -23,6 +25,11 @@ const targetFlashEvent = (
 } as MoveAnimationEvent)
 
 describe('move animation sequencing helpers', () => {
+  it('exports table-snappy default target stagger constants', () => {
+    expect(MOVE_ANIMATION_TARGET_STAGGER_STEP_MS).toBe(60)
+    expect(MOVE_ANIMATION_TARGET_STAGGER_MAX_TOTAL_MS).toBe(240)
+  })
+
   it('preserves target order while capping total stagger duration', () => {
     const offsets = createMoveAnimationTargetStartOffsets([
       { targetId: 'target-a' },

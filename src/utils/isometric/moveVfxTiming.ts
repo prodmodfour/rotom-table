@@ -1,12 +1,12 @@
 export const MOVE_VFX_DEFAULT_DURATIONS_MS = {
   /** Brief flashes, impact rings, miss puffs, and crit accents. */
-  quick: 240,
+  quick: 220,
   /** Default travel/pulse tier for projectiles, beams, self auras, and area pulses. */
-  normal: 560,
-  /** Longer combined or directional effects that still settle quickly at the table. */
-  long: 960,
-  /** Maximum default lifetime for effects that need a short visual afterglow. */
-  linger: 1200,
+  normal: 500,
+  /** Longer combined or directional effects tuned to settle within a table-snappy second. */
+  long: 840,
+  /** Maximum default lifetime for rare effects that need a short visual afterglow. */
+  linger: 1100,
 } as const
 
 export type MoveVfxDurationTier = keyof typeof MOVE_VFX_DEFAULT_DURATIONS_MS

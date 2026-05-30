@@ -46,8 +46,8 @@ export interface ApplyMoveAnimationTargetStartOffsetsOptions {
   readonly mode?: MoveAnimationTargetStartOffsetMode
 }
 
-export const MOVE_ANIMATION_TARGET_STAGGER_STEP_MS = 80
-export const MOVE_ANIMATION_TARGET_STAGGER_MAX_TOTAL_MS = 320
+export const MOVE_ANIMATION_TARGET_STAGGER_STEP_MS = 60
+export const MOVE_ANIMATION_TARGET_STAGGER_MAX_TOTAL_MS = 240
 
 interface NormalizedSequencingTarget {
   readonly targetId: string

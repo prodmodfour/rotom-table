@@ -472,14 +472,14 @@ describe('generic move animation planner', () => {
         kind: MOVE_VFX_KIND.healing,
         targetId: 'user-token',
         palette: MOVE_VFX_TONE_COLORS.healing,
-        startOffsetMs: 120,
+        startOffsetMs: 100,
       }),
       expect.objectContaining({
         kind: MOVE_VFX_KIND.status,
         targetId: 'target-token',
         conditionNames: ['Poisoned'],
         palette: MOVE_VFX_TONE_COLORS.status,
-        startOffsetMs: 120,
+        startOffsetMs: 100,
       }),
     ]))
   })
@@ -510,7 +510,7 @@ describe('generic move animation planner', () => {
     expect(semanticEvents[0]).toMatchObject({
       targetId: 'target-0',
       conditionNames: ['Burned', 'Poisoned'],
-      startOffsetMs: 180,
+      startOffsetMs: 140,
     })
   })
 
@@ -892,12 +892,12 @@ describe('generic move animation planner', () => {
     expect(events[1]).toMatchObject({
       kind: MOVE_VFX_KIND.areaPulse,
       areaCells: cells,
-      startOffsetMs: 120,
+      startOffsetMs: 100,
     })
     expect(events[2]).toMatchObject({
       kind: MOVE_VFX_KIND.targetFlash,
       targetId: 'target-a',
-      startOffsetMs: 260,
+      startOffsetMs: 220,
       shake: true,
     })
   })
@@ -940,13 +940,13 @@ describe('generic move animation planner', () => {
         targetId: 'target-a',
         targetCell: { x: 1, y: 0, z: 0 },
         shake: true,
-        startOffsetMs: 180,
+        startOffsetMs: 140,
       }),
       expect.objectContaining({
         kind: MOVE_VFX_KIND.miss,
         targetId: 'target-b',
         targetCell: { x: 2, y: 0, z: 0 },
-        startOffsetMs: 260,
+        startOffsetMs: 200,
       }),
     ]))
     expect(events.some((event) => 'targetId' in event && event.targetId === 'excluded-ally')).toBe(false)

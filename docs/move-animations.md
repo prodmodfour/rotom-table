@@ -118,15 +118,23 @@ Move VFX should look like part of the existing dark tactical map: luminous, conc
 
 ### Default timing tiers
 
-Use these tiers as the initial implementation defaults. Individual primitives may tune within the ranges, but a normal move resolution should usually settle within about 1.2 seconds and should not linger just to feel more dramatic.
+Use these VFX-071 playable-build defaults for the generic primitive set. Individual primitives may tune within the ranges, but a standalone move VFX cue should usually settle within about 1.1 seconds and should not linger just to feel more dramatic. Accuracy-roll follow-ups can start later only when they are synchronized to the existing roll-feedback phases.
 
-| Tier | Default range | Use for |
-| --- | ---: | --- |
-| **Quick** | 180-320 ms | Target flashes, impact rings, miss puffs, crit accents, one-shot semantic pulses. |
-| **Medium** | 450-700 ms | Projectiles, beams, arcs/lobs, melee lunges, self auras, healing/status/buff pulses, area cell pulses. |
-| **Long** | 850-1200 ms | Multi-target stagger sequences, dash/pass afterimages, line/cone sweeps, larger radial bursts, and combined launch-plus-follow-up sequences. |
+| Tier | Tuned default | Guardrail range | Use for |
+| --- | ---: | ---: | --- |
+| **Quick** | 220 ms | 180-280 ms | Target flashes, impact rings, miss puffs, crit accents, one-shot semantic pulses. |
+| **Medium** | 500 ms | 420-620 ms | Projectiles, beams, arcs/lobs, melee lunges, self auras, healing/status/buff pulses, area cell pulses. |
+| **Long** | 840 ms | 720-1000 ms | Dash/pass afterimages, line/cone sweeps, larger radial bursts, and combined launch-plus-follow-up sequences. |
+| **Linger** | 1100 ms | 900-1100 ms | Rare afterglow-only events that need to remain visible briefly without blocking table comprehension. |
 
-Long effects should still feel table-snappy. Prefer short start offsets and capped staggering over extending every target effect. Follow-up semantic effects should be delayed only enough to read after the launch/impact cue.
+Long effects should still feel table-snappy. Prefer short start offsets and capped staggering over extending every target effect. Multi-target follow-ups use a 60 ms default stagger step capped to 240 ms total spread; ordinary area target follow-ups begin at about 140 ms, while pass/dash area impacts begin at about 100 ms and their target follow-ups begin at about 220 ms. Follow-up semantic effects should be delayed only enough to read after the launch/impact cue.
+
+Timing-specific manual review scenarios for this pass:
+
+- single-target damaging moves such as **Tackle**, **Ember**, or **Water Gun** should show immediate launch/contact feedback without lingering after the result is understood;
+- self, status, heal, buff, and debuff moves such as **Recover**, **Thunder Wave**, **Swords Dance**, or **Growl** should be noticeable but not cover the token for more than a short beat;
+- area, line/cone, burst, and pass/dash moves should keep cells readable while the whole VFX batch settles quickly even when several targets receive follow-up flashes;
+- roll-feedback-aligned hit, miss, crit, healing, and status follow-ups should remain synchronized with the existing result/damage phases rather than starting arbitrary timers.
 
 ### Opacity, scale, glow, and render order
 

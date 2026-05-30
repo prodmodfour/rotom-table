@@ -14,19 +14,19 @@ import {
 describe('move VFX timing helpers', () => {
   it('exports documented default duration tiers', () => {
     expect(MOVE_VFX_DEFAULT_DURATIONS_MS).toEqual({
-      quick: 240,
-      normal: 560,
-      long: 960,
-      linger: 1200,
+      quick: 220,
+      normal: 500,
+      long: 840,
+      linger: 1100,
     })
 
     expect(MOVE_VFX_DEFAULT_DURATIONS_MS.quick).toBeGreaterThanOrEqual(180)
-    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.quick).toBeLessThanOrEqual(320)
-    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.normal).toBeGreaterThanOrEqual(450)
-    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.normal).toBeLessThanOrEqual(700)
-    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.long).toBeGreaterThanOrEqual(850)
-    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.long).toBeLessThanOrEqual(1200)
-    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.linger).toBeLessThanOrEqual(1200)
+    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.quick).toBeLessThanOrEqual(280)
+    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.normal).toBeGreaterThanOrEqual(420)
+    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.normal).toBeLessThanOrEqual(620)
+    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.long).toBeGreaterThanOrEqual(720)
+    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.long).toBeLessThanOrEqual(1000)
+    expect(MOVE_VFX_DEFAULT_DURATIONS_MS.linger).toBeLessThanOrEqual(1100)
   })
 
   it('clamps normalized progress safely', () => {
