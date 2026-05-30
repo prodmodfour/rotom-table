@@ -24,6 +24,7 @@ import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiStat
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
+import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import {
   createMoveVfxDebugPreviewEvents,
@@ -123,11 +124,22 @@ interface MapScenePanelHandle {
 const gridRef = ref<MapScenePanelHandle | null>(null)
 
 const {
+  moveAnimationsEnabled,
+  moveAnimationsStatusTitle,
+  moveAnimationsToggleLabel,
+  toggleMoveAnimationsEnabled,
+} = useMoveAnimationSettings()
+
+const {
   activeMoveAnimations,
   enqueueMoveAnimations,
   clearMoveAnimations,
   pruneExpiredMoveAnimations,
-} = useMoveAnimationQueue()
+} = useMoveAnimationQueue({ moveAnimationsEnabled })
+
+const visibleMoveAnimations = computed(() => (
+  moveAnimationsEnabled.value ? activeMoveAnimations.value : []
+))
 
 const moveVfxDebugHarnessEnabled = computed(() => isMoveVfxDebugHarnessEnabled({ query: route.query }))
 
@@ -918,7 +930,10 @@ useMapDimensionReconciliation({
         :token-control-notice="tokenControlNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="actionAutomationFeedback"
-        :move-animations="activeMoveAnimations"
+        :move-animations="visibleMoveAnimations"
+        :move-animations-enabled="moveAnimationsEnabled"
+        :move-animations-status-title="moveAnimationsStatusTitle"
+        :move-animations-toggle-label="moveAnimationsToggleLabel"
         :move-vfx-debug-harness-enabled="moveVfxDebugHarnessEnabled"
         :move-usage-error="sceneActionError"
         :spite-reaction-prompts="spiteReactionPrompts"
@@ -962,6 +977,7 @@ useMapDimensionReconciliation({
         @preview-move-vfx="previewMoveVfxDebugKind"
         @preview-all-move-vfx="previewAllMoveVfxDebug"
         @clear-move-vfx="clearMoveAnimations"
+        @toggle-move-animations="toggleMoveAnimationsEnabled"
         @dismiss-spite-reaction="dismissSpiteReactionPrompt"
         @apply-spite-reaction="applySpiteReactionPrompt"
         @dismiss-cute-charm-reaction="dismissCuteCharmReactionPrompt"

@@ -1,3 +1,4 @@
+import { ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { MOVE_ANIMATION_DUPLICATE_POLICY } from '~/composables/map-editor/moveAnimationQueuePolicy'
 import {
@@ -230,6 +231,41 @@ describe('useMoveAnimationQueue', () => {
 
     expect(pruned.removedEvents.map((event) => event.id)).toEqual(['short-lived'])
     expect(pruned.activeEvents.map((event) => event.id)).toEqual(['new-event'])
+  })
+
+  it('clears active VFX and skips new enqueue requests when move animations are disabled', () => {
+    const moveAnimationsEnabled = ref(true)
+    const queue = useMoveAnimationQueue({
+      now: () => 1000,
+      moveAnimationsEnabled,
+    })
+
+    queue.enqueueMoveAnimation(createInput({ id: 'before-disable' }))
+    expect(queue.activeMoveAnimations.value.map((event) => event.id)).toEqual(['before-disable'])
+
+    moveAnimationsEnabled.value = false
+    expect(queue.activeMoveAnimations.value).toEqual([])
+
+    const skippedSingle = queue.enqueueMoveAnimation(createInput({ id: 'while-disabled' }))
+    const skippedBatch = queue.enqueueMoveAnimations([
+      createInput({ id: 'disabled-batch-a' }),
+      createInput({ id: 'disabled-batch-b' }),
+    ])
+
+    expect(skippedSingle.action).toBe('skipped-disabled')
+    expect(skippedSingle.events).toEqual([])
+    expect(skippedBatch.results).toEqual([])
+    expect(queue.activeMoveAnimations.value).toEqual([])
+
+    moveAnimationsEnabled.value = true
+    queue.enqueueMoveAnimation(createInput({ moveName: 'After Disable' }))
+
+    expect(queue.activeMoveAnimations.value).toEqual([
+      expect.objectContaining({
+        id: 'move-vfx-000001',
+        moveName: 'After Disable',
+      }),
+    ])
   })
 
   it('materializes generic tactical VFX input without requiring non-move callers to provide a move name', () => {

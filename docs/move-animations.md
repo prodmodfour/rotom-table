@@ -72,6 +72,14 @@ A synthetic move-VFX harness is available on existing map pages for local visual
 
 The harness is intentionally hidden from normal player/GM workflows: it requires the explicit debug query and is dev-gated by default. Preview buttons only emit from the currently selected controllable token, so a player cannot use the harness to synthesize gameplay-looking VFX around tokens they do not control. Buttons enqueue transient `MoveAnimationEvent` inputs through the existing per-map queue, so previews use the same renderer, scheduler continuation source, layer-visibility handling, and disposal path as real move animations. The harness never writes map JSON, sheet data, campaign/session state, move logs, local storage, server payloads, or gameplay mutations; clearing the panel only clears the runtime VFX queue.
 
+### Move animation enable/disable preference
+
+Move animations can be turned off from the map scene overlay with the **Move VFX** toggle. The first pass is an app-level local browser preference stored under `rotom-table:move-animations-enabled`, defaults to enabled, and follows the user across maps in the same browser. It is not a map setting, campaign setting, sheet field, session payload, or move log entry.
+
+When disabled, move automation remains fully usable: targeting, roll feedback, mechanical transactions, field effects/hazards, HP/status/combat-stage updates, and logs continue through the same existing paths. The per-map move-animation queue clears active transient events and skips new enqueue requests, and the renderer receives an empty event list so the `move-vfx-animation` scheduler continuation source cannot stay active because of disabled move VFX.
+
+This toggle is not a renderer-quality or performance mode. It only suppresses the transient basic move VFX layer and must not lower DPR, antialiasing, weather/field-effect quality, map interaction availability, or saved move outcomes.
+
 ### Development VFX planning logs
 
 During local development, append `?debug=move-vfx-planning` to a map URL to enable one-shot console summaries from `planMoveAnimations()` when real move automation asks for VFX. Aliases are `move-vfx-plan`, `vfx-planning`, and `vfx-plan`, and the values may be combined in the existing comma/space-separated `debug` query field.
@@ -193,7 +201,7 @@ Move usage logs may continue to mention the move and its mechanical results thro
 
 Move animation events exist only in the runtime chain `planMoveAnimations()` -> `useMoveAnimationQueue()` -> the map renderer. They are not part of `SavedMap`, spawned Pokémon, trainer sheets, move automation transactions, live-session state, or any storage payload. Optional VFX source metadata such as `sourceKind` and `sourceLabel` follows the same transient-only rule.
 
-- Do not add `moveAnimations`, `activeMoveAnimations`, queue snapshots, `move-vfx-*` ids, `sourceKind`/`sourceLabel`, palette data, VFX timings, or renderer debug snapshots to persisted map JSON, sheet JSON, campaign/session state, local storage, realtime payloads, or server API payloads.
+- Do not add `moveAnimations`, `activeMoveAnimations`, queue snapshots, `move-vfx-*` ids, `sourceKind`/`sourceLabel`, palette data, VFX timings, or renderer debug snapshots to persisted map JSON, sheet JSON, campaign/session state, local storage, realtime payloads, or server API payloads. The only local storage entry related to this feature is the app-level boolean enable/disable preference; it must not contain event data or move outcomes.
 - Do not introduce a map/schema migration for basic move animations; renderer/page integration should create a fresh per-map queue at runtime and clear it on navigation, unmount, or map reset.
 - Existing move automation transactions and movement/action logs may still be saved or displayed when they would have been saved without VFX. Those records describe mechanical results; they should not store VFX ids, durations, palette data, or renderer lifecycle state.
 - Manual verification for integration tickets: after resolving a move and saving/exporting/reloading a map, inspect the generated JSON for absence of `moveAnimations`, `activeMoveAnimations`, `move-vfx`, VFX `kind`, VFX `durationMs`, or palette fields outside normal move metadata.

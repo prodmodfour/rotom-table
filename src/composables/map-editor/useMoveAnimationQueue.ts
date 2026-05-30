@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   MOVE_ANIMATION_DUPLICATE_POLICY,
   applyMoveAnimationBatchDedupe,
@@ -83,6 +83,10 @@ export const createTacticalVfxQueueInput = (
   } as MoveAnimationQueueInput
 }
 
+interface BooleanRef {
+  readonly value: boolean
+}
+
 export interface UseMoveAnimationQueueOptions extends MoveAnimationIdGeneratorOptions {
   /** Injected clock for deterministic tests and future renderer/page pruning. */
   readonly now?: () => number
@@ -92,13 +96,25 @@ export interface UseMoveAnimationQueueOptions extends MoveAnimationIdGeneratorOp
   readonly duplicatePolicy?: MoveAnimationDedupeOptions['duplicatePolicy']
   /** Opportunistically prune already-expired entries before enqueueing. Defaults to true. */
   readonly pruneExpiredOnEnqueue?: boolean
+  /** Local/browser preference gate. When false, queued move VFX are cleared and new events are skipped. */
+  readonly moveAnimationsEnabled?: BooleanRef
 }
 
 export interface EnqueueMoveAnimationOptions extends MoveAnimationDedupeOptions {}
 
-export interface EnqueueMoveAnimationResult extends MoveAnimationQueueDedupeResult {}
+export interface EnqueueMoveAnimationSkippedResult {
+  readonly events: readonly MoveAnimationEvent[]
+  readonly action: 'skipped-disabled'
+  readonly index: -1
+  readonly incomingEvent?: MoveAnimationEvent
+  readonly existingEvent?: MoveAnimationEvent
+}
 
-export interface EnqueueMoveAnimationsResult extends MoveAnimationQueueDedupeBatchResult {}
+export type EnqueueMoveAnimationResult = MoveAnimationQueueDedupeResult | EnqueueMoveAnimationSkippedResult
+
+export interface EnqueueMoveAnimationsResult extends Omit<MoveAnimationQueueDedupeBatchResult, 'results'> {
+  readonly results: readonly EnqueueMoveAnimationResult[]
+}
 
 export interface MoveAnimationPruneResult {
   readonly activeEvents: readonly MoveAnimationEvent[]
@@ -154,6 +170,8 @@ export const useMoveAnimationQueue = (options: UseMoveAnimationQueueOptions = {}
   const defaultDuplicatePolicy = options.duplicatePolicy
     ?? MOVE_ANIMATION_DUPLICATE_POLICY.ignore
   const pruneExpiredOnEnqueue = options.pruneExpiredOnEnqueue ?? true
+  const moveAnimationsEnabled = options.moveAnimationsEnabled
+  const queueEnabled = () => moveAnimationsEnabled?.value ?? true
   // Runtime-only queue contents. Keep this private so persistence code cannot
   // accidentally serialize active VFX as map, sheet, session, or log data.
   const activeEvents = ref<readonly MoveAnimationEvent[]>([])
@@ -174,6 +192,27 @@ export const useMoveAnimationQueue = (options: UseMoveAnimationQueueOptions = {}
     if (removedEvents.length > 0) activeEvents.value = []
     return removedEvents
   }
+
+  if (moveAnimationsEnabled) {
+    watch(
+      () => moveAnimationsEnabled.value,
+      (enabled) => {
+        if (!enabled) clearMoveAnimations()
+      },
+      { flush: 'sync' },
+    )
+  }
+
+  const skippedDisabledResult = (): EnqueueMoveAnimationSkippedResult => ({
+    events: activeEvents.value,
+    action: 'skipped-disabled',
+    index: -1,
+  })
+
+  const skippedDisabledBatchResult = (): EnqueueMoveAnimationsResult => ({
+    events: activeEvents.value,
+    results: [],
+  })
 
   const pruneExpiredMoveAnimations = (
     nowMs = getSafeNowMs(now),
@@ -197,6 +236,11 @@ export const useMoveAnimationQueue = (options: UseMoveAnimationQueueOptions = {}
     input: MoveAnimationQueueInput,
     enqueueOptions: EnqueueMoveAnimationOptions = {},
   ): EnqueueMoveAnimationResult => {
+    if (!queueEnabled()) {
+      clearMoveAnimations()
+      return skippedDisabledResult()
+    }
+
     const nowMs = getSafeNowMs(now)
     if (pruneExpiredOnEnqueue) pruneExpiredMoveAnimations(nowMs)
 
@@ -213,6 +257,11 @@ export const useMoveAnimationQueue = (options: UseMoveAnimationQueueOptions = {}
     inputs: readonly MoveAnimationQueueInput[],
     enqueueOptions: EnqueueMoveAnimationOptions = {},
   ): EnqueueMoveAnimationsResult => {
+    if (!queueEnabled()) {
+      clearMoveAnimations()
+      return skippedDisabledBatchResult()
+    }
+
     const nowMs = getSafeNowMs(now)
     if (pruneExpiredOnEnqueue) pruneExpiredMoveAnimations(nowMs)
 
