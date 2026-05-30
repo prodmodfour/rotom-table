@@ -75,6 +75,8 @@ export interface MoveAnimationPlanTimingContext {
   readonly baseDelayMs?: number
   /** Optional delay hint for impact/follow-up events after launch or roll feedback. */
   readonly impactDelayMs?: number
+  /** Optional delay hint for semantic transaction follow-ups once result/damage feedback is visually resolved. */
+  readonly semanticDelayMs?: number
 }
 
 /**
@@ -319,6 +321,10 @@ const finiteNumberOrZero = (value: unknown): number => (
   typeof value === 'number' && Number.isFinite(value) ? value : 0
 )
 
+const finiteNumberOrUndefined = (value: unknown): number | undefined => (
+  typeof value === 'number' && Number.isFinite(value) ? value : undefined
+)
+
 const safePlannerDurationMs = (value: unknown): number => (
   typeof value === 'number' && Number.isFinite(value) && value > 0
     ? value
@@ -333,6 +339,7 @@ const timingForInput = (input: MoveAnimationPlanInput): MoveAnimationPlanTimingC
     animationIdBase: nonEmptyStringOrUndefined(timing.animationIdBase),
     baseDelayMs: finiteNumberOrZero(timing.baseDelayMs),
     impactDelayMs: finiteNumberOrZero(timing.impactDelayMs),
+    semanticDelayMs: finiteNumberOrUndefined(timing.semanticDelayMs),
   }
 }
 
@@ -1212,13 +1219,14 @@ const planTargetSemanticAnimations = (
   const targetCell = positionForToken(target)
   const semanticIntent = semanticIntentForScript(input.script, 'target')
   const palette = paletteForSemanticIntent(semanticIntent)
-  const impactStartOffset = startOffsetMetadata(timingForInput(input).impactDelayMs)
+  const timing = timingForInput(input)
+  const semanticStartOffset = startOffsetMetadata(timing.semanticDelayMs ?? timing.impactDelayMs)
 
   if (semanticIntent.kind === 'healing') {
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.healing, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
       targetId,
       targetCell,
-      ...impactStartOffset,
+      ...semanticStartOffset,
     }, palette)]
   }
 
@@ -1228,7 +1236,7 @@ const planTargetSemanticAnimations = (
       targetCell,
       tone: semanticIntent.direction,
       direction: semanticIntent.direction,
-      ...impactStartOffset,
+      ...semanticStartOffset,
     }, palette)]
   }
 
@@ -1238,14 +1246,14 @@ const planTargetSemanticAnimations = (
       targetId,
       targetCell,
       ...(conditionNames.length ? { conditionNames } : {}),
-      ...impactStartOffset,
+      ...semanticStartOffset,
     }, palette)]
   }
 
   return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
     targetId,
     targetCell,
-    ...impactStartOffset,
+    ...semanticStartOffset,
   }, palette)]
 }
 
@@ -1273,14 +1281,15 @@ const planSingleTargetMoveAnimations = (
   const launchStartOffset = startOffsetMetadata(timing.baseDelayMs)
   const impactStartOffset = startOffsetMetadata(timing.impactDelayMs)
   const semanticTargetIds = uniquePlannerTargetIds([user.id, targetId])
+  const semanticStartOffsetMs = timing.semanticDelayMs ?? (timing.impactDelayMs ?? 0)
 
   if (!scriptHasDamageVisual(input.script)) {
     const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
       targetIds: semanticTargetIds,
-      startOffsetMs: timing.impactDelayMs ?? 0,
+      startOffsetMs: semanticStartOffsetMs,
     })
     const transactionMapConfirmationEvents = planTransactionMapConfirmationAnimations(input, nextId, {
-      startOffsetMs: timing.impactDelayMs ?? 0,
+      startOffsetMs: semanticStartOffsetMs,
     })
 
     if (!hit) {
@@ -1303,7 +1312,8 @@ const planSingleTargetMoveAnimations = (
   }
 
   const palette = damagingPaletteForScript(input.script)
-  const transactionFollowUpStartOffsetMs = (timing.impactDelayMs ?? 0) + TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS
+  const transactionFollowUpStartOffsetMs = timing.semanticDelayMs
+    ?? ((timing.impactDelayMs ?? 0) + TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS)
   const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
     targetIds: semanticTargetIds,
     startOffsetMs: transactionFollowUpStartOffsetMs,

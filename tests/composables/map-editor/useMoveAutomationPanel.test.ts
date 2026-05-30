@@ -1004,7 +1004,7 @@ describe('useMoveAutomationPanel', () => {
         ])
         for (const event of events.slice(1)) {
           const expectedStartOffset = semanticFollowUpKinds.has(event.kind)
-            ? MOVE_FEEDBACK_OUTCOME_MS + 120
+            ? MOVE_FEEDBACK_EFFECTIVE_FINAL_MS
             : MOVE_FEEDBACK_OUTCOME_MS
           expect(event.startOffsetMs, `${scenario.label}:${event.kind}`).toBe(expectedStartOffset)
         }
@@ -1020,6 +1020,78 @@ describe('useMoveAutomationPanel', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('delays accuracy-roll semantic VFX until the feedback damage phase', async () => {
+    vi.useFakeTimers()
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 1, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'attacker',
+      nickname: 'Attacker',
+      species: 'Pikachu',
+      level: 5,
+      movelist: [{ name: 'Nuzzle' }],
+    } as CharacterSheet
+    const calls: string[] = []
+    const enqueueMoveAnimations = vi.fn((_events: readonly MoveAnimationEvent[]) => undefined)
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Attacker', sheetSlug: 'attacker', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 40, maxHp: 40, defenderTypes: ['Normal'], position: { x: 1, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: (update) => { calls.push(`hp:${update.id}:${update.currentHp}`) },
+      modifyCombatStages: () => undefined,
+      modifyConditions: (update) => { calls.push(`conditions:${update.id}:${update.conditions.join(',')}`) },
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      enqueueMoveAnimations,
+      now: () => 9100,
+    })
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Nuzzle' })
+      await panel.selectMoveAutomationTarget('target-token')
+    } finally {
+      random.mockRestore()
+    }
+
+    expect(enqueueMoveAnimations).toHaveBeenCalledTimes(1)
+    const events = enqueueMoveAnimations.mock.calls[0]?.[0] ?? []
+    const launchEvent = events[0]
+    const impactEvent = events.find((event) => event.kind === MOVE_VFX_KIND.targetFlash)
+    const statusEvent = events.find((event) => event.kind === MOVE_VFX_KIND.status)
+    expect([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.arc,
+      MOVE_VFX_KIND.meleeLunge,
+    ]).toContain(launchEvent?.kind)
+    expect(launchEvent?.startOffsetMs).toBeUndefined()
+    expect(impactEvent?.startOffsetMs).toBe(MOVE_FEEDBACK_OUTCOME_MS)
+    expect(statusEvent).toMatchObject({
+      targetId: 'target-token',
+      startOffsetMs: MOVE_FEEDBACK_FINAL_MS,
+      conditionNames: ['Paralysis'],
+    })
+
+    expect(calls).toEqual([])
+    await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_OUTCOME_MS)
+    expect(calls).toEqual([])
+    await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_FINAL_MS - MOVE_FEEDBACK_OUTCOME_MS)
+    expect(calls).toEqual(expect.arrayContaining(['conditions:target-token:Paralysis']))
+    vi.useRealTimers()
   })
 
   it('still applies self-resolving move mechanics when VFX enqueue fails', async () => {

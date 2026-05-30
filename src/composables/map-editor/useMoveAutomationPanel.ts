@@ -160,12 +160,61 @@ export interface UseMoveAutomationPanelOptions {
 }
 
 const DEFAULT_MAX_LOG_ENTRIES = 100
-const D20_ROLL_ANIMATION_MS = 650
-const HIT_ROLL_VISIBLE_MS = 850
-const HIT_RESULT_VISIBLE_MS = 600
-const EFFECTIVENESS_VISIBLE_MS = 700
-const FINAL_RESULT_VISIBLE_MS = 1100
-const SINGLE_TARGET_MOVE_VFX_IMPACT_DELAY_MS = D20_ROLL_ANIMATION_MS + HIT_ROLL_VISIBLE_MS
+
+export const MOVE_AUTOMATION_FEEDBACK_TIMING_MS = {
+  d20RollAnimation: 650,
+  hitRollVisible: 850,
+  hitResultVisible: 600,
+  effectivenessVisible: 700,
+  finalResultVisible: 1100,
+} as const
+
+const D20_ROLL_ANIMATION_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.d20RollAnimation
+const HIT_ROLL_VISIBLE_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.hitRollVisible
+const HIT_RESULT_VISIBLE_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.hitResultVisible
+const EFFECTIVENESS_VISIBLE_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.effectivenessVisible
+const FINAL_RESULT_VISIBLE_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.finalResultVisible
+
+const MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS = D20_ROLL_ANIMATION_MS + HIT_ROLL_VISIBLE_MS
+const MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS = MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS + HIT_RESULT_VISIBLE_MS
+
+export const MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS = {
+  launch: 0,
+  impact: MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS,
+  crit: MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS,
+} as const
+
+export interface MoveAutomationFeedbackVfxTiming {
+  launchDelayMs: number
+  impactDelayMs: number
+  critDelayMs: number
+  semanticDelayMs: number
+}
+
+export const moveAutomationFeedbackHasFinalResolutionPhase = (feedback: MoveAutomationFeedbackState): boolean =>
+  feedback.damageResolved || feedback.conditions.length > 0
+
+export const moveAutomationFeedbackHasEffectivenessPhase = (feedback: MoveAutomationFeedbackState): boolean =>
+  Boolean(feedback.effectiveness)
+
+export const moveAutomationFeedbackDamagePhaseDelayMs = (feedback: MoveAutomationFeedbackState): number => (
+  MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS
+  + (
+    moveAutomationFeedbackHasFinalResolutionPhase(feedback)
+    && moveAutomationFeedbackHasEffectivenessPhase(feedback)
+      ? EFFECTIVENESS_VISIBLE_MS
+      : 0
+  )
+)
+
+export const moveAutomationFeedbackVfxTiming = (feedback: MoveAutomationFeedbackState): MoveAutomationFeedbackVfxTiming => ({
+  launchDelayMs: MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.launch,
+  impactDelayMs: MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.impact,
+  critDelayMs: MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.crit,
+  semanticDelayMs: moveAutomationFeedbackHasFinalResolutionPhase(feedback)
+    ? moveAutomationFeedbackDamagePhaseDelayMs(feedback)
+    : MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.impact,
+})
 
 interface ActiveSingleTargetingRequest {
   kind: 'single-target'
@@ -707,6 +756,8 @@ export const useMoveAutomationPanel = ({
     feedback: MoveAutomationFeedbackState
     transaction: MoveAutomationTransaction
   }) => {
+    const feedbackVfxTiming = moveAutomationFeedbackVfxTiming(options.feedback)
+
     try {
       enqueuePlannedMoveAnimations(planMoveAnimations({
         resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
@@ -720,7 +771,9 @@ export const useMoveAutomationPanel = ({
         timing: {
           nowMs: moveAnimationNowMs(),
           animationIdBase: nextMoveAnimationPlanIdBase('single-target', options.script, options.user),
-          impactDelayMs: SINGLE_TARGET_MOVE_VFX_IMPACT_DELAY_MS,
+          baseDelayMs: feedbackVfxTiming.launchDelayMs,
+          impactDelayMs: feedbackVfxTiming.impactDelayMs,
+          semanticDelayMs: feedbackVfxTiming.semanticDelayMs,
         },
       }))
     } catch (error) {
@@ -1106,12 +1159,6 @@ export const useMoveAutomationPanel = ({
     queueSpiteReactionPrompts(transaction)
   }
 
-  const feedbackHasFinalResolutionPhase = (feedback: MoveAutomationFeedbackState): boolean =>
-    feedback.damageResolved || feedback.conditions.length > 0
-
-  const feedbackHasEffectivenessPhase = (feedback: MoveAutomationFeedbackState): boolean =>
-    Boolean(feedback.effectiveness)
-
   const showMoveAutomationResolution = (
     feedback: MoveAutomationFeedbackState,
     transaction: MoveAutomationTransaction,
@@ -1120,8 +1167,8 @@ export const useMoveAutomationPanel = ({
     flushPendingFeedbackTransaction()
     clearFeedbackTimers()
 
-    const hasFinalPhase = feedbackHasFinalResolutionPhase(feedback)
-    const hasEffectivenessPhase = hasFinalPhase && feedbackHasEffectivenessPhase(feedback)
+    const hasFinalPhase = moveAutomationFeedbackHasFinalResolutionPhase(feedback)
+    const hasEffectivenessPhase = hasFinalPhase && moveAutomationFeedbackHasEffectivenessPhase(feedback)
     let transactionApplied = false
     const feedbackStillCurrent = () => moveAutomationFeedback.value?.id === feedback.id
     const applyTransactionOnce = () => {
@@ -1145,21 +1192,21 @@ export const useMoveAutomationPanel = ({
       setFeedbackPhase('hit-roll')
     })
 
-    const outcomeDelay = D20_ROLL_ANIMATION_MS + HIT_ROLL_VISIBLE_MS
+    const outcomeDelay = MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS
     scheduleFeedbackStep(outcomeDelay, () => {
       if (!setFeedbackPhase('outcome')) return
       if (!hasFinalPhase) applyTransactionOnce()
     })
 
     if (hasFinalPhase) {
-      const effectivenessDelay = outcomeDelay + HIT_RESULT_VISIBLE_MS
+      const effectivenessDelay = MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS
       if (hasEffectivenessPhase) {
         scheduleFeedbackStep(effectivenessDelay, () => {
           setFeedbackPhase('effectiveness')
         })
       }
 
-      const finalDelay = effectivenessDelay + (hasEffectivenessPhase ? EFFECTIVENESS_VISIBLE_MS : 0)
+      const finalDelay = moveAutomationFeedbackDamagePhaseDelayMs(feedback)
       scheduleFeedbackStep(finalDelay, () => {
         if (!setFeedbackPhase('damage')) return
         applyTransactionOnce()

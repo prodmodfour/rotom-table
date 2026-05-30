@@ -643,6 +643,55 @@ describe('generic move animation planner', () => {
     expect(events[1]).toMatchObject({ startOffsetMs: 1500 })
   })
 
+  it('uses caller semantic timing for transaction follow-ups independently of impact timing', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      user: token({ id: 'user-token', species: 'Caster', currentHp: 20, maxHp: 40 }),
+      script: script({
+        moveName: 'Generic Timed Semantic Hit',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Grass',
+        range: 'Range 6, 1 Target',
+      }),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+      transaction: transaction({
+        hpUpdates: [{ id: 'user-token', currentHp: 28 }],
+        conditionUpdates: [{ id: 'target-token', conditions: ['Poisoned'] }],
+      }),
+      timing: {
+        nowMs: 1234,
+        animationIdBase: 'timed-semantic-plan',
+        impactDelayMs: 1500,
+        semanticDelayMs: 2100,
+      },
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.healing,
+      MOVE_VFX_KIND.status,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'target-token',
+        startOffsetMs: 1500,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.healing,
+        targetId: 'user-token',
+        startOffsetMs: 2100,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.status,
+        targetId: 'target-token',
+        startOffsetMs: 2100,
+      }),
+    ]))
+  })
+
   it('uses miss puff instead of status follow-up for missed non-damaging accuracy outcomes', () => {
     const events = planGenericMoveAnimations(baseInput({
       script: script({

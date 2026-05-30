@@ -462,6 +462,12 @@ Move automation only plans or enqueues VFX after any tracked move-usage recordin
 
 Self-resolving moves use the same record-before-plan order: if usage recording fails, no self aura, buff/debuff, status, or semantic confirmation VFX is emitted and no transaction is applied. These guards keep cancelled or failed move flows from implying that a move happened while leaving successful animation planning best-effort and visual-only.
 
+### Roll-feedback timing alignment for VFX-064
+
+Accuracy-roll move VFX now derive their `startOffsetMs` values from the same phase durations used by `useMoveAutomationPanel` feedback timers: 650 ms for the rolling d20, 850 ms for the visible hit-roll formula, 600 ms for the hit/miss result, and 700 ms for the optional effectiveness phase. Launch/contact events keep a zero offset so they start promptly after target selection. Hit flashes, miss puffs, and crit bursts use the outcome offset at 1500 ms, matching the phase where the overlay first shows Hit, Miss, or Critical Hit.
+
+Semantic transaction follow-ups use a separate planner timing hint from the impact offset. If the feedback has a damage/condition final phase, healing, status, buff/debuff, and map-confirmation follow-ups wait for that final visual resolution: 2100 ms without an effectiveness phase or 2800 ms when effectiveness is shown. If the feedback has no final resolution phase, semantic follow-ups use the outcome offset. These offsets remain transient VFX hints only; they add no timers, persistence, gameplay changes, permission changes, or renderer loops, and the existing feedback transaction application remains authoritative.
+
 ### Layer visibility handling for VFX-027
 
 Move VFX follow the resolved token layer. `src/utils/isometric/layerVisibility.ts` exposes `resolveMoveVfxLayerVisibility(layers)`, and `src/components/IsometricGrid.client.vue` passes that result into `moveVfxRenderer.sync(...)` and each scheduled animation frame. The policy is intentionally conservative for this basic phase: hiding tokens also hides token-anchored VFX and area-only move confirmations so VFX cannot reveal or imply action around hidden tokens.
