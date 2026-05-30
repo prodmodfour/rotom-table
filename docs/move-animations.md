@@ -66,6 +66,12 @@ Existing roll feedback, target flashes, status clouds, buff/debuff particles, he
 
 Badge labels are normalized to one compact line, capped at 12 glyphs, rendered as CSS3D sprites with `pointer-events: none`, and anchored above the affected token or target cell. They use the semantic/palette colours supplied by the event and live inside the same transient VFX lifecycle as every other primitive. Because badges are the only CSS3D move VFX, the renderer reports `needsCss3DFrame()` only while badge instances are active; generic WebGL move VFX still skip CSS3D rendering.
 
+### Development VFX harness
+
+A synthetic move-VFX harness is available on existing map pages for local visual review. Start the Nuxt dev server, open a map with `?debug=move-vfx` (aliases: `?debug=vfx` or `?debug=move-vfx-harness`), and select a token. A bottom-right dev panel then exposes one button for every generic primitive plus a staggered **Play all primitives** pass. Targeted previews use another token when present or a nearby synthetic cell when the selected token is alone.
+
+The harness is intentionally hidden from normal player/GM workflows: it requires the explicit debug query and is dev-gated by default. Buttons enqueue transient `MoveAnimationEvent` inputs through the existing per-map queue, so previews use the same renderer, scheduler continuation source, layer-visibility handling, and disposal path as real move animations. The harness never writes map JSON, sheet data, campaign/session state, move logs, local storage, server payloads, or gameplay mutations; clearing the panel only clears the runtime VFX queue.
+
 ### Self and immediate moves
 
 Self-targeting or immediately resolving moves should not require a fake target just to animate. They should use a self-centred aura, healing pulse, buff/debuff particles, status cloud, or neutral pulse according to the move metadata and transaction outcome. These animations should be brief enough that immediate move use still feels fast.

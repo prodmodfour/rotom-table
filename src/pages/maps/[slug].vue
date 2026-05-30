@@ -25,6 +25,10 @@ import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavig
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
+import {
+  createMoveVfxDebugPreviewEvents,
+  isMoveVfxDebugHarnessEnabled,
+} from '~/utils/moveVfxDebugHarness'
 import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActionPanel'
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
@@ -43,6 +47,7 @@ import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, TabletopMap } from '~/types/map'
+import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 definePageMeta({
@@ -122,6 +127,8 @@ const {
   clearMoveAnimations,
   pruneExpiredMoveAnimations,
 } = useMoveAnimationQueue()
+
+const moveVfxDebugHarnessEnabled = computed(() => isMoveVfxDebugHarnessEnabled({ query: route.query }))
 
 watch(
   () => routeSlugParam(route.params),
@@ -226,6 +233,26 @@ const {
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
   },
 })
+
+const enqueueMoveVfxDebugPreview = (kind: MoveVfxKind | 'all') => {
+  const events = createMoveVfxDebugPreviewEvents({
+    kind,
+    selectedId: selectedId.value,
+    tokens: spawnedPokemon.value,
+    dimensions: map.value?.dimensions ?? null,
+  })
+
+  if (events.length === 0) return
+  enqueueMoveAnimations(events)
+}
+
+const previewMoveVfxDebugKind = (kind: MoveVfxKind) => {
+  enqueueMoveVfxDebugPreview(kind)
+}
+
+const previewAllMoveVfxDebug = () => {
+  enqueueMoveVfxDebugPreview('all')
+}
 
 const selectPokemon = (id: string | null) => {
   if (buildMode.value) return
@@ -868,6 +895,7 @@ useMapDimensionReconciliation({
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="actionAutomationFeedback"
         :move-animations="activeMoveAnimations"
+        :move-vfx-debug-harness-enabled="moveVfxDebugHarnessEnabled"
         :move-usage-error="sceneActionError"
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"
@@ -907,6 +935,9 @@ useMapDimensionReconciliation({
         @select-move-target="selectActionAutomationTarget"
         @select-move-area-direction="selectMoveAutomationAreaDirection"
         @cancel-move-targeting="cancelActionAutomationTargeting"
+        @preview-move-vfx="previewMoveVfxDebugKind"
+        @preview-all-move-vfx="previewAllMoveVfxDebug"
+        @clear-move-vfx="clearMoveAnimations"
         @dismiss-spite-reaction="dismissSpiteReactionPrompt"
         @apply-spite-reaction="applySpiteReactionPrompt"
         @dismiss-cute-charm-reaction="dismissCuteCharmReactionPrompt"

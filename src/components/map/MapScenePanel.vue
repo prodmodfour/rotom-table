@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
+import MoveVfxDebugPanel from '~/components/map/MoveVfxDebugPanel.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
 import MapCombatLog from '~/components/map/MapCombatLog.vue'
 import type { BuildTool } from '#shared/mapEditor'
@@ -28,7 +29,7 @@ import type {
   MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
-import type { MoveAnimationEvent } from '~/types/moveAnimation'
+import type { MoveAnimationEvent, MoveVfxKind } from '~/types/moveAnimation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
@@ -78,6 +79,7 @@ const props = defineProps<{
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
+  moveVfxDebugHarnessEnabled?: boolean
   moveUsageError?: string | null
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
   cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
@@ -121,6 +123,9 @@ const emit = defineEmits<{
   (event: 'select-move-target', targetId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
+  (event: 'preview-move-vfx', kind: MoveVfxKind): void
+  (event: 'preview-all-move-vfx'): void
+  (event: 'clear-move-vfx'): void
   (event: 'dismiss-spite-reaction', id: string): void
   (event: 'apply-spite-reaction', id: string): void
   (event: 'dismiss-cute-charm-reaction', id: string): void
@@ -241,6 +246,16 @@ defineExpose({ focusPokemon })
       <div v-if="props.moveUsageError" class="move-usage-error" role="status">
         {{ props.moveUsageError }}
       </div>
+
+      <MoveVfxDebugPanel
+        v-if="props.map && canViewMap && props.moveVfxDebugHarnessEnabled"
+        :selected-id="selectedId"
+        :spawned-pokemon="spawnedPokemon"
+        :active-count="(props.moveAnimations ?? []).length"
+        @preview-kind="emit('preview-move-vfx', $event)"
+        @preview-all="emit('preview-all-move-vfx')"
+        @clear="emit('clear-move-vfx')"
+      />
 
       <MapMoveReactionPromptStack
         :spite-prompts="props.spiteReactionPrompts ?? []"
