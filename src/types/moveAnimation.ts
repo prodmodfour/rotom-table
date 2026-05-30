@@ -142,6 +142,11 @@ export interface MoveAreaPulseAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.areaPulse>,
     MoveAnimationAreaMetadata {}
 
+export interface MoveRadialBurstAnimationEvent
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.radialBurst>,
+    MoveAnimationOriginMetadata,
+    MoveAnimationAreaMetadata {}
+
 export interface MoveLineSweepAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.lineSweep>,
     MoveAnimationOriginMetadata,
@@ -200,6 +205,7 @@ export interface MoveAnimationEventByKind {
   [MOVE_VFX_KIND.targetFlash]: MoveTargetFlashAnimationEvent
   [MOVE_VFX_KIND.impactRing]: MoveImpactRingAnimationEvent
   [MOVE_VFX_KIND.areaPulse]: MoveAreaPulseAnimationEvent
+  [MOVE_VFX_KIND.radialBurst]: MoveRadialBurstAnimationEvent
   [MOVE_VFX_KIND.lineSweep]: MoveLineSweepAnimationEvent
   [MOVE_VFX_KIND.coneSweep]: MoveConeSweepAnimationEvent
   [MOVE_VFX_KIND.dash]: MoveDashAnimationEvent

@@ -25,6 +25,7 @@ The initial VFX library may use the following reusable effect families. These ar
 - **Buff/debuff particles:** simple rising/falling particles or rings for combat-stage and similar effects.
 - **Status cloud:** a generic condition/status visual that does not require condition-specific art.
 - **Area pulse:** a short pulse over affected grid cells after area confirmation.
+- **Radial burst:** a center-out ring/ray accent for burst or blast-style area confirmations.
 - **Line/cone sweep:** a directional cell sequence for line-like and cone-like area moves.
 - **Dash/pass afterimage:** a movement-path cue for movement-like move outcomes.
 - **Miss puff:** a neutral understated effect near or just past the target for misses.
@@ -503,6 +504,16 @@ Status VFX remain visual-only runtime resources. They do not decide or apply con
 Each area pulse instance owns one `THREE.InstancedMesh` named `move-vfx-area-pulse-cells` with a constant plane geometry/material and one instance per affected cell. Scheduler frame time updates only instance transforms, shared material opacity, and visibility; the primitive does not rebuild geometry per frame and does not create timers or an independent RAF loop. The overlay uses the event palette supplied by the planner, which may be move-type coloured for damaging areas or semantic for non-damage area confirmations, with the neutral palette as a fallback.
 
 Area pulse VFX remain visual-only runtime resources. They do not re-run area targeting, decide who was affected, mutate terrain/token placement/HP/status/combat stages, change permissions, persist data, lower renderer quality, add dependencies, or alter existing map overlays. Completion, event removal, layer-hidden aging, hidden-tab expiry, and map unmount all dispose the owned instanced mesh through the existing move VFX lifecycle. A primitive-level reduced-motion hint keeps the same cells readable with a smaller fade/pulse while app/OS preference wiring remains scoped to the later accessibility tickets.
+
+### Radial burst primitive for VFX-045
+
+`src/types/moveVfx.ts` and `src/types/moveAnimation.ts` now include the generic `radial-burst` event kind for burst/blast-style area confirmations. The generic planner emits this event, alongside the area cell pulse, for metadata-driven `burst`, `close-blast`, `ranged-blast`, or range-text blast/burst area scripts; it does not key off exact move names.
+
+`src/utils/isometric/moveVfxRenderer.ts` resolves each radial burst from finite `areaCells`. User-centred close bursts lock to the user's foot/origin anchor when the origin is part of the affected cells or the computed centroid lands nearly on the user; remote or irregular shapes use the area-cell centroid. The radius is bounded from the farthest affected cell so irregular cell sets stay readable without expanding across the whole map.
+
+Each radial burst instance owns two ground-plane rings plus eight lightweight outward rays using transparent additive materials, disabled raycasting, `depthTest: true`, `depthWrite: false`, and render orders just above area cell pulses. Scheduler frame time drives only opacity, scale, ray length, completion, and disposal; there is no geometry rebuild per frame, no timer, and no independent RAF loop. The primitive-level reduced-motion hint hides the rays and keeps a small opacity pulse so the event remains readable without large directional motion.
+
+Radial burst VFX remain visual-only runtime resources. They do not re-run area targeting, decide affected tokens, mutate terrain/token placement/HP/status/combat stages, change permissions, persist data, reduce renderer quality, add dependencies, or alter existing targeting/roll-feedback overlays. Completion, event removal, hidden-tab expiry, layer-hidden aging, and map unmount dispose all owned ring/ray geometry and materials through the existing VFX lifecycle.
 
 ## Implementation labels, milestones, and ticket ordering
 

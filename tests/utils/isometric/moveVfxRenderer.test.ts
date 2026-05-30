@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveRadialBurstAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, MOVE_VFX_TYPE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -126,6 +126,21 @@ const areaPulseEvent = (overrides: Partial<MoveAreaPulseAnimationEvent> = {}): M
   createdAtMs: 100,
   durationMs: 560,
   kind: MOVE_VFX_KIND.areaPulse,
+  areaCells: [
+    { x: 1, y: 0, z: 0 },
+    { x: 2, y: 0, z: 1 },
+  ],
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const radialBurstEvent = (overrides: Partial<MoveRadialBurstAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-radial-burst',
+  moveName: 'Surf',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 560,
+  kind: MOVE_VFX_KIND.radialBurst,
   areaCells: [
     { x: 1, y: 0, z: 0 },
     { x: 2, y: 0, z: 1 },
@@ -307,6 +322,23 @@ const areaPulseCellsMeshNamed = (
   const mesh = group.children.find((child) => child.name === 'move-vfx-area-pulse-cells')
   expect(mesh).toBeInstanceOf(THREE.InstancedMesh)
   return mesh as THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
+}
+
+const radialBurstRingNamed = (
+  group: THREE.Object3D,
+  name: string,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === name)
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const radialBurstRayMeshes = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>[] => {
+  const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-radial-burst-ray-'))
+  expect(meshes).toHaveLength(8)
+  return meshes as THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>[]
 }
 
 const instanceMatrixPosition = (
@@ -1971,6 +2003,124 @@ describe('move VFX renderer shell', () => {
     expect(instanceMatrixScale(mesh, 0).x).toBeGreaterThan(initialScale)
     expect(instanceMatrixScale(mesh, 0).x).toBeLessThan(1.03)
     expect(mesh.material.opacity).toBeGreaterThan(0)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, reducedMotion: true })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders radial burst events as center-out rings and rays from close user anchors', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(2.5, 0, 2.5) })
+    const renderObjects = new Map([[user.id, user]])
+    const cells = [
+      { x: 2, y: 0, z: 2 },
+      { x: 4, y: 0, z: 2 },
+      { x: 2, y: 0, z: 4 },
+      { x: 1, y: 0, z: 3 },
+    ]
+
+    renderer.sync([radialBurstEvent({
+      areaCells: cells,
+      areaOrigin: { x: 2, y: 0, z: 2 },
+      originCell: { x: 2, y: 0, z: 2 },
+    })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const innerRing = radialBurstRingNamed(instanceGroup, 'move-vfx-radial-burst-inner-ring')
+    const outerRing = radialBurstRingNamed(instanceGroup, 'move-vfx-radial-burst-outer-ring')
+    const rays = radialBurstRayMeshes(instanceGroup)
+    const initialInnerScale = innerRing.scale.x
+    const initialRayLength = rays[0]?.scale.y ?? 0
+
+    expect(instanceGroup.children).toHaveLength(10)
+    expectVectorClose(instanceGroup.position, [2.5, 0, 2.5])
+    expectVectorClose(innerRing.position, [0, 0.052, 0])
+    expectVectorClose(outerRing.position, [0, 0.058, 0])
+    expect(innerRing.material.color.getHexString()).toBe(projectilePalette.accent.slice(1))
+    expect(outerRing.material.color.getHexString()).toBe(projectilePalette.primary.slice(1))
+    expect(rays[0]?.material.color.getHexString()).toBe(projectilePalette.glow.slice(1))
+    expect(innerRing.material.transparent).toBe(true)
+    expect(innerRing.material.depthTest).toBe(true)
+    expect(innerRing.material.depthWrite).toBe(false)
+    expect(innerRing.material.side).toBe(THREE.DoubleSide)
+    expect(innerRing.material.blending).toBe(THREE.AdditiveBlending)
+    expect(innerRing.renderOrder).toBe(36)
+    expect(rays.every((ray) => ray.renderOrder === 37)).toBe(true)
+    expect(rays.every((ray) => ray.visible)).toBe(true)
+    expect(initialInnerScale).toBeGreaterThan(0.5)
+    expect(initialRayLength).toBeGreaterThan(0.2)
+    expect(innerRing.material.opacity).toBeGreaterThan(0)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects })
+
+    expect(innerRing.scale.x).toBeGreaterThan(initialInnerScale)
+    expect(outerRing.scale.x).toBeGreaterThan(innerRing.scale.x)
+    expect(rays[0]?.scale.y).toBeGreaterThan(initialRayLength)
+    expect(rays[0]?.position.x).toBeGreaterThan(0)
+    expect(rays[0]?.position.y).toBeCloseTo(0.064)
+
+    const lockedCenter = instanceGroup.position.clone()
+    const geometryDisposeSpies = [innerRing, outerRing, ...rays].map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = [innerRing, outerRing, ...rays].map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    user.currentCenter.set(12, 0, 12)
+    renderer.animate({ frameNowMs: 520, delta: 0.016, renderObjects })
+
+    expect(instanceGroup.position.equals(lockedCenter)).toBe(true)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(geometryDisposeSpies.every((spy) => spy.mock.calls.length === 1)).toBe(true)
+    expect(materialDisposeSpies.every((spy) => spy.mock.calls.length === 1)).toBe(true)
+  })
+
+  it('uses centroid fallback, fallback palette, invalid-cell filtering, and reduced motion for radial bursts', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const cells = [
+      { x: 0, y: 0, z: 0 },
+      { x: 4, y: 0, z: 0 },
+      { x: 0, y: 0, z: 2 },
+      { x: Number.NaN, y: 0, z: 9 },
+    ]
+
+    renderer.sync([
+      radialBurstEvent({
+        id: 'move-vfx-radial-centroid',
+        areaCells: cells,
+        palette: undefined,
+      }),
+      radialBurstEvent({
+        id: 'move-vfx-radial-empty',
+        areaCells: [],
+        palette: undefined,
+      }),
+    ], { renderObjects: new Map(), reducedMotion: true })
+
+    const centroidGroup = renderer.group.children[0]
+    const emptyGroup = renderer.group.children[1]
+    const innerRing = radialBurstRingNamed(centroidGroup, 'move-vfx-radial-burst-inner-ring')
+    const outerRing = radialBurstRingNamed(centroidGroup, 'move-vfx-radial-burst-outer-ring')
+    const rays = radialBurstRayMeshes(centroidGroup)
+    const initialScale = innerRing.scale.x
+
+    expectVectorClose(centroidGroup.position, [1.8333333333333333, 0, 1.1666666666666667])
+    expect(innerRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.neutral.accent.slice(1))
+    expect(outerRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.neutral.primary.slice(1))
+    expect(rays.every((ray) => !ray.visible && ray.material.opacity === 0)).toBe(true)
+    expect(emptyGroup.children).toHaveLength(0)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, reducedMotion: true })
+
+    expect(innerRing.scale.x).toBeGreaterThan(initialScale)
+    expect(innerRing.scale.x).toBeLessThan(initialScale * 1.2)
+    expect(outerRing.visible).toBe(true)
+    expect(rays.every((ray) => !ray.visible && ray.material.opacity === 0)).toBe(true)
 
     renderer.animate({ frameNowMs: 660, delta: 0.016, reducedMotion: true })
 

@@ -13,6 +13,7 @@ import {
   type MoveMeleeLungeAnimationEvent,
   type MoveMissAnimationEvent,
   type MoveProjectileAnimationEvent,
+  type MoveRadialBurstAnimationEvent,
   type MoveSelfPulseAnimationEvent,
   type MoveStatusAnimationEvent,
   type MoveTargetFlashAnimationEvent,
@@ -301,6 +302,35 @@ const MOVE_VFX_AREA_PULSE_END_SCALE = 1.04
 const MOVE_VFX_AREA_PULSE_REDUCED_MAX_OPACITY = 0.26
 const MOVE_VFX_AREA_PULSE_REDUCED_START_SCALE = 0.9
 const MOVE_VFX_AREA_PULSE_REDUCED_END_SCALE = 1.02
+const MOVE_VFX_RADIAL_BURST_INNER_RING_NAME = 'move-vfx-radial-burst-inner-ring'
+const MOVE_VFX_RADIAL_BURST_OUTER_RING_NAME = 'move-vfx-radial-burst-outer-ring'
+const MOVE_VFX_RADIAL_BURST_RAY_PREFIX = 'move-vfx-radial-burst-ray'
+const MOVE_VFX_RADIAL_BURST_RING_RENDER_ORDER = MOVE_VFX_AREA_PULSE_RENDER_ORDER + 1
+const MOVE_VFX_RADIAL_BURST_RAY_RENDER_ORDER = MOVE_VFX_RADIAL_BURST_RING_RENDER_ORDER + 1
+const MOVE_VFX_RADIAL_BURST_RAY_COUNT = 8
+const MOVE_VFX_RADIAL_BURST_MIN_RADIUS = 0.8
+const MOVE_VFX_RADIAL_BURST_DEFAULT_RADIUS = 1.4
+const MOVE_VFX_RADIAL_BURST_MAX_RADIUS = 5.5
+const MOVE_VFX_RADIAL_BURST_CELL_RADIUS_PADDING = 0.72
+const MOVE_VFX_RADIAL_BURST_CLOSE_USER_DISTANCE = 0.78
+const MOVE_VFX_RADIAL_BURST_Y_OFFSET = 0.052
+const MOVE_VFX_RADIAL_BURST_FADE_IN_PROGRESS = 0.14
+const MOVE_VFX_RADIAL_BURST_FADE_OUT_START = 0.68
+const MOVE_VFX_RADIAL_BURST_INNER_RING_MAX_OPACITY = 0.42
+const MOVE_VFX_RADIAL_BURST_OUTER_RING_MAX_OPACITY = 0.34
+const MOVE_VFX_RADIAL_BURST_RAY_MAX_OPACITY = 0.28
+const MOVE_VFX_RADIAL_BURST_INNER_START_SCALE = 0.22
+const MOVE_VFX_RADIAL_BURST_INNER_END_SCALE = 0.82
+const MOVE_VFX_RADIAL_BURST_OUTER_START_SCALE = 0.34
+const MOVE_VFX_RADIAL_BURST_OUTER_END_SCALE = 1.18
+const MOVE_VFX_RADIAL_BURST_RAY_START_LENGTH = 0.12
+const MOVE_VFX_RADIAL_BURST_RAY_END_LENGTH = 1.02
+const MOVE_VFX_RADIAL_BURST_RAY_THICKNESS_RATIO = 0.028
+const MOVE_VFX_RADIAL_BURST_RAY_MIN_THICKNESS = 0.018
+const MOVE_VFX_RADIAL_BURST_RAY_MAX_THICKNESS = 0.06
+const MOVE_VFX_RADIAL_BURST_REDUCED_MAX_OPACITY = 0.28
+const MOVE_VFX_RADIAL_BURST_REDUCED_START_SCALE = 0.9
+const MOVE_VFX_RADIAL_BURST_REDUCED_END_SCALE = 1.06
 const MOVE_VFX_TARGET_FLASH_SHELL_NAME = 'move-vfx-target-flash-shell'
 const MOVE_VFX_TARGET_FLASH_RING_NAME = 'move-vfx-target-flash-ring'
 const MOVE_VFX_TARGET_FLASH_SHELL_RENDER_ORDER = 38
@@ -2167,7 +2197,7 @@ const isFiniteGridAnchor = (cell: GridAnchor | null | undefined): cell is GridAn
   && Number.isFinite(cell?.z)
 )
 
-const areaPulseCellsForEvent = (event: MoveAreaPulseAnimationEvent): GridAnchor[] => (
+const areaPulseCellsForEvent = (event: { areaCells?: readonly GridAnchor[] }): GridAnchor[] => (
   Array.isArray(event.areaCells) ? event.areaCells.filter(isFiniteGridAnchor) : []
 )
 
@@ -2250,6 +2280,206 @@ const applyAreaPulseVisualState = (options: {
     options.mesh.setMatrixAt(index, options.scratchMatrix)
   })
   options.mesh.instanceMatrix.needsUpdate = true
+}
+
+const gridAnchorMatches = (left: GridAnchor | null | undefined, right: GridAnchor | null | undefined): boolean => (
+  isFiniteGridAnchor(left)
+  && isFiniteGridAnchor(right)
+  && left.x === right.x
+  && left.y === right.y
+  && left.z === right.z
+)
+
+const createRadialBurstMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createRadialBurstRingMesh = (
+  name: string,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 56), material)
+  mesh.name = name
+  mesh.renderOrder = MOVE_VFX_RADIAL_BURST_RING_RENDER_ORDER
+  mesh.rotation.x = -Math.PI / 2
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createRadialBurstRayMesh = (
+  index: number,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 6, 1, false), material)
+  mesh.name = `${MOVE_VFX_RADIAL_BURST_RAY_PREFIX}-${index + 1}`
+  mesh.renderOrder = MOVE_VFX_RADIAL_BURST_RAY_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const radialBurstRayDirections = (): THREE.Vector3[] => Array.from(
+  { length: MOVE_VFX_RADIAL_BURST_RAY_COUNT },
+  (_, index) => {
+    const radians = (index / MOVE_VFX_RADIAL_BURST_RAY_COUNT) * Math.PI * 2
+    return new THREE.Vector3(Math.cos(radians), 0, Math.sin(radians)).normalize()
+  },
+)
+
+const resolveRadialBurstCenter = (
+  event: MoveRadialBurstAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+  cells: readonly GridAnchor[],
+  cellCenters: readonly THREE.Vector3[],
+): THREE.Vector3 | null => {
+  const fallbackOriginCell = event.originCell ?? event.areaOrigin
+  const userFoot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: event.userId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: fallbackOriginCell,
+  })
+
+  if (!cellCenters.length) return userFoot
+
+  const centroid = moveVfxAreaCentroidAnchor(cells, event.areaOrigin ?? fallbackOriginCell)
+  if (!centroid) return userFoot
+
+  const originIsAffected = cells.some((cell) => gridAnchorMatches(cell, fallbackOriginCell))
+  const userIsCloseToCentroid = userFoot
+    ? horizontalDistanceBetween(userFoot, centroid) <= MOVE_VFX_RADIAL_BURST_CLOSE_USER_DISTANCE
+    : false
+
+  // Burst/blast templates are often user-centred. When the user/origin is part
+  // of the affected cells (or the average lands nearly on the user), lock the
+  // ring to the user foot anchor; otherwise use the true area centroid so
+  // irregular remote cell sets still burst from their visual middle.
+  return userFoot && (originIsAffected || userIsCloseToCentroid) ? userFoot : centroid
+}
+
+const radialBurstRadiusForCenters = (
+  center: THREE.Vector3,
+  cellCenters: readonly THREE.Vector3[],
+): number => {
+  if (!cellCenters.length) return MOVE_VFX_RADIAL_BURST_DEFAULT_RADIUS
+
+  const farthest = cellCenters.reduce(
+    (maxDistance, cellCenter) => Math.max(maxDistance, horizontalDistanceBetween(center, cellCenter)),
+    0,
+  )
+
+  return clampNumber(
+    farthest + MOVE_VFX_RADIAL_BURST_CELL_RADIUS_PADDING,
+    MOVE_VFX_RADIAL_BURST_MIN_RADIUS,
+    MOVE_VFX_RADIAL_BURST_MAX_RADIUS,
+  )
+}
+
+const radialBurstOpacityMultiplier = (progress: number): number => {
+  const fadeIn = Math.max(0.18, clamp01(progress / MOVE_VFX_RADIAL_BURST_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_RADIAL_BURST_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_RADIAL_BURST_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const applyRadialBurstVisualState = (options: {
+  group: THREE.Group
+  innerRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  outerRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  rays: readonly THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>[]
+  rayDirections: readonly THREE.Vector3[]
+  rayQuaternions: readonly THREE.Quaternion[]
+  center: THREE.Vector3
+  radius: number
+  progress: number
+  reducedMotion?: boolean
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacityMultiplier = radialBurstOpacityMultiplier(progress) * (0.76 + (pulse * 0.24))
+  const y = MOVE_VFX_RADIAL_BURST_Y_OFFSET
+
+  options.group.position.copy(options.center)
+  options.innerRing.position.set(0, y, 0)
+  options.outerRing.position.set(0, y + 0.006, 0)
+
+  if (options.reducedMotion) {
+    const reducedScale = options.radius * (
+      MOVE_VFX_RADIAL_BURST_REDUCED_START_SCALE
+      + ((MOVE_VFX_RADIAL_BURST_REDUCED_END_SCALE - MOVE_VFX_RADIAL_BURST_REDUCED_START_SCALE) * expansion)
+    )
+    const reducedOpacity = MOVE_VFX_RADIAL_BURST_REDUCED_MAX_OPACITY * opacityMultiplier
+
+    options.innerRing.scale.setScalar(reducedScale)
+    options.outerRing.scale.setScalar(reducedScale * 1.04)
+    options.innerRing.material.opacity = reducedOpacity
+    options.outerRing.material.opacity = reducedOpacity * 0.72
+    options.innerRing.visible = reducedOpacity > 0.005
+    options.outerRing.visible = reducedOpacity > 0.005
+    options.rays.forEach((ray) => {
+      ray.material.opacity = 0
+      ray.visible = false
+    })
+    return
+  }
+
+  const innerScale = options.radius * (
+    MOVE_VFX_RADIAL_BURST_INNER_START_SCALE
+    + ((MOVE_VFX_RADIAL_BURST_INNER_END_SCALE - MOVE_VFX_RADIAL_BURST_INNER_START_SCALE) * expansion)
+  )
+  const outerScale = options.radius * (
+    MOVE_VFX_RADIAL_BURST_OUTER_START_SCALE
+    + ((MOVE_VFX_RADIAL_BURST_OUTER_END_SCALE - MOVE_VFX_RADIAL_BURST_OUTER_START_SCALE) * expansion)
+  )
+  const rayLength = options.radius * (
+    MOVE_VFX_RADIAL_BURST_RAY_START_LENGTH
+    + ((MOVE_VFX_RADIAL_BURST_RAY_END_LENGTH - MOVE_VFX_RADIAL_BURST_RAY_START_LENGTH) * expansion)
+  )
+  const rayThickness = clampNumber(
+    options.radius * MOVE_VFX_RADIAL_BURST_RAY_THICKNESS_RATIO,
+    MOVE_VFX_RADIAL_BURST_RAY_MIN_THICKNESS,
+    MOVE_VFX_RADIAL_BURST_RAY_MAX_THICKNESS,
+  )
+  const innerOpacity = MOVE_VFX_RADIAL_BURST_INNER_RING_MAX_OPACITY * opacityMultiplier
+  const outerOpacity = MOVE_VFX_RADIAL_BURST_OUTER_RING_MAX_OPACITY * opacityMultiplier * Math.max(0, 1 - (progress * 0.22))
+  const rayOpacity = MOVE_VFX_RADIAL_BURST_RAY_MAX_OPACITY * opacityMultiplier * Math.max(0, 1 - (progress * 0.36))
+
+  options.innerRing.scale.setScalar(innerScale)
+  options.outerRing.scale.setScalar(outerScale)
+  options.innerRing.material.opacity = innerOpacity
+  options.outerRing.material.opacity = outerOpacity
+  options.innerRing.visible = innerOpacity > 0.005
+  options.outerRing.visible = outerOpacity > 0.005
+
+  options.rays.forEach((ray, index) => {
+    const direction = options.rayDirections[index]
+    const quaternion = options.rayQuaternions[index]
+    if (!direction || !quaternion) return
+
+    ray.position.set(
+      direction.x * rayLength * 0.5,
+      y + 0.012,
+      direction.z * rayLength * 0.5,
+    )
+    ray.quaternion.copy(quaternion)
+    ray.scale.set(rayThickness, rayLength, rayThickness)
+    ray.material.opacity = rayOpacity
+    ray.visible = rayOpacity > 0.005
+  })
 }
 
 const missPuffRadiusForRenderObject = (
@@ -3322,6 +3552,97 @@ const createAreaPulseMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     },
   }
 }
+
+const createRadialBurstMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveRadialBurstAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const cells = areaPulseCellsForEvent(event)
+  const cellCenters = cells.map(moveVfxGridCellCenterAnchor)
+  const center = resolveRadialBurstCenter(event, renderObjects, cells, cellCenters)
+
+  if (!center) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
+  const radius = radialBurstRadiusForCenters(center, cellCenters)
+  const innerRing = createRadialBurstRingMesh(
+    MOVE_VFX_RADIAL_BURST_INNER_RING_NAME,
+    createRadialBurstMaterial(palette.accent, 0),
+  )
+  const outerRing = createRadialBurstRingMesh(
+    MOVE_VFX_RADIAL_BURST_OUTER_RING_NAME,
+    createRadialBurstMaterial(palette.primary, 0),
+  )
+  const rays = Array.from(
+    { length: MOVE_VFX_RADIAL_BURST_RAY_COUNT },
+    (_, index) => createRadialBurstRayMesh(index, createRadialBurstMaterial(palette.glow, 0)),
+  )
+  const rayDirections = radialBurstRayDirections()
+  const rayQuaternions = rayDirections.map((direction) => (
+    new THREE.Quaternion().setFromUnitVectors(MOVE_VFX_WORLD_UP, direction)
+  ))
+
+  // Radial bursts are a center-out overlay for burst/blast-like area moves. The
+  // instance locks its center/radius at creation, combines with area-pulse cell
+  // overlays without changing targeting or map state, and uses only scheduler
+  // frame time for expansion, opacity, completion, and disposal.
+  context.group.add(innerRing, outerRing, ...rays)
+  applyRadialBurstVisualState({
+    group: context.group,
+    innerRing,
+    outerRing,
+    rays,
+    rayDirections,
+    rayQuaternions,
+    center,
+    radius,
+    progress: 0,
+    reducedMotion: defaultReducedMotion,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyRadialBurstVisualState({
+        group: context.group,
+        innerRing,
+        outerRing,
+        rays,
+        rayDirections,
+        rayQuaternions,
+        center,
+        radius,
+        progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const createLineSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createConeSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createDashMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
@@ -3616,6 +3937,8 @@ const selectMoveVfxInstanceBuilder = (kind: string): MoveVfxInstanceBuilder => {
       return createImpactRingMoveVfxInstance
     case MOVE_VFX_KIND.areaPulse:
       return createAreaPulseMoveVfxInstance
+    case MOVE_VFX_KIND.radialBurst:
+      return createRadialBurstMoveVfxInstance
     case MOVE_VFX_KIND.lineSweep:
       return createLineSweepMoveVfxInstance
     case MOVE_VFX_KIND.coneSweep:

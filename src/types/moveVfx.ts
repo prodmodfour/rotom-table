@@ -15,6 +15,7 @@ export const MOVE_VFX_KIND = {
   targetFlash: 'target-flash',
   impactRing: 'impact-ring',
   areaPulse: 'area-pulse',
+  radialBurst: 'radial-burst',
   lineSweep: 'line-sweep',
   coneSweep: 'cone-sweep',
   dash: 'dash',

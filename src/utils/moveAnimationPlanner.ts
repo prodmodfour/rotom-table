@@ -659,13 +659,15 @@ const rangedLaunchKindForScript = (script: MoveAnimationPlanScript):
   return MOVE_VFX_KIND.projectile
 }
 
+const areaTemplateKindsForScript = (script: MoveAnimationPlanScript): string[] => areaTemplatesForScript(script)
+  .map((template) => isRecord(template) ? stringOrUndefined(template.kind) : undefined)
+  .filter((kind): kind is string => Boolean(kind))
+
 const areaSweepKindForScript = (script: MoveAnimationPlanScript):
   | typeof MOVE_VFX_KIND.lineSweep
   | typeof MOVE_VFX_KIND.coneSweep
   | null => {
-  const templateKinds = areaTemplatesForScript(script)
-    .map((template) => isRecord(template) ? stringOrUndefined(template.kind) : undefined)
-    .filter((kind): kind is string => Boolean(kind))
+  const templateKinds = areaTemplateKindsForScript(script)
   const classificationText = moveClassificationText(script)
 
   if (templateKinds.includes('line') || includesNormalizedWord(classificationText, ['line'])) {
@@ -677,6 +679,14 @@ const areaSweepKindForScript = (script: MoveAnimationPlanScript):
   }
 
   return null
+}
+
+const shouldPlanRadialBurstForScript = (script: MoveAnimationPlanScript): boolean => {
+  const templateKinds = areaTemplateKindsForScript(script)
+  const classificationText = moveClassificationText(script)
+
+  return templateKinds.some((kind) => kind === 'burst' || kind.endsWith('blast'))
+    || includesNormalizedWord(classificationText, ['burst', 'blast'])
 }
 
 const planSelfMoveAnimations = (
@@ -847,6 +857,14 @@ const planAreaMoveAnimations = (
       areaCells,
       areaOrigin: userCell,
     }, palette))
+
+    if (shouldPlanRadialBurstForScript(input.script)) {
+      events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.radialBurst, MOVE_VFX_DEFAULT_DURATIONS_MS.long, {
+        originCell: userCell,
+        areaCells,
+        areaOrigin: userCell,
+      }, palette))
+    }
 
     const sweepKind = areaSweepKindForScript(input.script)
     if (sweepKind === MOVE_VFX_KIND.lineSweep) {

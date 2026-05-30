@@ -422,7 +422,7 @@ describe('generic move animation planner', () => {
     ])
   })
 
-  it('classifies confirmed area moves as area pulses with optional line or cone sweeps', () => {
+  it('classifies confirmed area moves as area pulses with optional radial, line, or cone effects', () => {
     const cells = [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }]
     const lineEvents = planGenericMoveAnimations(areaInput(cells, {
       script: script({
@@ -457,6 +457,17 @@ describe('generic move animation planner', () => {
         areaTemplates: [{ kind: 'burst', size: 2, label: 'Burst 2' }],
       }),
     }))
+    const blastEvents = planGenericMoveAnimations(areaInput(cells, {
+      script: script({
+        moveName: 'Generic Blast Area',
+        targetMode: 'multi-target',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Water',
+        areaTemplates: [{ kind: 'ranged-blast', size: 2, label: 'Ranged 6, Blast 2' }],
+      }),
+    }))
 
     expect(lineEvents.map((event) => event.kind)).toEqual([
       MOVE_VFX_KIND.areaPulse,
@@ -473,8 +484,20 @@ describe('generic move animation planner', () => {
     expect(coneEvents[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Fire)
     expect(burstEvents.map((event) => event.kind)).toEqual([
       MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.radialBurst,
     ])
     expect(burstEvents[0]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Dragon)
+    expect(burstEvents[1]).toMatchObject({
+      areaCells: cells,
+      areaOrigin: { x: 0, y: 0, z: 0 },
+      originCell: { x: 0, y: 0, z: 0 },
+      palette: MOVE_VFX_TYPE_COLORS.Dragon,
+    })
+    expect(blastEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.radialBurst,
+    ])
+    expect(blastEvents[1]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Water)
   })
 
   it('no-ops safely when the user token is missing', () => {
