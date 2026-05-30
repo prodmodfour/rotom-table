@@ -450,6 +450,12 @@ For self and non-damaging target moves, transaction-derived healing/status/buff/
 
 These transaction-derived events remain visual-only runtime requests. They do not compute or apply HP, condition, or combat-stage changes; the already-built move automation transaction remains authoritative and is the only path that mutates sheets, map data, logs, permissions, or persisted state. The planner only reads transaction output and token snapshots, creates bounded transient `MoveAnimationEvent` objects, and relies on the existing queue/renderer lifecycle for scheduler-driven display and disposal.
 
+### Field and hazard transaction confirmations for VFX-062
+
+`planGenericMoveAnimations()` now also reads map-state entries that already exist on the resolved move automation transaction. Weather, terrain, and room applications in `fieldEffectsToApply` create a brief semantic self pulse at the user as a confirmation that map state changed. Hazard additions in `hazardsToAdd` create a short status-toned area pulse over the hazard cells when finite cell coordinates are available; duplicate hazard cells are collapsed and malformed/unknown geometry falls back to the same user-centred status pulse instead of throwing.
+
+These confirmations are deliberately transient and lightweight. They do not draw persistent weather, terrain, room, or hazard state, and they do not replace the existing field-effect, weather, or hazard renderers that remain authoritative after the transaction is applied. The planner only inspects the transaction output and creates runtime `MoveAnimationEvent` pulses; it does not apply map effects, place hazards, change permissions, mutate targeting, or persist VFX data.
+
 ### Layer visibility handling for VFX-027
 
 Move VFX follow the resolved token layer. `src/utils/isometric/layerVisibility.ts` exposes `resolveMoveVfxLayerVisibility(layers)`, and `src/components/IsometricGrid.client.vue` passes that result into `moveVfxRenderer.sync(...)` and each scheduled animation frame. The policy is intentionally conservative for this basic phase: hiding tokens also hides token-anchored VFX and area-only move confirmations so VFX cannot reveal or imply action around hidden tokens.

@@ -253,7 +253,10 @@ const AREA_PASS_DASH_IMPACT_OFFSET_MS = 120
 const AREA_PASS_DASH_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 260
 const TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS = 120
 const TRANSACTION_SEMANTIC_SAME_TOKEN_STEP_MS = 80
+const TRANSACTION_MAP_CONFIRMATION_SAME_STEP_MS = 80
 const MAX_TRANSACTION_SEMANTIC_EVENTS = 12
+const MAX_TRANSACTION_HAZARD_CONFIRMATION_CELLS = 24
+const FIELD_EFFECT_CONFIRMATION_KINDS = new Set<string>(['weather', 'terrain', 'room'])
 const MOVE_VFX_KIND_VALUES = new Set<string>(Object.values(MOVE_VFX_KIND))
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
@@ -295,6 +298,22 @@ const gridAnchorsOrEmpty = (value: readonly unknown[] | null | undefined): reado
     .map(gridAnchorOrUndefined)
     .filter((anchor): anchor is GridAnchor => Boolean(anchor))
 )
+
+const gridAnchorKey = (anchor: GridAnchor): string => `${anchor.x}:${anchor.y}:${anchor.z}`
+
+const uniqueGridAnchors = (anchors: readonly GridAnchor[]): GridAnchor[] => {
+  const seen = new Set<string>()
+  const out: GridAnchor[] = []
+
+  for (const anchor of anchors) {
+    const key = gridAnchorKey(anchor)
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(anchor)
+  }
+
+  return out
+}
 
 const finiteNumberOrZero = (value: unknown): number => (
   typeof value === 'number' && Number.isFinite(value) ? value : 0
@@ -757,6 +776,8 @@ type TransactionSemanticEventKind =
 type MoveAnimationPlanHpUpdate = MoveAnimationPlanTransaction['hpUpdates'][number]
 type MoveAnimationPlanConditionUpdate = MoveAnimationPlanTransaction['conditionUpdates'][number]
 type MoveAnimationPlanCombatStageUpdate = MoveAnimationPlanTransaction['combatStageUpdates'][number]
+type MoveAnimationPlanHazardAdd = MoveAnimationPlanTransaction['hazardsToAdd'][number]
+type MoveAnimationPlanFieldEffectApply = MoveAnimationPlanTransaction['fieldEffectsToApply'][number]
 
 interface TransactionSemanticAnimationDraft {
   readonly targetId: string
@@ -775,6 +796,11 @@ interface PlanTransactionSemanticAnimationOptions {
   readonly startOffsetMs?: number
   /** Optional source cell used to stagger multi-target semantic follow-ups from near to far. */
   readonly staggerOrigin?: GridAnchor
+}
+
+interface PlanTransactionMapConfirmationOptions {
+  /** Base start offset for field/hazard confirmation pulses. */
+  readonly startOffsetMs?: number
 }
 
 const uniqueNonEmptyStrings = (values: readonly unknown[]): string[] => {
@@ -1046,6 +1072,86 @@ const planTransactionSemanticAnimations = (
   return [...applyMoveAnimationTargetStartOffsets(events, offsets, { mode: 'add' })]
 }
 
+const transactionFieldEffectCanConfirm = (effect: MoveAnimationPlanFieldEffectApply | unknown): boolean => {
+  if (!isRecord(effect)) return false
+
+  const kind = stringOrUndefined(effect.kind)
+  return Boolean(
+    kind
+    && FIELD_EFFECT_CONFIRMATION_KINDS.has(kind)
+    && nonEmptyStringOrUndefined(effect.value)
+  )
+}
+
+const transactionHazardCanConfirm = (hazard: MoveAnimationPlanHazardAdd | unknown): boolean => (
+  isRecord(hazard) && Boolean(nonEmptyStringOrUndefined(hazard.kind))
+)
+
+const hasTransactionFieldEffectConfirmations = (transaction: MoveAnimationPlanTransaction): boolean => (
+  arrayOrEmpty(transaction.fieldEffectsToApply).some(transactionFieldEffectCanConfirm)
+)
+
+const hasTransactionHazardConfirmations = (transaction: MoveAnimationPlanTransaction): boolean => (
+  arrayOrEmpty(transaction.hazardsToAdd).some(transactionHazardCanConfirm)
+)
+
+const hazardConfirmationCellsForTransaction = (transaction: MoveAnimationPlanTransaction): GridAnchor[] => uniqueGridAnchors(
+  arrayOrEmpty(transaction.hazardsToAdd)
+    .map((hazard) => gridAnchorOrUndefined(hazard))
+    .filter((cell): cell is GridAnchor => Boolean(cell)),
+).slice(0, MAX_TRANSACTION_HAZARD_CONFIRMATION_CELLS)
+
+const createTransactionMapConfirmationSelfPulse = (
+  input: MoveAnimationPlanInput,
+  nextId: PlannerEventIdFactory,
+  startOffsetMs: number,
+): MoveAnimationEvent => {
+  const user = userTokenForInput(input)
+
+  return createPlannerEvent(input, nextId, MOVE_VFX_KIND.selfPulse, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+    originCell: positionForToken(user),
+    tone: MOVE_VFX_TONE.status,
+    ...startOffsetMetadata(startOffsetMs),
+  }, moveVfxColorForTone(MOVE_VFX_TONE.status))
+}
+
+const planTransactionMapConfirmationAnimations = (
+  input: MoveAnimationPlanInput,
+  nextId: PlannerEventIdFactory,
+  options: PlanTransactionMapConfirmationOptions = {},
+): MoveAnimationEvent[] => {
+  const transaction = input.transaction
+  if (!transaction) return []
+  if (!userTokenForInput(input)) return []
+
+  const hasFieldConfirmations = hasTransactionFieldEffectConfirmations(transaction)
+  const hasHazardConfirmations = hasTransactionHazardConfirmations(transaction)
+  if (!hasFieldConfirmations && !hasHazardConfirmations) return []
+
+  const palette = moveVfxColorForTone(MOVE_VFX_TONE.status)
+  const userCell = positionForToken(userTokenForInput(input))
+  const baseStartOffsetMs = Math.max(0, finiteNumberOrZero(options.startOffsetMs))
+  const events: MoveAnimationEvent[] = []
+
+  if (hasFieldConfirmations) {
+    events.push(createTransactionMapConfirmationSelfPulse(input, nextId, baseStartOffsetMs))
+  }
+
+  const hazardCells = hazardConfirmationCellsForTransaction(transaction)
+  if (hazardCells.length > 0) {
+    const startOffsetMs = baseStartOffsetMs + (events.length > 0 ? TRANSACTION_MAP_CONFIRMATION_SAME_STEP_MS : 0)
+    events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.areaPulse, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+      areaCells: hazardCells,
+      areaOrigin: userCell,
+      ...startOffsetMetadata(startOffsetMs),
+    }, palette))
+  } else if (hasHazardConfirmations && events.length === 0) {
+    events.push(createTransactionMapConfirmationSelfPulse(input, nextId, baseStartOffsetMs))
+  }
+
+  return events
+}
+
 const planSelfMoveAnimations = (
   input: MoveAnimationSelfPlanInput,
   nextId: PlannerEventIdFactory,
@@ -1060,7 +1166,12 @@ const planSelfMoveAnimations = (
   const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
     targetIds: targetId ? [targetId] : [],
   })
-  if (transactionSemanticEvents.length > 0) return transactionSemanticEvents
+  const transactionMapConfirmationEvents = planTransactionMapConfirmationAnimations(input, nextId, {
+    startOffsetMs: transactionSemanticEvents.length > 0 ? TRANSACTION_MAP_CONFIRMATION_SAME_STEP_MS : 0,
+  })
+  if (transactionSemanticEvents.length > 0 || transactionMapConfirmationEvents.length > 0) {
+    return [...transactionSemanticEvents, ...transactionMapConfirmationEvents]
+  }
 
   if (semanticIntent.kind === 'healing') {
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.healing, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
@@ -1168,6 +1279,9 @@ const planSingleTargetMoveAnimations = (
       targetIds: semanticTargetIds,
       startOffsetMs: timing.impactDelayMs ?? 0,
     })
+    const transactionMapConfirmationEvents = planTransactionMapConfirmationAnimations(input, nextId, {
+      startOffsetMs: timing.impactDelayMs ?? 0,
+    })
 
     if (!hit) {
       return [
@@ -1177,18 +1291,25 @@ const planSingleTargetMoveAnimations = (
           ...impactStartOffset,
         }, moveVfxColorForTone(MOVE_VFX_TONE.miss)),
         ...transactionSemanticEvents,
+        ...transactionMapConfirmationEvents,
       ]
     }
 
-    if (transactionSemanticEvents.length > 0) return transactionSemanticEvents
+    if (transactionSemanticEvents.length > 0 || transactionMapConfirmationEvents.length > 0) {
+      return [...transactionSemanticEvents, ...transactionMapConfirmationEvents]
+    }
 
     return planTargetSemanticAnimations(input, nextId, targetId)
   }
 
   const palette = damagingPaletteForScript(input.script)
+  const transactionFollowUpStartOffsetMs = (timing.impactDelayMs ?? 0) + TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS
   const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
     targetIds: semanticTargetIds,
-    startOffsetMs: (timing.impactDelayMs ?? 0) + TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS,
+    startOffsetMs: transactionFollowUpStartOffsetMs,
+  })
+  const transactionMapConfirmationEvents = planTransactionMapConfirmationAnimations(input, nextId, {
+    startOffsetMs: transactionFollowUpStartOffsetMs,
   })
   const events: MoveAnimationEvent[] = []
 
@@ -1215,7 +1336,7 @@ const planSingleTargetMoveAnimations = (
       targetCell,
       ...impactStartOffset,
     }, moveVfxColorForTone(MOVE_VFX_TONE.miss)))
-    events.push(...transactionSemanticEvents)
+    events.push(...transactionSemanticEvents, ...transactionMapConfirmationEvents)
     return events
   }
 
@@ -1234,7 +1355,7 @@ const planSingleTargetMoveAnimations = (
     }, palette))
   }
 
-  events.push(...transactionSemanticEvents)
+  events.push(...transactionSemanticEvents, ...transactionMapConfirmationEvents)
   return events
 }
 
@@ -1316,6 +1437,11 @@ const planAreaMoveAnimations = (
   const palette = damaging
     ? damagingPaletteForScript(input.script)
     : paletteForSemanticIntent(semanticIntent)
+  const transactionMapConfirmationEvents = planTransactionMapConfirmationAnimations(input, nextId, {
+    startOffsetMs: areaCells.length > 0 || hasPassDestination
+      ? areaTargetFollowUpBaseOffsetMs(input, hasPassDestination)
+      : 0,
+  })
   const events: MoveAnimationEvent[] = []
 
   if (passDestination) {
@@ -1363,6 +1489,8 @@ const planAreaMoveAnimations = (
       baseOffsetMs: areaTargetFollowUpBaseOffsetMs(input, hasPassDestination),
     }))
   }
+
+  events.push(...transactionMapConfirmationEvents)
 
   if (events.length > 0) return events
 

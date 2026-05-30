@@ -350,6 +350,83 @@ describe('generic move animation planner', () => {
     })
   })
 
+  it('adds field-effect transaction confirmations as semantic self pulses', () => {
+    const events = planGenericMoveAnimations(selfInput({
+      script: script({
+        moveName: 'Generic Field Effect',
+        targetMode: 'field',
+        targetCount: null,
+        damageClass: 'Static',
+      }),
+      transaction: transaction({
+        fieldEffectsToApply: [{ kind: 'weather', value: 'rainy', source: 'Generic Field Effect' }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([MOVE_VFX_KIND.selfPulse])
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.selfPulse,
+      originCell: { x: 0, y: 0, z: 0 },
+      tone: 'status',
+      durationMs: MOVE_VFX_DEFAULT_DURATIONS_MS.quick,
+      palette: MOVE_VFX_TONE_COLORS.status,
+    })
+  })
+
+  it('adds hazard transaction confirmations at hazard cells without relying on persistent hazard renderers', () => {
+    const events = planGenericMoveAnimations(areaInput([], {
+      script: script({
+        moveName: 'Generic Hazard Setup',
+        targetMode: 'hazard',
+        targetCount: null,
+        damageClass: 'Static',
+      }),
+      transaction: transaction({
+        hazardsToAdd: [
+          { kind: 'spikes', x: 2, y: 0, z: 1, owner: 'Caster' },
+          { kind: 'toxic-spikes', x: 2, y: 0, z: 1, layer: 1, owner: 'Caster' },
+          { kind: 'sticky-web', x: 3, y: 0, z: 1, owner: 'Caster' },
+        ],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([MOVE_VFX_KIND.areaPulse])
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.areaPulse,
+      areaCells: [
+        { x: 2, y: 0, z: 1 },
+        { x: 3, y: 0, z: 1 },
+      ],
+      areaOrigin: { x: 0, y: 0, z: 0 },
+      durationMs: MOVE_VFX_DEFAULT_DURATIONS_MS.quick,
+      palette: MOVE_VFX_TONE_COLORS.status,
+    })
+  })
+
+  it('falls back safely when hazard transactions have no usable cell geometry', () => {
+    const events = planGenericMoveAnimations(areaInput([], {
+      script: script({
+        moveName: 'Generic Unknown Hazard Geometry',
+        targetMode: 'hazard',
+        targetCount: null,
+        damageClass: 'Static',
+      }),
+      transaction: transaction({
+        hazardsToAdd: [
+          { kind: 'spikes', x: Number.NaN, y: 0, z: 1, owner: 'Caster' },
+        ],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([MOVE_VFX_KIND.selfPulse])
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.selfPulse,
+      originCell: { x: 0, y: 0, z: 0 },
+      tone: 'status',
+      palette: MOVE_VFX_TONE_COLORS.status,
+    })
+  })
+
   it('adds transaction semantic follow-ups after damaging impact without treating HP loss as healing', () => {
     const events = planGenericMoveAnimations(baseInput({
       user: token({ id: 'user-token', species: 'Caster', currentHp: 20, maxHp: 40 }),
