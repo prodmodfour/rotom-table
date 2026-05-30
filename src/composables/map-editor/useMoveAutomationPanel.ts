@@ -859,6 +859,9 @@ export const useMoveAutomationPanel = ({
     activeMoveTargeting.value = null
   }
 
+  const moveTargetingRequestIsStillActive = (request: ActiveMoveTargetingRequest): boolean =>
+    activeMoveTargeting.value === request
+
   const appendMoveAutomationLog = (transaction: MoveAutomationTransaction) => {
     if (!map.value) return
     map.value.metadata = appendMoveAutomationLogEntry(map.value.metadata, transaction, {
@@ -1183,7 +1186,7 @@ export const useMoveAutomationPanel = ({
   const executeSingleTargetMoveRequest = async (
     request: ActiveSingleTargetingRequest,
     targetId: string,
-    options: { skipActionNotifications?: boolean; logLine?: string } = {},
+    options: { skipActionNotifications?: boolean; logLine?: string; requireActiveTargeting?: boolean } = {},
   ): Promise<boolean> => {
     const user = findSpawnedPokemon(request.userId)
     const target = findSpawnedPokemon(targetId)
@@ -1194,6 +1197,7 @@ export const useMoveAutomationPanel = ({
       request.frequency,
     )
     if (!recorded) return false
+    if (options.requireActiveTargeting && !moveTargetingRequestIsStillActive(request)) return false
 
     if (!options.skipActionNotifications) {
       notifyMoveActionTaken(request)
@@ -1320,6 +1324,7 @@ export const useMoveAutomationPanel = ({
       request.frequency,
     )
     if (!recorded) return
+    if (!moveTargetingRequestIsStillActive(request)) return
     notifyMoveActionTaken(request)
     const selectedTargetIds = selectedAreaTargetIds(request)
     const targetSet = new Set(selectedTargetIds)
@@ -1368,7 +1373,7 @@ export const useMoveAutomationPanel = ({
     }
 
     if (!overlay?.candidateIds.includes(targetId)) return
-    await executeSingleTargetMoveRequest(request, targetId)
+    await executeSingleTargetMoveRequest(request, targetId, { requireActiveTargeting: true })
   }
 
   onBeforeUnmount(() => {

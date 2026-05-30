@@ -456,6 +456,12 @@ These transaction-derived events remain visual-only runtime requests. They do no
 
 These confirmations are deliberately transient and lightweight. They do not draw persistent weather, terrain, room, or hazard state, and they do not replace the existing field-effect, weather, or hazard renderers that remain authoritative after the transaction is applied. The planner only inspects the transaction output and creates runtime `MoveAnimationEvent` pulses; it does not apply map effects, place hazards, change permissions, mutate targeting, or persist VFX data.
 
+### Cancellation and record-failure guards for VFX-063
+
+Move automation only plans or enqueues VFX after any tracked move-usage recording succeeds and the relevant targeting request is still current. Opening a target or area overlay does not enqueue animation events. Cancelling targeting clears the active request; if an async usage-record call resolves after that cancellation, the stale request returns before action notifications, VFX planning/enqueueing, feedback creation, mechanics application, or move-log writes. Failed usage-record calls also return before VFX planning/enqueueing while preserving the existing error surface and retryable targeting overlay where applicable.
+
+Self-resolving moves use the same record-before-plan order: if usage recording fails, no self aura, buff/debuff, status, or semantic confirmation VFX is emitted and no transaction is applied. These guards keep cancelled or failed move flows from implying that a move happened while leaving successful animation planning best-effort and visual-only.
+
 ### Layer visibility handling for VFX-027
 
 Move VFX follow the resolved token layer. `src/utils/isometric/layerVisibility.ts` exposes `resolveMoveVfxLayerVisibility(layers)`, and `src/components/IsometricGrid.client.vue` passes that result into `moveVfxRenderer.sync(...)` and each scheduled animation frame. The policy is intentionally conservative for this basic phase: hiding tokens also hides token-anchored VFX and area-only move confirmations so VFX cannot reveal or imply action around hidden tokens.
