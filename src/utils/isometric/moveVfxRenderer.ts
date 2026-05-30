@@ -9,6 +9,7 @@ import {
   type MoveBuffDebuffAnimationEvent,
   type MoveConeSweepAnimationEvent,
   type MoveCritAnimationEvent,
+  type MoveDashAnimationEvent,
   type MoveHealingAnimationEvent,
   type MoveImpactRingAnimationEvent,
   type MoveMeleeLungeAnimationEvent,
@@ -316,6 +317,42 @@ const MOVE_VFX_AREA_SWEEP_END_SCALE = 1.08
 const MOVE_VFX_AREA_SWEEP_SEQUENCE_SPREAD_PROGRESS = 0.56
 const MOVE_VFX_AREA_SWEEP_CELL_WINDOW_PROGRESS = 0.34
 const MOVE_VFX_AREA_SWEEP_MIN_PENDING_SCALE = 0.001
+const MOVE_VFX_DASH_STREAK_NAME = 'move-vfx-dash-streak'
+const MOVE_VFX_DASH_AFTERIMAGE_PREFIX = 'move-vfx-dash-afterimage'
+const MOVE_VFX_DASH_DESTINATION_RING_NAME = 'move-vfx-dash-destination-ring'
+const MOVE_VFX_DASH_STREAK_RENDER_ORDER = MOVE_VFX_AREA_SWEEP_RENDER_ORDER
+const MOVE_VFX_DASH_AFTERIMAGE_RENDER_ORDER = MOVE_VFX_DASH_STREAK_RENDER_ORDER + 1
+const MOVE_VFX_DASH_DESTINATION_RING_RENDER_ORDER = MOVE_VFX_DASH_AFTERIMAGE_RENDER_ORDER
+const MOVE_VFX_DASH_AFTERIMAGE_COUNT = 4
+const MOVE_VFX_DASH_MIN_PATH_LENGTH = 0.12
+const MOVE_VFX_DASH_Y_OFFSET = 0.11
+const MOVE_VFX_DASH_STREAK_MIN_RADIUS = 0.045
+const MOVE_VFX_DASH_STREAK_DEFAULT_RADIUS = 0.075
+const MOVE_VFX_DASH_STREAK_MAX_RADIUS = 0.16
+const MOVE_VFX_DASH_STREAK_RADIUS_SCALE = 0.055
+const MOVE_VFX_DASH_AFTERIMAGE_MIN_RADIUS = 0.13
+const MOVE_VFX_DASH_AFTERIMAGE_DEFAULT_RADIUS = 0.22
+const MOVE_VFX_DASH_AFTERIMAGE_MAX_RADIUS = 0.42
+const MOVE_VFX_DASH_AFTERIMAGE_RADIUS_SCALE = 0.16
+const MOVE_VFX_DASH_DESTINATION_MIN_RADIUS = 0.42
+const MOVE_VFX_DASH_DESTINATION_DEFAULT_RADIUS = 0.68
+const MOVE_VFX_DASH_DESTINATION_MAX_RADIUS = 1.15
+const MOVE_VFX_DASH_DESTINATION_RADIUS_SCALE = 0.42
+const MOVE_VFX_DASH_FADE_IN_PROGRESS = 0.12
+const MOVE_VFX_DASH_FADE_OUT_START = 0.78
+const MOVE_VFX_DASH_STREAK_MAX_OPACITY = 0.34
+const MOVE_VFX_DASH_AFTERIMAGE_MAX_OPACITY = 0.28
+const MOVE_VFX_DASH_DESTINATION_RING_MAX_OPACITY = 0.42
+const MOVE_VFX_DASH_STREAK_START_LENGTH_SCALE = 0.08
+const MOVE_VFX_DASH_STREAK_END_LENGTH_SCALE = 1
+const MOVE_VFX_DASH_AFTERIMAGE_REVEAL_WINDOW = 0.28
+const MOVE_VFX_DASH_DESTINATION_START_PROGRESS = 0.32
+const MOVE_VFX_DASH_DESTINATION_WINDOW_PROGRESS = 0.48
+const MOVE_VFX_DASH_DESTINATION_RING_START_SCALE = 0.52
+const MOVE_VFX_DASH_DESTINATION_RING_END_SCALE = 1.36
+const MOVE_VFX_DASH_REDUCED_RING_MAX_OPACITY = 0.32
+const MOVE_VFX_DASH_REDUCED_RING_START_SCALE = 0.88
+const MOVE_VFX_DASH_REDUCED_RING_END_SCALE = 1.12
 const MOVE_VFX_RADIAL_BURST_INNER_RING_NAME = 'move-vfx-radial-burst-inner-ring'
 const MOVE_VFX_RADIAL_BURST_OUTER_RING_NAME = 'move-vfx-radial-burst-outer-ring'
 const MOVE_VFX_RADIAL_BURST_RAY_PREFIX = 'move-vfx-radial-burst-ray'
@@ -2523,6 +2560,287 @@ const applyAreaSweepVisualState = (options: {
   options.mesh.instanceMatrix.needsUpdate = true
 }
 
+const dashDestinationCellForEvent = (event: MoveDashAnimationEvent): GridAnchor | null => {
+  if (isFiniteGridAnchor(event.destinationCell)) return event.destinationCell
+
+  const pathCells = Array.isArray(event.pathCells) ? event.pathCells.filter(isFiniteGridAnchor) : []
+  return pathCells[pathCells.length - 1] ?? null
+}
+
+const dashDimensionsForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): { streakRadius: number, afterimageRadius: number, destinationRadius: number } => {
+  const footprint = Math.max(
+    finitePositiveNumber(renderObject?.base) ?? 0,
+    finitePositiveNumber(renderObject?.width) ?? 0,
+  )
+
+  return {
+    streakRadius: footprint > 0
+      ? clampNumber(
+        footprint * MOVE_VFX_DASH_STREAK_RADIUS_SCALE,
+        MOVE_VFX_DASH_STREAK_MIN_RADIUS,
+        MOVE_VFX_DASH_STREAK_MAX_RADIUS,
+      )
+      : MOVE_VFX_DASH_STREAK_DEFAULT_RADIUS,
+    afterimageRadius: footprint > 0
+      ? clampNumber(
+        footprint * MOVE_VFX_DASH_AFTERIMAGE_RADIUS_SCALE,
+        MOVE_VFX_DASH_AFTERIMAGE_MIN_RADIUS,
+        MOVE_VFX_DASH_AFTERIMAGE_MAX_RADIUS,
+      )
+      : MOVE_VFX_DASH_AFTERIMAGE_DEFAULT_RADIUS,
+    destinationRadius: footprint > 0
+      ? clampNumber(
+        footprint * MOVE_VFX_DASH_DESTINATION_RADIUS_SCALE,
+        MOVE_VFX_DASH_DESTINATION_MIN_RADIUS,
+        MOVE_VFX_DASH_DESTINATION_MAX_RADIUS,
+      )
+      : MOVE_VFX_DASH_DESTINATION_DEFAULT_RADIUS,
+  }
+}
+
+const resolveDashPath = (
+  event: MoveDashAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+  destinationCell: GridAnchor,
+): {
+  start: THREE.Vector3
+  end: THREE.Vector3
+  pathLength: number
+  pathDirection: THREE.Vector3
+  pathQuaternion: THREE.Quaternion
+  streakRadius: number
+  afterimageRadius: number
+  destinationRadius: number
+} | null => {
+  const userRenderObject = renderObjects.get(event.userId)
+  const start = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: event.userId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.originCell,
+  })
+  if (!start) return null
+
+  const end = moveVfxGridCellCenterAnchor(destinationCell)
+  const pathVector = new THREE.Vector3().subVectors(end, start)
+  const pathLength = pathVector.length()
+  if (pathLength < MOVE_VFX_DASH_MIN_PATH_LENGTH) return null
+
+  const pathDirection = pathVector.multiplyScalar(1 / pathLength)
+
+  return {
+    start: start.clone(),
+    end: end.clone(),
+    pathLength,
+    pathDirection: pathDirection.clone(),
+    pathQuaternion: new THREE.Quaternion().setFromUnitVectors(MOVE_VFX_WORLD_UP, pathDirection),
+    ...dashDimensionsForRenderObject(userRenderObject),
+  }
+}
+
+const createDashMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createDashStreakMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12, 1, false), material)
+  mesh.name = MOVE_VFX_DASH_STREAK_NAME
+  mesh.renderOrder = MOVE_VFX_DASH_STREAK_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createDashAfterimageMesh = (
+  index: number,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), material)
+  mesh.name = `${MOVE_VFX_DASH_AFTERIMAGE_PREFIX}-${index + 1}`
+  mesh.renderOrder = MOVE_VFX_DASH_AFTERIMAGE_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createDashDestinationRingMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 44), material)
+  mesh.name = MOVE_VFX_DASH_DESTINATION_RING_NAME
+  mesh.renderOrder = MOVE_VFX_DASH_DESTINATION_RING_RENDER_ORDER
+  mesh.rotation.x = -Math.PI / 2
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const dashOpacityMultiplier = (progress: number): number => {
+  const fadeIn = clamp01(progress / MOVE_VFX_DASH_FADE_IN_PROGRESS)
+  const fadeOut = progress <= MOVE_VFX_DASH_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_DASH_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const hideDashTravelMeshes = (options: {
+  streak: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  afterimages: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+}) => {
+  options.streak.material.opacity = 0
+  options.streak.visible = false
+  for (const afterimage of options.afterimages) {
+    afterimage.material.opacity = 0
+    afterimage.visible = false
+  }
+}
+
+const applyDashDestinationRingState = (options: {
+  destinationRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  relativeEnd: THREE.Vector3
+  destinationRadius: number
+  progress: number
+  opacityMultiplier: number
+  reducedMotion?: boolean
+}) => {
+  const progress = clamp01(options.progress)
+  const reducedMotion = options.reducedMotion === true
+  const destinationProgress = reducedMotion
+    ? easeOutCubic(progress)
+    : easeOutCubic(clamp01(
+      (progress - MOVE_VFX_DASH_DESTINATION_START_PROGRESS) / MOVE_VFX_DASH_DESTINATION_WINDOW_PROGRESS,
+    ))
+  const destinationFadeIn = reducedMotion
+    ? Math.max(0.26, clamp01(progress / MOVE_VFX_DASH_FADE_IN_PROGRESS))
+    : clamp01((progress - MOVE_VFX_DASH_DESTINATION_START_PROGRESS) / 0.18)
+  const maxOpacity = reducedMotion
+    ? MOVE_VFX_DASH_REDUCED_RING_MAX_OPACITY
+    : MOVE_VFX_DASH_DESTINATION_RING_MAX_OPACITY
+  const startScale = reducedMotion
+    ? MOVE_VFX_DASH_REDUCED_RING_START_SCALE
+    : MOVE_VFX_DASH_DESTINATION_RING_START_SCALE
+  const endScale = reducedMotion
+    ? MOVE_VFX_DASH_REDUCED_RING_END_SCALE
+    : MOVE_VFX_DASH_DESTINATION_RING_END_SCALE
+  const ringOpacityMultiplier = reducedMotion ? Math.max(0.22, options.opacityMultiplier) : options.opacityMultiplier
+  const opacity = maxOpacity
+    * ringOpacityMultiplier
+    * destinationFadeIn
+    * Math.max(0, 1 - (destinationProgress * 0.36))
+
+  options.destinationRing.position.copy(options.relativeEnd)
+  options.destinationRing.scale.setScalar(options.destinationRadius * (
+    startScale + ((endScale - startScale) * destinationProgress)
+  ))
+  options.destinationRing.material.opacity = opacity
+  options.destinationRing.visible = opacity > 0.005
+}
+
+const applyDashVisualState = (options: {
+  group: THREE.Group
+  streak: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+  afterimages: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  destinationRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  start: THREE.Vector3
+  end: THREE.Vector3
+  pathLength: number
+  pathDirection: THREE.Vector3
+  pathQuaternion: THREE.Quaternion
+  streakRadius: number
+  afterimageRadius: number
+  destinationRadius: number
+  progress: number
+  reducedMotion?: boolean
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacityMultiplier = dashOpacityMultiplier(progress) * (0.72 + (pulse * 0.28))
+  const relativeStart = new THREE.Vector3(0, MOVE_VFX_DASH_Y_OFFSET, 0)
+  const relativeEnd = new THREE.Vector3().subVectors(options.end, options.start).add(relativeStart)
+
+  options.group.position.copy(options.start)
+
+  if (options.reducedMotion) {
+    hideDashTravelMeshes({ streak: options.streak, afterimages: options.afterimages })
+    applyDashDestinationRingState({
+      destinationRing: options.destinationRing,
+      relativeEnd,
+      destinationRadius: options.destinationRadius,
+      progress,
+      opacityMultiplier,
+      reducedMotion: true,
+    })
+    return
+  }
+
+  const streakLengthScale = MOVE_VFX_DASH_STREAK_START_LENGTH_SCALE
+    + ((MOVE_VFX_DASH_STREAK_END_LENGTH_SCALE - MOVE_VFX_DASH_STREAK_START_LENGTH_SCALE) * expansion)
+  const streakLength = options.pathLength * streakLengthScale
+  const streakRadius = options.streakRadius * (0.86 + (pulse * 0.18))
+  const streakOpacity = MOVE_VFX_DASH_STREAK_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.24))
+
+  options.streak.position.copy(relativeStart).addScaledVector(options.pathDirection, streakLength * 0.5)
+  options.streak.quaternion.copy(options.pathQuaternion)
+  options.streak.scale.set(streakRadius, streakLength, streakRadius)
+  options.streak.material.opacity = streakOpacity
+  options.streak.visible = streakOpacity > 0.005
+
+  const afterimageDivisor = options.afterimages.length + 1
+  options.afterimages.forEach((afterimage, index) => {
+    const sampleT = (index + 1) / afterimageDivisor
+    const reveal = clamp01((expansion - sampleT + MOVE_VFX_DASH_AFTERIMAGE_REVEAL_WINDOW) / MOVE_VFX_DASH_AFTERIMAGE_REVEAL_WINDOW)
+    const opacity = MOVE_VFX_DASH_AFTERIMAGE_MAX_OPACITY
+      * opacityMultiplier
+      * reveal
+      * (1 - (sampleT * 0.24))
+      * Math.max(0, 1 - (progress * 0.22))
+    const radius = options.afterimageRadius * (0.68 + (reveal * 0.42) + (pulse * 0.08))
+
+    afterimage.position.lerpVectors(relativeStart, relativeEnd, sampleT)
+    afterimage.scale.set(radius * 1.08, radius * 0.42, radius * 0.82)
+    afterimage.material.opacity = opacity
+    afterimage.visible = opacity > 0.005
+  })
+
+  applyDashDestinationRingState({
+    destinationRing: options.destinationRing,
+    relativeEnd,
+    destinationRadius: options.destinationRadius,
+    progress,
+    opacityMultiplier,
+  })
+}
+
+const createDashFallbackSelfPulseInstance = (
+  context: MoveVfxInstanceBuildContext,
+  event: MoveDashAnimationEvent,
+): MoveVfxInstance => createSelfPulseMoveVfxInstance({
+  event: {
+    ...event,
+    kind: MOVE_VFX_KIND.selfPulse,
+  } as MoveAnimationEvent,
+  group: context.group,
+  syncContext: context.syncContext,
+})
+
 const gridAnchorMatches = (left: GridAnchor | null | undefined, right: GridAnchor | null | undefined): boolean => (
   isFiniteGridAnchor(left)
   && isFiniteGridAnchor(right)
@@ -3968,7 +4286,83 @@ const createAreaSweepMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
 
 const createLineSweepMoveVfxInstance: MoveVfxInstanceBuilder = createAreaSweepMoveVfxInstance
 const createConeSweepMoveVfxInstance: MoveVfxInstanceBuilder = createAreaSweepMoveVfxInstance
-const createDashMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+
+const createDashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveDashAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const destinationCell = dashDestinationCellForEvent(event)
+
+  if (!destinationCell) return createDashFallbackSelfPulseInstance(context, event)
+
+  const path = resolveDashPath(event, renderObjects, destinationCell)
+  if (!path) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
+  const streak = createDashStreakMesh(createDashMaterial(palette.glow, 0))
+  const afterimages = Array.from(
+    { length: MOVE_VFX_DASH_AFTERIMAGE_COUNT },
+    (_, index) => createDashAfterimageMesh(
+      index,
+      createDashMaterial(index % 2 === 0 ? palette.primary : palette.accent, 0),
+    ),
+  )
+  const destinationRing = createDashDestinationRingMesh(createDashMaterial(palette.accent, 0))
+
+  // Dash/pass VFX are a locked path cue from the user's current foot/origin to
+  // the destination cell supplied by the event. The primitive never offsets the
+  // real token render object or saved placement, so existing token center lerp
+  // and move automation placement rules remain authoritative.
+  context.group.add(streak, ...afterimages, destinationRing)
+  applyDashVisualState({
+    group: context.group,
+    streak,
+    afterimages,
+    destinationRing,
+    ...path,
+    progress: 0,
+    reducedMotion: defaultReducedMotion,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyDashVisualState({
+        group: context.group,
+        streak,
+        afterimages,
+        destinationRing,
+        ...path,
+        progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
 
 const createMissMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   const event = context.event as MoveMissAnimationEvent

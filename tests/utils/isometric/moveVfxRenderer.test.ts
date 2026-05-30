@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveConeSweepAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveLineSweepAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveRadialBurstAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveConeSweepAnimationEvent, type MoveCritAnimationEvent, type MoveDashAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveLineSweepAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveRadialBurstAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, MOVE_VFX_TYPE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -81,6 +81,18 @@ const meleeLungeEvent = (overrides: Partial<MoveMeleeLungeAnimationEvent> = {}):
   durationMs: 1000,
   kind: MOVE_VFX_KIND.meleeLunge,
   targetId: 'target-1',
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const dashEvent = (overrides: Partial<MoveDashAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-dash',
+  moveName: 'Pass',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 1000,
+  kind: MOVE_VFX_KIND.dash,
+  destinationCell: { x: 4, y: 0, z: 0 },
   palette: projectilePalette,
   ...overrides,
 }) as MoveAnimationEvent
@@ -318,6 +330,30 @@ const meleeLungeImpactRingNamed = (
   group: THREE.Object3D,
 ): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
   const mesh = group.children.find((child) => child.name === 'move-vfx-melee-lunge-impact-ring')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const dashStreakNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-dash-streak')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>
+}
+
+const dashAfterimageMeshes = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => {
+  const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-dash-afterimage-'))
+  expect(meshes).toHaveLength(4)
+  return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+}
+
+const dashDestinationRingNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-dash-destination-ring')
   expect(mesh).toBeInstanceOf(THREE.Mesh)
   return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
 }
@@ -1721,6 +1757,149 @@ describe('move VFX renderer shell', () => {
     expect(user.currentCenter.equals(userPlacement)).toBe(true)
     for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
     for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('renders dash events as VFX-owned afterimage paths without moving token placement', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const renderObjects = new Map([[user.id, user]])
+    const userPlacement = user.currentCenter.clone()
+
+    renderer.sync([dashEvent()], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const streak = dashStreakNamed(instanceGroup)
+    const afterimages = dashAfterimageMeshes(instanceGroup)
+    const destinationRing = dashDestinationRingNamed(instanceGroup)
+    expect(instanceGroup.children).toHaveLength(6)
+    expectVectorClose(instanceGroup.position, [0, 0, 0])
+    expect(streak.material.color.getHexString()).toBe('aa3300')
+    expect(afterimages[0]?.material.color.getHexString()).toBe('123456')
+    expect(afterimages[1]?.material.color.getHexString()).toBe('ffeeaa')
+    expect(destinationRing.material.color.getHexString()).toBe('ffeeaa')
+    expect(streak.material.transparent).toBe(true)
+    expect(streak.material.depthTest).toBe(true)
+    expect(streak.material.depthWrite).toBe(false)
+    expect(streak.material.side).toBe(THREE.DoubleSide)
+    expect(streak.material.blending).toBe(THREE.AdditiveBlending)
+    expect(streak.renderOrder).toBe(36)
+    expect(afterimages.every((afterimage) => afterimage.renderOrder === 37)).toBe(true)
+    expect(destinationRing.renderOrder).toBe(37)
+    expect(destinationRing.rotation.x).toBeCloseTo(-Math.PI / 2)
+    expect(streak.visible).toBe(false)
+    expect(afterimages.every((afterimage) => !afterimage.visible)).toBe(true)
+    expect(destinationRing.visible).toBe(false)
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, renderObjects })
+
+    expect(streak.visible).toBe(true)
+    expect(streak.position.x).toBeGreaterThan(1.5)
+    expect(streak.position.z).toBeGreaterThan(0.1)
+    expect(streak.scale.y).toBeGreaterThan(4)
+    expect(afterimages.every((afterimage) => afterimage.visible)).toBe(true)
+    expect(afterimages[0]?.position.x).toBeGreaterThan(0)
+    expect(afterimages[3]?.position.x).toBeGreaterThan(afterimages[0]?.position.x ?? 0)
+    expect(destinationRing.visible).toBe(true)
+    expectVectorClose(destinationRing.position, [4.5, 0.11, 0.5])
+    expect(destinationRing.material.opacity).toBeGreaterThan(0)
+    expect(user.currentCenter.equals(userPlacement)).toBe(true)
+
+    const lockedDashStart = instanceGroup.position.clone()
+    const dashMeshes = [streak, ...afterimages, destinationRing] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>[]
+    const geometryDisposeSpies = dashMeshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = dashMeshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    user.currentCenter.set(10, 0, 0)
+    renderer.animate({ frameNowMs: 601, delta: 0.016, renderObjects })
+
+    expect(instanceGroup.position.equals(lockedDashStart)).toBe(true)
+    expect(destinationRing.position.x).toBeCloseTo(4.5)
+    expect(user.currentCenter.equals(userPlacement)).toBe(false)
+
+    renderer.animate({ frameNowMs: 1100, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses path-cell destination fallback and reduced-motion destination pulses for dash events', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      dashEvent({
+        userId: 'missing-user',
+        originCell: { x: 0, y: 0, z: 0 },
+        destinationCell: undefined,
+        pathCells: [
+          { x: Number.NaN, y: 0, z: 0 },
+          { x: 2, y: 1, z: 1 },
+        ],
+        palette: undefined,
+      }),
+    ], { renderObjects: new Map(), reducedMotion: true })
+
+    const instanceGroup = renderer.group.children[0]
+    const streak = dashStreakNamed(instanceGroup)
+    const afterimages = dashAfterimageMeshes(instanceGroup)
+    const destinationRing = dashDestinationRingNamed(instanceGroup)
+    const initialRingScale = destinationRing.scale.x
+
+    expect(instanceGroup.children).toHaveLength(6)
+    expectVectorClose(instanceGroup.position, [0.5, 0, 0.5])
+    expectVectorClose(destinationRing.position, [2, 1.11, 1])
+    expect(destinationRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.neutral.accent.slice(1))
+    expect(destinationRing.visible).toBe(true)
+    expect(streak.visible).toBe(false)
+    expect(streak.material.opacity).toBe(0)
+    expect(afterimages.every((afterimage) => !afterimage.visible && afterimage.material.opacity === 0)).toBe(true)
+
+    renderer.animate({ frameNowMs: 600, delta: 0.016, reducedMotion: true })
+
+    expect(destinationRing.visible).toBe(true)
+    expect(destinationRing.scale.x).toBeGreaterThan(initialRingScale)
+    expect(destinationRing.scale.x).toBeLessThan(initialRingScale * 1.3)
+    expect(streak.visible).toBe(false)
+    expect(afterimages.every((afterimage) => !afterimage.visible && afterimage.material.opacity === 0)).toBe(true)
+  })
+
+  it('falls back to a self pulse for dash events without destination data', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(2, 0, 1) })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([dashEvent({ destinationCell: undefined, pathCells: undefined })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const baseRing = selfPulseRingNamed(instanceGroup, 'move-vfx-self-pulse-base-ring')
+    const shell = selfPulseShellNamed(instanceGroup)
+
+    expect(instanceGroup.children).toHaveLength(3)
+    expectVectorClose(instanceGroup.position, [2, 0, 1])
+    expect(baseRing.material.color.getHexString()).toBe(projectilePalette.accent.slice(1))
+    expect(shell.material.color.getHexString()).toBe(projectilePalette.primary.slice(1))
+    expect(instanceGroup.children.some((child) => child.name === 'move-vfx-dash-streak')).toBe(false)
+  })
+
+  it('falls back to a no-op dash when a destination is present but no start anchor can be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([dashEvent({ userId: 'missing-user' })], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 1100, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
   })
 
   it('renders target flash events as per-target palette-coloured shells and footprint rings', () => {

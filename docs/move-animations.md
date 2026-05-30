@@ -525,6 +525,14 @@ Each sweep instance owns one `THREE.InstancedMesh` named `move-vfx-area-sweep-ce
 
 Line/cone sweep VFX remain visual-only runtime resources. They do not decide affected cells/targets, mutate terrain/token placement/HP/status/combat stages, change permissions, persist data, lower renderer quality, add dependencies, or alter existing targeting/roll-feedback overlays. Completion, event removal, hidden-tab expiry, layer-hidden aging, and map unmount dispose the owned instanced geometry and material through the existing VFX lifecycle.
 
+### Dash/pass afterimage primitive for VFX-047
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the `dash` placeholder with a generic movement-path cue for pass/dash-style outcomes. Dash events resolve and lock the move user's current foot/origin anchor plus the destination grid cell supplied by `destinationCell`; when only `pathCells` are present, the last valid path cell is used as the destination. The primitive renders a lightweight path streak, four constant-count afterimage glows, and a destination ring using the event palette or the neutral fallback.
+
+Dash VFX deliberately do not move, offset, or mutate the real token render object. Existing move automation and token center interpolation remain the only systems that change saved placement or live token motion; the dash primitive is just an event-owned overlay that complements those systems. Missing destination data falls back to the existing self-pulse primitive on the user so movement-like events still communicate a resolved move without inventing a path, while a supplied destination with no resolvable start anchor no-ops safely.
+
+Dash meshes and materials are runtime-only resources owned by the event lifecycle group and disposed through `disposeObject3D()` on completion, event removal, hidden-tab expiry, layer-hidden aging, or map unmount. Scheduler frame time drives reveal, opacity, completion, and reduced-motion handling; no independent RAF/timer loop, persistence, gameplay mutation, permission change, renderer-quality reduction, external asset, or new dependency is introduced.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
