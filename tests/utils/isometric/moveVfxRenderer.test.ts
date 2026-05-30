@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -104,6 +104,18 @@ const impactRingEvent = (
   createdAtMs: 100,
   durationMs: 260,
   kind: MOVE_VFX_KIND.impactRing,
+  targetId: 'target-1',
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const missEvent = (overrides: Partial<MoveMissAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-miss',
+  moveName: 'Ember',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 260,
+  kind: MOVE_VFX_KIND.miss,
   targetId: 'target-1',
   palette: projectilePalette,
   ...overrides,
@@ -215,6 +227,22 @@ const impactRingNamed = (
   const mesh = group.children.find((child) => child.name === 'move-vfx-impact-ring')
   expect(mesh).toBeInstanceOf(THREE.Mesh)
   return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const missPuffRingNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-miss-puff-ring')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const missPuffCloudMeshes = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] => {
+  const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-miss-puff-cloud-'))
+  expect(meshes).toHaveLength(3)
+  return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
 }
 
 const attachDisposableMesh = (group: THREE.Object3D) => {
@@ -1110,6 +1138,106 @@ describe('move VFX renderer shell', () => {
     const renderer = createMoveVfxRenderer(scene)
 
     renderer.sync([impactRingEvent({ targetId: 'missing-target' })], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 360, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders miss puff events as neutral off-target puffs without hit colours', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({ id: 'user-1', currentCenter: new THREE.Vector3(0, 0, 0) })
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 0, 0) })
+    const renderObjects = new Map([
+      [user.id, user],
+      [target.id, target],
+    ])
+
+    renderer.sync([missEvent()], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const ring = missPuffRingNamed(instanceGroup)
+    const clouds = missPuffCloudMeshes(instanceGroup)
+    expect(instanceGroup.children).toHaveLength(4)
+    expect(instanceGroup.position.x).toBeGreaterThan(4)
+    expect(instanceGroup.position.x).toBeLessThan(4.7)
+    expect(instanceGroup.position.y).toBeCloseTo(0)
+    expect(instanceGroup.position.z).toBeCloseTo(0)
+    expectVectorClose(ring.position, [0, 0.055, 0])
+    expect(ring.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.miss.accent.slice(1))
+    expect(clouds[0]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.miss.primary.slice(1))
+    expect(clouds[1]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.miss.glow.slice(1))
+    expect(ring.material.color.getHexString()).not.toBe(projectilePalette.accent.slice(1))
+    expect(ring.material.transparent).toBe(true)
+    expect(ring.material.depthTest).toBe(true)
+    expect(ring.material.depthWrite).toBe(false)
+    expect(ring.renderOrder).toBe(36)
+    expect(clouds.every((cloud) => cloud.renderOrder === 37)).toBe(true)
+    expect(ring.visible).toBe(false)
+    expect(clouds.every((cloud) => !cloud.visible)).toBe(true)
+
+    renderer.animate({ frameNowMs: 190, delta: 0.016, renderObjects })
+
+    expect(ring.visible).toBe(true)
+    expect(ring.material.opacity).toBeGreaterThan(0)
+    expect(ring.material.opacity).toBeLessThan(0.31)
+    expect(ring.scale.x).toBeGreaterThan(0.45)
+    expect(clouds.every((cloud) => cloud.visible)).toBe(true)
+    expect(clouds[0]?.position.y).toBeGreaterThan(0)
+    expect(clouds[0]?.material.opacity).toBeLessThan(0.23)
+
+    const lockedMissPoint = instanceGroup.position.clone()
+    const geometryDisposeSpies = [ring, ...clouds].map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = [ring, ...clouds].map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    target.currentCenter.set(12, 0, 0)
+    renderer.animate({ frameNowMs: 240, delta: 0.016, renderObjects })
+
+    expect(instanceGroup.position.equals(lockedMissPoint)).toBe(true)
+
+    renderer.animate({ frameNowMs: 360, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses grid-cell fallback anchors for miss puffs when the target token is missing', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      missEvent({
+        targetId: 'missing-target',
+        targetCell: { x: 5, y: 2, z: 2 },
+      }),
+    ], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    const ring = missPuffRingNamed(instanceGroup)
+    const clouds = missPuffCloudMeshes(instanceGroup)
+
+    expect(instanceGroup.children).toHaveLength(4)
+    expect(instanceGroup.position.x).toBeCloseTo(5.5)
+    expect(instanceGroup.position.y).toBeCloseTo(2)
+    expect(instanceGroup.position.z).toBeGreaterThan(2.5)
+    expect(ring.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.miss.accent.slice(1))
+    expect(clouds[0]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.miss.primary.slice(1))
+  })
+
+  it('falls back to a no-op miss puff when no target anchor can be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([missEvent({ targetId: 'missing-target' })], { renderObjects: new Map() })
 
     const instanceGroup = renderer.group.children[0]
     expect(instanceGroup.children).toHaveLength(0)

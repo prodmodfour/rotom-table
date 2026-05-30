@@ -6,6 +6,7 @@ import {
   type MoveBeamAnimationEvent,
   type MoveImpactRingAnimationEvent,
   type MoveMeleeLungeAnimationEvent,
+  type MoveMissAnimationEvent,
   type MoveProjectileAnimationEvent,
   type MoveTargetFlashAnimationEvent,
 } from '~/types/moveAnimation'
@@ -181,6 +182,29 @@ const MOVE_VFX_IMPACT_RING_FADE_OUT_START = 0.42
 const MOVE_VFX_IMPACT_RING_MAX_OPACITY = 0.58
 const MOVE_VFX_IMPACT_RING_START_SCALE = 0.58
 const MOVE_VFX_IMPACT_RING_END_SCALE = 1.58
+const MOVE_VFX_MISS_PUFF_RING_NAME = 'move-vfx-miss-puff-ring'
+const MOVE_VFX_MISS_PUFF_CLOUD_PREFIX = 'move-vfx-miss-puff-cloud'
+const MOVE_VFX_MISS_PUFF_RING_RENDER_ORDER = 36
+const MOVE_VFX_MISS_PUFF_CLOUD_RENDER_ORDER = 37
+const MOVE_VFX_MISS_PUFF_MIN_RADIUS = 0.22
+const MOVE_VFX_MISS_PUFF_DEFAULT_RADIUS = 0.34
+const MOVE_VFX_MISS_PUFF_MAX_RADIUS = 0.74
+const MOVE_VFX_MISS_PUFF_RADIUS_SCALE = 0.32
+const MOVE_VFX_MISS_PUFF_MIN_OFFSET = 0.26
+const MOVE_VFX_MISS_PUFF_MAX_OFFSET = 0.64
+const MOVE_VFX_MISS_PUFF_OFFSET_RATIO = 0.9
+const MOVE_VFX_MISS_PUFF_RING_Y_OFFSET = 0.055
+const MOVE_VFX_MISS_PUFF_FADE_IN_PROGRESS = 0.12
+const MOVE_VFX_MISS_PUFF_FADE_OUT_START = 0.3
+const MOVE_VFX_MISS_PUFF_RING_MAX_OPACITY = 0.3
+const MOVE_VFX_MISS_PUFF_CLOUD_MAX_OPACITY = 0.22
+const MOVE_VFX_MISS_PUFF_RING_START_SCALE = 0.46
+const MOVE_VFX_MISS_PUFF_RING_END_SCALE = 1.28
+const MOVE_VFX_MISS_PUFF_CLOUD_LAYOUT = [
+  { x: 0, y: 0.38, z: 0, scale: 0.44, opacity: 1 },
+  { x: 0.34, y: 0.48, z: -0.18, scale: 0.32, opacity: 0.72 },
+  { x: -0.28, y: 0.44, z: 0.26, scale: 0.28, opacity: 0.62 },
+] as const
 const MOVE_VFX_WORLD_UP = new THREE.Vector3(0, 1, 0)
 const MOVE_VFX_WORLD_FORWARD = new THREE.Vector3(0, 0, 1)
 
@@ -419,6 +443,10 @@ const firstTargetFlashTargetId = (event: MoveTargetFlashAnimationEvent): string 
 )
 
 const firstImpactRingTargetId = (event: MoveImpactRingAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
+const firstMissTargetId = (event: MoveMissAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
 )
 
@@ -1024,6 +1052,152 @@ const applyImpactRingVisualState = (options: {
   options.ring.visible = opacity > 0.005
 }
 
+const missPuffRadiusForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): number => {
+  const footprint = Math.max(
+    finitePositiveNumber(renderObject?.base) ?? 0,
+    finitePositiveNumber(renderObject?.width) ?? 0,
+  )
+
+  return footprint > 0
+    ? clampNumber(
+      footprint * MOVE_VFX_MISS_PUFF_RADIUS_SCALE,
+      MOVE_VFX_MISS_PUFF_MIN_RADIUS,
+      MOVE_VFX_MISS_PUFF_MAX_RADIUS,
+    )
+    : MOVE_VFX_MISS_PUFF_DEFAULT_RADIUS
+}
+
+const missPuffOffsetForRadius = (radius: number): number => clampNumber(
+  radius * MOVE_VFX_MISS_PUFF_OFFSET_RATIO,
+  MOVE_VFX_MISS_PUFF_MIN_OFFSET,
+  MOVE_VFX_MISS_PUFF_MAX_OFFSET,
+)
+
+const resolveMissPuffAnchor = (
+  event: MoveMissAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): { foot: THREE.Vector3, radius: number } | null => {
+  const targetId = firstMissTargetId(event)
+  const targetRenderObject = targetId ? renderObjects.get(targetId) : undefined
+  const targetFoot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: targetId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.targetCell,
+  })
+
+  if (!targetFoot) return null
+
+  const userFoot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: event.userId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+  })
+  const direction = userFoot
+    ? new THREE.Vector3(targetFoot.x - userFoot.x, 0, targetFoot.z - userFoot.z)
+    : MOVE_VFX_WORLD_FORWARD.clone()
+
+  if (direction.lengthSq() < 0.0001) direction.copy(MOVE_VFX_WORLD_FORWARD)
+  else direction.normalize()
+
+  const radius = missPuffRadiusForRenderObject(targetRenderObject)
+  const foot = targetFoot.clone().addScaledVector(direction, missPuffOffsetForRadius(radius))
+
+  return { foot, radius }
+}
+
+const createMissPuffMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createMissPuffRingMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 32), material)
+  mesh.name = MOVE_VFX_MISS_PUFF_RING_NAME
+  mesh.renderOrder = MOVE_VFX_MISS_PUFF_RING_RENDER_ORDER
+  mesh.rotation.x = -Math.PI / 2
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createMissPuffCloudMesh = (
+  index: number,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), material)
+  mesh.name = `${MOVE_VFX_MISS_PUFF_CLOUD_PREFIX}-${index + 1}`
+  mesh.renderOrder = MOVE_VFX_MISS_PUFF_CLOUD_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const missPuffOpacityMultiplier = (progress: number): number => {
+  const fadeIn = clamp01(progress / MOVE_VFX_MISS_PUFF_FADE_IN_PROGRESS)
+  const fadeOut = progress <= MOVE_VFX_MISS_PUFF_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_MISS_PUFF_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const applyMissPuffVisualState = (options: {
+  group: THREE.Group
+  ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  clouds: readonly THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+  foot: THREE.Vector3
+  radius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const opacityMultiplier = missPuffOpacityMultiplier(progress)
+  const ringOpacity = MOVE_VFX_MISS_PUFF_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.58))
+
+  options.group.position.copy(options.foot)
+  options.ring.position.set(0, MOVE_VFX_MISS_PUFF_RING_Y_OFFSET, 0)
+  options.ring.scale.setScalar(options.radius * (
+    MOVE_VFX_MISS_PUFF_RING_START_SCALE
+    + ((MOVE_VFX_MISS_PUFF_RING_END_SCALE - MOVE_VFX_MISS_PUFF_RING_START_SCALE) * expansion)
+  ))
+  options.ring.material.opacity = ringOpacity
+  options.ring.visible = ringOpacity > 0.005
+
+  options.clouds.forEach((cloud, index) => {
+    const layout = MOVE_VFX_MISS_PUFF_CLOUD_LAYOUT[index] ?? MOVE_VFX_MISS_PUFF_CLOUD_LAYOUT[0]
+    const drift = 0.72 + (expansion * 0.38)
+    const cloudOpacity = MOVE_VFX_MISS_PUFF_CLOUD_MAX_OPACITY
+      * opacityMultiplier
+      * layout.opacity
+      * Math.max(0, 1 - (progress * 0.72))
+
+    cloud.position.set(
+      layout.x * options.radius * drift,
+      (layout.y + (expansion * 0.18)) * options.radius,
+      layout.z * options.radius * drift,
+    )
+    cloud.scale.setScalar(options.radius * layout.scale * (0.78 + (expansion * 0.5)))
+    cloud.material.opacity = cloudOpacity
+    cloud.visible = cloudOpacity > 0.005
+  })
+}
+
 /**
  * Safe placeholder for effect kinds whose visible primitive has not landed yet.
  *
@@ -1538,7 +1712,71 @@ const createAreaPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfx
 const createLineSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createConeSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createDashMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
-const createMissMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+
+const createMissMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveMissAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchor = resolveMissPuffAnchor(event, renderObjects)
+
+  if (!anchor) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette = moveVfxColorForTone(MOVE_VFX_TONE.miss)
+  const ring = createMissPuffRingMesh(createMissPuffMaterial(palette.accent, 0))
+  const clouds = MOVE_VFX_MISS_PUFF_CLOUD_LAYOUT.map((_, index) => createMissPuffCloudMesh(
+    index,
+    createMissPuffMaterial(index === 0 ? palette.primary : palette.glow, 0),
+  ))
+
+  // Miss puffs intentionally ignore type-coloured event palettes. They lock a
+  // point just past the target/cell anchor and use understated neutral miss
+  // styling so misses do not read as damaging hit impacts.
+  context.group.add(ring, ...clouds)
+  applyMissPuffVisualState({
+    group: context.group,
+    ring,
+    clouds,
+    ...anchor,
+    progress: 0,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyMissPuffVisualState({
+        group: context.group,
+        ring,
+        clouds,
+        ...anchor,
+        progress: progress.progress,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const createCritMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createStatusMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createHealingMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance

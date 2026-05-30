@@ -448,6 +448,14 @@ Impact rings use a small y-offset above the target/cell plane, transparent addit
 
 Impact ring VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay mutation, no token placement mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
 
+### Miss puff primitive for VFX-038
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the miss placeholder with a small neutral puff/ring primitive. Miss events resolve the first target id to a locked token-foot anchor, or use `targetCell` when the token render object is unavailable, then place the puff just past the target from the user's direction. If the user anchor is unavailable, the primitive uses a small deterministic fallback offset so grid-cell-only miss events still appear beside the affected cell.
+
+Miss puffs intentionally ignore type-coloured event palettes and use the shared semantic `miss` palette from `src/utils/moveAnimationPalette.ts`. Each instance owns one low-opacity ground ring plus three soft cloud puffs, all using transparent additive materials with `depthTest: true`, `depthWrite: false`, disabled raycasting, and render orders below stronger hit/target-flash accents. Scheduler frame time drives expansion, slight upward cloud drift, opacity fade, completion, and disposal.
+
+Miss puff VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay mutation, no token placement mutation, no permission changes, no renderer-quality reduction, no new dependencies, and no damaging hit/crit colour styling for miss outcomes.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
