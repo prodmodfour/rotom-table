@@ -1,7 +1,9 @@
 import * as THREE from 'three'
+import type { GridAnchor } from '~/types/map'
 import {
   MOVE_VFX_KIND,
   type MoveAnimationEvent,
+  type MoveAreaPulseAnimationEvent,
   type MoveArcAnimationEvent,
   type MoveBeamAnimationEvent,
   type MoveBuffDebuffAnimationEvent,
@@ -21,6 +23,7 @@ import type { PokemonRenderObject } from '~/utils/isometric/types'
 import {
   MOVE_VFX_TOKEN_ANCHOR,
   moveVfxAreaCentroidAnchor,
+  moveVfxGridCellCenterAnchor,
   resolveMoveVfxAnchorPair,
   resolveMoveVfxTokenAnchor,
 } from './moveVfxAnchors'
@@ -286,6 +289,18 @@ const MOVE_VFX_STATUS_CLOUD_ORBIT_END_SCALE = 0.62
 const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_MAX_OPACITY = 0.3
 const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_START_SCALE = 0.9
 const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_END_SCALE = 1.1
+const MOVE_VFX_AREA_PULSE_CELLS_NAME = 'move-vfx-area-pulse-cells'
+const MOVE_VFX_AREA_PULSE_RENDER_ORDER = 35
+const MOVE_VFX_AREA_PULSE_CELL_INSET = 0.14
+const MOVE_VFX_AREA_PULSE_Y_OFFSET = 0.032
+const MOVE_VFX_AREA_PULSE_FADE_IN_PROGRESS = 0.16
+const MOVE_VFX_AREA_PULSE_FADE_OUT_START = 0.7
+const MOVE_VFX_AREA_PULSE_MAX_OPACITY = 0.34
+const MOVE_VFX_AREA_PULSE_START_SCALE = 0.68
+const MOVE_VFX_AREA_PULSE_END_SCALE = 1.04
+const MOVE_VFX_AREA_PULSE_REDUCED_MAX_OPACITY = 0.26
+const MOVE_VFX_AREA_PULSE_REDUCED_START_SCALE = 0.9
+const MOVE_VFX_AREA_PULSE_REDUCED_END_SCALE = 1.02
 const MOVE_VFX_TARGET_FLASH_SHELL_NAME = 'move-vfx-target-flash-shell'
 const MOVE_VFX_TARGET_FLASH_RING_NAME = 'move-vfx-target-flash-ring'
 const MOVE_VFX_TARGET_FLASH_SHELL_RENDER_ORDER = 38
@@ -2145,6 +2160,98 @@ const applyImpactRingVisualState = (options: {
   options.ring.visible = opacity > 0.005
 }
 
+const isFiniteGridAnchor = (cell: GridAnchor | null | undefined): cell is GridAnchor => (
+  Boolean(cell)
+  && Number.isFinite(cell?.x)
+  && Number.isFinite(cell?.y)
+  && Number.isFinite(cell?.z)
+)
+
+const areaPulseCellsForEvent = (event: MoveAreaPulseAnimationEvent): GridAnchor[] => (
+  Array.isArray(event.areaCells) ? event.areaCells.filter(isFiniteGridAnchor) : []
+)
+
+const createAreaPulseMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createAreaPulseCellsMesh = (
+  count: number,
+  material: THREE.MeshBasicMaterial,
+): THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.InstancedMesh(
+    new THREE.PlaneGeometry(1 - MOVE_VFX_AREA_PULSE_CELL_INSET, 1 - MOVE_VFX_AREA_PULSE_CELL_INSET),
+    material,
+    Math.max(1, count),
+  )
+  mesh.name = MOVE_VFX_AREA_PULSE_CELLS_NAME
+  mesh.count = Math.max(0, count)
+  mesh.renderOrder = MOVE_VFX_AREA_PULSE_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const areaPulseOpacityMultiplier = (progress: number): number => {
+  const fadeIn = Math.max(0.22, clamp01(progress / MOVE_VFX_AREA_PULSE_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_AREA_PULSE_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_AREA_PULSE_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const applyAreaPulseVisualState = (options: {
+  mesh: THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
+  cellCenters: readonly THREE.Vector3[]
+  progress: number
+  reducedMotion?: boolean
+  scratchMatrix: THREE.Matrix4
+  scratchPosition: THREE.Vector3
+  scratchQuaternion: THREE.Quaternion
+  scratchScale: THREE.Vector3
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const pulse = pulse01(progress)
+  const maxOpacity = options.reducedMotion
+    ? MOVE_VFX_AREA_PULSE_REDUCED_MAX_OPACITY
+    : MOVE_VFX_AREA_PULSE_MAX_OPACITY
+  const startScale = options.reducedMotion
+    ? MOVE_VFX_AREA_PULSE_REDUCED_START_SCALE
+    : MOVE_VFX_AREA_PULSE_START_SCALE
+  const endScale = options.reducedMotion
+    ? MOVE_VFX_AREA_PULSE_REDUCED_END_SCALE
+    : MOVE_VFX_AREA_PULSE_END_SCALE
+  const scale = startScale + ((endScale - startScale) * expansion)
+  const opacity = maxOpacity
+    * areaPulseOpacityMultiplier(progress)
+    * (0.72 + (pulse * 0.28))
+    * Math.max(0, 1 - (progress * 0.26))
+
+  options.mesh.count = options.cellCenters.length
+  options.mesh.material.opacity = opacity
+  options.mesh.visible = options.cellCenters.length > 0 && opacity > 0.005
+
+  options.scratchScale.set(scale, scale, 1)
+  options.cellCenters.forEach((center, index) => {
+    options.scratchPosition.set(center.x, center.y + MOVE_VFX_AREA_PULSE_Y_OFFSET, center.z)
+    options.scratchMatrix.compose(options.scratchPosition, options.scratchQuaternion, options.scratchScale)
+    options.mesh.setMatrixAt(index, options.scratchMatrix)
+  })
+  options.mesh.instanceMatrix.needsUpdate = true
+}
+
 const missPuffRadiusForRenderObject = (
   renderObject: PokemonRenderObject | undefined,
 ): number => {
@@ -3141,7 +3248,80 @@ const createImpactRingMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
-const createAreaPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+const createAreaPulseMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveAreaPulseAnimationEvent
+  const cells = areaPulseCellsForEvent(event)
+
+  if (!cells.length) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette: MoveVfxPaletteEntry = event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  const defaultReducedMotion = context.syncContext.reducedMotion === true
+  const cellCenters = cells.map(moveVfxGridCellCenterAnchor)
+  const cellsMesh = createAreaPulseCellsMesh(
+    cellCenters.length,
+    createAreaPulseMaterial(palette.primary, 0),
+  )
+  const scratchMatrix = new THREE.Matrix4()
+  const scratchPosition = new THREE.Vector3()
+  const scratchQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0))
+  const scratchScale = new THREE.Vector3(1, 1, 1)
+
+  // Area pulses are one instanced, event-owned ground overlay for the confirmed
+  // cell set. The renderer locks the cells at creation, updates only instance
+  // transforms plus shared material opacity during scheduler frames, and never
+  // mutates area targeting, terrain, token placement, map JSON, or move rules.
+  context.group.add(cellsMesh)
+  applyAreaPulseVisualState({
+    mesh: cellsMesh,
+    cellCenters,
+    progress: 0,
+    reducedMotion: defaultReducedMotion,
+    scratchMatrix,
+    scratchPosition,
+    scratchQuaternion,
+    scratchScale,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyAreaPulseVisualState({
+        mesh: cellsMesh,
+        cellCenters,
+        progress: progress.progress,
+        reducedMotion: frameContext.reducedMotion ?? defaultReducedMotion,
+        scratchMatrix,
+        scratchPosition,
+        scratchQuaternion,
+        scratchScale,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
 const createLineSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createConeSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createDashMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance

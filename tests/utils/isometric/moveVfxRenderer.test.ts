@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveCritAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, MOVE_VFX_TYPE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -115,6 +115,21 @@ const impactRingEvent = (
   durationMs: 260,
   kind: MOVE_VFX_KIND.impactRing,
   targetId: 'target-1',
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const areaPulseEvent = (overrides: Partial<MoveAreaPulseAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-area-pulse',
+  moveName: 'Surf',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 560,
+  kind: MOVE_VFX_KIND.areaPulse,
+  areaCells: [
+    { x: 1, y: 0, z: 0 },
+    { x: 2, y: 0, z: 1 },
+  ],
   palette: projectilePalette,
   ...overrides,
 }) as MoveAnimationEvent
@@ -284,6 +299,32 @@ const impactRingNamed = (
   const mesh = group.children.find((child) => child.name === 'move-vfx-impact-ring')
   expect(mesh).toBeInstanceOf(THREE.Mesh)
   return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const areaPulseCellsMeshNamed = (
+  group: THREE.Object3D,
+): THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-area-pulse-cells')
+  expect(mesh).toBeInstanceOf(THREE.InstancedMesh)
+  return mesh as THREE.InstancedMesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
+}
+
+const instanceMatrixPosition = (
+  mesh: THREE.InstancedMesh,
+  index: number,
+): THREE.Vector3 => {
+  const matrix = new THREE.Matrix4()
+  mesh.getMatrixAt(index, matrix)
+  return new THREE.Vector3().setFromMatrixPosition(matrix)
+}
+
+const instanceMatrixScale = (
+  mesh: THREE.InstancedMesh,
+  index: number,
+): THREE.Vector3 => {
+  const matrix = new THREE.Matrix4()
+  mesh.getMatrixAt(index, matrix)
+  return new THREE.Vector3().setFromMatrixScale(matrix)
 }
 
 const missPuffRingNamed = (
@@ -1838,6 +1879,100 @@ describe('move VFX renderer shell', () => {
     expect(renderer.activeCount()).toBe(1)
 
     renderer.animate({ frameNowMs: 360, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders area pulse events as instanced cell overlays over locked confirmed cells', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const cells = [
+      { x: 1, y: 0, z: 0 },
+      { x: 3, y: 2, z: 4 },
+      { x: -1, y: 1, z: 2 },
+    ]
+
+    renderer.sync([areaPulseEvent({ areaCells: cells })])
+
+    const instanceGroup = renderer.group.children[0]
+    const mesh = areaPulseCellsMeshNamed(instanceGroup)
+    const firstInitialScale = instanceMatrixScale(mesh, 0).x
+    const firstInitialOpacity = mesh.material.opacity
+
+    expect(instanceGroup.children).toHaveLength(1)
+    expect(instanceGroup.position.equals(new THREE.Vector3(0, 0, 0))).toBe(true)
+    expect(mesh.count).toBe(cells.length)
+    expect(mesh.geometry).toBeInstanceOf(THREE.PlaneGeometry)
+    expect(mesh.material.color.getHexString()).toBe(projectilePalette.primary.slice(1))
+    expect(mesh.material.transparent).toBe(true)
+    expect(mesh.material.depthTest).toBe(true)
+    expect(mesh.material.depthWrite).toBe(false)
+    expect(mesh.material.side).toBe(THREE.DoubleSide)
+    expect(mesh.material.blending).toBe(THREE.AdditiveBlending)
+    expect(mesh.renderOrder).toBe(35)
+    expect(mesh.visible).toBe(true)
+    expectVectorClose(instanceMatrixPosition(mesh, 0), [1.5, 0.032, 0.5])
+    expectVectorClose(instanceMatrixPosition(mesh, 1), [3.5, 2.032, 4.5])
+    expect(firstInitialScale).toBeCloseTo(0.68)
+    expect(firstInitialOpacity).toBeGreaterThan(0)
+    expect(firstInitialOpacity).toBeLessThan(0.09)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016 })
+
+    expect(mesh.count).toBe(cells.length)
+    expect(instanceMatrixScale(mesh, 0).x).toBeGreaterThan(firstInitialScale)
+    expect(instanceMatrixScale(mesh, 1).x).toBeCloseTo(instanceMatrixScale(mesh, 0).x)
+    expect(mesh.material.opacity).toBeGreaterThan(firstInitialOpacity)
+    expectVectorClose(instanceMatrixPosition(mesh, 2), [-0.5, 1.032, 2.5])
+
+    const geometryDispose = vi.spyOn(mesh.geometry, 'dispose')
+    const materialDispose = vi.spyOn(mesh.material, 'dispose')
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016 })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    expect(geometryDispose).toHaveBeenCalledOnce()
+    expect(materialDispose).toHaveBeenCalledOnce()
+  })
+
+  it('uses fallback palettes, ignores invalid cells, and no-ops empty area pulse events safely', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      areaPulseEvent({
+        id: 'move-vfx-area-pulse-neutral',
+        areaCells: [
+          { x: 0, y: 0, z: 0 },
+          { x: Number.NaN, y: 0, z: 1 },
+        ],
+        palette: undefined,
+      }),
+      areaPulseEvent({ id: 'move-vfx-area-pulse-empty', areaCells: [] }),
+    ], { reducedMotion: true })
+
+    const neutralGroup = renderer.group.children[0]
+    const emptyGroup = renderer.group.children[1]
+    const mesh = areaPulseCellsMeshNamed(neutralGroup)
+    const initialScale = instanceMatrixScale(mesh, 0).x
+
+    expect(renderer.activeCount()).toBe(2)
+    expect(mesh.count).toBe(1)
+    expect(mesh.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.neutral.primary.slice(1))
+    expect(mesh.visible).toBe(true)
+    expect(initialScale).toBeCloseTo(0.9)
+    expect(emptyGroup.children).toHaveLength(0)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, reducedMotion: true })
+
+    expect(instanceMatrixScale(mesh, 0).x).toBeGreaterThan(initialScale)
+    expect(instanceMatrixScale(mesh, 0).x).toBeLessThan(1.03)
+    expect(mesh.material.opacity).toBeGreaterThan(0)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, reducedMotion: true })
 
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.group.children).toHaveLength(0)

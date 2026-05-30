@@ -496,6 +496,14 @@ Each status instance owns one low ground ring, one soft body cloud shell, and fi
 
 Status VFX remain visual-only runtime resources. They do not decide or apply conditions, mutate HP/combat stages/token placement/style/selection, change permissions, persist data, add dependencies, lower renderer quality, or create an independent RAF/timer loop. Scheduler frame time drives ring expansion, cloud/mote opacity, orbiting motion, completion, and disposal through the existing move VFX lifecycle. A primitive-level reduced-motion hint swaps the orbiting cloud into a single soft fade/pulse ring; app/OS reduced-motion wiring remains scoped to the later accessibility tickets.
 
+### Area cell pulse primitive for VFX-044
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the `area-pulse` placeholder with a confirmed-area cell overlay primitive. Area pulse events read the event's `areaCells` list, ignore invalid/non-finite runtime cells, and no-op safely when the cell set is empty. Non-empty events lock the confirmed cell centers when the instance is created so burst, cone, line, blast, or arbitrary area shapes remain tied to the resolution moment instead of following later targeting changes.
+
+Each area pulse instance owns one `THREE.InstancedMesh` named `move-vfx-area-pulse-cells` with a constant plane geometry/material and one instance per affected cell. Scheduler frame time updates only instance transforms, shared material opacity, and visibility; the primitive does not rebuild geometry per frame and does not create timers or an independent RAF loop. The overlay uses the event palette supplied by the planner, which may be move-type coloured for damaging areas or semantic for non-damage area confirmations, with the neutral palette as a fallback.
+
+Area pulse VFX remain visual-only runtime resources. They do not re-run area targeting, decide who was affected, mutate terrain/token placement/HP/status/combat stages, change permissions, persist data, lower renderer quality, add dependencies, or alter existing map overlays. Completion, event removal, layer-hidden aging, hidden-tab expiry, and map unmount all dispose the owned instanced mesh through the existing move VFX lifecycle. A primitive-level reduced-motion hint keeps the same cells readable with a smaller fade/pulse while app/OS preference wiring remains scoped to the later accessibility tickets.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.
