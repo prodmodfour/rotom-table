@@ -82,7 +82,9 @@ Area moves should keep the existing map-native area confirmation workflow. After
 
 ### Movement-like outcomes
 
-Moves with pass/dash destination data may add a path or afterimage cue, but actual placement remains controlled by the existing move automation transaction logic. The VFX must never save a temporary offset as token placement.
+Moves with pass/dash destination data add a dash/pass afterimage cue from the user's pre-resolution cell to the confirmed destination. The planner carries the destination and path cells in a transient `dash` event, starts the dash before the area impact pulse, and slightly delays affected-token follow-up flashes so the path reads as intentional. Actual placement remains controlled by the existing `moveTokenToPassDestination` logic after move automation applies mechanics, and the VFX must never save a temporary offset as token placement.
+
+Dash/pass rendering is VFX-owned: it draws streaks, afterimages, and a destination ring without moving the real token render object. If the normal token center interpolation is already active because the saved placement changed, that existing interpolation remains authoritative rather than being duplicated by VFX.
 
 ### Optional target shake
 
@@ -319,6 +321,7 @@ Current classifications are intentionally broad:
 - single-target damaging melee moves produce a melee lunge plus type-coloured target flash on hits;
 - single-target damaging ranged moves choose a projectile, beam, or arc from range/keyword/area-template hints, then add type-coloured impact, neutral miss puff, and type-coloured crit accent events as outcome data requires;
 - confirmed area moves produce an area pulse, with burst/blast templates adding a radial burst, line/cone templates adding matching sweep events, and selected affected targets receiving bounded staggered target flashes or miss puffs;
+- confirmed pass/dash area moves that provide `passDestination` also produce a transient `dash` event with destination/path metadata before the area impact timing, while saved token placement still changes only through the existing move automation placement path;
 - unusual scripts with enough user context fall back to a neutral self pulse instead of throwing.
 
 Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so future primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, and miss effects without re-reading move automation rules. Critical-hit events carry the damaging move palette so the renderer can layer that type colour with its semantic crit accent. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.

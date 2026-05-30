@@ -1365,6 +1365,9 @@ describe('useMoveAutomationPanel', () => {
       movelist: [{ name: 'Scratch' }],
     } as CharacterSheet
     const calls: string[] = []
+    const enqueueMoveAnimations = vi.fn((events: readonly MoveAnimationEvent[]) => {
+      calls.push(`vfx:${events.map((event) => event.kind).join(',')}`)
+    })
     const panel = useMoveAutomationPanel({
       map,
       spawnedPokemon: computed(() => [
@@ -1382,6 +1385,8 @@ describe('useMoveAutomationPanel', () => {
       modifyConditions: () => undefined,
       applyMoveFieldEffect: () => undefined,
       placeHazard: () => undefined,
+      enqueueMoveAnimations,
+      now: () => 15000,
     })
 
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Scratch' })
@@ -1408,7 +1413,44 @@ describe('useMoveAutomationPanel', () => {
       random.mockRestore()
     }
 
-    expect(calls).toEqual(['hp:first-token', 'hp:second-token'])
+    expect(calls).toEqual(['vfx:dash,area-pulse,target-flash,target-flash', 'hp:first-token', 'hp:second-token'])
+    expect(enqueueMoveAnimations).toHaveBeenCalledTimes(1)
+    const events = enqueueMoveAnimations.mock.calls[0]?.[0] ?? []
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.dash,
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.dash,
+      moveName: 'Scratch',
+      userId: 'user-token',
+      createdAtMs: 15000,
+      originCell: { x: 1, y: 0, z: 1 },
+      destinationCell: { x: 4, y: 0, z: 1 },
+      pathCells: [
+        { x: 2, y: 0, z: 1 },
+        { x: 3, y: 0, z: 1 },
+        { x: 4, y: 0, z: 1 },
+      ],
+    })
+    expect(events[1]).toMatchObject({
+      kind: MOVE_VFX_KIND.areaPulse,
+      startOffsetMs: 120,
+    })
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'first-token',
+        startOffsetMs: 260,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'second-token',
+        startOffsetMs: 340,
+      }),
+    ]))
     expect(map.value.placements.find((placement) => placement.id === 'user-token')?.position).toEqual({ x: 4, y: 0, z: 1 })
     expect(map.value.metadata?.moveLog).toMatchObject([
       { moveName: 'Scratch', scriptKind: 'explicit' },

@@ -248,6 +248,8 @@ interface MoveAnimationPlannerProcessEnvironment {
 const UNKNOWN_MOVE_ANIMATION_MOVE_NAME = 'Unknown Move'
 const UNKNOWN_MOVE_ANIMATION_USER_ID = 'unknown-user'
 const AREA_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 180
+const AREA_PASS_DASH_IMPACT_OFFSET_MS = 120
+const AREA_PASS_DASH_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 260
 const MOVE_VFX_KIND_VALUES = new Set<string>(Object.values(MOVE_VFX_KIND))
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
@@ -639,6 +641,27 @@ const selectedAreaTargetIdsForInput = (input: MoveAnimationAreaPlanInput): strin
   return selectedTargetIds
 }
 
+const passDestinationForInput = (input: MoveAnimationAreaPlanInput): GridAnchor | undefined => (
+  gridAnchorOrUndefined(input.passDestination)
+)
+
+const passDashAreaImpactStartOffset = (
+  timing: MoveAnimationPlanTimingContext,
+): { readonly startOffsetMs?: number } => startOffsetMetadata(
+  timing.impactDelayMs || AREA_PASS_DASH_IMPACT_OFFSET_MS,
+)
+
+const areaTargetFollowUpBaseOffsetMs = (
+  input: MoveAnimationAreaPlanInput,
+  hasPassDestination: boolean,
+): number => {
+  const timing = timingForInput(input)
+  if (timing.impactDelayMs) return timing.impactDelayMs
+  return hasPassDestination
+    ? AREA_PASS_DASH_TARGET_FOLLOW_UP_BASE_OFFSET_MS
+    : AREA_TARGET_FOLLOW_UP_BASE_OFFSET_MS
+}
+
 const damagingPaletteForScript = (script: MoveAnimationPlanScript): MoveVfxPaletteEntry => (
   moveVfxColorForType(script.type)
 )
@@ -900,13 +923,12 @@ const planAreaTargetFollowUpAnimations = (
     readonly userCell?: GridAnchor
     readonly palette: MoveVfxPaletteEntry
     readonly damaging: boolean
+    readonly baseOffsetMs: number
   },
 ): MoveAnimationEvent[] => {
   const targetIds = selectedAreaTargetIdsForInput(input)
   if (targetIds.length === 0) return []
 
-  const timing = timingForInput(input)
-  const followUpBaseOffsetMs = timing.impactDelayMs || AREA_TARGET_FOLLOW_UP_BASE_OFFSET_MS
   const offsets = createMoveAnimationTargetStartOffsets(
     targetIds.map((targetId) => ({
       targetId,
@@ -915,7 +937,7 @@ const planAreaTargetFollowUpAnimations = (
     {
       order: MOVE_ANIMATION_TARGET_SEQUENCE_ORDER.distanceFromOrigin,
       origin: options.userCell,
-      baseOffsetMs: followUpBaseOffsetMs,
+      baseOffsetMs: options.baseOffsetMs,
     },
   )
 
@@ -951,6 +973,10 @@ const planAreaMoveAnimations = (
 
   const userCell = positionForToken(user)
   const areaCells = gridAnchorsOrEmpty(input.areaCells)
+  const passDestination = passDestinationForInput(input)
+  const hasPassDestination = Boolean(passDestination)
+  const timing = timingForInput(input)
+  const passDashImpactOffset = hasPassDestination ? passDashAreaImpactStartOffset(timing) : {}
   const semanticIntent = semanticIntentForScript(input.script)
   const damaging = scriptHasDamageVisual(input.script)
   const palette = damaging
@@ -958,10 +984,19 @@ const planAreaMoveAnimations = (
     : paletteForSemanticIntent(semanticIntent)
   const events: MoveAnimationEvent[] = []
 
+  if (passDestination) {
+    events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.dash, MOVE_VFX_DEFAULT_DURATIONS_MS.long, {
+      originCell: userCell,
+      destinationCell: passDestination,
+      pathCells: areaCells.length > 0 ? areaCells : [passDestination],
+    }, palette))
+  }
+
   if (areaCells.length > 0) {
     events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.areaPulse, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
       areaCells,
       areaOrigin: userCell,
+      ...passDashImpactOffset,
     }, palette))
 
     if (shouldPlanRadialBurstForScript(input.script)) {
@@ -969,6 +1004,7 @@ const planAreaMoveAnimations = (
         originCell: userCell,
         areaCells,
         areaOrigin: userCell,
+        ...passDashImpactOffset,
       }, palette))
     }
 
@@ -978,6 +1014,7 @@ const planAreaMoveAnimations = (
       areaCells,
       areaOrigin: userCell,
       ...(input.areaDirection ? { areaDirection: input.areaDirection } : {}),
+      ...passDashImpactOffset,
     }
     if (sweepKind === MOVE_VFX_KIND.lineSweep) {
       events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.lineSweep, MOVE_VFX_DEFAULT_DURATIONS_MS.long, sweepMetadata, palette))
@@ -989,6 +1026,7 @@ const planAreaMoveAnimations = (
       userCell,
       palette,
       damaging,
+      baseOffsetMs: areaTargetFollowUpBaseOffsetMs(input, hasPassDestination),
     }))
   }
 

@@ -567,6 +567,53 @@ describe('generic move animation planner', () => {
     expect(blastEvents[1]?.palette).toBe(MOVE_VFX_TYPE_COLORS.Water)
   })
 
+  it('adds a dash event for pass-like area destinations before area impact follow-ups', () => {
+    const cells = [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }, { x: 3, y: 0, z: 0 }]
+    const destination = { x: 3, y: 0, z: 0 }
+    const events = planGenericMoveAnimations(areaInput(cells, {
+      areaDirection: 'east',
+      passDestination: destination,
+      targets: [token({ id: 'target-a', species: 'Target A', position: { x: 2, y: 0, z: 0 } })],
+      selectedTargetIds: ['target-a'],
+      targetOutcomes: [{ targetId: 'target-a', hit: true }],
+      script: script({
+        moveName: 'Generic Pass Area',
+        targetMode: 'multi-target',
+        damaging: true,
+        damageBase: 5,
+        damageClass: 'Physical',
+        type: 'Normal',
+        range: 'Pass 4',
+        areaTemplates: [{ kind: 'pass', size: 4, label: 'Pass 4' }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.dash,
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(events[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.dash,
+      originCell: { x: 0, y: 0, z: 0 },
+      destinationCell: destination,
+      pathCells: cells,
+      durationMs: MOVE_VFX_DEFAULT_DURATIONS_MS.long,
+      palette: MOVE_VFX_TYPE_COLORS.Normal,
+    })
+    expect(events[1]).toMatchObject({
+      kind: MOVE_VFX_KIND.areaPulse,
+      areaCells: cells,
+      startOffsetMs: 120,
+    })
+    expect(events[2]).toMatchObject({
+      kind: MOVE_VFX_KIND.targetFlash,
+      targetId: 'target-a',
+      startOffsetMs: 260,
+      shake: true,
+    })
+  })
+
   it('adds staggered target follow-ups for selected area targets without flashing excluded targets', () => {
     const cells = [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }]
     const events = planGenericMoveAnimations(areaInput(cells, {
