@@ -9,6 +9,7 @@ import {
   type MoveMeleeLungeAnimationEvent,
   type MoveMissAnimationEvent,
   type MoveProjectileAnimationEvent,
+  type MoveSelfPulseAnimationEvent,
   type MoveTargetFlashAnimationEvent,
 } from '~/types/moveAnimation'
 import { DEFAULT_MOVE_VFX_COLOR, MOVE_VFX_TONE, moveVfxColorForTone, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
@@ -154,6 +155,32 @@ const MOVE_VFX_MELEE_LUNGE_GHOST_RADIUS_MULTIPLIER = 1.45
 const MOVE_VFX_MELEE_LUNGE_GHOST_HEIGHT_MULTIPLIER = 1.9
 const MOVE_VFX_MELEE_LUNGE_STREAK_RADIUS_MULTIPLIER = 0.45
 const MOVE_VFX_MELEE_LUNGE_IMPACT_RADIUS_MULTIPLIER = 2.5
+const MOVE_VFX_SELF_PULSE_BASE_RING_NAME = 'move-vfx-self-pulse-base-ring'
+const MOVE_VFX_SELF_PULSE_RISING_RING_NAME = 'move-vfx-self-pulse-rising-ring'
+const MOVE_VFX_SELF_PULSE_SHELL_NAME = 'move-vfx-self-pulse-shell'
+const MOVE_VFX_SELF_PULSE_BASE_RING_RENDER_ORDER = 36
+const MOVE_VFX_SELF_PULSE_RISING_RING_RENDER_ORDER = 37
+const MOVE_VFX_SELF_PULSE_SHELL_RENDER_ORDER = 38
+const MOVE_VFX_SELF_PULSE_MIN_RADIUS = 0.42
+const MOVE_VFX_SELF_PULSE_DEFAULT_RADIUS = 0.72
+const MOVE_VFX_SELF_PULSE_MAX_RADIUS = 1.65
+const MOVE_VFX_SELF_PULSE_RADIUS_SCALE = 0.72
+const MOVE_VFX_SELF_PULSE_MIN_SHELL_HEIGHT = 0.52
+const MOVE_VFX_SELF_PULSE_DEFAULT_SHELL_HEIGHT = 0.9
+const MOVE_VFX_SELF_PULSE_MAX_SHELL_HEIGHT = 2.6
+const MOVE_VFX_SELF_PULSE_SHELL_HEIGHT_SCALE = 0.68
+const MOVE_VFX_SELF_PULSE_RING_Y_OFFSET = 0.05
+const MOVE_VFX_SELF_PULSE_RISING_RING_MIN_HEIGHT_RATIO = 0.16
+const MOVE_VFX_SELF_PULSE_RISING_RING_MAX_HEIGHT_RATIO = 0.86
+const MOVE_VFX_SELF_PULSE_FADE_IN_PROGRESS = 0.16
+const MOVE_VFX_SELF_PULSE_FADE_OUT_START = 0.72
+const MOVE_VFX_SELF_PULSE_BASE_RING_MAX_OPACITY = 0.44
+const MOVE_VFX_SELF_PULSE_RISING_RING_MAX_OPACITY = 0.36
+const MOVE_VFX_SELF_PULSE_SHELL_MAX_OPACITY = 0.2
+const MOVE_VFX_SELF_PULSE_BASE_RING_START_SCALE = 0.62
+const MOVE_VFX_SELF_PULSE_BASE_RING_END_SCALE = 1.38
+const MOVE_VFX_SELF_PULSE_RISING_RING_START_SCALE = 0.5
+const MOVE_VFX_SELF_PULSE_RISING_RING_END_SCALE = 1.16
 const MOVE_VFX_TARGET_FLASH_SHELL_NAME = 'move-vfx-target-flash-shell'
 const MOVE_VFX_TARGET_FLASH_RING_NAME = 'move-vfx-target-flash-ring'
 const MOVE_VFX_TARGET_FLASH_SHELL_RENDER_ORDER = 38
@@ -823,6 +850,163 @@ const applyMeleeLungeVisualState = (options: {
   options.impactRing.scale.setScalar(options.impactRadius * (0.58 + (impactProgress * 0.88)))
   options.impactRing.material.opacity = impactOpacity
   options.impactRing.visible = impactOpacity > 0.005
+}
+
+const selfPulsePaletteForEvent = (event: MoveSelfPulseAnimationEvent): MoveVfxPaletteEntry => (
+  event.tone == null
+    ? event.palette ?? DEFAULT_MOVE_VFX_COLOR
+    : moveVfxColorForTone(event.tone)
+)
+
+const selfPulseDimensionsForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): { radius: number, shellHeight: number } => {
+  const footprint = Math.max(
+    finitePositiveNumber(renderObject?.base) ?? 0,
+    finitePositiveNumber(renderObject?.width) ?? 0,
+  )
+  const bodyHeight = Math.max(
+    finitePositiveNumber(renderObject?.height) ?? 0,
+    finitePositiveNumber(renderObject?.clearance) ?? 0,
+  )
+
+  return {
+    radius: footprint > 0
+      ? clampNumber(
+        footprint * MOVE_VFX_SELF_PULSE_RADIUS_SCALE,
+        MOVE_VFX_SELF_PULSE_MIN_RADIUS,
+        MOVE_VFX_SELF_PULSE_MAX_RADIUS,
+      )
+      : MOVE_VFX_SELF_PULSE_DEFAULT_RADIUS,
+    shellHeight: bodyHeight > 0
+      ? clampNumber(
+        bodyHeight * MOVE_VFX_SELF_PULSE_SHELL_HEIGHT_SCALE,
+        MOVE_VFX_SELF_PULSE_MIN_SHELL_HEIGHT,
+        MOVE_VFX_SELF_PULSE_MAX_SHELL_HEIGHT,
+      )
+      : MOVE_VFX_SELF_PULSE_DEFAULT_SHELL_HEIGHT,
+  }
+}
+
+const resolveSelfPulseAnchor = (
+  event: MoveSelfPulseAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): { foot: THREE.Vector3, radius: number, shellHeight: number } | null => {
+  const userRenderObject = renderObjects.get(event.userId)
+  const foot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: event.userId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.originCell,
+  })
+
+  return foot
+    ? { foot: foot.clone(), ...selfPulseDimensionsForRenderObject(userRenderObject) }
+    : null
+}
+
+const createSelfPulseMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createSelfPulseRingMesh = (
+  name: string,
+  material: THREE.MeshBasicMaterial,
+  renderOrder: number,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 48), material)
+  mesh.name = name
+  mesh.renderOrder = renderOrder
+  mesh.rotation.x = -Math.PI / 2
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createSelfPulseShellMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 10), material)
+  mesh.name = MOVE_VFX_SELF_PULSE_SHELL_NAME
+  mesh.renderOrder = MOVE_VFX_SELF_PULSE_SHELL_RENDER_ORDER
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const selfPulseOpacityMultiplier = (progress: number): number => {
+  const fadeIn = Math.max(0.28, clamp01(progress / MOVE_VFX_SELF_PULSE_FADE_IN_PROGRESS))
+  const fadeOut = progress <= MOVE_VFX_SELF_PULSE_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_SELF_PULSE_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const applySelfPulseVisualState = (options: {
+  group: THREE.Group
+  baseRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  risingRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  shell: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+  foot: THREE.Vector3
+  radius: number
+  shellHeight: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const risingProgress = easeInOutCubic(progress)
+  const pulse = pulse01(progress)
+  const opacityMultiplier = selfPulseOpacityMultiplier(progress)
+  const baseOpacity = MOVE_VFX_SELF_PULSE_BASE_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.46))
+  const risingOpacity = MOVE_VFX_SELF_PULSE_RISING_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.74))
+  const shellOpacity = MOVE_VFX_SELF_PULSE_SHELL_MAX_OPACITY
+    * opacityMultiplier
+    * (0.64 + (pulse * 0.36))
+    * Math.max(0, 1 - (progress * 0.24))
+  const risingHeight = options.shellHeight * (
+    MOVE_VFX_SELF_PULSE_RISING_RING_MIN_HEIGHT_RATIO
+    + ((MOVE_VFX_SELF_PULSE_RISING_RING_MAX_HEIGHT_RATIO - MOVE_VFX_SELF_PULSE_RISING_RING_MIN_HEIGHT_RATIO) * risingProgress)
+  )
+
+  options.group.position.copy(options.foot)
+
+  options.baseRing.position.set(0, MOVE_VFX_SELF_PULSE_RING_Y_OFFSET, 0)
+  options.baseRing.scale.setScalar(options.radius * (
+    MOVE_VFX_SELF_PULSE_BASE_RING_START_SCALE
+    + ((MOVE_VFX_SELF_PULSE_BASE_RING_END_SCALE - MOVE_VFX_SELF_PULSE_BASE_RING_START_SCALE) * expansion)
+  ))
+  options.baseRing.material.opacity = baseOpacity
+  options.baseRing.visible = baseOpacity > 0.005
+
+  options.risingRing.position.set(0, MOVE_VFX_SELF_PULSE_RING_Y_OFFSET + risingHeight, 0)
+  options.risingRing.scale.setScalar(options.radius * (
+    MOVE_VFX_SELF_PULSE_RISING_RING_START_SCALE
+    + ((MOVE_VFX_SELF_PULSE_RISING_RING_END_SCALE - MOVE_VFX_SELF_PULSE_RISING_RING_START_SCALE) * expansion)
+  ))
+  options.risingRing.material.opacity = risingOpacity
+  options.risingRing.visible = risingOpacity > 0.005
+
+  options.shell.position.set(0, options.shellHeight / 2, 0)
+  options.shell.scale.set(
+    options.radius * (0.86 + (pulse * 0.16)),
+    options.shellHeight * (0.92 + (pulse * 0.12)),
+    options.radius * (0.86 + (pulse * 0.16)),
+  )
+  options.shell.material.opacity = shellOpacity
+  options.shell.visible = shellOpacity > 0.005
 }
 
 type TargetFlashResolvedTone = 'hit'
@@ -1812,7 +1996,78 @@ const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
-const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveSelfPulseAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchor = resolveSelfPulseAnchor(event, renderObjects)
+
+  if (!anchor) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette = selfPulsePaletteForEvent(event)
+  const baseRing = createSelfPulseRingMesh(
+    MOVE_VFX_SELF_PULSE_BASE_RING_NAME,
+    createSelfPulseMaterial(palette.accent, 0),
+    MOVE_VFX_SELF_PULSE_BASE_RING_RENDER_ORDER,
+  )
+  const risingRing = createSelfPulseRingMesh(
+    MOVE_VFX_SELF_PULSE_RISING_RING_NAME,
+    createSelfPulseMaterial(palette.glow, 0),
+    MOVE_VFX_SELF_PULSE_RISING_RING_RENDER_ORDER,
+  )
+  const shell = createSelfPulseShellMesh(createSelfPulseMaterial(palette.primary, 0))
+
+  // Self aura pulses are entirely VFX-owned overlay geometry. They lock the
+  // user/cell anchor at creation, scale from the token footprint and body
+  // clearance, and never alter token selection, hover, sprite, or placement
+  // state while the scheduler advances the aura.
+  context.group.add(baseRing, risingRing, shell)
+  applySelfPulseVisualState({
+    group: context.group,
+    baseRing,
+    risingRing,
+    shell,
+    ...anchor,
+    progress: 0,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applySelfPulseVisualState({
+        group: context.group,
+        baseRing,
+        risingRing,
+        shell,
+        ...anchor,
+        progress: progress.progress,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
 
 const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   const event = context.event as MoveTargetFlashAnimationEvent

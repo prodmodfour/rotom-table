@@ -464,6 +464,14 @@ Each crit burst instance owns two ground-plane rings plus eight lightweight star
 
 Crit burst VFX remain visual-only runtime resources. They are planned only when target outcome data marks `crit: true`; ordinary hits keep the normal launch plus target-flash plan. Scheduler frame time drives burst expansion, opacity fade, completion, and disposal through the existing move VFX lifecycle. The primitive adds no timers, no independent RAF loop, no persistence, no gameplay mutation, no token placement mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
 
+### Self aura pulse primitive for VFX-040
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the self-pulse placeholder with a user-centred aura primitive. Self-pulse events resolve the move user's token-foot anchor, or use `originCell` when the token render object is unavailable, then lock that anchor for the event lifetime so normal token motion or placement updates do not stretch the aura.
+
+Each self aura instance owns two horizontal ring meshes plus a translucent body shell. The renderer scales the aura from the user's token footprint and body height/clearance, with bounded defaults for grid-cell fallback events, so small and large tokens receive readable but not map-obscuring pulses. `MoveSelfPulseAnimationEvent.tone` may request semantic `heal`/`healing`, `buff`, `debuff`, `status`, or `neutral` colours; omitted tones use the event palette so type-coloured self-originating moves can still be represented.
+
+Self aura VFX remain visual-only runtime resources. They are VFX-owned overlay geometry and do not alter token selection, hover, sprite, placement, permissions, or saved state. Scheduler frame time drives ring expansion, a short rising-ring pulse, shell opacity/scale, completion, and disposal through the existing move VFX lifecycle. The primitive adds no timers, no independent RAF loop, no persistence, no gameplay mutation, no token placement mutation, no renderer-quality reduction, no external assets, and no new dependencies.
+
 ## Implementation labels, milestones, and ticket ordering
 
 Use this section as the markdown project-board for the move VFX feature when GitHub labels or milestones have not been created yet. The goal is to keep implementation PRs small, dependency-aware, and reviewable. Every PR in this feature should carry the `move-vfx` label plus one or more focus labels from the list below.

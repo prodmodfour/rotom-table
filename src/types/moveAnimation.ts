@@ -111,9 +111,14 @@ export interface MoveMeleeLungeAnimationEvent
     MoveAnimationOriginMetadata,
     MoveAnimationTargetMetadata {}
 
+export type MoveSelfPulseTone = 'heal' | MoveVfxTone
+
 export interface MoveSelfPulseAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.selfPulse>,
-    MoveAnimationOriginMetadata {}
+    MoveAnimationOriginMetadata {
+  /** Semantic colour hint for user-centred aura pulses; omitted values use the event/type palette. */
+  tone?: MoveSelfPulseTone
+}
 
 export type MoveTargetFlashTone = 'hit' | 'heal' | MoveVfxTone
 

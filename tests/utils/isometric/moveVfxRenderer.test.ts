@@ -1,18 +1,28 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveCritAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveCritAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 
-const selfPulseEvent = (id = 'move-vfx-test'): MoveAnimationEvent => ({
-  id,
-  moveName: 'Test Move',
-  userId: 'user-1',
-  createdAtMs: 100,
-  durationMs: 560,
-  kind: MOVE_VFX_KIND.selfPulse,
-})
+const selfPulseEvent = (
+  idOrOverrides: string | (Partial<Omit<MoveSelfPulseAnimationEvent, 'palette' | 'tone'>> & {
+    palette?: MoveVfxPaletteEntry | undefined
+    tone?: unknown
+  }) = 'move-vfx-test',
+): MoveAnimationEvent => {
+  const overrides = typeof idOrOverrides === 'string' ? { id: idOrOverrides } : idOrOverrides
+
+  return {
+    id: 'move-vfx-test',
+    moveName: 'Test Move',
+    userId: 'user-1',
+    createdAtMs: 100,
+    durationMs: 560,
+    kind: MOVE_VFX_KIND.selfPulse,
+    ...overrides,
+  } as MoveAnimationEvent
+}
 
 const eventForKind = (kind: MoveVfxKind, id = `move-vfx-${kind}`): MoveAnimationEvent => ({
   ...selfPulseEvent(id),
@@ -274,6 +284,23 @@ const critBurstSpokeMeshes = (
   return meshes as THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>[]
 }
 
+const selfPulseRingNamed = (
+  group: THREE.Object3D,
+  name: string,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === name)
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const selfPulseShellNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-self-pulse-shell')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>
+}
+
 const attachDisposableMesh = (group: THREE.Object3D) => {
   const geometry = new THREE.BoxGeometry(1, 1, 1)
   const material = new THREE.MeshBasicMaterial()
@@ -408,7 +435,7 @@ describe('move VFX renderer shell', () => {
     ])
   })
 
-  it('creates a safe placeholder instance through the factory for every registered effect kind', () => {
+  it('creates safe lifecycle instances through the factory for every registered effect kind', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)
     const kinds = Object.values(MOVE_VFX_KIND) as MoveVfxKind[]
@@ -446,6 +473,127 @@ describe('move VFX renderer shell', () => {
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.group.children).toHaveLength(0)
     expect(renderer.needsAnimationFrame()).toBe(false)
+  })
+
+  it('renders self pulse events as token-scaled aura rings and shell around the locked user anchor', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const user = makeRenderObject({
+      id: 'user-1',
+      currentCenter: new THREE.Vector3(2, 1, 3),
+      base: 2,
+      width: 1.5,
+      height: 3,
+      clearance: 2.4,
+    })
+    const renderObjects = new Map([[user.id, user]])
+
+    renderer.sync([selfPulseEvent({ palette: projectilePalette })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const baseRing = selfPulseRingNamed(instanceGroup, 'move-vfx-self-pulse-base-ring')
+    const risingRing = selfPulseRingNamed(instanceGroup, 'move-vfx-self-pulse-rising-ring')
+    const shell = selfPulseShellNamed(instanceGroup)
+    const initialBaseScale = baseRing.scale.x
+    const initialRisingY = risingRing.position.y
+
+    expect(instanceGroup.children).toHaveLength(3)
+    expectVectorClose(instanceGroup.position, [2, 1, 3])
+    expectVectorClose(baseRing.position, [0, 0.05, 0])
+    expect(shell.position.y).toBeCloseTo(1.02)
+    expect(baseRing.material.color.getHexString()).toBe('ffeeaa')
+    expect(risingRing.material.color.getHexString()).toBe('aa3300')
+    expect(shell.material.color.getHexString()).toBe('123456')
+    expect(baseRing.material.transparent).toBe(true)
+    expect(baseRing.material.depthTest).toBe(true)
+    expect(baseRing.material.depthWrite).toBe(false)
+    expect(shell.material.depthWrite).toBe(false)
+    expect(baseRing.renderOrder).toBe(36)
+    expect(risingRing.renderOrder).toBe(37)
+    expect(shell.renderOrder).toBe(38)
+    expect(baseRing.rotation.x).toBeCloseTo(-Math.PI / 2)
+    expect(risingRing.rotation.x).toBeCloseTo(-Math.PI / 2)
+    expect(baseRing.visible).toBe(true)
+    expect(risingRing.visible).toBe(true)
+    expect(shell.visible).toBe(true)
+
+    renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects })
+
+    expect(baseRing.scale.x).toBeGreaterThan(initialBaseScale)
+    expect(risingRing.position.y).toBeGreaterThan(initialRisingY)
+    expect(risingRing.position.y).toBeLessThan(1.9)
+    expect(shell.scale.y).toBeGreaterThan(1.8)
+    expect(shell.material.opacity).toBeGreaterThan(0)
+
+    const lockedSelfPulsePoint = instanceGroup.position.clone()
+    const selfPulseMeshes = [baseRing, risingRing, shell]
+    const geometryDisposeSpies = selfPulseMeshes.map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = selfPulseMeshes.map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    user.currentCenter.set(8, 4, 3)
+    renderer.animate({ frameNowMs: 520, delta: 0.016, renderObjects })
+
+    expect(instanceGroup.position.equals(lockedSelfPulsePoint)).toBe(true)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses semantic self pulse tones with grid-cell fallback anchors', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      selfPulseEvent({
+        id: 'move-vfx-self-pulse-heal',
+        userId: 'missing-user',
+        originCell: { x: 4, y: 2, z: 1 },
+        palette: undefined,
+        tone: 'heal',
+      }),
+      selfPulseEvent({
+        id: 'move-vfx-self-pulse-unknown',
+        userId: 'missing-user-2',
+        originCell: { x: 6, y: 0, z: 2 },
+        palette: undefined,
+        tone: 'mystery',
+      }),
+    ], { renderObjects: new Map() })
+
+    const healingGroup = renderer.group.children[0]
+    const unknownGroup = renderer.group.children[1]
+    const healingRing = selfPulseRingNamed(healingGroup, 'move-vfx-self-pulse-base-ring')
+    const unknownRing = selfPulseRingNamed(unknownGroup, 'move-vfx-self-pulse-base-ring')
+    const healingShell = selfPulseShellNamed(healingGroup)
+
+    expect(renderer.activeCount()).toBe(2)
+    expectVectorClose(healingGroup.position, [4.5, 2, 1.5])
+    expectVectorClose(unknownGroup.position, [6.5, 0, 2.5])
+    expect(healingRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.accent.slice(1))
+    expect(healingShell.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.primary.slice(1))
+    expect(unknownRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.neutral.accent.slice(1))
+    expect(healingRing.material).not.toBe(unknownRing.material)
+  })
+
+  it('falls back to a no-op self pulse when no user anchor can be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([selfPulseEvent({ userId: 'missing-user' })], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 660, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
   })
 
   it('renders projectile events as palette-coloured spheres travelling between locked token anchors', () => {
