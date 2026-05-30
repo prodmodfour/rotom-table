@@ -674,6 +674,59 @@ describe('move VFX renderer shell', () => {
     ])
   })
 
+  it('keeps delayed event groups hidden until their effective start time', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const event = selfPulseEvent({
+      id: 'move-vfx-delayed',
+      durationMs: 100,
+      startOffsetMs: 120,
+    })
+
+    renderer.sync([event])
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup?.name).toBe('move-vfx-instance:move-vfx-delayed')
+    expect(instanceGroup?.visible).toBe(false)
+    expect(renderer.activeCount()).toBe(1)
+    expect(renderer.needsAnimationFrame()).toBe(true)
+
+    renderer.animate({ frameNowMs: 219, delta: 0.016 })
+
+    expect(renderer.activeCount()).toBe(1)
+    expect(instanceGroup?.visible).toBe(false)
+
+    renderer.animate({ frameNowMs: 220, delta: 0.016 })
+
+    expect(renderer.activeCount()).toBe(1)
+    expect(instanceGroup?.visible).toBe(true)
+
+    renderer.animate({ frameNowMs: 320, delta: 0.016 })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+  })
+
+  it('disposes delayed events cleanly when they are cleared before starting', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const event = selfPulseEvent({
+      id: 'move-vfx-delayed-clear',
+      durationMs: 100,
+      startOffsetMs: 500,
+    })
+
+    renderer.sync([event])
+    expect(renderer.group.children[0]?.visible).toBe(false)
+
+    renderer.sync([])
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+  })
+
   it('creates safe lifecycle instances through the factory for every registered effect kind', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)

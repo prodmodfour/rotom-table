@@ -188,6 +188,27 @@ describe('useMoveAnimationQueue', () => {
     expect(queue.activeMoveAnimations.value.map((event) => event.id)).toEqual(['new-pulse'])
   })
 
+  it('keeps delayed events active until their start offset and duration have elapsed', () => {
+    let nowMs = 1000
+    const queue = useMoveAnimationQueue({ now: () => nowMs })
+
+    queue.enqueueMoveAnimation(createInput({
+      id: 'delayed-follow-up',
+      durationMs: 100,
+      startOffsetMs: 200,
+    }))
+
+    nowMs = 1250
+    expect(queue.pruneExpiredMoveAnimations().removedEvents).toEqual([])
+    expect(queue.activeMoveAnimations.value.map((event) => event.id)).toEqual(['delayed-follow-up'])
+
+    nowMs = 1300
+    const pruned = queue.pruneExpiredMoveAnimations()
+
+    expect(pruned.removedEvents.map((event) => event.id)).toEqual(['delayed-follow-up'])
+    expect(pruned.activeEvents).toEqual([])
+  })
+
   it('keeps expired events until explicit pruning when enqueue pruning is disabled', () => {
     let nowMs = 1000
     const queue = useMoveAnimationQueue({

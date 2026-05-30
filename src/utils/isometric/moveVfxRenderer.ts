@@ -22,6 +22,7 @@ import {
   type MoveTargetFlashAnimationEvent,
 } from '~/types/moveAnimation'
 import { DEFAULT_MOVE_VFX_COLOR, MOVE_VFX_TONE, moveVfxColorForTone, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
+import { hasMoveAnimationEventStarted, moveAnimationEventProgress } from '~/utils/moveAnimationSequencing'
 import { moveVfxStatusPaletteForConditions } from '~/utils/moveAnimationStatusPalette'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import {
@@ -36,7 +37,7 @@ import {
   createMoveVfxSolidMaterial,
   createMoveVfxTranslucentMaterial,
 } from './moveVfxMaterials'
-import { animationProgress, clamp01, easeInOutCubic, easeOutCubic, pulse01 } from './moveVfxTiming'
+import { clamp01, easeInOutCubic, easeOutCubic, pulse01 } from './moveVfxTiming'
 import { disposeObject3D } from './resourceDisposal'
 
 export interface MoveVfxRendererSyncContext {
@@ -3284,11 +3285,7 @@ const createNoopMoveVfxInstance: MoveVfxInstanceBuilder = ({ event, group }) => 
     animate(frameContext) {
       if (disposed || complete) return
 
-      complete = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      ).complete
+      complete = moveAnimationEventProgress(event, frameContext.frameNowMs).complete
     },
     dispose() {
       if (disposed) return
@@ -3361,11 +3358,7 @@ const createProjectileMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -3456,11 +3449,7 @@ const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -3550,11 +3539,7 @@ const createArcMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -3621,11 +3606,7 @@ const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -3694,11 +3675,7 @@ const createSelfPulseMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -3769,11 +3746,7 @@ const createHealingMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -3838,11 +3811,7 @@ const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -3902,11 +3871,7 @@ const createImpactRingMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -3973,11 +3938,7 @@ const createAreaPulseMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -4061,11 +4022,7 @@ const createRadialBurstMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -4143,11 +4100,7 @@ const createAreaSweepMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -4226,11 +4179,7 @@ const createDashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -4292,11 +4241,7 @@ const createMissMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -4364,11 +4309,7 @@ const createCritMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -4430,11 +4371,7 @@ const createStatusMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -4498,11 +4435,7 @@ const createBuffDebuffMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     animate(frameContext) {
       if (disposed || complete) return
 
-      const progress = animationProgress(
-        frameContext.frameNowMs,
-        event.createdAtMs,
-        event.durationMs,
-      )
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
       if (progress.complete) {
         complete = true
         return
@@ -4618,6 +4551,7 @@ export const createMoveVfxRenderer = (
   ): MoveVfxInstance => {
     const instanceGroup = new THREE.Group()
     instanceGroup.name = `${MOVE_VFX_INSTANCE_GROUP_PREFIX}:${event.id}`
+    instanceGroup.visible = hasMoveAnimationEventStarted(event, event.createdAtMs)
     group.add(instanceGroup)
 
     return selectMoveVfxInstanceBuilder(event.kind)({
@@ -4647,6 +4581,13 @@ export const createMoveVfxRenderer = (
 
   const animateInstances = (frameContext: MoveVfxRendererFrameContext) => {
     for (const instance of [...activeInstances.values()]) {
+      const event = activeEvents.get(instance.id)
+      if (event && !hasMoveAnimationEventStarted(event, frameContext.frameNowMs)) {
+        instance.group.visible = false
+        continue
+      }
+
+      instance.group.visible = true
       instance.animate(frameContext)
 
       if (instance.complete) completeInstance(instance.id)
@@ -4704,7 +4645,7 @@ export const createMoveVfxRenderer = (
 
       let expiredCount = 0
       for (const [id, event] of [...activeEvents.entries()]) {
-        if (!animationProgress(nowMs, event.createdAtMs, event.durationMs).complete) continue
+        if (!moveAnimationEventProgress(event, nowMs).complete) continue
 
         completeInstance(id)
         expiredCount += 1

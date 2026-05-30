@@ -16,7 +16,7 @@ import type {
   MoveAnimationId,
   MoveVfxKind,
 } from '~/types/moveAnimation'
-import { animationProgress } from '~/utils/isometric/moveVfxTiming'
+import { moveAnimationEventProgress } from '~/utils/moveAnimationSequencing'
 
 type OptionalQueueManagedFields<T extends MoveAnimationEvent> = Omit<T, 'id' | 'createdAtMs'>
   & Partial<Pick<T, 'id' | 'createdAtMs'>>
@@ -55,6 +55,15 @@ export interface MoveAnimationPruneResult {
   readonly removedEvents: readonly MoveAnimationEvent[]
 }
 
+const defaultMoveAnimationQueueNow = (): number => {
+  const performanceNow = globalThis.performance?.now
+  if (typeof performanceNow === 'function') {
+    return performanceNow.call(globalThis.performance)
+  }
+
+  return Date.now()
+}
+
 const getSafeNowMs = (now: () => number): number => {
   const nowMs = now()
   return Number.isFinite(nowMs) ? nowMs : 0
@@ -63,7 +72,7 @@ const getSafeNowMs = (now: () => number): number => {
 export const isMoveAnimationExpired = (
   event: MoveAnimationEvent,
   nowMs: number,
-): boolean => animationProgress(nowMs, event.createdAtMs, event.durationMs).complete
+): boolean => moveAnimationEventProgress(event, nowMs).complete
 
 const materializeMoveAnimationEvent = (
   input: MoveAnimationQueueInput,
@@ -87,7 +96,7 @@ const materializeMoveAnimationEvent = (
  * payloads, localStorage, or schema migrations.
  */
 export const useMoveAnimationQueue = (options: UseMoveAnimationQueueOptions = {}) => {
-  const now = options.now ?? Date.now
+  const now = options.now ?? defaultMoveAnimationQueueNow
   const nextId = options.createId ?? createMoveAnimationIdGenerator({
     prefix: options.prefix,
     initialSequence: options.initialSequence,

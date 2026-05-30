@@ -271,7 +271,7 @@ This policy keeps transient VFX one-shot per move resolution by default while st
 
 The per-map reactive queue implementation lives in `src/composables/map-editor/useMoveAnimationQueue.ts`. Each map page should create its own queue instance and pass the returned enqueue functions to later move-automation integration; the module owns no global state and imports no renderer or move-rule code.
 
-The composable exposes `activeMoveAnimations` as a readonly computed array plus `enqueueMoveAnimation`, `enqueueMoveAnimations`, `removeMoveAnimation`, `clearMoveAnimations`, and `pruneExpiredMoveAnimations`. Enqueue helpers fill missing `id` and `createdAtMs` fields from the per-queue id generator and injected clock, then apply the VFX-011 duplicate policy. Expiration pruning uses event `createdAtMs`/`durationMs` through the shared timing helpers and is opportunistic only; it does not create timers, a RAF loop, or persistence hooks.
+The composable exposes `activeMoveAnimations` as a readonly computed array plus `enqueueMoveAnimation`, `enqueueMoveAnimations`, `removeMoveAnimation`, `clearMoveAnimations`, and `pruneExpiredMoveAnimations`. Enqueue helpers fill missing `id` and `createdAtMs` fields from the per-queue id generator and injected clock, then apply the VFX-011 duplicate policy. The default queue clock uses `performance.now()` in browsers so event timestamps share the renderer frame-time clock, falling back to `Date.now()` only when the Performance API is unavailable. Expiration pruning uses event `createdAtMs`/`durationMs` through the shared timing helpers and is opportunistic only; it does not create timers, a RAF loop, or persistence hooks.
 
 Because the queue is runtime state, `activeMoveAnimations` should flow only into renderer-facing props and lifecycle cleanup. Do not pass queue contents to `useEditableMap`, sheet save helpers, move usage log builders, live-session payload builders, local-storage helpers, or schema migrations. Logs may mention that a move happened through the existing transaction/log paths, but they should not embed animation event ids, palettes, durations, or queue snapshots.
 
@@ -294,6 +294,14 @@ Current classifications are intentionally broad:
 - unusual scripts with enough user context fall back to a neutral self pulse instead of throwing.
 
 Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so future primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, and miss effects without re-reading move automation rules. Critical-hit events carry the damaging move palette so the renderer can layer that type colour with its semantic crit accent. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.
+
+### Multi-target sequencing helper for VFX-051
+
+Multi-target target flashes and semantic follow-up effects can use `src/utils/moveAnimationSequencing.ts` to assign bounded `startOffsetMs` values. `createMoveAnimationTargetStartOffsets()` accepts target ids plus optional target cells and can order by confirmed target order, distance from the user/source cell, or stable target id. The helper caps the total stagger spread by default so large area batches remain snappy instead of extending every target animation indefinitely.
+
+`MoveAnimationEvent.startOffsetMs` is a transient renderer timing hint measured from `createdAtMs`; it does not schedule timers, mutate queue state, or persist to map/sheet JSON. `applyMoveAnimationTargetStartOffsets()` can layer target staggering on top of existing launch/impact delays without changing non-target events. The queue and renderer both compute completion from `createdAtMs + startOffsetMs + durationMs`, so delayed events are not pruned before they begin.
+
+The move VFX renderer may create an event-owned group as soon as the event is synced, but delayed instance groups remain invisible until their effective start frame. If a delayed event is cleared before it starts, normal `sync([])` reconciliation disposes the hidden group and any owned resources.
 
 ### Future per-move override contract for VFX-016
 
@@ -635,7 +643,7 @@ This brief changes only documentation. As the feature tickets land, the first im
 | Documentation | `docs/move-animations.md`, later updates to `docs/render-scheduler-architecture.md` when scheduler hooks are added |
 | Domain types | `src/types/moveAnimation.ts` |
 | Queue/state | `src/composables/map-editor/moveAnimationQueuePolicy.ts`, `src/composables/map-editor/useMoveAnimationQueue.ts` |
-| Planner and palettes | `src/utils/moveAnimationPlanner.ts`, `src/utils/moveAnimationPalette.ts` |
+| Planner, palettes, and sequencing | `src/utils/moveAnimationPlanner.ts`, `src/utils/moveAnimationPalette.ts`, `src/utils/moveAnimationSequencing.ts` |
 | Timing and anchors | `src/utils/isometric/moveVfxTiming.ts`, `src/utils/isometric/moveVfxAnchors.ts` |
 | Renderer | `src/utils/isometric/moveVfxRenderer.ts` plus primitive helpers under `src/utils/isometric/` if split out |
 | Render scheduling | `src/utils/isometric/renderLoop.ts`, `src/utils/isometric/animationFrame.ts`, and scheduler-related tests when a VFX continuation source is added |

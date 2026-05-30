@@ -78,9 +78,14 @@ export interface MoveAnimationEventBase<K extends MoveVfxKind = MoveVfxKind> {
   moveName: string
   /** Map placement id for the user/source token at the time of the request. */
   userId: string
-  /** Client clock timestamp for when the request was created. */
+  /** Client animation-clock timestamp for when the request was created (same clock as renderer frame time). */
   createdAtMs: number
-  /** Intended visual lifetime in milliseconds. */
+  /**
+   * Optional non-negative delay from `createdAtMs` before this visual begins.
+   * Multi-target planners use this to stagger follow-up effects without timers.
+   */
+  startOffsetMs?: number
+  /** Intended visual lifetime in milliseconds after any start offset has elapsed. */
   durationMs: number
   /** Optional planner-selected colour palette for renderer primitives. */
   palette?: MoveVfxPaletteEntry
