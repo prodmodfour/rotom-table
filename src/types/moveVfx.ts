@@ -13,6 +13,7 @@ export const MOVE_VFX_KIND = {
   meleeLunge: 'melee-lunge',
   selfPulse: 'self-pulse',
   targetFlash: 'target-flash',
+  impactRing: 'impact-ring',
   areaPulse: 'area-pulse',
   lineSweep: 'line-sweep',
   coneSweep: 'cone-sweep',

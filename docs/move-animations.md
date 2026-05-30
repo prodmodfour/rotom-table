@@ -426,7 +426,7 @@ Melee lunge VFX remain visual-only runtime resources. They add no timers, no ind
 
 `src/utils/isometric/moveVfxRenderer.ts` now replaces the beam placeholder with a lightweight straight-line energy primitive. Beam events lock their user chest anchor and target chest anchor at creation time, with existing grid-cell fallbacks and an area-cell centroid fallback when no target token is supplied. This makes a beam stable for the event lifetime even if token render objects move before the VFX completes.
 
-Each beam instance owns two transparent additive cylinder meshes: a bright accent-coloured core and a wider primary-coloured glow. Scheduler frame time drives only opacity and thickness pulsing, so the beam appears quickly, holds briefly, fades, and then disposes through the same event-owned lifecycle group as other primitives. Beam events may also set `impact: true` to add a small target-end ring owned by the beam instance; the broader reusable impact-ring primitive remains a later ticket.
+Each beam instance owns two transparent additive cylinder meshes: a bright accent-coloured core and a wider primary-coloured glow. Scheduler frame time drives only opacity and thickness pulsing, so the beam appears quickly, holds briefly, fades, and then disposes through the same event-owned lifecycle group as other primitives. Beam events may also set `impact: true` to add a small target-end ring owned by the beam instance; the reusable impact-ring mesh/material helpers added in VFX-037 now share the same transparent depth-safe ring setup.
 
 Beam VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
 
@@ -437,6 +437,16 @@ Beam VFX remain visual-only runtime resources. They add no timers, no independen
 Each target flash instance owns a translucent body shell plus a small footprint ring. Scheduler frame time drives only opacity and scale pulses; multiple target-flash events therefore create independent geometry/materials and can run in the same frame without shared mutable material state. `MoveTargetFlashAnimationEvent.tone` supports `hit`, `heal`/`healing`, `buff`, `debuff`, `status`, and `neutral` styling, with unknown runtime tones falling back to the neutral palette. If no tone is supplied, the renderer uses the event palette so damaging hits can remain type-coloured.
 
 Target flash VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
+
+### Impact ring primitive for VFX-037
+
+`src/types/moveVfx.ts` and `src/types/moveAnimation.ts` now include the generic `impact-ring` event kind for reusable hit/contact pulses. `src/utils/isometric/moveVfxRenderer.ts` resolves the first target id to a locked token foot anchor, or to `targetCell` when the token render object is unavailable, then renders one event-owned ground-plane ring named `move-vfx-impact-ring`.
+
+Impact rings use a small y-offset above the target/cell plane, transparent additive material, `depthTest: true`, `depthWrite: false`, and a ground-effect render order so the ring reads above flat or raised terrain without covering CSS3D HP bars, roll feedback, or token HUDs. Scheduler frame time drives the ring expansion and opacity fade; completion, event removal, or map unmount disposes the owned ring geometry/material through the existing VFX lifecycle.
+
+`MoveImpactRingAnimationEvent.tone` may request semantic colours such as `heal`/`healing`, `status`, `buff`, `debuff`, `miss`, `crit`, or `neutral`; `hit`/`damage` tones and omitted tones use the event palette so damaging type-coloured hits remain available. Unknown runtime tones fall back to the neutral palette. The same ring mesh/material helper is used by beam and melee impact accents and can be reused by projectile follow-up effects later without changing scheduler or persistence behaviour.
+
+Impact ring VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay mutation, no token placement mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
 
 ## Implementation labels, milestones, and ticket ordering
 

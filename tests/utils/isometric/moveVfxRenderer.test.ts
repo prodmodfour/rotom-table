@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -87,6 +87,23 @@ const targetFlashEvent = (
   createdAtMs: 100,
   durationMs: 240,
   kind: MOVE_VFX_KIND.targetFlash,
+  targetId: 'target-1',
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const impactRingEvent = (
+  overrides: Partial<Omit<MoveImpactRingAnimationEvent, 'palette' | 'tone'>> & {
+    palette?: MoveVfxPaletteEntry | undefined
+    tone?: unknown
+  } = {},
+): MoveAnimationEvent => ({
+  id: 'move-vfx-impact-ring',
+  moveName: 'Thunder Punch',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 260,
+  kind: MOVE_VFX_KIND.impactRing,
   targetId: 'target-1',
   palette: projectilePalette,
   ...overrides,
@@ -188,6 +205,14 @@ const targetFlashRingNamed = (
   group: THREE.Object3D,
 ): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
   const mesh = group.children.find((child) => child.name === 'move-vfx-target-flash-ring')
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const impactRingNamed = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === 'move-vfx-impact-ring')
   expect(mesh).toBeInstanceOf(THREE.Mesh)
   return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
 }
@@ -982,6 +1007,115 @@ describe('move VFX renderer shell', () => {
     expect(renderer.activeCount()).toBe(1)
 
     renderer.animate({ frameNowMs: 340, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders impact ring events as palette-coloured ground pulses with terrain-safe depth settings', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 1, 0) })
+    const renderObjects = new Map([[target.id, target]])
+
+    renderer.sync([impactRingEvent({ tone: 'hit' })], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const ring = impactRingNamed(instanceGroup)
+    expect(instanceGroup.children).toHaveLength(1)
+    expectVectorClose(instanceGroup.position, [4, 1, 0])
+    expectVectorClose(ring.position, [0, 0.045, 0])
+    expect(ring.material.color.getHexString()).toBe('ffeeaa')
+    expect(ring.material.transparent).toBe(true)
+    expect(ring.material.depthTest).toBe(true)
+    expect(ring.material.depthWrite).toBe(false)
+    expect(ring.renderOrder).toBe(37)
+    expect(ring.rotation.x).toBeCloseTo(-Math.PI / 2)
+    expect(ring.visible).toBe(false)
+
+    renderer.animate({ frameNowMs: 230, delta: 0.016, renderObjects })
+
+    expect(ring.visible).toBe(true)
+    expect(ring.material.opacity).toBeGreaterThan(0)
+    expect(ring.scale.x).toBeGreaterThan(1.2)
+
+    const geometryDispose = vi.spyOn(ring.geometry, 'dispose')
+    const materialDispose = vi.spyOn(ring.material, 'dispose')
+
+    target.currentCenter.set(12, 3, 0)
+    renderer.animate({ frameNowMs: 240, delta: 0.016, renderObjects })
+
+    expectVectorClose(instanceGroup.position, [4, 1, 0])
+
+    renderer.animate({ frameNowMs: 360, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    expect(geometryDispose).toHaveBeenCalledOnce()
+    expect(materialDispose).toHaveBeenCalledOnce()
+  })
+
+  it('uses semantic impact ring tones with unknown tones falling back to neutral', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const firstTarget = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(2, 0, 0) })
+    const secondTarget = makeRenderObject({ id: 'target-2', currentCenter: new THREE.Vector3(6, 0, 1) })
+    const renderObjects = new Map([
+      [firstTarget.id, firstTarget],
+      [secondTarget.id, secondTarget],
+    ])
+
+    renderer.sync([
+      impactRingEvent({ id: 'move-vfx-impact-ring-crit', palette: undefined, tone: 'crit', targetId: 'target-1' }),
+      impactRingEvent({ id: 'move-vfx-impact-ring-unknown', palette: undefined, tone: 'mystery', targetId: 'target-2' }),
+    ], { renderObjects })
+
+    const critGroup = renderer.group.children[0]
+    const unknownGroup = renderer.group.children[1]
+    const critRing = impactRingNamed(critGroup)
+    const unknownRing = impactRingNamed(unknownGroup)
+
+    expect(renderer.activeCount()).toBe(2)
+    expectVectorClose(critGroup.position, [2, 0, 0])
+    expectVectorClose(unknownGroup.position, [6, 0, 1])
+    expect(critRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.crit.accent.slice(1))
+    expect(unknownRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.neutral.accent.slice(1))
+    expect(critRing.material).not.toBe(unknownRing.material)
+  })
+
+  it('uses grid-cell fallback anchors for impact rings when the target token is missing', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      impactRingEvent({
+        targetId: 'missing-target',
+        targetCell: { x: 5, y: 2, z: 2 },
+        palette: undefined,
+        tone: 'heal',
+      }),
+    ], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    const ring = impactRingNamed(instanceGroup)
+
+    expect(instanceGroup.children).toHaveLength(1)
+    expectVectorClose(instanceGroup.position, [5.5, 2, 2.5])
+    expect(ring.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.healing.accent.slice(1))
+  })
+
+  it('falls back to a no-op impact ring when no target anchor can be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([impactRingEvent({ targetId: 'missing-target' })], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 360, delta: 0.016, renderObjects: new Map() })
 
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.group.children).toHaveLength(0)

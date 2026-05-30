@@ -124,6 +124,15 @@ export interface MoveTargetFlashAnimationEvent
   tone?: MoveTargetFlashTone
 }
 
+export type MoveImpactRingTone = 'hit' | 'damage' | 'damaging' | 'heal' | MoveVfxTone
+
+export interface MoveImpactRingAnimationEvent
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.impactRing>,
+    MoveAnimationTargetMetadata {
+  /** Optional semantic colour hint; omitted values use the event/type palette. */
+  tone?: MoveImpactRingTone
+}
+
 export interface MoveAreaPulseAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.areaPulse>,
     MoveAnimationAreaMetadata {}
@@ -176,6 +185,7 @@ export interface MoveAnimationEventByKind {
   [MOVE_VFX_KIND.meleeLunge]: MoveMeleeLungeAnimationEvent
   [MOVE_VFX_KIND.selfPulse]: MoveSelfPulseAnimationEvent
   [MOVE_VFX_KIND.targetFlash]: MoveTargetFlashAnimationEvent
+  [MOVE_VFX_KIND.impactRing]: MoveImpactRingAnimationEvent
   [MOVE_VFX_KIND.areaPulse]: MoveAreaPulseAnimationEvent
   [MOVE_VFX_KIND.lineSweep]: MoveLineSweepAnimationEvent
   [MOVE_VFX_KIND.coneSweep]: MoveConeSweepAnimationEvent

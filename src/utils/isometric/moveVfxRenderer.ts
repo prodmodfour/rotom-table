@@ -1,5 +1,14 @@
 import * as THREE from 'three'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent } from '~/types/moveAnimation'
+import {
+  MOVE_VFX_KIND,
+  type MoveAnimationEvent,
+  type MoveArcAnimationEvent,
+  type MoveBeamAnimationEvent,
+  type MoveImpactRingAnimationEvent,
+  type MoveMeleeLungeAnimationEvent,
+  type MoveProjectileAnimationEvent,
+  type MoveTargetFlashAnimationEvent,
+} from '~/types/moveAnimation'
 import { DEFAULT_MOVE_VFX_COLOR, MOVE_VFX_TONE, moveVfxColorForTone, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
 import {
@@ -160,6 +169,18 @@ const MOVE_VFX_TARGET_FLASH_FADE_IN_PROGRESS = 0.14
 const MOVE_VFX_TARGET_FLASH_FADE_OUT_START = 0.68
 const MOVE_VFX_TARGET_FLASH_SHELL_MAX_OPACITY = 0.24
 const MOVE_VFX_TARGET_FLASH_RING_MAX_OPACITY = 0.48
+const MOVE_VFX_IMPACT_RING_NAME = 'move-vfx-impact-ring'
+const MOVE_VFX_IMPACT_RING_RENDER_ORDER = 37
+const MOVE_VFX_IMPACT_RING_MIN_RADIUS = 0.34
+const MOVE_VFX_IMPACT_RING_DEFAULT_RADIUS = 0.62
+const MOVE_VFX_IMPACT_RING_MAX_RADIUS = 1.35
+const MOVE_VFX_IMPACT_RING_RADIUS_SCALE = 0.58
+const MOVE_VFX_IMPACT_RING_Y_OFFSET = 0.045
+const MOVE_VFX_IMPACT_RING_FADE_IN_PROGRESS = 0.16
+const MOVE_VFX_IMPACT_RING_FADE_OUT_START = 0.42
+const MOVE_VFX_IMPACT_RING_MAX_OPACITY = 0.58
+const MOVE_VFX_IMPACT_RING_START_SCALE = 0.58
+const MOVE_VFX_IMPACT_RING_END_SCALE = 1.58
 const MOVE_VFX_WORLD_UP = new THREE.Vector3(0, 1, 0)
 const MOVE_VFX_WORLD_FORWARD = new THREE.Vector3(0, 0, 1)
 
@@ -397,6 +418,10 @@ const firstTargetFlashTargetId = (event: MoveTargetFlashAnimationEvent): string 
   event.targetId ?? event.targetIds?.[0]
 )
 
+const firstImpactRingTargetId = (event: MoveImpactRingAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
 const beamRadiusForRenderObjects = (
   userRenderObject: PokemonRenderObject | undefined,
   targetRenderObject: PokemonRenderObject | undefined,
@@ -431,17 +456,41 @@ const createBeamCylinderMesh = (
   return mesh
 }
 
-const createBeamImpactRingMesh = (
+const createImpactRingMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createImpactRingMesh = (
+  name: string,
   material: THREE.MeshBasicMaterial,
+  renderOrder = MOVE_VFX_IMPACT_RING_RENDER_ORDER,
 ): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
-  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.76, 1, 32), material)
-  mesh.name = MOVE_VFX_BEAM_IMPACT_RING_NAME
-  mesh.renderOrder = MOVE_VFX_BEAM_IMPACT_RENDER_ORDER
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 40), material)
+  mesh.name = name
+  mesh.renderOrder = renderOrder
   mesh.rotation.x = -Math.PI / 2
   mesh.visible = false
   mesh.raycast = () => {}
   return mesh
 }
+
+const createBeamImpactRingMesh = (
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => createImpactRingMesh(
+  MOVE_VFX_BEAM_IMPACT_RING_NAME,
+  material,
+  MOVE_VFX_BEAM_IMPACT_RENDER_ORDER,
+)
 
 const resolveBeamAnchorPair = (
   event: MoveBeamAnimationEvent,
@@ -582,15 +631,11 @@ const createMeleeLungeStreakMesh = (
 
 const createMeleeLungeImpactRingMesh = (
   material: THREE.MeshBasicMaterial,
-): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
-  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.74, 1, 28), material)
-  mesh.name = MOVE_VFX_MELEE_LUNGE_IMPACT_RING_NAME
-  mesh.renderOrder = MOVE_VFX_MELEE_LUNGE_IMPACT_RENDER_ORDER
-  mesh.rotation.x = -Math.PI / 2
-  mesh.visible = false
-  mesh.raycast = () => {}
-  return mesh
-}
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => createImpactRingMesh(
+  MOVE_VFX_MELEE_LUNGE_IMPACT_RING_NAME,
+  material,
+  MOVE_VFX_MELEE_LUNGE_IMPACT_RENDER_ORDER,
+)
 
 const meleeLungeOpacityMultiplier = (progress: number): number => {
   const fadeIn = clamp01(progress / MOVE_VFX_MELEE_LUNGE_FADE_IN_PROGRESS)
@@ -901,6 +946,84 @@ const applyTargetFlashVisualState = (options: {
   options.ring.visible = ringOpacity > 0.005
 }
 
+const impactRingPaletteForEvent = (event: MoveImpactRingAnimationEvent): MoveVfxPaletteEntry => {
+  if (event.tone == null) return event.palette ?? DEFAULT_MOVE_VFX_COLOR
+
+  const normalizedTone = typeof event.tone === 'string' ? event.tone.trim().toLowerCase() : ''
+  if (normalizedTone === 'hit' || normalizedTone === 'damage' || normalizedTone === 'damaging') {
+    return event.palette ?? DEFAULT_MOVE_VFX_COLOR
+  }
+
+  return moveVfxColorForTone(event.tone)
+}
+
+const impactRingRadiusForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): number => {
+  const footprint = Math.max(
+    finitePositiveNumber(renderObject?.base) ?? 0,
+    finitePositiveNumber(renderObject?.width) ?? 0,
+  )
+
+  return footprint > 0
+    ? clampNumber(
+      footprint * MOVE_VFX_IMPACT_RING_RADIUS_SCALE,
+      MOVE_VFX_IMPACT_RING_MIN_RADIUS,
+      MOVE_VFX_IMPACT_RING_MAX_RADIUS,
+    )
+    : MOVE_VFX_IMPACT_RING_DEFAULT_RADIUS
+}
+
+const resolveImpactRingAnchor = (
+  event: MoveImpactRingAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): { foot: THREE.Vector3, radius: number } | null => {
+  const targetId = firstImpactRingTargetId(event)
+  const targetRenderObject = targetId ? renderObjects.get(targetId) : undefined
+  const foot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: targetId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.targetCell,
+  })
+
+  return foot
+    ? { foot: foot.clone(), radius: impactRingRadiusForRenderObject(targetRenderObject) }
+    : null
+}
+
+const impactRingOpacityMultiplier = (progress: number): number => {
+  const fadeIn = clamp01(progress / MOVE_VFX_IMPACT_RING_FADE_IN_PROGRESS)
+  const fadeOut = progress <= MOVE_VFX_IMPACT_RING_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_IMPACT_RING_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const applyImpactRingVisualState = (options: {
+  group: THREE.Group
+  ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  foot: THREE.Vector3
+  radius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const opacity = MOVE_VFX_IMPACT_RING_MAX_OPACITY
+    * impactRingOpacityMultiplier(progress)
+    * Math.max(0, 1 - (progress * 0.72))
+
+  options.group.position.copy(options.foot)
+  options.ring.position.set(0, MOVE_VFX_IMPACT_RING_Y_OFFSET, 0)
+  options.ring.scale.setScalar(options.radius * (
+    MOVE_VFX_IMPACT_RING_START_SCALE
+    + ((MOVE_VFX_IMPACT_RING_END_SCALE - MOVE_VFX_IMPACT_RING_START_SCALE) * expansion)
+  ))
+  options.ring.material.opacity = opacity
+  options.ring.visible = opacity > 0.005
+}
+
 /**
  * Safe placeholder for effect kinds whose visible primitive has not landed yet.
  *
@@ -1066,7 +1189,7 @@ const createBeamMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
     createBeamMaterial(palette.primary, MOVE_VFX_BEAM_MAX_GLOW_OPACITY),
   )
   const impactRing = event.impact
-    ? createBeamImpactRingMesh(createBeamMaterial(palette.accent, 0))
+    ? createBeamImpactRingMesh(createImpactRingMaterial(palette.accent, 0))
     : undefined
 
   context.group.add(glow, core)
@@ -1235,7 +1358,7 @@ const createMeleeLungeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   const scales = meleeLungeRadiusForRenderObjects(userRenderObject, targetRenderObject)
   const ghost = createMeleeLungeGhostMesh(createMeleeLungeMaterial(palette.primary, 0))
   const streak = createMeleeLungeStreakMesh(createMeleeLungeMaterial(palette.glow, 0))
-  const impactRing = createMeleeLungeImpactRingMesh(createMeleeLungeMaterial(palette.accent, 0))
+  const impactRing = createMeleeLungeImpactRingMesh(createImpactRingMaterial(palette.accent, 0))
 
   // Melee lunges are deliberately VFX-owned overlay geometry. They never offset
   // the token render object or saved placement; the translucent ghost moves out
@@ -1350,6 +1473,67 @@ const createTargetFlashMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
+const createImpactRingMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveImpactRingAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchor = resolveImpactRingAnchor(event, renderObjects)
+
+  if (!anchor) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const palette = impactRingPaletteForEvent(event)
+  const ring = createImpactRingMesh(
+    MOVE_VFX_IMPACT_RING_NAME,
+    createImpactRingMaterial(palette.accent, 0),
+  )
+
+  // Impact rings are ground-plane VFX owned by the event instance. They lock the
+  // target foot/cell anchor at creation so the hit read stays tied to the
+  // resolution moment without mutating token placement or terrain state.
+  context.group.add(ring)
+  applyImpactRingVisualState({
+    group: context.group,
+    ring,
+    ...anchor,
+    progress: 0,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyImpactRingVisualState({
+        group: context.group,
+        ring,
+        ...anchor,
+        progress: progress.progress,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const createAreaPulseMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createLineSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createConeSweepMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
@@ -1374,6 +1558,8 @@ const selectMoveVfxInstanceBuilder = (kind: string): MoveVfxInstanceBuilder => {
       return createSelfPulseMoveVfxInstance
     case MOVE_VFX_KIND.targetFlash:
       return createTargetFlashMoveVfxInstance
+    case MOVE_VFX_KIND.impactRing:
+      return createImpactRingMoveVfxInstance
     case MOVE_VFX_KIND.areaPulse:
       return createAreaPulseMoveVfxInstance
     case MOVE_VFX_KIND.lineSweep:
