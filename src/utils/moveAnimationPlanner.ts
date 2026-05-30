@@ -807,7 +807,7 @@ const planSingleTargetMoveAnimations = (
     events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.crit, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
       targetId,
       targetCell,
-    }, moveVfxColorForTone(MOVE_VFX_TONE.crit)))
+    }, palette))
   }
 
   return events

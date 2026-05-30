@@ -327,8 +327,8 @@ describe('generic move animation planner', () => {
     })
   })
 
-  it('adds crit emphasis for critical hit outcomes', () => {
-    const events = planGenericMoveAnimations(baseInput({
+  it('adds type-coloured crit emphasis only for critical hit outcomes', () => {
+    const criticalEvents = planGenericMoveAnimations(baseInput({
       script: script({
         moveName: 'Generic Critical Hit',
         damaging: true,
@@ -339,17 +339,32 @@ describe('generic move animation planner', () => {
       }),
       targetOutcomes: [{ targetId: 'target-token', hit: true, crit: true }],
     }))
+    const ordinaryHitEvents = planGenericMoveAnimations(baseInput({
+      script: script({
+        moveName: 'Generic Ordinary Hit',
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Psychic',
+        range: 'Range 6, 1 Target',
+      }),
+      targetOutcomes: [{ targetId: 'target-token', hit: true, crit: false }],
+    }))
 
-    expect(events.map((event) => event.kind)).toEqual([
+    expect(criticalEvents.map((event) => event.kind)).toEqual([
       MOVE_VFX_KIND.projectile,
       MOVE_VFX_KIND.targetFlash,
       MOVE_VFX_KIND.crit,
     ])
-    expect(events[2]).toMatchObject({
+    expect(criticalEvents[2]).toMatchObject({
       kind: MOVE_VFX_KIND.crit,
       targetId: 'target-token',
-      palette: MOVE_VFX_TONE_COLORS.crit,
+      palette: MOVE_VFX_TYPE_COLORS.Psychic,
     })
+    expect(ordinaryHitEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+    ])
   })
 
   it('classifies confirmed area moves as area pulses with optional line or cone sweeps', () => {

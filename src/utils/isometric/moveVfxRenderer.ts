@@ -4,6 +4,7 @@ import {
   type MoveAnimationEvent,
   type MoveArcAnimationEvent,
   type MoveBeamAnimationEvent,
+  type MoveCritAnimationEvent,
   type MoveImpactRingAnimationEvent,
   type MoveMeleeLungeAnimationEvent,
   type MoveMissAnimationEvent,
@@ -205,6 +206,36 @@ const MOVE_VFX_MISS_PUFF_CLOUD_LAYOUT = [
   { x: 0.34, y: 0.48, z: -0.18, scale: 0.32, opacity: 0.72 },
   { x: -0.28, y: 0.44, z: 0.26, scale: 0.28, opacity: 0.62 },
 ] as const
+const MOVE_VFX_CRIT_BURST_INNER_RING_NAME = 'move-vfx-crit-burst-inner-ring'
+const MOVE_VFX_CRIT_BURST_OUTER_RING_NAME = 'move-vfx-crit-burst-outer-ring'
+const MOVE_VFX_CRIT_BURST_SPOKE_PREFIX = 'move-vfx-crit-burst-spoke'
+const MOVE_VFX_CRIT_BURST_RING_RENDER_ORDER = 39
+const MOVE_VFX_CRIT_BURST_SPOKE_RENDER_ORDER = 40
+const MOVE_VFX_CRIT_BURST_SPOKE_COUNT = 8
+const MOVE_VFX_CRIT_BURST_MIN_RADIUS = 0.42
+const MOVE_VFX_CRIT_BURST_DEFAULT_RADIUS = 0.74
+const MOVE_VFX_CRIT_BURST_MAX_RADIUS = 1.52
+const MOVE_VFX_CRIT_BURST_RADIUS_SCALE = 0.68
+const MOVE_VFX_CRIT_BURST_DEFAULT_CENTER_HEIGHT = 0.82
+const MOVE_VFX_CRIT_BURST_MIN_CENTER_HEIGHT = 0.58
+const MOVE_VFX_CRIT_BURST_MAX_CENTER_HEIGHT = 1.75
+const MOVE_VFX_CRIT_BURST_CENTER_HEIGHT_SCALE = 0.52
+const MOVE_VFX_CRIT_BURST_RING_Y_OFFSET = 0.075
+const MOVE_VFX_CRIT_BURST_FADE_IN_PROGRESS = 0.1
+const MOVE_VFX_CRIT_BURST_FADE_OUT_START = 0.46
+const MOVE_VFX_CRIT_BURST_INNER_RING_MAX_OPACITY = 0.68
+const MOVE_VFX_CRIT_BURST_OUTER_RING_MAX_OPACITY = 0.42
+const MOVE_VFX_CRIT_BURST_SPOKE_MAX_OPACITY = 0.78
+const MOVE_VFX_CRIT_BURST_INNER_RING_START_SCALE = 0.32
+const MOVE_VFX_CRIT_BURST_INNER_RING_END_SCALE = 1.12
+const MOVE_VFX_CRIT_BURST_OUTER_RING_START_SCALE = 0.48
+const MOVE_VFX_CRIT_BURST_OUTER_RING_END_SCALE = 1.75
+const MOVE_VFX_CRIT_BURST_SPOKE_START_LENGTH = 0.3
+const MOVE_VFX_CRIT_BURST_SPOKE_END_LENGTH = 0.94
+const MOVE_VFX_CRIT_BURST_SPOKE_THICKNESS_RATIO = 0.035
+const MOVE_VFX_CRIT_BURST_SPOKE_MIN_THICKNESS = 0.018
+const MOVE_VFX_CRIT_BURST_SPOKE_MAX_THICKNESS = 0.055
+const MOVE_VFX_CRIT_BURST_SPOKE_TWIST_RADIANS = Math.PI / 14
 const MOVE_VFX_WORLD_UP = new THREE.Vector3(0, 1, 0)
 const MOVE_VFX_WORLD_FORWARD = new THREE.Vector3(0, 0, 1)
 
@@ -447,6 +478,10 @@ const firstImpactRingTargetId = (event: MoveImpactRingAnimationEvent): string | 
 )
 
 const firstMissTargetId = (event: MoveMissAnimationEvent): string | undefined => (
+  event.targetId ?? event.targetIds?.[0]
+)
+
+const firstCritTargetId = (event: MoveCritAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
 )
 
@@ -1198,6 +1233,199 @@ const applyMissPuffVisualState = (options: {
   })
 }
 
+const critBurstRadiusForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): number => {
+  const footprint = Math.max(
+    finitePositiveNumber(renderObject?.base) ?? 0,
+    finitePositiveNumber(renderObject?.width) ?? 0,
+  )
+
+  return footprint > 0
+    ? clampNumber(
+      footprint * MOVE_VFX_CRIT_BURST_RADIUS_SCALE,
+      MOVE_VFX_CRIT_BURST_MIN_RADIUS,
+      MOVE_VFX_CRIT_BURST_MAX_RADIUS,
+    )
+    : MOVE_VFX_CRIT_BURST_DEFAULT_RADIUS
+}
+
+const critBurstCenterHeightForRenderObject = (
+  renderObject: PokemonRenderObject | undefined,
+): number => {
+  const bodyHeight = Math.max(
+    finitePositiveNumber(renderObject?.height) ?? 0,
+    finitePositiveNumber(renderObject?.clearance) ?? 0,
+  )
+
+  return bodyHeight > 0
+    ? clampNumber(
+      bodyHeight * MOVE_VFX_CRIT_BURST_CENTER_HEIGHT_SCALE,
+      MOVE_VFX_CRIT_BURST_MIN_CENTER_HEIGHT,
+      MOVE_VFX_CRIT_BURST_MAX_CENTER_HEIGHT,
+    )
+    : MOVE_VFX_CRIT_BURST_DEFAULT_CENTER_HEIGHT
+}
+
+const resolveCritBurstAnchor = (
+  event: MoveCritAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): { foot: THREE.Vector3, centerOffset: THREE.Vector3, radius: number } | null => {
+  const targetId = firstCritTargetId(event)
+  const targetRenderObject = targetId ? renderObjects.get(targetId) : undefined
+  const foot = resolveMoveVfxTokenAnchor({
+    renderObjects,
+    tokenId: targetId,
+    anchor: MOVE_VFX_TOKEN_ANCHOR.foot,
+    fallbackCell: event.targetCell,
+  })
+
+  if (!foot) return null
+
+  const center = targetRenderObject
+    ? resolveMoveVfxTokenAnchor({
+      renderObjects,
+      tokenId: targetId,
+      anchor: MOVE_VFX_TOKEN_ANCHOR.center,
+    })
+    : null
+  const centerOffset = (center ?? foot.clone().add(new THREE.Vector3(
+    0,
+    critBurstCenterHeightForRenderObject(targetRenderObject),
+    0,
+  ))).sub(foot)
+
+  return {
+    foot: foot.clone(),
+    centerOffset,
+    radius: critBurstRadiusForRenderObject(targetRenderObject),
+  }
+}
+
+const createCritBurstMaterial = (
+  color: THREE.ColorRepresentation,
+  opacity: number,
+): THREE.MeshBasicMaterial => new THREE.MeshBasicMaterial({
+  color,
+  transparent: true,
+  opacity,
+  depthTest: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  side: THREE.DoubleSide,
+  toneMapped: false,
+})
+
+const createCritBurstRingMesh = (
+  name: string,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 1, 48), material)
+  mesh.name = name
+  mesh.renderOrder = MOVE_VFX_CRIT_BURST_RING_RENDER_ORDER
+  mesh.rotation.x = -Math.PI / 2
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createCritBurstSpokeMesh = (
+  index: number,
+  material: THREE.MeshBasicMaterial,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 8, 1, false), material)
+  mesh.name = `${MOVE_VFX_CRIT_BURST_SPOKE_PREFIX}-${index + 1}`
+  mesh.renderOrder = MOVE_VFX_CRIT_BURST_SPOKE_RENDER_ORDER
+  mesh.visible = false
+  mesh.raycast = () => {}
+  return mesh
+}
+
+const createCritBurstSpokeMeshes = (
+  basePalette: MoveVfxPaletteEntry,
+  critPalette: MoveVfxPaletteEntry,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>[] => Array.from(
+  { length: MOVE_VFX_CRIT_BURST_SPOKE_COUNT },
+  (_, index) => createCritBurstSpokeMesh(
+    index,
+    createCritBurstMaterial(index % 2 === 0 ? basePalette.accent : critPalette.primary, 0),
+  ),
+)
+
+const critBurstOpacityMultiplier = (progress: number): number => {
+  const fadeIn = clamp01(progress / MOVE_VFX_CRIT_BURST_FADE_IN_PROGRESS)
+  const fadeOut = progress <= MOVE_VFX_CRIT_BURST_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_CRIT_BURST_FADE_OUT_START))
+
+  return Math.min(fadeIn, fadeOut)
+}
+
+const applyCritBurstVisualState = (options: {
+  group: THREE.Group
+  innerRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  outerRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+  spokes: readonly THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>[]
+  foot: THREE.Vector3
+  centerOffset: THREE.Vector3
+  radius: number
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const expansion = easeOutCubic(progress)
+  const opacityMultiplier = critBurstOpacityMultiplier(progress)
+  const innerOpacity = MOVE_VFX_CRIT_BURST_INNER_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.62))
+  const outerOpacity = MOVE_VFX_CRIT_BURST_OUTER_RING_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.78))
+
+  options.group.position.copy(options.foot)
+  options.innerRing.position.set(0, MOVE_VFX_CRIT_BURST_RING_Y_OFFSET, 0)
+  options.innerRing.scale.setScalar(options.radius * (
+    MOVE_VFX_CRIT_BURST_INNER_RING_START_SCALE
+    + ((MOVE_VFX_CRIT_BURST_INNER_RING_END_SCALE - MOVE_VFX_CRIT_BURST_INNER_RING_START_SCALE) * expansion)
+  ))
+  options.innerRing.material.opacity = innerOpacity
+  options.innerRing.visible = innerOpacity > 0.005
+
+  options.outerRing.position.set(0, MOVE_VFX_CRIT_BURST_RING_Y_OFFSET * 1.35, 0)
+  options.outerRing.scale.setScalar(options.radius * (
+    MOVE_VFX_CRIT_BURST_OUTER_RING_START_SCALE
+    + ((MOVE_VFX_CRIT_BURST_OUTER_RING_END_SCALE - MOVE_VFX_CRIT_BURST_OUTER_RING_START_SCALE) * expansion)
+  ))
+  options.outerRing.material.opacity = outerOpacity
+  options.outerRing.visible = outerOpacity > 0.005
+
+  const spokeProgress = easeOutCubic(clamp01((progress - 0.04) / 0.72))
+  const spokeLength = options.radius * (
+    MOVE_VFX_CRIT_BURST_SPOKE_START_LENGTH
+    + ((MOVE_VFX_CRIT_BURST_SPOKE_END_LENGTH - MOVE_VFX_CRIT_BURST_SPOKE_START_LENGTH) * spokeProgress)
+  )
+  const spokeThickness = clampNumber(
+    options.radius * MOVE_VFX_CRIT_BURST_SPOKE_THICKNESS_RATIO * (1 - (progress * 0.28)),
+    MOVE_VFX_CRIT_BURST_SPOKE_MIN_THICKNESS,
+    MOVE_VFX_CRIT_BURST_SPOKE_MAX_THICKNESS,
+  )
+  const spokeOpacity = MOVE_VFX_CRIT_BURST_SPOKE_MAX_OPACITY
+    * opacityMultiplier
+    * Math.max(0, 1 - (progress * 0.68))
+  const direction = new THREE.Vector3()
+
+  options.spokes.forEach((spoke, index) => {
+    const angle = ((index / options.spokes.length) * Math.PI * 2)
+      + (progress * MOVE_VFX_CRIT_BURST_SPOKE_TWIST_RADIANS)
+    direction.set(Math.cos(angle), 0, Math.sin(angle))
+
+    spoke.position.copy(options.centerOffset).addScaledVector(direction, spokeLength * 0.5)
+    spoke.quaternion.setFromUnitVectors(MOVE_VFX_WORLD_UP, direction)
+    spoke.scale.set(spokeThickness, spokeLength, spokeThickness)
+    spoke.material.opacity = spokeOpacity * (index % 2 === 0 ? 1 : 0.82)
+    spoke.visible = spoke.material.opacity > 0.005
+  })
+}
+
 /**
  * Safe placeholder for effect kinds whose visible primitive has not landed yet.
  *
@@ -1777,7 +2005,78 @@ const createMissMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
-const createCritMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
+const createCritMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveCritAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchor = resolveCritBurstAnchor(event, renderObjects)
+
+  if (!anchor) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+  const critPalette = moveVfxColorForTone(MOVE_VFX_TONE.crit)
+  const basePalette = event.palette ?? critPalette
+  const baseIsCritPalette = basePalette.key === MOVE_VFX_TONE.crit
+  const innerRing = createCritBurstRingMesh(
+    MOVE_VFX_CRIT_BURST_INNER_RING_NAME,
+    createCritBurstMaterial(critPalette.accent, 0),
+  )
+  const outerRing = createCritBurstRingMesh(
+    MOVE_VFX_CRIT_BURST_OUTER_RING_NAME,
+    createCritBurstMaterial(baseIsCritPalette ? critPalette.glow : basePalette.primary, 0),
+  )
+  const spokes = createCritBurstSpokeMeshes(basePalette, critPalette)
+
+  // Crit bursts are brief event-owned accents layered on top of the normal hit
+  // read. They lock the target/cell anchor at creation time, combine the move
+  // event palette with the semantic crit palette when available, and never
+  // decide whether a hit was actually critical.
+  context.group.add(outerRing, innerRing, ...spokes)
+  applyCritBurstVisualState({
+    group: context.group,
+    innerRing,
+    outerRing,
+    spokes,
+    ...anchor,
+    progress: 0,
+  })
+
+  return {
+    id: event.id,
+    group: context.group,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = animationProgress(
+        frameContext.frameNowMs,
+        event.createdAtMs,
+        event.durationMs,
+      )
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyCritBurstVisualState({
+        group: context.group,
+        innerRing,
+        outerRing,
+        spokes,
+        ...anchor,
+        progress: progress.progress,
+      })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
 const createStatusMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createHealingMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance
 const createBuffDebuffMoveVfxInstance: MoveVfxInstanceBuilder = createNoopMoveVfxInstance

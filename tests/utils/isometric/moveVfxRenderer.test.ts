@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveArcAnimationEvent, type MoveBeamAnimationEvent, type MoveCritAnimationEvent, type MoveImpactRingAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -116,6 +116,18 @@ const missEvent = (overrides: Partial<MoveMissAnimationEvent> = {}): MoveAnimati
   createdAtMs: 100,
   durationMs: 260,
   kind: MOVE_VFX_KIND.miss,
+  targetId: 'target-1',
+  palette: projectilePalette,
+  ...overrides,
+}) as MoveAnimationEvent
+
+const critEvent = (overrides: Partial<MoveCritAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-crit',
+  moveName: 'Psybeam',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 260,
+  kind: MOVE_VFX_KIND.crit,
   targetId: 'target-1',
   palette: projectilePalette,
   ...overrides,
@@ -243,6 +255,23 @@ const missPuffCloudMeshes = (
   const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-miss-puff-cloud-'))
   expect(meshes).toHaveLength(3)
   return meshes as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[]
+}
+
+const critBurstRingNamed = (
+  group: THREE.Object3D,
+  name: string,
+): THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial> => {
+  const mesh = group.children.find((child) => child.name === name)
+  expect(mesh).toBeInstanceOf(THREE.Mesh)
+  return mesh as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>
+}
+
+const critBurstSpokeMeshes = (
+  group: THREE.Object3D,
+): THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>[] => {
+  const meshes = group.children.filter((child) => child.name.startsWith('move-vfx-crit-burst-spoke-'))
+  expect(meshes).toHaveLength(8)
+  return meshes as THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>[]
 }
 
 const attachDisposableMesh = (group: THREE.Object3D) => {
@@ -1238,6 +1267,105 @@ describe('move VFX renderer shell', () => {
     const renderer = createMoveVfxRenderer(scene)
 
     renderer.sync([missEvent({ targetId: 'missing-target' })], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    expect(instanceGroup.children).toHaveLength(0)
+    expect(renderer.activeCount()).toBe(1)
+
+    renderer.animate({ frameNowMs: 360, delta: 0.016, renderObjects: new Map() })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders crit burst events as short starbursts with crit accents and move palette colour', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+    const target = makeRenderObject({ id: 'target-1', currentCenter: new THREE.Vector3(4, 1, 0) })
+    const renderObjects = new Map([[target.id, target]])
+
+    renderer.sync([critEvent()], { renderObjects })
+
+    const instanceGroup = renderer.group.children[0]
+    const outerRing = critBurstRingNamed(instanceGroup, 'move-vfx-crit-burst-outer-ring')
+    const innerRing = critBurstRingNamed(instanceGroup, 'move-vfx-crit-burst-inner-ring')
+    const spokes = critBurstSpokeMeshes(instanceGroup)
+    expect(instanceGroup.children).toHaveLength(10)
+    expectVectorClose(instanceGroup.position, [4, 1, 0])
+    expectVectorClose(innerRing.position, [0, 0.075, 0])
+    expectVectorClose(outerRing.position, [0, 0.10125, 0])
+    expect(outerRing.material.color.getHexString()).toBe('123456')
+    expect(innerRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.crit.accent.slice(1))
+    expect(spokes[0]?.material.color.getHexString()).toBe('ffeeaa')
+    expect(spokes[1]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.crit.primary.slice(1))
+    expect(outerRing.material.transparent).toBe(true)
+    expect(outerRing.material.depthTest).toBe(true)
+    expect(outerRing.material.depthWrite).toBe(false)
+    expect(outerRing.renderOrder).toBe(39)
+    expect(innerRing.renderOrder).toBe(39)
+    expect(spokes.every((spoke) => spoke.renderOrder === 40)).toBe(true)
+    expect(outerRing.visible).toBe(false)
+    expect(innerRing.visible).toBe(false)
+    expect(spokes.every((spoke) => !spoke.visible)).toBe(true)
+
+    renderer.animate({ frameNowMs: 190, delta: 0.016, renderObjects })
+
+    expect(outerRing.visible).toBe(true)
+    expect(innerRing.visible).toBe(true)
+    expect(spokes.every((spoke) => spoke.visible)).toBe(true)
+    expect(innerRing.material.opacity).toBeGreaterThan(outerRing.material.opacity)
+    expect(outerRing.scale.x).toBeGreaterThan(innerRing.scale.x)
+    expect(spokes[0]?.position.y).toBeCloseTo(1)
+    expect(spokes[0]?.scale.y).toBeGreaterThan(0.7)
+
+    const lockedCritPoint = instanceGroup.position.clone()
+    const geometryDisposeSpies = [outerRing, innerRing, ...spokes].map((mesh) => vi.spyOn(mesh.geometry, 'dispose'))
+    const materialDisposeSpies = [outerRing, innerRing, ...spokes].map((mesh) => vi.spyOn(mesh.material, 'dispose'))
+
+    target.currentCenter.set(12, 3, 0)
+    renderer.animate({ frameNowMs: 240, delta: 0.016, renderObjects })
+
+    expect(instanceGroup.position.equals(lockedCritPoint)).toBe(true)
+
+    renderer.animate({ frameNowMs: 360, delta: 0.016, renderObjects })
+
+    expect(renderer.activeCount()).toBe(0)
+    expect(renderer.group.children).toHaveLength(0)
+    expect(renderer.needsAnimationFrame()).toBe(false)
+    for (const spy of geometryDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+    for (const spy of materialDisposeSpies) expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('uses grid-cell fallback anchors and semantic colours for crit bursts without a target token', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([
+      critEvent({
+        targetId: 'missing-target',
+        targetCell: { x: 5, y: 2, z: 2 },
+        palette: undefined,
+      }),
+    ], { renderObjects: new Map() })
+
+    const instanceGroup = renderer.group.children[0]
+    const outerRing = critBurstRingNamed(instanceGroup, 'move-vfx-crit-burst-outer-ring')
+    const innerRing = critBurstRingNamed(instanceGroup, 'move-vfx-crit-burst-inner-ring')
+    const spokes = critBurstSpokeMeshes(instanceGroup)
+
+    expect(instanceGroup.children).toHaveLength(10)
+    expectVectorClose(instanceGroup.position, [5.5, 2, 2.5])
+    expect(outerRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.crit.glow.slice(1))
+    expect(innerRing.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.crit.accent.slice(1))
+    expect(spokes[0]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.crit.accent.slice(1))
+    expect(spokes[1]?.material.color.getHexString()).toBe(MOVE_VFX_TONE_COLORS.crit.primary.slice(1))
+  })
+
+  it('falls back to a no-op crit burst when no target anchor can be resolved', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    renderer.sync([critEvent({ targetId: 'missing-target' })], { renderObjects: new Map() })
 
     const instanceGroup = renderer.group.children[0]
     expect(instanceGroup.children).toHaveLength(0)

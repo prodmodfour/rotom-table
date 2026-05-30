@@ -284,11 +284,11 @@ Current classifications are intentionally broad:
 
 - self or immediate moves choose a healing pulse, buff/debuff particles, status cloud, or neutral self pulse from script suggestions and damage class;
 - single-target damaging melee moves produce a melee lunge plus type-coloured target flash on hits;
-- single-target damaging ranged moves choose a projectile, beam, or arc from range/keyword/area-template hints, then add type-coloured impact, neutral miss puff, and crit accent events as outcome data requires;
+- single-target damaging ranged moves choose a projectile, beam, or arc from range/keyword/area-template hints, then add type-coloured impact, neutral miss puff, and type-coloured crit accent events as outcome data requires;
 - confirmed area moves produce an area pulse, with line and cone area templates adding matching sweep events;
 - unusual scripts with enough user context fall back to a neutral self pulse instead of throwing.
 
-Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so future primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, miss, and crit effects without re-reading move automation rules. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.
+Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so future primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, and miss effects without re-reading move automation rules. Critical-hit events carry the damaging move palette so the renderer can layer that type colour with its semantic crit accent. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.
 
 ### Future per-move override contract for VFX-016
 
@@ -455,6 +455,14 @@ Impact ring VFX remain visual-only runtime resources. They add no timers, no ind
 Miss puffs intentionally ignore type-coloured event palettes and use the shared semantic `miss` palette from `src/utils/moveAnimationPalette.ts`. Each instance owns one low-opacity ground ring plus three soft cloud puffs, all using transparent additive materials with `depthTest: true`, `depthWrite: false`, disabled raycasting, and render orders below stronger hit/target-flash accents. Scheduler frame time drives expansion, slight upward cloud drift, opacity fade, completion, and disposal.
 
 Miss puff VFX remain visual-only runtime resources. They add no timers, no independent RAF loop, no persistence, no gameplay mutation, no token placement mutation, no permission changes, no renderer-quality reduction, no new dependencies, and no damaging hit/crit colour styling for miss outcomes.
+
+### Crit burst primitive for VFX-039
+
+`src/utils/isometric/moveVfxRenderer.ts` now replaces the crit placeholder with a short double-ring and starburst primitive. Crit events resolve the first target id to a locked token-foot/body anchor, or use `targetCell` when the token render object is unavailable. If no target anchor can be resolved, the renderer falls back to the safe no-op lifecycle instance so move resolution is unaffected.
+
+Each crit burst instance owns two ground-plane rings plus eight lightweight starburst spokes around the target body. The renderer combines the event palette, usually the damaging move type from `planGenericMoveAnimations()`, with the semantic `crit` palette so critical hits read as stronger than normal target flashes without replacing the move's type colour entirely. Transparent additive materials use `depthTest: true`, `depthWrite: false`, disabled raycasting, and render orders above the normal impact/target-flash rings while remaining below CSS3D HUD and roll feedback.
+
+Crit burst VFX remain visual-only runtime resources. They are planned only when target outcome data marks `crit: true`; ordinary hits keep the normal launch plus target-flash plan. Scheduler frame time drives burst expansion, opacity fade, completion, and disposal through the existing move VFX lifecycle. The primitive adds no timers, no independent RAF loop, no persistence, no gameplay mutation, no token placement mutation, no permission changes, no renderer-quality reduction, and no new dependencies.
 
 ## Implementation labels, milestones, and ticket ordering
 
