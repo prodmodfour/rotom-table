@@ -53,23 +53,25 @@ export const createSheetUpdateForPlacement = (
   if (placement.sheetKind === 'pokemon') {
     const original = lookups.pokemon.get(placement.sheetSlug)
     if (!original) return null
+    const updated = update('pokemon', original) as CharacterSheet
     return {
       kind: 'pokemon',
       slug: placement.sheetSlug,
       sheets: lookups.pokemon,
       original,
-      updated: update('pokemon', original) as CharacterSheet,
+      updated: { ...updated, slug: placement.sheetSlug },
     }
   }
 
   const original = lookups.trainer.get(placement.sheetSlug)
   if (!original) return null
+  const updated = update('trainer', original) as TrainerSheet
   return {
     kind: 'trainer',
     slug: placement.sheetSlug,
     sheets: lookups.trainer,
     original,
-    updated: update('trainer', original) as TrainerSheet,
+    updated: { ...updated, slug: placement.sheetSlug },
   }
 }
 

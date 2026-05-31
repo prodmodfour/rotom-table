@@ -28,6 +28,12 @@ export interface SaveSheetInput {
   sheet: Record<string, unknown>
   clientId?: string
   playerProfile?: PlayerProfile | null
+  /**
+   * When false, persist the supplied sheet under the current resource slug even
+   * if its display name would normally derive a different slug. Map token
+   * combat updates use this so HP/condition saves cannot orphan placements.
+   */
+  allowSlugSync?: boolean
 }
 
 export interface SaveSheetDependencies {
@@ -135,7 +141,7 @@ export const saveSheetUseCase = (
   }
 
   const existingSheet = readExistingSheet(path)
-  const canRenameSheetResource = input.role === 'gm' || playerPublicAccess
+  const canRenameSheetResource = (input.role === 'gm' || playerPublicAccess) && input.allowSlugSync !== false
   const target = canRenameSheetResource
     ? resolveSheetSaveTarget(input, path, {
         findSlugPath,

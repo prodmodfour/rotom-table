@@ -84,9 +84,31 @@ describe('useTokenSheetMutations', () => {
       slug: 'bolt',
       clientId: 'client-1',
       profileId: 'profile_ash00000',
+      allowSlugSync: false,
     })
     expect(saved[0].sheet).not.toHaveProperty('folder')
     expect(saved[0].sheet).toMatchObject({ slug: 'bolt' })
+  })
+
+  it('keeps the placement resource slug when a live sheet display slug has drifted', async () => {
+    const { map, mutations, pokemonSheets, saved } = makeMutations()
+    const drifted = pokemon()
+    drifted.slug = 'abra'
+    drifted.nickname = 'Abra'
+    pokemonSheets.clear()
+    pokemonSheets.set('examples-abra', drifted)
+    map.value.placements[0]!.sheetSlug = 'examples-abra'
+
+    await mutations.modifyConditions({ id: 'token-1', conditions: ['Burned'] })
+
+    expect(pokemonSheets.get('examples-abra')?.slug).toBe('examples-abra')
+    expect(saved).toHaveLength(1)
+    expect(saved[0]).toMatchObject({
+      kind: 'pokemon',
+      slug: 'examples-abra',
+      allowSlugSync: false,
+    })
+    expect(saved[0].sheet).toMatchObject({ slug: 'examples-abra' })
   })
 
   it('activates sheet ability automation and persists it', async () => {

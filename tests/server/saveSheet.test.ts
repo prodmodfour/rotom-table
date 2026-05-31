@@ -171,6 +171,53 @@ describe('save sheet use case', () => {
     expect(result.sheet.moveUsage).toBe(moveUsage)
   })
 
+  it('preserves the current slug when slug sync is disabled for a display-name mismatch', () => {
+    const { deps, writes } = createDeps()
+
+    const result = saveSheetUseCase({
+      role: 'gm',
+      kind: 'pokemon',
+      slug: 'examples-abra',
+      sheet: { slug: 'examples-abra', nickname: 'Abra', player: false },
+      clientId: 'client-1',
+      allowSlugSync: false,
+    }, deps)
+
+    expect(writes).toEqual([
+      {
+        path: '/repo/data/sheets/examples-abra.json',
+        sheet: { slug: 'examples-abra', nickname: 'Abra', player: false },
+      },
+    ])
+    expect(result).toMatchObject({
+      ok: true,
+      slug: 'examples-abra',
+      sheet: { slug: 'examples-abra', nickname: 'Abra', player: false },
+    })
+    expect(result.events).toEqual([
+      {
+        channel: 'sheet:pokemon:examples-abra',
+        type: 'updated',
+        clientId: 'client-1',
+        data: {
+          kind: 'pokemon',
+          slug: 'examples-abra',
+          sheet: { slug: 'examples-abra', nickname: 'Abra', player: false },
+        },
+      },
+      {
+        channel: 'sheets',
+        type: 'updated',
+        clientId: 'client-1',
+        data: {
+          kind: 'pokemon',
+          slug: 'examples-abra',
+          sheet: { slug: 'examples-abra', nickname: 'Abra', player: false },
+        },
+      },
+    ])
+  })
+
   it('renames the persisted file and emitted slug when the display name changes', () => {
     const writes: Array<{ path: string; sheet: Record<string, unknown> }> = []
     const renames: Array<{ from: string; to: string }> = []

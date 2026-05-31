@@ -34,6 +34,7 @@ export interface SavePlacedSheetRequest {
   sheet: Record<string, unknown>
   clientId: string
   profileId?: PlayerProfileId
+  allowSlugSync?: boolean
 }
 
 export type SavePlacedSheet = (request: SavePlacedSheetRequest) => Promise<void>
@@ -96,11 +97,14 @@ export const useTokenSheetMutations = ({
     commitSheetUpdate(context)
     lastError.value = null
     try {
+      const sheetPayload = toPersistableSheetPayload(context.updated)
+      sheetPayload.slug = context.slug
       await saveSheet({
         kind: context.kind,
         slug: context.slug,
-        sheet: toPersistableSheetPayload(context.updated),
+        sheet: sheetPayload,
         clientId: getClientId(),
+        allowSlugSync: false,
         ...profileRequestFields(),
       })
       return true
