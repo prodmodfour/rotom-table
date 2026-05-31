@@ -845,18 +845,49 @@ Use this checklist when extending the reusable VFX library:
 8. **Test the complete lifecycle.** Add or update unit tests for the type/planner path and renderer creation/sync/animation/completion/disposal path before relying on manual review.
 9. **Update docs and QA notes.** Keep this document and `move-animation-manual-qa.md` aligned if the primitive changes user-visible behaviour, review steps, accessibility behaviour, or performance assumptions.
 
-## Future per-move override starting point
+## Future: bespoke per-move animations
 
-Bespoke per-move choreography remains out of scope for this generic move-animation phase. When a later milestone approves it, start from the existing override seam in `src/utils/moveAnimationPlanner.ts`:
+Bespoke per-move choreography remains out of scope for this generic move-animation phase. This future backlog captures the approved starting path for a later milestone that wants fuller Pokémon-style per-move animation reads without pulling that work into the basic reusable VFX layer. Until that milestone exists, the production `MOVE_ANIMATION_OVERRIDE_REGISTRY` should remain empty and generic classifications should stay metadata-driven rather than move-name-specific.
+
+### Authoring model
+
+Future bespoke work should start from the existing override seam in `src/utils/moveAnimationPlanner.ts`:
 
 1. Add a `MoveAnimationPreset` whose `plan(input, context)` returns renderer-ready `MoveAnimationEvent[]`, returns `[]` to intentionally suppress VFX, or returns `null`/`undefined` to delegate to `context.fallbackPlanner(input)`.
 2. Register it in `MOVE_ANIMATION_OVERRIDE_REGISTRY` under `canonicalMoveAnimationOverrideKey(moveName)`; for example, `Solar Beam` maps to `solar-beam`.
-3. Prefer existing `MOVE_VFX_KIND` primitives, palette helpers, timing tiers, anchors, and sequencing before adding a new primitive. Do not import copyrighted animation assets, audio, or game animation data.
-4. Keep overrides pure and renderer-agnostic: no Vue refs, DOM/WebGL objects, timers, scheduler calls, persistence writes, permission decisions, or gameplay mutations.
-5. Add tests in `tests/utils/moveAnimationPlanner.test.ts` covering override success, fallback, disabled override behaviour, and no-op safety. Add renderer tests only if the override requires a new or changed primitive.
-6. Document the fan-project/asset boundary and reduced-motion behaviour in the same reviewed change.
+3. Build the sequence from existing `MOVE_VFX_KIND` primitives, palette helpers, timing tiers, anchors, and sequencing before proposing a new primitive.
+4. Keep overrides pure and renderer-agnostic: no Vue refs, DOM/WebGL objects, timers, scheduler calls, persistence writes, permission decisions, gameplay mutations, or direct token-placement offsets.
+5. Preserve the shipped runtime-only data boundary: override events still flow through `MoveAnimationEvent`, the per-map queue, and the existing scheduler continuation source; they must not be serialized to map, sheet, campaign, session, local-storage, server, or log payloads.
 
-Until that later milestone, the production `MOVE_ANIMATION_OVERRIDE_REGISTRY` should remain empty and generic classifications should stay metadata-driven rather than move-name-specific.
+### Batch and review strategy
+
+Do not attempt every canonical move in one pass. Open small curated batches of iconic or high-table-value moves, ideally 5-10 moves per reviewed PR, and choose batches that exercise different animation needs such as a beam, a charged projectile, a weather/field cue, a healing move, and a close-contact move. Each batch proposal should document:
+
+- the exact move names and why the generic planner is not expressive enough for them;
+- the existing primitives reused and any new primitive requested;
+- timing, reduced-motion, layer-visibility, and roll-feedback sequencing expectations;
+- how the sequence remains visual-only and permission-neutral;
+- manual QA scenarios on crowded maps, raised terrain, active targeting/roll feedback, hidden token layer, disabled VFX, and reduced motion.
+
+A new primitive should be approved only when several curated moves need the same reusable building block. Add it as a generic VFX kind with the same lifecycle, disposal, render-order, pointer-transparency, scheduler, and reduced-motion requirements as the current primitive library rather than as one move's private renderer code.
+
+### Testing expectations
+
+Every bespoke batch should include planner tests in `tests/utils/moveAnimationPlanner.test.ts` for override success, fallback to generic planning, disabled override behaviour, malformed/incomplete input safety, and no-op behaviour when anchors or targets are missing. Add renderer lifecycle tests only when the batch adds or changes a primitive, and update the dev harness or fixtures when that helps reviewers trigger the new sequence intentionally.
+
+Run the normal move-VFX verification commands for each batch:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+The optional `npm run check:move-automation` coverage command remains separate from animation override review unless the same PR intentionally changes move automation script coverage.
+
+### Asset and fan-project safety
+
+Future agents must not import, trace, rip, or reproduce copyrighted game animation assets, sprite sheets, particle textures, model packs, audio, frame data, or copied choreography data. Keep bespoke animation implementation procedural and internally authored, reuse the generic primitives first, and document any newly created art/material source in the reviewed change. Each bespoke batch should explicitly confirm that it respects `NOTICE.md`, `docs/fan-project-notice.md`, and this repository's fan-project boundaries.
 
 ## Testing expectations for move VFX changes
 
