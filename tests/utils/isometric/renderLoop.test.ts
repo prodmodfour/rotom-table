@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createIsometricAnimationContinuation,
   ISOMETRIC_ANIMATION_CONTINUATION_SOURCE,
+  ISOMETRIC_ANIMATION_CONTINUATION_SOURCES,
   isIsometricAnimationContinuationSource,
   resolveIsometricFieldEffectAnimationContinuationSources,
   resolveIsometricMoveVfxAnimationContinuationSources,
@@ -61,6 +62,27 @@ describe('isometric render loop helpers', () => {
     expect(toIsometricRenderSchedulerFrameResult(continuation)).toEqual({
       activeAnimation: false,
     })
+  })
+
+  it('lists and validates stable animation continuation sources including move VFX', () => {
+    expect(ISOMETRIC_ANIMATION_CONTINUATION_SOURCES).toEqual([
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion,
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteTextureLoading,
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.fieldEffectAnimation,
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.movementPreviewAnimation,
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.moveVfxAnimation,
+    ])
+    expect(ISOMETRIC_ANIMATION_CONTINUATION_SOURCES).toContain(
+      ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.moveVfxAnimation,
+    )
+
+    for (const source of ISOMETRIC_ANIMATION_CONTINUATION_SOURCES) {
+      expect(isIsometricAnimationContinuationSource(source)).toBe(true)
+    }
+
+    expect(isIsometricAnimationContinuationSource('moveVfxAnimation')).toBe(false)
+    expect(isIsometricAnimationContinuationSource('move-vfx')).toBe(false)
   })
 
   it('deduplicates active animation sources in first-seen order', () => {
@@ -149,16 +171,36 @@ describe('isometric render loop helpers', () => {
     ])
   })
 
-  it('exposes active move VFX instances as a continuation source', () => {
+  it('exposes active move VFX instances as a continuation source only while needed', () => {
     expect(resolveIsometricMoveVfxAnimationContinuationSources(null)).toEqual([])
+    expect(resolveIsometricMoveVfxAnimationContinuationSources(undefined)).toEqual([])
     expect(resolveIsometricMoveVfxAnimationContinuationSources({
       needsAnimationFrame: () => false,
     })).toEqual([])
+
+    const inactiveContinuation = createIsometricAnimationContinuation(
+      resolveIsometricMoveVfxAnimationContinuationSources({
+        needsAnimationFrame: () => false,
+      }),
+    )
+    expect(inactiveContinuation).toEqual({
+      active: false,
+      sources: [],
+    })
+
     expect(resolveIsometricMoveVfxAnimationContinuationSources({
       needsAnimationFrame: () => true,
     })).toEqual([
       ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.moveVfxAnimation,
     ])
+    expect(createIsometricAnimationContinuation(
+      resolveIsometricMoveVfxAnimationContinuationSources({
+        needsAnimationFrame: () => true,
+      }),
+    )).toEqual({
+      active: true,
+      sources: [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.moveVfxAnimation],
+    })
   })
 
   it('exposes visible animated movement-preview ghosts as a continuation source', () => {
