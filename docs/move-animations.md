@@ -939,7 +939,7 @@ The optional `npm run check:move-automation` coverage command remains unrelated 
 
 ## Manual QA checklist
 
-The repeatable human review plan for the playable basic move-animation build lives in [Move animation manual QA checklist](move-animation-manual-qa.md). Run it after the automated `npm run typecheck`, `npm test`, and `npm run build` checks, and record blockers separately from polish follow-up issues.
+The repeatable human review plan for the playable basic move-animation build lives in [Move animation manual QA checklist](move-animation-manual-qa.md). Run it after the automated `npm run typecheck`, `npm test`, and `npm run build` checks, and record blockers separately from polish follow-up issues. The first triaged issue list from VFX-086 is recorded in [Move VFX first-playtest follow-up issues](move-vfx-follow-up-issues.md).
 
 ## Maintenance decisions
 

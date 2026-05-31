@@ -95,6 +95,8 @@ Record Pass / Blocker / Polish for each row. If a real scripted move cannot prod
 
 ## Suggested review note template
 
+Record blocker and polish triage in the relevant PR, issue tracker, or a focused follow-up document such as [Move VFX first-playtest follow-up issues](move-vfx-follow-up-issues.md).
+
 ```text
 Move VFX manual QA date:
 Reviewer / browser / OS:
