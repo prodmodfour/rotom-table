@@ -222,6 +222,7 @@ const emit = defineEmits<{
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
+  (event: 'move-vfx-settled', payload: { nowMs: number }): void
 }>()
 
 const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibility)
@@ -469,6 +470,7 @@ const moveTargetingReticleRenderer = createMoveTargetingReticleRenderer(scene)
 const moveAreaTemplateRenderer = createMoveAreaTemplateRenderer(scene)
 const moveAutomationFeedbackRenderer = createMoveAutomationFeedbackRenderer(scene)
 const moveVfxRenderer: MoveVfxRenderer = createMoveVfxRenderer(scene)
+let moveVfxAnimationWasActive = false
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
 let camera: THREE.OrthographicCamera | null = null
@@ -544,6 +546,14 @@ const syncMoveVfxMetricsForMetricsOverlay = () => {
     moveVfxRenderer.debugSnapshot(),
     readRenderMetricsNowMs(),
   )
+}
+
+const syncMoveVfxCompletionSignal = (nowMs = readRenderMetricsNowMs()) => {
+  const moveVfxAnimationIsActive = moveVfxRenderer.needsAnimationFrame()
+  if (moveVfxAnimationWasActive && !moveVfxAnimationIsActive) {
+    emit('move-vfx-settled', { nowMs })
+  }
+  moveVfxAnimationWasActive = moveVfxAnimationIsActive
 }
 
 const syncPointerMetricsForMetricsOverlay = () => {
@@ -1234,6 +1244,7 @@ const syncMoveVfxRendererState = () => {
     reducedMotion: props.moveAnimationsReducedMotion === true,
   })
   syncMoveVfxMetricsForMetricsOverlay()
+  syncMoveVfxCompletionSignal()
 }
 
 const requestMoveVfxRenderFrame = () => {
@@ -1526,6 +1537,7 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
   })
   recordScheduledFrameForMetricsOverlay(frame)
   syncMoveVfxMetricsForMetricsOverlay()
+  syncMoveVfxCompletionSignal()
   sampleRendererInfoForMetricsOverlay()
 
   return true

@@ -121,6 +121,41 @@ describe('move VFX renderer lifecycle', () => {
     expect(resources.materialDispose).toHaveBeenCalledOnce()
   })
 
+  it('returns to zero active groups after repeated animation batches settle', () => {
+    const scene = new THREE.Scene()
+    const renderer = createMoveVfxRenderer(scene)
+
+    for (let cycle = 0; cycle < 6; cycle += 1) {
+      const startMs = 1000 + cycle * 1000
+      const events = [
+        selfPulseEvent({ id: `move-vfx-stress-${cycle}-a`, createdAtMs: startMs, durationMs: 120 }),
+        selfPulseEvent({ id: `move-vfx-stress-${cycle}-b`, createdAtMs: startMs, durationMs: 120 }),
+      ]
+
+      renderer.sync(events)
+      expect(renderer.activeCount()).toBe(2)
+      expect(renderer.group.children).toHaveLength(2)
+      expect(renderer.needsAnimationFrame()).toBe(true)
+
+      renderer.animate({ frameNowMs: startMs + 119, delta: 0.016 })
+      expect(renderer.activeCount()).toBe(2)
+      expect(renderer.group.children).toHaveLength(2)
+
+      renderer.animate({ frameNowMs: startMs + 120, delta: 0.016 })
+      expect(renderer.activeCount()).toBe(0)
+      expect(renderer.group.children).toHaveLength(0)
+      expect(renderer.needsAnimationFrame()).toBe(false)
+
+      renderer.sync([])
+      expect(renderer.debugSnapshot()).toMatchObject({
+        activeCount: 0,
+        instanceGroupCount: 0,
+        needsAnimationFrame: false,
+        visible: false,
+      })
+    }
+  })
+
   it('disposes all active instances and removes the root group idempotently', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveVfxRenderer(scene)

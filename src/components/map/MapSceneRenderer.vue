@@ -93,6 +93,7 @@ const emit = defineEmits<{
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
+  (event: 'move-vfx-settled', payload: { nowMs: number }): void
 }>()
 
 const gridRef = ref<IsometricGridHandle | null>(null)
@@ -160,5 +161,6 @@ defineExpose({ focusPokemon })
     @select-move-area-direction="emit('select-move-area-direction', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
     @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
+    @move-vfx-settled="emit('move-vfx-settled', $event)"
   />
 </template>

@@ -130,6 +130,7 @@ const emit = defineEmits<{
   (event: 'preview-all-move-vfx'): void
   (event: 'clear-move-vfx'): void
   (event: 'toggle-move-animations'): void
+  (event: 'move-vfx-settled', payload: { nowMs: number }): void
   (event: 'dismiss-spite-reaction', id: string): void
   (event: 'apply-spite-reaction', id: string): void
   (event: 'dismiss-cute-charm-reaction', id: string): void
@@ -235,6 +236,7 @@ defineExpose({ focusPokemon })
         @select-move-area-direction="emit('select-move-area-direction', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
         @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
+        @move-vfx-settled="emit('move-vfx-settled', $event)"
       />
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />
 

@@ -277,6 +277,7 @@ Renderer, scheduler, primitive, and move-automation integration tickets must ref
 - Meshes, groups, geometries, materials, textures, CSS3D elements, and event listeners created for VFX must be disposed or detached when the effect completes, when its event is removed from the active queue, when the map scene unmounts, and when map data changes or the scene rebuilds.
 - Disposal must be idempotent: repeated completion, removal, unmount, or scene-reset cleanup should be safe and should not throw.
 - Hidden-tab pause/resume and layer-hidden cases must not freeze VFX forever. Effects should either age out or resume under a documented policy and then release their resources.
+- When the renderer transitions from active move VFX to settled, the isometric bridge emits a runtime-only `move-vfx-settled` signal so the map page can prune expired queue entries using the same renderer-clock timestamp. This cleanup must stay on the existing scheduler path; do not add a timer, interval, independent RAF loop, persistence field, or gameplay mutation for queue cleanup.
 - Development metrics may expose active counts or snapshots, but production animation paths should avoid per-frame debug allocations unless debug mode is explicitly enabled.
 
 ### Data and mechanics boundary

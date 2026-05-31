@@ -142,6 +142,10 @@ const visibleMoveAnimations = computed(() => (
   moveAnimationsEnabled.value ? activeMoveAnimations.value : []
 ))
 
+const pruneSettledMoveAnimations = ({ nowMs }: { nowMs: number }) => {
+  pruneExpiredMoveAnimations(nowMs)
+}
+
 const moveVfxDebugHarnessEnabled = computed(() => isMoveVfxDebugHarnessEnabled({ query: route.query }))
 
 watch(
@@ -980,6 +984,7 @@ useMapDimensionReconciliation({
         @preview-all-move-vfx="previewAllMoveVfxDebug"
         @clear-move-vfx="clearMoveAnimations"
         @toggle-move-animations="toggleMoveAnimationsEnabled"
+        @move-vfx-settled="pruneSettledMoveAnimations"
         @dismiss-spite-reaction="dismissSpiteReactionPrompt"
         @apply-spite-reaction="applySpiteReactionPrompt"
         @dismiss-cute-charm-reaction="dismissCuteCharmReactionPrompt"
