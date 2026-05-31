@@ -889,6 +889,25 @@ The optional `npm run check:move-automation` coverage command remains separate f
 
 Future agents must not import, trace, rip, or reproduce copyrighted game animation assets, sprite sheets, particle textures, model packs, audio, frame data, or copied choreography data. Keep bespoke animation implementation procedural and internally authored, reuse the generic primitives first, and document any newly created art/material source in the reviewed change. Each bespoke batch should explicitly confirm that it respects `NOTICE.md`, `docs/fan-project-notice.md`, and this repository's fan-project boundaries.
 
+## Copyable PR checklist for move VFX changes
+
+Use this block in every PR description that touches the move VFX layer. Keep the checklist short in the PR by marking non-applicable items as `N/A` with a reason rather than deleting guardrails.
+
+```markdown
+### Move VFX PR checklist
+
+- [ ] Type safety passes (`npm run typecheck`) and changed contracts/tests cover new `MoveAnimationEvent` or `MOVE_VFX_KIND` usage.
+- [ ] VFX remains visual-only: animation code does not mutate hit/miss/crit, damage, healing, status, combat-stage, placement, log, permission, or persisted map/sheet/session/campaign decisions.
+- [ ] Scheduler ownership is preserved: no independent RAF, timer, or ticker; animated work uses the existing dirty scheduler/continuation model and settles when complete.
+- [ ] Renderer quality and map UX are unchanged: DPR, antialiasing, weather/field-effect quality, targeting, HUD, context menus, camera controls, and token interactions remain intact.
+- [ ] Created Three.js/CSS3D resources are disposed on completion, removal, disabled VFX, map reset, hidden-tab ageing, and component unmount where relevant.
+- [ ] Reduced-motion and disabled-animation paths were reviewed; semantic cues remain understandable while fast/large motion is reduced or suppressed.
+- [ ] Focused tests were added or updated for the touched queue, planner, renderer, scheduler, settings, or automation path, and `npm test` passes.
+- [ ] Manual QA was run or explicitly scoped using `docs/move-animation-manual-qa.md`; blockers are separated from polish follow-ups.
+- [ ] Scope stays generic/basic unless this PR is part of an approved future bespoke per-move milestone; no copyrighted or external animation assets were added.
+- [ ] Standard verification was run: `npm run typecheck`, `npm test`, and `npm run build` (plus `npm run check:move-automation` only if move automation script coverage changed).
+```
+
 ## Testing expectations for move VFX changes
 
 Run the standard project checks for reviewed move-VFX work:
