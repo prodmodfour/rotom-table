@@ -2,6 +2,19 @@
 
 This brief is the source-of-truth scope document for the Basic Move Animations and reusable VFX layer work. The first phase should make move use feel more responsive on the isometric map through generic, reusable visual effects. It must not attempt full Pokémon-style bespoke choreography for individual moves.
 
+## User-facing release note
+
+Basic move animations now play on the isometric map when a scripted move resolves. They add short type-coloured or semantic VFX for hits, misses, critical hits, healing, status, buffs/debuffs, area confirmations, and dash/pass-style outcomes.
+
+These animations are visual-only: move automation, rolls, HP/status/combat-stage updates, token placement, logs, permissions, and saved map data remain the source of truth. If a VFX cue is skipped or fails, the move still resolves through the normal automation flow.
+
+To reduce or disable motion:
+
+- Use the map overlay **Move VFX** toggle to turn the basic move-animation layer off for this browser. The preference is local to the browser, not a campaign or map setting.
+- If your browser or OS uses `prefers-reduced-motion: reduce`, Rotom Table automatically uses reduced-motion variants with less travel, displacement, sweep motion, and shake while keeping semantic outcome cues.
+
+This release ships generic reusable primitives only. It does not include bespoke per-move choreography or imported animation assets.
+
 ## Goals for this phase
 
 - Add satisfying generic move animations for common self, single-target, and area move flows.
