@@ -671,6 +671,203 @@ describe('generic move animation planner', () => {
     ])
   })
 
+  it('locks representative self status, self healing, melee, ranged, and no-accuracy classifications', () => {
+    const reflectEvents = planGenericMoveAnimations(selfInput({
+      script: reviewedScript('Reflect'),
+    }))
+    expect(reflectEvents).toEqual([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.status,
+        targetId: 'user-token',
+        targetCell: { x: 0, y: 0, z: 0 },
+        conditionNames: expect.arrayContaining(['Reflect Blessing']),
+        palette: MOVE_VFX_TONE_COLORS.status,
+      }),
+    ])
+
+    const synthesisEvents = planGenericMoveAnimations(selfInput({
+      script: reviewedScript('Synthesis'),
+    }))
+    expect(synthesisEvents).toEqual([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.healing,
+        targetId: 'user-token',
+        palette: MOVE_VFX_TONE_COLORS.healing,
+      }),
+    ])
+
+    expect(planGenericMoveAnimations(baseInput({
+      script: reviewedScript('Tackle'),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.meleeLunge,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+
+    expect(planGenericMoveAnimations(baseInput({
+      script: reviewedScript('Rock Throw'),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.projectile,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+
+    const noAccuracyTargetScript = reviewedScript('Magical Leaf')
+    expect(noAccuracyTargetScript.requiresAccuracy).toBe(false)
+    const noAccuracyTargetEvents = planGenericMoveAnimations(baseInput({
+      script: noAccuracyTargetScript,
+    }))
+    expect(noAccuracyTargetEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+    expect(noAccuracyTargetEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'target-token',
+        shake: true,
+        palette: MOVE_VFX_TYPE_COLORS.Grass,
+      }),
+    ]))
+  })
+
+  it('locks hit, miss, and crit variants for a representative reviewed target move', () => {
+    const waterGun = reviewedScript('Water Gun')
+
+    expect(planGenericMoveAnimations(baseInput({
+      script: waterGun,
+      targetOutcomes: [{ targetId: 'target-token', hit: true, crit: false }],
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.targetFlash,
+    ])
+
+    expect(planGenericMoveAnimations(baseInput({
+      script: waterGun,
+      targetOutcomes: [{ targetId: 'target-token', hit: false, crit: false }],
+    })).map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.miss,
+    ])
+
+    const critEvents = planGenericMoveAnimations(baseInput({
+      script: waterGun,
+      targetOutcomes: [{ targetId: 'target-token', hit: true, crit: true }],
+    }))
+    expect(critEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.crit,
+    ])
+    expect(critEvents[2]).toMatchObject({
+      kind: MOVE_VFX_KIND.crit,
+      targetId: 'target-token',
+      palette: MOVE_VFX_TYPE_COLORS.Water,
+    })
+  })
+
+  it('locks representative area burst, cone, and line classifications with confirmed cells', () => {
+    const cells = [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }]
+
+    const burstEvents = planGenericMoveAnimations(areaInput(cells, {
+      script: reviewedScript('Boomburst'),
+    }))
+    expect(burstEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.radialBurst,
+    ])
+    expect(burstEvents[0]).toMatchObject({
+      kind: MOVE_VFX_KIND.areaPulse,
+      areaCells: cells,
+      palette: MOVE_VFX_TYPE_COLORS.Normal,
+    })
+
+    const coneEvents = planGenericMoveAnimations(areaInput(cells, {
+      areaDirection: 'north',
+      script: reviewedScript('Razor Leaf'),
+    }))
+    expect(coneEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.coneSweep,
+    ])
+    expect(coneEvents[1]).toMatchObject({
+      kind: MOVE_VFX_KIND.coneSweep,
+      areaCells: cells,
+      areaDirection: 'north',
+      palette: MOVE_VFX_TYPE_COLORS.Grass,
+    })
+
+    const lineEvents = planGenericMoveAnimations(areaInput(cells, {
+      areaDirection: 'east',
+      script: reviewedScript('Powder Snow'),
+    }))
+    expect(lineEvents.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.lineSweep,
+    ])
+    expect(lineEvents[1]).toMatchObject({
+      kind: MOVE_VFX_KIND.lineSweep,
+      areaCells: cells,
+      areaDirection: 'east',
+      palette: MOVE_VFX_TYPE_COLORS.Ice,
+    })
+  })
+
+  it('locks transaction-derived healing, status, and combat-stage follow-up VFX together', () => {
+    const targetBeforeStages = { ...stages, def: 1 }
+    const events = planGenericMoveAnimations(baseInput({
+      user: token({ id: 'user-token', species: 'Caster', currentHp: 20, maxHp: 40 }),
+      targets: [token({
+        id: 'target-token',
+        species: 'Target',
+        currentHp: 35,
+        maxHp: 40,
+        combatStages: targetBeforeStages,
+        position: { x: 3, y: 0, z: 1 },
+      })],
+      script: reviewedScript('Water Gun'),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+      transaction: transaction({
+        hpUpdates: [
+          { id: 'target-token', currentHp: 21 },
+          { id: 'user-token', currentHp: 28 },
+        ],
+        combatStageUpdates: [{ id: 'target-token', stages: { ...stages, def: -1 } }],
+        conditionUpdates: [{ id: 'target-token', conditions: ['Burned'] }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.healing,
+      MOVE_VFX_KIND.buffDebuff,
+      MOVE_VFX_KIND.status,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.healing,
+        targetId: 'user-token',
+        palette: MOVE_VFX_TONE_COLORS.healing,
+        startOffsetMs: 100,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.buffDebuff,
+        targetId: 'target-token',
+        direction: 'debuff',
+        palette: MOVE_VFX_TONE_COLORS.debuff,
+        startOffsetMs: 100,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.status,
+        targetId: 'target-token',
+        conditionNames: ['Burned'],
+        palette: MOVE_VFX_TONE_COLORS.status,
+        startOffsetMs: 170,
+      }),
+    ]))
+  })
+
   it('classifies miss outcomes as launch plus neutral miss puff without impact flash', () => {
     const events = planGenericMoveAnimations(baseInput({
       script: script({
