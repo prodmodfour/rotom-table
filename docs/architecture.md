@@ -54,7 +54,7 @@ The selected role is stored in a cookie and checked by client navigation and ser
 The map table combines Vue controls with a Three.js-rendered isometric scene.
 
 - `src/components/IsometricGrid.client.vue` bridges Vue state to the rendered map.
-- `src/utils/isometric/` handles scene setup, grid/voxel rendering, token sprites, movement previews, pointer interactions, context menus, hazards, field effects, weather visuals, lighting, render scheduling, and resource cleanup.
+- `src/utils/isometric/` handles scene setup, grid/voxel rendering, token sprites, movement previews, transient move VFX, pointer interactions, context menus, hazards, field effects, weather visuals, lighting, render scheduling, and resource cleanup.
 - `src/components/map/` provides the surrounding product UI for terrain editing, initiative, field effects, hazards, token controls, and automation panels.
 
 The scene uses dirty render scheduling: Vue watchers, pointer interactions, async texture loads, resize/camera events, and document visibility lifecycle events request focused invalidation reasons, while active animation sources keep frames alive only while visual work is still changing. See [Isometric render scheduler architecture](render-scheduler-architecture.md) for the current dirty-rendering flow and extension checklist.

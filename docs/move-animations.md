@@ -260,7 +260,7 @@ Renderer, scheduler, primitive, and move-automation integration tickets must ref
 - Move VFX must use the existing dirty isometric render scheduler documented in `docs/render-scheduler-architecture.md`.
 - Do not add a separate always-on `requestAnimationFrame`, `setInterval`, timeout loop, or component-local animation loop for move animations.
 - Adding, removing, or syncing VFX events should request a focused scheduled scene frame through the same invalidation path used by other map renderer changes.
-- Active VFX may keep frames alive only by participating in the existing animation-continuation model. The planned renderer contract should expose whether it still needs another frame, for example through `needsAnimationFrame()` or an equivalent resolver used by `resolveSceneAnimationContinuation()`.
+- Active VFX may keep frames alive only by participating in the existing animation-continuation model. `MoveVfxRenderer.needsAnimationFrame()` is read by `resolveIsometricMoveVfxAnimationContinuationSources()` and then by `resolveSceneAnimationContinuation()` in `IsometricGrid.client.vue`.
 - The continuation source must become inactive as soon as all VFX instances are complete, hidden-and-aged-out, removed, or disposed so an idle map returns to one-shot rendering.
 - VFX that only changes WebGL objects should not force CSS3D renders. The optional badge primitive is CSS3D-only and reports CSS output through `MoveVfxRenderer.needsCss3DFrame()` so `stepIsometricAnimationFrame()` marks CSS3D dirty only while an active badge can change or hide CSS output.
 
@@ -290,9 +290,9 @@ Renderer, scheduler, primitive, and move-automation integration tickets must ref
 - Temporary visual offsets such as melee lunges, shakes, dash afterimages, or impact pulses must reset every frame or live in VFX-owned overlay objects; they must never be persisted as token placement.
 - Animation planning and rendering failures must be no-op safe. A bad palette lookup, missing token render object, deleted target, empty area cell list, or renderer disposal race must not prevent the move automation flow from resolving.
 
-### Implementation note checklist for later tickets
+### Implementation maintenance checklist
 
-For each later renderer or integration ticket, include a brief note in code comments, tests, docs, or the PR summary confirming:
+For each renderer, planner, primitive, or integration change, include a brief note in code comments, tests, docs, or the PR summary confirming:
 
 1. which scheduler invalidation or continuation path the change uses;
 2. how the renderer reports whether another animation frame is needed;
@@ -349,7 +349,7 @@ Available helpers cover token foot, center, chest, head, and above-head anchors;
 
 ### Queue id and dedupe policy for VFX-011
 
-The shared queue policy implementation lives in `src/composables/map-editor/moveAnimationQueuePolicy.ts`. The future `useMoveAnimationQueue` composable should use these helpers instead of inventing id or duplicate handling locally.
+The shared queue policy implementation lives in `src/composables/map-editor/moveAnimationQueuePolicy.ts`, and `src/composables/map-editor/useMoveAnimationQueue.ts` uses these helpers for every enqueue path instead of inventing id or duplicate handling locally.
 
 - Queue-owned ids use the deterministic `move-vfx` prefix and a monotonically increasing, zero-padded suffix such as `move-vfx-000001`.
 - Id generators are per queue instance, not module-global state, so map pages, tests, and SSR/client setup do not leak counters across sessions.
@@ -361,7 +361,7 @@ This policy keeps transient VFX one-shot per move resolution by default while st
 
 ### Queue composable for VFX-012
 
-The per-map reactive queue implementation lives in `src/composables/map-editor/useMoveAnimationQueue.ts`. Each map page should create its own queue instance and pass the returned enqueue functions to later move-automation integration; the module owns no global state and imports no renderer or move-rule code.
+The per-map reactive queue implementation lives in `src/composables/map-editor/useMoveAnimationQueue.ts`. `src/pages/maps/[slug].vue` creates one queue instance for the mounted map page and passes `enqueueMoveAnimations` into move automation; the module owns no global state and imports no renderer or move-rule code.
 
 The composable exposes `activeMoveAnimations` as a readonly computed array plus `enqueueMoveAnimation`, `enqueueMoveAnimations`, `removeMoveAnimation`, `clearMoveAnimations`, and `pruneExpiredMoveAnimations`. Enqueue helpers fill missing `id` and `createdAtMs` fields from the per-queue id generator and injected clock, then apply the VFX-011 duplicate policy. The default queue clock uses `performance.now()` in browsers so event timestamps share the renderer frame-time clock, falling back to `Date.now()` only when the Performance API is unavailable. Expiration pruning uses event `createdAtMs`/`durationMs` through the shared timing helpers and is opportunistic only; it does not create timers, a RAF loop, or persistence hooks.
 
@@ -394,7 +394,7 @@ Current classifications are intentionally broad:
 - confirmed pass/dash area moves that provide `passDestination` also produce a transient `dash` event with destination/path metadata before the area impact timing, while saved token placement still changes only through the existing move automation placement path;
 - unusual scripts with enough user context fall back to a neutral self pulse instead of throwing.
 
-Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so future primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, and miss effects without re-reading move automation rules. Critical-hit events carry the damaging move palette so the renderer can layer that type colour with its semantic crit accent. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.
+Planner-created events may carry a palette entry from `src/utils/moveAnimationPalette.ts` so renderer primitives can use move-type colours for damaging effects and semantic colours for healing, status, buff/debuff, and miss effects without re-reading move automation rules. Critical-hit events carry the damaging move palette so the renderer can layer that type colour with its semantic crit accent. The planner still does not mutate gameplay state, enqueue events, schedule frames, or persist VFX data.
 
 ### VFX-072 heuristic polish sample review
 
@@ -456,13 +456,13 @@ These fallbacks are visual-only. They do not change hit/miss, targeting, HP, sta
 
 ### Renderer shell for VFX-019
 
-The initial renderer shell lives in `src/utils/isometric/moveVfxRenderer.ts`. It exports `createMoveVfxRenderer(scene)` and `createMoveVfxRenderer({ scene, group })`, creating a dedicated `THREE.Group` named `move-vfx-root` for all future move VFX objects.
+The renderer owner lives in `src/utils/isometric/moveVfxRenderer.ts`. It exports `createMoveVfxRenderer(scene)` and `createMoveVfxRenderer({ scene, group })`, creating a dedicated `THREE.Group` named `move-vfx-root` for transient move VFX objects.
 
-The shell exposes the renderer contract needed by later integration tickets: `sync(events, context)`, `animate(frameContext)`, `needsAnimationFrame()`, `activeCount()`, and `dispose()`. This preserves the dirty-scheduler guardrail: VFX renderer work must be advanced by the existing isometric render loop and must not add a separate RAF or timer loop.
+The renderer contract is `sync(events, context)`, `animate(frameContext)`, `needsAnimationFrame()`, `needsCss3DFrame()`, `activeCount()`, `debugSnapshot()`, `expireCompleted(nowMs)`, and `dispose()`. This preserves the dirty-scheduler guardrail: VFX renderer work is advanced by the existing isometric render loop and does not add a separate RAF or timer loop.
 
 ### Renderer lifecycle for VFX-020
 
-The renderer now tracks one lifecycle instance root group per active `MoveAnimationEvent.id` under `move-vfx-root`. These groups are intentionally empty until later primitive tickets add meshes, materials, geometries, or CSS3D elements, but they establish the resource ownership boundary: primitives should attach their objects to the per-event group and let renderer lifecycle cleanup remove them.
+The renderer tracks one lifecycle instance root group per active `MoveAnimationEvent.id` under `move-vfx-root`. Each visible primitive attaches its owned meshes, materials, geometries, instanced meshes, or CSS3D badge sprite to that per-event group and lets renderer lifecycle cleanup remove them.
 
 `sync(events, context)` creates lifecycle groups for new event ids, keeps existing groups for repeated ids, and disposes groups whose ids are no longer present. `animate(frameContext)` uses scheduler-provided frame time with the shared timing helper to dispose completed events. Completed ids are not recreated while the same expired event remains in the synced input; once an id disappears from input, a future event can reuse that id normally. `needsAnimationFrame()` reports whether any lifecycle instance is still active; the renderer itself never schedules frames directly and exposes this signal to the existing render-loop continuation model.
 
@@ -472,37 +472,37 @@ Disposing the renderer removes every active per-event group, then removes the de
 
 `src/utils/isometric/moveVfxRenderer.ts` now has an internal `MoveVfxInstance` seam with an owned group, `animate(frameContext)`, `complete`, and idempotent `dispose()` for each active event. The top-level renderer only reconciles ids, delegates frame advancement to active instances, prunes completed instances, and reports `needsAnimationFrame()`; primitive-specific animation math belongs in per-kind builders instead of the sync loop.
 
-A factory switch maps every current `MOVE_VFX_KIND` to a per-kind builder. These builders intentionally return safe no-op placeholder instances until the primitive tickets add visible projectile, beam, flash, pulse, and area implementations. Unknown runtime effect kinds also fall back to the same no-op instance, so malformed or future events do not crash production rendering. The placeholders still age out from scheduler-provided frame time and release their groups through `disposeObject3D()`, preserving the lifecycle and no-independent-RAF guardrails.
+A factory switch maps every current `MOVE_VFX_KIND` to a per-kind builder for projectile, beam, arc, melee lunge, self pulse, target flash, impact ring, area pulse, radial burst, line/cone sweep, dash, miss puff, crit burst, status cloud, healing pulse, buff/debuff particles, and optional badge labels. Unknown runtime effect kinds still fall back to a no-op instance, so malformed or future events do not crash production rendering. Every instance ages out from scheduler-provided frame time and releases its group through `disposeObject3D()`, preserving the lifecycle and no-independent-RAF guardrails.
 
 ### Render-loop continuation source for VFX-022
 
 `src/utils/isometric/renderLoop.ts` includes the `move-vfx-animation` continuation source and the `resolveIsometricMoveVfxAnimationContinuationSources(renderer)` helper. The helper is intentionally small: it returns the source only when a move VFX renderer exists and its `needsAnimationFrame()` method reports active work.
 
-This preserves idle performance because no move VFX source is reported for absent, disposed, or inactive renderers, and the source participates in the same validation and first-seen dedupe path as token motion, sprite animation, movement preview, and field-effect animation. Move VFX remains WebGL-only for CSS3D dirty tracking until a later CSS3D primitive explicitly needs CSS output invalidation.
+This preserves idle performance because no move VFX source is reported for absent, disposed, or inactive renderers, and the source participates in the same validation and first-seen dedupe path as token motion, sprite animation, movement preview, and field-effect animation. Most move VFX are WebGL-only; the optional badge primitive reports CSS output through `MoveVfxRenderer.needsCss3DFrame()` so CSS3D is dirtied only while a badge instance can change or hide CSS output.
 
 ### Scheduler frame stepping for VFX-023
 
 `src/utils/isometric/animationFrame.ts` now accepts an optional move VFX renderer frame hook. When a renderer is present and `needsAnimationFrame()` reports active work, `stepIsometricAnimationFrame()` calls `moveVfxRenderer.animate(...)` before the WebGL render with the scheduler's `frameNowMs`, clamped `delta`, clock `elapsedTime`, active camera, optional live token render-object map, and optional visibility flag.
 
-`src/components/IsometricGrid.client.vue` includes the dormant move VFX renderer slot in both `resolveSceneAnimationContinuation()` and the per-frame call into `stepIsometricAnimationFrame()`. Until the later prop-plumbing ticket instantiates and syncs the renderer, the slot is `null` and produces no continuation source or animation work. This keeps VFX advancement on the existing dirty-scheduled frame path without introducing an independent RAF loop.
+`src/components/IsometricGrid.client.vue` owns a live `createMoveVfxRenderer(scene)` instance, includes it in `resolveSceneAnimationContinuation()`, and passes it into each call to `stepIsometricAnimationFrame()`. This keeps VFX advancement on the existing dirty-scheduled frame path without introducing an independent RAF loop.
 
-The current move VFX path is pure WebGL: stepping the renderer does not mark CSS3D dirty, and `CSS3DRenderer.render()` still runs only when the existing dirty tracker reports CSS-visible changes. If a future primitive uses CSS3D badges or labels, that primitive must add an explicit CSS dirty signal instead of relying on the WebGL-only move VFX continuation source.
+`stepIsometricAnimationFrame()` passes renderer-clock time, delta, elapsed clock time, the active camera, live token render objects, layer visibility, and the reduced-motion hint into `moveVfxRenderer.animate(...)`. If `MoveVfxRenderer.needsCss3DFrame()` returns true for an active badge, the CSS3D dirty tracker is marked for that frame; ordinary WebGL-only move VFX do not force CSS3D rendering.
 
 ### Isometric grid prop bridge for VFX-024
 
-`src/components/IsometricGrid.client.vue` now accepts an optional `moveAnimations?: MoveAnimationEvent[]` prop and owns a `createMoveVfxRenderer(scene)` instance alongside the existing targeting, area-template, and feedback renderers. The prop remains optional so existing map callers can omit it until `MapSceneRenderer.vue` and the map page are wired in later tickets.
+`src/components/IsometricGrid.client.vue` accepts `moveAnimations?: MoveAnimationEvent[]` and `moveAnimationsReducedMotion?: boolean` props and owns a `createMoveVfxRenderer(scene)` instance alongside the existing targeting, area-template, and feedback renderers.
 
-When the prop changes, the grid syncs the event list into the renderer with the live token render-object map, then requests one WebGL-only scheduled frame using the broad `scene-state` debug reason. The renderer's `needsAnimationFrame()` signal is still the only way active move VFX keeps subsequent frames alive, so adding or removing events wakes the existing dirty scheduler without adding any independent RAF loop or CSS3D work.
+When the event or reduced-motion prop changes, the grid syncs the event list into the renderer with the live token render-object map, token-layer visibility, and reduced-motion hint, then requests one WebGL-only scheduled frame using the broad `scene-state` debug reason. The renderer's `needsAnimationFrame()` signal is still the only way active move VFX keeps subsequent frames alive, so adding or removing events wakes the existing dirty scheduler without adding any independent RAF loop.
 
 ### Map scene prop bridge for VFX-025
 
-`src/components/map/MapSceneRenderer.vue` now accepts the same optional `moveAnimations?: MoveAnimationEvent[]` prop and forwards `moveAnimations ?? []` to `IsometricGrid.client.vue`. This keeps the wrapper backward-compatible for existing callers while exposing the renderer-facing event list to later page-level queue wiring.
+`src/components/map/MapSceneRenderer.vue` accepts `moveAnimations?: MoveAnimationEvent[]` and `moveAnimationsReducedMotion?: boolean`, forwards them to `IsometricGrid.client.vue`, and re-emits the runtime-only `move-vfx-settled` signal from the grid.
 
-The prop remains a transient runtime bridge only. `MapSceneRenderer.vue` does not own, serialize, mutate, or persist animation events; it simply forwards caller-owned active events into the existing isometric grid scheduler path added by VFX-024.
+The props remain a transient runtime bridge only. `MapSceneRenderer.vue` does not own, serialize, mutate, or persist animation events; it simply forwards caller-owned active events into the existing isometric grid scheduler path.
 
 ### Map page queue wiring for VFX-026
 
-`src/pages/maps/[slug].vue` now creates one `useMoveAnimationQueue()` instance for the mounted map page. Its `activeMoveAnimations` computed value is passed through `src/components/map/MapScenePanel.vue` into `MapSceneRenderer.vue`, then onward to `IsometricGrid.client.vue` and the scheduler-owned move VFX renderer. The page also passes the queue's `enqueueMoveAnimations` function into `useMoveAutomationPanel` through a renderer-agnostic typed option so later move automation tickets can request VFX without importing Three.js or renderer utilities.
+`src/pages/maps/[slug].vue` creates one `useMoveAnimationQueue()` instance for the mounted map page. Its enabled-filtered `visibleMoveAnimations` computed value is passed through `src/components/map/MapScenePanel.vue` into `MapSceneRenderer.vue`, then onward to `IsometricGrid.client.vue` and the scheduler-owned move VFX renderer. The page also passes the queue's `enqueueMoveAnimations` function into `useMoveAutomationPanel` through a renderer-agnostic typed option, so move automation requests VFX without importing Three.js or renderer utilities.
 
 The queue remains page-local runtime state. The map page clears active move animations when the route map slug changes, when `useEditableMap` reports that an authoritative persisted map payload was adopted or cleared, when map dimensions trigger a major scene rebuild, and during unmount/navigation cleanup. `useEditableMap` exposes this as a runtime-only map-data revision so VFX cleanup follows reloads, realtime replacements, document-backed token-action responses, renames, and deletes without treating ordinary autosave timestamp updates as a full map reset.
 
@@ -510,9 +510,9 @@ Transient VFX are cleared instead of carried across map reloads because their an
 
 ### Move automation enqueue callback for VFX-055
 
-`UseMoveAutomationPanelOptions` now accepts an optional `enqueueMoveAnimations` callback typed as a renderer-agnostic sink for transient `MoveAnimationEvent` batches. The composable defaults the callback to a no-op so existing move automation callers and tests do not need to provide it, and actual VFX emission remains scoped to the later self, target, and area integration tickets.
+`UseMoveAutomationPanelOptions` accepts an optional `enqueueMoveAnimations` callback typed as a renderer-agnostic sink for transient `MoveAnimationEvent` batches. The composable defaults the callback to a no-op so existing move automation callers and tests do not need to provide it.
 
-The panel imports only shared animation types for this bridge. It does not import the Three.js move VFX renderer, queue internals, scheduler helpers, or persistence code, so move automation can later hand planned events to the map page without taking ownership of rendering or saved state.
+Self, single-target, no-accuracy, and confirmed-area move paths plan VFX after successful usage recording and transaction/feedback creation, then call the enqueue sink best-effort. The panel imports only shared animation types and planner utilities; it does not import the Three.js move VFX renderer, queue internals, scheduler helpers, or persistence code, so move automation hands planned events to the map page without taking ownership of rendering or saved state.
 
 ### Self-resolving move integration for VFX-056
 
@@ -801,56 +801,98 @@ Parallel work is safe only after its shared contracts are merged. When in doubt,
 
 Do not merge a later batch ahead of a hard dependency unless the PR explicitly no-ops without the dependency and documents that temporary state. Avoid mixing unrelated batches in one PR; visual polish should not be bundled with foundation type changes unless required to fix the same ticket.
 
-## Architecture direction
+## Implemented architecture reference
 
-The implementation should follow this one-way data flow:
+The shipped move VFX flow is one-way and runtime-only:
 
 ```text
-useMoveAutomationPanel
-  -> pure move animation planner
-  -> per-map transient animation queue
-  -> MapSceneRenderer moveAnimations prop
-  -> IsometricGrid.client.vue
-  -> createMoveVfxRenderer
-  -> existing isometric render scheduler continuation source
+src/composables/map-editor/useMoveAutomationPanel.ts
+  -> planMoveAnimations() in src/utils/moveAnimationPlanner.ts
+  -> useMoveAnimationQueue() in src/composables/map-editor/useMoveAnimationQueue.ts
+  -> src/pages/maps/[slug].vue visibleMoveAnimations
+  -> MapScenePanel.vue -> MapSceneRenderer.vue -> IsometricGrid.client.vue props
+  -> createMoveVfxRenderer() in src/utils/isometric/moveVfxRenderer.ts
+  -> move-vfx-animation continuation in the existing isometric scheduler
 ```
 
-Key architecture constraints:
+Key shipped files and APIs:
 
-- The VFX renderer should be an isolated utility under `src/utils/isometric/`, similar to existing map renderer factories.
-- Active VFX should keep rendering alive only through the existing animation-continuation model described in `docs/render-scheduler-architecture.md`.
-- No separate always-on `requestAnimationFrame` loop should be added for move animations.
-- Renderer quality must not be reduced to pay for VFX. Do not lower DPR, disable antialiasing, remove map features, or simplify weather/field effects.
-- VFX objects must be disposed when complete, when removed from the queue, and when the map scene unmounts.
-
-## Expected first implementation files
-
-This brief changes only documentation. As the feature tickets land, the first implementation pass is expected to touch or add the following product files:
-
-| Area | Expected files |
+| Area | Implemented files and APIs |
 | --- | --- |
-| Documentation | `docs/move-animations.md`, later updates to `docs/render-scheduler-architecture.md` when scheduler hooks are added |
-| Domain types | `src/types/moveAnimation.ts` |
-| Queue/state | `src/composables/map-editor/moveAnimationQueuePolicy.ts`, `src/composables/map-editor/useMoveAnimationQueue.ts` |
-| Planner, palettes, and sequencing | `src/utils/moveAnimationPlanner.ts`, `src/utils/moveAnimationPalette.ts`, `src/utils/moveAnimationSequencing.ts` |
-| Timing and anchors | `src/utils/isometric/moveVfxTiming.ts`, `src/utils/isometric/moveVfxAnchors.ts` |
-| Renderer | `src/utils/isometric/moveVfxRenderer.ts` plus primitive helpers under `src/utils/isometric/` if split out |
-| Render scheduling | `src/utils/isometric/renderLoop.ts`, `src/utils/isometric/animationFrame.ts`, and scheduler-related tests when a VFX continuation source is added |
-| Vue prop plumbing | `src/components/IsometricGrid.client.vue`, `src/components/map/MapSceneRenderer.vue`, `src/components/map/MapScenePanel.vue`, `src/pages/maps/[slug].vue` |
-| Move automation integration | `src/composables/map-editor/useMoveAutomationPanel.ts` |
-| Tests | focused Vitest files for the queue, planner, renderer lifecycle, render-loop continuation, and move automation enqueue integration |
+| Event and kind contracts | `src/types/moveAnimation.ts` defines the discriminated `MoveAnimationEvent` variants. `src/types/moveVfx.ts` defines `MOVE_VFX_KIND`, `MoveVfxKind`, `MoveAnimationEffectKind`, `MOVE_VFX_SOURCE_KIND`, and `MoveVfxSourceKind`. |
+| Queue and dedupe | `src/composables/map-editor/moveAnimationQueuePolicy.ts` owns `move-vfx-000001`-style id generation and duplicate-id policy. `src/composables/map-editor/useMoveAnimationQueue.ts` owns the per-map reactive queue plus generic tactical aliases such as `enqueueTacticalVfxBatch()`. |
+| Planner | `src/utils/moveAnimationPlanner.ts` exports `MOVE_ANIMATION_PLAN_RESOLUTION`, `MoveAnimationPlanInput`, `MoveAnimationPlanner`, `planGenericMoveAnimations()`, `createMoveAnimationPlanner()`, and the public `planMoveAnimations()`. It also owns the deliberately empty `MOVE_ANIMATION_OVERRIDE_REGISTRY`. |
+| Palette, status, timing, sequencing | `src/utils/moveAnimationPalette.ts` and `src/utils/moveAnimationStatusPalette.ts` select readable type/semantic colours. `src/utils/isometric/moveVfxTiming.ts` provides duration and easing helpers. `src/utils/moveAnimationSequencing.ts` handles bounded target staggering and event progress with `startOffsetMs`. |
+| Settings and accessibility | `src/utils/moveAnimationSettings.ts` parses/stores the browser-local enable flag and reads `prefers-reduced-motion`. `src/composables/useMoveAnimationSettings.ts` exposes `moveAnimationsEnabled`, `moveAnimationsReducedMotion`, labels, and toggle helpers. |
+| Move automation integration | `src/composables/map-editor/useMoveAutomationPanel.ts` plans and enqueues best-effort VFX for self, single-target hit/miss/crit, no-accuracy, confirmed area, pass/dash, semantic transaction, field-effect, and hazard-confirmation flows after permission and usage-record guards pass. |
+| Vue map bridge | `src/pages/maps/[slug].vue` owns the queue and settings, clears runtime VFX on map resets/unmount/hidden-tab resume, and passes events through `src/components/map/MapScenePanel.vue` and `src/components/map/MapSceneRenderer.vue` to `src/components/IsometricGrid.client.vue`. The bridge uses `moveAnimations`, `moveAnimationsReducedMotion`, `toggle-move-animations`, and the runtime-only `move-vfx-settled` signal. |
+| Renderer and scheduler | `src/utils/isometric/moveVfxRenderer.ts` owns per-event VFX instances, primitive builders, `sync()`, `animate()`, `needsAnimationFrame()`, `needsCss3DFrame()`, `debugSnapshot()`, `expireCompleted()`, and `dispose()`. `src/utils/isometric/moveVfxAnchors.ts`, `moveVfxMaterials.ts`, and `moveVfxTiming.ts` provide shared primitive helpers. `src/utils/isometric/renderLoop.ts` defines `move-vfx-animation`, and `src/utils/isometric/animationFrame.ts` advances VFX from the existing scheduled frame. |
+| Debug and review | `src/components/map/MoveVfxDebugPanel.vue` plus `src/utils/moveVfxDebugHarness.ts` provide the `?debug=move-vfx` dev harness. Planner debug summaries use `?debug=move-vfx-planning`. Render metrics sample `MoveVfxRenderer.debugSnapshot()` only behind the existing render-debug gate. |
 
-The exact file list may evolve as implementation details are discovered, but product changes should stay in the Rotom Table repository and should not introduce autonomous build-controller files.
+The architecture constraints are unchanged in the shipped implementation: no independent RAF/timer loop, no renderer-quality reduction, no gameplay mutation, no VFX persistence, pointer-transparent VFX object trees, scheduler-owned continuation, and idempotent disposal on completion/removal/map unmount.
+
+## Adding or changing a generic primitive
+
+Use this checklist when extending the reusable VFX library:
+
+1. **Prefer an existing kind.** If the desired cue fits `MOVE_VFX_KIND`, add planner or debug-harness events that use the existing `MoveAnimationEvent` variant instead of creating a new kind.
+2. **Add type coverage for a new kind only when needed.** Update `src/types/moveVfx.ts`, add the matching event interface and `MoveAnimationEventByKind` entry in `src/types/moveAnimation.ts`, then update planner/debug/test fixtures that enumerate VFX kinds.
+3. **Plan events without renderer coupling.** Add metadata-driven selection in `src/utils/moveAnimationPlanner.ts` or dev-only previews in `src/utils/moveVfxDebugHarness.ts`. Use palette helpers, `MOVE_VFX_DEFAULT_DURATIONS_MS`, and `startOffsetMs`; do not read DOM/WebGL state, start timers, or mutate move automation state.
+4. **Implement renderer work inside the VFX renderer ownership model.** Add a per-kind builder in `src/utils/isometric/moveVfxRenderer.ts` (or split a helper under `src/utils/isometric/` if the primitive grows), register it in the `selectMoveVfxInstanceBuilder()` switch, attach owned objects to the event group, and dispose through `disposeObject3D()`.
+5. **Reuse shared primitive helpers.** Resolve anchors through `moveVfxAnchors.ts`, create materials through `moveVfxMaterials.ts`, use `moveVfxTiming.ts` for progress/easing, and keep object counts bounded. Avoid per-frame geometry/material allocation.
+6. **Respect map UX guardrails.** Mark object trees pointer-transparent, keep render orders inside the named VFX bands, respect token-layer visibility, make delayed events invisible until their effective start frame, and never move actual token render objects or saved placement.
+7. **Add reduced-motion behaviour.** Branch on the renderer context's `reducedMotion` hint so the cue still communicates the outcome while avoiding fast travel, large displacement, repeated oscillation, and shake.
+8. **Test the complete lifecycle.** Add or update unit tests for the type/planner path and renderer creation/sync/animation/completion/disposal path before relying on manual review.
+9. **Update docs and QA notes.** Keep this document and `move-animation-manual-qa.md` aligned if the primitive changes user-visible behaviour, review steps, accessibility behaviour, or performance assumptions.
+
+## Future per-move override starting point
+
+Bespoke per-move choreography remains out of scope for this generic move-animation phase. When a later milestone approves it, start from the existing override seam in `src/utils/moveAnimationPlanner.ts`:
+
+1. Add a `MoveAnimationPreset` whose `plan(input, context)` returns renderer-ready `MoveAnimationEvent[]`, returns `[]` to intentionally suppress VFX, or returns `null`/`undefined` to delegate to `context.fallbackPlanner(input)`.
+2. Register it in `MOVE_ANIMATION_OVERRIDE_REGISTRY` under `canonicalMoveAnimationOverrideKey(moveName)`; for example, `Solar Beam` maps to `solar-beam`.
+3. Prefer existing `MOVE_VFX_KIND` primitives, palette helpers, timing tiers, anchors, and sequencing before adding a new primitive. Do not import copyrighted animation assets, audio, or game animation data.
+4. Keep overrides pure and renderer-agnostic: no Vue refs, DOM/WebGL objects, timers, scheduler calls, persistence writes, permission decisions, or gameplay mutations.
+5. Add tests in `tests/utils/moveAnimationPlanner.test.ts` covering override success, fallback, disabled override behaviour, and no-op safety. Add renderer tests only if the override requires a new or changed primitive.
+6. Document the fan-project/asset boundary and reduced-motion behaviour in the same reviewed change.
+
+Until that later milestone, the production `MOVE_ANIMATION_OVERRIDE_REGISTRY` should remain empty and generic classifications should stay metadata-driven rather than move-name-specific.
+
+## Testing expectations for move VFX changes
+
+Run the standard project checks for reviewed move-VFX work:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+Focused test coverage should match the layer changed:
+
+- Queue/id/dedupe: `tests/composables/map-editor/moveAnimationQueuePolicy.test.ts` and `tests/composables/map-editor/useMoveAnimationQueue.test.ts`.
+- Planner/classification/fallback/overrides: `tests/utils/moveAnimationPlanner.test.ts`.
+- Palette/status/readability/settings/sequencing: `tests/utils/moveAnimationPalette.test.ts`, `tests/utils/moveAnimationStatusPalette.test.ts`, `tests/utils/moveAnimationSettings.test.ts`, and `tests/utils/moveAnimationSequencing.test.ts`.
+- Renderer primitives/lifecycle/materials/anchors/timing: `tests/utils/isometric/moveVfxRenderer.test.ts`, `tests/utils/isometric/moveVfxRendererLifecycle.test.ts`, `tests/utils/isometric/moveVfxMaterials.test.ts`, `tests/utils/isometric/moveVfxAnchors.test.ts`, and `tests/utils/isometric/moveVfxTiming.test.ts`.
+- Scheduler continuation/frame stepping: `tests/utils/isometric/renderLoop.test.ts` and `tests/utils/isometric/animationFrame.test.ts`.
+- Move automation enqueue integration and timing guards: `tests/composables/map-editor/useMoveAutomationPanel.test.ts`.
+- Dev harness previews: `tests/utils/moveVfxDebugHarness.test.ts`.
+
+The optional `npm run check:move-automation` coverage command remains unrelated to this visual-only VFX layer unless a move-automation ticket explicitly asks for full script-registry coverage.
+
+## Reduced-motion and disabled-animation behaviour
+
+- The map overlay **Move VFX** toggle is driven by `useMoveAnimationSettings()` and stores only a browser-local boolean under `rotom-table:move-animations-enabled`.
+- When disabled, `useMoveAnimationQueue({ moveAnimationsEnabled })` clears active events and skips new enqueue requests, while the map page passes an empty `visibleMoveAnimations` array to the renderer. Move automation, targeting, feedback, logs, HP/status/stage changes, field effects, hazards, permissions, and renderer quality are unchanged.
+- `prefers-reduced-motion: reduce` is read on the client through `readPrefersReducedMotion()` and `subscribePrefersReducedMotion()`, then passed as `moveAnimationsReducedMotion` through the Vue map bridge into `MoveVfxRenderer.sync()` and `animate()`.
+- Reduced-motion primitives keep semantic outcome cues but remove or soften fast travel, large displacement, repeated oscillation, directional sweeps, and VFX-owned shake. Reduced motion is not saved to map/sheet/campaign/session data and does not disable move automation.
 
 ## Manual QA checklist
 
 The repeatable human review plan for the playable basic move-animation build lives in [Move animation manual QA checklist](move-animation-manual-qa.md). Run it after the automated `npm run typecheck`, `npm test`, and `npm run build` checks, and record blockers separately from polish follow-up issues.
 
-## Follow-up documents and decisions
+## Maintenance decisions
 
-This brief now records the initial scope, visual style guardrails, and technical non-regression rules. Later tickets should refine it with:
-
-- any future ADR that reopens the dependency-free decision for bespoke per-move animation work;
-- final implemented API details once types, planner, renderer, and settings exist;
-- timing, colour, render-order, and reduced-motion adjustments discovered during playable review;
-- a future bespoke per-move animation backlog.
+- The basic move-animation layer is dependency-free and uses Three.js plus internal helpers only. Reopen that decision with an ADR or focused ticket before adding an animation/tweening package.
+- Keep the production override registry empty until a bespoke per-move animation milestone explicitly approves exact move-specific choreography.
+- Keep this document, `docs/render-scheduler-architecture.md`, `docs/performance-guardrails.md`, and manual QA notes aligned whenever VFX scheduler ownership, primitive behaviour, settings, accessibility, or performance assumptions change.
