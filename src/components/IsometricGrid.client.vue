@@ -33,6 +33,7 @@ import type {
   MoveAutomationTargetHitChance,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
+import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { BuildTool } from '#shared/mapEditor'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
@@ -114,8 +115,10 @@ import {
 } from '~/utils/isometric/lifecycle'
 import { createIsometricSceneGraph } from '~/utils/isometric/sceneGraph'
 import { stepIsometricAnimationFrame } from '~/utils/isometric/animationFrame'
+import { createMoveVfxRenderer, type MoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import {
   createIsometricLayerVisibilityApplicator,
+  resolveMoveVfxLayerVisibility,
   setIsometricGridVisibility,
 } from '~/utils/isometric/layerVisibility'
 import { createIsometricBuildInteractionController } from '~/utils/isometric/buildInteraction'
@@ -133,6 +136,7 @@ import { createRenderFrameTimingSampler } from '~/utils/isometric/frameTimingSam
 import {
   createEmptyIsometricRenderMetricsSnapshot,
   createIsometricRenderMetricsSnapshotWithFrameTiming,
+  createIsometricRenderMetricsSnapshotWithMoveVfx,
   createIsometricRenderMetricsSnapshotWithPointerInteractions,
   createIsometricRenderMetricsSnapshotWithRendererInfo,
   type IsometricPointerRaycastKind,
@@ -148,6 +152,7 @@ import {
 import {
   createIsometricAnimationContinuation,
   resolveIsometricFieldEffectAnimationContinuationSources,
+  resolveIsometricMoveVfxAnimationContinuationSources,
   resolveIsometricMovementPreviewAnimationContinuationSources,
   resolveIsometricSpriteAnimationContinuationSources,
   resolveIsometricTokenMotionContinuationSources,
@@ -187,6 +192,8 @@ const props = defineProps<{
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  moveAnimations?: readonly MoveAnimationEvent[]
+  moveAnimationsReducedMotion?: boolean
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
@@ -215,9 +222,11 @@ const emit = defineEmits<{
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
+  (event: 'move-vfx-settled', payload: { nowMs: number }): void
 }>()
 
 const visibleLayers = () => resolveIsometricLayerVisibility(props.layerVisibility)
+const moveVfxVisible = () => resolveMoveVfxLayerVisibility(visibleLayers())
 
 const normalizedGroundLevelY = () => clampIsometricGroundLevelY(props.dimensions, props.groundLevelY)
 
@@ -460,6 +469,8 @@ const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({
 const moveTargetingReticleRenderer = createMoveTargetingReticleRenderer(scene)
 const moveAreaTemplateRenderer = createMoveAreaTemplateRenderer(scene)
 const moveAutomationFeedbackRenderer = createMoveAutomationFeedbackRenderer(scene)
+const moveVfxRenderer: MoveVfxRenderer = createMoveVfxRenderer(scene)
+let moveVfxAnimationWasActive = false
 let renderer: THREE.WebGLRenderer | null = null
 let cssRenderer: ReturnType<typeof createIsometricCssRenderer> | null = null
 let camera: THREE.OrthographicCamera | null = null
@@ -523,6 +534,26 @@ const sampleRendererInfoForMetricsOverlay = () => {
     renderMetricsOverlaySnapshot.value,
     rendererInfo,
   )
+}
+
+const syncMoveVfxMetricsForMetricsOverlay = () => {
+  if (!renderMetricsOverlayEnabled.value) {
+    return
+  }
+
+  renderMetricsOverlaySnapshot.value = createIsometricRenderMetricsSnapshotWithMoveVfx(
+    renderMetricsOverlaySnapshot.value,
+    moveVfxRenderer.debugSnapshot(),
+    readRenderMetricsNowMs(),
+  )
+}
+
+const syncMoveVfxCompletionSignal = (nowMs = readRenderMetricsNowMs()) => {
+  const moveVfxAnimationIsActive = moveVfxRenderer.needsAnimationFrame()
+  if (moveVfxAnimationWasActive && !moveVfxAnimationIsActive) {
+    emit('move-vfx-settled', { nowMs })
+  }
+  moveVfxAnimationWasActive = moveVfxAnimationIsActive
 }
 
 const syncPointerMetricsForMetricsOverlay = () => {
@@ -743,6 +774,7 @@ const syncPokemonObjects = () => {
   })
 
   refreshPokemonStyles()
+  syncMoveVfxRendererState()
 }
 
 const syncVoxelMeshes = () => {
@@ -775,7 +807,7 @@ const applyLayerVisibility = (options: { force?: boolean } = {}) => {
     layerVisibilityApplicator.invalidate()
   }
 
-  return layerVisibilityApplicator.apply({
+  const changed = layerVisibilityApplicator.apply({
     layers: visibleLayers(),
     hasSelectedPokemon: Boolean(selectedPokemon.value),
     buildMode: props.buildMode,
@@ -787,6 +819,9 @@ const applyLayerVisibility = (options: { force?: boolean } = {}) => {
     renderObjects: renderObjects.values(),
     setTokenLayerVisibility: setPokemonRenderObjectLayerVisibility,
   })
+
+  if (changed) syncMoveVfxRendererState()
+  return changed
 }
 
 const ensureBuildGhost = () => buildGhostRenderer.ensure()
@@ -1202,6 +1237,20 @@ watch([() => props.buildMode, () => props.hazardMode], ([buildActive, hazardActi
   sendOutInteraction.cancel()
 })
 
+const syncMoveVfxRendererState = () => {
+  moveVfxRenderer.sync(props.moveAnimations ?? [], {
+    renderObjects,
+    visible: moveVfxVisible(),
+    reducedMotion: props.moveAnimationsReducedMotion === true,
+  })
+  syncMoveVfxMetricsForMetricsOverlay()
+  syncMoveVfxCompletionSignal()
+}
+
+const requestMoveVfxRenderFrame = () => {
+  requestScheduledSceneFrame({ reasons: 'scene-state', dirtyLayers: 'webgl' })
+}
+
 watch(() => props.moveAutomationTargeting, (targeting) => {
   moveAreaDirectionUpdateThrottle.syncCurrentDirection(targeting?.areaDirection)
   if (!targeting) return
@@ -1226,6 +1275,16 @@ watch(
   () => {
     if (!renderer) return
     requestScheduledSceneFrame('targeting')
+  },
+  { deep: true },
+)
+
+watch(
+  [() => props.moveAnimations, () => props.moveAnimationsReducedMotion],
+  () => {
+    syncMoveVfxRendererState()
+    if (!renderer) return
+    requestMoveVfxRenderFrame()
   },
   { deep: true },
 )
@@ -1417,6 +1476,7 @@ function resolveSceneAnimationContinuation() {
     ...resolveIsometricSpriteAnimationContinuationSources(renderObjects.values()),
     ...resolveIsometricMovementPreviewAnimationContinuationSources(tokenMovePreviewRenderer),
     ...resolveIsometricFieldEffectAnimationContinuationSources(fieldEffectRenderer),
+    ...resolveIsometricMoveVfxAnimationContinuationSources(moveVfxRenderer),
   ])
 }
 
@@ -1436,6 +1496,11 @@ const pauseScheduledRenderLoopForHiddenTab = () => {
 }
 
 const resumeScheduledRenderLoopFromHiddenTab = () => {
+  // Move VFX use renderer-clock event lifetimes, not a paused animation timeline.
+  // Expiring completed instances before the first visible frame prevents a tab
+  // that was hidden past an effect's duration from rendering a catch-up burst.
+  moveVfxRenderer.expireCompleted(readRenderMetricsNowMs())
+  syncMoveVfxMetricsForMetricsOverlay()
   renderScheduler?.resume()
   requestScheduledSceneFrame('hidden-tab-resume')
 }
@@ -1456,6 +1521,10 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     controls,
     fieldEffectRenderer,
     tokenMovePreviewRenderer,
+    moveVfxRenderer,
+    moveVfxRenderObjects: renderObjects,
+    moveVfxVisible: moveVfxVisible(),
+    moveVfxReducedMotion: props.moveAnimationsReducedMotion === true,
     selectedPokemon: sendOutInteraction.activePokemon() ?? selectedPokemon.value,
     previewPositionY: activeSendOutRequest.value ? sendOutInteraction.previewPositionY() : movementInteraction.previewPositionY(),
     camera,
@@ -1467,6 +1536,8 @@ const renderOneShotScheduledFrame = (frame: IsometricScheduledRenderFrame): bool
     css3DRenderDirtyTracker,
   })
   recordScheduledFrameForMetricsOverlay(frame)
+  syncMoveVfxMetricsForMetricsOverlay()
+  syncMoveVfxCompletionSignal()
   sampleRendererInfoForMetricsOverlay()
 
   return true
@@ -1522,6 +1593,7 @@ onMounted(() => {
   syncRendererSize()
   buildGrid()
   syncPokemonObjects()
+  syncMoveVfxRendererState()
   syncVoxelMeshes()
   syncFieldEffectMeshes()
   syncHazardMeshes()
@@ -1576,6 +1648,7 @@ onBeforeUnmount(() => {
     hazardRenderer,
     fieldEffectRenderer,
     voxelRenderer,
+    moveVfxRenderer,
     renderObjects,
     disposeRenderObject,
     gridRenderer,

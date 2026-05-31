@@ -18,6 +18,7 @@ interface SaveBody {
   sheet?: unknown
   clientId?: unknown
   profileId?: unknown
+  allowSlugSync?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -40,6 +41,7 @@ export default defineEventHandler(async (event) => {
       sheet,
       clientId: normalizeRealtimeClientId(body.clientId),
       playerProfile,
+      allowSlugSync: body.allowSlugSync === false ? false : undefined,
     })
     publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, slug: result.slug, path: result.path, sheet: result.sheet }

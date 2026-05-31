@@ -9,6 +9,7 @@ import {
   type RenderFrameTimingMetrics,
   type SampledWebGLRendererInfo,
 } from '~/utils/isometric/renderMetrics'
+import type { MoveVfxDebugSnapshot } from '~/utils/isometric/moveVfxRenderer'
 
 export interface RenderMetricsOverlayRow {
   key: string
@@ -22,8 +23,10 @@ export interface RenderMetricsOverlayViewModel {
   frameRows: RenderMetricsOverlayRow[]
   lastReasonLabels: string[]
   reasonRows: RenderMetricsOverlayRow[]
+  moveVfxRows: RenderMetricsOverlayRow[]
   pointerRows: RenderMetricsOverlayRow[]
   rendererRows: RenderMetricsOverlayRow[]
+  hasMoveVfxInfo: boolean
   hasRendererInfo: boolean
 }
 
@@ -105,6 +108,24 @@ export const createRenderMetricsReasonRows = (
     .filter((row) => row.value !== '0')
 )
 
+export const createRenderMetricsMoveVfxRows = (
+  moveVfx: MoveVfxDebugSnapshot | null,
+): RenderMetricsOverlayRow[] => {
+  if (!moveVfx) {
+    return [{ key: 'move-vfx-info', label: 'Move VFX', value: 'pending' }]
+  }
+
+  return [
+    { key: 'move-vfx-active', label: 'Active VFX', value: formatRenderMetricCount(moveVfx.activeCount) },
+    { key: 'move-vfx-instance-groups', label: 'Instance groups', value: formatRenderMetricCount(moveVfx.instanceGroupCount) },
+    { key: 'move-vfx-needs-frame', label: 'Keeps scheduler active', value: formatRenderMetricBoolean(moveVfx.needsAnimationFrame) },
+    { key: 'move-vfx-css3d-active', label: 'CSS3D badge active', value: formatRenderMetricBoolean(moveVfx.css3DActive) },
+    { key: 'move-vfx-visible', label: 'Root visible', value: formatRenderMetricBoolean(moveVfx.visible) },
+    { key: 'move-vfx-layer-visible', label: 'Layer visible', value: formatRenderMetricBoolean(moveVfx.layerVisible) },
+    { key: 'move-vfx-disposed', label: 'Renderer disposed', value: formatRenderMetricBoolean(moveVfx.disposed) },
+  ]
+}
+
 export const createRenderMetricsPointerRows = (
   pointerInteractions: PointerInteractionMetrics,
 ): RenderMetricsOverlayRow[] => [
@@ -182,7 +203,9 @@ export const createRenderMetricsOverlayViewModel = (
   frameRows: createRenderMetricsFrameRows(snapshot.frames),
   lastReasonLabels: snapshot.frames.lastFrameReasons.map(frameReasonLabel),
   reasonRows: createRenderMetricsReasonRows(snapshot.frames),
+  moveVfxRows: createRenderMetricsMoveVfxRows(snapshot.moveVfx),
   pointerRows: createRenderMetricsPointerRows(snapshot.pointerInteractions),
   rendererRows: createRenderMetricsRendererRows(snapshot.rendererInfo),
+  hasMoveVfxInfo: Boolean(snapshot.moveVfx),
   hasRendererInfo: Boolean(snapshot.rendererInfo),
 })

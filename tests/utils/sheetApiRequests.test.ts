@@ -53,6 +53,20 @@ describe('sheet API profile request helpers', () => {
     })
   })
 
+  it('can explicitly disable display-name slug sync on save bodies', () => {
+    expect(buildSheetSaveBody({
+      kind: 'pokemon',
+      slug: 'examples-abra',
+      sheet: { slug: 'examples-abra', nickname: 'Abra' },
+      allowSlugSync: false,
+    })).toEqual({
+      kind: 'pokemon',
+      slug: 'examples-abra',
+      sheet: { slug: 'examples-abra', nickname: 'Abra' },
+      allowSlugSync: false,
+    })
+  })
+
   it('validates selected profile ids instead of forwarding arbitrary strings', () => {
     expect(() => selectedPlayerProfileIdForSheetRequest(sheetApiProfileContext(true, 'not-a-profile')))
       .toThrow(PLAYER_PROFILE_INVALID_FOR_SHEET_REQUEST_MESSAGE)

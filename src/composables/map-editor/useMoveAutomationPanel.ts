@@ -28,6 +28,11 @@ import {
   resolveInstantSelfMoveAutomation,
   resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
+import {
+  MOVE_ANIMATION_PLAN_RESOLUTION,
+  planMoveAnimations,
+  type MoveAnimationPlanTargetOutcome,
+} from '~/utils/moveAnimationPlanner'
 import { moveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import {
   setTokenFacingOnPlacement,
@@ -87,6 +92,7 @@ import type {
   MoveAutomationTargetingOverlayState,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
+import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -97,10 +103,20 @@ interface BooleanRef {
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
 type MaybePromise<T> = T | Promise<T>
 
+export type MoveAnimationEnqueueHandler = (events: readonly MoveAnimationEvent[]) => MaybePromise<unknown>
+
 type SheetUpdateOptions = { allowAnyTarget?: boolean }
 
 type MoveUsageRecordRequest = { placementId: string; moveName: string }
 type MoveUsageRecordHandler = (request: MoveUsageRecordRequest) => MaybePromise<void>
+
+const noopEnqueueMoveAnimations: MoveAnimationEnqueueHandler = () => undefined
+
+const defaultMoveAnimationNowMs = (): number => {
+  const performanceNow = globalThis.performance?.now
+  if (typeof performanceNow === 'function') return performanceNow.call(globalThis.performance)
+  return Date.now()
+}
 
 export interface MoveAutomationNonImmediateActionEvent {
   userId: string
@@ -131,6 +147,12 @@ export interface UseMoveAutomationPanelOptions {
   applyMoveFieldEffect: (effect: MoveAutomationFieldEffectApply) => MaybePromise<void>
   placeHazard: (hazard: MapHazardV2) => MaybePromise<void>
   recordMoveUsage?: MoveUsageRecordHandler
+  /**
+   * Renderer-agnostic sink for transient move VFX requests owned by the map page.
+   * VFX integration tickets decide when to call it; the panel must not import
+   * Three.js renderer utilities or persist queued animation events.
+   */
+  enqueueMoveAnimations?: MoveAnimationEnqueueHandler
   onBeforeNonImmediateAction?: (event: MoveAutomationNonImmediateActionEvent) => void
   onRangedAttackOfOpportunity?: (event: MoveAutomationRangedAttackOfOpportunityEvent) => void
   now?: () => number
@@ -138,11 +160,61 @@ export interface UseMoveAutomationPanelOptions {
 }
 
 const DEFAULT_MAX_LOG_ENTRIES = 100
-const D20_ROLL_ANIMATION_MS = 650
-const HIT_ROLL_VISIBLE_MS = 850
-const HIT_RESULT_VISIBLE_MS = 600
-const EFFECTIVENESS_VISIBLE_MS = 700
-const FINAL_RESULT_VISIBLE_MS = 1100
+
+export const MOVE_AUTOMATION_FEEDBACK_TIMING_MS = {
+  d20RollAnimation: 650,
+  hitRollVisible: 850,
+  hitResultVisible: 600,
+  effectivenessVisible: 700,
+  finalResultVisible: 1100,
+} as const
+
+const D20_ROLL_ANIMATION_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.d20RollAnimation
+const HIT_ROLL_VISIBLE_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.hitRollVisible
+const HIT_RESULT_VISIBLE_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.hitResultVisible
+const EFFECTIVENESS_VISIBLE_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.effectivenessVisible
+const FINAL_RESULT_VISIBLE_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.finalResultVisible
+
+const MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS = D20_ROLL_ANIMATION_MS + HIT_ROLL_VISIBLE_MS
+const MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS = MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS + HIT_RESULT_VISIBLE_MS
+
+export const MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS = {
+  launch: 0,
+  impact: MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS,
+  crit: MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS,
+} as const
+
+export interface MoveAutomationFeedbackVfxTiming {
+  launchDelayMs: number
+  impactDelayMs: number
+  critDelayMs: number
+  semanticDelayMs: number
+}
+
+export const moveAutomationFeedbackHasFinalResolutionPhase = (feedback: MoveAutomationFeedbackState): boolean =>
+  feedback.damageResolved || feedback.conditions.length > 0
+
+export const moveAutomationFeedbackHasEffectivenessPhase = (feedback: MoveAutomationFeedbackState): boolean =>
+  Boolean(feedback.effectiveness)
+
+export const moveAutomationFeedbackDamagePhaseDelayMs = (feedback: MoveAutomationFeedbackState): number => (
+  MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS
+  + (
+    moveAutomationFeedbackHasFinalResolutionPhase(feedback)
+    && moveAutomationFeedbackHasEffectivenessPhase(feedback)
+      ? EFFECTIVENESS_VISIBLE_MS
+      : 0
+  )
+)
+
+export const moveAutomationFeedbackVfxTiming = (feedback: MoveAutomationFeedbackState): MoveAutomationFeedbackVfxTiming => ({
+  launchDelayMs: MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.launch,
+  impactDelayMs: MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.impact,
+  critDelayMs: MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.crit,
+  semanticDelayMs: moveAutomationFeedbackHasFinalResolutionPhase(feedback)
+    ? moveAutomationFeedbackDamagePhaseDelayMs(feedback)
+    : MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.impact,
+})
 
 interface ActiveSingleTargetingRequest {
   kind: 'single-target'
@@ -207,6 +279,7 @@ export const useMoveAutomationPanel = ({
   applyMoveFieldEffect,
   placeHazard,
   recordMoveUsage,
+  enqueueMoveAnimations = noopEnqueueMoveAnimations,
   onBeforeNonImmediateAction,
   onRangedAttackOfOpportunity,
   now,
@@ -222,6 +295,7 @@ export const useMoveAutomationPanel = ({
   const celebrateTriggerPrompts = ref<MoveAutomationCelebratePrompt[]>([])
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
   let pendingFeedbackTransactionApplier: (() => void) | null = null
+  let moveAnimationPlanSequence = 0
 
   const sheetLookup = () => ({
     pokemon: pokemonBySlug.value,
@@ -567,6 +641,191 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const moveAnimationNowMs = (): number => {
+    const nowMs = now?.() ?? defaultMoveAnimationNowMs()
+    return Number.isFinite(nowMs) ? nowMs : 0
+  }
+
+  const nextMoveAnimationPlanIdBase = (
+    resolution: string,
+    script: MoveAutomationScript,
+    user: SpawnedPokemon,
+  ): string => {
+    moveAnimationPlanSequence += 1
+    return `use-move-${resolution}-${script.moveName}-${user.id}-${String(moveAnimationPlanSequence).padStart(6, '0')}`
+  }
+
+  const warnMoveAnimationEmissionFailure = (stage: string, error: unknown) => {
+    console.warn(`[useMoveAutomationPanel] move animation ${stage} failed`, error)
+  }
+
+  const clearMoveAutomationTargetingForUser = (userId: string) => {
+    if (activeMoveTargeting.value?.userId === userId) activeMoveTargeting.value = null
+  }
+
+  const canContinueMoveAutomationForUser = (userId: string): boolean => {
+    if (canControlPlacement(userId)) return true
+
+    clearMoveAutomationTargetingForUser(userId)
+    return false
+  }
+
+  const enqueuePlannedMoveAnimations = (userId: string, events: readonly MoveAnimationEvent[]) => {
+    if (events.length === 0 || !canControlPlacement(userId)) return
+
+    try {
+      void Promise.resolve(enqueueMoveAnimations(events)).catch((error) => {
+        warnMoveAnimationEmissionFailure('enqueue', error)
+      })
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('enqueue', error)
+    }
+  }
+
+  const planAndEnqueueSelfMoveAnimations = (options: {
+    script: MoveAutomationScript
+    user: SpawnedPokemon
+    transaction: MoveAutomationTransaction
+  }) => {
+    try {
+      enqueuePlannedMoveAnimations(options.user.id, planMoveAnimations({
+        resolution: MOVE_ANIMATION_PLAN_RESOLUTION.self,
+        user: options.user,
+        targets: [],
+        selectedTargetIds: [],
+        script: options.script,
+        transaction: options.transaction,
+        timing: {
+          nowMs: moveAnimationNowMs(),
+          animationIdBase: nextMoveAnimationPlanIdBase('self', options.script, options.user),
+        },
+      }))
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('planning', error)
+    }
+  }
+
+  const targetOutcomesForFeedback = (feedback: MoveAutomationFeedbackState): readonly MoveAnimationPlanTargetOutcome[] => [{
+    targetId: feedback.targetId,
+    hit: feedback.hit,
+    crit: feedback.crit,
+    damageResolved: feedback.damageResolved,
+    damageLoss: feedback.damageLoss,
+    effectiveness: feedback.effectiveness,
+    conditions: feedback.conditions
+      .filter((condition) => condition.applied)
+      .map((condition) => condition.condition),
+  }]
+
+  const confirmedTargetOutcomeForTransaction = (
+    target: SpawnedPokemon,
+    transaction: MoveAutomationTransaction,
+  ): MoveAnimationPlanTargetOutcome => {
+    const hpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
+    const damageLoss = hpUpdate ? Math.max(0, target.currentHp - hpUpdate.currentHp) : undefined
+    const conditionUpdate = transaction.conditionUpdates.find((update) => update.id === target.id)
+    const hitTargetIds = transaction.hitTargetIds
+
+    return {
+      targetId: target.id,
+      hit: !hitTargetIds || hitTargetIds.includes(target.id),
+      damageResolved: Boolean(hpUpdate),
+      ...(damageLoss && damageLoss > 0 ? { damageLoss } : {}),
+      ...(conditionUpdate?.conditions.length ? { conditions: conditionUpdate.conditions } : {}),
+    }
+  }
+
+  const planAndEnqueueConfirmedSingleTargetMoveAnimations = (options: {
+    script: MoveAutomationScript
+    user: SpawnedPokemon
+    target: SpawnedPokemon
+    transaction: MoveAutomationTransaction
+  }) => {
+    try {
+      enqueuePlannedMoveAnimations(options.user.id, planMoveAnimations({
+        resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
+        user: options.user,
+        targets: [options.target],
+        selectedTargetIds: [options.target.id],
+        script: options.script,
+        targetOutcomes: [confirmedTargetOutcomeForTransaction(options.target, options.transaction)],
+        transaction: options.transaction,
+        timing: {
+          nowMs: moveAnimationNowMs(),
+          animationIdBase: nextMoveAnimationPlanIdBase('single-target-confirmed', options.script, options.user),
+        },
+      }))
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('planning', error)
+    }
+  }
+
+  const planAndEnqueueSingleTargetMoveAnimations = (options: {
+    script: MoveAutomationScript
+    user: SpawnedPokemon
+    target: SpawnedPokemon
+    feedback: MoveAutomationFeedbackState
+    transaction: MoveAutomationTransaction
+  }) => {
+    const feedbackVfxTiming = moveAutomationFeedbackVfxTiming(options.feedback)
+
+    try {
+      enqueuePlannedMoveAnimations(options.user.id, planMoveAnimations({
+        resolution: MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget,
+        user: options.user,
+        targets: [options.target],
+        selectedTargetIds: [options.target.id],
+        script: options.script,
+        feedback: options.feedback,
+        targetOutcomes: targetOutcomesForFeedback(options.feedback),
+        transaction: options.transaction,
+        timing: {
+          nowMs: moveAnimationNowMs(),
+          animationIdBase: nextMoveAnimationPlanIdBase('single-target', options.script, options.user),
+          baseDelayMs: feedbackVfxTiming.launchDelayMs,
+          impactDelayMs: feedbackVfxTiming.impactDelayMs,
+          semanticDelayMs: feedbackVfxTiming.semanticDelayMs,
+        },
+      }))
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('planning', error)
+    }
+  }
+
+  const planAndEnqueueAreaMoveAnimations = (options: {
+    script: MoveAutomationScript
+    user: SpawnedPokemon
+    targets: readonly SpawnedPokemon[]
+    selectedTargetIds: readonly string[]
+    excludedTargetIds: readonly string[]
+    areaCells: readonly GridAnchor[]
+    areaDirection?: MoveAutomationAreaDirection
+    passDestination?: GridAnchor
+    transaction: MoveAutomationTransaction
+  }) => {
+    try {
+      enqueuePlannedMoveAnimations(options.user.id, planMoveAnimations({
+        resolution: MOVE_ANIMATION_PLAN_RESOLUTION.area,
+        user: options.user,
+        targets: options.targets,
+        selectedTargetIds: options.selectedTargetIds,
+        script: options.script,
+        transaction: options.transaction,
+        targetOutcomes: options.targets.map((target) => confirmedTargetOutcomeForTransaction(target, options.transaction)),
+        areaCells: options.areaCells,
+        ...(options.areaDirection ? { areaDirection: options.areaDirection } : {}),
+        ...(options.excludedTargetIds.length ? { excludedTargetIds: options.excludedTargetIds } : {}),
+        ...(options.passDestination ? { passDestination: options.passDestination } : {}),
+        timing: {
+          nowMs: moveAnimationNowMs(),
+          animationIdBase: nextMoveAnimationPlanIdBase('area', options.script, options.user),
+        },
+      }))
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('planning', error)
+    }
+  }
+
   const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
     const user = findSpawnedPokemon(id)
     if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
@@ -604,8 +863,9 @@ export const useMoveAutomationPanel = ({
       activeMoveTargeting.value = null
       const frequency = frequencyForEntry(entry)
       void (async () => {
+        if (!canContinueMoveAutomationForUser(id)) return
         const recorded = await recordMoveUseIfTracked({ placementId: id, moveName: script.moveName }, frequency)
-        if (!recorded) return
+        if (!recorded || !canContinueMoveAutomationForUser(id)) return
         notifyMoveActionTaken({
           kind: 'single-target',
           userId: id,
@@ -615,11 +875,13 @@ export const useMoveAutomationPanel = ({
           frequency,
           rangeMeters: 0,
         })
-        await applyMoveAutomation(resolveInstantSelfMoveAutomation({
+        const transaction = resolveInstantSelfMoveAutomation({
           script,
           user,
           fieldEffects: map.value?.fieldEffects,
-        }), { script })
+        })
+        planAndEnqueueSelfMoveAnimations({ script, user, transaction })
+        await applyMoveAutomation(transaction, { script })
       })()
       return true
     }
@@ -661,6 +923,9 @@ export const useMoveAutomationPanel = ({
   const cancelMoveAutomationTargeting = () => {
     activeMoveTargeting.value = null
   }
+
+  const moveTargetingRequestIsStillActive = (request: ActiveMoveTargetingRequest): boolean =>
+    activeMoveTargeting.value === request
 
   const appendMoveAutomationLog = (transaction: MoveAutomationTransaction) => {
     if (!map.value) return
@@ -906,12 +1171,6 @@ export const useMoveAutomationPanel = ({
     queueSpiteReactionPrompts(transaction)
   }
 
-  const feedbackHasFinalResolutionPhase = (feedback: MoveAutomationFeedbackState): boolean =>
-    feedback.damageResolved || feedback.conditions.length > 0
-
-  const feedbackHasEffectivenessPhase = (feedback: MoveAutomationFeedbackState): boolean =>
-    Boolean(feedback.effectiveness)
-
   const showMoveAutomationResolution = (
     feedback: MoveAutomationFeedbackState,
     transaction: MoveAutomationTransaction,
@@ -920,8 +1179,8 @@ export const useMoveAutomationPanel = ({
     flushPendingFeedbackTransaction()
     clearFeedbackTimers()
 
-    const hasFinalPhase = feedbackHasFinalResolutionPhase(feedback)
-    const hasEffectivenessPhase = hasFinalPhase && feedbackHasEffectivenessPhase(feedback)
+    const hasFinalPhase = moveAutomationFeedbackHasFinalResolutionPhase(feedback)
+    const hasEffectivenessPhase = hasFinalPhase && moveAutomationFeedbackHasEffectivenessPhase(feedback)
     let transactionApplied = false
     const feedbackStillCurrent = () => moveAutomationFeedback.value?.id === feedback.id
     const applyTransactionOnce = () => {
@@ -945,21 +1204,21 @@ export const useMoveAutomationPanel = ({
       setFeedbackPhase('hit-roll')
     })
 
-    const outcomeDelay = D20_ROLL_ANIMATION_MS + HIT_ROLL_VISIBLE_MS
+    const outcomeDelay = MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS
     scheduleFeedbackStep(outcomeDelay, () => {
       if (!setFeedbackPhase('outcome')) return
       if (!hasFinalPhase) applyTransactionOnce()
     })
 
     if (hasFinalPhase) {
-      const effectivenessDelay = outcomeDelay + HIT_RESULT_VISIBLE_MS
+      const effectivenessDelay = MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS
       if (hasEffectivenessPhase) {
         scheduleFeedbackStep(effectivenessDelay, () => {
           setFeedbackPhase('effectiveness')
         })
       }
 
-      const finalDelay = effectivenessDelay + (hasEffectivenessPhase ? EFFECTIVENESS_VISIBLE_MS : 0)
+      const finalDelay = moveAutomationFeedbackDamagePhaseDelayMs(feedback)
       scheduleFeedbackStep(finalDelay, () => {
         if (!setFeedbackPhase('damage')) return
         applyTransactionOnce()
@@ -986,8 +1245,9 @@ export const useMoveAutomationPanel = ({
   const executeSingleTargetMoveRequest = async (
     request: ActiveSingleTargetingRequest,
     targetId: string,
-    options: { skipActionNotifications?: boolean; logLine?: string } = {},
+    options: { skipActionNotifications?: boolean; logLine?: string; requireActiveTargeting?: boolean } = {},
   ): Promise<boolean> => {
+    if (!canContinueMoveAutomationForUser(request.userId)) return false
     const user = findSpawnedPokemon(request.userId)
     const target = findSpawnedPokemon(targetId)
     if (!user || !target) return false
@@ -996,7 +1256,8 @@ export const useMoveAutomationPanel = ({
       { placementId: request.userId, moveName: request.moveName },
       request.frequency,
     )
-    if (!recorded) return false
+    if (!recorded || !canContinueMoveAutomationForUser(request.userId)) return false
+    if (options.requireActiveTargeting && !moveTargetingRequestIsStillActive(request)) return false
 
     if (!options.skipActionNotifications) {
       notifyMoveActionTaken(request)
@@ -1016,6 +1277,12 @@ export const useMoveAutomationPanel = ({
       })
       prependTransactionLogLine(transaction, options.logLine)
       activeMoveTargeting.value = null
+      planAndEnqueueConfirmedSingleTargetMoveAnimations({
+        script: request.script,
+        user,
+        target,
+        transaction,
+      })
       await applyMoveAutomation(transaction, { script: request.script })
       return true
     }
@@ -1030,6 +1297,13 @@ export const useMoveAutomationPanel = ({
     })
     prependTransactionLogLine(result.transaction, options.logLine)
     activeMoveTargeting.value = null
+    planAndEnqueueSingleTargetMoveAnimations({
+      script: request.script,
+      user,
+      target,
+      feedback: result.feedback,
+      transaction: result.transaction,
+    })
     showMoveAutomationResolution(result.feedback, result.transaction, { script: request.script })
     return true
   }
@@ -1103,15 +1377,18 @@ export const useMoveAutomationPanel = ({
   }
 
   const confirmMoveAutomationArea = async (request: ActiveAreaConfirmationRequest) => {
+    if (!canContinueMoveAutomationForUser(request.userId)) return
     const user = findSpawnedPokemon(request.userId)
     if (!user) return
     const recorded = await recordMoveUseIfTracked(
       { placementId: request.userId, moveName: request.moveName },
       request.frequency,
     )
-    if (!recorded) return
+    if (!recorded || !canContinueMoveAutomationForUser(request.userId)) return
+    if (!moveTargetingRequestIsStillActive(request)) return
     notifyMoveActionTaken(request)
-    const targetSet = new Set(selectedAreaTargetIds(request))
+    const selectedTargetIds = selectedAreaTargetIds(request)
+    const targetSet = new Set(selectedTargetIds)
     const targets = spawnedPokemon.value.filter((token) => targetSet.has(token.id))
     if (request.direction) faceTokenTowardAreaDirection(user, request.direction)
     else faceTokenTowardNearestTarget(user, targets)
@@ -1127,6 +1404,17 @@ export const useMoveAutomationPanel = ({
     const destinationLogLine = passDestinationLogLine(user, request.passDestination)
     if (destinationLogLine) transaction.logLines.push(destinationLogLine)
     activeMoveTargeting.value = null
+    planAndEnqueueAreaMoveAnimations({
+      script: request.script,
+      user,
+      targets,
+      selectedTargetIds,
+      excludedTargetIds: request.excludedTargetIds,
+      areaCells: request.cells,
+      ...(request.direction ? { areaDirection: request.direction } : {}),
+      ...(request.passDestination ? { passDestination: request.passDestination } : {}),
+      transaction,
+    })
     await applyMoveAutomation(transaction, { updateFacing: !request.direction, script: request.script })
     moveTokenToPassDestination(request.userId, request.passDestination)
   }
@@ -1137,6 +1425,7 @@ export const useMoveAutomationPanel = ({
     if (!request) return
 
     if (request.kind === 'area-confirmation') {
+      if (!overlay) return
       if (canToggleAreaTargets(request.script) && request.targetIds.includes(targetId)) {
         toggleMoveAutomationAreaTarget(request, targetId)
         return
@@ -1146,7 +1435,7 @@ export const useMoveAutomationPanel = ({
     }
 
     if (!overlay?.candidateIds.includes(targetId)) return
-    await executeSingleTargetMoveRequest(request, targetId)
+    await executeSingleTargetMoveRequest(request, targetId, { requireActiveTargeting: true })
   }
 
   onBeforeUnmount(() => {

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import MapSceneRenderer from '~/components/map/MapSceneRenderer.vue'
 import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
+import MoveVfxDebugPanel from '~/components/map/MoveVfxDebugPanel.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
 import MapCombatLog from '~/components/map/MapCombatLog.vue'
 import type { BuildTool } from '#shared/mapEditor'
@@ -28,6 +29,7 @@ import type {
   MoveAutomationSpitePrompt,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
+import type { MoveAnimationEvent, MoveVfxKind } from '~/types/moveAnimation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
@@ -75,6 +77,12 @@ const props = defineProps<{
   canDeleteTokens: boolean
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  moveAnimations?: readonly MoveAnimationEvent[]
+  moveAnimationsReducedMotion?: boolean
+  moveAnimationsEnabled?: boolean
+  moveAnimationsStatusTitle?: string
+  moveAnimationsToggleLabel?: string
+  moveVfxDebugHarnessEnabled?: boolean
   moveUsageError?: string | null
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
   cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
@@ -118,6 +126,11 @@ const emit = defineEmits<{
   (event: 'select-move-target', targetId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
+  (event: 'preview-move-vfx', kind: MoveVfxKind): void
+  (event: 'preview-all-move-vfx'): void
+  (event: 'clear-move-vfx'): void
+  (event: 'toggle-move-animations'): void
+  (event: 'move-vfx-settled', payload: { nowMs: number }): void
   (event: 'dismiss-spite-reaction', id: string): void
   (event: 'apply-spite-reaction', id: string): void
   (event: 'dismiss-cute-charm-reaction', id: string): void
@@ -134,6 +147,22 @@ const emit = defineEmits<{
 const COMBAT_LOG_MESSAGE_LIMIT = 24
 
 const rendererRef = ref<MapSceneRendererHandle | null>(null)
+const moveAnimationsEnabled = computed(() => props.moveAnimationsEnabled !== false)
+const moveAnimationsToggleText = computed(() => (
+  moveAnimationsEnabled.value ? 'Animations on' : 'Animations off'
+))
+const moveAnimationsToggleAriaLabel = computed(() => (
+  props.moveAnimationsToggleLabel
+  ?? (moveAnimationsEnabled.value ? 'Disable move animations' : 'Enable move animations')
+))
+const moveAnimationsToggleTitle = computed(() => (
+  props.moveAnimationsStatusTitle
+  ?? (
+    moveAnimationsEnabled.value
+      ? 'Move automation will play transient visual effects.'
+      : 'Move automation stays usable, but transient move visual effects are skipped.'
+  )
+))
 const combatLogMessages = computed(() =>
   buildCombatLogMessages(props.map?.metadata, {
     maxMessages: COMBAT_LOG_MESSAGE_LIMIT,
@@ -180,6 +209,8 @@ defineExpose({ focusPokemon })
         :token-pokeball-options-by-id="tokenPokeballOptionsById"
         :move-automation-targeting="moveAutomationTargeting"
         :move-automation-feedback="moveAutomationFeedback"
+        :move-animations="moveAnimations ?? []"
+        :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
         :attack-of-opportunity-prompts="props.attackOfOpportunityPrompts ?? []"
         @select-pokemon="emit('select-pokemon', $event)"
         @move-pokemon="emit('move-pokemon', $event)"
@@ -205,6 +236,7 @@ defineExpose({ focusPokemon })
         @select-move-area-direction="emit('select-move-area-direction', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
         @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
+        @move-vfx-settled="emit('move-vfx-settled', $event)"
       />
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />
 
@@ -228,6 +260,20 @@ defineExpose({ focusPokemon })
         {{ props.tokenControlNotice }}
       </div>
 
+      <button
+        v-if="props.map && canViewMap"
+        type="button"
+        class="move-animation-toggle"
+        :class="{ 'is-disabled': !moveAnimationsEnabled }"
+        :aria-pressed="moveAnimationsEnabled"
+        :aria-label="moveAnimationsToggleAriaLabel"
+        :title="moveAnimationsToggleTitle"
+        @click="emit('toggle-move-animations')"
+      >
+        <span class="move-animation-toggle__eyebrow">Move VFX</span>
+        <span>{{ moveAnimationsToggleText }}</span>
+      </button>
+
       <MapCombatLog
         v-if="props.map && canViewMap"
         :messages="combatLogMessages"
@@ -236,6 +282,17 @@ defineExpose({ focusPokemon })
       <div v-if="props.moveUsageError" class="move-usage-error" role="status">
         {{ props.moveUsageError }}
       </div>
+
+      <MoveVfxDebugPanel
+        v-if="props.map && canViewMap && props.moveVfxDebugHarnessEnabled"
+        :selected-id="selectedId"
+        :spawned-pokemon="spawnedPokemon"
+        :controllable-placement-ids="controllablePlacementIds"
+        :active-count="(props.moveAnimations ?? []).length"
+        @preview-kind="emit('preview-move-vfx', $event)"
+        @preview-all="emit('preview-all-move-vfx')"
+        @clear="emit('clear-move-vfx')"
+      />
 
       <MapMoveReactionPromptStack
         :spite-prompts="props.spiteReactionPrompts ?? []"
@@ -292,6 +349,47 @@ defineExpose({ focusPokemon })
   font-weight: 850;
   line-height: 1.32;
   pointer-events: none;
+}
+
+.move-animation-toggle {
+  position: absolute;
+  z-index: 7;
+  top: var(--map-overlay-gutter, 0.75rem);
+  right: var(--map-overlay-gutter, 0.75rem);
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  align-items: flex-start;
+  max-width: min(12rem, calc(100vw - 2rem));
+  padding: 0.54rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, rgba(255, 255, 255, 0.28));
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, rgba(8, 10, 14, 0.82) 88%, var(--paper));
+  color: var(--ink-bright);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.15;
+  cursor: pointer;
+}
+
+.move-animation-toggle:not(.is-disabled):hover,
+.move-animation-toggle:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 78%, white 12%);
+  background: color-mix(in srgb, rgba(11, 14, 22, 0.9) 82%, var(--accent));
+}
+
+.move-animation-toggle.is-disabled {
+  border-color: color-mix(in srgb, var(--ink-muted) 44%, rgba(255, 255, 255, 0.18));
+  color: color-mix(in srgb, var(--ink-muted) 88%, white 8%);
+}
+
+.move-animation-toggle__eyebrow {
+  color: color-mix(in srgb, currentColor 64%, transparent);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .move-usage-error {

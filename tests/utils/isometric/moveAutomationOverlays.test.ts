@@ -84,6 +84,10 @@ describe('move automation CSS overlay renderers', () => {
       hitChances: { 'target-1': hitChance({ tone: 'medium', label: '50%', percent: 50, title: '50% to hit' }) },
     })).toBe(true)
 
+    const reticle = scene.children.find((child) => child instanceof THREE.Object3D && child.visible) as (THREE.Object3D & { element?: HTMLElement }) | undefined
+    expect(reticle?.element?.style.pointerEvents).toBe('none')
+    expect(reticle?.element?.style.zIndex).toBe('20')
+
     expect(renderer.update({ ...updateOptions, show: false })).toBe(true)
     expect(renderer.update({ ...updateOptions, show: false })).toBe(false)
 
@@ -114,6 +118,10 @@ describe('move automation CSS overlay renderers', () => {
       ...updateOptions,
       feedback: feedbackState({ phase: 'damage', damageResolved: true, damageLoss: 9 }),
     })).toBe(true)
+
+    const feedbackSprite = scene.children.find((child) => child instanceof THREE.Object3D && child.visible) as (THREE.Object3D & { element?: HTMLElement }) | undefined
+    expect(feedbackSprite?.element?.style.pointerEvents).toBe('none')
+    expect(feedbackSprite?.element?.style.zIndex).toBe('30')
 
     expect(renderer.update({ ...updateOptions, show: false })).toBe(true)
     expect(renderer.update({ ...updateOptions, show: false })).toBe(false)

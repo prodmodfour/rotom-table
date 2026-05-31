@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
@@ -23,7 +23,13 @@ import {
 import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
+import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
+import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
+import {
+  createMoveVfxDebugPreviewEvents,
+  isMoveVfxDebugHarnessEnabled,
+} from '~/utils/moveVfxDebugHarness'
 import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActionPanel'
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
@@ -42,6 +48,7 @@ import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, TabletopMap } from '~/types/map'
+import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 definePageMeta({
@@ -65,6 +72,7 @@ const {
   status,
   error,
   renamedTo,
+  mapDataRevision,
   applyPersistedMap,
 } = useEditableMap(slug, {
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
@@ -115,6 +123,65 @@ interface MapScenePanelHandle {
 
 const gridRef = ref<MapScenePanelHandle | null>(null)
 
+const {
+  moveAnimationsEnabled,
+  moveAnimationsReducedMotion,
+  moveAnimationsStatusTitle,
+  moveAnimationsToggleLabel,
+  toggleMoveAnimationsEnabled,
+} = useMoveAnimationSettings()
+
+const {
+  activeMoveAnimations,
+  enqueueMoveAnimations,
+  clearMoveAnimations,
+  pruneExpiredMoveAnimations,
+} = useMoveAnimationQueue({ moveAnimationsEnabled })
+
+const visibleMoveAnimations = computed(() => (
+  moveAnimationsEnabled.value ? activeMoveAnimations.value : []
+))
+
+const pruneSettledMoveAnimations = ({ nowMs }: { nowMs: number }) => {
+  pruneExpiredMoveAnimations(nowMs)
+}
+
+const moveVfxDebugHarnessEnabled = computed(() => isMoveVfxDebugHarnessEnabled({ query: route.query }))
+
+watch(
+  () => routeSlugParam(route.params),
+  (nextSlug, previousSlug) => {
+    if (nextSlug !== previousSlug) clearMoveAnimations()
+  },
+)
+
+// `useEditableMap` keeps the map object stable during authoritative reloads,
+// realtime replacements, document-backed token actions, and rename/delete
+// events. Watch its explicit data-revision signal so transient VFX are cleared
+// when the rendered scene adopts a new persisted map without tying cleanup to
+// ordinary local autosave timestamp updates.
+watch(mapDataRevision, () => {
+  clearMoveAnimations()
+})
+
+watch(
+  () => {
+    const dimensions = map.value?.dimensions
+    return dimensions ? `${dimensions.x}:${dimensions.y}:${dimensions.z}` : 'no-map'
+  },
+  (nextDimensionsKey, previousDimensionsKey) => {
+    if (nextDimensionsKey !== previousDimensionsKey) clearMoveAnimations()
+  },
+)
+
+let cleanupMoveAnimationVisibilityChange: (() => void) | null = null
+
+onBeforeUnmount(() => {
+  cleanupMoveAnimationVisibilityChange?.()
+  cleanupMoveAnimationVisibilityChange = null
+  clearMoveAnimations()
+})
+
 if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
 const syncPlayerProfileForMapControl = async () => {
@@ -129,6 +196,21 @@ const syncPlayerProfileForMapControl = async () => {
 }
 
 onMounted(() => {
+  if (import.meta.client) {
+    const handleMoveAnimationVisibilityChange = () => {
+      if (document.hidden) return
+
+      // Hidden tabs age move VFX by wall-clock time. Prune expired queue
+      // entries on resume so renderer input cannot retain stale events after
+      // the isometric scheduler wakes for its hidden-tab-resume frame.
+      pruneExpiredMoveAnimations(Date.now())
+    }
+    document.addEventListener('visibilitychange', handleMoveAnimationVisibilityChange)
+    cleanupMoveAnimationVisibilityChange = () => {
+      document.removeEventListener('visibilitychange', handleMoveAnimationVisibilityChange)
+    }
+  }
+
   void syncPlayerProfileForMapControl()
 })
 
@@ -188,6 +270,30 @@ const {
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
   },
 })
+
+const enqueueMoveVfxDebugPreview = (kind: MoveVfxKind | 'all') => {
+  const selectedTokenId = selectedId.value
+  if (!selectedTokenId || !canControlPlacement(selectedTokenId)) return
+
+  const events = createMoveVfxDebugPreviewEvents({
+    kind,
+    selectedId: selectedTokenId,
+    tokens: spawnedPokemon.value,
+    controllablePlacementIds: controllablePlacementIds.value,
+    dimensions: map.value?.dimensions ?? null,
+  })
+
+  if (events.length === 0) return
+  enqueueMoveAnimations(events)
+}
+
+const previewMoveVfxDebugKind = (kind: MoveVfxKind) => {
+  enqueueMoveVfxDebugPreview(kind)
+}
+
+const previewAllMoveVfxDebug = () => {
+  enqueueMoveVfxDebugPreview('all')
+}
 
 const selectPokemon = (id: string | null) => {
   if (buildMode.value) return
@@ -515,6 +621,7 @@ const {
   applyMoveFieldEffect: applyMoveFieldEffectFromScene,
   placeHazard: placeHazardFromScene,
   recordMoveUsage,
+  enqueueMoveAnimations,
   onBeforeNonImmediateAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
@@ -828,6 +935,12 @@ useMapDimensionReconciliation({
         :token-control-notice="tokenControlNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="actionAutomationFeedback"
+        :move-animations="visibleMoveAnimations"
+        :move-animations-enabled="moveAnimationsEnabled"
+        :move-animations-reduced-motion="moveAnimationsReducedMotion"
+        :move-animations-status-title="moveAnimationsStatusTitle"
+        :move-animations-toggle-label="moveAnimationsToggleLabel"
+        :move-vfx-debug-harness-enabled="moveVfxDebugHarnessEnabled"
         :move-usage-error="sceneActionError"
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"
@@ -867,6 +980,11 @@ useMapDimensionReconciliation({
         @select-move-target="selectActionAutomationTarget"
         @select-move-area-direction="selectMoveAutomationAreaDirection"
         @cancel-move-targeting="cancelActionAutomationTargeting"
+        @preview-move-vfx="previewMoveVfxDebugKind"
+        @preview-all-move-vfx="previewAllMoveVfxDebug"
+        @clear-move-vfx="clearMoveAnimations"
+        @toggle-move-animations="toggleMoveAnimationsEnabled"
+        @move-vfx-settled="pruneSettledMoveAnimations"
         @dismiss-spite-reaction="dismissSpiteReactionPrompt"
         @apply-spite-reaction="applySpiteReactionPrompt"
         @dismiss-cute-charm-reaction="dismissCuteCharmReactionPrompt"

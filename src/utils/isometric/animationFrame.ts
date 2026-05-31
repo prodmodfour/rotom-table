@@ -1,6 +1,7 @@
 import type * as THREE from 'three'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
+import type { MoveVfxRendererFrameContext } from '~/utils/isometric/moveVfxRenderer'
 import { getIsometricSpriteLighting } from '~/utils/isometric/spriteLighting'
 import { tokenCenterLerpNeedsAnimation } from '~/utils/isometric/tokenRenderState'
 import { animatePokemonRenderObject } from '~/utils/isometric/tokenRenderer'
@@ -16,8 +17,14 @@ export interface IsometricAnimationFrameResult {
 }
 
 export interface IsometricCss3DRenderDirtyTrackerLike {
-  markDirty?: (reason?: 'camera' | 'targeting' | 'token-style') => void
+  markDirty?: (reason?: 'camera' | 'targeting' | 'token-style' | 'manual') => void
   consumeDirty: () => boolean
+}
+
+export interface IsometricMoveVfxAnimationFrameRenderer {
+  animate: (frameContext: MoveVfxRendererFrameContext) => void
+  needsAnimationFrame?: () => boolean
+  needsCss3DFrame?: () => boolean
 }
 
 export interface IsometricAnimationFrameOptions {
@@ -39,6 +46,10 @@ export interface IsometricAnimationFrameOptions {
       haloAlpha: number
     }) => void
   }
+  moveVfxRenderer?: IsometricMoveVfxAnimationFrameRenderer | null
+  moveVfxRenderObjects?: ReadonlyMap<string, PokemonRenderObject>
+  moveVfxVisible?: boolean
+  moveVfxReducedMotion?: boolean
   selectedPokemon: SpawnedPokemon | null
   previewPositionY: number | null
   camera: THREE.Camera
@@ -104,6 +115,21 @@ export const stepIsometricAnimationFrame = (
     spriteBrightness,
     haloAlpha,
   })
+
+  if (options.moveVfxRenderer && (options.moveVfxRenderer.needsAnimationFrame?.() ?? true)) {
+    options.moveVfxRenderer.animate({
+      frameNowMs,
+      delta,
+      elapsedTime: options.clock.elapsedTime,
+      camera: options.camera,
+      renderObjects: options.moveVfxRenderObjects,
+      visible: options.moveVfxVisible,
+      reducedMotion: options.moveVfxReducedMotion === true,
+    })
+    if (options.moveVfxRenderer.needsCss3DFrame?.() === true) {
+      options.css3DRenderDirtyTracker?.markDirty?.('manual')
+    }
+  }
 
   if (options.beforeRender?.() === true) {
     options.css3DRenderDirtyTracker?.markDirty?.('targeting')

@@ -59,6 +59,12 @@ export interface UseEditableMapReturn {
   error: Ref<string | null>
   /** Set to the new slug when this map was renamed in another tab. */
   renamedTo: Ref<string | null>
+  /**
+   * Runtime-only revision that increments when a full persisted map payload is
+   * adopted or the loaded map is cleared. Scene-local transient state can watch
+   * this without treating autosave timestamp updates as a full map reload.
+   */
+  mapDataRevision: Ref<number>
   saveNow: () => Promise<void>
   reload: () => Promise<void>
   applyPersistedMap: (incoming: TabletopMap) => void
@@ -87,6 +93,7 @@ export const useEditableMap = (
   const status = ref<MapSaveStatus>('loading')
   const error = ref<string | null>(null)
   const renamedTo = ref<string | null>(null)
+  const mapDataRevision = ref(0)
 
   const clientId = getClientId()
   const { getJson, postJson } = useApiClient()
@@ -180,6 +187,7 @@ export const useEditableMap = (
     autosave.cancelPendingSave()
     autosave.snapshot.markClean(incoming)
     applyServerMap(incoming)
+    mapDataRevision.value += 1
     status.value = 'idle'
     error.value = null
   }
@@ -234,6 +242,7 @@ export const useEditableMap = (
       if (e?.statusCode === 404) {
         status.value = 'not-found'
         map.value = null
+        mapDataRevision.value += 1
         return
       }
       autosave.statusController.markError(err, { logPrefix: '[useEditableMap] load failed' })
@@ -265,6 +274,7 @@ export const useEditableMap = (
     } else if (event.type === 'deleted') {
       status.value = 'not-found'
       map.value = null
+      mapDataRevision.value += 1
     } else if (event.type === 'renamed' && event.data) {
       const payload = event.data as { newSlug?: string; map?: TabletopMap }
       if (!payload.newSlug) return
@@ -294,5 +304,5 @@ export const useEditableMap = (
 
   void reload()
 
-  return { map, status, error, renamedTo, saveNow, reload, applyPersistedMap }
+  return { map, status, error, renamedTo, mapDataRevision, saveNow, reload, applyPersistedMap }
 }

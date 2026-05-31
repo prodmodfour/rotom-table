@@ -64,6 +64,7 @@ describe('CSS3D render dirty tracker', () => {
       sources: [
         ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation,
         ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.fieldEffectAnimation,
+        ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.moveVfxAnimation,
         ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion,
         ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.movementPreviewAnimation,
       ],
@@ -87,5 +88,6 @@ describe('CSS3D render dirty tracker', () => {
     expect(isCss3DRenderDirtyInvalidationReason('weather')).toBe(false)
     expect(isCss3DRenderDirtyAnimationSource(ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.tokenMotion)).toBe(true)
     expect(isCss3DRenderDirtyAnimationSource(ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.spriteAnimation)).toBe(false)
+    expect(isCss3DRenderDirtyAnimationSource(ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.moveVfxAnimation)).toBe(false)
   })
 })

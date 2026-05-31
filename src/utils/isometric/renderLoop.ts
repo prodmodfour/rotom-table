@@ -19,6 +19,7 @@ export const ISOMETRIC_ANIMATION_CONTINUATION_SOURCE = {
   spriteTextureLoading: 'sprite-texture-loading',
   fieldEffectAnimation: 'field-effect-animation',
   movementPreviewAnimation: 'movement-preview-animation',
+  moveVfxAnimation: 'move-vfx-animation',
 } as const
 
 export const ISOMETRIC_ANIMATION_CONTINUATION_SOURCES = Object.values(
@@ -73,6 +74,10 @@ export interface IsometricFieldEffectAnimationRenderer {
   needsAnimationFrame(): boolean
 }
 
+export interface IsometricMoveVfxAnimationRenderer {
+  needsAnimationFrame(): boolean
+}
+
 export interface IsometricMovementPreviewAnimationRenderer {
   getAnimationState(): MovementPreviewAnimationState
 }
@@ -124,6 +129,14 @@ export const resolveIsometricMovementPreviewAnimationContinuationSources = (
 ): IsometricAnimationContinuationSource[] => (
   renderer && movementPreviewAnimationStateNeedsFrame(renderer.getAnimationState())
     ? [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.movementPreviewAnimation]
+    : []
+)
+
+export const resolveIsometricMoveVfxAnimationContinuationSources = (
+  renderer: IsometricMoveVfxAnimationRenderer | null | undefined,
+): IsometricAnimationContinuationSource[] => (
+  renderer?.needsAnimationFrame()
+    ? [ISOMETRIC_ANIMATION_CONTINUATION_SOURCE.moveVfxAnimation]
     : []
 )
 

@@ -60,6 +60,146 @@ describe('isometric animation frame', () => {
     expect(result.cssRendered).toBe(true)
   })
 
+  it('advances active move VFX with scheduler frame context before render without dirtying CSS3D', () => {
+    const camera = new THREE.OrthographicCamera()
+    camera.position.set(5, 6, 5)
+    const scene = new THREE.Scene()
+    const renderObject = {
+      currentCenter: new THREE.Vector3(1, 0, 1),
+      targetCenter: new THREE.Vector3(1, 0, 1),
+    } as PokemonRenderObject
+    const renderObjects = new Map([['token-a', renderObject]])
+    const moveVfxRenderer = {
+      needsAnimationFrame: vi.fn(() => true),
+      animate: vi.fn(),
+    }
+    const renderer = { render: vi.fn() }
+    const cssRenderer = { render: vi.fn() }
+    const css3DRenderDirtyTracker = {
+      markDirty: vi.fn(),
+      consumeDirty: vi.fn(() => false),
+    }
+
+    const result = stepIsometricAnimationFrame({
+      clock: { getDelta: () => 0.016, elapsedTime: 2.5 },
+      renderObjects: renderObjects.values(),
+      applyRenderObjectPosition: vi.fn(() => false),
+      controls: { target: new THREE.Vector3(), update: vi.fn(() => false) },
+      fieldEffectRenderer: { update: vi.fn(), needsAnimationFrame: vi.fn(() => false) },
+      tokenMovePreviewRenderer: { animate: vi.fn() },
+      moveVfxRenderer,
+      moveVfxRenderObjects: renderObjects,
+      moveVfxVisible: false,
+      moveVfxReducedMotion: true,
+      selectedPokemon: null,
+      previewPositionY: null,
+      camera,
+      renderer,
+      cssRenderer,
+      scene,
+      facingDirection: new THREE.Vector2(1, 0),
+      frameNowMs: 2500,
+      animateRenderObject: vi.fn(),
+      css3DRenderDirtyTracker,
+    })
+
+    expect(moveVfxRenderer.needsAnimationFrame).toHaveBeenCalledOnce()
+    expect(moveVfxRenderer.animate).toHaveBeenCalledWith({
+      frameNowMs: 2500,
+      delta: 0.016,
+      elapsedTime: 2.5,
+      camera,
+      renderObjects,
+      visible: false,
+      reducedMotion: true,
+    })
+    expect(moveVfxRenderer.animate.mock.invocationCallOrder[0]).toBeLessThan(
+      renderer.render.mock.invocationCallOrder[0],
+    )
+    expect(css3DRenderDirtyTracker.markDirty).not.toHaveBeenCalled()
+    expect(cssRenderer.render).not.toHaveBeenCalled()
+    expect(result.cssRendered).toBe(false)
+  })
+
+  it('marks CSS3D dirty only when active move VFX reports CSS badge output', () => {
+    const camera = new THREE.OrthographicCamera()
+    const scene = new THREE.Scene()
+    const moveVfxRenderer = {
+      needsAnimationFrame: vi.fn(() => true),
+      needsCss3DFrame: vi.fn(() => true),
+      animate: vi.fn(),
+    }
+    const renderer = { render: vi.fn() }
+    const cssRenderer = { render: vi.fn() }
+    let dirty = false
+    const css3DRenderDirtyTracker = {
+      markDirty: vi.fn((reason?: string) => {
+        if (reason === 'manual') dirty = true
+      }),
+      consumeDirty: vi.fn(() => dirty),
+    }
+
+    const result = stepIsometricAnimationFrame({
+      clock: { getDelta: () => 0.016, elapsedTime: 1 },
+      renderObjects: [],
+      applyRenderObjectPosition: vi.fn(),
+      controls: { target: new THREE.Vector3(), update: vi.fn() },
+      fieldEffectRenderer: { update: vi.fn(), needsAnimationFrame: vi.fn(() => false) },
+      tokenMovePreviewRenderer: { animate: vi.fn() },
+      moveVfxRenderer,
+      selectedPokemon: null,
+      previewPositionY: null,
+      camera,
+      renderer,
+      cssRenderer,
+      scene,
+      facingDirection: new THREE.Vector2(1, 0),
+      frameNowMs: 1,
+      animateRenderObject: vi.fn(),
+      css3DRenderDirtyTracker,
+    })
+
+    expect(moveVfxRenderer.animate).toHaveBeenCalledOnce()
+    expect(moveVfxRenderer.needsCss3DFrame).toHaveBeenCalledOnce()
+    expect(css3DRenderDirtyTracker.markDirty).toHaveBeenCalledWith('manual')
+    expect(renderer.render).toHaveBeenCalledWith(scene, camera)
+    expect(cssRenderer.render).toHaveBeenCalledWith(scene, camera)
+    expect(result.cssRendered).toBe(true)
+  })
+
+  it('skips idle move VFX animation work while still rendering the scheduled frame', () => {
+    const camera = new THREE.OrthographicCamera()
+    const scene = new THREE.Scene()
+    const moveVfxRenderer = {
+      needsAnimationFrame: vi.fn(() => false),
+      animate: vi.fn(),
+    }
+    const renderer = { render: vi.fn() }
+
+    stepIsometricAnimationFrame({
+      clock: { getDelta: () => 0.016, elapsedTime: 1 },
+      renderObjects: [],
+      applyRenderObjectPosition: vi.fn(),
+      controls: { target: new THREE.Vector3(), update: vi.fn() },
+      fieldEffectRenderer: { update: vi.fn(), needsAnimationFrame: vi.fn(() => false) },
+      tokenMovePreviewRenderer: { animate: vi.fn() },
+      moveVfxRenderer,
+      selectedPokemon: null,
+      previewPositionY: null,
+      camera,
+      renderer,
+      cssRenderer: { render: vi.fn() },
+      scene,
+      facingDirection: new THREE.Vector2(1, 0),
+      frameNowMs: 1,
+      animateRenderObject: vi.fn(),
+    })
+
+    expect(moveVfxRenderer.needsAnimationFrame).toHaveBeenCalledOnce()
+    expect(moveVfxRenderer.animate).not.toHaveBeenCalled()
+    expect(renderer.render).toHaveBeenCalledWith(scene, camera)
+  })
+
   it('animates render objects when passed a one-shot map iterator', () => {
     const camera = new THREE.OrthographicCamera()
     camera.position.set(5, 6, 5)

@@ -9,6 +9,7 @@ import type {
   MoveAutomationHpUpdate,
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
+import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type {
   GridAnchor,
   LayerVisibility,
@@ -62,6 +63,8 @@ defineProps<{
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
+  moveAnimations?: readonly MoveAnimationEvent[]
+  moveAnimationsReducedMotion?: boolean
   attackOfOpportunityPrompts?: AttackOfOpportunityPrompt[]
 }>()
 
@@ -90,6 +93,7 @@ const emit = defineEmits<{
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'cancel-move-targeting'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
+  (event: 'move-vfx-settled', payload: { nowMs: number }): void
 }>()
 
 const gridRef = ref<IsometricGridHandle | null>(null)
@@ -130,6 +134,8 @@ defineExpose({ focusPokemon })
     :token-pokeball-options-by-id="tokenPokeballOptionsById"
     :move-automation-targeting="moveAutomationTargeting"
     :move-automation-feedback="moveAutomationFeedback"
+    :move-animations="moveAnimations ?? []"
+    :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
     :attack-of-opportunity-prompts="attackOfOpportunityPrompts ?? []"
     @select-pokemon="emit('select-pokemon', $event)"
     @move-pokemon="emit('move-pokemon', $event)"
@@ -155,5 +161,6 @@ defineExpose({ focusPokemon })
     @select-move-area-direction="emit('select-move-area-direction', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
     @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
+    @move-vfx-settled="emit('move-vfx-settled', $event)"
   />
 </template>

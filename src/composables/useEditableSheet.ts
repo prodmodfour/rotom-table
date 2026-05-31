@@ -103,6 +103,7 @@ export function useEditableSheet<T extends { slug: string }>(
     clientId,
     profileContext: currentProfileContext(),
     requireSelectedPlayerProfile: requiresSelectedPlayerProfile(),
+    allowSlugSync: canSyncSlug(),
   })
 
   const jsonFor = (value: T): string => stablePersistableSheetJson(value)

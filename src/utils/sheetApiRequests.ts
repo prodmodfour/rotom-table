@@ -26,6 +26,8 @@ export interface BuildSheetSaveBodyOptions {
   readonly clientId?: string
   readonly profileContext?: SheetApiProfileContext
   readonly requireSelectedPlayerProfile?: boolean
+  /** When false, the save route must not rename the sheet resource from its display name. */
+  readonly allowSlugSync?: boolean
 }
 
 export const sheetApiProfileContext = (
@@ -90,5 +92,6 @@ export const buildSheetSaveBody = (
     sheet: options.sheet,
     ...(options.clientId ? { clientId: options.clientId } : {}),
     ...(profileId ? { profileId } : {}),
+    ...(options.allowSlugSync === false ? { allowSlugSync: false } : {}),
   }
 }

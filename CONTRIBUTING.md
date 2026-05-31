@@ -34,6 +34,8 @@ For move automation work, also run:
 npm run check:move-automation
 ```
 
+For move VFX work, copy the PR checklist from `docs/move-animations.md#copyable-pr-checklist-for-move-vfx-changes` into the PR description and run the focused tests/manual QA listed there when they apply.
+
 ## Data hygiene
 
 - Do not commit personal campaign data, private player details, credentials, unreleased story notes, or one-off local scratch data.
