@@ -1283,6 +1283,58 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.moveUsageError.value).toBe('No remaining uses')
   })
 
+  it('does not enqueue VFX or apply mechanics when targeting is cancelled before selecting a target', async () => {
+    const map = ref({
+      ...mapFixture(),
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 0 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'caster',
+      nickname: 'Caster',
+      species: 'Charmander',
+      level: 5,
+      movelist: [{ name: 'Ember' }],
+    } as CharacterSheet
+    const hpCalls: MoveAutomationTransaction['hpUpdates'] = []
+    const enqueueMoveAnimations = vi.fn((_events: readonly MoveAnimationEvent[]) => undefined)
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Caster', sheetSlug: 'caster', position: { x: 0, y: 0, z: 0 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 40, maxHp: 40, defenderTypes: ['Grass'], position: { x: 2, y: 0, z: 0 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: (update) => { hpCalls.push(update) },
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      enqueueMoveAnimations,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Ember' })
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'target',
+      moveName: 'Ember',
+      candidateIds: ['target-token'],
+    })
+
+    panel.cancelMoveAutomationTargeting()
+    await panel.selectMoveAutomationTarget('target-token')
+
+    expect(panel.moveAutomationTargeting.value).toBeNull()
+    expect(panel.moveAutomationFeedback.value).toBeNull()
+    expect(hpCalls).toEqual([])
+    expect(enqueueMoveAnimations).not.toHaveBeenCalled()
+    expect(map.value.metadata?.moveLog).toBeUndefined()
+  })
+
   it('drops in-flight single-target VFX and mechanics when targeting is cancelled during usage recording', async () => {
     const map = ref({
       ...mapFixture(),
@@ -1391,6 +1443,7 @@ describe('useMoveAutomationPanel', () => {
       movelist: [{ name: 'Helping Hand' }],
     } as CharacterSheet
     const conditionCalls: MoveAutomationTransaction['conditionUpdates'] = []
+    const enqueueMoveAnimations = vi.fn((_events: readonly MoveAnimationEvent[]) => undefined)
     const panel = useMoveAutomationPanel({
       map,
       spawnedPokemon: computed(() => [
@@ -1406,6 +1459,8 @@ describe('useMoveAutomationPanel', () => {
       modifyConditions: (update) => { conditionCalls.push(update) },
       applyMoveFieldEffect: () => undefined,
       placeHazard: () => undefined,
+      enqueueMoveAnimations,
+      now: () => 11000,
     })
 
     panel.openMoveAutomation({ id: 'user-token', moveName: 'Helping Hand' })
@@ -1421,6 +1476,21 @@ describe('useMoveAutomationPanel', () => {
 
     expect(panel.moveAutomationFeedback.value).toBeNull()
     expect(conditionCalls).toEqual([{ id: 'target-token', conditions: ['Helping Hand'] }])
+    expect(enqueueMoveAnimations).toHaveBeenCalledTimes(1)
+    const events = enqueueMoveAnimations.mock.calls[0]?.[0] ?? []
+    expect(events).toEqual([
+      expect.objectContaining({
+        id: expect.stringContaining('helping-hand'),
+        kind: MOVE_VFX_KIND.status,
+        moveName: 'Helping Hand',
+        userId: 'user-token',
+        createdAtMs: 11000,
+        targetId: 'target-token',
+        targetCell: { x: 2, y: 0, z: 0 },
+        conditionNames: ['Helping Hand'],
+      }),
+    ])
+    expect(events.every((event) => event.startOffsetMs == null)).toBe(true)
     expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Helping Hand', scriptKind: 'explicit' }])
   })
 
