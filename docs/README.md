@@ -63,4 +63,5 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Map v2](maps-v2.md) — current map document shape and render layers.
 - [Move automation requirements](move-automation-requirements.md) — design notes for map move automation coverage.
 - [Move animations implementation brief](move-animations.md) — user-facing release note, disable/reduced-motion controls, scope, UX, visual-only boundaries, and expected source areas for the basic move VFX layer.
+- [Move animation manual QA checklist](move-animation-manual-qa.md) — repeatable browser review scenarios for hits, misses, crits, self/healing/status/buff/area/pass effects, reduced motion, disabled animations, lifecycle, persistence, and blocker/polish classification.
 - [Pokémon size outliers](pokemon-size-outliers.md) — data notes for sprite/map scale edge cases.

@@ -841,6 +841,10 @@ This brief changes only documentation. As the feature tickets land, the first im
 
 The exact file list may evolve as implementation details are discovered, but product changes should stay in the Rotom Table repository and should not introduce autonomous build-controller files.
 
+## Manual QA checklist
+
+The repeatable human review plan for the playable basic move-animation build lives in [Move animation manual QA checklist](move-animation-manual-qa.md). Run it after the automated `npm run typecheck`, `npm test`, and `npm run build` checks, and record blockers separately from polish follow-up issues.
+
 ## Follow-up documents and decisions
 
 This brief now records the initial scope, visual style guardrails, and technical non-regression rules. Later tickets should refine it with:
@@ -848,4 +852,4 @@ This brief now records the initial scope, visual style guardrails, and technical
 - any future ADR that reopens the dependency-free decision for bespoke per-move animation work;
 - final implemented API details once types, planner, renderer, and settings exist;
 - timing, colour, render-order, and reduced-motion adjustments discovered during playable review;
-- a manual QA checklist and future bespoke per-move animation backlog.
+- a future bespoke per-move animation backlog.
