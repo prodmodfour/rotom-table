@@ -1,5 +1,6 @@
 export const HOME_PATH = '/'
 export const LOGIN_PATH = '/login'
+export const CAMPAIGN_PATH = '/campaign'
 export const SETTINGS_PATH = '/settings'
 export const SESSION_LOBBY_PATH = '/sessions'
 export const SESSION_LOBBY_GM_SECTION_ID = 'gm-lobby-title'
@@ -17,6 +18,8 @@ const SESSION_LOBBY_SECTION_IDS: Record<SessionLobbySection, string> = {
 export const homePath = (): typeof HOME_PATH => HOME_PATH
 
 export const loginPath = (): typeof LOGIN_PATH => LOGIN_PATH
+
+export const campaignPath = (): typeof CAMPAIGN_PATH => CAMPAIGN_PATH
 
 export const settingsPath = (): typeof SETTINGS_PATH => SETTINGS_PATH
 
