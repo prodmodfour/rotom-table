@@ -37,7 +37,9 @@ const FRONT_MIRRORED_VIEW: WorldSpriteFacingView = { asset: 'front', mirrorX: tr
 const BACK_MIRRORED_VIEW: WorldSpriteFacingView = { asset: 'back', mirrorX: true }
 // Split the camera circle into four 90° sectors. The side sectors reuse
 // the available front/back art mirrored horizontally to approximate the
-// missing left/right three-quarter views.
+// missing left/right three-quarter views. Keep the side sectors ordered so
+// rotating a default-camera-facing token visually progresses through:
+// front -> mirrored front -> back -> mirrored back.
 const DIAGONAL_VIEW_THRESHOLD = Math.SQRT1_2
 
 const DIAGONAL_VIEW_THRESHOLD_EPSILON = 1e-9
@@ -98,7 +100,7 @@ export const resolveWorldSpriteFacing = ({
   if (dot < -DIAGONAL_VIEW_THRESHOLD - DIAGONAL_VIEW_THRESHOLD_EPSILON) return BACK_VIEW
 
   const cross = facing.x * camera.y - facing.y * camera.x
-  return cross < 0 ? FRONT_MIRRORED_VIEW : BACK_MIRRORED_VIEW
+  return cross > 0 ? FRONT_MIRRORED_VIEW : BACK_MIRRORED_VIEW
 }
 
 export const worldSpriteMirrorXForAvailableAsset = (

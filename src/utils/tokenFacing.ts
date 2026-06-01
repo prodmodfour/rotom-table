@@ -3,10 +3,9 @@ import type { TokenFacingDirection } from '~/types/tokenFacing'
 
 export const DEFAULT_TOKEN_FACING_DIRECTION: TokenFacingDirection = 'south-east'
 
-// Isometric diagonals in 90° rotation order. Front art maps to
-// south-east, back art maps to north-west; the other two directions
-// are rendered by mirroring. The first rotation uses back art so the
-// control gives visible feedback even for mostly-symmetric front sprites.
+// Isometric diagonals in 90° rotation order. From the default camera,
+// these resolve visually as front, mirrored front, back, then mirrored
+// back so the rotate control follows the camera-facing sprite order.
 export const TOKEN_FACING_DIRECTIONS = [
   'south-east',
   'north-east',

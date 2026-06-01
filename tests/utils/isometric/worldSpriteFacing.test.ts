@@ -4,6 +4,7 @@ import {
   shouldUseFrontWorldSprite,
   worldSpriteMirrorXForAvailableAsset,
 } from '~/utils/isometric/worldSpriteFacing'
+import { TOKEN_FACING_DIRECTIONS, tokenFacingVector } from '~/utils/tokenFacing'
 
 describe('world sprite facing helpers', () => {
   it('uses the unmirrored front sprite when camera data is unavailable or coincident', () => {
@@ -56,12 +57,12 @@ describe('world sprite facing helpers', () => {
       center,
       facingDirection,
       cameraPosition: { x: 5, z: 0 },
-    })).toEqual({ asset: 'front', mirrorX: true })
+    })).toEqual({ asset: 'back', mirrorX: true })
     expect(resolveWorldSpriteFacing({
       center,
       facingDirection,
       cameraPosition: { x: -5, z: 0 },
-    })).toEqual({ asset: 'back', mirrorX: true })
+    })).toEqual({ asset: 'front', mirrorX: true })
   })
 
   it('keeps adjacent diagonal facings distinct on exact sector boundaries', () => {
@@ -72,12 +73,28 @@ describe('world sprite facing helpers', () => {
       center,
       facingDirection: { x: Math.SQRT1_2, y: Math.SQRT1_2 },
       toCameraDirection: eastCameraDirection,
-    })).toEqual({ asset: 'front', mirrorX: true })
+    })).toEqual({ asset: 'back', mirrorX: true })
     expect(resolveWorldSpriteFacing({
       center,
       facingDirection: { x: Math.SQRT1_2, y: -Math.SQRT1_2 },
       toCameraDirection: eastCameraDirection,
-    })).toEqual({ asset: 'back', mirrorX: true })
+    })).toEqual({ asset: 'front', mirrorX: true })
+  })
+
+  it('orders the four token facings relative to the default camera', () => {
+    const center = { x: 0, z: 0 }
+    const defaultCameraDirection = { x: 1, z: 1 }
+
+    expect(TOKEN_FACING_DIRECTIONS.map((facing) => resolveWorldSpriteFacing({
+      center,
+      facingDirection: tokenFacingVector(facing),
+      toCameraDirection: defaultCameraDirection,
+    }))).toEqual([
+      { asset: 'front', mirrorX: false },
+      { asset: 'front', mirrorX: true },
+      { asset: 'back', mirrorX: false },
+      { asset: 'back', mirrorX: true },
+    ])
   })
 
   it('flips the facing direction for legacy turned tokens', () => {
@@ -124,6 +141,6 @@ describe('world sprite facing helpers', () => {
       center,
       facingDirection,
       cameraPosition: { x: 9, z: 11 },
-    })).toBe(false)
+    })).toBe(true)
   })
 })
