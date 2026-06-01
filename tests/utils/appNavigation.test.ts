@@ -5,7 +5,7 @@ import {
   filterAppNavItems,
   isAppNavItemActive,
 } from '~/utils/appNavigation'
-import { GM_PATH, LOGIN_PATH } from '~/utils/appRoutes'
+import { LOGIN_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import {
@@ -26,12 +26,12 @@ describe('app navigation helpers', () => {
       '/maps',
       '/pokedex',
       '/sheets',
-      GM_PATH,
+      SETTINGS_PATH,
       PLAYER_PROFILE_MANAGEMENT_PATH,
       '/generate',
     ])
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).some((item) => item.path === '/sessions')).toBe(false)
-    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === GM_PATH)?.label).toBe('GM')
+    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === SETTINGS_PATH)?.label).toBe('Settings')
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === PLAYER_PROFILE_MANAGEMENT_PATH)?.label).toBe('Players')
     expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
       '/moves',
@@ -58,9 +58,9 @@ describe('app navigation helpers', () => {
   it('uses exact matching for the home route and prefix matching otherwise', () => {
     expect(isAppNavItemActive('/', '/')).toBe(true)
     expect(isAppNavItemActive('/maps', '/')).toBe(false)
-    expect(isAppNavItemActive('/gm', GM_PATH)).toBe(true)
-    expect(isAppNavItemActive('/gm/campaign', GM_PATH)).toBe(true)
-    expect(isAppNavItemActive('/gm-tools', GM_PATH)).toBe(false)
+    expect(isAppNavItemActive('/settings', SETTINGS_PATH)).toBe(true)
+    expect(isAppNavItemActive('/settings/campaign', SETTINGS_PATH)).toBe(true)
+    expect(isAppNavItemActive('/settings-tools', SETTINGS_PATH)).toBe(false)
     expect(isAppNavItemActive('/players', '/players')).toBe(true)
     expect(isAppNavItemActive('/players/profile_ash00000', '/players')).toBe(true)
     expect(isAppNavItemActive('/moves/tackle', '/moves')).toBe(true)

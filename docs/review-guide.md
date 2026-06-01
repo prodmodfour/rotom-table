@@ -17,6 +17,7 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 | Route | Why it matters |
 | --- | --- |
 | `/login` | Shows the trust-based GM/Player role picker and player profile selection flow. |
+| `/settings` | GM-only settings and local campaign folder controls. |
 | `/players` | GM-only profile list plus Pokémon/trainer sheet link management. |
 | `/maps` | Local map library and folder management. |
 | `/maps/:slug` | Main isometric table, terrain editing, token placement, initiative, field effects, and automation controls. |

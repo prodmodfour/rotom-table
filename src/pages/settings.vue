@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
 
-useHead({ title: 'GM · Rotom Table' })
+useHead({ title: 'Settings · Rotom Table' })
 
 definePageMeta({
   middleware: () => {
@@ -40,13 +40,13 @@ const handleCampaignFolderSelection = (event: Event) => {
 </script>
 
 <template>
-  <main class="gm-page">
+  <main class="settings-page">
     <AppNavigation />
 
-    <section class="gm-panel panel-card" aria-labelledby="gm-page-title">
+    <section class="settings-panel panel-card" aria-labelledby="settings-page-title">
       <div>
-        <p class="eyebrow">GM tools</p>
-        <h1 id="gm-page-title">GM</h1>
+        <p class="eyebrow">Settings</p>
+        <h1 id="settings-page-title">Settings</h1>
       </div>
 
       <button
@@ -75,7 +75,7 @@ const handleCampaignFolderSelection = (event: Event) => {
 </template>
 
 <style scoped>
-.gm-page {
+.settings-page {
   min-height: 100vh;
   display: grid;
   align-content: start;
@@ -86,7 +86,7 @@ const handleCampaignFolderSelection = (event: Event) => {
     var(--paper);
 }
 
-.gm-panel {
+.settings-panel {
   display: grid;
   gap: 1rem;
   justify-items: start;

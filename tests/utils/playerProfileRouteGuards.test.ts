@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GM_PATH, LOGIN_PATH, SESSION_LOBBY_PATH } from '~/utils/appRoutes'
+import { LOGIN_PATH, SESSION_LOBBY_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_GENERATOR_PATH } from '~/utils/encounterRoutes'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
@@ -112,8 +112,8 @@ describe('player profile-aware route guards', () => {
   it('keeps GM-only routes blocked for players regardless of selected profile state', () => {
     for (const hasSelectedPlayerProfile of [false, true]) {
       expect(resolveProfileAwareRouteGuard({
-        path: GM_PATH,
-        fullPath: GM_PATH,
+        path: SETTINGS_PATH,
+        fullPath: SETTINGS_PATH,
         hasRole: true,
         isPlayer: true,
         hasSelectedPlayerProfile,

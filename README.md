@@ -95,6 +95,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | `/` | Redirects to the map library. |
 | `/login` | Choose the local GM role or select a GM-created persistent player profile for Player Login. |
 | `/sessions` | Direct-only legacy live-session identity/socket lobby for maintenance smoke checks; not linked from normal app navigation or required for profile-based play. |
+| `/settings` | GM-only campaign settings and local campaign folder controls. |
 | `/players` | GM-only player profile list plus Pokémon/trainer sheet link and unlink management. |
 | `/maps` | Map library and folders; players see player-visible maps only. |
 | `/maps/:slug` | Map editor/table view with profile-linked player token control. |
@@ -170,7 +171,7 @@ The `/generate` page rolls from those tables and can either preview generated sh
 
 Rotom Table currently uses a trust-based role picker, not password authentication:
 
-- **GM** — full map, sheet, encounter, and control-panel access.
+- **GM** — full map, sheet, encounter, and settings access.
 - **Player** — player-facing view with player-visible maps, public/linked sheets, Pokédex, reference pages, and linked-character token control.
 - **Guest** — redirected to `/login`.
 

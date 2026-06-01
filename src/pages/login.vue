@@ -91,7 +91,7 @@ onMounted(() => {
       <div class="login-actions" role="group" aria-label="Login options">
         <button type="button" class="login-button login-button--gm" @click="chooseGmLogin">
           <span>GM Login</span>
-          <small>Full map, sheet, encounter, and control-panel access</small>
+          <small>Full map, sheet, encounter, and settings access</small>
         </button>
         <button
           type="button"

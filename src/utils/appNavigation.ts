@@ -1,4 +1,4 @@
-import { GM_PATH, HOME_PATH, isGmPath, isHomePath } from '~/utils/appRoutes'
+import { HOME_PATH, SETTINGS_PATH, isHomePath, isSettingsPath } from '~/utils/appRoutes'
 import { ENCOUNTER_GENERATOR_PATH, ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { isLegacyGridPath } from '~/utils/legacyGridRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
@@ -17,7 +17,7 @@ export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: MAP_LIBRARY_PATH, label: 'Maps' },
   { path: POKEDEX_PATH, label: 'Pokédex' },
   { path: SHEET_LIBRARY_PATH, label: 'Sheets' },
-  { path: GM_PATH, label: 'GM', gmOnly: true },
+  { path: SETTINGS_PATH, label: 'Settings', gmOnly: true },
   { path: PLAYER_PROFILE_MANAGEMENT_PATH, label: 'Players', gmOnly: true },
   { path: ENCOUNTER_GENERATOR_PATH, label: 'Generate', gmOnly: true },
 ]
@@ -49,7 +49,7 @@ export const isAppNavItemActive = (currentPath: string, itemPath: string): boole
     )
   }
 
-  if (itemPath === GM_PATH) return isGmPath(currentPath)
+  if (itemPath === SETTINGS_PATH) return isSettingsPath(currentPath)
 
   if (itemPath === HOME_PATH) return isHomePath(currentPath)
 
