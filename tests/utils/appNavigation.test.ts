@@ -5,7 +5,7 @@ import {
   filterAppNavItems,
   isAppNavItemActive,
 } from '~/utils/appNavigation'
-import { LOGIN_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
+import { CAMPAIGN_PATH, LOGIN_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import {
@@ -18,12 +18,14 @@ describe('app navigation helpers', () => {
   it('filters GM-only nav items while keeping normal player navigation available', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
       '/maps',
+      CAMPAIGN_PATH,
       '/pokedex',
       '/sheets',
     ])
     expect(PRIMARY_APP_NAV_ITEMS.some((item) => item.path === '/sessions')).toBe(false)
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).map((item) => item.path)).toEqual([
       '/maps',
+      CAMPAIGN_PATH,
       '/pokedex',
       '/sheets',
       SETTINGS_PATH,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CAMPAIGN_PATH,
   GM_ONLY_PATH_PREFIXES,
   HOME_PATH,
   LOGIN_PATH,
@@ -8,6 +9,7 @@ import {
   SESSION_LOBBY_PLAYER_SECTION_ID,
   SESSION_LOBBY_REMEMBERED_SECTION_ID,
   SETTINGS_PATH,
+  campaignPath,
   homePath,
   isHomePath,
   isSettingsPath,
@@ -21,11 +23,13 @@ import {
 } from '~/utils/appRoutes'
 
 describe('app route helpers', () => {
-  it('exposes canonical home, login, settings, and session lobby routes', () => {
+  it('exposes canonical home, login, campaign, settings, and session lobby routes', () => {
     expect(HOME_PATH).toBe('/')
     expect(homePath()).toBe('/')
     expect(LOGIN_PATH).toBe('/login')
     expect(loginPath()).toBe('/login')
+    expect(CAMPAIGN_PATH).toBe('/campaign')
+    expect(campaignPath()).toBe('/campaign')
     expect(SETTINGS_PATH).toBe('/settings')
     expect(settingsPath()).toBe('/settings')
     expect(GM_ONLY_PATH_PREFIXES).toEqual(['/settings'])
