@@ -43,10 +43,9 @@ const handleCampaignFolderSelection = (event: Event) => {
   <main class="settings-page">
     <AppNavigation />
 
-    <section class="settings-panel panel-card" aria-labelledby="settings-page-title">
+    <section class="settings-panel panel-card" aria-label="Settings">
       <div>
         <p class="eyebrow">Settings</p>
-        <h1 id="settings-page-title">Settings</h1>
       </div>
 
       <button
@@ -99,13 +98,6 @@ const handleCampaignFolderSelection = (event: Event) => {
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-}
-
-h1 {
-  margin: 0;
-  color: var(--ink-bright);
-  font-family: var(--font-book);
-  font-size: clamp(2.2rem, 7vw, 3.6rem);
 }
 
 .campaign-folder-button {
