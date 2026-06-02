@@ -18,6 +18,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
+type MaybePromise<T> = T | Promise<T>
 
 export interface ManeuverActionEvent {
   userId: string
@@ -29,7 +30,7 @@ export interface UseManeuverActionPanelOptions {
   spawnedPokemon: ComputedRef<SpawnedPokemon[]>
   trainerBySlug: SheetMapRef<TrainerSheet>
   canControlPlacement: (id: string) => boolean
-  onBeforeManeuverAction?: (event: ManeuverActionEvent) => void
+  onBeforeManeuverAction?: (event: ManeuverActionEvent) => MaybePromise<unknown>
   dispatchManeuverUse?: (event: ManeuverActionEvent & { targetTokenId?: string }) => boolean | undefined
   now?: () => number
   maxLogEntries?: number
@@ -53,6 +54,12 @@ const rangeImpliesTarget = (range: string | null | undefined): boolean => {
 
 const maneuverTargetLabel = (maneuver: TokenManeuverMenuOption): string | null =>
   rangeImpliesTarget(maneuver.range) ? maneuver.range : null
+
+const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => (
+  value !== null
+  && (typeof value === 'object' || typeof value === 'function')
+  && typeof (value as { then?: unknown }).then === 'function'
+)
 
 export const useManeuverActionPanel = ({
   map,
@@ -126,14 +133,13 @@ export const useManeuverActionPanel = ({
     }
   })
 
-  const performManeuverUse = (
+  const finishManeuverUse = (
     user: SpawnedPokemon,
     maneuver: TokenManeuverMenuOption,
     target: SpawnedPokemon | null = null,
   ): boolean => {
     if (!map.value || !canControlPlacement(user.id)) return false
 
-    onBeforeManeuverAction?.({ userId: user.id, maneuverName: maneuver.name })
     const dispatchResult = dispatchManeuverUse?.({
       userId: user.id,
       maneuverName: maneuver.name,
@@ -153,7 +159,22 @@ export const useManeuverActionPanel = ({
     return true
   }
 
-  const useManeuver = (input: { id: string; maneuverName?: string | null }): boolean => {
+  const performManeuverUse = (
+    user: SpawnedPokemon,
+    maneuver: TokenManeuverMenuOption,
+    target: SpawnedPokemon | null = null,
+  ): MaybePromise<boolean> => {
+    if (!map.value || !canControlPlacement(user.id)) return false
+
+    const notification = onBeforeManeuverAction?.({ userId: user.id, maneuverName: maneuver.name })
+    if (isPromiseLike(notification)) {
+      return Promise.resolve(notification).then(() => finishManeuverUse(user, maneuver, target))
+    }
+
+    return finishManeuverUse(user, maneuver, target)
+  }
+
+  const useManeuver = (input: { id: string; maneuverName?: string | null }): MaybePromise<boolean> => {
     if (!map.value || !canControlPlacement(input.id)) return false
     const maneuverName = input.maneuverName?.trim()
     if (!maneuverName) return false
@@ -182,7 +203,7 @@ export const useManeuverActionPanel = ({
     activeManeuverTargeting.value = null
   }
 
-  const selectManeuverActionTarget = (targetId: string): boolean => {
+  const selectManeuverActionTarget = (targetId: string): MaybePromise<boolean> => {
     const request = activeManeuverTargeting.value
     const overlay = maneuverActionTargeting.value
     if (!request || !overlay?.candidateIds.includes(targetId)) return false

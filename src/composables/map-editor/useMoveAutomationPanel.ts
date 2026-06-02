@@ -156,7 +156,7 @@ export interface UseMoveAutomationPanelOptions {
    */
   enqueueMoveAnimations?: MoveAnimationEnqueueHandler
   onBeforeNonImmediateAction?: (event: MoveAutomationNonImmediateActionEvent) => void
-  onMoveUse?: (event: MoveAutomationActionUseEvent) => void
+  onMoveUse?: (event: MoveAutomationActionUseEvent) => MaybePromise<unknown>
   onRangedAttackOfOpportunity?: (event: MoveAutomationRangedAttackOfOpportunityEvent) => void
   now?: () => number
   maxLogEntries?: number
@@ -618,9 +618,14 @@ export const useMoveAutomationPanel = ({
     onBeforeNonImmediateAction?.({ userId: request.userId, moveName: request.moveName })
   }
 
-  const notifyMoveUse = (request: Pick<ActiveMoveTargetingRequest, 'userId' | 'moveName'>) => {
+  const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => (
+    value !== null
+    && (typeof value === 'object' || typeof value === 'function')
+    && typeof (value as { then?: unknown }).then === 'function'
+  )
+
+  const notifyMoveUse = (request: Pick<ActiveMoveTargetingRequest, 'userId' | 'moveName'>): MaybePromise<unknown> =>
     onMoveUse?.({ userId: request.userId, moveName: request.moveName })
-  }
 
   const notifyRangedAttackOfOpportunity = (
     request: ActiveMoveTargetingRequest,
@@ -874,7 +879,9 @@ export const useMoveAutomationPanel = ({
         if (!canContinueMoveAutomationForUser(id)) return
         const recorded = await recordMoveUseIfTracked({ placementId: id, moveName: script.moveName }, frequency)
         if (!recorded || !canContinueMoveAutomationForUser(id)) return
-        notifyMoveUse({ userId: id, moveName: script.moveName })
+        const notification = notifyMoveUse({ userId: id, moveName: script.moveName })
+        if (isPromiseLike(notification)) await notification
+        if (!canContinueMoveAutomationForUser(id)) return
         notifyMoveActionTaken({
           kind: 'single-target',
           userId: id,
@@ -1268,7 +1275,10 @@ export const useMoveAutomationPanel = ({
     if (!recorded || !canContinueMoveAutomationForUser(request.userId)) return false
     if (options.requireActiveTargeting && !moveTargetingRequestIsStillActive(request)) return false
 
-    notifyMoveUse(request)
+    activeMoveTargeting.value = null
+    const notification = notifyMoveUse(request)
+    if (isPromiseLike(notification)) await notification
+    if (!canContinueMoveAutomationForUser(request.userId)) return false
 
     if (!options.skipActionNotifications) {
       notifyMoveActionTaken(request)
@@ -1287,7 +1297,6 @@ export const useMoveAutomationPanel = ({
         conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
       })
       prependTransactionLogLine(transaction, options.logLine)
-      activeMoveTargeting.value = null
       planAndEnqueueConfirmedSingleTargetMoveAnimations({
         script: request.script,
         user,
@@ -1307,7 +1316,6 @@ export const useMoveAutomationPanel = ({
       conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
     prependTransactionLogLine(result.transaction, options.logLine)
-    activeMoveTargeting.value = null
     planAndEnqueueSingleTargetMoveAnimations({
       script: request.script,
       user,
@@ -1397,7 +1405,10 @@ export const useMoveAutomationPanel = ({
     )
     if (!recorded || !canContinueMoveAutomationForUser(request.userId)) return
     if (!moveTargetingRequestIsStillActive(request)) return
-    notifyMoveUse(request)
+    activeMoveTargeting.value = null
+    const notification = notifyMoveUse(request)
+    if (isPromiseLike(notification)) await notification
+    if (!canContinueMoveAutomationForUser(request.userId)) return
     notifyMoveActionTaken(request)
     const selectedTargetIds = selectedAreaTargetIds(request)
     const targetSet = new Set(selectedTargetIds)
@@ -1415,7 +1426,6 @@ export const useMoveAutomationPanel = ({
     })
     const destinationLogLine = passDestinationLogLine(user, request.passDestination)
     if (destinationLogLine) transaction.logLines.push(destinationLogLine)
-    activeMoveTargeting.value = null
     planAndEnqueueAreaMoveAnimations({
       script: request.script,
       user,

@@ -51,7 +51,7 @@ export interface UseAbilityAutomationPanelOptions {
   modifyCombatStages: SheetUpdateHandler<MoveAutomationCombatStageUpdate>
   modifyConditions: SheetUpdateHandler<MoveAutomationConditionUpdate>
   modifyAbilityActivation: SheetUpdateHandler<AbilitySheetActivationUpdate>
-  onBeforeNonImmediateAction?: (event: { userId: string; abilityName: string }) => void
+  onBeforeNonImmediateAction?: (event: { userId: string; abilityName: string }) => MaybePromise<unknown>
   dispatchAbilityUse?: (event: { userId: string; abilityName: string; targetTokenId?: string }) => boolean | undefined
   now?: () => number
   maxLogEntries?: number
@@ -138,9 +138,25 @@ export const useAbilityAutomationPanel = ({
     })
   }
 
-  const applyAbilityAutomationTransaction = async (transaction: AbilityAutomationTransaction) => {
+  const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => (
+    value !== null
+    && (typeof value === 'object' || typeof value === 'function')
+    && typeof (value as { then?: unknown }).then === 'function'
+  )
+
+  const notifyAbilityAction = (event: { userId: string; abilityName: string }): MaybePromise<unknown> =>
+    onBeforeNonImmediateAction?.(event)
+
+  const applyAbilityAutomationTransaction = async (
+    transaction: AbilityAutomationTransaction,
+    options: { skipActionNotification?: boolean } = {},
+  ) => {
     if (!map.value || !canControlPlacement(transaction.userId)) return
-    onBeforeNonImmediateAction?.({ userId: transaction.userId, abilityName: transaction.abilityName })
+    if (!options.skipActionNotification) {
+      const notification = notifyAbilityAction({ userId: transaction.userId, abilityName: transaction.abilityName })
+      if (isPromiseLike(notification)) await notification
+      if (!map.value || !canControlPlacement(transaction.userId)) return
+    }
     for (const update of transaction.combatStageUpdates) {
       await modifyCombatStages(update, { allowAnyTarget: true })
     }
@@ -154,7 +170,10 @@ export const useAbilityAutomationPanel = ({
     user: SpawnedPokemon,
     option: TokenAbilityMenuOption,
   ) => {
-    onBeforeNonImmediateAction?.({ userId: user.id, abilityName: option.name })
+    const notification = notifyAbilityAction({ userId: user.id, abilityName: option.name })
+    if (isPromiseLike(notification)) await notification
+    if (!map.value || !canControlPlacement(user.id)) return
+
     const dispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: option.name })
     if (dispatchResult !== undefined) return
 
@@ -178,10 +197,15 @@ export const useAbilityAutomationPanel = ({
     user: SpawnedPokemon,
     option: TokenAbilityMenuOption,
   ) => {
-    const dispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: option.name })
-    if (dispatchResult !== undefined) {
-      onBeforeNonImmediateAction?.({ userId: user.id, abilityName: option.name })
-      return
+    let actionNotified = false
+    if (dispatchAbilityUse) {
+      const notification = notifyAbilityAction({ userId: user.id, abilityName: option.name })
+      if (isPromiseLike(notification)) await notification
+      actionNotified = true
+      if (!map.value || !canControlPlacement(user.id)) return
+
+      const dispatchResult = dispatchAbilityUse({ userId: user.id, abilityName: option.name })
+      if (dispatchResult !== undefined) return
     }
 
     const transaction = resolveMapAbilityAutomationTransaction({
@@ -189,7 +213,7 @@ export const useAbilityAutomationPanel = ({
       user,
       fieldEffects: map.value?.fieldEffects,
     })
-    if (transaction) await applyAbilityAutomationTransaction(transaction)
+    if (transaction) await applyAbilityAutomationTransaction(transaction, { skipActionNotification: actionNotified })
   }
 
   const beginMapAbilityTargeting = (
@@ -246,10 +270,15 @@ export const useAbilityAutomationPanel = ({
     if (!user || !target) return
 
     activeAbilityTargeting.value = null
-    const dispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: request.abilityName, targetTokenId: target.id })
-    if (dispatchResult !== undefined) {
-      onBeforeNonImmediateAction?.({ userId: user.id, abilityName: request.abilityName })
-      return
+    let actionNotified = false
+    if (dispatchAbilityUse) {
+      const notification = notifyAbilityAction({ userId: user.id, abilityName: request.abilityName })
+      if (isPromiseLike(notification)) await notification
+      actionNotified = true
+      if (!map.value || !canControlPlacement(user.id)) return
+
+      const dispatchResult = dispatchAbilityUse({ userId: user.id, abilityName: request.abilityName, targetTokenId: target.id })
+      if (dispatchResult !== undefined) return
     }
 
     const transaction = resolveMapAbilityAutomationTransaction({
@@ -260,7 +289,7 @@ export const useAbilityAutomationPanel = ({
     })
     if (!transaction) return
 
-    await applyAbilityAutomationTransaction(transaction)
+    await applyAbilityAutomationTransaction(transaction, { skipActionNotification: actionNotified })
   }
 
   return {

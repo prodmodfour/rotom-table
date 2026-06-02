@@ -185,16 +185,16 @@ export const useTokenControls = ({
     clearSelection()
   }
 
-  const sendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): boolean => {
-    if (!map.value || !canSendOutTokens.value || !canControlPlacement(payload.trainerId)) return false
+  const sendOutPokemonContext = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }) => {
+    if (!map.value || !canSendOutTokens.value || !canControlPlacement(payload.trainerId)) return null
 
     const trainerPlacement = placementById(payload.trainerId)
-    if (trainerPlacement?.sheetKind !== 'trainer') return false
+    if (trainerPlacement?.sheetKind !== 'trainer') return null
 
     const trainer = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.trainerId)
     const option = tokenSendOutOptionsById.value[payload.trainerId]
       ?.find((entry) => entry.pokemonSlug === payload.pokemonSlug)
-    if (!trainer || !option) return false
+    if (!trainer || !option) return null
 
     const occupiedKeys = buildMapOccupancy({
       voxels: mapVoxels.value,
@@ -206,13 +206,22 @@ export const useTokenControls = ({
       map.value.dimensions,
       null,
       occupiedKeys,
-    )) return false
+    )) return null
     if (!isSendOutPositionWithinThrowRange({
       trainer,
       pokemon: option.preview,
       position: payload.position,
       range: POKEBALL_THROW_RANGE_SQUARES,
-    })) return false
+    })) return null
+
+    return { trainer, option }
+  }
+
+  const canSendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): boolean =>
+    sendOutPokemonContext(payload) !== null
+
+  const sendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): boolean => {
+    if (!map.value || !sendOutPokemonContext(payload)) return false
 
     map.value.placements.push({
       id: createPlacementId(),
@@ -293,6 +302,7 @@ export const useTokenControls = ({
     controllablePlacementIds,
     tokenSendOutOptionsById,
     canControlPlacement,
+    canSendOutPokemon,
     placementById,
     resetPreview,
     clearSelection,

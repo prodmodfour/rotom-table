@@ -65,7 +65,7 @@ const splashStyle = computed(() => ({
   z-index: 12050;
   display: grid;
   place-items: center;
-  pointer-events: none;
+  pointer-events: auto;
   overflow: hidden;
   color: white;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.72), 0 0 18px rgba(0, 0, 0, 0.58);

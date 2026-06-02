@@ -21,6 +21,7 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
+type MaybePromise<T> = T | Promise<T>
 
 export interface OrderActionEvent {
   userId: string
@@ -32,7 +33,7 @@ export interface UseOrderActionPanelOptions {
   spawnedPokemon: ComputedRef<SpawnedPokemon[]>
   trainerBySlug: SheetMapRef<TrainerSheet>
   canControlPlacement: (id: string) => boolean
-  onBeforeOrderAction?: (event: OrderActionEvent) => void
+  onBeforeOrderAction?: (event: OrderActionEvent) => MaybePromise<unknown>
   dispatchOrderUse?: (event: OrderActionEvent & { targetTokenId?: string }) => boolean | undefined
   now?: () => number
   idFactory?: () => string
@@ -66,6 +67,12 @@ const isPokemonTargetLabel = (label: string, order: TokenOrderMenuOption): boole
 
 const trainerTeamSlugs = (trainer: TrainerSheet | null | undefined): Set<string> =>
   new Set((trainer?.currentTeam ?? []).map((slug) => slug.trim()).filter(Boolean))
+
+const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => (
+  value !== null
+  && (typeof value === 'object' || typeof value === 'function')
+  && typeof (value as { then?: unknown }).then === 'function'
+)
 
 export const useOrderActionPanel = ({
   map,
@@ -156,14 +163,13 @@ export const useOrderActionPanel = ({
     }
   })
 
-  const performOrderUse = (
+  const finishOrderUse = (
     user: SpawnedPokemon,
     order: TokenOrderMenuOption,
     target: SpawnedPokemon | null = null,
   ): boolean => {
     if (!map.value || !canControlPlacement(user.id)) return false
 
-    onBeforeOrderAction?.({ userId: user.id, orderName: order.name })
     const dispatchResult = dispatchOrderUse?.({
       userId: user.id,
       orderName: order.name,
@@ -194,7 +200,22 @@ export const useOrderActionPanel = ({
     return true
   }
 
-  const useOrder = (input: { id: string; orderName?: string | null }): boolean => {
+  const performOrderUse = (
+    user: SpawnedPokemon,
+    order: TokenOrderMenuOption,
+    target: SpawnedPokemon | null = null,
+  ): MaybePromise<boolean> => {
+    if (!map.value || !canControlPlacement(user.id)) return false
+
+    const notification = onBeforeOrderAction?.({ userId: user.id, orderName: order.name })
+    if (isPromiseLike(notification)) {
+      return Promise.resolve(notification).then(() => finishOrderUse(user, order, target))
+    }
+
+    return finishOrderUse(user, order, target)
+  }
+
+  const useOrder = (input: { id: string; orderName?: string | null }): MaybePromise<boolean> => {
     if (!map.value || !canControlPlacement(input.id)) return false
     const orderName = input.orderName?.trim()
     if (!orderName) return false
@@ -222,7 +243,7 @@ export const useOrderActionPanel = ({
     activeOrderTargeting.value = null
   }
 
-  const selectOrderActionTarget = (targetId: string): boolean => {
+  const selectOrderActionTarget = (targetId: string): MaybePromise<boolean> => {
     const request = activeOrderTargeting.value
     const overlay = orderActionTargeting.value
     if (!request || !overlay?.candidateIds.includes(targetId)) return false

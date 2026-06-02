@@ -141,6 +141,7 @@ const visibleMoveAnimations = computed(() => (
 ))
 
 const ACTION_SPLASH_DURATION_MS = 1850
+const ACTION_SPLASH_LEAD_IN_MS = ACTION_SPLASH_DURATION_MS
 const actionSplash = ref<MapActionSplashState | null>(null)
 let actionSplashSequence = 0
 let actionSplashTimer: ReturnType<typeof setTimeout> | null = null
@@ -259,6 +260,7 @@ const {
   controllablePlacementIds,
   tokenSendOutOptionsById,
   canControlPlacement,
+  canSendOutPokemon,
   placementById,
   clearSelection,
   updatePreview,
@@ -282,12 +284,12 @@ const {
   },
 })
 
-const showActionSplash = (event: { userId: string; actionName: string; verb?: string }) => {
+const showActionSplash = (event: { userId: string; actionName: string; verb?: string }): Promise<void> => {
   const actionName = event.actionName.trim()
-  if (!actionName) return
+  if (!actionName) return Promise.resolve()
 
   const actor = spawnedPokemon.value.find((pokemon) => pokemon.id === event.userId)
-  if (!actor) return
+  if (!actor) return Promise.resolve()
 
   const id = ++actionSplashSequence
   actionSplash.value = {
@@ -305,6 +307,10 @@ const showActionSplash = (event: { userId: string; actionName: string; verb?: st
     if (actionSplash.value?.id === id) actionSplash.value = null
     actionSplashTimer = null
   }, ACTION_SPLASH_DURATION_MS)
+
+  return new Promise((resolve) => {
+    setTimeout(resolve, Math.min(ACTION_SPLASH_LEAD_IN_MS, ACTION_SPLASH_DURATION_MS))
+  })
 }
 
 const enqueueMoveVfxDebugPreview = (kind: MoveVfxKind | 'all') => {
@@ -616,17 +622,19 @@ const removeVoxelFromScene: typeof removeVoxel = (cell) => {
 }
 
 const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {
+  if (!canSendOutPokemon(payload)) return false
+
   const option = tokenSendOutOptionsById.value[payload.trainerId]
     ?.find((entry) => entry.pokemonSlug === payload.pokemonSlug)
-  const sentOut = sendOutPokemon(payload)
-  if (sentOut) {
-    showActionSplash({
+  void (async () => {
+    await showActionSplash({
       userId: payload.trainerId,
       actionName: option?.label ?? payload.pokemonSlug,
       verb: 'sends out',
     })
-  }
-  return sentOut
+    sendOutPokemon(payload)
+  })()
+  return true
 }
 
 const {
@@ -668,9 +676,7 @@ const {
   placeHazard: placeHazardFromScene,
   recordMoveUsage,
   enqueueMoveAnimations,
-  onMoveUse: (event) => {
-    showActionSplash({ userId: event.userId, actionName: event.moveName })
-  },
+  onMoveUse: (event) => showActionSplash({ userId: event.userId, actionName: event.moveName }),
   onBeforeNonImmediateAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
@@ -723,8 +729,8 @@ const {
     return true
   },
   onBeforeNonImmediateAction: (event) => {
-    showActionSplash({ userId: event.userId, actionName: event.abilityName })
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+    return showActionSplash({ userId: event.userId, actionName: event.abilityName })
   },
 })
 
@@ -749,8 +755,8 @@ const {
     return true
   },
   onBeforeManeuverAction: (event) => {
-    showActionSplash({ userId: event.userId, actionName: event.maneuverName })
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+    return showActionSplash({ userId: event.userId, actionName: event.maneuverName })
   },
 })
 
@@ -769,8 +775,8 @@ const orderActionPanel = useOrderActionPanel({
     return true
   },
   onBeforeOrderAction: (event) => {
-    showActionSplash({ userId: event.userId, actionName: event.orderName })
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+    return showActionSplash({ userId: event.userId, actionName: event.orderName })
   },
 })
 const {
@@ -924,31 +930,31 @@ const cancelActionAutomationTargeting = () => {
 
 const applySpiteReactionPromptFromScene = async (id: string) => {
   const prompt = spiteReactionPrompts.value.find((item) => item.id === id)
-  if (prompt) showActionSplash({ userId: prompt.defenderId, actionName: 'Spite' })
+  if (prompt) await showActionSplash({ userId: prompt.defenderId, actionName: 'Spite' })
   await applySpiteReactionPrompt(id)
 }
 
 const applyCuteCharmReactionPromptFromScene = async (id: string) => {
   const prompt = cuteCharmReactionPrompts.value.find((item) => item.id === id)
-  if (prompt) showActionSplash({ userId: prompt.defenderId, actionName: 'Cute Charm' })
+  if (prompt) await showActionSplash({ userId: prompt.defenderId, actionName: 'Cute Charm' })
   await applyCuteCharmReactionPrompt(id)
 }
 
 const applyPoisonPointReactionPromptFromScene = async (id: string) => {
   const prompt = poisonPointReactionPrompts.value.find((item) => item.id === id)
-  if (prompt) showActionSplash({ userId: prompt.defenderId, actionName: 'Poison Point' })
+  if (prompt) await showActionSplash({ userId: prompt.defenderId, actionName: 'Poison Point' })
   await applyPoisonPointReactionPrompt(id)
 }
 
 const applyMoxieTriggerPromptFromScene = async (id: string) => {
   const prompt = moxieTriggerPrompts.value.find((item) => item.id === id)
-  if (prompt) showActionSplash({ userId: prompt.attackerId, actionName: 'Moxie' })
+  if (prompt) await showActionSplash({ userId: prompt.attackerId, actionName: 'Moxie' })
   await applyMoxieTriggerPrompt(id)
 }
 
-const applyCelebrateTriggerPromptFromScene = (id: string) => {
+const applyCelebrateTriggerPromptFromScene = async (id: string) => {
   const prompt = celebrateTriggerPrompts.value.find((item) => item.id === id)
-  if (prompt) showActionSplash({ userId: prompt.attackerId, actionName: 'Celebrate' })
+  if (prompt) await showActionSplash({ userId: prompt.attackerId, actionName: 'Celebrate' })
   applyCelebrateTriggerPrompt(id)
 }
 
