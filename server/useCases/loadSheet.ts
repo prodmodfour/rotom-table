@@ -3,9 +3,9 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { playerCanAccessSheet } from '../policies/playerProfilePolicy'
+import { playerCanAccessSheet, type PlayerProfileLinkedTrainerSheet } from '../policies/playerProfilePolicy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { readSheetFileWithFolder } from '../utils/sheetStorage'
+import { listSheetFilesWithFolders, readSheetFileWithFolder } from '../utils/sheetStorage'
 
 export class LoadSheetUseCaseError extends UseCaseHttpError<403 | 404> {}
 
@@ -27,6 +27,7 @@ export interface LoadSheetInput {
 
 export interface LoadSheetDependencies {
   readSheet?: (kind: SheetKind, slug: string) => { sheet: LoadedSheet } | null
+  listTrainerSheets?: () => Iterable<PlayerProfileLinkedTrainerSheet>
 }
 
 export interface LoadSheetResult {
@@ -41,6 +42,8 @@ export const loadSheetUseCase = (
 ): LoadSheetResult => {
   const readSheet = dependencies.readSheet
     ?? ((kind: SheetKind, slug: string) => readSheetFileWithFolder<LoadedSheet>(kind, slug))
+  const listTrainerSheets = dependencies.listTrainerSheets
+    ?? (() => listSheetFilesWithFolders<TrainerSheet>('trainer'))
   const result = readSheet(input.kind, input.slug)
 
   if (!result) throw new LoadSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
@@ -52,6 +55,7 @@ export const loadSheetUseCase = (
       sheet: result.sheet,
       playerProfile: input.playerProfile,
       canAccessPlayerSheet: input.canAccessPlayerSheet,
+      linkedTrainerSheets: input.kind === 'pokemon' ? listTrainerSheets : undefined,
     })
   ) {
     throw new LoadSheetUseCaseError(

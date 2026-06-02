@@ -147,6 +147,36 @@ describe('save sheet use case', () => {
     })
   })
 
+  it('allows player saves for private Pokémon linked through their selected trainer', () => {
+    const { deps, writes } = createDeps()
+    deps.isPlayerAccessible.mockReturnValue(false)
+    const depsWithTrainerLinks = {
+      ...deps,
+      readExistingSheet: vi.fn(() => ({ slug: 'pika', nickname: 'Pika', player: false })),
+      listTrainerSheets: vi.fn(() => [{ slug: 'ash', currentTeam: ['pika'] }]),
+    }
+
+    expect(saveSheetUseCase({
+      role: 'player',
+      kind: 'pokemon',
+      slug: 'pika',
+      sheet: { slug: 'pika', nickname: 'Pika Prime', player: true, playerProfileAccessible: true },
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'ash' }]),
+    }, depsWithTrainerLinks)).toMatchObject({
+      ok: true,
+      slug: 'pika',
+      sheet: { slug: 'pika', nickname: 'Pika Prime', player: false },
+    })
+
+    expect(depsWithTrainerLinks.listTrainerSheets).toHaveBeenCalledOnce()
+    expect(writes).toEqual([
+      {
+        path: '/repo/data/sheets/pika.json',
+        sheet: { slug: 'pika', nickname: 'Pika Prime', player: false },
+      },
+    ])
+  })
+
   it('preserves existing move usage when a general sheet save omits it', () => {
     const { deps, writes } = createDeps()
     const moveUsage = { daily: { thunderbolt: { moveName: 'Thunderbolt', uses: 1 } } }

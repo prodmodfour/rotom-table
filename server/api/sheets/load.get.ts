@@ -3,6 +3,8 @@ import { requireAuthRole } from '../../utils/auth'
 import { expectSheetKind, expectSlug, requireNonProduction } from '../../utils/http'
 import { playerProfileCanAccessSheet, resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { getPlayerSessionAccessGrant, playerSessionCanAccessSheet } from '../../utils/sessionPlayerAccess'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import { listSheetFilesWithFolders } from '../../utils/sheetStorage'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { loadSheetUseCase } from '../../useCases/loadSheet'
 
@@ -10,7 +12,6 @@ const markPlayerAccessibleSheet = <TSheet extends { player?: unknown }>(
   sheet: TSheet,
   options: { readonly sessionAccessible: boolean; readonly profileAccessible: boolean },
 ): TSheet => {
-  if (sheet.player === true) return sheet
   if (!options.sessionAccessible && !options.profileAccessible) return sheet
 
   return {
@@ -33,7 +34,10 @@ export default defineEventHandler((event) => {
       ? resolvePlayerProfileForPolicy(query.profileId)
       : null
     const sessionAccessible = playerSessionCanAccessSheet(sessionAccess, kind, slug)
-    const profileAccessible = playerProfileCanAccessSheet(playerProfile, kind, slug)
+    const linkedTrainerSheets = kind === 'pokemon'
+      ? () => listSheetFilesWithFolders<TrainerSheet>('trainer')
+      : undefined
+    const profileAccessible = playerProfileCanAccessSheet(playerProfile, kind, slug, { linkedTrainerSheets })
 
     const result = loadSheetUseCase({
       role,

@@ -5,11 +5,16 @@ import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { SheetKind } from '#shared/sheets'
-import { playerProfileCanAccessSheet } from '../policies/playerProfilePolicy'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import {
+  playerProfileCanAccessSheet,
+  type PlayerProfileLinkedTrainerSheet,
+} from '../policies/playerProfilePolicy'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import {
   allocateSheetSlug,
   findPersistedSheetFile,
+  listSheetFilesWithFolders,
   sheetIsPlayerAccessible,
   sheetNameFieldForKind,
   sheetNameSlug,
@@ -42,6 +47,7 @@ export interface SaveSheetDependencies {
   isPlayerAccessible?: (kind: SheetKind, slug: string) => boolean
   stripDerivedFields?: (sheet: Record<string, unknown>) => Record<string, unknown>
   readExistingSheet?: (path: string) => Record<string, unknown>
+  listTrainerSheets?: () => Iterable<PlayerProfileLinkedTrainerSheet>
   writeSheet?: (path: string, sheet: Record<string, unknown>) => void
   pathExists?: (path: string) => boolean
   renameSheetPath?: (from: string, to: string) => void
@@ -109,6 +115,8 @@ export const saveSheetUseCase = (
   const isPlayerAccessible = dependencies.isPlayerAccessible ?? sheetIsPlayerAccessible
   const stripDerivedFields = dependencies.stripDerivedFields ?? stripDerivedSheetFields
   const readExistingSheet = dependencies.readExistingSheet ?? ((path: string) => tryReadJsonFile<Record<string, unknown>>(path) ?? {})
+  const listTrainerSheets = dependencies.listTrainerSheets
+    ?? (() => listSheetFilesWithFolders<TrainerSheet>('trainer'))
   const writeSheet = dependencies.writeSheet ?? writeSheetFile
   const pathExists = dependencies.pathExists ?? existsSync
   const renameSheetPath = dependencies.renameSheetPath ?? renameSync
@@ -130,7 +138,9 @@ export const saveSheetUseCase = (
     ? isPlayerAccessible(input.kind, input.slug)
     : false
   const playerLinkedProfileAccess = input.role === 'player'
-    ? playerProfileCanAccessSheet(input.playerProfile, input.kind, input.slug)
+    ? playerProfileCanAccessSheet(input.playerProfile, input.kind, input.slug, {
+        linkedTrainerSheets: input.kind === 'pokemon' ? listTrainerSheets : undefined,
+      })
     : false
 
   if (input.role === 'player' && !playerPublicAccess && !playerLinkedProfileAccess) {

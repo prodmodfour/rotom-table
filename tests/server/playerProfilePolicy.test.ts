@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   playerCanAccessSheet,
   playerProfileCanAccessSheet,
+  playerProfileLinkedTrainerPokemonSlugs,
   playerProfileSheetAccessKeys,
   playerSheetAccessSource,
   resolvePlayerProfileForPolicy,
@@ -28,11 +29,25 @@ describe('player profile sheet policy', () => {
       { sheetKind: 'trainer', sheetSlug: 'ash' },
     ])
 
+    const linkedTrainerSheets = [
+      { slug: 'ash', currentTeam: ['bulba', ''], boxedPokemon: ['char'] },
+      { slug: 'misty', currentTeam: ['staryu'], boxedPokemon: ['psyduck'] },
+    ]
+
     expect(playerProfileCanAccessSheet(selectedProfile, 'pokemon', 'pika')).toBe(true)
     expect(playerProfileCanAccessSheet(selectedProfile, 'trainer', 'ash')).toBe(true)
+    expect(playerProfileCanAccessSheet(selectedProfile, 'pokemon', 'bulba', { linkedTrainerSheets })).toBe(true)
+    expect(playerProfileCanAccessSheet(selectedProfile, 'pokemon', 'char', { linkedTrainerSheets })).toBe(true)
+    expect(playerProfileCanAccessSheet(selectedProfile, 'pokemon', 'staryu', { linkedTrainerSheets })).toBe(false)
     expect(playerProfileCanAccessSheet(selectedProfile, 'pokemon', 'ash')).toBe(false)
     expect(playerProfileCanAccessSheet(null, 'pokemon', 'pika')).toBe(false)
-    expect([...playerProfileSheetAccessKeys(selectedProfile)].sort()).toEqual([
+    expect([...playerProfileLinkedTrainerPokemonSlugs(selectedProfile, linkedTrainerSheets)].sort()).toEqual([
+      'bulba',
+      'char',
+    ])
+    expect([...playerProfileSheetAccessKeys(selectedProfile, { linkedTrainerSheets })].sort()).toEqual([
+      'pokemon:bulba',
+      'pokemon:char',
       'pokemon:pika',
       'trainer:ash',
     ])
@@ -58,6 +73,13 @@ describe('player profile sheet policy', () => {
       slug: 'session-pika',
       sheet: { player: false },
       canAccessPlayerSheet: (kind, slug) => kind === 'pokemon' && slug === 'session-pika',
+    })).toBe(true)
+    expect(playerCanAccessSheet({
+      kind: 'pokemon',
+      slug: 'on-team',
+      sheet: { player: false },
+      playerProfile: selectedProfile,
+      linkedTrainerSheets: [{ slug: 'ash', currentTeam: ['on-team'] }],
     })).toBe(true)
     expect(playerCanAccessSheet({
       kind: 'pokemon',

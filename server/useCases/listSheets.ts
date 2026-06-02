@@ -54,7 +54,14 @@ export const listSheetsUseCase = (
 
   if (input.role === 'player') {
     return {
-      pokemonSheets: pokemonSheets.filter((sheet) => canListPlayerSheet('pokemon', sheet, input)),
+      pokemonSheets: pokemonSheets.filter((sheet) => playerCanAccessSheet({
+        kind: 'pokemon',
+        slug: sheet.slug,
+        sheet,
+        playerProfile: input.playerProfile,
+        canAccessPlayerSheet: input.canAccessPlayerSheet,
+        linkedTrainerSheets: trainerSheets,
+      })),
       trainerSheets: trainerSheets.filter((sheet) => canListPlayerSheet('trainer', sheet, input)),
     }
   }

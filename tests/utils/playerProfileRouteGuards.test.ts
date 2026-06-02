@@ -18,6 +18,7 @@ import {
   resolveProfileAwareRouteGuard,
 } from '~/utils/playerProfileRouteGuards'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
+import { PLAYER_TRAINER_PORTAL_PATH } from '~/utils/playerTrainerPortalRoutes'
 
 describe('player profile-aware route guards', () => {
   it('keeps login, profile picker, Pokédex, reference, and informational routes reachable without a selected profile', () => {
@@ -28,8 +29,10 @@ describe('player profile-aware route guards', () => {
     expect(isPlayerProfileOptionalPath(referenceDetailPath('rule', 'combat-stages'))).toBe(true)
     expect(isPlayerProfileOptionalPath(MAP_LIBRARY_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(`${MAP_LIBRARY_PATH}?folder=routes`)).toBe(true)
-    expect(isPlayerProfileOptionalPath(SHEET_LIBRARY_PATH)).toBe(true)
-    expect(isPlayerProfileOptionalPath(`${SHEET_LIBRARY_PATH}?folder=party`)).toBe(true)
+    expect(isPlayerProfileOptionalPath(PLAYER_TRAINER_PORTAL_PATH)).toBe(true)
+    expect(isPlayerProfileOptionalPath(`${PLAYER_TRAINER_PORTAL_PATH}?folder=party`)).toBe(true)
+    expect(isPlayerProfileOptionalPath(SHEET_LIBRARY_PATH)).toBe(false)
+    expect(isPlayerProfileOptionalPath(`${SHEET_LIBRARY_PATH}?folder=party`)).toBe(false)
     expect(isPlayerProfileOptionalPath(SESSION_LOBBY_PATH)).toBe(true)
   })
 
@@ -93,7 +96,7 @@ describe('player profile-aware route guards', () => {
   it('does not over-restrict players without profiles from browsing allowed app routes', () => {
     for (const path of [
       '/maps',
-      '/sheets',
+      PLAYER_TRAINER_PORTAL_PATH,
       '/pokedex/pikachu',
       '/moves/tackle',
       '/rules/combat-stages',
@@ -107,6 +110,24 @@ describe('player profile-aware route guards', () => {
         hasSelectedPlayerProfile: false,
       })).toEqual({ type: 'allow' })
     }
+  })
+
+  it('redirects players away from the sheet library to the trainer portal', () => {
+    expect(resolveProfileAwareRouteGuard({
+      path: SHEET_LIBRARY_PATH,
+      fullPath: `${SHEET_LIBRARY_PATH}?folder=party`,
+      hasRole: true,
+      isPlayer: true,
+      hasSelectedPlayerProfile: true,
+    })).toEqual({ type: 'redirect', location: PLAYER_TRAINER_PORTAL_PATH })
+
+    expect(resolveProfileAwareRouteGuard({
+      path: SHEET_LIBRARY_PATH,
+      fullPath: SHEET_LIBRARY_PATH,
+      hasRole: true,
+      isPlayer: false,
+      hasSelectedPlayerProfile: false,
+    })).toEqual({ type: 'allow' })
   })
 
   it('keeps GM-only routes blocked for players regardless of selected profile state', () => {

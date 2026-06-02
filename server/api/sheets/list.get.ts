@@ -10,7 +10,6 @@ const markPlayerAccessibleSheet = <TSheet extends { slug: string; player?: unkno
   sheet: TSheet,
   options: { readonly sessionAccessible: boolean; readonly profileAccessible: boolean },
 ): TSheet => {
-  if (sheet.player === true) return sheet
   if (!options.sessionAccessible && !options.profileAccessible) return sheet
 
   return {
@@ -37,19 +36,21 @@ export default defineEventHandler((event) => {
 
     if (role !== 'player') return result
 
+    const linkedTrainerSheets = result.trainerSheets
+
     return {
       pokemonSheets: result.pokemonSheets.map((sheet) => markPlayerAccessibleSheet(
         sheet,
         {
           sessionAccessible: playerSessionCanAccessSheet(sessionAccess, 'pokemon', sheet.slug),
-          profileAccessible: playerProfileCanAccessSheet(playerProfile, 'pokemon', sheet.slug),
+          profileAccessible: playerProfileCanAccessSheet(playerProfile, 'pokemon', sheet.slug, { linkedTrainerSheets }),
         },
       )),
       trainerSheets: result.trainerSheets.map((sheet) => markPlayerAccessibleSheet(
         sheet,
         {
           sessionAccessible: playerSessionCanAccessSheet(sessionAccess, 'trainer', sheet.slug),
-          profileAccessible: playerProfileCanAccessSheet(playerProfile, 'trainer', sheet.slug),
+          profileAccessible: playerProfileCanAccessSheet(playerProfile, 'trainer', sheet.slug, { linkedTrainerSheets }),
         },
       )),
     }

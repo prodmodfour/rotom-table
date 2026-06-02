@@ -31,8 +31,8 @@ const {
   clearSelectedProfile,
 } = usePlayerProfiles()
 
-const primaryItems = computed(() => filterAppNavItems(PRIMARY_APP_NAV_ITEMS, isGm.value))
-const referenceItems = computed(() => filterAppNavItems(REFERENCE_APP_NAV_ITEMS, isGm.value))
+const primaryItems = computed(() => filterAppNavItems(PRIMARY_APP_NAV_ITEMS, isGm.value, isPlayer.value))
+const referenceItems = computed(() => filterAppNavItems(REFERENCE_APP_NAV_ITEMS, isGm.value, isPlayer.value))
 const playerProfileStatusText = computed(() => playerProfileNavStatusText(selectedProfileDisplayName.value))
 const switchProfileRoute = computed(() => playerProfileSwitchRoute(route.fullPath))
 

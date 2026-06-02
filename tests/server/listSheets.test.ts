@@ -57,8 +57,16 @@ describe('list sheets use case', () => {
   })
 
   it('includes sheets linked to the selected player profile for players', () => {
-    const listPokemonSheets = vi.fn(() => [pokemon({ player: false }), pokemon({ slug: 'hidden-mon', player: false })])
-    const listTrainerSheets = vi.fn(() => [trainer({ player: false }), trainer({ slug: 'hidden-trainer', player: false })])
+    const listPokemonSheets = vi.fn(() => [
+      pokemon({ player: false }),
+      pokemon({ slug: 'hidden-mon', player: false }),
+      pokemon({ slug: 'team-mon', player: false }),
+      pokemon({ slug: 'other-team-mon', player: false }),
+    ])
+    const listTrainerSheets = vi.fn(() => [
+      trainer({ player: false, currentTeam: ['team-mon'] }),
+      trainer({ slug: 'hidden-trainer', player: false, currentTeam: ['other-team-mon'] }),
+    ])
 
     expect(listSheetsUseCase({
       role: 'player',
@@ -67,8 +75,11 @@ describe('list sheets use case', () => {
         { sheetKind: 'trainer', sheetSlug: 'new-trainer-1' },
       ]),
     }, { listPokemonSheets, listTrainerSheets })).toEqual({
-      pokemonSheets: [pokemon({ slug: 'hidden-mon', player: false })],
-      trainerSheets: [trainer({ player: false })],
+      pokemonSheets: [
+        pokemon({ slug: 'hidden-mon', player: false }),
+        pokemon({ slug: 'team-mon', player: false }),
+      ],
+      trainerSheets: [trainer({ player: false, currentTeam: ['team-mon'] })],
     })
   })
 

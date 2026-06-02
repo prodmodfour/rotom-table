@@ -7,6 +7,7 @@ import {
 } from '~/utils/loginRedirect'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
+import { PLAYER_TRAINER_PORTAL_PATH } from '~/utils/playerTrainerPortalRoutes'
 import { REFERENCE_PATH_BY_KIND } from '~/utils/reference/routes'
 import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
 
@@ -20,7 +21,7 @@ export const PLAYER_PROFILE_OPTIONAL_EXACT_PATHS = [
   HOME_PATH,
   LOGIN_PATH,
   MAP_LIBRARY_PATH,
-  SHEET_LIBRARY_PATH,
+  PLAYER_TRAINER_PORTAL_PATH,
   SESSION_LOBBY_PATH,
 ] as const
 
@@ -126,6 +127,10 @@ export const resolveProfileAwareRouteGuard = (
 
   if (input.isPlayer && isPlayerBlockedRedirectPath(path)) {
     return { type: 'redirect', location: DEFAULT_LOGIN_REDIRECT }
+  }
+
+  if (input.isPlayer && path === SHEET_LIBRARY_PATH) {
+    return { type: 'redirect', location: PLAYER_TRAINER_PORTAL_PATH }
   }
 
   if (

@@ -20,7 +20,7 @@ describe('app navigation helpers', () => {
       '/maps',
       CAMPAIGN_PATH,
       '/pokedex',
-      '/sheets',
+      '/trainers',
     ])
     expect(PRIMARY_APP_NAV_ITEMS.some((item) => item.path === '/sessions')).toBe(false)
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).map((item) => item.path)).toEqual([
@@ -55,6 +55,9 @@ describe('app navigation helpers', () => {
     expect(isAppNavItemActive('/maps/airship', '/maps')).toBe(true)
     expect(isAppNavItemActive('/grids/legacy', '/maps')).toBe(true)
     expect(isAppNavItemActive('/sheets', '/maps')).toBe(false)
+    expect(isAppNavItemActive('/trainers', '/trainers')).toBe(true)
+    expect(isAppNavItemActive('/sheets/trainers/brock', '/trainers')).toBe(true)
+    expect(isAppNavItemActive('/sheets/pikachu', '/trainers')).toBe(true)
   })
 
   it('uses exact matching for the home route and prefix matching otherwise', () => {

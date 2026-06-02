@@ -65,6 +65,22 @@ describe('load sheet use case', () => {
     })
   })
 
+  it('allows players to load private Pokémon linked through their selected trainer', () => {
+    const sheet = { slug: 'locked', nickname: 'Locked', species: 'Pikachu', level: 5, player: false }
+    const listTrainerSheets = vi.fn(() => [{ slug: 'ash', currentTeam: ['locked'] }])
+
+    expect(loadSheetUseCase({
+      role: 'player',
+      kind: 'pokemon',
+      slug: 'locked',
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'ash' }]),
+    }, {
+      readSheet: () => ({ sheet }),
+      listTrainerSheets,
+    })).toEqual({ kind: 'pokemon', slug: 'locked', sheet })
+    expect(listTrainerSheets).toHaveBeenCalledOnce()
+  })
+
   it('does not let one selected player profile load another profile linked sheet', () => {
     expect(() => loadSheetUseCase({
       role: 'player',

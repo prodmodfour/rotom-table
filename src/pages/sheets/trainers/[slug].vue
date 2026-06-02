@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { trainerSheetsBySlug } from '~~/data/trainerSheets'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
@@ -27,6 +27,7 @@ definePageMeta({
 const route = useRoute()
 const { isGm, isPlayer } = useAuth()
 const { selectedProfileId, loadRememberedProfile } = usePlayerProfiles()
+const { reloadRuntimeSheets } = useLiveSheets()
 if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
 const slug = routeSlugParam(route.params)
@@ -79,6 +80,20 @@ const sheetNotFoundMessage = computed(() => sheetLoadErrorMessage.value ?? 'No t
 const sheetPathLabel = computed(() => {
   if (!sheet.value) return null
   return sheet.value.name || sheet.value.slug
+})
+
+const syncLiveSheetsForPlayerProfile = async () => {
+  if (!import.meta.client || !isPlayer.value) return
+  loadRememberedProfile()
+  await reloadRuntimeSheets({ profileId: selectedProfileId.value })
+}
+
+onMounted(() => {
+  void syncLiveSheetsForPlayerProfile()
+})
+
+watch(selectedProfileId, () => {
+  void syncLiveSheetsForPlayerProfile()
 })
 
 useHead(() => ({
