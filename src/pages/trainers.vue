@@ -331,21 +331,6 @@ watch(selectedProfileId, () => {
   <div class="trainer-portal-page">
     <header class="trainer-portal-page__header">
       <AppNavigation />
-
-      <section class="trainer-portal-hero panel-card">
-        <div>
-          <p class="trainer-portal-eyebrow">Player trainer page</p>
-          <h1>Your linked trainers</h1>
-          <p>
-            Open your linked trainer sheets and the Pokémon in each trainer's team and box.
-          </p>
-        </div>
-        <div class="trainer-portal-profile">
-          <span>Profile</span>
-          <strong>{{ selectedProfileLabel }}</strong>
-          <NuxtLink :to="chooseProfileRoute">{{ hasSelectedProfile ? 'Switch' : 'Choose profile' }}</NuxtLink>
-        </div>
-      </section>
     </header>
 
     <main class="trainer-portal-page__body">
@@ -521,14 +506,6 @@ watch(selectedProfileId, () => {
   gap: 0.85rem;
 }
 
-.trainer-portal-hero {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.trainer-portal-hero h1,
 .trainer-portal-empty h2,
 .trainer-portal-card h2,
 .trainer-portal-other h2 {
@@ -538,11 +515,6 @@ watch(selectedProfileId, () => {
   letter-spacing: 0.04em;
 }
 
-.trainer-portal-hero h1 {
-  font-size: clamp(2rem, 4vw, 3.2rem);
-}
-
-.trainer-portal-hero p,
 .trainer-portal-empty p,
 .trainer-portal-card__meta {
   margin: 0.35rem 0 0;
@@ -559,30 +531,7 @@ watch(selectedProfileId, () => {
   text-transform: uppercase;
 }
 
-.trainer-portal-profile {
-  min-width: min(100%, 18rem);
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.8rem;
-  border: 1px solid var(--rule-soft);
-  background: var(--paper-inset);
-}
-
-.trainer-portal-profile span {
-  color: var(--ink-muted);
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.trainer-portal-profile strong {
-  color: var(--ink-bright);
-}
-
-.trainer-portal-action,
-.trainer-portal-profile a {
+.trainer-portal-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -599,8 +548,7 @@ watch(selectedProfileId, () => {
   text-transform: uppercase;
 }
 
-.trainer-portal-action:hover,
-.trainer-portal-profile a:hover {
+.trainer-portal-action:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
@@ -856,10 +804,6 @@ watch(selectedProfileId, () => {
 }
 
 @media (max-width: 900px) {
-  .trainer-portal-hero {
-    flex-direction: column;
-  }
-
   .trainer-portal-card {
     grid-template-columns: 1fr;
     grid-template-areas:
