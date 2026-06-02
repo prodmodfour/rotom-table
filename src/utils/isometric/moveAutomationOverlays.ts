@@ -351,6 +351,19 @@ const updateFeedbackElement = (element: HTMLElement, feedback: MoveAutomationFee
 const feedbackY = (renderObject: PokemonRenderObject): number =>
   renderObject.currentCenter.y + Math.max(renderObject.height, renderObject.clearance) + 0.95
 
+const feedbackAnchorsToUser = (feedback: MoveAutomationFeedbackState): boolean =>
+  feedback.phase === 'rolling' || feedback.phase === 'hit-roll'
+
+const feedbackAnchorRenderObject = (
+  feedback: MoveAutomationFeedbackState,
+  renderObjects: Map<string, PokemonRenderObject>,
+): PokemonRenderObject | null => {
+  const anchorId = feedbackAnchorsToUser(feedback) ? feedback.userId : feedback.targetId
+  return renderObjects.get(anchorId)
+    ?? (anchorId === feedback.targetId ? renderObjects.get(feedback.userId) : null)
+    ?? null
+}
+
 interface MoveAutomationFeedbackRenderState {
   visible: boolean
   feedbackKey: string
@@ -551,18 +564,19 @@ export const createMoveAutomationFeedbackRenderer = (scene: THREE.Scene) => {
     show: boolean
   }): boolean => {
     const feedback = options.feedback
-    const renderObject = feedback ? options.renderObjects.get(feedback.userId) : null
-    const visible = Boolean(options.show && feedback && renderObject)
-    if (!visible || !feedback || !renderObject) return setMoveAutomationFeedbackHidden(sprite)
+    const anchorObject = feedback ? feedbackAnchorRenderObject(feedback, options.renderObjects) : null
+    const visible = Boolean(options.show && feedback && anchorObject)
+    if (!visible || !feedback || !anchorObject) return setMoveAutomationFeedbackHidden(sprite)
 
-    const accentColor = normalizeTrainerAccentColor(renderObject.accentColor) ?? ''
+    const accentObject = options.renderObjects.get(feedback.userId) ?? anchorObject
+    const accentColor = normalizeTrainerAccentColor(accentObject.accentColor) ?? ''
     const nextState: MoveAutomationFeedbackRenderState = {
       visible: true,
       feedbackKey: moveAutomationFeedbackKey(feedback),
       accentColor,
-      x: renderObject.currentCenter.x,
-      y: feedbackY(renderObject),
-      z: renderObject.currentCenter.z,
+      x: anchorObject.currentCenter.x,
+      y: feedbackY(anchorObject),
+      z: anchorObject.currentCenter.z,
     }
 
     if (sprite.visible && sameMoveAutomationFeedbackRenderState(moveAutomationFeedbackRenderState(sprite), nextState)) {

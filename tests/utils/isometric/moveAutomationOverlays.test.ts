@@ -94,12 +94,22 @@ describe('move automation CSS overlay renderers', () => {
     renderer.dispose()
   })
 
-  it('reports move feedback CSS changes and skips repeated identical output', () => {
+  it('reports move feedback CSS changes and anchors roll/result phases correctly', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveAutomationFeedbackRenderer(scene)
     const user = makeRenderObject({ id: 'user-1' })
-    const renderObjects = new Map([['user-1', user]])
-    const feedback = feedbackState()
+    const target = makeRenderObject({
+      id: 'target-1',
+      currentCenter: new THREE.Vector3(6, 4, 8),
+      targetCenter: new THREE.Vector3(6, 4, 8),
+      height: 1.8,
+      clearance: 1.4,
+    })
+    const renderObjects = new Map([
+      ['user-1', user],
+      ['target-1', target],
+    ])
+    const feedback = feedbackState({ phase: 'rolling' })
 
     const updateOptions = {
       feedback,
@@ -110,16 +120,41 @@ describe('move automation CSS overlay renderers', () => {
     expect(renderer.update(updateOptions)).toBe(true)
     expect(renderer.update(updateOptions)).toBe(false)
 
+    const feedbackSprite = scene.children.find((child) => child instanceof THREE.Object3D && child.visible) as (THREE.Object3D & { element?: HTMLElement }) | undefined
+    expect(feedbackSprite?.position.x).toBe(user.currentCenter.x)
+    expect(feedbackSprite?.position.y).toBeCloseTo(user.currentCenter.y + Math.max(user.height, user.clearance) + 0.95)
+    expect(feedbackSprite?.position.z).toBe(user.currentCenter.z)
+
     user.currentCenter.set(1, 3, 3)
     expect(renderer.update(updateOptions)).toBe(true)
     expect(renderer.update(updateOptions)).toBe(false)
+    expect(feedbackSprite?.position.x).toBe(user.currentCenter.x)
+    expect(feedbackSprite?.position.y).toBeCloseTo(user.currentCenter.y + Math.max(user.height, user.clearance) + 0.95)
+    expect(feedbackSprite?.position.z).toBe(user.currentCenter.z)
+
+    expect(renderer.update({
+      ...updateOptions,
+      feedback: feedbackState({ phase: 'hit-roll' }),
+    })).toBe(true)
+    expect(feedbackSprite?.position.x).toBe(user.currentCenter.x)
+    expect(feedbackSprite?.position.y).toBeCloseTo(user.currentCenter.y + Math.max(user.height, user.clearance) + 0.95)
+    expect(feedbackSprite?.position.z).toBe(user.currentCenter.z)
+
+    expect(renderer.update({
+      ...updateOptions,
+      feedback: feedbackState({ phase: 'outcome' }),
+    })).toBe(true)
+    expect(feedbackSprite?.position.x).toBe(target.currentCenter.x)
+    expect(feedbackSprite?.position.y).toBeCloseTo(target.currentCenter.y + Math.max(target.height, target.clearance) + 0.95)
+    expect(feedbackSprite?.position.z).toBe(target.currentCenter.z)
 
     expect(renderer.update({
       ...updateOptions,
       feedback: feedbackState({ phase: 'damage', damageResolved: true, damageLoss: 9 }),
     })).toBe(true)
-
-    const feedbackSprite = scene.children.find((child) => child instanceof THREE.Object3D && child.visible) as (THREE.Object3D & { element?: HTMLElement }) | undefined
+    expect(feedbackSprite?.position.x).toBe(target.currentCenter.x)
+    expect(feedbackSprite?.position.y).toBeCloseTo(target.currentCenter.y + Math.max(target.height, target.clearance) + 0.95)
+    expect(feedbackSprite?.position.z).toBe(target.currentCenter.z)
     expect(feedbackSprite?.element?.style.pointerEvents).toBe('none')
     expect(feedbackSprite?.element?.style.zIndex).toBe('30')
 
