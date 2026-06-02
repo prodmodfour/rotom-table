@@ -2015,13 +2015,20 @@ useIsometricSceneWatchers({
   inset: 0;
   overflow: hidden;
   background:
+    radial-gradient(ellipse 44% 28% at 50% 52%, color-mix(in srgb, var(--map-iso-glow) 34%, transparent), transparent 72%),
     radial-gradient(ellipse at center, transparent 0 58%, var(--map-iso-vignette) 100%);
   pointer-events: none;
 }
 
-.scene-atmosphere::before {
+.scene-atmosphere::before,
+.scene-atmosphere::after {
   content: '';
   position: absolute;
+  pointer-events: none;
+}
+
+.scene-atmosphere::before {
+  z-index: 1;
   inset: -18%;
   background-image:
     radial-gradient(circle, var(--map-iso-particle) 0 1px, transparent 1.6px),
@@ -2031,6 +2038,26 @@ useIsometricSceneWatchers({
   opacity: 0.3;
   transform: translate3d(0, 0, 0);
   animation: map-iso-dust-drift 38s linear infinite;
+}
+
+.scene-atmosphere::after {
+  z-index: 0;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      30deg,
+      transparent 0 42px,
+      var(--map-iso-grid-line) 42px 43px,
+      transparent 43px 84px
+    ),
+    repeating-linear-gradient(
+      -30deg,
+      transparent 0 42px,
+      var(--map-iso-grid-line-soft) 42px 43px,
+      transparent 43px 84px
+    );
+  -webkit-mask-image: radial-gradient(ellipse 40% 30% at 50% 52%, transparent 0 58%, rgba(0, 0, 0, 0.72) 75%, black 100%);
+  mask-image: radial-gradient(ellipse 40% 30% at 50% 52%, transparent 0 58%, rgba(0, 0, 0, 0.72) 75%, black 100%);
 }
 
 :global(:root[data-theme='light']) .scene-root {
