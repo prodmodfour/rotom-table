@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   applyPokemonCenterRecovery,
   applyPokemonExtendedRest,
@@ -24,19 +24,30 @@ const props = defineProps<{
   tickValue: number
 }>()
 
+const { isGm } = useAuth()
+const gmIgnoreDailyInjuryLimit = ref(false)
+const ignoreDailyInjuryLimit = computed(() => isGm.value && gmIgnoreDailyInjuryLimit.value)
+const injuryRemovalOptions = computed(() => ({ ignoreDailyLimit: ignoreDailyInjuryLimit.value }))
+
 const vitals = computed(() => computePokemonHealingVitals(props.sheet))
 const injuriesModel = computed({
   get: () => vitals.value.injuries,
-  set: (value: unknown) => setPokemonInjuries(props.sheet, value),
+  set: (value: unknown) => setPokemonInjuries(props.sheet, value, injuryRemovalOptions.value),
 })
 const naturalRestHp = computed(() => vitals.value.naturalRestHp)
 const quarterHp = computed(() => healingFractionAmount(props.fullMaxHp, 4))
 const halfHp = computed(() => healingFractionAmount(props.fullMaxHp, 2))
 const canHeal = computed(() => props.currentHp < props.maxHp)
 const canRestHeal = computed(() => canHeal.value && vitals.value.injuries < 5)
-const canRemoveInjuries = computed(() => vitals.value.injuries > 0 && vitals.value.injuryHealsRemainingToday > 0)
-const injuryCareLimit = computed(() => Math.min(vitals.value.injuries, vitals.value.injuryHealsRemainingToday))
+const canRemoveInjuries = computed(() =>
+  vitals.value.injuries > 0 && (ignoreDailyInjuryLimit.value || vitals.value.injuryHealsRemainingToday > 0),
+)
+const injuryCareLimit = computed(() => Math.min(
+  vitals.value.injuries,
+  ignoreDailyInjuryLimit.value ? vitals.value.injuries : vitals.value.injuryHealsRemainingToday,
+))
 const removeUpToInjuryCount = computed(() => Math.min(3, injuryCareLimit.value))
+const clearInjuriesButtonLabel = computed(() => ignoreDailyInjuryLimit.value ? 'Clear Injuries' : 'Use daily allowance')
 const conditionCount = computed(() => {
   const conditions = Array.isArray(props.sheet.combat?.conditions) ? props.sheet.combat.conditions.length : 0
   const freeform = typeof props.sheet.combat?.statusAfflictions === 'string' && props.sheet.combat.statusAfflictions.trim()
@@ -46,6 +57,8 @@ const conditionCount = computed(() => {
 })
 
 const heal = (amount: number) => healPokemonHp(props.sheet, amount)
+const removeInjuries = (amount: number) => removePokemonInjuries(props.sheet, amount, injuryRemovalOptions.value)
+const setInjuries = (value: unknown) => setPokemonInjuries(props.sheet, value, injuryRemovalOptions.value)
 const fullHeal = () => setPokemonCurrentHp(props.sheet, props.maxHp, props.maxHp)
 const resetDailyMoves = () => clearSheetDailyMoveUsage(props.sheet)
 </script>
@@ -128,20 +141,26 @@ const resetDailyMoves = () => clearSheetDailyMoveUsage(props.sheet)
       </section>
 
       <section class="healing-block">
-        <h3>Injury care</h3>
+        <div class="healing-block__title-row">
+          <h3>Injury care</h3>
+          <label v-if="isGm" class="healing-checkbox">
+            <input v-model="gmIgnoreDailyInjuryLimit" type="checkbox" />
+            <span>Ignore daily limit</span>
+          </label>
+        </div>
         <div class="healing-actions">
-          <button type="button" class="healing-button" :disabled="!canRemoveInjuries" @click="removePokemonInjuries(sheet, 1)">
+          <button type="button" class="healing-button" :disabled="!canRemoveInjuries" @click="removeInjuries(1)">
             Remove 1 Injury
           </button>
-          <button type="button" class="healing-button" :disabled="!canRemoveInjuries" @click="removePokemonInjuries(sheet, 3)">
+          <button type="button" class="healing-button" :disabled="!canRemoveInjuries" @click="removeInjuries(3)">
             Remove up to {{ removeUpToInjuryCount }}
           </button>
-          <button type="button" class="healing-button" :disabled="!canRemoveInjuries" @click="setPokemonInjuries(sheet, 0)">
-            Use daily allowance
+          <button type="button" class="healing-button" :disabled="!canRemoveInjuries" @click="setInjuries(0)">
+            {{ clearInjuriesButtonLabel }}
           </button>
         </div>
         <p class="healing-note">
-          Injury removal raises the effective HP cap by 10% of full Max HP per Injury. Up to {{ vitals.maxInjuriesHealedPerDay }} Injuries can be restored per day.
+          Injury removal raises the effective HP cap by 10% of full Max HP per Injury. Up to {{ vitals.maxInjuriesHealedPerDay }} Injuries can be restored per day; GMs may ignore this for manual removal.
         </p>
       </section>
 
@@ -268,6 +287,29 @@ const resetDailyMoves = () => clearSheetDailyMoveUsage(props.sheet)
 
 .healing-block {
   padding: 0.75rem;
+}
+
+.healing-block__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.healing-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.healing-checkbox input {
+  accent-color: var(--accent);
 }
 
 .healing-actions {

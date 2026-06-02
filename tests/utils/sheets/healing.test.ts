@@ -106,6 +106,23 @@ describe('sheet healing helpers', () => {
     expect(sheet.combat?.currentHp).toBe(computePokemonHealingVitals(sheet).maxHp)
   })
 
+  it('allows explicit manual injury-removal overrides to ignore the daily cap', () => {
+    const sheet: CharacterSheet = {
+      slug: 'manual-override-test',
+      nickname: 'Manual Override Test',
+      species: '',
+      level: 10,
+      stats: { hp: { added: 10 } },
+      combat: { currentHp: 1, injuries: 5, injuriesHealedToday: MAX_INJURIES_HEALED_PER_DAY },
+    }
+
+    expect(removePokemonInjuries(sheet, 2, { ignoreDailyLimit: true })).toBe(2)
+    expect(sheet.combat?.injuries).toBe(3)
+    expect(sheet.combat?.injuriesHealedToday).toBe(MAX_INJURIES_HEALED_PER_DAY)
+    expect(setPokemonInjuries(sheet, 0, { ignoreDailyLimit: true })).toBe(0)
+    expect(sheet.combat?.injuriesHealedToday).toBe(MAX_INJURIES_HEALED_PER_DAY)
+  })
+
   it('starts a new injury-healing allowance on the next day before natural injury healing', () => {
     const sheet: TrainerSheet = {
       slug: 'new-day-cap-test',
