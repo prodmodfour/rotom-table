@@ -36,12 +36,21 @@ const splashStyle = computed(() => ({
       <div class="map-action-splash__bar">
         <figure class="map-action-splash__card">
           <span class="map-action-splash__portrait">
-            <img
-              v-if="imageUrl"
-              :src="imageUrl"
-              :alt="splash.actorName"
-              draggable="false"
-            />
+            <template v-if="imageUrl">
+              <img
+                class="map-action-splash__portrait-shadow"
+                :src="imageUrl"
+                alt=""
+                aria-hidden="true"
+                draggable="false"
+              />
+              <img
+                class="map-action-splash__portrait-image"
+                :src="imageUrl"
+                :alt="splash.actorName"
+                draggable="false"
+              />
+            </template>
             <span v-else class="map-action-splash__initials">{{ initials }}</span>
           </span>
           <figcaption class="map-action-splash__caption">
@@ -59,6 +68,7 @@ const splashStyle = computed(() => ({
   --action-splash-height: clamp(8rem, 22vh, 13rem);
   --action-splash-border-width: 4px;
   --action-splash-inner-height: calc(var(--action-splash-height) - (var(--action-splash-border-width) * 2));
+  --action-splash-shadow-offset: clamp(0.35rem, 0.9vw, 0.7rem);
 
   position: absolute;
   inset: 0;
@@ -66,7 +76,7 @@ const splashStyle = computed(() => ({
   pointer-events: auto;
   overflow: hidden;
   color: white;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.72), 0 0 18px rgba(0, 0, 0, 0.58);
+  text-shadow: none;
 }
 
 .map-action-splash__bar {
@@ -98,6 +108,7 @@ const splashStyle = computed(() => ({
 }
 
 .map-action-splash__portrait {
+  position: relative;
   display: grid;
   flex: 0 0 var(--action-splash-inner-height);
   place-items: center;
@@ -106,14 +117,27 @@ const splashStyle = computed(() => ({
   overflow: hidden;
 }
 
-.map-action-splash__portrait img {
+.map-action-splash__portrait-image,
+.map-action-splash__portrait-shadow {
   display: block;
+  grid-area: 1 / 1;
   width: auto;
   min-width: 100%;
   height: 100%;
   max-width: none;
   object-fit: cover;
   image-rendering: pixelated;
+}
+
+.map-action-splash__portrait-shadow {
+  z-index: 0;
+  filter: brightness(0) saturate(100%);
+  transform: translateX(var(--action-splash-shadow-offset));
+}
+
+.map-action-splash__portrait-image {
+  position: relative;
+  z-index: 1;
 }
 
 .map-action-splash__initials {
