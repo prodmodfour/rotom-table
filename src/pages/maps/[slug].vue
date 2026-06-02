@@ -126,9 +126,6 @@ const gridRef = ref<MapScenePanelHandle | null>(null)
 const {
   moveAnimationsEnabled,
   moveAnimationsReducedMotion,
-  moveAnimationsStatusTitle,
-  moveAnimationsToggleLabel,
-  toggleMoveAnimationsEnabled,
 } = useMoveAnimationSettings()
 
 const {
@@ -936,10 +933,7 @@ useMapDimensionReconciliation({
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="actionAutomationFeedback"
         :move-animations="visibleMoveAnimations"
-        :move-animations-enabled="moveAnimationsEnabled"
         :move-animations-reduced-motion="moveAnimationsReducedMotion"
-        :move-animations-status-title="moveAnimationsStatusTitle"
-        :move-animations-toggle-label="moveAnimationsToggleLabel"
         :move-vfx-debug-harness-enabled="moveVfxDebugHarnessEnabled"
         :move-usage-error="sceneActionError"
         :spite-reaction-prompts="spiteReactionPrompts"
@@ -983,7 +977,6 @@ useMapDimensionReconciliation({
         @preview-move-vfx="previewMoveVfxDebugKind"
         @preview-all-move-vfx="previewAllMoveVfxDebug"
         @clear-move-vfx="clearMoveAnimations"
-        @toggle-move-animations="toggleMoveAnimationsEnabled"
         @move-vfx-settled="pruneSettledMoveAnimations"
         @dismiss-spite-reaction="dismissSpiteReactionPrompt"
         @apply-spite-reaction="applySpiteReactionPrompt"

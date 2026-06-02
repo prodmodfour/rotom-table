@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
 
 useHead({ title: 'Settings · Rotom Table' })
@@ -23,6 +24,19 @@ const campaignFolderStatus = computed(() => (
   selectedCampaignFolderName.value
     ? `Selected folder: ${selectedCampaignFolderName.value}`
     : 'No campaign folder selected.'
+))
+
+const {
+  moveAnimationsEnabled,
+  moveAnimationsReducedMotion,
+  moveAnimationsStatusLabel,
+  moveAnimationsStatusTitle,
+  moveAnimationsToggleLabel,
+  toggleMoveAnimationsEnabled,
+} = useMoveAnimationSettings()
+
+const moveAnimationsToggleText = computed(() => (
+  moveAnimationsEnabled.value ? 'Animations on' : 'Animations off'
 ))
 
 const openCampaignFolderBrowser = () => {
@@ -69,6 +83,40 @@ const handleCampaignFolderSelection = (event: Event) => {
       <p class="campaign-folder-status" aria-live="polite">
         {{ campaignFolderStatus }}
       </p>
+
+      <section class="settings-group" aria-labelledby="move-vfx-settings-title">
+        <div class="settings-group__copy">
+          <h2 id="move-vfx-settings-title">Move VFX</h2>
+          <p>{{ moveAnimationsStatusTitle }}</p>
+          <p
+            v-if="moveAnimationsReducedMotion"
+            class="settings-note"
+          >
+            Your system prefers reduced motion, so move VFX render with reduced-motion safeguards.
+          </p>
+        </div>
+
+        <div class="settings-group__control">
+          <span
+            class="settings-status"
+            :class="{ 'is-disabled': !moveAnimationsEnabled }"
+          >
+            {{ moveAnimationsStatusLabel }}
+          </span>
+          <button
+            type="button"
+            class="move-animation-toggle"
+            :class="{ 'is-disabled': !moveAnimationsEnabled }"
+            :aria-pressed="moveAnimationsEnabled"
+            :aria-label="moveAnimationsToggleLabel"
+            :title="moveAnimationsStatusTitle"
+            @click="toggleMoveAnimationsEnabled"
+          >
+            <span class="move-animation-toggle__eyebrow">Move VFX</span>
+            <span>{{ moveAnimationsToggleText }}</span>
+          </button>
+        </div>
+      </section>
     </section>
   </main>
 </template>
@@ -89,6 +137,65 @@ const handleCampaignFolderSelection = (event: Event) => {
   display: grid;
   gap: 1rem;
   justify-items: start;
+}
+
+.settings-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 44rem;
+  padding: 0.9rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper-soft) 72%, transparent);
+}
+
+.settings-group__copy {
+  display: grid;
+  gap: 0.35rem;
+  min-width: min(22rem, 100%);
+  max-width: 32rem;
+}
+
+.settings-group__copy h2,
+.settings-group__copy p {
+  margin: 0;
+}
+
+.settings-group__copy h2 {
+  color: var(--ink-bright);
+  font-size: 1rem;
+}
+
+.settings-group__copy p {
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.settings-note {
+  color: color-mix(in srgb, var(--accent) 72%, var(--ink-soft));
+  font-size: 0.9rem;
+}
+
+.settings-group__control {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: start;
+}
+
+.settings-status {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.settings-status.is-disabled {
+  color: var(--ink-muted);
 }
 
 .eyebrow {
@@ -139,5 +246,43 @@ const handleCampaignFolderSelection = (event: Event) => {
   margin: 0;
   color: var(--ink-soft);
   line-height: 1.5;
+}
+
+.move-animation-toggle {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  align-items: flex-start;
+  min-width: 9.5rem;
+  padding: 0.54rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, rgba(255, 255, 255, 0.28));
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, rgba(8, 10, 14, 0.82) 88%, var(--paper));
+  color: var(--ink-bright);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.15;
+  cursor: pointer;
+}
+
+.move-animation-toggle:not(.is-disabled):hover,
+.move-animation-toggle:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 78%, white 12%);
+  background: color-mix(in srgb, rgba(11, 14, 22, 0.9) 82%, var(--accent));
+  outline: none;
+}
+
+.move-animation-toggle.is-disabled {
+  border-color: color-mix(in srgb, var(--ink-muted) 44%, rgba(255, 255, 255, 0.18));
+  color: color-mix(in srgb, var(--ink-muted) 88%, white 8%);
+}
+
+.move-animation-toggle__eyebrow {
+  color: color-mix(in srgb, currentColor 64%, transparent);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 </style>
