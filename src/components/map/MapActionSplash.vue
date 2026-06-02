@@ -33,179 +33,109 @@ const splashStyle = computed(() => ({
       aria-live="polite"
       :aria-label="`${splash.actorName} ${splash.actionLabel}`"
     >
-      <div class="map-action-splash__bar" aria-hidden="true">
-        <span class="map-action-splash__slash map-action-splash__slash--left" />
-        <span class="map-action-splash__slash map-action-splash__slash--right" />
-        <span class="map-action-splash__glow" />
+      <div class="map-action-splash__bar">
+        <figure class="map-action-splash__card">
+          <span class="map-action-splash__portrait">
+            <img
+              v-if="imageUrl"
+              :src="imageUrl"
+              :alt="splash.actorName"
+              draggable="false"
+            />
+            <span v-else class="map-action-splash__initials">{{ initials }}</span>
+          </span>
+          <figcaption class="map-action-splash__caption">
+            <span class="map-action-splash__actor">{{ splash.actorName }}</span>
+            <span class="map-action-splash__action">{{ splash.actionLabel }}</span>
+          </figcaption>
+        </figure>
       </div>
-
-      <figure class="map-action-splash__card">
-        <span class="map-action-splash__portrait">
-          <img
-            v-if="imageUrl"
-            :src="imageUrl"
-            :alt="splash.actorName"
-            draggable="false"
-          />
-          <span v-else class="map-action-splash__initials">{{ initials }}</span>
-        </span>
-        <figcaption class="map-action-splash__caption">
-          <span class="map-action-splash__actor">{{ splash.actorName }}</span>
-          <span class="map-action-splash__action">{{ splash.actionLabel }}</span>
-        </figcaption>
-      </figure>
     </div>
   </Transition>
 </template>
 
 <style scoped>
 .map-action-splash {
+  --action-splash-height: clamp(8rem, 22vh, 13rem);
+  --action-splash-border-width: 4px;
+  --action-splash-inner-height: calc(var(--action-splash-height) - (var(--action-splash-border-width) * 2));
+
   position: absolute;
   inset: 0;
   z-index: 12050;
-  display: grid;
-  place-items: center;
   pointer-events: auto;
   overflow: hidden;
   color: white;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.72), 0 0 18px rgba(0, 0, 0, 0.58);
 }
 
-.map-action-splash::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.12), transparent 32%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.10), rgba(0, 0, 0, 0.42));
-}
-
 .map-action-splash__bar {
   position: absolute;
+  top: 50%;
   left: 50%;
-  width: min(100vw, 980px);
-  height: clamp(9.4rem, 24vh, 14.5rem);
-  transform: translateX(-50%) skewX(-13deg);
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  height: var(--action-splash-height);
+  box-sizing: border-box;
   overflow: hidden;
-  border-top: 3px solid rgba(255, 255, 255, 0.86);
-  border-bottom: 3px solid rgba(255, 255, 255, 0.86);
-  background:
-    linear-gradient(90deg,
-      rgba(3, 5, 9, 0.96) 0%,
-      rgba(3, 5, 9, 0.90) 16%,
-      color-mix(in srgb, var(--action-splash-accent) 76%, #111827) 42%,
-      var(--action-splash-accent) 64%,
-      color-mix(in srgb, var(--action-splash-accent) 58%, #050608) 100%),
-    var(--action-splash-accent);
-  box-shadow:
-    0 28px 68px rgba(0, 0, 0, 0.50),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    inset 0 -34px 60px rgba(0, 0, 0, 0.34);
-}
-
-.map-action-splash__bar::before,
-.map-action-splash__bar::after {
-  content: '';
-  position: absolute;
-  inset: -30% auto -30% 50%;
-  width: 8rem;
-  transform: translateX(-50%) skewX(-18deg);
-  background: rgba(255, 255, 255, 0.20);
-  mix-blend-mode: screen;
-}
-
-.map-action-splash__bar::after {
-  left: 67%;
-  width: 12rem;
-  background: rgba(255, 255, 255, 0.10);
-}
-
-.map-action-splash__slash {
-  position: absolute;
-  top: -18%;
-  bottom: -18%;
-  width: clamp(6rem, 18vw, 13rem);
-  background: rgba(0, 0, 0, 0.52);
-  box-shadow: 0 0 34px rgba(0, 0, 0, 0.28);
-}
-
-.map-action-splash__slash--left {
-  left: -4rem;
-  transform: skewX(-18deg);
-}
-
-.map-action-splash__slash--right {
-  right: -5rem;
-  transform: skewX(-18deg);
-}
-
-.map-action-splash__glow {
-  position: absolute;
-  inset: 10% 15%;
-  border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--action-splash-accent) 50%, white) 0%, transparent 58%);
-  filter: blur(26px);
-  opacity: 0.65;
+  transform: translate(-50%, -50%);
+  border-top: var(--action-splash-border-width) solid white;
+  border-bottom: var(--action-splash-border-width) solid white;
+  background: var(--action-splash-accent);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.48);
 }
 
 .map-action-splash__card {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  justify-items: center;
-  gap: 0.54rem;
+  display: flex;
+  align-items: stretch;
+  width: min(100%, 72rem);
+  height: var(--action-splash-inner-height);
   margin: 0;
-  transform: translateY(-0.08rem);
+  padding-inline: clamp(1rem, 5vw, 4rem);
+  box-sizing: border-box;
+  gap: clamp(1rem, 3.5vw, 2.4rem);
 }
 
 .map-action-splash__portrait {
   display: grid;
+  flex: 0 0 var(--action-splash-inner-height);
   place-items: center;
-  width: clamp(7.2rem, 15vw, 10.6rem);
-  aspect-ratio: 1;
+  width: var(--action-splash-inner-height);
+  height: var(--action-splash-inner-height);
   overflow: hidden;
-  border: 4px solid rgba(255, 255, 255, 0.94);
-  border-radius: 1.35rem;
-  background:
-    radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0.04) 42%, rgba(0, 0, 0, 0.38) 100%),
-    color-mix(in srgb, var(--action-splash-accent) 26%, #111827);
-  box-shadow:
-    0 20px 44px rgba(0, 0, 0, 0.48),
-    0 0 0 8px rgba(0, 0, 0, 0.34),
-    0 0 40px color-mix(in srgb, var(--action-splash-accent) 52%, transparent);
 }
 
 .map-action-splash__portrait img {
   display: block;
-  width: 100%;
+  width: auto;
+  min-width: 100%;
   height: 100%;
-  object-fit: contain;
+  max-width: none;
+  object-fit: cover;
   image-rendering: pixelated;
 }
 
 .map-action-splash__initials {
-  font-size: clamp(2.2rem, 7vw, 4.5rem);
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: clamp(2.6rem, 8vw, 5.8rem);
   font-weight: 1000;
   letter-spacing: -0.08em;
 }
 
 .map-action-splash__caption {
   display: grid;
-  gap: 0.16rem;
-  min-width: min(26rem, calc(100vw - 2rem));
-  padding: 0.44rem 1rem 0.58rem;
-  border: 2px solid rgba(255, 255, 255, 0.88);
-  border-radius: 0.95rem;
-  background: rgba(0, 0, 0, 0.70);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--action-splash-accent) 54%, transparent),
-    0 12px 30px rgba(0, 0, 0, 0.36);
-  text-align: center;
+  align-content: center;
+  min-width: 0;
+  gap: 0.24rem;
 }
 
 .map-action-splash__actor {
-  color: rgba(255, 255, 255, 0.74);
-  font-size: clamp(0.72rem, 1.5vw, 0.9rem);
+  color: rgba(255, 255, 255, 0.76);
+  font-size: clamp(0.72rem, 1.6vw, 0.95rem);
   font-weight: 900;
   letter-spacing: 0.12em;
   line-height: 1;
@@ -213,10 +143,10 @@ const splashStyle = computed(() => ({
 }
 
 .map-action-splash__action {
-  font-size: clamp(1.14rem, 3vw, 1.82rem);
+  font-size: clamp(1.55rem, 4.4vw, 3.3rem);
   font-weight: 1000;
   letter-spacing: 0.01em;
-  line-height: 1.05;
+  line-height: 1.02;
 }
 
 .map-action-splash-enter-active {
@@ -239,11 +169,9 @@ const splashStyle = computed(() => ({
 @keyframes map-action-splash-pop {
   from {
     opacity: 0;
-    transform: scale(1.04);
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -266,13 +194,13 @@ const splashStyle = computed(() => ({
 }
 
 @media (max-width: 720px) {
-  .map-action-splash__bar {
-    width: calc(100vw + 4rem);
-    height: clamp(8.4rem, 24vh, 12rem);
+  .map-action-splash {
+    --action-splash-height: clamp(7rem, 21vh, 10rem);
   }
 
-  .map-action-splash__caption {
-    min-width: min(22rem, calc(100vw - 1.5rem));
+  .map-action-splash__card {
+    padding-inline: 0.75rem;
+    gap: 0.85rem;
   }
 }
 </style>
