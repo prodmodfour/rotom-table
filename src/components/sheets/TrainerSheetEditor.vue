@@ -194,6 +194,19 @@ const {
     />
 
     <!-- =================================================================== -->
+    <!-- HEALING TAB                                                          -->
+    <!-- =================================================================== -->
+    <TrainerHealingPanel
+      v-if="activeTab === 'healing'"
+      :sheet="sheet"
+      :current-hp="currentHp"
+      :max-hp="maxHp"
+      :full-max-hp="fullMaxHp"
+      :tick-value="tickValue"
+      :max-ap="maxAp"
+    />
+
+    <!-- =================================================================== -->
     <!-- POKÉMON TAB                                                          -->
     <!-- =================================================================== -->
     <TrainerPokemonTabPanel

@@ -4,6 +4,7 @@ import { usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDeri
 import { usePokemonSheetCsvFields } from '~/composables/sheets/usePokemonSheetCsvFields'
 import { usePokemonSheetRowActions } from '~/composables/sheets/usePokemonSheetRowActions'
 import { usePokemonNatureControls } from '~/composables/sheets/usePokemonNatureControls'
+import { usePokemonSheetTabs } from '~/composables/sheets/usePokemonSheetTabs'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetEditorCapabilities } from '~/utils/sheetEditorCapabilities'
@@ -83,6 +84,8 @@ const {
   setAccuracyStage,
   setInheritedMove,
 } = usePokemonSheetRowActions(sheet)
+
+const { tabs, activeTab, setActiveTab } = usePokemonSheetTabs()
 </script>
 
 <template>
@@ -104,95 +107,118 @@ const {
       :can-manage-player-access="canManagePlayerAccess"
     />
 
-    <!-- ============ Stats + Combat strip ============ -->
-    <div class="row two-col">
-      <PokemonStatsPanel
-        :stats="stats"
-        :stat-points-left="statPointsLeft"
-        :stat-points-spent="statPointsSpent"
-        :stat-points-budget="statPointsBudget"
-        :base-relation-violations="baseRelationViolations"
-        :visible-base-relation-violations="visibleBaseRelationViolations"
-        :remaining-base-relation-violation-count="remainingBaseRelationViolationCount"
-        @set-stat="setStat"
+    <SheetTabNav
+      :tabs="tabs"
+      :active-key="activeTab"
+      @update:active-key="setActiveTab"
+    />
+
+    <div v-if="activeTab === 'sheet'" class="pokemon-sheet__tab-panel">
+      <!-- ============ Stats + Combat strip ============ -->
+      <div class="row two-col">
+        <PokemonStatsPanel
+          :stats="stats"
+          :stat-points-left="statPointsLeft"
+          :stat-points-spent="statPointsSpent"
+          :stat-points-budget="statPointsBudget"
+          :base-relation-violations="baseRelationViolations"
+          :visible-base-relation-violations="visibleBaseRelationViolations"
+          :remaining-base-relation-violation-count="remainingBaseRelationViolationCount"
+          @set-stat="setStat"
+        />
+
+        <PokemonCombatPanel
+          :sheet="sheet"
+          :current-hp="currentHp"
+          :max-hp="maxHp"
+          :full-max-hp="fullMaxHp"
+          :tick-value="tickValue"
+          :hp-thresholds="hpThresholds"
+          :speed-total="speedTotal"
+          :initiative="initiative"
+          :initiative-training-bonus="initiativeTrainingBonus"
+          :pokemon-accuracy="pokemonAccuracy"
+          :pokemon-evasion="pokemonEvasion"
+          :condition-effects="conditionEffects"
+          @set-current-hp="setCurrentHp"
+          @set-evasion-bonus="setEvasionBonus"
+          @set-accuracy-stage="setAccuracyStage"
+        />
+      </div>
+
+      <!-- ============ Items / Weapon ============ -->
+      <PokemonEquipmentPanel
+        :sheet="sheet"
+        :held-item-name="heldItemName"
+        :held-item-reference="heldItemReference"
+        @set-held-item-name="setHeldItemName"
       />
 
-      <PokemonCombatPanel
+      <!-- ============ Tutor pts + Active Training Feature + Skill bg + Inherited ============ -->
+      <PokemonTrainingPanel
+        v-model:skill-bg-raised-csv="skillBgRaisedCsv"
+        v-model:skill-bg-lowered-csv="skillBgLoweredCsv"
         :sheet="sheet"
-        :current-hp="currentHp"
-        :max-hp="maxHp"
-        :full-max-hp="fullMaxHp"
-        :tick-value="tickValue"
-        :hp-thresholds="hpThresholds"
-        :speed-total="speedTotal"
-        :initiative="initiative"
-        :initiative-training-bonus="initiativeTrainingBonus"
-        :pokemon-accuracy="pokemonAccuracy"
-        :pokemon-evasion="pokemonEvasion"
-        :condition-effects="conditionEffects"
-        @set-current-hp="setCurrentHp"
-        @set-evasion-bonus="setEvasionBonus"
-        @set-accuracy-stage="setAccuracyStage"
+        :tutor-points-left="tutorPointsLeft"
+        @set-inherited-move="setInheritedMove"
+      />
+
+      <!-- ============ Movelist ============ -->
+      <PokemonMovesPanel
+        :move-rows="moveRows"
+        @add-move="addMove"
+        @remove-move="removeMove"
+        @reorder-move="reorderMove"
+      />
+
+      <!-- ============ Type Effectiveness ============ -->
+      <PokemonTypeEffectivenessPanel
+        :rows="typeEffectivenessRows"
+      />
+
+      <!-- ============ Capabilities ============ -->
+      <PokemonCapabilitiesPanel
+        v-model:other-caps-csv="otherCapsCsv"
+        :sheet="sheet"
+      />
+
+      <!-- ============ Abilities + Edges ============ -->
+      <PokemonAbilitiesEdgesPanel
+        :sheet="sheet"
+        :ability-rows="abilityRows"
+        @add-ability="addAbility"
+        @remove-ability="removeAbility"
+        @toggle-ability-activation="toggleAbilityActivation"
+        @add-edge="addEdge"
+        @remove-edge="removeEdge"
+      />
+
+      <!-- ============ Pokémon Skills ============ -->
+      <PokemonSkillsPanel
+        :sheet="sheet"
+        :skills="skills"
       />
     </div>
 
-    <!-- ============ Items / Weapon ============ -->
-    <PokemonEquipmentPanel
+    <PokemonHealingPanel
+      v-if="activeTab === 'healing'"
       :sheet="sheet"
-      :held-item-name="heldItemName"
-      :held-item-reference="heldItemReference"
-      @set-held-item-name="setHeldItemName"
-    />
-
-    <!-- ============ Tutor pts + Active Training Feature + Skill bg + Inherited ============ -->
-    <PokemonTrainingPanel
-      v-model:skill-bg-raised-csv="skillBgRaisedCsv"
-      v-model:skill-bg-lowered-csv="skillBgLoweredCsv"
-      :sheet="sheet"
-      :tutor-points-left="tutorPointsLeft"
-      @set-inherited-move="setInheritedMove"
-    />
-
-    <!-- ============ Movelist ============ -->
-    <PokemonMovesPanel
-      :move-rows="moveRows"
-      @add-move="addMove"
-      @remove-move="removeMove"
-      @reorder-move="reorderMove"
-    />
-
-    <!-- ============ Type Effectiveness ============ -->
-    <PokemonTypeEffectivenessPanel
-      :rows="typeEffectivenessRows"
-    />
-
-    <!-- ============ Capabilities ============ -->
-    <PokemonCapabilitiesPanel
-      v-model:other-caps-csv="otherCapsCsv"
-      :sheet="sheet"
-    />
-
-    <!-- ============ Abilities + Edges ============ -->
-    <PokemonAbilitiesEdgesPanel
-      :sheet="sheet"
-      :ability-rows="abilityRows"
-      @add-ability="addAbility"
-      @remove-ability="removeAbility"
-      @toggle-ability-activation="toggleAbilityActivation"
-      @add-edge="addEdge"
-      @remove-edge="removeEdge"
-    />
-
-    <!-- ============ Pokémon Skills ============ -->
-    <PokemonSkillsPanel
-      :sheet="sheet"
-      :skills="skills"
+      :current-hp="currentHp"
+      :max-hp="maxHp"
+      :full-max-hp="fullMaxHp"
+      :tick-value="tickValue"
     />
   </article>
 </template>
 
 <style scoped>
 .pokemon-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.pokemon-sheet__tab-panel {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;

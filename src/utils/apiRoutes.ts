@@ -1,5 +1,9 @@
 export const API_EVENTS_PATH = '/api/events' as const
 
+export const CAMPAIGN_API_PATHS = {
+  nextDay: '/api/campaign/next-day',
+} as const
+
 export const SESSION_API_PATHS = {
   safety: '/api/sessions/safety',
   start: '/api/sessions/start',

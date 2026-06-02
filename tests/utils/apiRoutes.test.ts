@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   API_EVENTS_PATH,
+  CAMPAIGN_API_PATHS,
   ENCOUNTER_API_PATHS,
   MAP_API_PATHS,
   PLAYER_PROFILE_API_PATHS,
@@ -12,6 +13,12 @@ import {
 describe('API route constants', () => {
   it('exposes the realtime events path', () => {
     expect(API_EVENTS_PATH).toBe('/api/events')
+  })
+
+  it('exposes campaign API paths', () => {
+    expect(CAMPAIGN_API_PATHS).toEqual({
+      nextDay: '/api/campaign/next-day',
+    })
   })
 
   it('exposes session API paths', () => {

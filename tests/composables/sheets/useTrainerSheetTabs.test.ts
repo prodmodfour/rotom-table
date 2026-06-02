@@ -11,6 +11,7 @@ describe('useTrainerSheetTabs', () => {
       ['stats', 'Stats'],
       ['skills', 'Skills'],
       ['combat', 'Combat'],
+      ['healing', 'Healing'],
       ['pokemon', 'Pokémon'],
       ['inventory', 'Inventory'],
       ['features', 'Features'],
@@ -22,6 +23,7 @@ describe('useTrainerSheetTabs', () => {
     expect(isTrainerSheetTabKey('stats')).toBe(true)
     expect(isTrainerSheetTabKey('skills')).toBe(true)
     expect(isTrainerSheetTabKey('combat')).toBe(true)
+    expect(isTrainerSheetTabKey('healing')).toBe(true)
     expect(isTrainerSheetTabKey('pokemon')).toBe(true)
     expect(isTrainerSheetTabKey(null)).toBe(false)
   })
