@@ -398,9 +398,6 @@ watch(selectedProfileId, () => {
                 <p v-if="trainer.sheet.classes?.length" class="trainer-portal-card__meta">
                   {{ trainer.sheet.classes.map((entry) => entry.name).join(', ') }}
                 </p>
-                <p v-else-if="trainer.sheet.playedBy" class="trainer-portal-card__meta">
-                  Played by {{ trainer.sheet.playedBy }}
-                </p>
                 <p v-if="savingRosterSlugs.has(trainer.slug)" class="trainer-portal-card__save" aria-live="polite">
                   Saving roster…
                 </p>
@@ -627,7 +624,7 @@ watch(selectedProfileId, () => {
 
 .trainer-portal-card {
   display: grid;
-  grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 520px) minmax(0, 1fr);
   grid-template-areas:
     "trainer box"
     "team box";
@@ -682,6 +679,12 @@ watch(selectedProfileId, () => {
 
 .trainer-portal-card__save--error {
   color: var(--bad);
+}
+
+.trainer-portal-card h2 {
+  max-width: 100%;
+  font-size: clamp(2.2rem, 3.8vw, 4.75rem);
+  line-height: 0.95;
 }
 
 .trainer-portal-card h2 a {
