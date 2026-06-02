@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import InitiativeProfileImage from '~/components/map/InitiativeProfileImage.vue'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 import { splitInitiativeTimeline } from '~/utils/initiativeTimeline'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 
 const props = defineProps<{
   rows: InitiativeRow[]
@@ -21,6 +22,9 @@ const timeline = computed(() => splitInitiativeTimeline(props.rows, props.active
 
 const tileTitle = (entry: InitiativeRow): string =>
   `${entry.name} · Initiative ${entry.initiativeScore}`
+
+const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefined =>
+  entry.accentColor ? trainerAccentCssVariables(entry.accentColor) : undefined
 </script>
 
 <template>
@@ -37,6 +41,7 @@ const tileTitle = (entry: InitiativeRow): string =>
             type="button"
             class="initiative-info-bar__tile is-past"
             :class="{ 'is-fainted': entry.currentHp <= 0 }"
+            :style="tileAccentStyle(entry)"
             :title="tileTitle(entry)"
             :aria-label="`Center map on ${entry.name}`"
             @click="emit('focus', entry.id)"
@@ -62,6 +67,7 @@ const tileTitle = (entry: InitiativeRow): string =>
             type="button"
             class="initiative-info-bar__tile initiative-info-bar__tile--current"
             :class="{ 'is-fainted': timeline.current.currentHp <= 0 }"
+            :style="tileAccentStyle(timeline.current)"
             :title="tileTitle(timeline.current)"
             :aria-label="`Center map on ${timeline.current.name}`"
             aria-current="step"
@@ -89,6 +95,7 @@ const tileTitle = (entry: InitiativeRow): string =>
             type="button"
             class="initiative-info-bar__tile"
             :class="{ 'is-fainted': entry.currentHp <= 0 }"
+            :style="tileAccentStyle(entry)"
             :title="tileTitle(entry)"
             :aria-label="`Center map on ${entry.name}`"
             @click="emit('focus', entry.id)"
@@ -105,6 +112,7 @@ const tileTitle = (entry: InitiativeRow): string =>
           type="button"
           class="initiative-info-bar__tile"
           :class="{ 'is-fainted': entry.currentHp <= 0 }"
+          :style="tileAccentStyle(entry)"
           :title="tileTitle(entry)"
           :aria-label="`Center map on ${entry.name}`"
           @click="emit('focus', entry.id)"
