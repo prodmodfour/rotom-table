@@ -5,6 +5,7 @@ import MapSceneStatus from '~/components/map/MapSceneStatus.vue'
 import MapMoveReactionPromptStack from '~/components/map/MapMoveReactionPromptStack.vue'
 import MoveVfxDebugPanel from '~/components/map/MoveVfxDebugPanel.vue'
 import InitiativeInfoBar from '~/components/map/InitiativeInfoBar.vue'
+import MapActionSplash from '~/components/map/MapActionSplash.vue'
 import MapCombatLog from '~/components/map/MapCombatLog.vue'
 import type { BuildTool } from '#shared/mapEditor'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -30,6 +31,7 @@ import type {
   MoveAutomationTargetingOverlayState,
 } from '~/types/moveAutomation'
 import type { MoveAnimationEvent, MoveVfxKind } from '~/types/moveAnimation'
+import type { MapActionSplashState } from '~/types/mapActionSplash'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
@@ -80,6 +82,7 @@ const props = defineProps<{
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
   moveVfxDebugHarnessEnabled?: boolean
+  actionSplash?: MapActionSplashState | null
   moveUsageError?: string | null
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
   cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
@@ -244,6 +247,8 @@ defineExpose({ focusPokemon })
         v-if="props.map && canViewMap"
         :messages="combatLogMessages"
       />
+
+      <MapActionSplash :splash="props.actionSplash ?? null" />
 
       <div v-if="props.moveUsageError" class="move-usage-error" role="status">
         {{ props.moveUsageError }}

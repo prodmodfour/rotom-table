@@ -48,6 +48,7 @@ import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, TabletopMap } from '~/types/map'
+import type { MapActionSplashState } from '~/types/mapActionSplash'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -139,6 +140,17 @@ const visibleMoveAnimations = computed(() => (
   moveAnimationsEnabled.value ? activeMoveAnimations.value : []
 ))
 
+const ACTION_SPLASH_DURATION_MS = 1850
+const actionSplash = ref<MapActionSplashState | null>(null)
+let actionSplashSequence = 0
+let actionSplashTimer: ReturnType<typeof setTimeout> | null = null
+
+const clearActionSplashTimer = () => {
+  if (!actionSplashTimer) return
+  clearTimeout(actionSplashTimer)
+  actionSplashTimer = null
+}
+
 const pruneSettledMoveAnimations = ({ nowMs }: { nowMs: number }) => {
   pruneExpiredMoveAnimations(nowMs)
 }
@@ -176,6 +188,8 @@ let cleanupMoveAnimationVisibilityChange: (() => void) | null = null
 onBeforeUnmount(() => {
   cleanupMoveAnimationVisibilityChange?.()
   cleanupMoveAnimationVisibilityChange = null
+  clearActionSplashTimer()
+  actionSplash.value = null
   clearMoveAnimations()
 })
 
@@ -267,6 +281,31 @@ const {
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
   },
 })
+
+const showActionSplash = (event: { userId: string; actionName: string; verb?: string }) => {
+  const actionName = event.actionName.trim()
+  if (!actionName) return
+
+  const actor = spawnedPokemon.value.find((pokemon) => pokemon.id === event.userId)
+  if (!actor) return
+
+  const id = ++actionSplashSequence
+  actionSplash.value = {
+    id,
+    userId: actor.id,
+    actorName: actor.species,
+    actionLabel: `${event.verb ?? 'uses'} ${actionName}`,
+    profileUrl: actor.profileSpriteUrl ?? null,
+    fallbackSpriteUrl: actor.spriteUrl ?? null,
+    accentColor: actor.accentColor ?? null,
+  }
+
+  clearActionSplashTimer()
+  actionSplashTimer = setTimeout(() => {
+    if (actionSplash.value?.id === id) actionSplash.value = null
+    actionSplashTimer = null
+  }, ACTION_SPLASH_DURATION_MS)
+}
 
 const enqueueMoveVfxDebugPreview = (kind: MoveVfxKind | 'all') => {
   const selectedTokenId = selectedId.value
@@ -577,7 +616,17 @@ const removeVoxelFromScene: typeof removeVoxel = (cell) => {
 }
 
 const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {
-  sendOutPokemon(payload)
+  const option = tokenSendOutOptionsById.value[payload.trainerId]
+    ?.find((entry) => entry.pokemonSlug === payload.pokemonSlug)
+  const sentOut = sendOutPokemon(payload)
+  if (sentOut) {
+    showActionSplash({
+      userId: payload.trainerId,
+      actionName: option?.label ?? payload.pokemonSlug,
+      verb: 'sends out',
+    })
+  }
+  return sentOut
 }
 
 const {
@@ -619,6 +668,9 @@ const {
   placeHazard: placeHazardFromScene,
   recordMoveUsage,
   enqueueMoveAnimations,
+  onMoveUse: (event) => {
+    showActionSplash({ userId: event.userId, actionName: event.moveName })
+  },
   onBeforeNonImmediateAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
@@ -670,7 +722,8 @@ const {
     })
     return true
   },
-  onBeforeNonImmediateAction: () => {
+  onBeforeNonImmediateAction: (event) => {
+    showActionSplash({ userId: event.userId, actionName: event.abilityName })
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
 })
@@ -695,7 +748,8 @@ const {
     })
     return true
   },
-  onBeforeManeuverAction: () => {
+  onBeforeManeuverAction: (event) => {
+    showActionSplash({ userId: event.userId, actionName: event.maneuverName })
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
 })
@@ -714,7 +768,8 @@ const orderActionPanel = useOrderActionPanel({
     })
     return true
   },
-  onBeforeOrderAction: () => {
+  onBeforeOrderAction: (event) => {
+    showActionSplash({ userId: event.userId, actionName: event.orderName })
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
 })
@@ -867,6 +922,36 @@ const cancelActionAutomationTargeting = () => {
   cancelOrderActionTargeting()
 }
 
+const applySpiteReactionPromptFromScene = async (id: string) => {
+  const prompt = spiteReactionPrompts.value.find((item) => item.id === id)
+  if (prompt) showActionSplash({ userId: prompt.defenderId, actionName: 'Spite' })
+  await applySpiteReactionPrompt(id)
+}
+
+const applyCuteCharmReactionPromptFromScene = async (id: string) => {
+  const prompt = cuteCharmReactionPrompts.value.find((item) => item.id === id)
+  if (prompt) showActionSplash({ userId: prompt.defenderId, actionName: 'Cute Charm' })
+  await applyCuteCharmReactionPrompt(id)
+}
+
+const applyPoisonPointReactionPromptFromScene = async (id: string) => {
+  const prompt = poisonPointReactionPrompts.value.find((item) => item.id === id)
+  if (prompt) showActionSplash({ userId: prompt.defenderId, actionName: 'Poison Point' })
+  await applyPoisonPointReactionPrompt(id)
+}
+
+const applyMoxieTriggerPromptFromScene = async (id: string) => {
+  const prompt = moxieTriggerPrompts.value.find((item) => item.id === id)
+  if (prompt) showActionSplash({ userId: prompt.attackerId, actionName: 'Moxie' })
+  await applyMoxieTriggerPrompt(id)
+}
+
+const applyCelebrateTriggerPromptFromScene = (id: string) => {
+  const prompt = celebrateTriggerPrompts.value.find((item) => item.id === id)
+  if (prompt) showActionSplash({ userId: prompt.attackerId, actionName: 'Celebrate' })
+  applyCelebrateTriggerPrompt(id)
+}
+
 useMapGmModeGuard({
   isGm,
   buildMode,
@@ -935,6 +1020,7 @@ useMapDimensionReconciliation({
         :move-animations="visibleMoveAnimations"
         :move-animations-reduced-motion="moveAnimationsReducedMotion"
         :move-vfx-debug-harness-enabled="moveVfxDebugHarnessEnabled"
+        :action-splash="actionSplash"
         :move-usage-error="sceneActionError"
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"
@@ -979,15 +1065,15 @@ useMapDimensionReconciliation({
         @clear-move-vfx="clearMoveAnimations"
         @move-vfx-settled="pruneSettledMoveAnimations"
         @dismiss-spite-reaction="dismissSpiteReactionPrompt"
-        @apply-spite-reaction="applySpiteReactionPrompt"
+        @apply-spite-reaction="applySpiteReactionPromptFromScene"
         @dismiss-cute-charm-reaction="dismissCuteCharmReactionPrompt"
-        @apply-cute-charm-reaction="applyCuteCharmReactionPrompt"
+        @apply-cute-charm-reaction="applyCuteCharmReactionPromptFromScene"
         @dismiss-poison-point-reaction="dismissPoisonPointReactionPrompt"
-        @apply-poison-point-reaction="applyPoisonPointReactionPrompt"
+        @apply-poison-point-reaction="applyPoisonPointReactionPromptFromScene"
         @dismiss-moxie-trigger="dismissMoxieTriggerPrompt"
-        @apply-moxie-trigger="applyMoxieTriggerPrompt"
+        @apply-moxie-trigger="applyMoxieTriggerPromptFromScene"
         @dismiss-celebrate-trigger="dismissCelebrateTriggerPrompt"
-        @apply-celebrate-trigger="applyCelebrateTriggerPrompt"
+        @apply-celebrate-trigger="applyCelebrateTriggerPromptFromScene"
         @use-attack-of-opportunity="useAttackOfOpportunity"
       />
     </template>

@@ -185,16 +185,16 @@ export const useTokenControls = ({
     clearSelection()
   }
 
-  const sendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }) => {
-    if (!map.value || !canSendOutTokens.value || !canControlPlacement(payload.trainerId)) return
+  const sendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): boolean => {
+    if (!map.value || !canSendOutTokens.value || !canControlPlacement(payload.trainerId)) return false
 
     const trainerPlacement = placementById(payload.trainerId)
-    if (trainerPlacement?.sheetKind !== 'trainer') return
+    if (trainerPlacement?.sheetKind !== 'trainer') return false
 
     const trainer = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.trainerId)
     const option = tokenSendOutOptionsById.value[payload.trainerId]
       ?.find((entry) => entry.pokemonSlug === payload.pokemonSlug)
-    if (!trainer || !option) return
+    if (!trainer || !option) return false
 
     const occupiedKeys = buildMapOccupancy({
       voxels: mapVoxels.value,
@@ -206,13 +206,13 @@ export const useTokenControls = ({
       map.value.dimensions,
       null,
       occupiedKeys,
-    )) return
+    )) return false
     if (!isSendOutPositionWithinThrowRange({
       trainer,
       pokemon: option.preview,
       position: payload.position,
       range: POKEBALL_THROW_RANGE_SQUARES,
-    })) return
+    })) return false
 
     map.value.placements.push({
       id: createPlacementId(),
@@ -223,6 +223,7 @@ export const useTokenControls = ({
       turned: false,
     })
     clearSelection()
+    return true
   }
 
   const selectPlacement = (id: string | null) => {

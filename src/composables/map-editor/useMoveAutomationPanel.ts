@@ -118,10 +118,12 @@ const defaultMoveAnimationNowMs = (): number => {
   return Date.now()
 }
 
-export interface MoveAutomationNonImmediateActionEvent {
+export interface MoveAutomationActionUseEvent {
   userId: string
   moveName: string
 }
+
+export type MoveAutomationNonImmediateActionEvent = MoveAutomationActionUseEvent
 
 export interface MoveAutomationRangedAttackOfOpportunityEvent {
   provokerId: string
@@ -154,6 +156,7 @@ export interface UseMoveAutomationPanelOptions {
    */
   enqueueMoveAnimations?: MoveAnimationEnqueueHandler
   onBeforeNonImmediateAction?: (event: MoveAutomationNonImmediateActionEvent) => void
+  onMoveUse?: (event: MoveAutomationActionUseEvent) => void
   onRangedAttackOfOpportunity?: (event: MoveAutomationRangedAttackOfOpportunityEvent) => void
   now?: () => number
   maxLogEntries?: number
@@ -281,6 +284,7 @@ export const useMoveAutomationPanel = ({
   recordMoveUsage,
   enqueueMoveAnimations = noopEnqueueMoveAnimations,
   onBeforeNonImmediateAction,
+  onMoveUse,
   onRangedAttackOfOpportunity,
   now,
   maxLogEntries = DEFAULT_MAX_LOG_ENTRIES,
@@ -614,6 +618,10 @@ export const useMoveAutomationPanel = ({
     onBeforeNonImmediateAction?.({ userId: request.userId, moveName: request.moveName })
   }
 
+  const notifyMoveUse = (request: Pick<ActiveMoveTargetingRequest, 'userId' | 'moveName'>) => {
+    onMoveUse?.({ userId: request.userId, moveName: request.moveName })
+  }
+
   const notifyRangedAttackOfOpportunity = (
     request: ActiveMoveTargetingRequest,
     targetIds: readonly string[],
@@ -866,6 +874,7 @@ export const useMoveAutomationPanel = ({
         if (!canContinueMoveAutomationForUser(id)) return
         const recorded = await recordMoveUseIfTracked({ placementId: id, moveName: script.moveName }, frequency)
         if (!recorded || !canContinueMoveAutomationForUser(id)) return
+        notifyMoveUse({ userId: id, moveName: script.moveName })
         notifyMoveActionTaken({
           kind: 'single-target',
           userId: id,
@@ -1259,6 +1268,8 @@ export const useMoveAutomationPanel = ({
     if (!recorded || !canContinueMoveAutomationForUser(request.userId)) return false
     if (options.requireActiveTargeting && !moveTargetingRequestIsStillActive(request)) return false
 
+    notifyMoveUse(request)
+
     if (!options.skipActionNotifications) {
       notifyMoveActionTaken(request)
       notifyRangedAttackOfOpportunity(request, [targetId])
@@ -1386,6 +1397,7 @@ export const useMoveAutomationPanel = ({
     )
     if (!recorded || !canContinueMoveAutomationForUser(request.userId)) return
     if (!moveTargetingRequestIsStillActive(request)) return
+    notifyMoveUse(request)
     notifyMoveActionTaken(request)
     const selectedTargetIds = selectedAreaTargetIds(request)
     const targetSet = new Set(selectedTargetIds)
