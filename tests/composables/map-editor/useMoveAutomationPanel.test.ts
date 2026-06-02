@@ -58,7 +58,10 @@ const spawned = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
 
 const MOVE_FEEDBACK_OUTCOME_MS = 1500
 const MOVE_FEEDBACK_FINAL_MS = 2100
-const MOVE_FEEDBACK_EFFECTIVE_FINAL_MS = 2800
+const MOVE_FEEDBACK_ANIMATION_LAUNCH_MS = 2100
+const MOVE_FEEDBACK_ANIMATION_IMPACT_MS = 2600
+const MOVE_FEEDBACK_DAMAGE_FINAL_MS = 2820
+const MOVE_FEEDBACK_EFFECTIVE_DAMAGE_FINAL_MS = 2820
 
 const transaction = (): MoveAutomationTransaction => ({
   userId: 'user-token',
@@ -257,7 +260,7 @@ describe('useMoveAutomationPanel', () => {
         damageLoss: 20,
       })
 
-      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_FINAL_MS)
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_DAMAGE_FINAL_MS)
 
       expect(calls).toEqual(['hp:target-token:20'])
       expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Psywave', scriptKind: 'explicit' }])
@@ -390,7 +393,7 @@ describe('useMoveAutomationPanel', () => {
       })
       expect(panel.spiteReactionPrompts.value).toEqual([])
 
-      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_EFFECTIVE_FINAL_MS - MOVE_FEEDBACK_FINAL_MS)
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_EFFECTIVE_DAMAGE_FINAL_MS - MOVE_FEEDBACK_FINAL_MS)
 
       expect(panel.spiteReactionPrompts.value).toMatchObject([{
         defenderId: 'target-token',
@@ -532,7 +535,7 @@ describe('useMoveAutomationPanel', () => {
       await panel.selectMoveAutomationTarget('target-token')
       expect(panel.poisonPointReactionPrompts.value).toEqual([])
 
-      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_FINAL_MS)
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_DAMAGE_FINAL_MS)
 
       expect(panel.poisonPointReactionPrompts.value).toMatchObject([{
         defenderId: 'target-token',
@@ -699,7 +702,7 @@ describe('useMoveAutomationPanel', () => {
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Ember' })
       await panel.selectMoveAutomationTarget('target-token')
 
-      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_EFFECTIVE_FINAL_MS)
+      await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_EFFECTIVE_DAMAGE_FINAL_MS)
 
       expect(hpCalls.length).toBeGreaterThan(0)
       expect(panel.celebrateTriggerPrompts.value).toMatchObject([{
@@ -1094,7 +1097,7 @@ describe('useMoveAutomationPanel', () => {
           originCell: { x: 0, y: 0, z: 0 },
           targetCell: { x: 2, y: 0, z: 0 },
         })
-        expect(events[0]?.startOffsetMs, scenario.label).toBeUndefined()
+        expect(events[0]?.startOffsetMs, scenario.label).toBe(MOVE_FEEDBACK_ANIMATION_LAUNCH_MS)
         const semanticFollowUpKinds = new Set<MoveAnimationEvent['kind']>([
           MOVE_VFX_KIND.healing,
           MOVE_VFX_KIND.buffDebuff,
@@ -1102,14 +1105,14 @@ describe('useMoveAutomationPanel', () => {
         ])
         for (const event of events.slice(1)) {
           const expectedStartOffset = semanticFollowUpKinds.has(event.kind)
-            ? MOVE_FEEDBACK_EFFECTIVE_FINAL_MS
-            : MOVE_FEEDBACK_OUTCOME_MS
+            ? MOVE_FEEDBACK_EFFECTIVE_DAMAGE_FINAL_MS
+            : MOVE_FEEDBACK_ANIMATION_IMPACT_MS
           expect(event.startOffsetMs, `${scenario.label}:${event.kind}`).toBe(expectedStartOffset)
         }
 
         if (scenario.label === 'hit') {
           expect(hpCalls).toEqual([])
-          await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_EFFECTIVE_FINAL_MS)
+          await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_EFFECTIVE_DAMAGE_FINAL_MS)
           expect(hpCalls.length).toBeGreaterThan(0)
         }
 
@@ -1176,18 +1179,20 @@ describe('useMoveAutomationPanel', () => {
       MOVE_VFX_KIND.arc,
       MOVE_VFX_KIND.meleeLunge,
     ]).toContain(launchEvent?.kind)
-    expect(launchEvent?.startOffsetMs).toBeUndefined()
-    expect(impactEvent?.startOffsetMs).toBe(MOVE_FEEDBACK_OUTCOME_MS)
+    expect(launchEvent?.startOffsetMs).toBe(MOVE_FEEDBACK_ANIMATION_LAUNCH_MS)
+    expect(impactEvent?.startOffsetMs).toBe(MOVE_FEEDBACK_ANIMATION_IMPACT_MS)
     expect(statusEvent).toMatchObject({
       targetId: 'target-token',
-      startOffsetMs: MOVE_FEEDBACK_FINAL_MS,
+      startOffsetMs: MOVE_FEEDBACK_DAMAGE_FINAL_MS,
       conditionNames: ['Paralysis'],
     })
 
     expect(calls).toEqual([])
     await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_OUTCOME_MS)
     expect(calls).toEqual([])
-    await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_FINAL_MS - MOVE_FEEDBACK_OUTCOME_MS)
+    await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_ANIMATION_IMPACT_MS - MOVE_FEEDBACK_OUTCOME_MS)
+    expect(calls).toEqual([])
+    await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_DAMAGE_FINAL_MS - MOVE_FEEDBACK_ANIMATION_IMPACT_MS)
     expect(calls).toEqual(expect.arrayContaining(['conditions:target-token:Paralysis']))
     vi.useRealTimers()
   })

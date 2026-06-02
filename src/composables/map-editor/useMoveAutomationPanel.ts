@@ -69,6 +69,7 @@ import {
 import { moveAutomationTargetHitChance } from '~/utils/moveAutomationAccuracy'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { getErrorMessage } from '~/utils/errorMessages'
+import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
 import { moveFrequencyTracksOnMap, moveFrequencyTracksOnSheet, parseMoveFrequency } from '~/utils/moveUsage'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
 import type { AbilityAutomationTransaction } from '~/types/abilityAutomation'
@@ -180,11 +181,16 @@ const FINAL_RESULT_VISIBLE_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.finalResultVi
 
 const MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS = D20_ROLL_ANIMATION_MS + HIT_ROLL_VISIBLE_MS
 const MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS = MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS + HIT_RESULT_VISIBLE_MS
+const MOVE_AUTOMATION_VFX_LAUNCH_DELAY_MS = MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS
+const MOVE_AUTOMATION_VFX_IMPACT_DELAY_MS = MOVE_AUTOMATION_VFX_LAUNCH_DELAY_MS + MOVE_VFX_DEFAULT_DURATIONS_MS.normal
+const MOVE_AUTOMATION_FEEDBACK_DAMAGE_ANIMATION_DONE_DELAY_MS = (
+  MOVE_AUTOMATION_VFX_IMPACT_DELAY_MS + MOVE_VFX_DEFAULT_DURATIONS_MS.quick
+)
 
 export const MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS = {
-  launch: 0,
-  impact: MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS,
-  crit: MOVE_AUTOMATION_FEEDBACK_OUTCOME_DELAY_MS,
+  launch: MOVE_AUTOMATION_VFX_LAUNCH_DELAY_MS,
+  impact: MOVE_AUTOMATION_VFX_IMPACT_DELAY_MS,
+  crit: MOVE_AUTOMATION_VFX_IMPACT_DELAY_MS,
 } as const
 
 export interface MoveAutomationFeedbackVfxTiming {
@@ -200,15 +206,19 @@ export const moveAutomationFeedbackHasFinalResolutionPhase = (feedback: MoveAuto
 export const moveAutomationFeedbackHasEffectivenessPhase = (feedback: MoveAutomationFeedbackState): boolean =>
   Boolean(feedback.effectiveness)
 
-export const moveAutomationFeedbackDamagePhaseDelayMs = (feedback: MoveAutomationFeedbackState): number => (
-  MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS
-  + (
-    moveAutomationFeedbackHasFinalResolutionPhase(feedback)
-    && moveAutomationFeedbackHasEffectivenessPhase(feedback)
-      ? EFFECTIVENESS_VISIBLE_MS
-      : 0
-  )
-)
+export const moveAutomationFeedbackDamagePhaseDelayMs = (feedback: MoveAutomationFeedbackState): number => {
+  const feedbackDelay = MOVE_AUTOMATION_FEEDBACK_EFFECTIVENESS_DELAY_MS
+    + (
+      moveAutomationFeedbackHasFinalResolutionPhase(feedback)
+      && moveAutomationFeedbackHasEffectivenessPhase(feedback)
+        ? EFFECTIVENESS_VISIBLE_MS
+        : 0
+    )
+
+  return feedback.damageResolved
+    ? Math.max(feedbackDelay, MOVE_AUTOMATION_FEEDBACK_DAMAGE_ANIMATION_DONE_DELAY_MS)
+    : feedbackDelay
+}
 
 export const moveAutomationFeedbackVfxTiming = (feedback: MoveAutomationFeedbackState): MoveAutomationFeedbackVfxTiming => ({
   launchDelayMs: MOVE_AUTOMATION_VFX_ROLL_FEEDBACK_OFFSETS_MS.launch,

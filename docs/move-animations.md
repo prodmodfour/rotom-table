@@ -524,7 +524,7 @@ This integration remains best-effort and visual-only. Planning or enqueue failur
 
 Single-target moves that resolve through `resolveInstantMoveAutomation()` now plan and enqueue generic VFX immediately after the roll feedback and transaction are available. The planner input includes the user, selected target, script, transaction, feedback snapshot, and distilled target outcome so hit, miss, and crit visuals reflect the same automation result shown by the existing roll-feedback overlay.
 
-Launch events start when the roll feedback begins, while target flashes, miss puffs, and crit bursts use a transient `startOffsetMs` aligned with the feedback outcome phase. Enqueue/planning remains best-effort and visual-only: failures are logged without blocking feedback timers, transaction application, logs, HP/status/combat-stage updates, permissions, persistence, or renderer scheduling.
+Launch events wait until the rolling d20, hit-roll formula, and hit/miss callout have finished, while target flashes, miss puffs, and crit bursts use a transient `startOffsetMs` after the launch travel. Damage callouts and damage-applying transaction feedback wait until the impact cue finishes. Enqueue/planning remains best-effort and visual-only: failures are logged without blocking feedback timers, transaction application, logs, HP/status/combat-stage updates, permissions, persistence, or renderer scheduling.
 
 ### No-accuracy single-target move integration for VFX-058
 
@@ -560,9 +560,9 @@ Self-resolving moves use the same record-before-plan order: if usage recording f
 
 ### Roll-feedback timing alignment for VFX-064
 
-Accuracy-roll move VFX now derive their `startOffsetMs` values from the same phase durations used by `useMoveAutomationPanel` feedback timers: 650 ms for the rolling d20, 850 ms for the visible hit-roll formula, 600 ms for the hit/miss result, and 700 ms for the optional effectiveness phase. Launch/contact events keep a zero offset so they start promptly after target selection. Hit flashes, miss puffs, and crit bursts use the outcome offset at 1500 ms, matching the phase where the overlay first shows Hit, Miss, or Critical Hit.
+Accuracy-roll move VFX now derive their `startOffsetMs` values from the same phase durations used by `useMoveAutomationPanel` feedback timers: 650 ms for the rolling d20, 850 ms for the visible hit-roll formula, 600 ms for the hit/miss result, and 700 ms for the optional effectiveness phase. Launch/contact events start after the hit/miss callout has had its visible window, at 2100 ms. Hit flashes, miss puffs, and crit bursts start after the normal launch-travel duration, at 2600 ms.
 
-Semantic transaction follow-ups use a separate planner timing hint from the impact offset. If the feedback has a damage/condition final phase, healing, status, buff/debuff, and map-confirmation follow-ups wait for that final visual resolution: 2100 ms without an effectiveness phase or 2800 ms when effectiveness is shown. If the feedback has no final resolution phase, semantic follow-ups use the outcome offset. These offsets remain transient VFX hints only; they add no timers, persistence, gameplay changes, permission changes, or renderer loops, and the existing feedback transaction application remains authoritative.
+Semantic transaction follow-ups use a separate planner timing hint from the impact offset. If the feedback has a damage final phase, damage application and its callout wait until the launch plus quick impact cue has finished, at 2820 ms; optional effectiveness still appears at 2100 ms and remains visible before the damage result. Non-damage final condition/status feedback keeps the existing final visual resolution timing. If the feedback has no final resolution phase, semantic follow-ups use the impact offset. These offsets remain transient VFX hints only; they add no timers, persistence, gameplay changes, permission changes, or renderer loops, and the existing feedback transaction application remains authoritative.
 
 ### Permission and visibility invariants for VFX-065
 
