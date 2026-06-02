@@ -269,6 +269,20 @@ export const applyPokemonFullRecovery = (sheet: CharacterSheet): SheetHealingMut
   return summary
 }
 
+export const applyPokemonCenterRecovery = (sheet: CharacterSheet): SheetHealingMutationSummary => {
+  const summary = emptyHealingMutationSummary()
+  const before = computePokemonHealingVitals(sheet)
+  summary.injuriesHealed += removePokemonInjuries(sheet, 3)
+  const afterInjuries = computePokemonHealingVitals(sheet)
+  setPokemonCurrentHp(sheet, afterInjuries.maxHp, afterInjuries.maxHp)
+  summary.hitPointsRestored += Math.max(0, afterInjuries.maxHp - before.currentHp)
+  const daily = clearSheetDailyMoveUsage(sheet)
+  summary.dailyMoveUsesCleared += daily.uses
+  summary.dailyMoveEntriesCleared += daily.entries
+  summary.conditionsCleared += clearPokemonConditions(sheet)
+  return summary
+}
+
 export const applyTrainerFullRecovery = (sheet: TrainerSheet): SheetHealingMutationSummary => {
   const summary = emptyHealingMutationSummary()
   const before = computeTrainerHealingVitals(sheet)

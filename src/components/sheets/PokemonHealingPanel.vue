@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import {
+  applyPokemonCenterRecovery,
   applyPokemonExtendedRest,
   applyPokemonFullRecovery,
   applyPokemonNextDay,
@@ -149,12 +150,15 @@ const resetDailyMoves = () => clearSheetDailyMoveUsage(props.sheet)
           <button type="button" class="healing-button" @click="applyPokemonExtendedRest(sheet)">
             Extended Rest
           </button>
+          <button type="button" class="healing-button healing-button--primary" @click="applyPokemonCenterRecovery(sheet)">
+            Pokémon Center
+          </button>
           <button type="button" class="healing-button healing-button--danger" @click="applyPokemonFullRecovery(sheet)">
             Full recovery
           </button>
         </div>
         <p class="healing-note">
-          Extended Rest clears conditions and Daily move use; HP is restored only when below 5 Injuries.
+          Extended Rest clears conditions and Daily move use; Pokémon Center also restores HP and removes up to 3 Injuries.
         </p>
       </section>
     </div>

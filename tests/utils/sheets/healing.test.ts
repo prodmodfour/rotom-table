@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
+  applyPokemonCenterRecovery,
   applyPokemonNextDay,
   applyTrainerNextDay,
   computePokemonHealingVitals,
@@ -31,6 +32,29 @@ describe('sheet healing helpers', () => {
       dailyMoveUsesCleared: 1,
       conditionsCleared: 1,
     })
+    expect(summary.hitPointsRestored).toBeGreaterThan(0)
+  })
+
+  it('applies pokemon center recovery without clearing more than 3 injuries', () => {
+    const sheet: CharacterSheet = {
+      slug: 'center-test',
+      nickname: 'Center Test',
+      species: '',
+      level: 10,
+      stats: { hp: { added: 10 } },
+      combat: { currentHp: 1, injuries: 5, conditions: ['Paralysis'] },
+      moveUsage: { daily: { rest: { moveName: 'Rest', uses: 1 } } },
+    }
+
+    const summary = applyPokemonCenterRecovery(sheet)
+
+    expect(sheet.combat?.injuries).toBe(2)
+    expect(sheet.combat?.currentHp).toBe(computePokemonHealingVitals(sheet).maxHp)
+    expect(sheet.combat?.conditions).toEqual([])
+    expect(sheet.moveUsage).toBeUndefined()
+    expect(summary.injuriesHealed).toBe(3)
+    expect(summary.dailyMoveUsesCleared).toBe(1)
+    expect(summary.conditionsCleared).toBe(1)
     expect(summary.hitPointsRestored).toBeGreaterThan(0)
   })
 
