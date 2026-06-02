@@ -19,7 +19,7 @@ const formatCount = (count: number, singular: string, plural = `${singular}s`): 
 const advanceCampaignDay = async () => {
   if (!isGm.value || advancingDay.value) return
   const confirmed = window.confirm(
-    'Advance the campaign to the next day? This will remove 1 Injury from every Pokémon and Trainer sheet, restore HP for sheets below 5 Injuries, clear conditions, reset Daily move use, and restore Trainer AP.',
+    'Advance the campaign to the next day? This starts a new Injury-healing allowance, removes 1 Injury from every Pokémon and Trainer sheet, restores HP for sheets below 5 Injuries, clears conditions, resets Daily move use, and restores Trainer AP.',
   )
   if (!confirmed) return
 
@@ -64,7 +64,7 @@ useHead({ title: 'Campaign · Rotom Table' })
     <section class="panel-card next-day-card">
       <h2>Next day effects</h2>
       <ul>
-        <li>Remove 1 Injury from each sheet.</li>
+        <li>Start a new Injury-healing allowance and remove 1 Injury from each sheet.</li>
         <li>Restore HP to the injury-adjusted Max HP when the sheet is below 5 Injuries.</li>
         <li>Clear sheet conditions and reset Daily move usage.</li>
         <li>Restore Trainer AP while preserving bound AP.</li>

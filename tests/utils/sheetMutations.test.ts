@@ -57,6 +57,25 @@ describe('sheet mutation helpers', () => {
     expect(injuredTrainer.currentHp).toBeLessThanOrEqual(trainerHpSnapshot(injuredTrainer).maxHp)
   })
 
+  it('caps Injury decreases in HP updates by the daily healing allowance', () => {
+    const originalPokemon = pokemon()
+    originalPokemon.combat = { currentHp: 1, injuries: 5, injuriesHealedToday: 2 }
+
+    const healedPokemon = applyHpToSheet('pokemon', originalPokemon, 999, 0) as CharacterSheet
+    expect(healedPokemon.combat?.injuries).toBe(4)
+    expect(healedPokemon.combat?.injuriesHealedToday).toBe(3)
+    expect(healedPokemon.combat?.currentHp).toBe(pokemonHpSnapshot(healedPokemon).maxHp)
+
+    const originalTrainer = trainer()
+    originalTrainer.currentInjuries = 5
+    originalTrainer.injuriesHealedToday = 3
+
+    const healedTrainer = applyHpToSheet('trainer', originalTrainer, 999, 0) as TrainerSheet
+    expect(healedTrainer.currentInjuries).toBe(5)
+    expect(healedTrainer.injuriesHealedToday).toBe(3)
+    expect(healedTrainer.currentHp).toBe(trainerHpSnapshot(healedTrainer).maxHp)
+  })
+
   it('normalizes combat stages and condition names', () => {
     const staged = applyCombatStagesToSheet('pokemon', pokemon(), {
       atk: 99,

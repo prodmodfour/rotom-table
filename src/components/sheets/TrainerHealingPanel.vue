@@ -35,6 +35,9 @@ const quarterHp = computed(() => healingFractionAmount(props.fullMaxHp, 4))
 const halfHp = computed(() => healingFractionAmount(props.fullMaxHp, 2))
 const canHeal = computed(() => props.currentHp < props.maxHp)
 const canRestHeal = computed(() => canHeal.value && vitals.value.injuries < 5)
+const canRemoveInjuries = computed(() => vitals.value.injuries > 0 && vitals.value.injuryHealsRemainingToday > 0)
+const injuryCareLimit = computed(() => Math.min(vitals.value.injuries, vitals.value.injuryHealsRemainingToday))
+const removeUpToInjuryCount = computed(() => Math.min(3, injuryCareLimit.value))
 const apLeft = computed(() => props.sheet.ap?.left ?? props.maxAp)
 const apBound = computed(() => props.sheet.ap?.bound ?? 0)
 const conditionCount = computed(() => {
@@ -86,6 +89,10 @@ const restoreAp = () => restoreTrainerAp(props.sheet, props.maxAp)
         <strong><EditableCell v-model="injuriesModel" type="number" :min="0" :max="10" /></strong>
       </div>
       <div class="healing-vital">
+        <span>Injury heals today</span>
+        <strong>{{ vitals.injuriesHealedToday }} / {{ vitals.maxInjuriesHealedPerDay }}<small>{{ vitals.injuryHealsRemainingToday }} left</small></strong>
+      </div>
+      <div class="healing-vital">
         <span>Tick</span>
         <strong>{{ tickValue }}</strong>
       </div>
@@ -127,18 +134,18 @@ const restoreAp = () => restoreTrainerAp(props.sheet, props.maxAp)
       <section class="healing-block">
         <h3>Injury care</h3>
         <div class="healing-actions">
-          <button type="button" class="healing-button" :disabled="vitals.injuries <= 0" @click="removeTrainerInjuries(sheet, 1)">
+          <button type="button" class="healing-button" :disabled="!canRemoveInjuries" @click="removeTrainerInjuries(sheet, 1)">
             Remove 1 Injury
           </button>
-          <button type="button" class="healing-button" :disabled="vitals.injuries <= 0" @click="removeTrainerInjuries(sheet, 3)">
-            Remove up to 3
+          <button type="button" class="healing-button" :disabled="!canRemoveInjuries" @click="removeTrainerInjuries(sheet, 3)">
+            Remove up to {{ removeUpToInjuryCount }}
           </button>
-          <button type="button" class="healing-button" :disabled="vitals.injuries <= 0" @click="setTrainerInjuries(sheet, 0)">
-            Clear Injuries
+          <button type="button" class="healing-button" :disabled="!canRemoveInjuries" @click="setTrainerInjuries(sheet, 0)">
+            Use daily allowance
           </button>
         </div>
         <p class="healing-note">
-          Injury removal raises the effective HP cap by 10% of full Max HP per Injury.
+          Injury removal raises the effective HP cap by 10% of full Max HP per Injury. Up to {{ vitals.maxInjuriesHealedPerDay }} Injuries can be restored per day.
         </p>
       </section>
 
@@ -162,7 +169,7 @@ const restoreAp = () => restoreTrainerAp(props.sheet, props.maxAp)
           </button>
         </div>
         <p class="healing-note">
-          Extended Rest clears conditions and Daily move use, restores drained/spent AP, and restores HP when below 5 Injuries.
+          Extended Rest clears conditions and Daily move use, restores drained/spent AP, and restores HP when below 5 Injuries. Full recovery still obeys the daily Injury-healing limit.
         </p>
       </section>
     </div>

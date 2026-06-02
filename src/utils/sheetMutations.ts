@@ -5,6 +5,7 @@ import { COMBAT_STAT_STAGE_KEYS, normalizeCombatStages as normalizeCombatStageMa
 import { normalizeConditionNames } from './statusConditions'
 import { activateSheetAbility } from './sheetAbilityActivation'
 import { resolveCanonicalSheetAbilityName } from './sheetAbilities'
+import { setPokemonInjuries, setTrainerInjuries } from './sheets/healing'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SheetKind, SheetPlacement } from '~/types/map'
@@ -94,13 +95,13 @@ export const applyHpToSheet = (
   if (kind === 'pokemon') {
     const updated = deepCloneJson(sheet as CharacterSheet)
     updated.combat = { ...(updated.combat ?? {}) }
-    if (injuries != null) updated.combat.injuries = normalizeInjuryCount(injuries)
+    if (injuries != null) setPokemonInjuries(updated, normalizeInjuryCount(injuries))
     updated.combat.currentHp = clampHpValue(currentHp, pokemonHpSnapshot(updated).maxHp)
     return updated
   }
 
   const updated = deepCloneJson(sheet as TrainerSheet)
-  if (injuries != null) updated.currentInjuries = normalizeInjuryCount(injuries)
+  if (injuries != null) setTrainerInjuries(updated, normalizeInjuryCount(injuries))
   updated.currentHp = clampHpValue(currentHp, trainerHpSnapshot(updated).maxHp)
   return updated
 }

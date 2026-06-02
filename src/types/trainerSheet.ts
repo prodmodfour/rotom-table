@@ -272,6 +272,8 @@ export interface TrainerSheet {
 
   level: number
   currentInjuries?: number
+  /** Injuries restored during the current campaign day; capped by PTU's daily Injury-healing limit. */
+  injuriesHealedToday?: number
   money?: number
 
   /** Optional URL of a portrait image to drop into the silhouette frame. */

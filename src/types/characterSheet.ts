@@ -76,6 +76,8 @@ export interface CharacterSheetCombat {
   maxHp?: number
   currentHp?: number
   injuries?: number
+  /** Injuries restored during the current campaign day; capped by PTU's daily Injury-healing limit. */
+  injuriesHealedToday?: number
   /** Legacy/manual injured HP. Renderer derives the injury-adjusted Max HP. */
   injuredHp?: number
   /** Legacy/manual Tick. Renderer derives Tick from formula Max HP. */
