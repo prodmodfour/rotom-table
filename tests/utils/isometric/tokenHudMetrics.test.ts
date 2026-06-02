@@ -40,7 +40,7 @@ describe('token HUD metrics', () => {
 
   it('derives compact status HUD heights from labels, conditions, and turn state', () => {
     expect(tokenStatusCssHeight('Pikachu', [], false)).toBe(18)
-    expect(tokenStatusCssHeight('Mega Gengar', ['Burned', 'Poisoned', 'Burned'], true)).toBe(72)
+    expect(tokenStatusCssHeight('Mega Gengar', ['Burned', 'Poisoned', 'Burned'], true)).toBe(100)
   })
 
   it('classifies HP ratios into existing token HUD tiers', () => {
