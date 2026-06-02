@@ -2,8 +2,10 @@
 import InitiativeTokenSprite from '~/components/map/InitiativeTokenSprite.vue'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 
+type InitiativeProfileImageEntry = Pick<InitiativeRow, 'name' | 'profileUrl' | 'sprite'>
+
 defineProps<{
-  entry: InitiativeRow
+  entry: InitiativeProfileImageEntry
 }>()
 </script>
 

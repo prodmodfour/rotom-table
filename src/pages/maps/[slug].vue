@@ -291,14 +291,16 @@ const showActionSplash = (event: { userId: string; actionName: string; verb?: st
   const actor = spawnedPokemon.value.find((pokemon) => pokemon.id === event.userId)
   if (!actor) return Promise.resolve()
 
+  const profileEntry = initiativeRows.value.find((entry) => entry.id === actor.id)
+  if (!profileEntry) return Promise.resolve()
+
   const id = ++actionSplashSequence
   actionSplash.value = {
     id,
     userId: actor.id,
     actorName: actor.species,
     actionLabel: `${event.verb ?? 'uses'} ${actionName}`,
-    profileUrl: actor.profileSpriteUrl ?? null,
-    fallbackSpriteUrl: actor.spriteUrl ?? null,
+    profileEntry,
     accentColor: actor.accentColor ?? null,
   }
 

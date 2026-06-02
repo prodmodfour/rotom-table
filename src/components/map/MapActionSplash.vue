@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import InitiativeProfileImage from '~/components/map/InitiativeProfileImage.vue'
 import type { MapActionSplashState } from '~/types/mapActionSplash'
 
 const props = defineProps<{
   splash: MapActionSplashState | null
 }>()
 
-const imageUrl = computed(() => props.splash?.profileUrl ?? props.splash?.fallbackSpriteUrl ?? null)
+const profileEntry = computed(() => props.splash?.profileEntry ?? null)
 const initials = computed(() => {
   const name = props.splash?.actorName.trim() ?? ''
   return name
@@ -36,19 +37,14 @@ const splashStyle = computed(() => ({
       <div class="map-action-splash__bar">
         <figure class="map-action-splash__card">
           <span class="map-action-splash__portrait">
-            <template v-if="imageUrl">
-              <img
+            <template v-if="profileEntry">
+              <InitiativeProfileImage
                 class="map-action-splash__portrait-shadow"
-                :src="imageUrl"
-                alt=""
-                aria-hidden="true"
-                draggable="false"
+                :entry="profileEntry"
               />
-              <img
+              <InitiativeProfileImage
                 class="map-action-splash__portrait-image"
-                :src="imageUrl"
-                :alt="splash.actorName"
-                draggable="false"
+                :entry="profileEntry"
               />
             </template>
             <span v-else class="map-action-splash__initials">{{ initials }}</span>
@@ -69,6 +65,11 @@ const splashStyle = computed(() => ({
   --action-splash-border-width: 4px;
   --action-splash-inner-height: calc(var(--action-splash-height) - (var(--action-splash-border-width) * 2));
   --action-splash-shadow-offset: clamp(0.35rem, 0.9vw, 0.7rem);
+  --action-splash-profile-width: calc(var(--action-splash-inner-height) * 2.6666667);
+  --action-splash-edge: color-mix(in srgb, var(--action-splash-accent) 68%, #050608 32%);
+  --action-splash-edge-hot: color-mix(in srgb, var(--action-splash-accent) 86%, #111018 14%);
+  --action-splash-center: color-mix(in srgb, var(--action-splash-accent) 52%, white 48%);
+  --action-splash-line: color-mix(in srgb, var(--action-splash-accent) 24%, white 76%);
 
   position: absolute;
   inset: 0;
@@ -84,6 +85,7 @@ const splashStyle = computed(() => ({
   top: 50%;
   left: 50%;
   display: grid;
+  isolation: isolate;
   place-items: center;
   width: 100vw;
   height: var(--action-splash-height);
@@ -93,10 +95,58 @@ const splashStyle = computed(() => ({
   border-top: var(--action-splash-border-width) solid white;
   border-bottom: var(--action-splash-border-width) solid white;
   background: var(--action-splash-accent);
+  background: var(--action-splash-edge);
   box-shadow: 0 24px 56px rgba(0, 0, 0, 0.48);
 }
 
+.map-action-splash__bar::before,
+.map-action-splash__bar::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.map-action-splash__bar::before {
+  inset: -1px -10vw;
+  z-index: 0;
+  background: linear-gradient(
+    90deg,
+    var(--action-splash-edge) 0%,
+    var(--action-splash-edge-hot) 18%,
+    var(--action-splash-accent) 34%,
+    var(--action-splash-center) 50%,
+    var(--action-splash-accent) 66%,
+    var(--action-splash-edge-hot) 82%,
+    var(--action-splash-edge) 100%
+  );
+  background-size: 135% 100%;
+  filter: saturate(1.12);
+  animation: map-action-splash-gradient-drift 820ms cubic-bezier(0.2, 0, 0.2, 1) infinite alternate;
+  will-change: transform, filter;
+}
+
+.map-action-splash__bar::after {
+  inset: 0 -28%;
+  z-index: 1;
+  opacity: 0.82;
+  background-image:
+    linear-gradient(90deg, transparent 0 10%, color-mix(in srgb, var(--action-splash-line) 30%, transparent) 17%, color-mix(in srgb, var(--action-splash-line) 72%, transparent) 24%, transparent 42%),
+    linear-gradient(90deg, transparent 0 24%, color-mix(in srgb, var(--action-splash-line) 18%, transparent) 35%, color-mix(in srgb, var(--action-splash-line) 55%, transparent) 45%, transparent 68%),
+    linear-gradient(90deg, transparent 0 2%, color-mix(in srgb, var(--action-splash-line) 26%, transparent) 9%, color-mix(in srgb, var(--action-splash-line) 62%, transparent) 15%, transparent 31%),
+    linear-gradient(90deg, transparent 0 34%, color-mix(in srgb, var(--action-splash-line) 22%, transparent) 46%, color-mix(in srgb, var(--action-splash-line) 58%, transparent) 56%, transparent 78%),
+    linear-gradient(90deg, transparent 0 12%, rgba(255, 255, 255, 0.2) 22%, rgba(255, 255, 255, 0.42) 32%, transparent 54%),
+    linear-gradient(90deg, transparent 0 46%, rgba(255, 255, 255, 0.14) 55%, rgba(255, 255, 255, 0.34) 64%, transparent 82%);
+  background-position: 0 18%, 9rem 31%, -5rem 43%, 15rem 57%, 3rem 69%, -11rem 82%;
+  background-repeat: repeat-x;
+  background-size: 30rem 3px, 36rem 2px, 24rem 2px, 42rem 3px, 28rem 2px, 34rem 2px;
+  mix-blend-mode: screen;
+  animation: map-action-splash-speed-lines 1200ms linear infinite;
+  will-change: background-position;
+}
+
 .map-action-splash__card {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: stretch;
   width: min(100%, 72rem);
@@ -110,23 +160,18 @@ const splashStyle = computed(() => ({
 .map-action-splash__portrait {
   position: relative;
   display: grid;
-  flex: 0 0 var(--action-splash-inner-height);
+  flex: 0 0 var(--action-splash-profile-width);
   place-items: center;
-  width: var(--action-splash-inner-height);
+  width: var(--action-splash-profile-width);
   height: var(--action-splash-inner-height);
   overflow: hidden;
 }
 
 .map-action-splash__portrait-image,
 .map-action-splash__portrait-shadow {
-  display: block;
   grid-area: 1 / 1;
-  width: auto;
-  min-width: 100%;
+  width: 100%;
   height: 100%;
-  max-width: none;
-  object-fit: cover;
-  image-rendering: pixelated;
 }
 
 .map-action-splash__portrait-shadow {
@@ -155,6 +200,7 @@ const splashStyle = computed(() => ({
   align-content: center;
   min-width: 0;
   gap: 0.24rem;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.42), 0 10px 28px rgba(0, 0, 0, 0.34);
 }
 
 .map-action-splash__actor {
@@ -208,12 +254,37 @@ const splashStyle = computed(() => ({
   }
 }
 
+@keyframes map-action-splash-gradient-drift {
+  from {
+    transform: translate3d(-3.5%, 0, 0) scaleX(1.04);
+    filter: saturate(1.08) brightness(0.98);
+  }
+  to {
+    transform: translate3d(3.5%, 0, 0) scaleX(1.07);
+    filter: saturate(1.24) brightness(1.06);
+  }
+}
+
+@keyframes map-action-splash-speed-lines {
+  from {
+    background-position: 0 18%, 9rem 31%, -5rem 43%, 15rem 57%, 3rem 69%, -11rem 82%;
+  }
+  to {
+    background-position: 30rem 18%, 45rem 31%, 19rem 43%, 57rem 57%, 31rem 69%, 23rem 82%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .map-action-splash-enter-active,
   .map-action-splash-leave-active,
   .map-action-splash-enter-active .map-action-splash__bar,
   .map-action-splash-leave-active .map-action-splash__bar {
     animation-duration: 1ms;
+  }
+
+  .map-action-splash__bar::before,
+  .map-action-splash__bar::after {
+    animation: none;
   }
 }
 

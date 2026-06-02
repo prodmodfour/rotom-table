@@ -102,7 +102,7 @@ const initiativeSpriteFor = (pokemon: SpawnedPokemon): InitiativeSpritePreview =
   }
 }
 
-export const initiativeSpriteFrameStyle = (entry: InitiativeRow): Record<string, string> => ({
+export const initiativeSpriteFrameStyle = (entry: Pick<InitiativeRow, 'sprite'>): Record<string, string> => ({
   backgroundImage: entry.sprite.url ? `url(${entry.sprite.url})` : 'none',
   width: `${entry.sprite.frameWidth}px`,
   height: `${entry.sprite.frameHeight}px`,

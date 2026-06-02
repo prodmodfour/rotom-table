@@ -4,8 +4,10 @@ import {
   type InitiativeRow,
 } from '~/composables/map-editor/useInitiativeTracker'
 
+type InitiativeTokenSpriteEntry = Pick<InitiativeRow, 'name' | 'sprite'>
+
 defineProps<{
-  entry: InitiativeRow
+  entry: InitiativeTokenSpriteEntry
 }>()
 </script>
 
