@@ -138,12 +138,12 @@ onBeforeUnmount(clearTimers)
   max-height: min(92vh, 920px);
   position: relative;
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--rule-soft);
   border-radius: 18px;
-  background: rgba(5, 6, 8, 0.42);
+  background: color-mix(in srgb, var(--paper-soft) 84%, transparent);
   box-shadow:
-    0 24px 70px rgba(0, 0, 0, 0.30),
-    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    0 24px 70px color-mix(in srgb, var(--pokemon-black) 24%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink-bright) 10%, transparent);
   color: var(--ink);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
@@ -183,13 +183,13 @@ onBeforeUnmount(clearTimers)
   z-index: 2;
   padding: 0.18rem 0.55rem 0.24rem;
   border-radius: 999px;
-  background: rgba(5, 6, 8, 0.62);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--pokemon-black) 28%, transparent);
   font-size: clamp(1.2rem, 8vw, 2.25rem);
   font-weight: 950;
   letter-spacing: 0.04em;
   line-height: 1;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.82);
+  text-shadow: 0 2px 0 color-mix(in srgb, var(--pokemon-black) 72%, transparent);
   transform: translate(-50%, -50%) rotate(-4deg);
   white-space: nowrap;
 }

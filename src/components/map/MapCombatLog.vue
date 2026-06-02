@@ -164,16 +164,15 @@ onBeforeUnmount(() => {
   max-width: 100%;
   padding: 0.46rem 0.58rem;
   border: 0;
-  background: rgba(8, 10, 14, 0.34);
+  background: var(--map-glass-surface, color-mix(in srgb, var(--paper) 72%, transparent));
   box-shadow:
-    0 8px 22px rgba(0, 0, 0, 0.20),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 8px 22px color-mix(in srgb, var(--pokemon-black) 18%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink-bright) 10%, transparent);
   backdrop-filter: blur(12px) saturate(135%);
   -webkit-backdrop-filter: blur(12px) saturate(135%);
-  color: #fff;
+  color: var(--ink-bright);
   cursor: pointer;
   pointer-events: auto;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
 
 .combat-log--scroll-active .combat-log__message {
@@ -199,7 +198,7 @@ onBeforeUnmount(() => {
 
 .combat-log__time {
   flex: 0 0 auto;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--ink-muted);
   font-size: clamp(0.58rem, 0.72vw, 0.68rem);
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -216,7 +215,7 @@ onBeforeUnmount(() => {
 }
 
 .combat-log__detail {
-  color: rgba(255, 255, 255, 0.94);
+  color: var(--ink);
   font-size: clamp(0.74rem, 0.9vw, 0.86rem);
   font-weight: 700;
   line-height: 1.22;

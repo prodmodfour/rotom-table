@@ -205,7 +205,7 @@ const tileTitle = (entry: InitiativeRow): string =>
   line-height: 1;
   padding: 0;
   pointer-events: auto;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--pokemon-black) 35%, transparent));
   transition: color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
 }
 
@@ -222,11 +222,11 @@ const tileTitle = (entry: InitiativeRow): string =>
 }
 
 .initiative-info-bar__round-label {
-  color: #fff;
+  color: var(--ink-bright);
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--pokemon-black) 28%, transparent));
   white-space: nowrap;
 }
 
@@ -239,10 +239,10 @@ const tileTitle = (entry: InitiativeRow): string =>
   overflow: hidden;
   border: 1px solid var(--rule-soft);
   border-radius: 0;
-  background: rgba(8, 10, 14, 0.34);
+  background: var(--map-glass-surface, color-mix(in srgb, var(--paper) 72%, transparent));
   box-shadow:
-    0 8px 22px rgba(0, 0, 0, 0.20),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 8px 22px color-mix(in srgb, var(--pokemon-black) 18%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink-bright) 10%, transparent);
   backdrop-filter: blur(12px) saturate(135%);
   -webkit-backdrop-filter: blur(12px) saturate(135%);
   color: inherit;
@@ -272,9 +272,9 @@ const tileTitle = (entry: InitiativeRow): string =>
 .initiative-info-bar__tile--current {
   border: 2px solid var(--accent);
   box-shadow:
-    0 0 0 2px rgba(255, 31, 45, 0.22),
-    0 10px 26px rgba(0, 0, 0, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    0 0 0 2px rgba(var(--accent-rgb), 0.22),
+    0 10px 26px color-mix(in srgb, var(--pokemon-black) 22%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink-bright) 12%, transparent);
   opacity: 1;
 }
 </style>

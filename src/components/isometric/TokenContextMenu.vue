@@ -772,32 +772,21 @@ watch(orders, (nextOrders) => {
 
 <style scoped>
 .context-menu {
-  --paper: rgba(5, 6, 8, 0.48);
-  --paper-soft: rgba(12, 14, 18, 0.68);
-  --paper-hover: rgba(255, 255, 255, 0.11);
-  --paper-active: rgba(var(--accent-rgb), 0.20);
-  --paper-inset: rgba(5, 6, 8, 0.38);
-  --rule-soft: rgba(255, 255, 255, 0.26);
-  --rule-strong: rgba(var(--accent-rgb), 0.58);
-  --shadow-card:
-    0 18px 52px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-
   position: fixed;
   z-index: 11000;
   width: min(230px, calc(100vw - 1.5rem));
   max-height: calc(100vh - 1.5rem);
   overflow: visible;
   padding: 0.4rem;
-  border: 1px solid rgba(255, 255, 255, 0.26);
+  border: 1px solid var(--rule-soft);
   border-radius: 12px;
   background:
     linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.13) 0 24%,
+      color-mix(in srgb, var(--ink-bright) 12%, transparent) 0 24%,
       transparent 24% 100%
     ),
-    rgba(12, 14, 18, 0.66);
+    color-mix(in srgb, var(--paper-soft) 86%, transparent);
   box-shadow: var(--shadow-card);
   backdrop-filter: blur(16px) saturate(145%) contrast(108%);
   -webkit-backdrop-filter: blur(16px) saturate(145%) contrast(108%);

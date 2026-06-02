@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { GridDimensions } from '~/types/pokemon'
+import type { AppThemeMode } from '~/utils/appTheme'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 
 const buildFloorGridGeometry = (dimensions: GridDimensions) => {
@@ -45,6 +46,33 @@ const buildMoveGridGeometry = (dimensions: GridDimensions) => {
   return geometry
 }
 
+export interface GridRendererSyncOptions {
+  themeMode?: AppThemeMode
+}
+
+const GRID_THEME_PALETTES: Record<AppThemeMode, {
+  floor: number
+  seam: number
+  seamOpacity: number
+  movement: number
+  movementOpacity: number
+}> = {
+  dark: {
+    floor: 0x12151b,
+    seam: 0x050608,
+    seamOpacity: 0.85,
+    movement: 0x050608,
+    movementOpacity: 0.01,
+  },
+  light: {
+    floor: 0xf2e3d0,
+    seam: 0xa39380,
+    seamOpacity: 0.58,
+    movement: 0x6f6255,
+    movementOpacity: 0.045,
+  },
+}
+
 export const createGridRenderer = (group: THREE.Group) => {
   let floorGridLines: THREE.LineSegments | null = null
   let moveGridLines: THREE.LineSegments | null = null
@@ -73,17 +101,19 @@ export const createGridRenderer = (group: THREE.Group) => {
   }
 
   return {
-    sync(dimensions: GridDimensions) {
+    sync(dimensions: GridDimensions, options: GridRendererSyncOptions = {}) {
       disposeGridObjects()
 
-      // Graphite-black terrain seam lines matching the page background.
-      // Seam lines stay subtle so terrain reads as tile grout.
+      const palette = GRID_THEME_PALETTES[options.themeMode ?? 'dark']
+
+      // Terrain seam lines matching the active page theme. Seam lines stay
+      // subtle so terrain reads as tile grout without overpowering sprites.
       floorGridLines = new THREE.LineSegments(
         buildFloorGridGeometry(dimensions),
         new THREE.LineBasicMaterial({
-          color: 0x050608,
+          color: palette.seam,
           transparent: true,
-          opacity: 0.85,
+          opacity: palette.seamOpacity,
           depthTest: true,
           depthWrite: false,
         }),
@@ -93,21 +123,21 @@ export const createGridRenderer = (group: THREE.Group) => {
       moveGridLines = new THREE.LineSegments(
         buildMoveGridGeometry(dimensions),
         new THREE.LineBasicMaterial({
-          color: 0x050608,
+          color: palette.movement,
           transparent: true,
-          opacity: 0.01,
+          opacity: palette.movementOpacity,
           depthTest: true,
           depthWrite: false,
         }),
       )
       group.add(moveGridLines)
 
-      // Floor plane = the lit "top" of the tabletop. The graphite surface sits
-      // just below voxel tops so placed objects visually pop upward.
+      // Floor plane = the lit "top" of the tabletop. It sits just below voxel
+      // tops so placed objects visually pop upward.
       floorPlane = new THREE.Mesh(
         new THREE.PlaneGeometry(dimensions.x, dimensions.z),
         new THREE.MeshBasicMaterial({
-          color: 0x12151b,
+          color: palette.floor,
           side: THREE.DoubleSide,
           depthWrite: false,
         }),

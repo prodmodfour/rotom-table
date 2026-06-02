@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridDimensions, SpawnedPokemon } from '~/types/pokemon'
+import type { AppThemeMode } from '~/utils/appTheme'
 import {
   ISOMETRIC_WEBGL_RENDERER_PARAMETERS,
   resolveIsometricRendererPixelRatio,
@@ -45,9 +46,21 @@ export const createIsometricCamera = () => {
   return camera
 }
 
-export const createIsometricWebGLRenderer = () => {
+const ISOMETRIC_CLEAR_COLORS: Record<AppThemeMode, number> = {
+  dark: 0x050608,
+  light: 0xfff8ed,
+}
+
+export const applyIsometricWebGLRendererTheme = (
+  renderer: THREE.WebGLRenderer,
+  themeMode: AppThemeMode,
+) => {
+  renderer.setClearColor(ISOMETRIC_CLEAR_COLORS[themeMode], 1)
+}
+
+export const createIsometricWebGLRenderer = (themeMode: AppThemeMode = 'dark') => {
   const renderer = new THREE.WebGLRenderer(ISOMETRIC_WEBGL_RENDERER_PARAMETERS)
-  renderer.setClearColor(0x050608, 1) // Pokémon black surface
+  applyIsometricWebGLRendererTheme(renderer, themeMode)
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.domElement.style.display = 'block'
   renderer.domElement.style.width = '100%'

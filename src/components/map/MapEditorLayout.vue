@@ -26,15 +26,16 @@
   );
   --map-combat-log-top: var(--map-top-info-top);
 
+  --map-scene-background: #050608;
   --map-glass-surface: rgba(5, 6, 8, 0.42);
   --map-glass-surface-strong: rgba(12, 14, 18, 0.58);
   --map-glass-surface-hover: rgba(255, 255, 255, 0.10);
-  --map-glass-surface-active: rgba(255, 31, 45, 0.18);
+  --map-glass-surface-active: rgba(var(--accent-rgb), 0.18);
   --map-glass-surface-inset: rgba(5, 6, 8, 0.34);
   --map-glass-border: rgba(255, 255, 255, 0.18);
   --map-glass-border-soft: rgba(255, 255, 255, 0.24);
   --map-glass-border-strong: rgba(255, 255, 255, 0.34);
-  --map-glass-accent-border: rgba(255, 31, 45, 0.48);
+  --map-glass-accent-border: rgba(var(--accent-rgb), 0.48);
 
   --paper: var(--map-glass-surface);
   --paper-soft: var(--map-glass-surface-strong);
@@ -42,22 +43,6 @@
   --paper-active: var(--map-glass-surface-active);
   --paper-inset: var(--map-glass-surface-inset);
   --paper-accent: color-mix(in srgb, var(--accent) 16%, transparent);
-  --accent: var(--pokemon-red);
-  --accent-rgb: 255, 31, 45;
-  --accent-soft: rgba(var(--accent-rgb), 0.16);
-  --accent-muted: var(--pokemon-red-dark);
-  --accent-contrast: var(--pokemon-black);
-  --ink: var(--pokemon-white-soft);
-  --ink-bright: var(--pokemon-white);
-  --ink-soft: #c9cdd2;
-  --ink-muted: var(--pokemon-white-muted);
-  --ink-faint: #66707a;
-  --good: #64e676;
-  --bad: var(--pokemon-red);
-  --info: #8fb8ff;
-  --warn: #ffb84d;
-  --magic: #d88cff;
-  --map-token-level-prefix: #ff8c00;
   --rule: var(--map-glass-border);
   --rule-soft: var(--map-glass-border-soft);
   --rule-strong: var(--map-glass-border-strong);
@@ -70,7 +55,20 @@
   min-height: 100vh;
   overflow: hidden;
   isolation: isolate;
-  background: #050608;
+  background: var(--map-scene-background);
+}
+
+:global(:root[data-theme='light']) .layout-shell {
+  --map-scene-background: #fff8ed;
+  --map-glass-surface: rgba(255, 253, 248, 0.62);
+  --map-glass-surface-strong: rgba(255, 253, 248, 0.82);
+  --map-glass-surface-hover: rgba(242, 227, 208, 0.9);
+  --map-glass-surface-active: rgba(var(--accent-rgb), 0.12);
+  --map-glass-surface-inset: rgba(239, 225, 207, 0.72);
+  --map-glass-border: rgba(5, 6, 8, 0.12);
+  --map-glass-border-soft: rgba(5, 6, 8, 0.18);
+  --map-glass-border-strong: rgba(5, 6, 8, 0.34);
+  --map-glass-accent-border: rgba(var(--accent-rgb), 0.46);
 }
 
 .layout-shell__scene {

@@ -43,18 +43,18 @@ const emit = defineEmits<{
 
 .admin-panel {
   width: min(440px, 100%);
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  border: 1px solid var(--rule-soft);
   border-radius: 18px;
   background:
     linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.10) 0 18%,
+      color-mix(in srgb, var(--ink-bright) 9%, transparent) 0 18%,
       transparent 18% 100%
     ),
-    rgba(12, 14, 18, 0.82);
+    color-mix(in srgb, var(--paper-soft) 88%, transparent);
   box-shadow:
     var(--shadow-card),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    inset 0 1px 0 color-mix(in srgb, var(--ink-bright) 10%, transparent);
   padding: 1rem;
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);

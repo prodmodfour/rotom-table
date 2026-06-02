@@ -48,6 +48,7 @@ import type { TokenPokeballOption } from '~/utils/pokeballCapture'
 import {
   DEFAULT_FACING_DIRECTION,
   alignCameraToGrid as alignIsometricCameraToGrid,
+  applyIsometricWebGLRendererTheme,
   bindIsometricCameraControlChangeInvalidation,
   createIsometricCamera,
   createIsometricCssRenderer,
@@ -231,6 +232,7 @@ const moveVfxVisible = () => resolveMoveVfxLayerVisibility(visibleLayers())
 const normalizedGroundLevelY = () => clampIsometricGroundLevelY(props.dimensions, props.groundLevelY)
 
 const route = useRoute()
+const { appThemeMode } = useAppTheme()
 const container = ref<HTMLDivElement | null>(null)
 const renderMetricsOverlayEnabled = computed(() => isIsometricRenderDebugEnabled({ query: route.query }))
 const renderMetricsOverlaySnapshot = ref(createEmptyIsometricRenderMetricsSnapshot())
@@ -706,9 +708,16 @@ const updateGridVisibility = () => {
 }
 
 const buildGrid = () => {
-  gridRenderer.sync(props.dimensions)
+  gridRenderer.sync(props.dimensions, { themeMode: appThemeMode.value })
   buildHazardPickTargets.setFloorPlane(gridRenderer.floorPlane())
   updateGridVisibility()
+}
+
+const applySceneTheme = () => {
+  if (!renderer) return
+  applyIsometricWebGLRendererTheme(renderer, appThemeMode.value)
+  buildGrid()
+  requestScheduledSceneFrame('terrain')
 }
 
 const hoverController = createIsometricTokenHoverController({
@@ -1575,7 +1584,7 @@ onMounted(() => {
   }
 
   camera = createIsometricCamera()
-  renderer = createIsometricWebGLRenderer()
+  renderer = createIsometricWebGLRenderer(appThemeMode.value)
   cssRenderer = createIsometricCssRenderer()
   controls = createIsometricOrbitControls(
     camera,
@@ -1666,6 +1675,8 @@ onBeforeUnmount(() => {
   buildHazardPickTargets.clear()
   tokenGeometryCache.dispose()
 })
+
+watch(appThemeMode, applySceneTheme)
 
 useIsometricSceneWatchers({
   sources: {

@@ -95,18 +95,18 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.95rem;
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  border: 1px solid var(--rule-soft, rgba(255, 255, 255, 0.24));
   border-radius: 22px;
   background:
     linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.10) 0 18%,
+      color-mix(in srgb, var(--ink-bright) 9%, transparent) 0 18%,
       transparent 18% 100%
     ),
-    rgba(12, 14, 18, 0.84);
+    color-mix(in srgb, var(--paper-soft) 88%, transparent);
   box-shadow:
     var(--shadow-card, 0 18px 52px rgba(0, 0, 0, 0.34)),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    inset 0 1px 0 color-mix(in srgb, var(--ink-bright) 10%, transparent);
   padding: clamp(0.9rem, 2vw, 1.15rem);
   overflow: hidden;
   backdrop-filter: blur(14px) saturate(140%);
