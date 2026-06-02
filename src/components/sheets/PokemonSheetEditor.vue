@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDerived'
 import { usePokemonSheetCsvFields } from '~/composables/sheets/usePokemonSheetCsvFields'
 import { usePokemonSheetRowActions } from '~/composables/sheets/usePokemonSheetRowActions'
 import { usePokemonNatureControls } from '~/composables/sheets/usePokemonNatureControls'
-import { usePokemonSheetTabs } from '~/composables/sheets/usePokemonSheetTabs'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetEditorCapabilities } from '~/utils/sheetEditorCapabilities'
@@ -85,7 +84,15 @@ const {
   setInheritedMove,
 } = usePokemonSheetRowActions(sheet)
 
-const { tabs, activeTab, setActiveTab } = usePokemonSheetTabs()
+const healingModalOpen = ref(false)
+const openHealingModal = () => {
+  healingModalOpen.value = true
+}
+const closeHealingModal = () => {
+  healingModalOpen.value = false
+}
+const healingModalTitle = computed(() => `Healing · ${sheet.value.nickname || sheet.value.species || 'Pokémon'}`)
+const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value.species} recovery and daily resources` : 'Recovery and daily resources')
 </script>
 
 <template>
@@ -105,15 +112,10 @@ const { tabs, activeTab, setActiveTab } = usePokemonSheetTabs()
       :nature-minus-display="natureMinusDisplay"
       :can-edit-sheet="canEditSheet"
       :can-manage-player-access="canManagePlayerAccess"
+      @open-healing="openHealingModal"
     />
 
-    <SheetTabNav
-      :tabs="tabs"
-      :active-key="activeTab"
-      @update:active-key="setActiveTab"
-    />
-
-    <div v-if="activeTab === 'sheet'" class="pokemon-sheet__tab-panel">
+    <div class="pokemon-sheet__tab-panel">
       <!-- ============ Stats + Combat strip ============ -->
       <div class="row two-col">
         <PokemonStatsPanel
@@ -199,16 +201,22 @@ const { tabs, activeTab, setActiveTab } = usePokemonSheetTabs()
         :skills="skills"
       />
     </div>
+  </article>
 
+  <SheetHealingModal
+    v-if="healingModalOpen"
+    :title="healingModalTitle"
+    :subtitle="healingModalSubtitle"
+    @close="closeHealingModal"
+  >
     <PokemonHealingPanel
-      v-if="activeTab === 'healing'"
       :sheet="sheet"
       :current-hp="currentHp"
       :max-hp="maxHp"
       :full-max-hp="fullMaxHp"
       :tick-value="tickValue"
     />
-  </article>
+  </SheetHealingModal>
 </template>
 
 <style scoped>

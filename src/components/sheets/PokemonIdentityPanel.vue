@@ -25,6 +25,10 @@ const props = defineProps<{
   canManagePlayerAccess: boolean
 }>()
 
+const emit = defineEmits<{
+  'open-healing': []
+}>()
+
 const pokedexPath = computed(() => pokedexEntryPathForSpecies(props.sheet.species))
 const loyaltyModel = computed({
   get: () => props.sheet.loyalty,
@@ -74,6 +78,13 @@ const loyaltyModel = computed({
           >
             View in Pokédex
           </NuxtLink>
+          <button
+            type="button"
+            class="badge pokedex-link healing-link"
+            @click="emit('open-healing')"
+          >
+            Healing
+          </button>
           <span
             class="badge"
             :title="levelIsExperienceDerived ? `Level ${levelFromExperience} from Total EXP` : 'Manual level'"
@@ -281,6 +292,12 @@ const loyaltyModel = computed({
   font-weight: 800;
   text-decoration: none;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.healing-link {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .pokedex-link:hover,

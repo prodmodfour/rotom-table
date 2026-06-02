@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import TrainerPokemonTabPanel from './TrainerPokemonTabPanel.vue'
 import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
@@ -33,6 +33,15 @@ const SKILL_KEYS: TrainerSkillKey[] = TRAINER_SKILL_ORDER.map(([key]) => key)
 const RANK_OPTIONS: SkillRank[] = ['Pathetic', 'Untrained', 'Novice', 'Adept', 'Expert', 'Master']
 
 const { tabs, activeTab, setActiveTab } = useTrainerSheetTabs()
+const healingModalOpen = ref(false)
+const openHealingModal = () => {
+  healingModalOpen.value = true
+}
+const closeHealingModal = () => {
+  healingModalOpen.value = false
+}
+const healingModalTitle = computed(() => `Healing · ${sheet.value.name || 'Trainer'}`)
+const healingModalSubtitle = computed(() => 'Trainer recovery, AP, and daily resources')
 
 const {
   stats,
@@ -112,6 +121,7 @@ const {
       :full-max-hp="fullMaxHp"
       :max-ap="maxAp"
       :can-manage-player-access="canManagePlayerAccess"
+      @open-healing="openHealingModal"
       @open-portrait-picker="openPortraitPicker"
       @clear-portrait="clearPortrait"
       @set-current-hp="setCurrentHp"
@@ -194,19 +204,6 @@ const {
     />
 
     <!-- =================================================================== -->
-    <!-- HEALING TAB                                                          -->
-    <!-- =================================================================== -->
-    <TrainerHealingPanel
-      v-if="activeTab === 'healing'"
-      :sheet="sheet"
-      :current-hp="currentHp"
-      :max-hp="maxHp"
-      :full-max-hp="fullMaxHp"
-      :tick-value="tickValue"
-      :max-ap="maxAp"
-    />
-
-    <!-- =================================================================== -->
     <!-- POKÉMON TAB                                                          -->
     <!-- =================================================================== -->
     <TrainerPokemonTabPanel
@@ -244,6 +241,22 @@ const {
       @remove-edge="removeEdge"
     />
   </article>
+
+  <SheetHealingModal
+    v-if="healingModalOpen"
+    :title="healingModalTitle"
+    :subtitle="healingModalSubtitle"
+    @close="closeHealingModal"
+  >
+    <TrainerHealingPanel
+      :sheet="sheet"
+      :current-hp="currentHp"
+      :max-hp="maxHp"
+      :full-max-hp="fullMaxHp"
+      :tick-value="tickValue"
+      :max-ap="maxAp"
+    />
+  </SheetHealingModal>
 
   <TrainerPortraitPickerModal
     v-if="portraitPickerOpen"
