@@ -555,9 +555,9 @@ samp {
 
 .token-status__turn-chevron {
   display: none;
-  height: 14px;
+  height: 42px;
   color: var(--accent);
-  font-size: 22px;
+  font-size: 66px;
   font-weight: 900;
   line-height: 0.7;
   text-shadow:
