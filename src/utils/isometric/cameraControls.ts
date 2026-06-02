@@ -55,7 +55,7 @@ export const applyIsometricWebGLRendererTheme = (
   renderer: THREE.WebGLRenderer,
   themeMode: AppThemeMode,
 ) => {
-  renderer.setClearColor(ISOMETRIC_CLEAR_COLORS[themeMode], 0)
+  renderer.setClearColor(ISOMETRIC_CLEAR_COLORS[themeMode], 1)
 }
 
 export const createIsometricWebGLRenderer = (themeMode: AppThemeMode = 'dark') => {

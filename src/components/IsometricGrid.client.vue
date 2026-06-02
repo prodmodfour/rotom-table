@@ -2011,7 +2011,7 @@ useIsometricSceneWatchers({
 
 .scene-atmosphere {
   position: absolute;
-  z-index: 3;
+  z-index: 2;
   inset: 0;
   overflow: hidden;
   background:
