@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhMoon, PhSun } from '@phosphor-icons/vue'
 import { computed, onMounted, watch } from 'vue'
 import {
   PRIMARY_APP_NAV_ITEMS,
@@ -40,7 +41,6 @@ const primaryItems = computed(() => filterAppNavItems(PRIMARY_APP_NAV_ITEMS, isG
 const referenceItems = computed(() => filterAppNavItems(REFERENCE_APP_NAV_ITEMS, isGm.value, isPlayer.value))
 const playerProfileStatusText = computed(() => playerProfileNavStatusText(selectedProfileDisplayName.value))
 const switchProfileRoute = computed(() => playerProfileSwitchRoute(route.fullPath))
-const appThemeToggleText = computed(() => (isLightAppTheme.value ? 'Dark mode' : 'Light mode'))
 
 const isActive = (path: string) => isAppNavItemActive(route.path, path)
 
@@ -124,10 +124,12 @@ watch(isPlayer, (nextIsPlayer) => {
       type="button"
       class="nav-link nav-link--button nav-link--theme"
       :aria-label="appThemeToggleLabel"
+      :aria-pressed="isLightAppTheme"
       :title="appThemeToggleLabel"
       @click="toggleAppThemeMode"
     >
-      {{ appThemeToggleText }}
+      <PhSun v-if="isLightAppTheme" :size="18" weight="bold" aria-hidden="true" />
+      <PhMoon v-else :size="18" weight="bold" aria-hidden="true" />
     </button>
     <span v-if="showRoleBadge" class="role-badge">{{ roleLabel }}</span>
     <button type="button" class="nav-link nav-link--button" @click="handleLogout">
@@ -279,8 +281,18 @@ watch(isPlayer, (nextIsPlayer) => {
 }
 
 .nav-link--theme {
+  width: 2.4rem;
+  height: 2.4rem;
+  min-width: 2.4rem;
+  flex-basis: 2.4rem;
+  padding: 0;
   border-color: color-mix(in srgb, var(--accent) 38%, var(--rule-soft));
   color: var(--accent);
+  letter-spacing: 0;
+}
+
+.nav-link--theme :deep(svg) {
+  flex: 0 0 auto;
 }
 
 .nav-link--theme:hover,
@@ -339,5 +351,12 @@ watch(isPlayer, (nextIsPlayer) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.app-navigation--vertical .nav-link--theme {
+  width: 2.4rem;
+  min-height: 2.4rem;
+  align-self: center;
+  padding: 0;
 }
 </style>
