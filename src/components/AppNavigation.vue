@@ -40,6 +40,9 @@ const {
 const primaryItems = computed(() => filterAppNavItems(PRIMARY_APP_NAV_ITEMS, isGm.value, isPlayer.value))
 const referenceItems = computed(() => filterAppNavItems(REFERENCE_APP_NAV_ITEMS, isGm.value, isPlayer.value))
 const playerProfileStatusText = computed(() => playerProfileNavStatusText(selectedProfileDisplayName.value))
+const playerNameRoleBadge = computed(() => selectedProfileDisplayName.value?.trim() ?? '')
+const roleBadgeLabel = computed(() => (isPlayer.value && playerNameRoleBadge.value ? playerNameRoleBadge.value : roleLabel.value))
+const roleBadgeShowsPlayerName = computed(() => isPlayer.value && playerNameRoleBadge.value.length > 0)
 const switchProfileRoute = computed(() => playerProfileSwitchRoute(route.fullPath))
 
 const isActive = (path: string) => isAppNavItemActive(route.path, path)
@@ -131,7 +134,10 @@ watch(isPlayer, (nextIsPlayer) => {
       <PhSun v-if="isLightAppTheme" :size="18" weight="bold" aria-hidden="true" />
       <PhMoon v-else :size="18" weight="bold" aria-hidden="true" />
     </button>
-    <span v-if="showRoleBadge" class="role-badge">{{ roleLabel }}</span>
+    <span
+      v-if="showRoleBadge"
+      :class="['role-badge', { 'role-badge--profile': roleBadgeShowsPlayerName }]"
+    >{{ roleBadgeLabel }}</span>
     <button type="button" class="nav-link nav-link--button" @click="handleLogout">
       Logout
     </button>
@@ -167,6 +173,9 @@ watch(isPlayer, (nextIsPlayer) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-width: 0;
+  max-width: min(100%, 16rem);
+  overflow: hidden;
   padding: 0.42rem 0.7rem;
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
@@ -175,7 +184,14 @@ watch(isPlayer, (nextIsPlayer) => {
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.role-badge--profile {
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .profile-status {
