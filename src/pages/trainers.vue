@@ -7,6 +7,7 @@ import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { playerProfileSwitchRoute } from '~/utils/playerProfileNavigation'
 import { buildPlayerTrainerPortal } from '~/utils/playerTrainerPortal'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import { buildSheetListFetchOptions, sheetApiProfileContext } from '~/utils/sheetApiRequests'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -54,6 +55,9 @@ const portal = computed(() => buildPlayerTrainerPortal({
 const hasPortalSheets = computed(() => (
   portal.value.trainers.length > 0 || portal.value.otherPokemon.length > 0
 ))
+const trainerPortalAccentStyle = (accentColor: unknown): Record<string, string> => (
+  trainerAccentCssVariables(accentColor)
+)
 
 const loadTrainerPortal = async (): Promise<void> => {
   if (!import.meta.client || !isPlayer.value) return
@@ -160,6 +164,7 @@ watch(selectedProfileId, () => {
             v-for="trainer in portal.trainers"
             :key="trainer.slug"
             class="trainer-portal-card panel-card"
+            :style="trainerPortalAccentStyle(trainer.sheet.accentColor)"
           >
             <header class="trainer-portal-card__header">
               <div class="trainer-portal-card__portrait">
