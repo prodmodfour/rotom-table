@@ -1734,6 +1734,8 @@ useIsometricSceneWatchers({
 
 <template>
   <div ref="container" class="scene-root">
+    <div class="scene-atmosphere" aria-hidden="true" />
+
     <div
       v-if="movementPreviewHud"
       class="movement-preview-hud"
@@ -1965,11 +1967,96 @@ useIsometricSceneWatchers({
 
 <style scoped>
 .scene-root {
+  --map-iso-background-base: var(--map-scene-background, #050608);
+  --map-iso-grid-line: rgba(129, 178, 255, 0.045);
+  --map-iso-grid-line-soft: rgba(129, 178, 255, 0.032);
+  --map-iso-glow: rgba(84, 132, 255, 0.16);
+  --map-iso-glow-soft: rgba(var(--accent-rgb), 0.07);
+  --map-iso-shadow: rgba(0, 0, 0, 0.62);
+  --map-iso-vignette: rgba(0, 0, 0, 0.34);
+  --map-iso-particle: rgba(174, 210, 255, 0.22);
+
   position: relative;
   width: 100%;
   min-height: 100vh;
   overflow: hidden;
-  background: var(--paper);
+  isolation: isolate;
+  background: var(--map-iso-background-base);
+}
+
+.scene-root::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 44% 28% at 50% 52%, var(--map-iso-glow), transparent 72%),
+    radial-gradient(ellipse 34% 18% at 50% 60%, var(--map-iso-shadow), transparent 76%),
+    radial-gradient(ellipse 56% 36% at 50% 46%, var(--map-iso-glow-soft), transparent 74%),
+    repeating-linear-gradient(
+      30deg,
+      transparent 0 42px,
+      var(--map-iso-grid-line) 42px 43px,
+      transparent 43px 84px
+    ),
+    repeating-linear-gradient(
+      -30deg,
+      transparent 0 42px,
+      var(--map-iso-grid-line-soft) 42px 43px,
+      transparent 43px 84px
+    ),
+    var(--map-iso-background-base);
+  pointer-events: none;
+}
+
+.scene-atmosphere {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at center, transparent 0 58%, var(--map-iso-vignette) 100%);
+  pointer-events: none;
+}
+
+.scene-atmosphere::before {
+  content: '';
+  position: absolute;
+  inset: -18%;
+  background-image:
+    radial-gradient(circle, var(--map-iso-particle) 0 1px, transparent 1.6px),
+    radial-gradient(circle, var(--map-iso-particle) 0 1px, transparent 1.5px);
+  background-position: 0 0, 96px 124px;
+  background-size: 210px 210px, 310px 310px;
+  opacity: 0.3;
+  transform: translate3d(0, 0, 0);
+  animation: map-iso-dust-drift 38s linear infinite;
+}
+
+:global(:root[data-theme='light']) .scene-root {
+  --map-iso-grid-line: rgba(36, 42, 51, 0.07);
+  --map-iso-grid-line-soft: rgba(197, 22, 40, 0.045);
+  --map-iso-glow: rgba(var(--accent-rgb), 0.12);
+  --map-iso-glow-soft: rgba(143, 93, 32, 0.08);
+  --map-iso-shadow: rgba(88, 61, 30, 0.16);
+  --map-iso-vignette: rgba(88, 61, 30, 0.16);
+  --map-iso-particle: rgba(36, 42, 51, 0.18);
+}
+
+@keyframes map-iso-dust-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(84px, -48px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-atmosphere::before {
+    animation: none;
+  }
 }
 
 .movement-preview-hud {

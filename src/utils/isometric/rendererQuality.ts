@@ -7,7 +7,7 @@ import type { WebGLRendererParameters } from 'three'
  */
 export const ISOMETRIC_WEBGL_RENDERER_PARAMETERS = {
   antialias: true,
-  alpha: false,
+  alpha: true,
 } satisfies WebGLRendererParameters
 
 /**

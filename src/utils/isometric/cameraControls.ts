@@ -55,13 +55,15 @@ export const applyIsometricWebGLRendererTheme = (
   renderer: THREE.WebGLRenderer,
   themeMode: AppThemeMode,
 ) => {
-  renderer.setClearColor(ISOMETRIC_CLEAR_COLORS[themeMode], 1)
+  renderer.setClearColor(ISOMETRIC_CLEAR_COLORS[themeMode], 0)
 }
 
 export const createIsometricWebGLRenderer = (themeMode: AppThemeMode = 'dark') => {
   const renderer = new THREE.WebGLRenderer(ISOMETRIC_WEBGL_RENDERER_PARAMETERS)
   applyIsometricWebGLRendererTheme(renderer, themeMode)
   renderer.outputColorSpace = THREE.SRGBColorSpace
+  renderer.domElement.style.position = 'relative'
+  renderer.domElement.style.zIndex = '1'
   renderer.domElement.style.display = 'block'
   renderer.domElement.style.width = '100%'
   renderer.domElement.style.height = '100%'
@@ -73,6 +75,7 @@ export const createIsometricCssRenderer = () => {
   const renderer = new CSS3DRenderer()
   renderer.domElement.style.position = 'absolute'
   renderer.domElement.style.inset = '0'
+  renderer.domElement.style.zIndex = '2'
   renderer.domElement.style.pointerEvents = 'none'
   renderer.domElement.style.overflow = 'hidden'
   return renderer
