@@ -75,6 +75,11 @@ export default defineNuxtConfig({
           content: 'A Nuxt 3 tabletop for spawning and moving Pokémon sprites on isometric maps.',
         },
       ],
+      script: [
+        {
+          innerHTML: "try{var mode=localStorage.getItem('rotom-table:theme-mode');if(mode==='light'||mode==='dark'){document.documentElement.dataset.theme=mode;document.documentElement.style.colorScheme=mode;}}catch(error){}",
+        },
+      ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
         { rel: 'apple-touch-icon', href: '/favicon.png' },

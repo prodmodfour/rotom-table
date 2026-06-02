@@ -76,18 +76,18 @@ const emit = defineEmits<{
 
 .pokedex-admin-panel {
   width: min(440px, 100%);
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  border: 1px solid var(--rule-soft);
   border-radius: 18px;
   background:
     linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.10) 0 18%,
+      color-mix(in srgb, var(--ink-bright) 8%, transparent) 0 18%,
       transparent 18% 100%
     ),
-    rgba(12, 14, 18, 0.86);
+    color-mix(in srgb, var(--paper-soft) 92%, transparent);
   box-shadow:
     var(--shadow-card),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    inset 0 1px 0 color-mix(in srgb, var(--ink-bright) 10%, transparent);
   color: var(--ink);
   padding: 1rem;
   backdrop-filter: blur(14px) saturate(140%);
@@ -142,7 +142,7 @@ const emit = defineEmits<{
   border: 1px solid var(--accent);
   border-radius: 14px;
   background: var(--accent);
-  color: #050608;
+  color: var(--accent-contrast);
   cursor: pointer;
   font: inherit;
   font-weight: 900;
@@ -168,12 +168,12 @@ const emit = defineEmits<{
 }
 
 .pokedex-admin-panel__message--error {
-  background: rgba(255, 80, 80, 0.16);
-  color: #ffb5b5;
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+  color: var(--bad);
 }
 
 .pokedex-admin-panel__message--success {
-  background: rgba(95, 220, 125, 0.15);
-  color: #a8efb4;
+  background: color-mix(in srgb, var(--good) 14%, transparent);
+  color: var(--good);
 }
 </style>

@@ -27,6 +27,13 @@ const campaignFolderStatus = computed(() => (
 ))
 
 const {
+  appThemeModeLabel,
+  appThemeModeTitle,
+  appThemeToggleLabel,
+  isLightAppTheme,
+  toggleAppThemeMode,
+} = useAppTheme()
+const {
   moveAnimationsEnabled,
   moveAnimationsReducedMotion,
   moveAnimationsStatusLabel,
@@ -35,6 +42,9 @@ const {
   toggleMoveAnimationsEnabled,
 } = useMoveAnimationSettings()
 
+const appThemeToggleText = computed(() => (
+  isLightAppTheme.value ? 'Light mode' : 'Dark mode'
+))
 const moveAnimationsToggleText = computed(() => (
   moveAnimationsEnabled.value ? 'Animations on' : 'Animations off'
 ))
@@ -84,6 +94,29 @@ const handleCampaignFolderSelection = (event: Event) => {
         {{ campaignFolderStatus }}
       </p>
 
+      <section class="settings-group" aria-labelledby="appearance-settings-title">
+        <div class="settings-group__copy">
+          <h2 id="appearance-settings-title">Appearance</h2>
+          <p>{{ appThemeModeTitle }}</p>
+        </div>
+
+        <div class="settings-group__control">
+          <span class="settings-status">{{ appThemeModeLabel }}</span>
+          <button
+            type="button"
+            class="settings-toggle"
+            :class="{ 'is-light': isLightAppTheme }"
+            :aria-pressed="isLightAppTheme"
+            :aria-label="appThemeToggleLabel"
+            :title="appThemeToggleLabel"
+            @click="toggleAppThemeMode"
+          >
+            <span class="settings-toggle__eyebrow">Theme</span>
+            <span>{{ appThemeToggleText }}</span>
+          </button>
+        </div>
+      </section>
+
       <section class="settings-group" aria-labelledby="move-vfx-settings-title">
         <div class="settings-group__copy">
           <h2 id="move-vfx-settings-title">Move VFX</h2>
@@ -105,14 +138,14 @@ const handleCampaignFolderSelection = (event: Event) => {
           </span>
           <button
             type="button"
-            class="move-animation-toggle"
+            class="settings-toggle move-animation-toggle"
             :class="{ 'is-disabled': !moveAnimationsEnabled }"
             :aria-pressed="moveAnimationsEnabled"
             :aria-label="moveAnimationsToggleLabel"
             :title="moveAnimationsStatusTitle"
             @click="toggleMoveAnimationsEnabled"
           >
-            <span class="move-animation-toggle__eyebrow">Move VFX</span>
+            <span class="settings-toggle__eyebrow">Move VFX</span>
             <span>{{ moveAnimationsToggleText }}</span>
           </button>
         </div>
@@ -248,18 +281,18 @@ const handleCampaignFolderSelection = (event: Event) => {
   line-height: 1.5;
 }
 
-.move-animation-toggle {
+.settings-toggle {
   display: inline-flex;
   flex-direction: column;
   gap: 0.08rem;
   align-items: flex-start;
   min-width: 9.5rem;
   padding: 0.54rem 0.72rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, rgba(255, 255, 255, 0.28));
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--rule-soft));
   border-radius: 0.8rem;
-  background: color-mix(in srgb, rgba(8, 10, 14, 0.82) 88%, var(--paper));
+  background: color-mix(in srgb, var(--paper) 86%, var(--accent-soft));
   color: var(--ink-bright);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--pokemon-black) 22%, transparent);
   font: inherit;
   font-size: 0.78rem;
   font-weight: 900;
@@ -267,19 +300,23 @@ const handleCampaignFolderSelection = (event: Event) => {
   cursor: pointer;
 }
 
-.move-animation-toggle:not(.is-disabled):hover,
-.move-animation-toggle:focus-visible {
-  border-color: color-mix(in srgb, var(--accent) 78%, white 12%);
-  background: color-mix(in srgb, rgba(11, 14, 22, 0.9) 82%, var(--accent));
+.settings-toggle:not(.is-disabled):hover,
+.settings-toggle:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 78%, var(--ink-bright) 12%);
+  background: color-mix(in srgb, var(--paper-hover) 72%, var(--accent-soft));
   outline: none;
 }
 
-.move-animation-toggle.is-disabled {
-  border-color: color-mix(in srgb, var(--ink-muted) 44%, rgba(255, 255, 255, 0.18));
-  color: color-mix(in srgb, var(--ink-muted) 88%, white 8%);
+.settings-toggle.is-light {
+  background: color-mix(in srgb, var(--accent-soft) 58%, var(--paper));
 }
 
-.move-animation-toggle__eyebrow {
+.settings-toggle.is-disabled {
+  border-color: color-mix(in srgb, var(--ink-muted) 44%, var(--rule-soft));
+  color: color-mix(in srgb, var(--ink-muted) 88%, var(--paper));
+}
+
+.settings-toggle__eyebrow {
   color: color-mix(in srgb, currentColor 64%, transparent);
   font-size: 0.64rem;
   letter-spacing: 0.08em;

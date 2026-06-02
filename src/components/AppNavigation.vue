@@ -24,6 +24,11 @@ const route = useRoute()
 const router = useRouter()
 const { isGm, isPlayer, roleLabel, logout } = useAuth()
 const {
+  appThemeToggleLabel,
+  isLightAppTheme,
+  toggleAppThemeMode,
+} = useAppTheme()
+const {
   selectedProfileDisplayName,
   hasSelectedProfile,
   loadRememberedProfile,
@@ -35,6 +40,7 @@ const primaryItems = computed(() => filterAppNavItems(PRIMARY_APP_NAV_ITEMS, isG
 const referenceItems = computed(() => filterAppNavItems(REFERENCE_APP_NAV_ITEMS, isGm.value, isPlayer.value))
 const playerProfileStatusText = computed(() => playerProfileNavStatusText(selectedProfileDisplayName.value))
 const switchProfileRoute = computed(() => playerProfileSwitchRoute(route.fullPath))
+const appThemeToggleText = computed(() => (isLightAppTheme.value ? 'Dark mode' : 'Light mode'))
 
 const isActive = (path: string) => isAppNavItemActive(route.path, path)
 
@@ -114,6 +120,15 @@ watch(isPlayer, (nextIsPlayer) => {
         </button>
       </span>
     </div>
+    <button
+      type="button"
+      class="nav-link nav-link--button nav-link--theme"
+      :aria-label="appThemeToggleLabel"
+      :title="appThemeToggleLabel"
+      @click="toggleAppThemeMode"
+    >
+      {{ appThemeToggleText }}
+    </button>
     <span v-if="showRoleBadge" class="role-badge">{{ roleLabel }}</span>
     <button type="button" class="nav-link nav-link--button" @click="handleLogout">
       Logout
@@ -261,6 +276,17 @@ watch(isPlayer, (nextIsPlayer) => {
 
 .nav-link--button {
   cursor: pointer;
+}
+
+.nav-link--theme {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--rule-soft));
+  color: var(--accent);
+}
+
+.nav-link--theme:hover,
+.nav-link--theme:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .app-navigation--vertical {

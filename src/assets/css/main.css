@@ -51,6 +51,7 @@
   --accent-rgb:    255, 31, 45;
   --accent-soft:   rgba(var(--accent-rgb), 0.16);
   --accent-muted:  var(--pokemon-red-dark);
+  --accent-contrast: var(--pokemon-black);
 
   /* Keep semantic/gameplay colors readable and distinct. */
   --good:          #64e676;
@@ -71,6 +72,45 @@
   --shadow-card:
     0 18px 44px rgba(0, 0, 0, 0.72),
     0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --paper:         #fff8ed;
+  --paper-soft:    #fffdf8;
+  --paper-hover:   #f2e3d0;
+  --paper-active:  #ffe5e8;
+  --paper-inset:   #efe1cf;
+
+  --ink:           #242a33;
+  --ink-bright:    #050608;
+  --ink-soft:      #343c48;
+  --ink-muted:     #5b6572;
+  --ink-faint:     #7a8492;
+
+  --rule:          rgba(5, 6, 8, 0.12);
+  --rule-soft:     rgba(5, 6, 8, 0.18);
+  --rule-strong:   rgba(5, 6, 8, 0.34);
+  --rule-active:   rgba(var(--accent-rgb), 0.56);
+
+  --accent:        #c51628;
+  --accent-rgb:    197, 22, 40;
+  --accent-soft:   rgba(var(--accent-rgb), 0.12);
+  --accent-muted:  #8f1020;
+  --accent-contrast: var(--paper-soft);
+
+  --good:          #187235;
+  --bad:           #c51628;
+  --info:          #245fa8;
+  --warn:          #9b5a00;
+  --magic:         #8b3fb0;
+
+  --map-token-level-prefix: #b85c00;
+
+  --shadow-card:
+    0 16px 34px rgba(58, 46, 31, 0.18),
+    0 0 0 1px rgba(5, 6, 8, 0.045);
 }
 
 *,

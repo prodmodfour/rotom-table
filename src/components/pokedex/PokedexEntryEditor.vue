@@ -131,12 +131,12 @@ const emit = defineEmits<{
 .pokedex-entry-editor__button--primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #050608;
+  color: var(--accent-contrast);
 }
 
 .pokedex-entry-editor__button--primary:hover:not(:disabled),
 .pokedex-entry-editor__button--primary:focus-visible:not(:disabled) {
-  color: #050608;
+  color: var(--accent-contrast);
   filter: brightness(1.08);
 }
 
@@ -151,7 +151,7 @@ const emit = defineEmits<{
   resize: vertical;
   border: 1px solid var(--rule);
   border-radius: 14px;
-  background: rgba(5, 6, 8, 0.72);
+  background: var(--paper-inset);
   color: var(--ink-bright);
   font-family: var(--font-mono);
   font-size: 0.86rem;
@@ -174,13 +174,13 @@ const emit = defineEmits<{
 }
 
 .pokedex-entry-editor__message--error {
-  background: rgba(255, 80, 80, 0.16);
-  color: #ffb5b5;
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+  color: var(--bad);
 }
 
 .pokedex-entry-editor__message--success {
-  background: rgba(95, 220, 125, 0.15);
-  color: #a8efb4;
+  background: color-mix(in srgb, var(--good) 14%, transparent);
+  color: var(--good);
 }
 
 @media (max-width: 760px) {

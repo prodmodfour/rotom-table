@@ -14,6 +14,11 @@ const route = useRoute()
 const router = useRouter()
 const { role, roleLabel, loginAs } = useAuth()
 const {
+  appThemeToggleLabel,
+  isLightAppTheme,
+  toggleAppThemeMode,
+} = useAppTheme()
+const {
   profiles,
   selectedProfileId,
   selectedProfileDisplayName,
@@ -33,6 +38,7 @@ const redirectTarget = (nextRole: AuthRole) =>
 const showPlayerProfilePicker = computed(() => (
   playerProfilePickerRequested.value || role.value === 'player'
 ))
+const appThemeToggleText = computed(() => (isLightAppTheme.value ? 'Dark mode' : 'Light mode'))
 const playerProfileGuardNotice = computed(() => profileRequiredLoginNotice(
   route.query[PLAYER_PROFILE_REQUIRED_QUERY_KEY],
 ))
@@ -81,7 +87,18 @@ onMounted(() => {
 <template>
   <main class="login-page">
     <section class="login-card" aria-labelledby="login-title">
-      <p class="eyebrow">Rotom Table</p>
+      <div class="login-card__top">
+        <p class="eyebrow">Rotom Table</p>
+        <button
+          type="button"
+          class="theme-toggle"
+          :aria-label="appThemeToggleLabel"
+          :title="appThemeToggleLabel"
+          @click="toggleAppThemeMode"
+        >
+          {{ appThemeToggleText }}
+        </button>
+      </div>
       <h1 id="login-title">Choose a login</h1>
       <p class="login-copy">
         For now this uses the table's trust system: no passwords, just pick the role
@@ -201,6 +218,37 @@ onMounted(() => {
   padding: 1.35rem;
 }
 
+.login-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.15rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 44%, var(--rule-soft));
+  background: var(--paper);
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  outline: none;
+}
+
 .eyebrow {
   margin: 0 0 0.35rem;
   color: var(--accent);
@@ -208,6 +256,10 @@ onMounted(() => {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.login-card__top .eyebrow {
+  margin-bottom: 0;
 }
 
 h1,
