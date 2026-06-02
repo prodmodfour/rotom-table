@@ -7,9 +7,11 @@ const props = withDefaults(defineProps<{
   member: ResolvedTrainerPokemonLink
   variant?: TrainerPokemonRosterKind
   canMoveToTeam?: boolean
+  showUnlink?: boolean
 }>(), {
   variant: 'box',
   canMoveToTeam: true,
+  showUnlink: true,
 })
 
 const emit = defineEmits<{
@@ -98,6 +100,7 @@ const startDrag = (event: DragEvent) => {
         @click="emit('moveToBox', member.slug)"
       >Box</button>
       <button
+        v-if="props.showUnlink"
         type="button"
         class="pokemon-link-card__action pokemon-link-card__action--danger"
         @click="emit('unlink', member.slug)"

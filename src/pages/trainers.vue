@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import TrainerPokemonCard from '~/components/sheets/TrainerPokemonCard.vue'
 import { getSpriteUrl } from '~~/data/characterSheets'
 import { useApiClient } from '~/composables/useApiClient'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
@@ -8,7 +9,20 @@ import { getErrorMessage } from '~/utils/errorMessages'
 import { playerProfileSwitchRoute } from '~/utils/playerProfileNavigation'
 import { buildPlayerTrainerPortal } from '~/utils/playerTrainerPortal'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
-import { buildSheetListFetchOptions, sheetApiProfileContext } from '~/utils/sheetApiRequests'
+import {
+  buildSheetListFetchOptions,
+  buildSheetSaveBody,
+  sheetApiProfileContext,
+} from '~/utils/sheetApiRequests'
+import {
+  addPokemonToTrainerTeam,
+  boxPokemonForTrainer,
+  moveTrainerPokemonLink,
+  trainerTeamHasOpenSlot,
+  trainerTeamSlotCount,
+  TRAINER_TEAM_LIMIT,
+  type TrainerPokemonRosterKind,
+} from '~/utils/trainerPokemonLinks'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -23,7 +37,7 @@ useHead({
 
 const route = useRoute()
 const { isPlayer } = useAuth()
-const { getJson } = useApiClient()
+const { getJson, postJson } = useApiClient()
 const {
   selectedProfileId,
   selectedProfileDisplayName,
@@ -39,7 +53,19 @@ const pokemonSheets = ref<CharacterSheet[]>([])
 const trainerSheets = ref<TrainerSheet[]>([])
 const loadingSheets = ref(false)
 const sheetError = ref<string | null>(null)
+const savingRosterSlugs = reactive(new Set<string>())
+const rosterSaveErrors = reactive<Record<string, string>>({})
 let loadSequence = 0
+
+interface TrainerPortalDragPayload {
+  trainerSlug: string
+  slug: string
+  sourceRoster: TrainerPokemonRosterKind
+}
+
+const TRAINER_PORTAL_POKEMON_LINK_DRAG_TYPE = 'application/x-rotom-trainer-portal-pokemon-link'
+const draggedPokemon = ref<TrainerPortalDragPayload | null>(null)
+const dragOverRoster = ref<{ trainerSlug: string; roster: TrainerPokemonRosterKind } | null>(null)
 
 if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
@@ -58,6 +84,193 @@ const hasPortalSheets = computed(() => (
 const trainerPortalAccentStyle = (accentColor: unknown): Record<string, string> => (
   trainerAccentCssVariables(accentColor)
 )
+const trainerHasOpenTeamSlot = (sheet: TrainerSheet): boolean => trainerTeamHasOpenSlot(sheet)
+const trainerTeamCount = (sheet: TrainerSheet): number => trainerTeamSlotCount(sheet)
+const emptyTeamSlotsForTrainer = (sheet: TrainerSheet): unknown[] => Array.from({
+  length: Math.max(0, TRAINER_TEAM_LIMIT - trainerTeamSlotCount(sheet)),
+})
+const isRosterDropTarget = (trainerSlug: string, roster: TrainerPokemonRosterKind): boolean => (
+  dragOverRoster.value?.trainerSlug === trainerSlug && dragOverRoster.value.roster === roster
+)
+
+const findTrainerSheet = (trainerSlug: string): TrainerSheet | null => (
+  trainerSheets.value.find((sheet) => sheet.slug === trainerSlug) ?? null
+)
+
+const touchTrainerSheets = (): void => {
+  trainerSheets.value = [...trainerSheets.value]
+}
+
+const trainerRosterSnapshot = (sheet: TrainerSheet) => ({
+  currentTeam: [...(sheet.currentTeam ?? [])],
+  boxedPokemon: [...(sheet.boxedPokemon ?? [])],
+})
+
+const restoreTrainerRosterSnapshot = (
+  sheet: TrainerSheet,
+  snapshot: ReturnType<typeof trainerRosterSnapshot>,
+): void => {
+  sheet.currentTeam = [...snapshot.currentTeam]
+  sheet.boxedPokemon = [...snapshot.boxedPokemon]
+  touchTrainerSheets()
+}
+
+const setTrainerRosterSaving = (trainerSlug: string, saving: boolean): void => {
+  if (saving) savingRosterSlugs.add(trainerSlug)
+  else savingRosterSlugs.delete(trainerSlug)
+}
+
+const persistTrainerRoster = async (sheet: TrainerSheet): Promise<void> => {
+  setTrainerRosterSaving(sheet.slug, true)
+  delete rosterSaveErrors[sheet.slug]
+  try {
+    await postJson(SHEET_API_PATHS.save, buildSheetSaveBody({
+      kind: 'trainer',
+      slug: sheet.slug,
+      sheet,
+      profileContext: sheetApiProfileContext(true, selectedProfileId.value),
+      requireSelectedPlayerProfile: true,
+      allowSlugSync: false,
+    }))
+  } catch (error) {
+    rosterSaveErrors[sheet.slug] = getErrorMessage(error)
+    throw error
+  } finally {
+    setTrainerRosterSaving(sheet.slug, false)
+  }
+}
+
+const updateTrainerRoster = async (
+  trainerSlug: string,
+  mutate: (sheet: TrainerSheet) => boolean,
+): Promise<void> => {
+  if (savingRosterSlugs.has(trainerSlug)) return
+
+  const sheet = findTrainerSheet(trainerSlug)
+  if (!sheet) return
+
+  const snapshot = trainerRosterSnapshot(sheet)
+  if (!mutate(sheet)) return
+
+  touchTrainerSheets()
+  try {
+    await persistTrainerRoster(sheet)
+  } catch {
+    restoreTrainerRosterSnapshot(sheet, snapshot)
+  }
+}
+
+const readTrainerPokemonDragPayload = (event: DragEvent): TrainerPortalDragPayload | null => {
+  if (draggedPokemon.value) return draggedPokemon.value
+
+  const rawPayload = event.dataTransfer?.getData(TRAINER_PORTAL_POKEMON_LINK_DRAG_TYPE)
+  if (!rawPayload) return null
+
+  try {
+    const parsed = JSON.parse(rawPayload) as Partial<TrainerPortalDragPayload>
+    const sourceRoster = parsed.sourceRoster === 'team' || parsed.sourceRoster === 'box'
+      ? parsed.sourceRoster
+      : null
+    const trainerSlug = typeof parsed.trainerSlug === 'string' ? parsed.trainerSlug : ''
+    const slug = typeof parsed.slug === 'string' ? parsed.slug : ''
+    return sourceRoster && trainerSlug && slug ? { trainerSlug, slug, sourceRoster } : null
+  } catch {
+    return null
+  }
+}
+
+const canDropPokemonOnRoster = (
+  payload: TrainerPortalDragPayload | null,
+  targetTrainerSlug: string,
+  targetRoster: TrainerPokemonRosterKind,
+): boolean => {
+  if (!payload || payload.trainerSlug !== targetTrainerSlug) return false
+  if (savingRosterSlugs.has(targetTrainerSlug)) return false
+  const sheet = findTrainerSheet(targetTrainerSlug)
+  if (!sheet) return false
+  if (targetRoster === 'team' && payload.sourceRoster !== 'team' && !trainerTeamHasOpenSlot(sheet)) return false
+  return true
+}
+
+const clearPokemonDragState = (): void => {
+  draggedPokemon.value = null
+  dragOverRoster.value = null
+}
+
+const handlePokemonDragStart = (
+  event: DragEvent,
+  trainerSlug: string,
+  slug: string,
+  sourceRoster: TrainerPokemonRosterKind,
+): void => {
+  const payload: TrainerPortalDragPayload = { trainerSlug, slug, sourceRoster }
+  draggedPokemon.value = payload
+  dragOverRoster.value = null
+
+  if (!event.dataTransfer) return
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData(TRAINER_PORTAL_POKEMON_LINK_DRAG_TYPE, JSON.stringify(payload))
+  event.dataTransfer.setData('text/plain', slug)
+}
+
+const handlePokemonDragEnd = (): void => {
+  clearPokemonDragState()
+}
+
+const handleRosterDragOver = (
+  event: DragEvent,
+  trainerSlug: string,
+  targetRoster: TrainerPokemonRosterKind,
+): void => {
+  if (!canDropPokemonOnRoster(draggedPokemon.value, trainerSlug, targetRoster)) {
+    dragOverRoster.value = null
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'none'
+    return
+  }
+
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  dragOverRoster.value = { trainerSlug, roster: targetRoster }
+}
+
+const handlePokemonCardDragOver = (
+  event: DragEvent,
+  trainerSlug: string,
+  targetRoster: TrainerPokemonRosterKind,
+): void => {
+  event.stopPropagation()
+  handleRosterDragOver(event, trainerSlug, targetRoster)
+}
+
+const handlePokemonDrop = (
+  event: DragEvent,
+  trainerSlug: string,
+  targetRoster: TrainerPokemonRosterKind,
+  targetIndex?: number,
+): void => {
+  const payload = readTrainerPokemonDragPayload(event)
+  if (!payload) return
+
+  event.preventDefault()
+  event.stopPropagation()
+  if (canDropPokemonOnRoster(payload, trainerSlug, targetRoster)) {
+    void updateTrainerRoster(trainerSlug, (sheet) => moveTrainerPokemonLink(
+      sheet,
+      payload.slug,
+      targetRoster,
+      targetIndex,
+    ))
+  }
+  clearPokemonDragState()
+}
+
+const movePokemonToTeam = (trainerSlug: string, pokemonSlug: string): void => {
+  void updateTrainerRoster(trainerSlug, (sheet) => addPokemonToTrainerTeam(sheet, pokemonSlug))
+}
+
+const movePokemonToBox = (trainerSlug: string, pokemonSlug: string): void => {
+  void updateTrainerRoster(trainerSlug, (sheet) => boxPokemonForTrainer(sheet, pokemonSlug))
+}
 
 const loadTrainerPortal = async (): Promise<void> => {
   if (!import.meta.client || !isPlayer.value) return
@@ -92,6 +305,8 @@ const loadTrainerPortal = async (): Promise<void> => {
     if (sequence !== loadSequence) return
     pokemonSheets.value = payload.pokemonSheets
     trainerSheets.value = payload.trainerSheets
+    savingRosterSlugs.clear()
+    for (const key of Object.keys(rosterSaveErrors)) delete rosterSaveErrors[key]
     sheetError.value = null
   } catch (error) {
     if (sequence !== loadSequence) return
@@ -186,59 +401,75 @@ watch(selectedProfileId, () => {
                 <p v-else-if="trainer.sheet.playedBy" class="trainer-portal-card__meta">
                   Played by {{ trainer.sheet.playedBy }}
                 </p>
+                <p v-if="savingRosterSlugs.has(trainer.slug)" class="trainer-portal-card__save" aria-live="polite">
+                  Saving roster…
+                </p>
+                <p v-else-if="rosterSaveErrors[trainer.slug]" class="trainer-portal-card__save trainer-portal-card__save--error" aria-live="polite">
+                  {{ rosterSaveErrors[trainer.slug] }}
+                </p>
               </div>
             </header>
 
-            <section class="trainer-portal-roster" aria-label="Team Pokémon">
+            <section
+              class="trainer-portal-roster trainer-portal-roster--team"
+              :class="{ 'is-pokemon-drop-target': isRosterDropTarget(trainer.slug, 'team') }"
+              aria-label="Team Pokémon"
+              @dragover="handleRosterDragOver($event, trainer.slug, 'team')"
+              @drop="handlePokemonDrop($event, trainer.slug, 'team')"
+            >
               <div class="trainer-portal-roster__heading">
                 <h3>Team</h3>
-                <span>{{ trainer.team.length }}</span>
+                <span>{{ trainerTeamCount(trainer.sheet) }}/{{ TRAINER_TEAM_LIMIT }}</span>
               </div>
-              <div v-if="trainer.team.length" class="trainer-portal-pokemon-list">
-                <NuxtLink
-                  v-for="pokemon in trainer.team"
+              <div class="trainer-portal-pokemon-list trainer-portal-pokemon-list--team">
+                <TrainerPokemonCard
+                  v-for="(pokemon, index) in trainer.team"
                   :key="`team-${trainer.slug}-${pokemon.slug}`"
-                  class="trainer-portal-pokemon"
-                  :class="{ 'trainer-portal-pokemon--missing': !pokemon.path }"
-                  :to="pokemon.path || trainer.path"
+                  :member="pokemon"
+                  variant="team"
+                  :show-unlink="false"
+                  @move-to-box="(slug) => movePokemonToBox(trainer.slug, slug)"
+                  @drag-start="(event, slug, roster) => handlePokemonDragStart(event, trainer.slug, slug, roster)"
+                  @drag-end="handlePokemonDragEnd"
+                  @drag-over="(event) => handlePokemonCardDragOver(event, trainer.slug, 'team')"
+                  @drop="(event) => handlePokemonDrop(event, trainer.slug, 'team', index)"
+                />
+
+                <div
+                  v-for="(_, index) in emptyTeamSlotsForTrainer(trainer.sheet)"
+                  :key="`empty-team-slot-${trainer.slug}-${index}`"
+                  class="trainer-portal-team-empty-slot"
                 >
-                  <span class="trainer-portal-pokemon__sprite">
-                    <img v-if="pokemon.spriteUrl" :src="pokemon.spriteUrl" :alt="pokemon.species || pokemon.displayName">
-                    <span v-else aria-hidden="true">?</span>
-                  </span>
-                  <span class="trainer-portal-pokemon__text">
-                    <strong>{{ pokemon.displayName }}</strong>
-                    <small v-if="pokemon.sheet">{{ pokemon.species }} · Lv {{ pokemon.level }}</small>
-                    <small v-else>Sheet unavailable</small>
-                  </span>
-                </NuxtLink>
+                  <span>Empty Slot</span>
+                </div>
               </div>
-              <p v-else class="trainer-portal-roster__empty">No team Pokémon linked.</p>
             </section>
 
-            <section class="trainer-portal-roster" aria-label="Boxed Pokémon">
+            <section
+              class="trainer-portal-roster trainer-portal-roster--box"
+              :class="{ 'is-pokemon-drop-target': isRosterDropTarget(trainer.slug, 'box') }"
+              aria-label="Boxed Pokémon"
+              @dragover="handleRosterDragOver($event, trainer.slug, 'box')"
+              @drop="handlePokemonDrop($event, trainer.slug, 'box')"
+            >
               <div class="trainer-portal-roster__heading">
                 <h3>Box</h3>
                 <span>{{ trainer.box.length }}</span>
               </div>
               <div v-if="trainer.box.length" class="trainer-portal-pokemon-list trainer-portal-pokemon-list--box">
-                <NuxtLink
-                  v-for="pokemon in trainer.box"
+                <TrainerPokemonCard
+                  v-for="(pokemon, index) in trainer.box"
                   :key="`box-${trainer.slug}-${pokemon.slug}`"
-                  class="trainer-portal-pokemon"
-                  :class="{ 'trainer-portal-pokemon--missing': !pokemon.path }"
-                  :to="pokemon.path || trainer.path"
-                >
-                  <span class="trainer-portal-pokemon__sprite">
-                    <img v-if="pokemon.spriteUrl" :src="pokemon.spriteUrl" :alt="pokemon.species || pokemon.displayName">
-                    <span v-else aria-hidden="true">?</span>
-                  </span>
-                  <span class="trainer-portal-pokemon__text">
-                    <strong>{{ pokemon.displayName }}</strong>
-                    <small v-if="pokemon.sheet">{{ pokemon.species }} · Lv {{ pokemon.level }}</small>
-                    <small v-else>Sheet unavailable</small>
-                  </span>
-                </NuxtLink>
+                  :member="pokemon"
+                  variant="box"
+                  :can-move-to-team="trainerHasOpenTeamSlot(trainer.sheet)"
+                  :show-unlink="false"
+                  @move-to-team="(slug) => movePokemonToTeam(trainer.slug, slug)"
+                  @drag-start="(event, slug, roster) => handlePokemonDragStart(event, trainer.slug, slug, roster)"
+                  @drag-end="handlePokemonDragEnd"
+                  @drag-over="(event) => handlePokemonCardDragOver(event, trainer.slug, 'box')"
+                  @drop="(event) => handlePokemonDrop(event, trainer.slug, 'box', index)"
+                />
               </div>
               <p v-else class="trainer-portal-roster__empty">No boxed Pokémon linked.</p>
             </section>
@@ -389,22 +620,33 @@ watch(selectedProfileId, () => {
 }
 
 .trainer-portal-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 0.85rem;
-}
-
-.trainer-portal-card {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
+.trainer-portal-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
+  grid-template-areas:
+    "trainer box"
+    "team box";
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: stretch;
+  width: 100%;
+}
+
 .trainer-portal-card__header {
+  grid-area: trainer;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0.75rem;
+  align-content: flex-start;
   align-items: center;
+  min-width: 0;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--rule-soft);
 }
 
 .trainer-portal-card__portrait,
@@ -429,6 +671,19 @@ watch(selectedProfileId, () => {
   object-fit: contain;
 }
 
+.trainer-portal-card__save {
+  grid-column: 1 / -1;
+  margin: 0.4rem 0 0;
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.trainer-portal-card__save--error {
+  color: var(--bad);
+}
+
 .trainer-portal-card h2 a {
   color: var(--ink-bright);
   text-decoration: none;
@@ -441,7 +696,29 @@ watch(selectedProfileId, () => {
 .trainer-portal-roster {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.55rem;
+  min-width: 0;
+  min-height: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper-inset);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.trainer-portal-roster--team {
+  grid-area: team;
+  background:
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.08), transparent 40%),
+    var(--paper-inset);
+}
+
+.trainer-portal-roster--box {
+  grid-area: box;
+}
+
+.trainer-portal-roster.is-pokemon-drop-target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18), 0 12px 28px rgba(5, 6, 8, 0.28);
 }
 
 .trainer-portal-roster__heading {
@@ -472,12 +749,34 @@ watch(selectedProfileId, () => {
 .trainer-portal-pokemon-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
-.trainer-portal-pokemon-list--box,
+.trainer-portal-pokemon-list--team {
+  display: flex;
+  flex-direction: column;
+}
+
+.trainer-portal-pokemon-list--box {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  align-content: start;
+}
+
 .trainer-portal-pokemon-list--other {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+.trainer-portal-team-empty-slot {
+  min-height: 64px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--rule-soft);
+  color: var(--ink-faint);
+  background: rgba(5, 6, 8, 0.24);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .trainer-portal-pokemon {
@@ -553,13 +852,24 @@ watch(selectedProfileId, () => {
   gap: 0.75rem;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .trainer-portal-hero {
     flex-direction: column;
   }
 
-  .trainer-portal-grid {
+  .trainer-portal-card {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "trainer"
+      "team"
+      "box";
+  }
+
+  .trainer-portal-card__header {
+    padding-right: 0;
+    padding-bottom: 0.85rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule-soft);
   }
 }
 </style>
