@@ -61,6 +61,7 @@ interface TrainingRosterRow {
   level: number | null
   spriteUrl: string | null
   activeTrainingFeature: string
+  selectedTrainingFeature: string
   trainingExp: number
   totalExp: number | null
   selectedForSession: boolean
@@ -78,6 +79,7 @@ const { selectedProfileId } = usePlayerProfiles()
 const selectedTrainingSlugs = ref<Set<string>>(new Set())
 const selectedExperienceSlugs = ref<Set<string>>(new Set())
 const selectedTrainingFeature = ref('')
+const selectedTrainingFeatureBySlug = ref<Record<string, string>>({})
 const applyTrainingFeature = ref(true)
 const experienceSkill = ref<TrainerTrainingSkillKey>('command')
 const saving = ref(false)
@@ -130,6 +132,51 @@ const selectedTrainingFeatureEffects = computed(() =>
   resolvePokemonTrainingFeatureEffects(selectedTrainingFeature.value),
 )
 
+const initialTrainingFeature = () => {
+  const savedDefault = normalizePokemonTrainingFeatureName(props.sheet.trainingFeature)
+  if (savedDefault) return savedDefault
+  return trainingFeatureOptions.value[0] ?? ''
+}
+
+const selectedTrainingFeatureForSlug = (slug: string): string => {
+  if (Object.prototype.hasOwnProperty.call(selectedTrainingFeatureBySlug.value, slug)) {
+    return normalizePokemonTrainingFeatureName(selectedTrainingFeatureBySlug.value[slug]) ?? ''
+  }
+  return normalizePokemonTrainingFeatureName(selectedTrainingFeature.value) ?? ''
+}
+
+const setTrainingFeatureForSlug = (slug: string, value: unknown): void => {
+  const normalized = normalizePokemonTrainingFeatureName(value)
+  selectedTrainingFeatureBySlug.value = {
+    ...selectedTrainingFeatureBySlug.value,
+    [slug]: normalized ?? '',
+  }
+}
+
+const setTrainingFeatureForSlugFromEvent = (slug: string, event: Event): void => {
+  const target = event.target
+  if (!(target instanceof HTMLSelectElement)) return
+  setTrainingFeatureForSlug(slug, target.value)
+}
+
+const ensureTrainingFeatureChoices = (slugs: readonly string[]): void => {
+  const next = { ...selectedTrainingFeatureBySlug.value }
+  const fallback = normalizePokemonTrainingFeatureName(selectedTrainingFeature.value) ?? initialTrainingFeature()
+  for (const slug of slugs) {
+    const current = normalizePokemonTrainingFeatureName(next[slug])
+    if (!current) next[slug] = fallback
+  }
+  selectedTrainingFeatureBySlug.value = next
+}
+
+const setSelectedRowsToDefaultTrainingFeature = (): void => {
+  const normalized = normalizePokemonTrainingFeatureName(selectedTrainingFeature.value)
+  if (!normalized) return
+  const next = { ...selectedTrainingFeatureBySlug.value }
+  for (const slug of selectedTrainingSlugs.value) next[slug] = normalized
+  selectedTrainingFeatureBySlug.value = next
+}
+
 const experienceSkillOptions = computed<Array<{ key: TrainerTrainingSkillKey; label: string }>>(() => {
   const options: Array<{ key: TrainerTrainingSkillKey; label: string }> = [
     { key: 'command', label: TRAINING_SKILL_LABELS.command },
@@ -157,6 +204,7 @@ const rosterRows = computed<TrainingRosterRow[]>(() => rosterEntries.value.map((
     level,
     spriteUrl: pokemon ? getSpriteUrl(pokemon.species) : null,
     activeTrainingFeature: pokemon?.activeTrainingFeature ?? '',
+    selectedTrainingFeature: selectedTrainingFeatureForSlug(slug),
     trainingExp: pokemon?.combat?.trainingExp ?? 0,
     totalExp: typeof pokemon?.totalExp === 'number' ? pokemon.totalExp : null,
     selectedForSession: selectedTrainingSlugs.value.has(slug),
@@ -167,25 +215,30 @@ const rosterRows = computed<TrainingRosterRow[]>(() => rosterEntries.value.map((
 
 const selectedRowsWithSheets = computed(() => rosterRows.value.filter((row) => row.selectedForSession && row.sheet))
 const selectedExperienceRows = computed(() => rosterRows.value.filter((row) => row.selectedForExperience && row.sheet))
+const selectedRowsWithTrainingFeature = computed(() => selectedRowsWithSheets.value.filter(
+  (row) => Boolean(normalizePokemonTrainingFeatureName(row.selectedTrainingFeature)),
+))
 
 const canApplyTraining = computed(() => (
   selectedRowsWithSheets.value.length > 0 && (
-    (applyTrainingFeature.value && Boolean(selectedTrainingFeature.value)) ||
+    (applyTrainingFeature.value && selectedRowsWithTrainingFeature.value.length > 0) ||
     selectedExperienceRows.value.length > 0
   )
 ))
-
-const initialTrainingFeature = () => {
-  const savedDefault = normalizePokemonTrainingFeatureName(props.sheet.trainingFeature)
-  if (savedDefault) return savedDefault
-  return trainingFeatureOptions.value[0] ?? ''
-}
 
 watch(trainingFeatureOptions, () => {
   const normalized = normalizePokemonTrainingFeatureName(selectedTrainingFeature.value)
   if (!normalized || !trainingFeatureOptions.value.includes(normalized)) {
     selectedTrainingFeature.value = initialTrainingFeature()
   }
+
+  const optionSet = new Set(trainingFeatureOptions.value)
+  const nextChoices: Record<string, string> = {}
+  for (const [slug, rawFeature] of Object.entries(selectedTrainingFeatureBySlug.value)) {
+    const feature = normalizePokemonTrainingFeatureName(rawFeature)
+    if (feature && optionSet.has(feature)) nextChoices[slug] = feature
+  }
+  selectedTrainingFeatureBySlug.value = nextChoices
 }, { immediate: true })
 
 watch(rosterSlugs, (slugs) => {
@@ -194,6 +247,10 @@ watch(rosterSlugs, (slugs) => {
   if (!selected.length) selected = teamSlugs.value.slice(0, TRAINING_SESSION_TARGET_LIMIT)
   selectedTrainingSlugs.value = new Set(selected)
   selectedExperienceSlugs.value = new Set([...selectedExperienceSlugs.value].filter((slug) => selected.includes(slug)))
+  selectedTrainingFeatureBySlug.value = Object.fromEntries(
+    Object.entries(selectedTrainingFeatureBySlug.value).filter(([slug]) => valid.has(slug)),
+  )
+  ensureTrainingFeatureChoices(selected)
 }, { immediate: true })
 
 watch([experienceLimit, selectedTrainingSlugs], () => {
@@ -206,8 +263,10 @@ watch([experienceLimit, selectedTrainingSlugs], () => {
 })
 
 const setSelectedTrainingSlugs = (slugs: readonly string[]) => {
-  selectedTrainingSlugs.value = new Set(slugs.slice(0, TRAINING_SESSION_TARGET_LIMIT))
+  const selected = slugs.slice(0, TRAINING_SESSION_TARGET_LIMIT)
+  selectedTrainingSlugs.value = new Set(selected)
   selectedExperienceSlugs.value = new Set([...selectedExperienceSlugs.value].filter((slug) => selectedTrainingSlugs.value.has(slug)))
+  ensureTrainingFeatureChoices(selected)
 }
 
 const selectTeam = () => setSelectedTrainingSlugs(teamSlugs.value)
@@ -235,6 +294,7 @@ const toggleTrainingTarget = (slug: string) => {
       return
     }
     next.add(slug)
+    ensureTrainingFeatureChoices([slug])
   }
   selectedTrainingSlugs.value = next
 }
@@ -312,11 +372,18 @@ const applyTraining = async () => {
   statusMessage.value = null
 
   const selectedFeature = normalizePokemonTrainingFeatureName(selectedTrainingFeature.value)
+  const trainingFeatureBySlug = new Map<string, string>()
+  if (applyTrainingFeature.value) {
+    for (const row of selectedRowsWithSheets.value) {
+      const feature = normalizePokemonTrainingFeatureName(row.selectedTrainingFeature)
+      if (feature) trainingFeatureBySlug.set(row.slug, feature)
+    }
+  }
   const experienceBySlug = new Map(selectedExperienceRows.value.map((row) => [row.slug, row.experienceGain]))
   const appliedExperienceTotal = [...experienceBySlug.values()].reduce((sum, gain) => sum + gain, 0)
-  const shouldApplyFeature = applyTrainingFeature.value && Boolean(selectedFeature)
+  const shouldApplyFeature = trainingFeatureBySlug.size > 0
   const targetRows = selectedRowsWithSheets.value.filter((row) => (
-    shouldApplyFeature || experienceBySlug.has(row.slug)
+    trainingFeatureBySlug.has(row.slug) || experienceBySlug.has(row.slug)
   ))
 
   try {
@@ -324,8 +391,9 @@ const applyTraining = async () => {
       const original = row.sheet!
       const updated = normalizeCharacterSheet(deepCloneJson(original))
 
-      if (shouldApplyFeature && selectedFeature) {
-        updated.activeTrainingFeature = selectedFeature
+      const rowTrainingFeature = trainingFeatureBySlug.get(row.slug)
+      if (rowTrainingFeature) {
+        updated.activeTrainingFeature = rowTrainingFeature
       }
 
       const experienceGain = experienceBySlug.get(row.slug)
@@ -404,9 +472,9 @@ onBeforeUnmount(() => {
             <small>{{ TRAINING_SKILL_LABELS[experienceSkill] }} {{ experienceRankName }} rank.</small>
           </div>
           <div class="training-summary-card">
-            <span class="summary-label">Training Feature</span>
+            <span class="summary-label">Default Feature</span>
             <strong>{{ selectedTrainingFeature || 'None' }}</strong>
-            <small>Applied until the Pokémon takes an Extended Rest.</small>
+            <small>Each Pokémon row can override this default.</small>
           </div>
         </div>
 
@@ -414,9 +482,9 @@ onBeforeUnmount(() => {
           <div class="training-control-block training-control-block--feature">
             <label class="check-row">
               <input v-model="applyTrainingFeature" type="checkbox" />
-              <span>Apply active Training Feature</span>
+              <span>Apply Training Features</span>
             </label>
-            <select v-model="selectedTrainingFeature" :disabled="!applyTrainingFeature || saving">
+            <select v-model="selectedTrainingFeature" :disabled="!applyTrainingFeature || saving" title="Default Training Feature for newly selected Pokémon">
               <option value="">No Feature</option>
               <option v-for="name in trainingFeatureOptions" :key="name" :value="name">
                 {{ name }}<template v-if="trainerOwnedTrainingFeatures.has(name)"> · owned</template>
@@ -426,6 +494,14 @@ onBeforeUnmount(() => {
               <strong>{{ selectedTrainingFeatureEffects.stateName }}:</strong>
               {{ selectedTrainingFeatureEffects.reference?.effect ?? 'Training bonus is applied to selected Pokémon.' }}
             </p>
+            <button
+              type="button"
+              class="training-control-inline-button"
+              :disabled="!applyTrainingFeature || !selectedSessionCount || saving"
+              @click="setSelectedRowsToDefaultTrainingFeature"
+            >
+              Set selected Pokémon to default
+            </button>
           </div>
 
           <div class="training-control-block">
@@ -457,6 +533,7 @@ onBeforeUnmount(() => {
             <span>Pokémon</span>
             <span>Roster</span>
             <span>Current Training</span>
+            <span>New Feature</span>
             <span>Session</span>
             <span>EXP</span>
           </div>
@@ -483,6 +560,18 @@ onBeforeUnmount(() => {
                 {{ row.activeTrainingFeature || '—' }}
                 <small v-if="row.totalExp != null">Total EXP {{ row.totalExp }}</small>
                 <small v-if="row.trainingExp">Training EXP {{ row.trainingExp }}</small>
+              </span>
+              <span class="training-row__feature-select">
+                <select
+                  :value="row.selectedTrainingFeature"
+                  :disabled="!row.sheet || !row.selectedForSession || !applyTrainingFeature || saving"
+                  @change="setTrainingFeatureForSlugFromEvent(row.slug, $event)"
+                >
+                  <option value="">No Feature</option>
+                  <option v-for="name in trainingFeatureOptions" :key="`${row.slug}-${name}`" :value="name">
+                    {{ name }}
+                  </option>
+                </select>
               </span>
               <label class="training-row__toggle">
                 <input
@@ -583,6 +672,7 @@ onBeforeUnmount(() => {
 
 .trainer-training-modal__close,
 .training-actions-row button,
+.training-control-inline-button,
 .apply-button {
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
@@ -599,6 +689,8 @@ onBeforeUnmount(() => {
 .trainer-training-modal__close:focus-visible,
 .training-actions-row button:hover:not(:disabled),
 .training-actions-row button:focus-visible:not(:disabled),
+.training-control-inline-button:hover:not(:disabled),
+.training-control-inline-button:focus-visible:not(:disabled),
 .apply-button:hover:not(:disabled),
 .apply-button:focus-visible:not(:disabled) {
   border-color: var(--accent);
@@ -710,8 +802,10 @@ onBeforeUnmount(() => {
 }
 
 .training-actions-row button:disabled,
+.training-control-inline-button:disabled,
 .apply-button:disabled,
-.training-control-block select:disabled {
+.training-control-block select:disabled,
+.training-row__feature-select select:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -723,7 +817,7 @@ onBeforeUnmount(() => {
 .training-roster__head,
 .training-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.3fr) 84px minmax(150px, 0.9fr) 92px 116px;
+  grid-template-columns: minmax(220px, 1.3fr) 84px minmax(150px, 0.9fr) minmax(150px, 0.85fr) 92px 116px;
   align-items: center;
   gap: 0.6rem;
 }
@@ -804,6 +898,18 @@ onBeforeUnmount(() => {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.training-row__feature-select select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--rule-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink-bright);
+  padding: 0.36rem 0.45rem;
+  font: inherit;
+  font-size: 0.78rem;
 }
 
 .training-row__toggle {
