@@ -55,6 +55,7 @@ const loadingSheets = ref(false)
 const sheetError = ref<string | null>(null)
 const savingRosterSlugs = reactive(new Set<string>())
 const rosterSaveErrors = reactive<Record<string, string>>({})
+const trainingTrainerSlug = ref<string | null>(null)
 let loadSequence = 0
 
 interface TrainerPortalDragPayload {
@@ -96,6 +97,32 @@ const isRosterDropTarget = (trainerSlug: string, roster: TrainerPokemonRosterKin
 const findTrainerSheet = (trainerSlug: string): TrainerSheet | null => (
   trainerSheets.value.find((sheet) => sheet.slug === trainerSlug) ?? null
 )
+
+const trainingTrainer = computed(() => (
+  trainingTrainerSlug.value ? findTrainerSheet(trainingTrainerSlug.value) : null
+))
+
+const openTrainingModal = (trainerSlug: string): void => {
+  trainingTrainerSlug.value = trainerSlug
+}
+
+const closeTrainingModal = (): void => {
+  trainingTrainerSlug.value = null
+}
+
+const replacePokemonSheet = (updatedSheet: CharacterSheet): void => {
+  const index = pokemonSheets.value.findIndex((sheet) => sheet.slug === updatedSheet.slug)
+  if (index >= 0) pokemonSheets.value.splice(index, 1, updatedSheet)
+  else pokemonSheets.value.push(updatedSheet)
+  pokemonSheets.value = [...pokemonSheets.value]
+}
+
+const replaceTrainerSheet = (updatedSheet: TrainerSheet): void => {
+  const index = trainerSheets.value.findIndex((sheet) => sheet.slug === updatedSheet.slug)
+  if (index >= 0) trainerSheets.value.splice(index, 1, { ...trainerSheets.value[index], ...updatedSheet })
+  else trainerSheets.value.push(updatedSheet)
+  touchTrainerSheets()
+}
 
 const touchTrainerSheets = (): void => {
   trainerSheets.value = [...trainerSheets.value]
@@ -383,6 +410,13 @@ watch(selectedProfileId, () => {
                 <p v-if="trainer.sheet.classes?.length" class="trainer-portal-card__meta">
                   {{ trainer.sheet.classes.map((entry) => entry.name).join(', ') }}
                 </p>
+                <button
+                  type="button"
+                  class="trainer-portal-action trainer-portal-action--button trainer-portal-action--training"
+                  @click="openTrainingModal(trainer.slug)"
+                >
+                  Training
+                </button>
                 <p v-if="savingRosterSlugs.has(trainer.slug)" class="trainer-portal-card__save" aria-live="polite">
                   Saving roster…
                 </p>
@@ -457,6 +491,15 @@ watch(selectedProfileId, () => {
             </section>
           </article>
         </section>
+
+        <TrainerTrainingModal
+          v-if="trainingTrainer"
+          :sheet="trainingTrainer"
+          :pokemon-sheets="pokemonSheets"
+          @close="closeTrainingModal"
+          @pokemon-updated="replacePokemonSheet"
+          @trainer-updated="replaceTrainerSheet"
+        />
 
         <section v-if="portal.otherPokemon.length" class="trainer-portal-other panel-card">
           <header>
@@ -555,6 +598,12 @@ watch(selectedProfileId, () => {
 
 .trainer-portal-action--button {
   cursor: pointer;
+}
+
+.trainer-portal-action--training {
+  margin-top: 0.55rem;
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--rule-soft));
+  background: rgba(var(--accent-rgb), 0.14);
 }
 
 .trainer-portal-empty {
