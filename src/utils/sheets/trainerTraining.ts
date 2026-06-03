@@ -45,6 +45,10 @@ export const trainerHasFeatureNamed = (sheet: TrainerSheet, name: string): boole
 export const trainerHasEdgeNamed = (sheet: TrainerSheet, name: string): boolean =>
   Boolean(namedEntry<TrainerEdgeEntry>(sheet.edges, name))
 
+/** Elite Trainer permits using multiple Training Features during a training session. */
+export const trainerCanSelectPerPokemonTrainingFeatures = (sheet: TrainerSheet): boolean =>
+  trainerHasFeatureNamed(sheet, 'Elite Trainer')
+
 const skillAliases = (skillKey: TrainerTrainingSkillKey): readonly string[] => {
   switch (skillKey) {
     case 'command': return ['command']

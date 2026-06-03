@@ -17,6 +17,7 @@ import {
   TRAINING_SESSION_TARGET_LIMIT,
   TRAINING_SKILL_LABELS,
   pokemonTrainingExperienceGain,
+  trainerCanSelectPerPokemonTrainingFeatures,
   trainerExperienceTrainingLimit,
   trainerHasEdgeNamed,
   trainerSkillRankNameForTraining,
@@ -131,6 +132,7 @@ const trainingFeatureOptions = computed(() => {
 const selectedTrainingFeatureEffects = computed(() =>
   resolvePokemonTrainingFeatureEffects(selectedTrainingFeature.value),
 )
+const canSelectPerPokemonTrainingFeatures = computed(() => trainerCanSelectPerPokemonTrainingFeatures(props.sheet))
 
 const initialTrainingFeature = () => {
   const savedDefault = normalizePokemonTrainingFeatureName(props.sheet.trainingFeature)
@@ -139,6 +141,9 @@ const initialTrainingFeature = () => {
 }
 
 const selectedTrainingFeatureForSlug = (slug: string): string => {
+  if (!canSelectPerPokemonTrainingFeatures.value) {
+    return normalizePokemonTrainingFeatureName(selectedTrainingFeature.value) ?? ''
+  }
   if (Object.prototype.hasOwnProperty.call(selectedTrainingFeatureBySlug.value, slug)) {
     return normalizePokemonTrainingFeatureName(selectedTrainingFeatureBySlug.value[slug]) ?? ''
   }
@@ -474,7 +479,8 @@ onBeforeUnmount(() => {
           <div class="training-summary-card">
             <span class="summary-label">Default Feature</span>
             <strong>{{ selectedTrainingFeature || 'None' }}</strong>
-            <small>Each Pokémon row can override this default.</small>
+            <small v-if="canSelectPerPokemonTrainingFeatures">Each Pokémon row can override this default.</small>
+            <small v-else>Applied to all selected Pokémon unless a feature permits per-Pokémon choices.</small>
           </div>
         </div>
 
@@ -495,6 +501,7 @@ onBeforeUnmount(() => {
               {{ selectedTrainingFeatureEffects.reference?.effect ?? 'Training bonus is applied to selected Pokémon.' }}
             </p>
             <button
+              v-if="canSelectPerPokemonTrainingFeatures"
               type="button"
               class="training-control-inline-button"
               :disabled="!applyTrainingFeature || !selectedSessionCount || saving"
@@ -502,6 +509,9 @@ onBeforeUnmount(() => {
             >
               Set selected Pokémon to default
             </button>
+            <p v-else class="feature-effect">
+              Per-Pokémon Training Feature choices require Elite Trainer.
+            </p>
           </div>
 
           <div class="training-control-block">
@@ -563,6 +573,7 @@ onBeforeUnmount(() => {
               </span>
               <span class="training-row__feature-select">
                 <select
+                  v-if="canSelectPerPokemonTrainingFeatures"
                   :value="row.selectedTrainingFeature"
                   :disabled="!row.sheet || !row.selectedForSession || !applyTrainingFeature || saving"
                   @change="setTrainingFeatureForSlugFromEvent(row.slug, $event)"
@@ -572,6 +583,9 @@ onBeforeUnmount(() => {
                     {{ name }}
                   </option>
                 </select>
+                <span v-else class="training-row__feature-locked">
+                  {{ applyTrainingFeature && selectedTrainingFeature ? selectedTrainingFeature : '—' }}
+                </span>
               </span>
               <label class="training-row__toggle">
                 <input
@@ -900,7 +914,8 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
 }
 
-.training-row__feature-select select {
+.training-row__feature-select select,
+.training-row__feature-locked {
   width: 100%;
   min-width: 0;
   border: 1px solid var(--rule-soft);
@@ -910,6 +925,15 @@ onBeforeUnmount(() => {
   padding: 0.36rem 0.45rem;
   font: inherit;
   font-size: 0.78rem;
+}
+
+.training-row__feature-locked {
+  display: inline-block;
+  color: var(--ink-muted);
+  background: rgba(5, 6, 8, 0.18);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .training-row__toggle {

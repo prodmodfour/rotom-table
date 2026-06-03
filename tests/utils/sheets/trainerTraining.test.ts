@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   pokemonTrainingExperienceGain,
+  trainerCanSelectPerPokemonTrainingFeatures,
   trainerExperienceTrainingBonus,
   trainerExperienceTrainingLimit,
   trainerSkillRankNameForTraining,
@@ -61,5 +62,12 @@ describe('trainer training helpers', () => {
     expect(trainerSkillRankNameForTraining(sheet)).toBe('Virtuoso')
     expect(trainerExperienceTrainingLimit(sheet)).toBe(8)
     expect(trainerExperienceTrainingBonus(sheet)).toBe(15)
+  })
+
+  it('gates per-Pokémon Training Feature selection behind Elite Trainer', () => {
+    expect(trainerCanSelectPerPokemonTrainingFeatures(trainer())).toBe(false)
+    expect(trainerCanSelectPerPokemonTrainingFeatures(trainer({
+      features: [{ name: 'Elite Trainer' }],
+    }))).toBe(true)
   })
 })
