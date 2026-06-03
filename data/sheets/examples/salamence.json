@@ -1,8 +1,8 @@
 {
-  "slug": "examples-salamence",
+  "slug": "salamence",
   "nickname": "Salamence",
   "species": "Salamence",
-  "level": 20,
+  "level": 90,
   "gender": "Male",
   "shiny": false,
   "nature": "Gentle",
@@ -44,14 +44,18 @@
   },
   "combat": {
     "maxHp": 75,
-    "currentHp": 75,
+    "currentHp": 123,
     "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 3,
+      "vsAtkBonus": 0,
+      "vsSatkBonus": 0,
+      "vsAnyBonus": 0
     },
-    "dr": 0
+    "dr": 0,
+    "conditions": []
   },
   "tutorPoints": {
     "earned": 5,
@@ -139,5 +143,19 @@
     "other": [
       "Mountable 1"
     ]
-  }
+  },
+  "player": false,
+  "combatStages": {
+    "acc": 0
+  },
+  "items": {
+    "extraItems": []
+  },
+  "weapon": {},
+  "skillBackground": {},
+  "inheritedMoves": {},
+  "edges": [],
+  "skills": {},
+  "scene": {},
+  "totalExp": 16000
 }
