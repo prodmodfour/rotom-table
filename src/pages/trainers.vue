@@ -86,7 +86,6 @@ const trainerPortalAccentStyle = (accentColor: unknown): Record<string, string> 
   trainerAccentCssVariables(accentColor)
 )
 const trainerHasOpenTeamSlot = (sheet: TrainerSheet): boolean => trainerTeamHasOpenSlot(sheet)
-const trainerTeamCount = (sheet: TrainerSheet): number => trainerTeamSlotCount(sheet)
 const emptyTeamSlotsForTrainer = (sheet: TrainerSheet): unknown[] => Array.from({
   length: Math.max(0, TRAINER_TEAM_LIMIT - trainerTeamSlotCount(sheet)),
 })
@@ -435,7 +434,6 @@ watch(selectedProfileId, () => {
             >
               <div class="trainer-portal-roster__heading">
                 <h3>Team</h3>
-                <span>{{ trainerTeamCount(trainer.sheet) }}/{{ TRAINER_TEAM_LIMIT }}</span>
               </div>
               <div class="trainer-portal-pokemon-list trainer-portal-pokemon-list--team">
                 <TrainerPokemonCard
