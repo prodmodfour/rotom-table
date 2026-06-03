@@ -82,9 +82,9 @@ export const MOVE_VFX_TYPE_COLORS = {
   Poison: {
     key: 'Poison',
     label: 'Poison',
-    primary: '#e0a0ff',
-    accent: '#f6d8ff',
-    glow: '#b96cff',
+    primary: '#df96ff',
+    accent: '#f0c2ff',
+    glow: '#b960ff',
   },
   Ground: {
     key: 'Ground',

@@ -619,6 +619,24 @@ describe('generic move animation planner', () => {
     })
   })
 
+  it('uses the Poison palette for Poison Sting launch and impact VFX', () => {
+    const events = planGenericMoveAnimations(baseInput({
+      script: reviewedScript('Poison Sting'),
+      targetOutcomes: [{ targetId: 'target-token', hit: true }],
+    }))
+
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.projectile,
+        palette: MOVE_VFX_TYPE_COLORS.Poison,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        palette: MOVE_VFX_TYPE_COLORS.Poison,
+      }),
+    ]))
+  })
+
   it('documents representative reviewed move metadata classifications after visual heuristic tuning', () => {
     expect(planGenericMoveAnimations(baseInput({
       script: reviewedScript('Tackle'),

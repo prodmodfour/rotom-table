@@ -155,6 +155,11 @@ describe('move animation palette', () => {
       accent: '#fff8b8',
       glow: '#f0af16',
     })
+    expect(moveVfxColorForType('Poison')).toMatchObject({
+      primary: '#df96ff',
+      accent: '#f0c2ff',
+      glow: '#b960ff',
+    })
     expect(moveVfxColorForType('Dark')).toMatchObject({
       primary: '#b8c4d6',
       accent: '#f1f5ff',
