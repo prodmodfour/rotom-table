@@ -20,12 +20,12 @@ Use the placeholder-only [`.env.vps.example`](../.env.vps.example) as a starting
 
 ## Hosted write policy
 
-Private VPS filesystem writes must fail closed in production unless the operator explicitly opts in. The selected flag is `ROTOM_ENABLE_HOSTED_WRITES`, enforced by server-side campaign write policy on the sheet, encounter-table, and campaign next-day routes that have been moved off the older production-only block.
+Private VPS filesystem writes must fail closed in production unless the operator explicitly opts in. The selected flag is `ROTOM_ENABLE_HOSTED_WRITES`, enforced by server-side write policy on the sheet, encounter-table, persistent encounter-generation, player-profile, Pokédex maintenance, and campaign next-day routes that have been moved off the older production-only block.
 
 - **Disabled by default:** when `NODE_ENV=production`, hosted writes are disabled if the flag is unset or set to anything other than exactly `1`. Values such as `true`, `yes`, `on`, or `enabled` do not enable writes. Routes covered by the hosted-write policy reject with a clear 403-style message instead of writing.
-- **Enabled for private hosts:** `NODE_ENV=production` plus `ROTOM_ENABLE_HOSTED_WRITES=1` opts the private instance into campaign JSON writes for trusted table use. Use this only with an outer access gate and operator-controlled campaign storage such as `ROTOM_CAMPAIGN_ROOT`.
+- **Enabled for private hosts:** `NODE_ENV=production` plus `ROTOM_ENABLE_HOSTED_WRITES=1` opts the private instance into covered filesystem writes for trusted table use. Use this only with an outer access gate and operator-controlled campaign storage such as `ROTOM_CAMPAIGN_ROOT`.
 - **Development remains unchanged:** non-production local development writes keep working without the hosted-write flag, so `npm run dev` and existing local campaign workflows are not gated by VPS settings.
-- **Scope:** the flag controls server-side filesystem persistence only. It is not authentication, authorization, a public-hosting safety layer, or a substitute for backups and route review. Treat mutating routes that have not been reviewed for hosted mode as part of the remaining production limitations until they are explicitly documented.
+- **Scope:** the flag controls server-side filesystem persistence only. It is not authentication, authorization, a public-hosting safety layer, or a substitute for backups and route review. See the [API route mutation audit](api-route-mutation-audit.md) for the current route-by-route coverage. Map write routes remain pending hosted-mode review and should not be treated as supported private VPS write surfaces until that review is complete.
 
 ## What this is not
 
@@ -41,7 +41,7 @@ The **GM / Player** picker and persistent player profiles are table workflow con
 
 ## Out of scope for the initial target
 
-Before treating a hosted instance as a regular remote table, document and verify the remaining operational pieces for that host: environment variable values, production write policy enforcement, route mutation review, process management, reverse proxy behaviour, access-gate configuration, backups, restores, and deployment smoke checks.
+Before treating a hosted instance as a regular remote table, document and verify the remaining operational pieces for that host: environment variable values, production write policy enforcement, route mutation review, map hosted-mode behaviour, process management, reverse proxy behaviour, access-gate configuration, backups, restores, and deployment smoke checks.
 
 Until those pieces are documented for the specific host, keep hosted use private, conservative, and reversible. If the trust boundary is unclear, run Rotom Table locally instead.
 
@@ -50,5 +50,6 @@ Until those pieces are documented for the specific host, keep hosted use private
 - [Security](../SECURITY.md) — trust-based security expectations and public-exposure non-goals.
 - [Local development](local-development.md) — local-first filesystem behaviour, checks, and production write limitations.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON separate from the app checkout.
+- [API route mutation audit](api-route-mutation-audit.md) — current non-GET route classifications, hosted-write coverage, and remaining map-route limitation.
 - [Player profiles and linked character control](player-profiles.md) — normal GM/player profile flow for table play.
 - [Live session security boundaries](live-session-security-boundaries.md) — legacy live-session exposure risks and non-goals.

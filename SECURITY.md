@@ -10,7 +10,7 @@ Do not expose this application publicly without replacing the current auth and p
 
 - real authentication and authorization
 - a persistence layer designed for hosted use instead of repository-tree JSON writes
-- review of all mutating API routes
+- review of all mutating API routes (see the current private-hosting [API route mutation audit](docs/api-route-mutation-audit.md))
 - content/asset rights review
 - separation of private campaign data from public/static reference data
 
