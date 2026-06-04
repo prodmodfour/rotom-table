@@ -82,6 +82,12 @@ Start the built Nitro server after a successful build when you need a production
 npm run start
 ```
 
+In another shell, the no-secret health endpoint should return a small JSON status for private host or reverse-proxy monitoring:
+
+```bash
+curl -fsS http://127.0.0.1:3000/api/health
+```
+
 Recommended local verification before sharing changes:
 
 ```bash

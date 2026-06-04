@@ -91,11 +91,12 @@ npm run build
 
 See [docs/architecture.md](docs/architecture.md) for more detail.
 
-## Common routes
+## Common routes and endpoints
 
 | Route | Purpose |
 | --- | --- |
 | `/` | Redirects to the map library. |
+| `/api/health` | No-secret JSON health check for private host and reverse-proxy monitoring. |
 | `/login` | Choose the local GM role or select a GM-created persistent player profile for Player Login. |
 | `/sessions` | Direct-only legacy live-session identity/socket lobby for maintenance smoke checks; not linked from normal app navigation or required for profile-based play. |
 | `/settings` | GM-only campaign settings and local campaign folder controls. |
