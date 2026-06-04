@@ -7,7 +7,7 @@ Rotom Table's first VPS target is **private trusted-table hosting**: one GM/oper
 Use this mode only when all of these are true:
 
 - the VPS is operated by the GM or another trusted table operator;
-- access to the app is restricted by an outer gate such as a private network, VPN/Tailscale, reverse-proxy authentication, Cloudflare Access, SSH tunnel, or equivalent provider controls;
+- access to the app is restricted by an outer gate such as a private network, VPN/Tailscale, reverse-proxy authentication, Cloudflare Access, SSH tunnel, or equivalent provider controls; see [Outer access gate](#outer-access-gate) before sharing the URL;
 - participants are known table members who already trust the GM/operator and campaign data;
 - campaign JSON stays in private operator-controlled storage, preferably through `ROTOM_CAMPAIGN_ROOT` as described in [Campaign repositories](campaign-repositories.md);
 - the operator understands the local-first filesystem model in [Local development](local-development.md) and the security expectations in [Security](../SECURITY.md).
@@ -94,6 +94,27 @@ curl -fsS https://rotom-table.example.com/api/health
 WebSocket upgrade support must work end-to-end for legacy `/sessions` maintenance surfaces such as `WebSocket /api/sessions/socket` and for any future realtime endpoints. Caddy's `reverse_proxy` handles WebSocket upgrades by default; if you replace this example with nginx or another proxy, explicitly configure HTTP/1.1 upgrade forwarding and test the socket path before sharing the host with players.
 
 The reverse proxy is only transport and TLS plumbing. It is not Rotom Table authentication, not the GM/Player role picker, and not a public-hosting safety layer by itself. Keep the Node service unexposed on `127.0.0.1`, restrict the HTTPS URL with the required outer access gate for the trusted table, and keep real hostnames, credentials, certificates, access-policy exports, and proxy logs out of Git.
+
+## Outer access gate
+
+A private VPS URL must not be reachable by arbitrary internet users. Put an outer access gate in front of the Rotom Table origin before sharing the URL with players, and verify that the gate protects the app before the `/login` page, `/api/health`, other `/api/*` routes, and WebSocket upgrade paths.
+
+Acceptable gate examples include the following. Choose the one that fits the host and table; no single vendor is required.
+
+- A private network or firewall rule that only allows trusted LAN/private-subnet clients and blocks direct public access.
+- A VPN or mesh network such as Tailscale or WireGuard where only known table devices can reach the hostname.
+- Cloudflare Access or an equivalent identity-aware proxy that allows only the trusted campaign group.
+- Reverse-proxy basic authentication for a trusted group, served only over HTTPS, with strong shared credentials kept outside Git and rotated if they are shared too broadly.
+- An SSH tunnel or comparable provider control that keeps the app reachable only from explicitly approved operator/player devices.
+
+The outer gate is separate from Rotom Table's GM/Player role picker. **GM Login is not enough** for a private VPS: it is a table workflow role choice after a visitor has reached the app, not a password, account system, or public authentication layer. Anyone who can reach the app may be able to choose a local role, so the gate should admit only known table members who already trust the GM/operator.
+
+Before sharing a host URL, confirm these checks:
+
+- the Nitro process still binds to `127.0.0.1`, and the VPS firewall blocks direct public access to the Node port such as `:3000`;
+- an off-network or unauthenticated browser cannot load `/login` or `/api/health`;
+- the same outer gate covers normal page loads, mutating API routes, and WebSocket upgrades;
+- access-gate configs, basic-auth password files, tunnel credentials, private hostnames, provider policy exports, and logs stay out of Git.
 
 ## VPS campaign data layout
 
