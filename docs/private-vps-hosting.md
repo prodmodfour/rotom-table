@@ -18,6 +18,12 @@ The built Nitro server can be used for private host smoke checks with Node.js 24
 
 Use the placeholder-only [`.env.vps.example`](../.env.vps.example) as a starting point for a private host's service manager environment or for an untracked `.env` file loaded by the deployment. It sets `NODE_ENV=production`, loopback Nitro bind settings, and an example `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign` so campaign-owned JSON stays outside the application checkout. Replace paths and bind settings for your host, but keep real `.env` files, hostnames, credentials, and campaign data out of Git.
 
+## Branch and data separation strategy
+
+If a private VPS deployment process names a Git branch, keep the branch model simple: prefer `main` as the deployable production-code line plus short-lived feature branches for review. Avoid maintaining long-lived `dev` and `production` branches unless there is a real staging environment with its own service, access gate, backups, and isolated campaign data.
+
+Data separation matters more than branch names. The app checkout and `ROTOM_CAMPAIGN_ROOT` are separate operational boundaries; branch naming must not decide which campaign JSON is writable. If a staging environment is added later, never point staging and production at the same writable `ROTOM_CAMPAIGN_ROOT`, and record the app commit, tag, or release identifier deployed with each private campaign backup.
+
 ## Primary process management path
 
 The primary private VPS process-management path is **systemd with a direct Node.js 24 runtime**. This keeps Rotom Table close to the existing local-first filesystem model: the service runs the built Nitro server from the app checkout, while campaign JSON stays in `/srv/rotom-table/campaign` through `ROTOM_CAMPAIGN_ROOT`.

@@ -67,9 +67,9 @@ Campaign archives are not enough to rebuild a VPS. Keep a separate private recor
 - `/etc/rotom-table/rotom-table.env`, including `ROTOM_CAMPAIGN_ROOT`, `NITRO_HOST`, `NITRO_PORT`, `NODE_ENV`, and whether `ROTOM_ENABLE_HOSTED_WRITES=1` was intentionally enabled;
 - `/etc/systemd/system/rotom-table.service` or the reviewed service unit installed on the host;
 - reverse-proxy and outer-access-gate configuration needed to reach the loopback Node service;
-- the app commit or release identifier deployed in `/srv/rotom-table/app`.
+- the app commit or release identifier deployed in `/srv/rotom-table/app`, and the branch or tag name only when it helps identify that release.
 
-Treat those records as private operational data. The real environment file may contain private paths or future credentials, so keep private copies root-readable only and do not commit them to Git. If you need a shareable reference, commit only placeholder examples such as `.env.vps.example`, or write a redacted note that replaces host-specific values and credentials with placeholders.
+Treat those records as private operational data. Prefer `main` plus short-lived feature branches for app-code deployment notes; do not create long-lived `dev` and `production` branch tiers unless a real staging environment exists. Branch names are not data-isolation boundaries, so a later staging host must use a different writable `ROTOM_CAMPAIGN_ROOT` from the private production table. The real environment file may contain private paths or future credentials, so keep private copies root-readable only and do not commit them to Git. If you need a shareable reference, commit only placeholder examples such as `.env.vps.example`, or write a redacted note that replaces host-specific values and credentials with placeholders.
 
 A private config archive can be stored beside the campaign archive when the files exist on the host:
 
