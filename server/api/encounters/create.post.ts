@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { readObjectBody, requireNonProduction } from '../../utils/http'
+import { readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { createEncounterTableUseCase } from '../../useCases/encounterTableLibrary'
 
@@ -11,7 +11,7 @@ interface CreateEncounterTableBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  requireNonProduction()
+  requireWritableCampaignMode()
   const body = await readObjectBody<CreateEncounterTableBody>(event)
 
   try {

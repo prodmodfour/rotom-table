@@ -4,7 +4,7 @@ Rotom Table is designed to run locally with filesystem-backed JSON data.
 
 ## Requirements
 
-- Node.js and npm; a current LTS release is recommended.
+- Node.js 24 LTS and npm.
 - Optional: Python 3 for helper scripts in `scripts/` and `ptu-data/`.
 - Optional: [`just`](https://github.com/casey/just) for convenience commands in `justfile`.
 
@@ -76,6 +76,18 @@ Build the app:
 npm run build
 ```
 
+Start the built Nitro server after a successful build when you need a production-style Node/Nitro smoke check or a private Node host process:
+
+```bash
+npm run start
+```
+
+In another shell, the no-secret health endpoint should return a small JSON status for private host or reverse-proxy monitoring:
+
+```bash
+curl -fsS http://127.0.0.1:3000/api/health
+```
+
 Recommended local verification before sharing changes:
 
 ```bash
@@ -115,16 +127,19 @@ The app edits local JSON files during development. By default the campaign paths
 - player profiles: `data/player-profiles/`
 - Pokémon sheets: `data/sheets/`
 - trainer sheets: `data/trainers/`
+- Pokédex reference override diff: `data/reference-overrides/pokedex.json`
 - encounter tables: `encounter_tables/`
 
 Legacy session runtime files, if that maintenance surface is used, remain app-local under `data/sessions/` and are not part of the campaign repository root switch.
 
-Nuxt/Vite are configured to ignore app-written sheet/map data changes so autosaves do not trigger full page reloads while editing. If you edit files outside the browser, refresh the relevant page or restart the dev server if the UI does not reflect the change. Restart Nuxt after changing `ROTOM_CAMPAIGN_ROOT`.
+Nuxt/Vite are configured to ignore app-written sheet/map/reference-override data changes so autosaves and admin edits do not trigger full page reloads while editing. If you edit files outside the browser, refresh the relevant page or restart the dev server if the UI does not reflect the change. Restart Nuxt after changing `ROTOM_CAMPAIGN_ROOT`.
 
-`.gitignore` is configured to keep personal campaign data, player profiles, new local encounter-table folders, and legacy live session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [Player profiles and linked character control](player-profiles.md) for profile behaviour, [live session storage](live-session-storage.md) for legacy snapshot/event-log layout details, [Live session backup and recovery](live-session-backup-recovery.md) for private archive/restore guidance, [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) for the snapshot/event-log and hygiene review, and [Live session security boundaries](live-session-security-boundaries.md) for no-secret data-handling boundaries.
+`.gitignore` is configured to keep personal campaign data, player profiles, campaign-specific reference overrides, new local encounter-table folders, and legacy live session runtime files out of the repository by default. Before committing, check `git status` and make sure private campaign data, real player details, session snapshots/event logs, credentials, and unreleased story notes are not included. See [Player profiles and linked character control](player-profiles.md) for profile behaviour, [live session storage](live-session-storage.md) for legacy snapshot/event-log layout details, [Live session backup and recovery](live-session-backup-recovery.md) for private archive/restore guidance, [Live session persistence/recovery maintenance](live-session-persistence-recovery-maintenance.md) for the snapshot/event-log and hygiene review, and [Live session security boundaries](live-session-security-boundaries.md) for no-secret data-handling boundaries.
 
 ## Production write limitations
 
-Rotom Table is strongest as a local table tool. Several filesystem-mutating API routes are disabled in production mode. Use `npm run dev` when you need browser-based editing, autosave, encounter generation, or local JSON management.
+Rotom Table is strongest as a local table tool. Production hosted writes are fail-closed unless a private operator explicitly opts in. Use `npm run dev` when you need unrestricted local browser editing, autosave, encounter generation, or local JSON management.
 
-A hosted/public deployment should replace the trust-based role picker, decide on a durable persistence layer, review asset/content rights, and separate private campaign data from public reference data.
+The private VPS hosted-write policy uses `ROTOM_ENABLE_HOSTED_WRITES=1` as the exact production opt-in for covered filesystem writes. When `NODE_ENV=production`, an unset flag or any value other than exactly `1` keeps covered hosted writes disabled with a 403-style error; non-production development writes remain unchanged. See [Private VPS hosting scope](private-vps-hosting.md) for the full flag semantics and private trusted-table boundary, and see the [API route mutation audit](api-route-mutation-audit.md) for route-by-route coverage.
+
+A public deployment should replace the trust-based role picker, decide on a durable persistence layer, review mutating routes, review asset/content rights, and separate private campaign data from public reference data.

@@ -1,6 +1,6 @@
 # Data model
 
-Rotom Table is built around local, inspectable data. By default the app edits JSON in the application checkout during local development so campaign data can be backed up, reviewed in Git, and repaired manually when needed. Set `ROTOM_CAMPAIGN_ROOT` to point those campaign-owned paths at a separate private campaign repository; see [Campaign repositories](campaign-repositories.md).
+Rotom Table is built around local, inspectable data. By default the app edits JSON in the application checkout during local development so campaign data and campaign-owned reference override diffs can be backed up, reviewed in Git, and repaired manually when needed. Set `ROTOM_CAMPAIGN_ROOT` to point those campaign-owned paths at a separate private campaign repository; see [Campaign repositories](campaign-repositories.md).
 
 ## Maps
 
@@ -83,7 +83,7 @@ Important reference files include:
 - `data/reference/pokedex.json`
 - `data/reference/rules.json`
 
-The app uses this content for Pokédex browsing, reference pages, sheet defaults, lookup helpers, and automation support.
+The app uses this content for Pokédex browsing, reference pages, sheet defaults, lookup helpers, and automation support. GM Pokédex maintenance is the deliberate exception to app-checkout reference immutability: it writes a campaign-owned override diff at `data/reference-overrides/pokedex.json`, resolved under `ROTOM_CAMPAIGN_ROOT` when set, and layers replacement entries from that diff on top of `data/reference/pokedex.json` for the Pokédex API.
 
 ## Generated wild sheets
 
@@ -99,7 +99,7 @@ The browser `/generate` page can also preview or write generated results dependi
 
 ## Local campaign data and `.gitignore`
 
-The repository is configured for local campaign ownership. If `ROTOM_CAMPAIGN_ROOT` is unset, campaign paths are under the app checkout. If it is set, maps, profiles, sheets, trainers, and encounter tables are resolved under that campaign root instead.
+The repository is configured for local campaign ownership. If `ROTOM_CAMPAIGN_ROOT` is unset, campaign paths are under the app checkout. If it is set, maps, profiles, sheets, trainers, campaign reference override diffs, and encounter tables are resolved under that campaign root instead. Base PTU reference data stays app-owned under `data/reference/`; Pokédex maintenance writes campaign overrides under `data/reference-overrides/pokedex.json`.
 
 The default app repository hygiene is:
 

@@ -6,7 +6,7 @@ import {
   expectSlug,
   expectString,
   readObjectBody,
-  requireNonProduction,
+  requireWritableCampaignMode,
 } from '../../utils/http'
 import { renameSheetUseCase } from '../../useCases/renameSheet'
 import { normalizeRealtimeClientId } from '#shared/realtime'
@@ -20,7 +20,7 @@ interface RenameBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  requireNonProduction()
+  requireWritableCampaignMode()
 
   const body = await readObjectBody<RenameBody>(event)
   const kind = expectSheetKind(body.kind)

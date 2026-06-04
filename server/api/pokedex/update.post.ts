@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { expectRecord, expectSlug, readObjectBody } from '../../utils/http'
+import { expectRecord, expectSlug, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { updatePokedexEntryUseCase } from '../../useCases/updatePokedexEntry'
 
@@ -11,6 +11,7 @@ interface UpdatePokedexEntryBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
+  requireWritableCampaignMode()
 
   const body = await readObjectBody<UpdatePokedexEntryBody>(event)
   const slug = expectSlug(body.slug)

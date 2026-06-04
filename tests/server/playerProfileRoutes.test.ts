@@ -1,5 +1,6 @@
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { HOSTED_WRITES_DISABLED_MESSAGE } from '~~/server/utils/http'
 import { UseCaseHttpError } from '~~/server/utils/useCaseErrors'
 
 const mocks = vi.hoisted(() => ({
@@ -24,6 +25,14 @@ const updateRoute = (await import('../../server/api/player-profiles/update.post'
 
 type ProfileRouteHandler = EventHandler<EventHandlerRequest, unknown>
 
+const originalNodeEnv = process.env.NODE_ENV
+const originalHostedWrites = process.env.ROTOM_ENABLE_HOSTED_WRITES
+
+const restoreEnvValue = (key: 'NODE_ENV' | 'ROTOM_ENABLE_HOSTED_WRITES', value: string | undefined): void => {
+  if (value === undefined) delete process.env[key]
+  else process.env[key] = value
+}
+
 const invokeRoute = async (
   handler: ProfileRouteHandler,
   options: { role?: 'gm' | 'player'; body?: unknown; method?: string } = {},
@@ -46,6 +55,11 @@ const invokeRoute = async (
 describe('player profile API routes', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    restoreEnvValue('NODE_ENV', originalNodeEnv)
+    restoreEnvValue('ROTOM_ENABLE_HOSTED_WRITES', originalHostedWrites)
   })
 
   it('lists profiles for authenticated profile picker requests', async () => {
@@ -83,6 +97,29 @@ describe('player profile API routes', () => {
       statusMessage: 'GM login required',
     })
     expect(mocks.createPlayerProfileUseCase).not.toHaveBeenCalled()
+  })
+
+  it('requires the hosted-write opt-in before profile writes in production', async () => {
+    process.env.NODE_ENV = 'production'
+    delete process.env.ROTOM_ENABLE_HOSTED_WRITES
+
+    await expect(invokeRoute(createRoute, {
+      role: 'gm',
+      body: { displayName: 'May' },
+    })).rejects.toMatchObject({
+      statusCode: 403,
+      statusMessage: HOSTED_WRITES_DISABLED_MESSAGE,
+    })
+    expect(mocks.createPlayerProfileUseCase).not.toHaveBeenCalled()
+
+    await expect(invokeRoute(updateRoute, {
+      role: 'gm',
+      body: { profileId: 'profile_may00000', displayName: 'May' },
+    })).rejects.toMatchObject({
+      statusCode: 403,
+      statusMessage: HOSTED_WRITES_DISABLED_MESSAGE,
+    })
+    expect(mocks.updatePlayerProfileUseCase).not.toHaveBeenCalled()
   })
 
   it('maps profile use-case errors to API errors', async () => {

@@ -1,7 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
-import { expectSlug, expectString, readObjectBody } from '../../utils/http'
+import { expectSlug, expectString, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { recordMoveUsageUseCase } from '../../useCases/recordMoveUsage'
 import { normalizeRealtimeClientId } from '#shared/realtime'
@@ -16,6 +16,8 @@ interface UseMoveBody {
 
 export default defineEventHandler(async (event) => {
   const role = requireAuthRole(event)
+  requireWritableCampaignMode()
+
   const body = await readObjectBody<UseMoveBody>(event)
   const slug = expectSlug(body.slug)
   const placementId = expectString(body.placementId, 'placementId', { maxLength: 120 })

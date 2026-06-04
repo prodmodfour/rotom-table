@@ -6,10 +6,15 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 
 - [Review guide](review-guide.md) — what to inspect first, key routes, source areas, scripts, and production caveats.
 - [Architecture](architecture.md) — high-level Nuxt/Nitro/local-first architecture.
-- [Data model](data-model.md) — maps, sheets, trainers, player profiles, encounter tables, app-owned PTU reference content, generated sheets, and local data hygiene.
-- [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON in a separate Git repository.
+- [Data model](data-model.md) — maps, sheets, trainers, player profiles, encounter tables, campaign reference overrides, app-owned PTU reference content, generated sheets, and local data hygiene.
+- [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON and campaign reference override diffs in a separate Git repository.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
+- [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to local-first/security docs.
+- [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy private VPS checks for install, validation, built-server start, health, outer-gated profile play, write persistence after restart, Git hygiene, and legacy `/sessions` boundaries.
+- [Private VPS readiness summary](private-vps-readiness-summary.md) — selected Node 24 runtime, systemd deployment path, hosted-write policy, final validation evidence, and known public-service follow-ups.
+- [Private VPS backup runbook](private-vps-backups.md) — before/after-session campaign archives, temporary restore smoke checks, private deployment config notes, retention guidance, and Git hygiene.
+- [API route mutation audit](api-route-mutation-audit.md) — non-GET API route classifications, hosted-write coverage, and remaining limitations.
 - [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.
 - [Map rendering performance roadmap](map-rendering-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
 - [Live session roadmap](live-session-roadmap.md) — legacy GM-hosted live session scope, lifecycle, concurrency model, roadmap phases, and non-goals; not the normal profile-based play path.

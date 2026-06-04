@@ -24,13 +24,14 @@ This structure keeps route handlers thin and makes persistence-heavy behaviours 
 
 ## Local filesystem-backed JSON data
 
-Rotom Table is local-first. Campaign state is stored as JSON on the local filesystem rather than in a hosted database. By default those files live in the app checkout; `ROTOM_CAMPAIGN_ROOT` can point campaign-owned paths at a separate private campaign repository.
+Rotom Table is local-first. Campaign state is stored as JSON on the local filesystem rather than in a hosted database. By default those files live in the app checkout; `ROTOM_CAMPAIGN_ROOT` can point campaign-owned paths, including campaign reference override diffs, at a separate private campaign repository.
 
 - Maps live under `data/maps/`.
 - Persistent player profiles live under `data/player-profiles/`.
 - Pokémon sheets live under `data/sheets/`.
 - Trainer sheets live under `data/trainers/`.
 - Encounter tables live under `encounter_tables/`.
+- Campaign reference override diffs, currently Pokédex maintenance entries, live under `data/reference-overrides/`.
 - App-owned PTU reference content lives under `data/reference/` with indexes in `data/ptuReference.ts` and `src/utils/reference/`. `ptu-data/` is documentary upstream/source material and parser output, not the runtime source of truth.
 
 This makes data easy to inspect, back up, diff, and repair while developing or running a home campaign.
@@ -77,4 +78,4 @@ The app exposes PTU reference material through searchable/browsable routes for m
 
 ## Production limitations
 
-Rotom Table is strongest as a local development/table tool. Several mutating API routes are disabled in production mode, and the current role picker assumes trusted local users. A public hosted version should replace the auth model, define a durable persistence layer, review asset/content rights, and decide which local JSON data should become static reference content versus private campaign state.
+Rotom Table is strongest as a local development/table tool. Private VPS filesystem writes are gated by `ROTOM_ENABLE_HOSTED_WRITES=1` for routes that have been moved to the hosted-write policy, including map routes; the current role picker still assumes trusted local/table users. Covered Pokédex maintenance writes a campaign override diff under `data/reference-overrides/` instead of mutating app-owned `data/reference/`. See the [API route mutation audit](api-route-mutation-audit.md) for current route coverage. A public hosted version should replace the auth model, define a durable persistence layer, review mutating routes, review asset/content rights, and decide which local JSON data should become static reference content versus private campaign state.

@@ -98,15 +98,15 @@ The current tracked-file review confirms that the repository does not commit liv
 
 - no real GM keys or join codes are documented; tests use synthetic constants and product docs use redacted placeholders instead of real table credentials;
 - no `data/sessions/` runtime directories, `snapshot.json` session snapshots, or `events.jsonl` event logs are tracked;
-- no private `data/maps/`, `data/trainers/`, or personal `data/sheets/` campaign files are tracked; only curated `data/sheets/examples/` and app-owned reference data are intentionally present;
+- no private `data/maps/`, `data/trainers/`, `data/reference-overrides/`, or personal `data/sheets/` campaign files are tracked; only curated `data/sheets/examples/` and app-owned reference data are intentionally present;
 - no Cloudflare `cert.pem`, tunnel credentials JSON, API tokens, private keys, real `.env` or `.env.*` files, tunnel logs, screenshots with secrets, or private campaign archives are tracked;
-- `.gitignore` continues to ignore local campaign maps, generated/private sheets, trainer data, live-session snapshots, event logs, environment files, build outputs, and temporary smoke data.
+- `.gitignore` continues to ignore local campaign maps, generated/private sheets, trainer data, campaign reference overrides, live-session snapshots, event logs, environment files, build outputs, and temporary smoke data.
 
 Repeat this check before sharing evidence or committing after a live table rehearsal:
 
 ```bash
 git status --short
-git ls-files | grep -E '(^|/)(\.env(\.|$)|data/sessions/|data/maps/|data/trainers/|snapshot\.json$|events\.jsonl$|cert\.pem$|.*credentials.*\.json$)'
+git ls-files | grep -E '(^|/)(\.env(\.|$)|data/sessions/|data/maps/|data/trainers/|data/reference-overrides/|snapshot\.json$|events\.jsonl$|cert\.pem$|.*credentials.*\.json$)'
 ```
 
 The first command should show no unintended generated/private files. The second command should print nothing for this repository; if it prints a path, inspect and remove/rotate the data before sharing or committing.

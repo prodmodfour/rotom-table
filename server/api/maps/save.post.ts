@@ -1,7 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
-import { expectRecord, expectSlug, readObjectBody } from '../../utils/http'
+import { expectRecord, expectSlug, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { saveMapUseCase } from '../../useCases/saveMap'
 import { normalizeRealtimeClientId } from '#shared/realtime'
@@ -16,6 +16,8 @@ interface SaveBody {
 
 export default defineEventHandler(async (event) => {
   const role = requireAuthRole(event)
+  requireWritableCampaignMode()
+
   const body = await readObjectBody<SaveBody>(event)
   const slug = expectSlug(body.slug)
   const map = expectRecord(body.map, 'map') as unknown as TabletopMap

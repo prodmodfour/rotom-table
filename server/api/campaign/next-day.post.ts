@@ -1,7 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { normalizeRealtimeClientId } from '#shared/realtime'
 import { requireGm } from '../../utils/auth'
-import { readObjectBody, requireNonProduction } from '../../utils/http'
+import { readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { advanceCampaignDayUseCase } from '../../useCases/advanceCampaignDay'
 
@@ -11,7 +11,7 @@ interface NextDayBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  requireNonProduction()
+  requireWritableCampaignMode()
 
   const body = await readObjectBody<NextDayBody>(event)
 

@@ -32,7 +32,7 @@ A move-animation-specific pass was recorded after the generic VFX integration to
 | Field | Value |
 | --- | --- |
 | Date | 2026-05-31 UTC |
-| Measurement source | `feature/move-vfx-autonomous-build` during VFX-082 review |
+| Measurement source | move VFX feature branch during VFX-082 review |
 | App mode | `npm run dev`, Nuxt dev server at `http://127.0.0.1:3100` |
 | Browser | Headless Chrome via Playwright on Linux x86_64 |
 | Debug flags | `?debug=render,move-vfx` |

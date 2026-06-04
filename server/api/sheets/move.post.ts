@@ -6,7 +6,7 @@ import {
   expectSheetKind,
   expectSlug,
   readObjectBody,
-  requireNonProduction,
+  requireWritableCampaignMode,
 } from '../../utils/http'
 import { moveSheetUseCase } from '../../useCases/moveSheet'
 import { normalizeRealtimeClientId } from '#shared/realtime'
@@ -20,7 +20,7 @@ interface MoveSheetBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  requireNonProduction()
+  requireWritableCampaignMode()
 
   const body = await readObjectBody<MoveSheetBody>(event)
   const kind = expectSheetKind(body.kind)

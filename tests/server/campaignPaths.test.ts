@@ -26,6 +26,7 @@ describe('campaign path configuration', () => {
 
     expect(paths.CAMPAIGN_ROOT).toBe(resolve(process.cwd()))
     expect(paths.CAMPAIGN_MAPS_ROOT).toBe(resolve(process.cwd(), 'data/maps'))
+    expect(paths.CAMPAIGN_POKEDEX_OVERRIDES_PATH).toBe(resolve(process.cwd(), 'data/reference-overrides/pokedex.json'))
     expect(paths.CAMPAIGN_ENCOUNTER_TABLES_ROOT).toBe(resolve(process.cwd(), 'encounter_tables'))
   })
 
@@ -38,6 +39,7 @@ describe('campaign path configuration', () => {
 
     expect(paths.CAMPAIGN_ROOT).toBe(campaignRoot)
     expect(paths.CAMPAIGN_TRAINER_SHEETS_ROOT).toBe(resolve(campaignRoot, 'data/trainers'))
+    expect(paths.CAMPAIGN_REFERENCE_OVERRIDES_ROOT).toBe(resolve(campaignRoot, 'data/reference-overrides'))
     expect(paths.campaignPathLabel(resolve(campaignRoot, 'data/maps/atrium.json'))).toBe('data/maps/atrium.json')
   })
 

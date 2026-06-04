@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 
 const isDev = process.env.NODE_ENV !== 'production'
-const persistedDataWatchIgnored = [/(?:^|[\\/])data[\\/](?:sheets|trainers|maps|player-profiles)(?:[\\/]|$)/]
+const persistedDataWatchIgnored = [/(?:^|[\\/])data[\\/](?:sheets|trainers|maps|player-profiles|reference-overrides)(?:[\\/]|$)/]
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-04-22',
@@ -37,10 +37,10 @@ export default defineNuxtConfig({
   },
   watchers: {
     chokidar: {
-      // Sheet and map JSON is edited by the app itself. Let the realtime
-      // channels update UI state instead of letting Nuxt/Vite full-reload
-      // every open editor when an autosave writes to disk. Chokidar v4 no
-      // longer treats glob strings as patterns, so use regexes here.
+      // Sheet, map, profile, and reference-override JSON is edited by the app
+      // itself. Let the realtime channels update UI state instead of letting
+      // Nuxt/Vite full-reload every open editor when an autosave writes to disk.
+      // Chokidar v4 no longer treats glob strings as patterns, so use regexes here.
       ignored: persistedDataWatchIgnored,
     },
   },

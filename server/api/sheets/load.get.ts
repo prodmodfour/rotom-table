@@ -1,6 +1,6 @@
 import { defineEventHandler, getQuery } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
-import { expectSheetKind, expectSlug, requireNonProduction } from '../../utils/http'
+import { expectSheetKind, expectSlug } from '../../utils/http'
 import { playerProfileCanAccessSheet, resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { getPlayerSessionAccessGrant, playerSessionCanAccessSheet } from '../../utils/sessionPlayerAccess'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -23,8 +23,6 @@ const markPlayerAccessibleSheet = <TSheet extends { player?: unknown }>(
 
 export default defineEventHandler((event) => {
   const role = requireAuthRole(event)
-  if (role === 'gm') requireNonProduction()
-
   const query = getQuery(event)
   const kind = expectSheetKind(query.kind)
   const slug = expectSlug(query.slug)

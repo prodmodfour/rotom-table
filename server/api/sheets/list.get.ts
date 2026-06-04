@@ -1,6 +1,5 @@
 import { defineEventHandler, getQuery } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
-import { requireNonProduction } from '../../utils/http'
 import { playerProfileCanAccessSheet, resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { getPlayerSessionAccessGrant, playerSessionCanAccessSheet } from '../../utils/sessionPlayerAccess'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
@@ -21,7 +20,6 @@ const markPlayerAccessibleSheet = <TSheet extends { slug: string; player?: unkno
 
 export default defineEventHandler((event) => {
   const role = requireAuthRole(event)
-  if (role === 'gm') requireNonProduction()
   try {
     const query = getQuery(event)
     const sessionAccess = role === 'player' ? getPlayerSessionAccessGrant(event) : null

@@ -2,11 +2,15 @@
   "name": "rotom-table",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "nuxt dev",
     "dev:session:lan": "node scripts/session-host-dev.mjs --mode lan",
     "dev:session:tunnel": "node scripts/session-host-dev.mjs --mode tunnel",
     "build": "nuxt build",
+    "start": "node .output/server/index.mjs",
     "preview": "nuxt preview",
     "postinstall": "NODE_ENV=development nuxt prepare",
     "typecheck": "NODE_ENV=development nuxt typecheck",
@@ -26,7 +30,7 @@
     "three": "^0.176.0"
   },
   "devDependencies": {
-    "@types/node": "^20.19.40",
+    "@types/node": "^24.13.0",
     "@types/three": "^0.176.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
