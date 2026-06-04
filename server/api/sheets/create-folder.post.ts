@@ -1,7 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
-import { readObjectBody, requireNonProduction } from '../../utils/http'
+import { readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { createSheetFolderUseCase } from '../../useCases/createSheetFolder'
 
 interface CreateFolderBody {
@@ -10,7 +10,7 @@ interface CreateFolderBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
-  requireNonProduction()
+  requireWritableCampaignMode()
 
   const body = await readObjectBody<CreateFolderBody>(event)
 

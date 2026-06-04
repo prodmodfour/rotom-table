@@ -18,6 +18,25 @@ export const conflict = (statusMessage: string): never => {
   throw createError({ statusCode: 409, statusMessage })
 }
 
+export const HOSTED_WRITES_FLAG = 'ROTOM_ENABLE_HOSTED_WRITES'
+
+export const HOSTED_WRITES_DISABLED_MESSAGE =
+  `Hosted filesystem writes are disabled in production. Set ${HOSTED_WRITES_FLAG}=1 only for a private trusted-table host.`
+
+type WritableCampaignEnv = Readonly<Record<string, string | undefined>>
+
+export const areHostedWritesEnabled = (env: WritableCampaignEnv = process.env): boolean => (
+  env[HOSTED_WRITES_FLAG] === '1'
+)
+
+export const isWritableCampaignMode = (env: WritableCampaignEnv = process.env): boolean => (
+  env.NODE_ENV !== 'production' || areHostedWritesEnabled(env)
+)
+
+export const requireWritableCampaignMode = (env: WritableCampaignEnv = process.env): void => {
+  if (!isWritableCampaignMode(env)) forbidden(HOSTED_WRITES_DISABLED_MESSAGE)
+}
+
 export const requireNonProduction = (): void => {
   if (process.env.NODE_ENV === 'production') forbidden('Disabled in production')
 }

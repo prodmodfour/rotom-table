@@ -77,4 +77,4 @@ The app exposes PTU reference material through searchable/browsable routes for m
 
 ## Production limitations
 
-Rotom Table is strongest as a local development/table tool. Several mutating API routes are disabled in production mode, and the current role picker assumes trusted local users. A public hosted version should replace the auth model, define a durable persistence layer, review asset/content rights, and decide which local JSON data should become static reference content versus private campaign state.
+Rotom Table is strongest as a local development/table tool. Private VPS campaign writes are gated by `ROTOM_ENABLE_HOSTED_WRITES=1` for routes that have been moved to the hosted-write policy, while the current role picker still assumes trusted local/table users. A public hosted version should replace the auth model, define a durable persistence layer, review mutating routes, review asset/content rights, and decide which local JSON data should become static reference content versus private campaign state.

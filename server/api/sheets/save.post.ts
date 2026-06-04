@@ -6,7 +6,7 @@ import {
   expectSheetKind,
   expectSlug,
   readObjectBody,
-  requireNonProduction,
+  requireWritableCampaignMode,
 } from '../../utils/http'
 import { resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { saveSheetUseCase } from '../../useCases/saveSheet'
@@ -23,7 +23,7 @@ interface SaveBody {
 
 export default defineEventHandler(async (event) => {
   const role = requireAuthRole(event)
-  requireNonProduction()
+  requireWritableCampaignMode()
 
   const body = await readObjectBody<SaveBody>(event)
   const kind = expectSheetKind(body.kind)

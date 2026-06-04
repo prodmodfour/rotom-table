@@ -137,8 +137,8 @@ Nuxt/Vite are configured to ignore app-written sheet/map data changes so autosav
 
 ## Production write limitations
 
-Rotom Table is strongest as a local table tool. Several filesystem-mutating API routes are disabled in production mode. Use `npm run dev` when you need browser-based editing, autosave, encounter generation, or local JSON management.
+Rotom Table is strongest as a local table tool. Production hosted writes are fail-closed unless a private operator explicitly opts in. Use `npm run dev` when you need unrestricted local browser editing, autosave, encounter generation, or local JSON management.
 
-The private VPS hosted-write design uses `ROTOM_ENABLE_HOSTED_WRITES=1` as the exact production opt-in for filesystem writes. When `NODE_ENV=production`, an unset flag or any value other than exactly `1` must keep hosted writes disabled; non-production development writes remain unchanged. See [Private VPS hosting scope](private-vps-hosting.md) for the full flag semantics and private trusted-table boundary.
+The private VPS hosted-write policy uses `ROTOM_ENABLE_HOSTED_WRITES=1` as the exact production opt-in for filesystem writes. When `NODE_ENV=production`, an unset flag or any value other than exactly `1` keeps covered hosted writes disabled with a 403-style error; non-production development writes remain unchanged. See [Private VPS hosting scope](private-vps-hosting.md) for the full flag semantics, currently covered campaign routes, and private trusted-table boundary.
 
-A public deployment should replace the trust-based role picker, decide on a durable persistence layer, review asset/content rights, and separate private campaign data from public reference data.
+A public deployment should replace the trust-based role picker, decide on a durable persistence layer, review mutating routes, review asset/content rights, and separate private campaign data from public reference data.
