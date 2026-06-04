@@ -41,7 +41,24 @@ Then confirm the built server is reachable only through the intended private pat
 curl -fsS http://127.0.0.1:3000/api/health
 ```
 
-For unattended VPS operation, systemd should load the real environment from an external, untracked env file, set `WorkingDirectory=/srv/rotom-table/app`, and run `npm run start` or `node .output/server/index.mjs`. Define restart behaviour with `Restart=on-failure` and a short `RestartSec` delay; use `systemctl restart rotom-table.service` for planned deploy restarts after rebuilding. Standard output and error should go to journald so logs are available with `journalctl -u rotom-table.service` or `journalctl -u rotom-table.service -f`.
+For unattended VPS operation, use the example unit at [`deploy/systemd/rotom-table.service`](../deploy/systemd/rotom-table.service) as a reviewable starting point and install the reviewed copy as `/etc/systemd/system/rotom-table.service`. The example runs as a non-root `rotom-table` user/group, sets `WorkingDirectory=/srv/rotom-table/app`, loads app settings from `EnvironmentFile=/etc/rotom-table/rotom-table.env`, starts the built server with `npm run start`, and defines `Restart=on-failure` with a short `RestartSec` delay. If an operator does not want the npm wrapper, the equivalent command is `node .output/server/index.mjs` from the same working directory.
+
+The real systemd environment file should live outside the app checkout, for example at `/etc/rotom-table/rotom-table.env`, and should be copied from `.env.vps.example` or written with the same key names and host-specific values. Keep it untracked and root-readable only, for example `0600`, because it may contain private paths or future secrets. It should set the selected private host values such as `NODE_ENV=production`, `NITRO_HOST=127.0.0.1`, `NITRO_PORT=3000`, `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign`, and the optional exact hosted-write opt-in only when the private host is ready for campaign writes.
+
+A minimal install flow after creating `/srv/rotom-table/app` and building the app is:
+
+```bash
+id -u rotom-table >/dev/null 2>&1 || sudo useradd --system --home-dir /srv/rotom-table --shell /usr/sbin/nologin rotom-table
+sudo install -d -o rotom-table -g rotom-table -m 0750 /srv/rotom-table/campaign /srv/rotom-table/backups
+sudo install -d -o root -g root -m 0750 /etc/rotom-table
+sudo install -o root -g root -m 0600 .env.vps.example /etc/rotom-table/rotom-table.env
+sudo editor /etc/rotom-table/rotom-table.env
+sudo install -o root -g root -m 0644 deploy/systemd/rotom-table.service /etc/systemd/system/rotom-table.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now rotom-table.service
+```
+
+Ensure the `rotom-table` service user can read `/srv/rotom-table/app` and write the configured campaign root before enabling the service. After each planned deploy, rebuild the app and use `systemctl restart rotom-table.service`; standard output and error go to journald so logs are available with `journalctl -u rotom-table.service` or `journalctl -u rotom-table.service -f`.
 
 Docker and Compose are not the primary deployment path for the initial private VPS target. Keep the Node service bound to loopback until a reverse proxy and outer access gate are configured.
 

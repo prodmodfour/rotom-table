@@ -1,0 +1,27 @@
+# Example systemd unit for private trusted-table Rotom Table VPS hosting.
+# Install as /etc/systemd/system/rotom-table.service after reviewing paths,
+# creating the service user, and building the app in WorkingDirectory.
+# Keep real environment files, campaign data, and backup archives outside Git.
+
+[Unit]
+Description=Rotom Table private table server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rotom-table
+Group=rotom-table
+WorkingDirectory=/srv/rotom-table/app
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=/etc/rotom-table/rotom-table.env
+ExecStart=/usr/bin/env npm run start
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
