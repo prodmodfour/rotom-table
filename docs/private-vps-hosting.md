@@ -12,7 +12,7 @@ Use this mode only when all of these are true:
 - campaign JSON stays in private operator-controlled storage, preferably through `ROTOM_CAMPAIGN_ROOT` as described in [Campaign repositories](campaign-repositories.md);
 - the operator understands the local-first filesystem model in [Local development](local-development.md) and the security expectations in [Security](../SECURITY.md).
 
-The built Nitro server can be used for private host smoke checks with Node.js 24 LTS, `npm run build`, `npm run start`, and the no-secret `/api/health` endpoint. Keep normal profile-based play intact: the GM manages profiles from `/players`, players choose **Player Login**, and players open the regular player-visible routes such as `/maps/<slug>`.
+The built Nitro server can be used for private host smoke checks with Node.js 24 LTS, `npm run build`, `npm run start`, and the no-secret `/api/health` endpoint. After every deploy, follow the [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) before sharing the private URL with players. Keep normal profile-based play intact: the GM manages profiles from `/players`, players choose **Player Login**, and players open the regular player-visible routes such as `/maps/<slug>`.
 
 ## Environment example
 
@@ -177,6 +177,7 @@ Until those pieces are verified for the specific host, keep hosted use private, 
 - [Security](../SECURITY.md) — trust-based security expectations and public-exposure non-goals.
 - [Local development](local-development.md) — local-first filesystem behaviour, checks, and production write limitations.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON separate from the app checkout.
+- [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy install, validation, start, health, outer-gated profile play, persistence, Git hygiene, and legacy `/sessions` boundary checks.
 - [Private VPS backup runbook](private-vps-backups.md) — creating private campaign and deployment-config backups before and after sessions, then smoke-checking a temporary restore without committing archives.
 - [API route mutation audit](api-route-mutation-audit.md) — current non-GET route classifications, hosted-write coverage, and remaining limitations.
 - [Player profiles and linked character control](player-profiles.md) — normal GM/player profile flow for table play.
