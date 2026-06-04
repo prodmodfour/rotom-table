@@ -13,43 +13,43 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 16,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 27,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 17,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 2,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 17,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
+    "maxHp": 178,
     "currentHp": 123,
-    "tick": 7,
+    "tick": 17,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 3,
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 5,
       "vsAtkBonus": 0,
       "vsSatkBonus": 0,
       "vsAnyBonus": 0
