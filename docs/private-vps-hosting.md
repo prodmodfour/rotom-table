@@ -18,6 +18,15 @@ The built Nitro server can be used for private host smoke checks with Node.js 24
 
 Use the placeholder-only [`.env.vps.example`](../.env.vps.example) as a starting point for a private host's service manager environment or for an untracked `.env` file loaded by the deployment. It sets `NODE_ENV=production`, loopback Nitro bind settings, and an example `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign` so campaign-owned JSON stays outside the application checkout. Replace paths and bind settings for your host, but keep real `.env` files, hostnames, credentials, and campaign data out of Git.
 
+## Hosted write flag design
+
+Private VPS filesystem writes must fail closed in production unless the operator explicitly opts in. The selected flag is `ROTOM_ENABLE_HOSTED_WRITES`.
+
+- **Disabled by default:** when `NODE_ENV=production`, hosted writes are disabled if the flag is unset or set to anything other than exactly `1`. Values such as `true`, `yes`, `on`, or `enabled` must not enable writes. Mutating routes that persist campaign JSON should reject with a clear 403-style message instead of writing.
+- **Enabled for private hosts:** `NODE_ENV=production` plus `ROTOM_ENABLE_HOSTED_WRITES=1` opts the private instance into campaign JSON writes for trusted table use. Use this only with an outer access gate and operator-controlled campaign storage such as `ROTOM_CAMPAIGN_ROOT`.
+- **Development remains unchanged:** non-production local development writes keep working without the hosted-write flag, so `npm run dev` and existing local campaign workflows are not gated by VPS settings.
+- **Scope:** the flag controls server-side filesystem persistence only. It is not authentication, authorization, a public-hosting safety layer, or a substitute for backups and route review.
+
 ## What this is not
 
 Private VPS hosting is not any of the following:
@@ -32,7 +41,7 @@ The **GM / Player** picker and persistent player profiles are table workflow con
 
 ## Out of scope for the initial target
 
-Before treating a hosted instance as a regular remote table, document and verify the remaining operational pieces for that host: environment variables, production write policy, route mutation review, process management, reverse proxy behaviour, access-gate configuration, backups, restores, and deployment smoke checks.
+Before treating a hosted instance as a regular remote table, document and verify the remaining operational pieces for that host: environment variable values, production write policy enforcement, route mutation review, process management, reverse proxy behaviour, access-gate configuration, backups, restores, and deployment smoke checks.
 
 Until those pieces are documented for the specific host, keep hosted use private, conservative, and reversible. If the trust boundary is unclear, run Rotom Table locally instead.
 
