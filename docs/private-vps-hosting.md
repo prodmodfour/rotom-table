@@ -18,6 +18,33 @@ The built Nitro server can be used for private host smoke checks with Node.js 24
 
 Use the placeholder-only [`.env.vps.example`](../.env.vps.example) as a starting point for a private host's service manager environment or for an untracked `.env` file loaded by the deployment. It sets `NODE_ENV=production`, loopback Nitro bind settings, and an example `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign` so campaign-owned JSON stays outside the application checkout. Replace paths and bind settings for your host, but keep real `.env` files, hostnames, credentials, and campaign data out of Git.
 
+## Primary process management path
+
+The primary private VPS process-management path is **systemd with a direct Node.js 24 runtime**. This keeps Rotom Table close to the existing local-first filesystem model: the service runs the built Nitro server from the app checkout, while campaign JSON stays in `/srv/rotom-table/campaign` through `ROTOM_CAMPAIGN_ROOT`.
+
+A manual smoke for the same command that systemd should supervise is:
+
+```bash
+cd /srv/rotom-table/app
+npm ci
+npm run build
+NODE_ENV=production \
+NITRO_HOST=127.0.0.1 \
+NITRO_PORT=3000 \
+ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign \
+npm run start
+```
+
+Then confirm the built server is reachable only through the intended private path:
+
+```bash
+curl -fsS http://127.0.0.1:3000/api/health
+```
+
+For unattended VPS operation, systemd should load the real environment from an external, untracked env file, set `WorkingDirectory=/srv/rotom-table/app`, and run `npm run start` or `node .output/server/index.mjs`. Define restart behaviour with `Restart=on-failure` and a short `RestartSec` delay; use `systemctl restart rotom-table.service` for planned deploy restarts after rebuilding. Standard output and error should go to journald so logs are available with `journalctl -u rotom-table.service` or `journalctl -u rotom-table.service -f`.
+
+Docker and Compose are not the primary deployment path for the initial private VPS target. Keep the Node service bound to loopback until a reverse proxy and outer access gate are configured.
+
 ## VPS campaign data layout
 
 A simple private VPS can keep the app, campaign data, and backups under one operator-controlled parent while still separating the public/shareable app checkout from private campaign JSON:
