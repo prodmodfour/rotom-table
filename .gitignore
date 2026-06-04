@@ -15,6 +15,7 @@ temp/
 .env
 .env.*
 !.env.example
+!.env.vps.example
 
 # Local campaign content
 # Keep generated example sheets and curated sample encounter tables trackable while
