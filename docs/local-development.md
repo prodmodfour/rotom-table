@@ -4,7 +4,7 @@ Rotom Table is designed to run locally with filesystem-backed JSON data.
 
 ## Requirements
 
-- Node.js and npm; a current LTS release is recommended.
+- Node.js 24 LTS and npm.
 - Optional: Python 3 for helper scripts in `scripts/` and `ptu-data/`.
 - Optional: [`just`](https://github.com/casey/just) for convenience commands in `justfile`.
 

@@ -6,7 +6,7 @@ This page records the first small follow-up issue list for the Basic Move Animat
 
 - **Date:** 2026-05-31
 - **Reviewer environment:** Chromium via Playwright on Linux, local Nuxt dev server, GM login.
-- **Target branch:** `feature/move-vfx-autonomous-build`
+- **Target branch:** move VFX feature branch
 - **Fixture:** temporary external `ROTOM_CAMPAIGN_ROOT` under `/tmp/rotom-vfx-playtest-campaign`; no campaign fixture, screenshots, or generated files are committed.
 - **Map coverage:** dark/saturated terrain, rain, electric terrain, a spike hazard, flat cells, y=1/y=2 raised platforms, and neighbouring/crowded token placements.
 - **Token-size coverage:** small Charmander/Chikorita/Aipom, medium Amaura, and large Abomasnow.

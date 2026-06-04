@@ -16,6 +16,8 @@ Rotom Table is a fan-made tabletop utility, not an official or commercial Pokém
 
 ## Quick start
 
+Use Node.js 24 LTS with npm, then install and run the app:
+
 ```bash
 npm install
 npm run dev

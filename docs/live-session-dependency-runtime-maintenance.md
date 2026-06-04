@@ -62,7 +62,7 @@ Both session-host helpers support `--port <port>` and `--print-only`. They set t
 
 ## Node and Nitro compatibility assumptions
 
-- Use a maintained Node.js LTS runtime for development and GM-hosted sessions. Node 20 or newer is the documented floor for live-session hosting because the project uses ESM, modern Node built-ins, `@types/node` 20.x, and Nuxt/Nitro WebSocket support; the standard validation currently runs on a newer Node runtime.
+- Use Node.js 24 LTS for development, validation, and any private Node/Nuxt/Nitro host. Node 22 LTS is a fallback only if a concrete Nuxt/Nitro or dependency incompatibility is documented. The project uses ESM, modern Node built-ins, `@types/node`, and Nuxt/Nitro WebSocket support.
 - Run live session hosting on the normal Node/Nuxt/Nitro server process. Static hosting, edge/serverless adapters, Cloudflare Workers, Durable Objects, or serverless functions are not supported live-session hosts.
 - `nuxt.config.ts` intentionally enables `nitro.experimental.websocket = true`. Removing that flag, changing the server adapter, or moving the socket route away from H3/Nitro requires re-running WebSocket transport tests and updating this maintenance guide.
 - The GM host must have filesystem access for local JSON reads/writes under the expected repository data paths, including `data/sessions/` for snapshots/event logs. A read-only deployment is not a supported live-session host.
