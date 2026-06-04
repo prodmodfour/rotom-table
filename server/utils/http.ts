@@ -37,9 +37,6 @@ export const requireWritableCampaignMode = (env: WritableCampaignEnv = process.e
   if (!isWritableCampaignMode(env)) forbidden(HOSTED_WRITES_DISABLED_MESSAGE)
 }
 
-export const requireNonProduction = (): void => {
-  if (process.env.NODE_ENV === 'production') forbidden('Disabled in production')
-}
 
 export const readObjectBody = async <T extends object = Record<string, unknown>>(
   event: H3Event,
