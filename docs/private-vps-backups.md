@@ -1,6 +1,6 @@
 # Private VPS backup runbook
 
-Use this runbook to create private backups of a trusted-table VPS campaign before and after play sessions. It covers campaign JSON stored under `ROTOM_CAMPAIGN_ROOT` and the private deployment settings needed to recreate the host. It does not make Rotom Table a public hosted service, and it does not encrypt archives for you.
+Use this runbook to create private backups of a trusted-table VPS campaign before and after play sessions, then smoke-check a restore before trusting an archive. It covers campaign JSON stored under `ROTOM_CAMPAIGN_ROOT` and the private deployment settings needed to recreate the host. It does not make Rotom Table a public hosted service, and it does not encrypt archives for you.
 
 ## What to back up
 
@@ -85,6 +85,65 @@ sudo chmod 0600 "$CONFIG_ARCHIVE"
 ```
 
 Add proxy or access-gate config files only when the operator is allowed to copy them and understands whether they include credentials. Keep tunnel credentials, password files, provider exports, private hostnames, logs, and screenshots out of the app repository.
+
+## Restore smoke check
+
+Run a restore smoke check on a temporary campaign root before depending on a backup for a real recovery. Do not restore over the live campaign root for this check, and do not create the temporary root inside `/srv/rotom-table/app` or another tracked checkout.
+
+Restore the campaign archive into a staging directory outside the app checkout:
+
+```bash
+ARCHIVE=/srv/rotom-table/backups/rotom-campaign-post-session-20260604T223000Z.tar.gz
+RESTORE_ROOT="$(sudo mktemp -d /srv/rotom-table/restore-smoke.XXXXXX)"
+sudo tar -C "$RESTORE_ROOT" -xzf "$ARCHIVE"
+sudo chown -R rotom-table:rotom-table "$RESTORE_ROOT"
+RESTORED_CAMPAIGN_ROOT="${RESTORE_ROOT}/campaign"
+
+test -d "$RESTORED_CAMPAIGN_ROOT/data/maps"
+test -d "$RESTORED_CAMPAIGN_ROOT/data/sheets"
+test -d "$RESTORED_CAMPAIGN_ROOT/data/trainers"
+test -d "$RESTORED_CAMPAIGN_ROOT/data/player-profiles"
+test -d "$RESTORED_CAMPAIGN_ROOT/encounter_tables"
+```
+
+Boot a separate loopback-only app process against that temporary campaign root. Use a different port from the real service so the live table can remain stopped or isolated while you inspect the restore. The exact hosted-write flag is included here only so the disposable test write below can prove persistence in the restored copy.
+
+```bash
+cd /srv/rotom-table/app
+NODE_ENV=production \
+NITRO_HOST=127.0.0.1 \
+NITRO_PORT=3100 \
+ROTOM_CAMPAIGN_ROOT="$RESTORED_CAMPAIGN_ROOT" \
+ROTOM_ENABLE_HOSTED_WRITES=1 \
+npm run start
+```
+
+In a browser on the host or through the same private access path, verify the restored data loads before making any changes:
+
+- open `http://127.0.0.1:3100/login` and choose the GM role, remembering that this is still the trust-based table role picker, not public authentication;
+- open `/maps` and load at least one restored map;
+- open `/sheets` and load at least one restored Pokémon sheet and one trainer sheet;
+- open `/players` and confirm restored player profiles and linked character references are present;
+- open `/encounter-tables` and confirm restored encounter-table regions and tables are listed.
+
+Then verify a test write persists after restart:
+
+1. In the temporary restore app, create or edit a clearly disposable item such as `Restore Smoke <current-date>` in a map folder or sheet folder.
+2. Confirm the matching JSON file exists under the temporary root, for example with `find "$RESTORED_CAMPAIGN_ROOT" -iname '*restore-smoke*' -print`.
+3. Stop the temporary app process with `Ctrl+C` and start it again with the same environment values.
+4. Reload the edited map, sheet, player profile list, or encounter table and confirm the disposable write is still present.
+5. Delete the disposable item from the temporary root, or discard the entire temporary restore root after recording the result.
+
+After the check, clean up only the staging directory created for this smoke pass:
+
+```bash
+case "$RESTORE_ROOT" in
+  /srv/rotom-table/restore-smoke.*) sudo rm -rf "$RESTORE_ROOT" ;;
+  *) echo "Refusing to remove unexpected path: $RESTORE_ROOT" >&2 ;;
+esac
+```
+
+If the app cannot boot with the temporary `ROTOM_CAMPAIGN_ROOT`, any expected folder is missing, restored maps/sheets/trainers/player profiles/encounter tables do not load, or the test write disappears after restart, treat the archive as unverified and create a new backup before the next session.
 
 ## Retention guidance
 

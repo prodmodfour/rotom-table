@@ -143,7 +143,7 @@ Rotom Table then resolves campaign-owned paths under the campaign root: maps at 
 
 Do not store private maps, sheets, trainers, player profiles, encounter tables, backups, or unreleased campaign notes in a public or shared app repository checkout. Keep `/srv/rotom-table/campaign` and `/srv/rotom-table/backups` private to the operator and exclude real `.env` files and generated archives from Git.
 
-For step-by-step private archives before and after a session, use the [Private VPS backup runbook](private-vps-backups.md).
+For step-by-step private archives before and after a session, plus a temporary restore smoke check, use the [Private VPS backup runbook](private-vps-backups.md).
 
 ## Hosted write policy
 
@@ -177,7 +177,7 @@ Until those pieces are verified for the specific host, keep hosted use private, 
 - [Security](../SECURITY.md) — trust-based security expectations and public-exposure non-goals.
 - [Local development](local-development.md) — local-first filesystem behaviour, checks, and production write limitations.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON separate from the app checkout.
-- [Private VPS backup runbook](private-vps-backups.md) — creating private campaign and deployment-config backups before and after sessions without committing archives.
+- [Private VPS backup runbook](private-vps-backups.md) — creating private campaign and deployment-config backups before and after sessions, then smoke-checking a temporary restore without committing archives.
 - [API route mutation audit](api-route-mutation-audit.md) — current non-GET route classifications, hosted-write coverage, and remaining limitations.
 - [Player profiles and linked character control](player-profiles.md) — normal GM/player profile flow for table play.
 - [Live session security boundaries](live-session-security-boundaries.md) — legacy live-session exposure risks and non-goals.
