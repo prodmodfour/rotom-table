@@ -50,6 +50,7 @@ npm run build
 | `npm run dev:session:lan` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and LAN binding (`0.0.0.0:3000`). |
 | `npm run dev:session:tunnel` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and loopback binding (`127.0.0.1:3000`) for a named tunnel. |
 | `npm run build` | Build the Nuxt app. |
+| `npm run start` | Start the built Nitro server with `node .output/server/index.mjs` after `npm run build` for private Node hosting or production-style smoke checks. |
 | `npm run preview` | Preview the built app. |
 | `npm run typecheck` | Run Nuxt/Vue TypeScript checks. |
 | `npm test` | Run the Vitest test suite once. |

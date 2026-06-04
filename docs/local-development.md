@@ -76,6 +76,12 @@ Build the app:
 npm run build
 ```
 
+Start the built Nitro server after a successful build when you need a production-style Node/Nitro smoke check or a private Node host process:
+
+```bash
+npm run start
+```
+
 Recommended local verification before sharing changes:
 
 ```bash
