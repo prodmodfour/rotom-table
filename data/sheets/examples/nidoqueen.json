@@ -2,7 +2,7 @@
   "slug": "examples-nidoqueen",
   "nickname": "Nidoqueen",
   "species": "Nidoqueen",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Docile",
@@ -13,104 +13,127 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 104,
+    "currentHp": 104,
+    "tick": 10,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tail Whip",
-      "type": "Normal",
+      "name": "Flatter",
+      "type": "Dark",
       "category": "Status",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Special Attack is raised by +1 Combat Stage. Flatter Confuses the target."
     },
     {
-      "name": "Double Kick",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Double Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Fury Swipes",
+      "name": "Body Slam",
       "type": "Normal",
       "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Body Slam Paralyzes the target on 15+."
     },
     {
-      "name": "Poison Sting",
+      "name": "Toxic Spikes",
       "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Toxic Spikes, all 8 meters must be adjacent with at least one other space of Toxic Spikes next to each other. Toxic Spikes cause Terrain to become Slow Terrain, and a grounded foe that runs into the hazard becomes Poisoned, and Slowed until the end of their next turn. If there are 2 Layers of Toxic Spikes on the same space, it Deadly Poisons the foes instead. Poison-Type Pokémon may move over Toxic Spikes harmlessly, destroying the Hazards as they do so."
+    },
+    {
+      "name": "Helping Hand",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+    },
+    {
+      "name": "Chip Away",
+      "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Poison Sting Poisons the target on 17+."
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [
     {
       "name": "Poison Point",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Move",
       "effect": "The attacking foe is Poisoned."
     },
     {
       "name": "Rivalry",
       "frequency": "Static",
       "effect": "Whenever the user deals direct damage to a target of the same gender, increase the Damage dealt by +5."
+    },
+    {
+      "name": "Bodyguard",
+      "frequency": "Scene x2 – Free Action",
+      "trigger": "An adjacent Ally is hit by an attack",
+      "effect": "The user and the triggering Ally switch places, and the user becomes the target of the triggering attack instead, taking damage from the attack as if resisted one step further. If switching places would not move the triggering Ally out of the area-of-effect of a Burst, Blast, Cone, or Line, this Ability does not prevent the ally from being hit. Defensive."
     }
   ],
   "capabilities": {

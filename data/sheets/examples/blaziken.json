@@ -2,7 +2,7 @@
   "slug": "examples-blaziken",
   "nickname": "Blaziken",
   "species": "Blaziken",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -13,61 +13,88 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Double Kick",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
       "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Double Strike",
-      "effect": "None"
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Blaze Kick",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "Blaze Kick Burns the target on 19+, and is a Critical Hit on 18+."
+    },
+    {
+      "name": "Bulk Up",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
     },
     {
       "name": "Flame Charge",
@@ -81,46 +108,32 @@
       "effect": "Raise the user’s Speed 1 Combat Stage."
     },
     {
-      "name": "Peck",
-      "type": "Flying",
+      "name": "Double Kick",
+      "type": "Fighting",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 5,
+      "damageRoll": "1d8+8",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
       "effect": "None"
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
-    {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
     }
   ],
   "abilities": [
     {
       "name": "Klutz",
+      "trigger": "The user hits with a Melee Attack",
       "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     },
     {
       "name": "Speed Boost",
       "frequency": "Static",
       "effect": "The Pokémon’s Speed is raised 1 Combat Stage at the end of each of its turns. Speed Boost has no effect while out of combat."
+    },
+    {
+      "name": "Moxie",
+      "frequency": "Static",
+      "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
     }
   ],
   "natureMod": {

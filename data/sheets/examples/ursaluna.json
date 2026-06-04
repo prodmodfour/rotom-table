@@ -2,7 +2,7 @@
   "slug": "examples-ursaluna",
   "nickname": "Ursaluna",
   "species": "Ursaluna",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Quiet",
@@ -13,59 +13,83 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 12,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 125,
+    "currentHp": 125,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 4,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Baby-Doll Eyes",
+      "name": "High Horsepower",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene x2",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "High Horsepower may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, High Horsepower gains Smite."
+    },
+    {
+      "name": "Play Rough",
       "type": "Fairy",
-      "category": "Status",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "Play Rough lowers the target’s Attack 1 Combat Stage on 17-20 during Accuracy Check."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target, Priority, Social",
-      "effect": "The target’s Attack is lowered 1 Combat Stage."
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
     },
     {
       "name": "Bulldoze",
@@ -79,15 +103,13 @@
       "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
     },
     {
-      "name": "Slash",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10",
+      "name": "Baby-Doll Eyes",
+      "type": "Fairy",
+      "category": "Status",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "Slash is a Critical Hit on 18+."
+      "range": "4, 1 Target, Priority, Social",
+      "effect": "The target’s Attack is lowered 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -100,6 +122,11 @@
       "name": "Frighten",
       "frequency": "Scene – Swift Action",
       "effect": "Lower the target’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Arena Trap",
+      "frequency": "Scene – Free Action",
+      "effect": "Once Arena Trap is activated, all foes within 5 meters of the user are considered Slowed and Trapped. This does not affect targets of the Flying Type, or with a Levitate, Sky, or Burrow Speed of 4 or higher. The user may end the effect as a Free Action, and the effect ends if the user is Fainted or returned to a Poké Ball."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-beheeyem",
   "nickname": "Beheeyem",
   "species": "Beheeyem",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Cuddly",
@@ -12,98 +12,109 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 13,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 104,
+    "currentHp": 104,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
+      "vsAtk": 3,
+      "vsSatk": 4,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Headbutt",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Psybeam",
+      "name": "Psychic",
       "type": "Psychic",
       "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
+      "range": "5, 1 Target, Push",
+      "effect": "The target is Pushed 1 meter in any direction. Psychic lowers the target’s Special Defense 1 Combat Stage on 17+.",
+      "special": "Grants Telekinetic"
     },
     {
-      "name": "Miracle Eye",
+      "name": "Psych Up",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target",
+      "effect": "The user’s Combat Stages are changed to match the target’s Combat Stages. Psych Up cannot miss."
+    },
+    {
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Simple Beam",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "You choose one of the target’s Abilities. Simple Beam changes that Ability to Simple for the remainder of the encounter."
+    },
+    {
+      "name": "Imprison",
       "type": "Psychic",
       "category": "Status",
       "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Miracle Eye may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Psychic-Type Moves can hit and affect Dark-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
     },
     {
-      "name": "Heal Block",
-      "type": "Psychic",
-      "category": "Status",
+      "name": "Hidden Power",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
       "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
+      "range": "Burst 1",
+      "effect": "When a Pokémon first obtains the Move Hidden Power, roll 1d20. Hidden Power’s Elemental Type will be changed from Normal to Bug on a result of 1; Dark on 2; Dragon on 3; Electric on 4; Fairy on 5; Fighting on 6; Fire on 7; Flying on 8; Ghost on 9; Grass on 10; Ground on 11; Ice on 12; Normal on 13; Poison on 14; Psychic on 15; Rock on 16; Steel on 17; Water on 18; and on 19 or 20, reroll until you roll another number. This effect is permanent –if Hidden Power is forgotten and relearned, the chosen Type remains the same."
     }
   ],
   "abilities": [
@@ -115,7 +126,13 @@
     {
       "name": "Synchronize",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is Paralyzed, Frozen, Burned,",
       "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
+    },
+    {
+      "name": "Probability Control",
+      "frequency": "Scene – Free Action",
+      "effect": "The user may reroll any roll, or have any ally reroll any roll that has been made. This leaves discoverable Psychic residue."
     }
   ],
   "natureMod": {

@@ -13,7 +13,7 @@ import type { SheetMoveUsageState } from '~/types/moveUsage'
 export type StatKey = 'hp' | 'atk' | 'def' | 'satk' | 'sdef' | 'spd'
 
 export interface CharacterSheetStat {
-  /** Legacy/manual Base override. Ignored by the sheet renderer; Base is Species + Nature Mod. */
+  /** Legacy/manual Base override. Used as a fallback only when species reference Base Stats are unavailable. */
   base?: number
   /** Stat points added on level-up. */
   added?: number

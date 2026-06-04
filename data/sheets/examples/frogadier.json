@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 0,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
@@ -37,18 +37,18 @@
     },
     "spd": {
       "base": 0,
-      "added": 10,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
+    "maxHp": 63,
+    "currentHp": 63,
     "tick": 6,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
-      "vsAny": 4
+      "vsAny": 3
     },
     "dr": 0
   },
@@ -57,6 +57,36 @@
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Smokescreen",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "5, Ranged Blast 3",
+      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Lick",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
+    },
     {
       "name": "Quick Attack",
       "type": "Normal",
@@ -78,36 +108,6 @@
       "ac": 2,
       "range": "Burst 1",
       "effect": "Bubble lowers the target’s Speed on 16+."
-    },
-    {
-      "name": "Smokescreen",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "5, Ranged Blast 3",
-      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
-    },
-    {
-      "name": "Lick",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
-    },
-    {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
     },
     {
       "name": "Growl",

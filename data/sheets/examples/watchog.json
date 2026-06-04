@@ -2,7 +2,7 @@
   "slug": "examples-watchog",
   "nickname": "Watchog",
   "species": "Watchog",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Docile",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
@@ -22,68 +22,57 @@
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 68,
+    "currentHp": 68,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Leer",
+      "name": "After You",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "frequency": "Scene x2",
+      "range": "6, 1 Target",
+      "effect": "After You is a Swift Action. The target takes their turn for the round immediately after the user finishes their turn, ignoring Initiative. After You may only affect a target that has not yet acted that round and can only affect willing targets."
     },
     {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Bide",
+      "name": "Super Fang",
       "type": "Normal",
       "category": "Physical",
       "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "The target loses 1/2 of their current Hit Points."
     },
     {
       "name": "Confuse Ray",
@@ -95,14 +84,6 @@
       "effect": "The target is Confused."
     },
     {
-      "name": "Detect",
-      "type": "Fighting",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Detect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
-    },
-    {
       "name": "Hypnosis",
       "type": "Psychic",
       "category": "Status",
@@ -110,6 +91,26 @@
       "ac": 6,
       "range": "4, 1 Target",
       "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [

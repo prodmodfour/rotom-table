@@ -2,7 +2,7 @@
   "slug": "examples-beldum",
   "nickname": "Beldum",
   "species": "Beldum",
-  "level": 20,
+  "level": 10,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Desperate",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 10,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
@@ -38,14 +38,14 @@
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 35,
+    "currentHp": 35,
+    "tick": 3,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -54,7 +54,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -75,10 +75,6 @@
       "name": "Clear Body",
       "frequency": "Static",
       "effect": "The user’s Combat Stages may not be lowered by the effect of foes’ Feautres, Abilities, or Moves. Status Affictions may still alter their Combat Stages. Defensive."
-    },
-    {
-      "name": "Klutz",
-      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-skiddo",
   "nickname": "Skiddo",
   "species": "Skiddo",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Modest",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -42,37 +42,41 @@
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Synthesis",
+      "name": "Vine Whip",
       "type": "Grass",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value instead. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value instead."
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None",
+      "special": "Grants Threaded"
     },
     {
-      "name": "Leech Seed",
-      "type": "Grass",
+      "name": "Growth",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Daily x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     },
     {
       "name": "Tackle",
@@ -84,36 +88,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Razor Leaf",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
-    },
-    {
-      "name": "Growth",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
-    },
-    {
-      "name": "Vine Whip",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -121,11 +95,6 @@
       "name": "Grass Pelt",
       "frequency": "Scene - Swift Action",
       "effect": "The user gains two ticks worth of Temporary Hit Points."
-    },
-    {
-      "name": "Rock Head",
-      "frequency": "Static",
-      "effect": "The user ignores the Recoil keyword when attacking. If the user moves at least 4 meters in a straight line towards a foe before attacking that foe with a physical attack, they may add a +2d6 Bonus to the Damage Roll against that foe."
     }
   ],
   "natureMod": {

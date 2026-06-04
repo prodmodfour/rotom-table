@@ -2,7 +2,7 @@
   "slug": "examples-arctozolt",
   "nickname": "Arctozolt",
   "species": "Arctozolt",
-  "level": 20,
+  "level": 25,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Brave",
@@ -18,64 +18,56 @@
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 80,
+    "currentHp": 80,
+    "tick": 8,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Powder Snow",
-      "type": "Ice",
+      "name": "Ancient Power",
+      "type": "Rock",
       "category": "Special",
       "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
-    },
-    {
-      "name": "Charge",
-      "type": "Electric",
-      "category": "Status",
+      "damageRoll": "2d6+8 / 15",
       "frequency": "EOT",
-      "range": "Self",
-      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     },
     {
       "name": "Echoed Voice",
@@ -89,6 +81,14 @@
       "effect": "If Echoed Voice was used by any Pokémon or Trainer in the Encounter on the previous round, increase its Damage Base by +4. If Echoed Voice was used by any Pokémon or Trainers during both the previous two rounds, increase its Damage Base by +8."
     },
     {
+      "name": "Charge",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
       "name": "Thunder Shock",
       "type": "Electric",
       "category": "Special",
@@ -97,12 +97,26 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
+    },
+    {
+      "name": "Powder Snow",
+      "type": "Ice",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Line 4",
+      "effect": "Powder Snow Freezes all Legal Targets on 19+.",
+      "special": "Grants Freezer"
     }
   ],
   "abilities": [
     {
       "name": "Klutz",
+      "trigger": "The user hits with a Melee Attack",
       "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     },
     {

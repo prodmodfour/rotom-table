@@ -2,7 +2,7 @@
   "slug": "examples-regice",
   "nickname": "Regice",
   "species": "Regice",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Bold",
@@ -12,51 +12,78 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 17,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 95,
+    "currentHp": 95,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 5,
-      "vsAny": 2
+      "vsAtk": 4,
+      "vsSatk": 7,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Curse",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+    },
     {
       "name": "Bulldoze",
       "type": "Ground",
@@ -67,28 +94,6 @@
       "ac": 2,
       "range": "Burst 1",
       "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
-    },
-    {
-      "name": "Stomp",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
-    },
-    {
-      "name": "Icy Wind",
-      "type": "Ice",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
     },
     {
       "name": "Charge Beam",
@@ -102,15 +107,15 @@
       "effect": "If Charge Beam successfully hits a target, roll 1d20. On a roll of 7+,  the user’s Special Attack is raised by +1 Combat Stage."
     },
     {
-      "name": "Explosion",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 25,
-      "damageRoll": "6d12+60 / 100",
-      "frequency": "Daily",
-      "ac": 2,
-      "range": "Burst 2",
-      "effect": "The user’s Hit Points are set to -50% of their full Hit Point value. This Hit Point loss cannot be prevented or reduced in any way. The user’s loyalty toward its trainer may be lowered."
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -123,6 +128,11 @@
       "name": "Freezing Point",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Ice."
+    },
+    {
+      "name": "Unaware",
+      "frequency": "Static",
+      "effect": "Whenever the user attacks, they ignore all positive Combat Stages to the target’s Defense, Special Defense, and Speed."
     }
   ],
   "natureMod": {

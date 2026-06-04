@@ -2,7 +2,7 @@
   "slug": "examples-regidrago",
   "nickname": "Regidrago",
   "species": "Regidrago",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Modest",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 9,
+      "added": 17,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
@@ -37,47 +37,55 @@
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 117,
-    "currentHp": 117,
-    "tick": 11,
+    "maxHp": 161,
+    "currentHp": 161,
+    "tick": 16,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bite",
-      "type": "Dark",
+      "name": "Dragon Claw",
+      "type": "Dragon",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Vice Grip",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
+    },
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
     },
     {
       "name": "Dragon Breath",
@@ -102,27 +110,33 @@
       "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     },
     {
-      "name": "Twister",
-      "type": "Dragon",
-      "category": "Special",
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
       "db": 6,
-      "damageRoll": "2d6+8",
+      "damageRoll": "2d6+8 / 15",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, Ranged Blast 3",
-      "effect": "Small or Medium targets in the central square of the blast are not hit. Twister Flinches the target on 18-20 during Accuracy Check. Any Pokémon Airborne as a result of Fly or Sky Drop above the Blast are hit, ignoring range, and Twister has a Damage Base of 8 against those targets instead."
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [
     {
       "name": "Dragon’s Maw",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "The user hits with a damaging Dragon-Type",
       "effect": "One target hit by the attack becomes one stage more vulnerable to the attack (applied after all other modifiers). Immune targets are treated as initially double-resistant for the purposes of this Ability, and may be damaged normally."
     },
     {
       "name": "Strong Jaw",
       "frequency": "Static",
       "effect": "The user has the Damage Base of the following Moves increased by +2; Bite, Bug Bite, Crunch, Fire Fang, Ice Fang, Thunder Fang, Poison Fang, and Hyper Fang."
+    },
+    {
+      "name": "Unaware",
+      "frequency": "Static",
+      "effect": "Whenever the user attacks, they ignore all positive Combat Stages to the target’s Defense, Special Defense, and Speed."
     }
   ],
   "natureMod": {

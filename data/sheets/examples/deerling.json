@@ -2,7 +2,7 @@
   "slug": "examples-deerling",
   "nickname": "Deerling",
   "species": "Deerling",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Proud",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
@@ -38,57 +38,26 @@
     },
     "spd": {
       "base": 0,
-      "added": 12,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 4
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Take Down",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 11,
-      "damageRoll": "3d10+10",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Dash, Recoil 1/3",
-      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
-    },
-    {
-      "name": "Leech Seed",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
-    },
     {
       "name": "Double Kick",
       "type": "Fighting",
@@ -101,16 +70,6 @@
       "effect": "None"
     },
     {
-      "name": "Feint Attack",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
-    },
-    {
       "name": "Sand Attack",
       "type": "Ground",
       "category": "Status",
@@ -118,6 +77,35 @@
       "ac": 2,
       "range": "2, 1 Target",
       "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Camouflage",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user changes their Type to match the field. Forests and grassy areas change the user into Grass- Type. Watery areas change the user into Water-Type. Caves and Mountains could change the user into Rock- Type or Ground-Type. An icy terrain would turn the user into Ice-Type. A building may change the user into Steel-Type or Normal-Type. Weather affects what Type the user becomes. Use common sense, if you are having difficult determining what type the user should become, consult the GM.",
+      "special": "Grants Blender"
     }
   ],
   "abilities": [
@@ -125,11 +113,6 @@
       "name": "Seasonal",
       "frequency": "Static",
       "effect": "The user gains an Ability based on the season. - Spring: Run Away - Summer: Grass Pelt - Autumn: Rivalry - Winter: Thick Fat"
-    },
-    {
-      "name": "Ragelope",
-      "frequency": "Static",
-      "effect": "The user’s Physical Attacks gain the following Effect Range: On 18+, the user becomes Enraged and gains +1 Speed CS. If the user is already Enraged, they gain +1 Attack CS instead."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-gourgeist-super-size",
   "nickname": "Gourgeist Super Size",
   "species": "Gourgeist Super Size",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Distracted",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 9,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "satk": {
@@ -33,28 +33,28 @@
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 87,
-    "currentHp": 87,
-    "tick": 8,
+    "maxHp": 94,
+    "currentHp": 94,
+    "tick": 9,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [],

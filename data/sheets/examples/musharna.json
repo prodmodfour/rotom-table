@@ -2,7 +2,7 @@
   "slug": "examples-musharna",
   "nickname": "Musharna",
   "species": "Musharna",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Sassy",
@@ -12,51 +12,73 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 13,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 1,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 0,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 7,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 105,
-    "currentHp": 105,
-    "tick": 10,
+    "maxHp": 95,
+    "currentHp": 95,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 1
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Synchronoise",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Burst 3",
+      "effect": "Synchronoise can only hit targets that share a type with Synchronoise’s user."
+    },
+    {
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
     {
       "name": "Hypnosis",
       "type": "Psychic",
@@ -67,20 +89,20 @@
       "effect": "The target falls Asleep."
     },
     {
-      "name": "Lucky Chant",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
-    },
-    {
       "name": "Moonlight",
       "type": "Fairy",
       "category": "Status",
       "frequency": "Daily x2",
       "range": "Self",
       "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
+    },
+    {
+      "name": "Imprison",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
     },
     {
       "name": "Psybeam",
@@ -92,28 +114,13 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Psybeam Confuses the target on 19+."
-    },
-    {
-      "name": "Imprison",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "10, 1 Target",
-      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
-    },
-    {
-      "name": "Yawn",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "2, 1 Target, Social",
-      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
     }
   ],
   "abilities": [
     {
       "name": "Dream Smoke",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe falls Asleep."
     },
     {

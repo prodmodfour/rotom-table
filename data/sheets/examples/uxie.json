@@ -2,7 +2,7 @@
   "slug": "examples-uxie",
   "nickname": "Uxie",
   "species": "Uxie",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Jolly",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 13,
       "stage": 0
     },
     "satk": {
@@ -32,31 +32,67 @@
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 3,
+      "added": 12,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 108,
+    "currentHp": 108,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 3,
-      "vsAny": 3
+      "vsAtk": 5,
+      "vsSatk": 5,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Future Sight",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "Future Sight does nothing on the turn it is used. At the end of the user’s next turn, Future Sight hits, even if the user is no longer on the field. Future Sight cannot miss."
+    },
+    {
+      "name": "Yawn",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
     {
       "name": "Endure",
       "type": "Normal",
@@ -66,43 +102,29 @@
       "effect": "If the user is hit by a damaging Move, you may use Endure as a Free Action. If the Move would bring Endure’s user down to 0 Hit Points or less, Endure’s user instead is set to 1 Hit Point."
     },
     {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
       "name": "Imprison",
       "type": "Psychic",
       "category": "Status",
       "frequency": "Scene x2",
       "range": "10, 1 Target",
       "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
-    },
-    {
-      "name": "Rest",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self",
-      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Frisk",
       "frequency": "Static",
       "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
+    },
+    {
+      "name": "Anticipation",
+      "frequency": "At-Will – Swift Action",
+      "effect": "The target reveals if they have any Moves that are Super-Effective against the Pokémon with Anticipation. You may not target a Pokémon or Trainer more than once per encounter with Anticipation. Anticipation only reveals whether the opponent does or does not have those moves, not the specific moves themselves."
     }
   ],
   "natureMod": {

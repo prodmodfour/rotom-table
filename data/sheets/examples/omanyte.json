@@ -2,7 +2,7 @@
   "slug": "examples-omanyte",
   "nickname": "Omanyte",
   "species": "Omanyte",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 1,
+      "added": 2,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -43,18 +43,18 @@
     }
   },
   "combat": {
-    "maxHp": 42,
-    "currentHp": 42,
-    "tick": 4,
+    "maxHp": 35,
+    "currentHp": 35,
+    "tick": 3,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -67,7 +67,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
       "name": "Bite",
@@ -81,6 +82,14 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
+      "name": "Withdraw",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage."
+    },
+    {
       "name": "Constrict",
       "type": "Normal",
       "category": "Physical",
@@ -90,34 +99,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
-    },
-    {
-      "name": "Withdraw",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
-    },
-    {
-      "name": "Rollout",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Pass",
-      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -125,11 +106,6 @@
       "name": "Shell Armor",
       "frequency": "Static",
       "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
-    },
-    {
-      "name": "Swift Swim",
-      "frequency": "Static",
-      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
     }
   ],
   "natureMod": {

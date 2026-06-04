@@ -2,7 +2,7 @@
   "slug": "examples-shelmet",
   "nickname": "Shelmet",
   "species": "Shelmet",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Bashful",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -27,24 +27,24 @@
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 2,
@@ -53,51 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Struggle Bug",
-      "type": "Bug",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2",
-      "effect": "On hit, lowers the target’s Special Attack by -1 CS."
-    },
-    {
-      "name": "Mega Drain",
-      "type": "Grass",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Curse",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "See Text",
-      "range": "Self",
-      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
-    },
-    {
-      "name": "Leech Life",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
-    },
     {
       "name": "Bide",
       "type": "Normal",
@@ -116,6 +75,17 @@
       "ac": 2,
       "range": "Cone 2",
       "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Leech Life",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
     }
   ],
   "abilities": [
@@ -123,11 +93,6 @@
       "name": "Shell Armor",
       "frequency": "Static",
       "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
-    },
-    {
-      "name": "Overcoat",
-      "frequency": "Static",
-      "effect": "The user is immune to Moves with the Powder Keyword, and does not take damage from any Weather that would normally cause it to take damage. Defensive."
     }
   ],
   "capabilities": {

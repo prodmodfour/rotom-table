@@ -2,7 +2,7 @@
   "slug": "examples-tropius",
   "nickname": "Tropius",
   "species": "Tropius",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Sassy",
@@ -13,59 +13,59 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 5,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
+    "maxHp": 89,
+    "currentHp": 89,
     "tick": 8,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 3,
+      "vsSatk": 4,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Sweet Scent",
+      "name": "Whirlwind",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+      "range": "Line 6",
+      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
     },
     {
       "name": "Magical Leaf",
@@ -89,12 +89,14 @@
       "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
     },
     {
-      "name": "Growth",
+      "name": "Sweet Scent",
       "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
     },
     {
       "name": "Razor Leaf",
@@ -108,15 +110,13 @@
       "effect": "Razor Leaf is a Critical Hit on 18+."
     },
     {
-      "name": "Gust",
-      "type": "Flying",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     }
   ],
   "abilities": [
@@ -128,6 +128,7 @@
     {
       "name": "Solar Power",
       "frequency": "Scene x2- Swift Action",
+      "trigger": "The user rolls Damage",
       "effect": "The user loses a Tick of Hit Points, and gains a bonus to the triggering damage roll equal to 5 + their Tick Value. Solar Power may be activated ignoring Frequency while in Sunny Weather."
     }
   ],

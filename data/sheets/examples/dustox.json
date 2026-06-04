@@ -2,7 +2,7 @@
   "slug": "examples-dustox",
   "nickname": "Dustox",
   "species": "Dustox",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Patient",
@@ -13,100 +13,103 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 3,
-      "vsAny": 1
+      "vsSatk": 4,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Gust",
-      "type": "Flying",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+      "name": "Quiver Dance",
+      "type": "Bug",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack, Special Defense, and Speed by +1 Combat Stage each."
     },
     {
-      "name": "Venoshock",
-      "type": "Poison",
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Bug Buzz",
+      "type": "Bug",
       "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "Scene x2",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "If the target is Poisoned, Venoshock has a Damage Base of 13 (4d10+10 / 35) instead."
+      "range": "Cone 2 or Close Blast 2, Sonic, Smite",
+      "effect": "Bug Buzz lowers the Special Defense of all targets on 19+."
     },
     {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Moonlight",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
-    },
-    {
-      "name": "Poison Powder",
+      "name": "Toxic",
       "type": "Poison",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target is Poisoned."
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "4, 1 Target",
+      "effect": "The target is Badly Poisoned. If the user is Poison Type, Toxic cannot miss."
+    },
+    {
+      "name": "Whirlwind",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Line 6",
+      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
+    },
+    {
+      "name": "Light Screen",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Light Screen may activate it when receiving Special Damage to resist the Damage one step. Light Screen may be activated 2 times, and then disappears."
     }
   ],
   "abilities": [
@@ -119,6 +122,12 @@
       "name": "Compound Eyes",
       "frequency": "Static",
       "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
+    },
+    {
+      "name": "Effect Spore",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
+      "effect": "Roll 1d6. On a result of 1 or 2, the attacker is Poisoned. On a result of 3 or 4, the attacker is Paralyzed. On a result of 5 or 6, the attacker falls Asleep."
     }
   ],
   "natureMod": {

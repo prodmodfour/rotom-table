@@ -2,7 +2,7 @@
   "slug": "examples-porygon-z",
   "nickname": "Porygon-Z",
   "species": "Porygon-Z",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Desperate",
@@ -12,69 +12,91 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 10,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 1,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 13,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 95,
+    "currentHp": 95,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Agility",
-      "type": "Psychic",
-      "category": "Status",
+      "name": "Discharge",
+      "type": "Electric",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
       "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Speed 2 Combat Stages."
+      "ac": 2,
+      "range": "All Cardinally Adjacent Targets",
+      "effect": "Discharge Paralyzes all legal targets on 15+."
     },
     {
-      "name": "Psybeam",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
+      "name": "Embargo",
+      "type": "Dark",
+      "category": "Status",
       "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
+      "effect": "The target cannot use or benefit from held items for the remainder of the encounter. Embargo may only affect one target at a time; if Embargo is used on a new target, the previous target is freed from the effect."
+    },
+    {
+      "name": "Signal Beam",
+      "type": "Bug",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Signal Beam confuses the target on 19+."
+    },
+    {
+      "name": "Magnet Rise",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 2,
+      "range": "Self, Swift Action",
+      "effect": "The user gains the Levitate Ability for 5 turns. Magnet Rise may be activated as a Swift Action if the user is otherwise given an action that consumes a Command.",
+      "special": "Grants Magnetic"
     },
     {
       "name": "Recover",
@@ -83,6 +105,14 @@
       "frequency": "Daily x2",
       "range": "Self",
       "effect": "The user regains Hit Points equal to half of its full Hit Point value."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -95,6 +125,11 @@
       "name": "Tolerance",
       "frequency": "Static",
       "effect": "Any Types resisted by the user are resisted one step further. Defensive."
+    },
+    {
+      "name": "Targeting System",
+      "frequency": "Scene – Free Action",
+      "effect": "Connection – Lock-On. The user may activate this Ability to use Lock-On as a Swift Action."
     }
   ],
   "natureMod": {

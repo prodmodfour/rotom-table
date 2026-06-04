@@ -2,7 +2,7 @@
   "slug": "examples-florges",
   "nickname": "Florges",
   "species": "Florges",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Mild",
@@ -12,51 +12,88 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 95,
+    "currentHp": 95,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 4,
-      "vsAny": 2
+      "vsAtk": 2,
+      "vsSatk": 5,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Aromatherapy",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 1",
+      "effect": "All allies in the burst are cured of one status condition of their choice."
+    },
+    {
+      "name": "Petal Blizzard",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "None."
+    },
+    {
+      "name": "Grassy Terrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field",
+      "effect": "The area becomes Grassy for 5 rounds. While Grassy, all Pokémon and Trainers standing on the ground recover a Tick of Hit Points at the start of every turn, and Grass-Type attacks performed by grounded Pokémon and Trainers gain a +10 bonus to Damage Rolls."
+    },
+    {
+      "name": "Magical Leaf",
+      "type": "Grass",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, 1 Target",
+      "effect": "Magical Leaf cannot miss."
+    },
     {
       "name": "Wish",
       "type": "Normal",
@@ -64,28 +101,6 @@
       "frequency": "Daily x2",
       "range": "15, 1 Target",
       "effect": "At the end of the user’s next turn, the target regains Hit Points equal to half of its full Hit Point value. If the user targets themselves and are replaced in battle, the replacement is healed."
-    },
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Fairy Wind",
-      "type": "Fairy",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "None"
     },
     {
       "name": "Razor Leaf",
@@ -97,25 +112,6 @@
       "ac": 4,
       "range": "Cone 2",
       "effect": "Razor Leaf is a Critical Hit on 18+."
-    },
-    {
-      "name": "Lucky Chant",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
-    },
-    {
-      "name": "Vine Whip",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -128,6 +124,11 @@
       "name": "Overgrow",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Grass."
+    },
+    {
+      "name": "Symbiosis",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user choses a Held Item they are holding. If the target is willing, they also gain the effects of the chosen item for the rest of the Scene. Items that are activated at a frequency may be activated independently by the user and the the target."
     }
   ],
   "natureMod": {

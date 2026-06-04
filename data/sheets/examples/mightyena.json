@@ -2,7 +2,7 @@
   "slug": "examples-mightyena",
   "nickname": "Mightyena",
   "species": "Mightyena",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Impish",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "atk": {
@@ -32,33 +32,33 @@
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
+    "maxHp": 74,
+    "currentHp": 74,
     "tick": 7,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 1,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bite",
+      "name": "Assurance",
       "type": "Dark",
       "category": "Physical",
       "db": 8,
@@ -66,7 +66,16 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
     },
     {
       "name": "Snarl",
@@ -80,23 +89,6 @@
       "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
     },
     {
-      "name": "Odor Sleuth",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
-    },
-    {
-      "name": "Swagger",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "6, 1 Target, Social",
-      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
-    },
-    {
       "name": "Roar",
       "type": "Normal",
       "category": "Status",
@@ -106,13 +98,24 @@
       "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
     },
     {
-      "name": "Sand Attack",
-      "type": "Ground",
+      "name": "Odor Sleuth",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those.",
+      "special": "Grants Tracker"
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [

@@ -2,7 +2,7 @@
   "slug": "examples-amaura",
   "nickname": "Amaura",
   "species": "Amaura",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "atk": {
@@ -23,17 +23,17 @@
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -43,9 +43,9 @@
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
@@ -54,30 +54,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Aurora Beam",
-      "type": "Ice",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
     {
       "name": "Rock Throw",
       "type": "Rock",
@@ -90,25 +70,6 @@
       "effect": "None"
     },
     {
-      "name": "Mist",
-      "type": "Ice",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
-    },
-    {
-      "name": "Icy Wind",
-      "type": "Ice",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
-    },
-    {
       "name": "Thunder Wave",
       "type": "Electric",
       "category": "Status",
@@ -116,18 +77,35 @@
       "ac": 4,
       "range": "6, 1 Target",
       "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
+      "name": "Powder Snow",
+      "type": "Ice",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Line 4",
+      "effect": "Powder Snow Freezes all Legal Targets on 19+.",
+      "special": "Grants Freezer"
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     }
   ],
   "abilities": [
     {
       "name": "Refrigerate",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user uses a Normal-Type damaging Move",
       "effect": "The Move is changed to be Ice-Type."
-    },
-    {
-      "name": "Solid Rock",
-      "frequency": "Static",
-      "effect": "The user gains +5 Damage Reduction against Super- Effective damage. Defensive."
     }
   ],
   "natureMod": {

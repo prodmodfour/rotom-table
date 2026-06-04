@@ -2,7 +2,7 @@
   "slug": "examples-cursola",
   "nickname": "Cursola",
   "species": "Cursola",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Serious",
@@ -17,7 +17,7 @@
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "def": {
@@ -27,54 +27,63 @@
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 3,
-      "vsAny": 0
+      "vsSatk": 5,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Astonish",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "At-Will",
+      "name": "Strength Sap",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+      "effect": "The user gains Hit Points equal to the higher of the target's Attack or Special Attack; the target then loses 1 Combat Stage in that Stat."
     },
     {
-      "name": "Disable",
-      "type": "Normal",
+      "name": "Curse",
+      "type": "Ghost",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+    },
+    {
+      "name": "Hex",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
     },
     {
       "name": "Ancient Power",
@@ -94,12 +103,21 @@
       "frequency": "Scene",
       "range": "1 Target, Trigger",
       "effect": "Spite may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
     }
   ],
   "abilities": [
     {
       "name": "Cursed Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Damaging Move.",
       "effect": "The Move becomes Disabled."
     },
     {

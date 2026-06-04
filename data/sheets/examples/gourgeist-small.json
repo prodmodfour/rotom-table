@@ -2,7 +2,7 @@
   "slug": "examples-gourgeist-small",
   "nickname": "Gourgeist Small",
   "species": "Gourgeist Small",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Modest",
@@ -13,48 +13,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 73,
+    "currentHp": 73,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 3,
+      "vsAtk": 4,
+      "vsSatk": 2,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [],

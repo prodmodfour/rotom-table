@@ -2,7 +2,7 @@
   "slug": "examples-regigigas",
   "nickname": "Regigigas",
   "species": "Regigigas",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Mild",
@@ -12,58 +12,80 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 17,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 139,
+    "currentHp": 139,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Foresight",
-      "type": "Normal",
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Wide Guard",
+      "type": "Rock",
       "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+      "frequency": "Scene",
+      "range": "Burst 1, Interrupt, Shield, Trigger",
+      "effect": "If an Ally adjacent to Wide Guard’s user is hit by a Move, you may use Wide Guard as an Interrupt. All targets adjacent to Wide Guard’s user, including the user, are instead not hit by the triggering Move and do not suffer any of its effects."
+    },
+    {
+      "name": "Revenge",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority (Limited)",
+      "effect": "When declaring Revenge, the user does nothing and may not Shift. At the end of the round, the user may shift and use Revenge. If the target has damaged the user this round, Revenge has a Damage Base of 12 (3d12+10 / 30)."
     },
     {
       "name": "Stomp",
@@ -77,6 +99,14 @@
       "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
     },
     {
+      "name": "Foresight",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    },
+    {
       "name": "Dizzy Punch",
       "type": "Normal",
       "category": "Physical",
@@ -86,15 +116,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Dizzy Punch Confuses the target on 17+"
-    },
-    {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
     }
   ],
   "abilities": [
@@ -107,6 +128,11 @@
       "name": "Battle Armor",
       "frequency": "Static",
       "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
+    },
+    {
+      "name": "Unaware",
+      "frequency": "Static",
+      "effect": "Whenever the user attacks, they ignore all positive Combat Stages to the target’s Defense, Special Defense, and Speed."
     }
   ],
   "natureMod": {

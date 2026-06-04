@@ -2,7 +2,7 @@
   "slug": "examples-treecko",
   "nickname": "Treecko",
   "species": "Treecko",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -27,24 +27,24 @@
     },
     "satk": {
       "base": -1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
@@ -53,32 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Absorb",
-      "type": "Grass",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Pursuit",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
-    },
     {
       "name": "Quick Attack",
       "type": "Normal",
@@ -91,14 +69,14 @@
       "effect": "None."
     },
     {
-      "name": "Mega Drain",
+      "name": "Absorb",
       "type": "Grass",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 4,
+      "damageRoll": "1d8+6",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target",
+      "range": "4, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
@@ -127,11 +105,6 @@
       "name": "Overgrow",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Grass."
-    },
-    {
-      "name": "Vanguard",
-      "frequency": "Static",
-      "effect": "The user gains a +5 Bonus to all Damage Rolls against targets with an initiative lower than itself that have not yet acted that round (having Ante’d up your Action via an Interrupt or similar on a previous round does not count as having acted that round)."
     }
   ],
   "natureMod": {

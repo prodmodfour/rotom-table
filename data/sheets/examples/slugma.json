@@ -2,7 +2,7 @@
   "slug": "examples-slugma",
   "nickname": "Slugma",
   "species": "Slugma",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -27,12 +27,12 @@
     },
     "satk": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -42,9 +42,9 @@
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
@@ -53,42 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Clear Smog",
-      "type": "Poison",
-      "category": "Special",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "Scene x2",
-      "range": "6, 1 Target",
-      "effect": "The target’s Combat Stages are reset to their default, and all Coats on the target are destroyed. Clear Smog cannot miss."
-    },
-    {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
-      "name": "Incinerate",
-      "type": "Fire",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Line 3",
-      "effect": "If a target is holding a Held Item or Main or Off- Hand item, they must either drop it immediately or lose a Tick of Hit Points. This may only cause a target to lose at most one Tick of Hit Points, no matter how many items they were holding."
-    },
     {
       "name": "Rock Throw",
       "type": "Rock",
@@ -101,6 +69,18 @@
       "effect": "None"
     },
     {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
+    },
+    {
       "name": "Yawn",
       "type": "Normal",
       "category": "Status",
@@ -109,12 +89,15 @@
       "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
     },
     {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
+      "name": "Smog",
+      "type": "Poison",
+      "category": "Special",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
       "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
+      "ac": 7,
+      "range": "Line 2",
+      "effect": "Smog Poisons the target on an Even-Numbered Roll."
     }
   ],
   "abilities": [
@@ -122,11 +105,6 @@
       "name": "Magma Armor",
       "frequency": "Static",
       "effect": "Whenever a foe hits you with a Melee Attack or ends their turn grappling you, they lose a tick of Hit Points. Foes immune to Burn do not suffer this effect."
-    },
-    {
-      "name": "Thermosensitive",
-      "frequency": "Static",
-      "effect": "While Sunny, the user’s Attack and Special Attack are raised by +2 combat stages each. While Hailing, the user’s movement capabilities are reduced by half."
     }
   ],
   "natureMod": {

@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "atk": {
@@ -22,7 +22,7 @@
     },
     "def": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "satk": {
@@ -42,8 +42,8 @@
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
+    "maxHp": 66,
+    "currentHp": 66,
     "tick": 6,
     "evasion": {
       "vsAtk": 3,
@@ -57,6 +57,15 @@
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
     {
       "name": "Bite",
       "type": "Dark",
@@ -80,15 +89,6 @@
       "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
     },
     {
-      "name": "Scary Face",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
-    },
-    {
       "name": "Water Gun",
       "type": "Water",
       "category": "Special",
@@ -97,7 +97,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Fountain"
     }
   ],
   "abilities": [

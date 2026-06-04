@@ -2,7 +2,7 @@
   "slug": "examples-teddiursa",
   "nickname": "Teddiursa",
   "species": "Teddiursa",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Stark",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "def": {
@@ -27,47 +27,36 @@
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Scratch",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "None"
-    },
     {
       "name": "Fury Swipes",
       "type": "Normal",
@@ -80,23 +69,15 @@
       "effect": "None"
     },
     {
-      "name": "Feint Attack",
-      "type": "Dark",
+      "name": "Scratch",
+      "type": "Normal",
       "category": "Physical",
       "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "Melee, Pass",
+      "effect": "None"
     },
     {
       "name": "Lick",
@@ -108,6 +89,15 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -115,11 +105,6 @@
       "name": "Quick Feet",
       "frequency": "Static",
       "effect": "When Poisoned, Burned, Paralyzed, Frozen or put to Sleep, the user’s Speed is raised 2 Combat Stages. The user’s Initiative is not halved by Paralysis. If the user is healed all Status Conditions, their Speed is lowered appropriately."
-    },
-    {
-      "name": "Pickup",
-      "frequency": "Daily – Extended Action",
-      "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
     }
   ],
   "natureMod": {

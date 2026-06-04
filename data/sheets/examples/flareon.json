@@ -2,7 +2,7 @@
   "slug": "examples-flareon",
   "nickname": "Flareon",
   "species": "Flareon",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Brave",
@@ -17,7 +17,7 @@
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "def": {
@@ -27,7 +27,7 @@
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
@@ -42,9 +42,9 @@
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
@@ -53,29 +53,32 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
+      "name": "Fire Spin",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "3, 1 Target",
+      "effect": "The target is put in a Vortex.",
+      "special": "Grants Firestarter"
     },
     {
-      "name": "Quick Attack",
-      "type": "Normal",
+      "name": "Fire Fang",
+      "type": "Fire",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
     },
     {
       "name": "Bite",
@@ -89,6 +92,17 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
       "name": "Ember",
       "type": "Fire",
       "category": "Special",
@@ -97,13 +111,24 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [
     {
       "name": "Flame Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Burned."
     },
     {

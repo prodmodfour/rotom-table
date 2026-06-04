@@ -2,7 +2,7 @@
   "slug": "examples-piloswine",
   "nickname": "Piloswine",
   "species": "Piloswine",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Skittish",
@@ -13,88 +13,94 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 3,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 99,
+    "currentHp": 99,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 1,
+      "vsAtk": 3,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Endure",
+      "name": "Fury Attack",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "Daily",
-      "range": "Self, Reaction, Trigger",
-      "effect": "If the user is hit by a damaging Move, you may use Endure as a Free Action. If the Move would bring Endure’s user down to 0 Hit Points or less, Endure’s user instead is set to 1 Hit Point."
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
     },
     {
-      "name": "Mud Sport",
-      "type": "Ground",
-      "category": "Status",
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
       "frequency": "EOT",
-      "range": "Burst 2",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
     },
     {
-      "name": "Powder Snow",
+      "name": "Ice Shard",
       "type": "Ice",
-      "category": "Special",
+      "category": "Physical",
       "db": 6,
       "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+      "range": "4, 1 Target, Priority",
+      "effect": "None"
     },
     {
-      "name": "Mud-Slap",
-      "type": "Ground",
+      "name": "Icy Wind",
+      "type": "Ice",
       "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
     },
     {
       "name": "Mud Bomb",
@@ -106,6 +112,14 @@
       "ac": 4,
       "range": "6, 1 Target",
       "effect": "The target’s Accuracy is lowered by -1 on 16+."
+    },
+    {
+      "name": "Endure",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "Self, Reaction, Trigger",
+      "effect": "If the user is hit by a damaging Move, you may use Endure as a Free Action. If the Move would bring Endure’s user down to 0 Hit Points or less, Endure’s user instead is set to 1 Hit Point."
     }
   ],
   "abilities": [

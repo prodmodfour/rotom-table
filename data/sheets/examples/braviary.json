@@ -2,7 +2,7 @@
   "slug": "examples-braviary",
   "nickname": "Braviary",
   "species": "Braviary",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Cuddly",
@@ -13,72 +13,87 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 113,
+    "currentHp": 113,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Fury Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
+      "name": "Tailwind",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Scene",
+      "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack.",
+      "special": "Grants Guster"
     },
     {
-      "name": "Wing Attack",
+      "name": "Defog",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The Weather becomes Clear, and all Blessings, Coats, and Hazards are destroyed. Clear Weather is the default weather, conferring no innate bonuses or penalties of any sort."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Aerial Ace",
       "type": "Flying",
       "category": "Physical",
       "db": 8,
       "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
+      "frequency": "EOT",
       "range": "Melee, 1 Target",
-      "effect": "None."
+      "effect": "Aerial Ace cannot miss."
     },
     {
       "name": "Scary Face",
@@ -108,6 +123,12 @@
       "name": "Courage",
       "frequency": "Static",
       "effect": "While at or under 1/3rd of its Max Hit Point value, the user gains a +5 Damage Bonus to all Damage Rolls, and 5 Damage Reduction. Defensive."
+    },
+    {
+      "name": "Bodyguard",
+      "frequency": "Scene x2 – Free Action",
+      "trigger": "An adjacent Ally is hit by an attack",
+      "effect": "The user and the triggering Ally switch places, and the user becomes the target of the triggering attack instead, taking damage from the attack as if resisted one step further. If switching places would not move the triggering Ally out of the area-of-effect of a Burst, Blast, Cone, or Line, this Ability does not prevent the ally from being hit. Defensive."
     }
   ],
   "natureMod": {

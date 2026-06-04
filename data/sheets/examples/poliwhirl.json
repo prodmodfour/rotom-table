@@ -2,7 +2,7 @@
   "slug": "examples-poliwhirl",
   "nickname": "Poliwhirl",
   "species": "Poliwhirl",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Sassy",
@@ -12,38 +12,38 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
+    "maxHp": 74,
+    "currentHp": 74,
     "tick": 7,
     "evasion": {
       "vsAtk": 2,
@@ -53,10 +53,21 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Body Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Body Slam Paralyzes the target on 15+."
+    },
     {
       "name": "Rain Dance",
       "type": "Water",
@@ -85,7 +96,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
       "name": "Hypnosis",

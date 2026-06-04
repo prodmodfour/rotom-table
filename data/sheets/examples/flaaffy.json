@@ -12,41 +12,41 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 66,
+    "currentHp": 66,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 1
     },
@@ -57,15 +57,6 @@
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Thunder Wave",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
-    },
     {
       "name": "Take Down",
       "type": "Normal",
@@ -78,6 +69,14 @@
       "effect": "You may perform a Trip Maneuver against the target as a Free Action."
     },
     {
+      "name": "Charge",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
       "name": "Cotton Spore",
       "type": "Grass",
       "category": "Status",
@@ -85,14 +84,6 @@
       "ac": 2,
       "range": "Burst 1, Powder",
       "effect": "All Legal Targets have their Speed lowered 2 Combat Stages."
-    },
-    {
-      "name": "Charge",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
     },
     {
       "name": "Thunder Shock",
@@ -103,13 +94,24 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
+    },
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
     }
   ],
   "abilities": [
     {
       "name": "Static",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Paralyzed."
     },
     {

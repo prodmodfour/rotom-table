@@ -2,7 +2,7 @@
   "slug": "examples-pyroar",
   "nickname": "Pyroar",
   "species": "Pyroar",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Desperate",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
@@ -33,19 +33,19 @@
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 82,
+    "currentHp": 82,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -54,29 +54,29 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Leer",
+      "name": "Endeavor",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
+      "category": "Physical",
+      "frequency": "Scene",
       "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "Melee, 1 Target, Dash",
+      "effect": "The target loses a Tick of Hit Points for each Injury the user has."
     },
     {
-      "name": "Headbutt",
-      "type": "Normal",
+      "name": "Fire Fang",
+      "type": "Fire",
       "category": "Physical",
       "db": 9,
       "damageRoll": "2d10+10",
-      "frequency": "EOT",
-      "ac": 2,
+      "frequency": "At-Will",
+      "ac": 3,
       "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
+      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
     },
     {
       "name": "Take Down",
@@ -90,26 +90,24 @@
       "effect": "You may perform a Trip Maneuver against the target as a Free Action."
     },
     {
-      "name": "Tackle",
+      "name": "Noble Roar",
       "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "category": "Status",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "Burst 1, Sonic, Friendly, Social",
+      "effect": "Noble Roar lowers all targets’ Attack and Special Attack by 1 Combat Stage."
     },
     {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
     },
     {
       "name": "Work Up",

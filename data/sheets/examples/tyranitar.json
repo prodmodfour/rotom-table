@@ -2,7 +2,7 @@
   "slug": "examples-tyranitar",
   "nickname": "Tyranitar",
   "species": "Tyranitar",
-  "level": 20,
+  "level": 55,
   "gender": "Male",
   "shiny": false,
   "nature": "Brave",
@@ -13,89 +13,115 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 10,
+      "added": 16,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 12,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 7,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 128,
+    "currentHp": 128,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 4,
+      "vsSatk": 4,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 12,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Chip Away",
-      "type": "Normal",
+      "name": "Earthquake",
+      "type": "Ground",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
+      "db": 10,
+      "damageRoll": "3d8+10 / 24",
+      "frequency": "Scene",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage."
+      "range": "Burst 3, Groundsource",
+      "effect": "Earthquake can hit targets that are underground, including those using the Move Dig.",
+      "special": "Grants Groundshaper"
     },
     {
-      "name": "Sandstorm",
-      "type": "Rock",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Field, Weather",
-      "effect": "The weather changes to a Sandstorm for 5 rounds. While it is Sandstorming, all non-Ground, Rock, or Steel Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
-    },
-    {
-      "name": "Screech",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
-    },
-    {
-      "name": "Rock Slide",
-      "type": "Rock",
+      "name": "Crunch",
+      "type": "Dark",
       "category": "Physical",
       "db": 10,
       "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Payback",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
+    },
+    {
+      "name": "Dark Pulse",
+      "type": "Dark",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Dark Pulse Flinches the target on 17+"
+    },
+    {
+      "name": "Thrash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10 / 30",
       "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, Ranged Blast 3",
-      "effect": "Rock Slide Flinches all Legal Targets on 17+."
+      "ac": 3,
+      "range": "Melee, all adjacent foes, Smite",
+      "effect": "After damage is dealt, the user becomes Enraged and Confused."
+    },
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -108,6 +134,11 @@
       "name": "Enduring Rage",
       "frequency": "Static",
       "effect": "The user may not make rolls to cure themselves from the Enraged condition. However, while Enraged, the user gains 5 Damage Reduction."
+    },
+    {
+      "name": "Unnerve",
+      "frequency": "At-Will - Swift Action",
+      "effect": "The target cannot gain positive Combat Stages or trade in Digestion Buffs for 1 full round."
     }
   ],
   "natureMod": {

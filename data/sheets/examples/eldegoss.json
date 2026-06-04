@@ -2,7 +2,7 @@
   "slug": "examples-eldegoss",
   "nickname": "Eldegoss",
   "species": "Eldegoss",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Hasty",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
@@ -32,31 +32,42 @@
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
+    "maxHp": 68,
+    "currentHp": 68,
     "tick": 6,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 3
+      "vsSatk": 4,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Leaf Tornado",
+      "type": "Grass",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Small or Medium targets in the central square of the blast are not hit. On 15+, all legal targets have their Accuracy lowered by -1."
+    },
     {
       "name": "Round",
       "type": "Normal",
@@ -65,17 +76,6 @@
       "ac": 2,
       "range": "Burst 1, Sonic",
       "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
-    },
-    {
-      "name": "Rapid Spin",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
     },
     {
       "name": "Razor Leaf",
@@ -95,18 +95,32 @@
       "frequency": "Scene",
       "ac": 2,
       "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
+    },
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
     }
   ],
   "abilities": [
     {
       "name": "Cotton Down",
       "frequency": "Scene – Free Action, Reaction",
+      "trigger": "The user is hit by an attack",
       "effect": "All Pokémon in a Burst 1 around the user have their speed lowered by 1 CS, and are Slowed for one full round."
     },
     {
       "name": "Regenerator",
       "frequency": "Daily x2 – Free Action",
+      "trigger": "The user is recalled into a Poké Ball, or Takes",
       "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
     }
   ],

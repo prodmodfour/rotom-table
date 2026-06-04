@@ -2,7 +2,7 @@
   "slug": "examples-greedent",
   "nickname": "Greedent",
   "species": "Greedent",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Naughty",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "satk": {
@@ -37,61 +37,33 @@
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 106,
+    "currentHp": 106,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stuff Cheeks",
-      "type": "Normal",
+      "name": "Rest",
+      "type": "Psychic",
       "category": "Status",
       "frequency": "Scene",
       "range": "Self",
-      "effect": "The user immediately consumes one of its Food Buffs, regardless of any conditions that need to be met, gaining its benefit if applicable. If a Buff is consumed, the user’s Defense CS is raised by 2."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Stockpile",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
-    },
-    {
-      "name": "Spit Up",
-      "type": "Normal",
-      "category": "Special",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "For each Stockpiled Count the user has, Spit Up’s Damage Base is increased by +8. If the user has no Stockpiled count, Spit Up cannot be used."
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
     },
     {
       "name": "Body Slam",
@@ -105,12 +77,37 @@
       "effect": "Body Slam Paralyzes the target on 15+."
     },
     {
+      "name": "Spit Up",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "For each Stockpiled Count the user has, Spit Up’s Damage Base is increased by +8. If the user has no Stockpiled count, Spit Up cannot be used."
+    },
+    {
       "name": "Swallow",
       "type": "Normal",
       "category": "Status",
       "frequency": "Daily x2",
       "range": "Self",
       "effect": "If the user’s Stockpiled count is 1, they are healed 25% of their full Hit Point value; if their Stockpiled count is 2, they are healed half of their full Hit Point value; if their Stockpiled count is 3, they are healed back to full Hit Points. After using Swallow, the user’s Stockpiled count is set to 0. If the user has no Stockpiled count, Swallow does nothing."
+    },
+    {
+      "name": "Stockpile",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
+    },
+    {
+      "name": "Stuff Cheeks",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user immediately consumes one of its Food Buffs, regardless of any conditions that need to be met, gaining its benefit if applicable. If a Buff is consumed, the user’s Defense CS is raised by 2."
     }
   ],
   "abilities": [
@@ -122,6 +119,7 @@
     {
       "name": "Lunchbox",
       "frequency": "Scene – Free Action",
+      "trigger": "The user trades in a Food Buff",
       "effect": "The user gains a Tick of Temporary Hit Points. These Temporary Hit Points stack with any Temporary Hit Points granted by the triggering Food Buff."
     }
   ],

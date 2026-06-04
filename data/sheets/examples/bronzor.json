@@ -2,7 +2,7 @@
   "slug": "examples-bronzor",
   "nickname": "Bronzor",
   "species": "Bronzor",
-  "level": 20,
+  "level": 10,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Distracted",
@@ -13,67 +13,58 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 56,
+    "currentHp": 56,
+    "tick": 5,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsSatk": 3,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Iron Defense",
-      "type": "Steel",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 2 Combat Stages."
-    },
-    {
-      "name": "Confuse Ray",
-      "type": "Ghost",
+      "name": "Imprison",
+      "type": "Psychic",
       "category": "Status",
       "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
     },
     {
       "name": "Hypnosis",
@@ -96,15 +87,6 @@
       "effect": "The target is pushed 2 Meters."
     },
     {
-      "name": "Psywave",
-      "type": "Psychic",
-      "category": "Special",
-      "frequency": "Scene",
-      "ac": 5,
-      "range": "6, 1 Target",
-      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
-    },
-    {
       "name": "Confusion",
       "type": "Psychic",
       "category": "Special",
@@ -120,12 +102,7 @@
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
-    },
-    {
-      "name": "Heatproof",
-      "frequency": "Static",
-      "effect": "The user resists Fire Type movesf one step further, and does not lose Hit Points from the Burn Condition."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     }
   ],
   "natureMod": {

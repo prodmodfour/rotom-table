@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "atk": {
@@ -22,29 +22,29 @@
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 10,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -69,6 +69,17 @@
       "effect": "Bubble Beam lowers the target’s Speed on 18+."
     },
     {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    },
+    {
       "name": "Peck",
       "type": "Flying",
       "category": "Physical",
@@ -78,6 +89,15 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
+    },
+    {
+      "name": "Water Sport",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2, Coat",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed.",
+      "special": "Grants Fountain"
     },
     {
       "name": "Bubble",
@@ -91,14 +111,6 @@
       "effect": "Bubble lowers the target’s Speed on 16+."
     },
     {
-      "name": "Water Sport",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2, Coat",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
-    },
-    {
       "name": "Growl",
       "type": "Normal",
       "category": "Status",
@@ -106,17 +118,6 @@
       "ac": 2,
       "range": "Burst 1, Friendly, Sonic, Social",
       "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Metal Claw",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
     }
   ],
   "abilities": [

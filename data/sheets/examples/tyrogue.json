@@ -2,7 +2,7 @@
   "slug": "examples-tyrogue",
   "nickname": "Tyrogue",
   "species": "Tyrogue",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Relaxed",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -27,46 +27,43 @@
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 5,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Fake Out",
+      "name": "Foresight",
       "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
     },
     {
       "name": "Tackle",
@@ -88,24 +85,23 @@
       "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
     },
     {
-      "name": "Foresight",
+      "name": "Fake Out",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
     }
   ],
   "abilities": [
     {
       "name": "Steadfast",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user would be Flinched",
       "effect": "The user’s Speed is raised by +1 Combat Stage."
-    },
-    {
-      "name": "Guts",
-      "frequency": "Static",
-      "effect": "While suffering from Burn, Poison, Paralysis, Freezing, or while Asleep, the user’s Attack is raised 2 Combat Stages. If suffering from none of these conditions, the user loses any Combat Stages gained this way."
     }
   ],
   "natureMod": {

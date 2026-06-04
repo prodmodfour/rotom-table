@@ -2,7 +2,7 @@
   "slug": "examples-sigilyph",
   "nickname": "Sigilyph",
   "species": "Sigilyph",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Docile",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
@@ -23,48 +23,59 @@
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 10,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Miracle Eye",
+      "name": "Light Screen",
       "type": "Psychic",
       "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Miracle Eye may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Psychic-Type Moves can hit and affect Dark-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Light Screen may activate it when receiving Special Damage to resist the Damage one step. Light Screen may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Air Cutter",
+      "type": "Flying",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Air Cutter is a Critical Hit on 18+."
     },
     {
       "name": "Psybeam",
@@ -78,13 +89,6 @@
       "effect": "Psybeam Confuses the target on 19+."
     },
     {
-      "name": "Tailwind",
-      "type": "Flying",
-      "category": "Status",
-      "frequency": "Scene",
-      "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack."
-    },
-    {
       "name": "Whirlwind",
       "type": "Normal",
       "category": "Status",
@@ -94,24 +98,21 @@
       "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
     },
     {
-      "name": "Hypnosis",
-      "type": "Psychic",
+      "name": "Tailwind",
+      "type": "Flying",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target",
-      "effect": "The target falls Asleep."
+      "frequency": "Scene",
+      "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack.",
+      "special": "Grants Guster"
     },
     {
-      "name": "Gust",
-      "type": "Flying",
+      "name": "Psywave",
+      "type": "Psychic",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+      "frequency": "Scene",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
     }
   ],
   "abilities": [

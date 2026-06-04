@@ -2,7 +2,7 @@
   "slug": "examples-nihilego",
   "nickname": "Nihilego",
   "species": "Nihilego",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Careful",
@@ -13,82 +13,88 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 8,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 113,
+    "currentHp": 113,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
-      "vsAny": 2
+      "vsAtk": 1,
+      "vsSatk": 5,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Constrict",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 1,
-      "damageRoll": "1d6+1 / 4",
+      "name": "Power Gem",
+      "type": "Rock",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
+      "range": "6, 1 Target",
+      "effect": "None"
     },
     {
-      "name": "Clear Smog",
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Toxic Spikes",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Toxic Spikes, all 8 meters must be adjacent with at least one other space of Toxic Spikes next to each other. Toxic Spikes cause Terrain to become Slow Terrain, and a grounded foe that runs into the hazard becomes Poisoned, and Slowed until the end of their next turn. If there are 2 Layers of Toxic Spikes on the same space, it Deadly Poisons the foes instead. Poison-Type Pokémon may move over Toxic Spikes harmlessly, destroying the Hazards as they do so."
+    },
+    {
+      "name": "Venoshock",
       "type": "Poison",
       "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "Scene x2",
-      "range": "6, 1 Target",
-      "effect": "The target’s Combat Stages are reset to their default, and all Coats on the target are destroyed. Clear Smog cannot miss."
-    },
-    {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
+      "range": "6, 1 Target",
+      "effect": "If the target is Poisoned, Venoshock has a Damage Base of 13 (4d10+10 / 35) instead."
     },
     {
       "name": "Headbutt",
@@ -100,15 +106,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Tickle",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
     },
     {
       "name": "Psywave",
@@ -124,12 +121,18 @@
     {
       "name": "Beast Boost",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user’s Damaging Attack causes an",
       "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
     },
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+    },
+    {
+      "name": "Moody",
+      "frequency": "Static",
+      "effect": "At the end of the user’s turn, roll 1d6 to determine a Stat to be raised by +2 Combat Stages, then roll 1d6 to determine a Stat to be lowered by 1 Combat Stage. 1 is Attack, 2 is Defense, 3 is Special Attack, 4 is Special Defense, 5 is Speed, and 6 is Accuracy."
     }
   ],
   "natureMod": {

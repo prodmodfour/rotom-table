@@ -2,7 +2,7 @@
   "slug": "examples-darmanitan-galar-standard-mode",
   "nickname": "Darmanitan Galar Standard Mode",
   "species": "Darmanitan Galar Standard Mode",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Dreamy",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 10,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 14,
-      "added": 8,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 6,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "satk": {
@@ -31,62 +31,72 @@
       "stage": 0
     },
     "sdef": {
-      "base": 7,
-      "added": 4,
+      "base": 8,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 10,
-      "added": 5,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
-    "tick": 8,
+    "maxHp": 110,
+    "currentHp": 110,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Taunt",
-      "type": "Dark",
+      "name": "Belly Drum",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Enraged."
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user gains +6 Attack Combat Stages, and loses Hit Points equal to ½ of their Max Hit Points."
     },
     {
-      "name": "Bite",
-      "type": "Dark",
+      "name": "Uproar",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Spirit Surge, Sonic",
+      "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
+    },
+    {
+      "name": "Ice Punch",
+      "type": "Ice",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
+      "effect": "Ice Punch Freezes the target on 19+ during Accuracy Check."
     },
     {
-      "name": "Avalanche",
-      "type": "Ice",
+      "name": "Headbutt",
+      "type": "Normal",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
       "frequency": "EOT",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "When declaring Avalanche, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Avalanche on any legal target. If the target damaged the user this round, Avalanche has a Damage Base of 12 (4d10+15 / 40) instead."
+      "effect": "Headbutt Flinches the target on 15+."
     },
     {
       "name": "Ice Fang",
@@ -118,6 +128,11 @@
       "name": "Winter’s Kiss",
       "frequency": "Static",
       "effect": "The user does not take damage from Ice-Type Moves. Whenever the user uses or is hit by an Ice- Type Move, the user is healed by a Tick of Hit Points. Defensive."
+    },
+    {
+      "name": "Zen Snowed",
+      "frequency": "Scene – Swift Action",
+      "effect": "The user changes into Zen Mode forme for the rest of the Scene, and may use the Moves “Ice Punch” and “Fire Punch” as if they were on its Move List."
     }
   ],
   "natureMod": {

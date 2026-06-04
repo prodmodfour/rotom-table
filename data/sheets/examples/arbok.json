@@ -2,7 +2,7 @@
   "slug": "examples-arbok",
   "nickname": "Arbok",
   "species": "Arbok",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Jolly",
@@ -12,39 +12,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 9,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 68,
+    "currentHp": 68,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -53,10 +53,41 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Acid",
+      "type": "Poison",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
     {
       "name": "Glare",
       "type": "Normal",
@@ -65,17 +96,6 @@
       "ac": 2,
       "range": "4, 1 Target, Social",
       "effect": "Glare Paralyzes the target."
-    },
-    {
-      "name": "Poison Sting",
-      "type": "Poison",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Poison Sting Poisons the target on 17+."
     },
     {
       "name": "Bite",
@@ -89,24 +109,15 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Screech",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
-    },
-    {
-      "name": "Acid",
+      "name": "Poison Sting",
       "type": "Poison",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Cone 2",
-      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
+      "range": "6, 1 Target",
+      "effect": "Poison Sting Poisons the target on 17+."
     }
   ],
   "abilities": [

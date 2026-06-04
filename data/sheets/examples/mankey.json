@@ -2,7 +2,7 @@
   "slug": "examples-mankey",
   "nickname": "Mankey",
   "species": "Mankey",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Adamant",
@@ -12,48 +12,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -69,17 +69,6 @@
       "effect": "None"
     },
     {
-      "name": "Karate Chop",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Karate Chop is a Critical Hit on 17+."
-    },
-    {
       "name": "Scratch",
       "type": "Normal",
       "category": "Physical",
@@ -91,14 +80,6 @@
       "effect": "None"
     },
     {
-      "name": "Focus Energy",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
-    },
-    {
       "name": "Low Kick",
       "type": "Fighting",
       "category": "Physical",
@@ -108,13 +89,21 @@
       "effect": "Low Kick’s Damage Base is equal to twice the target’s Weight Class."
     },
     {
-      "name": "Seismic Toss",
-      "type": "Fighting",
-      "category": "Physical",
-      "frequency": "Scene x2",
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Seismic Toss’ user."
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
     }
   ],
   "abilities": [
@@ -122,11 +111,6 @@
       "name": "Defiant",
       "frequency": "Static",
       "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
-    },
-    {
-      "name": "Vital Spirit",
-      "frequency": "Static",
-      "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
     }
   ],
   "natureMod": {

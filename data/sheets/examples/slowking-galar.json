@@ -2,7 +2,7 @@
   "slug": "examples-slowking-galar",
   "nickname": "Slowking Galar",
   "species": "Slowking Galar",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Skittish",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
@@ -38,72 +38,74 @@
     },
     "spd": {
       "base": 1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 96,
+    "currentHp": 96,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 4,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Growl",
+      "name": "Slack Off",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Points."
     },
     {
-      "name": "Acid",
-      "type": "Poison",
+      "name": "Surf",
+      "type": "Water",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Cone 2",
-      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
+      "range": "Line 6",
+      "effect": "As a Shift Action, the user may Move to any open square in Surf’s area of effect without provoking any Attacks of Opportunity."
     },
     {
-      "name": "Confusion",
+      "name": "Amnesia",
       "type": "Psychic",
-      "category": "Special",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
       "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Yawn",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "2, 1 Target, Social",
-      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
-    },
-    {
-      "name": "Disable",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
     },
     {
       "name": "Water Pulse",
@@ -126,6 +128,7 @@
     {
       "name": "Flame Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Burned."
     }
   ],

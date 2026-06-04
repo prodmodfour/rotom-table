@@ -2,7 +2,7 @@
   "slug": "examples-dusknoir",
   "nickname": "Dusknoir",
   "species": "Dusknoir",
-  "level": 20,
+  "level": 45,
   "gender": "Male",
   "shiny": false,
   "nature": "Bold",
@@ -22,17 +22,17 @@
     },
     "def": {
       "base": 1,
-      "added": 4,
+      "added": 16,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 14,
       "stage": 0
     },
     "spd": {
@@ -42,58 +42,78 @@
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 85,
+    "currentHp": 85,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 3,
+      "vsAtk": 6,
+      "vsSatk": 5,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Foresight",
-      "type": "Normal",
+      "name": "Shadow Ball",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "Shadow Ball lowers the foe’s Special Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Hex",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
+    },
+    {
+      "name": "Shadow Punch",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "6, 1 Target",
+      "effect": "Shadow Punch cannot miss."
+    },
+    {
+      "name": "Curse",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
       "category": "Status",
       "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
-    },
-    {
-      "name": "Shadow Sneak",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
     },
     {
-      "name": "Disable",
-      "type": "Normal",
+      "name": "Will-O-Wisp",
+      "type": "Fire",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
-    },
-    {
-      "name": "Astonish",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "The target is Burned."
     }
   ],
   "abilities": [
@@ -106,6 +126,11 @@
       "name": "Frighten",
       "frequency": "Scene – Swift Action",
       "effect": "Lower the target’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-delphox",
   "nickname": "Delphox",
   "species": "Delphox",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Serious",
@@ -13,39 +13,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
@@ -54,48 +54,59 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tail Whip",
+      "name": "Psyshock",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "When calculating damage, the target subtracts their Defense from Psyshock’s damage instead of their Special Defense. Psyshock is still otherwise Special ( Special Evasion is used to avoid it, Mirror Coat can reflect it, etc. )"
+    },
+    {
+      "name": "Mystical Fire",
+      "type": "Fire",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Mystical Fire lowers the target’s Special Attack by 1 Combat Stage."
+    },
+    {
+      "name": "Light Screen",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Light Screen may activate it when receiving Special Damage to resist the Damage one step. Light Screen may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Lucky Chant",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
     },
     {
-      "name": "Flame Charge",
-      "type": "Fire",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Raise the user’s Speed 1 Combat Stage."
-    },
-    {
-      "name": "Ember",
+      "name": "Fire Spin",
       "type": "Fire",
       "category": "Special",
       "db": 6,
       "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
-      "name": "Howl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "3, 1 Target",
+      "effect": "The target is put in a Vortex.",
+      "special": "Grants Firestarter"
     },
     {
       "name": "Psybeam",
@@ -107,17 +118,6 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Psybeam Confuses the target on 19+."
-    },
-    {
-      "name": "Scratch",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -130,6 +130,11 @@
       "name": "Forewarn",
       "frequency": "Scene – Free Action",
       "effect": "The Move with the highest Damage Dice Roll known by the targeted foe is revealed. If there is a tie, all tied Moves are revealed. The Moves revealed gain a -2 Penalty during Accuracy Checks when used by the target for the rest of the encounter."
+    },
+    {
+      "name": "Fox Fire",
+      "frequency": "Scene – Standard Action",
+      "effect": "Connection - Ember. The user creates 3 Fire Wisps. Whenever the user is targeted by a foe within 6 meters, they may spend a Fire Wisp as to use the Move Ember against that foe as a Free Action after the triggering Move is resolved."
     }
   ],
   "capabilities": {

@@ -2,7 +2,7 @@
   "slug": "examples-flabebe",
   "nickname": "Flabébé",
   "species": "Flabébé",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Quiet",
@@ -12,48 +12,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 9,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 2,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -85,7 +85,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Threaded"
     },
     {
       "name": "Tackle",
@@ -97,25 +98,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Wish",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "15, 1 Target",
-      "effect": "At the end of the user’s next turn, the target regains Hit Points equal to half of its full Hit Point value. If the user targets themselves and are replaced in battle, the replacement is healed."
-    },
-    {
-      "name": "Razor Leaf",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
     }
   ],
   "abilities": [
@@ -123,11 +105,6 @@
       "name": "Flower Power",
       "frequency": "Static",
       "effect": "The user may perform damaging Grass Type Moves as if they were their choice of either Physical or Special."
-    },
-    {
-      "name": "Perception",
-      "frequency": "Static",
-      "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
     }
   ],
   "natureMod": {

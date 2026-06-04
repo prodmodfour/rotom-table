@@ -2,7 +2,7 @@
   "slug": "examples-tsareena",
   "nickname": "Tsareena",
   "species": "Tsareena",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Lax",
@@ -12,59 +12,97 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 4,
+      "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Swagger",
+      "name": "Captivate",
       "type": "Normal",
       "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "Captivate lowers the target’s Special Attack 2 Combat Stages. Captivate may not affect something that is the same gender as the user or something that is genderless."
+    },
+    {
+      "name": "Aromatic Mist",
+      "type": "Fairy",
+      "category": "Status",
       "frequency": "EOT",
-      "ac": 5,
-      "range": "6, 1 Target, Social",
-      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+      "range": "Burst 1",
+      "effect": "All allies in Aromatic Mist’s area of effect have their Special Defense raised 1 Combat Stage."
+    },
+    {
+      "name": "Stomp",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+    },
+    {
+      "name": "Teeter Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Teeter Dance Confuses all Legal Targets."
+    },
+    {
+      "name": "Magical Leaf",
+      "type": "Grass",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "8, 1 Target",
+      "effect": "Magical Leaf cannot miss."
     },
     {
       "name": "Sweet Scent",
@@ -73,41 +111,26 @@
       "frequency": "Scene",
       "ac": 2,
       "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
-    },
-    {
-      "name": "Rapid Spin",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
-    },
-    {
-      "name": "Razor Leaf",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
     }
   ],
   "abilities": [
     {
       "name": "Queenly Majesty",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "An adjacent foe uses a Priority Move or an",
       "effect": "Connection – Stomp. The user may attack the triggering foe with Stomp as a Free Action Interrupt."
     },
     {
       "name": "Sweet Veil",
       "frequency": "Static",
       "effect": "The user and allies within 3 meters are immune to Sleep. Defensive."
+    },
+    {
+      "name": "Lightning Kicks",
+      "frequency": "Scene – Free Action",
+      "effect": "The user may activate this Ability to use any Move with “Kick” in the name as a Priority Move, and gain a +4 Bonus to the attack’s Accuracy Roll."
     }
   ],
   "natureMod": {

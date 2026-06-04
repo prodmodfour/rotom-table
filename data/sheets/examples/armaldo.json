@@ -2,7 +2,7 @@
   "slug": "examples-armaldo",
   "nickname": "Armaldo",
   "species": "Armaldo",
-  "level": 20,
+  "level": 45,
   "gender": "Male",
   "shiny": false,
   "nature": "Relaxed",
@@ -13,51 +13,106 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 11,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 2,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 106,
+    "currentHp": 106,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 5,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Crush Claw",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Crush Claw lowers the target’s Defense 1 Combat Stage on Even-Numbered Rolls."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Brine",
+      "type": "Water",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "If the target’s Hit Points are under 50%, Brine’s Damage Base is increased to Damage Base 13 (4d10+10 / 35)."
+    },
+    {
+      "name": "Bug Bite",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
     {
       "name": "Metal Claw",
       "type": "Steel",
@@ -68,47 +123,6 @@
       "ac": 3,
       "range": "Melee, 1 Target, Spirit Surge",
       "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Mud Sport",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
-    },
-    {
-      "name": "Fury Cutter",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
-    },
-    {
-      "name": "Smack Down",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -121,6 +135,12 @@
       "name": "Overcoat",
       "frequency": "Static",
       "effect": "The user is immune to Moves with the Powder Keyword, and does not take damage from any Weather that would normally cause it to take damage. Defensive."
+    },
+    {
+      "name": "Rough Skin",
+      "frequency": "At-Will - Free Action, Reaction",
+      "trigger": "The user is hit by a damaging Melee Attack",
+      "effect": "The attacker loses a tick of Hit Points."
     }
   ],
   "natureMod": {

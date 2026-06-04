@@ -2,7 +2,7 @@
   "slug": "examples-yungoos",
   "nickname": "Yungoos",
   "species": "Yungoos",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Dreamy",
@@ -12,51 +12,60 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsSatk": 1,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
     {
       "name": "Pursuit",
       "type": "Dark",
@@ -69,12 +78,13 @@
       "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     },
     {
-      "name": "Bide",
+      "name": "Leer",
       "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
       "name": "Tackle",
@@ -86,34 +96,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Odor Sleuth",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [
@@ -121,11 +103,6 @@
       "name": "Ambush",
       "frequency": "Scene – Free Action",
       "effect": "The user may activate this Ability to use a Move with a Damage Base of 6 (before applying STAB or other modifiers) or lower as if it had the Priority keyword. If it hits, the target is Flinched and has a -2 penalty to Accuracy Rolls for 1 full round."
-    },
-    {
-      "name": "Strong Jaw",
-      "frequency": "Static",
-      "effect": "The user has the Damage Base of the following Moves increased by +2; Bite, Bug Bite, Crunch, Fire Fang, Ice Fang, Thunder Fang, Poison Fang, and Hyper Fang."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-doduo",
   "nickname": "Doduo",
   "species": "Doduo",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 11,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
@@ -38,14 +38,14 @@
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 38,
+    "currentHp": 38,
+    "tick": 3,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
@@ -54,51 +54,20 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Fury Attack",
+      "name": "Rage",
       "type": "Normal",
       "category": "Physical",
       "db": 4,
       "damageRoll": "1d8+6",
       "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Pursuit",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
-    },
-    {
-      "name": "Peck",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
     },
     {
       "name": "Quick Attack",
@@ -112,15 +81,24 @@
       "effect": "None."
     },
     {
-      "name": "Rage",
-      "type": "Normal",
+      "name": "Peck",
+      "type": "Flying",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -128,11 +106,6 @@
       "name": "Run Away",
       "frequency": "Static",
       "effect": "The user does not provoke Attacks of Opportunity by Shifting.  The user cannot be Trapped."
-    },
-    {
-      "name": "Early Bird",
-      "frequency": "Static",
-      "effect": "The user gains a bonus to Initiative equal to half its Speed, and a +3 Bonus on Save Checks against Sleep."
     }
   ],
   "natureMod": {

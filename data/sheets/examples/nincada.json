@@ -2,7 +2,7 @@
   "slug": "examples-nincada",
   "nickname": "Nincada",
   "species": "Nincada",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Decisive",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "satk": {
@@ -33,19 +33,19 @@
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 0,
@@ -54,20 +54,18 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Scratch",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "None"
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     },
     {
       "name": "Leech Life",
@@ -81,34 +79,14 @@
       "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
     },
     {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
-    {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
-    },
-    {
-      "name": "Fury Swipes",
+      "name": "Scratch",
       "type": "Normal",
       "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Five Strike",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
       "effect": "None"
     },
     {
@@ -125,11 +103,6 @@
       "name": "Compound Eyes",
       "frequency": "Static",
       "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
-    },
-    {
-      "name": "Forewarn",
-      "frequency": "Scene – Free Action",
-      "effect": "The Move with the highest Damage Dice Roll known by the targeted foe is revealed. If there is a tie, all tied Moves are revealed. The Moves revealed gain a -2 Penalty during Accuracy Checks when used by the target for the rest of the encounter."
     }
   ],
   "natureMod": {

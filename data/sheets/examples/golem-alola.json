@@ -2,7 +2,7 @@
   "slug": "examples-golem-alola",
   "nickname": "Golem Alola",
   "species": "Golem Alola",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Sassy",
@@ -13,51 +13,105 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 2,
+      "vsAtk": 5,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Discharge",
+      "type": "Electric",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "All Cardinally Adjacent Targets",
+      "effect": "Discharge Paralyzes all legal targets on 15+."
+    },
+    {
+      "name": "Rock Blast",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None",
+      "special": "Grants Materializer"
+    },
+    {
+      "name": "Stealth Rock",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Field, Hazard",
+      "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out.",
+      "special": "Grants Materializer"
+    },
+    {
+      "name": "Self-Destruct",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 20,
+      "damageRoll": "6d12+35 / 75",
+      "frequency": "Daily",
+      "ac": 2,
+      "range": "Burst 3",
+      "effect": "The user’s Hit Points are set to -50% of their full Hit Point value. This Hit Point loss may not be prevented or reduced in any way. The user’s loyalty toward its trainer may be lowered."
+    },
+    {
+      "name": "Thunder Punch",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Thunder Punch Paralyzes the target on 19+."
+    },
     {
       "name": "Smack Down",
       "type": "Rock",
@@ -67,56 +121,7 @@
       "frequency": "Scene x2",
       "ac": 2,
       "range": "8, 1 Target",
-      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
-    },
-    {
-      "name": "Rock Throw",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Charge",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
-    },
-    {
-      "name": "Steamroller",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "Steamroller Flinches the target on 15+. If the target is Small, Steamroller deals an additional +5 Damage."
-    },
-    {
-      "name": "Rock Polish",
-      "type": "Rock",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Speed 2 Combat Stages."
-    },
-    {
-      "name": "Spark",
-      "type": "Electric",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Spark Paralyzes the target on 15+."
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Moves with the Groundsource keyword even if normally immune."
     }
   ],
   "abilities": [
@@ -129,6 +134,12 @@
       "name": "Magnet Pull",
       "frequency": "Scene x3 – Swift Action",
       "effect": "Pick Two Effects; - The target is pushed or pulled X meters directly away or towards the user. X is up to 6 meters minus the target’s Weight Class. - Until the end of the user’s next turn, the target may not move more then 6 meters away from the user . - Until the end of the user’s next turn, the target may not move closer than 3 meters ot the user."
+    },
+    {
+      "name": "Full Guard",
+      "frequency": "Scene - Swift Action",
+      "trigger": "You take Damage while having Temporary Hit",
+      "effect": "You resist the triggering Damage one step further."
     }
   ],
   "natureMod": {

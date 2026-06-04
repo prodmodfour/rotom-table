@@ -2,7 +2,7 @@
   "slug": "examples-poliwrath",
   "nickname": "Poliwrath",
   "species": "Poliwrath",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Docile",
@@ -13,70 +13,102 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 13,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 104,
+    "currentHp": 104,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 2,
+      "vsAtk": 3,
+      "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Double Slap",
+      "name": "Belly Drum",
       "type": "Normal",
-      "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user gains +6 Attack Combat Stages, and loses Hit Points equal to ½ of their Max Hit Points."
     },
     {
-      "name": "Hypnosis",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
+      "name": "Mud Shot",
+      "type": "Ground",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "3, 1 Target",
+      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+    },
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
       "range": "4, 1 Target",
-      "effect": "The target falls Asleep."
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    },
+    {
+      "name": "Dynamic Punch",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "At-Will",
+      "ac": 9,
+      "range": "Melee, 1 Target",
+      "effect": "Dynamic Punch Confuses the target. Dynamic Punch ignores the target’s Evasion if they are Flanked."
+    },
+    {
+      "name": "Body Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Body Slam Paralyzes the target on 15+."
     },
     {
       "name": "Rain Dance",
@@ -85,28 +117,6 @@
       "frequency": "Daily x2",
       "range": "Field, Weather",
       "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Bubble",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
     }
   ],
   "abilities": [
@@ -119,6 +129,11 @@
       "name": "Water Absorb",
       "frequency": "Static",
       "effect": "The user is immune to the damage and effects of  Water-Type attacks, and whenever they are hit with a Water Type attack, they gain a Tick of Hit Points. Defensive."
+    },
+    {
+      "name": "Guts",
+      "frequency": "Static",
+      "effect": "While suffering from Burn, Poison, Paralysis, Freezing, or while Asleep, the user’s Attack is raised 2 Combat Stages. If suffering from none of these conditions, the user loses any Combat Stages gained this way."
     }
   ],
   "capabilities": {

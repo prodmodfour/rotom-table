@@ -2,7 +2,7 @@
   "slug": "examples-kingler",
   "nickname": "Kingler",
   "species": "Kingler",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Dreamy",
@@ -12,51 +12,95 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 67,
+    "currentHp": 67,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Stomp",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Mud Shot",
+      "type": "Ground",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "3, 1 Target",
+      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+    },
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    },
     {
       "name": "Harden",
       "type": "Normal",
@@ -73,39 +117,6 @@
       "ac": 2,
       "range": "Cone 2, Friendly, Social",
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Vice Grip",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Bubble Beam",
-      "type": "Water",
-      "category": "Special",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
-    },
-    {
-      "name": "Mud Shot",
-      "type": "Ground",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "3, 1 Target",
-      "effect": "The target’s Speed is lowed by -1 Combat Stage."
     }
   ],
   "abilities": [
@@ -117,6 +128,7 @@
     {
       "name": "Parry",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attack instead misses. Defensive."
     }
   ],

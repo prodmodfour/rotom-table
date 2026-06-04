@@ -2,7 +2,7 @@
   "slug": "examples-banette",
   "nickname": "Banette",
   "species": "Banette",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Curious",
@@ -12,107 +12,110 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 80,
+    "currentHp": 80,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Night Shade",
-      "type": "Ghost",
-      "category": "Special",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
-    },
-    {
-      "name": "Screech",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
-    },
-    {
-      "name": "Shadow Sneak",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Spite",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Spite may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
-    },
-    {
-      "name": "Knock Off",
+      "name": "Sucker Punch",
       "type": "Dark",
       "category": "Physical",
       "db": 7,
       "damageRoll": "2d6+10 / 17",
-      "frequency": "Scene",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+      "range": "Melee, 1 Target, Interrupt, Trigger",
+      "effect": "If an adjacent foe targets the user with a Damaging Attack, Sucker Punch may be used as an Interrupt Move against the triggering foe."
     },
     {
-      "name": "Will-O-Wisp",
-      "type": "Fire",
+      "name": "Embargo",
+      "type": "Dark",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 5,
+      "frequency": "At-Will",
+      "ac": 2,
       "range": "6, 1 Target",
-      "effect": "The target is Burned."
+      "effect": "The target cannot use or benefit from held items for the remainder of the encounter. Embargo may only affect one target at a time; if Embargo is used on a new target, the previous target is freed from the effect."
+    },
+    {
+      "name": "Shadow Ball",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "Shadow Ball lowers the foe’s Special Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Curse",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+    },
+    {
+      "name": "Hex",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
     }
   ],
   "abilities": [
@@ -124,7 +127,14 @@
     {
       "name": "Cursed Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Damaging Move.",
       "effect": "The Move becomes Disabled."
+    },
+    {
+      "name": "Voodoo Doll",
+      "frequency": "Daily – Free Action",
+      "trigger": "The user uses the Move Curse as a Ghost Type",
+      "effect": "Connection - Curse. Choose an additional target within 8 meters of the user to become Cursed."
     }
   ],
   "natureMod": {

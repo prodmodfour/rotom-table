@@ -2,7 +2,7 @@
   "slug": "examples-gliscor",
   "nickname": "Gliscor",
   "species": "Gliscor",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Rash",
@@ -13,70 +13,93 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 11,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 82,
+    "currentHp": 82,
+    "tick": 8,
     "evasion": {
       "vsAtk": 4,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
-    {
-      "name": "Knock Off",
-      "type": "Dark",
+      "name": "U-Turn",
+      "type": "Bug",
       "category": "Physical",
       "db": 7,
       "damageRoll": "2d6+10 / 17",
-      "frequency": "Scene",
+      "frequency": "At-Will",
       "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "If U-Turn successfully hits its target, the user deals damage and then immediately is returned to its Poké Ball in the same turn. A New Pokémon may immediately be sent out. Using U-Turn lets a Trapped user be recalled."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Acrobatics",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Dash, 1 Target",
+      "effect": "If the user is not holding an item, Acrobatics instead has a Damage Base of 11 (3d10+10 / 27)."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
       "range": "Melee, 1 Target",
-      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+      "effect": "Feint Attack cannot miss."
     },
     {
       "name": "Fury Cutter",
@@ -99,24 +122,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
-    },
-    {
-      "name": "Feint Attack",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
-    },
-    {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -128,6 +133,7 @@
     {
       "name": "Poison Heal",
       "frequency": "Daily – Free Action",
+      "trigger": "The user becomes Poisoned",
       "effect": "For the rest of the encounter, while Poisoned or Badly Poisoned, the user gains a Tick of Hit Points at the beginning of each turn instead of losing any Hit Points from Poison. At the end of the encounter, the user is cured of the Poison Status. Additionally, the user does not have any Combat Stages lowered from being Poisoned."
     }
   ],

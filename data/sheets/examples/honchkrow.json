@@ -2,7 +2,7 @@
   "slug": "examples-honchkrow",
   "nickname": "Honchkrow",
   "species": "Honchkrow",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Impish",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "def": {
@@ -28,23 +28,23 @@
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 87,
-    "currentHp": 87,
+    "maxHp": 86,
+    "currentHp": 86,
     "tick": 8,
     "evasion": {
       "vsAtk": 2,
@@ -54,10 +54,39 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    },
     {
       "name": "Wing Attack",
       "type": "Flying",

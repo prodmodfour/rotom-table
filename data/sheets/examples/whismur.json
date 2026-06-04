@@ -2,7 +2,7 @@
   "slug": "examples-whismur",
   "nickname": "Whismur",
   "species": "Whismur",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -12,48 +12,48 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 1,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 47,
+    "currentHp": 47,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 0,
-      "vsAny": 0
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -69,15 +69,6 @@
       "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
     },
     {
-      "name": "Supersonic",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
-    {
       "name": "Echoed Voice",
       "type": "Normal",
       "category": "Special",
@@ -89,14 +80,6 @@
       "effect": "If Echoed Voice was used by any Pokémon or Trainer in the Encounter on the previous round, increase its Damage Base by +4. If Echoed Voice was used by any Pokémon or Trainers during both the previous two rounds, increase its Damage Base by +8."
     },
     {
-      "name": "Howl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
-    },
-    {
       "name": "Pound",
       "type": "Normal",
       "category": "Physical",
@@ -106,15 +89,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
-    },
-    {
-      "name": "Screech",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -122,11 +96,6 @@
       "name": "Soundproof",
       "frequency": "Static",
       "effect": "The Pokémon is immune to Moves with the Sonic Keyword. Defensive."
-    },
-    {
-      "name": "Cute Charm",
-      "frequency": "Scene – Free Action",
-      "effect": "The foe becomes Infatuated."
     }
   ],
   "natureMod": {

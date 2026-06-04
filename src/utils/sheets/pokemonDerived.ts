@@ -58,7 +58,7 @@ const STAT_LABELS: Record<StatKey, string> = {
 export interface ResolvedStat {
   key: StatKey
   label: string
-  /** Base stat from the species. */
+  /** Base stat from the species reference, or the sheet's manual Base fallback when reference stats are unavailable. */
   species: number
   /** Effective Nature modifier after PTU's stat-specific delta and minimum-1 floor. */
   mod: number
@@ -113,7 +113,10 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
   const baseStats = species?.base_stats
 
   const speciesValueFor = (key: StatKey): number => {
-    if (!baseStats) return 0
+    if (!baseStats) {
+      const manualBase = sheet.stats?.[key]?.base
+      return typeof manualBase === 'number' && Number.isFinite(manualBase) ? manualBase : 0
+    }
     switch (key) {
       case 'hp':   return baseStats.hp
       case 'atk':  return baseStats.atk
@@ -131,7 +134,7 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
   return POKEMON_STAT_KEYS.map((key) => {
     const personal = sheet.stats?.[key] ?? {}
     const speciesValue = speciesValueFor(key)
-    const mod = adjustedNatureModForStat(speciesValue, key, plus, minus)
+    const mod = baseStats ? adjustedNatureModForStat(speciesValue, key, plus, minus) : 0
     const base = speciesValue + mod
     const added = personal.added ?? 0
     const stage = personal.stage ?? 0

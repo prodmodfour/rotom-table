@@ -2,7 +2,7 @@
   "slug": "examples-mawile",
   "nickname": "Mawile",
   "species": "Mawile",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Rash",
@@ -13,70 +13,68 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 11,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 62,
+    "currentHp": 62,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 3,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Astonish",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
+      "name": "Baton Pass",
+      "type": "Normal",
+      "category": "Status",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+      "range": "Self",
+      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
     },
     {
-      "name": "Fake Tears",
+      "name": "Feint Attack",
       "type": "Dark",
-      "category": "Status",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "8, 1 Target, Social",
-      "effect": "Lower the target’s Special Defense 2 Combat Stages."
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
     },
     {
       "name": "Vice Grip",
@@ -90,6 +88,16 @@
       "effect": "None"
     },
     {
+      "name": "Sweet Scent",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
+    },
+    {
       "name": "Bite",
       "type": "Dark",
       "category": "Physical",
@@ -101,13 +109,13 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Sweet Scent",
-      "type": "Normal",
+      "name": "Fake Tears",
+      "type": "Dark",
       "category": "Status",
-      "frequency": "Scene",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+      "range": "8, 1 Target, Social",
+      "effect": "Lower the target’s Special Defense 2 Combat Stages."
     }
   ],
   "abilities": [

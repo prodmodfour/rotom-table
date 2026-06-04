@@ -2,7 +2,7 @@
   "slug": "examples-slowpoke",
   "nickname": "Slowpoke",
   "species": "Slowpoke",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Careful",
@@ -18,7 +18,7 @@
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "def": {
@@ -28,36 +28,65 @@
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 65,
+    "currentHp": 65,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
-      "vsAny": 1
+      "vsSatk": 2,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None",
+      "special": "Grants Fountain"
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Yawn",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+    },
     {
       "name": "Tackle",
       "type": "Normal",
@@ -76,44 +105,6 @@
       "frequency": "See Text",
       "range": "Self",
       "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
-    },
-    {
-      "name": "Yawn",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "2, 1 Target, Social",
-      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
-    },
-    {
-      "name": "Disable",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
-    },
-    {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -121,11 +112,6 @@
       "name": "Own Tempo",
       "frequency": "Static",
       "effect": "The user is immune to Confusion. Defensive."
-    },
-    {
-      "name": "Oblivious",
-      "frequency": "Static",
-      "effect": "The user is immune to the Enraged and Infatuated conditions. Defensive."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-stakataka",
   "nickname": "Stakataka",
   "species": "Stakataka",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Naughty",
@@ -13,51 +13,78 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 19,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 83,
+    "currentHp": 83,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 5,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsAtk": 8,
+      "vsSatk": 3,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
+    },
+    {
+      "name": "Autotomize",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "For the remainder of the Encounter, the user’s Weight Class is one value lower, to a minimum of 1. If the user can, the user’s Speed is raised by +2 Combat Stages."
+    },
+    {
+      "name": "Rock Throw",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
     {
       "name": "Take Down",
       "type": "Normal",
@@ -70,15 +97,12 @@
       "effect": "You may perform a Trip Maneuver against the target as a Free Action."
     },
     {
-      "name": "Tackle",
+      "name": "Bide",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
     },
     {
       "name": "Stealth Rock",
@@ -86,46 +110,26 @@
       "category": "Status",
       "frequency": "Scene",
       "range": "Field, Hazard",
-      "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out."
-    },
-    {
-      "name": "Protect",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
-    },
-    {
-      "name": "Rock Slide",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, Ranged Blast 3",
-      "effect": "Rock Slide Flinches all Legal Targets on 17+."
-    },
-    {
-      "name": "Bide",
-      "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+      "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out.",
+      "special": "Grants Materializer"
     }
   ],
   "abilities": [
     {
       "name": "Beast Boost",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user’s Damaging Attack causes an",
       "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
     },
     {
       "name": "Rock Head",
       "frequency": "Static",
       "effect": "The user ignores the Recoil keyword when attacking. If the user moves at least 4 meters in a straight line towards a foe before attacking that foe with a physical attack, they may add a +2d6 Bonus to the Damage Roll against that foe."
+    },
+    {
+      "name": "Filter",
+      "frequency": "Static",
+      "effect": "The user gains +5 Damage Reduction against Super- Effective damage. Defensive."
     }
   ],
   "natureMod": {

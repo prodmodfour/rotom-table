@@ -2,7 +2,7 @@
   "slug": "examples-drifblim",
   "nickname": "Drifblim",
   "species": "Drifblim",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -13,83 +13,69 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 90,
-    "currentHp": 90,
-    "tick": 9,
+    "maxHp": 115,
+    "currentHp": 115,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 1,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Astonish",
+      "name": "Hex",
       "type": "Ghost",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
-    },
-    {
-      "name": "Payback",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
     },
     {
-      "name": "Gust",
-      "type": "Flying",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+      "name": "Stockpile",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
     },
     {
       "name": "Ominous Wind",
@@ -103,12 +89,35 @@
       "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     },
     {
+      "name": "Payback",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
+    },
+    {
       "name": "Focus Energy",
       "type": "Normal",
       "category": "Status",
       "frequency": "At-Will",
       "range": "Self",
       "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead.",
+      "special": "Grants Guster"
     }
   ],
   "abilities": [
@@ -120,6 +129,7 @@
     {
       "name": "Absorb Force",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is damaged by a Physical Attack",
       "effect": "The user takes damage as if the attack was resisted one step further."
     }
   ],

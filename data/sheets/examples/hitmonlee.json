@@ -2,7 +2,7 @@
   "slug": "examples-hitmonlee",
   "nickname": "Hitmonlee",
   "species": "Hitmonlee",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -12,61 +12,66 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
+    "maxHp": 62,
+    "currentHp": 62,
     "tick": 6,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Jump Kick",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 12,
-      "damageRoll": "3d12+10",
+      "name": "Feint",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Trigger",
+      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
       "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, Dash, 1 Target",
-      "effect": "If Jump Kick misses, the user loses Hit Points equal to 1/4th of their Max Hit Points. A failure to hit due to a Move with the Shield keyword does not count as a miss. This Move cannot be used if Gravity is in effect."
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
     },
     {
       "name": "Brick Break",
@@ -80,12 +85,15 @@
       "effect": "Light Screen and Reflect may not be activated in response to Brick Break."
     },
     {
-      "name": "Meditate",
-      "type": "Psychic",
-      "category": "Status",
+      "name": "Jump Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
       "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage."
+      "ac": 3,
+      "range": "Melee, Dash, 1 Target",
+      "effect": "If Jump Kick misses, the user loses Hit Points equal to 1/4th of their Max Hit Points. A failure to hit due to a Move with the Shield keyword does not count as a miss. This Move cannot be used if Gravity is in effect."
     },
     {
       "name": "Rolling Kick",
@@ -97,6 +105,14 @@
       "ac": 4,
       "range": "Melee, 1 Target",
       "effect": "Rolling Kick Flinches the target on 15+."
+    },
+    {
+      "name": "Meditate",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage."
     }
   ],
   "abilities": [

@@ -18,17 +18,17 @@
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
@@ -38,7 +38,7 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
@@ -47,7 +47,7 @@
     "currentHp": 72,
     "tick": 7,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 1,
       "vsAny": 2
     },
@@ -58,6 +58,14 @@
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Aqua Ring",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
+    },
     {
       "name": "Mud Shot",
       "type": "Ground",
@@ -70,13 +78,15 @@
       "effect": "The target’s Speed is lowed by -1 Combat Stage."
     },
     {
-      "name": "Supersonic",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
     },
     {
       "name": "Round",
@@ -88,23 +98,13 @@
       "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
     },
     {
-      "name": "Aqua Ring",
-      "type": "Water",
+      "name": "Supersonic",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Coat",
-      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
-    },
-    {
-      "name": "Bubble Beam",
-      "type": "Water",
-      "category": "Special",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     }
   ],
   "abilities": [

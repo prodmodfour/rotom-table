@@ -2,7 +2,7 @@
   "slug": "examples-sneasel",
   "nickname": "Sneasel",
   "species": "Sneasel",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Quiet",
@@ -13,48 +13,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 47,
+    "currentHp": 47,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -69,26 +69,6 @@
       "effect": "Feint Attack cannot miss."
     },
     {
-      "name": "Icy Wind",
-      "type": "Ice",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
-    },
-    {
-      "name": "Taunt",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Enraged."
-    },
-    {
       "name": "Quick Attack",
       "type": "Normal",
       "category": "Physical",
@@ -100,6 +80,26 @@
       "effect": "None."
     },
     {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Scratch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
       "name": "Leer",
       "type": "Normal",
       "category": "Status",
@@ -107,17 +107,6 @@
       "ac": 2,
       "range": "Cone 2, Friendly, Social",
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Fury Swipes",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -125,11 +114,6 @@
       "name": "Keen Eye",
       "frequency": "Static",
       "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
-    },
-    {
-      "name": "Inner Focus",
-      "frequency": "Static",
-      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
     }
   ],
   "natureMod": {

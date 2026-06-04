@@ -2,7 +2,7 @@
   "slug": "examples-enamorus-incarnate-forme",
   "nickname": "Enamorus Incarnate Forme",
   "species": "Enamorus Incarnate Forme",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Careful",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
@@ -23,51 +23,59 @@
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 89,
+    "currentHp": 89,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsSatk": 3,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Twister",
-      "type": "Dragon",
+      "name": "Extrasensory",
+      "type": "Psychic",
       "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "6, Ranged Blast 3",
-      "effect": "Small or Medium targets in the central square of the blast are not hit. Twister Flinches the target on 18-20 during Accuracy Check. Any Pokémon Airborne as a result of Fly or Sky Drop above the Blast are hit, ignoring range, and Twister has a Damage Base of 8 against those targets instead."
+      "range": "5, 1 Target",
+      "effect": "Extrasensory Flinches the target on 19+."
+    },
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
     },
     {
       "name": "Draining Kiss",
@@ -79,6 +87,17 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Twister",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, Ranged Blast 3",
+      "effect": "Small or Medium targets in the central square of the blast are not hit. Twister Flinches the target on 18-20 during Accuracy Check. Any Pokémon Airborne as a result of Fly or Sky Drop above the Blast are hit, ignoring range, and Twister has a Damage Base of 8 against those targets instead."
     },
     {
       "name": "Bite",
@@ -113,6 +132,11 @@
       "name": "Frisk",
       "frequency": "Static",
       "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
+    },
+    {
+      "name": "Misty Surge",
+      "frequency": "Scene x3 – Swift Action",
+      "effect": "The Field becomes Misty, as if affected by the Move Misty Terrain, for one full round."
     }
   ],
   "natureMod": {

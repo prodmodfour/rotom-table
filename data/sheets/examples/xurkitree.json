@@ -2,7 +2,7 @@
   "slug": "examples-xurkitree",
   "nickname": "Xurkitree",
   "species": "Xurkitree",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Bashful",
@@ -12,66 +12,93 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 15,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 95,
+    "currentHp": 95,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Wrap",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+      "name": "Thunderbolt",
+      "type": "Electric",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunderbolt Paralyzes the target on 19+."
     },
     {
-      "name": "Thunder Wave",
+      "name": "Signal Beam",
+      "type": "Bug",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Signal Beam confuses the target on 19+."
+    },
+    {
+      "name": "Eerie Impulse",
       "type": "Electric",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 4,
+      "frequency": "EOT",
+      "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+      "effect": "The target’s Special Attack is lowered 2 Combat Stages.",
+      "special": "Grants Glow"
+    },
+    {
+      "name": "Thunder Punch",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Thunder Punch Paralyzes the target on 19+."
     },
     {
       "name": "Ingrain",
@@ -82,28 +109,6 @@
       "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
     },
     {
-      "name": "Thunder Shock",
-      "type": "Electric",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
-    },
-    {
-      "name": "Spark",
-      "type": "Electric",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Spark Paralyzes the target on 15+."
-    },
-    {
       "name": "Shock Wave",
       "type": "Electric",
       "category": "Special",
@@ -111,19 +116,26 @@
       "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "range": "6, 1 Target",
-      "effect": "Shock Wave cannot miss."
+      "effect": "Shock Wave cannot miss.",
+      "special": "Grants Zapper"
     }
   ],
   "abilities": [
     {
       "name": "Beast Boost",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user’s Damaging Attack causes an",
       "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
     },
     {
       "name": "Illuminate",
       "frequency": "Static",
       "effect": "Attacks that target the user have a -2 Accuracy Penalty against the user. Does not affect attackers with the Blindsense Capability. Defensive."
+    },
+    {
+      "name": "Type Aura",
+      "frequency": "Static",
+      "effect": "The user and all allies within 3 meters gain a +5 Bonus to Damage Rolls with Moves matching the user’s Primary Type."
     }
   ],
   "capabilities": {

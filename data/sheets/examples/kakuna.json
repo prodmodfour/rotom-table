@@ -2,7 +2,7 @@
   "slug": "examples-kakuna",
   "nickname": "Kakuna",
   "species": "Kakuna",
-  "level": 20,
+  "level": 5,
   "gender": "Female",
   "shiny": false,
   "nature": "Careful",
@@ -13,70 +13,56 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 8,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 39,
+    "currentHp": 39,
+    "tick": 3,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 1,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 2,
     "spent": 0
   },
-  "movelist": [
-    {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
-    }
-  ],
+  "movelist": [],
   "abilities": [
     {
       "name": "Shed Skin",
       "frequency": "Scene – Swift Action",
       "effect": "The user is cured of one of Paralysis, Freezing, Burns, Poison, or Sleep."
-    },
-    {
-      "name": "Battle Armor",
-      "frequency": "Static",
-      "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
     }
   ],
   "natureMod": {

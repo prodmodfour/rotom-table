@@ -2,7 +2,7 @@
   "slug": "examples-conkeldurr",
   "nickname": "Conkeldurr",
   "species": "Conkeldurr",
-  "level": 20,
+  "level": 45,
   "gender": "Female",
   "shiny": false,
   "nature": "Skittish",
@@ -12,97 +12,111 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 15,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 115,
+    "currentHp": 115,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bide",
-      "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
-    },
-    {
-      "name": "Low Kick",
+      "name": "Hammer Arm",
       "type": "Fighting",
       "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Weight Class",
-      "effect": "Low Kick’s Damage Base is equal to twice the target’s Weight Class."
-    },
-    {
-      "name": "Wake-Up Slap",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
+      "ac": 3,
       "range": "Melee, 1 Target",
-      "effect": "If the target is Asleep, Wake-Up Slap has a Damage Base of 10 (3d8+10 / 24) instead, and cures the target of Sleep."
+      "effect": "The user lowers their Speed 1 Combat Stage."
     },
     {
-      "name": "Focus Energy",
+      "name": "Scary Face",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
     },
     {
-      "name": "Rock Throw",
+      "name": "Dynamic Punch",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "At-Will",
+      "ac": 9,
+      "range": "Melee, 1 Target",
+      "effect": "Dynamic Punch Confuses the target. Dynamic Punch ignores the target’s Evasion if they are Flanked."
+    },
+    {
+      "name": "Rock Slide",
       "type": "Rock",
       "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "Scene x2",
       "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "None"
+      "range": "6, Ranged Blast 3",
+      "effect": "Rock Slide Flinches all Legal Targets on 17+."
+    },
+    {
+      "name": "Bulk Up",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Chip Away",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage."
     }
   ],
   "abilities": [
@@ -115,6 +129,11 @@
       "name": "Hustle",
       "frequency": "Static",
       "effect": "The user receives a -2 penalty to all Accuracy Rolls and gains a +10 Bonus to All Damage Rolls."
+    },
+    {
+      "name": "Iron Fist",
+      "frequency": "Static",
+      "effect": "The user increases the Damage Base of the following Moves by +2; Bullet Punch, Comet Punch, Dizzy Punch, Drain Punch, Dynamic Punch, Fire Punch, Meteor Mash, Shadow Punch, Ice Punch, Mach Punch, Mega Punch, Sky Uppercut, Thunder Punch, Focus Punch, Hammer Arm, and Power-Up Punch."
     }
   ],
   "natureMod": {

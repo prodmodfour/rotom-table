@@ -2,7 +2,7 @@
   "slug": "examples-torterra",
   "nickname": "Torterra",
   "species": "Torterra",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Cuddly",
@@ -13,61 +13,101 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 113,
+    "currentHp": 113,
+    "tick": 11,
     "evasion": {
       "vsAtk": 4,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Razor Leaf",
+      "name": "Synthesis",
       "type": "Grass",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value instead. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value instead."
+    },
+    {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
       "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
+    {
+      "name": "Earthquake",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 3, Groundsource",
+      "effect": "Earthquake can hit targets that are underground, including those using the Move Dig.",
+      "special": "Grants Groundshaper"
+    },
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
     },
     {
       "name": "Curse",
@@ -76,25 +116,6 @@
       "frequency": "See Text",
       "range": "Self",
       "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
-    },
-    {
-      "name": "Withdraw",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
-    },
-    {
-      "name": "Absorb",
-      "type": "Grass",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     }
   ],
   "abilities": [
@@ -107,6 +128,11 @@
       "name": "Sturdy",
       "frequency": "Static",
       "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    },
+    {
+      "name": "Natural Cure",
+      "frequency": "Scene – Free Action",
+      "effect": "Whenever the user is returned to its Poké Ball or Takes A Breather, it may activate Natural Cure to cure itself of all Persistent Status Afflictions."
     }
   ],
   "natureMod": {

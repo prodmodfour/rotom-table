@@ -2,7 +2,7 @@
   "slug": "examples-dragonair",
   "nickname": "Dragonair",
   "species": "Dragonair",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Sassy",
@@ -12,59 +12,80 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 3,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Thunder Wave",
-      "type": "Electric",
+      "name": "Dragon Tail",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Push",
+      "effect": "The target is Pushed 6 meters minus their Weight Class. On a roll of 15+, the target is also Tripped."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
     },
     {
       "name": "Dragon Rage",
@@ -85,6 +106,15 @@
       "ac": 2,
       "range": "6, Ranged Blast 3",
       "effect": "Small or Medium targets in the central square of the blast are not hit. Twister Flinches the target on 18-20 during Accuracy Check. Any Pokémon Airborne as a result of Fly or Sky Drop above the Blast are hit, ignoring range, and Twister has a Damage Base of 8 against those targets instead."
+    },
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
     }
   ],
   "abilities": [

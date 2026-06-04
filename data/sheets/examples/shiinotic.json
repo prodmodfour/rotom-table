@@ -2,7 +2,7 @@
   "slug": "examples-shiinotic",
   "nickname": "Shiinotic",
   "species": "Shiinotic",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Patient",
@@ -13,51 +13,59 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 10,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 6,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 74,
+    "currentHp": 74,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
-      "vsAny": 1
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Ingrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
+    },
     {
       "name": "Sleep Powder",
       "type": "Grass",
@@ -66,14 +74,6 @@
       "ac": 6,
       "range": "4, 1 Target, Powder",
       "effect": "The target falls asleep."
-    },
-    {
-      "name": "Moonlight",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
     },
     {
       "name": "Mega Drain",
@@ -87,13 +87,22 @@
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
+      "name": "Moonlight",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
+    },
+    {
       "name": "Flash",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
       "ac": 2,
       "range": "Cone 2",
-      "effect": "The Accuracy of all Legal Targets is lowered by -1."
+      "effect": "The Accuracy of all Legal Targets is lowered by -1.",
+      "special": "Grants Glow"
     },
     {
       "name": "Astonish",
@@ -116,6 +125,7 @@
     {
       "name": "Effect Spore",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "Roll 1d6. On a result of 1 or 2, the attacker is Poisoned. On a result of 3 or 4, the attacker is Paralyzed. On a result of 5 or 6, the attacker falls Asleep."
     }
   ],

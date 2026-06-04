@@ -2,7 +2,7 @@
   "slug": "examples-totodile",
   "nickname": "Totodile",
   "species": "Totodile",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Gentle",
@@ -12,39 +12,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
@@ -53,43 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Ice Fang",
-      "type": "Ice",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "Ice Fang Freezes or Flinches on 18+ during Accuracy Check; flip a coin to determine whether the foe gets Frozen or Flinches. On 20 during Accuracy Check, the foe is Frozen and Flinches."
-    },
     {
       "name": "Rage",
       "type": "Normal",
@@ -100,6 +67,18 @@
       "ac": 2,
       "range": "Melee, 1 Target, Spirit Surge",
       "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
       "name": "Scratch",
@@ -113,13 +92,13 @@
       "effect": "None"
     },
     {
-      "name": "Scary Face",
+      "name": "Leer",
       "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -127,11 +106,6 @@
       "name": "Hyper Cutter",
       "frequency": "Static",
       "effect": "The user’s Attack Stat may not be lowered, and its Attack Combat Stages may not be lowered. Defensive."
-    },
-    {
-      "name": "Frisk",
-      "frequency": "Static",
-      "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
     }
   ],
   "natureMod": {

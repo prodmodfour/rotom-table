@@ -2,7 +2,7 @@
   "slug": "examples-palafin-zero",
   "nickname": "Palafin Zero",
   "species": "Palafin Zero",
-  "level": 20,
+  "level": 43,
   "gender": "Male",
   "shiny": false,
   "nature": "Curious",
@@ -12,80 +12,88 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 12,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 110,
+    "currentHp": 110,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 1,
-      "vsAny": 3
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Supersonic",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+      "name": "Flip Turn",
+      "type": "Water",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "If Flip Turn successfully hits its target, the user deals damage and then immediately is returned to its Poké Ball in the same turn. A New Pokémon may immediately be sent out. Using Flip Turn lets a Trapped user be recalled."
     },
     {
-      "name": "Water Gun",
+      "name": "Charm",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
+    },
+    {
+      "name": "Chilling Water",
       "type": "Water",
-      "category": "Special",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target"
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
+      "category": "Physical",
       "db": 6,
       "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
+      "range": "Melee, 1 Target, Priority",
       "effect": "None"
     },
     {
@@ -97,20 +105,12 @@
       "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
     },
     {
-      "name": "Jet Punch",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target"
-    },
-    {
-      "name": "Work Up",
+      "name": "Helping Hand",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
     }
   ],
   "abilities": [
@@ -122,7 +122,13 @@
     {
       "name": "Friend Guard",
       "frequency": "Scene – Free Action",
+      "trigger": "An adjacent Ally takes Damage",
       "effect": "The damage is resisted one step further. Defensive."
+    },
+    {
+      "name": "Hydration",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user is cured of one Status Affliction. Hydration’s Frequency is ignored if used during Rainy Weather."
     }
   ],
   "natureMod": {

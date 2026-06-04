@@ -2,7 +2,7 @@
   "slug": "examples-cinderace",
   "nickname": "Cinderace",
   "species": "Cinderace",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Skittish",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
@@ -37,26 +37,64 @@
     },
     "spd": {
       "base": 1,
-      "added": 4,
+      "added": 13,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 89,
+    "currentHp": 89,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 3,
-      "vsAny": 3
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Counter",
+      "type": "Fighting",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "range": "Melee, 1 Target, Reaction, Trigger",
+      "effect": "Counter may be used as a Reaction when the user is hit by a damaging Physical Attack. Resolve the Triggering Attack, with Counter’s user resisting the attack one step further. After the attack is resolved, if Counter’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Counter is Physical, and while it cannot miss, it cannot hit targets immune to Fighting-Type Moves."
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Flame Charge",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Raise the user’s Speed 1 Combat Stage."
+    },
     {
       "name": "Double Kick",
       "type": "Fighting",
@@ -69,17 +107,6 @@
       "effect": "None"
     },
     {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
       "name": "Quick Attack",
       "type": "Normal",
       "category": "Physical",
@@ -89,17 +116,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
-    },
-    {
-      "name": "Flame Charge",
-      "type": "Fire",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Raise the user’s Speed 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -112,6 +128,12 @@
       "name": "Tangled Feet",
       "frequency": "Static",
       "effect": "While Confused or Slowed, the user gains +3 Evasion. The user is immune to the Vulnerable Condition."
+    },
+    {
+      "name": "Protean",
+      "frequency": "At-Will – Swift Action",
+      "trigger": "The user uses a Move",
+      "effect": "The user’s Type changes to match the Type of the triggering Move. This Ability resolves before the Move is resolved (And thus you may apply STAB, and trigger other Features and Abilities appropriately)."
     }
   ],
   "natureMod": {

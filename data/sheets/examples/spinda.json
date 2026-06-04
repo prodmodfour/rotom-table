@@ -2,7 +2,7 @@
   "slug": "examples-spinda",
   "nickname": "Spinda",
   "species": "Spinda",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Bashful",
@@ -12,71 +12,61 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 1,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Feint Attack",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
-    },
-    {
-      "name": "Tackle",
+      "name": "Dizzy Punch",
       "type": "Normal",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "Melee, 1 Target",
+      "effect": "Dizzy Punch Confuses the target on 17+"
     },
     {
       "name": "Hypnosis",
@@ -99,12 +89,33 @@
       "effect": "Psybeam Confuses the target on 19+."
     },
     {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
+    {
       "name": "Copycat",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene x2",
       "range": "4, 1 Target",
       "effect": "Use the Move the target has used on their last turn. You may choose new targets for the Move. Copycat cannot miss."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [

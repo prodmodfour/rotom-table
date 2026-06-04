@@ -2,7 +2,7 @@
   "slug": "examples-lickilicky",
   "nickname": "Lickilicky",
   "species": "Lickilicky",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Impish",
@@ -12,51 +12,77 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
+    "maxHp": 89,
+    "currentHp": 89,
     "tick": 8,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 4,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
+      "name": "Stomp",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+    },
+    {
+      "name": "Wrap",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
     {
       "name": "Knock Off",
       "type": "Dark",
@@ -77,13 +103,6 @@
       "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
     },
     {
-      "name": "Wrap",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
-    },
-    {
       "name": "Supersonic",
       "type": "Normal",
       "category": "Status",
@@ -97,11 +116,13 @@
     {
       "name": "Tonguelash",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "The user hits a target with Lick",
       "effect": "Connection – Lick. Lick automatically Paralyzes and Flinches its target."
     },
     {
       "name": "Tingle",
       "frequency": "At-Will - Free Action",
+      "trigger": "The user hits an adjacent target foe with a 1-Target",
       "effect": "The target loses a Tick of Hit Points and takes a -5 penalty to Damage Rolls for 1 full round."
     }
   ],

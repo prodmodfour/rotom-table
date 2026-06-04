@@ -2,7 +2,7 @@
   "slug": "examples-snom",
   "nickname": "Snom",
   "species": "Snom",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Serious",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 10,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -43,18 +43,18 @@
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 38,
+    "currentHp": 38,
+    "tick": 3,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 1,
       "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -78,7 +78,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+      "effect": "Powder Snow Freezes all Legal Targets on 19+.",
+      "special": "Grants Freezer"
     }
   ],
   "abilities": [
@@ -86,11 +87,6 @@
       "name": "Ice Shield",
       "frequency": "Scene – Standard Action, Interrupt",
       "effect": "The user places up to 3 segments of Ice Wall; each segment must be continuous with another segment, and at least one must be adjacent to the user. These Ice Walls count as Blocking Terrain and last until the end of the encounter or until they are destroyed. Each Ice Wall segment is 2 meters tall, 1 meter wide, and 2 centimeters thick. Each segment has 10 Hit Points, 5 Damage Reduction, and takes damage as if it was Ice- Type."
-    },
-    {
-      "name": "Shield Dust",
-      "frequency": "Static",
-      "effect": "The user ignores the secondary effects that trigger during Accuracy Roll of damaging Moves that target the user. For example, Flamethrower can never inflict the Burn Condition. Defensive."
     }
   ],
   "capabilities": {

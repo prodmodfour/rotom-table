@@ -2,7 +2,7 @@
   "slug": "examples-garbodor",
   "nickname": "Garbodor",
   "species": "Garbodor",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Calm",
@@ -12,111 +12,126 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 101,
+    "currentHp": 101,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Double Slap",
+      "name": "Toxic",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "4, 1 Target",
+      "effect": "The target is Badly Poisoned. If the user is Poison Type, Toxic cannot miss."
+    },
+    {
+      "name": "Clear Smog",
+      "type": "Poison",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "range": "6, 1 Target",
+      "effect": "The target’s Combat Stages are reset to their default, and all Coats on the target are destroyed. Clear Smog cannot miss."
+    },
+    {
+      "name": "Sludge Bomb",
+      "type": "Poison",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "Sludge Bomb Poisons the target on 15+."
+    },
+    {
+      "name": "Body Slam",
       "type": "Normal",
       "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Toxic Spikes",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "6, Hazard",
-      "effect": "Set 8 square meters of Toxic Spikes, all 8 meters must be adjacent with at least one other space of Toxic Spikes next to each other. Toxic Spikes cause Terrain to become Slow Terrain, and a grounded foe that runs into the hazard becomes Poisoned, and Slowed until the end of their next turn. If there are 2 Layers of Toxic Spikes on the same space, it Deadly Poisons the foes instead. Poison-Type Pokémon may move over Toxic Spikes harmlessly, destroying the Hazards as they do so."
-    },
-    {
-      "name": "Acid Spray",
-      "type": "Poison",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Acid Spray lowers the target’s Special Defense 2 Combat Stages."
-    },
-    {
-      "name": "Sludge",
-      "type": "Poison",
-      "category": "Special",
       "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "EOT",
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Sludge Poisons the target on 15+."
+      "range": "Melee, 1 Target",
+      "effect": "Body Slam Paralyzes the target on 15+."
     },
     {
-      "name": "Recycle",
+      "name": "Swallow",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
+      "frequency": "Daily x2",
       "range": "Self",
-      "effect": "The effect of a consumable item used earlier in the encounter is used again as if it had not been destroyed. The item is still gone."
+      "effect": "If the user’s Stockpiled count is 1, they are healed 25% of their full Hit Point value; if their Stockpiled count is 2, they are healed half of their full Hit Point value; if their Stockpiled count is 3, they are healed back to full Hit Points. After using Swallow, the user’s Stockpiled count is set to 0. If the user has no Stockpiled count, Swallow does nothing."
+    },
+    {
+      "name": "Stockpile",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
     }
   ],
   "abilities": [
     {
       "name": "Absorb Force",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is damaged by a Physical Attack",
       "effect": "The user takes damage as if the attack was resisted one step further."
     },
     {
       "name": "Weird Power",
       "frequency": "Static",
       "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
+    },
+    {
+      "name": "Aftermath",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user becomes Fainted",
+      "effect": "The user creates a Burst 1. Everything in the Burst loses three Ticks of Hit Points."
     }
   ],
   "natureMod": {

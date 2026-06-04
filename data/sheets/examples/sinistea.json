@@ -2,7 +2,7 @@
   "slug": "examples-sinistea",
   "nickname": "Sinistea",
   "species": "Sinistea",
-  "level": 20,
+  "level": 10,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Curious",
@@ -17,46 +17,54 @@
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 45,
-    "currentHp": 45,
-    "tick": 4,
+    "maxHp": 35,
+    "currentHp": 35,
+    "tick": 3,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 1,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Aromatic Mist",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 1",
+      "effect": "All allies in Aromatic Mist’s area of effect have their Special Defense raised 1 Combat Stage."
+    },
     {
       "name": "Withdraw",
       "type": "Water",
@@ -75,45 +83,14 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
-    },
-    {
-      "name": "Mega Drain",
-      "type": "Grass",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Protect",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
-    },
-    {
-      "name": "Aromatic Mist",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "All allies in Aromatic Mist’s area of effect have their Special Defense raised 1 Combat Stage."
     }
   ],
   "abilities": [
     {
       "name": "Cursed Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Damaging Move.",
       "effect": "The Move becomes Disabled."
-    },
-    {
-      "name": "Weak Armor",
-      "frequency": "At-Will – Free Action",
-      "effect": "The user may lower its Defense by 1 Combat Stage, and gain +1 Speed Combat Stage. This is done after the triggering damage is resolved."
     }
   ],
   "natureMod": {

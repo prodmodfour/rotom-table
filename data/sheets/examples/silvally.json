@@ -2,7 +2,7 @@
   "slug": "examples-silvally",
   "nickname": "Silvally",
   "species": "Silvally",
-  "level": 20,
+  "level": 35,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Calm",
@@ -12,72 +12,91 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 99,
+    "currentHp": 99,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Pursuit",
-      "type": "Dark",
+      "name": "X-Scissor",
+      "type": "Bug",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+      "range": "Melee, 1 Target, Dash",
+      "effect": "None"
     },
     {
-      "name": "Rage",
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
+    {
+      "name": "Crush Claw",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Crush Claw lowers the target’s Defense 1 Combat Stage on Even-Numbered Rolls."
+    },
+    {
+      "name": "Aerial Ace",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Aerial Ace cannot miss."
     },
     {
       "name": "Bite",
@@ -91,20 +110,23 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Aerial Ace",
-      "type": "Flying",
+      "name": "Pursuit",
+      "type": "Dark",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Aerial Ace cannot miss."
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     }
   ],
   "abilities": [
     {
       "name": "RKS System",
-      "effect": "The Field becomes Weird, as if affected by the Move Psychic Terrain, for one full round."
+      "frequency": "Scene – Free Action",
+      "effect": "If the user is hit by a damaging attack, they may calculate damage as if they were Normal-Type instead. If they were already Normal-Type, they instead resist the damage one step further.",
+      "bonus": "The user’s Type changes to match the Type of their held Memory Disc."
     },
     {
       "name": "Adaptability",

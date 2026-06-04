@@ -2,7 +2,7 @@
   "slug": "examples-solgaleo",
   "nickname": "Solgaleo",
   "species": "Solgaleo",
-  "level": 20,
+  "level": 55,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Naughty",
@@ -13,51 +13,99 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 13,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 15,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 90,
-    "currentHp": 90,
-    "tick": 9,
+    "maxHp": 146,
+    "currentHp": 146,
+    "tick": 14,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 12,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Solar Beam",
+      "type": "Grass",
+      "category": "Special",
+      "db": 12,
+      "damageRoll": "3d12+10 / 30",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Line 6, 1 Target, Set-Up"
+    },
+    {
+      "name": "Metal Burst",
+      "type": "Steel",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1",
+      "effect": "Metal Burst causes all targets in the burst to lose Hit Points equal to the total amount of direct Damage the user has taken since the beginning of this Round. Metal Burst cannot miss."
+    },
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Morning Sun",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
+    },
+    {
+      "name": "Flash Cannon",
+      "type": "Steel",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Flash Cannon lowers the target’s Special Defense by 1 Combat Stage on 17+."
+    },
     {
       "name": "Zen Headbutt",
       "type": "Psychic",
@@ -68,37 +116,6 @@
       "ac": 4,
       "range": "Melee, 1 Target, Dash",
       "effect": "Zen Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Metal Claw",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Iron Head",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Iron Head Flinches the target on 15+."
-    },
-    {
-      "name": "Metal Sound",
-      "type": "Steel",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -111,6 +128,11 @@
       "name": "Illuminate",
       "frequency": "Static",
       "effect": "Attacks that target the user have a -2 Accuracy Penalty against the user. Does not affect attackers with the Blindsense Capability. Defensive."
+    },
+    {
+      "name": "Bulletproof",
+      "frequency": "Static",
+      "effect": "The user resists all X target ranged attacks one step further. This refers to attacks and Moves that simply hit one target or specify hitting multiple targets, such as Razor Wind hitting three targets. It has no effect on Moves that are capable of hitting multiple targets through areas of effect, such as Bursts or Cones. Defensive."
     }
   ],
   "natureMod": {

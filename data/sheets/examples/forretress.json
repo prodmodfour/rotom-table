@@ -2,7 +2,7 @@
   "slug": "examples-forretress",
   "nickname": "Forretress",
   "species": "Forretress",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Naughty",
@@ -13,51 +13,95 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 93,
+    "currentHp": 93,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 5,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Autotomize",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "For the remainder of the Encounter, the user’s Weight Class is one value lower, to a minimum of 1. If the user can, the user’s Speed is raised by +2 Combat Stages."
+    },
+    {
+      "name": "Mirror Shot",
+      "type": "Steel",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, Ranged Blast 2",
+      "effect": "All Legal Targets have their Accuracy lowered by -2 on 16+."
+    },
+    {
+      "name": "Spikes",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Spikes within your range, all 8 meters must be adjacent with at least one other space of Spikes. Spikes cause terrain to count as Slow Terrain, and a grounded foe that runs into the hazards will lose a Tick of Hit Points and become Slowed until the end of their next turn."
+    },
+    {
+      "name": "Natural Gift",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "6, 1 Target, Berry",
+      "effect": "Refer to the Move Keywords Berry list. Natural Gift deals damage according to the Berry list and Natural Gift’s Type is also defined there. The Berry’s Digestion Buff is nullified and is not used."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+    },
     {
       "name": "Rapid Spin",
       "type": "Normal",
@@ -68,47 +112,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Spirit Surge",
       "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
-    },
-    {
-      "name": "Self-Destruct",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 20,
-      "damageRoll": "6d12+35 / 75",
-      "frequency": "Daily",
-      "ac": 2,
-      "range": "Burst 3",
-      "effect": "The user’s Hit Points are set to -50% of their full Hit Point value. This Hit Point loss may not be prevented or reduced in any way. The user’s loyalty toward its trainer may be lowered."
-    },
-    {
-      "name": "Bug Bite",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
-    },
-    {
-      "name": "Take Down",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10 / 21",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Dash, Recoil 1/3",
-      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
-    },
-    {
-      "name": "Bide",
-      "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
     }
   ],
   "abilities": [

@@ -2,7 +2,7 @@
   "slug": "examples-froakie",
   "nickname": "Froakie",
   "species": "Froakie",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Composed",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
@@ -32,70 +32,31 @@
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Smokescreen",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "5, Ranged Blast 3",
-      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
-    },
-    {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
     {
       "name": "Lick",
       "type": "Ghost",
@@ -108,6 +69,17 @@
       "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
     },
     {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
       "name": "Bubble",
       "type": "Water",
       "category": "Special",
@@ -117,6 +89,26 @@
       "ac": 2,
       "range": "Burst 1",
       "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
     }
   ],
   "abilities": [
@@ -124,11 +116,6 @@
       "name": "Torrent",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Water."
-    },
-    {
-      "name": "Mud Dweller",
-      "frequency": "Static",
-      "effect": "The user resists Ground-Type and Water-Type attacks one step further."
     }
   ],
   "capabilities": {

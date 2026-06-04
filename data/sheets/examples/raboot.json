@@ -17,12 +17,12 @@
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "satk": {
@@ -46,7 +46,7 @@
     "currentHp": 66,
     "tick": 6,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 3
     },
@@ -57,17 +57,6 @@
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
     {
       "name": "Flame Charge",
       "type": "Fire",
@@ -80,17 +69,6 @@
       "effect": "Raise the user’s Speed 1 Combat Stage."
     },
     {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
       "name": "Double Kick",
       "type": "Fighting",
       "category": "Physical",
@@ -100,6 +78,29 @@
       "ac": 3,
       "range": "Melee, 1 Target, Double Strike",
       "effect": "None"
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     }
   ],
   "abilities": [

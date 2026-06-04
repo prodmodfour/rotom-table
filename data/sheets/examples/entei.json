@@ -2,7 +2,7 @@
   "slug": "examples-entei",
   "nickname": "Entei",
   "species": "Entei",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Lax",
@@ -12,59 +12,104 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 12,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 90,
-    "currentHp": 90,
-    "tick": 9,
+    "maxHp": 132,
+    "currentHp": 132,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Leer",
+      "name": "Fire Fang",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
+    },
+    {
+      "name": "Swagger",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Flamethrower",
+      "type": "Fire",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "4, 1 Target",
+      "effect": "Flamethrower Burns the target on 19+."
+    },
+    {
+      "name": "Stomp",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+    },
+    {
+      "name": "Fire Spin",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "3, 1 Target",
+      "effect": "The target is put in a Vortex.",
+      "special": "Grants Firestarter"
     },
     {
       "name": "Roar",
@@ -74,28 +119,6 @@
       "ac": 2,
       "range": "Burst 1, Sonic, Social",
       "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
-    },
-    {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [
@@ -108,6 +131,11 @@
       "name": "Pressure",
       "frequency": "Scene - Swift Action",
       "effect": "All foes within 3 meters are Suppressed for 1 full round."
+    },
+    {
+      "name": "Speed Boost",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Speed is raised 1 Combat Stage at the end of each of its turns. Speed Boost has no effect while out of combat."
     }
   ],
   "natureMod": {

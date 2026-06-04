@@ -2,7 +2,7 @@
   "slug": "examples-zapdos-galar",
   "nickname": "Zapdos Galar",
   "species": "Zapdos Galar",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Decisive",
@@ -13,61 +13,99 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 107,
+    "currentHp": 107,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Peck",
+      "name": "Quick Guard",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Melee, Interrupt, Shield, Trigger",
+      "effect": "If the user or an adjacent ally is targeted by a Priority or Interrupt Attack, Quick Guard may be declared as an Interrupt, causing the triggering attack to have no effect."
+    },
+    {
+      "name": "Drill Peck",
       "type": "Flying",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "None"
+    },
+    {
+      "name": "Brick Break",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "None"
+      "effect": "Light Screen and Reflect may not be activated in response to Brick Break."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
     },
     {
       "name": "Pluck",
@@ -79,41 +117,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Pluck takes the target’s Held Item or Accessory Slot Item and attaches it to Pluck’s user, if the user is not holding anything."
-    },
-    {
-      "name": "Focus Energy",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
-    },
-    {
-      "name": "Agility",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Speed 2 Combat Stages."
-    },
-    {
-      "name": "Reflect",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
-    },
-    {
-      "name": "Rock Smash",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
     }
   ],
   "abilities": [
@@ -126,6 +129,13 @@
       "name": "Scrappy",
       "frequency": "Static",
       "effect": "Ghost Types are not immune to the user’s Normal and Fighting-Type Moves."
+    },
+    {
+      "name": "Stalwart",
+      "frequency": "Scene – Free Action, Reaction",
+      "trigger": "The user receives Massive Damage",
+      "effect": "The user’s Attack, Special Attack, Defense, and Special Defense all increase by 1 CS.",
+      "bonus": "The user may not be Intercepted, nor may any Abilities, Moves, or Features be activated to change the user’s target. Any of those existing effects (such as Follow Me) fail."
     }
   ],
   "natureMod": {

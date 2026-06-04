@@ -2,7 +2,7 @@
   "slug": "examples-ho-oh",
   "nickname": "Ho-Oh",
   "species": "Ho-Oh",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Docile",
@@ -13,92 +13,113 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 16,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
-    "tick": 8,
+    "maxHp": 136,
+    "currentHp": 136,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 6,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Weather Ball",
-      "type": "Normal",
-      "category": "Special",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "If it is Sunny, Weather Ball is Fire-Type. If it is Rainy, Weather Ball is Water-Type. If it is Hailing, Weather Ball is Ice-Type. If it is Sandstorming, Weather Ball is Rock-Type. When a weather effect is on the field, Weather Ball has a Damage Base of 10 (3d8+10 / 24). If there are multiple Weather Effects on the field, choose one type for Weather Ball to be that corresponds with an existing Weather Effect."
-    },
-    {
-      "name": "Whirlwind",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "Line 6",
-      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
-    },
-    {
-      "name": "Gust",
-      "type": "Flying",
+      "name": "Ancient Power",
+      "type": "Rock",
       "category": "Special",
       "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     },
     {
-      "name": "Brave Bird",
-      "type": "Flying",
+      "name": "Punishment",
+      "type": "Dark",
       "category": "Physical",
-      "db": 14,
-      "damageRoll": "4d10+15",
-      "frequency": "Scene x2",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, Dash, Push, Recoil 1/3",
-      "effect": "The target is pushed back 2 meters."
+      "range": "Melee, 1 Target",
+      "effect": "Punishment’s Damage Base is raised by +1 for each positive Combat Stage the target has, to a maximum of DB 12."
+    },
+    {
+      "name": "Sacred Fire",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target",
+      "effect": "Sacred Fire Burns the target on Even-Numbered Rolls."
+    },
+    {
+      "name": "Fire Blast",
+      "type": "Fire",
+      "category": "Special",
+      "db": 13,
+      "damageRoll": "4d10+10",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target, Smite",
+      "effect": "Fire Blast burns the target on 19+."
+    },
+    {
+      "name": "Sunny Day",
+      "type": "Fire",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather becomes Sunny for 5 rounds. While Sunny, Fire-Type Attacks gain a +5 bonus to Damage Rolls, and Water-Type Attacks suffer a -5 Damage penalty."
+    },
+    {
+      "name": "Extrasensory",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "5, 1 Target",
+      "effect": "Extrasensory Flinches the target on 19+."
     }
   ],
   "abilities": [
@@ -110,7 +131,13 @@
     {
       "name": "Regenerator",
       "frequency": "Daily x2 – Free Action",
+      "trigger": "The user is recalled into a Poké Ball, or Takes",
       "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
+    },
+    {
+      "name": "Life Force",
+      "frequency": "Daily x5 – Swift Action",
+      "effect": "The user gains a Tick of Hit Points."
     }
   ],
   "capabilities": {

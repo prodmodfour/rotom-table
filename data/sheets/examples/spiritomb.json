@@ -2,7 +2,7 @@
   "slug": "examples-spiritomb",
   "nickname": "Spiritomb",
   "species": "Spiritomb",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Composed",
@@ -13,38 +13,38 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
+    "maxHp": 62,
+    "currentHp": 62,
     "tick": 6,
     "evasion": {
       "vsAtk": 3,
@@ -54,10 +54,32 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Ominous Wind",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Dream Eater",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10 / 24",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Dream Eater can only target Sleeping Pokémon or Trainers. After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target. Dream Eater does not wake up sleeping targets."
+    },
     {
       "name": "Hypnosis",
       "type": "Psychic",
@@ -66,6 +88,16 @@
       "ac": 6,
       "range": "4, 1 Target",
       "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
     },
     {
       "name": "Shadow Sneak",
@@ -79,15 +111,6 @@
       "effect": "None."
     },
     {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
-    },
-    {
       "name": "Pursuit",
       "type": "Dark",
       "category": "Physical",
@@ -97,24 +120,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
-    },
-    {
-      "name": "Curse",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "See Text",
-      "range": "Self",
-      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
-    },
-    {
-      "name": "Feint Attack",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
     }
   ],
   "abilities": [

@@ -2,7 +2,7 @@
   "slug": "examples-crawdaunt",
   "nickname": "Crawdaunt",
   "species": "Crawdaunt",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -13,89 +13,93 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 11,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
-      "vsAny": 1
+      "vsSatk": 2,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bubble Beam",
+      "name": "Razor Shell",
       "type": "Water",
-      "category": "Special",
+      "category": "Physical",
       "db": 10,
       "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Razor Shell lowers the Target’s Defense 1 Combat Stage on an Even-Numbered Roll."
     },
     {
-      "name": "Vice Grip",
+      "name": "Swift",
       "type": "Normal",
-      "category": "Physical",
+      "category": "Special",
       "db": 6,
       "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
+    {
+      "name": "Night Slash",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Night Slash is a Critical Hit on 18+"
+    },
+    {
+      "name": "Knock Off",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Protect",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     },
     {
       "name": "Double Hit",
@@ -109,12 +113,12 @@
       "effect": "None"
     },
     {
-      "name": "Harden",
+      "name": "Protect",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
     }
   ],
   "abilities": [

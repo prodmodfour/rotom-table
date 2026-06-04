@@ -2,7 +2,7 @@
   "slug": "examples-regieleki",
   "nickname": "Regieleki",
   "species": "Regieleki",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Timid",
@@ -12,51 +12,82 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 8,
+      "added": 19,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 95,
+    "currentHp": 95,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 6
+      "vsAtk": 1,
+      "vsSatk": 1,
+      "vsAny": 8
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Thunder Cage",
+      "type": "Electric",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "8, Ranged Blast 2, Spirit Surge",
+      "effect": "The targets are trapped in a Vortex. The DC to escape the Vortex is increased by 3."
+    },
+    {
+      "name": "Extreme Speed",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
     {
       "name": "Shock Wave",
       "type": "Electric",
@@ -65,18 +96,8 @@
       "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "range": "6, 1 Target",
-      "effect": "Shock Wave cannot miss."
-    },
-    {
-      "name": "Thunder Shock",
-      "type": "Electric",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
+      "effect": "Shock Wave cannot miss.",
+      "special": "Grants Zapper"
     },
     {
       "name": "Ancient Power",
@@ -99,27 +120,25 @@
       "ac": 3,
       "range": "4, Ranged Blast 2",
       "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
-    },
-    {
-      "name": "Rapid Spin",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
     }
   ],
   "abilities": [
     {
-      "name": "Transistor"
+      "name": "Transistor",
+      "frequency": "Scene x2 – Free Action",
+      "trigger": "The user hits with a damaging Electric-Type Move",
+      "effect": "One target hit by the attack becomes one stage more vulnerable to the attack (applied after all other modifiers). Immune targets are treated as initially double-resistant for the purposes of this Ability, and may be damaged normally."
     },
     {
       "name": "Absorb Force",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is damaged by a Physical Attack",
       "effect": "The user takes damage as if the attack was resisted one step further."
+    },
+    {
+      "name": "Unaware",
+      "frequency": "Static",
+      "effect": "Whenever the user attacks, they ignore all positive Combat Stages to the target’s Defense, Special Defense, and Speed."
     }
   ],
   "natureMod": {

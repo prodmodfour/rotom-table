@@ -2,7 +2,7 @@
   "slug": "examples-chansey",
   "nickname": "Chansey",
   "species": "Chansey",
-  "level": 20,
+  "level": 15,
   "gender": "Female",
   "shiny": false,
   "nature": "Proud",
@@ -12,85 +12,51 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 9,
+      "added": 14,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 0,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 6,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 135,
-    "currentHp": 135,
-    "tick": 13,
+    "maxHp": 145,
+    "currentHp": 145,
+    "tick": 14,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 0,
       "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 4,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Tail Whip",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Soft-Boiled",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Melee, 1 Target",
-      "effect": "The target regains Hit Points equal to half of its full Hit Points. The user may target themselves with Soft-Boiled."
-    },
-    {
-      "name": "Bestow",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": "--",
-      "range": "Melee, 1 Target",
-      "effect": "The user gives its held item to the target, unless the target is already holding an item. Using Bestow is a Swift Action."
-    },
-    {
-      "name": "Refresh",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self",
-      "effect": "The user is cured of all Poison, Burns, and Paralysis."
-    },
     {
       "name": "Double Slap",
       "type": "Normal",
@@ -101,6 +67,23 @@
       "ac": 4,
       "range": "Melee, 1 Target, Five Strike",
       "effect": "None"
+    },
+    {
+      "name": "Refresh",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "The user is cured of all Poison, Burns, and Paralysis."
+    },
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -108,11 +91,6 @@
       "name": "Serene Grace",
       "frequency": "Static",
       "effect": "The user’s Effect Range is increased by +2."
-    },
-    {
-      "name": "Natural Cure",
-      "frequency": "Scene – Free Action",
-      "effect": "Whenever the user is returned to its Poké Ball or Takes A Breather, it may activate Natural Cure to cure itself of all Persistent Status Afflictions."
     }
   ],
   "natureMod": {

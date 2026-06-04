@@ -2,7 +2,7 @@
   "slug": "examples-thundurus-incarnate-forme",
   "nickname": "Thundurus Incarnate Forme",
   "species": "Thundurus Incarnate Forme",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Cuddly",
@@ -13,51 +13,79 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 101,
+    "currentHp": 101,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Heal Block",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
+    },
+    {
+      "name": "Shock Wave",
+      "type": "Electric",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "range": "6, 1 Target",
+      "effect": "Shock Wave cannot miss.",
+      "special": "Grants Zapper"
+    },
     {
       "name": "Revenge",
       "type": "Fighting",
@@ -68,26 +96,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority (Limited)",
       "effect": "When declaring Revenge, the user does nothing and may not Shift. At the end of the round, the user may shift and use Revenge. If the target has damaged the user this round, Revenge has a Damage Base of 12 (3d12+10 / 30)."
-    },
-    {
-      "name": "Swagger",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "6, 1 Target, Social",
-      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
-    },
-    {
-      "name": "Astonish",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
     },
     {
       "name": "Bite",
@@ -101,26 +109,13 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Thunder Shock",
-      "type": "Electric",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
-    },
-    {
-      "name": "Uproar",
+      "name": "Swagger",
       "type": "Normal",
-      "category": "Special",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
+      "category": "Status",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1, Spirit Surge, Sonic",
-      "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
     }
   ],
   "abilities": [
@@ -132,7 +127,13 @@
     {
       "name": "Lightning Rod",
       "frequency": "Scene – Free Action",
+      "trigger": "A ranged Electric Type Move is used within 10",
       "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  The user’s Special Attack is then raised by +1 Combat Stage."
+    },
+    {
+      "name": "Drizzle",
+      "frequency": "Scene x3 – Swift Action",
+      "effect": "The Weather changes to be Rainy for 1 full round."
     }
   ],
   "natureMod": {

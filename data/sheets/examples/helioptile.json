@@ -2,7 +2,7 @@
   "slug": "examples-helioptile",
   "nickname": "Helioptile",
   "species": "Helioptile",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Gentle",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
@@ -38,36 +38,37 @@
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 45,
-    "currentHp": 45,
+    "maxHp": 41,
+    "currentHp": 41,
     "tick": 4,
     "evasion": {
       "vsAtk": 0,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
       "db": 6,
       "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
     },
     {
       "name": "Tail Whip",
@@ -79,45 +80,15 @@
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
-      "name": "Quick Attack",
+      "name": "Pound",
       "type": "Normal",
       "category": "Physical",
       "db": 6,
       "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Thunder Shock",
-      "type": "Electric",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
-    },
-    {
-      "name": "Charge",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
-    },
-    {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
+      "range": "Melee, 1 Target",
+      "effect": "None"
     }
   ],
   "abilities": [
@@ -125,11 +96,6 @@
       "name": "Electrodash",
       "frequency": "Scene x2 – Swift Action",
       "effect": "The user may make a Sprint Action as a Free Action."
-    },
-    {
-      "name": "Desert Weather",
-      "frequency": "Static",
-      "effect": "The user is immune to Sandstorm Damage, resists Fire-Type Moves in Sunny Weather, and gains a Tick of Temporary Hit Points at the end of each of its turns while in Rainy Weather."
     }
   ],
   "natureMod": {

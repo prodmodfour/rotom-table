@@ -2,7 +2,7 @@
   "slug": "examples-cottonee",
   "nickname": "Cottonee",
   "species": "Cottonee",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Hardy",
@@ -13,70 +13,59 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsSatk": 1,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mega Drain",
-      "type": "Grass",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Cotton Spore",
+      "name": "Stun Spore",
       "type": "Grass",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1, Powder",
-      "effect": "All Legal Targets have their Speed lowered 2 Combat Stages."
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
     },
     {
       "name": "Leech Seed",
@@ -88,23 +77,13 @@
       "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
     },
     {
-      "name": "Razor Leaf",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
-    },
-    {
       "name": "Growth",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
       "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     },
     {
       "name": "Fairy Wind",
@@ -116,6 +95,17 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "None"
+    },
+    {
+      "name": "Absorb",
+      "type": "Grass",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     }
   ],
   "abilities": [
@@ -123,11 +113,6 @@
       "name": "Infiltrator",
       "frequency": "Static",
       "effect": "The user gains a +2 Bonus to Stealth Checks, does not trigger Hazards, Blessings cannot be activated in response to its actions, and the user may bypass the effects of the move Substitute."
-    },
-    {
-      "name": "Chlorophyll",
-      "frequency": "Static",
-      "effect": "While in Sunny Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
     }
   ],
   "capabilities": {

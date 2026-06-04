@@ -2,7 +2,7 @@
   "slug": "examples-purugly",
   "nickname": "Purugly",
   "species": "Purugly",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Docile",
@@ -12,89 +12,96 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 95,
+    "currentHp": 95,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
-      "vsAny": 3
+      "vsSatk": 2,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Growl",
+      "name": "Swagger",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Hypnosis",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target",
-      "effect": "The target falls Asleep."
-    },
-    {
-      "name": "Feint Attack",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
       "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
     },
     {
-      "name": "Scratch",
+      "name": "Slash",
       "type": "Normal",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
       "ac": 2,
       "range": "Melee, Pass",
-      "effect": "None"
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Captivate",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "Captivate lowers the target’s Special Attack 2 Combat Stages. Captivate may not affect something that is the same gender as the user or something that is genderless."
+    },
+    {
+      "name": "Assist",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "Randomly select another Pokémon on the user’s roster and then randomly select a Move that Pokémon knows. Assist’s user uses that Move immediately."
+    },
+    {
+      "name": "Charm",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
     },
     {
       "name": "Fury Swipes",
@@ -117,7 +124,13 @@
     {
       "name": "Cruelty",
       "frequency": "Scene – Swift Action",
+      "trigger": "The user hits a foe with a damaging attack",
       "effect": "After Damage is Resolved, the foe gains an Injury. The user is then informed of the total number of Injuries currently on the target, and may use that number to “purchase” the effects listed below. »» 1 Injury: The target loses 2 Hit Points. May be “pur- chased” multiple times. »» 1 Injury: The target is Slowed. »» 2 Injuries: Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
+    },
+    {
+      "name": "Defiant",
+      "frequency": "Static",
+      "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
     }
   ],
   "capabilities": {

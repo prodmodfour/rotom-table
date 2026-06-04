@@ -2,7 +2,7 @@
   "slug": "examples-lanturn",
   "nickname": "Lanturn",
   "species": "Lanturn",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Naughty",
@@ -13,90 +13,97 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 87,
-    "currentHp": 87,
-    "tick": 8,
+    "maxHp": 112,
+    "currentHp": 112,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
+      "vsAtk": 2,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Thunder Wave",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
-    },
-    {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Electro Ball",
-      "type": "Electric",
+      "name": "Signal Beam",
+      "type": "Bug",
       "category": "Special",
       "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "Scene x2",
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "10, 1 Target",
-      "effect": "The user adds their Speed Stat, including Combat Stages, in addition to their Special Attack when determining the damage dealt by Electro Ball. The Defender in turn subtracts both their Special Defense and Speed Stats from the damage dealt before applying Type Effectiveness."
+      "range": "6, 1 Target",
+      "effect": "Signal Beam confuses the target on 19+."
+    },
+    {
+      "name": "Spit Up",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "For each Stockpiled Count the user has, Spit Up’s Damage Base is increased by +8. If the user has no Stockpiled count, Spit Up cannot be used."
+    },
+    {
+      "name": "Swallow",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "If the user’s Stockpiled count is 1, they are healed 25% of their full Hit Point value; if their Stockpiled count is 2, they are healed half of their full Hit Point value; if their Stockpiled count is 3, they are healed back to full Hit Points. After using Swallow, the user’s Stockpiled count is set to 0. If the user has no Stockpiled count, Swallow does nothing."
+    },
+    {
+      "name": "Stockpile",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
+    },
+    {
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Spark Paralyzes the target on 15+."
     },
     {
       "name": "Bubble Beam",

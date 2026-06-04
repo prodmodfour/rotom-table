@@ -2,7 +2,7 @@
   "slug": "examples-kyurem",
   "nickname": "Kyurem",
   "species": "Kyurem",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Jolly",
@@ -18,84 +18,109 @@
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 2,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 2,
+      "added": 13,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 111,
-    "currentHp": 111,
-    "tick": 11,
+    "maxHp": 151,
+    "currentHp": 151,
+    "tick": 15,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Dragon Rage",
+      "name": "Dragon Pulse",
       "type": "Dragon",
       "category": "Special",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
-    },
-    {
-      "name": "Imprison",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "10, 1 Target",
-      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
-    },
-    {
-      "name": "Ancient Power",
-      "type": "Rock",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+      "range": "8, 1 Target, Aura",
+      "effect": "None"
     },
     {
-      "name": "Icy Wind",
+      "name": "Glaciate",
       "type": "Ice",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Burst 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage. On an Even-Numbered Roll, all Legal Targets on the ground are Slowed."
+    },
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
       "category": "Special",
       "db": 8,
       "damageRoll": "2d8+10",
       "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
+    },
+    {
+      "name": "Ice Beam",
+      "type": "Ice",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ice Beam Freezes on 19+ during Accuracy Check."
     }
   ],
   "abilities": [
@@ -108,6 +133,11 @@
       "name": "Winter’s Kiss",
       "frequency": "Static",
       "effect": "The user does not take damage from Ice-Type Moves. Whenever the user uses or is hit by an Ice- Type Move, the user is healed by a Tick of Hit Points. Defensive."
+    },
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
     }
   ],
   "natureMod": {

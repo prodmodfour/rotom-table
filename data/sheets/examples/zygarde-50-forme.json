@@ -2,7 +2,7 @@
   "slug": "examples-zygarde-50-forme",
   "nickname": "Zygarde 50% Forme",
   "species": "Zygarde 50% Forme",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Serious",
@@ -13,78 +13,78 @@
   "stats": {
     "hp": {
       "base": 11,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 10,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 12,
-      "added": 9,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 8,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 10,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 10,
-      "added": 5,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 126,
+    "currentHp": 126,
+    "tick": 12,
     "evasion": {
       "vsAtk": 4,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Glare",
-      "type": "Normal",
+      "name": "Haze",
+      "type": "Ice",
       "category": "Status",
       "frequency": "Scene x2",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Glare Paralyzes the target."
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
     },
     {
-      "name": "Safeguard",
-      "type": "Normal",
+      "name": "Sandstorm",
+      "type": "Rock",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to a Sandstorm for 5 rounds. While it is Sandstorming, all non-Ground, Rock, or Steel Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
     },
     {
-      "name": "Bulldoze",
+      "name": "Land’s Wrath",
       "type": "Ground",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Burst 1",
-      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
+      "range": "Burst 5, Friendly, Groundsource",
+      "effect": "None.",
+      "special": "Grants Groundshaper"
     },
     {
       "name": "Bind",
@@ -101,18 +101,16 @@
       "damageRoll": "3d8+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Burst 1, Set-Up, Full Action, Groundsource"
+      "range": "Burst 1, Set-Up, Full Action, Groundsource",
+      "special": "Grants Burrow +3"
     },
     {
-      "name": "Dragon Breath",
-      "type": "Dragon",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Dragon Breath Paralyzes the Target on 15+."
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
     }
   ],
   "abilities": [
@@ -125,6 +123,11 @@
       "name": "Interference",
       "frequency": "Scene - Swift Action",
       "effect": "The accuracy of all foes within 3 meters is reduced by -2 for 1 full round."
+    },
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
     }
   ],
   "capabilities": {

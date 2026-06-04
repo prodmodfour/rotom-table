@@ -2,7 +2,7 @@
   "slug": "examples-mienshao",
   "nickname": "Mienshao",
   "species": "Mienshao",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Timid",
@@ -12,51 +12,102 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 7,
+      "added": 12,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 4
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Jump Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, Dash, 1 Target",
+      "effect": "If Jump Kick misses, the user loses Hit Points equal to 1/4th of their Max Hit Points. A failure to hit due to a Move with the Shield keyword does not count as a miss. This Move cannot be used if Gravity is in effect."
+    },
+    {
+      "name": "Drain Punch",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target, Aura",
+      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Force Palm",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Aura",
+      "effect": "Force Palm Paralyzes the target on 18+."
+    },
+    {
+      "name": "Calm Mind",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
     {
       "name": "Double Slap",
       "type": "Normal",
@@ -67,45 +118,24 @@
       "ac": 4,
       "range": "Melee, 1 Target, Five Strike",
       "effect": "None"
-    },
-    {
-      "name": "Detect",
-      "type": "Fighting",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Detect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
-    },
-    {
-      "name": "Meditate",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage."
-    },
-    {
-      "name": "Fake Out",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
     }
   ],
   "abilities": [
     {
       "name": "Regenerator",
       "frequency": "Daily x2 – Free Action",
+      "trigger": "The user is recalled into a Poké Ball, or Takes",
       "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
     },
     {
       "name": "Inner Focus",
       "frequency": "Static",
       "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Reckless",
+      "frequency": "Static",
+      "effect": "Increases the Damage Base of Moves with the Exhaust, Recoil, or Reckless Keywords by +3. Reckless Moves: Jump Kick, Hi Jump Kick, Close Combat, Draco Meteor, Hammer Arm, Leaf Storm, Outrage, Overheat, Petal Dance, Psycho Boost, Superpower, Thrash, and V-Create."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-wobbuffet",
   "nickname": "Wobbuffet",
   "species": "Wobbuffet",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Timid",
@@ -12,48 +12,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 9,
+      "added": 17,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 114,
-    "currentHp": 114,
-    "tick": 11,
+    "maxHp": 143,
+    "currentHp": 143,
+    "tick": 14,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
+      "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
@@ -66,12 +66,12 @@
       "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
     },
     {
-      "name": "Counter",
-      "type": "Fighting",
-      "category": "Physical",
+      "name": "Mirror Coat",
+      "type": "Psychic",
+      "category": "Special",
       "frequency": "Scene x2",
-      "range": "Melee, 1 Target, Reaction, Trigger",
-      "effect": "Counter may be used as a Reaction when the user is hit by a damaging Physical Attack. Resolve the Triggering Attack, with Counter’s user resisting the attack one step further. After the attack is resolved, if Counter’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Counter is Physical, and while it cannot miss, it cannot hit targets immune to Fighting-Type Moves."
+      "range": "Any, 1 Target, Reaction",
+      "effect": "Mirror Coat may be used as a Reaction when the user is hit by a damaging Special Attack. Resolve the Triggering Attack, with Mirror Coat’s user resisting the attack one step further. After the attack is resolved, if Mirror Coat’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Mirror Coat is Special, and while it cannot miss, it cannot hit targets immune to Psychic-Type Moves."
     },
     {
       "name": "Destiny Bond",
@@ -82,18 +82,19 @@
       "effect": "All enemy targets in the burst become Bound to the user until the end of the user’s next turn. If a Bound target causes the user to Faint through a Damaging Attack, the Bound target immediately faints after their attack is resolved."
     },
     {
-      "name": "Mirror Coat",
-      "type": "Psychic",
-      "category": "Special",
+      "name": "Counter",
+      "type": "Fighting",
+      "category": "Physical",
       "frequency": "Scene x2",
-      "range": "Any, 1 Target, Reaction",
-      "effect": "Mirror Coat may be used as a Reaction when the user is hit by a damaging Special Attack. Resolve the Triggering Attack, with Mirror Coat’s user resisting the attack one step further. After the attack is resolved, if Mirror Coat’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Mirror Coat is Special, and while it cannot miss, it cannot hit targets immune to Psychic-Type Moves."
+      "range": "Melee, 1 Target, Reaction, Trigger",
+      "effect": "Counter may be used as a Reaction when the user is hit by a damaging Physical Attack. Resolve the Triggering Attack, with Counter’s user resisting the attack one step further. After the attack is resolved, if Counter’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Counter is Physical, and while it cannot miss, it cannot hit targets immune to Fighting-Type Moves."
     }
   ],
   "abilities": [
     {
       "name": "Weeble",
       "frequency": "At-Will – Standard Action, Reaction",
+      "trigger": "The user is hit by a damaging attack",
       "effect": "The user may make an AC4 Physical Attack against an adjacent target. If the attack hits, the target loses Hit Points equal to 1/3rd of the damage taken by the user from the attack that triggered Weeble."
     },
     {

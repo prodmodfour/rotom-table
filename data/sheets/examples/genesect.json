@@ -2,7 +2,7 @@
   "slug": "examples-genesect",
   "nickname": "Genesect",
   "species": "Genesect",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Decisive",
@@ -13,100 +13,103 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 108,
+    "currentHp": 108,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsAtk": 4,
+      "vsSatk": 3,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Lock-On",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "10, 1 Target",
-      "effect": "The target is Locked-On. The next Move that the user uses against the Target that requires an Accuracy Check cannot miss. Lock-On’s effect, on both the User and Target, is passed on by Baton Pass."
-    },
-    {
-      "name": "Fell Stinger",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the user successfully knocks out a target with Fell Stinger, raise their Attack by 2 Combat Stages."
-    },
-    {
-      "name": "Techno Blast",
+      "name": "Tri Attack",
       "type": "Normal",
       "category": "Special",
-      "db": 12,
-      "damageRoll": "3d12+10 / 30",
-      "frequency": "Scene",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "6, Ranged Blast 2",
-      "effect": "Techno Blast’s Type can be any Type while holding the appropriate Drive item or Plate item."
+      "range": "6, 1 target",
+      "effect": "Tri Attack gives the target a Status ailment on 17+ during Accuracy Check. If this effect is triggered, roll 1d3; on 1 the target is Paralyzed; on 2 the target is Burned; on 3 the target is Frozen."
     },
     {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "name": "Signal Beam",
+      "type": "Bug",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
+      "range": "6, 1 Target",
+      "effect": "Signal Beam confuses the target on 19+."
     },
     {
-      "name": "Screech",
-      "type": "Normal",
+      "name": "Metal Sound",
+      "type": "Steel",
       "category": "Status",
       "frequency": "EOT",
       "ac": 4,
       "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Magnet Bomb",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "8, 1 target",
+      "effect": "Magnet Bomb cannot miss.",
+      "special": "Grants Magnetic"
     },
     {
       "name": "Flame Charge",
@@ -130,6 +133,11 @@
       "name": "Pressure",
       "frequency": "Scene - Swift Action",
       "effect": "All foes within 3 meters are Suppressed for 1 full round."
+    },
+    {
+      "name": "Analytic",
+      "frequency": "Static",
+      "effect": "Whenever the user targets uses a damaging Move on a Pokémon or Trainer that has acted before it during Initiative this Round, that Move deals an additional +5 Damage."
     }
   ],
   "natureMod": {

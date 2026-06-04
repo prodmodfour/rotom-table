@@ -2,7 +2,7 @@
   "slug": "examples-whimsicott",
   "nickname": "Whimsicott",
   "species": "Whimsicott",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Sassy",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 1,
+      "added": 5,
       "stage": 0
     },
     "def": {
@@ -28,12 +28,12 @@
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 10,
+      "added": 7,
       "stage": 0
     },
     "spd": {
@@ -43,31 +43,29 @@
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 65,
+    "currentHp": 65,
+    "tick": 6,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 4,
+      "vsSatk": 3,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mega Drain",
-      "type": "Grass",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
     },
     {
       "name": "Razor Leaf",
@@ -81,12 +79,24 @@
       "effect": "Razor Leaf is a Critical Hit on 18+."
     },
     {
-      "name": "Growth",
-      "type": "Normal",
+      "name": "Cotton Spore",
+      "type": "Grass",
       "category": "Status",
       "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+      "ac": 2,
+      "range": "Burst 1, Powder",
+      "effect": "All Legal Targets have their Speed lowered 2 Combat Stages."
+    },
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
       "name": "Gust",
@@ -97,27 +107,17 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead.",
+      "special": "Grants Guster"
     },
     {
-      "name": "Fairy Wind",
-      "type": "Fairy",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Cotton Spore",
+      "name": "Stun Spore",
       "type": "Grass",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1, Powder",
-      "effect": "All Legal Targets have their Speed lowered 2 Combat Stages."
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
     }
   ],
   "abilities": [

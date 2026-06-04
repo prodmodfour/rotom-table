@@ -2,7 +2,7 @@
   "slug": "examples-naganadel",
   "nickname": "Naganadel",
   "species": "Naganadel",
-  "level": 20,
+  "level": 35,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Adamant",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
@@ -28,7 +28,7 @@
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
@@ -38,26 +38,42 @@
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Nasty Plot",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 2 Combat Stages."
+    },
+    {
+      "name": "Venom Drench",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Cone 2",
+      "effect": "All Poisoned targets have their Attack, Special Attack, and Speed lowered by 1 Combat Stage. Venom Drench cannot miss."
+    },
     {
       "name": "Charm",
       "type": "Fairy",
@@ -94,6 +110,7 @@
     {
       "name": "Beast Boost",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user’s Damaging Attack causes an",
       "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
     },
     {

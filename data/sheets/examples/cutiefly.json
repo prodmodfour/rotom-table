@@ -2,7 +2,7 @@
   "slug": "examples-cutiefly",
   "nickname": "Cutiefly",
   "species": "Cutiefly",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Relaxed",
@@ -13,38 +13,38 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 0,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 10,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 1,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 42,
-    "currentHp": 42,
+    "maxHp": 41,
+    "currentHp": 41,
     "tick": 4,
     "evasion": {
       "vsAtk": 2,
@@ -54,7 +54,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -68,28 +68,6 @@
       "ac": 2,
       "range": "Cone 2",
       "effect": "On hit, lowers the target’s Special Attack by -1 CS."
-    },
-    {
-      "name": "Absorb",
-      "type": "Grass",
-      "category": "Special",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Draining Kiss",
-      "type": "Fairy",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
       "name": "Stun Spore",
@@ -112,15 +90,15 @@
       "effect": "None"
     },
     {
-      "name": "Silver Wind",
-      "type": "Bug",
+      "name": "Absorb",
+      "type": "Grass",
       "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+      "range": "4, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     }
   ],
   "abilities": [
@@ -128,11 +106,6 @@
       "name": "Shield Dust",
       "frequency": "Static",
       "effect": "The user ignores the secondary effects that trigger during Accuracy Roll of damaging Moves that target the user. For example, Flamethrower can never inflict the Burn Condition. Defensive."
-    },
-    {
-      "name": "Sweet Veil",
-      "frequency": "Static",
-      "effect": "The user and allies within 3 meters are immune to Sleep. Defensive."
     }
   ],
   "natureMod": {

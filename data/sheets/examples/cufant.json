@@ -2,7 +2,7 @@
   "slug": "examples-cufant",
   "nickname": "Cufant",
   "species": "Cufant",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Calm",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
@@ -32,19 +32,19 @@
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
@@ -53,20 +53,20 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tackle",
-      "type": "Normal",
+      "name": "Rock Smash",
+      "type": "Fighting",
       "category": "Physical",
       "db": 4,
       "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "Melee, 1 Target",
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
     },
     {
       "name": "Rollout",
@@ -80,17 +80,6 @@
       "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
     },
     {
-      "name": "Bulldoze",
-      "type": "Ground",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
-    },
-    {
       "name": "Growl",
       "type": "Normal",
       "category": "Status",
@@ -100,26 +89,15 @@
       "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
-      "name": "Stomp",
+      "name": "Tackle",
       "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
-    },
-    {
-      "name": "Rock Smash",
-      "type": "Fighting",
       "category": "Physical",
       "db": 4,
       "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [
@@ -127,11 +105,6 @@
       "name": "Guts",
       "frequency": "Static",
       "effect": "While suffering from Burn, Poison, Paralysis, Freezing, or while Asleep, the user’s Attack is raised 2 Combat Stages. If suffering from none of these conditions, the user loses any Combat Stages gained this way."
-    },
-    {
-      "name": "Battle Armor",
-      "frequency": "Static",
-      "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
     }
   ],
   "natureMod": {

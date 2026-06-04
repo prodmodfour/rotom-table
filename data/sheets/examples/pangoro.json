@@ -2,7 +2,7 @@
   "slug": "examples-pangoro",
   "nickname": "Pangoro",
   "species": "Pangoro",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Skittish",
@@ -13,61 +13,93 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 90,
+    "currentHp": 90,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 1,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Arm Thrust",
+      "name": "Body Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Body Slam Paralyzes the target on 15+."
+    },
+    {
+      "name": "Vital Throw",
       "type": "Fighting",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
+      "range": "Melee, 1 Target, Push, Reaction",
+      "effect": "If the user is targeted by a Melee attack and has not yet taken a turn this round, the user may declare Vital Throw. After the triggering attack is resolved, the user may use Vital Throw against the triggering foe as a Reaction. Vital Throw cannot miss."
+    },
+    {
+      "name": "Circle Throw",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
       "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
+      "range": "Melee, 1 Target, Push",
+      "effect": "The target is Pushed 6 meters minus their Weight Class. On 15+, the target is also Tripped."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
     },
     {
       "name": "Comet Punch",
@@ -90,37 +122,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Karate Chop is a Critical Hit on 17+."
-    },
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Slash",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "Slash is a Critical Hit on 18+."
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [

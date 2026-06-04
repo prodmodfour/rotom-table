@@ -2,7 +2,7 @@
   "slug": "examples-zygarde",
   "nickname": "Zygarde",
   "species": "Zygarde",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Desperate",
@@ -13,89 +13,85 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 2,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 9,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 120,
+    "currentHp": 120,
+    "tick": 12,
     "evasion": {
       "vsAtk": 4,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Safeguard",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Dragon Breath",
-      "type": "Dragon",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Dragon Breath Paralyzes the Target on 15+."
-    },
-    {
-      "name": "Glare",
-      "type": "Normal",
+      "name": "Haze",
+      "type": "Ice",
       "category": "Status",
       "frequency": "Scene x2",
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
+    },
+    {
+      "name": "Sandstorm",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to a Sandstorm for 5 rounds. While it is Sandstorming, all non-Ground, Rock, or Steel Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
+    },
+    {
+      "name": "Land’s Wrath",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Glare Paralyzes the target."
+      "range": "Burst 5, Friendly, Groundsource",
+      "effect": "None.",
+      "special": "Grants Groundshaper"
+    },
+    {
+      "name": "Bind",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
     },
     {
       "name": "Dig",
@@ -105,18 +101,16 @@
       "damageRoll": "3d8+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Burst 1, Set-Up, Full Action, Groundsource"
+      "range": "Burst 1, Set-Up, Full Action, Groundsource",
+      "special": "Grants Burrow +3"
     },
     {
-      "name": "Bulldoze",
-      "type": "Ground",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
     }
   ],
   "abilities": [
@@ -129,6 +123,11 @@
       "name": "Filter",
       "frequency": "Static",
       "effect": "The user gains +5 Damage Reduction against Super- Effective damage. Defensive."
+    },
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
     }
   ],
   "natureMod": {

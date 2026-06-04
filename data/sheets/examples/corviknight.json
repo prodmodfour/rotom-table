@@ -2,7 +2,7 @@
   "slug": "examples-corviknight",
   "nickname": "Corviknight",
   "species": "Corviknight",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Naughty",
@@ -13,51 +13,80 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 9,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 110,
+    "currentHp": 110,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Drill Peck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "None"
+    },
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
     {
       "name": "Pluck",
       "type": "Flying",
@@ -81,17 +110,6 @@
       "effect": "None"
     },
     {
-      "name": "Power Trip",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "This Move gains +2 to its Damage Base for every positive Combat Stage held by the user, to a maximum of DB 20."
-    },
-    {
       "name": "Hone Claws",
       "type": "Dark",
       "category": "Status",
@@ -110,6 +128,12 @@
       "name": "Guts",
       "frequency": "Static",
       "effect": "While suffering from Burn, Poison, Paralysis, Freezing, or while Asleep, the user’s Attack is raised 2 Combat Stages. If suffering from none of these conditions, the user loses any Combat Stages gained this way."
+    },
+    {
+      "name": "Mirror Armor",
+      "frequency": "At-Will – Free Action, Reaction",
+      "trigger": "A foe’s Move or Ability directly lowers the user’s CS (including Effect Ranges, but not including things like Status)",
+      "effect": "The user’s CS are instead not lowered, and the triggering foe’s CS in the affected stats are instead lowered the same amount the user’s would have been."
     }
   ],
   "natureMod": {

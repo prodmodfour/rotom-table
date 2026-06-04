@@ -2,7 +2,7 @@
   "slug": "examples-seaking",
   "nickname": "Seaking",
   "species": "Seaking",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Serious",
@@ -12,70 +12,88 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 93,
+    "currentHp": 93,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Flail",
-      "type": "Normal",
+      "name": "Waterfall",
+      "type": "Water",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "EOT",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
+      "effect": "Waterfall Flinches the target on 17+."
     },
     {
-      "name": "Supersonic",
-      "type": "Normal",
+      "name": "Agility",
+      "type": "Psychic",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Aqua Ring",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
     },
     {
       "name": "Water Pulse",
@@ -89,15 +107,15 @@
       "effect": "Water Pulse Confuses the target on 17+."
     },
     {
-      "name": "Horn Attack",
+      "name": "Flail",
       "type": "Normal",
       "category": "Physical",
       "db": 7,
       "damageRoll": "2d6+10 / 17",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "None"
+      "range": "Melee, 1 Target",
+      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
     }
   ],
   "abilities": [
@@ -109,6 +127,7 @@
     {
       "name": "Lightning Rod",
       "frequency": "Scene – Free Action",
+      "trigger": "A ranged Electric Type Move is used within 10",
       "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  The user’s Special Attack is then raised by +1 Combat Stage."
     }
   ],

@@ -12,42 +12,42 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 3,
+      "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
@@ -58,22 +58,6 @@
   },
   "movelist": [
     {
-      "name": "Light Screen",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Light Screen may activate it when receiving Special Damage to resist the Damage one step. Light Screen may be activated 2 times, and then disappears."
-    },
-    {
-      "name": "Snatch",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "6, 1 Target, Interrupt",
-      "effect": "If the target uses a Self-Targeting Move, you may use Snatch. You gain the benefits of the Self-Targeting Move instead of the target."
-    },
-    {
       "name": "Charm",
       "type": "Fairy",
       "category": "Status",
@@ -83,12 +67,31 @@
       "effect": "Charm lowers the target’s Attack 2 Combat Stages."
     },
     {
-      "name": "Reflect",
+      "name": "Light Screen",
       "type": "Psychic",
       "category": "Status",
       "frequency": "Scene",
       "range": "Blessing",
-      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
+      "effect": "Blessing – Any user affected by Light Screen may activate it when receiving Special Damage to resist the Damage one step. Light Screen may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Hidden Power",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "When a Pokémon first obtains the Move Hidden Power, roll 1d20. Hidden Power’s Elemental Type will be changed from Normal to Bug on a result of 1; Dark on 2; Dragon on 3; Electric on 4; Fairy on 5; Fighting on 6; Fire on 7; Flying on 8; Ghost on 9; Grass on 10; Ground on 11; Ice on 12; Normal on 13; Poison on 14; Psychic on 15; Rock on 16; Steel on 17; Water on 18; and on 19 or 20, reroll until you roll another number. This effect is permanent –if Hidden Power is forgotten and relearned, the chosen Type remains the same."
+    },
+    {
+      "name": "Snatch",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "6, 1 Target, Interrupt",
+      "effect": "If the target uses a Self-Targeting Move, you may use Snatch. You gain the benefits of the Self-Targeting Move instead of the target."
     },
     {
       "name": "Rollout",
@@ -102,15 +105,12 @@
       "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
     },
     {
-      "name": "Hidden Power",
-      "type": "Normal",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "When a Pokémon first obtains the Move Hidden Power, roll 1d20. Hidden Power’s Elemental Type will be changed from Normal to Bug on a result of 1; Dark on 2; Dragon on 3; Electric on 4; Fairy on 5; Fighting on 6; Fire on 7; Flying on 8; Ghost on 9; Grass on 10; Ground on 11; Ice on 12; Normal on 13; Poison on 14; Psychic on 15; Rock on 16; Steel on 17; Water on 18; and on 19 or 20, reroll until you roll another number. This effect is permanent –if Hidden Power is forgotten and relearned, the chosen Type remains the same."
+      "name": "Reflect",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
     }
   ],
   "abilities": [
@@ -122,7 +122,7 @@
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     }
   ],
   "natureMod": {

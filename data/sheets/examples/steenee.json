@@ -2,7 +2,7 @@
   "slug": "examples-steenee",
   "nickname": "Steenee",
   "species": "Steenee",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Cuddly",
@@ -12,51 +12,70 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 77,
+    "currentHp": 77,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 3
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Teeter Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Teeter Dance Confuses all Legal Targets."
+    },
+    {
+      "name": "Magical Leaf",
+      "type": "Grass",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "8, 1 Target",
+      "effect": "Magical Leaf cannot miss."
+    },
     {
       "name": "Sweet Scent",
       "type": "Normal",
@@ -64,7 +83,8 @@
       "frequency": "Scene",
       "ac": 2,
       "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
     },
     {
       "name": "Razor Leaf",

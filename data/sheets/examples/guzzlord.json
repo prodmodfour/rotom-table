@@ -2,7 +2,7 @@
   "slug": "examples-guzzlord",
   "nickname": "Guzzlord",
   "species": "Guzzlord",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Modest",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 20,
       "stage": 0
     },
     "atk": {
@@ -28,12 +28,12 @@
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
@@ -43,67 +43,64 @@
     }
   },
   "combat": {
-    "maxHp": 108,
-    "currentHp": 108,
-    "tick": 10,
+    "maxHp": 176,
+    "currentHp": 176,
+    "tick": 17,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stockpile",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
-    },
-    {
-      "name": "Dragon Rage",
-      "type": "Dragon",
-      "category": "Special",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
-    },
-    {
-      "name": "Bite",
+      "name": "Crunch",
       "type": "Dark",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Stomping Tantrum",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the user’s last attack failed or missed, Stomping Tantrum is DB 15 (4d10+10 / 45) instead."
+    },
+    {
+      "name": "Iron Tail",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10 / 24",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "Melee, 1 Target, Smite",
+      "effect": "Iron Tail lowers the target’s Defense 1 Combat Stage on 15+."
+    },
+    {
+      "name": "Dragon Tail",
+      "type": "Dragon",
       "category": "Physical",
       "db": 8,
       "damageRoll": "2d8+10",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Stomp",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
-    },
-    {
-      "name": "Swallow",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "If the user’s Stockpiled count is 1, they are healed 25% of their full Hit Point value; if their Stockpiled count is 2, they are healed half of their full Hit Point value; if their Stockpiled count is 3, they are healed back to full Hit Points. After using Swallow, the user’s Stockpiled count is set to 0. If the user has no Stockpiled count, Swallow does nothing."
+      "ac": 3,
+      "range": "Melee, 1 Target, Push",
+      "effect": "The target is Pushed 6 meters minus their Weight Class. On a roll of 15+, the target is also Tripped."
     },
     {
       "name": "Steamroller",
@@ -115,18 +112,34 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "Steamroller Flinches the target on 15+. If the target is Small, Steamroller deals an additional +5 Damage."
+    },
+    {
+      "name": "Brutal Swing",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1"
     }
   ],
   "abilities": [
     {
       "name": "Beast Boost",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user’s Damaging Attack causes an",
       "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
     },
     {
       "name": "Mold Breaker",
       "frequency": "Static",
       "effect": "The user ignores the effect of enemies’ Defensive Abilities."
+    },
+    {
+      "name": "Big Swallow",
+      "frequency": "Static",
+      "effect": "Connection - Stockpile. Whenever the user uses Swallow or Spit Up, it may treat the Stockpile Count as if it was one higher. This Ability has no effect if the Stockpile Counter is already 3."
     }
   ],
   "natureMod": {

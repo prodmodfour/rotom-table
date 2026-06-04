@@ -2,7 +2,7 @@
   "slug": "examples-galvantula",
   "nickname": "Galvantula",
   "species": "Galvantula",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Rash",
@@ -13,90 +13,100 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 13,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 12,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
-      "vsAny": 3
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Electroweb",
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Signal Beam",
+      "type": "Bug",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Signal Beam confuses the target on 19+."
+    },
+    {
+      "name": "Electro Ball",
       "type": "Electric",
       "category": "Special",
       "db": 8,
       "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "4, Ranged Blast 2",
-      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
-    },
-    {
-      "name": "Thunder Wave",
-      "type": "Electric",
-      "category": "Status",
       "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+      "ac": 2,
+      "range": "10, 1 Target",
+      "effect": "The user adds their Speed Stat, including Combat Stages, in addition to their Special Attack when determining the damage dealt by Electro Ball. The Defender in turn subtracts both their Special Defense and Speed Stats from the damage dealt before applying Type Effectiveness."
     },
     {
-      "name": "Screech",
+      "name": "Slash",
       "type": "Normal",
-      "category": "Status",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
       "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
     },
     {
-      "name": "Fury Cutter",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+      "name": "Gastro Acid",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "The target’s Ability is disabled until the end of the encounter. If the target has more than one Ability, you choose one of them to disable."
     },
     {
       "name": "Bug Bite",
@@ -120,6 +130,12 @@
       "name": "Unnerve",
       "frequency": "At-Will - Swift Action",
       "effect": "The target cannot gain positive Combat Stages or trade in Digestion Buffs for 1 full round."
+    },
+    {
+      "name": "Sequence",
+      "frequency": "At-Will – Free Action",
+      "trigger": "The user uses an Electric Attack",
+      "effect": "For every Electric-Type Pokémon adjacent to the user, the triggering Attack deals an additional +3 Damage."
     }
   ],
   "natureMod": {

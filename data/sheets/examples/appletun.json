@@ -2,7 +2,7 @@
   "slug": "examples-appletun",
   "nickname": "Appletun",
   "species": "Appletun",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Stark",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "satk": {
@@ -33,7 +33,7 @@
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "spd": {
@@ -43,8 +43,8 @@
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
+    "maxHp": 86,
+    "currentHp": 86,
     "tick": 8,
     "evasion": {
       "vsAtk": 3,
@@ -54,28 +54,17 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Protect",
+      "name": "Recover",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
-    },
-    {
-      "name": "Stomp",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
     },
     {
       "name": "Bullet Seed",
@@ -89,12 +78,12 @@
       "effect": "None"
     },
     {
-      "name": "Curse",
-      "type": "Ghost",
+      "name": "Protect",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "See Text",
-      "range": "Self",
-      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
     },
     {
       "name": "Leech Seed",
@@ -104,6 +93,25 @@
       "ac": 4,
       "range": "6, 1 Target",
       "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
+    {
+      "name": "Stomp",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+    },
+    {
+      "name": "Curse",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
     }
   ],
   "abilities": [
@@ -113,7 +121,9 @@
       "effect": "The user may have up to three Food Buffs at once, use up to three Food Buffs per Scene, and may eat two refreshments per half hour."
     },
     {
-      "name": "Ripen"
+      "name": "Ripen",
+      "frequency": "Static",
+      "effect": "Any numeric benefits of Berry Food Buffs the user trades in are doubled. (Oran Berries restore 10 HP, Liechi increases Attack by +2 CS, Jaboca causes ¼ Hit Point loss, Occa Weakens a Move 2 stages, etc.). This does not increase the number of statuses cured, Scene Moves restored, stats lowered by suppressants, or allow triggering at double the usual HP one must be at."
     }
   ],
   "natureMod": {

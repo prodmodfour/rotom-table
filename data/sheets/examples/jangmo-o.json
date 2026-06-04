@@ -2,7 +2,7 @@
   "slug": "examples-jangmo-o",
   "nickname": "Jangmo-o",
   "species": "Jangmo-o",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Bold",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
@@ -22,12 +22,12 @@
     },
     "def": {
       "base": 1,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
@@ -42,9 +42,9 @@
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 1,
@@ -53,18 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Protect",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
-    },
     {
       "name": "Bide",
       "type": "Normal",
@@ -72,17 +64,6 @@
       "frequency": "Scene",
       "range": "Burst 1, Friendly",
       "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
-    },
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
     },
     {
       "name": "Leer",
@@ -94,15 +75,15 @@
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
-      "name": "Dragon Tail",
-      "type": "Dragon",
+      "name": "Tackle",
+      "type": "Normal",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Push",
-      "effect": "The target is Pushed 6 meters minus their Weight Class. On a roll of 15+, the target is also Tripped."
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [
@@ -110,11 +91,6 @@
       "name": "Overcoat",
       "frequency": "Static",
       "effect": "The user is immune to Moves with the Powder Keyword, and does not take damage from any Weather that would normally cause it to take damage. Defensive."
-    },
-    {
-      "name": "Bulletproof",
-      "frequency": "Static",
-      "effect": "The user resists all X target ranged attacks one step further. This refers to attacks and Moves that simply hit one target or specify hitting multiple targets, such as Razor Wind hitting three targets. It has no effect on Moves that are capable of hitting multiple targets through areas of effect, such as Bursts or Cones. Defensive."
     }
   ],
   "natureMod": {

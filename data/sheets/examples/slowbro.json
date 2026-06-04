@@ -2,7 +2,7 @@
   "slug": "examples-slowbro",
   "nickname": "Slowbro",
   "species": "Slowbro",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Curious",
@@ -13,81 +13,99 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 9,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 104,
+    "currentHp": 104,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 4,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Water Gun",
+      "name": "Withdraw",
       "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
       "category": "Status",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage."
     },
     {
-      "name": "Confusion",
+      "name": "Slack Off",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Points."
+    },
+    {
+      "name": "Zen Headbutt",
       "type": "Psychic",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
       "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
     },
     {
       "name": "Disable",
@@ -108,6 +126,12 @@
       "name": "Truant",
       "frequency": "Static",
       "effect": "At the beginning of each of its turns, the user must roll 1d20. On a roll of 7 or lower, the target refuses to act; they heal a Tick of Hit Points, and do not get a Standard Action that turn. Turns in which the user refuses to act count towards turns used up by Interrupts or the Exhausted Condition, and the user may make Rolls to cure themselves from Status Effects with a +3 Bonus that turn."
+    },
+    {
+      "name": "Regenerator",
+      "frequency": "Daily x2 – Free Action",
+      "trigger": "The user is recalled into a Poké Ball, or Takes",
+      "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
     }
   ],
   "natureMod": {

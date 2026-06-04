@@ -2,7 +2,7 @@
   "slug": "examples-cosmog",
   "nickname": "Cosmog",
   "species": "Cosmog",
-  "level": 20,
+  "level": 10,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Proud",
@@ -12,39 +12,39 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 10,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
@@ -53,7 +53,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -63,7 +63,8 @@
       "category": "Status",
       "frequency": "At-Will",
       "range": "Self",
-      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn."
+      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn.",
+      "special": "Grants Long Jump +1"
     }
   ],
   "abilities": [
@@ -71,11 +72,6 @@
       "name": "Unaware",
       "frequency": "Static",
       "effect": "Whenever the user attacks, they ignore all positive Combat Stages to the target’s Defense, Special Defense, and Speed."
-    },
-    {
-      "name": "Snuggle",
-      "frequency": "Scene - Standard Action",
-      "effect": "The user and the target each gain two ticks of Temporary Hit Points."
     }
   ],
   "natureMod": {

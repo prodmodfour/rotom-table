@@ -2,7 +2,7 @@
   "slug": "examples-articuno-galar",
   "nickname": "Articuno Galar",
   "species": "Articuno Galar",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Lax",
@@ -13,105 +13,110 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 13,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 114,
+    "currentHp": 114,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsAtk": 4,
+      "vsSatk": 3,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Agility",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Speed 2 Combat Stages."
-    },
-    {
-      "name": "Reflect",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
-    },
-    {
-      "name": "Psycho Shift",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Melee, 1 Target",
-      "effect": "The user is cured of a Status ailment and the target is given that Status ailment. Psycho Shift cannot miss. Psycho Shift can only be used if the user has a Status ailment and the target does not have the status ailment that is being transferred."
-    },
-    {
-      "name": "Confusion",
+      "name": "Dream Eater",
       "type": "Psychic",
       "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Dream Eater can only target Sleeping Pokémon or Trainers. After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target. Dream Eater does not wake up sleeping targets."
+    },
+    {
+      "name": "Freezing Glare",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "effect": "Freezing Glare Freezes the target on a 19+. Once per Scene, Freezing Glare may instead be used as an Ice-Type Move."
     },
     {
-      "name": "Gust",
+      "name": "Recover",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
+    },
+    {
+      "name": "Psycho Cut",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psycho Cut is a Critical Hit on 18+."
+    },
+    {
+      "name": "Tailwind",
       "type": "Flying",
+      "category": "Status",
+      "frequency": "Scene",
+      "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack.",
+      "special": "Grants Guster"
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
       "category": "Special",
       "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
-    },
-    {
-      "name": "Hypnosis",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target",
-      "effect": "The target falls Asleep."
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     }
   ],
   "abilities": [
@@ -124,6 +129,11 @@
       "name": "Competitive",
       "frequency": "Static",
       "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Special Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Beam Cannon",
+      "frequency": "Static",
+      "effect": "The Effect Range and Critical Hit Range of the user’s Ranged, 1-Target Moves are increased by 3."
     }
   ],
   "natureMod": {

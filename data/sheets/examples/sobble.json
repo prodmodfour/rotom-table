@@ -2,7 +2,7 @@
   "slug": "examples-sobble",
   "nickname": "Sobble",
   "species": "Sobble",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Skittish",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "spd": {
@@ -42,9 +42,9 @@
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
@@ -53,7 +53,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -73,27 +73,17 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
-      "name": "Sucker Punch",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Interrupt, Trigger",
-      "effect": "If an adjacent foe targets the user with a Damaging Attack, Sucker Punch may be used as an Interrupt Move against the triggering foe."
-    },
-    {
-      "name": "Tearful Look",
+      "name": "Growl",
       "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "Burst 1, Social, Friendly",
-      "effect": "Tearful Look lowers all Legal Targets’ Attack and Special Attack 1 Combat Stage."
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
       "name": "Pound",
@@ -105,29 +95,14 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
-    },
-    {
-      "name": "Water Pulse",
-      "type": "Water",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "8, 1 Target, Aura",
-      "effect": "Water Pulse Confuses the target on 17+."
     }
   ],
   "abilities": [
     {
       "name": "Cute Tears",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Damaging Attack",
       "effect": "The attacking foe loses 2 Combat Stages in the Attack Stat used by the triggering Move."
-    },
-    {
-      "name": "Torrent",
-      "frequency": "Static",
-      "effect": "The user gains Last Chance with Water."
     }
   ],
   "natureMod": {

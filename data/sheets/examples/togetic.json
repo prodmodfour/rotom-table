@@ -2,7 +2,7 @@
   "slug": "examples-togetic",
   "nickname": "Togetic",
   "species": "Togetic",
-  "level": 20,
+  "level": 15,
   "gender": "Male",
   "shiny": false,
   "nature": "Serious",
@@ -13,60 +13,51 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
+    "maxHp": 55,
+    "currentHp": 55,
     "tick": 5,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 4,
+      "vsAtk": 2,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 4,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Sweet Kiss",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
     {
       "name": "Fairy Wind",
       "type": "Fairy",
@@ -79,21 +70,21 @@
       "effect": "None"
     },
     {
-      "name": "Encore",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
-    },
-    {
       "name": "Yawn",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene x2",
       "range": "2, 1 Target, Social",
       "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+    },
+    {
+      "name": "Sweet Kiss",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     },
     {
       "name": "Metronome",
@@ -109,11 +100,6 @@
       "name": "Serene Grace",
       "frequency": "Static",
       "effect": "The user’s Effect Range is increased by +2."
-    },
-    {
-      "name": "Gentle Vibe",
-      "frequency": "Scene – Standard Action",
-      "effect": "All targets in the burst, including the user, have their Combat Stages reset, and are cured of any Volatile Status ailments."
     }
   ],
   "capabilities": {

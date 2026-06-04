@@ -2,7 +2,7 @@
   "slug": "examples-spinarak",
   "nickname": "Spinarak",
   "species": "Spinarak",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Dreamy",
@@ -18,22 +18,22 @@
     },
     "atk": {
       "base": 0,
-      "added": 11,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -43,9 +43,9 @@
     }
   },
   "combat": {
-    "maxHp": 45,
-    "currentHp": 45,
-    "tick": 4,
+    "maxHp": 35,
+    "currentHp": 35,
+    "tick": 3,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
@@ -54,21 +54,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Poison Sting",
-      "type": "Poison",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Poison Sting Poisons the target on 17+."
-    },
     {
       "name": "Constrict",
       "type": "Normal",
@@ -81,26 +70,6 @@
       "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
     },
     {
-      "name": "String Shot",
-      "type": "Bug",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck."
-    },
-    {
-      "name": "Leech Life",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
-    },
-    {
       "name": "Scary Face",
       "type": "Normal",
       "category": "Status",
@@ -110,13 +79,25 @@
       "effect": "The target’s Speed is lowered 2 Combat Stages."
     },
     {
-      "name": "Night Shade",
-      "type": "Ghost",
-      "category": "Special",
-      "frequency": "Scene x2",
+      "name": "String Shot",
+      "type": "Bug",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck.",
+      "special": "Grants Threaded"
+    },
+    {
+      "name": "Poison Sting",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+      "range": "6, 1 Target",
+      "effect": "Poison Sting Poisons the target on 17+."
     }
   ],
   "abilities": [
@@ -124,11 +105,6 @@
       "name": "Insomnia",
       "frequency": "Static",
       "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
-    },
-    {
-      "name": "Silk Threads",
-      "frequency": "Static",
-      "effect": "Connection - String Shot. Whenever the user uses String Shot, all targets hit become Slowed and Vulnerable for 1 full round."
     }
   ],
   "natureMod": {

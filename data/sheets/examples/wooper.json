@@ -2,7 +2,7 @@
   "slug": "examples-wooper",
   "nickname": "Wooper",
   "species": "Wooper",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Lax",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "atk": {
@@ -23,52 +23,41 @@
     },
     "def": {
       "base": 1,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 0,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Mud Bomb",
-      "type": "Ground",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1 on 16+."
-    },
     {
       "name": "Mud Shot",
       "type": "Ground",
@@ -89,15 +78,16 @@
       "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
     },
     {
-      "name": "Slam",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10 / 19",
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
-      "ac": 6,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
       "name": "Tail Whip",
@@ -107,17 +97,6 @@
       "ac": 2,
       "range": "Burst 1, Friendly",
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -125,11 +104,6 @@
       "name": "Water Absorb",
       "frequency": "Static",
       "effect": "The user is immune to the damage and effects of  Water-Type attacks, and whenever they are hit with a Water Type attack, they gain a Tick of Hit Points. Defensive."
-    },
-    {
-      "name": "Poison Point",
-      "frequency": "Scene – Free Action",
-      "effect": "The attacking foe is Poisoned."
     }
   ],
   "natureMod": {

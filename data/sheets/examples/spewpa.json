@@ -2,7 +2,7 @@
   "slug": "examples-spewpa",
   "nickname": "Spewpa",
   "species": "Spewpa",
-  "level": 20,
+  "level": 5,
   "gender": "Female",
   "shiny": false,
   "nature": "Decisive",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "def": {
@@ -27,44 +27,36 @@
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 45,
+    "currentHp": 45,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
+      "vsSatk": 0,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 2,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
-    },
     {
       "name": "Protect",
       "type": "Normal",
@@ -72,6 +64,14 @@
       "frequency": "Scene",
       "range": "Self, Interrupt, Shield, Trigger",
       "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -79,11 +79,6 @@
       "name": "Compound Eyes",
       "frequency": "Static",
       "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
-    },
-    {
-      "name": "Wonder Skin",
-      "frequency": "Static",
-      "effect": "The user gains +6 Evasion against Status Moves. Defensive."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-espurr",
   "nickname": "Espurr",
   "species": "Espurr",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Hasty",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -42,42 +42,31 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Psybeam",
+      "name": "Confusion",
       "type": "Psychic",
       "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
+      "db": 7,
+      "damageRoll": "2d6+10",
       "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
-    },
-    {
-      "name": "Fake Out",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
+      "effect": "Confusion Confuses the target on 19+."
     },
     {
       "name": "Covet",
@@ -109,17 +98,6 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "None"
-    },
-    {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
     }
   ],
   "abilities": [
@@ -127,11 +105,6 @@
       "name": "Keen Eye",
       "frequency": "Static",
       "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
-    },
-    {
-      "name": "Oblivious",
-      "frequency": "Static",
-      "effect": "The user is immune to the Enraged and Infatuated conditions. Defensive."
     }
   ],
   "natureMod": {

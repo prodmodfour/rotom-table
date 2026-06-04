@@ -2,7 +2,7 @@
   "slug": "examples-castform",
   "nickname": "Castform",
   "species": "Castform",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Quiet",
@@ -17,17 +17,17 @@
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
@@ -37,14 +37,14 @@
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 74,
+    "currentHp": 74,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -53,20 +53,20 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Water Gun",
-      "type": "Water",
+      "name": "Weather Ball",
+      "type": "Normal",
       "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
+      "range": "8, 1 Target",
+      "effect": "If it is Sunny, Weather Ball is Fire-Type. If it is Rainy, Weather Ball is Water-Type. If it is Hailing, Weather Ball is Ice-Type. If it is Sandstorming, Weather Ball is Rock-Type. When a weather effect is on the field, Weather Ball has a Damage Base of 10 (3d8+10 / 24). If there are multiple Weather Effects on the field, choose one type for Weather Ball to be that corresponds with an existing Weather Effect."
     },
     {
       "name": "Sunny Day",
@@ -77,14 +77,6 @@
       "effect": "The weather becomes Sunny for 5 rounds. While Sunny, Fire-Type Attacks gain a +5 bonus to Damage Rolls, and Water-Type Attacks suffer a -5 Damage penalty."
     },
     {
-      "name": "Hail",
-      "type": "Ice",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Field, Weather",
-      "effect": "The weather changes to Hail for 5 rounds. While it is Hailing, all non-Ice Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
-    },
-    {
       "name": "Rain Dance",
       "type": "Water",
       "category": "Status",
@@ -93,26 +85,35 @@
       "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
     },
     {
-      "name": "Powder Snow",
+      "name": "Hail",
       "type": "Ice",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to Hail for 5 rounds. While it is Hailing, all non-Ice Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
     },
     {
-      "name": "Ember",
-      "type": "Fire",
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
       "category": "Special",
       "db": 4,
       "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "effect": "None",
+      "special": "Grants Fountain"
     }
   ],
   "abilities": [

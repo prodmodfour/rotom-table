@@ -2,7 +2,7 @@
   "slug": "examples-doublade",
   "nickname": "Doublade",
   "species": "Doublade",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Serious",
@@ -13,100 +13,101 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 14,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 5,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Pursuit",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
-    },
-    {
-      "name": "Metal Sound",
+      "name": "Iron Defense",
       "type": "Steel",
       "category": "Status",
       "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
-    },
-    {
-      "name": "Swords Dance",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
       "range": "Self",
-      "effect": "The user’s Attack is raised 2 Combat Stages."
+      "effect": "Raise the user’s Defense 2 Combat Stages."
     },
     {
-      "name": "Tackle",
+      "name": "Slash",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Retaliate",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Retaliate’s Damage Base is doubled to DB 14 (4d10+15 / 40) if an ally has been Fainted by a Damaging Move used by the Target in the last 2 rounds of Combat."
+    },
+    {
+      "name": "Aerial Ace",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Aerial Ace cannot miss."
+    },
+    {
+      "name": "Shadow Sneak",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Fury Cutter",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
     },
     {
       "name": "Autotomize",

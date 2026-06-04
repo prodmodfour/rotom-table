@@ -2,7 +2,7 @@
   "slug": "examples-shroomish",
   "nickname": "Shroomish",
   "species": "Shroomish",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Curious",
@@ -12,39 +12,39 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -53,21 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Absorb",
-      "type": "Grass",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
     {
       "name": "Leech Seed",
       "type": "Grass",
@@ -76,15 +65,6 @@
       "ac": 4,
       "range": "6, 1 Target",
       "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
-    },
-    {
-      "name": "Poison Powder",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target is Poisoned."
     },
     {
       "name": "Stun Spore",
@@ -96,25 +76,25 @@
       "effect": "The target is Paralyzed."
     },
     {
-      "name": "Headbutt",
+      "name": "Tackle",
       "type": "Normal",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Mega Drain",
-      "type": "Grass",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target",
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Absorb",
+      "type": "Grass",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     }
   ],
@@ -122,12 +102,8 @@
     {
       "name": "Effect Spore",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "Roll 1d6. On a result of 1 or 2, the attacker is Poisoned. On a result of 3 or 4, the attacker is Paralyzed. On a result of 5 or 6, the attacker falls Asleep."
-    },
-    {
-      "name": "Tangled Feet",
-      "frequency": "Static",
-      "effect": "While Confused or Slowed, the user gains +3 Evasion. The user is immune to the Vulnerable Condition."
     }
   ],
   "natureMod": {

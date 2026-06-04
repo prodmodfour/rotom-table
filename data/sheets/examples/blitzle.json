@@ -2,7 +2,7 @@
   "slug": "examples-blitzle",
   "nickname": "Blitzle",
   "species": "Blitzle",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Naughty",
@@ -12,71 +12,51 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 0,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Thunder Wave",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
-    },
-    {
-      "name": "Flame Charge",
-      "type": "Fire",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Raise the user’s Speed 1 Combat Stage."
-    },
     {
       "name": "Charge",
       "type": "Electric",
@@ -86,14 +66,13 @@
       "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
     },
     {
-      "name": "Shock Wave",
-      "type": "Electric",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
       "frequency": "At-Will",
-      "range": "6, 1 Target",
-      "effect": "Shock Wave cannot miss."
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
       "name": "Quick Attack",
@@ -105,15 +84,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
-    },
-    {
-      "name": "Tail Whip",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -121,11 +91,6 @@
       "name": "Motor Drive",
       "frequency": "Static",
       "effect": "The user is immune to the damage and effects of Electric Type attacks. Whenever an Electric Type attack hits the Pokémon, raise their Speed by +1 Combat Stage. Defensive."
-    },
-    {
-      "name": "Sprint",
-      "frequency": "Scene – Swift Action",
-      "effect": "The user gains +2 Speed Combat Stages."
     }
   ],
   "natureMod": {

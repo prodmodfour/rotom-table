@@ -2,7 +2,7 @@
   "slug": "examples-ampharos",
   "nickname": "Ampharos",
   "species": "Ampharos",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Bashful",
@@ -12,87 +12,103 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 104,
+    "currentHp": 104,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 3,
+      "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Cotton Spore",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1, Powder",
-      "effect": "All Legal Targets have their Speed lowered 2 Combat Stages."
-    },
-    {
-      "name": "Thunder Wave",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
-    },
-    {
-      "name": "Thunder Shock",
+      "name": "Discharge",
       "type": "Electric",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
+      "range": "All Cardinally Adjacent Targets",
+      "effect": "Discharge Paralyzes all legal targets on 15+."
     },
     {
-      "name": "Charge",
+      "name": "Power Gem",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Thunder Punch",
       "type": "Electric",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Thunder Punch Paralyzes the target on 19+."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Electro Ball",
+      "type": "Electric",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "10, 1 Target",
+      "effect": "The user adds their Speed Stat, including Combat Stages, in addition to their Special Attack when determining the damage dealt by Electro Ball. The Defender in turn subtracts both their Special Defense and Speed Stats from the damage dealt before applying Type Effectiveness."
     },
     {
       "name": "Take Down",
@@ -110,12 +126,19 @@
     {
       "name": "Static",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Paralyzed."
     },
     {
       "name": "Sap Sipper",
       "frequency": "Scene",
       "effect": "The user is immune to the damage and effects of Grass-Type attacks. If the user is hit by a Grass-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
+    },
+    {
+      "name": "Plus",
+      "frequency": "Scene x2 – Free Action, Reaction",
+      "trigger": "An ally within 10m has Combat Stages raised",
+      "effect": "The target gains an additional Combat Stage in one stat raised by the triggering effect."
     }
   ],
   "capabilities": {

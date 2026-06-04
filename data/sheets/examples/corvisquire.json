@@ -12,43 +12,43 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 69,
+    "currentHp": 69,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 3
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 2
     },
     "dr": 0
   },
@@ -58,12 +58,15 @@
   },
   "movelist": [
     {
-      "name": "Hone Claws",
-      "type": "Dark",
-      "category": "Status",
+      "name": "Pluck",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Pluck takes the target’s Held Item or Accessory Slot Item and attaches it to Pluck’s user, if the user is not holding anything."
     },
     {
       "name": "Fury Attack",
@@ -77,15 +80,12 @@
       "effect": "None"
     },
     {
-      "name": "Pluck",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Pluck takes the target’s Held Item or Accessory Slot Item and attaches it to Pluck’s user, if the user is not holding anything."
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
     },
     {
       "name": "Power Trip",

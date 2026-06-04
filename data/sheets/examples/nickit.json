@@ -2,7 +2,7 @@
   "slug": "examples-nickit",
   "nickname": "Nickit",
   "species": "Nickit",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Sassy",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -27,7 +27,7 @@
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
@@ -37,14 +37,14 @@
     },
     "spd": {
       "base": -1,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
@@ -53,10 +53,26 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
+    },
+    {
+      "name": "Beat Up",
+      "type": "Dark",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "The user and up to two allies adjacent to the target may each make a Struggle Attack against the target. These Struggle Attacks hit for Dark-Type Damage instead of their usual Type. Beat Up may trigger Pack Hunt only once, no matter the number of attacks."
+    },
     {
       "name": "Tail Whip",
       "type": "Normal",
@@ -65,36 +81,6 @@
       "ac": 2,
       "range": "Burst 1, Friendly",
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Snarl",
-      "type": "Dark",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2, Sonic",
-      "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
-    },
-    {
-      "name": "Nasty Plot",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Special Attack 2 Combat Stages."
-    },
-    {
-      "name": "Assurance",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
     },
     {
       "name": "Quick Attack",
@@ -106,14 +92,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
-    },
-    {
-      "name": "Hone Claws",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
     }
   ],
   "abilities": [
@@ -121,9 +99,6 @@
       "name": "Run Away",
       "frequency": "Static",
       "effect": "The user does not provoke Attacks of Opportunity by Shifting.  The user cannot be Trapped."
-    },
-    {
-      "name": "Stakeout"
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-goodra-hisuian",
   "nickname": "Goodra Hisuian",
   "species": "Goodra Hisuian",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -13,68 +13,80 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 89,
+    "currentHp": 89,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 4,
-      "vsAny": 1
+      "vsAtk": 4,
+      "vsSatk": 5,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Acid Spray",
-      "type": "Poison",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Acid Spray lowers the target’s Special Defense 2 Combat Stages."
-    },
-    {
-      "name": "Acid Armor",
-      "type": "Poison",
+      "name": "Shelter",
+      "type": "Steel",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Self, Set-Up"
+      "range": "Self",
+      "effect": "The user gains +1 CS in Defense and Special Defense, and +2 Evasion."
+    },
+    {
+      "name": "Dragon Pulse",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "None"
+    },
+    {
+      "name": "Iron Head",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Iron Head Flinches the target on 15+."
     },
     {
       "name": "Water Pulse",
@@ -86,6 +98,24 @@
       "ac": 2,
       "range": "8, 1 Target, Aura",
       "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Acid Armor",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Set-Up"
+    },
+    {
+      "name": "Acid Spray",
+      "type": "Poison",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Acid Spray lowers the target’s Special Defense 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -97,7 +127,14 @@
     {
       "name": "Gooey",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The triggering attacker has their Speed lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Absorb Force",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user is damaged by a Physical Attack",
+      "effect": "The user takes damage as if the attack was resisted one step further."
     }
   ],
   "natureMod": {

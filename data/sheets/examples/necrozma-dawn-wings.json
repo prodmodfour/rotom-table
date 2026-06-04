@@ -2,7 +2,7 @@
   "slug": "examples-necrozma-dawn-wings",
   "nickname": "Necrozma Dawn Wings",
   "species": "Necrozma Dawn Wings",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Composed",
@@ -13,105 +13,108 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 17,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 130,
+    "currentHp": 130,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsAtk": 4,
+      "vsSatk": 5,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stored Power",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "10, 1 Target",
-      "effect": "For every Combat Stage the user has above 0, add +2 to Stored Power’s Damage Base, up to a maximum of Damage Base 20."
-    },
-    {
-      "name": "Metal Claw",
+      "name": "Iron Defense",
       "type": "Steel",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Slash",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
+      "category": "Status",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "Slash is a Critical Hit on 18+."
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
     },
     {
-      "name": "Confusion",
+      "name": "Stealth Rock",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Field, Hazard",
+      "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out.",
+      "special": "Grants Materializer"
+    },
+    {
+      "name": "Photon Geyser",
       "type": "Psychic",
       "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2",
+      "effect": "This attack uses the highest of the user’s Attack or Special Attack Stat, though it remains a Special Move. This Move ignores any Abilities that would cause it to fail or miss, such as Dodge or Wonder Guard; those Abilities cannot be activated in response to Photon Geyser."
+    },
+    {
+      "name": "Autotomize",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "For the remainder of the Encounter, the user’s Weight Class is one value lower, to a minimum of 1. If the user can, the user’s Speed is raised by +2 Combat Stages."
+    },
+    {
+      "name": "Power Gem",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
       "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "effect": "None"
     },
     {
-      "name": "Rock Blast",
-      "type": "Rock",
+      "name": "Psycho Cut",
+      "type": "Psychic",
       "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
-      "ac": 5,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psycho Cut is a Critical Hit on 18+."
     }
   ],
   "abilities": [
@@ -124,6 +127,11 @@
       "name": "Chlorophyll",
       "frequency": "Static",
       "effect": "While in Sunny Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    },
+    {
+      "name": "Beam Cannon",
+      "frequency": "Static",
+      "effect": "The Effect Range and Critical Hit Range of the user’s Ranged, 1-Target Moves are increased by 3."
     }
   ],
   "capabilities": {

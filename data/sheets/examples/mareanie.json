@@ -2,7 +2,7 @@
   "slug": "examples-mareanie",
   "nickname": "Mareanie",
   "species": "Mareanie",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Quiet",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
@@ -43,37 +43,21 @@
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 47,
+    "currentHp": 47,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Toxic Spikes",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "6, Hazard",
-      "effect": "Set 8 square meters of Toxic Spikes, all 8 meters must be adjacent with at least one other space of Toxic Spikes next to each other. Toxic Spikes cause Terrain to become Slow Terrain, and a grounded foe that runs into the hazard becomes Poisoned, and Slowed until the end of their next turn. If there are 2 Layers of Toxic Spikes on the same space, it Deadly Poisons the foes instead. Poison-Type Pokémon may move over Toxic Spikes harmlessly, destroying the Hazards as they do so."
-    },
-    {
-      "name": "Wide Guard",
-      "type": "Rock",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Burst 1, Interrupt, Shield, Trigger",
-      "effect": "If an Ally adjacent to Wide Guard’s user is hit by a Move, you may use Wide Guard as an Interrupt. All targets adjacent to Wide Guard’s user, including the user, are instead not hit by the triggering Move and do not suffer any of its effects."
-    },
     {
       "name": "Bite",
       "type": "Dark",
@@ -86,17 +70,6 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Poison Sting",
-      "type": "Poison",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Poison Sting Poisons the target on 17+."
-    },
-    {
       "name": "Peck",
       "type": "Flying",
       "category": "Physical",
@@ -106,6 +79,17 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
+    },
+    {
+      "name": "Poison Sting",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Poison Sting Poisons the target on 17+."
     }
   ],
   "abilities": [
@@ -113,11 +97,6 @@
       "name": "Limber",
       "frequency": "Static",
       "effect": "The user is immune to Paralysis. Defensive."
-    },
-    {
-      "name": "Cruelty",
-      "frequency": "Scene – Swift Action",
-      "effect": "After Damage is Resolved, the foe gains an Injury. The user is then informed of the total number of Injuries currently on the target, and may use that number to “purchase” the effects listed below. »» 1 Injury: The target loses 2 Hit Points. May be “pur- chased” multiple times. »» 1 Injury: The target is Slowed. »» 2 Injuries: Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
     }
   ],
   "natureMod": {

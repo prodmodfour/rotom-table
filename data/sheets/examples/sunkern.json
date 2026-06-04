@@ -2,7 +2,7 @@
   "slug": "examples-sunkern",
   "nickname": "Sunkern",
   "species": "Sunkern",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Brave",
@@ -12,69 +12,51 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
+    "maxHp": 41,
+    "currentHp": 41,
     "tick": 4,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 1,
       "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Leech Seed",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
-    },
-    {
-      "name": "Grass Whistle",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Sonic",
-      "effect": "The target falls Asleep."
-    },
     {
       "name": "Mega Drain",
       "type": "Grass",
@@ -87,6 +69,15 @@
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
+      "name": "Grass Whistle",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Sonic",
+      "effect": "The target falls Asleep."
+    },
+    {
       "name": "Ingrain",
       "type": "Grass",
       "category": "Status",
@@ -95,13 +86,13 @@
       "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
     },
     {
-      "name": "Worry Seed",
-      "type": "Grass",
+      "name": "Growth",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "You choose one of the target’s Abilities. Worry Seed changes that Ability to Insomnia for the remainder of the encounter."
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     },
     {
       "name": "Absorb",
@@ -119,12 +110,8 @@
     {
       "name": "Sun Blanket",
       "frequency": "Daily x5 - Swift Action",
+      "trigger": "The user gains Initiative.",
       "effect": "The user gains a Tick of Hit Points. Sun Blanket may only be triggered while the user is under 50% Hit Points or in Sunny Weather."
-    },
-    {
-      "name": "Solar Power",
-      "frequency": "Scene x2- Swift Action",
-      "effect": "The user loses a Tick of Hit Points, and gains a bonus to the triggering damage roll equal to 5 + their Tick Value. Solar Power may be activated ignoring Frequency while in Sunny Weather."
     }
   ],
   "natureMod": {

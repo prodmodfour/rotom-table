@@ -2,7 +2,7 @@
   "slug": "examples-arceus",
   "nickname": "Arceus",
   "species": "Arceus",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Curious",
@@ -12,70 +12,90 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 12,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 9,
+      "added": 13,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 136,
+    "currentHp": 136,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 3,
-      "vsAny": 3
+      "vsAtk": 4,
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Punishment",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Punishment’s Damage Base is raised by +1 for each positive Combat Stage the target has, to a maximum of DB 12."
+      "name": "Future Sight",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 12,
+      "damageRoll": "3d12+10 / 30",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "Future Sight does nothing on the turn it is used. At the end of the user’s next turn, Future Sight hits, even if the user is no longer on the field. Future Sight cannot miss."
     },
     {
-      "name": "Seismic Toss",
-      "type": "Fighting",
+      "name": "Refresh",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "The user is cured of all Poison, Burns, and Paralysis."
+    },
+    {
+      "name": "Extreme Speed",
+      "type": "Normal",
       "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Hyper Voice",
+      "type": "Normal",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "Scene x2",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Seismic Toss’ user."
+      "range": "Close Blast 3, Sonic, Smite",
+      "effect": "All Legal Targets are pushed back to the squares immediately outside the blast, away from the user."
     },
     {
       "name": "Earth Power",
@@ -89,29 +109,12 @@
       "effect": "Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+."
     },
     {
-      "name": "Natural Gift",
-      "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "6, 1 Target, Berry",
-      "effect": "Refer to the Move Keywords Berry list. Natural Gift deals damage according to the Berry list and Natural Gift’s Type is also defined there. The Berry’s Digestion Buff is nullified and is not used."
-    },
-    {
       "name": "Gravity",
       "type": "Psychic",
       "category": "Status",
       "frequency": "Daily x2",
       "range": "Field",
-      "effect": "For 5 rounds, the area is considered Warped. While Warped, Moves that involve the user being airborne may not be used. Pokémon cannot use Sky or Levitate Capabilities to end their turn at an altitude higher than 1 meter. Flying-Types and Pokémon with the Ability Levitate are no longer immune to Ground- Type Moves. All Accuracy Rolls receive a +2 Bonus."
-    },
-    {
-      "name": "Cosmic Power",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage."
+      "effect": "For 5 rounds, the area is considered Warped. While Warped, Moves that involve the user being airborne may not be used. Pokémon cannot use Sky or Levitate Capabilities to end their turn at an altitude higher than 1 meter. Flying-Types and Pokémon with the Ability Levitate no longer resist Ground-Type Moves, and Pokémon cannot use Sky or Levitate Capabilities for immunity to Moves with the Groundsource keyword. All Accuracy Rolls receive a +2 Bonus."
     }
   ],
   "abilities": [
@@ -122,7 +125,13 @@
     {
       "name": "Regenerator",
       "frequency": "Daily x2 – Free Action",
+      "trigger": "The user is recalled into a Poké Ball, or Takes",
       "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
+    },
+    {
+      "name": "Adaptability",
+      "frequency": "Static",
+      "effect": "The user gains a +1d10 Bonus to Damage Rolls with Moves with which they apply STAB."
     }
   ],
   "natureMod": {

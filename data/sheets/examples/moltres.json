@@ -2,7 +2,7 @@
   "slug": "examples-moltres",
   "nickname": "Moltres",
   "species": "Moltres",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Jolly",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "satk": {
@@ -33,41 +33,60 @@
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 7,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 101,
+    "currentHp": 101,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Wing Attack",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "name": "Flamethrower",
+      "type": "Fire",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None."
+      "range": "4, 1 Target",
+      "effect": "Flamethrower Burns the target on 19+."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Endure",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "Self, Reaction, Trigger",
+      "effect": "If the user is hit by a damaging Move, you may use Endure as a Free Action. If the Move would bring Endure’s user down to 0 Hit Points or less, Endure’s user instead is set to 1 Hit Point."
     },
     {
       "name": "Agility",
@@ -86,18 +105,19 @@
       "frequency": "Scene x2",
       "ac": 4,
       "range": "3, 1 Target",
-      "effect": "The target is put in a Vortex."
+      "effect": "The target is put in a Vortex.",
+      "special": "Grants Firestarter"
     },
     {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "range": "Melee, 1 Target",
+      "effect": "None."
     }
   ],
   "abilities": [
@@ -110,6 +130,11 @@
       "name": "Drought",
       "frequency": "Scene x3 – Swift Action",
       "effect": "The Weather changes to be Sunny for 1 full round."
+    },
+    {
+      "name": "White Flame",
+      "frequency": "Static",
+      "effect": "The user may not make rolls to cure themselves from the Enraged condition. However, while Enraged, the user gains a +5 Bonus to all Damage Rolls."
     }
   ],
   "natureMod": {

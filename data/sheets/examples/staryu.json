@@ -2,7 +2,7 @@
   "slug": "examples-staryu",
   "nickname": "Staryu",
   "species": "Staryu",
-  "level": 20,
+  "level": 10,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Desperate",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "def": {
@@ -27,7 +27,7 @@
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
@@ -37,66 +37,33 @@
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
-    "tick": 4,
+    "maxHp": 29,
+    "currentHp": 29,
+    "tick": 2,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tackle",
+      "name": "Recover",
       "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Bubble Beam",
-      "type": "Water",
-      "category": "Special",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
-    },
-    {
-      "name": "Psywave",
-      "type": "Psychic",
-      "category": "Special",
-      "frequency": "Scene",
-      "ac": 5,
-      "range": "6, 1 Target",
-      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
-    },
-    {
-      "name": "Swift",
-      "type": "Normal",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "8, Ranged Blast 2, Friendly",
-      "effect": "Swift cannot Miss."
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
     },
     {
       "name": "Rapid Spin",
@@ -110,12 +77,35 @@
       "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
     },
     {
-      "name": "Recover",
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None",
+      "special": "Grants Fountain"
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Harden",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Daily x2",
+      "frequency": "At-Will",
       "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
+      "effect": "Raise the user’s Defense 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -123,11 +113,6 @@
       "name": "Natural Cure",
       "frequency": "Scene – Free Action",
       "effect": "Whenever the user is returned to its Poké Ball or Takes A Breather, it may activate Natural Cure to cure itself of all Persistent Status Afflictions."
-    },
-    {
-      "name": "Starswirl",
-      "frequency": "Scene – Swift Action",
-      "effect": "Connection – Rapid Spin. The user may activate this Ability to user Rapid Spin as a Swift Action."
     }
   ],
   "natureMod": {

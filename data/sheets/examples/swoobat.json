@@ -2,7 +2,7 @@
   "slug": "examples-swoobat",
   "nickname": "Swoobat",
   "species": "Swoobat",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Quirky",
@@ -13,51 +13,71 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 3
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Attract",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "3, 1 Target, Social",
+      "effect": "Attract Infatuates the target if its gender is the opposite of the user’s. Attract fails when used by or against Genderless targets."
+    },
+    {
+      "name": "Air Cutter",
+      "type": "Flying",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Air Cutter is a Critical Hit on 18+."
+    },
     {
       "name": "Imprison",
       "type": "Psychic",
@@ -65,25 +85,6 @@
       "frequency": "Scene x2",
       "range": "10, 1 Target",
       "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
-    },
-    {
-      "name": "Assurance",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
-    },
-    {
-      "name": "Odor Sleuth",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
     },
     {
       "name": "Heart Stamp",
@@ -97,6 +98,17 @@
       "effect": "Heart Stamp Flinches the target on 15+."
     },
     {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
       "name": "Gust",
       "type": "Flying",
       "category": "Special",
@@ -105,7 +117,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead.",
+      "special": "Grants Guster"
     }
   ],
   "abilities": [

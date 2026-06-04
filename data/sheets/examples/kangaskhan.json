@@ -2,7 +2,7 @@
   "slug": "examples-kangaskhan",
   "nickname": "Kangaskhan",
   "species": "Kangaskhan",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Calm",
@@ -17,17 +17,17 @@
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
@@ -37,26 +37,59 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 87,
-    "currentHp": 87,
-    "tick": 8,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Mega Punch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Rage",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+    },
+    {
+      "name": "Double Hit",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "None"
+    },
     {
       "name": "Bite",
       "type": "Dark",
@@ -69,15 +102,6 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
       "name": "Tail Whip",
       "type": "Normal",
       "category": "Status",
@@ -85,17 +109,6 @@
       "ac": 2,
       "range": "Burst 1, Friendly",
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Comet Punch",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
     },
     {
       "name": "Fake Out",
@@ -107,17 +120,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
-    },
-    {
-      "name": "Double Hit",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Melee, 1 Target, Double Strike",
-      "effect": "None"
     }
   ],
   "abilities": [

@@ -2,7 +2,7 @@
   "slug": "examples-dewgong",
   "nickname": "Dewgong",
   "species": "Dewgong",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Decisive",
@@ -18,96 +18,104 @@
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 87,
-    "currentHp": 87,
-    "tick": 8,
+    "maxHp": 102,
+    "currentHp": 102,
+    "tick": 10,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Growl",
-      "type": "Normal",
+      "name": "Sheer Cold",
+      "type": "Ice",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+      "frequency": "Daily",
+      "range": "4, 1 Target, Execute",
+      "effect": "Roll 1d100. This roll may not be modified in any way.  If you roll X or lower, the target Faints. X is equal to 30 + The User’s Level - The Target’s Level.",
+      "special": "Grants Freezer"
     },
     {
-      "name": "Ice Shard",
-      "type": "Ice",
+      "name": "Brine",
+      "type": "Water",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "If the target’s Hit Points are under 50%, Brine’s Damage Base is increased to Damage Base 13 (4d10+10 / 35)."
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
       "category": "Physical",
       "db": 6,
       "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target, Priority",
+      "range": "Melee, 1 Target, Priority",
       "effect": "None"
     },
     {
-      "name": "Encore",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
-    },
-    {
-      "name": "Icy Wind",
+      "name": "Aurora Beam",
       "type": "Ice",
       "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
-    },
-    {
-      "name": "Signal Beam",
-      "type": "Bug",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10 / 19",
-      "frequency": "EOT",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Signal Beam confuses the target on 19+."
+      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+.",
+      "special": "Grants Freezer"
+    },
+    {
+      "name": "Aqua Ring",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
+    },
+    {
+      "name": "Rest",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
     }
   ],
   "abilities": [

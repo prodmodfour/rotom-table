@@ -2,7 +2,7 @@
   "slug": "examples-yanma",
   "nickname": "Yanma",
   "species": "Yanma",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Jolly",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -28,12 +28,12 @@
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "spd": {
@@ -43,9 +43,9 @@
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
@@ -54,26 +54,20 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Detect",
-      "type": "Fighting",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Detect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
-    },
-    {
-      "name": "Sonic Boom",
+      "name": "Quick Attack",
       "type": "Normal",
-      "category": "Special",
-      "frequency": "EOT",
-      "ac": 6,
-      "range": "8, 1 Target",
-      "effect": "Sonic Boom causes the target to lose 15 Hit Points. Sonic Boom is Special and interacts with other moves and effects as such ( Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc. )"
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
     },
     {
       "name": "Tackle",
@@ -85,25 +79,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Double Team",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Illusion, Coat",
-      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
-    },
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
     },
     {
       "name": "Foresight",
@@ -119,11 +94,6 @@
       "name": "Speed Boost",
       "frequency": "Static",
       "effect": "The Pokémon’s Speed is raised 1 Combat Stage at the end of each of its turns. Speed Boost has no effect while out of combat."
-    },
-    {
-      "name": "Compound Eyes",
-      "frequency": "Static",
-      "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
     }
   ],
   "natureMod": {

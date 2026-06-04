@@ -2,7 +2,7 @@
   "slug": "examples-arboliva",
   "nickname": "Arboliva",
   "species": "Arboliva",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Lax",
@@ -13,91 +13,89 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mirror Coat",
-      "type": "Psychic",
-      "category": "Special",
-      "frequency": "Scene x2",
-      "range": "Any, 1 Target, Reaction",
-      "effect": "Mirror Coat may be used as a Reaction when the user is hit by a damaging Special Attack. Resolve the Triggering Attack, with Mirror Coat’s user resisting the attack one step further. After the attack is resolved, if Mirror Coat’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Mirror Coat is Special, and while it cannot miss, it cannot hit targets immune to Psychic-Type Moves."
-    },
-    {
-      "name": "Razor Leaf",
+      "name": "Leech Seed",
       "type": "Grass",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "category": "Status",
+      "frequency": "Daily x2",
       "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
     },
     {
-      "name": "Absorb",
+      "name": "Energy Ball",
       "type": "Grass",
       "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Flail",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
+      "range": "8, 1 Target",
+      "effect": "Energy Ball lowers the foe’s Special Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Seed Bomb",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Grassy Terrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field",
+      "effect": "The area becomes Grassy for 5 rounds. While Grassy, all Pokémon and Trainers standing on the ground recover a Tick of Hit Points at the start of every turn, and Grass-Type attacks performed by grounded Pokémon and Trainers gain a +10 bonus to Damage Rolls."
     },
     {
       "name": "Mega Drain",
@@ -111,12 +109,15 @@
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
-      "name": "Growth",
+      "name": "Flail",
       "type": "Normal",
-      "category": "Status",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
     }
   ],
   "abilities": [
@@ -127,6 +128,11 @@
       "name": "Chlorophyll",
       "frequency": "Static",
       "effect": "While in Sunny Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    },
+    {
+      "name": "Harvest",
+      "frequency": "At-Will – Free Action",
+      "effect": "Whenever the user trades in a Digestion Buff from a Berry, flip a coin. On heads, the user gains all the benefits of the Digestion Buff, but the Buff is not used up. On tails, the Buff is consumed normally. While in Sunny Weather, the Buff is never consumed. The user may trade in a Digestion Buff up to once per turn during an encounter, but only until they flip “Tails”."
     }
   ],
   "natureMod": {

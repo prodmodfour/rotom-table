@@ -2,7 +2,7 @@
   "slug": "examples-cinccino",
   "nickname": "Cinccino",
   "species": "Cinccino",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Rash",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "def": {
@@ -27,12 +27,12 @@
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -42,9 +42,9 @@
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 77,
+    "currentHp": 77,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
@@ -53,29 +53,29 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Double Slap",
+      "name": "Tail Slap",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "EOT",
       "ac": 4,
       "range": "Melee, 1 Target, Five Strike",
       "effect": "None"
     },
     {
-      "name": "Tickle",
+      "name": "Sing",
       "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
+      "frequency": "Scene",
+      "ac": 10,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
     },
     {
       "name": "Swift",
@@ -97,21 +97,24 @@
       "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
     },
     {
-      "name": "Baby-Doll Eyes",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Priority, Social",
-      "effect": "The target’s Attack is lowered 1 Combat Stage."
+      "name": "Double Slap",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
     },
     {
-      "name": "Helping Hand",
+      "name": "Tickle",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -123,6 +126,7 @@
     {
       "name": "Cute Charm",
       "frequency": "Scene – Free Action",
+      "trigger": "A foe of the opposite gender attacks the user",
       "effect": "The foe becomes Infatuated."
     }
   ],

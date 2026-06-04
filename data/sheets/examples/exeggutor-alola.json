@@ -2,7 +2,7 @@
   "slug": "examples-exeggutor-alola",
   "nickname": "Exeggutor Alola",
   "species": "Exeggutor Alola",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Stark",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "satk": {
@@ -33,19 +33,19 @@
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 77,
+    "currentHp": 77,
+    "tick": 7,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 2,
@@ -54,10 +54,37 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Sleep Powder",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
+    {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
+    },
+    {
+      "name": "Stun Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
+    },
     {
       "name": "Psyshock",
       "type": "Psychic",
@@ -70,6 +97,17 @@
       "effect": "When calculating damage, the target subtracts their Defense from Psyshock’s damage instead of their Special Defense. Psyshock is still otherwise Special ( Special Evasion is used to avoid it, Mirror Coat can reflect it, etc. )"
     },
     {
+      "name": "Bullet Seed",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
       "name": "Leech Seed",
       "type": "Grass",
       "category": "Status",
@@ -79,33 +117,12 @@
       "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
     },
     {
-      "name": "Stun Spore",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Powder",
-      "effect": "The target is Paralyzed."
-    },
-    {
-      "name": "Barrage",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Hypnosis",
+      "name": "Reflect",
       "type": "Psychic",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target",
-      "effect": "The target falls Asleep."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
     },
     {
       "name": "Uproar",
@@ -117,25 +134,6 @@
       "ac": 2,
       "range": "Burst 1, Spirit Surge, Sonic",
       "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
-    },
-    {
-      "name": "Reflect",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
-    },
-    {
-      "name": "Bullet Seed",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
     }
   ],
   "abilities": [

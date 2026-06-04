@@ -2,7 +2,7 @@
   "slug": "examples-klinklang",
   "nickname": "Klinklang",
   "species": "Klinklang",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Hasty",
@@ -12,92 +12,127 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 11,
+      "added": 13,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 99,
+    "currentHp": 99,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 4,
+      "vsSatk": 3,
       "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Charge",
+      "name": "Metal Sound",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Discharge",
       "type": "Electric",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "All Cardinally Adjacent Targets",
+      "effect": "Discharge Paralyzes all legal targets on 15+."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Mirror Shot",
+      "type": "Steel",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, Ranged Blast 2",
+      "effect": "All Legal Targets have their Accuracy lowered by -2 on 16+."
+    },
+    {
+      "name": "Autotomize",
+      "type": "Steel",
       "category": "Status",
       "frequency": "EOT",
       "range": "Self",
-      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+      "effect": "For the remainder of the Encounter, the user’s Weight Class is one value lower, to a minimum of 1. If the user can, the user’s Speed is raised by +2 Combat Stages."
     },
     {
-      "name": "Gear Grind",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Melee, 1 Target, Double Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Thunder Shock",
+      "name": "Charge Beam",
       "type": "Electric",
       "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "If Charge Beam successfully hits a target, roll 1d20. On a roll of 7+,  the user’s Special Attack is raised by +1 Combat Stage."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Plus",
       "frequency": "Scene x2 – Free Action, Reaction",
+      "trigger": "An ally within 10m has Combat Stages raised",
       "effect": "The target gains an additional Combat Stage in one stat raised by the triggering effect."
+    },
+    {
+      "name": "Targeting System",
+      "frequency": "Scene – Free Action",
+      "effect": "Connection – Lock-On. The user may activate this Ability to use Lock-On as a Swift Action."
     }
   ],
   "natureMod": {

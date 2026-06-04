@@ -2,7 +2,7 @@
   "slug": "examples-rotom-fan",
   "nickname": "Rotom Fan",
   "species": "Rotom Fan",
-  "level": 20,
+  "level": 25,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Serious",
@@ -13,48 +13,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
+    "maxHp": 59,
+    "currentHp": 59,
     "tick": 5,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 3,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [],

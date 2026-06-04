@@ -2,7 +2,7 @@
   "slug": "examples-duraludon",
   "nickname": "Duraludon",
   "species": "Duraludon",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -13,51 +13,81 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 10,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 83,
+    "currentHp": 83,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 5,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
+    },
+    {
+      "name": "Dragon Tail",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Push",
+      "effect": "The target is Pushed 6 meters minus their Weight Class. On a roll of 15+, the target is also Tripped."
+    },
+    {
+      "name": "Breaking Swipe",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Close Blast 2",
+      "effect": "The target’s Attack is lowered 1 CS."
+    },
     {
       "name": "Metal Sound",
       "type": "Steel",
@@ -66,6 +96,14 @@
       "ac": 4,
       "range": "Burst 2, Friendly, Sonic",
       "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
     },
     {
       "name": "Rock Smash",
@@ -77,34 +115,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
-    },
-    {
-      "name": "Hone Claws",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
-    },
-    {
-      "name": "Metal Claw",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -117,6 +127,11 @@
       "name": "Heavy Metal",
       "frequency": "Static",
       "effect": "The user’s Weight Class is increased by +2. Their Defense Base Stat is increased by +2, but their Speed Base Stat is decreased by 2."
+    },
+    {
+      "name": "Clear Body",
+      "frequency": "Static",
+      "effect": "The user’s Combat Stages may not be lowered by the effect of foes’ Feautres, Abilities, or Moves. Status Affictions may still alter their Combat Stages. Defensive."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-giratina-altered-forme",
   "nickname": "Giratina Altered Forme",
   "species": "Giratina Altered Forme",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Naive",
@@ -13,114 +13,112 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 12,
+      "added": 16,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 4,
+      "added": 11,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 111,
-    "currentHp": 111,
-    "tick": 11,
+    "maxHp": 163,
+    "currentHp": 163,
+    "tick": 16,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsAtk": 5,
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Ancient Power",
-      "type": "Rock",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
-    },
-    {
-      "name": "Scary Face",
-      "type": "Normal",
+      "name": "Heal Block",
+      "type": "Psychic",
       "category": "Status",
       "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
+      "range": "6, 1 Target",
+      "effect": "Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
     },
     {
-      "name": "Shadow Sneak",
+      "name": "Hex",
       "type": "Ghost",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Dragon Breath",
-      "type": "Dragon",
       "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Dragon Breath Paralyzes the Target on 15+."
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
     },
     {
-      "name": "Slash",
-      "type": "Normal",
+      "name": "Shadow Force",
+      "type": "Ghost",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Daily x3",
+      "ac": 2,
+      "range": "Melee, 1 Target, Set-Up"
+    },
+    {
+      "name": "Shadow Claw",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
       "ac": 2,
       "range": "Melee, Pass",
-      "effect": "Slash is a Critical Hit on 18+."
+      "effect": "Shadow Claw is a Critical Hit on 18+."
     },
     {
-      "name": "Ominous Wind",
-      "type": "Ghost",
+      "name": "Aura Sphere",
+      "type": "Fighting",
       "category": "Special",
       "db": 8,
-      "damageRoll": "2d8+10",
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "range": "8, 1 Target, Aura",
+      "effect": "Aura Sphere cannot miss."
+    },
+    {
+      "name": "Earth Power",
+      "type": "Ground",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
       "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+      "range": "6, 1 Target, Groundsource",
+      "effect": "Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+."
     }
   ],
   "abilities": [
@@ -133,6 +131,12 @@
       "name": "Telepathy",
       "frequency": "Static",
       "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    },
+    {
+      "name": "Soulstealer",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user’s attack causes a foe to Faint",
+      "effect": "The user removes one Injury from themselves and gains Hit Points equal to 25% of their Max Hit Points. If the triggering attack killed its target, the user instead removes all Injuries and recovers Hit Points equal to 50% of the user’s Max Hit Points."
     }
   ],
   "natureMod": {

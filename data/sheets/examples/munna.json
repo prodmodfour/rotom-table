@@ -2,7 +2,7 @@
   "slug": "examples-munna",
   "nickname": "Munna",
   "species": "Munna",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Proud",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "atk": {
@@ -22,17 +22,17 @@
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "spd": {
@@ -42,38 +42,21 @@
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 65,
+    "currentHp": 65,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 2,
       "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Defense Curl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
-    },
-    {
-      "name": "Hypnosis",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target",
-      "effect": "The target falls Asleep."
-    },
     {
       "name": "Yawn",
       "type": "Normal",
@@ -83,23 +66,12 @@
       "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
     },
     {
-      "name": "Imprison",
-      "type": "Psychic",
+      "name": "Lucky Chant",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "range": "10, 1 Target",
-      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
-    },
-    {
-      "name": "Psybeam",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
     },
     {
       "name": "Psywave",
@@ -109,18 +81,22 @@
       "ac": 5,
       "range": "6, 1 Target",
       "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
+    },
+    {
+      "name": "Defense Curl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
     }
   ],
   "abilities": [
     {
       "name": "Dream Smoke",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe falls Asleep."
-    },
-    {
-      "name": "Hypnotic",
-      "frequency": "Static",
-      "effect": "Connection - Hypnosis. When used by the user, Hypnosis cannot miss."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-thievul",
   "nickname": "Thievul",
   "species": "Thievul",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Rash",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
@@ -42,31 +42,28 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Snarl",
+      "name": "Nasty Plot",
       "type": "Dark",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "category": "Status",
       "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2, Sonic",
-      "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 2 Combat Stages."
     },
     {
       "name": "Assurance",
@@ -80,12 +77,15 @@
       "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
     },
     {
-      "name": "Beat Up",
+      "name": "Snarl",
       "type": "Dark",
-      "category": "Physical",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "The user and up to two allies adjacent to the target may each make a Struggle Attack against the target. These Struggle Attacks hit for Dark-Type Damage instead of their usual Type. Beat Up may trigger Pack Hunt only once, no matter the number of attacks."
+      "ac": 3,
+      "range": "Cone 2, Sonic",
+      "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
     },
     {
       "name": "Hone Claws",
@@ -94,11 +94,21 @@
       "frequency": "At-Will",
       "range": "Self",
       "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
+    },
+    {
+      "name": "Beat Up",
+      "type": "Dark",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "The user and up to two allies adjacent to the target may each make a Struggle Attack against the target. These Struggle Attacks hit for Dark-Type Damage instead of their usual Type. Beat Up may trigger Pack Hunt only once, no matter the number of attacks."
     }
   ],
   "abilities": [
     {
-      "name": "Stakeout"
+      "name": "Stakeout",
+      "frequency": "Static",
+      "effect": "The user gains a +2d6+4 bonus on damage rolls against foes that were released from a Pokéball or entered the encounter since the user's last turn."
     },
     {
       "name": "Weird Power",

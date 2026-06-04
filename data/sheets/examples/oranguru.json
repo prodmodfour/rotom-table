@@ -2,7 +2,7 @@
   "slug": "examples-oranguru",
   "nickname": "Oranguru",
   "species": "Oranguru",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Cuddly",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
@@ -38,26 +38,44 @@
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
+    "maxHp": 86,
+    "currentHp": 86,
     "tick": 8,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Nasty Plot",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 2 Combat Stages."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
     {
       "name": "Psych Up",
       "type": "Normal",
@@ -65,14 +83,6 @@
       "frequency": "Scene",
       "range": "6, 1 Target",
       "effect": "The user’s Combat Stages are changed to match the target’s Combat Stages. Psych Up cannot miss."
-    },
-    {
-      "name": "After You",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "6, 1 Target",
-      "effect": "After You is a Swift Action. The target takes their turn for the round immediately after the user finishes their turn, ignoring Initiative. After You may only affect a target that has not yet acted that round and can only affect willing targets."
     },
     {
       "name": "Stored Power",
@@ -93,17 +103,6 @@
       "ac": 2,
       "range": "10, 1 Target, Social",
       "effect": "Quash changes the target’s Initiative to 0 for the remainder of the round."
-    },
-    {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
     },
     {
       "name": "Taunt",

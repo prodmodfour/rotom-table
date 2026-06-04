@@ -2,7 +2,7 @@
   "slug": "examples-hatenna",
   "nickname": "Hatenna",
   "species": "Hatenna",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Bold",
@@ -17,17 +17,17 @@
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 10,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
@@ -37,48 +37,26 @@
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Psybeam",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
-    },
     {
       "name": "Disarming Voice",
       "type": "Fairy",
@@ -90,6 +68,14 @@
       "effect": "Disarming Voice cannot miss."
     },
     {
+      "name": "Life Dew",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Burst 1, Healing",
+      "effect": "The user and all allies in the burst regain Hit Points equal to 1/4 of their Maximum Hit Points."
+    },
+    {
       "name": "Play Nice",
       "type": "Normal",
       "category": "Status",
@@ -99,20 +85,15 @@
       "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
     },
     {
-      "name": "Life Dew",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Burst 1, Healing",
-      "effect": "The user and all allies in the burst regain Hit Points equal to 1/4 of their Maximum Hit Points."
-    },
-    {
-      "name": "Aromatherapy",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Burst 1",
-      "effect": "All allies in the burst are cured of one status condition of their choice."
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
     }
   ],
   "abilities": [
@@ -120,11 +101,6 @@
       "name": "Anticipation",
       "frequency": "At-Will – Swift Action",
       "effect": "The target reveals if they have any Moves that are Super-Effective against the Pokémon with Anticipation. You may not target a Pokémon or Trainer more than once per encounter with Anticipation. Anticipation only reveals whether the opponent does or does not have those moves, not the specific moves themselves."
-    },
-    {
-      "name": "Gentle Vibe",
-      "frequency": "Scene – Standard Action",
-      "effect": "All targets in the burst, including the user, have their Combat Stages reset, and are cured of any Volatile Status ailments."
     }
   ],
   "natureMod": {

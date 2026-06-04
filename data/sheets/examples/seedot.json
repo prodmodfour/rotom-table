@@ -2,7 +2,7 @@
   "slug": "examples-seedot",
   "nickname": "Seedot",
   "species": "Seedot",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Desperate",
@@ -17,61 +17,54 @@
     },
     "atk": {
       "base": 1,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
-    "tick": 4,
+    "maxHp": 38,
+    "currentHp": 38,
+    "tick": 3,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Bide",
-      "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
-    },
     {
       "name": "Growth",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
       "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     },
     {
       "name": "Harden",
@@ -82,13 +75,12 @@
       "effect": "Raise the user’s Defense 1 Combat Stage."
     },
     {
-      "name": "Nature Power",
+      "name": "Bide",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": "See Effect",
-      "range": "See Effect",
-      "effect": "Nature Power uses a Move defined by the Environ keyword."
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
     }
   ],
   "abilities": [
@@ -96,11 +88,6 @@
       "name": "Sturdy",
       "frequency": "Static",
       "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
-    },
-    {
-      "name": "Early Bird",
-      "frequency": "Static",
-      "effect": "The user gains a bonus to Initiative equal to half its Speed, and a +3 Bonus on Save Checks against Sleep."
     }
   ],
   "natureMod": {

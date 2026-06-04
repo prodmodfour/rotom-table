@@ -2,7 +2,7 @@
   "slug": "examples-persian-alola",
   "nickname": "Persian Alola",
   "species": "Persian Alola",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Mild",
@@ -27,7 +27,7 @@
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
@@ -37,26 +37,54 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 79,
+    "currentHp": 79,
+    "tick": 7,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
     {
       "name": "Fury Swipes",
       "type": "Normal",
@@ -69,13 +97,15 @@
       "effect": "None"
     },
     {
-      "name": "Screech",
+      "name": "Fake Out",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
     },
     {
       "name": "Bite",
@@ -87,17 +117,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Fake Out",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
     }
   ],
   "abilities": [
@@ -109,6 +128,7 @@
     {
       "name": "Rattled",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user is hit by a Bug, Dark, or Ghost Type Move",
       "effect": "The user’s Speed is raised by +1 Combat Stage, and may immediately Disengage as a Free Action."
     }
   ],

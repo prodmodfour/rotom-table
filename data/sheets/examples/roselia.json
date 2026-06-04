@@ -2,7 +2,7 @@
   "slug": "examples-roselia",
   "nickname": "Roselia",
   "species": "Roselia",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Decisive",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -43,40 +43,40 @@
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
+    "maxHp": 68,
+    "currentHp": 68,
     "tick": 6,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Leech Seed",
+      "name": "Giga Drain",
       "type": "Grass",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
-    },
-    {
-      "name": "Poison Sting",
-      "type": "Poison",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Poison Sting Poisons the target on 17+."
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Grass Whistle",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Sonic",
+      "effect": "The target falls Asleep."
     },
     {
       "name": "Magical Leaf",
@@ -89,12 +89,13 @@
       "effect": "Magical Leaf cannot miss."
     },
     {
-      "name": "Growth",
-      "type": "Normal",
+      "name": "Leech Seed",
+      "type": "Grass",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
     },
     {
       "name": "Mega Drain",
@@ -121,6 +122,7 @@
     {
       "name": "Poison Point",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Move",
       "effect": "The attacking foe is Poisoned."
     },
     {

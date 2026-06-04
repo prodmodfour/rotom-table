@@ -2,7 +2,7 @@
   "slug": "examples-clefairy",
   "nickname": "Clefairy",
   "species": "Clefairy",
-  "level": 20,
+  "level": 15,
   "gender": "Female",
   "shiny": false,
   "nature": "Bashful",
@@ -12,51 +12,59 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 9,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 61,
+    "currentHp": 61,
+    "tick": 6,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 3,
+      "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 4,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Defense Curl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
+    },
     {
       "name": "Double Slap",
       "type": "Normal",
@@ -69,20 +77,13 @@
       "effect": "None"
     },
     {
-      "name": "Defense Curl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
-    },
-    {
-      "name": "Follow Me",
+      "name": "Sing",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Burst 5, Social",
-      "effect": "Until the end of the user’s next turn, all Foes must target the user when using a Move that targets their opponents. This effect ends if the user is Fainted or Switched out."
+      "ac": 10,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
     },
     {
       "name": "Encore",
@@ -92,36 +93,14 @@
       "ac": 2,
       "range": "4, 1 Target, Social",
       "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
-    },
-    {
-      "name": "Bestow",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": "--",
-      "range": "Melee, 1 Target",
-      "effect": "The user gives its held item to the target, unless the target is already holding an item. Using Bestow is a Swift Action."
-    },
-    {
-      "name": "Sing",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 10,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
     }
   ],
   "abilities": [
     {
       "name": "Cute Charm",
       "frequency": "Scene – Free Action",
+      "trigger": "A foe of the opposite gender attacks the user",
       "effect": "The foe becomes Infatuated."
-    },
-    {
-      "name": "Magic Guard",
-      "frequency": "Static",
-      "effect": "The user is immune to damage and Hit Point loss from Hazards, Weather, Status Afflictions, Vortexes, Recoil, Hay Fever, Iron Barbs, Rough Skin, and Leech Seed. Defensive."
     }
   ],
   "capabilities": {

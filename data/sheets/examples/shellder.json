@@ -2,7 +2,7 @@
   "slug": "examples-shellder",
   "nickname": "Shellder",
   "species": "Shellder",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Hardy",
@@ -17,17 +17,17 @@
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 12,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
@@ -42,32 +42,21 @@
     }
   },
   "combat": {
-    "maxHp": 45,
-    "currentHp": 45,
-    "tick": 4,
+    "maxHp": 35,
+    "currentHp": 35,
+    "tick": 3,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 3,
       "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
     {
       "name": "Supersonic",
       "type": "Normal",
@@ -78,40 +67,23 @@
       "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     },
     {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Icicle Spear",
-      "type": "Ice",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Protect",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
-    },
-    {
       "name": "Withdraw",
       "type": "Water",
       "category": "Status",
       "frequency": "At-Will",
       "range": "Self",
       "effect": "The user’s Defense is raised 1 Combat Stage."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [
@@ -119,11 +91,6 @@
       "name": "Shell Armor",
       "frequency": "Static",
       "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
-    },
-    {
-      "name": "Overcoat",
-      "frequency": "Static",
-      "effect": "The user is immune to Moves with the Powder Keyword, and does not take damage from any Weather that would normally cause it to take damage. Defensive."
     }
   ],
   "capabilities": {

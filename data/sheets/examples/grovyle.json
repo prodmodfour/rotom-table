@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "atk": {
@@ -22,32 +22,32 @@
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 10,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
+    "maxHp": 57,
+    "currentHp": 57,
     "tick": 5,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 1,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
@@ -102,15 +102,6 @@
       "effect": "None."
     },
     {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
       "name": "Absorb",
       "type": "Grass",
       "category": "Special",
@@ -120,6 +111,15 @@
       "ac": 2,
       "range": "4, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [

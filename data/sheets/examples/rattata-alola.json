@@ -2,7 +2,7 @@
   "slug": "examples-rattata-alola",
   "nickname": "Rattata Alola",
   "species": "Rattata Alola",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -13,62 +13,51 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 45,
-    "currentHp": 45,
-    "tick": 4,
+    "maxHp": 32,
+    "currentHp": 32,
+    "tick": 3,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsSatk": 1,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
     {
       "name": "Bite",
       "type": "Dark",
@@ -79,6 +68,14 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
     },
     {
       "name": "Quick Attack",
@@ -101,26 +98,15 @@
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
-      "name": "Hyper Fang",
+      "name": "Tackle",
       "type": "Normal",
-      "category": "Physical",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target",
-      "effect": "Hyper Fang Flinches the target on 19+"
-    },
-    {
-      "name": "Pursuit",
-      "type": "Dark",
       "category": "Physical",
       "db": 6,
       "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [
@@ -128,11 +114,6 @@
       "name": "Thick Fat",
       "frequency": "Static",
       "effect": "The user resists Fire-Type and Ice-Type attacks one step further. Defensive."
-    },
-    {
-      "name": "Pickup",
-      "frequency": "Daily – Extended Action",
-      "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
     }
   ],
   "natureMod": {

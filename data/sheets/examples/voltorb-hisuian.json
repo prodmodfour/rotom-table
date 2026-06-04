@@ -2,7 +2,7 @@
   "slug": "examples-voltorb-hisuian",
   "nickname": "Voltorb Hisuian",
   "species": "Voltorb Hisuian",
-  "level": 20,
+  "level": 10,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Patient",
@@ -13,48 +13,48 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 10,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsSatk": 1,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -87,18 +87,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
-    },
-    {
-      "name": "Spark",
-      "type": "Electric",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Spark Paralyzes the target on 15+."
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
     }
   ],
   "abilities": [
@@ -106,11 +96,6 @@
       "name": "Soundproof",
       "frequency": "Static",
       "effect": "The Pokémon is immune to Moves with the Sonic Keyword. Defensive."
-    },
-    {
-      "name": "Static",
-      "frequency": "Scene – Free Action",
-      "effect": "The attacking foe becomes Paralyzed."
     }
   ],
   "natureMod": {

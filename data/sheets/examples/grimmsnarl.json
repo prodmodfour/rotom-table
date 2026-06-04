@@ -2,7 +2,7 @@
   "slug": "examples-grimmsnarl",
   "nickname": "Grimmsnarl",
   "species": "Grimmsnarl",
-  "level": 20,
+  "level": 45,
   "gender": "Male",
   "shiny": false,
   "nature": "Dreamy",
@@ -13,51 +13,90 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 109,
+    "currentHp": 109,
+    "tick": 10,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsSatk": 4,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Nasty Plot",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 2 Combat Stages."
+    },
+    {
+      "name": "Dark Pulse",
+      "type": "Dark",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Dark Pulse Flinches the target on 17+"
+    },
+    {
+      "name": "Torment",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "10, 1 Target, Social",
+      "effect": "The target becomes Suppressed."
+    },
+    {
+      "name": "Sucker Punch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Interrupt, Trigger",
+      "effect": "If an adjacent foe targets the user with a Damaging Attack, Sucker Punch may be used as an Interrupt Move against the triggering foe."
+    },
     {
       "name": "Swagger",
       "type": "Normal",
@@ -66,24 +105,6 @@
       "ac": 5,
       "range": "6, 1 Target, Social",
       "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
-    },
-    {
-      "name": "Flatter",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "The target’s Special Attack is raised by +1 Combat Stage. Flatter Confuses the target."
-    },
-    {
-      "name": "Fake Tears",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "8, 1 Target, Social",
-      "effect": "Lower the target’s Special Defense 2 Combat Stages."
     },
     {
       "name": "Assurance",
@@ -95,17 +116,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [
@@ -118,6 +128,11 @@
       "name": "Defiant",
       "frequency": "Static",
       "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Prankster",
+      "frequency": "Static",
+      "effect": "The user may use Status Moves as Priority (Advanced)."
     }
   ],
   "natureMod": {

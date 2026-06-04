@@ -2,7 +2,7 @@
   "slug": "examples-oricorio",
   "nickname": "Oricorio",
   "species": "Oricorio",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Hardy",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -43,21 +43,49 @@
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 77,
+    "currentHp": 77,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Double Slap",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Feather Dance",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Attack lowered 2 Combat Stages."
+    },
+    {
+      "name": "Baton Pass",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
+    },
     {
       "name": "Air Cutter",
       "type": "Flying",
@@ -70,40 +98,12 @@
       "effect": "Air Cutter is a Critical Hit on 18+."
     },
     {
-      "name": "Baton Pass",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
-    },
-    {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
       "name": "Helping Hand",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
       "range": "4, 1 Target, Priority",
       "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
-    },
-    {
-      "name": "Feather Dance",
-      "type": "Flying",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Attack lowered 2 Combat Stages."
     },
     {
       "name": "Peck",
@@ -121,11 +121,13 @@
     {
       "name": "Dancer",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "Someone within 10 meters uses a StatusClass Dance Move",
       "effect": "The user may immediately use the triggering Move as a Free Action."
     },
     {
       "name": "Spinning Dance",
       "frequency": "At-Will - Free Action",
+      "trigger": "The user is targeted by an attack, but is missed",
       "effect": "If not Fainted, Paralyzed, or Asleep, the user gains +1 Evasion and may immediately Shift 1 meter."
     }
   ],

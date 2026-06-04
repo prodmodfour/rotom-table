@@ -2,7 +2,7 @@
   "slug": "examples-dragonite",
   "nickname": "Dragonite",
   "species": "Dragonite",
-  "level": 20,
+  "level": 55,
   "gender": "Male",
   "shiny": false,
   "nature": "Bashful",
@@ -13,79 +13,110 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 122,
+    "currentHp": 122,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 4,
+      "vsSatk": 4,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 12,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Dragon Rage",
-      "type": "Dragon",
-      "category": "Special",
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
+      "range": "Melee, 1 Target",
+      "effect": "None."
     },
     {
-      "name": "Thunder Wave",
-      "type": "Electric",
+      "name": "Safeguard",
+      "type": "Normal",
       "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Dragon Rush",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
       "frequency": "Scene x2",
       "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+      "range": "Melee, 1 Target, Dash, Push, Smite",
+      "effect": "The target is Pushed 3 meters. Dragon Rush Flinches the target on 17+."
     },
     {
-      "name": "Twister",
+      "name": "Aqua Tail",
+      "type": "Water",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Dragon Tail",
       "type": "Dragon",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, Ranged Blast 3",
-      "effect": "Small or Medium targets in the central square of the blast are not hit. Twister Flinches the target on 18-20 during Accuracy Check. Any Pokémon Airborne as a result of Fly or Sky Drop above the Blast are hit, ignoring range, and Twister has a Damage Base of 8 against those targets instead."
+      "ac": 3,
+      "range": "Melee, 1 Target, Push",
+      "effect": "The target is Pushed 6 meters minus their Weight Class. On a roll of 15+, the target is also Tripped."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -98,6 +129,11 @@
       "name": "Courage",
       "frequency": "Static",
       "effect": "While at or under 1/3rd of its Max Hit Point value, the user gains a +5 Damage Bonus to all Damage Rolls, and 5 Damage Reduction. Defensive."
+    },
+    {
+      "name": "Confidence",
+      "frequency": "Scene – Standard Action",
+      "effect": "Choose a Combat Stat. All allies within 5 meters of the user gain +1 CS in the Chosen Stat."
     }
   ],
   "capabilities": {

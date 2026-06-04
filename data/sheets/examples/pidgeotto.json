@@ -18,7 +18,7 @@
     },
     "atk": {
       "base": 1,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "def": {
@@ -33,12 +33,12 @@
     },
     "sdef": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
@@ -59,26 +59,6 @@
   },
   "movelist": [
     {
-      "name": "Gust",
-      "type": "Flying",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
-    {
       "name": "Whirlwind",
       "type": "Normal",
       "category": "Status",
@@ -97,6 +77,27 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
+    },
+    {
+      "name": "Gust",
+      "type": "Flying",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead.",
+      "special": "Grants Guster"
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [

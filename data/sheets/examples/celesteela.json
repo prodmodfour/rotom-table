@@ -2,7 +2,7 @@
   "slug": "examples-celesteela",
   "nickname": "Celesteela",
   "species": "Celesteela",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Modest",
@@ -13,51 +13,93 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 8,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 107,
+    "currentHp": 107,
+    "tick": 10,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Flash Cannon",
+      "type": "Steel",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Flash Cannon lowers the target’s Special Defense by 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Giga Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Iron Head",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Iron Head Flinches the target on 15+."
+    },
+    {
+      "name": "Metal Sound",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
     {
       "name": "Leech Seed",
       "type": "Grass",
@@ -66,36 +108,6 @@
       "ac": 4,
       "range": "6, 1 Target",
       "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
-    },
-    {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Smack Down",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
-    },
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
     },
     {
       "name": "Mega Drain",
@@ -107,29 +119,24 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Absorb",
-      "type": "Grass",
-      "category": "Special",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     }
   ],
   "abilities": [
     {
       "name": "Beast Boost",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user’s Damaging Attack causes an",
       "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
     },
     {
       "name": "Battle Armor",
       "frequency": "Static",
       "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
+    },
+    {
+      "name": "Clay Cannons",
+      "frequency": "At-Will – Swift Action",
+      "effect": "Until the end of the round, the user may originate any Ranged Move they use from any square within 2 meters of itself."
     }
   ],
   "natureMod": {

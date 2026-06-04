@@ -2,7 +2,7 @@
   "slug": "examples-orbeetle",
   "nickname": "Orbeetle",
   "species": "Orbeetle",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Naive",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "spd": {
@@ -43,39 +43,67 @@
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 86,
+    "currentHp": 86,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 4,
+      "vsSatk": 4,
       "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Magic Coat",
-      "type": "Psychic",
+      "name": "After You",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Daily",
-      "range": "4, Interrupt, Trigger",
-      "effect": "If the user is about to get a hit by a Move that does not have a Damage Dice Roll, they may use Magic Coat as an Interrupt. The Interrupted Move’s user is treated as if they were the target of their own Move, with the user of Magic Coat as the user."
+      "frequency": "Scene x2",
+      "range": "6, 1 Target",
+      "effect": "After You is a Swift Action. The target takes their turn for the round immediately after the user finishes their turn, ignoring Initiative. After You may only affect a target that has not yet acted that round and can only affect willing targets."
     },
     {
-      "name": "Psybeam",
+      "name": "Psychic",
       "type": "Psychic",
       "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
+      "range": "5, 1 Target, Push",
+      "effect": "The target is Pushed 1 meter in any direction. Psychic lowers the target’s Special Defense 1 Combat Stage on 17+.",
+      "special": "Grants Telekinetic"
+    },
+    {
+      "name": "Mirror Coat",
+      "type": "Psychic",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "range": "Any, 1 Target, Reaction",
+      "effect": "Mirror Coat may be used as a Reaction when the user is hit by a damaging Special Attack. Resolve the Triggering Attack, with Mirror Coat’s user resisting the attack one step further. After the attack is resolved, if Mirror Coat’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Mirror Coat is Special, and while it cannot miss, it cannot hit targets immune to Psychic-Type Moves."
+    },
+    {
+      "name": "Bug Buzz",
+      "type": "Bug",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Cone 2 or Close Blast 2, Sonic, Smite",
+      "effect": "Bug Buzz lowers the Special Defense of all targets on 19+."
+    },
+    {
+      "name": "Ally Switch",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target, Interrupt",
+      "effect": "Ally Switch may be declared during a foe’s turn as an Interrupt. The user chooses one willing ally within 6 meters; the target and the user switch places. If the ally was a target of a Move, the user is now the target; If the user was a target of a Move, the ally is now the target."
     },
     {
       "name": "Hypnosis",
@@ -85,23 +113,6 @@
       "ac": 6,
       "range": "4, 1 Target",
       "effect": "The target falls Asleep."
-    },
-    {
-      "name": "Agility",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Speed 2 Combat Stages."
-    },
-    {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
     }
   ],
   "abilities": [
@@ -114,6 +125,11 @@
       "name": "Compound Eyes",
       "frequency": "Static",
       "effect": "The user gains a +3 Bonus to all Accuracy Rolls."
+    },
+    {
+      "name": "Hypnotic",
+      "frequency": "Static",
+      "effect": "Connection - Hypnosis. When used by the user, Hypnosis cannot miss."
     }
   ],
   "natureMod": {

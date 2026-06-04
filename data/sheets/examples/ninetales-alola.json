@@ -2,7 +2,7 @@
   "slug": "examples-ninetales-alola",
   "nickname": "Ninetales Alola",
   "species": "Ninetales Alola",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Stark",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -38,45 +38,43 @@
     },
     "spd": {
       "base": 0,
-      "added": 10,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 65,
+    "currentHp": 65,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 3,
-      "vsAny": 4
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Roar",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 1, Sonic, Social",
-      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
     },
     {
-      "name": "Icy Wind",
+      "name": "Mist",
       "type": "Ice",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
     },
     {
       "name": "Payback",
@@ -90,13 +88,24 @@
       "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
     },
     {
-      "name": "Tail Whip",
-      "type": "Normal",
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
     },
     {
       "name": "Ice Shard",
@@ -108,15 +117,6 @@
       "ac": 2,
       "range": "4, 1 Target, Priority",
       "effect": "None"
-    },
-    {
-      "name": "Baby-Doll Eyes",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Priority, Social",
-      "effect": "The target’s Attack is lowered 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -128,6 +128,7 @@
     {
       "name": "Cute Charm",
       "frequency": "Scene – Free Action",
+      "trigger": "A foe of the opposite gender attacks the user",
       "effect": "The foe becomes Infatuated."
     }
   ],

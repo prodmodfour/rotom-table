@@ -2,7 +2,7 @@
   "slug": "examples-togedemaru",
   "nickname": "Togedemaru",
   "species": "Togedemaru",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Gentle",
@@ -13,61 +13,71 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 74,
+    "currentHp": 74,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 1,
+      "vsSatk": 3,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tackle",
-      "type": "Normal",
+      "name": "Magnet Rise",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 2,
+      "range": "Self, Swift Action",
+      "effect": "The user gains the Levitate Ability for 5 turns. Magnet Rise may be activated as a Swift Action if the user is otherwise given an action that consumes a Command.",
+      "special": "Grants Magnetic"
+    },
+    {
+      "name": "Nuzzle",
+      "type": "Electric",
       "category": "Physical",
       "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "damageRoll": "1d8+6",
+      "frequency": "Scene",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "Melee, 1 Target",
+      "effect": "Nuzzle Paralyzes the target."
     },
     {
       "name": "Spark",
@@ -81,23 +91,12 @@
       "effect": "Spark Paralyzes the target on 15+."
     },
     {
-      "name": "Defense Curl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
-    },
-    {
-      "name": "Thunder Shock",
+      "name": "Charge",
       "type": "Electric",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
     },
     {
       "name": "Rollout",
@@ -111,18 +110,19 @@
       "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
     },
     {
-      "name": "Charge",
-      "type": "Electric",
+      "name": "Defense Curl",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
+      "frequency": "At-Will",
       "range": "Self",
-      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
     }
   ],
   "abilities": [
     {
       "name": "Lightning Rod",
       "frequency": "Scene – Free Action",
+      "trigger": "A ranged Electric Type Move is used within 10",
       "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  The user’s Special Attack is then raised by +1 Combat Stage."
     },
     {

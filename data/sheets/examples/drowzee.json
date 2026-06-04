@@ -2,7 +2,7 @@
   "slug": "examples-drowzee",
   "nickname": "Drowzee",
   "species": "Drowzee",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Serious",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
@@ -42,9 +42,9 @@
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 3,
@@ -53,10 +53,29 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
     {
       "name": "Pound",
       "type": "Normal",
@@ -76,45 +95,6 @@
       "ac": 6,
       "range": "4, 1 Target",
       "effect": "The target falls Asleep."
-    },
-    {
-      "name": "Headbutt",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Poison Gas",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 6,
-      "range": "Burst 1 or Cone 2",
-      "effect": "Poison Gas Poisons all Legal Targets."
-    },
-    {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Disable",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
     }
   ],
   "abilities": [
@@ -122,11 +102,6 @@
       "name": "Hypnotic",
       "frequency": "Static",
       "effect": "Connection - Hypnosis. When used by the user, Hypnosis cannot miss."
-    },
-    {
-      "name": "Dreamspinner",
-      "frequency": "Scene x3 – Swift Action",
-      "effect": "All Sleeping Foes within 3 meters lose a Tick of Hit Points, and the user gains a Tick of Temporary Hit Points."
     }
   ],
   "capabilities": {

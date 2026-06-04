@@ -2,7 +2,7 @@
   "slug": "examples-pidove",
   "nickname": "Pidove",
   "species": "Pidove",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Cuddly",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 9,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
@@ -38,48 +38,26 @@
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Gust",
-      "type": "Flying",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
-    },
     {
       "name": "Leer",
       "type": "Normal",
@@ -99,23 +77,16 @@
       "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
-      "name": "Air Cutter",
+      "name": "Gust",
       "type": "Flying",
       "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Cone 2",
-      "effect": "Air Cutter is a Critical Hit on 18+."
-    },
-    {
-      "name": "Roost",
-      "type": "Flying",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Points. If the user is a Flying Type, it loses the Flying Type until the start of their next turn."
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead.",
+      "special": "Grants Guster"
     }
   ],
   "abilities": [
@@ -123,10 +94,6 @@
       "name": "Super Luck",
       "frequency": "Static",
       "effect": "The Pokémon’s Moves are Critical Hits on 18-20. If a Move already has an extended Critical Hit range, Super Luck extends that range by 2."
-    },
-    {
-      "name": "Klutz",
-      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     }
   ],
   "natureMod": {

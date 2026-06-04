@@ -2,7 +2,7 @@
   "slug": "examples-comfey",
   "nickname": "Comfey",
   "species": "Comfey",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Quiet",
@@ -22,67 +22,60 @@
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 11,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 2,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 62,
+    "currentHp": 62,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
+      "vsAtk": 3,
+      "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Draining Kiss",
-      "type": "Fairy",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "name": "Petal Blizzard",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+      "range": "Burst 1",
+      "effect": "None."
     },
     {
-      "name": "Growth",
+      "name": "Natural Gift",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
-    },
-    {
-      "name": "Flower Shield",
-      "type": "Fairy",
-      "category": "Status",
+      "category": "Physical",
       "frequency": "Scene",
-      "range": "Burst 2",
-      "effect": "All Grass Type Pokémon in Flower Shield’s area of effect have their Defense raised by +2 Combat Stages."
+      "ac": 2,
+      "range": "6, 1 Target, Berry",
+      "effect": "Refer to the Move Keywords Berry list. Natural Gift deals damage according to the Berry list and Natural Gift’s Type is also defined there. The Berry’s Digestion Buff is nullified and is not used."
     },
     {
       "name": "Sweet Kiss",
@@ -94,6 +87,22 @@
       "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     },
     {
+      "name": "Wrap",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Growth",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
+    },
+    {
       "name": "Magical Leaf",
       "type": "Grass",
       "category": "Special",
@@ -102,14 +111,6 @@
       "frequency": "EOT",
       "range": "8, 1 Target",
       "effect": "Magical Leaf cannot miss."
-    },
-    {
-      "name": "Helping Hand",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
     }
   ],
   "abilities": [

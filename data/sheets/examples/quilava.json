@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 10,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -42,9 +42,9 @@
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -58,12 +58,15 @@
   },
   "movelist": [
     {
-      "name": "Smokescreen",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "5, Ranged Blast 3",
-      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
+      "name": "Flame Wheel",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Flame Wheel Burns the target on 19+."
     },
     {
       "name": "Quick Attack",
@@ -77,17 +80,6 @@
       "effect": "None."
     },
     {
-      "name": "Flame Wheel",
-      "type": "Fire",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Flame Wheel Burns the target on 19+."
-    },
-    {
       "name": "Ember",
       "type": "Fire",
       "category": "Special",
@@ -96,13 +88,23 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
+    },
+    {
+      "name": "Smokescreen",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "5, Ranged Blast 3",
+      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
     }
   ],
   "abilities": [
     {
       "name": "Flame Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Burned."
     },
     {

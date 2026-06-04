@@ -2,7 +2,7 @@
   "slug": "examples-archen",
   "nickname": "Archen",
   "species": "Archen",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Calm",
@@ -13,39 +13,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 47,
+    "currentHp": 47,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
@@ -54,50 +54,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Ancient Power",
-      "type": "Rock",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
-    },
-    {
-      "name": "Scary Face",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
-    },
-    {
-      "name": "Wing Attack",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None."
-    },
     {
       "name": "Double Team",
       "type": "Normal",
@@ -116,6 +76,37 @@
       "ac": 4,
       "range": "6, 1 Target",
       "effect": "None"
+    },
+    {
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -123,11 +114,6 @@
       "name": "Defeatist",
       "frequency": "Static",
       "effect": "The user gain a +2d6 Bonus to Damage Rolls while over 50% of its Maximum Hit Points. While at 50% Max Hit Points or lower, the user gains a -5 penalty to Damage Rolls and +10 Initiative."
-    },
-    {
-      "name": "Dodge",
-      "frequency": "Daily – Free Action",
-      "effect": "The triggering Move instead misses. Defensive."
     }
   ],
   "natureMod": {

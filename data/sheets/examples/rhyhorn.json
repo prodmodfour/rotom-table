@@ -2,7 +2,7 @@
   "slug": "examples-rhyhorn",
   "nickname": "Rhyhorn",
   "species": "Rhyhorn",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Sassy",
@@ -18,46 +18,55 @@
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 6,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 56,
+    "currentHp": 56,
+    "tick": 5,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 1,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
     {
       "name": "Fury Attack",
       "type": "Normal",
@@ -79,37 +88,6 @@
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
-      "name": "Scary Face",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
-    },
-    {
-      "name": "Smack Down",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
-    },
-    {
-      "name": "Stomp",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
-    },
-    {
       "name": "Horn Attack",
       "type": "Normal",
       "category": "Physical",
@@ -126,11 +104,6 @@
       "name": "Rock Head",
       "frequency": "Static",
       "effect": "The user ignores the Recoil keyword when attacking. If the user moves at least 4 meters in a straight line towards a foe before attacking that foe with a physical attack, they may add a +2d6 Bonus to the Damage Roll against that foe."
-    },
-    {
-      "name": "Reckless",
-      "frequency": "Static",
-      "effect": "Increases the Damage Base of Moves with the Exhaust, Recoil, or Reckless Keywords by +3. Reckless Moves: Jump Kick, Hi Jump Kick, Close Combat, Draco Meteor, Hammer Arm, Leaf Storm, Outrage, Overheat, Petal Dance, Psycho Boost, Superpower, Thrash, and V-Create."
     }
   ],
   "natureMod": {

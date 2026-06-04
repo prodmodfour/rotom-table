@@ -2,7 +2,7 @@
   "slug": "examples-zeraora",
   "nickname": "Zeraora",
   "species": "Zeraora",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Mild",
@@ -12,116 +12,113 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 14,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 114,
+    "currentHp": 114,
+    "tick": 11,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 4
+      "vsSatk": 3,
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Spark",
+      "name": "Discharge",
       "type": "Electric",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Spark Paralyzes the target on 15+."
+      "range": "All Cardinally Adjacent Targets",
+      "effect": "Discharge Paralyzes all legal targets on 15+."
     },
     {
-      "name": "Quick Attack",
-      "type": "Normal",
+      "name": "Close Combat",
+      "type": "Fighting",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 12,
+      "damageRoll": "3d12+10 / 30",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "The user’s Defense and Special Defense are each lowered by -1 Combat Stage."
+    },
+    {
+      "name": "Plasma Fists",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target, Smite",
+      "effect": "The target’s next damaging Normal Type Move instead becomes Electric Type."
+    },
+    {
+      "name": "Quick Guard",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Melee, Interrupt, Shield, Trigger",
+      "effect": "If the user or an adjacent ally is targeted by a Priority or Interrupt Attack, Quick Guard may be declared as an Interrupt, causing the triggering attack to have no effect."
+    },
+    {
+      "name": "Wild Charge",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
       "effect": "None."
     },
     {
-      "name": "Volt Switch",
-      "type": "Electric",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "5, 1 Target",
-      "effect": "If Volt Switch successfully hits its target, the user deals damage and then immediately is returned to its Poké Ball in the same turn. A New Pokémon may immediately be sent out. Using Volt Switch lets a Trapped user be recalled."
-    },
-    {
-      "name": "Fury Swipes",
+      "name": "Slash",
       "type": "Normal",
       "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
       "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Scratch",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, Pass",
-      "effect": "None"
-    },
-    {
-      "name": "Snarl",
-      "type": "Dark",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2, Sonic",
-      "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
+      "effect": "Slash is a Critical Hit on 18+."
     }
   ],
   "abilities": [
@@ -133,7 +130,13 @@
     {
       "name": "Vicious",
       "frequency": "Scene – Special",
+      "trigger": "The user uses Hone Claws",
       "effect": "Connection – Hone Claws. When this Ability is activated, choose one effect; the user gains another Standard Action this round; or the user increase their Critical Hit Range on all attacks by +2 for the remainder of the encounter."
+    },
+    {
+      "name": "Tough Claws",
+      "frequency": "Static",
+      "effect": "The user increases the Damage Base of all Melee Moves by +2."
     }
   ],
   "natureMod": {

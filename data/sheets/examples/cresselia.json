@@ -2,7 +2,7 @@
   "slug": "examples-cresselia",
   "nickname": "Cresselia",
   "species": "Cresselia",
-  "level": 20,
+  "level": 50,
   "gender": "Female",
   "shiny": false,
   "nature": "Bashful",
@@ -12,58 +12,83 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 12,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 12,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 132,
+    "currentHp": 132,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 3,
+      "vsAtk": 4,
+      "vsSatk": 5,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Double Team",
+      "name": "Slash",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Illusion, Coat",
-      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Future Sight",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "Future Sight does nothing on the turn it is used. At the end of the user’s next turn, Future Sight hits, even if the user is no longer on the field. Future Sight cannot miss."
+    },
+    {
+      "name": "Aurora Beam",
+      "type": "Ice",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+.",
+      "special": "Grants Freezer"
     },
     {
       "name": "Mist",
@@ -74,35 +99,38 @@
       "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
     },
     {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
       "name": "Safeguard",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
       "range": "Blessing",
       "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Mind Mold",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Psychic."
+    },
+    {
+      "name": "Magic Bounce",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Status Move",
+      "effect": "The user may reflect the Move back to the attacker. This Ability may be used to change the placement and affiliation of any Hazards being set within 10 meters of the user as well. Defensive."
     }
   ],
   "capabilities": {

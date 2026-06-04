@@ -2,7 +2,7 @@
   "slug": "examples-haxorus",
   "nickname": "Haxorus",
   "species": "Haxorus",
-  "level": 20,
+  "level": 45,
   "gender": "Male",
   "shiny": false,
   "nature": "Distracted",
@@ -12,51 +12,101 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 12,
+      "added": 16,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 109,
+    "currentHp": 109,
+    "tick": 10,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
-      "vsAny": 3
+      "vsSatk": 2,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Dragon Pulse",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "None"
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Dragon Dance",
+      "type": "Dragon",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Speed 1 Combat Stage."
+    },
+    {
+      "name": "Dragon Claw",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "False Swipe",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "False Swipe’s damage cannot bring a target lower than 1 Hit Point."
+    },
     {
       "name": "Slash",
       "type": "Normal",
@@ -67,55 +117,6 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "Slash is a Critical Hit on 18+."
-    },
-    {
-      "name": "Scary Face",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
-    },
-    {
-      "name": "Assurance",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
-    },
-    {
-      "name": "Dragon Rage",
-      "type": "Dragon",
-      "category": "Special",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
-    },
-    {
-      "name": "Dual Chop",
-      "type": "Dragon",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Melee, 1 Target, Double Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -128,6 +129,11 @@
       "name": "Mold Breaker",
       "frequency": "Static",
       "effect": "The user ignores the effect of enemies’ Defensive Abilities."
+    },
+    {
+      "name": "Frighten",
+      "frequency": "Scene – Swift Action",
+      "effect": "Lower the target’s Speed 2 Combat Stages."
     }
   ],
   "natureMod": {

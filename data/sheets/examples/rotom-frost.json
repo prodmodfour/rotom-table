@@ -2,7 +2,7 @@
   "slug": "examples-rotom-frost",
   "nickname": "Rotom Frost",
   "species": "Rotom Frost",
-  "level": 20,
+  "level": 25,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Impish",
@@ -13,48 +13,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 59,
+    "currentHp": 59,
+    "tick": 5,
     "evasion": {
       "vsAtk": 4,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [],

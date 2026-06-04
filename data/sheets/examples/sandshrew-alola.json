@@ -2,7 +2,7 @@
   "slug": "examples-sandshrew-alola",
   "nickname": "Sandshrew Alola",
   "species": "Sandshrew Alola",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Careful",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
@@ -38,26 +38,48 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Rapid Spin",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    },
+    {
+      "name": "Ice Ball",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "The user continues to use Ice Ball on each of its turns until they miss any target with Ice Ball, or are not able to hit any target with Ice Ball during their turn.  Each successive use of Ice Ball increases Ice Ball’s Damage Base by +3 to a maximum of DB 15."
+    },
     {
       "name": "Powder Snow",
       "type": "Ice",
@@ -67,7 +89,16 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+      "effect": "Powder Snow Freezes all Legal Targets on 19+.",
+      "special": "Grants Freezer"
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
     },
     {
       "name": "Defense Curl",
@@ -76,38 +107,6 @@
       "frequency": "At-Will",
       "range": "Self",
       "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
-    },
-    {
-      "name": "Fury Swipes",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Metal Claw",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Swift",
-      "type": "Normal",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "8, Ranged Blast 2, Friendly",
-      "effect": "Swift cannot Miss."
     },
     {
       "name": "Scratch",
@@ -126,11 +125,6 @@
       "name": "Pickup",
       "frequency": "Daily – Extended Action",
       "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
-    },
-    {
-      "name": "Slush Rush",
-      "frequency": "Static",
-      "effect": "While in Hailing Weather or under half maximum Hit Points, the user’s Initiative is doubled."
     }
   ],
   "natureMod": {

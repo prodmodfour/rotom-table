@@ -2,7 +2,7 @@
   "slug": "examples-pikipek",
   "nickname": "Pikipek",
   "species": "Pikipek",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Bold",
@@ -18,7 +18,7 @@
     },
     "atk": {
       "base": -1,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "def": {
@@ -28,43 +28,46 @@
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 10,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Roost",
-      "type": "Flying",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Points. If the user is a Flying Type, it loses the Flying Type until the start of their next turn."
+      "name": "Rock Smash",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
     },
     {
       "name": "Echoed Voice",
@@ -78,24 +81,13 @@
       "effect": "If Echoed Voice was used by any Pokémon or Trainer in the Encounter on the previous round, increase its Damage Base by +4. If Echoed Voice was used by any Pokémon or Trainers during both the previous two rounds, increase its Damage Base by +8."
     },
     {
-      "name": "Supersonic",
+      "name": "Growl",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
-    {
-      "name": "Pluck",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Pluck takes the target’s Held Item or Accessory Slot Item and attaches it to Pluck’s user, if the user is not holding anything."
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
       "name": "Peck",
@@ -107,15 +99,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -123,11 +106,6 @@
       "name": "Keen Eye",
       "frequency": "Static",
       "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
-    },
-    {
-      "name": "Pickup",
-      "frequency": "Daily – Extended Action",
-      "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
     }
   ],
   "natureMod": {

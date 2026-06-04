@@ -2,7 +2,7 @@
   "slug": "examples-smoliv",
   "nickname": "Smoliv",
   "species": "Smoliv",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Curious",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -43,39 +43,40 @@
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
-    "tick": 4,
+    "maxHp": 35,
+    "currentHp": 35,
+    "tick": 3,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 1,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Razor Leaf",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Cone 2",
+      "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
     {
       "name": "Growth",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
       "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
-    },
-    {
-      "name": "Mega Drain",
-      "type": "Grass",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     },
     {
       "name": "Absorb",
@@ -89,26 +90,14 @@
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
-      "name": "Flail",
+      "name": "Sweet Scent",
       "type": "Normal",
-      "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "EOT",
+      "category": "Status",
+      "frequency": "Scene",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
-    },
-    {
-      "name": "Razor Leaf",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
     },
     {
       "name": "Tackle",
@@ -127,9 +116,6 @@
       "name": "Early Bird",
       "frequency": "Static",
       "effect": "The user gains a bonus to Initiative equal to half its Speed, and a +3 Bonus on Save Checks against Sleep."
-    },
-    {
-      "name": "Seed Sower"
     }
   ],
   "natureMod": {

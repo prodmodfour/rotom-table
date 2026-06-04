@@ -2,7 +2,7 @@
   "slug": "examples-gigalith",
   "nickname": "Gigalith",
   "species": "Gigalith",
-  "level": 20,
+  "level": 45,
   "gender": "Male",
   "shiny": false,
   "nature": "Modest",
@@ -12,51 +12,101 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 14,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 109,
+    "currentHp": 109,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 5,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Sandstorm",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to a Sandstorm for 5 rounds. While it is Sandstorming, all non-Ground, Rock, or Steel Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
+    },
+    {
+      "name": "Stealth Rock",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Field, Hazard",
+      "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out.",
+      "special": "Grants Materializer"
+    },
+    {
+      "name": "Rock Slide",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Rock Slide Flinches all Legal Targets on 17+."
+    },
+    {
+      "name": "Power Gem",
+      "type": "Rock",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Smack Down",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Moves with the Groundsource keyword even if normally immune."
+    },
     {
       "name": "Iron Defense",
       "type": "Steel",
@@ -64,56 +114,6 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "Raise the user’s Defense 2 Combat Stages."
-    },
-    {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Rock Blast",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Headbutt",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
-    {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
     }
   ],
   "abilities": [
@@ -126,6 +126,11 @@
       "name": "Sand Force",
       "frequency": "Static",
       "effect": "While on sandy terrain or in Sandstorms, the user’s Ground, Rock, and Steel-Typed damaging moves deal +5 Damage."
+    },
+    {
+      "name": "Sunglow",
+      "frequency": "Daily – Swift Action",
+      "effect": "The user may activate Sunglow while exposed to sunlight to become Radiant. As a Swift Action, the user may expend the Radiant condition to gain +2 Attack CS and +2 Accuracy for the rest of the Scene."
     }
   ],
   "natureMod": {

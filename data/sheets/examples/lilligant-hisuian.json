@@ -2,7 +2,7 @@
   "slug": "examples-lilligant-hisuian",
   "nickname": "Lilligant Hisuian",
   "species": "Lilligant Hisuian",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Proud",
@@ -13,60 +13,70 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 1,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 10,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 85,
+    "currentHp": 85,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Leafage",
+      "name": "Sleep Powder",
       "type": "Grass",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
+    {
+      "name": "Energy Ball",
+      "type": "Grass",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target"
+      "range": "8, 1 Target",
+      "effect": "Energy Ball lowers the foe’s Special Defense 1 Combat Stage on 17+."
     },
     {
       "name": "Poison Powder",
@@ -85,6 +95,16 @@
       "ac": 6,
       "range": "6, 1 Target, Powder",
       "effect": "The target is Paralyzed."
+    },
+    {
+      "name": "Leafage",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target"
     }
   ],
   "abilities": [

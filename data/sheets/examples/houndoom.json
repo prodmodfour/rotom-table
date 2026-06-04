@@ -2,7 +2,7 @@
   "slug": "examples-houndoom",
   "nickname": "Houndoom",
   "species": "Houndoom",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Distracted",
@@ -13,58 +13,89 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 7,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 88,
+    "currentHp": 88,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 1,
+      "vsSatk": 3,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Howl",
+      "name": "Fire Fang",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
+    },
+    {
+      "name": "Beat Up",
+      "type": "Dark",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "The user and up to two allies adjacent to the target may each make a Struggle Attack against the target. These Struggle Attacks hit for Dark-Type Damage instead of their usual Type. Beat Up may trigger Pack Hunt only once, no matter the number of attacks."
+    },
+    {
+      "name": "Odor Sleuth",
       "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those.",
+      "special": "Grants Tracker"
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
     },
     {
       "name": "Roar",
@@ -85,25 +116,6 @@
       "ac": 7,
       "range": "Line 2",
       "effect": "Smog Poisons the target on an Even-Numbered Roll."
-    },
-    {
-      "name": "Odor Sleuth",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [

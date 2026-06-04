@@ -2,7 +2,7 @@
   "slug": "examples-tauros",
   "nickname": "Tauros",
   "species": "Tauros",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Distracted",
@@ -12,51 +12,70 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 1,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 0,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 10,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
+    "maxHp": 80,
+    "currentHp": 80,
     "tick": 8,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 4
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Payback",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
+    },
+    {
+      "name": "Rest",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
+    },
     {
       "name": "Pursuit",
       "type": "Dark",
@@ -67,6 +86,15 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+    },
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
     },
     {
       "name": "Horn Attack",
@@ -80,23 +108,6 @@
       "effect": "None"
     },
     {
-      "name": "Rest",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self",
-      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
-    },
-    {
-      "name": "Tail Whip",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
       "name": "Rage",
       "type": "Normal",
       "category": "Physical",
@@ -106,15 +117,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Spirit Surge",
       "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
-    },
-    {
-      "name": "Scary Face",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -126,6 +128,7 @@
     {
       "name": "Gore",
       "frequency": "Scene x2 - Swift Action",
+      "trigger": "The user uses Horn Attack",
       "effect": "Connection - Horn Attack. Horn Attack gains the Double Strike keyword, and pushes its target 2 meters."
     }
   ],

@@ -2,7 +2,7 @@
   "slug": "examples-donphan",
   "nickname": "Donphan",
   "species": "Donphan",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Rash",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
@@ -37,26 +37,57 @@
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 88,
+    "currentHp": 88,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Magnitude",
+      "type": "Ground",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Burst 2, Groundsource",
+      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig.",
+      "special": "Grants Groundshaper"
+    },
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
+    },
     {
       "name": "Knock Off",
       "type": "Dark",
@@ -69,28 +100,6 @@
       "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     },
     {
-      "name": "Rollout",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Pass",
-      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
-    },
-    {
-      "name": "Rapid Spin",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
-    },
-    {
       "name": "Assurance",
       "type": "Dark",
       "category": "Physical",
@@ -100,6 +109,17 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
+      "name": "Rollout",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Pass",
+      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
     }
   ],
   "abilities": [

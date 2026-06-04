@@ -2,7 +2,7 @@
   "slug": "examples-typhlosion-hisuian",
   "nickname": "Typhlosion Hisuian",
   "species": "Typhlosion Hisuian",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "spd": {
@@ -43,21 +43,53 @@
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 86,
+    "currentHp": 86,
+    "tick": 8,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Infernal Parade",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, Ranged Blast 2",
+      "effect": "Legal targets hit by Infernal Parade are Burned on a 17+. Once a Scene, if at least one of Infernal Parade’s targets has a Status Condition, you may have Infernal Parade’s Damage Base be 12 instead (3d12+10 / 30)."
+    },
+    {
+      "name": "Flamethrower",
+      "type": "Fire",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Flamethrower Burns the target on 19+."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
     {
       "name": "Flame Wheel",
       "type": "Fire",
@@ -70,17 +102,6 @@
       "effect": "Flame Wheel Burns the target on 19+."
     },
     {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
       "name": "Rollout",
       "type": "Rock",
       "category": "Physical",
@@ -90,6 +111,18 @@
       "ac": 4,
       "range": "Melee, 1 Target, Pass",
       "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+    },
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     }
   ],
   "abilities": [
@@ -102,6 +135,11 @@
       "name": "Blaze",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Fire."
+    },
+    {
+      "name": "Flash Fire",
+      "frequency": "Static",
+      "effect": "The user is immune to the damage and effects of Fire-Type attacks. If the user is hit by a Fire-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
     }
   ],
   "natureMod": {

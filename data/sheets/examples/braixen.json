@@ -12,41 +12,41 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 11,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 63,
+    "currentHp": 63,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 2
     },
@@ -58,6 +58,17 @@
   },
   "movelist": [
     {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
       "name": "Flame Charge",
       "type": "Fire",
       "category": "Physical",
@@ -67,6 +78,26 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash",
       "effect": "Raise the user’s Speed 1 Combat Stage."
+    },
+    {
+      "name": "Howl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 1",
+      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
+    },
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     },
     {
       "name": "Tail Whip",
@@ -87,36 +118,6 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "None"
-    },
-    {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
-      "name": "Howl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
-    },
-    {
-      "name": "Psybeam",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
     }
   ],
   "abilities": [
@@ -128,6 +129,7 @@
     {
       "name": "Magician",
       "frequency": "Scene – Free Action",
+      "trigger": "The user hits a foe with a damaging Single-",
       "effect": "The user takes the target’s Held Item. This Ability may not be triggered if the user is already holding a Held Item."
     }
   ],

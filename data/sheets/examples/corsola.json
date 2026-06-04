@@ -2,7 +2,7 @@
   "slug": "examples-corsola",
   "nickname": "Corsola",
   "species": "Corsola",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Naive",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "satk": {
@@ -33,18 +33,18 @@
     },
     "sdef": {
       "base": -1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
+    "maxHp": 68,
+    "currentHp": 68,
     "tick": 6,
     "evasion": {
       "vsAtk": 3,
@@ -54,10 +54,40 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Lucky Chant",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Spike Cannon",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
     {
       "name": "Refresh",
       "type": "Normal",
@@ -78,51 +108,19 @@
       "effect": "Bubble Beam lowers the target’s Speed on 18+."
     },
     {
-      "name": "Ancient Power",
-      "type": "Rock",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
-    },
-    {
-      "name": "Harden",
+      "name": "Recover",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "Daily x2",
       "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Spike Cannon",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Bubble",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
     }
   ],
   "abilities": [
     {
       "name": "Regenerator",
       "frequency": "Daily x2 – Free Action",
+      "trigger": "The user is recalled into a Poké Ball, or Takes",
       "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
     },
     {

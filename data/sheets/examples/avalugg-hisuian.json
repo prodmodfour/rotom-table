@@ -2,7 +2,7 @@
   "slug": "examples-avalugg-hisuian",
   "nickname": "Avalugg Hisuian",
   "species": "Avalugg Hisuian",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Timid",
@@ -13,51 +13,92 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 8,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 16,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 102,
+    "currentHp": 102,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 6,
       "vsSatk": 1,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Earth Power",
+      "type": "Ground",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Groundsource",
+      "effect": "Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+."
+    },
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
     {
       "name": "Ice Shard",
       "type": "Ice",
@@ -78,18 +119,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
+      "effect": "Powder Snow Freezes all Legal Targets on 19+.",
+      "special": "Grants Freezer"
     }
   ],
   "abilities": [

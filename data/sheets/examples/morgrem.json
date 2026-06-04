@@ -2,7 +2,7 @@
   "slug": "examples-morgrem",
   "nickname": "Morgrem",
   "species": "Morgrem",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Modest",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -43,29 +43,31 @@
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
+    "maxHp": 74,
+    "currentHp": 74,
     "tick": 7,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Flatter",
+      "name": "Sucker Punch",
       "type": "Dark",
-      "category": "Status",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "The target’s Special Attack is raised by +1 Combat Stage. Flatter Confuses the target."
+      "range": "Melee, 1 Target, Interrupt, Trigger",
+      "effect": "If an adjacent foe targets the user with a Damaging Attack, Sucker Punch may be used as an Interrupt Move against the triggering foe."
     },
     {
       "name": "Swagger",
@@ -75,17 +77,6 @@
       "ac": 5,
       "range": "6, 1 Target, Social",
       "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
     },
     {
       "name": "Assurance",
@@ -106,6 +97,26 @@
       "ac": 2,
       "range": "8, 1 Target, Social",
       "effect": "Lower the target’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Flatter",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Special Attack is raised by +1 Combat Stage. Flatter Confuses the target."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [

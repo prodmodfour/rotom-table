@@ -2,7 +2,7 @@
   "slug": "examples-gorebyss",
   "nickname": "Gorebyss",
   "species": "Gorebyss",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Hardy",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 10,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
@@ -42,47 +42,29 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
+    "maxHp": 65,
+    "currentHp": 65,
     "tick": 6,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Whirlpool",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "3, 1 Target",
-      "effect": "The target is put in a Vortex."
-    },
-    {
-      "name": "Agility",
-      "type": "Psychic",
+      "name": "Captivate",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Speed 2 Combat Stages."
-    },
-    {
-      "name": "Amnesia",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "Captivate lowers the target’s Special Attack 2 Combat Stages. Captivate may not affect something that is the same gender as the user or something that is genderless."
     },
     {
       "name": "Aqua Ring",
@@ -91,6 +73,14 @@
       "frequency": "Scene",
       "range": "Self, Coat",
       "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
+    },
+    {
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
     },
     {
       "name": "Water Pulse",
@@ -113,13 +103,22 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
     }
   ],
   "abilities": [
     {
       "name": "Spray Down",
       "frequency": "Scene x2 – Free Action",
-      "effect": "The triggering attack’s target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+      "trigger": "The user hits an airborne target with a ranged",
+      "effect": "The triggering attack’s target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Moves with the Groundsource keyword even if normally immune."
     },
     {
       "name": "Water Veil",

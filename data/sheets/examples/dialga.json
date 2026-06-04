@@ -2,7 +2,7 @@
   "slug": "examples-dialga",
   "nickname": "Dialga",
   "species": "Dialga",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Bold",
@@ -13,114 +13,113 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 6,
+      "added": 15,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 16,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 130,
+    "currentHp": 130,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsAtk": 5,
+      "vsSatk": 4,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Ancient Power",
-      "type": "Rock",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
-    },
-    {
-      "name": "Dragon Breath",
-      "type": "Dragon",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Dragon Breath Paralyzes the Target on 15+."
-    },
-    {
-      "name": "Scary Face",
-      "type": "Normal",
+      "name": "Heal Block",
+      "type": "Psychic",
       "category": "Status",
       "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
+      "range": "6, 1 Target",
+      "effect": "Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
     },
     {
-      "name": "Power Gem",
-      "type": "Rock",
+      "name": "Flash Cannon",
+      "type": "Steel",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Flash Cannon lowers the target’s Special Defense by 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Roar of Time",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 17,
+      "damageRoll": "5d12+25",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "Burst 8, Smite, Exhaust",
+      "effect": "All legal targets are Slowed, even if the attack misses."
+    },
+    {
+      "name": "Iron Tail",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "Melee, 1 Target, Smite",
+      "effect": "Iron Tail lowers the target’s Defense 1 Combat Stage on 15+."
+    },
+    {
+      "name": "Aura Sphere",
+      "type": "Fighting",
       "category": "Special",
       "db": 8,
       "damageRoll": "2d8+10 / 19",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "None"
+      "frequency": "EOT",
+      "range": "8, 1 Target, Aura",
+      "effect": "Aura Sphere cannot miss."
     },
     {
-      "name": "Metal Claw",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Slash",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
+      "name": "Earth Power",
+      "type": "Ground",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "Slash is a Critical Hit on 18+."
+      "range": "6, 1 Target, Groundsource",
+      "effect": "Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+."
     }
   ],
   "abilities": [
@@ -132,7 +131,13 @@
     {
       "name": "Synchronize",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is Paralyzed, Frozen, Burned,",
       "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
+    },
+    {
+      "name": "Heavy Metal",
+      "frequency": "Static",
+      "effect": "The user’s Weight Class is increased by +2. Their Defense Base Stat is increased by +2, but their Speed Base Stat is decreased by 2."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-pupitar",
   "nickname": "Pupitar",
   "species": "Pupitar",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Careful",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -38,42 +38,56 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 90,
+    "currentHp": 90,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 3,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Screech",
+      "name": "Dark Pulse",
+      "type": "Dark",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Dark Pulse Flinches the target on 17+"
+    },
+    {
+      "name": "Thrash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10 / 30",
+      "frequency": "Scene x2",
+      "ac": 3,
+      "range": "Melee, all adjacent foes, Smite",
+      "effect": "After damage is dealt, the user becomes Enraged and Confused."
+    },
+    {
+      "name": "Scary Face",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
-    },
-    {
-      "name": "Sandstorm",
-      "type": "Rock",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Field, Weather",
-      "effect": "The weather changes to a Sandstorm for 5 rounds. While it is Sandstorming, all non-Ground, Rock, or Steel Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
     },
     {
       "name": "Rock Slide",
@@ -96,6 +110,15 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
     }
   ],
   "abilities": [

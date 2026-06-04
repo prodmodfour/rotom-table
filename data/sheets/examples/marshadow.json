@@ -2,7 +2,7 @@
   "slug": "examples-marshadow",
   "nickname": "Marshadow",
   "species": "Marshadow",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Impish",
@@ -13,110 +13,109 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 12,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 114,
+    "currentHp": 114,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 4
+      "vsAtk": 4,
+      "vsSatk": 3,
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Pursuit",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
-    },
-    {
-      "name": "Shadow Sneak",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Rolling Kick",
+      "name": "Close Combat",
       "type": "Fighting",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target",
-      "effect": "Rolling Kick Flinches the target on 15+."
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "The user’s Defense and Special Defense are each lowered by -1 Combat Stage."
     },
     {
-      "name": "Feint",
+      "name": "Spectral Thief",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Before rolling damage, transfer all Combat Stages on the target to the user."
+    },
+    {
+      "name": "Psych Up",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Trigger",
-      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
+      "range": "6, 1 Target",
+      "effect": "The user’s Combat Stages are changed to match the target’s Combat Stages. Psych Up cannot miss."
     },
     {
-      "name": "Copycat",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "4, 1 Target",
-      "effect": "Use the Move the target has used on their last turn. You may choose new targets for the Move. Copycat cannot miss."
-    },
-    {
-      "name": "Force Palm",
+      "name": "Jump Kick",
       "type": "Fighting",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, Dash, 1 Target",
+      "effect": "If Jump Kick misses, the user loses Hit Points equal to 1/4th of their Max Hit Points. A failure to hit due to a Move with the Shield keyword does not count as a miss. This Move cannot be used if Gravity is in effect."
+    },
+    {
+      "name": "Role Play",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "Melee, 1 Target",
+      "effect": "The user gains one of the target’s Abilities, chosen at random, for the remainder of the encounter. This effect ends if the user Faints or is switched out. Role Play cannot miss."
+    },
+    {
+      "name": "Shadow Punch",
+      "type": "Ghost",
       "category": "Physical",
       "db": 8,
       "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Aura",
-      "effect": "Force Palm Paralyzes the target on 18+."
+      "frequency": "EOT",
+      "range": "6, 1 Target",
+      "effect": "Shadow Punch cannot miss."
     }
   ],
   "abilities": [
@@ -129,6 +128,11 @@
       "name": "Copy Master",
       "frequency": "Static",
       "effect": "Connection - Copycat. Whenever the user uses Copycat or Mimic, it gains +1 Combat Stage in a Stat of its choice after the Move is resolved."
+    },
+    {
+      "name": "Fade Away",
+      "frequency": "Scene – Standard Action, Interrupt",
+      "effect": "The user becomes Invisible until the beginning of their next turn, and may immediately Shift. This Ability may be activated as an Interrupt when hit by a Physical attack; the user may declare the use of Fade Away to avoid all damage and/or effects of the move. Defensive."
     }
   ],
   "natureMod": {

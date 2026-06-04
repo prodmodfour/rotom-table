@@ -18,7 +18,7 @@
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "def": {
@@ -28,7 +28,7 @@
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
@@ -59,6 +59,23 @@
   },
   "movelist": [
     {
+      "name": "Endeavor",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "The target loses a Tick of Hit Points for each Injury the user has."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
       "name": "Wing Attack",
       "type": "Flying",
       "category": "Physical",
@@ -70,15 +87,6 @@
       "effect": "None."
     },
     {
-      "name": "Endeavor",
-      "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "The target loses a Tick of Hit Points for each Injury the user has."
-    },
-    {
       "name": "Quick Attack",
       "type": "Normal",
       "category": "Physical",
@@ -88,14 +96,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
-    },
-    {
-      "name": "Double Team",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Illusion, Coat",
-      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
     }
   ],
   "abilities": [

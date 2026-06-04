@@ -2,7 +2,7 @@
   "slug": "salamence",
   "nickname": "Salamence",
   "species": "Salamence",
-  "level": 90,
+  "level": 55,
   "gender": "Male",
   "shiny": false,
   "nature": "Gentle",
@@ -13,107 +13,117 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 16,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 27,
+      "added": 15,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 13,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 17,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 10,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 17,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 178,
-    "currentHp": 123,
-    "tick": 17,
+    "maxHp": 128,
+    "currentHp": 102,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 4,
-      "vsAny": 5,
+      "vsAny": 4,
       "vsAtkBonus": 0,
       "vsSatkBonus": 0,
       "vsAnyBonus": 0
     },
     "dr": 0,
-    "conditions": []
+    "conditions": [
+      "Burned"
+    ]
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 12,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Headbutt",
-      "type": "Normal",
+      "name": "Fly",
+      "type": "Flying",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
+      "ac": 3,
+      "range": "Melee, Dash, Set-Up",
+      "special": "Grants Sky +3"
     },
     {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Ember",
+      "name": "Flamethrower",
       "type": "Fire",
       "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
-      "name": "Dragon Breath",
-      "type": "Dragon",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
       "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Dragon Breath Paralyzes the Target on 15+."
+      "range": "4, 1 Target",
+      "effect": "Flamethrower Burns the target on 19+."
+    },
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
+    {
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Dragon Claw",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
     }
   ],
   "abilities": [
@@ -126,6 +136,11 @@
       "name": "Moxie",
       "frequency": "Static",
       "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
+    },
+    {
+      "name": "Rock Head",
+      "frequency": "Static",
+      "effect": "The user ignores the Recoil keyword when attacking. If the user moves at least 4 meters in a straight line towards a foe before attacking that foe with a physical attack, they may add a +2d6 Bonus to the Damage Roll against that foe."
     }
   ],
   "natureMod": {

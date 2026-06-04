@@ -2,7 +2,7 @@
   "slug": "examples-scolipede",
   "nickname": "Scolipede",
   "species": "Scolipede",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Skittish",
@@ -13,78 +13,99 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 14,
+      "added": 13,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 80,
+    "currentHp": 80,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Protect",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+      "name": "Steamroller",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Steamroller Flinches the target on 15+. If the target is Small, Steamroller deals an additional +5 Damage."
     },
     {
-      "name": "Screech",
-      "type": "Normal",
+      "name": "Agility",
+      "type": "Psychic",
       "category": "Status",
       "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
     },
     {
-      "name": "Pursuit",
-      "type": "Dark",
+      "name": "Baton Pass",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
+    },
+    {
+      "name": "Venoshock",
+      "type": "Poison",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "If the target is Poisoned, Venoshock has a Damage Base of 13 (4d10+10 / 35) instead."
+    },
+    {
+      "name": "Bug Bite",
+      "type": "Bug",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
     },
     {
       "name": "Poison Tail",
@@ -96,29 +117,24 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Poison Tail is a Critical Hit on 18+, and Poisons the target on 19+."
-    },
-    {
-      "name": "Poison Sting",
-      "type": "Poison",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Poison Sting Poisons the target on 17+."
     }
   ],
   "abilities": [
     {
       "name": "Poison Point",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Move",
       "effect": "The attacking foe is Poisoned."
     },
     {
       "name": "Speed Boost",
       "frequency": "Static",
       "effect": "The Pokémon’s Speed is raised 1 Combat Stage at the end of each of its turns. Speed Boost has no effect while out of combat."
+    },
+    {
+      "name": "Rock Head",
+      "frequency": "Static",
+      "effect": "The user ignores the Recoil keyword when attacking. If the user moves at least 4 meters in a straight line towards a foe before attacking that foe with a physical attack, they may add a +2d6 Bonus to the Damage Roll against that foe."
     }
   ],
   "natureMod": {

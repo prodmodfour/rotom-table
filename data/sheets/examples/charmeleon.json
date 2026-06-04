@@ -12,43 +12,43 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
+    "maxHp": 63,
+    "currentHp": 63,
     "tick": 6,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
@@ -83,7 +83,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     }
   ],
   "abilities": [

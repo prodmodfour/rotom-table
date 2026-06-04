@@ -2,7 +2,7 @@
   "slug": "examples-zacian-crowned-sword-forme",
   "nickname": "Zacian Crowned Sword Forme",
   "species": "Zacian Crowned Sword Forme",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Quirky",
@@ -13,91 +13,88 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 16,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 12,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 14,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 124,
+    "currentHp": 124,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 3,
-      "vsAny": 4
+      "vsAtk": 4,
+      "vsSatk": 4,
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Quick Attack",
-      "type": "Normal",
+      "name": "Crunch",
+      "type": "Dark",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
     },
     {
-      "name": "Howl",
+      "name": "Laser Focus",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "The next successful damaging attack made by the user is automatically a Critical Hit."
+    },
+    {
+      "name": "Iron Head",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Iron Head Flinches the target on 15+."
+    },
+    {
+      "name": "Swords Dance",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Metal Claw",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
     },
     {
       "name": "Slash",
@@ -109,6 +106,17 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [
@@ -121,6 +129,11 @@
       "name": "Defiant",
       "frequency": "Static",
       "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Tough Claws",
+      "frequency": "Static",
+      "effect": "The user increases the Damage Base of all Melee Moves by +2."
     }
   ],
   "capabilities": {

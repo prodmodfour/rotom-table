@@ -2,7 +2,7 @@
   "slug": "examples-bagon",
   "nickname": "Bagon",
   "species": "Bagon",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 9,
+      "added": 3,
       "stage": 0
     },
     "atk": {
@@ -22,7 +22,7 @@
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
@@ -32,31 +32,42 @@
     },
     "sdef": {
       "base": 0,
-      "added": 1,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 0,
-      "vsAny": 2
+      "vsSatk": 1,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
     {
       "name": "Leer",
       "type": "Normal",
@@ -75,18 +86,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
-      "name": "Headbutt",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     },
     {
       "name": "Rage",
@@ -98,40 +99,14 @@
       "ac": 2,
       "range": "Melee, 1 Target, Spirit Surge",
       "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
-    },
-    {
-      "name": "Dragon Breath",
-      "type": "Dragon",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Dragon Breath Paralyzes the Target on 15+."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [
     {
       "name": "Steadfast",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user would be Flinched",
       "effect": "The user’s Speed is raised by +1 Combat Stage."
-    },
-    {
-      "name": "Moxie",
-      "frequency": "Static",
-      "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-sewaddle",
   "nickname": "Sewaddle",
   "species": "Sewaddle",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Lonely",
@@ -18,12 +18,12 @@
     },
     "atk": {
       "base": 1,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
@@ -33,7 +33,7 @@
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "spd": {
@@ -43,18 +43,18 @@
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -70,26 +70,6 @@
       "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
     },
     {
-      "name": "String Shot",
-      "type": "Bug",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck."
-    },
-    {
-      "name": "Razor Leaf",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
-    },
-    {
       "name": "Tackle",
       "type": "Normal",
       "category": "Physical",
@@ -99,6 +79,16 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "String Shot",
+      "type": "Bug",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck.",
+      "special": "Grants Threaded"
     }
   ],
   "abilities": [
@@ -106,11 +96,6 @@
       "name": "Designer",
       "frequency": "At-Will – Extended Action",
       "effect": "The user is adept at crafting clothes for itself out of common leaves. When activating this ability to create a leaf suit, the user may choose two Types; the user resists the chosen types one step further while wearing that suit. The user may only have one leaf suit at a time, and creating a new suit destroys the old one."
-    },
-    {
-      "name": "Leafy Cloak",
-      "frequency": "Static",
-      "effect": "Whenever the user activates Designer, theychoose two of Chlorophyll, Leaf Guard, or Overcoat. Until the user activates Designer again, they gain the chosen Abilities."
     }
   ],
   "natureMod": {

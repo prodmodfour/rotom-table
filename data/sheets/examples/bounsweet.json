@@ -2,7 +2,7 @@
   "slug": "examples-bounsweet",
   "nickname": "Bounsweet",
   "species": "Bounsweet",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Cuddly",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 9,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "satk": {
@@ -32,7 +32,7 @@
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "spd": {
@@ -42,39 +42,21 @@
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Sweet Scent",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
-    },
-    {
-      "name": "Play Nice",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
-    },
     {
       "name": "Rapid Spin",
       "type": "Normal",
@@ -87,15 +69,13 @@
       "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
     },
     {
-      "name": "Razor Leaf",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "name": "Play Nice",
+      "type": "Normal",
+      "category": "Status",
       "frequency": "At-Will",
-      "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
     },
     {
       "name": "Splash",
@@ -103,7 +83,8 @@
       "category": "Status",
       "frequency": "At-Will",
       "range": "Self",
-      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn."
+      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn.",
+      "special": "Grants Long Jump +1"
     }
   ],
   "abilities": [
@@ -111,11 +92,6 @@
       "name": "Oblivious",
       "frequency": "Static",
       "effect": "The user is immune to the Enraged and Infatuated conditions. Defensive."
-    },
-    {
-      "name": "Run Away",
-      "frequency": "Static",
-      "effect": "The user does not provoke Attacks of Opportunity by Shifting.  The user cannot be Trapped."
     }
   ],
   "natureMod": {

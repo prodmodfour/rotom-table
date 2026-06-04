@@ -2,7 +2,7 @@
   "slug": "examples-kyogre",
   "nickname": "Kyogre",
   "species": "Kyogre",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Dreamy",
@@ -12,51 +12,100 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 16,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 8,
+      "added": 17,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 124,
+    "currentHp": 124,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 6,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Muddy Water",
+      "type": "Water",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Close Blast 2",
+      "effect": "As a Shift Action, the user may Move to any open square in Muddy Water’s area of effect without provoking any Attacks of Opportunity. On 16+, the Accuracy of all targets is lowered by 1."
+    },
+    {
+      "name": "Calm Mind",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Origin Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "ac": 5,
+      "range": "Close Blast 3, Smite",
+      "effect": "None"
+    },
+    {
+      "name": "Ice Beam",
+      "type": "Ice",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ice Beam Freezes on 19+ during Accuracy Check."
+    },
+    {
+      "name": "Aqua Ring",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
+    },
     {
       "name": "Body Slam",
       "type": "Normal",
@@ -67,48 +116,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Body Slam Paralyzes the target on 15+."
-    },
-    {
-      "name": "Aqua Tail",
-      "type": "Water",
-      "category": "Physical",
-      "db": 11,
-      "damageRoll": "3d10+10",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Melee, Pass",
-      "effect": "None"
-    },
-    {
-      "name": "Water Pulse",
-      "type": "Water",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "8, 1 Target, Aura",
-      "effect": "Water Pulse Confuses the target on 17+."
-    },
-    {
-      "name": "Scary Face",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
-    },
-    {
-      "name": "Ancient Power",
-      "type": "Rock",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     }
   ],
   "abilities": [
@@ -121,6 +128,11 @@
       "name": "Swift Swim",
       "frequency": "Static",
       "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    },
+    {
+      "name": "Rain Dish",
+      "frequency": "Daily x5 - Swift Action",
+      "effect": "The user gains a Tick of Hit Points. Rain Dish may only be used while the user is under 50% Hit Points or in Rainy Weather."
     }
   ],
   "natureMod": {

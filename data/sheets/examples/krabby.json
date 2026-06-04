@@ -2,7 +2,7 @@
   "slug": "examples-krabby",
   "nickname": "Krabby",
   "species": "Krabby",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Lonely",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "atk": {
@@ -22,62 +22,49 @@
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 1,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 35,
+    "currentHp": 35,
+    "tick": 3,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 0,
-      "vsAny": 2
+      "vsSatk": 1,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bubble Beam",
-      "type": "Water",
-      "category": "Special",
-      "db": 10,
-      "damageRoll": "3d8+10",
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
-    },
-    {
-      "name": "Bubble",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
       "name": "Vice Grip",
@@ -91,31 +78,23 @@
       "effect": "None"
     },
     {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Mud Shot",
-      "type": "Ground",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "3, 1 Target",
-      "effect": "The target’s Speed is lowed by -1 Combat Stage."
-    },
-    {
       "name": "Mud Sport",
       "type": "Ground",
       "category": "Status",
       "frequency": "EOT",
       "range": "Burst 2",
       "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
+    },
+    {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
     }
   ],
   "abilities": [
@@ -123,11 +102,6 @@
       "name": "Shell Armor",
       "frequency": "Static",
       "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
-    },
-    {
-      "name": "Hyper Cutter",
-      "frequency": "Static",
-      "effect": "The user’s Attack Stat may not be lowered, and its Attack Combat Stages may not be lowered. Defensive."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-zamazenta-crowned-shield-forme",
   "nickname": "Zamazenta Crowned Shield Forme",
   "species": "Zamazenta Crowned Shield Forme",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Desperate",
@@ -13,61 +13,88 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 4,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 14,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 14,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 13,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 118,
+    "currentHp": 118,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 4,
-      "vsAny": 3
+      "vsAtk": 5,
+      "vsSatk": 5,
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Quick Attack",
-      "type": "Normal",
+      "name": "Crunch",
+      "type": "Dark",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Laser Focus",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "The next successful damaging attack made by the user is automatically a Critical Hit."
+    },
+    {
+      "name": "Iron Head",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Iron Head Flinches the target on 15+."
+    },
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
     },
     {
       "name": "Slash",
@@ -81,14 +108,6 @@
       "effect": "Slash is a Critical Hit on 18+."
     },
     {
-      "name": "Howl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
-    },
-    {
       "name": "Bite",
       "type": "Dark",
       "category": "Physical",
@@ -98,17 +117,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Metal Claw",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
     }
   ],
   "abilities": [
@@ -120,7 +128,13 @@
     {
       "name": "Sprint",
       "frequency": "Scene – Swift Action",
+      "trigger": "The user uses the Sprint Action during Combat",
       "effect": "The user gains +2 Speed Combat Stages."
+    },
+    {
+      "name": "Bulletproof",
+      "frequency": "Static",
+      "effect": "The user resists all X target ranged attacks one step further. This refers to attacks and Moves that simply hit one target or specify hitting multiple targets, such as Razor Wind hitting three targets. It has no effect on Moves that are capable of hitting multiple targets through areas of effect, such as Bursts or Cones. Defensive."
     }
   ],
   "natureMod": {

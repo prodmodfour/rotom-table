@@ -2,7 +2,7 @@
   "slug": "examples-cryogonal",
   "nickname": "Cryogonal",
   "species": "Cryogonal",
-  "level": 20,
+  "level": 25,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Impish",
@@ -12,57 +12,89 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 9,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 4,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bind",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+      "name": "Aurora Beam",
+      "type": "Ice",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+.",
+      "special": "Grants Freezer"
+    },
+    {
+      "name": "Mist",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Haze",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
+    },
+    {
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
     },
     {
       "name": "Rapid Spin",
@@ -82,35 +114,13 @@
       "frequency": "At-Will",
       "range": "Self",
       "effect": "Raise the user’s Attack 1 Combat Stage."
-    },
-    {
-      "name": "Ice Shard",
-      "type": "Ice",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target, Priority",
-      "effect": "None"
-    },
-    {
-      "name": "Icy Wind",
-      "type": "Ice",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Snow Cloak",

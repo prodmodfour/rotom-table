@@ -2,7 +2,7 @@
   "slug": "examples-golisopod",
   "nickname": "Golisopod",
   "species": "Golisopod",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Docile",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -43,50 +43,53 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 90,
+    "currentHp": 90,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 5,
       "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Spite",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Spite may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
-    },
-    {
-      "name": "Rock Smash",
-      "type": "Fighting",
+      "name": "Sucker Punch",
+      "type": "Dark",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
+      "range": "Melee, 1 Target, Interrupt, Trigger",
+      "effect": "If an adjacent foe targets the user with a Damaging Attack, Sucker Punch may be used as an Interrupt Move against the triggering foe."
     },
     {
-      "name": "Fury Cutter",
-      "type": "Bug",
+      "name": "Razor Shell",
+      "type": "Water",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
       "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Razor Shell lowers the Target’s Defense 1 Combat Stage on an Even-Numbered Roll."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
     },
     {
       "name": "Swords Dance",
@@ -95,6 +98,14 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "The user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Spite",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Spite may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
     },
     {
       "name": "Bug Bite",

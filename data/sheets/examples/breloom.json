@@ -2,7 +2,7 @@
   "slug": "examples-breloom",
   "nickname": "Breloom",
   "species": "Breloom",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Jolly",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
@@ -43,31 +43,39 @@
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
+    "maxHp": 68,
+    "currentHp": 68,
     "tick": 6,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mega Drain",
-      "type": "Grass",
-      "category": "Special",
+      "name": "Mach Punch",
+      "type": "Fighting",
+      "category": "Physical",
       "db": 6,
       "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Counter",
+      "type": "Fighting",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "range": "Melee, 1 Target, Reaction, Trigger",
+      "effect": "Counter may be used as a Reaction when the user is hit by a damaging Physical Attack. Resolve the Triggering Attack, with Counter’s user resisting the attack one step further. After the attack is resolved, if Counter’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Counter is Physical, and while it cannot miss, it cannot hit targets immune to Fighting-Type Moves."
     },
     {
       "name": "Feint",
@@ -89,13 +97,15 @@
       "effect": "Headbutt Flinches the target on 15+."
     },
     {
-      "name": "Stun Spore",
+      "name": "Mega Drain",
       "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Powder",
-      "effect": "The target is Paralyzed."
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
       "name": "Leech Seed",
@@ -111,6 +121,7 @@
     {
       "name": "Effect Spore",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "Roll 1d6. On a result of 1 or 2, the attacker is Poisoned. On a result of 3 or 4, the attacker is Paralyzed. On a result of 5 or 6, the attacker falls Asleep."
     },
     {

@@ -2,7 +2,7 @@
   "slug": "examples-runerigus",
   "nickname": "Runerigus",
   "species": "Runerigus",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Curious",
@@ -18,53 +18,75 @@
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 10,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 72,
+    "currentHp": 72,
+    "tick": 7,
     "evasion": {
       "vsAtk": 5,
-      "vsSatk": 3,
+      "vsSatk": 4,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Disable",
+      "name": "Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
+    },
+    {
+      "name": "Mean Look",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+      "range": "6, 1 Target, Social",
+      "effect": "The user casts a foul spell on the target, causing it to become Trapped and Slowed for the remainder of the encounter."
+    },
+    {
+      "name": "Hex",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
     },
     {
       "name": "Crafty Shield",
@@ -85,27 +107,19 @@
       "range": "Burst 1"
     },
     {
-      "name": "Night Shade",
-      "type": "Ghost",
-      "category": "Special",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
-    },
-    {
-      "name": "Haze",
-      "type": "Ice",
+      "name": "Disable",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Field",
-      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
     }
   ],
   "abilities": [
     {
       "name": "Wandering Spirit",
       "frequency": "Scene – Free Action, Reaction",
+      "trigger": "The user is hit by a Melee attack",
       "effect": "The user exchanges Wandering Spirit with a random Ability of the opposing Pokémon, as per the Move Skill Swap."
     },
     {

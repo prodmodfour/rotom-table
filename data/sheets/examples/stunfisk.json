@@ -2,7 +2,7 @@
   "slug": "examples-stunfisk",
   "nickname": "Stunfisk",
   "species": "Stunfisk",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Mild",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "def": {
@@ -28,43 +28,66 @@
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bide",
+      "name": "Discharge",
+      "type": "Electric",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "All Cardinally Adjacent Targets",
+      "effect": "Discharge Paralyzes all legal targets on 15+."
+    },
+    {
+      "name": "Mud Bomb",
+      "type": "Ground",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1 on 16+."
+    },
+    {
+      "name": "Camouflage",
       "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user changes their Type to match the field. Forests and grassy areas change the user into Grass- Type. Watery areas change the user into Water-Type. Caves and Mountains could change the user into Rock- Type or Ground-Type. An icy terrain would turn the user into Ice-Type. A building may change the user into Steel-Type or Normal-Type. Weather affects what Type the user becomes. Use common sense, if you are having difficult determining what type the user should become, consult the GM.",
+      "special": "Grants Blender"
     },
     {
       "name": "Mud Shot",
@@ -78,51 +101,31 @@
       "effect": "The target’s Speed is lowed by -1 Combat Stage."
     },
     {
-      "name": "Camouflage",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "The user changes their Type to match the field. Forests and grassy areas change the user into Grass- Type. Watery areas change the user into Water-Type. Caves and Mountains could change the user into Rock- Type or Ground-Type. An icy terrain would turn the user into Ice-Type. A building may change the user into Steel-Type or Normal-Type. Weather affects what Type the user becomes. Use common sense, if you are having difficult determining what type the user should become, consult the GM."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
+      "name": "Thunder Shock",
+      "type": "Electric",
       "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
     },
     {
-      "name": "Tackle",
+      "name": "Bide",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
     }
   ],
   "abilities": [
     {
       "name": "Static",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Paralyzed."
     },
     {

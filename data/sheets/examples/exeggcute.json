@@ -2,7 +2,7 @@
   "slug": "examples-exeggcute",
   "nickname": "Exeggcute",
   "species": "Exeggcute",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Curious",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 9,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -43,29 +43,28 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stun Spore",
-      "type": "Grass",
+      "name": "Reflect",
+      "type": "Psychic",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Powder",
-      "effect": "The target is Paralyzed."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
     },
     {
       "name": "Uproar",
@@ -79,34 +78,6 @@
       "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
     },
     {
-      "name": "Reflect",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
-    },
-    {
-      "name": "Leech Seed",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
-    },
-    {
-      "name": "Bullet Seed",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
       "name": "Hypnosis",
       "type": "Psychic",
       "category": "Status",
@@ -114,6 +85,17 @@
       "ac": 6,
       "range": "4, 1 Target",
       "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Barrage",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
     }
   ],
   "abilities": [
@@ -121,11 +103,6 @@
       "name": "Filter",
       "frequency": "Static",
       "effect": "The user gains +5 Damage Reduction against Super- Effective damage. Defensive."
-    },
-    {
-      "name": "Eggscellence",
-      "frequency": "Static",
-      "effect": "Connection – Barrage. The user receives STAB when using Barrage and Egg Bomb. If Normal Typed, these Moves deal Damage as if one step more effective on 16+."
     }
   ],
   "natureMod": {

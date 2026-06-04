@@ -2,7 +2,7 @@
   "slug": "charizard",
   "nickname": "Charizard",
   "species": "Charizard",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Naive",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
@@ -43,11 +43,11 @@
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 4,
       "vsAtkBonus": 0,
@@ -58,17 +58,51 @@
     "conditions": []
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Smokescreen",
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Flame Burst",
+      "type": "Fire",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Any Trainers or Pokémon cardinally adjacent to the target lose 5 Hit Points."
+    },
+    {
+      "name": "Fire Fang",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
+    },
+    {
+      "name": "Scary Face",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "range": "5, Ranged Blast 3",
-      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
     },
     {
       "name": "Dragon Rage",
@@ -80,15 +114,12 @@
       "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
     },
     {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "name": "Smokescreen",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "5, Ranged Blast 3",
+      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
     }
   ],
   "abilities": [
@@ -101,6 +132,11 @@
       "name": "Intimidate",
       "frequency": "At-Will – Swift Action",
       "effect": "Lower the target’s Attack 1 Combat Stage. You may target a specific foe only once per Scene with Intimidate."
+    },
+    {
+      "name": "White Flame",
+      "frequency": "Static",
+      "effect": "The user may not make rolls to cure themselves from the Enraged condition. However, while Enraged, the user gains a +5 Bonus to all Damage Rolls."
     }
   ],
   "natureMod": {

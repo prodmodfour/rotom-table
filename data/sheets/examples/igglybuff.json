@@ -2,7 +2,7 @@
   "slug": "examples-igglybuff",
   "nickname": "Igglybuff",
   "species": "Igglybuff",
-  "level": 20,
+  "level": 5,
   "gender": "Female",
   "shiny": false,
   "nature": "Brave",
@@ -18,64 +18,46 @@
     },
     "atk": {
       "base": 1,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 1
+      "vsAtk": 0,
+      "vsSatk": 0,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 2,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Charm",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
-    },
-    {
-      "name": "Sweet Kiss",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
     {
       "name": "Pound",
       "type": "Normal",
@@ -105,24 +87,21 @@
       "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
     },
     {
-      "name": "Copycat",
-      "type": "Normal",
+      "name": "Charm",
+      "type": "Fairy",
       "category": "Status",
-      "frequency": "Scene x2",
-      "range": "4, 1 Target",
-      "effect": "Use the Move the target has used on their last turn. You may choose new targets for the Move. Copycat cannot miss."
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
     }
   ],
   "abilities": [
     {
       "name": "Cute Charm",
       "frequency": "Scene – Free Action",
+      "trigger": "A foe of the opposite gender attacks the user",
       "effect": "The foe becomes Infatuated."
-    },
-    {
-      "name": "Oblivious",
-      "frequency": "Static",
-      "effect": "The user is immune to the Enraged and Infatuated conditions. Defensive."
     }
   ],
   "natureMod": {

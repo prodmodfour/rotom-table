@@ -2,7 +2,7 @@
   "slug": "examples-vikavolt",
   "nickname": "Vikavolt",
   "species": "Vikavolt",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Hasty",
@@ -13,81 +13,80 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 14,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 0,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "String Shot",
-      "type": "Bug",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck."
-    },
-    {
-      "name": "Bug Bite",
-      "type": "Bug",
+      "name": "Dig",
+      "type": "Ground",
       "category": "Physical",
       "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
+      "range": "Burst 1, Set-Up, Full Action, Groundsource",
+      "special": "Grants Burrow +3"
     },
     {
-      "name": "Mud-Slap",
-      "type": "Ground",
+      "name": "Bug Buzz",
+      "type": "Bug",
       "category": "Special",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
+      "range": "Cone 2 or Close Blast 2, Sonic, Smite",
+      "effect": "Bug Buzz lowers the Special Defense of all targets on 19+."
+    },
+    {
+      "name": "Guillotine",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "Melee, 1 Target, Execute",
+      "effect": "Roll 1d100. This roll may not be modified in any way.  If you roll X or lower, the target Faints. X is equal to 30 + The User’s Level - The Target’s Level."
     },
     {
       "name": "Acrobatics",
@@ -101,17 +100,6 @@
       "effect": "If the user is not holding an item, Acrobatics instead has a Damage Base of 11 (3d10+10 / 27)."
     },
     {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
       "name": "Spark",
       "type": "Electric",
       "category": "Physical",
@@ -121,18 +109,35 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash",
       "effect": "Spark Paralyzes the target on 15+."
+    },
+    {
+      "name": "Bug Bite",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Swarm",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Bug."
+    },
+    {
+      "name": "Rocket",
+      "frequency": "Scene – Free Action",
+      "trigger": "A Round Begins",
+      "effect": "The user may take their turn at the top of the round. Priority, Interrupt, or Reaction Moves or Abilities cannot be declared in response to the user’s turn."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-blastoise",
   "nickname": "Blastoise",
   "species": "Blastoise",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Skittish",
@@ -12,81 +12,90 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 3,
+      "vsSatk": 4,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Tail Whip",
+      "name": "Skull Bash",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
+      "category": "Physical",
+      "db": 13,
+      "damageRoll": "4d10+10 / 35",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "Melee, 1 Target, Dash, Push, Set-Up"
     },
     {
-      "name": "Water Gun",
+      "name": "Aqua Tail",
+      "type": "Water",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Water Pulse",
       "type": "Water",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
     },
     {
       "name": "Rapid Spin",
@@ -100,23 +109,15 @@
       "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
     },
     {
-      "name": "Withdraw",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
-    },
-    {
-      "name": "Bubble",
-      "type": "Water",
-      "category": "Special",
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
       "db": 6,
-      "damageRoll": "2d6+8",
+      "damageRoll": "2d6+8 / 15",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
     }
   ],
   "abilities": [
@@ -129,6 +130,11 @@
       "name": "Shell Armor",
       "frequency": "Static",
       "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
+    },
+    {
+      "name": "Overcoat",
+      "frequency": "Static",
+      "effect": "The user is immune to Moves with the Powder Keyword, and does not take damage from any Weather that would normally cause it to take damage. Defensive."
     }
   ],
   "natureMod": {

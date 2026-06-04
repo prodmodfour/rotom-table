@@ -2,7 +2,7 @@
   "slug": "examples-alomomola",
   "nickname": "Alomomola",
   "species": "Alomomola",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -12,77 +12,77 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 12,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 0,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 96,
-    "currentHp": 96,
-    "tick": 9,
+    "maxHp": 122,
+    "currentHp": 122,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 1,
+      "vsAtk": 2,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
     },
     {
-      "name": "Aqua Ring",
-      "type": "Water",
+      "name": "Protect",
+      "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Self, Coat",
-      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
     },
     {
-      "name": "Water Sport",
-      "type": "Water",
+      "name": "Heal Pulse",
+      "type": "Psychic",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2, Coat",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+      "frequency": "Daily x2",
+      "range": "6, 1 Target, Aura",
+      "effect": "Restores 50% of the target’s max Hit Points. Heal Pulse’s user may not target itself with Heal Pulse."
     },
     {
       "name": "Double Slap",
@@ -107,12 +107,12 @@
       "effect": "None"
     },
     {
-      "name": "Heal Pulse",
-      "type": "Psychic",
+      "name": "Aqua Ring",
+      "type": "Water",
       "category": "Status",
-      "frequency": "Daily x2",
-      "range": "6, 1 Target, Aura",
-      "effect": "Restores 50% of the target’s max Hit Points. Heal Pulse’s user may not target itself with Heal Pulse."
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
     }
   ],
   "abilities": [

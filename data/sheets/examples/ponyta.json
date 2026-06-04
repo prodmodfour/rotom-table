@@ -2,7 +2,7 @@
   "slug": "examples-ponyta",
   "nickname": "Ponyta",
   "species": "Ponyta",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Lax",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 13,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
@@ -37,56 +37,37 @@
     },
     "spd": {
       "base": 0,
-      "added": 12,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
+    "maxHp": 44,
+    "currentHp": 44,
     "tick": 4,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 1,
-      "vsAny": 4
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stomp",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
-    },
-    {
-      "name": "Flame Wheel",
+      "name": "Ember",
       "type": "Fire",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Flame Wheel Burns the target on 19+."
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     },
     {
       "name": "Tail Whip",
@@ -98,6 +79,15 @@
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+    },
+    {
       "name": "Tackle",
       "type": "Normal",
       "category": "Physical",
@@ -107,17 +97,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
     }
   ],
   "abilities": [
@@ -125,11 +104,6 @@
       "name": "Flash Fire",
       "frequency": "Static",
       "effect": "The user is immune to the damage and effects of Fire-Type attacks. If the user is hit by a Fire-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
-    },
-    {
-      "name": "Sprint",
-      "frequency": "Scene – Swift Action",
-      "effect": "The user gains +2 Speed Combat Stages."
     }
   ],
   "natureMod": {

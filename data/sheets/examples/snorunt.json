@@ -2,7 +2,7 @@
   "slug": "examples-snorunt",
   "nickname": "Snorunt",
   "species": "Snorunt",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Stark",
@@ -12,79 +12,51 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 10,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
+    "maxHp": 41,
+    "currentHp": 41,
     "tick": 4,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Double Team",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Illusion, Coat",
-      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
     {
       "name": "Ice Shard",
       "type": "Ice",
@@ -97,6 +69,14 @@
       "effect": "None"
     },
     {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
       "name": "Powder Snow",
       "type": "Ice",
       "category": "Special",
@@ -105,18 +85,17 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+      "effect": "Powder Snow Freezes all Legal Targets on 19+.",
+      "special": "Grants Freezer"
     },
     {
-      "name": "Icy Wind",
-      "type": "Ice",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -124,11 +103,6 @@
       "name": "Inner Focus",
       "frequency": "Static",
       "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
-    },
-    {
-      "name": "Moody",
-      "frequency": "Static",
-      "effect": "At the end of the user’s turn, roll 1d6 to determine a Stat to be raised by +2 Combat Stages, then roll 1d6 to determine a Stat to be lowered by 1 Combat Stage. 1 is Attack, 2 is Defense, 3 is Special Attack, 4 is Special Defense, 5 is Speed, and 6 is Accuracy."
     }
   ],
   "natureMod": {

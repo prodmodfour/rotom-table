@@ -2,7 +2,7 @@
   "slug": "examples-pawniard",
   "nickname": "Pawniard",
   "species": "Pawniard",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Sassy",
@@ -13,39 +13,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -54,29 +54,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Feint Attack",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
-    },
-    {
-      "name": "Torment",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "10, 1 Target, Social",
-      "effect": "The target becomes Suppressed."
-    },
     {
       "name": "Fury Cutter",
       "type": "Bug",
@@ -114,11 +95,6 @@
       "name": "Defiant",
       "frequency": "Static",
       "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
-    },
-    {
-      "name": "Inner Focus",
-      "frequency": "Static",
-      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
     }
   ],
   "natureMod": {

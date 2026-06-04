@@ -2,7 +2,7 @@
   "slug": "examples-petilil",
   "nickname": "Petilil",
   "species": "Petilil",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Stark",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 10,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -42,9 +42,9 @@
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
@@ -53,10 +53,19 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Sleep Powder",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
     {
       "name": "Leech Seed",
       "type": "Grass",
@@ -72,15 +81,8 @@
       "category": "Status",
       "frequency": "EOT",
       "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
-    },
-    {
-      "name": "Synthesis",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value instead. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value instead."
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     },
     {
       "name": "Absorb",
@@ -92,25 +94,6 @@
       "ac": 2,
       "range": "4, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Magical Leaf",
-      "type": "Grass",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "range": "8, 1 Target",
-      "effect": "Magical Leaf cannot miss."
-    },
-    {
-      "name": "Sleep Powder",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target falls asleep."
     }
   ],
   "abilities": [
@@ -118,11 +101,6 @@
       "name": "Chlorophyll",
       "frequency": "Static",
       "effect": "While in Sunny Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
-    },
-    {
-      "name": "Flower Veil",
-      "frequency": "Static",
-      "effect": "Grass-Type Pokemon within 5 meters cannot have their Combat Stages lowered."
     }
   ],
   "natureMod": {

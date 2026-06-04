@@ -2,7 +2,7 @@
   "slug": "examples-vulpix-alola",
   "nickname": "Vulpix Alola",
   "species": "Vulpix Alola",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Naive",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -27,68 +27,46 @@
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 8,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 8,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Icy Wind",
+      "name": "Ice Shard",
       "type": "Ice",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
-    },
-    {
-      "name": "Powder Snow",
-      "type": "Ice",
-      "category": "Special",
+      "category": "Physical",
       "db": 6,
       "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
-    },
-    {
-      "name": "Payback",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
+      "range": "4, 1 Target, Priority",
+      "effect": "None"
     },
     {
       "name": "Baby-Doll Eyes",
@@ -100,12 +78,13 @@
       "effect": "The target’s Attack is lowered 1 Combat Stage."
     },
     {
-      "name": "Mist",
-      "type": "Ice",
+      "name": "Roar",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 1, Sonic, Social",
+      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
     },
     {
       "name": "Tail Whip",
@@ -115,6 +94,18 @@
       "ac": 2,
       "range": "Burst 1, Friendly",
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Powder Snow",
+      "type": "Ice",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Line 4",
+      "effect": "Powder Snow Freezes all Legal Targets on 19+.",
+      "special": "Grants Freezer"
     }
   ],
   "abilities": [
@@ -122,11 +113,6 @@
       "name": "Snow Cloak",
       "frequency": "Static",
       "effect": "The user gains +1 Evasion. This is increased to +2 Evasion while in Hail or snowy terrain. While in Hail, the user and adjacent allies do not lose Hit Points due to the Hail."
-    },
-    {
-      "name": "Cute Charm",
-      "frequency": "Scene – Free Action",
-      "effect": "The foe becomes Infatuated."
     }
   ],
   "natureMod": {

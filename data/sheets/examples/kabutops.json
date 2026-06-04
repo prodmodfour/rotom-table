@@ -2,7 +2,7 @@
   "slug": "examples-kabutops",
   "nickname": "Kabutops",
   "species": "Kabutops",
-  "level": 20,
+  "level": 45,
   "gender": "Male",
   "shiny": false,
   "nature": "Brave",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 15,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 12,
       "stage": 0
     },
     "satk": {
@@ -33,50 +33,89 @@
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 91,
+    "currentHp": 91,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsAtk": 4,
+      "vsSatk": 3,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mud Shot",
-      "type": "Ground",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "3, 1 Target",
-      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+      "name": "Metal Sound",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
     },
     {
-      "name": "Leer",
+      "name": "Slash",
       "type": "Normal",
-      "category": "Status",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
+    },
+    {
+      "name": "Endure",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "Self, Reaction, Trigger",
+      "effect": "If the user is hit by a damaging Move, you may use Endure as a Free Action. If the Move would bring Endure’s user down to 0 Hit Points or less, Endure’s user instead is set to 1 Hit Point."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [
@@ -89,6 +128,12 @@
       "name": "Sturdy",
       "frequency": "Static",
       "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    },
+    {
+      "name": "Weak Armor",
+      "frequency": "At-Will – Free Action",
+      "trigger": "The user takes Physical damage.",
+      "effect": "The user may lower its Defense by 1 Combat Stage, and gain +1 Speed Combat Stage. This is done after the triggering damage is resolved."
     }
   ],
   "natureMod": {

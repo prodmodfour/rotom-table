@@ -2,7 +2,7 @@
   "slug": "examples-farfetchd-galar",
   "nickname": "Farfetch’d Galar",
   "species": "Farfetch’d Galar",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -12,62 +12,51 @@
   "stats": {
     "hp": {
       "base": 5,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "atk": {
-      "base": 11,
+      "base": 12,
       "added": 6,
       "stage": 0
     },
     "def": {
-      "base": 5,
-      "added": 1,
+      "base": 4,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 6,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 6,
-      "added": 8,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 6,
-      "added": 7,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
+    "maxHp": 44,
+    "currentHp": 44,
     "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsSatk": 1,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Rock Smash",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
-    },
     {
       "name": "Fury Cutter",
       "type": "Bug",
@@ -89,17 +78,6 @@
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
-      "name": "Peck",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
       "name": "Sand Attack",
       "type": "Ground",
       "category": "Status",
@@ -109,26 +87,23 @@
       "effect": "The target is Blinded until the end of their next turn."
     },
     {
-      "name": "Brutal Swing",
-      "type": "Dark",
+      "name": "Peck",
+      "type": "Flying",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "Burst 1"
+      "range": "Melee, 1 Target",
+      "effect": "None"
     }
   ],
   "abilities": [
     {
       "name": "Steadfast",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user would be Flinched",
       "effect": "The user’s Speed is raised by +1 Combat Stage."
-    },
-    {
-      "name": "Scrappy",
-      "frequency": "Static",
-      "effect": "Ghost Types are not immune to the user’s Normal and Fighting-Type Moves."
     }
   ],
   "natureMod": {

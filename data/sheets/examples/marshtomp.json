@@ -13,38 +13,38 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
+    "maxHp": 72,
+    "currentHp": 72,
     "tick": 7,
     "evasion": {
       "vsAtk": 2,
@@ -78,15 +78,12 @@
       "effect": "The target’s Speed is lowed by -1 Combat Stage."
     },
     {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
+      "name": "Foresight",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
     },
     {
       "name": "Mud-Slap",
@@ -100,12 +97,16 @@
       "effect": "The target’s Accuracy is lowered by -1."
     },
     {
-      "name": "Foresight",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None",
+      "special": "Grants Fountain"
     }
   ],
   "abilities": [

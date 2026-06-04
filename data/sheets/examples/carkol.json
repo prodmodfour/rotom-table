@@ -2,7 +2,7 @@
   "slug": "examples-carkol",
   "nickname": "Carkol",
   "species": "Carkol",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Rash",
@@ -13,48 +13,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 12,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 80,
+    "currentHp": 80,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 3,
       "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
@@ -70,6 +70,14 @@
       "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     },
     {
+      "name": "Rock Polish",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
       "name": "Smack Down",
       "type": "Rock",
       "category": "Physical",
@@ -78,7 +86,7 @@
       "frequency": "Scene x2",
       "ac": 2,
       "range": "8, 1 Target",
-      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Moves with the Groundsource keyword even if normally immune."
     },
     {
       "name": "Rapid Spin",
@@ -90,14 +98,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Spirit Surge",
       "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
-    },
-    {
-      "name": "Rock Polish",
-      "type": "Rock",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Speed 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -109,6 +109,7 @@
     {
       "name": "Steam Engine",
       "frequency": "Scene x2 – Swift Action, Reaction",
+      "trigger": "The user is hit by a damaging Fire-Type or Water-Type Move, or begins their turn in Rainy Weather",
       "effect": "Connection – Smokescreen. The user may use Smokescreen as a Free Action, ignoring frequency, centered on the user."
     }
   ],

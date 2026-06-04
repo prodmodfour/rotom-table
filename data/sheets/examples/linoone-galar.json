@@ -13,42 +13,42 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
+    "maxHp": 66,
+    "currentHp": 66,
     "tick": 6,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 3,
+      "vsAtk": 2,
+      "vsSatk": 2,
       "vsAny": 3
     },
     "dr": 0
@@ -58,17 +58,6 @@
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Lick",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
-    },
     {
       "name": "Fury Swipes",
       "type": "Normal",
@@ -89,6 +78,17 @@
       "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
     },
     {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
       "name": "Snarl",
       "type": "Dark",
       "category": "Special",
@@ -100,15 +100,15 @@
       "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
     },
     {
-      "name": "Headbutt",
-      "type": "Normal",
+      "name": "Lick",
+      "type": "Ghost",
       "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "EOT",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
+      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
     },
     {
       "name": "Sand Attack",

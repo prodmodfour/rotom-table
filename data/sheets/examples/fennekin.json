@@ -2,7 +2,7 @@
   "slug": "examples-fennekin",
   "nickname": "Fennekin",
   "species": "Fennekin",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Decisive",
@@ -12,39 +12,39 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 12,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
@@ -53,10 +53,22 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
+    },
     {
       "name": "Tail Whip",
       "type": "Normal",
@@ -67,56 +79,15 @@
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
-      "name": "Howl",
+      "name": "Scratch",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
-    },
-    {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
-      "name": "Psybeam",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
-    },
-    {
-      "name": "Flame Charge",
-      "type": "Fire",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Raise the user’s Speed 1 Combat Stage."
-    },
-    {
-      "name": "Fire Spin",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "3, 1 Target",
-      "effect": "The target is put in a Vortex."
+      "range": "Melee, Pass",
+      "effect": "None"
     }
   ],
   "abilities": [
@@ -124,11 +95,6 @@
       "name": "Forewarn",
       "frequency": "Scene – Free Action",
       "effect": "The Move with the highest Damage Dice Roll known by the targeted foe is revealed. If there is a tie, all tied Moves are revealed. The Moves revealed gain a -2 Penalty during Accuracy Checks when used by the target for the rest of the encounter."
-    },
-    {
-      "name": "Sorcery",
-      "frequency": "Static",
-      "effect": "The user’s Base Special Attack Stat is increased by +5, and by +1 more for every 10 Levels the user has. This Ability cannot be disabled in any way."
     }
   ],
   "natureMod": {

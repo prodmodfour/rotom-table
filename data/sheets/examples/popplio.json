@@ -2,7 +2,7 @@
   "slug": "examples-popplio",
   "nickname": "Popplio",
   "species": "Popplio",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 10,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
@@ -42,41 +42,21 @@
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
+    "maxHp": 41,
+    "currentHp": 41,
     "tick": 4,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Encore",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
-    },
-    {
-      "name": "Aqua Jet",
-      "type": "Water",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None"
-    },
     {
       "name": "Disarming Voice",
       "type": "Fairy",
@@ -88,13 +68,13 @@
       "effect": "Disarming Voice cannot miss."
     },
     {
-      "name": "Baby-Doll Eyes",
-      "type": "Fairy",
+      "name": "Growl",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target, Priority, Social",
-      "effect": "The target’s Attack is lowered 1 Combat Stage."
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
       "name": "Water Gun",
@@ -105,18 +85,19 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
-      "name": "Icy Wind",
-      "type": "Ice",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+      "name": "Pound",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None"
     }
   ],
   "abilities": [
@@ -124,11 +105,6 @@
       "name": "Torrent",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Water."
-    },
-    {
-      "name": "Swift Swim",
-      "frequency": "Static",
-      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
     }
   ],
   "natureMod": {

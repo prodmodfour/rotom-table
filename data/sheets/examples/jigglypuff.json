@@ -2,7 +2,7 @@
   "slug": "examples-jigglypuff",
   "nickname": "Jigglypuff",
   "species": "Jigglypuff",
-  "level": 20,
+  "level": 15,
   "gender": "Female",
   "shiny": false,
   "nature": "Lax",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "def": {
@@ -28,55 +28,43 @@
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 91,
+    "currentHp": 91,
+    "tick": 9,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 1
+      "vsSatk": 0,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 4,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Play Nice",
+      "name": "Disable",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
-    },
-    {
-      "name": "Double Slap",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
     },
     {
       "name": "Disarming Voice",
@@ -87,6 +75,15 @@
       "frequency": "At-Will",
       "range": "Burst 1",
       "effect": "Disarming Voice cannot miss."
+    },
+    {
+      "name": "Play Nice",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
     },
     {
       "name": "Pound",
@@ -106,14 +103,6 @@
       "frequency": "At-Will",
       "range": "Self",
       "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
-    },
-    {
-      "name": "Disable",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
     }
   ],
   "abilities": [
@@ -121,11 +110,6 @@
       "name": "Lullaby",
       "frequency": "Scene – Free Action",
       "effect": "Connection - Sing. Whenever the user uses the Move “Sing”, they may activate this Feature. The user then picks a Pokémon or Trainer being targeted by Sing; Sing automatically hits that target."
-    },
-    {
-      "name": "Huge Power",
-      "frequency": "Static",
-      "effect": "The Pokémon’s Base Attack stat is doubled. This may double any bonuses from Nature or Vitamins, but not bonuses from Trainer Features."
     }
   ],
   "natureMod": {

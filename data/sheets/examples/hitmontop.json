@@ -2,7 +2,7 @@
   "slug": "examples-hitmontop",
   "nickname": "Hitmontop",
   "species": "Hitmontop",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Naive",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "atk": {
@@ -27,43 +27,57 @@
     },
     "satk": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
+    "maxHp": 62,
+    "currentHp": 62,
     "tick": 6,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsSatk": 3,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Focus Energy",
+      "name": "Rapid Spin",
       "type": "Normal",
-      "category": "Status",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
       "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+      "ac": 2,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+    },
+    {
+      "name": "Triple Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "After attacking with Triple Kick, hit or miss, the user may Disengage 2m and attack a different target with Triple Kick. This effect may be repeated a second time, targeting a creature that has not been targeted by either prior attack. Before making each attack roll, the user can elect to give up triggering all remaining additional shifts and attacks. Triple Kick gains +1 Accuracy and +2 DB for each attack that is given up. Triple Kick always benefits from the Technician Ability."
     },
     {
       "name": "Quick Attack",
@@ -88,15 +102,12 @@
       "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     },
     {
-      "name": "Triple Kick",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
       "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "After attacking with Triple Kick, hit or miss, the user may Disengage 2m and attack a different target with Triple Kick. This effect may be repeated a second time, targeting a creature that has not been targeted by either prior attack. Before making each attack roll, the user can elect to give up triggering all remaining additional shifts and attacks. Triple Kick gains +1 Accuracy and +2 DB for each attack that is given up. Triple Kick always benefits from the Technician Ability."
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
     }
   ],
   "abilities": [

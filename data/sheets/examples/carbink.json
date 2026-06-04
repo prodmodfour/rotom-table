@@ -2,7 +2,7 @@
   "slug": "examples-carbink",
   "nickname": "Carbink",
   "species": "Carbink",
-  "level": 20,
+  "level": 25,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Composed",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "atk": {
@@ -23,59 +23,57 @@
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 62,
+    "currentHp": 62,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsAtk": 5,
+      "vsSatk": 5,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "name": "Stealth Rock",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Field, Hazard",
+      "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out.",
+      "special": "Grants Materializer"
     },
     {
-      "name": "Harden",
-      "type": "Normal",
+      "name": "Reflect",
+      "type": "Psychic",
       "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
     },
     {
       "name": "Smack Down",
@@ -86,15 +84,15 @@
       "frequency": "Scene x2",
       "ac": 2,
       "range": "8, 1 Target",
-      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Moves with the Groundsource keyword even if normally immune."
     },
     {
-      "name": "Reflect",
-      "type": "Psychic",
+      "name": "Sharpen",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage."
     },
     {
       "name": "Rock Throw",
@@ -108,12 +106,12 @@
       "effect": "None"
     },
     {
-      "name": "Sharpen",
+      "name": "Harden",
       "type": "Normal",
       "category": "Status",
       "frequency": "At-Will",
       "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage."
+      "effect": "Raise the user’s Defense 1 Combat Stage."
     }
   ],
   "abilities": [

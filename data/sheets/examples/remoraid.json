@@ -2,7 +2,7 @@
   "slug": "examples-remoraid",
   "nickname": "Remoraid",
   "species": "Remoraid",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Bashful",
@@ -22,49 +22,41 @@
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Lock-On",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "10, 1 Target",
-      "effect": "The target is Locked-On. The next Move that the user uses against the Target that requires an Accuracy Check cannot miss. Lock-On’s effect, on both the User and Target, is passed on by Baton Pass."
-    },
     {
       "name": "Psybeam",
       "type": "Psychic",
@@ -77,6 +69,14 @@
       "effect": "Psybeam Confuses the target on 19+."
     },
     {
+      "name": "Lock-On",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked-On. The next Move that the user uses against the Target that requires an Accuracy Check cannot miss. Lock-On’s effect, on both the User and Target, is passed on by Baton Pass."
+    },
+    {
       "name": "Water Gun",
       "type": "Water",
       "category": "Special",
@@ -85,29 +85,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Bubble Beam",
-      "type": "Water",
-      "category": "Special",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
-    },
-    {
-      "name": "Aurora Beam",
-      "type": "Ice",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+."
+      "effect": "None",
+      "special": "Grants Fountain"
     }
   ],
   "abilities": [
@@ -115,11 +94,6 @@
       "name": "Sniper",
       "frequency": "Static",
       "effect": "When the user gets a Critical Hit, the attack deals +3d10 additional damage."
-    },
-    {
-      "name": "Beam Cannon",
-      "frequency": "Static",
-      "effect": "The Effect Range and Critical Hit Range of the user’s Ranged, 1-Target Moves are increased by 3."
     }
   ],
   "capabilities": {

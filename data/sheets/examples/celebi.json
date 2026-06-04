@@ -2,7 +2,7 @@
   "slug": "examples-celebi",
   "nickname": "Celebi",
   "species": "Celebi",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Gentle",
@@ -13,74 +13,78 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 120,
+    "currentHp": 120,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Recover",
+      "name": "Natural Gift",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "6, 1 Target, Berry",
+      "effect": "Refer to the Move Keywords Berry list. Natural Gift deals damage according to the Berry list and Natural Gift’s Type is also defined there. The Berry’s Digestion Buff is nullified and is not used."
+    },
+    {
+      "name": "Baton Pass",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Daily x2",
+      "frequency": "At-Will",
       "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
+      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
     },
     {
-      "name": "Safeguard",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
-    },
-    {
-      "name": "Heal Bell",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Burst 3, Sonic",
-      "effect": "All targets are cured of any Persistent Status ailments."
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     },
     {
       "name": "Magical Leaf",
@@ -93,24 +97,20 @@
       "effect": "Magical Leaf cannot miss."
     },
     {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
     },
     {
-      "name": "Leech Seed",
-      "type": "Grass",
+      "name": "Recover",
+      "type": "Normal",
       "category": "Status",
       "frequency": "Daily x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
     }
   ],
   "abilities": [
@@ -123,6 +123,11 @@
       "name": "Magic Guard",
       "frequency": "Static",
       "effect": "The user is immune to damage and Hit Point loss from Hazards, Weather, Status Afflictions, Vortexes, Recoil, Hay Fever, Iron Barbs, Rough Skin, and Leech Seed. Defensive."
+    },
+    {
+      "name": "Healer",
+      "frequency": "Scene – Free Action",
+      "effect": "The target is cured of all Status conditions."
     }
   ],
   "natureMod": {

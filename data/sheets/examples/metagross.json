@@ -2,7 +2,7 @@
   "slug": "examples-metagross",
   "nickname": "Metagross",
   "species": "Metagross",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Rash",
@@ -13,72 +13,131 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 3,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 108,
+    "currentHp": 108,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 5,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "name": "Hammer Arm",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10 / 24",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "The user lowers their Speed 1 Combat Stage."
     },
     {
-      "name": "Metal Claw",
+      "name": "Meteor Mash",
       "type": "Steel",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 15+."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Psychic",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "5, 1 Target, Push",
+      "effect": "The target is Pushed 1 meter in any direction. Psychic lowers the target’s Special Defense 1 Combat Stage on 17+.",
+      "special": "Grants Telekinetic"
+    },
+    {
+      "name": "Scary Face",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
+    {
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Miracle Eye",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Miracle Eye may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Psychic-Type Moves can hit and affect Dark-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+    },
+    {
+      "name": "Bullet Punch",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
     }
   ],
   "abilities": [
@@ -91,6 +150,11 @@
       "name": "Keen Eye",
       "frequency": "Static",
       "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
+    },
+    {
+      "name": "Cluster Mind",
+      "frequency": "Static",
+      "effect": "The user’s Move Pool limit is increased by +2."
     }
   ],
   "natureMod": {

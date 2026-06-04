@@ -2,7 +2,7 @@
   "slug": "examples-sunflora",
   "nickname": "Sunflora",
   "species": "Sunflora",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Cuddly",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "atk": {
@@ -27,24 +27,24 @@
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 83,
+    "currentHp": 83,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
@@ -53,34 +53,28 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Ingrain",
+      "name": "Bullet Seed",
       "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Coat",
-      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
-    },
-    {
-      "name": "Leech Seed",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Daily x2",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "EOT",
       "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
     },
     {
-      "name": "Mega Drain",
+      "name": "Giga Drain",
       "type": "Grass",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
@@ -106,19 +100,31 @@
       "effect": "Razor Leaf is a Critical Hit on 18+."
     },
     {
-      "name": "Grass Whistle",
+      "name": "Leech Seed",
       "type": "Grass",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Sonic",
-      "effect": "The target falls Asleep."
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     }
   ],
   "abilities": [
     {
       "name": "Sun Blanket",
       "frequency": "Daily x5 - Swift Action",
+      "trigger": "The user gains Initiative.",
       "effect": "The user gains a Tick of Hit Points. Sun Blanket may only be triggered while the user is under 50% Hit Points or in Sunny Weather."
     },
     {

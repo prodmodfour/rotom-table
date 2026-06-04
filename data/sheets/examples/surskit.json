@@ -2,7 +2,7 @@
   "slug": "examples-surskit",
   "nickname": "Surskit",
   "species": "Surskit",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Brave",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 11,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 1,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
@@ -38,37 +38,26 @@
     },
     "spd": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
+    "maxHp": 41,
+    "currentHp": 41,
     "tick": 4,
     "evasion": {
-      "vsAtk": 0,
+      "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Bubble Beam",
-      "type": "Water",
-      "category": "Special",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
-    },
     {
       "name": "Sweet Scent",
       "type": "Normal",
@@ -76,26 +65,8 @@
       "frequency": "Scene",
       "ac": 2,
       "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
-    },
-    {
-      "name": "Bubble",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
-    },
-    {
-      "name": "Water Sport",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2, Coat",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
     },
     {
       "name": "Quick Attack",
@@ -107,18 +78,25 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
+    },
+    {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
     }
   ],
   "abilities": [
     {
       "name": "Danger Syrup",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by an attack",
       "effect": "Connection - Sweet Scent. When this Ability is activated the user may use Sweet Scent as a Free Action, ignoring Frequency. Whenever the user hits a foe with Sweet Scent, that foe is Blinded for 1 full round."
-    },
-    {
-      "name": "Swift Swim",
-      "frequency": "Static",
-      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
     }
   ],
   "natureMod": {

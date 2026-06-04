@@ -2,7 +2,7 @@
   "slug": "examples-leafeon",
   "nickname": "Leafeon",
   "species": "Leafeon",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Calm",
@@ -12,51 +12,72 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 13,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 5,
-      "vsSatk": 2,
+      "vsAtk": 4,
+      "vsSatk": 3,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Giga Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Magical Leaf",
+      "type": "Grass",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "8, 1 Target",
+      "effect": "Magical Leaf cannot miss."
+    },
     {
       "name": "Grass Whistle",
       "type": "Grass",
@@ -65,15 +86,6 @@
       "ac": 6,
       "range": "6, 1 Target, Sonic",
       "effect": "The target falls Asleep."
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
     },
     {
       "name": "Quick Attack",
@@ -96,6 +108,15 @@
       "ac": 4,
       "range": "Cone 2",
       "effect": "Razor Leaf is a Critical Hit on 18+."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [

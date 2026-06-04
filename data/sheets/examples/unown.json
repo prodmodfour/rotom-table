@@ -2,7 +2,7 @@
   "slug": "examples-unown",
   "nickname": "Unown",
   "species": "Unown",
-  "level": 20,
+  "level": 25,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Brave",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -42,18 +42,18 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
+    "maxHp": 65,
+    "currentHp": 65,
     "tick": 6,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
+      "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
@@ -73,7 +73,7 @@
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Anticipation",

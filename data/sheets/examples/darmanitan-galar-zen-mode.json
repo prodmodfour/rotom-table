@@ -2,7 +2,7 @@
   "slug": "examples-darmanitan-galar-zen-mode",
   "nickname": "Darmanitan Galar Zen Mode",
   "species": "Darmanitan Galar Zen Mode",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Impish",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 11,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 16,
-      "added": 4,
+      "added": 14,
       "stage": 0
     },
     "def": {
-      "base": 7,
-      "added": 5,
+      "base": 8,
+      "added": 7,
       "stage": 0
     },
     "satk": {
-      "base": 2,
-      "added": 7,
+      "base": 1,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
@@ -38,36 +38,66 @@
     },
     "spd": {
       "base": 14,
-      "added": 4,
+      "added": 13,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 113,
+    "currentHp": 113,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bite",
-      "type": "Dark",
+      "name": "Belly Drum",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user gains +6 Attack Combat Stages, and loses Hit Points equal to ½ of their Max Hit Points."
+    },
+    {
+      "name": "Uproar",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Spirit Surge, Sonic",
+      "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
+    },
+    {
+      "name": "Ice Punch",
+      "type": "Ice",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
+      "effect": "Ice Punch Freezes the target on 19+ during Accuracy Check."
+    },
+    {
+      "name": "Headbutt",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
     },
     {
       "name": "Ice Fang",
@@ -79,26 +109,6 @@
       "ac": 3,
       "range": "Melee, 1 Target",
       "effect": "Ice Fang Freezes or Flinches on 18+ during Accuracy Check; flip a coin to determine whether the foe gets Frozen or Flinches. On 20 during Accuracy Check, the foe is Frozen and Flinches."
-    },
-    {
-      "name": "Taunt",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Enraged."
-    },
-    {
-      "name": "Avalanche",
-      "type": "Ice",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "When declaring Avalanche, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Avalanche on any legal target. If the target damaged the user this round, Avalanche has a Damage Base of 12 (4d10+15 / 40) instead."
     },
     {
       "name": "Work Up",
@@ -119,6 +129,11 @@
       "name": "Winter’s Kiss",
       "frequency": "Static",
       "effect": "The user does not take damage from Ice-Type Moves. Whenever the user uses or is hit by an Ice- Type Move, the user is healed by a Tick of Hit Points. Defensive."
+    },
+    {
+      "name": "Zen Snowed",
+      "frequency": "Scene – Swift Action",
+      "effect": "The user changes into Zen Mode forme for the rest of the Scene, and may use the Moves “Ice Punch” and “Fire Punch” as if they were on its Move List."
     }
   ],
   "natureMod": {

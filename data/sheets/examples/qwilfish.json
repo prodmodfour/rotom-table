@@ -2,7 +2,7 @@
   "slug": "examples-qwilfish",
   "nickname": "Qwilfish",
   "species": "Qwilfish",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Composed",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 8,
       "stage": 0
     },
     "def": {
@@ -28,79 +28,60 @@
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
+      "vsSatk": 2,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bubble",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
+      "name": "Stockpile",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
     },
     {
-      "name": "Water Gun",
-      "type": "Water",
+      "name": "Spit Up",
+      "type": "Normal",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "frequency": "Scene",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "For each Stockpiled Count the user has, Spit Up’s Damage Base is increased by +8. If the user has no Stockpiled count, Spit Up cannot be used."
     },
     {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Poison Sting",
+      "name": "Toxic Spikes",
       "type": "Poison",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Poison Sting Poisons the target on 17+."
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Toxic Spikes, all 8 meters must be adjacent with at least one other space of Toxic Spikes next to each other. Toxic Spikes cause Terrain to become Slow Terrain, and a grounded foe that runs into the hazard becomes Poisoned, and Slowed until the end of their next turn. If there are 2 Layers of Toxic Spikes on the same space, it Deadly Poisons the foes instead. Poison-Type Pokémon may move over Toxic Spikes harmlessly, destroying the Hazards as they do so."
     },
     {
       "name": "Rollout",
@@ -114,12 +95,24 @@
       "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
     },
     {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
       "name": "Minimize",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
       "range": "Self",
-      "effect": "The user gains +4 Evasion, and user’s size is lowered to Small for the remainder of the encounter."
+      "effect": "The user gains +4 Evasion, and user’s size is lowered to Small for the remainder of the encounter.",
+      "special": "Grants Shrinkable"
     }
   ],
   "abilities": [
@@ -131,6 +124,7 @@
     {
       "name": "Poison Point",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Move",
       "effect": "The attacking foe is Poisoned."
     }
   ],

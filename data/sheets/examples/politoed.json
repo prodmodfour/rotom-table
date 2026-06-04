@@ -2,7 +2,7 @@
   "slug": "examples-politoed",
   "nickname": "Politoed",
   "species": "Politoed",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Adamant",
@@ -12,100 +12,112 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 12,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 104,
+    "currentHp": 104,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
-      "vsAny": 1
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Hypnosis",
-      "type": "Psychic",
-      "category": "Status",
+      "name": "Bounce",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
       "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target",
-      "effect": "The target falls Asleep."
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash, Full Action",
+      "effect": "The user first Shifts, gaining a +1 Bonus to Movement Speed and to their Jump Capabilities. After the user Shifts, they may attack with Bounce. The target becomes Vulnerable, and is Paralyzed on 16+.",
+      "special": "Grants High Jump +1"
     },
     {
-      "name": "Double Slap",
+      "name": "Belly Drum",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user gains +6 Attack Combat Stages, and loses Hit Points equal to ½ of their Max Hit Points."
+    },
+    {
+      "name": "Mud Shot",
+      "type": "Ground",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "3, 1 Target",
+      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+    },
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    },
+    {
+      "name": "Body Slam",
       "type": "Normal",
       "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Bubble",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
-    },
-    {
-      "name": "Rain Dance",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Field, Weather",
-      "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
+      "range": "Melee, 1 Target",
+      "effect": "Body Slam Paralyzes the target on 15+."
     }
   ],
   "abilities": [
@@ -118,6 +130,11 @@
       "name": "Water Absorb",
       "frequency": "Static",
       "effect": "The user is immune to the damage and effects of  Water-Type attacks, and whenever they are hit with a Water Type attack, they gain a Tick of Hit Points. Defensive."
+    },
+    {
+      "name": "Rain Dish",
+      "frequency": "Daily x5 - Swift Action",
+      "effect": "The user gains a Tick of Hit Points. Rain Dish may only be used while the user is under 50% Hit Points or in Rainy Weather."
     }
   ],
   "natureMod": {

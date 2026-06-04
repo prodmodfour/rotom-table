@@ -2,7 +2,7 @@
   "slug": "examples-alcremie",
   "nickname": "Alcremie",
   "species": "Alcremie",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Jolly",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "def": {
@@ -27,7 +27,7 @@
     },
     "satk": {
       "base": -1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
@@ -37,14 +37,14 @@
     },
     "spd": {
       "base": 1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 4,
@@ -53,27 +53,26 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Sweet Scent",
+      "name": "Attract",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+      "range": "3, 1 Target, Social",
+      "effect": "Attract Infatuates the target if its gender is the opposite of the user’s. Attract fails when used by or against Genderless targets."
     },
     {
-      "name": "Sweet Kiss",
-      "type": "Fairy",
+      "name": "Aromatherapy",
+      "type": "Grass",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+      "frequency": "Scene",
+      "range": "Burst 1",
+      "effect": "All allies in the burst are cured of one status condition of their choice."
     },
     {
       "name": "Draining Kiss",
@@ -87,12 +86,23 @@
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
-      "name": "Aromatherapy",
-      "type": "Grass",
+      "name": "Sweet Scent",
+      "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Burst 1",
-      "effect": "All allies in the burst are cured of one status condition of their choice."
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
+    },
+    {
+      "name": "Sweet Kiss",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     }
   ],
   "abilities": [

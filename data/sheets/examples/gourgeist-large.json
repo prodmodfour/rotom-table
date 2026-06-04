@@ -2,7 +2,7 @@
   "slug": "examples-gourgeist-large",
   "nickname": "Gourgeist Large",
   "species": "Gourgeist Large",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Gentle",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "def": {
@@ -28,33 +28,33 @@
     },
     "satk": {
       "base": 0,
-      "added": 1,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 11,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 1,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 82,
+    "currentHp": 82,
+    "tick": 8,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 4,
-      "vsAny": 1
+      "vsSatk": 3,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [],

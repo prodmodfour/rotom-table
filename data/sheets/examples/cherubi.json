@@ -2,7 +2,7 @@
   "slug": "examples-cherubi",
   "nickname": "Cherubi",
   "species": "Cherubi",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Modest",
@@ -17,12 +17,12 @@
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "satk": {
@@ -32,7 +32,7 @@
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -42,32 +42,21 @@
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 47,
+    "currentHp": 47,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 1,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
     {
       "name": "Leech Seed",
       "type": "Grass",
@@ -78,20 +67,13 @@
       "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
     },
     {
-      "name": "Helping Hand",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
-    },
-    {
       "name": "Growth",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
       "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     },
     {
       "name": "Morning Sun",
@@ -102,14 +84,15 @@
       "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
     },
     {
-      "name": "Magical Leaf",
-      "type": "Grass",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "range": "8, 1 Target",
-      "effect": "Magical Leaf cannot miss."
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [
@@ -117,11 +100,6 @@
       "name": "Cherry Power",
       "frequency": "Daily – Swift Action",
       "effect": "The user gains 15 Temporary Hit Points, and is cured of all Persistent Status Afflictions."
-    },
-    {
-      "name": "Flower Power",
-      "frequency": "Static",
-      "effect": "The user may perform damaging Grass Type Moves as if they were their choice of either Physical or Special."
     }
   ],
   "natureMod": {

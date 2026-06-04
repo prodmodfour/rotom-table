@@ -2,7 +2,7 @@
   "slug": "examples-grumpig",
   "nickname": "Grumpig",
   "species": "Grumpig",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Skittish",
@@ -12,70 +12,99 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 87,
+    "currentHp": 87,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 3,
+      "vsSatk": 4,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Psywave",
-      "type": "Psychic",
+      "name": "Snore",
+      "type": "Normal",
       "category": "Special",
-      "frequency": "Scene",
-      "ac": 5,
-      "range": "6, 1 Target",
-      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic",
+      "effect": "Snore Flinches all legal targets on 15+. Snore may only be used by Sleeping users."
     },
     {
-      "name": "Psybeam",
+      "name": "Rest",
       "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
+    },
+    {
+      "name": "Power Gem",
+      "type": "Rock",
       "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
       "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
+      "effect": "None"
+    },
+    {
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Magic Coat",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "4, Interrupt, Trigger",
+      "effect": "If the user is about to get a hit by a Move that does not have a Damage Dice Roll, they may use Magic Coat as an Interrupt. The Interrupted Move’s user is treated as if they were the target of their own Move, with the user of Magic Coat as the user."
     },
     {
       "name": "Confuse Ray",
@@ -85,22 +114,6 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "The target is Confused."
-    },
-    {
-      "name": "Odor Sleuth",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
-    },
-    {
-      "name": "Psych Up",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "6, 1 Target",
-      "effect": "The user’s Combat Stages are changed to match the target’s Combat Stages. Psych Up cannot miss."
     }
   ],
   "abilities": [

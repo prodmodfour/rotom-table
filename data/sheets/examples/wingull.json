@@ -2,7 +2,7 @@
   "slug": "examples-wingull",
   "nickname": "Wingull",
   "species": "Wingull",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Rash",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "atk": {
@@ -23,29 +23,29 @@
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 0,
@@ -54,7 +54,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -70,13 +70,13 @@
       "effect": "None."
     },
     {
-      "name": "Growl",
+      "name": "Supersonic",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     },
     {
       "name": "Water Gun",
@@ -87,35 +87,17 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
-      "name": "Supersonic",
+      "name": "Growl",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Mist",
-      "type": "Ice",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -123,11 +105,6 @@
       "name": "Keen Eye",
       "frequency": "Static",
       "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
-    },
-    {
-      "name": "Rain Dish",
-      "frequency": "Daily x5 - Swift Action",
-      "effect": "The user gains a Tick of Hit Points. Rain Dish may only be used while the user is under 50% Hit Points or in Rainy Weather."
     }
   ],
   "natureMod": {

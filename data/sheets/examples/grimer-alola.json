@@ -2,7 +2,7 @@
   "slug": "examples-grimer-alola",
   "nickname": "Grimer Alola",
   "species": "Grimer Alola",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Composed",
@@ -13,48 +13,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 59,
+    "currentHp": 59,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -70,15 +70,12 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Pound",
+      "name": "Harden",
       "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "category": "Status",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
     },
     {
       "name": "Poison Gas",
@@ -90,31 +87,15 @@
       "effect": "Poison Gas Poisons all Legal Targets."
     },
     {
-      "name": "Harden",
+      "name": "Pound",
       "type": "Normal",
-      "category": "Status",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Acid Spray",
-      "type": "Poison",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Acid Spray lowers the target’s Special Defense 2 Combat Stages."
-    },
-    {
-      "name": "Disable",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+      "range": "Melee, 1 Target",
+      "effect": "None"
     }
   ],
   "abilities": [
@@ -122,11 +103,6 @@
       "name": "Weird Power",
       "frequency": "Static",
       "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
-    },
-    {
-      "name": "Gluttony",
-      "frequency": "Static",
-      "effect": "The user may have up to three Food Buffs at once, use up to three Food Buffs per Scene, and may eat two refreshments per half hour."
     }
   ],
   "capabilities": {

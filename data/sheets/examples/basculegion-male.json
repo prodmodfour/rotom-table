@@ -2,7 +2,7 @@
   "slug": "examples-basculegion-male",
   "nickname": "Basculegion Male",
   "species": "Basculegion Male",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Brave",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "def": {
@@ -33,41 +33,52 @@
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 103,
+    "currentHp": 103,
+    "tick": 10,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bite",
+      "name": "Shadow Ball",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "Shadow Ball lowers the foe’s Special Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Crunch",
       "type": "Dark",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
     },
     {
       "name": "Zen Headbutt",
@@ -81,17 +92,6 @@
       "effect": "Zen Headbutt Flinches the target on 15+."
     },
     {
-      "name": "Aqua Jet",
-      "type": "Water",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None"
-    },
-    {
       "name": "Hex",
       "type": "Ghost",
       "category": "Special",
@@ -101,6 +101,28 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Once a Scene, if Hex’s target has a Status Affliction, you may have Hex’s Damage Base be 13 instead (4d10+10 / 35)."
+    },
+    {
+      "name": "Bite",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Bite Flinches the target on 15+."
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
     }
   ],
   "abilities": [

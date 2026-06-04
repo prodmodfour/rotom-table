@@ -2,7 +2,7 @@
   "slug": "examples-binacle",
   "nickname": "Binacle",
   "species": "Binacle",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Careful",
@@ -18,7 +18,7 @@
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -28,52 +28,36 @@
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsSatk": 2,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Clamp",
-      "type": "Water",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
     {
       "name": "Fury Swipes",
       "type": "Normal",
@@ -102,26 +86,17 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
-      "name": "Shell Smash",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 2 Combat Stages, raise the user’s Special Attack 2 Combat Stages and raise the user’s Speed 2 Combat Stages. Lower the user’s Defense 1 Combat Stage and lower the user’s Special Defense 1 Combat Stage."
-    },
-    {
-      "name": "Mud-Slap",
+      "name": "Sand Attack",
       "type": "Ground",
-      "category": "Special",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
+      "category": "Status",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     },
     {
       "name": "Scratch",
@@ -133,6 +108,14 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "None"
+    },
+    {
+      "name": "Shell Smash",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 2 Combat Stages, raise the user’s Special Attack 2 Combat Stages and raise the user’s Speed 2 Combat Stages. Lower the user’s Defense 1 Combat Stage and lower the user’s Special Defense 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -140,11 +123,6 @@
       "name": "Tough Claws",
       "frequency": "Static",
       "effect": "The user increases the Damage Base of all Melee Moves by +2."
-    },
-    {
-      "name": "Cluster Mind",
-      "frequency": "Static",
-      "effect": "The user’s Move Pool limit is increased by +2."
     }
   ],
   "natureMod": {

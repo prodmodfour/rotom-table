@@ -2,7 +2,7 @@
   "slug": "examples-falinks",
   "nickname": "Falinks",
   "species": "Falinks",
-  "level": 20,
+  "level": 25,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Mild",
@@ -12,58 +12,66 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Protect",
+      "name": "Endure",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+      "frequency": "Daily",
+      "range": "Self, Reaction, Trigger",
+      "effect": "If the user is hit by a damaging Move, you may use Endure as a Free Action. If the Move would bring Endure’s user down to 0 Hit Points or less, Endure’s user instead is set to 1 Hit Point."
+    },
+    {
+      "name": "Bulk Up",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Defense 1 Combat Stage."
     },
     {
       "name": "Headbutt",
@@ -77,6 +85,14 @@
       "effect": "Headbutt Flinches the target on 15+."
     },
     {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
+    {
       "name": "Rock Smash",
       "type": "Fighting",
       "category": "Physical",
@@ -88,31 +104,12 @@
       "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
     },
     {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Bulk Up",
-      "type": "Fighting",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Focus Energy",
+      "name": "Protect",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
     }
   ],
   "abilities": [

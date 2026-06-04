@@ -2,7 +2,7 @@
   "slug": "examples-mandibuzz",
   "nickname": "Mandibuzz",
   "species": "Mandibuzz",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Impish",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 9,
+      "added": 12,
       "stage": 0
     },
     "satk": {
@@ -33,41 +33,67 @@
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 113,
+    "currentHp": 113,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 5,
+      "vsSatk": 3,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Pluck",
+      "name": "Tailwind",
       "type": "Flying",
+      "category": "Status",
+      "frequency": "Scene",
+      "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack.",
+      "special": "Grants Guster"
+    },
+    {
+      "name": "Defog",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The Weather becomes Clear, and all Blessings, Coats, and Hazards are destroyed. Clear Weather is the default weather, conferring no innate bonuses or penalties of any sort."
+    },
+    {
+      "name": "Punishment",
+      "type": "Dark",
       "category": "Physical",
       "db": 8,
       "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Pluck takes the target’s Held Item or Accessory Slot Item and attaches it to Pluck’s user, if the user is not holding anything."
+      "effect": "Punishment’s Damage Base is raised by +1 for each positive Combat Stage the target has, to a maximum of DB 12."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
     },
     {
       "name": "Flatter",
@@ -85,29 +111,25 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "Raise the user’s Special Attack 2 Combat Stages."
-    },
-    {
-      "name": "Fury Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
     }
   ],
   "abilities": [
     {
       "name": "Cruelty",
       "frequency": "Scene – Swift Action",
+      "trigger": "The user hits a foe with a damaging attack",
       "effect": "After Damage is Resolved, the foe gains an Injury. The user is then informed of the total number of Injuries currently on the target, and may use that number to “purchase” the effects listed below. »» 1 Injury: The target loses 2 Hit Points. May be “pur- chased” multiple times. »» 1 Injury: The target is Slowed. »» 2 Injuries: Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
     },
     {
       "name": "Overcoat",
       "frequency": "Static",
       "effect": "The user is immune to Moves with the Powder Keyword, and does not take damage from any Weather that would normally cause it to take damage. Defensive."
+    },
+    {
+      "name": "Bully",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user hits a target for Super-Effective",
+      "effect": "The target of the attack is pushed 2 Meters, becomes Tripped, and gains an Injury."
     }
   ],
   "natureMod": {

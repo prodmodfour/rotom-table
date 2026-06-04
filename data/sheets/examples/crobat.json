@@ -2,7 +2,7 @@
   "slug": "examples-crobat",
   "nickname": "Crobat",
   "species": "Crobat",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Lax",
@@ -13,81 +13,98 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 12,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 101,
+    "currentHp": 101,
+    "tick": 10,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 1,
-      "vsAny": 3
+      "vsSatk": 2,
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Supersonic",
-      "type": "Normal",
+      "name": "Haze",
+      "type": "Ice",
       "category": "Status",
       "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
     },
     {
-      "name": "Wing Attack",
+      "name": "Acrobatics",
       "type": "Flying",
       "category": "Physical",
       "db": 8,
       "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Dash, 1 Target",
+      "effect": "If the user is not holding an item, Acrobatics instead has a Damage Base of 11 (3d10+10 / 27)."
+    },
+    {
+      "name": "Mean Look",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target, Social",
+      "effect": "The user casts a foul spell on the target, causing it to become Trapped and Slowed for the remainder of the encounter."
+    },
+    {
+      "name": "Poison Fang",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "None."
+      "effect": "Poison Fang Badly Poisons the target on 17+."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
     },
     {
       "name": "Air Cutter",
@@ -99,26 +116,6 @@
       "ac": 2,
       "range": "Cone 2",
       "effect": "Air Cutter is a Critical Hit on 18+."
-    },
-    {
-      "name": "Astonish",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
-    },
-    {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
     }
   ],
   "abilities": [
@@ -131,6 +128,11 @@
       "name": "Inner Focus",
       "frequency": "Static",
       "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Ambush",
+      "frequency": "Scene – Free Action",
+      "effect": "The user may activate this Ability to use a Move with a Damage Base of 6 (before applying STAB or other modifiers) or lower as if it had the Priority keyword. If it hits, the target is Flinched and has a -2 penalty to Accuracy Rolls for 1 full round."
     }
   ],
   "natureMod": {

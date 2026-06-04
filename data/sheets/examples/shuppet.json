@@ -2,7 +2,7 @@
   "slug": "examples-shuppet",
   "nickname": "Shuppet",
   "species": "Shuppet",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Bold",
@@ -17,34 +17,34 @@
     },
     "atk": {
       "base": -1,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
@@ -53,21 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Shadow Sneak",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
     {
       "name": "Spite",
       "type": "Ghost",
@@ -86,6 +75,15 @@
       "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
     },
     {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
       "name": "Knock Off",
       "type": "Dark",
       "category": "Physical",
@@ -95,24 +93,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
-    },
-    {
-      "name": "Will-O-Wisp",
-      "type": "Fire",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "6, 1 Target",
-      "effect": "The target is Burned."
-    },
-    {
-      "name": "Screech",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -120,11 +100,6 @@
       "name": "Frisk",
       "frequency": "Static",
       "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
-    },
-    {
-      "name": "Mojo",
-      "frequency": "Static",
-      "effect": "Normal Types are not immune to the user’s Ghost-Type Moves."
     }
   ],
   "natureMod": {

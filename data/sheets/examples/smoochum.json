@@ -2,7 +2,7 @@
   "slug": "examples-smoochum",
   "nickname": "Smoochum",
   "species": "Smoochum",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Jolly",
@@ -13,51 +13,60 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 0,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Sweet Kiss",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
     {
       "name": "Lick",
       "type": "Ghost",
@@ -70,15 +79,6 @@
       "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
     },
     {
-      "name": "Sweet Kiss",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
-    {
       "name": "Pound",
       "type": "Normal",
       "category": "Physical",
@@ -88,37 +88,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
-    },
-    {
-      "name": "Sing",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 10,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
-    },
-    {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Powder Snow",
-      "type": "Ice",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
     }
   ],
   "abilities": [
@@ -126,11 +95,6 @@
       "name": "Forewarn",
       "frequency": "Scene – Free Action",
       "effect": "The Move with the highest Damage Dice Roll known by the targeted foe is revealed. If there is a tie, all tied Moves are revealed. The Moves revealed gain a -2 Penalty during Accuracy Checks when used by the target for the rest of the encounter."
-    },
-    {
-      "name": "Cute Tears",
-      "frequency": "Scene – Free Action",
-      "effect": "The attacking foe loses 2 Combat Stages in the Attack Stat used by the triggering Move."
     }
   ],
   "natureMod": {

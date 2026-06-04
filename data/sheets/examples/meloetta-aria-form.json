@@ -2,7 +2,7 @@
   "slug": "examples-meloetta-aria-form",
   "nickname": "Meloetta Aria Form",
   "species": "Meloetta Aria Form",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Careful",
@@ -13,90 +13,114 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 8,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 7,
+      "added": 14,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 120,
+    "currentHp": 120,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 5,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Round",
-      "type": "Normal",
-      "category": "Special",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1, Sonic",
-      "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
-    },
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
+      "name": "Wake-Up Slap",
+      "type": "Fighting",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
+      "range": "Melee, 1 Target",
+      "effect": "If the target is Asleep, Wake-Up Slap has a Damage Base of 10 (3d8+10 / 24) instead, and cures the target of Sleep."
     },
     {
-      "name": "Confusion",
+      "name": "U-Turn",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "If U-Turn successfully hits its target, the user deals damage and then immediately is returned to its Poké Ball in the same turn. A New Pokémon may immediately be sent out. Using U-Turn lets a Trapped user be recalled."
+    },
+    {
+      "name": "Echoed Voice",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "3, 1 Target, Sonic",
+      "effect": "If Echoed Voice was used by any Pokémon or Trainer in the Encounter on the previous round, increase its Damage Base by +4. If Echoed Voice was used by any Pokémon or Trainers during both the previous two rounds, increase its Damage Base by +8."
+    },
+    {
+      "name": "Psybeam",
       "type": "Psychic",
       "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "effect": "Psybeam Confuses the target on 19+."
     },
     {
-      "name": "Sing",
+      "name": "Acrobatics",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Dash, 1 Target",
+      "effect": "If the user is not holding an item, Acrobatics instead has a Damage Base of 11 (3d10+10 / 27)."
+    },
+    {
+      "name": "Teeter Dance",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "ac": 10,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Teeter Dance Confuses all Legal Targets."
     }
   ],
   "abilities": [
@@ -109,6 +133,11 @@
       "name": "Own Tempo",
       "frequency": "Static",
       "effect": "The user is immune to Confusion. Defensive."
+    },
+    {
+      "name": "Lullaby",
+      "frequency": "Scene – Free Action",
+      "effect": "Connection - Sing. Whenever the user uses the Move “Sing”, they may activate this Feature. The user then picks a Pokémon or Trainer being targeted by Sing; Sing automatically hits that target."
     }
   ],
   "natureMod": {

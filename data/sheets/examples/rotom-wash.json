@@ -2,7 +2,7 @@
   "slug": "examples-rotom-wash",
   "nickname": "Rotom Wash",
   "species": "Rotom Wash",
-  "level": 20,
+  "level": 25,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Patient",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "atk": {
@@ -23,29 +23,29 @@
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 65,
+    "currentHp": 65,
+    "tick": 6,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 3,
@@ -54,7 +54,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [],

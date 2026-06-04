@@ -2,7 +2,7 @@
   "slug": "examples-heliolisk",
   "nickname": "Heliolisk",
   "species": "Heliolisk",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Timid",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -28,44 +28,67 @@
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
+    "maxHp": 65,
+    "currentHp": 65,
     "tick": 6,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsSatk": 3,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tail Whip",
+      "name": "Parabolic Charge",
+      "type": "Electric",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "After the targets take damage, the user gains Hit Points equal to half of the total damage they dealt to all targets."
+    },
+    {
+      "name": "Razor Wind",
       "type": "Normal",
-      "category": "Status",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "10, 3 Targets, Set-Up"
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
     },
     {
       "name": "Mud-Slap",
@@ -87,17 +110,6 @@
       "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
     },
     {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
       "name": "Thunder Shock",
       "type": "Electric",
       "category": "Special",
@@ -106,18 +118,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
-    },
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
     }
   ],
   "abilities": [
@@ -129,6 +131,7 @@
     {
       "name": "Solar Power",
       "frequency": "Scene x2- Swift Action",
+      "trigger": "The user rolls Damage",
       "effect": "The user loses a Tick of Hit Points, and gains a bonus to the triggering damage roll equal to 5 + their Tick Value. Solar Power may be activated ignoring Frequency while in Sunny Weather."
     }
   ],

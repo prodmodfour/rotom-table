@@ -2,7 +2,7 @@
   "slug": "examples-swampert",
   "nickname": "Swampert",
   "species": "Swampert",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Brave",
@@ -13,61 +13,91 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 9,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
-    "tick": 8,
+    "maxHp": 107,
+    "currentHp": 107,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 3,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mud-Slap",
+      "name": "Muddy Water",
+      "type": "Water",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Close Blast 2",
+      "effect": "As a Shift Action, the user may Move to any open square in Muddy Water’s area of effect without provoking any Attacks of Opportunity. On 16+, the Accuracy of all targets is lowered by 1."
+    },
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Rock Slide",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Rock Slide Flinches all Legal Targets on 17+."
+    },
+    {
+      "name": "Mud Bomb",
       "type": "Ground",
       "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1 on 16+."
     },
     {
       "name": "Bide",
@@ -87,25 +117,6 @@
       "ac": 3,
       "range": "3, 1 Target",
       "effect": "The target’s Speed is lowed by -1 Combat Stage."
-    },
-    {
-      "name": "Foresight",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -118,6 +129,12 @@
       "name": "Mud Dweller",
       "frequency": "Static",
       "effect": "The user resists Ground-Type and Water-Type attacks one step further."
+    },
+    {
+      "name": "Regenerator",
+      "frequency": "Daily x2 – Free Action",
+      "trigger": "The user is recalled into a Poké Ball, or Takes",
+      "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
     }
   ],
   "natureMod": {

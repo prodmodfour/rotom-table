@@ -2,7 +2,7 @@
   "slug": "examples-druddigon",
   "nickname": "Druddigon",
   "species": "Druddigon",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Bashful",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 6,
       "stage": 0
     },
     "atk": {
@@ -22,29 +22,29 @@
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 10,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 1,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 77,
+    "currentHp": 77,
+    "tick": 7,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 3,
@@ -53,20 +53,31 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Scratch",
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Slash",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
       "ac": 2,
       "range": "Melee, Pass",
-      "effect": "None"
+      "effect": "Slash is a Critical Hit on 18+."
     },
     {
       "name": "Dragon Rage",
@@ -76,15 +87,6 @@
       "ac": 2,
       "range": "4, 1 Target",
       "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
       "name": "Scary Face",
@@ -119,6 +121,7 @@
     {
       "name": "Rough Skin",
       "frequency": "At-Will - Free Action, Reaction",
+      "trigger": "The user is hit by a damaging Melee Attack",
       "effect": "The attacker loses a tick of Hit Points."
     },
     {

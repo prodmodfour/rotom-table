@@ -2,7 +2,7 @@
   "slug": "examples-drifloon",
   "nickname": "Drifloon",
   "species": "Drifloon",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Bold",
@@ -13,39 +13,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 62,
+    "currentHp": 62,
+    "tick": 6,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
@@ -54,58 +54,21 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Focus Energy",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
-    },
-    {
-      "name": "Constrict",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 1,
-      "damageRoll": "1d6+1 / 4",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
-    },
-    {
-      "name": "Minimize",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self",
-      "effect": "The user gains +4 Evasion, and user’s size is lowered to Small for the remainder of the encounter."
-    },
-    {
-      "name": "Payback",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
-    },
-    {
-      "name": "Ominous Wind",
-      "type": "Ghost",
+      "name": "Gust",
+      "type": "Flying",
       "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+      "range": "4, 1 Target",
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead.",
+      "special": "Grants Guster"
     },
     {
       "name": "Astonish",
@@ -117,6 +80,26 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Minimize",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user gains +4 Evasion, and user’s size is lowered to Small for the remainder of the encounter.",
+      "special": "Grants Shrinkable"
+    },
+    {
+      "name": "Constrict",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 1,
+      "damageRoll": "1d6+1 / 4",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
     }
   ],
   "abilities": [
@@ -124,11 +107,6 @@
       "name": "Unburden",
       "frequency": "Static",
       "effect": "The default state of the user’s Speed is +2 Combat Stages. While holding a Held Item, the user’s Speed is lowered by 2 Combat Stages."
-    },
-    {
-      "name": "Aftermath",
-      "frequency": "Scene – Free Action",
-      "effect": "The user creates a Burst 1. Everything in the Burst loses three Ticks of Hit Points."
     }
   ],
   "natureMod": {

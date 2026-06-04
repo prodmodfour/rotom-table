@@ -2,7 +2,7 @@
   "slug": "examples-perrserker",
   "nickname": "Perrserker",
   "species": "Perrserker",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Lax",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "def": {
@@ -27,12 +27,12 @@
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -42,9 +42,9 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 74,
+    "currentHp": 74,
+    "tick": 7,
     "evasion": {
       "vsAtk": 4,
       "vsSatk": 1,
@@ -53,10 +53,28 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Taunt",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target, Social",
+      "effect": "The target becomes Enraged."
+    },
     {
       "name": "Metal Claw",
       "type": "Steel",
@@ -80,23 +98,6 @@
       "effect": "Pay Day scatters metal coins equal in value to 1d8 times the user’s level. If it is a trainer battle, the winner of the battle gets to pick up the coins."
     },
     {
-      "name": "Taunt",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Enraged."
-    },
-    {
-      "name": "Hone Claws",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
-    },
-    {
       "name": "Scratch",
       "type": "Normal",
       "category": "Physical",
@@ -106,6 +107,14 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "None"
+    },
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
     }
   ],
   "abilities": [

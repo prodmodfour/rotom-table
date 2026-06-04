@@ -18,17 +18,17 @@
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 14,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
@@ -38,7 +38,7 @@
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     }
   },
@@ -109,7 +109,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     }
   ],
   "abilities": [

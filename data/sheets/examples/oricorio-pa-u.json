@@ -2,7 +2,7 @@
   "slug": "examples-oricorio-pa-u",
   "nickname": "Oricorio Pa'u",
   "species": "Oricorio Pa'u",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Relaxed",
@@ -13,39 +13,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 77,
+    "currentHp": 77,
+    "tick": 7,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 2,
@@ -54,7 +54,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [],
@@ -62,11 +62,13 @@
     {
       "name": "Dancer",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "Someone within 10 meters uses a StatusClass Dance Move",
       "effect": "The user may immediately use the triggering Move as a Free Action."
     },
     {
       "name": "Revelation",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "Someone within 10 meters uses a Damaging",
       "effect": "The user may immediately use the triggering Move as a Standard Action interrupt."
     }
   ],

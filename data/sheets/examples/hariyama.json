@@ -2,7 +2,7 @@
   "slug": "examples-hariyama",
   "nickname": "Hariyama",
   "species": "Hariyama",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Gentle",
@@ -12,90 +12,60 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 93,
-    "currentHp": 93,
-    "tick": 9,
+    "maxHp": 107,
+    "currentHp": 107,
+    "tick": 10,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Arm Thrust",
+      "name": "Vital Throw",
       "type": "Fighting",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Whirlwind",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "Line 6",
-      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
-    {
-      "name": "Force Palm",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Aura",
-      "effect": "Force Palm Paralyzes the target on 18+."
+      "range": "Melee, 1 Target, Push, Reaction",
+      "effect": "If the user is targeted by a Melee attack and has not yet taken a turn this round, the user may declare Vital Throw. After the triggering attack is resolved, the user may use Vital Throw against the triggering foe as a Reaction. Vital Throw cannot miss."
     },
     {
       "name": "Knock Off",
@@ -109,6 +79,26 @@
       "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     },
     {
+      "name": "Whirlwind",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Line 6",
+      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
+    },
+    {
+      "name": "Force Palm",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Aura",
+      "effect": "Force Palm Paralyzes the target on 18+."
+    },
+    {
       "name": "Fake Out",
       "type": "Normal",
       "category": "Physical",
@@ -118,12 +108,24 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
+    },
+    {
+      "name": "Arm Thrust",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
     }
   ],
   "abilities": [
     {
       "name": "Sumo Stance",
       "frequency": "At-Will - Shift Action",
+      "trigger": "The user hits a foe with a Melee Attack",
       "effect": "The triggering foe is Pushed 1 meter away from the user and the user is immune to Push Effects for 1 full round."
     },
     {

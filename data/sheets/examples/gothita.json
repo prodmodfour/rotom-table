@@ -2,7 +2,7 @@
   "slug": "examples-gothita",
   "nickname": "Gothita",
   "species": "Gothita",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -22,17 +22,17 @@
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 14,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -42,40 +42,29 @@
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 4,
+      "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tickle",
-      "type": "Normal",
+      "name": "Fake Tears",
+      "type": "Dark",
       "category": "Status",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Psybeam",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
+      "range": "8, 1 Target, Social",
+      "effect": "Lower the target’s Special Defense 2 Combat Stages."
     },
     {
       "name": "Play Nice",
@@ -87,6 +76,26 @@
       "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
     },
     {
+      "name": "Tickle",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Confusion",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
+    },
+    {
       "name": "Pound",
       "type": "Normal",
       "category": "Physical",
@@ -96,26 +105,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
-    },
-    {
-      "name": "Double Slap",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Embargo",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target cannot use or benefit from held items for the remainder of the encounter. Embargo may only affect one target at a time; if Embargo is used on a new target, the previous target is freed from the effect."
     }
   ],
   "abilities": [
@@ -123,11 +112,6 @@
       "name": "Frisk",
       "frequency": "Static",
       "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
-    },
-    {
-      "name": "Competitive",
-      "frequency": "Static",
-      "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Special Attack is raised 2 Combat Stages."
     }
   ],
   "natureMod": {

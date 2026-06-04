@@ -2,7 +2,7 @@
   "slug": "examples-komala",
   "nickname": "Komala",
   "species": "Komala",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Hasty",
@@ -12,75 +12,69 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stockpile",
+      "name": "Slam",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
-    },
-    {
-      "name": "Defense Curl",
-      "type": "Normal",
-      "category": "Status",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
     },
     {
-      "name": "Spit Up",
+      "name": "Yawn",
       "type": "Normal",
-      "category": "Special",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "For each Stockpiled Count the user has, Spit Up’s Damage Base is increased by +8. If the user has no Stockpiled count, Spit Up cannot be used."
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
     },
     {
       "name": "Rapid Spin",
@@ -94,12 +88,13 @@
       "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
     },
     {
-      "name": "Yawn",
+      "name": "Spit Up",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "2, 1 Target, Social",
-      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "For each Stockpiled Count the user has, Spit Up’s Damage Base is increased by +8. If the user has no Stockpiled count, Spit Up cannot be used."
     },
     {
       "name": "Swallow",
@@ -108,6 +103,14 @@
       "frequency": "Daily x2",
       "range": "Self",
       "effect": "If the user’s Stockpiled count is 1, they are healed 25% of their full Hit Point value; if their Stockpiled count is 2, they are healed half of their full Hit Point value; if their Stockpiled count is 3, they are healed back to full Hit Points. After using Swallow, the user’s Stockpiled count is set to 0. If the user has no Stockpiled count, Swallow does nothing."
+    },
+    {
+      "name": "Stockpile",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user adds 1 to their Stockpiled count to a maximum of 3. For each number a Stockpiled count is above 0, raise the user’s Defense 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage. If a Stockpiled count is set to 0, the Combat Stages gained from the Stockpiled count are removed."
     }
   ],
   "abilities": [

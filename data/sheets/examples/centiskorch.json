@@ -2,7 +2,7 @@
   "slug": "examples-centiskorch",
   "nickname": "Centiskorch",
   "species": "Centiskorch",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Patient",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "spd": {
@@ -43,21 +43,40 @@
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 105,
+    "currentHp": 105,
+    "tick": 10,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
+    },
+    {
+      "name": "Coil",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage, raise the user’s Defense 1 Combat Stage, and the user gains +1 Accuracy."
+    },
     {
       "name": "Bug Bite",
       "type": "Bug",
@@ -70,11 +89,15 @@
       "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
     },
     {
-      "name": "Wrap",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+      "name": "Flame Wheel",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Flame Wheel Burns the target on 19+."
     },
     {
       "name": "Bite",
@@ -88,15 +111,11 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Flame Wheel",
-      "type": "Fire",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Flame Wheel Burns the target on 19+."
+      "name": "Wrap",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
     }
   ],
   "abilities": [

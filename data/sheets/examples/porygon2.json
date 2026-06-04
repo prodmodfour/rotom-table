@@ -2,7 +2,7 @@
   "slug": "examples-porygon2",
   "nickname": "Porygon2",
   "species": "Porygon2",
-  "level": 20,
+  "level": 15,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Naughty",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 10,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "spd": {
@@ -42,18 +42,18 @@
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
+    "maxHp": 64,
+    "currentHp": 64,
     "tick": 6,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 4,
     "spent": 0
   },
   "movelist": [
@@ -64,14 +64,6 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "Raise the user’s Speed 2 Combat Stages."
-    },
-    {
-      "name": "Recover",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
     },
     {
       "name": "Psybeam",
@@ -90,11 +82,6 @@
       "name": "Download",
       "frequency": "Scene – Swift Action",
       "effect": "The target must reveal whether its Defense or Special Defense Stats are lower. If the Defense Stat is lower, the user gains a +1 Attack CS.  If the Special Defense Stat is lower, the user instead gains +1 Special Attack CS. If both are tied, the user gains +1 CS to any Stat of their choice."
-    },
-    {
-      "name": "Trace",
-      "frequency": "Scene – Free Action",
-      "effect": "The Pokémon gains an Ability known by the Target for the remainder of the encounter, or until it is Fainted."
     }
   ],
   "natureMod": {

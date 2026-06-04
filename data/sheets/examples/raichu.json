@@ -2,7 +2,7 @@
   "slug": "examples-raichu",
   "nickname": "Raichu",
   "species": "Raichu",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Calm",
@@ -12,99 +12,110 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 12,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 86,
+    "currentHp": 86,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 3,
-      "vsAny": 3
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Thunder Wave",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
-    },
-    {
-      "name": "Electro Ball",
-      "type": "Electric",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "10, 1 Target",
-      "effect": "The user adds their Speed Stat, including Combat Stages, in addition to their Special Attack when determining the damage dealt by Electro Ball. The Defender in turn subtracts both their Special Defense and Speed Stats from the damage dealt before applying Type Effectiveness."
-    },
-    {
-      "name": "Play Nice",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
-    },
-    {
-      "name": "Quick Attack",
+      "name": "Slam",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
     },
     {
-      "name": "Tail Whip",
+      "name": "Discharge",
+      "type": "Electric",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "All Cardinally Adjacent Targets",
+      "effect": "Discharge Paralyzes all legal targets on 15+."
+    },
+    {
+      "name": "Nuzzle",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Nuzzle Paralyzes the target."
+    },
+    {
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Spark Paralyzes the target on 15+."
+    },
+    {
+      "name": "Double Team",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
+    {
+      "name": "Feint",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Trigger",
+      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
     }
   ],
   "abilities": [
@@ -116,7 +127,14 @@
     {
       "name": "Static",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Paralyzed."
+    },
+    {
+      "name": "Sequence",
+      "frequency": "At-Will – Free Action",
+      "trigger": "The user uses an Electric Attack",
+      "effect": "For every Electric-Type Pokémon adjacent to the user, the triggering Attack deals an additional +3 Damage."
     }
   ],
   "natureMod": {

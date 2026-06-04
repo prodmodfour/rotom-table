@@ -2,7 +2,7 @@
   "slug": "examples-weavile",
   "nickname": "Weavile",
   "species": "Weavile",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Sassy",
@@ -18,55 +18,93 @@
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 4,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Feint Attack",
+      "name": "Night Slash",
       "type": "Dark",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Night Slash is a Critical Hit on 18+"
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Fling",
+      "type": "Dark",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target, Fling",
+      "effect": "The user throws a held item, determining the effect of Fling."
+    },
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
     },
     {
       "name": "Nasty Plot",
@@ -75,39 +113,6 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "Raise the user’s Special Attack 2 Combat Stages."
-    },
-    {
-      "name": "Fury Swipes",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Icy Wind",
-      "type": "Ice",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
     }
   ],
   "abilities": [

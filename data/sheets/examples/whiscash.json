@@ -2,7 +2,7 @@
   "slug": "examples-whiscash",
   "nickname": "Whiscash",
   "species": "Whiscash",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Naive",
@@ -13,85 +13,103 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
-    "tick": 8,
+    "maxHp": 108,
+    "currentHp": 108,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 2
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Water Sport",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2, Coat",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
-    },
-    {
-      "name": "Mud Sport",
+      "name": "Earthquake",
       "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 3, Groundsource",
+      "effect": "Earthquake can hit targets that are underground, including those using the Move Dig.",
+      "special": "Grants Groundshaper"
     },
     {
-      "name": "Water Gun",
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Aqua Tail",
       "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, Pass",
       "effect": "None"
     },
     {
-      "name": "Amnesia",
+      "name": "Snore",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic",
+      "effect": "Snore Flinches all legal targets on 15+. Snore may only be used by Sleeping users."
+    },
+    {
+      "name": "Rest",
       "type": "Psychic",
       "category": "Status",
-      "frequency": "EOT",
+      "frequency": "Scene",
       "range": "Self",
-      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
     },
     {
       "name": "Magnitude",
@@ -99,18 +117,8 @@
       "category": "Physical",
       "frequency": "EOT",
       "range": "Burst 2, Groundsource",
-      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
-    },
-    {
-      "name": "Mud Bomb",
-      "type": "Ground",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1 on 16+."
+      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig.",
+      "special": "Grants Groundshaper"
     }
   ],
   "abilities": [

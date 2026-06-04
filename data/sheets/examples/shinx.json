@@ -2,7 +2,7 @@
   "slug": "examples-shinx",
   "nickname": "Shinx",
   "species": "Shinx",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Adamant",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "satk": {
@@ -32,62 +32,31 @@
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 47,
+    "currentHp": 47,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Baby-Doll Eyes",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Priority, Social",
-      "effect": "The target’s Attack is lowered 1 Combat Stage."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Spark",
-      "type": "Electric",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Spark Paralyzes the target on 15+."
-    },
     {
       "name": "Charge",
       "type": "Electric",
@@ -95,6 +64,15 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
       "name": "Tackle",
@@ -106,15 +84,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -122,11 +91,6 @@
       "name": "Rivalry",
       "frequency": "Static",
       "effect": "Whenever the user deals direct damage to a target of the same gender, increase the Damage dealt by +5."
-    },
-    {
-      "name": "Strong Jaw",
-      "frequency": "Static",
-      "effect": "The user has the Damage Base of the following Moves increased by +2; Bite, Bug Bite, Crunch, Fire Fang, Ice Fang, Thunder Fang, Poison Fang, and Hyper Fang."
     }
   ],
   "natureMod": {

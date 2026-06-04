@@ -2,7 +2,7 @@
   "slug": "examples-meditite",
   "nickname": "Meditite",
   "species": "Meditite",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Proud",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
@@ -23,17 +23,17 @@
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 11,
+      "added": 4,
       "stage": 0
     },
     "spd": {
@@ -43,48 +43,21 @@
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 3,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Feint",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Trigger",
-      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
-    },
-    {
-      "name": "Force Palm",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Aura",
-      "effect": "Force Palm Paralyzes the target on 18+."
-    },
-    {
-      "name": "Meditate",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage."
-    },
     {
       "name": "Detect",
       "type": "Fighting",
@@ -105,6 +78,14 @@
       "effect": "Confusion Confuses the target on 19+."
     },
     {
+      "name": "Meditate",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage."
+    },
+    {
       "name": "Bide",
       "type": "Normal",
       "category": "Physical",
@@ -118,11 +99,6 @@
       "name": "Pure Power",
       "frequency": "Static",
       "effect": "The Pokémon’s base attack stat is doubled. This may double any bonuses from Nature or Vitamins, but not bonuses from Features. Ability List: Q–U"
-    },
-    {
-      "name": "Inner Focus",
-      "frequency": "Static",
-      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
     }
   ],
   "natureMod": {

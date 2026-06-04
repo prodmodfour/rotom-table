@@ -2,7 +2,7 @@
   "slug": "examples-hoopa-unbound",
   "nickname": "Hoopa Unbound",
   "species": "Hoopa Unbound",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Lonely",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 4,
+      "added": 19,
       "stage": 0
     },
     "def": {
@@ -28,33 +28,33 @@
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 18,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 118,
+    "currentHp": 118,
+    "tick": 11,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 3,
+      "vsSatk": 5,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [],
@@ -62,12 +62,18 @@
     {
       "name": "Magician",
       "frequency": "Scene – Free Action",
+      "trigger": "The user hits a foe with a damaging Single-",
       "effect": "The user takes the target’s Held Item. This Ability may not be triggered if the user is already holding a Held Item."
     },
     {
       "name": "Enduring Rage",
       "frequency": "Static",
       "effect": "The user may not make rolls to cure themselves from the Enraged condition. However, while Enraged, the user gains 5 Damage Reduction."
+    },
+    {
+      "name": "Weird Power",
+      "frequency": "Static",
+      "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
     }
   ],
   "natureMod": {

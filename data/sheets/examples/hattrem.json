@@ -2,7 +2,7 @@
   "slug": "examples-hattrem",
   "nickname": "Hattrem",
   "species": "Hattrem",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Timid",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 6,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
@@ -37,14 +37,14 @@
     },
     "spd": {
       "base": 1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -53,17 +53,17 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Life Dew",
-      "type": "Water",
+      "name": "Heal Pulse",
+      "type": "Psychic",
       "category": "Status",
       "frequency": "Daily x2",
-      "range": "Burst 1, Healing",
-      "effect": "The user and all allies in the burst regain Hit Points equal to 1/4 of their Maximum Hit Points."
+      "range": "6, 1 Target, Aura",
+      "effect": "Restores 50% of the target’s max Hit Points. Heal Pulse’s user may not target itself with Heal Pulse."
     },
     {
       "name": "Psybeam",
@@ -93,12 +93,21 @@
       "frequency": "At-Will",
       "range": "Burst 1",
       "effect": "Disarming Voice cannot miss."
+    },
+    {
+      "name": "Life Dew",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Burst 1, Healing",
+      "effect": "The user and all allies in the burst regain Hit Points equal to 1/4 of their Maximum Hit Points."
     }
   ],
   "abilities": [
     {
       "name": "Cruelty",
       "frequency": "Scene – Swift Action",
+      "trigger": "The user hits a foe with a damaging attack",
       "effect": "After Damage is Resolved, the foe gains an Injury. The user is then informed of the total number of Injuries currently on the target, and may use that number to “purchase” the effects listed below. »» 1 Injury: The target loses 2 Hit Points. May be “pur- chased” multiple times. »» 1 Injury: The target is Slowed. »» 2 Injuries: Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
     },
     {

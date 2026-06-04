@@ -12,42 +12,42 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 9,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 3,
+      "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
@@ -57,6 +57,37 @@
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Encore",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
+    },
+    {
+      "name": "Icy Wind",
+      "type": "Ice",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+    },
+    {
+      "name": "Aqua Jet",
+      "type": "Water",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None"
+    },
     {
       "name": "Baby-Doll Eyes",
       "type": "Fairy",
@@ -84,37 +115,6 @@
       "ac": 2,
       "range": "Burst 1, Friendly, Sonic, Social",
       "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Encore",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
-    },
-    {
-      "name": "Aqua Jet",
-      "type": "Water",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None"
-    },
-    {
-      "name": "Icy Wind",
-      "type": "Ice",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -126,6 +126,7 @@
     {
       "name": "Liquid Voice",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user uses a Move with the Sonic",
       "effect": "The triggering move loses the Sonic keyword, but gains the Friendly keyword and becomes Water Typed. If the Move was a Status Class Move, you may treat it as a Special Move with DB1."
     }
   ],

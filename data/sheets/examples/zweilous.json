@@ -2,7 +2,7 @@
   "slug": "examples-zweilous",
   "nickname": "Zweilous",
   "species": "Zweilous",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Bold",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "def": {
@@ -28,7 +28,7 @@
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
@@ -38,26 +38,68 @@
     },
     "spd": {
       "base": 0,
-      "added": 1,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 90,
+    "currentHp": 90,
+    "tick": 9,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 2,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Dragon Pulse",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "None"
+    },
+    {
+      "name": "Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
+    },
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Roar",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 1, Sonic, Social",
+      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
+    },
     {
       "name": "Dragon Breath",
       "type": "Dragon",
@@ -70,26 +112,6 @@
       "effect": "Dragon Breath Paralyzes the Target on 15+."
     },
     {
-      "name": "Roar",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 1, Sonic, Social",
-      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
       "name": "Headbutt",
       "type": "Normal",
       "category": "Physical",
@@ -99,14 +121,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Focus Energy",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
     }
   ],
   "abilities": [

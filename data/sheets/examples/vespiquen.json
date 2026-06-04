@@ -2,7 +2,7 @@
   "slug": "examples-vespiquen",
   "nickname": "Vespiquen",
   "species": "Vespiquen",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Naive",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "satk": {
@@ -33,31 +33,61 @@
     },
     "sdef": {
       "base": -1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 3,
-      "vsAny": 1
+      "vsSatk": 2,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Power Gem",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Defend Order",
+      "type": "Bug",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense and Special Defense 1 Combat Stage each."
+    },
     {
       "name": "Fury Swipes",
       "type": "Normal",
@@ -90,14 +120,6 @@
       "ac": 3,
       "range": "Melee, 1 Target",
       "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
-    },
-    {
-      "name": "Defend Order",
-      "type": "Bug",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Defense and Special Defense 1 Combat Stage each."
     }
   ],
   "abilities": [
@@ -109,6 +131,7 @@
     {
       "name": "Friend Guard",
       "frequency": "Scene – Free Action",
+      "trigger": "An adjacent Ally takes Damage",
       "effect": "The damage is resisted one step further. Defensive."
     }
   ],

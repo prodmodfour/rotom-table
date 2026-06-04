@@ -2,7 +2,7 @@
   "slug": "examples-minun",
   "nickname": "Minun",
   "species": "Minun",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Naughty",
@@ -17,12 +17,12 @@
     },
     "atk": {
       "base": 1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "satk": {
@@ -32,7 +32,7 @@
     },
     "sdef": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
@@ -42,8 +42,8 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
+    "maxHp": 68,
+    "currentHp": 68,
     "tick": 6,
     "evasion": {
       "vsAtk": 1,
@@ -53,18 +53,26 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Switcheroo",
+      "name": "Fake Tears",
       "type": "Dark",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "The user and the target exchange Held Items or Accessory Slot Items."
+      "range": "8, 1 Target, Social",
+      "effect": "Lower the target’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Copycat",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "4, 1 Target",
+      "effect": "Use the Move the target has used on their last turn. You may choose new targets for the Move. Copycat cannot miss."
     },
     {
       "name": "Electro Ball",
@@ -78,12 +86,23 @@
       "effect": "The user adds their Speed Stat, including Combat Stages, in addition to their Special Attack when determining the damage dealt by Electro Ball. The Defender in turn subtracts both their Special Defense and Speed Stats from the damage dealt before applying Type Effectiveness."
     },
     {
-      "name": "Helping Hand",
+      "name": "Swift",
       "type": "Normal",
-      "category": "Status",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
       "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
+    {
+      "name": "Switcheroo",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The user and the target exchange Held Items or Accessory Slot Items."
     },
     {
       "name": "Encore",
@@ -93,39 +112,19 @@
       "ac": 2,
       "range": "4, 1 Target, Social",
       "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
-    },
-    {
-      "name": "Spark",
-      "type": "Electric",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Spark Paralyzes the target on 15+."
-    },
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
     }
   ],
   "abilities": [
     {
       "name": "Minus",
       "frequency": "Scene x2 – Free Action, Reaction",
+      "trigger": "A foe within 10m has Combat Stages lowered",
       "effect": "The target loses an additional Combat Stage in one stat lowered by the triggering effect."
     },
     {
       "name": "Sequence",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user uses an Electric Attack",
       "effect": "For every Electric-Type Pokémon adjacent to the user, the triggering Attack deals an additional +3 Damage."
     }
   ],

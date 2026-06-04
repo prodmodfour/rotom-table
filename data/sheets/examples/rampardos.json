@@ -2,7 +2,7 @@
   "slug": "examples-rampardos",
   "nickname": "Rampardos",
   "species": "Rampardos",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 15,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -37,14 +37,14 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
-    "tick": 8,
+    "maxHp": 102,
+    "currentHp": 102,
+    "tick": 10,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -53,17 +53,42 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Focus Energy",
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Chip Away",
       "type": "Normal",
-      "category": "Status",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage."
+    },
+    {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
       "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
     },
     {
       "name": "Scary Face",
@@ -75,17 +100,6 @@
       "effect": "The target’s Speed is lowered 2 Combat Stages."
     },
     {
-      "name": "Pursuit",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
-    },
-    {
       "name": "Take Down",
       "type": "Normal",
       "category": "Physical",
@@ -95,6 +109,17 @@
       "ac": 5,
       "range": "Melee, 1 Target, Dash, Recoil 1/3",
       "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Pursuit",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     }
   ],
   "abilities": [
@@ -106,6 +131,7 @@
     {
       "name": "Sprint",
       "frequency": "Scene – Swift Action",
+      "trigger": "The user uses the Sprint Action during Combat",
       "effect": "The user gains +2 Speed Combat Stages."
     }
   ],

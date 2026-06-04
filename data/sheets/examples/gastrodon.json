@@ -2,7 +2,7 @@
   "slug": "examples-gastrodon",
   "nickname": "Gastrodon",
   "species": "Gastrodon",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Calm",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "spd": {
@@ -43,9 +43,9 @@
     }
   },
   "combat": {
-    "maxHp": 87,
-    "currentHp": 87,
-    "tick": 8,
+    "maxHp": 108,
+    "currentHp": 108,
+    "tick": 10,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
@@ -54,31 +54,28 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Water Pulse",
-      "type": "Water",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "name": "Body Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "8, 1 Target, Aura",
-      "effect": "Water Pulse Confuses the target on 17+."
+      "range": "Melee, 1 Target",
+      "effect": "Body Slam Paralyzes the target on 15+."
     },
     {
-      "name": "Mud Bomb",
-      "type": "Ground",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1 on 16+."
+      "name": "Rain Dance",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
     },
     {
       "name": "Hidden Power",
@@ -92,12 +89,26 @@
       "effect": "When a Pokémon first obtains the Move Hidden Power, roll 1d20. Hidden Power’s Elemental Type will be changed from Normal to Bug on a result of 1; Dark on 2; Dragon on 3; Electric on 4; Fairy on 5; Fighting on 6; Fire on 7; Flying on 8; Ghost on 9; Grass on 10; Ground on 11; Ice on 12; Normal on 13; Poison on 14; Psychic on 15; Rock on 16; Steel on 17; Water on 18; and on 19 or 20, reroll until you roll another number. This effect is permanent –if Hidden Power is forgotten and relearned, the chosen Type remains the same."
     },
     {
-      "name": "Mud Sport",
+      "name": "Mud Bomb",
       "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1 on 16+."
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
     },
     {
       "name": "Harden",
@@ -112,6 +123,7 @@
     {
       "name": "Storm Drain",
       "frequency": "Scene – Free Action",
+      "trigger": "A ranged Water Type Move is used within 10",
       "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  the user’s Special Attack is then raised by +1 Combat Stage."
     },
     {

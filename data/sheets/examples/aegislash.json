@@ -2,7 +2,7 @@
   "slug": "examples-aegislash",
   "nickname": "Aegislash",
   "species": "Aegislash",
-  "level": 20,
+  "level": 45,
   "gender": "Female",
   "shiny": false,
   "nature": "Modest",
@@ -13,111 +13,110 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 16,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 16,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 91,
+    "currentHp": 91,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 4,
+      "vsAtk": 6,
+      "vsSatk": 6,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Pursuit",
+      "name": "Iron Head",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Iron Head Flinches the target on 15+."
+    },
+    {
+      "name": "Power Trick",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user’s Attack stat and Defense stat are switched for the remainder of the scene, or until the user is switched out or Fainted."
+    },
+    {
+      "name": "Night Slash",
       "type": "Dark",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+      "range": "Melee, Pass",
+      "effect": "Night Slash is a Critical Hit on 18+"
     },
     {
-      "name": "Fury Cutter",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
-    },
-    {
-      "name": "Autotomize",
+      "name": "Iron Defense",
       "type": "Steel",
       "category": "Status",
       "frequency": "EOT",
       "range": "Self",
-      "effect": "For the remainder of the Encounter, the user’s Weight Class is one value lower, to a minimum of 1. If the user can, the user’s Speed is raised by +2 Combat Stages."
+      "effect": "Raise the user’s Defense 2 Combat Stages."
     },
     {
-      "name": "Shadow Sneak",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Metal Sound",
-      "type": "Steel",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
-    },
-    {
-      "name": "Tackle",
+      "name": "Slash",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Retaliate",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Retaliate’s Damage Base is doubled to DB 14 (4d10+15 / 40) if an ally has been Fainted by a Damaging Move used by the Target in the last 2 rounds of Combat."
     }
   ],
   "abilities": [
@@ -130,6 +129,12 @@
       "name": "Hyper Cutter",
       "frequency": "Static",
       "effect": "The user’s Attack Stat may not be lowered, and its Attack Combat Stages may not be lowered. Defensive."
+    },
+    {
+      "name": "Soulstealer",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user’s attack causes a foe to Faint",
+      "effect": "The user removes one Injury from themselves and gains Hit Points equal to 25% of their Max Hit Points. If the triggering attack killed its target, the user instead removes all Injuries and recovers Hit Points equal to 50% of the user’s Max Hit Points."
     }
   ],
   "natureMod": {

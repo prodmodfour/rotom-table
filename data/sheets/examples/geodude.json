@@ -2,7 +2,7 @@
   "slug": "examples-geodude",
   "nickname": "Geodude",
   "species": "Geodude",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Sassy",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
@@ -28,46 +28,46 @@
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsSatk": 1,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Smack Down",
+      "name": "Rollout",
       "type": "Rock",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Pass",
+      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
     },
     {
       "name": "Rock Polish",
@@ -76,25 +76,6 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "Raise the user’s Speed 2 Combat Stages."
-    },
-    {
-      "name": "Magnitude",
-      "type": "Ground",
-      "category": "Physical",
-      "frequency": "EOT",
-      "range": "Burst 2, Groundsource",
-      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
-    },
-    {
-      "name": "Rock Throw",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "None"
     },
     {
       "name": "Mud Sport",
@@ -114,18 +95,21 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Defense Curl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
-    },
-    {
-      "name": "Sturdy",
-      "frequency": "Static",
-      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     }
   ],
   "natureMod": {

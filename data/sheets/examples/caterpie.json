@@ -2,7 +2,7 @@
   "slug": "examples-caterpie",
   "nickname": "Caterpie",
   "species": "Caterpie",
-  "level": 20,
+  "level": 5,
   "gender": "Female",
   "shiny": false,
   "nature": "Hasty",
@@ -12,48 +12,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 8,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 42,
+    "currentHp": 42,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 3
+      "vsAtk": 0,
+      "vsSatk": 0,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 2,
     "spent": 0
   },
   "movelist": [
@@ -69,24 +69,14 @@
       "effect": "The target is pushed 2 Meters."
     },
     {
-      "name": "Bug Bite",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
-    },
-    {
       "name": "String Shot",
       "type": "Bug",
       "category": "Status",
       "frequency": "At-Will",
       "ac": 3,
       "range": "Cone 2",
-      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck."
+      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck.",
+      "special": "Grants Threaded"
     }
   ],
   "abilities": [
@@ -94,11 +84,6 @@
       "name": "Shield Dust",
       "frequency": "Static",
       "effect": "The user ignores the secondary effects that trigger during Accuracy Roll of damaging Moves that target the user. For example, Flamethrower can never inflict the Burn Condition. Defensive."
-    },
-    {
-      "name": "Run Away",
-      "frequency": "Static",
-      "effect": "The user does not provoke Attacks of Opportunity by Shifting.  The user cannot be Trapped."
     }
   ],
   "natureMod": {

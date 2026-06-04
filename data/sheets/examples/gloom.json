@@ -2,7 +2,7 @@
   "slug": "examples-gloom",
   "nickname": "Gloom",
   "species": "Gloom",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Relaxed",
@@ -13,97 +13,58 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 5,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 68,
+    "currentHp": 68,
+    "tick": 6,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsSatk": 3,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Poison Powder",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target is Poisoned."
-    },
-    {
-      "name": "Stun Spore",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Powder",
-      "effect": "The target is Paralyzed."
-    },
-    {
-      "name": "Sweet Scent",
+      "name": "Lucky Chant",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
-    },
-    {
-      "name": "Acid",
-      "type": "Poison",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2",
-      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Sleep Powder",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target falls asleep."
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
     },
     {
       "name": "Mega Drain",
@@ -115,6 +76,44 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Sleep Powder",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls asleep."
+    },
+    {
+      "name": "Stun Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
+    },
+    {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
+    },
+    {
+      "name": "Acid",
+      "type": "Poison",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
     }
   ],
   "abilities": [

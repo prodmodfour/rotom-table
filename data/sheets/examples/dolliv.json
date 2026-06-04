@@ -2,7 +2,7 @@
   "slug": "examples-dolliv",
   "nickname": "Dolliv",
   "species": "Dolliv",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Serious",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
@@ -38,14 +38,14 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 73,
+    "currentHp": 73,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
@@ -54,10 +54,51 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Seed Bomb",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Grassy Terrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field",
+      "effect": "The area becomes Grassy for 5 rounds. While Grassy, all Pokémon and Trainers standing on the ground recover a Tick of Hit Points at the start of every turn, and Grass-Type attacks performed by grounded Pokémon and Trainers gain a +10 bonus to Damage Rolls."
+    },
+    {
+      "name": "Mega Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Flail",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
+    },
     {
       "name": "Helping Hand",
       "type": "Normal",
@@ -76,45 +117,6 @@
       "ac": 4,
       "range": "Cone 2",
       "effect": "Razor Leaf is a Critical Hit on 18+."
-    },
-    {
-      "name": "Sweet Scent",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
-    },
-    {
-      "name": "Flail",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
-    },
-    {
-      "name": "Growth",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
-    },
-    {
-      "name": "Absorb",
-      "type": "Grass",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     }
   ],
   "abilities": [

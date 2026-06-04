@@ -2,7 +2,7 @@
   "slug": "examples-lunala",
   "nickname": "Lunala",
   "species": "Lunala",
-  "level": 20,
+  "level": 55,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Careful",
@@ -13,59 +13,99 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 13,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 93,
-    "currentHp": 93,
-    "tick": 9,
+    "maxHp": 146,
+    "currentHp": 146,
+    "tick": 14,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 5,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 12,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Night Shade",
+      "name": "Moonblast",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10 / 24",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Moonblast lowers the target’s Special Attack by 1 Combat Stage on 15+."
+    },
+    {
+      "name": "Magic Coat",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily",
+      "range": "4, Interrupt, Trigger",
+      "effect": "If the user is about to get a hit by a Move that does not have a Damage Dice Roll, they may use Magic Coat as an Interrupt. The Interrupted Move’s user is treated as if they were the target of their own Move, with the user of Magic Coat as the user."
+    },
+    {
+      "name": "Night Daze",
+      "type": "Dark",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "4, 1 Target",
+      "effect": "Night Daze lowers the target’s Accuracy by -1 on 13+."
+    },
+    {
+      "name": "Moonlight",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
+    },
+    {
+      "name": "Shadow Ball",
       "type": "Ghost",
       "category": "Special",
-      "frequency": "Scene x2",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
       "ac": 2,
       "range": "8, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+      "effect": "Shadow Ball lowers the foe’s Special Defense 1 Combat Stage on 17+."
     },
     {
       "name": "Air Slash",
@@ -77,26 +117,6 @@
       "ac": 3,
       "range": "6, 1 Target",
       "effect": "Air Slash Flinches the target on 15+."
-    },
-    {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
     }
   ],
   "abilities": [
@@ -109,6 +129,11 @@
       "name": "Infiltrator",
       "frequency": "Static",
       "effect": "The user gains a +2 Bonus to Stealth Checks, does not trigger Hazards, Blessings cannot be activated in response to its actions, and the user may bypass the effects of the move Substitute."
+    },
+    {
+      "name": "Fade Away",
+      "frequency": "Scene – Standard Action, Interrupt",
+      "effect": "The user becomes Invisible until the beginning of their next turn, and may immediately Shift. This Ability may be activated as an Interrupt when hit by a Physical attack; the user may declare the use of Fade Away to avoid all damage and/or effects of the move. Defensive."
     }
   ],
   "natureMod": {

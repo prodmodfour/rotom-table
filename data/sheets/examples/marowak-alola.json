@@ -2,7 +2,7 @@
   "slug": "examples-marowak-alola",
   "nickname": "Marowak Alola",
   "species": "Marowak Alola",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Proud",
@@ -13,51 +13,82 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 82,
+    "currentHp": 82,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 3,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Shadow Bone",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The target’s Defense is lowered by 1 Combat Stage on a 17+."
+    },
+    {
+      "name": "Will-O-Wisp",
+      "type": "Fire",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "The target is Burned."
+    },
+    {
+      "name": "Bonemerang",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, Double Strike",
+      "effect": "None"
+    },
     {
       "name": "Hex",
       "type": "Ghost",
@@ -88,26 +119,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash",
       "effect": "Flame Wheel Burns the target on 19+."
-    },
-    {
-      "name": "Tail Whip",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Bone Club",
-      "type": "Ground",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "At-Will",
-      "ac": 5,
-      "range": "Melee, 1 Target",
-      "effect": "Bone Club Flinches the target on 18+."
     }
   ],
   "abilities": [
@@ -119,6 +130,7 @@
     {
       "name": "Cursed Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Damaging Move.",
       "effect": "The Move becomes Disabled."
     }
   ],

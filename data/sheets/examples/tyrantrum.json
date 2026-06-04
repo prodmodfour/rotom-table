@@ -2,7 +2,7 @@
   "slug": "examples-tyrantrum",
   "nickname": "Tyrantrum",
   "species": "Tyrantrum",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 1,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -38,36 +38,78 @@
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tackle",
-      "type": "Normal",
+      "name": "Dragon Claw",
+      "type": "Dragon",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "Melee, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Dragon Tail",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target, Push",
+      "effect": "The target is Pushed 6 meters minus their Weight Class. On a roll of 15+, the target is also Tripped."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Charm",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
     },
     {
       "name": "Bite",
@@ -79,55 +121,24 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Bide",
-      "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
-    },
-    {
-      "name": "Stomp",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
-    },
-    {
-      "name": "Roar",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 1, Sonic, Social",
-      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
-    },
-    {
-      "name": "Charm",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
     }
   ],
   "abilities": [
     {
       "name": "Sprint",
       "frequency": "Scene – Swift Action",
+      "trigger": "The user uses the Sprint Action during Combat",
       "effect": "The user gains +2 Speed Combat Stages."
     },
     {
       "name": "Strong Jaw",
       "frequency": "Static",
       "effect": "The user has the Damage Base of the following Moves increased by +2; Bite, Bug Bite, Crunch, Fire Fang, Ice Fang, Thunder Fang, Poison Fang, and Hyper Fang."
+    },
+    {
+      "name": "Moxie",
+      "frequency": "Static",
+      "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
     }
   ],
   "natureMod": {

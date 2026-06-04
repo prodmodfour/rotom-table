@@ -2,7 +2,7 @@
   "slug": "examples-rillaboom",
   "nickname": "Rillaboom",
   "species": "Rillaboom",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Distracted",
@@ -12,51 +12,93 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 113,
+    "currentHp": 113,
+    "tick": 11,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Uproar",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Spirit Surge, Sonic",
+      "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
+    },
+    {
+      "name": "Slam",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "At-Will",
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
+    },
+    {
+      "name": "Knock Off",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
     {
       "name": "Razor Leaf",
       "type": "Grass",
@@ -76,25 +118,6 @@
       "ac": 3,
       "range": "6, 1 Target, Social",
       "effect": "The target becomes Enraged."
-    },
-    {
-      "name": "Branch Poke",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "2, 1 Target"
-    },
-    {
-      "name": "Screech",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -107,6 +130,11 @@
       "name": "Vital Spirit",
       "frequency": "Static",
       "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
+    },
+    {
+      "name": "Grassy Surge",
+      "frequency": "Scene x3 – Swift Action",
+      "effect": "The Field becomes Grassy, as if affected by the Move Grassy Terrain, for one full round."
     }
   ],
   "natureMod": {

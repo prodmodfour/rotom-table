@@ -2,7 +2,7 @@
   "slug": "examples-purrloin",
   "nickname": "Purrloin",
   "species": "Purrloin",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Hasty",
@@ -17,34 +17,34 @@
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 10,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 0,
       "vsSatk": 1,
@@ -53,29 +53,35 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Torment",
-      "type": "Dark",
+      "name": "Sand Attack",
+      "type": "Ground",
       "category": "Status",
-      "frequency": "Scene x2",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "10, 1 Target, Social",
-      "effect": "The target becomes Suppressed."
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     },
     {
-      "name": "Pursuit",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "name": "Assist",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "Randomly select another Pokémon on the user’s roster and then randomly select a Move that Pokémon knows. Assist’s user uses that Move immediately."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
       "name": "Scratch",
@@ -87,34 +93,6 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "None"
-    },
-    {
-      "name": "Assist",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self",
-      "effect": "Randomly select another Pokémon on the user’s roster and then randomly select a Move that Pokémon knows. Assist’s user uses that Move immediately."
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
-    {
-      "name": "Fury Swipes",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -122,11 +100,6 @@
       "name": "Unburden",
       "frequency": "Static",
       "effect": "The default state of the user’s Speed is +2 Combat Stages. While holding a Held Item, the user’s Speed is lowered by 2 Combat Stages."
-    },
-    {
-      "name": "Cruelty",
-      "frequency": "Scene – Swift Action",
-      "effect": "After Damage is Resolved, the foe gains an Injury. The user is then informed of the total number of Injuries currently on the target, and may use that number to “purchase” the effects listed below. »» 1 Injury: The target loses 2 Hit Points. May be “pur- chased” multiple times. »» 1 Injury: The target is Slowed. »» 2 Injuries: Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
     }
   ],
   "natureMod": {

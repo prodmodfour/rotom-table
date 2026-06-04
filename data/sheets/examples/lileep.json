@@ -2,7 +2,7 @@
   "slug": "examples-lileep",
   "nickname": "Lileep",
   "species": "Lileep",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Decisive",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 9,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "satk": {
@@ -33,62 +33,31 @@
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
-    "tick": 8,
+    "maxHp": 59,
+    "currentHp": 59,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Astonish",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
-    },
-    {
-      "name": "Constrict",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 1,
-      "damageRoll": "1d6+1 / 4",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
-    },
-    {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
-    },
     {
       "name": "Ingrain",
       "type": "Grass",
@@ -109,15 +78,26 @@
       "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
     },
     {
-      "name": "Ancient Power",
-      "type": "Rock",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
+      "name": "Constrict",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 1,
+      "damageRoll": "1d6+1 / 4",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+      "range": "Melee, 1 Target",
+      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
+    },
+    {
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
     }
   ],
   "abilities": [
@@ -125,11 +105,6 @@
       "name": "Suction Cups",
       "frequency": "At-Will - Shift Action",
       "effect": "The user gains +5 Damage Reduction for 1 full round."
-    },
-    {
-      "name": "Storm Drain",
-      "frequency": "Scene – Free Action",
-      "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  the user’s Special Attack is then raised by +1 Combat Stage."
     }
   ],
   "natureMod": {

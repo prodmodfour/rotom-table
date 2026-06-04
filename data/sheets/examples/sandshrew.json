@@ -2,7 +2,7 @@
   "slug": "examples-sandshrew",
   "nickname": "Sandshrew",
   "species": "Sandshrew",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Proud",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
@@ -37,14 +37,14 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 1,
@@ -53,31 +53,20 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Poison Sting",
-      "type": "Poison",
+      "name": "Rapid Spin",
+      "type": "Normal",
       "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Poison Sting Poisons the target on 17+."
-    },
-    {
-      "name": "Fury Cutter",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
     },
     {
       "name": "Rollout",
@@ -91,12 +80,32 @@
       "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
     },
     {
-      "name": "Magnitude",
-      "type": "Ground",
+      "name": "Poison Sting",
+      "type": "Poison",
       "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Poison Sting Poisons the target on 17+."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
       "frequency": "EOT",
-      "range": "Burst 2, Groundsource",
-      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
+    },
+    {
+      "name": "Defense Curl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
     },
     {
       "name": "Scratch",
@@ -108,14 +117,6 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "None"
-    },
-    {
-      "name": "Defense Curl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
     }
   ],
   "abilities": [
@@ -123,11 +124,6 @@
       "name": "Quick Curl",
       "frequency": "Scene – Free Action",
       "effect": "Connection - Defense Curl. The user may activate this Ability to use Defense Curl as an Standard Action Interrupt and gain +10 Damage Reduction for 1 full round."
-    },
-    {
-      "name": "Sand Rush",
-      "frequency": "Static",
-      "effect": "While in Sandstorming Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
     }
   ],
   "natureMod": {

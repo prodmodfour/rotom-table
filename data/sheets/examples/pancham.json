@@ -2,7 +2,7 @@
   "slug": "examples-pancham",
   "nickname": "Pancham",
   "species": "Pancham",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Calm",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 10,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
@@ -42,41 +42,21 @@
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
-    "tick": 8,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Karate Chop",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Karate Chop is a Critical Hit on 17+."
-    },
     {
       "name": "Work Up",
       "type": "Normal",
@@ -84,28 +64,6 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
-    },
-    {
-      "name": "Slash",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "Slash is a Critical Hit on 18+."
-    },
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
     },
     {
       "name": "Arm Thrust",
@@ -117,6 +75,26 @@
       "ac": 4,
       "range": "Melee, 1 Target, Five Strike",
       "effect": "None"
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [
@@ -124,11 +102,6 @@
       "name": "Mold Breaker",
       "frequency": "Static",
       "effect": "The user ignores the effect of enemies’ Defensive Abilities."
-    },
-    {
-      "name": "Deep Sleep",
-      "frequency": "Static",
-      "effect": "When asleep, this Pokémon restores a Tick of Hit Points at the end of each turn."
     }
   ],
   "natureMod": {

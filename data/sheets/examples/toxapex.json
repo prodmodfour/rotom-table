@@ -2,7 +2,7 @@
   "slug": "examples-toxapex",
   "nickname": "Toxapex",
   "species": "Toxapex",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Naive",
@@ -13,51 +13,101 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 16,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 80,
+    "currentHp": 80,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 3,
+      "vsAtk": 6,
+      "vsSatk": 4,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Poison Jab",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Poison Jab Poisons the target on 15+."
+    },
+    {
+      "name": "Recover",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
+    },
+    {
+      "name": "Spike Cannon",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Venoshock",
+      "type": "Poison",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "If the target is Poisoned, Venoshock has a Damage Base of 13 (4d10+10 / 35) instead."
+    },
+    {
+      "name": "Toxic",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "4, 1 Target",
+      "effect": "The target is Badly Poisoned. If the user is Poison Type, Toxic cannot miss."
+    },
     {
       "name": "Wide Guard",
       "type": "Rock",
@@ -65,36 +115,6 @@
       "frequency": "Scene",
       "range": "Burst 1, Interrupt, Shield, Trigger",
       "effect": "If an Ally adjacent to Wide Guard’s user is hit by a Move, you may use Wide Guard as an Interrupt. All targets adjacent to Wide Guard’s user, including the user, are instead not hit by the triggering Move and do not suffer any of its effects."
-    },
-    {
-      "name": "Peck",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Toxic Spikes",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "6, Hazard",
-      "effect": "Set 8 square meters of Toxic Spikes, all 8 meters must be adjacent with at least one other space of Toxic Spikes next to each other. Toxic Spikes cause Terrain to become Slow Terrain, and a grounded foe that runs into the hazard becomes Poisoned, and Slowed until the end of their next turn. If there are 2 Layers of Toxic Spikes on the same space, it Deadly Poisons the foes instead. Poison-Type Pokémon may move over Toxic Spikes harmlessly, destroying the Hazards as they do so."
     }
   ],
   "abilities": [
@@ -106,7 +126,13 @@
     {
       "name": "Cruelty",
       "frequency": "Scene – Swift Action",
+      "trigger": "The user hits a foe with a damaging attack",
       "effect": "After Damage is Resolved, the foe gains an Injury. The user is then informed of the total number of Injuries currently on the target, and may use that number to “purchase” the effects listed below. »» 1 Injury: The target loses 2 Hit Points. May be “pur- chased” multiple times. »» 1 Injury: The target is Slowed. »» 2 Injuries: Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
+    },
+    {
+      "name": "Merciless",
+      "frequency": "Static",
+      "effect": "If the user hits a poisoned target with a damaging attack, it automatically becomes a Critical Hit."
     }
   ],
   "natureMod": {

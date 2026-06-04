@@ -2,7 +2,7 @@
   "slug": "examples-yamask-galar",
   "nickname": "Yamask Galar",
   "species": "Yamask Galar",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Hardy",
@@ -13,39 +13,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 0,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 38,
+    "currentHp": 38,
+    "tick": 3,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 2,
@@ -54,19 +54,34 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Brutal Swing",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Burst 1"
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    },
+    {
+      "name": "Haze",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
+    },
+    {
+      "name": "Protect",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
     },
     {
       "name": "Astonish",
@@ -78,51 +93,14 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
-    },
-    {
-      "name": "Crafty Shield",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Burst 2, Interrupt, Shield, Trigger",
-      "effect": "If the user or an Ally within 2 meters of Crafty Shield’s user is hit by a Status Move, you may use Crafty Shield as an Interrupt. All targets in Crafty Shield’s area- of-effect including the user, are instead not hit by the triggering Move and do not suffer any of its effects."
-    },
-    {
-      "name": "Haze",
-      "type": "Ice",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Field",
-      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
-    },
-    {
-      "name": "Night Shade",
-      "type": "Ghost",
-      "category": "Special",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
-    },
-    {
-      "name": "Protect",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
     }
   ],
   "abilities": [
     {
       "name": "Wandering Spirit",
       "frequency": "Scene – Free Action, Reaction",
+      "trigger": "The user is hit by a Melee attack",
       "effect": "The user exchanges Wandering Spirit with a random Ability of the opposing Pokémon, as per the Move Skill Swap."
-    },
-    {
-      "name": "Sturdy",
-      "frequency": "Static",
-      "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
     }
   ],
   "capabilities": {

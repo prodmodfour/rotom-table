@@ -2,7 +2,7 @@
   "slug": "examples-snorlax",
   "nickname": "Snorlax",
   "species": "Snorlax",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Distracted",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 13,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "satk": {
@@ -32,41 +32,60 @@
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 93,
-    "currentHp": 93,
-    "tick": 9,
+    "maxHp": 130,
+    "currentHp": 130,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 1,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Lick",
-      "type": "Ghost",
+      "name": "Snore",
+      "type": "Normal",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic",
+      "effect": "Snore Flinches all legal targets on 15+. Snore may only be used by Sleeping users."
+    },
+    {
+      "name": "Rest",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
+    },
+    {
+      "name": "Chip Away",
+      "type": "Normal",
       "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
+      "effect": "Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage."
     },
     {
       "name": "Yawn",
@@ -85,20 +104,15 @@
       "effect": "The user gains +6 Attack Combat Stages, and loses Hit Points equal to ½ of their Max Hit Points."
     },
     {
-      "name": "Defense Curl",
-      "type": "Normal",
-      "category": "Status",
+      "name": "Lick",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
       "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage and they become Curled Up until the end of the Scene or they are Recalled or Take a Breather. When using the Moves Rollout or Ice Ball while Curled Up, the user gains a +10 bonus to the damage rolls of those Moves."
-    },
-    {
-      "name": "Amnesia",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
     }
   ],
   "abilities": [
@@ -110,6 +124,7 @@
     {
       "name": "Lunchbox",
       "frequency": "Scene – Free Action",
+      "trigger": "The user trades in a Food Buff",
       "effect": "The user gains a Tick of Temporary Hit Points. These Temporary Hit Points stack with any Temporary Hit Points granted by the triggering Food Buff."
     }
   ],

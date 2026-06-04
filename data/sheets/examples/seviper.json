@@ -2,7 +2,7 @@
   "slug": "examples-seviper",
   "nickname": "Seviper",
   "species": "Seviper",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Docile",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
@@ -32,41 +32,49 @@
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Poison Tail",
+      "name": "Venom Drench",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Cone 2",
+      "effect": "All Poisoned targets have their Attack, Special Attack, and Speed lowered by 1 Combat Stage. Venom Drench cannot miss."
+    },
+    {
+      "name": "Poison Fang",
       "type": "Poison",
       "category": "Physical",
       "db": 7,
       "damageRoll": "2d6+10",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Poison Tail is a Critical Hit on 18+, and Poisons the target on 19+."
+      "effect": "Poison Fang Badly Poisons the target on 17+."
     },
     {
       "name": "Glare",
@@ -76,24 +84,6 @@
       "ac": 2,
       "range": "4, 1 Target, Social",
       "effect": "Glare Paralyzes the target."
-    },
-    {
-      "name": "Lick",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
-    },
-    {
-      "name": "Wrap",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
     },
     {
       "name": "Venoshock",
@@ -114,6 +104,17 @@
       "ac": 4,
       "range": "Burst 2, Friendly, Sonic",
       "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Poison Tail",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Poison Tail is a Critical Hit on 18+, and Poisons the target on 19+."
     }
   ],
   "abilities": [

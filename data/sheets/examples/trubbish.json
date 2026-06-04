@@ -2,7 +2,7 @@
   "slug": "examples-trubbish",
   "nickname": "Trubbish",
   "species": "Trubbish",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Docile",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "satk": {
@@ -32,19 +32,19 @@
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -53,31 +53,17 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Double Slap",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Sludge",
+      "name": "Toxic Spikes",
       "type": "Poison",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
+      "category": "Status",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Sludge Poisons the target on 15+."
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Toxic Spikes, all 8 meters must be adjacent with at least one other space of Toxic Spikes next to each other. Toxic Spikes cause Terrain to become Slow Terrain, and a grounded foe that runs into the hazard becomes Poisoned, and Slowed until the end of their next turn. If there are 2 Layers of Toxic Spikes on the same space, it Deadly Poisons the foes instead. Poison-Type Pokémon may move over Toxic Spikes harmlessly, destroying the Hazards as they do so."
     },
     {
       "name": "Recycle",
@@ -86,26 +72,6 @@
       "frequency": "Scene",
       "range": "Self",
       "effect": "The effect of a consumable item used earlier in the encounter is used again as if it had not been destroyed. The item is still gone."
-    },
-    {
-      "name": "Acid Spray",
-      "type": "Poison",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Acid Spray lowers the target’s Special Defense 2 Combat Stages."
-    },
-    {
-      "name": "Poison Gas",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 6,
-      "range": "Burst 1 or Cone 2",
-      "effect": "Poison Gas Poisons all Legal Targets."
     },
     {
       "name": "Pound",
@@ -117,6 +83,15 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
+    },
+    {
+      "name": "Poison Gas",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 6,
+      "range": "Burst 1 or Cone 2",
+      "effect": "Poison Gas Poisons all Legal Targets."
     }
   ],
   "abilities": [
@@ -124,11 +99,6 @@
       "name": "Stench",
       "frequency": "Static",
       "effect": "The Pokémon’s Moves Flinch Targets on a roll of 18+. If a move already has a chance of Flinching foes, the Effect Range is increased by +3 instead. Whenever the user Flinches a foe with an attack, that foe gains a -2 penalty to Accuracy Rolls for 1 full round."
-    },
-    {
-      "name": "Weird Power",
-      "frequency": "Static",
-      "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
     }
   ],
   "capabilities": {

@@ -2,7 +2,7 @@
   "slug": "examples-cradily",
   "nickname": "Cradily",
   "species": "Cradily",
-  "level": 20,
+  "level": 45,
   "gender": "Female",
   "shiny": false,
   "nature": "Hasty",
@@ -13,51 +13,101 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 11,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 2,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 112,
+    "currentHp": 112,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 4,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Energy Ball",
+      "type": "Grass",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "Energy Ball lowers the foe’s Special Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Gastro Acid",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "The target’s Ability is disabled until the end of the encounter. If the target has more than one Ability, you choose one of them to disable."
+    },
+    {
+      "name": "Giga Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Brine",
+      "type": "Water",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "If the target’s Hit Points are under 50%, Brine’s Damage Base is increased to Damage Base 13 (4d10+10 / 35)."
+    },
     {
       "name": "Ancient Power",
       "type": "Rock",
@@ -68,34 +118,6 @@
       "ac": 2,
       "range": "6, 1 Target, Spirit Surge",
       "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
-    },
-    {
-      "name": "Ingrain",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Coat",
-      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
-    },
-    {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
-    },
-    {
-      "name": "Acid",
-      "type": "Poison",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2",
-      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
     }
   ],
   "abilities": [
@@ -107,7 +129,14 @@
     {
       "name": "Storm Drain",
       "frequency": "Scene – Free Action",
+      "trigger": "A ranged Water Type Move is used within 10",
       "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  the user’s Special Attack is then raised by +1 Combat Stage."
+    },
+    {
+      "name": "Regenerator",
+      "frequency": "Daily x2 – Free Action",
+      "trigger": "The user is recalled into a Poké Ball, or Takes",
+      "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
     }
   ],
   "natureMod": {

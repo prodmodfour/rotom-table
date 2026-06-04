@@ -2,7 +2,7 @@
   "slug": "examples-dragalge",
   "nickname": "Dragalge",
   "species": "Dragalge",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Quiet",
@@ -13,110 +13,111 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 8,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 3,
-      "vsAny": 1
+      "vsSatk": 4,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Feint Attack",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
-    },
-    {
-      "name": "Bubble",
-      "type": "Water",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
-    },
-    {
-      "name": "Acid",
+      "name": "Sludge Bomb",
       "type": "Poison",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2",
-      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Smokescreen",
-      "type": "Normal",
-      "category": "Status",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "EOT",
-      "range": "5, Ranged Blast 3",
-      "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "Sludge Bomb Poisons the target on 15+."
     },
     {
-      "name": "Tail Whip",
+      "name": "Aqua Tail",
+      "type": "Water",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Toxic",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "4, 1 Target",
+      "effect": "The target is Badly Poisoned. If the user is Poison Type, Toxic cannot miss."
+    },
+    {
+      "name": "Double Team",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
     },
     {
-      "name": "Water Gun",
+      "name": "Water Pulse",
       "type": "Water",
       "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Poison Tail",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Poison Tail is a Critical Hit on 18+, and Poisons the target on 19+."
     }
   ],
   "abilities": [
@@ -128,7 +129,13 @@
     {
       "name": "Poison Point",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Move",
       "effect": "The attacking foe is Poisoned."
+    },
+    {
+      "name": "Corrosive Toxins",
+      "frequency": "Scene – Free Action",
+      "effect": "Connection - Toxic. The user may activate this Ability when using Toxic to allow the Move to ignore Immunity to the Status Affliction, Blessings, and the effects of Abilities that may prevent Hit Point loss from being Badly Poisoned (such as Magic Guard or Poison Heal)."
     }
   ],
   "natureMod": {

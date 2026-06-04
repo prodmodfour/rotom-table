@@ -2,7 +2,7 @@
   "slug": "examples-bastiodon",
   "nickname": "Bastiodon",
   "species": "Bastiodon",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -13,51 +13,88 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 8,
+      "added": 14,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 4,
+      "vsAtk": 5,
+      "vsSatk": 5,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Block",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The target is Stuck and Trapped until the beginning of your next turn."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
+    },
     {
       "name": "Take Down",
       "type": "Normal",
@@ -68,23 +105,6 @@
       "ac": 5,
       "range": "Melee, 1 Target, Dash, Recoil 1/3",
       "effect": "You may perform a Trip Maneuver against the target as a Free Action."
-    },
-    {
-      "name": "Taunt",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Enraged."
-    },
-    {
-      "name": "Iron Defense",
-      "type": "Steel",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 2 Combat Stages."
     },
     {
       "name": "Metal Sound",
@@ -105,6 +125,7 @@
     {
       "name": "Bodyguard",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "An adjacent Ally is hit by an attack",
       "effect": "The user and the triggering Ally switch places, and the user becomes the target of the triggering attack instead, taking damage from the attack as if resisted one step further. If switching places would not move the triggering Ally out of the area-of-effect of a Burst, Blast, Cone, or Line, this Ability does not prevent the ally from being hit. Defensive."
     }
   ],

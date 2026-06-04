@@ -13,42 +13,42 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 13,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 1,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
+    "maxHp": 63,
+    "currentHp": 63,
     "tick": 6,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
+      "vsAtk": 2,
+      "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
@@ -59,6 +59,17 @@
   },
   "movelist": [
     {
+      "name": "Bullet Seed",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
       "name": "Sleep Powder",
       "type": "Grass",
       "category": "Status",
@@ -68,15 +79,22 @@
       "effect": "The target falls asleep."
     },
     {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "name": "Stun Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
+    },
+    {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
     },
     {
       "name": "Fairy Wind",
@@ -90,32 +108,15 @@
       "effect": "None"
     },
     {
-      "name": "Poison Powder",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target is Poisoned."
-    },
-    {
-      "name": "Synthesis",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value instead. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value instead."
-    },
-    {
-      "name": "Bullet Seed",
-      "type": "Grass",
+      "name": "Tackle",
+      "type": "Normal",
       "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [

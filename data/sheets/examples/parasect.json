@@ -2,7 +2,7 @@
   "slug": "examples-parasect",
   "nickname": "Parasect",
   "species": "Parasect",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Timid",
@@ -13,51 +13,59 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
+    "maxHp": 68,
+    "currentHp": 68,
     "tick": 6,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "4, 1 Target, Powder",
+      "effect": "The target falls Asleep."
+    },
     {
       "name": "Fury Cutter",
       "type": "Bug",
@@ -70,13 +78,15 @@
       "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
     },
     {
-      "name": "Poison Powder",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target is Poisoned."
+      "name": "Leech Life",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
     },
     {
       "name": "Stun Spore",
@@ -88,15 +98,13 @@
       "effect": "The target is Paralyzed."
     },
     {
-      "name": "Leech Life",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
     }
   ],
   "abilities": [

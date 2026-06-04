@@ -2,7 +2,7 @@
   "slug": "examples-sandile",
   "nickname": "Sandile",
   "species": "Sandile",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Naive",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
@@ -23,7 +23,7 @@
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
@@ -33,40 +33,31 @@
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 12,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 4
+      "vsSatk": 0,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
     {
       "name": "Torment",
       "type": "Dark",
@@ -75,6 +66,15 @@
       "ac": 2,
       "range": "10, 1 Target, Social",
       "effect": "The target becomes Suppressed."
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     },
     {
       "name": "Bite",
@@ -88,26 +88,6 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
       "name": "Rage",
       "type": "Normal",
       "category": "Physical",
@@ -117,6 +97,15 @@
       "ac": 2,
       "range": "Melee, 1 Target, Spirit Surge",
       "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -124,11 +113,6 @@
       "name": "Moxie",
       "frequency": "Static",
       "effect": "Whenever the user’s Move causes a target to faint, it may raise its Attack Combat Stage by +1. You may only trigger Moxie once per Move, even if the Move causes multiple targets to faint."
-    },
-    {
-      "name": "Deep Sleep",
-      "frequency": "Static",
-      "effect": "When asleep, this Pokémon restores a Tick of Hit Points at the end of each turn."
     }
   ],
   "natureMod": {

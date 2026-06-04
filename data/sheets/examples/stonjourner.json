@@ -2,7 +2,7 @@
   "slug": "examples-stonjourner",
   "nickname": "Stonjourner",
   "species": "Stonjourner",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -12,61 +12,69 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 7,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 86,
+    "currentHp": 86,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 4,
+      "vsSatk": 1,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Rock Throw",
-      "type": "Rock",
+      "name": "Stomp",
+      "type": "Normal",
       "category": "Physical",
       "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "None"
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+    },
+    {
+      "name": "Gravity",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field",
+      "effect": "For 5 rounds, the area is considered Warped. While Warped, Moves that involve the user being airborne may not be used. Pokémon cannot use Sky or Levitate Capabilities to end their turn at an altitude higher than 1 meter. Flying-Types and Pokémon with the Ability Levitate no longer resist Ground-Type Moves, and Pokémon cannot use Sky or Levitate Capabilities for immunity to Moves with the Groundsource keyword. All Accuracy Rolls receive a +2 Bonus."
     },
     {
       "name": "Rock Tomb",
@@ -77,15 +85,16 @@
       "frequency": "At-Will",
       "ac": 5,
       "range": "6, 1 Target",
-      "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage."
+      "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage.",
+      "special": "Grants Materializer"
     },
     {
-      "name": "Gravity",
-      "type": "Psychic",
+      "name": "Rock Polish",
+      "type": "Rock",
       "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Field",
-      "effect": "For 5 rounds, the area is considered Warped. While Warped, Moves that involve the user being airborne may not be used. Pokémon cannot use Sky or Levitate Capabilities to end their turn at an altitude higher than 1 meter. Flying-Types and Pokémon with the Ability Levitate are no longer immune to Ground- Type Moves. All Accuracy Rolls receive a +2 Bonus."
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
     },
     {
       "name": "Block",
@@ -97,12 +106,15 @@
       "effect": "The target is Stuck and Trapped until the beginning of your next turn."
     },
     {
-      "name": "Rock Polish",
+      "name": "Rock Throw",
       "type": "Rock",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Speed 2 Combat Stages."
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
     }
   ],
   "abilities": [

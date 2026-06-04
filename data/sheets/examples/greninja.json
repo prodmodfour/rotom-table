@@ -2,7 +2,7 @@
   "slug": "examples-greninja",
   "nickname": "Greninja",
   "species": "Greninja",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Distracted",
@@ -13,61 +13,89 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 11,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
+      "vsAtk": 2,
+      "vsSatk": 2,
       "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bubble",
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
+    {
+      "name": "Water Shuriken",
       "type": "Water",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Five Strike, Priority"
+    },
+    {
+      "name": "Spikes",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Spikes within your range, all 8 meters must be adjacent with at least one other space of Spikes. Spikes cause terrain to count as Slow Terrain, and a grounded foe that runs into the hazards will lose a Tick of Hit Points and become Slowed until the end of their next turn."
+    },
+    {
+      "name": "Shadow Sneak",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
     },
     {
       "name": "Smokescreen",
@@ -76,17 +104,6 @@
       "frequency": "EOT",
       "range": "5, Ranged Blast 3",
       "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
-    },
-    {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
     },
     {
       "name": "Water Pulse",
@@ -98,26 +115,6 @@
       "ac": 2,
       "range": "8, 1 Target, Aura",
       "effect": "Water Pulse Confuses the target on 17+."
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
     }
   ],
   "abilities": [
@@ -129,7 +126,14 @@
     {
       "name": "Protean",
       "frequency": "At-Will – Swift Action",
+      "trigger": "The user uses a Move",
       "effect": "The user’s Type changes to match the Type of the triggering Move. This Ability resolves before the Move is resolved (And thus you may apply STAB, and trigger other Features and Abilities appropriately)."
+    },
+    {
+      "name": "Wash Away",
+      "frequency": "Daily – Free Action",
+      "trigger": "The user hits with a Water Type Move",
+      "effect": "Before the Move “hits”, all Combat Stages on targets hit by the Move are reset to their default (usually 0), and all coats on the targets, except ones placed by Water Sport, are destroyed."
     }
   ],
   "natureMod": {

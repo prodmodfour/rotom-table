@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
@@ -22,32 +22,32 @@
     },
     "def": {
       "base": 1,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
+    "maxHp": 63,
+    "currentHp": 63,
     "tick": 6,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 3,
+      "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
@@ -58,23 +58,6 @@
   },
   "movelist": [
     {
-      "name": "Withdraw",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
-    },
-    {
-      "name": "Tail Whip",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
       "name": "Rapid Spin",
       "type": "Normal",
       "category": "Physical",
@@ -84,17 +67,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Spirit Surge",
       "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
     },
     {
       "name": "Bite",
@@ -108,6 +80,26 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None",
+      "special": "Grants Fountain"
+    },
+    {
+      "name": "Withdraw",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage."
+    },
+    {
       "name": "Bubble",
       "type": "Water",
       "category": "Special",
@@ -117,6 +109,15 @@
       "ac": 2,
       "range": "Burst 1",
       "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
+      "name": "Tail Whip",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [

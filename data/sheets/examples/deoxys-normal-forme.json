@@ -2,7 +2,7 @@
   "slug": "examples-deoxys-normal-forme",
   "nickname": "Deoxys Normal Forme",
   "species": "Deoxys Normal Forme",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Curious",
@@ -12,83 +12,100 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 15,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 6,
+      "added": 16,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 15,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 4
+      "vsAny": 6
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Wrap",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+      "name": "Zen Headbutt",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
     },
     {
-      "name": "Night Shade",
-      "type": "Ghost",
-      "category": "Special",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
-    },
-    {
-      "name": "Teleport",
+      "name": "Psycho Shift",
       "type": "Psychic",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Self, Interrupt",
-      "effect": "The user Teleports up to X meters, where X is its Teleporter Capability. Teleport can be used as an Interrupt at any time. Moves that targeted Teleport’s user continue through the desired target’s space if the Move allows for it as if the user hadn’t been there; single target moves simply miss."
+      "range": "Melee, 1 Target",
+      "effect": "The user is cured of a Status ailment and the target is given that Status ailment. Psycho Shift cannot miss. Psycho Shift can only be used if the user has a Status ailment and the target does not have the status ailment that is being transferred."
     },
     {
-      "name": "Leer",
-      "type": "Normal",
+      "name": "Snatch",
+      "type": "Dark",
       "category": "Status",
+      "frequency": "Scene x2",
+      "range": "6, 1 Target, Interrupt",
+      "effect": "If the target uses a Self-Targeting Move, you may use Snatch. You gain the benefits of the Self-Targeting Move instead of the target."
+    },
+    {
+      "name": "Psychic",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "5, 1 Target, Push",
+      "effect": "The target is Pushed 1 meter in any direction. Psychic lowers the target’s Special Defense 1 Combat Stage on 17+.",
+      "special": "Grants Telekinetic"
+    },
+    {
+      "name": "Pursuit",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "Melee, 1 Target",
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     },
     {
       "name": "Knock Off",
@@ -112,6 +129,11 @@
       "name": "Perception",
       "frequency": "Static",
       "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    },
+    {
+      "name": "Transporter",
+      "frequency": "Daily x3 – Free Action",
+      "trigger": "You Teleport"
     }
   ],
   "natureMod": {

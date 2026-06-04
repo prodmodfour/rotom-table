@@ -2,7 +2,7 @@
   "slug": "examples-urshifu-single-strike-form",
   "nickname": "Urshifu Single Strike Form",
   "species": "Urshifu Single Strike Form",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Adamant",
@@ -18,7 +18,7 @@
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 12,
       "stage": 0
     },
     "def": {
@@ -28,53 +28,62 @@
     },
     "satk": {
       "base": -1,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 99,
+    "currentHp": 99,
+    "tick": 9,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 1,
-      "vsAny": 2
+      "vsSatk": 2,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Focus Energy",
-      "type": "Normal",
+      "name": "Bulk Up",
+      "type": "Fighting",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Defense 1 Combat Stage."
     },
     {
-      "name": "Aerial Ace",
-      "type": "Flying",
+      "name": "Detect",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Detect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+    },
+    {
+      "name": "Brick Break",
+      "type": "Fighting",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Aerial Ace cannot miss."
+      "effect": "Light Screen and Reflect may not be activated in response to Brick Break."
     },
     {
       "name": "Headbutt",
@@ -88,14 +97,6 @@
       "effect": "Headbutt Flinches the target on 15+."
     },
     {
-      "name": "Endure",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Daily",
-      "range": "Self, Reaction, Trigger",
-      "effect": "If the user is hit by a damaging Move, you may use Endure as a Free Action. If the Move would bring Endure’s user down to 0 Hit Points or less, Endure’s user instead is set to 1 Hit Point."
-    },
-    {
       "name": "Scary Face",
       "type": "Normal",
       "category": "Status",
@@ -103,16 +104,28 @@
       "ac": 2,
       "range": "4, 1 Target, Social",
       "effect": "The target’s Speed is lowered 2 Combat Stages."
+    },
+    {
+      "name": "Aerial Ace",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Aerial Ace cannot miss."
     }
   ],
   "abilities": [
     {
       "name": "Unseen Fist",
-      "effect": "The user may pick a Move from their Mount’s known Moves that they do not already know. For the rest of the user’s Turn, they may use that Move as though it was one of their own Moves. Note that this does not remove any frequency limitations – a Daily Move that the Mount knows may not be used more than once. This Ability may not be copied or transferred."
+      "frequency": "Static",
+      "effect": "Reactions, Interrupts, and Blessings may not be activated in response to the user’s Melee Attacks."
     },
     {
       "name": "Sprint",
       "frequency": "Scene – Swift Action",
+      "trigger": "The user uses the Sprint Action during Combat",
       "effect": "The user gains +2 Speed Combat Stages."
     }
   ],

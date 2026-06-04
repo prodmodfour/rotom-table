@@ -2,7 +2,7 @@
   "slug": "examples-pyukumuku",
   "nickname": "Pyukumuku",
   "species": "Pyukumuku",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Lonely",
@@ -12,74 +12,66 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
+    "maxHp": 68,
+    "currentHp": 68,
     "tick": 6,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 4,
       "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mud Sport",
-      "type": "Ground",
+      "name": "Curse",
+      "type": "Ghost",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
     },
     {
-      "name": "Bide",
-      "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
-    },
-    {
-      "name": "Safeguard",
-      "type": "Normal",
+      "name": "Purify",
+      "type": "Poison",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+      "range": "Melee, 1 Target",
+      "effect": "The target is cured of all Permanent and Volatile Statuses. For every status removed, the user recovers a Tick of Hit Points."
     },
     {
       "name": "Counter",
@@ -90,12 +82,12 @@
       "effect": "Counter may be used as a Reaction when the user is hit by a damaging Physical Attack. Resolve the Triggering Attack, with Counter’s user resisting the attack one step further. After the attack is resolved, if Counter’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Counter is Physical, and while it cannot miss, it cannot hit targets immune to Fighting-Type Moves."
     },
     {
-      "name": "Water Sport",
-      "type": "Water",
+      "name": "Safeguard",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2, Coat",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
     },
     {
       "name": "Taunt",
@@ -105,12 +97,21 @@
       "ac": 3,
       "range": "6, 1 Target, Social",
       "effect": "The target becomes Enraged."
+    },
+    {
+      "name": "Helping Hand",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
     }
   ],
   "abilities": [
     {
       "name": "Innards Out",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "The user is hit by a Damaging Attack",
       "effect": "The user resists the triggering attack one step further. After the attack is resolved, a foe within 2 meters loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack, even if the triggering attack caused the user to Faint."
     },
     {

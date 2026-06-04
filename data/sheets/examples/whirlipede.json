@@ -18,27 +18,27 @@
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
@@ -47,7 +47,7 @@
     "currentHp": 51,
     "tick": 5,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 3,
       "vsAny": 1
     },
@@ -59,13 +59,23 @@
   },
   "movelist": [
     {
-      "name": "Screech",
+      "name": "Poison Tail",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Poison Tail is a Critical Hit on 18+, and Poisons the target on 19+."
+    },
+    {
+      "name": "Protect",
       "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+      "frequency": "Scene",
+      "range": "Self, Interrupt, Shield, Trigger",
+      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
     },
     {
       "name": "Pursuit",
@@ -79,12 +89,13 @@
       "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     },
     {
-      "name": "Protect",
+      "name": "Screech",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt, Shield, Trigger",
-      "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
     },
     {
       "name": "Poison Sting",
@@ -96,17 +107,6 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Poison Sting Poisons the target on 17+."
-    },
-    {
-      "name": "Poison Tail",
-      "type": "Poison",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Poison Tail is a Critical Hit on 18+, and Poisons the target on 19+."
     }
   ],
   "abilities": [
@@ -118,6 +118,7 @@
     {
       "name": "Poison Point",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Move",
       "effect": "The attacking foe is Poisoned."
     }
   ],

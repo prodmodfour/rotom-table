@@ -2,7 +2,7 @@
   "slug": "examples-roggenrola",
   "nickname": "Roggenrola",
   "species": "Roggenrola",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Bold",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "def": {
@@ -27,73 +27,46 @@
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 1,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tackle",
+      "name": "Headbutt",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Iron Defense",
-      "type": "Steel",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 2 Combat Stages."
-    },
-    {
-      "name": "Rock Blast",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
+      "range": "Melee, 1 Target",
+      "effect": "Headbutt Flinches the target on 15+."
     },
     {
       "name": "Sand Attack",
@@ -105,15 +78,23 @@
       "effect": "The target is Blinded until the end of their next turn."
     },
     {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
+      "name": "Harden",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [
@@ -121,11 +102,6 @@
       "name": "Sturdy",
       "frequency": "Static",
       "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
-    },
-    {
-      "name": "Sand Rush",
-      "frequency": "Static",
-      "effect": "While in Sandstorming Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
     }
   ],
   "natureMod": {

@@ -22,12 +22,12 @@
     },
     "def": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
@@ -58,13 +58,6 @@
   },
   "movelist": [
     {
-      "name": "Bind",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
-    },
-    {
       "name": "Tearful Look",
       "type": "Normal",
       "category": "Status",
@@ -85,6 +78,13 @@
       "effect": "Water Pulse Confuses the target on 17+."
     },
     {
+      "name": "Bind",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
       "name": "Water Gun",
       "type": "Water",
       "category": "Special",
@@ -93,7 +93,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Fountain"
     }
   ],
   "abilities": [

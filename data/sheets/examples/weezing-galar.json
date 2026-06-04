@@ -2,7 +2,7 @@
   "slug": "examples-weezing-galar",
   "nickname": "Weezing Galar",
   "species": "Weezing Galar",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Relaxed",
@@ -18,17 +18,17 @@
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 2,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
@@ -38,54 +38,55 @@
     },
     "spd": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 5,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Clear Smog",
+      "name": "Sludge Bomb",
       "type": "Poison",
       "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "Scene x2",
-      "range": "6, 1 Target",
-      "effect": "The target’s Combat Stages are reset to their default, and all Coats on the target are destroyed. Clear Smog cannot miss."
-    },
-    {
-      "name": "Assurance",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
-    },
-    {
-      "name": "Aromatic Mist",
-      "type": "Fairy",
-      "category": "Status",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "Sludge Bomb Poisons the target on 15+."
+    },
+    {
+      "name": "Self-Destruct",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 20,
+      "damageRoll": "6d12+35 / 75",
+      "frequency": "Daily",
+      "ac": 2,
+      "range": "Burst 3",
+      "effect": "The user’s Hit Points are set to -50% of their full Hit Point value. This Hit Point loss may not be prevented or reduced in any way. The user’s loyalty toward its trainer may be lowered."
+    },
+    {
+      "name": "Aromatherapy",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
       "range": "Burst 1",
-      "effect": "All allies in Aromatic Mist’s area of effect have their Special Defense raised 1 Combat Stage."
+      "effect": "All allies in the burst are cured of one status condition of their choice."
     },
     {
       "name": "Sludge",
@@ -99,26 +100,37 @@
       "effect": "Sludge Poisons the target on 15+."
     },
     {
-      "name": "Fairy Wind",
-      "type": "Fairy",
-      "category": "Special",
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
       "db": 6,
-      "damageRoll": "2d6+8",
+      "damageRoll": "2d6+8 / 15",
       "frequency": "At-Will",
       "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
+      "name": "Clear Smog",
+      "type": "Poison",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
       "range": "6, 1 Target",
-      "effect": "None"
+      "effect": "The target’s Combat Stages are reset to their default, and all Coats on the target are destroyed. Clear Smog cannot miss."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Aftermath",
       "frequency": "Scene – Free Action",
+      "trigger": "The user becomes Fainted",
       "effect": "The user creates a Burst 1. Everything in the Burst loses three Ticks of Hit Points."
     }
   ],

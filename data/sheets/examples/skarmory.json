@@ -2,7 +2,7 @@
   "slug": "examples-skarmory",
   "nickname": "Skarmory",
   "species": "Skarmory",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Proud",
@@ -23,41 +23,51 @@
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 6,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
+    "maxHp": 77,
+    "currentHp": 77,
     "tick": 7,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 5,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
     {
       "name": "Feint",
       "type": "Normal",
@@ -100,24 +110,13 @@
       "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
     },
     {
-      "name": "Leer",
-      "type": "Normal",
+      "name": "Sand Attack",
+      "type": "Ground",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Peck",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [

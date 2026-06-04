@@ -2,7 +2,7 @@
   "slug": "examples-magcargo",
   "nickname": "Magcargo",
   "species": "Magcargo",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -13,113 +13,128 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 15,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 9,
+      "added": 12,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 83,
+    "currentHp": 83,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 3,
+      "vsAtk": 5,
+      "vsSatk": 4,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Harden",
+      "name": "Shell Smash",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "Scene",
       "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
+      "effect": "Raise the user’s Attack 2 Combat Stages, raise the user’s Special Attack 2 Combat Stages and raise the user’s Speed 2 Combat Stages. Lower the user’s Defense 1 Combat Stage and lower the user’s Special Defense 1 Combat Stage."
     },
     {
-      "name": "Rock Throw",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "None"
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
     },
     {
-      "name": "Ember",
+      "name": "Lava Plume",
       "type": "Fire",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "range": "Burst 1",
+      "effect": "Lava Plume burns all targets on 16+."
     },
     {
-      "name": "Incinerate",
+      "name": "Rock Slide",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Rock Slide Flinches all Legal Targets on 17+."
+    },
+    {
+      "name": "Flame Burst",
       "type": "Fire",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Any Trainers or Pokémon cardinally adjacent to the target lose 5 Hit Points."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
       "category": "Special",
       "db": 8,
       "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Line 3",
-      "effect": "If a target is holding a Held Item or Main or Off- Hand item, they must either drop it immediately or lose a Tick of Hit Points. This may only cause a target to lose at most one Tick of Hit Points, no matter how many items they were holding."
-    },
-    {
-      "name": "Clear Smog",
-      "type": "Poison",
-      "category": "Special",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "Scene x2",
-      "range": "6, 1 Target",
-      "effect": "The target’s Combat Stages are reset to their default, and all Coats on the target are destroyed. Clear Smog cannot miss."
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     }
   ],
   "abilities": [
     {
       "name": "Sun Blanket",
       "frequency": "Daily x5 - Swift Action",
+      "trigger": "The user gains Initiative.",
       "effect": "The user gains a Tick of Hit Points. Sun Blanket may only be triggered while the user is under 50% Hit Points or in Sunny Weather."
     },
     {
       "name": "Thermosensitive",
       "frequency": "Static",
       "effect": "While Sunny, the user’s Attack and Special Attack are raised by +2 combat stages each. While Hailing, the user’s movement capabilities are reduced by half."
+    },
+    {
+      "name": "Sol Veil",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. This is increased to +2 Evasion while in Sunny Weather or on grassy terrain. While in Sunny Weather, the user gains +5 Damage Reduction."
     }
   ],
   "natureMod": {

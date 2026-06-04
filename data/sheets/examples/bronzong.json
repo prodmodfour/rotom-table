@@ -2,7 +2,7 @@
   "slug": "examples-bronzong",
   "nickname": "Bronzong",
   "species": "Bronzong",
-  "level": 20,
+  "level": 35,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Timid",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 11,
       "stage": 0
     },
     "spd": {
@@ -43,9 +43,9 @@
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 84,
+    "currentHp": 84,
+    "tick": 8,
     "evasion": {
       "vsAtk": 4,
       "vsSatk": 4,
@@ -54,35 +54,55 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Hypnosis",
-      "type": "Psychic",
+      "name": "Block",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target",
-      "effect": "The target falls Asleep."
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "The target is Stuck and Trapped until the beginning of your next turn."
     },
     {
-      "name": "Imprison",
-      "type": "Psychic",
+      "name": "Metal Sound",
+      "type": "Steel",
       "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
+    {
+      "name": "Future Sight",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 14,
+      "damageRoll": "4d10+15",
       "frequency": "Scene x2",
       "range": "10, 1 Target",
-      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
+      "effect": "Future Sight does nothing on the turn it is used. At the end of the user’s next turn, Future Sight hits, even if the user is no longer on the field. Future Sight cannot miss."
     },
     {
-      "name": "Confuse Ray",
-      "type": "Ghost",
+      "name": "Safeguard",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
     },
     {
       "name": "Iron Defense",
@@ -91,15 +111,6 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "Raise the user’s Defense 2 Combat Stages."
-    },
-    {
-      "name": "Psywave",
-      "type": "Psychic",
-      "category": "Special",
-      "frequency": "Scene",
-      "ac": 5,
-      "range": "6, 1 Target",
-      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
     }
   ],
   "abilities": [

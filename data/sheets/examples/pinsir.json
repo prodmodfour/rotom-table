@@ -2,7 +2,7 @@
   "slug": "examples-pinsir",
   "nickname": "Pinsir",
   "species": "Pinsir",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Desperate",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "def": {
@@ -27,7 +27,7 @@
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
@@ -42,8 +42,8 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
+    "maxHp": 65,
+    "currentHp": 65,
     "tick": 6,
     "evasion": {
       "vsAtk": 3,
@@ -53,10 +53,31 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Double Hit",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Vital Throw",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target, Push, Reaction",
+      "effect": "If the user is targeted by a Melee attack and has not yet taken a turn this round, the user may declare Vital Throw. After the triggering attack is resolved, the user may use Vital Throw against the triggering foe as a Reaction. Vital Throw cannot miss."
+    },
     {
       "name": "Revenge",
       "type": "Fighting",
@@ -69,38 +90,12 @@
       "effect": "When declaring Revenge, the user does nothing and may not Shift. At the end of the round, the user may shift and use Revenge. If the target has damaged the user this round, Revenge has a Damage Base of 12 (3d12+10 / 30)."
     },
     {
-      "name": "Bind",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
-    },
-    {
       "name": "Harden",
       "type": "Normal",
       "category": "Status",
       "frequency": "At-Will",
       "range": "Self",
       "effect": "Raise the user’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Focus Energy",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
-    },
-    {
-      "name": "Vice Grip",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
     },
     {
       "name": "Seismic Toss",
@@ -110,6 +105,13 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "The target loses Hit Points equal to the level of Seismic Toss’ user."
+    },
+    {
+      "name": "Bind",
+      "type": "Normal",
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
     }
   ],
   "abilities": [
@@ -121,6 +123,7 @@
     {
       "name": "Kampfgeist",
       "frequency": "Scene - Free Action",
+      "trigger": "The user takes Bug, Dark, or Rock-Type Damage",
       "effect": "The triggering damage is resisted one step further."
     }
   ],

@@ -2,7 +2,7 @@
   "slug": "examples-tynamo",
   "nickname": "Tynamo",
   "species": "Tynamo",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
@@ -22,52 +22,41 @@
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 1,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 0,
       "vsSatk": 1,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Charge Beam",
-      "type": "Electric",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "If Charge Beam successfully hits a target, roll 1d20. On a roll of 7+,  the user’s Special Attack is raised by +1 Combat Stage."
-    },
     {
       "name": "Thunder Wave",
       "type": "Electric",
@@ -76,6 +65,17 @@
       "ac": 4,
       "range": "6, 1 Target",
       "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     },
     {
       "name": "Spark",
@@ -89,27 +89,22 @@
       "effect": "Spark Paralyzes the target on 15+."
     },
     {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "name": "Charge Beam",
+      "type": "Electric",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "If Charge Beam successfully hits a target, roll 1d20. On a roll of 7+,  the user’s Special Attack is raised by +1 Combat Stage."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
-    },
-    {
-      "name": "Sequence",
-      "frequency": "At-Will – Free Action",
-      "effect": "For every Electric-Type Pokémon adjacent to the user, the triggering Attack deals an additional +3 Damage."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     }
   ],
   "natureMod": {

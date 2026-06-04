@@ -2,7 +2,7 @@
   "slug": "examples-walrein",
   "nickname": "Walrein",
   "species": "Walrein",
-  "level": 20,
+  "level": 50,
   "gender": "Male",
   "shiny": false,
   "nature": "Bashful",
@@ -13,92 +13,108 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 12,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 87,
-    "currentHp": 87,
-    "tick": 8,
+    "maxHp": 129,
+    "currentHp": 129,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 3,
-      "vsAny": 1
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Ice Ball",
+      "name": "Blizzard",
+      "type": "Ice",
+      "category": "Special",
+      "db": 13,
+      "damageRoll": "4d10+10",
+      "frequency": "Scene x2",
+      "ac": 7,
+      "range": "4, Ranged Blast 2, Smite",
+      "effect": "Blizzard Freezes all legal target on 15+. If the target is in Hailing Weather, Blizzard cannot miss."
+    },
+    {
+      "name": "Ice Fang",
       "type": "Ice",
       "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target",
-      "effect": "The user continues to use Ice Ball on each of its turns until they miss any target with Ice Ball, or are not able to hit any target with Ice Ball during their turn.  Each successive use of Ice Ball increases Ice Ball’s Damage Base by +3 to a maximum of DB 15."
-    },
-    {
-      "name": "Brine",
-      "type": "Water",
-      "category": "Special",
       "db": 9,
       "damageRoll": "2d10+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "If the target’s Hit Points are under 50%, Brine’s Damage Base is increased to Damage Base 13 (4d10+10 / 35)."
-    },
-    {
-      "name": "Rollout",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
       "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Pass",
-      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Ice Fang Freezes or Flinches on 18+ during Accuracy Check; flip a coin to determine whether the foe gets Frozen or Flinches. On 20 during Accuracy Check, the foe is Frozen and Flinches."
     },
     {
-      "name": "Encore",
+      "name": "Hail",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to Hail for 5 rounds. While it is Hailing, all non-Ice Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
+    },
+    {
+      "name": "Swagger",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Snore",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
+      "range": "Burst 1, Sonic",
+      "effect": "Snore Flinches all legal targets on 15+. Snore may only be used by Sleeping users."
+    },
+    {
+      "name": "Rest",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
     }
   ],
   "abilities": [
@@ -111,6 +127,11 @@
       "name": "Ice Body",
       "frequency": "Daily x5 - Swift Action",
       "effect": "The user gains a Tick of Hit Points. Ice Body may only be used while the user is under 50% Hit Points or in Hailing Weather."
+    },
+    {
+      "name": "Snow Cloak",
+      "frequency": "Static",
+      "effect": "The user gains +1 Evasion. This is increased to +2 Evasion while in Hail or snowy terrain. While in Hail, the user and adjacent allies do not lose Hit Points due to the Hail."
     }
   ],
   "capabilities": {

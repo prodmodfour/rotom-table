@@ -2,7 +2,7 @@
   "slug": "examples-jolteon",
   "nickname": "Jolteon",
   "species": "Jolteon",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Adamant",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
@@ -22,49 +22,62 @@
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 3,
       "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
+      "name": "Pin Missile",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Thunder Fang",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Thunder Fang Paralyzes or Flinches on 18- 19 during Accuracy Check; flip a coin to determine whether the foe gets Paralyzed or Flinches. On 20 during Accuracy Check, the foe is Paralyzed and Flinched."
     },
     {
       "name": "Double Kick",
@@ -78,17 +91,6 @@
       "effect": "None"
     },
     {
-      "name": "Thunder Shock",
-      "type": "Electric",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
-    },
-    {
       "name": "Quick Attack",
       "type": "Normal",
       "category": "Physical",
@@ -98,6 +100,27 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
+    },
+    {
+      "name": "Thunder Shock",
+      "type": "Electric",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
+    },
+    {
+      "name": "Sand Attack",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [
@@ -109,6 +132,7 @@
     {
       "name": "Sprint",
       "frequency": "Scene – Swift Action",
+      "trigger": "The user uses the Sprint Action during Combat",
       "effect": "The user gains +2 Speed Combat Stages."
     }
   ],

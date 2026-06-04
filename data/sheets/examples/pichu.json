@@ -2,7 +2,7 @@
   "slug": "examples-pichu",
   "nickname": "Pichu",
   "species": "Pichu",
-  "level": 20,
+  "level": 5,
   "gender": "Male",
   "shiny": false,
   "nature": "Mild",
@@ -12,39 +12,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 1,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 24,
+    "currentHp": 24,
+    "tick": 2,
     "evasion": {
       "vsAtk": 0,
       "vsSatk": 1,
@@ -53,36 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 2,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Nasty Plot",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Special Attack 2 Combat Stages."
-    },
-    {
-      "name": "Thunder Wave",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
-    },
-    {
-      "name": "Sweet Kiss",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Social",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
     {
       "name": "Tail Whip",
       "type": "Normal",
@@ -101,7 +75,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
     },
     {
       "name": "Charm",
@@ -117,12 +92,8 @@
     {
       "name": "Cute Charm",
       "frequency": "Scene – Free Action",
+      "trigger": "A foe of the opposite gender attacks the user",
       "effect": "The foe becomes Infatuated."
-    },
-    {
-      "name": "Static",
-      "frequency": "Scene – Free Action",
-      "effect": "The attacking foe becomes Paralyzed."
     }
   ],
   "natureMod": {

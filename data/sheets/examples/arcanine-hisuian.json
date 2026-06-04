@@ -2,7 +2,7 @@
   "slug": "examples-arcanine-hisuian",
   "nickname": "Arcanine Hisuian",
   "species": "Arcanine Hisuian",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Impish",
@@ -18,56 +18,89 @@
     },
     "atk": {
       "base": 0,
-      "added": 13,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 81,
-    "currentHp": 81,
-    "tick": 8,
+    "maxHp": 91,
+    "currentHp": 91,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Ember",
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Raging Fury",
       "type": "Fire",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "range": "Burst 1, Spirit Surge",
+      "effect": "The user becomes Enraged. Legal targets become Enraged on a 16+."
+    },
+    {
+      "name": "Rock Slide",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Rock Slide Flinches all Legal Targets on 17+."
+    },
+    {
+      "name": "Fire Fang",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
     },
     {
       "name": "Bite",
@@ -81,15 +114,16 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Fire Fang",
+      "name": "Ember",
       "type": "Fire",
-      "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     }
   ],
   "abilities": [
@@ -101,6 +135,7 @@
     {
       "name": "Justified",
       "frequency": "At-Will - Free Action",
+      "trigger": "The user is hit by a damaging Dark Type Move or",
       "effect": "The user may raise its Attack by +1 Combat Stage."
     }
   ],

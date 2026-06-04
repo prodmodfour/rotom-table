@@ -2,7 +2,7 @@
   "slug": "examples-sandslash-alola",
   "nickname": "Sandslash Alola",
   "species": "Sandslash Alola",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Relaxed",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "atk": {
@@ -23,17 +23,17 @@
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -43,42 +43,28 @@
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 77,
+    "currentHp": 77,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Powder Snow",
-      "type": "Ice",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
-    },
-    {
-      "name": "Rapid Spin",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
     },
     {
       "name": "Fury Swipes",
@@ -92,15 +78,25 @@
       "effect": "None"
     },
     {
-      "name": "Ice Ball",
-      "type": "Ice",
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
+    {
+      "name": "Metal Claw",
+      "type": "Steel",
       "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
+      "db": 7,
+      "damageRoll": "2d6+10",
       "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target",
-      "effect": "The user continues to use Ice Ball on each of its turns until they miss any target with Ice Ball, or are not able to hit any target with Ice Ball during their turn.  Each successive use of Ice Ball increases Ice Ball’s Damage Base by +3 to a maximum of DB 15."
+      "ac": 3,
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
     },
     {
       "name": "Fury Cutter",
@@ -114,15 +110,15 @@
       "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
     },
     {
-      "name": "Metal Claw",
-      "type": "Steel",
+      "name": "Rapid Spin",
+      "type": "Normal",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
       "frequency": "At-Will",
-      "ac": 3,
+      "ac": 2,
       "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
+      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
     }
   ],
   "abilities": [

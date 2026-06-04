@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -42,8 +42,8 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
+    "maxHp": 66,
+    "currentHp": 66,
     "tick": 6,
     "evasion": {
       "vsAtk": 1,
@@ -67,6 +67,14 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Dragon Breath Paralyzes the Target on 15+."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
     },
     {
       "name": "Protect",
@@ -108,14 +116,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Bide",
-      "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
     }
   ],
   "abilities": [
@@ -127,6 +127,7 @@
     {
       "name": "Gooey",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The triggering attacker has their Speed lowered by 1 Combat Stage."
     }
   ],

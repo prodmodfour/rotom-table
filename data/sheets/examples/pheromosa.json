@@ -2,7 +2,7 @@
   "slug": "examples-pheromosa",
   "nickname": "Pheromosa",
   "species": "Pheromosa",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Curious",
@@ -18,17 +18,17 @@
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 8,
+      "added": 14,
       "stage": 0
     },
     "sdef": {
@@ -38,36 +38,67 @@
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 13,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 83,
+    "currentHp": 83,
+    "tick": 8,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 4
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stomp",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
       "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Jump Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, Dash, 1 Target",
+      "effect": "If Jump Kick misses, the user loses Hit Points equal to 1/4th of their Max Hit Points. A failure to hit due to a Move with the Shield keyword does not count as a miss. This Move cannot be used if Gravity is in effect."
+    },
+    {
+      "name": "Bounce",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash, Full Action",
+      "effect": "The user first Shifts, gaining a +1 Bonus to Movement Speed and to their Jump Capabilities. After the user Shifts, they may attack with Bounce. The target becomes Vulnerable, and is Paralyzed on 16+.",
+      "special": "Grants High Jump +1"
+    },
+    {
+      "name": "Silver Wind",
+      "type": "Bug",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     },
     {
       "name": "Feint",
@@ -78,57 +109,33 @@
       "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
     },
     {
-      "name": "Rapid Spin",
+      "name": "Stomp",
       "type": "Normal",
       "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Rapid Spin destroys all Hazards within 5 meters, removes Leech Seeds, and removes the user’s Trapped or Stuck status. If Rapid Spin hits, the user’s speed raises 1 CS."
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Double Kick",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Double Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Swift",
-      "type": "Normal",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
       "frequency": "EOT",
-      "range": "8, Ranged Blast 2, Friendly",
-      "effect": "Swift cannot Miss."
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
     }
   ],
   "abilities": [
     {
       "name": "Beast Boost",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user’s Damaging Attack causes an",
       "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
     },
     {
       "name": "Vanguard",
       "frequency": "Static",
       "effect": "The user gains a +5 Bonus to all Damage Rolls against targets with an initiative lower than itself that have not yet acted that round (having Ante’d up your Action via an Interrupt or similar on a previous round does not count as having acted that round)."
+    },
+    {
+      "name": "Lightning Kicks",
+      "frequency": "Scene – Free Action",
+      "effect": "The user may activate this Ability to use any Move with “Kick” in the name as a Priority Move, and gain a +4 Bonus to the attack’s Accuracy Roll."
     }
   ],
   "natureMod": {

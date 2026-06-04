@@ -2,7 +2,7 @@
   "slug": "examples-qwilfish-hisuian",
   "nickname": "Qwilfish Hisuian",
   "species": "Qwilfish Hisuian",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Quiet",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -43,40 +43,21 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 1,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Spikes",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "6, Hazard",
-      "effect": "Set 8 square meters of Spikes within your range, all 8 meters must be adjacent with at least one other space of Spikes. Spikes cause terrain to count as Slow Terrain, and a grounded foe that runs into the hazards will lose a Tick of Hit Points and become Slowed until the end of their next turn."
-    },
-    {
-      "name": "Barb Barrage",
-      "type": "Poison",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "The target is Poisoned on a 17+. Once a Scene, if Barb Barrage’s target has a Status Condition, you may choose to not roll for Five Strike. Instead, treat Barb Barrage as though it automatically rolled an 8 for Five Strike."
-    },
     {
       "name": "Pin Missile",
       "type": "Bug",
@@ -87,6 +68,14 @@
       "ac": 4,
       "range": "6, 1 Target, Five Strike",
       "effect": "None"
+    },
+    {
+      "name": "Spikes",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Spikes within your range, all 8 meters must be adjacent with at least one other space of Spikes. Spikes cause terrain to count as Slow Terrain, and a grounded foe that runs into the hazards will lose a Tick of Hit Points and become Slowed until the end of their next turn."
     },
     {
       "name": "Poison Sting",
@@ -104,12 +93,8 @@
     {
       "name": "Poison Point",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Move",
       "effect": "The attacking foe is Poisoned."
-    },
-    {
-      "name": "Swift Swim",
-      "frequency": "Static",
-      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
     }
   ],
   "natureMod": {

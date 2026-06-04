@@ -12,42 +12,42 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 13,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 4,
+      "vsAtk": 2,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
@@ -57,6 +57,15 @@
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
     {
       "name": "Leaf Tornado",
       "type": "Grass",
@@ -69,21 +78,13 @@
       "effect": "Small or Medium targets in the central square of the blast are not hit. On 15+, all legal targets have their Accuracy lowered by -1."
     },
     {
-      "name": "Leech Seed",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
-    },
-    {
       "name": "Growth",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
       "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     },
     {
       "name": "Wrap",
@@ -101,7 +102,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Threaded"
     },
     {
       "name": "Leer",

@@ -2,7 +2,7 @@
   "slug": "examples-swellow",
   "nickname": "Swellow",
   "species": "Swellow",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Lonely",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "satk": {
@@ -33,19 +33,19 @@
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 68,
+    "currentHp": 68,
+    "tick": 6,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
@@ -54,10 +54,28 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Aerial Ace",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Aerial Ace cannot miss."
+    },
+    {
+      "name": "Double Team",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Illusion, Coat",
+      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+    },
     {
       "name": "Wing Attack",
       "type": "Flying",
@@ -68,14 +86,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None."
-    },
-    {
-      "name": "Double Team",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Illusion, Coat",
-      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
     },
     {
       "name": "Quick Attack",

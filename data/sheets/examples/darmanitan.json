@@ -2,7 +2,7 @@
   "slug": "examples-darmanitan",
   "nickname": "Darmanitan",
   "species": "Darmanitan",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Stark",
@@ -12,48 +12,48 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 110,
+    "currentHp": 110,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [],
@@ -61,12 +61,18 @@
     {
       "name": "Flame Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Burned."
     },
     {
       "name": "Inner Focus",
       "frequency": "Static",
       "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
+    },
+    {
+      "name": "Zen Mode",
+      "frequency": "Scene - Swift Action",
+      "effect": "The user changes into Zen Mode forme for the rest of the Scene, and may use the Moves “Flamethrower” and “Psychic” as if they were on its Move List."
     }
   ],
   "natureMod": {

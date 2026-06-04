@@ -2,7 +2,7 @@
   "slug": "examples-vivillon",
   "nickname": "Vivillon",
   "species": "Vivillon",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Distracted",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 12,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
@@ -38,26 +38,65 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 11,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 113,
+    "currentHp": 113,
+    "tick": 11,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Bug Buzz",
+      "type": "Bug",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Cone 2 or Close Blast 2, Sonic, Smite",
+      "effect": "Bug Buzz lowers the Special Defense of all targets on 19+."
+    },
+    {
+      "name": "Aromatherapy",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 1",
+      "effect": "All allies in the burst are cured of one status condition of their choice."
+    },
+    {
+      "name": "Draining Kiss",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+    },
     {
       "name": "Psybeam",
       "type": "Psychic",
@@ -91,6 +130,12 @@
       "name": "Shield Dust",
       "frequency": "Static",
       "effect": "The user ignores the secondary effects that trigger during Accuracy Roll of damaging Moves that target the user. For example, Flamethrower can never inflict the Burn Condition. Defensive."
+    },
+    {
+      "name": "Effect Spore",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
+      "effect": "Roll 1d6. On a result of 1 or 2, the attacker is Poisoned. On a result of 3 or 4, the attacker is Paralyzed. On a result of 5 or 6, the attacker falls Asleep."
     }
   ],
   "natureMod": {

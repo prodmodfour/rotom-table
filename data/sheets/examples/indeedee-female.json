@@ -2,7 +2,7 @@
   "slug": "examples-indeedee-female",
   "nickname": "Indeedee Female",
   "species": "Indeedee Female",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Bashful",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "def": {
@@ -28,36 +28,52 @@
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 12,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 4,
-      "vsAny": 2
+      "vsSatk": 3,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Follow Me",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 5, Social",
+      "effect": "Until the end of the user’s next turn, all Foes must target the user when using a Move that targets their opponents. This effect ends if the user is Fainted or Switched out."
+    },
+    {
+      "name": "Helping Hand",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+    },
     {
       "name": "Psybeam",
       "type": "Psychic",
@@ -70,22 +86,6 @@
       "effect": "Psybeam Confuses the target on 19+."
     },
     {
-      "name": "Helping Hand",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
-    },
-    {
-      "name": "Baton Pass",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
-    },
-    {
       "name": "Disarming Voice",
       "type": "Fairy",
       "category": "Special",
@@ -96,15 +96,12 @@
       "effect": "Disarming Voice cannot miss."
     },
     {
-      "name": "Stored Power",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "10, 1 Target",
-      "effect": "For every Combat Stage the user has above 0, add +2 to Stored Power’s Damage Base, up to a maximum of Damage Base 20."
+      "name": "Baton Pass",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
     },
     {
       "name": "Play Nice",
@@ -125,6 +122,7 @@
     {
       "name": "Friend Guard",
       "frequency": "Scene – Free Action",
+      "trigger": "An adjacent Ally takes Damage",
       "effect": "The damage is resisted one step further. Defensive."
     }
   ],

@@ -2,7 +2,7 @@
   "slug": "examples-slurpuff",
   "nickname": "Slurpuff",
   "species": "Slurpuff",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Impish",
@@ -22,12 +22,12 @@
     },
     "def": {
       "base": 1,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -42,8 +42,8 @@
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
+    "maxHp": 77,
+    "currentHp": 77,
     "tick": 7,
     "evasion": {
       "vsAtk": 3,
@@ -53,10 +53,19 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Endeavor",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "The target loses a Tick of Hit Points for each Injury the user has."
+    },
     {
       "name": "Cotton Spore",
       "type": "Grass",
@@ -65,15 +74,6 @@
       "ac": 2,
       "range": "Burst 1, Powder",
       "effect": "All Legal Targets have their Speed lowered 2 Combat Stages."
-    },
-    {
-      "name": "Play Nice",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
     },
     {
       "name": "Round",
@@ -85,24 +85,22 @@
       "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
     },
     {
-      "name": "Sweet Scent",
-      "type": "Normal",
+      "name": "Fake Tears",
+      "type": "Dark",
       "category": "Status",
-      "frequency": "Scene",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+      "range": "8, 1 Target, Social",
+      "effect": "Lower the target’s Special Defense 2 Combat Stages."
     },
     {
-      "name": "Tackle",
+      "name": "Play Nice",
       "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "category": "Status",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "6, 1 Target, Social",
+      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
     },
     {
       "name": "Fairy Wind",

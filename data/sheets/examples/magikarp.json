@@ -2,7 +2,7 @@
   "slug": "examples-magikarp",
   "nickname": "Magikarp",
   "species": "Magikarp",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Timid",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "def": {
@@ -27,54 +27,44 @@
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 4,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
-    "tick": 4,
+    "maxHp": 32,
+    "currentHp": 32,
+    "tick": 3,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsSatk": 0,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
     {
       "name": "Splash",
       "type": "Normal",
       "category": "Status",
       "frequency": "At-Will",
       "range": "Self",
-      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn."
+      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn.",
+      "special": "Grants Long Jump +1"
     }
   ],
   "abilities": [
@@ -82,11 +72,6 @@
       "name": "Bulletproof",
       "frequency": "Static",
       "effect": "The user resists all X target ranged attacks one step further. This refers to attacks and Moves that simply hit one target or specify hitting multiple targets, such as Razor Wind hitting three targets. It has no effect on Moves that are capable of hitting multiple targets through areas of effect, such as Bursts or Cones. Defensive."
-    },
-    {
-      "name": "Simple",
-      "frequency": "Static",
-      "effect": "When the Pokémon’s Combat Stages are altered, double the amount of Combat Stages they are raised or lowered."
     }
   ],
   "natureMod": {

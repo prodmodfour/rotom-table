@@ -2,7 +2,7 @@
   "slug": "examples-cherrim",
   "nickname": "Cherrim",
   "species": "Cherrim",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Mild",
@@ -12,51 +12,79 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 0,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 12,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 11,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 79,
+    "currentHp": 79,
+    "tick": 7,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 4
+      "vsSatk": 3,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Worry Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "You choose one of the target’s Abilities. Worry Seed changes that Ability to Insomnia for the remainder of the encounter."
+    },
+    {
+      "name": "Petal Dance",
+      "type": "Grass",
+      "category": "Special",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "ac": 3,
+      "range": "Melee, all adjacent foes, Smite",
+      "effect": "After damage is dealt, the user becomes Enraged and Confused."
+    },
+    {
+      "name": "Sunny Day",
+      "type": "Fire",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather becomes Sunny for 5 rounds. While Sunny, Fire-Type Attacks gain a +5 bonus to Damage Rolls, and Water-Type Attacks suffer a -5 Damage penalty."
+    },
     {
       "name": "Magical Leaf",
       "type": "Grass",
@@ -68,12 +96,12 @@
       "effect": "Magical Leaf cannot miss."
     },
     {
-      "name": "Growth",
+      "name": "Helping Hand",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
     },
     {
       "name": "Leech Seed",
@@ -83,14 +111,6 @@
       "ac": 4,
       "range": "6, 1 Target",
       "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
-    },
-    {
-      "name": "Helping Hand",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
     }
   ],
   "abilities": [
@@ -102,6 +122,7 @@
     {
       "name": "Sun Blanket",
       "frequency": "Daily x5 - Swift Action",
+      "trigger": "The user gains Initiative.",
       "effect": "The user gains a Tick of Hit Points. Sun Blanket may only be triggered while the user is under 50% Hit Points or in Sunny Weather."
     }
   ],

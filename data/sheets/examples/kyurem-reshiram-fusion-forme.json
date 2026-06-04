@@ -2,7 +2,7 @@
   "slug": "examples-kyurem-reshiram-fusion-forme",
   "nickname": "Kyurem Reshiram Fusion Forme",
   "species": "Kyurem Reshiram Fusion Forme",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Bold",
@@ -13,89 +13,115 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 13,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 16,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 148,
+    "currentHp": 148,
+    "tick": 14,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 4,
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Icy Wind",
+      "name": "Dragon Pulse",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "None"
+    },
+    {
+      "name": "Ice Burn",
       "type": "Ice",
+      "category": "Special",
+      "db": 16,
+      "damageRoll": "5d10+20",
+      "frequency": "Scene",
+      "ac": 4,
+      "range": "10, Single Target, Set-Up, Full Action"
+    },
+    {
+      "name": "Fusion Flare",
+      "type": "Fire",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10 / 24",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target, Smite",
+      "effect": "If Fusion Bolt was used this round or last round by any participant of the encounter, Fusion Flare has its Damage Base increased by +3."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
       "category": "Special",
       "db": 8,
       "damageRoll": "2d8+10",
       "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
-    },
-    {
-      "name": "Imprison",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "10, 1 Target",
-      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
-    },
-    {
-      "name": "Dragon Rage",
-      "type": "Dragon",
-      "category": "Special",
-      "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
     },
     {
-      "name": "Ancient Power",
-      "type": "Rock",
+      "name": "Ice Beam",
+      "type": "Ice",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+      "range": "4, 1 Target",
+      "effect": "Ice Beam Freezes on 19+ during Accuracy Check."
     }
   ],
   "abilities": [
@@ -108,6 +134,11 @@
       "name": "Flash Fire",
       "frequency": "Static",
       "effect": "The user is immune to the damage and effects of Fire-Type attacks. If the user is hit by a Fire-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
+    },
+    {
+      "name": "Inner Focus",
+      "frequency": "Static",
+      "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
     }
   ],
   "natureMod": {

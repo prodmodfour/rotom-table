@@ -2,7 +2,7 @@
   "slug": "examples-spearow",
   "nickname": "Spearow",
   "species": "Spearow",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Calm",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "atk": {
@@ -23,41 +23,52 @@
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsSatk": 1,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
+    },
     {
       "name": "Leer",
       "type": "Normal",
@@ -79,17 +90,6 @@
       "effect": "None"
     },
     {
-      "name": "Pursuit",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
-    },
-    {
       "name": "Growl",
       "type": "Normal",
       "category": "Status",
@@ -97,27 +97,6 @@
       "ac": 2,
       "range": "Burst 1, Friendly, Sonic, Social",
       "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Aerial Ace",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Aerial Ace cannot miss."
-    },
-    {
-      "name": "Fury Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -125,11 +104,6 @@
       "name": "Sniper",
       "frequency": "Static",
       "effect": "When the user gets a Critical Hit, the attack deals +3d10 additional damage."
-    },
-    {
-      "name": "Early Bird",
-      "frequency": "Static",
-      "effect": "The user gains a bonus to Initiative equal to half its Speed, and a +3 Bonus on Save Checks against Sleep."
     }
   ],
   "natureMod": {

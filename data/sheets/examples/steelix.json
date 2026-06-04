@@ -2,7 +2,7 @@
   "slug": "examples-steelix",
   "nickname": "Steelix",
   "species": "Steelix",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Impish",
@@ -13,107 +13,114 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 21,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 95,
+    "currentHp": 95,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 5,
+      "vsAtk": 8,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Rock Throw",
-      "type": "Rock",
+      "name": "Iron Tail",
+      "type": "Steel",
       "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "None"
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "Melee, 1 Target, Smite",
+      "effect": "Iron Tail lowers the target’s Defense 1 Combat Stage on 15+."
     },
     {
-      "name": "Autotomize",
-      "type": "Steel",
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Rock Slide",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Rock Slide Flinches all Legal Targets on 17+."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "range": "Self",
-      "effect": "For the remainder of the Encounter, the user’s Weight Class is one value lower, to a minimum of 1. If the user can, the user’s Speed is raised by +2 Combat Stages."
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
     },
     {
-      "name": "Rock Tomb",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 5,
-      "range": "6, 1 Target",
-      "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage."
-    },
-    {
-      "name": "Curse",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "See Text",
-      "range": "Self",
-      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
-    },
-    {
-      "name": "Stealth Rock",
-      "type": "Rock",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Field, Hazard",
-      "effect": "Set 4 square meters of Stealth Rock hazards within 6 meters. If a foe moves within 2 meters of a space occupied by Rocks, move at most one Rock to the offender, then destroy the Rock. When that happens, the Stealth Rock causes a foe to lose a Tick of Hit Points. Stealth Rock is considered to be dealing damage; Apply Weakness and Resistance. Do not apply stats. A Pokémon who has been hit by a Stealth Rock Hazard cannot get hit by another in the same encounter until it is returned to a Poké Ball and then sent back out."
-    },
-    {
-      "name": "Rage",
+      "name": "Slam",
       "type": "Normal",
       "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
       "frequency": "At-Will",
+      "ac": 6,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
+    },
+    {
+      "name": "Dragon Breath",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+      "range": "6, 1 Target",
+      "effect": "Dragon Breath Paralyzes the Target on 15+."
     }
   ],
   "abilities": [
@@ -126,6 +133,11 @@
       "name": "Battle Armor",
       "frequency": "Static",
       "effect": "The user is immune to Critical Hits; they are instead normal hits. Defensive."
+    },
+    {
+      "name": "Rock Head",
+      "frequency": "Static",
+      "effect": "The user ignores the Recoil keyword when attacking. If the user moves at least 4 meters in a straight line towards a foe before attacking that foe with a physical attack, they may add a +2d6 Bonus to the Damage Roll against that foe."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-landorus-therian-forme",
   "nickname": "Landorus Therian Forme",
   "species": "Landorus Therian Forme",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Docile",
@@ -13,51 +13,103 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 114,
+    "currentHp": 114,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Rock Slide",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, Ranged Blast 3",
+      "effect": "Rock Slide Flinches all Legal Targets on 17+."
+    },
+    {
+      "name": "Earth Power",
+      "type": "Ground",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Groundsource",
+      "effect": "Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+."
+    },
+    {
+      "name": "Swords Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Extrasensory",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "5, 1 Target",
+      "effect": "Extrasensory Flinches the target on 19+."
+    },
+    {
+      "name": "Rock Throw",
+      "type": "Rock",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
     {
       "name": "Bulldoze",
       "type": "Ground",
@@ -68,56 +120,6 @@
       "ac": 2,
       "range": "Burst 1",
       "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
-    },
-    {
-      "name": "Rock Tomb",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 5,
-      "range": "6, 1 Target",
-      "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage."
-    },
-    {
-      "name": "Imprison",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "10, 1 Target",
-      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
-    },
-    {
-      "name": "Mud Shot",
-      "type": "Ground",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "3, 1 Target",
-      "effect": "The target’s Speed is lowed by -1 Combat Stage."
-    },
-    {
-      "name": "Block",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "The target is Stuck and Trapped until the beginning of your next turn."
-    },
-    {
-      "name": "Punishment",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Punishment’s Damage Base is raised by +1 for each positive Combat Stage the target has, to a maximum of DB 12."
     }
   ],
   "abilities": [
@@ -130,6 +132,11 @@
       "name": "Defiant",
       "frequency": "Static",
       "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Healer",
+      "frequency": "Scene – Free Action",
+      "effect": "The target is cured of all Status conditions."
     }
   ],
   "capabilities": {

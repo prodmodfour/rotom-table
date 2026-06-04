@@ -2,7 +2,7 @@
   "slug": "examples-mareep",
   "nickname": "Mareep",
   "species": "Mareep",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Docile",
@@ -12,39 +12,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
@@ -53,7 +53,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -66,16 +66,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
     },
     {
       "name": "Thunder Wave",
@@ -87,12 +79,13 @@
       "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
     },
     {
-      "name": "Charge",
-      "type": "Electric",
+      "name": "Growl",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
       "name": "Tackle",
@@ -104,29 +97,14 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Take Down",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10 / 21",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Dash, Recoil 1/3",
-      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
     }
   ],
   "abilities": [
     {
       "name": "Static",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Paralyzed."
-    },
-    {
-      "name": "Fluffy Charge",
-      "frequency": "Static",
-      "effect": "Connection – Charge. Whenever the user uses Charge, they gain +1 CS to Defense."
     }
   ],
   "capabilities": {

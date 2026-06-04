@@ -2,7 +2,7 @@
   "slug": "examples-umbreon",
   "nickname": "Umbreon",
   "species": "Umbreon",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Skittish",
@@ -12,7 +12,7 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
@@ -22,41 +22,82 @@
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 11,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 80,
+    "currentHp": 80,
+    "tick": 8,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 4,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Assurance",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Quick Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
     {
       "name": "Pursuit",
       "type": "Dark",
@@ -69,15 +110,6 @@
       "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     },
     {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
-    },
-    {
       "name": "Sand Attack",
       "type": "Ground",
       "category": "Status",
@@ -85,23 +117,13 @@
       "ac": 2,
       "range": "2, 1 Target",
       "effect": "The target is Blinded until the end of their next turn."
-    },
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
     }
   ],
   "abilities": [
     {
       "name": "Synchronize",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is Paralyzed, Frozen, Burned,",
       "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
     },
     {

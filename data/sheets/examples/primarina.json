@@ -2,7 +2,7 @@
   "slug": "examples-primarina",
   "nickname": "Primarina",
   "species": "Primarina",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Brave",
@@ -13,72 +13,92 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 11,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 3,
+      "vsSatk": 4,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Aqua Jet",
-      "type": "Water",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "name": "Hyper Voice",
+      "type": "Normal",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
+      "range": "Close Blast 3, Sonic, Smite",
+      "effect": "All Legal Targets are pushed back to the squares immediately outside the blast, away from the user."
+    },
+    {
+      "name": "Double Slap",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
       "effect": "None"
     },
     {
-      "name": "Icy Wind",
-      "type": "Ice",
+      "name": "Sing",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 10,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
+    },
+    {
+      "name": "Bubble Beam",
+      "type": "Water",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Bubble Beam lowers the target’s Speed on 18+."
     },
     {
       "name": "Encore",
@@ -90,32 +110,15 @@
       "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
     },
     {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Baby-Doll Eyes",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Priority, Social",
-      "effect": "The target’s Attack is lowered 1 Combat Stage."
-    },
-    {
-      "name": "Disarming Voice",
-      "type": "Fairy",
+      "name": "Icy Wind",
+      "type": "Ice",
       "category": "Special",
       "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "range": "Burst 1",
-      "effect": "Disarming Voice cannot miss."
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Cone 2",
+      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -127,7 +130,14 @@
     {
       "name": "Liquid Voice",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user uses a Move with the Sonic",
       "effect": "The triggering move loses the Sonic keyword, but gains the Friendly keyword and becomes Water Typed. If the Move was a Status Class Move, you may treat it as a Special Move with DB1."
+    },
+    {
+      "name": "Wash Away",
+      "frequency": "Daily – Free Action",
+      "trigger": "The user hits with a Water Type Move",
+      "effect": "Before the Move “hits”, all Combat Stages on targets hit by the Move are reset to their default (usually 0), and all coats on the targets, except ones placed by Water Sport, are destroyed."
     }
   ],
   "natureMod": {

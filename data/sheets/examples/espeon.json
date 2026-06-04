@@ -2,7 +2,7 @@
   "slug": "examples-espeon",
   "nickname": "Espeon",
   "species": "Espeon",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Cuddly",
@@ -17,34 +17,34 @@
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 74,
+    "currentHp": 74,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
@@ -53,20 +53,40 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Confusion",
+      "name": "Future Sight",
       "type": "Psychic",
       "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "Future Sight does nothing on the turn it is used. At the end of the user’s next turn, Future Sight hits, even if the user is no longer on the field. Future Sight cannot miss."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
     },
     {
       "name": "Quick Attack",
@@ -80,14 +100,15 @@
       "effect": "None."
     },
     {
-      "name": "Swift",
-      "type": "Normal",
+      "name": "Confusion",
+      "type": "Psychic",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "8, Ranged Blast 2, Friendly",
-      "effect": "Swift cannot Miss."
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Confusion Confuses the target on 19+."
     },
     {
       "name": "Sand Attack",
@@ -103,6 +124,7 @@
     {
       "name": "Synchronize",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is Paralyzed, Frozen, Burned,",
       "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
     },
     {

@@ -2,7 +2,7 @@
   "slug": "examples-calyrex",
   "nickname": "Calyrex",
   "species": "Calyrex",
-  "level": 20,
+  "level": 25,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Careful",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
@@ -38,13 +38,13 @@
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
+    "maxHp": 86,
+    "currentHp": 86,
     "tick": 8,
     "evasion": {
       "vsAtk": 2,
@@ -54,10 +54,29 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Psyshock",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "When calculating damage, the target subtracts their Defense from Psyshock’s damage instead of their Special Defense. Psyshock is still otherwise Special ( Special Evasion is used to avoid it, Mirror Coat can reflect it, etc. )"
+    },
+    {
+      "name": "Helping Hand",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+    },
     {
       "name": "Giga Drain",
       "type": "Grass",
@@ -70,34 +89,21 @@
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
+      "name": "Life Dew",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Burst 1, Healing",
+      "effect": "The user and all allies in the burst regain Hit Points equal to 1/4 of their Maximum Hit Points."
+    },
+    {
       "name": "Growth",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
       "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
-    },
-    {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Mega Drain",
-      "type": "Grass",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained.",
+      "special": "Grants Inflatable"
     },
     {
       "name": "Confusion",
@@ -109,14 +115,6 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Life Dew",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Burst 1, Healing",
-      "effect": "The user and all allies in the burst regain Hit Points equal to 1/4 of their Maximum Hit Points."
     }
   ],
   "abilities": [

@@ -2,7 +2,7 @@
   "slug": "examples-gabite",
   "nickname": "Gabite",
   "species": "Gabite",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Timid",
@@ -13,39 +13,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 7,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 82,
+    "currentHp": 82,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -54,28 +54,31 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Sandstorm",
-      "type": "Rock",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Field, Weather",
-      "effect": "The weather changes to a Sandstorm for 5 rounds. While it is Sandstorming, all non-Ground, Rock, or Steel Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
-    },
-    {
-      "name": "Take Down",
+      "name": "Slash",
       "type": "Normal",
       "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10 / 21",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
       "frequency": "EOT",
-      "ac": 5,
-      "range": "Melee, 1 Target, Dash, Recoil 1/3",
-      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Dual Chop",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "None"
     },
     {
       "name": "Sand Tomb",
@@ -89,6 +92,25 @@
       "effect": "The target is put in a Vortex."
     },
     {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Sandstorm",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to a Sandstorm for 5 rounds. While it is Sandstorming, all non-Ground, Rock, or Steel Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
+    },
+    {
       "name": "Dragon Rage",
       "type": "Dragon",
       "category": "Special",
@@ -96,15 +118,6 @@
       "ac": 2,
       "range": "4, 1 Target",
       "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [

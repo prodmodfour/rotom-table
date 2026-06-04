@@ -2,7 +2,7 @@
   "slug": "examples-dusclops",
   "nickname": "Dusclops",
   "species": "Dusclops",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Gentle",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "satk": {
@@ -32,46 +32,59 @@
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
-    "tick": 4,
+    "maxHp": 61,
+    "currentHp": 61,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 4,
-      "vsAny": 0
+      "vsAtk": 4,
+      "vsSatk": 5,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Disable",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
-    },
-    {
-      "name": "Foresight",
-      "type": "Normal",
+      "name": "Confuse Ray",
+      "type": "Ghost",
       "category": "Status",
       "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
+    {
+      "name": "Will-O-Wisp",
+      "type": "Fire",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target",
+      "effect": "The target is Burned."
+    },
+    {
+      "name": "Pursuit",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     },
     {
       "name": "Shadow Sneak",
@@ -83,6 +96,14 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
+    },
+    {
+      "name": "Foresight",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self, Swift Action",
+      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
     },
     {
       "name": "Astonish",

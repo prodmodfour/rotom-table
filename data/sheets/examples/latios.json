@@ -2,7 +2,7 @@
   "slug": "examples-latios",
   "nickname": "Latios",
   "species": "Latios",
-  "level": 20,
+  "level": 50,
   "gender": "Male",
   "shiny": false,
   "nature": "Quirky",
@@ -13,114 +13,122 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 13,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 108,
+    "currentHp": 108,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 3
+      "vsAtk": 3,
+      "vsSatk": 4,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stored Power",
+      "name": "Power Split",
       "type": "Psychic",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "10, 1 Target",
-      "effect": "For every Combat Stage the user has above 0, add +2 to Stored Power’s Damage Base, up to a maximum of Damage Base 20."
-    },
-    {
-      "name": "Psywave",
-      "type": "Psychic",
-      "category": "Special",
+      "category": "Status",
       "frequency": "Scene",
-      "ac": 5,
-      "range": "6, 1 Target",
-      "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
+      "range": "Melee, 1 Target",
+      "effect": "The target has their Attack and Special Attack lowered by 5. If they do, the user gains a +5 bonus to Damage Rolls. These effects last until the end of the scene."
     },
     {
-      "name": "Heal Pulse",
+      "name": "Zen Headbutt",
       "type": "Psychic",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Zen Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Telekinesis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "4, 1 Target",
+      "effect": "The target becomes Lifted. While Lifted, they gain the Levitate Ability, are Slowed, and lose all Movement Capabilities except for the Levitate 4 granted by Levitate (reduced to 2 by the Slow condition). While Lifted, the user may not apply any Evasion bonuses to determine whether they are hit by Moves or not. The Lifted target may use a Shift Action to roll 1d20; on a result of 16+, they stop being Lifted.",
+      "special": "Grants Telekinetic"
+    },
+    {
+      "name": "Recover",
+      "type": "Normal",
       "category": "Status",
       "frequency": "Daily x2",
-      "range": "6, 1 Target, Aura",
-      "effect": "Restores 50% of the target’s max Hit Points. Heal Pulse’s user may not target itself with Heal Pulse."
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
     },
     {
-      "name": "Safeguard",
-      "type": "Normal",
+      "name": "Psycho Shift",
+      "type": "Psychic",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+      "range": "Melee, 1 Target",
+      "effect": "The user is cured of a Status ailment and the target is given that Status ailment. Psycho Shift cannot miss. Psycho Shift can only be used if the user has a Status ailment and the target does not have the status ailment that is being transferred."
     },
     {
-      "name": "Helping Hand",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
-    },
-    {
-      "name": "Dragon Dance",
-      "type": "Dragon",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Speed 1 Combat Stage."
+      "name": "Luster Purge",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "12, 1 Target",
+      "effect": "Luster Purge lowers the target’s Special Defense by 1 Combat Stage on an Even-Numbered Roll."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Telepathy",
       "frequency": "Static",
       "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    },
+    {
+      "name": "Speed Boost",
+      "frequency": "Static",
+      "effect": "The Pokémon’s Speed is raised 1 Combat Stage at the end of each of its turns. Speed Boost has no effect while out of combat."
     }
   ],
   "capabilities": {

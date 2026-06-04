@@ -2,7 +2,7 @@
   "slug": "examples-barboach",
   "nickname": "Barboach",
   "species": "Barboach",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Modest",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
@@ -28,7 +28,7 @@
     },
     "satk": {
       "base": 1,
-      "added": 10,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -38,14 +38,14 @@
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
@@ -54,7 +54,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -67,18 +67,25 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
-      "name": "Water Pulse",
+      "name": "Water Sport",
       "type": "Water",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "8, 1 Target, Aura",
-      "effect": "Water Pulse Confuses the target on 17+."
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2, Coat",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed.",
+      "special": "Grants Fountain"
+    },
+    {
+      "name": "Mud Sport",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
     },
     {
       "name": "Mud-Slap",
@@ -90,30 +97,6 @@
       "ac": 2,
       "range": "3, 1 Target",
       "effect": "The target’s Accuracy is lowered by -1."
-    },
-    {
-      "name": "Magnitude",
-      "type": "Ground",
-      "category": "Physical",
-      "frequency": "EOT",
-      "range": "Burst 2, Groundsource",
-      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
-    },
-    {
-      "name": "Amnesia",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Special Defense 2 Combat Stages."
-    },
-    {
-      "name": "Mud Sport",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
     }
   ],
   "abilities": [
@@ -121,11 +104,6 @@
       "name": "Anticipation",
       "frequency": "At-Will – Swift Action",
       "effect": "The target reveals if they have any Moves that are Super-Effective against the Pokémon with Anticipation. You may not target a Pokémon or Trainer more than once per encounter with Anticipation. Anticipation only reveals whether the opponent does or does not have those moves, not the specific moves themselves."
-    },
-    {
-      "name": "Mud Dweller",
-      "frequency": "Static",
-      "effect": "The user resists Ground-Type and Water-Type attacks one step further."
     }
   ],
   "natureMod": {

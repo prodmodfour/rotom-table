@@ -2,7 +2,7 @@
   "slug": "examples-krookodile",
   "nickname": "Krookodile",
   "species": "Krookodile",
-  "level": 20,
+  "level": 45,
   "gender": "Male",
   "shiny": false,
   "nature": "Composed",
@@ -13,112 +13,110 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 118,
+    "currentHp": 118,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
-    },
-    {
-      "name": "Sand Tomb",
-      "type": "Ground",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "5, 1 Target",
-      "effect": "The target is put in a Vortex."
-    },
-    {
-      "name": "Bite",
+      "name": "Foul Play",
       "type": "Dark",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene x2",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
+      "effect": "The target reveals its Attack stat. When calculating damage, add the target’s Attack stat instead of the user’s Attack stat."
     },
     {
-      "name": "Sand Attack",
-      "type": "Ground",
+      "name": "Scary Face",
+      "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
       "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
+      "range": "4, 1 Target, Social",
+      "effect": "The target’s Speed is lowered 2 Combat Stages."
     },
     {
-      "name": "Torment",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "Scene x2",
+      "name": "Dig",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "10, 1 Target, Social",
-      "effect": "The target becomes Suppressed."
+      "range": "Burst 1, Set-Up, Full Action, Groundsource",
+      "special": "Grants Burrow +3"
     },
     {
-      "name": "Assurance",
+      "name": "Crunch",
       "type": "Dark",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "When you hit with Assurance, if Assurance’s target has already been damaged by a Move on the same round Assurance is being used, Assurance has a Damage Base of 12 (3d12+10 / 30) instead. This effect may trigger only once per Scene per Target."
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Embargo",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target cannot use or benefit from held items for the remainder of the encounter. Embargo may only affect one target at a time; if Embargo is used on a new target, the previous target is freed from the effect."
     }
   ],
   "abilities": [
@@ -131,6 +129,11 @@
       "name": "Deep Sleep",
       "frequency": "Static",
       "effect": "When asleep, this Pokémon restores a Tick of Hit Points at the end of each turn."
+    },
+    {
+      "name": "Strong Jaw",
+      "frequency": "Static",
+      "effect": "The user has the Damage Base of the following Moves increased by +2; Bite, Bug Bite, Crunch, Fire Fang, Ice Fang, Thunder Fang, Poison Fang, and Hyper Fang."
     }
   ],
   "capabilities": {

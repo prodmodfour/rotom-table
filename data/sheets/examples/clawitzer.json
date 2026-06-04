@@ -2,7 +2,7 @@
   "slug": "examples-clawitzer",
   "nickname": "Clawitzer",
   "species": "Clawitzer",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Composed",
@@ -12,91 +12,80 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsSatk": 3,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Vice Grip",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Bubble",
+      "name": "Water Pulse",
       "type": "Water",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
     },
     {
-      "name": "Water Sport",
+      "name": "Crabhammer",
       "type": "Water",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "Crabhammer is a Critical Hit on 18+."
+    },
+    {
+      "name": "Swords Dance",
+      "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "range": "Burst 2, Coat",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
     },
     {
       "name": "Bubble Beam",
@@ -119,6 +108,17 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
+    },
+    {
+      "name": "Bubble",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
     }
   ],
   "abilities": [
@@ -131,6 +131,11 @@
       "name": "Swift Swim",
       "frequency": "Static",
       "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
+    },
+    {
+      "name": "Mega Launcher",
+      "frequency": "Static",
+      "effect": "The user increases the Damage Base of Aura Sphere, Dark Pulse, Dragon Pulse, and Water Pulse by +3."
     }
   ],
   "capabilities": {

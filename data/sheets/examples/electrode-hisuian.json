@@ -2,7 +2,7 @@
   "slug": "examples-electrode-hisuian",
   "nickname": "Electrode Hisuian",
   "species": "Electrode Hisuian",
-  "level": 20,
+  "level": 35,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Modest",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
@@ -32,31 +32,53 @@
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 14,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 81,
+    "currentHp": 81,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 4
+      "vsSatk": 3,
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Thunderbolt",
+      "type": "Electric",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunderbolt Paralyzes the target on 19+."
+    },
+    {
+      "name": "Energy Ball",
+      "type": "Grass",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "Energy Ball lowers the foe’s Special Defense 1 Combat Stage on 17+."
+    },
     {
       "name": "Spark",
       "type": "Electric",
@@ -69,6 +91,15 @@
       "effect": "Spark Paralyzes the target on 15+."
     },
     {
+      "name": "Thunder Wave",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
+    },
+    {
       "name": "Tackle",
       "type": "Normal",
       "category": "Physical",
@@ -78,21 +109,13 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Thunder Wave",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
     }
   ],
   "abilities": [
     {
       "name": "Static",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Paralyzed."
     },
     {

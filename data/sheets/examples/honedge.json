@@ -2,7 +2,7 @@
   "slug": "examples-honedge",
   "nickname": "Honedge",
   "species": "Honedge",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Gentle",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "satk": {
@@ -33,28 +33,28 @@
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 1,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 0
+      "vsAtk": 2,
+      "vsSatk": 1,
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -68,15 +68,23 @@
       "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
     },
     {
-      "name": "Pursuit",
-      "type": "Dark",
+      "name": "Fury Cutter",
+      "type": "Bug",
       "category": "Physical",
       "db": 4,
       "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
-      "ac": 2,
+      "ac": 3,
       "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
+    },
+    {
+      "name": "Swords Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
     },
     {
       "name": "Tackle",
@@ -88,33 +96,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Swords Dance",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "The user’s Attack is raised 2 Combat Stages."
-    },
-    {
-      "name": "Autotomize",
-      "type": "Steel",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "For the remainder of the Encounter, the user’s Weight Class is one value lower, to a minimum of 1. If the user can, the user’s Speed is raised by +2 Combat Stages."
-    },
-    {
-      "name": "Fury Cutter",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
     }
   ],
   "abilities": [
@@ -122,11 +103,6 @@
       "name": "No Guard",
       "frequency": "Static",
       "effect": "The user gains a +3 bonus to all Attack Rolls; however all foes gain a +3 Bonus on Attack Rolls against the user."
-    },
-    {
-      "name": "Hyper Cutter",
-      "frequency": "Static",
-      "effect": "The user’s Attack Stat may not be lowered, and its Attack Combat Stages may not be lowered. Defensive."
     }
   ],
   "natureMod": {

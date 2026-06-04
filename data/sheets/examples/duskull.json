@@ -2,7 +2,7 @@
   "slug": "examples-duskull",
   "nickname": "Duskull",
   "species": "Duskull",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Dreamy",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 2,
       "stage": 0
     },
     "def": {
@@ -27,7 +27,7 @@
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
@@ -37,14 +37,14 @@
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 42,
-    "currentHp": 42,
-    "tick": 4,
+    "maxHp": 26,
+    "currentHp": 26,
+    "tick": 2,
     "evasion": {
       "vsAtk": 3,
       "vsSatk": 3,
@@ -53,19 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
     {
       "name": "Astonish",
       "type": "Ghost",
@@ -76,17 +67,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
-    },
-    {
-      "name": "Shadow Sneak",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
     },
     {
       "name": "Disable",
@@ -106,24 +86,20 @@
       "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
     },
     {
-      "name": "Foresight",
+      "name": "Leer",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
-    },
-    {
-      "name": "Frisk",
-      "frequency": "Static",
-      "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-slowpoke-galar",
   "nickname": "Slowpoke Galar",
   "species": "Slowpoke Galar",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Quirky",
@@ -17,64 +17,53 @@
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 65,
+    "currentHp": 65,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Water Pulse",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "8, 1 Target, Aura",
-      "effect": "Water Pulse Confuses the target on 17+."
-    },
-    {
-      "name": "Curse",
-      "type": "Ghost",
+      "name": "Yawn",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "See Text",
-      "range": "Self",
-      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
     },
     {
       "name": "Acid",
@@ -97,23 +86,23 @@
       "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     },
     {
-      "name": "Yawn",
-      "type": "Normal",
+      "name": "Curse",
+      "type": "Ghost",
       "category": "Status",
-      "frequency": "Scene x2",
-      "range": "2, 1 Target, Social",
-      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
     }
   ],
   "abilities": [
@@ -121,11 +110,6 @@
       "name": "Gluttony",
       "frequency": "Static",
       "effect": "The user may have up to three Food Buffs at once, use up to three Food Buffs per Scene, and may eat two refreshments per half hour."
-    },
-    {
-      "name": "Own Tempo",
-      "frequency": "Static",
-      "effect": "The user is immune to Confusion. Defensive."
     }
   ],
   "capabilities": {

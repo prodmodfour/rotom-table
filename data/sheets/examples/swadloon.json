@@ -28,17 +28,17 @@
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
@@ -76,6 +76,7 @@
     {
       "name": "Full Guard",
       "frequency": "Scene - Swift Action",
+      "trigger": "You take Damage while having Temporary Hit",
       "effect": "You resist the triggering Damage one step further."
     }
   ],

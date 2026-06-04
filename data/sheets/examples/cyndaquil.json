@@ -2,7 +2,7 @@
   "slug": "examples-cyndaquil",
   "nickname": "Cyndaquil",
   "species": "Cyndaquil",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Gentle",
@@ -12,51 +12,63 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 9,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 48,
-    "currentHp": 48,
+    "maxHp": 41,
+    "currentHp": 41,
     "tick": 4,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 3,
+      "vsAtk": 0,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
+    },
     {
       "name": "Smokescreen",
       "type": "Normal",
@@ -75,28 +87,6 @@
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
       "name": "Tackle",
       "type": "Normal",
       "category": "Physical",
@@ -106,29 +96,14 @@
       "ac": 2,
       "range": "Melee, 1 Target, Dash, Push",
       "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Flame Wheel",
-      "type": "Fire",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Flame Wheel Burns the target on 19+."
     }
   ],
   "abilities": [
     {
       "name": "Flame Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The attacking foe becomes Burned."
-    },
-    {
-      "name": "Celebrate",
-      "frequency": "At-Will – Swift Action",
-      "effect": "The user may immediately Disengage as a Free Action."
     }
   ],
   "natureMod": {

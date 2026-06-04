@@ -2,7 +2,7 @@
   "slug": "examples-klefki",
   "nickname": "Klefki",
   "species": "Klefki",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Decisive",
@@ -13,78 +13,58 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 11,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Spikes",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "6, Hazard",
-      "effect": "Set 8 square meters of Spikes within your range, all 8 meters must be adjacent with at least one other space of Spikes. Spikes cause terrain to count as Slow Terrain, and a grounded foe that runs into the hazards will lose a Tick of Hit Points and become Slowed until the end of their next turn."
-    },
-    {
-      "name": "Fairy Wind",
+      "name": "Crafty Shield",
       "type": "Fairy",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Metal Sound",
-      "type": "Steel",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+      "frequency": "Scene",
+      "range": "Burst 2, Interrupt, Shield, Trigger",
+      "effect": "If the user or an Ally within 2 meters of Crafty Shield’s user is hit by a Status Move, you may use Crafty Shield as an Interrupt. All targets in Crafty Shield’s area- of-effect including the user, are instead not hit by the triggering Move and do not suffer any of its effects."
     },
     {
       "name": "Draining Kiss",
@@ -98,12 +78,21 @@
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
-      "name": "Fairy Lock",
-      "type": "Fairy",
+      "name": "Spikes",
+      "type": "Ground",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "Burst 3, Friendly",
-      "effect": "All legal targets become Trapped and Slowed while the user remains in the encounter. This effect ends if the user switches or is Fainted."
+      "frequency": "At-Will",
+      "range": "6, Hazard",
+      "effect": "Set 8 square meters of Spikes within your range, all 8 meters must be adjacent with at least one other space of Spikes. Spikes cause terrain to count as Slow Terrain, and a grounded foe that runs into the hazards will lose a Tick of Hit Points and become Slowed until the end of their next turn."
+    },
+    {
+      "name": "Metal Sound",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
     },
     {
       "name": "Astonish",
@@ -115,6 +104,17 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Fairy Wind",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "None"
     }
   ],
   "abilities": [
@@ -126,6 +126,7 @@
     {
       "name": "Magician",
       "frequency": "Scene – Free Action",
+      "trigger": "The user hits a foe with a damaging Single-",
       "effect": "The user takes the target’s Held Item. This Ability may not be triggered if the user is already holding a Held Item."
     }
   ],

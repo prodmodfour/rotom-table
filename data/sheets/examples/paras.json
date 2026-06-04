@@ -2,7 +2,7 @@
   "slug": "examples-paras",
   "nickname": "Paras",
   "species": "Paras",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Bold",
@@ -18,22 +18,22 @@
     },
     "atk": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "spd": {
@@ -43,18 +43,18 @@
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -68,6 +68,15 @@
       "effect": "The target is Paralyzed."
     },
     {
+      "name": "Poison Powder",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 6,
+      "range": "4, 1 Target, Powder",
+      "effect": "The target is Poisoned."
+    },
+    {
       "name": "Scratch",
       "type": "Normal",
       "category": "Physical",
@@ -77,37 +86,6 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "None"
-    },
-    {
-      "name": "Fury Cutter",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "If Fury Cutter is used successfully and consecutively on the same target, the Damage Base is increased by +4 to a maximum of 16. For example, the first hit would have a DB of 4; the second hit a DB of 8; the third hit a DB of 12; the fourth and further hits a DB of 16. If Fury Cuter misses or fails to damage its target, its Damage Base resets."
-    },
-    {
-      "name": "Leech Life",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Poison Powder",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target is Poisoned."
     }
   ],
   "abilities": [
@@ -115,11 +93,6 @@
       "name": "Tochukaso",
       "frequency": "Static",
       "effect": "The user resists Bug-Type and Poison-Type attacks one step further. Defensive."
-    },
-    {
-      "name": "Dire Spore",
-      "frequency": "Static",
-      "effect": "Connection - Spore. Whenever the user hits a target with Spore, that target is also Poisoned."
     }
   ],
   "natureMod": {

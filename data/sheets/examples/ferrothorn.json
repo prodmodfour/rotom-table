@@ -2,7 +2,7 @@
   "slug": "examples-ferrothorn",
   "nickname": "Ferrothorn",
   "species": "Ferrothorn",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Jolly",
@@ -13,27 +13,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 14,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 13,
       "stage": 0
     },
     "spd": {
@@ -43,73 +43,99 @@
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 3,
+      "vsAtk": 5,
+      "vsSatk": 5,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Curse",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "See Text",
-      "range": "Self",
-      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+      "name": "Power Whip",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "ac": 5,
+      "range": "8, 1 Target, Smite",
+      "effect": "None",
+      "special": "Grants Threaded"
     },
     {
-      "name": "Metal Claw",
+      "name": "Self-Destruct",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 20,
+      "damageRoll": "6d12+35 / 75",
+      "frequency": "Daily",
+      "ac": 2,
+      "range": "Burst 3",
+      "effect": "The user’s Hit Points are set to -50% of their full Hit Point value. This Hit Point loss may not be prevented or reduced in any way. The user’s loyalty toward its trainer may be lowered."
+    },
+    {
+      "name": "Ingrain",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Ingrain applies a Coat to the user, which has the following effect; the user cannot be pushed or pulled, and cannot be switched out.  At the beginning of each of the user’s turn, the user gains a Tick of Hit Points."
+    },
+    {
+      "name": "Mirror Shot",
+      "type": "Steel",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, Ranged Blast 2",
+      "effect": "All Legal Targets have their Accuracy lowered by -2 on 16+."
+    },
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
+    },
+    {
+      "name": "Gyro Ball",
       "type": "Steel",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Pin Missile",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Rollout",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Pass",
-      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target reveals their Speed Stat (including Combat Stages). If it is higher than the user’s (again, including Combat Stages), subtract the user’s Speed Stat from the target’s, and apply the difference as Bonus Damage."
     }
   ],
   "abilities": [
     {
       "name": "Iron Barbs",
       "frequency": "At-Will - Free Action, Reaction",
+      "trigger": "The user is hit by a damaging Melee Attack",
       "effect": "The attacker loses Hit Points equal to  Tick of Hit Points."
     },
     {
       "name": "Spike Shot",
       "frequency": "Static",
       "effect": "The user may use Moves with a Range of “Melee, 1-Target” as if they had a Range of “8, 1-Target” instead."
+    },
+    {
+      "name": "Analytic",
+      "frequency": "Static",
+      "effect": "Whenever the user targets uses a damaging Move on a Pokémon or Trainer that has acted before it during Initiative this Round, that Move deals an additional +5 Damage."
     }
   ],
   "natureMod": {

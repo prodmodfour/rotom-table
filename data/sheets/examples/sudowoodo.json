@@ -2,7 +2,7 @@
   "slug": "examples-sudowoodo",
   "nickname": "Sudowoodo",
   "species": "Sudowoodo",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Hasty",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
@@ -37,13 +37,13 @@
     },
     "spd": {
       "base": 1,
-      "added": 1,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
+    "maxHp": 74,
+    "currentHp": 74,
     "tick": 7,
     "evasion": {
       "vsAtk": 3,
@@ -53,31 +53,31 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Rock Throw",
+      "name": "Rock Tomb",
       "type": "Rock",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
-      "ac": 4,
+      "ac": 5,
       "range": "6, 1 Target",
-      "effect": "None"
+      "effect": "Rock Tomb lowers the target’s Speed by -1 Combat Stage.",
+      "special": "Grants Materializer"
     },
     {
-      "name": "Flail",
-      "type": "Normal",
+      "name": "Feint Attack",
+      "type": "Dark",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
       "frequency": "EOT",
-      "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
+      "effect": "Feint Attack cannot miss."
     },
     {
       "name": "Slam",
@@ -91,15 +91,6 @@
       "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
     },
     {
-      "name": "Low Kick",
-      "type": "Fighting",
-      "category": "Physical",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Weight Class",
-      "effect": "Low Kick’s Damage Base is equal to twice the target’s Weight Class."
-    },
-    {
       "name": "Mimic",
       "type": "Normal",
       "category": "Status",
@@ -108,14 +99,24 @@
       "effect": "Choose a Move that the target has used during the encounter. For the remainder of the encounter, that Move replaces Mimic on the user’s Move List. Mimic cannot miss."
     },
     {
-      "name": "Feint Attack",
-      "type": "Dark",
+      "name": "Rock Throw",
+      "type": "Rock",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
+    },
+    {
+      "name": "Low Kick",
+      "type": "Fighting",
+      "category": "Physical",
       "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
+      "ac": 2,
+      "range": "Melee, 1 Target, Weight Class",
+      "effect": "Low Kick’s Damage Base is equal to twice the target’s Weight Class."
     }
   ],
   "abilities": [

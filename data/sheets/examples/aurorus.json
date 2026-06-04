@@ -2,7 +2,7 @@
   "slug": "examples-aurorus",
   "nickname": "Aurorus",
   "species": "Aurorus",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Adamant",
@@ -13,51 +13,90 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 12,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 102,
-    "currentHp": 102,
-    "tick": 10,
+    "maxHp": 119,
+    "currentHp": 119,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Hail",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to Hail for 5 rounds. While it is Hailing, all non-Ice Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
+    },
+    {
+      "name": "Avalanche",
+      "type": "Ice",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "When declaring Avalanche, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Avalanche on any legal target. If the target damaged the user this round, Avalanche has a Damage Base of 12 (4d10+15 / 40) instead."
+    },
+    {
+      "name": "Round",
+      "type": "Normal",
+      "category": "Special",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Sonic",
+      "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
     {
       "name": "Aurora Beam",
       "type": "Ice",
@@ -67,49 +106,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Icy Wind",
-      "type": "Ice",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
-    },
-    {
-      "name": "Powder Snow",
-      "type": "Ice",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Rock Throw",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "None"
+      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+.",
+      "special": "Grants Freezer"
     },
     {
       "name": "Mist",
@@ -130,6 +128,11 @@
       "name": "Solid Rock",
       "frequency": "Static",
       "effect": "The user gains +5 Damage Reduction against Super- Effective damage. Defensive."
+    },
+    {
+      "name": "Snow Warning",
+      "frequency": "Scene – Free Action",
+      "effect": "The Weather changes to Hail for 5 rounds. As a static effect the user is not damaged by Hail."
     }
   ],
   "natureMod": {

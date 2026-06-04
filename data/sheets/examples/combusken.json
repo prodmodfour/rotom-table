@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "atk": {
@@ -23,29 +23,29 @@
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 60,
+    "currentHp": 60,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
@@ -59,6 +59,17 @@
   },
   "movelist": [
     {
+      "name": "Flame Charge",
+      "type": "Fire",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Raise the user’s Speed 1 Combat Stage."
+    },
+    {
       "name": "Double Kick",
       "type": "Fighting",
       "category": "Physical",
@@ -70,15 +81,15 @@
       "effect": "None"
     },
     {
-      "name": "Flame Charge",
-      "type": "Fire",
+      "name": "Peck",
+      "type": "Flying",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Raise the user’s Speed 1 Combat Stage."
+      "range": "Melee, 1 Target",
+      "effect": "None"
     },
     {
       "name": "Sand Attack",
@@ -98,18 +109,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
-      "name": "Peck",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     }
   ],
   "abilities": [
@@ -120,6 +121,7 @@
     },
     {
       "name": "Klutz",
+      "trigger": "The user hits with a Melee Attack",
       "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     }
   ],

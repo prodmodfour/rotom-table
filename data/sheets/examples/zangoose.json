@@ -2,7 +2,7 @@
   "slug": "examples-zangoose",
   "nickname": "Zangoose",
   "species": "Zangoose",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Hasty",
@@ -12,38 +12,38 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
+    "maxHp": 71,
+    "currentHp": 71,
     "tick": 7,
     "evasion": {
       "vsAtk": 1,
@@ -53,10 +53,21 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Revenge",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority (Limited)",
+      "effect": "When declaring Revenge, the user does nothing and may not Shift. At the end of the round, the user may shift and use Revenge. If the target has damaged the user this round, Revenge has a Damage Base of 12 (3d12+10 / 30)."
+    },
     {
       "name": "Slash",
       "type": "Normal",
@@ -67,6 +78,14 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Hone Claws",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
     },
     {
       "name": "Pursuit",
@@ -80,6 +99,14 @@
       "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     },
     {
+      "name": "Swords Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
+    },
+    {
       "name": "Quick Attack",
       "type": "Normal",
       "category": "Physical",
@@ -89,33 +116,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
-    },
-    {
-      "name": "Hone Claws",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Accuracy is raised by +1, and the user gains +1 Attack Combat Stage."
-    },
-    {
-      "name": "Swords Dance",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "The user’s Attack is raised 2 Combat Stages."
-    },
-    {
-      "name": "Scratch",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -127,6 +127,7 @@
     {
       "name": "Celebrate",
       "frequency": "At-Will – Swift Action",
+      "trigger": "The user hits a foe with a damaging attack",
       "effect": "The user may immediately Disengage as a Free Action."
     }
   ],

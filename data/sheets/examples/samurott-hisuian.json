@@ -2,7 +2,7 @@
   "slug": "examples-samurott-hisuian",
   "nickname": "Samurott Hisuian",
   "species": "Samurott Hisuian",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Docile",
@@ -13,58 +13,94 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 107,
+    "currentHp": 107,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Swords Dance",
-      "type": "Normal",
-      "category": "Status",
+      "name": "Dark Pulse",
+      "type": "Dark",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "EOT",
-      "range": "Self",
-      "effect": "The user’s Attack is raised 2 Combat Stages."
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Dark Pulse Flinches the target on 17+"
+    },
+    {
+      "name": "Aqua Tail",
+      "type": "Water",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, Pass",
+      "effect": "None"
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
+    {
+      "name": "Ceaseless Edge",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "The target is put in a Vortex. Ceaseless Edge is a Critical Hit on a 19+."
     },
     {
       "name": "Water Pulse",
@@ -78,15 +114,12 @@
       "effect": "Water Pulse Confuses the target on 17+."
     },
     {
-      "name": "Aqua Jet",
-      "type": "Water",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None"
+      "name": "Swords Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -99,6 +132,12 @@
       "name": "Torrent",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Water."
+    },
+    {
+      "name": "Parry",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
+      "effect": "The attack instead misses. Defensive."
     }
   ],
   "capabilities": {

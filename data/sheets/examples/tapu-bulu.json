@@ -2,7 +2,7 @@
   "slug": "examples-tapu-bulu",
   "nickname": "Tapu Bulu",
   "species": "Tapu Bulu",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Hardy",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
@@ -23,41 +23,69 @@
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 89,
+    "currentHp": 89,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 4,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Rototiller",
+      "type": "Ground",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 2",
+      "effect": "All Grass-type Pokémon in the area raise their Attack and Special Attack 1 Combat Stage."
+    },
+    {
+      "name": "Horn Leech",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Leech Seed",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+    },
     {
       "name": "Scary Face",
       "type": "Normal",
@@ -66,24 +94,6 @@
       "ac": 2,
       "range": "4, 1 Target, Social",
       "effect": "The target’s Speed is lowered 2 Combat Stages."
-    },
-    {
-      "name": "Leafage",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target"
-    },
-    {
-      "name": "Disable",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
     },
     {
       "name": "Giga Drain",
@@ -95,14 +105,6 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Withdraw",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
     },
     {
       "name": "Horn Attack",
@@ -126,6 +128,11 @@
       "name": "Shell Shield",
       "frequency": "Scene – Free Action",
       "effect": "Connection - Withdraw. The user may activate this Ability to use Withdraw as an Standard Action Interrupt and gain +10 Damage Reduction for 1 full round."
+    },
+    {
+      "name": "Abominable",
+      "frequency": "Static",
+      "effect": "The user’s Base HP is increased by +5. Additionally, the user ignores the Recoil Keyword when attacking."
     }
   ],
   "capabilities": {

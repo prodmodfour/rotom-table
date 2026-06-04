@@ -2,7 +2,7 @@
   "slug": "examples-starly",
   "nickname": "Starly",
   "species": "Starly",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Modest",
@@ -18,56 +18,56 @@
     },
     "atk": {
       "base": -1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tackle",
-      "type": "Normal",
+      "name": "Wing Attack",
+      "type": "Flying",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "Melee, 1 Target",
+      "effect": "None."
     },
     {
       "name": "Quick Attack",
@@ -81,13 +81,15 @@
       "effect": "None."
     },
     {
-      "name": "Endeavor",
+      "name": "Tackle",
       "type": "Normal",
       "category": "Physical",
-      "frequency": "Scene",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "The target loses a Tick of Hit Points for each Injury the user has."
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     },
     {
       "name": "Growl",
@@ -97,25 +99,6 @@
       "ac": 2,
       "range": "Burst 1, Friendly, Sonic, Social",
       "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Wing Attack",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None."
-    },
-    {
-      "name": "Double Team",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Illusion, Coat",
-      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
     }
   ],
   "abilities": [
@@ -123,11 +106,6 @@
       "name": "Keen Eye",
       "frequency": "Static",
       "effect": "The user’s Accuracy cannot be lowered, their attacks cannot have Accuracy Penalties (such as from Illuminate), the user is immune to the Blind condition (but not Total Blindness), and the user ignores any Evasion not directly derived from Stats (such as from the Instinct Ability, or from moves like Minimize)."
-    },
-    {
-      "name": "Big Pecks",
-      "frequency": "Static",
-      "effect": "The user cannot have its Defense Stat lowered. The user cannot have its Defense Combat Stages lowered. Defensive."
     }
   ],
   "natureMod": {

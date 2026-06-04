@@ -2,7 +2,7 @@
   "slug": "examples-articuno",
   "nickname": "Articuno",
   "species": "Articuno",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Quiet",
@@ -13,72 +13,96 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 12,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 9,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 114,
+    "currentHp": 114,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 4,
+      "vsAtk": 4,
+      "vsSatk": 5,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Gust",
-      "type": "Flying",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+      "name": "Reflect",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Reflect may activate it when receiving Physical Damage to resist the Damage one step. Reflect may be activated 2 times, and then disappears."
     },
     {
-      "name": "Powder Snow",
+      "name": "Ice Beam",
       "type": "Ice",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Line 4",
-      "effect": "Powder Snow Freezes all Legal Targets on 19+."
+      "range": "4, 1 Target",
+      "effect": "Ice Beam Freezes on 19+ during Accuracy Check."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Ancient Power",
+      "type": "Rock",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Mind Reader",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "6, 1 Target",
+      "effect": "The target becomes Read to the user until the end of the user’s next turn. The user may end this effect when making an Attack on the user, causing that attack to automatically hit; OR when the Read target uses an Attack against the user, causing that attack to automatically miss. If the user has the Telepathy Capability, the user automatically succeeds on a mind- reading attempt against the target, and may listen to the target’s surface thoughts as long as they remain Read. Mind Reader automatically misses against targets with the Mindlock Capability."
     },
     {
       "name": "Ice Shard",
@@ -90,14 +114,6 @@
       "ac": 2,
       "range": "4, 1 Target, Priority",
       "effect": "None"
-    },
-    {
-      "name": "Mist",
-      "type": "Ice",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
     }
   ],
   "abilities": [
@@ -110,6 +126,11 @@
       "name": "Pressure",
       "frequency": "Scene - Swift Action",
       "effect": "All foes within 3 meters are Suppressed for 1 full round."
+    },
+    {
+      "name": "Frostbite",
+      "frequency": "Static",
+      "effect": "The user’s damaging Ice-Type attacks cause the target to become Slowed on 18+, and the Effect Range for Freeze on these Moves is increased by +1. If the Move does not cause Freezing, it now causes Freezing on a roll of 20."
     }
   ],
   "natureMod": {

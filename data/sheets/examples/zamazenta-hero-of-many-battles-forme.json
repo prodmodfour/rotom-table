@@ -2,7 +2,7 @@
   "slug": "examples-zamazenta-hero-of-many-battles-forme",
   "nickname": "Zamazenta Hero Of Many Battles Forme",
   "species": "Zamazenta Hero Of Many Battles Forme",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Dreamy",
@@ -12,51 +12,89 @@
   "stats": {
     "hp": {
       "base": 8,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 13,
-      "added": 5,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 12,
-      "added": 2,
+      "added": 12,
       "stage": 0
     },
     "satk": {
       "base": 8,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
-      "base": 13,
-      "added": 8,
+      "base": 14,
+      "added": 15,
       "stage": 0
     },
     "spd": {
       "base": 14,
-      "added": 5,
+      "added": 14,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 118,
+    "currentHp": 118,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
-      "vsAny": 3
+      "vsAtk": 4,
+      "vsSatk": 5,
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Laser Focus",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "The next successful damaging attack made by the user is automatically a Critical Hit."
+    },
+    {
+      "name": "Iron Head",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Iron Head Flinches the target on 15+."
+    },
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
+    },
     {
       "name": "Slash",
       "type": "Normal",
@@ -67,36 +105,6 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "Slash is a Critical Hit on 18+."
-    },
-    {
-      "name": "Quick Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
-    },
-    {
-      "name": "Metal Claw",
-      "type": "Steel",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Spirit Surge",
-      "effect": "Raise the user’s Attack 1 Combat Stage on 18+."
-    },
-    {
-      "name": "Howl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
     },
     {
       "name": "Bite",
@@ -117,7 +125,15 @@
       "effect": "The user’s default Defense Combat Stages are increased by +1."
     },
     {
-      "name": "Stamina"
+      "name": "Stamina",
+      "frequency": "At-Will – Free Action",
+      "trigger": "The user is hit by a Damaging Attack",
+      "effect": "The user receives +1 Defense Combat Stage. Defensive."
+    },
+    {
+      "name": "Bulletproof",
+      "frequency": "Static",
+      "effect": "The user resists all X target ranged attacks one step further. This refers to attacks and Moves that simply hit one target or specify hitting multiple targets, such as Razor Wind hitting three targets. It has no effect on Moves that are capable of hitting multiple targets through areas of effect, such as Bursts or Cones. Defensive."
     }
   ],
   "natureMod": {

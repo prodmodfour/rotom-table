@@ -2,7 +2,7 @@
   "slug": "examples-kubfu",
   "nickname": "Kubfu",
   "species": "Kubfu",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "def": {
@@ -27,36 +27,44 @@
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 47,
+    "currentHp": 47,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Focus Energy",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+    },
     {
       "name": "Endure",
       "type": "Normal",
@@ -64,26 +72,6 @@
       "frequency": "Daily",
       "range": "Self, Reaction, Trigger",
       "effect": "If the user is hit by a damaging Move, you may use Endure as a Free Action. If the Move would bring Endure’s user down to 0 Hit Points or less, Endure’s user instead is set to 1 Hit Point."
-    },
-    {
-      "name": "Scary Face",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
-    },
-    {
-      "name": "Rock Smash",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
     },
     {
       "name": "Leer",
@@ -95,23 +83,15 @@
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     },
     {
-      "name": "Headbutt",
-      "type": "Normal",
+      "name": "Rock Smash",
+      "type": "Fighting",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Focus Energy",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
     }
   ],
   "abilities": [
@@ -119,11 +99,6 @@
       "name": "Inner Focus",
       "frequency": "Static",
       "effect": "The user cannot be Flinched, and their Initiative cannot be unwillingly lowered by any effects."
-    },
-    {
-      "name": "Aura Storm",
-      "frequency": "Static",
-      "effect": "For each injury the user has, they gain a +3 Bonus to Damage Rolls."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-pumpkaboo",
   "nickname": "Pumpkaboo",
   "species": "Pumpkaboo",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Timid",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "satk": {
@@ -33,48 +33,39 @@
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Trick",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "5, 2 Targets",
-      "effect": "Both targets must be hit for Trick to succeed. The user may target itself or willing allies with Trick; you do not need to roll for Accuracy Check in these cases. Both targets lose their Held Item or Accessory Slot Item, and gain the other target’s Held Item or Accessory Slot Item. If a target has no Item, it still can gain the other target’s Item."
-    },
-    {
-      "name": "Confuse Ray",
+      "name": "Trick-or-Treat",
       "type": "Ghost",
       "category": "Status",
-      "frequency": "Scene x2",
+      "frequency": "Daily",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "The target is Confused."
+      "effect": "The target gains the Ghost Type in addition to its other Types for 5 turns."
     },
     {
       "name": "Scary Face",
@@ -86,33 +77,33 @@
       "effect": "The target’s Speed is lowered 2 Combat Stages."
     },
     {
-      "name": "Trick-or-Treat",
+      "name": "Confuse Ray",
       "type": "Ghost",
       "category": "Status",
-      "frequency": "Daily",
+      "frequency": "Scene x2",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "The target gains the Ghost Type in addition to its other Types for 5 turns."
+      "effect": "The target is Confused."
     },
     {
-      "name": "Leech Seed",
-      "type": "Grass",
+      "name": "Trick",
+      "type": "Psychic",
       "category": "Status",
-      "frequency": "Daily x2",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "5, 2 Targets",
+      "effect": "Both targets must be hit for Trick to succeed. The user may target itself or willing allies with Trick; you do not need to roll for Accuracy Check in these cases. Both targets lose their Held Item or Accessory Slot Item, and gain the other target’s Held Item or Accessory Slot Item. If a target has no Item, it still can gain the other target’s Item."
     },
     {
-      "name": "Razor Leaf",
-      "type": "Grass",
+      "name": "Astonish",
+      "type": "Ghost",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 5,
+      "damageRoll": "1d8+8",
       "frequency": "At-Will",
-      "ac": 4,
-      "range": "Cone 2",
-      "effect": "Razor Leaf is a Critical Hit on 18+."
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
     }
   ],
   "abilities": [
@@ -120,11 +111,6 @@
       "name": "Frisk",
       "frequency": "Static",
       "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
-    },
-    {
-      "name": "Pickup",
-      "frequency": "Daily – Extended Action",
-      "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
     }
   ],
   "natureMod": {

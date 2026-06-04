@@ -2,7 +2,7 @@
   "slug": "examples-zygarde-complete-forme",
   "nickname": "Zygarde Complete Forme",
   "species": "Zygarde Complete Forme",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Dreamy",
@@ -13,107 +13,110 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 7,
+      "added": 20,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 12,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 4,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 114,
-    "currentHp": 114,
-    "tick": 11,
+    "maxHp": 193,
+    "currentHp": 193,
+    "tick": 19,
     "evasion": {
       "vsAtk": 4,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsSatk": 4,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Glare",
+      "name": "Camouflage",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Glare Paralyzes the target."
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user changes their Type to match the field. Forests and grassy areas change the user into Grass- Type. Watery areas change the user into Water-Type. Caves and Mountains could change the user into Rock- Type or Ground-Type. An icy terrain would turn the user into Ice-Type. A building may change the user into Steel-Type or Normal-Type. Weather affects what Type the user becomes. Use common sense, if you are having difficult determining what type the user should become, consult the GM.",
+      "special": "Grants Blender"
     },
     {
-      "name": "Bite",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Bite Flinches the target on 15+."
-    },
-    {
-      "name": "Bulldoze",
+      "name": "Earthquake",
       "type": "Ground",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
-    },
-    {
-      "name": "Safeguard",
-      "type": "Normal",
-      "category": "Status",
+      "db": 12,
+      "damageRoll": "3d12+10",
       "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+      "ac": 2,
+      "range": "Burst 3, Groundsource",
+      "effect": "Earthquake can hit targets that are underground, including those using the Move Dig.",
+      "special": "Grants Groundshaper"
     },
     {
-      "name": "Bind",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
-    },
-    {
-      "name": "Dragon Breath",
-      "type": "Dragon",
-      "category": "Special",
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
       "db": 8,
-      "damageRoll": "2d8+10",
+      "damageRoll": "2d8+10 / 19",
       "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Dragon Breath Paralyzes the Target on 15+."
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Haze",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Field",
+      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
+    },
+    {
+      "name": "Sandstorm",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather changes to a Sandstorm for 5 rounds. While it is Sandstorming, all non-Ground, Rock, or Steel Type Pokémon lose a Tick of Hit Points at the beginning of their turn."
+    },
+    {
+      "name": "Land’s Wrath",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Burst 5, Friendly, Groundsource",
+      "effect": "None.",
+      "special": "Grants Groundshaper"
     }
   ],
   "abilities": [
@@ -126,6 +129,11 @@
       "name": "Air Lock",
       "frequency": "Scene – Free Action",
       "effect": "The weather is set to normal as long as the Pokémon with Air Lock wants it to remain that way. The user may continue to sustain this effect as a Swift Action each round."
+    },
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
     }
   ],
   "natureMod": {

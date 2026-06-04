@@ -2,7 +2,7 @@
   "slug": "examples-xatu",
   "nickname": "Xatu",
   "species": "Xatu",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Timid",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "atk": {
@@ -23,12 +23,12 @@
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
@@ -38,26 +38,54 @@
     },
     "spd": {
       "base": 1,
-      "added": 6,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 79,
+    "currentHp": 79,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Wish",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "15, 1 Target",
+      "effect": "At the end of the user’s next turn, the target regains Hit Points equal to half of its full Hit Point value. If the user targets themselves and are replaced in battle, the replacement is healed."
+    },
+    {
+      "name": "Air Slash",
+      "type": "Flying",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target",
+      "effect": "Air Slash Flinches the target on 15+."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
+    },
     {
       "name": "Ominous Wind",
       "type": "Ghost",
@@ -70,31 +98,6 @@
       "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     },
     {
-      "name": "Lucky Chant",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
-    },
-    {
-      "name": "Night Shade",
-      "type": "Ghost",
-      "category": "Special",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
-    },
-    {
-      "name": "Teleport",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt",
-      "effect": "The user Teleports up to X meters, where X is its Teleporter Capability. Teleport can be used as an Interrupt at any time. Moves that targeted Teleport’s user continue through the desired target’s space if the Move allows for it as if the user hadn’t been there; single target moves simply miss."
-    },
-    {
       "name": "Stored Power",
       "type": "Psychic",
       "category": "Special",
@@ -104,6 +107,14 @@
       "ac": 2,
       "range": "10, 1 Target",
       "effect": "For every Combat Stage the user has above 0, add +2 to Stored Power’s Damage Base, up to a maximum of Damage Base 20."
+    },
+    {
+      "name": "Lucky Chant",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
     }
   ],
   "abilities": [
@@ -115,6 +126,7 @@
     {
       "name": "Synchronize",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is Paralyzed, Frozen, Burned,",
       "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
     }
   ],

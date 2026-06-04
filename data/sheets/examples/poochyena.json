@@ -2,7 +2,7 @@
   "slug": "examples-poochyena",
   "nickname": "Poochyena",
   "species": "Poochyena",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Decisive",
@@ -12,39 +12,39 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 47,
+    "currentHp": 47,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 0,
@@ -53,30 +53,10 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Roar",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 1, Sonic, Social",
-      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
-    },
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
     {
       "name": "Bite",
       "type": "Dark",
@@ -89,14 +69,6 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Howl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
-    },
-    {
       "name": "Sand Attack",
       "type": "Ground",
       "category": "Status",
@@ -106,13 +78,23 @@
       "effect": "The target is Blinded until the end of their next turn."
     },
     {
-      "name": "Swagger",
+      "name": "Howl",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "ac": 5,
-      "range": "6, 1 Target, Social",
-      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+      "range": "Burst 1",
+      "effect": "The user and all allies in the Burst have their Attack CS raised by 1."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [
@@ -120,11 +102,6 @@
       "name": "Run Away",
       "frequency": "Static",
       "effect": "The user does not provoke Attacks of Opportunity by Shifting.  The user cannot be Trapped."
-    },
-    {
-      "name": "Quick Feet",
-      "frequency": "Static",
-      "effect": "When Poisoned, Burned, Paralyzed, Frozen or put to Sleep, the user’s Speed is raised 2 Combat Stages. The user’s Initiative is not halved by Paralysis. If the user is healed all Status Conditions, their Speed is lowered appropriately."
     }
   ],
   "natureMod": {

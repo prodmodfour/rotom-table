@@ -2,7 +2,7 @@
   "slug": "examples-wailord",
   "nickname": "Wailord",
   "species": "Wailord",
-  "level": 20,
+  "level": 45,
   "gender": "Female",
   "shiny": false,
   "nature": "Patient",
@@ -12,114 +12,107 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 8,
+      "added": 20,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 1,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 108,
-    "currentHp": 108,
-    "tick": 10,
+    "maxHp": 169,
+    "currentHp": 169,
+    "tick": 16,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Rollout",
-      "type": "Rock",
+      "name": "Dive",
+      "type": "Water",
       "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Pass",
-      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
-    },
-    {
-      "name": "Water Gun",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Astonish",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
-    },
-    {
-      "name": "Water Pulse",
-      "type": "Water",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "8, 1 Target, Aura",
-      "effect": "Water Pulse Confuses the target on 17+."
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Whirlpool",
-      "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Burst 1, Set-Up, Full Action",
+      "special": "Swim +3"
+    },
+    {
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Water Spout",
+      "type": "Water",
+      "category": "Special",
+      "db": 17,
+      "damageRoll": "5d12+25",
+      "frequency": "Daily",
       "ac": 4,
-      "range": "3, 1 Target",
-      "effect": "The target is put in a Vortex."
+      "range": "Burst 1*",
+      "effect": "For each 10% of HP the user is missing, Water Spout’s Damage Base is reduced by 1. Water Spout creates a 1 meter burst, but also affects an area 10 meters tall straight up."
+    },
+    {
+      "name": "Rest",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
+    },
+    {
+      "name": "Brine",
+      "type": "Water",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "If the target’s Hit Points are under 50%, Brine’s Damage Base is increased to Damage Base 13 (4d10+10 / 35)."
+    },
+    {
+      "name": "Mist",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
     }
   ],
   "abilities": [
@@ -132,6 +125,11 @@
       "name": "Water Veil",
       "frequency": "Static",
       "effect": "The user is immune to Burns. Defensive."
+    },
+    {
+      "name": "Pressure",
+      "frequency": "Scene - Swift Action",
+      "effect": "All foes within 3 meters are Suppressed for 1 full round."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-lumineon",
   "nickname": "Lumineon",
   "species": "Lumineon",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Adamant",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 11,
+      "added": 8,
       "stage": 0
     },
     "spd": {
@@ -42,48 +42,56 @@
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 87,
+    "currentHp": 87,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
+      "vsAtk": 3,
+      "vsSatk": 3,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Attract",
+      "name": "Aqua Ring",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
+    },
+    {
+      "name": "Safeguard",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "3, 1 Target, Social",
-      "effect": "Attract Infatuates the target if its gender is the opposite of the user’s. Attract fails when used by or against Genderless targets."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
     },
     {
-      "name": "Water Gun",
+      "name": "Captivate",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "Captivate lowers the target’s Special Attack 2 Combat Stages. Captivate may not affect something that is the same gender as the user or something that is genderless."
+    },
+    {
+      "name": "Water Pulse",
       "type": "Water",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Rain Dance",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Field, Weather",
-      "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
     },
     {
       "name": "Gust",
@@ -94,7 +102,16 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead.",
+      "special": "Grants Guster"
+    },
+    {
+      "name": "Rain Dance",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
     }
   ],
   "abilities": [
@@ -106,6 +123,7 @@
     {
       "name": "Cute Charm",
       "frequency": "Scene – Free Action",
+      "trigger": "A foe of the opposite gender attacks the user",
       "effect": "The foe becomes Infatuated."
     }
   ],

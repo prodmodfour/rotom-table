@@ -2,7 +2,7 @@
   "slug": "examples-lucario",
   "nickname": "Lucario",
   "species": "Lucario",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Adamant",
@@ -18,7 +18,7 @@
     },
     "atk": {
       "base": 1,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "def": {
@@ -28,36 +28,45 @@
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Metal Sound",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Special Defense lowered 2 Combat Stages."
+    },
     {
       "name": "Me First",
       "type": "Normal",
@@ -65,6 +74,17 @@
       "frequency": "Scene",
       "range": "Self, Trigger, Interrupt",
       "effect": "If an opponent declares a Damaging Attack against the user, and Me First’s user has a higher Speed stat then the target, the user may use Me First as an Interrupt. The User will then use the same Move the triggering foe was about to use on that foe."
+    },
+    {
+      "name": "Force Palm",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Aura",
+      "effect": "Force Palm Paralyzes the target on 18+."
     },
     {
       "name": "Feint",
@@ -81,17 +101,6 @@
       "frequency": "Scene x2",
       "range": "Melee, 1 Target, Reaction, Trigger",
       "effect": "Counter may be used as a Reaction when the user is hit by a damaging Physical Attack. Resolve the Triggering Attack, with Counter’s user resisting the attack one step further. After the attack is resolved, if Counter’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Counter is Physical, and while it cannot miss, it cannot hit targets immune to Fighting-Type Moves."
-    },
-    {
-      "name": "Force Palm",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Aura",
-      "effect": "Force Palm Paralyzes the target on 18+."
     }
   ],
   "abilities": [
@@ -103,6 +112,7 @@
     {
       "name": "Steadfast",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user would be Flinched",
       "effect": "The user’s Speed is raised by +1 Combat Stage."
     }
   ],

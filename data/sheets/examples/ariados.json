@@ -2,7 +2,7 @@
   "slug": "examples-ariados",
   "nickname": "Ariados",
   "species": "Ariados",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Proud",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
@@ -33,19 +33,19 @@
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 80,
+    "currentHp": 80,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -54,20 +54,20 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Constrict",
+      "name": "Fury Swipes",
       "type": "Normal",
       "category": "Physical",
-      "db": 1,
-      "damageRoll": "1d6+1 / 4",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
     },
     {
       "name": "Shadow Sneak",
@@ -99,6 +99,17 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "After the target takes damage, the user gains HP equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Constrict",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 1,
+      "damageRoll": "1d6+1 / 4",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way."
     },
     {
       "name": "Scary Face",

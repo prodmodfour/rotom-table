@@ -17,7 +17,7 @@
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 6,
       "stage": 0
     },
     "def": {
@@ -27,17 +27,17 @@
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
@@ -47,7 +47,7 @@
     "tick": 6,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 1,
+      "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
@@ -58,14 +58,13 @@
   },
   "movelist": [
     {
-      "name": "Branch Poke",
-      "type": "Grass",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "2, 1 Target"
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
     },
     {
       "name": "Razor Leaf",
@@ -88,13 +87,14 @@
       "effect": "The target becomes Enraged."
     },
     {
-      "name": "Screech",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "Burst 2, Friendly, Sonic",
-      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
+      "name": "Branch Poke",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "2, 1 Target"
     }
   ],
   "abilities": [
@@ -106,6 +106,7 @@
     {
       "name": "Drown Out",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "A foe uses a Move with the Sonic keyword",
       "effect": "The triggering Move fails and has no effect."
     }
   ],

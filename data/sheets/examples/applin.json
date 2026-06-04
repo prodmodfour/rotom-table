@@ -2,7 +2,7 @@
   "slug": "examples-applin",
   "nickname": "Applin",
   "species": "Applin",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Jolly",
@@ -13,59 +13,51 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Withdraw",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
-    },
     {
       "name": "Astonish",
       "type": "Ghost",
@@ -76,6 +68,14 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Withdraw",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "The user’s Defense is raised 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -83,11 +83,6 @@
       "name": "Gluttony",
       "frequency": "Static",
       "effect": "The user may have up to three Food Buffs at once, use up to three Food Buffs per Scene, and may eat two refreshments per half hour."
-    },
-    {
-      "name": "Immunity",
-      "frequency": "Static",
-      "effect": "The user cannot be Poisoned or Badly Poisoned. Defensive."
     }
   ],
   "natureMod": {

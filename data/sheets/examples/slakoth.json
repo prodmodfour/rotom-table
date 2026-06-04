@@ -2,7 +2,7 @@
   "slug": "examples-slakoth",
   "nickname": "Slakoth",
   "species": "Slakoth",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Sassy",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "satk": {
@@ -32,28 +32,28 @@
     },
     "sdef": {
       "base": 1,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 4,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -66,17 +66,6 @@
       "effect": "The user regains Hit Points equal to half of its full Hit Points."
     },
     {
-      "name": "Scratch",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "None"
-    },
-    {
       "name": "Encore",
       "type": "Normal",
       "category": "Status",
@@ -86,30 +75,23 @@
       "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
     },
     {
-      "name": "Amnesia",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Special Defense 2 Combat Stages."
-    },
-    {
-      "name": "Feint Attack",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
-    },
-    {
       "name": "Yawn",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene x2",
       "range": "2, 1 Target, Social",
       "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
+    },
+    {
+      "name": "Scratch",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "None"
     }
   ],
   "abilities": [
@@ -117,11 +99,6 @@
       "name": "Truant",
       "frequency": "Static",
       "effect": "At the beginning of each of its turns, the user must roll 1d20. On a roll of 7 or lower, the target refuses to act; they heal a Tick of Hit Points, and do not get a Standard Action that turn. Turns in which the user refuses to act count towards turns used up by Interrupts or the Exhausted Condition, and the user may make Rolls to cure themselves from Status Effects with a +3 Bonus that turn."
-    },
-    {
-      "name": "Own Tempo",
-      "frequency": "Static",
-      "effect": "The user is immune to Confusion. Defensive."
     }
   ],
   "natureMod": {

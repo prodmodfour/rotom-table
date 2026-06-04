@@ -2,7 +2,7 @@
   "slug": "examples-murkrow",
   "nickname": "Murkrow",
   "species": "Murkrow",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Careful",
@@ -18,64 +18,56 @@
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 1,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 47,
+    "currentHp": 47,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 3
+      "vsSatk": 1,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Haze",
-      "type": "Ice",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Field",
-      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
-    },
-    {
-      "name": "Astonish",
-      "type": "Ghost",
+      "name": "Pursuit",
+      "type": "Dark",
       "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
     },
     {
       "name": "Peck",
@@ -89,26 +81,15 @@
       "effect": "None"
     },
     {
-      "name": "Wing Attack",
-      "type": "Flying",
+      "name": "Astonish",
+      "type": "Ghost",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "None."
-    },
-    {
-      "name": "Pursuit",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the foe is fleeing or being switched out, Pursuit may be used as an Interrupt, targeting the triggering foe. When used as an Interrupt, Pursuit grants the user a +5 bonus to all Movement Speeds, and has a Damage Base of 8 (2d8+10 / 19)."
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
     }
   ],
   "abilities": [
@@ -116,11 +97,6 @@
       "name": "Insomnia",
       "frequency": "Static",
       "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
-    },
-    {
-      "name": "Omen",
-      "frequency": "Scene – Swift Action",
-      "effect": "Choose a Pokémon or Trainer within 5 meters. The target’s Accuracy is lowered by 2."
     }
   ],
   "natureMod": {

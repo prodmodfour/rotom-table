@@ -2,7 +2,7 @@
   "slug": "examples-wyrdeer",
   "nickname": "Wyrdeer",
   "species": "Wyrdeer",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Mild",
@@ -13,51 +13,81 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 10,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 94,
+    "currentHp": 94,
+    "tick": 9,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Extrasensory",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "5, 1 Target",
+      "effect": "Extrasensory Flinches the target on 19+."
+    },
+    {
+      "name": "Psyshield Bash",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, 1 Target",
+      "effect": "The user gains +5 DR for one full round."
+    },
+    {
+      "name": "Calm Mind",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage."
+    },
     {
       "name": "Hypnosis",
       "type": "Psychic",
@@ -77,14 +107,6 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Calm Mind",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Special Attack 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage."
     }
   ],
   "abilities": [

@@ -2,7 +2,7 @@
   "slug": "examples-malamar",
   "nickname": "Malamar",
   "species": "Malamar",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Naughty",
@@ -13,101 +13,100 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 96,
+    "currentHp": 96,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Topsy-Turvy",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "The target’s Combat Stages are inverted; +1 Stage becomes -1 Stage, -3 Stages becomes +3 Stages, etc."
-    },
-    {
-      "name": "Foul Play",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 12,
-      "damageRoll": "3d12+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "The target reveals its Attack stat. When calculating damage, add the target’s Attack stat instead of the user’s Attack stat."
-    },
-    {
-      "name": "Peck",
+      "name": "Pluck",
       "type": "Flying",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "None"
+      "effect": "Pluck takes the target’s Held Item or Accessory Slot Item and attaches it to Pluck’s user, if the user is not holding anything."
     },
     {
-      "name": "Tackle",
-      "type": "Normal",
+      "name": "Light Screen",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Light Screen may activate it when receiving Special Damage to resist the Damage one step. Light Screen may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Payback",
+      "type": "Dark",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "If the target hit the user with a Damaging Move on the previous turn, Payback has a Damage Base of 10 (3d8+10 / 24) instead."
+    },
+    {
+      "name": "Switcheroo",
+      "type": "Dark",
+      "category": "Status",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "Melee, 1 Target",
+      "effect": "The user and the target exchange Held Items or Accessory Slot Items."
     },
     {
-      "name": "Swagger",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 5,
-      "range": "6, 1 Target, Social",
-      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
     },
     {
       "name": "Hypnosis",

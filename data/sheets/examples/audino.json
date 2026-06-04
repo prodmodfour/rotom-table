@@ -2,7 +2,7 @@
   "slug": "examples-audino",
   "nickname": "Audino",
   "species": "Audino",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -12,68 +12,70 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 13,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 99,
-    "currentHp": 99,
-    "tick": 9,
+    "maxHp": 89,
+    "currentHp": 89,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Refresh",
+      "name": "Secret Power",
+      "type": "Normal",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target, Environ",
+      "effect": "Secret Power’s effect depends on Environ. Secret Power’s effect activates on 17+."
+    },
+    {
+      "name": "Attract",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene x2",
-      "range": "Self",
-      "effect": "The user is cured of all Poison, Burns, and Paralysis."
-    },
-    {
-      "name": "Disarming Voice",
-      "type": "Fairy",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "range": "Burst 1",
-      "effect": "Disarming Voice cannot miss."
+      "ac": 2,
+      "range": "3, 1 Target, Social",
+      "effect": "Attract Infatuates the target if its gender is the opposite of the user’s. Attract fails when used by or against Genderless targets."
     },
     {
       "name": "Double Slap",
@@ -87,33 +89,31 @@
       "effect": "None"
     },
     {
-      "name": "Play Nice",
-      "type": "Normal",
-      "category": "Status",
+      "name": "Disarming Voice",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
+      "range": "Burst 1",
+      "effect": "Disarming Voice cannot miss."
     },
     {
-      "name": "Growl",
+      "name": "Refresh",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "The user is cured of all Poison, Burns, and Paralysis."
     },
     {
-      "name": "Pound",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "name": "Baby-Doll Eyes",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
+      "range": "4, 1 Target, Priority, Social",
+      "effect": "The target’s Attack is lowered 1 Combat Stage."
     }
   ],
   "abilities": [

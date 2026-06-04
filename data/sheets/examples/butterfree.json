@@ -2,7 +2,7 @@
   "slug": "examples-butterfree",
   "nickname": "Butterfree",
   "species": "Butterfree",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Adamant",
@@ -13,108 +13,105 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 89,
+    "currentHp": 89,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Gust",
-      "type": "Flying",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
-    },
-    {
-      "name": "Supersonic",
+      "name": "Captivate",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "Captivate lowers the target’s Special Attack 2 Combat Stages. Captivate may not affect something that is the same gender as the user or something that is genderless."
     },
     {
-      "name": "Sleep Powder",
-      "type": "Grass",
+      "name": "Safeguard",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Rage Powder",
+      "type": "Bug",
       "category": "Status",
       "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target falls asleep."
+      "range": "Burst 1 or Line 6, Powder",
+      "effect": "All targets hit by Rage Powder are Enraged. While enraged, they must shift to target the user when using a Move or Attack if the user is within reach.  If the user is Fainted or Switched out, all targets hit by Rage Powder are cured of rage."
     },
     {
-      "name": "Poison Powder",
-      "type": "Poison",
+      "name": "Tailwind",
+      "type": "Flying",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 6,
-      "range": "4, 1 Target, Powder",
-      "effect": "The target is Poisoned."
+      "frequency": "Scene",
+      "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack.",
+      "special": "Grants Guster"
     },
     {
-      "name": "Stun Spore",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Powder",
-      "effect": "The target is Paralyzed."
+      "name": "Silver Wind",
+      "type": "Bug",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
     },
     {
-      "name": "Confusion",
+      "name": "Psybeam",
       "type": "Psychic",
       "category": "Special",
-      "db": 5,
-      "damageRoll": "1d8+8 / 13",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
       "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "effect": "Psybeam Confuses the target on 19+."
     }
   ],
   "abilities": [
@@ -127,6 +124,11 @@
       "name": "Flutter",
       "frequency": "At-Will – Shift Action",
       "effect": "The user gains +3 Evasion until the end of their next turn, and cannot be Flanked."
+    },
+    {
+      "name": "Blow Away",
+      "frequency": "Static",
+      "effect": "Connection - Whirlwind. When the user uses Whirlwind, all targets hit are pushed an additional 2 meters and lose a Tick of Hit Points."
     }
   ],
   "natureMod": {

@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 1,
+      "added": 2,
       "stage": 0
     },
     "satk": {
@@ -32,7 +32,7 @@
     },
     "sdef": {
       "base": 1,
-      "added": 8,
+      "added": 7,
       "stage": 0
     },
     "spd": {
@@ -42,11 +42,11 @@
     }
   },
   "combat": {
-    "maxHp": 45,
-    "currentHp": 45,
-    "tick": 4,
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 0,
+      "vsAtk": 1,
       "vsSatk": 3,
       "vsAny": 3
     },
@@ -58,6 +58,14 @@
   },
   "movelist": [
     {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+    },
+    {
       "name": "Confusion",
       "type": "Psychic",
       "category": "Special",
@@ -67,14 +75,6 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Disable",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
     }
   ],
   "abilities": [
@@ -86,6 +86,7 @@
     {
       "name": "Synchronize",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is Paralyzed, Frozen, Burned,",
       "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
     }
   ],

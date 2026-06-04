@@ -2,7 +2,7 @@
   "slug": "examples-mr-rime",
   "nickname": "Mr. Rime",
   "species": "Mr. Rime",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Naive",
@@ -13,69 +13,100 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 4,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Confusion",
+      "name": "Sucker Punch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Interrupt, Trigger",
+      "effect": "If an adjacent foe targets the user with a Damaging Attack, Sucker Punch may be used as an Interrupt Move against the triggering foe."
+    },
+    {
+      "name": "Mirror Coat",
       "type": "Psychic",
       "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
+      "frequency": "Scene x2",
+      "range": "Any, 1 Target, Reaction",
+      "effect": "Mirror Coat may be used as a Reaction when the user is hit by a damaging Special Attack. Resolve the Triggering Attack, with Mirror Coat’s user resisting the attack one step further. After the attack is resolved, if Mirror Coat’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Mirror Coat is Special, and while it cannot miss, it cannot hit targets immune to Psychic-Type Moves."
+    },
+    {
+      "name": "Hypnosis",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target",
+      "effect": "The target falls Asleep."
+    },
+    {
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "At-Will",
       "ac": 2,
       "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "effect": "Psybeam Confuses the target on 19+."
     },
     {
-      "name": "Baton Pass",
-      "type": "Normal",
-      "category": "Status",
+      "name": "Double Kick",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
       "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user is replaced with another Pokémon from their trainer’s roster. All Combat Stage, Coats, and [Stratagems] on Baton Pass’ user are transferred to the replacement. Baton Pass may be used to switch even if the user is Trapped."
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "None"
     },
     {
       "name": "Icy Wind",
@@ -87,25 +118,6 @@
       "ac": 3,
       "range": "Cone 2",
       "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
-    },
-    {
-      "name": "Ally Switch",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "6, 1 Target, Interrupt",
-      "effect": "Ally Switch may be declared during a foe’s turn as an Interrupt. The user chooses one willing ally within 6 meters; the target and the user switch places. If the ally was a target of a Move, the user is now the target; If the user was a target of a Move, the ally is now the target."
-    },
-    {
-      "name": "Ice Shard",
-      "type": "Ice",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target, Priority",
-      "effect": "None"
     }
   ],
   "abilities": [
@@ -118,6 +130,12 @@
       "name": "Vital Spirit",
       "frequency": "Static",
       "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
+    },
+    {
+      "name": "Screen Cleaner",
+      "frequency": "Daily – Standard Action",
+      "effect": "All Blessings on the field, both ally and enemy, are removed.",
+      "bonus": "The user is immune to non-Blocking Hazards, and destroys them when moving over them. Blocking Hazards are treated instead as Slow Terrain for the purposes of movement only (the user may still not target through them), and are destroyed if moved through."
     }
   ],
   "natureMod": {

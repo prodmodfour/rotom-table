@@ -12,43 +12,43 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 0,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 0,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 10,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 9,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 42,
-    "currentHp": 42,
-    "tick": 4,
+    "maxHp": 51,
+    "currentHp": 51,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 3,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
@@ -85,17 +85,6 @@
       "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
     },
     {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
       "name": "Fairy Wind",
       "type": "Fairy",
       "category": "Special",
@@ -115,7 +104,19 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
+      "effect": "None",
+      "special": "Grants Threaded"
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [

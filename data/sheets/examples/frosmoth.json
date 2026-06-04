@@ -2,7 +2,7 @@
   "slug": "examples-frosmoth",
   "nickname": "Frosmoth",
   "species": "Frosmoth",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Bold",
@@ -13,69 +13,62 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Defog",
-      "type": "Flying",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Field, Weather",
-      "effect": "The Weather becomes Clear, and all Blessings, Coats, and Hazards are destroyed. Clear Weather is the default weather, conferring no innate bonuses or penalties of any sort."
-    },
-    {
-      "name": "Infestation",
-      "type": "Bug",
+      "name": "Aurora Beam",
+      "type": "Ice",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "Scene x2",
-      "ac": 4,
-      "range": "3, 1 Target",
-      "effect": "The target is put in a Vortex."
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Aurora Beam lowers the target’s Attack 1 Combat Stage on 18+.",
+      "special": "Grants Freezer"
     },
     {
       "name": "Feather Dance",
@@ -87,12 +80,31 @@
       "effect": "All legal targets have their Attack lowered 2 Combat Stages."
     },
     {
+      "name": "Defog",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The Weather becomes Clear, and all Blessings, Coats, and Hazards are destroyed. Clear Weather is the default weather, conferring no innate bonuses or penalties of any sort."
+    },
+    {
       "name": "Mist",
       "type": "Ice",
       "category": "Status",
       "frequency": "Scene x2",
       "range": "Blessing",
       "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Infestation",
+      "type": "Bug",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "3, 1 Target",
+      "effect": "The target is put in a Vortex."
     },
     {
       "name": "Stun Spore",

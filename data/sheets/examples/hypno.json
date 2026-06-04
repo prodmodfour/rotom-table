@@ -2,7 +2,7 @@
   "slug": "examples-hypno",
   "nickname": "Hypno",
   "species": "Hypno",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Lonely",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "spd": {
@@ -42,30 +42,21 @@
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 88,
+    "currentHp": 88,
+    "tick": 8,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 3,
+      "vsSatk": 4,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Poison Gas",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 6,
-      "range": "Burst 1 or Cone 2",
-      "effect": "Poison Gas Poisons all Legal Targets."
-    },
     {
       "name": "Headbutt",
       "type": "Normal",
@@ -78,12 +69,32 @@
       "effect": "Headbutt Flinches the target on 15+."
     },
     {
-      "name": "Disable",
-      "type": "Normal",
+      "name": "Psybeam",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psybeam Confuses the target on 19+."
+    },
+    {
+      "name": "Meditate",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage."
+    },
+    {
+      "name": "Poison Gas",
+      "type": "Poison",
       "category": "Status",
       "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+      "ac": 6,
+      "range": "Burst 1 or Cone 2",
+      "effect": "Poison Gas Poisons all Legal Targets."
     },
     {
       "name": "Confusion",
@@ -95,6 +106,14 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Confusion Confuses the target on 19+."
+    },
+    {
+      "name": "Disable",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "1 Target, Trigger",
+      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
     }
   ],
   "abilities": [

@@ -2,7 +2,7 @@
   "slug": "examples-machamp",
   "nickname": "Machamp",
   "species": "Machamp",
-  "level": 20,
+  "level": 45,
   "gender": "Male",
   "shiny": false,
   "nature": "Hasty",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 12,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 1,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 1,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
@@ -37,75 +37,58 @@
     },
     "spd": {
       "base": 1,
-      "added": 1,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 112,
+    "currentHp": 112,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 1,
+      "vsAtk": 2,
       "vsSatk": 3,
-      "vsAny": 1
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Focus Energy",
-      "type": "Normal",
+      "name": "Bulk Up",
+      "type": "Fighting",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Defense 1 Combat Stage."
     },
     {
-      "name": "Foresight",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self, Swift Action",
-      "effect": "Foresight may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
-    },
-    {
-      "name": "Revenge",
+      "name": "Submission",
       "type": "Fighting",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 6,
+      "range": "Melee, 1 Target, Recoil 1/3",
+      "effect": "On an accuracy roll of 15+, the target is Tripped."
+    },
+    {
+      "name": "Dual Chop",
+      "type": "Dragon",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Priority (Limited)",
-      "effect": "When declaring Revenge, the user does nothing and may not Shift. At the end of the round, the user may shift and use Revenge. If the target has damaged the user this round, Revenge has a Damage Base of 12 (3d12+10 / 30)."
+      "ac": 3,
+      "range": "Melee, 1 Target, Double Strike",
+      "effect": "None"
     },
     {
-      "name": "Low Sweep",
-      "type": "Fighting",
-      "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Lowers the target’s Speed 1 Combat Stage."
-    },
-    {
-      "name": "Seismic Toss",
-      "type": "Fighting",
-      "category": "Physical",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Seismic Toss’ user."
-    },
-    {
-      "name": "Karate Chop",
+      "name": "Wake-Up Slap",
       "type": "Fighting",
       "category": "Physical",
       "db": 7,
@@ -113,19 +96,46 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Karate Chop is a Critical Hit on 17+."
+      "effect": "If the target is Asleep, Wake-Up Slap has a Damage Base of 10 (3d8+10 / 24) instead, and cures the target of Sleep."
+    },
+    {
+      "name": "Vital Throw",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target, Push, Reaction",
+      "effect": "If the user is targeted by a Melee attack and has not yet taken a turn this round, the user may declare Vital Throw. After the triggering attack is resolved, the user may use Vital Throw against the triggering foe as a Reaction. Vital Throw cannot miss."
+    },
+    {
+      "name": "Knock Off",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     }
   ],
   "abilities": [
     {
       "name": "Steadfast",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user would be Flinched",
       "effect": "The user’s Speed is raised by +1 Combat Stage."
     },
     {
       "name": "Guts",
       "frequency": "Static",
       "effect": "While suffering from Burn, Poison, Paralysis, Freezing, or while Asleep, the user’s Attack is raised 2 Combat Stages. If suffering from none of these conditions, the user loses any Combat Stages gained this way."
+    },
+    {
+      "name": "No Guard",
+      "frequency": "Static",
+      "effect": "The user gains a +3 bonus to all Attack Rolls; however all foes gain a +3 Bonus on Attack Rolls against the user."
     }
   ],
   "natureMod": {

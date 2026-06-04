@@ -2,7 +2,7 @@
   "slug": "examples-gourgeist",
   "nickname": "Gourgeist",
   "species": "Gourgeist",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Curious",
@@ -13,39 +13,39 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 73,
+    "currentHp": 73,
+    "tick": 7,
     "evasion": {
       "vsAtk": 4,
       "vsSatk": 2,
@@ -54,10 +54,41 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Shadow Sneak",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Priority",
+      "effect": "None."
+    },
+    {
+      "name": "Bullet Seed",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 5,
+      "damageRoll": "1d8+8",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
+    },
+    {
+      "name": "Trick-or-Treat",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Daily",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target gains the Ghost Type in addition to its other Types for 5 turns."
+    },
     {
       "name": "Leech Seed",
       "type": "Grass",
@@ -66,26 +97,6 @@
       "ac": 4,
       "range": "6, 1 Target",
       "effect": "At the beginning of each of the target’s turns, Leech Seed’s target loses a Tick of Hit Points. Leech Seed’s user then gains Hit Points equal to the amount the target lost. Leech Seed lasts until the target faints or is returned to a Poké Ball. Grass Types and targets immune to Grass Attacks are immune to Leech Seed."
-    },
-    {
-      "name": "Astonish",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
-    },
-    {
-      "name": "Trick",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "5, 2 Targets",
-      "effect": "Both targets must be hit for Trick to succeed. The user may target itself or willing allies with Trick; you do not need to roll for Accuracy Check in these cases. Both targets lose their Held Item or Accessory Slot Item, and gain the other target’s Held Item or Accessory Slot Item. If a target has no Item, it still can gain the other target’s Item."
     },
     {
       "name": "Razor Leaf",
@@ -106,21 +117,13 @@
       "ac": 2,
       "range": "8, 1 Target",
       "effect": "You choose one of the target’s Abilities. Worry Seed changes that Ability to Insomnia for the remainder of the encounter."
-    },
-    {
-      "name": "Trick-or-Treat",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Daily",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target gains the Ghost Type in addition to its other Types for 5 turns."
     }
   ],
   "abilities": [
     {
       "name": "Regenerator",
       "frequency": "Daily x2 – Free Action",
+      "trigger": "The user is recalled into a Poké Ball, or Takes",
       "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
     },
     {

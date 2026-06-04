@@ -2,7 +2,7 @@
   "slug": "examples-frillish",
   "nickname": "Frillish",
   "species": "Frillish",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Modest",
@@ -13,69 +13,59 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
-      "vsSatk": 3,
+      "vsSatk": 2,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Recover",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value."
-    },
-    {
-      "name": "Bubble",
-      "type": "Water",
+      "name": "Night Shade",
+      "type": "Ghost",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Burst 1",
-      "effect": "Bubble lowers the target’s Speed on 16+."
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
     },
     {
       "name": "Absorb",
@@ -94,39 +84,27 @@
       "category": "Status",
       "frequency": "EOT",
       "range": "Burst 2, Coat",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed.",
+      "special": "Grants Fountain"
     },
     {
-      "name": "Bubble Beam",
+      "name": "Bubble",
       "type": "Water",
       "category": "Special",
-      "db": 10,
-      "damageRoll": "3d8+10",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
-    },
-    {
-      "name": "Night Shade",
-      "type": "Ghost",
-      "category": "Special",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
     }
   ],
   "abilities": [
     {
       "name": "Cursed Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Damaging Move.",
       "effect": "The Move becomes Disabled."
-    },
-    {
-      "name": "Water Absorb",
-      "frequency": "Static",
-      "effect": "The user is immune to the damage and effects of  Water-Type attacks, and whenever they are hit with a Water Type attack, they gain a Tick of Hit Points. Defensive."
     }
   ],
   "natureMod": {

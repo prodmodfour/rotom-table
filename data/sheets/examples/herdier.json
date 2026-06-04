@@ -17,7 +17,7 @@
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 6,
       "stage": 0
     },
     "def": {
@@ -27,17 +27,17 @@
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
@@ -48,7 +48,7 @@
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
@@ -57,6 +57,14 @@
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Work Up",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
+    },
     {
       "name": "Take Down",
       "type": "Normal",
@@ -69,12 +77,12 @@
       "effect": "You may perform a Trip Maneuver against the target as a Free Action."
     },
     {
-      "name": "Work Up",
+      "name": "Helping Hand",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
     },
     {
       "name": "Bite",
@@ -93,15 +101,8 @@
       "category": "Status",
       "frequency": "Scene x2",
       "range": "Self, Swift Action",
-      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
-    },
-    {
-      "name": "Helping Hand",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+      "effect": "Odor Sleuth may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Normal-Type and Fighting-Type Moves can hit and affect Ghost-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those.",
+      "special": "Grants Tracker"
     }
   ],
   "abilities": [

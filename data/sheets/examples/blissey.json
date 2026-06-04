@@ -2,7 +2,7 @@
   "slug": "examples-blissey",
   "nickname": "Blissey",
   "species": "Blissey",
-  "level": 20,
+  "level": 45,
   "gender": "Female",
   "shiny": false,
   "nature": "Desperate",
@@ -12,95 +12,107 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 24,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 1,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 117,
-    "currentHp": 117,
-    "tick": 11,
+    "maxHp": 202,
+    "currentHp": 202,
+    "tick": 20,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 4,
+      "vsAtk": 0,
+      "vsSatk": 5,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Bestow",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": "--",
-      "range": "Melee, 1 Target",
-      "effect": "The user gives its held item to the target, unless the target is already holding an item. Using Bestow is a Swift Action."
-    },
-    {
-      "name": "Refresh",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Self",
-      "effect": "The user is cured of all Poison, Burns, and Paralysis."
-    },
-    {
-      "name": "Tail Whip",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Double Slap",
+      "name": "Egg Bomb",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "5, Blast 2",
+      "effect": "None."
     },
     {
-      "name": "Soft-Boiled",
-      "type": "Normal",
+      "name": "Heal Pulse",
+      "type": "Psychic",
       "category": "Status",
       "frequency": "Daily x2",
-      "range": "Melee, 1 Target",
-      "effect": "The target regains Hit Points equal to half of its full Hit Points. The user may target themselves with Soft-Boiled."
+      "range": "6, 1 Target, Aura",
+      "effect": "Restores 50% of the target’s max Hit Points. Heal Pulse’s user may not target itself with Heal Pulse."
+    },
+    {
+      "name": "Fling",
+      "type": "Dark",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target, Fling",
+      "effect": "The user throws a held item, determining the effect of Fling."
+    },
+    {
+      "name": "Sing",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 10,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All legal Targets fall Asleep. On a miss, Sing instead causes targets to become Slowed and suffer a -2 penalty to their Evasion until the end of the user’s next turn."
+    },
+    {
+      "name": "Take Down",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Minimize",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user gains +4 Evasion, and user’s size is lowered to Small for the remainder of the encounter.",
+      "special": "Grants Shrinkable"
     }
   ],
   "abilities": [
@@ -113,6 +125,11 @@
       "name": "Natural Cure",
       "frequency": "Scene – Free Action",
       "effect": "Whenever the user is returned to its Poké Ball or Takes A Breather, it may activate Natural Cure to cure itself of all Persistent Status Afflictions."
+    },
+    {
+      "name": "Blessed Touch",
+      "frequency": "Daily x2 – Standard Action",
+      "effect": "An adjacent Pokémon or Trainer gains Hit Points equal to 1/4th of its maximum Hit Points."
     }
   ],
   "natureMod": {

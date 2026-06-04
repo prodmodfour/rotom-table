@@ -2,7 +2,7 @@
   "slug": "examples-oricorio-sensu",
   "nickname": "Oricorio Sensu",
   "species": "Oricorio Sensu",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Jolly",
@@ -13,38 +13,38 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 7,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
+    "maxHp": 77,
+    "currentHp": 77,
     "tick": 7,
     "evasion": {
       "vsAtk": 2,
@@ -54,7 +54,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [],
@@ -62,6 +62,7 @@
     {
       "name": "Dancer",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "Someone within 10 meters uses a StatusClass Dance Move",
       "effect": "The user may immediately use the triggering Move as a Free Action."
     },
     {

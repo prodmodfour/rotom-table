@@ -2,7 +2,7 @@
   "slug": "examples-gallade",
   "nickname": "Gallade",
   "species": "Gallade",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Desperate",
@@ -13,80 +13,93 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 86,
+    "currentHp": 86,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsSatk": 4,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Quick Guard",
-      "type": "Fighting",
+      "name": "Feint",
+      "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Melee, Interrupt, Shield, Trigger",
-      "effect": "If the user or an adjacent ally is targeted by a Priority or Interrupt Attack, Quick Guard may be declared as an Interrupt, causing the triggering attack to have no effect."
+      "range": "Trigger",
+      "effect": "If a foe uses a Move with the Shield Keyword in response to one of your actions, you may activate Feint to cause the triggering Move to Fail. Feint is activated as a Free Action."
     },
     {
-      "name": "Slash",
+      "name": "Helping Hand",
       "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "4, 1 Target, Priority",
+      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+    },
+    {
+      "name": "Psycho Cut",
+      "type": "Psychic",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "Slash is a Critical Hit on 18+."
+      "range": "6, 1 Target",
+      "effect": "Psycho Cut is a Critical Hit on 18+."
+    },
+    {
+      "name": "Swords Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Wide Guard",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 1, Interrupt, Shield, Trigger",
+      "effect": "If an Ally adjacent to Wide Guard’s user is hit by a Move, you may use Wide Guard as an Interrupt. All targets adjacent to Wide Guard’s user, including the user, are instead not hit by the triggering Move and do not suffer any of its effects."
     },
     {
       "name": "Heal Pulse",
@@ -95,34 +108,25 @@
       "frequency": "Daily x2",
       "range": "6, 1 Target, Aura",
       "effect": "Restores 50% of the target’s max Hit Points. Heal Pulse’s user may not target itself with Heal Pulse."
-    },
-    {
-      "name": "Double Team",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Illusion, Coat",
-      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
-    },
-    {
-      "name": "Teleport",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Interrupt",
-      "effect": "The user Teleports up to X meters, where X is its Teleporter Capability. Teleport can be used as an Interrupt at any time. Moves that targeted Teleport’s user continue through the desired target’s space if the Move allows for it as if the user hadn’t been there; single target moves simply miss."
     }
   ],
   "abilities": [
     {
       "name": "Synchronize",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is Paralyzed, Frozen, Burned,",
       "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
     },
     {
       "name": "Justified",
       "frequency": "At-Will - Free Action",
+      "trigger": "The user is hit by a damaging Dark Type Move or",
       "effect": "The user may raise its Attack by +1 Combat Stage."
+    },
+    {
+      "name": "Vanguard",
+      "frequency": "Static",
+      "effect": "The user gains a +5 Bonus to all Damage Rolls against targets with an initiative lower than itself that have not yet acted that round (having Ante’d up your Action via an Interrupt or similar on a previous round does not count as having acted that round)."
     }
   ],
   "natureMod": {

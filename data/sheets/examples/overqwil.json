@@ -2,7 +2,7 @@
   "slug": "examples-overqwil",
   "nickname": "Overqwil",
   "species": "Overqwil",
-  "level": 20,
+  "level": 30,
   "gender": "Female",
   "shiny": false,
   "nature": "Rash",
@@ -13,61 +13,83 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 88,
+    "currentHp": 88,
+    "tick": 8,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsSatk": 1,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Pin Missile",
-      "type": "Bug",
+      "name": "Poison Jab",
+      "type": "Poison",
       "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
+      "db": 10,
+      "damageRoll": "3d8+10",
       "frequency": "EOT",
-      "ac": 4,
-      "range": "6, 1 Target, Five Strike",
-      "effect": "None"
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Poison Jab Poisons the target on 15+."
+    },
+    {
+      "name": "Dark Pulse",
+      "type": "Dark",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Dark Pulse Flinches the target on 17+"
+    },
+    {
+      "name": "Water Pulse",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "8, 1 Target, Aura",
+      "effect": "Water Pulse Confuses the target on 17+."
     },
     {
       "name": "Barb Barrage",
@@ -79,6 +101,17 @@
       "ac": 2,
       "range": "6, 1 Target, Five Strike",
       "effect": "The target is Poisoned on a 17+. Once a Scene, if Barb Barrage’s target has a Status Condition, you may choose to not roll for Five Strike. Instead, treat Barb Barrage as though it automatically rolled an 8 for Five Strike."
+    },
+    {
+      "name": "Pin Missile",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "6, 1 Target, Five Strike",
+      "effect": "None"
     },
     {
       "name": "Spikes",

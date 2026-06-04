@@ -2,7 +2,7 @@
   "slug": "examples-tapu-koko",
   "nickname": "Tapu Koko",
   "species": "Tapu Koko",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Skittish",
@@ -13,123 +13,124 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 10,
+      "added": 15,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 96,
+    "currentHp": 96,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 5
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 6
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Shock Wave",
+      "name": "Discharge",
       "type": "Electric",
       "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "range": "6, 1 Target",
-      "effect": "Shock Wave cannot miss."
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "All Cardinally Adjacent Targets",
+      "effect": "Discharge Paralyzes all legal targets on 15+."
     },
     {
-      "name": "Quick Attack",
-      "type": "Normal",
+      "name": "Nature’s Madness",
+      "type": "Fairy",
+      "category": "Special",
+      "frequency": "Scene",
+      "ac": 4,
+      "range": "4, 1 Target",
+      "effect": "The target loses 1/2 of their current Hit Points."
+    },
+    {
+      "name": "Mirror Move",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "6, 1 Target, Illusion",
+      "effect": "Use the Move the target has used on their last turn. You may choose new targets for the Move. Mirror Move cannot miss."
+    },
+    {
+      "name": "Wild Charge",
+      "type": "Electric",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
       "effect": "None."
     },
     {
-      "name": "Thunder Shock",
+      "name": "Charge",
       "type": "Electric",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
-    },
-    {
-      "name": "False Swipe",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, Pass",
-      "effect": "False Swipe’s damage cannot bring a target lower than 1 Hit Point."
-    },
-    {
-      "name": "Withdraw",
-      "type": "Water",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
     },
     {
-      "name": "Spark",
-      "type": "Electric",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Spark Paralyzes the target on 15+."
+      "ac": 4,
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
     }
   ],
   "abilities": [
     {
       "name": "Electric Surge",
-      "effect": "Connection – Sweet Scent. Whenever the user hits a male target with Poison Gas, Smog, Sweet Scent, Toxic, or Venom Drench, that target becomes Infatuated with the user."
+      "frequency": "Scene x3 – Swift Action",
+      "effect": "The Field becomes Electrified, as if affected by the Move Electric Terrain, for one full round."
     },
     {
       "name": "Prime Fury",
       "frequency": "Scene – Swift Action",
       "effect": "The user becomes Enraged, and gains +1 Combat Stage in each of Attack and Special Attack."
+    },
+    {
+      "name": "Rocket",
+      "frequency": "Scene – Free Action",
+      "trigger": "A Round Begins",
+      "effect": "The user may take their turn at the top of the round. Priority, Interrupt, or Reaction Moves or Abilities cannot be declared in response to the user’s turn."
     }
   ],
   "natureMod": {

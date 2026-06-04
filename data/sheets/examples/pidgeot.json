@@ -2,7 +2,7 @@
   "slug": "examples-pidgeot",
   "nickname": "Pidgeot",
   "species": "Pidgeot",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Jolly",
@@ -13,51 +13,90 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 10,
+      "added": 13,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 101,
+    "currentHp": 101,
+    "tick": 10,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 1,
-      "vsAny": 4
+      "vsSatk": 2,
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Agility",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Feather Dance",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Attack lowered 2 Combat Stages."
+    },
+    {
+      "name": "Twister",
+      "type": "Dragon",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, Ranged Blast 3",
+      "effect": "Small or Medium targets in the central square of the blast are not hit. Twister Flinches the target on 18-20 during Accuracy Check. Any Pokémon Airborne as a result of Fly or Sky Drop above the Blast are hit, ignoring range, and Twister has a Damage Base of 8 against those targets instead."
+    },
     {
       "name": "Whirlwind",
       "type": "Normal",
@@ -77,26 +116,6 @@
       "ac": 2,
       "range": "Melee, 1 Target, Priority",
       "effect": "None."
-    },
-    {
-      "name": "Gust",
-      "type": "Flying",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
-    },
-    {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [
@@ -108,7 +127,13 @@
     {
       "name": "Rocket",
       "frequency": "Scene – Free Action",
+      "trigger": "A Round Begins",
       "effect": "The user may take their turn at the top of the round. Priority, Interrupt, or Reaction Moves or Abilities cannot be declared in response to the user’s turn."
+    },
+    {
+      "name": "Competitive",
+      "frequency": "Static",
+      "effect": "Whenever the user has its Combat Stages lowered, by something other than its own Moves or Abilities, the user’s Special Attack is raised 2 Combat Stages."
     }
   ],
   "natureMod": {

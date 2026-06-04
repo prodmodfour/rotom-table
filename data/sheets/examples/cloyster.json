@@ -2,7 +2,7 @@
   "slug": "examples-cloyster",
   "nickname": "Cloyster",
   "species": "Cloyster",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Brave",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 12,
       "stage": 0
     },
     "satk": {
@@ -38,23 +38,23 @@
     },
     "spd": {
       "base": -1,
-      "added": 7,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 59,
+    "currentHp": 59,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 4,
+      "vsAtk": 6,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [

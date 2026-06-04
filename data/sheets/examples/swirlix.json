@@ -2,7 +2,7 @@
   "slug": "examples-swirlix",
   "nickname": "Swirlix",
   "species": "Swirlix",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Bashful",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
@@ -42,18 +42,18 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 2,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -67,15 +67,6 @@
       "effect": "Lower the target’s Special Defense 2 Combat Stages."
     },
     {
-      "name": "Sweet Scent",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
-    },
-    {
       "name": "Play Nice",
       "type": "Normal",
       "category": "Status",
@@ -83,24 +74,6 @@
       "ac": 2,
       "range": "6, 1 Target, Social",
       "effect": "Play Nice lowers the target’s Attack by 1 Combat Stage."
-    },
-    {
-      "name": "Cotton Spore",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1, Powder",
-      "effect": "All Legal Targets have their Speed lowered 2 Combat Stages."
-    },
-    {
-      "name": "Round",
-      "type": "Normal",
-      "category": "Special",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1, Sonic",
-      "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
     },
     {
       "name": "Fairy Wind",
@@ -112,6 +85,27 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "None"
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
+    },
+    {
+      "name": "Sweet Scent",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
     }
   ],
   "abilities": [
@@ -119,11 +113,6 @@
       "name": "Sweet Veil",
       "frequency": "Static",
       "effect": "The user and allies within 3 meters are immune to Sleep. Defensive."
-    },
-    {
-      "name": "Frisk",
-      "frequency": "Static",
-      "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
     }
   ],
   "capabilities": {

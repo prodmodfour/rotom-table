@@ -2,7 +2,7 @@
   "slug": "examples-shiftry",
   "nickname": "Shiftry",
   "species": "Shiftry",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Stark",
@@ -13,67 +13,93 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 1,
-      "vsAny": 2
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Torment",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "Scene x2",
+      "name": "Extrasensory",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "10, 1 Target, Social",
-      "effect": "The target becomes Suppressed."
+      "range": "5, 1 Target",
+      "effect": "Extrasensory Flinches the target on 19+."
     },
     {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
+      "name": "Hurricane",
+      "type": "Flying",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10 / 27",
+      "frequency": "Scene x2",
+      "ac": 7,
+      "range": "Burst 1, Smite",
+      "effect": "Hurricane Confuses its target on 15+. If the target is in Sunny Weather, Hurricane’s Accuracy Check is 11. If the target is in Rainy Weather, Hurricane cannot miss. If the target is airborne as a result of Fly or Sky Drop, Hurricane cannot miss."
+    },
+    {
+      "name": "Leaf Blade",
+      "type": "Grass",
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Leaf Blade is a Critical Hit on 18+."
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "Melee, 1 Target",
+      "effect": "Feint Attack cannot miss."
     },
     {
       "name": "Leaf Tornado",
@@ -87,32 +113,13 @@
       "effect": "Small or Medium targets in the central square of the blast are not hit. On 15+, all legal targets have their Accuracy lowered by -1."
     },
     {
-      "name": "Nature Power",
-      "type": "Normal",
+      "name": "Torment",
+      "type": "Dark",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": "See Effect",
-      "range": "See Effect",
-      "effect": "Nature Power uses a Move defined by the Environ keyword."
-    },
-    {
-      "name": "Growth",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage. If it is Sunny, double the amount of Combat Stages gained."
-    },
-    {
-      "name": "Fake Out",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "You may only use Fake Out with Priority upon joining an encounter; if you do, Fake Out Flinches the target. Switching out resets the requirement of joining an encounter."
+      "range": "10, 1 Target, Social",
+      "effect": "The target becomes Suppressed."
     }
   ],
   "abilities": [
@@ -125,6 +132,11 @@
       "name": "Omen",
       "frequency": "Scene – Swift Action",
       "effect": "Choose a Pokémon or Trainer within 5 meters. The target’s Accuracy is lowered by 2."
+    },
+    {
+      "name": "Blow Away",
+      "frequency": "Static",
+      "effect": "Connection - Whirlwind. When the user uses Whirlwind, all targets hit are pushed an additional 2 meters and lose a Tick of Hit Points."
     }
   ],
   "natureMod": {

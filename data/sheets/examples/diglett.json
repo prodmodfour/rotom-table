@@ -2,7 +2,7 @@
   "slug": "examples-diglett",
   "nickname": "Diglett",
   "species": "Diglett",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
@@ -42,40 +42,40 @@
     }
   },
   "combat": {
-    "maxHp": 39,
-    "currentHp": 39,
-    "tick": 3,
+    "maxHp": 26,
+    "currentHp": 26,
+    "tick": 2,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 2,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Sand Attack",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "2, 1 Target",
-      "effect": "The target is Blinded until the end of their next turn."
-    },
-    {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
+      "name": "Astonish",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 3,
+      "damageRoll": "1d6+5 / 9",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
+      "range": "Melee, 1 Target",
+      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+    },
+    {
+      "name": "Growl",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Burst 1, Friendly, Sonic, Social",
+      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
       "name": "Scratch",
@@ -89,32 +89,13 @@
       "effect": "None"
     },
     {
-      "name": "Magnitude",
+      "name": "Sand Attack",
       "type": "Ground",
-      "category": "Physical",
-      "frequency": "EOT",
-      "range": "Burst 2, Groundsource",
-      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig."
-    },
-    {
-      "name": "Bulldoze",
-      "type": "Ground",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1",
-      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
+      "frequency": "EOT",
       "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
+      "range": "2, 1 Target",
+      "effect": "The target is Blinded until the end of their next turn."
     }
   ],
   "abilities": [
@@ -122,11 +103,6 @@
       "name": "Arena Trap",
       "frequency": "Scene – Free Action",
       "effect": "Once Arena Trap is activated, all foes within 5 meters of the user are considered Slowed and Trapped. This does not affect targets of the Flying Type, or with a Levitate, Sky, or Burrow Speed of 4 or higher. The user may end the effect as a Free Action, and the effect ends if the user is Fainted or returned to a Poké Ball."
-    },
-    {
-      "name": "Celebrate",
-      "frequency": "At-Will – Swift Action",
-      "effect": "The user may immediately Disengage as a Free Action."
     }
   ],
   "natureMod": {

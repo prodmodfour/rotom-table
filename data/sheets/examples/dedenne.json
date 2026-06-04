@@ -2,7 +2,7 @@
   "slug": "examples-dedenne",
   "nickname": "Dedenne",
   "species": "Dedenne",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Curious",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "def": {
@@ -33,19 +33,19 @@
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 68,
+    "currentHp": 68,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -54,29 +54,29 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Tail Whip",
-      "type": "Normal",
+      "name": "Thunder Wave",
+      "type": "Electric",
       "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects."
     },
     {
-      "name": "Tackle",
-      "type": "Normal",
+      "name": "Nuzzle",
+      "type": "Electric",
       "category": "Physical",
       "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "damageRoll": "1d8+6",
+      "frequency": "Scene",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "Melee, 1 Target",
+      "effect": "Nuzzle Paralyzes the target."
     },
     {
       "name": "Parabolic Charge",
@@ -99,6 +99,14 @@
       "effect": "Charm lowers the target’s Attack 2 Combat Stages."
     },
     {
+      "name": "Charge",
+      "type": "Electric",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
       "name": "Thunder Shock",
       "type": "Electric",
       "category": "Special",
@@ -107,26 +115,21 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "Thunder Shock Paralyzes the target on 17+."
-    },
-    {
-      "name": "Charge",
-      "type": "Electric",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "If the user performs an Electric Move on their next turn that deals damage, add its Damage Dice Roll an extra time to the damage. Raise the user’s Special Defense 1 Combat Stage."
+      "effect": "Thunder Shock Paralyzes the target on 17+.",
+      "special": "Grants Zapper"
     }
   ],
   "abilities": [
     {
       "name": "Lunchbox",
       "frequency": "Scene – Free Action",
+      "trigger": "The user trades in a Food Buff",
       "effect": "The user gains a Tick of Temporary Hit Points. These Temporary Hit Points stack with any Temporary Hit Points granted by the triggering Food Buff."
     },
     {
       "name": "Sequence",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user uses an Electric Attack",
       "effect": "For every Electric-Type Pokémon adjacent to the user, the triggering Attack deals an additional +3 Damage."
     }
   ],

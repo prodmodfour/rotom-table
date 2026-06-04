@@ -2,7 +2,7 @@
   "slug": "examples-slaking",
   "nickname": "Slaking",
   "species": "Slaking",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Jolly",
@@ -12,60 +12,100 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 12,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 3,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 96,
-    "currentHp": 96,
-    "tick": 9,
+    "maxHp": 128,
+    "currentHp": 128,
+    "tick": 12,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Feint Attack",
-      "type": "Dark",
+      "name": "Flail",
+      "type": "Normal",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "EOT",
+      "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
+      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
+    },
+    {
+      "name": "Swagger",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Attack is raised 2 Combat Stages. Swagger Confuses the target."
+    },
+    {
+      "name": "Counter",
+      "type": "Fighting",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "range": "Melee, 1 Target, Reaction, Trigger",
+      "effect": "Counter may be used as a Reaction when the user is hit by a damaging Physical Attack. Resolve the Triggering Attack, with Counter’s user resisting the attack one step further. After the attack is resolved, if Counter’s user was not Fainted, the triggering foe then loses Hit Points equal to twice the amount of Hit Points lost by the user from the triggering attack. Note that Counter is Physical, and while it cannot miss, it cannot hit targets immune to Fighting-Type Moves."
+    },
+    {
+      "name": "Chip Away",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage."
+    },
+    {
+      "name": "Covet",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Covet takes the target’s Held Item or Accessory Slot Item and attaches it to Covet’s user, if the user is not holding anything."
     },
     {
       "name": "Amnesia",
@@ -74,23 +114,6 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "Raise the user’s Special Defense 2 Combat Stages."
-    },
-    {
-      "name": "Slack Off",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Daily x2",
-      "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Points."
-    },
-    {
-      "name": "Encore",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
     }
   ],
   "abilities": [
@@ -103,6 +126,11 @@
       "name": "Limber",
       "frequency": "Static",
       "effect": "The user is immune to Paralysis. Defensive."
+    },
+    {
+      "name": "Deep Sleep",
+      "frequency": "Static",
+      "effect": "When asleep, this Pokémon restores a Tick of Hit Points at the end of each turn."
     }
   ],
   "natureMod": {

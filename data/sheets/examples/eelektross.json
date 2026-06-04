@@ -2,7 +2,7 @@
   "slug": "examples-eelektross",
   "nickname": "Eelektross",
   "species": "Eelektross",
-  "level": 20,
+  "level": 45,
   "gender": "Female",
   "shiny": false,
   "nature": "Proud",
@@ -12,51 +12,84 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 8,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 118,
+    "currentHp": 118,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsAtk": 3,
+      "vsSatk": 3,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Thunderbolt",
+      "type": "Electric",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Thunderbolt Paralyzes the target on 19+."
+    },
+    {
+      "name": "Crunch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
+    },
+    {
+      "name": "Discharge",
+      "type": "Electric",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "All Cardinally Adjacent Targets",
+      "effect": "Discharge Paralyzes all legal targets on 15+."
+    },
     {
       "name": "Acid",
       "type": "Poison",
@@ -73,12 +106,19 @@
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Sequence",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user uses an Electric Attack",
       "effect": "For every Electric-Type Pokémon adjacent to the user, the triggering Attack deals an additional +3 Damage."
+    },
+    {
+      "name": "Lightning Rod",
+      "frequency": "Scene – Free Action",
+      "trigger": "A ranged Electric Type Move is used within 10",
+      "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  The user’s Special Attack is then raised by +1 Combat Stage."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-tapu-lele",
   "nickname": "Tapu Lele",
   "species": "Tapu Lele",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Serious",
@@ -13,51 +13,79 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 89,
+    "currentHp": 89,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
+      "vsAtk": 3,
+      "vsSatk": 4,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Tickle",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
+    },
+    {
+      "name": "Psyshock",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "When calculating damage, the target subtracts their Defense from Psyshock’s damage instead of their Special Defense. Psyshock is still otherwise Special ( Special Evasion is used to avoid it, Mirror Coat can reflect it, etc. )"
+    },
+    {
+      "name": "Skill Swap",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Melee, 1 Target",
+      "effect": "The user loses one of their Abilities, selected by the user, and gains one the target’s Abilities, selected at random, for the remainder of encounter. The target loses the copied Ability, and gains the user’s lost Ability.  This effect ends if either the target or the user is Switched out or Fainted, but only for that Pokémon or Trainer."
+    },
     {
       "name": "Sweet Scent",
       "type": "Normal",
@@ -65,18 +93,8 @@
       "frequency": "Scene",
       "ac": 2,
       "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
-    },
-    {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
     },
     {
       "name": "Psybeam",
@@ -90,17 +108,6 @@
       "effect": "Psybeam Confuses the target on 19+."
     },
     {
-      "name": "Astonish",
-      "type": "Ghost",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
-    },
-    {
       "name": "Psywave",
       "type": "Psychic",
       "category": "Special",
@@ -108,24 +115,23 @@
       "ac": 5,
       "range": "6, 1 Target",
       "effect": "Roll 1d4; on 1 the target loses Hit Points equal to half the user’s Level; on 2 the target loses Hit Points equal to the user’s Level; on 3 the target loses Hit Points equal to 1.5x the user’s level; on 4 the target loses Hit Points equal to the user’s Level doubled. Do not apply weakness or resistance, and do not apply Stats. Do apply Immunity."
-    },
-    {
-      "name": "Withdraw",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
     }
   ],
   "abilities": [
     {
-      "name": "Psychic Surge"
+      "name": "Psychic Surge",
+      "frequency": "Scene x3 – Swift Action",
+      "effect": "The Field becomes Weird, as if affected by the Move Psychic Terrain, for one full round."
     },
     {
       "name": "Shell Shield",
       "frequency": "Scene – Free Action",
       "effect": "Connection - Withdraw. The user may activate this Ability to use Withdraw as an Standard Action Interrupt and gain +10 Damage Reduction for 1 full round."
+    },
+    {
+      "name": "Flutter",
+      "frequency": "At-Will – Shift Action",
+      "effect": "The user gains +3 Evasion until the end of their next turn, and cannot be Flanked."
     }
   ],
   "capabilities": {

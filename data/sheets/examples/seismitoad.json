@@ -2,7 +2,7 @@
   "slug": "examples-seismitoad",
   "nickname": "Seismitoad",
   "species": "Seismitoad",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Calm",
@@ -13,51 +13,103 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 12,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 8,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 99,
-    "currentHp": 99,
-    "tick": 9,
+    "maxHp": 113,
+    "currentHp": 113,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 3,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Flail",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
+    },
+    {
+      "name": "Acid",
+      "type": "Poison",
+      "category": "Special",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "Acid lowers the target’s Special Defense 1 Combat Stage on 18+."
+    },
+    {
+      "name": "Rain Dance",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
+    },
+    {
+      "name": "Muddy Water",
+      "type": "Water",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 5,
+      "range": "Close Blast 2",
+      "effect": "As a Shift Action, the user may Move to any open square in Muddy Water’s area of effect without provoking any Attacks of Opportunity. On 16+, the Accuracy of all targets is lowered by 1."
+    },
+    {
+      "name": "Uproar",
+      "type": "Normal",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Burst 1, Spirit Surge, Sonic",
+      "effect": "All Pokémon and Trainers within 5 meters of the user are cured of sleep."
+    },
     {
       "name": "Aqua Ring",
       "type": "Water",
@@ -65,46 +117,6 @@
       "frequency": "Scene",
       "range": "Self, Coat",
       "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
-    },
-    {
-      "name": "Round",
-      "type": "Normal",
-      "category": "Special",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Burst 1, Sonic",
-      "effect": "Round’s Damage Base is equal to 6, plus +2 more for each previous use of Round by any Trainer or Pokémon this round, up to a maximum of DB12."
-    },
-    {
-      "name": "Supersonic",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
-    {
-      "name": "Mud Shot",
-      "type": "Ground",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "3, 1 Target",
-      "effect": "The target’s Speed is lowed by -1 Combat Stage."
-    },
-    {
-      "name": "Bubble Beam",
-      "type": "Water",
-      "category": "Special",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
     }
   ],
   "abilities": [
@@ -117,6 +129,11 @@
       "name": "Poison Touch",
       "frequency": "Static",
       "effect": "The Pokémon’s Moves which deal damage Poison Legal Targets on 19+. If a move already has a chance of Poisoning foes, Poison Touch increases the effect range by +2."
+    },
+    {
+      "name": "Refreshing Veil",
+      "frequency": "Scene – Free Action",
+      "effect": "Connection – Aqua Ring. Whenever the user activates Aqua Ring, they may activate this Feature to cure themselves of all Persistent Status Effects."
     }
   ],
   "natureMod": {

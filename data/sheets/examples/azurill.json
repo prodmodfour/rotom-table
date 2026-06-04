@@ -2,7 +2,7 @@
   "slug": "examples-azurill",
   "nickname": "Azurill",
   "species": "Azurill",
-  "level": 20,
+  "level": 5,
   "gender": "Female",
   "shiny": false,
   "nature": "Rash",
@@ -13,51 +13,60 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 4,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 42,
+    "currentHp": 42,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 1,
+      "vsAtk": 1,
+      "vsSatk": 0,
       "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 2,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Water Sport",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 2, Coat",
+      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed.",
+      "special": "Grants Fountain"
+    },
     {
       "name": "Tail Whip",
       "type": "Normal",
@@ -66,42 +75,6 @@
       "ac": 2,
       "range": "Burst 1, Friendly",
       "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Charm",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
-    },
-    {
-      "name": "Slam",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 10,
-      "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 6,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Slam may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, Slam gains the Smite keyword."
-    },
-    {
-      "name": "Splash",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn."
-    },
-    {
-      "name": "Water Sport",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2, Coat",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
     },
     {
       "name": "Bubble",
@@ -113,6 +86,15 @@
       "ac": 2,
       "range": "Burst 1",
       "effect": "Bubble lowers the target’s Speed on 16+."
+    },
+    {
+      "name": "Splash",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "range": "Self",
+      "effect": "Shift Action - The user may make a single Jump, adding +1 to their Long Jump and High Jump values, and gains +2 Evasion until the end of their next turn.",
+      "special": "Grants Long Jump +1"
     }
   ],
   "abilities": [
@@ -120,11 +102,6 @@
       "name": "Thick Fat",
       "frequency": "Static",
       "effect": "The user resists Fire-Type and Ice-Type attacks one step further. Defensive."
-    },
-    {
-      "name": "Huge Power",
-      "frequency": "Static",
-      "effect": "The Pokémon’s Base Attack stat is doubled. This may double any bonuses from Nature or Vitamins, but not bonuses from Trainer Features."
     }
   ],
   "natureMod": {

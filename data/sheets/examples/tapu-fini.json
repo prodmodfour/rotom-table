@@ -2,7 +2,7 @@
   "slug": "examples-tapu-fini",
   "nickname": "Tapu Fini",
   "species": "Tapu Fini",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Sassy",
@@ -13,61 +13,86 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 9,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 7,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 89,
+    "currentHp": 89,
+    "tick": 8,
     "evasion": {
       "vsAtk": 4,
-      "vsSatk": 4,
+      "vsSatk": 5,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Water Gun",
+      "name": "Defog",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Field, Weather",
+      "effect": "The Weather becomes Clear, and all Blessings, Coats, and Hazards are destroyed. Clear Weather is the default weather, conferring no innate bonuses or penalties of any sort."
+    },
+    {
+      "name": "Brine",
       "type": "Water",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "None"
+      "range": "6, 1 Target",
+      "effect": "If the target’s Hit Points are under 50%, Brine’s Damage Base is increased to Damage Base 13 (4d10+10 / 35)."
+    },
+    {
+      "name": "Refresh",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Self",
+      "effect": "The user is cured of all Poison, Burns, and Paralysis."
+    },
+    {
+      "name": "Soak",
+      "type": "Water",
+      "category": "Status",
+      "frequency": "Daily",
+      "ac": 2,
+      "range": "5, 1 Target",
+      "effect": "The target gains the Water Type in addition to its other Types for 5 turns."
     },
     {
       "name": "Whirlpool",
@@ -81,14 +106,6 @@
       "effect": "The target is put in a Vortex."
     },
     {
-      "name": "Haze",
-      "type": "Ice",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "range": "Field",
-      "effect": "The Combat Stages of the user and all Pokémon and Trainers in the encounter are set to their default state (usually 0)."
-    },
-    {
       "name": "Water Pulse",
       "type": "Water",
       "category": "Special",
@@ -98,34 +115,24 @@
       "ac": 2,
       "range": "8, 1 Target, Aura",
       "effect": "Water Pulse Confuses the target on 17+."
-    },
-    {
-      "name": "Soak",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "Daily",
-      "ac": 2,
-      "range": "5, 1 Target",
-      "effect": "The target gains the Water Type in addition to its other Types for 5 turns."
-    },
-    {
-      "name": "Withdraw",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
     }
   ],
   "abilities": [
     {
       "name": "Misty Surge",
-      "effect": "The user may hold two Held Items at once. Whenever an Ability or Move affects the user’s Held Items, you may choose which one is affected."
+      "frequency": "Scene x3 – Swift Action",
+      "effect": "The Field becomes Misty, as if affected by the Move Misty Terrain, for one full round."
     },
     {
       "name": "Telepathy",
       "frequency": "Static",
       "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    },
+    {
+      "name": "Wash Away",
+      "frequency": "Daily – Free Action",
+      "trigger": "The user hits with a Water Type Move",
+      "effect": "Before the Move “hits”, all Combat Stages on targets hit by the Move are reset to their default (usually 0), and all coats on the targets, except ones placed by Water Sport, are destroyed."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-rhyperior",
   "nickname": "Rhyperior",
   "species": "Rhyperior",
-  "level": 20,
+  "level": 55,
   "gender": "Male",
   "shiny": false,
   "nature": "Naughty",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 14,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 4,
+      "added": 19,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 15,
       "stage": 0
     },
     "satk": {
@@ -33,72 +33,97 @@
     },
     "sdef": {
       "base": -1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 143,
+    "currentHp": 143,
+    "tick": 14,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
+      "vsAtk": 5,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 12,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stomp",
-      "type": "Normal",
+      "name": "Megahorn",
+      "type": "Bug",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
+      "db": 12,
+      "damageRoll": "3d12+10 / 30",
+      "frequency": "Scene x2",
+      "ac": 5,
+      "range": "Melee, 1 Target, Push",
+      "effect": "The target is pushed 1 Meter."
+    },
+    {
+      "name": "Earthquake",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
+      "range": "Burst 3, Groundsource",
+      "effect": "Earthquake can hit targets that are underground, including those using the Move Dig.",
+      "special": "Grants Groundshaper"
     },
     {
-      "name": "Fury Attack",
-      "type": "Normal",
+      "name": "Hammer Arm",
+      "type": "Fighting",
       "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
+      "db": 10,
+      "damageRoll": "3d8+10 / 24",
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "The user lowers their Speed 1 Combat Stage."
     },
     {
-      "name": "Smack Down",
+      "name": "Stone Edge",
       "type": "Rock",
       "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "Scene x2",
-      "ac": 2,
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "EOT",
+      "ac": 5,
       "range": "8, 1 Target",
-      "effect": "The target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
+      "effect": "Stone Edge is a Critical Hit on 17+."
     },
     {
-      "name": "Scary Face",
+      "name": "Take Down",
       "type": "Normal",
-      "category": "Status",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10 / 21",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
+      "ac": 5,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
+      "effect": "You may perform a Trip Maneuver against the target as a Free Action."
+    },
+    {
+      "name": "Drill Run",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "Drill Run is a Critical Hit on 18+."
     }
   ],
   "abilities": [
@@ -111,6 +136,12 @@
       "name": "Sturdy",
       "frequency": "Static",
       "effect": "The user is immune to Moves with the Execute Keyword. If a single source of Damage or Hit Point Loss would cause the user to lose more than X Hit Points, the damage or Hit Point loss is instead reduced to X. X is equal to 50% of their Max Hit Points. Defensive."
+    },
+    {
+      "name": "Lightning Rod",
+      "frequency": "Scene – Free Action",
+      "trigger": "A ranged Electric Type Move is used within 10",
+      "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  The user’s Special Attack is then raised by +1 Combat Stage."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-gulpin",
   "nickname": "Gulpin",
   "species": "Gulpin",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Quirky",
@@ -12,60 +12,51 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 56,
+    "currentHp": 56,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 2,
+      "vsAtk": 1,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Encore",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
-    },
     {
       "name": "Sludge",
       "type": "Poison",
@@ -78,14 +69,6 @@
       "effect": "Sludge Poisons the target on 15+."
     },
     {
-      "name": "Amnesia",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Special Defense 2 Combat Stages."
-    },
-    {
       "name": "Poison Gas",
       "type": "Poison",
       "category": "Status",
@@ -95,15 +78,12 @@
       "effect": "Poison Gas Poisons all Legal Targets."
     },
     {
-      "name": "Acid Spray",
-      "type": "Poison",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Acid Spray lowers the target’s Special Defense 2 Combat Stages."
+      "name": "Yawn",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "2, 1 Target, Social",
+      "effect": "The target falls Asleep at the end of their next turn. Yawn cannot miss."
     },
     {
       "name": "Pound",
@@ -122,11 +102,6 @@
       "name": "Liquid Ooze",
       "frequency": "Static",
       "effect": "This user resists Poison-Type Damage one step further. Additionally, when this user is damaged by Absorb, Drain Punch, Giga Drain, Horn Leech, Leech Life, or Mega Drain, that Move gains Recoil ½ and the Move’s user does not gain any HP. If the user is hit by Leech Seed, the user does not lose Hit Points from Leech Seed; instead Leech Seed’s user loses Hit Points equal to this user’s Tick Value."
-    },
-    {
-      "name": "Lunchbox",
-      "frequency": "Scene – Free Action",
-      "effect": "The user gains a Tick of Temporary Hit Points. These Temporary Hit Points stack with any Temporary Hit Points granted by the triggering Food Buff."
     }
   ],
   "capabilities": {

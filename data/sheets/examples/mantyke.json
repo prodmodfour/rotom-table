@@ -2,7 +2,7 @@
   "slug": "examples-mantyke",
   "nickname": "Mantyke",
   "species": "Mantyke",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Stark",
@@ -13,60 +13,51 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 1,
+      "added": 2,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 11,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 45,
-    "currentHp": 45,
-    "tick": 4,
+    "maxHp": 38,
+    "currentHp": 38,
+    "tick": 3,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 4,
+      "vsAtk": 2,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Supersonic",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
     {
       "name": "Bubble Beam",
       "type": "Water",
@@ -77,6 +68,15 @@
       "ac": 2,
       "range": "4, 1 Target",
       "effect": "Bubble Beam lowers the target’s Speed on 18+."
+    },
+    {
+      "name": "Supersonic",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     },
     {
       "name": "Tackle",
@@ -90,37 +90,15 @@
       "effect": "The target is pushed 2 Meters."
     },
     {
-      "name": "Headbutt",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Headbutt Flinches the target on 15+."
-    },
-    {
-      "name": "Wing Attack",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None."
-    },
-    {
-      "name": "Water Pulse",
+      "name": "Bubble",
       "type": "Water",
       "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "8, 1 Target, Aura",
-      "effect": "Water Pulse Confuses the target on 17+."
+      "range": "Burst 1",
+      "effect": "Bubble lowers the target’s Speed on 16+."
     }
   ],
   "abilities": [
@@ -128,11 +106,6 @@
       "name": "Wonder Skin",
       "frequency": "Static",
       "effect": "The user gains +6 Evasion against Status Moves. Defensive."
-    },
-    {
-      "name": "Swift Swim",
-      "frequency": "Static",
-      "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
     }
   ],
   "natureMod": {

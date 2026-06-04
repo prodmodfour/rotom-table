@@ -2,7 +2,7 @@
   "slug": "examples-blacephalon",
   "nickname": "Blacephalon",
   "species": "Blacephalon",
-  "level": 20,
+  "level": 40,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Decisive",
@@ -13,12 +13,12 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 12,
       "stage": 0
     },
     "def": {
@@ -28,54 +28,71 @@
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 13,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 83,
+    "currentHp": 83,
+    "tick": 8,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 2
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Magic Coat",
-      "type": "Psychic",
-      "category": "Status",
-      "frequency": "Daily",
-      "range": "4, Interrupt, Trigger",
-      "effect": "If the user is about to get a hit by a Move that does not have a Damage Dice Roll, they may use Magic Coat as an Interrupt. The Interrupted Move’s user is treated as if they were the target of their own Move, with the user of Magic Coat as the user."
+      "name": "Fire Blast",
+      "type": "Fire",
+      "category": "Special",
+      "db": 13,
+      "damageRoll": "4d10+10",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "6, 1 Target, Smite",
+      "effect": "Fire Blast burns the target on 19+."
     },
     {
-      "name": "Astonish",
+      "name": "Calm Mind",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 1 Combat Stage and raise the user’s Special Defense 1 Combat Stage."
+    },
+    {
+      "name": "Light Screen",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Light Screen may activate it when receiving Special Damage to resist the Damage one step. Light Screen may be activated 2 times, and then disappears."
+    },
+    {
+      "name": "Night Shade",
       "type": "Ghost",
-      "category": "Physical",
-      "db": 5,
-      "damageRoll": "1d8+8",
-      "frequency": "At-Will",
+      "category": "Special",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
     },
     {
       "name": "Flame Burst",
@@ -87,17 +104,6 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "Any Trainers or Pokémon cardinally adjacent to the target lose 5 Hit Points."
-    },
-    {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
     },
     {
       "name": "Stored Power",
@@ -115,12 +121,19 @@
     {
       "name": "Beast Boost",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user’s Damaging Attack causes an",
       "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
     },
     {
       "name": "Ambush",
       "frequency": "Scene – Free Action",
       "effect": "The user may activate this Ability to use a Move with a Damage Base of 6 (before applying STAB or other modifiers) or lower as if it had the Priority keyword. If it hits, the target is Flinched and has a -2 penalty to Accuracy Rolls for 1 full round."
+    },
+    {
+      "name": "Aftermath",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user becomes Fainted",
+      "effect": "The user creates a Burst 1. Everything in the Burst loses three Ticks of Hit Points."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-mantine",
   "nickname": "Mantine",
   "species": "Mantine",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Gentle",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "satk": {
@@ -33,7 +33,7 @@
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 12,
       "stage": 0
     },
     "spd": {
@@ -43,31 +43,28 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 71,
+    "currentHp": 71,
+    "tick": 7,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 4,
+      "vsAtk": 1,
+      "vsSatk": 5,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Wing Attack",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None."
+      "name": "Wide Guard",
+      "type": "Rock",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 1, Interrupt, Shield, Trigger",
+      "effect": "If an Ally adjacent to Wide Guard’s user is hit by a Move, you may use Wide Guard as an Interrupt. All targets adjacent to Wide Guard’s user, including the user, are instead not hit by the triggering Move and do not suffer any of its effects."
     },
     {
       "name": "Water Pulse",
@@ -81,24 +78,6 @@
       "effect": "Water Pulse Confuses the target on 17+."
     },
     {
-      "name": "Supersonic",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
-    },
-    {
-      "name": "Confuse Ray",
-      "type": "Ghost",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target is Confused."
-    },
-    {
       "name": "Headbutt",
       "type": "Normal",
       "category": "Physical",
@@ -108,6 +87,26 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Headbutt Flinches the target on 15+."
+    },
+    {
+      "name": "Wing Attack",
+      "type": "Flying",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "None."
+    },
+    {
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
     },
     {
       "name": "Bubble Beam",

@@ -2,7 +2,7 @@
   "slug": "examples-haunter",
   "nickname": "Haunter",
   "species": "Haunter",
-  "level": 20,
+  "level": 25,
   "gender": "Male",
   "shiny": false,
   "nature": "Lax",
@@ -13,22 +13,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
@@ -38,14 +38,14 @@
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 62,
+    "currentHp": 62,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
@@ -54,17 +54,30 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mean Look",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "6, 1 Target, Social",
-      "effect": "The user casts a foul spell on the target, causing it to become Trapped and Slowed for the remainder of the encounter."
+      "name": "Shadow Punch",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "6, 1 Target",
+      "effect": "Shadow Punch cannot miss."
+    },
+    {
+      "name": "Sucker Punch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Interrupt, Trigger",
+      "effect": "If an adjacent foe targets the user with a Damaging Attack, Sucker Punch may be used as an Interrupt Move against the triggering foe."
     },
     {
       "name": "Confuse Ray",
@@ -76,6 +89,15 @@
       "effect": "The target is Confused."
     },
     {
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    },
+    {
       "name": "Curse",
       "type": "Ghost",
       "category": "Status",
@@ -84,28 +106,19 @@
       "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
     },
     {
-      "name": "Spite",
-      "type": "Ghost",
+      "name": "Mean Look",
+      "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Spite may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
-    },
-    {
-      "name": "Night Shade",
-      "type": "Ghost",
-      "category": "Special",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "8, 1 Target",
-      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+      "range": "6, 1 Target, Social",
+      "effect": "The user casts a foul spell on the target, causing it to become Trapped and Slowed for the remainder of the encounter."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Frighten",

@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
@@ -23,17 +23,17 @@
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 9,
+      "added": 8,
       "stage": 0
     },
     "spd": {
@@ -43,12 +43,12 @@
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
+    "maxHp": 66,
+    "currentHp": 66,
     "tick": 6,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 4,
+      "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
@@ -59,13 +59,6 @@
   },
   "movelist": [
     {
-      "name": "Acid Armor",
-      "type": "Poison",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Set-Up"
-    },
-    {
       "name": "Water Pulse",
       "type": "Water",
       "category": "Special",
@@ -75,6 +68,13 @@
       "ac": 2,
       "range": "8, 1 Target, Aura",
       "effect": "Water Pulse Confuses the target on 17+."
+    },
+    {
+      "name": "Acid Armor",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self, Set-Up"
     },
     {
       "name": "Acid Spray",
@@ -97,6 +97,7 @@
     {
       "name": "Gooey",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user is hit by a Melee Attack",
       "effect": "The triggering attacker has their Speed lowered by 1 Combat Stage."
     }
   ],

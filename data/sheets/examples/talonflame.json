@@ -2,7 +2,7 @@
   "slug": "examples-talonflame",
   "nickname": "Talonflame",
   "species": "Talonflame",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Brave",
@@ -13,39 +13,39 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 9,
+      "added": 11,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 98,
+    "currentHp": 98,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
@@ -54,39 +54,59 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Quick Attack",
-      "type": "Normal",
+      "name": "Flame Charge",
+      "type": "Fire",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
+      "db": 7,
+      "damageRoll": "2d6+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target, Priority",
-      "effect": "None."
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Raise the user’s Speed 1 Combat Stage."
     },
     {
-      "name": "Tackle",
+      "name": "Natural Gift",
       "type": "Normal",
       "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "frequency": "Scene",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "6, 1 Target, Berry",
+      "effect": "Refer to the Move Keywords Berry list. Natural Gift deals damage according to the Berry list and Natural Gift’s Type is also defined there. The Berry’s Digestion Buff is nullified and is not used."
     },
     {
-      "name": "Agility",
-      "type": "Psychic",
-      "category": "Status",
+      "name": "Razor Wind",
+      "type": "Normal",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
       "frequency": "EOT",
+      "ac": 2,
+      "range": "10, 3 Targets, Set-Up"
+    },
+    {
+      "name": "Roost",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Daily x2",
       "range": "Self",
-      "effect": "Raise the user’s Speed 2 Combat Stages."
+      "effect": "The user regains Hit Points equal to half of its full Hit Points. If the user is a Flying Type, it loses the Flying Type until the start of their next turn."
+    },
+    {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     },
     {
       "name": "Flail",
@@ -98,26 +118,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "For each Injury the user has, Flail’s Damage Base is increased by +1."
-    },
-    {
-      "name": "Peck",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     }
   ],
   "abilities": [
@@ -130,6 +130,12 @@
       "name": "Gale Wings",
       "frequency": "Static",
       "effect": "Connection – Quick Attack. The user may use Quick Attack as a Flying-Type Move."
+    },
+    {
+      "name": "Rocket",
+      "frequency": "Scene – Free Action",
+      "trigger": "A Round Begins",
+      "effect": "The user may take their turn at the top of the round. Priority, Interrupt, or Reaction Moves or Abilities cannot be declared in response to the user’s turn."
     }
   ],
   "natureMod": {

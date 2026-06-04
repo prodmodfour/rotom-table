@@ -2,7 +2,7 @@
   "slug": "examples-muk",
   "nickname": "Muk",
   "species": "Muk",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Distracted",
@@ -12,99 +12,109 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 9,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 93,
-    "currentHp": 93,
-    "tick": 9,
+    "maxHp": 119,
+    "currentHp": 119,
+    "tick": 11,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsAtk": 2,
+      "vsSatk": 4,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Disable",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+      "name": "Gunk Shot",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Daily x2",
+      "ac": 5,
+      "range": "6, 1 Target, Smite",
+      "effect": "Gunk Shot Poisons the Target on 15+."
     },
     {
-      "name": "Mud Bomb",
-      "type": "Ground",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "At-Will",
+      "name": "Venom Drench",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Cone 2",
+      "effect": "All Poisoned targets have their Attack, Special Attack, and Speed lowered by 1 Combat Stage. Venom Drench cannot miss."
+    },
+    {
+      "name": "Screech",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
       "ac": 4,
-      "range": "6, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1 on 16+."
+      "range": "Burst 2, Friendly, Sonic",
+      "effect": "All Legal Targets have their Defense lowered 2 Combat Stages."
     },
     {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
-    },
-    {
-      "name": "Harden",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Sludge",
+      "name": "Sludge Wave",
       "type": "Poison",
       "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Burst 1 or Close Blast 2",
+      "effect": "Sludge Wave Poisons targets on 19+."
+    },
+    {
+      "name": "Sludge Bomb",
+      "type": "Poison",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "EOT",
       "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Sludge Poisons the target on 15+."
+      "range": "8, 1 Target",
+      "effect": "Sludge Bomb Poisons the target on 15+."
+    },
+    {
+      "name": "Fling",
+      "type": "Dark",
+      "category": "Physical",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target, Fling",
+      "effect": "The user throws a held item, determining the effect of Fling."
     }
   ],
   "abilities": [
@@ -117,6 +127,12 @@
       "name": "Weird Power",
       "frequency": "Static",
       "effect": "If the user’s Attack is higher than its Special Attack, the user may add its Attack Stat to its Special Damage Rolls. If their Special Attack is higher, they user may add its Special Attack Stat to its Physical Damage Rolls. This does not stack with Mixed Power."
+    },
+    {
+      "name": "Absorb Force",
+      "frequency": "Scene – Free Action",
+      "trigger": "The user is damaged by a Physical Attack",
+      "effect": "The user takes damage as if the attack was resisted one step further."
     }
   ],
   "natureMod": {

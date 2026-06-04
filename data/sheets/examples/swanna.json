@@ -2,7 +2,7 @@
   "slug": "examples-swanna",
   "nickname": "Swanna",
   "species": "Swanna",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Patient",
@@ -13,109 +13,102 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 2,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 78,
-    "currentHp": 78,
-    "tick": 7,
+    "maxHp": 107,
+    "currentHp": 107,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 1,
-      "vsAny": 2
+      "vsAtk": 2,
+      "vsSatk": 2,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Defog",
+      "name": "Tailwind",
       "type": "Flying",
+      "category": "Status",
+      "frequency": "Scene",
+      "effect": "For the remainder of the encounter, all allied trainers and Pokémon gain +5 to their Initiative. Multiple instances of Tailwind cannot stack.",
+      "special": "Grants Guster"
+    },
+    {
+      "name": "Rain Dance",
+      "type": "Water",
       "category": "Status",
       "frequency": "Daily x2",
       "range": "Field, Weather",
-      "effect": "The Weather becomes Clear, and all Blessings, Coats, and Hazards are destroyed. Clear Weather is the default weather, conferring no innate bonuses or penalties of any sort."
+      "effect": "The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty."
     },
     {
-      "name": "Water Pulse",
-      "type": "Water",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "8, 1 Target, Aura",
-      "effect": "Water Pulse Confuses the target on 17+."
+      "name": "Roost",
+      "type": "Flying",
+      "category": "Status",
+      "frequency": "Daily x2",
+      "range": "Self",
+      "effect": "The user regains Hit Points equal to half of its full Hit Points. If the user is a Flying Type, it loses the Flying Type until the start of their next turn."
     },
     {
-      "name": "Bubble Beam",
-      "type": "Water",
+      "name": "Air Slash",
+      "type": "Flying",
       "category": "Special",
       "db": 10,
       "damageRoll": "3d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Bubble Beam lowers the target’s Speed on 18+."
+      "frequency": "EOT",
+      "ac": 3,
+      "range": "6, 1 Target",
+      "effect": "Air Slash Flinches the target on 15+."
     },
     {
-      "name": "Wing Attack",
-      "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "None."
-    },
-    {
-      "name": "Water Sport",
+      "name": "Aqua Ring",
       "type": "Water",
       "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2, Coat",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Fire Type Moves. After a target has been hit by a damaging Fire Type Move, the coat is removed."
+      "frequency": "Scene",
+      "range": "Self, Coat",
+      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
     },
     {
-      "name": "Aerial Ace",
+      "name": "Feather Dance",
       "type": "Flying",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "category": "Status",
       "frequency": "EOT",
-      "range": "Melee, 1 Target",
-      "effect": "Aerial Ace cannot miss."
+      "ac": 2,
+      "range": "Burst 1, Friendly",
+      "effect": "All legal targets have their Attack lowered 2 Combat Stages."
     }
   ],
   "abilities": [
@@ -128,6 +121,11 @@
       "name": "Hydration",
       "frequency": "Scene - Swift Action",
       "effect": "The user is cured of one Status Affliction. Hydration’s Frequency is ignored if used during Rainy Weather."
+    },
+    {
+      "name": "Serene Grace",
+      "frequency": "Static",
+      "effect": "The user’s Effect Range is increased by +2."
     }
   ],
   "natureMod": {

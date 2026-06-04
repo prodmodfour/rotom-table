@@ -2,7 +2,7 @@
   "slug": "examples-sneasler",
   "nickname": "Sneasler",
   "species": "Sneasler",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Brave",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 13,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "satk": {
@@ -33,31 +33,50 @@
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 90,
+    "currentHp": 90,
+    "tick": 9,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Swords Dance",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "The user’s Attack is raised 2 Combat Stages."
+    },
+    {
+      "name": "Poison Jab",
+      "type": "Poison",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "Poison Jab Poisons the target on 15+."
+    },
     {
       "name": "Slash",
       "type": "Normal",
@@ -70,15 +89,15 @@
       "effect": "Slash is a Critical Hit on 18+."
     },
     {
-      "name": "Rock Smash",
-      "type": "Fighting",
+      "name": "Dire Claw",
+      "type": "Poison",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
+      "effect": "Dire Claw is a Critical Hit on a 19+. Dire Claw gives the target a Status ailment on a 15+. If this is triggered, roll 1d3; on 1 the target is Poisoned; on 2 the target is Paralyzed; on 3 the target is Flinched."
     },
     {
       "name": "Swift",
@@ -91,15 +110,15 @@
       "effect": "Swift cannot Miss."
     },
     {
-      "name": "Dire Claw",
-      "type": "Poison",
+      "name": "Rock Smash",
+      "type": "Fighting",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Dire Claw is a Critical Hit on a 19+. Dire Claw gives the target a Status ailment on a 15+. If this is triggered, roll 1d3; on 1 the target is Poisoned; on 2 the target is Paralyzed; on 3 the target is Flinched."
+      "effect": "Rock Smash lowers the target’s Defense 1 Combat Stage on 17+."
     }
   ],
   "abilities": [

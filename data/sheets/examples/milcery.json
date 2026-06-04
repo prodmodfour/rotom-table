@@ -2,7 +2,7 @@
   "slug": "examples-milcery",
   "nickname": "Milcery",
   "species": "Milcery",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Decisive",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -27,24 +27,24 @@
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
@@ -53,7 +53,7 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -64,29 +64,8 @@
       "frequency": "Scene",
       "ac": 2,
       "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
-    },
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
-    {
-      "name": "Draining Kiss",
-      "type": "Fairy",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
     },
     {
       "name": "Sweet Kiss",
@@ -98,20 +77,23 @@
       "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     },
     {
-      "name": "Aromatherapy",
-      "type": "Grass",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Burst 1",
-      "effect": "All allies in the burst are cured of one status condition of their choice."
-    },
-    {
       "name": "Aromatic Mist",
       "type": "Fairy",
       "category": "Status",
       "frequency": "EOT",
       "range": "Burst 1",
       "effect": "All allies in Aromatic Mist’s area of effect have their Special Defense raised 1 Combat Stage."
+    },
+    {
+      "name": "Tackle",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     }
   ],
   "abilities": [
@@ -119,11 +101,6 @@
       "name": "Sweet Veil",
       "frequency": "Static",
       "effect": "The user and allies within 3 meters are immune to Sleep. Defensive."
-    },
-    {
-      "name": "Aroma Veil",
-      "frequency": "Static",
-      "effect": "The user and all adjacent Pokémon and Trainers cannot become Confused, Enraged, or Suppressed. Defensive."
     }
   ],
   "natureMod": {

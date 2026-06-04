@@ -2,7 +2,7 @@
   "slug": "examples-charmander",
   "nickname": "Charmander",
   "species": "Charmander",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Rash",
@@ -17,7 +17,7 @@
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -27,7 +27,7 @@
     },
     "satk": {
       "base": 1,
-      "added": 10,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -37,23 +37,23 @@
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -66,6 +66,18 @@
       "effect": "Smokescreen creates a blast of Smoke that covers the target area; the Smoke persists until the end of the encounter, or until Defog or Whirlwind are used. All targets attacking from or into the Smoke receive a -3 penalty to Accuracy."
     },
     {
+      "name": "Ember",
+      "type": "Fire",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
+    },
+    {
       "name": "Growl",
       "type": "Normal",
       "category": "Status",
@@ -73,15 +85,6 @@
       "ac": 2,
       "range": "Burst 1, Friendly, Sonic, Social",
       "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Scary Face",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
     },
     {
       "name": "Scratch",
@@ -93,38 +96,14 @@
       "ac": 2,
       "range": "Melee, Pass",
       "effect": "None"
-    },
-    {
-      "name": "Ember",
-      "type": "Fire",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
-    },
-    {
-      "name": "Dragon Rage",
-      "type": "Dragon",
-      "category": "Special",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
     }
   ],
   "abilities": [
     {
       "name": "Rattled",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user is hit by a Bug, Dark, or Ghost Type Move",
       "effect": "The user’s Speed is raised by +1 Combat Stage, and may immediately Disengage as a Free Action."
-    },
-    {
-      "name": "Blaze",
-      "frequency": "Static",
-      "effect": "The user gains Last Chance with Fire."
     }
   ],
   "natureMod": {

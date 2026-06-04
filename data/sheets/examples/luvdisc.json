@@ -2,7 +2,7 @@
   "slug": "examples-luvdisc",
   "nickname": "Luvdisc",
   "species": "Luvdisc",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Composed",
@@ -12,22 +12,22 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 1,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 6,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
@@ -37,14 +37,14 @@
     },
     "spd": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 62,
+    "currentHp": 62,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 3,
@@ -53,28 +53,18 @@
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Lucky Chant",
+      "name": "Attract",
       "type": "Normal",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "Blessing",
-      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
-    },
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
+      "range": "3, 1 Target, Social",
+      "effect": "Attract Infatuates the target if its gender is the opposite of the user’s. Attract fails when used by or against Genderless targets."
     },
     {
       "name": "Water Pulse",
@@ -88,13 +78,12 @@
       "effect": "Water Pulse Confuses the target on 17+."
     },
     {
-      "name": "Charm",
-      "type": "Fairy",
+      "name": "Lucky Chant",
+      "type": "Normal",
       "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
     },
     {
       "name": "Draining Kiss",
@@ -114,6 +103,18 @@
       "frequency": "EOT",
       "range": "Self",
       "effect": "Raise the user’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Water Gun",
+      "type": "Water",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "None",
+      "special": "Grants Fountain"
     }
   ],
   "abilities": [

@@ -2,7 +2,7 @@
   "slug": "examples-wishiwashi-schooling",
   "nickname": "Wishiwashi Schooling",
   "species": "Wishiwashi Schooling",
-  "level": 20,
+  "level": 50,
   "gender": "Female",
   "shiny": false,
   "nature": "Distracted",
@@ -17,102 +17,104 @@
     },
     "atk": {
       "base": 0,
-      "added": 6,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 11,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 13,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 13,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 96,
+    "currentHp": 96,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
+      "vsAtk": 4,
+      "vsSatk": 5,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Helping Hand",
+      "name": "Endeavor",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+      "category": "Physical",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "The target loses a Tick of Hit Points for each Injury the user has."
     },
     {
-      "name": "Water Gun",
+      "name": "Soak",
       "type": "Water",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "category": "Status",
+      "frequency": "Daily",
       "ac": 2,
-      "range": "4, 1 Target",
+      "range": "5, 1 Target",
+      "effect": "The target gains the Water Type in addition to its other Types for 5 turns."
+    },
+    {
+      "name": "Double-Edge",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10 / 30",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash, Recoil 1/3",
       "effect": "None"
     },
     {
-      "name": "Growl",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Burst 1, Friendly, Sonic, Social",
-      "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
-    },
-    {
-      "name": "Brine",
+      "name": "Aqua Tail",
       "type": "Water",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "If the target’s Hit Points are under 50%, Brine’s Damage Base is increased to Damage Base 13 (4d10+10 / 35)."
+      "category": "Physical",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 4,
+      "range": "Melee, Pass",
+      "effect": "None"
     },
     {
-      "name": "Aqua Ring",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Self, Coat",
-      "effect": "Aqua Ring covers the user in a Coat that heals the user at the beginning of their turn. The user is healed a Tick of Hit Points each turn."
-    },
-    {
-      "name": "Feint Attack",
+      "name": "Beat Up",
       "type": "Dark",
       "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
       "frequency": "EOT",
       "range": "Melee, 1 Target",
-      "effect": "Feint Attack cannot miss."
+      "effect": "The user and up to two allies adjacent to the target may each make a Struggle Attack against the target. These Struggle Attacks hit for Dark-Type Damage instead of their usual Type. Beat Up may trigger Pack Hunt only once, no matter the number of attacks."
+    },
+    {
+      "name": "Dive",
+      "type": "Water",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Burst 1, Set-Up, Full Action",
+      "special": "Swim +3"
     }
   ],
   "abilities": [
@@ -124,7 +126,13 @@
     {
       "name": "Horde Break",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user changes from School Form to Solo Form",
       "effect": "The user is cured of all Status Conditions."
+    },
+    {
+      "name": "Multiscale",
+      "frequency": "Static",
+      "effect": "While at full Hit Points, all damage taken is resisted one step further. Defensive."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-ribombee",
   "nickname": "Ribombee",
   "species": "Ribombee",
-  "level": 20,
+  "level": 30,
   "gender": "Male",
   "shiny": false,
   "nature": "Dreamy",
@@ -28,44 +28,56 @@
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 67,
+    "currentHp": 67,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Stun Spore",
-      "type": "Grass",
-      "category": "Status",
+      "name": "Bug Buzz",
+      "type": "Bug",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
       "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Powder",
-      "effect": "The target is Paralyzed."
+      "ac": 2,
+      "range": "Cone 2 or Close Blast 2, Sonic, Smite",
+      "effect": "Bug Buzz lowers the Special Defense of all targets on 19+."
+    },
+    {
+      "name": "Sweet Scent",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "ac": 2,
+      "range": "Burst 2, Friendly",
+      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )",
+      "special": "Grants Alluring"
     },
     {
       "name": "Draining Kiss",
@@ -77,17 +89,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
-    },
-    {
-      "name": "Fairy Wind",
-      "type": "Fairy",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "None"
     },
     {
       "name": "Silver Wind",
@@ -110,6 +111,15 @@
       "ac": 2,
       "range": "Cone 2",
       "effect": "On hit, lowers the target’s Special Attack by -1 CS."
+    },
+    {
+      "name": "Stun Spore",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "6, 1 Target, Powder",
+      "effect": "The target is Paralyzed."
     }
   ],
   "abilities": [

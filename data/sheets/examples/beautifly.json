@@ -2,7 +2,7 @@
   "slug": "examples-beautifly",
   "nickname": "Beautifly",
   "species": "Beautifly",
-  "level": 20,
+  "level": 40,
   "gender": "Male",
   "shiny": false,
   "nature": "Sassy",
@@ -13,100 +13,109 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 9,
+      "added": 13,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 2,
+      "added": 6,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 89,
+    "currentHp": 89,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsAtk": 2,
+      "vsSatk": 3,
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Gust",
-      "type": "Flying",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
-    },
-    {
-      "name": "Morning Sun",
-      "type": "Normal",
+      "name": "Quiver Dance",
+      "type": "Bug",
       "category": "Status",
-      "frequency": "Daily x2",
+      "frequency": "Scene x2",
       "range": "Self",
-      "effect": "The user regains Hit Points equal to half of its full Hit Point value. If it is Sunny, the user gains 2/3 of its full Hit Point value. If it is Rainy, Sand Storming or Hailing the user gains 1/4 of their full Hit Point value."
+      "effect": "Raise the user’s Special Attack, Special Defense, and Speed by +1 Combat Stage each."
     },
     {
-      "name": "Absorb",
-      "type": "Grass",
-      "category": "Special",
+      "name": "Rage",
+      "type": "Normal",
+      "category": "Physical",
       "db": 2,
       "damageRoll": "1d6+3 / 7",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
+      "range": "Melee, 1 Target, Spirit Surge",
+      "effect": "The user becomes Enraged. Until the end of the user’s next turn, if the user is Enraged, the user gains +1 Attack Combat Stage whenever they are damaged by an Damaging Move or Attack."
+    },
+    {
+      "name": "Bug Buzz",
+      "type": "Bug",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "Cone 2 or Close Blast 2, Sonic, Smite",
+      "effect": "Bug Buzz lowers the Special Defense of all targets on 19+."
+    },
+    {
+      "name": "Giga Drain",
+      "type": "Grass",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10 / 19",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "6, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     },
     {
-      "name": "Stun Spore",
-      "type": "Grass",
+      "name": "Whirlwind",
+      "type": "Normal",
       "category": "Status",
       "frequency": "Scene x2",
-      "ac": 6,
-      "range": "6, 1 Target, Powder",
-      "effect": "The target is Paralyzed."
+      "ac": 2,
+      "range": "Line 6",
+      "effect": "All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed."
     },
     {
-      "name": "Air Cutter",
-      "type": "Flying",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
+      "name": "Attract",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "Cone 2",
-      "effect": "Air Cutter is a Critical Hit on 18+."
+      "range": "3, 1 Target, Social",
+      "effect": "Attract Infatuates the target if its gender is the opposite of the user’s. Attract fails when used by or against Genderless targets."
     }
   ],
   "abilities": [
@@ -119,6 +128,11 @@
       "name": "Rivalry",
       "frequency": "Static",
       "effect": "Whenever the user deals direct damage to a target of the same gender, increase the Damage dealt by +5."
+    },
+    {
+      "name": "Sap Sipper",
+      "frequency": "Scene",
+      "effect": "The user is immune to the damage and effects of Grass-Type attacks. If the user is hit by a Grass-Type attack, they gain +1 CS in their choice of Attack or Special Attack. Defensive."
     }
   ],
   "natureMod": {

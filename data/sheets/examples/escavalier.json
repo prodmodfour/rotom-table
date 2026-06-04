@@ -2,7 +2,7 @@
   "slug": "examples-escavalier",
   "nickname": "Escavalier",
   "species": "Escavalier",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Cuddly",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 5,
+      "added": 6,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 7,
+      "added": 8,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "satk": {
@@ -33,50 +33,41 @@
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 6,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 77,
+    "currentHp": 77,
+    "tick": 7,
     "evasion": {
       "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 1
+      "vsSatk": 3,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
-    },
-    {
-      "name": "Fury Attack",
+      "name": "False Swipe",
       "type": "Normal",
       "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "False Swipe’s damage cannot bring a target lower than 1 Hit Point."
     },
     {
       "name": "Headbutt",
@@ -90,12 +81,15 @@
       "effect": "Headbutt Flinches the target on 15+."
     },
     {
-      "name": "Quick Guard",
-      "type": "Fighting",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Melee, Interrupt, Shield, Trigger",
-      "effect": "If the user or an adjacent ally is targeted by a Priority or Interrupt Attack, Quick Guard may be declared as an Interrupt, causing the triggering attack to have no effect."
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
     },
     {
       "name": "Twineedle",
@@ -107,6 +101,23 @@
       "ac": 3,
       "range": "Melee, 1 Target, Double Strike",
       "effect": "Twineedle Poisons the target on an Accuracy Check of 18+"
+    },
+    {
+      "name": "Quick Guard",
+      "type": "Fighting",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Melee, Interrupt, Shield, Trigger",
+      "effect": "If the user or an adjacent ally is targeted by a Priority or Interrupt Attack, Quick Guard may be declared as an Interrupt, causing the triggering attack to have no effect."
+    },
+    {
+      "name": "Leer",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
     }
   ],
   "abilities": [

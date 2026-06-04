@@ -2,7 +2,7 @@
   "slug": "examples-mesprit",
   "nickname": "Mesprit",
   "species": "Mesprit",
-  "level": 20,
+  "level": 50,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Impish",
@@ -12,66 +12,87 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": 1,
-      "added": 7,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 8,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 108,
+    "currentHp": 108,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 3,
-      "vsAny": 2
+      "vsAtk": 5,
+      "vsSatk": 4,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 11,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Rest",
-      "type": "Psychic",
+      "name": "Charm",
+      "type": "Fairy",
       "category": "Status",
-      "frequency": "Scene",
-      "range": "Self",
-      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "Charm lowers the target’s Attack 2 Combat Stages."
     },
     {
-      "name": "Imprison",
+      "name": "Future Sight",
       "type": "Psychic",
-      "category": "Status",
+      "category": "Special",
+      "db": 14,
+      "damageRoll": "4d10+15",
       "frequency": "Scene x2",
       "range": "10, 1 Target",
-      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
+      "effect": "Future Sight does nothing on the turn it is used. At the end of the user’s next turn, Future Sight hits, even if the user is no longer on the field. Future Sight cannot miss."
+    },
+    {
+      "name": "Lucky Chant",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Lucky Chant may activate it when receiving a Critical Hit to cause the attack to instead deal damage as if it was not a Critical Hit. Lucky Chant may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
     },
     {
       "name": "Protect",
@@ -82,27 +103,29 @@
       "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
     },
     {
-      "name": "Confusion",
+      "name": "Imprison",
       "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "The target is Locked for the rest of the Scene. A Locked target may not use any Moves the user knows. Imprison cannot miss."
     }
   ],
   "abilities": [
     {
       "name": "Levitate",
       "frequency": "Static",
-      "effect": "The Pokémon is immune to the damage and effects of Ground Type Moves, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
+      "effect": "The Pokémon resists Ground-Type Moves one step further, and gains a Levitate Speed of 4, or has existing Levitate Speeds increased by +2. Defensive."
     },
     {
       "name": "Gentle Vibe",
       "frequency": "Scene – Standard Action",
       "effect": "All targets in the burst, including the user, have their Combat Stages reset, and are cured of any Volatile Status ailments."
+    },
+    {
+      "name": "Prime Fury",
+      "frequency": "Scene – Swift Action",
+      "effect": "The user becomes Enraged, and gains +1 Combat Stage in each of Attack and Special Attack."
     }
   ],
   "natureMod": {

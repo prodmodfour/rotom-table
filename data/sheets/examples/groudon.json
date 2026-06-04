@@ -2,7 +2,7 @@
   "slug": "examples-groudon",
   "nickname": "Groudon",
   "species": "Groudon",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Lonely",
@@ -12,92 +12,99 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 9,
+      "added": 18,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 7,
+      "added": 13,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 6,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 2,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 133,
+    "currentHp": 133,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsAtk": 5,
+      "vsSatk": 3,
+      "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Ancient Power",
-      "type": "Rock",
+      "name": "Solar Beam",
+      "type": "Grass",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
+      "db": 12,
+      "damageRoll": "3d12+10 / 30",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "6, 1 Target, Spirit Surge",
-      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+      "range": "Line 6, 1 Target, Set-Up"
     },
     {
-      "name": "Scary Face",
-      "type": "Normal",
+      "name": "Bulk Up",
+      "type": "Fighting",
       "category": "Status",
       "frequency": "EOT",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "The target’s Speed is lowered 2 Combat Stages."
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Defense 1 Combat Stage."
     },
     {
-      "name": "Mud Shot",
+      "name": "Precipice Blades",
       "type": "Ground",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "3, 1 Target",
-      "effect": "The target’s Speed is lowed by -1 Combat Stage."
+      "category": "Physical",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "ac": 5,
+      "range": "Burst 1, Smite",
+      "effect": "None."
     },
     {
-      "name": "Earth Power",
+      "name": "Earthquake",
       "type": "Ground",
-      "category": "Special",
-      "db": 11,
-      "damageRoll": "3d10+10",
-      "frequency": "EOT",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene",
       "ac": 2,
-      "range": "6, 1 Target, Groundsource",
-      "effect": "Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+."
+      "range": "Burst 3, Groundsource",
+      "effect": "Earthquake can hit targets that are underground, including those using the Move Dig.",
+      "special": "Grants Groundshaper"
+    },
+    {
+      "name": "Rest",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Self",
+      "effect": "The user is set to their full Hit Point value. The user is cured of any Status ailments. Then, the user falls Asleep. The user cannot make Sleep Checks at the beginning of their turn. They are cured of the Sleep at the end of their turn in 2 rounds."
     },
     {
       "name": "Lava Plume",
@@ -120,7 +127,13 @@
     {
       "name": "Sun Blanket",
       "frequency": "Daily x5 - Swift Action",
+      "trigger": "The user gains Initiative.",
       "effect": "The user gains a Tick of Hit Points. Sun Blanket may only be triggered while the user is under 50% Hit Points or in Sunny Weather."
+    },
+    {
+      "name": "Sand Force",
+      "frequency": "Static",
+      "effect": "While on sandy terrain or in Sandstorms, the user’s Ground, Rock, and Steel-Typed damaging moves deal +5 Damage."
     }
   ],
   "natureMod": {

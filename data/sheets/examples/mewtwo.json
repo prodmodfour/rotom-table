@@ -2,7 +2,7 @@
   "slug": "examples-mewtwo",
   "nickname": "Mewtwo",
   "species": "Mewtwo",
-  "level": 20,
+  "level": 60,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Naughty",
@@ -12,97 +12,101 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 11,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 14,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 16,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 13,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 75,
-    "currentHp": 75,
-    "tick": 7,
+    "maxHp": 136,
+    "currentHp": 136,
+    "tick": 13,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 5
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 13,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Confusion",
+      "name": "Power Swap",
       "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Disable",
-      "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "range": "1 Target, Trigger",
-      "effect": "Disable may be used as a Free Action that does not take up a Command whenever the user is hit by a Move. That Move becomes Disabled for the attacker."
+      "range": "Melee, 1 Target",
+      "effect": "The user and the target trade Combat Stage values for the Attack Stat, and then for the Special Attack Stat."
     },
     {
-      "name": "Future Sight",
+      "name": "Guard Swap",
       "type": "Psychic",
-      "category": "Special",
-      "db": 14,
-      "damageRoll": "4d10+15",
-      "frequency": "Scene x2",
-      "range": "10, 1 Target",
-      "effect": "Future Sight does nothing on the turn it is used. At the end of the user’s next turn, Future Sight hits, even if the user is no longer on the field. Future Sight cannot miss."
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Melee, 1 Target",
+      "effect": "The user and the target trade Combat Stage values for the Defense Stat, and then for the Special Defense Stat."
     },
     {
-      "name": "Barrier",
+      "name": "Amnesia",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Defense 2 Combat Stages."
+    },
+    {
+      "name": "Psycho Cut",
+      "type": "Psychic",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Psycho Cut is a Critical Hit on 18+."
+    },
+    {
+      "name": "Mist",
+      "type": "Ice",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "range": "Blessing",
+      "effect": "Blessing – Any user affected by Mist may activate it when having Combat Stages lowered by any effect; if they do, those Combat Stages are instead not lowered. Mist may be activated 3 times, and then disappears."
+    },
+    {
+      "name": "Miracle Eye",
       "type": "Psychic",
       "category": "Status",
       "frequency": "Scene x2",
-      "range": "Hazard",
-      "effect": "The user creates a Barrier of psychic energy. The user places up to 4 segments of Barrier; each segment must be continuous with another segment, and at least one must be adjacent to the user. These barriers count as blocking terrain and last until the end of the encounter or until they are destroyed. Each Barrier segment is 2 meters tall, 1 meter wide, and 2 centimeters thick.  Each segment has 20 Hit Points, 15 Damage Reduction, and takes damage as if it was Psychic Typed."
-    },
-    {
-      "name": "Swift",
-      "type": "Normal",
-      "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8 / 15",
-      "frequency": "EOT",
-      "range": "8, Ranged Blast 2, Friendly",
-      "effect": "Swift cannot Miss."
+      "range": "Self, Swift Action",
+      "effect": "Miracle Eye may be activated as a Swift Action on the user’s turn. For the rest of the turn, the user’s Psychic-Type Moves can hit and affect Dark-Type targets, and the user can see through the Illusion Ability, Moves with the Illusion keyword, and effects created by the Illusionist Capability, ignoring all effects from those."
     }
   ],
   "abilities": [
@@ -115,6 +119,11 @@
       "name": "Frighten",
       "frequency": "Scene – Swift Action",
       "effect": "Lower the target’s Speed 2 Combat Stages."
+    },
+    {
+      "name": "Memory Wipe",
+      "frequency": "Scene - Special",
+      "effect": "If used as a Swift Action, the last Move used by the target becomes Disabled. If used as a Standard Action, the target is Flinched and Paralyzed. If used as an Extended Action that takes about 1 minute, it can erase up to 10 minutes that have occurred within the last 30 minutes from the target’s memory."
     }
   ],
   "natureMod": {

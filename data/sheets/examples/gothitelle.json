@@ -2,7 +2,7 @@
   "slug": "examples-gothitelle",
   "nickname": "Gothitelle",
   "species": "Gothitelle",
-  "level": 20,
+  "level": 40,
   "gender": "Female",
   "shiny": false,
   "nature": "Jolly",
@@ -12,110 +12,111 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 5,
+      "added": 8,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 8,
+      "added": 10,
       "stage": 0
     },
     "spd": {
       "base": 1,
-      "added": 6,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 92,
+    "currentHp": 92,
+    "tick": 9,
     "evasion": {
-      "vsAtk": 3,
-      "vsSatk": 3,
+      "vsAtk": 4,
+      "vsSatk": 4,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 9,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Double Slap",
-      "type": "Normal",
+      "name": "Psychic",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 11,
+      "damageRoll": "3d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "5, 1 Target, Push",
+      "effect": "The target is Pushed 1 meter in any direction. Psychic lowers the target’s Special Defense 1 Combat Stage on 17+.",
+      "special": "Grants Telekinetic"
+    },
+    {
+      "name": "Heal Block",
+      "type": "Psychic",
+      "category": "Status",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "6, 1 Target",
+      "effect": "Until the end of the encounter, the target may not gain Hit Points or Temporary Hit Points from any source. This effect ends if the target is switched out or Takes a Breather."
+    },
+    {
+      "name": "Future Sight",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 14,
+      "damageRoll": "4d10+15",
+      "frequency": "Scene x2",
+      "range": "10, 1 Target",
+      "effect": "Future Sight does nothing on the turn it is used. At the end of the user’s next turn, Future Sight hits, even if the user is no longer on the field. Future Sight cannot miss."
+    },
+    {
+      "name": "Flatter",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "6, 1 Target, Social",
+      "effect": "The target’s Special Attack is raised by +1 Combat Stage. Flatter Confuses the target."
+    },
+    {
+      "name": "Psyshock",
+      "type": "Psychic",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "When calculating damage, the target subtracts their Defense from Psyshock’s damage instead of their Special Defense. Psyshock is still otherwise Special ( Special Evasion is used to avoid it, Mirror Coat can reflect it, etc. )"
+    },
+    {
+      "name": "Feint Attack",
+      "type": "Dark",
       "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Confusion",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 7,
-      "damageRoll": "2d6+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Confusion Confuses the target on 19+."
-    },
-    {
-      "name": "Embargo",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "The target cannot use or benefit from held items for the remainder of the encounter. Embargo may only affect one target at a time; if Embargo is used on a new target, the previous target is freed from the effect."
-    },
-    {
-      "name": "Psybeam",
-      "type": "Psychic",
-      "category": "Special",
-      "db": 9,
-      "damageRoll": "2d10+10",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target",
-      "effect": "Psybeam Confuses the target on 19+."
-    },
-    {
-      "name": "Tickle",
-      "type": "Normal",
-      "category": "Status",
+      "db": 6,
+      "damageRoll": "2d6+8 / 15",
       "frequency": "EOT",
-      "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Lower the target’s Attack 1 Combat Stage and lower the target’s Defense 1 Combat Stage."
-    },
-    {
-      "name": "Fake Tears",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "ac": 2,
-      "range": "8, 1 Target, Social",
-      "effect": "Lower the target’s Special Defense 2 Combat Stages."
+      "effect": "Feint Attack cannot miss."
     }
   ],
   "abilities": [
@@ -128,6 +129,11 @@
       "name": "Perception",
       "frequency": "Static",
       "effect": "The user gains +1 Evasion. Whenever an Ally uses a damaging area-of-effect attack that would hit you, you may Disengage as a Free Action before the attack resolves."
+    },
+    {
+      "name": "Shadow Tag",
+      "frequency": "Scene – Free Action",
+      "effect": "The target’s shadow becomes pinned to the target’s current spot for 5 turns. During this time, the target is Slowed and Trapped, and cannot move more than 5 meters from the spot their shadow is pinned to; even being Pushed and other forced movement effects cannot force the target to Move more than 5 meters from that spot."
     }
   ],
   "natureMod": {

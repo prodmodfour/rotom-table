@@ -2,7 +2,7 @@
   "slug": "examples-froslass",
   "nickname": "Froslass",
   "species": "Froslass",
-  "level": 20,
+  "level": 45,
   "gender": "Female",
   "shiny": false,
   "nature": "Sassy",
@@ -13,91 +13,112 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 4,
+      "added": 9,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 3,
+      "added": 9,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 8,
+      "added": 11,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 9,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 100,
+    "currentHp": 100,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
-      "vsSatk": 3,
+      "vsAtk": 3,
+      "vsSatk": 4,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Double Team",
+      "name": "Shadow Ball",
+      "type": "Ghost",
+      "category": "Special",
+      "db": 10,
+      "damageRoll": "3d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "Shadow Ball lowers the foe’s Special Defense 1 Combat Stage on 17+."
+    },
+    {
+      "name": "Captivate",
       "type": "Normal",
       "category": "Status",
       "frequency": "Scene",
-      "range": "Self, Illusion, Coat",
-      "effect": "The user gains 3 activations of Double Team. The user may either activate Double Team when being targeted by an attack to increase their Evasion by +2 against that attack; or when making an attack to increase their Accuracy by +2 for that attack."
+      "ac": 2,
+      "range": "Cone 2, Friendly, Social",
+      "effect": "Captivate lowers the target’s Special Attack 2 Combat Stages. Captivate may not affect something that is the same gender as the user or something that is genderless."
     },
     {
-      "name": "Astonish",
-      "type": "Ghost",
+      "name": "Wake-Up Slap",
+      "type": "Fighting",
       "category": "Physical",
       "db": 5,
-      "damageRoll": "1d8+8",
+      "damageRoll": "1d8+8 / 13",
       "frequency": "At-Will",
       "ac": 2,
       "range": "Melee, 1 Target",
-      "effect": "Astonish Flinches the target on 15+. Once per scene, if the target is unaware of the user’s presence, Astonish automatically Flinches the target."
+      "effect": "If the target is Asleep, Wake-Up Slap has a Damage Base of 10 (3d8+10 / 24) instead, and cures the target of Sleep."
     },
     {
-      "name": "Ice Shard",
-      "type": "Ice",
-      "category": "Physical",
-      "db": 6,
-      "damageRoll": "2d6+8",
-      "frequency": "At-Will",
+      "name": "Confuse Ray",
+      "type": "Ghost",
+      "category": "Status",
+      "frequency": "Scene x2",
       "ac": 2,
-      "range": "4, 1 Target, Priority",
-      "effect": "None"
+      "range": "6, 1 Target",
+      "effect": "The target is Confused."
     },
     {
-      "name": "Icy Wind",
-      "type": "Ice",
+      "name": "Ominous Wind",
+      "type": "Ghost",
       "category": "Special",
       "db": 8,
       "damageRoll": "2d8+10",
       "frequency": "EOT",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "All Legal Targets have their Speed lowered 1 Combat Stage."
+      "ac": 2,
+      "range": "6, 1 Target, Spirit Surge",
+      "effect": "On 19+, the user has each of its stats raised by +1 Combat Stage."
+    },
+    {
+      "name": "Draining Kiss",
+      "type": "Fairy",
+      "category": "Special",
+      "db": 5,
+      "damageRoll": "1d8+8 / 13",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
     }
   ],
   "abilities": [
@@ -110,6 +131,11 @@
       "name": "Snow Cloak",
       "frequency": "Static",
       "effect": "The user gains +1 Evasion. This is increased to +2 Evasion while in Hail or snowy terrain. While in Hail, the user and adjacent allies do not lose Hit Points due to the Hail."
+    },
+    {
+      "name": "Frostbite",
+      "frequency": "Static",
+      "effect": "The user’s damaging Ice-Type attacks cause the target to become Slowed on 18+, and the Effect Range for Freeze on these Moves is increased by +1. If the Move does not cause Freezing, it now causes Freezing on a roll of 20."
     }
   ],
   "natureMod": {

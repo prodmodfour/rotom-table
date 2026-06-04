@@ -2,7 +2,7 @@
   "slug": "examples-pumpkaboo-large",
   "nickname": "Pumpkaboo Large",
   "species": "Pumpkaboo Large",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Quiet",
@@ -13,17 +13,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 8,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "satk": {
@@ -33,28 +33,28 @@
     },
     "sdef": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 1,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [],
@@ -63,11 +63,6 @@
       "name": "Pickup",
       "frequency": "Daily – Extended Action",
       "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
-    },
-    {
-      "name": "Life Force",
-      "frequency": "Daily x5 – Swift Action",
-      "effect": "The user gains a Tick of Hit Points."
     }
   ],
   "natureMod": {

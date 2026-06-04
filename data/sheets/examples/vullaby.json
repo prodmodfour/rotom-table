@@ -2,7 +2,7 @@
   "slug": "examples-vullaby",
   "nickname": "Vullaby",
   "species": "Vullaby",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Decisive",
@@ -13,7 +13,7 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 13,
+      "added": 4,
       "stage": 0
     },
     "atk": {
@@ -38,23 +38,23 @@
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 93,
-    "currentHp": 93,
-    "tick": 9,
+    "maxHp": 56,
+    "currentHp": 56,
+    "tick": 5,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 1,
-      "vsAny": 2
+      "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
@@ -68,6 +68,17 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Pluck takes the target’s Held Item or Accessory Slot Item and attaches it to Pluck’s user, if the user is not holding anything."
+    },
+    {
+      "name": "Fury Attack",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
     },
     {
       "name": "Leer",
@@ -87,35 +98,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead."
-    },
-    {
-      "name": "Nasty Plot",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Special Attack 2 Combat Stages."
-    },
-    {
-      "name": "Flatter",
-      "type": "Dark",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "6, 1 Target, Social",
-      "effect": "The target’s Special Attack is raised by +1 Combat Stage. Flatter Confuses the target."
-    },
-    {
-      "name": "Fury Attack",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
-      "frequency": "At-Will",
-      "ac": 4,
-      "range": "Melee, 1 Target, Five Strike",
-      "effect": "None"
+      "effect": "If the target is airborne as a result of Fly or Sky Drop, Gust can hit them, ignoring Range and has a Damage Base of 8 instead.",
+      "special": "Grants Guster"
     }
   ],
   "abilities": [
@@ -123,11 +107,6 @@
       "name": "Overcoat",
       "frequency": "Static",
       "effect": "The user is immune to Moves with the Powder Keyword, and does not take damage from any Weather that would normally cause it to take damage. Defensive."
-    },
-    {
-      "name": "Lunchbox",
-      "frequency": "Scene – Free Action",
-      "effect": "The user gains a Tick of Temporary Hit Points. These Temporary Hit Points stack with any Temporary Hit Points granted by the triggering Food Buff."
     }
   ],
   "natureMod": {

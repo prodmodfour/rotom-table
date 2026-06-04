@@ -2,7 +2,7 @@
   "slug": "examples-zoroark-hisuian",
   "nickname": "Zoroark Hisuian",
   "species": "Zoroark Hisuian",
-  "level": 20,
+  "level": 35,
   "gender": "Male",
   "shiny": false,
   "nature": "Calm",
@@ -18,7 +18,7 @@
     },
     "atk": {
       "base": -1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "def": {
@@ -28,36 +28,58 @@
     },
     "satk": {
       "base": 0,
-      "added": 10,
+      "added": 11,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 2,
+      "added": 10,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 78,
+    "currentHp": 78,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
-      "vsAny": 2
+      "vsSatk": 3,
+      "vsAny": 4
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Shadow Claw",
+      "type": "Ghost",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Shadow Claw is a Critical Hit on 18+."
+    },
+    {
+      "name": "Slash",
+      "type": "Normal",
+      "category": "Physical",
+      "db": 9,
+      "damageRoll": "2d10+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, Pass",
+      "effect": "Slash is a Critical Hit on 18+."
+    },
     {
       "name": "Bitter Malice",
       "type": "Ghost",
@@ -70,6 +92,16 @@
       "effect": "Legal targets hit by Bitter Malice are Stuck and Trapped until the end of their next turn on a 19+. Once a Scene, if Bitter Malice’s target has a Status Condition, you may have Bitter Malice’s Damage Base be 12 instead (3d12+10 / 30)."
     },
     {
+      "name": "Swift",
+      "type": "Normal",
+      "category": "Special",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "range": "8, Ranged Blast 2, Friendly",
+      "effect": "Swift cannot Miss."
+    },
+    {
       "name": "Snarl",
       "type": "Dark",
       "category": "Special",
@@ -79,16 +111,6 @@
       "ac": 3,
       "range": "Cone 2, Sonic",
       "effect": "All Legal Targets have their Special Attack lowered 1 Combat Stage."
-    },
-    {
-      "name": "Swift",
-      "type": "Normal",
-      "category": "Special",
-      "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "range": "8, Ranged Blast 2, Friendly",
-      "effect": "Swift cannot Miss."
     }
   ],
   "abilities": [

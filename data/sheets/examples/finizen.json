@@ -2,7 +2,7 @@
   "slug": "examples-finizen",
   "nickname": "Finizen",
   "species": "Finizen",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Careful",
@@ -12,66 +12,67 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 3,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "satk": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 8,
+      "added": 5,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 69,
-    "currentHp": 69,
-    "tick": 6,
+    "maxHp": 53,
+    "currentHp": 53,
+    "tick": 5,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 2,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Helping Hand",
+      "name": "Work Up",
       "type": "Normal",
       "category": "Status",
       "frequency": "EOT",
-      "range": "4, 1 Target, Priority",
-      "effect": "Helping Hand grants the target +2 on their next Accuracy Roll this round, and +10 to the next Damage Roll this round."
+      "range": "Self",
+      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
     },
     {
-      "name": "Focus Energy",
+      "name": "Supersonic",
       "type": "Normal",
       "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user becomes Pumped. While Pumped, the user’s Critical Range is extended by 2, or 18+ if the Critical Range is not otherwise extended. Being switched will cause this effect to end."
+      "frequency": "Scene x2",
+      "ac": 6,
+      "range": "4, 1 Target, Sonic",
+      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     },
     {
       "name": "Water Gun",
@@ -82,15 +83,8 @@
       "frequency": "At-Will",
       "ac": 2,
       "range": "4, 1 Target",
-      "effect": "None"
-    },
-    {
-      "name": "Work Up",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Attack 1 Combat Stage and raise the user’s Special Attack 1 Combat Stage."
+      "effect": "None",
+      "special": "Grants Fountain"
     },
     {
       "name": "Pound",
@@ -102,15 +96,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "None"
-    },
-    {
-      "name": "Supersonic",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 6,
-      "range": "4, 1 Target, Sonic",
-      "effect": "The target becomes Confused. On miss, the target suffers a -2 penalty to Accuracy Rolls for one full round."
     }
   ],
   "abilities": [
@@ -118,11 +103,6 @@
       "name": "Swift Swim",
       "frequency": "Static",
       "effect": "While in Rainy Weather or under 50% Max Hit Points, the user’s Initiative is doubled."
-    },
-    {
-      "name": "Friend Guard",
-      "frequency": "Scene – Free Action",
-      "effect": "The damage is resisted one step further. Defensive."
     }
   ],
   "natureMod": {

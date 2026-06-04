@@ -2,7 +2,7 @@
   "slug": "examples-litten",
   "nickname": "Litten",
   "species": "Litten",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Composed",
@@ -12,17 +12,17 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "satk": {
@@ -37,45 +37,36 @@
     },
     "spd": {
       "base": 0,
-      "added": 9,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 57,
-    "currentHp": 57,
-    "tick": 5,
+    "maxHp": 44,
+    "currentHp": 44,
+    "tick": 4,
     "evasion": {
       "vsAtk": 1,
       "vsSatk": 1,
-      "vsAny": 3
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Double Kick",
-      "type": "Fighting",
+      "name": "Lick",
+      "type": "Ghost",
       "category": "Physical",
       "db": 3,
       "damageRoll": "1d6+5 / 9",
       "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target, Double Strike",
-      "effect": "None"
-    },
-    {
-      "name": "Leer",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "At-Will",
       "ac": 2,
-      "range": "Cone 2, Friendly, Social",
-      "effect": "All legal targets have their Defense lowered by 1 Combat Stage."
+      "range": "Melee, 1 Target",
+      "effect": "Lick Paralyzes the target on 15+ during Accuracy Check."
     },
     {
       "name": "Growl",
@@ -87,24 +78,16 @@
       "effect": "Growl lowers all Legal Targets Attack 1 Combat Stage."
     },
     {
-      "name": "Roar",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 1, Sonic, Social",
-      "effect": "When declaring Roar, the user does nothing and may not Shift. At the end of the round, the user Shifts and uses Roar.  Targets hit by Roar immediately Shift away from the target using their highest usable movement capability, and towards their Trainer if possible. If the target is an owned Pokémon and ends this shift within 6 meters of their Poké Ball, they are immediately recalled to their Poké Ball. If that Trainer sends out a replacement, they do not lose their Pokémon turn."
-    },
-    {
-      "name": "Fire Fang",
+      "name": "Ember",
       "type": "Fire",
-      "category": "Physical",
-      "db": 9,
-      "damageRoll": "2d10+10",
+      "category": "Special",
+      "db": 6,
+      "damageRoll": "2d6+8",
       "frequency": "At-Will",
-      "ac": 3,
-      "range": "Melee, 1 Target",
-      "effect": "Fire Fang Burns or Flinches on 18-19 during Accuracy Check; flip a coin to determine whether the foe gets Burned or Flinches. On 20 during Accuracy Check, the foe is Burned and Flinches."
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "Ember Burns the target on 18+.",
+      "special": "Grants Firestarter"
     },
     {
       "name": "Scratch",
@@ -123,11 +106,6 @@
       "name": "Blaze",
       "frequency": "Static",
       "effect": "The user gains Last Chance with Fire."
-    },
-    {
-      "name": "Intimidate",
-      "frequency": "At-Will – Swift Action",
-      "effect": "Lower the target’s Attack 1 Combat Stage. You may target a specific foe only once per Scene with Intimidate."
     }
   ],
   "capabilities": {

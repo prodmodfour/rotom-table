@@ -2,7 +2,7 @@
   "slug": "examples-charjabug",
   "nickname": "Charjabug",
   "species": "Charjabug",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Quiet",
@@ -13,70 +13,61 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 7,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 10,
+      "added": 8,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 6,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 5,
+      "added": 2,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 54,
-    "currentHp": 54,
-    "tick": 5,
+    "maxHp": 68,
+    "currentHp": 68,
+    "tick": 6,
     "evasion": {
-      "vsAtk": 4,
-      "vsSatk": 3,
-      "vsAny": 1
+      "vsAtk": 3,
+      "vsSatk": 2,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "String Shot",
-      "type": "Bug",
-      "category": "Status",
-      "frequency": "At-Will",
-      "ac": 3,
-      "range": "Cone 2",
-      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck."
-    },
-    {
-      "name": "Spark",
-      "type": "Electric",
+      "name": "Crunch",
+      "type": "Dark",
       "category": "Physical",
       "db": 8,
-      "damageRoll": "2d8+10",
+      "damageRoll": "2d8+10 / 19",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Melee, 1 Target, Dash",
-      "effect": "Spark Paralyzes the target on 15+."
+      "range": "Melee, 1 Target",
+      "effect": "Crunch lowers the target’s Defense 1 Combat Stage on 17+"
     },
     {
       "name": "Acrobatics",
@@ -90,15 +81,26 @@
       "effect": "If the user is not holding an item, Acrobatics instead has a Damage Base of 11 (3d10+10 / 27)."
     },
     {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 2,
-      "damageRoll": "1d6+3 / 7",
+      "name": "Spark",
+      "type": "Electric",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target, Dash",
+      "effect": "Spark Paralyzes the target on 15+."
+    },
+    {
+      "name": "Bug Bite",
+      "type": "Bug",
+      "category": "Physical",
+      "db": 8,
+      "damageRoll": "2d8+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
+      "range": "Melee, 1 Target",
+      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
     },
     {
       "name": "Bite",
@@ -112,15 +114,15 @@
       "effect": "Bite Flinches the target on 15+."
     },
     {
-      "name": "Bug Bite",
-      "type": "Bug",
-      "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "name": "Mud-Slap",
+      "type": "Ground",
+      "category": "Special",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
+      "range": "3, 1 Target",
+      "effect": "The target’s Accuracy is lowered by -1."
     }
   ],
   "abilities": [

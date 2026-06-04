@@ -2,7 +2,7 @@
   "slug": "examples-wurmple",
   "nickname": "Wurmple",
   "species": "Wurmple",
-  "level": 20,
+  "level": 5,
   "gender": "Female",
   "shiny": false,
   "nature": "Bashful",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 7,
+      "added": 4,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 10,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 3,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "spd": {
@@ -42,32 +42,21 @@
     }
   },
   "combat": {
-    "maxHp": 66,
-    "currentHp": 66,
-    "tick": 6,
+    "maxHp": 42,
+    "currentHp": 42,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 1,
       "vsSatk": 1,
       "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 2,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Tackle",
-      "type": "Normal",
-      "category": "Physical",
-      "db": 4,
-      "damageRoll": "1d8+6 / 11",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "Melee, 1 Target, Dash, Push",
-      "effect": "The target is pushed 2 Meters."
-    },
     {
       "name": "Poison Sting",
       "type": "Poison",
@@ -80,15 +69,15 @@
       "effect": "Poison Sting Poisons the target on 17+."
     },
     {
-      "name": "Bug Bite",
-      "type": "Bug",
+      "name": "Tackle",
+      "type": "Normal",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "If the target has a stored Digestion Buff or has traded in a Digestion Buff this Scene, the user may gain the effects of the Digestion Buff. This does not count towards the usual limit on the user’s Digestion Buffs."
+      "range": "Melee, 1 Target, Dash, Push",
+      "effect": "The target is pushed 2 Meters."
     },
     {
       "name": "String Shot",
@@ -97,7 +86,8 @@
       "frequency": "At-Will",
       "ac": 3,
       "range": "Cone 2",
-      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck."
+      "effect": "Targets have their Speed CS lowered by -1. If this lowers their Speed CS to -6, or if their Speed CS was already at -6, the target is instead Stuck.",
+      "special": "Grants Threaded"
     }
   ],
   "abilities": [
@@ -105,11 +95,6 @@
       "name": "Shield Dust",
       "frequency": "Static",
       "effect": "The user ignores the secondary effects that trigger during Accuracy Roll of damaging Moves that target the user. For example, Flamethrower can never inflict the Burn Condition. Defensive."
-    },
-    {
-      "name": "Poison Point",
-      "frequency": "Scene – Free Action",
-      "effect": "The attacking foe is Poisoned."
     }
   ],
   "capabilities": {

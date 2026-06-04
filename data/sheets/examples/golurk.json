@@ -2,7 +2,7 @@
   "slug": "examples-golurk",
   "nickname": "Golurk",
   "species": "Golurk",
-  "level": 20,
+  "level": 45,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Lonely",
@@ -13,101 +13,126 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 5,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 1,
-      "added": 6,
+      "added": 15,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 7,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 5,
+      "added": 9,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 72,
-    "currentHp": 72,
-    "tick": 7,
+    "maxHp": 112,
+    "currentHp": 112,
+    "tick": 11,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 2,
+      "vsSatk": 3,
       "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 10,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Shadow Punch",
+      "name": "Heavy Slam",
+      "type": "Steel",
+      "category": "Physical",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
+      "frequency": "EOT",
+      "ac": 2,
+      "range": "Melee, 1 Target",
+      "effect": "For each weight class the user is above the target, increase Heavy Slam’s damage base by +2."
+    },
+    {
+      "name": "Curse",
       "type": "Ghost",
+      "category": "Status",
+      "frequency": "See Text",
+      "range": "Self",
+      "effect": "If the user is not a Ghost Type, Curse has a Frequency of EOT, and when used the user lowers its Speed by -1 Combat Stage, but raises Attack and Defense by +1 Combat Stage each.  If the user is a Ghost Type, Curse has a Frequency of Scene, and when used the user loses 1/3rd of their Max Hit Points and a target Pokémon or Trainer within 8 meters of the user becomes Cursed. This Hit Point loss cannot be prevented in any way."
+    },
+    {
+      "name": "Night Shade",
+      "type": "Ghost",
+      "category": "Special",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "8, 1 Target",
+      "effect": "The target loses Hit Points equal to the level of Night Shade’s user. Do not apply weakness or resistance. Do not apply stats."
+    },
+    {
+      "name": "Dynamic Punch",
+      "type": "Fighting",
+      "category": "Physical",
+      "db": 10,
+      "damageRoll": "3d8+10 / 24",
+      "frequency": "At-Will",
+      "ac": 9,
+      "range": "Melee, 1 Target",
+      "effect": "Dynamic Punch Confuses the target. Dynamic Punch ignores the target’s Evasion if they are Flanked."
+    },
+    {
+      "name": "Magnitude",
+      "type": "Ground",
+      "category": "Physical",
+      "frequency": "EOT",
+      "range": "Burst 2, Groundsource",
+      "effect": "When you use Magnitude, roll 1d6.  Magnitude’s Damage Base is equal to 5+X, where X is the value of the d6. Magnitude can hit targets that are underground, including those using the Move Dig.",
+      "special": "Grants Groundshaper"
+    },
+    {
+      "name": "Mega Punch",
+      "type": "Normal",
       "category": "Physical",
       "db": 8,
-      "damageRoll": "2d8+10",
-      "frequency": "EOT",
-      "range": "6, 1 Target",
-      "effect": "Shadow Punch cannot miss."
-    },
-    {
-      "name": "Mud-Slap",
-      "type": "Ground",
-      "category": "Special",
-      "db": 4,
-      "damageRoll": "1d8+6",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "3, 1 Target",
-      "effect": "The target’s Accuracy is lowered by -1."
-    },
-    {
-      "name": "Rollout",
-      "type": "Rock",
-      "category": "Physical",
-      "db": 3,
-      "damageRoll": "1d6+5 / 9",
+      "damageRoll": "2d8+10 / 19",
       "frequency": "At-Will",
       "ac": 4,
-      "range": "Melee, 1 Target, Pass",
-      "effect": "The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15."
-    },
-    {
-      "name": "Iron Defense",
-      "type": "Steel",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Self",
-      "effect": "Raise the user’s Defense 2 Combat Stages."
+      "range": "Melee, 1 Target",
+      "effect": "None"
     }
   ],
   "abilities": [
     {
       "name": "Klutz",
+      "trigger": "The user hits with a Melee Attack",
       "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
     },
     {
       "name": "Prime Fury",
       "frequency": "Scene – Swift Action",
       "effect": "The user becomes Enraged, and gains +1 Combat Stage in each of Attack and Special Attack."
+    },
+    {
+      "name": "No Guard",
+      "frequency": "Static",
+      "effect": "The user gains a +3 bonus to all Attack Rolls; however all foes gain a +3 Bonus on Attack Rolls against the user."
     }
   ],
   "natureMod": {

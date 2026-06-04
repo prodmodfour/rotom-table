@@ -2,7 +2,7 @@
   "slug": "examples-pumpkaboo-small",
   "nickname": "Pumpkaboo Small",
   "species": "Pumpkaboo Small",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Rash",
@@ -13,48 +13,48 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 11,
+      "added": 4,
       "stage": 0
     },
     "satk": {
       "base": 1,
-      "added": 5,
+      "added": 4,
       "stage": 0
     },
     "sdef": {
       "base": -1,
-      "added": 3,
+      "added": 2,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 38,
+    "currentHp": 38,
+    "tick": 3,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 1,
-      "vsAny": 1
+      "vsAny": 2
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [],
@@ -63,11 +63,6 @@
       "name": "Pickup",
       "frequency": "Daily – Extended Action",
       "effect": "You may use Pickup as an Extended Action that requires at least 5 minutes. Roll 1d20, consult the Pickup keyword to figure out what you find!"
-    },
-    {
-      "name": "Insomnia",
-      "frequency": "Static",
-      "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
     }
   ],
   "natureMod": {

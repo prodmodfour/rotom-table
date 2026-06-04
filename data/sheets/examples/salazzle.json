@@ -2,7 +2,7 @@
   "slug": "examples-salazzle",
   "nickname": "Salazzle",
   "species": "Salazzle",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Sassy",
@@ -13,79 +13,89 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 2,
+      "added": 6,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 13,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 4,
+      "added": 7,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 5,
+      "added": 9,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 63,
-    "currentHp": 63,
-    "tick": 6,
+    "maxHp": 87,
+    "currentHp": 87,
+    "tick": 8,
     "evasion": {
-      "vsAtk": 1,
-      "vsSatk": 2,
+      "vsAtk": 2,
+      "vsSatk": 3,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Dragon Rage",
-      "type": "Dragon",
-      "category": "Special",
-      "frequency": "At-Will",
-      "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
+      "name": "Nasty Plot",
+      "type": "Dark",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Special Attack 2 Combat Stages."
     },
     {
-      "name": "Ember",
+      "name": "Toxic",
+      "type": "Poison",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 4,
+      "range": "4, 1 Target",
+      "effect": "The target is Badly Poisoned. If the user is Poison Type, Toxic cannot miss."
+    },
+    {
+      "name": "Flame Burst",
       "type": "Fire",
       "category": "Special",
-      "db": 6,
-      "damageRoll": "2d6+8",
+      "db": 9,
+      "damageRoll": "2d10+10",
       "frequency": "At-Will",
       "ac": 2,
-      "range": "4, 1 Target",
-      "effect": "Ember Burns the target on 18+."
+      "range": "6, 1 Target",
+      "effect": "Any Trainers or Pokémon cardinally adjacent to the target lose 5 Hit Points."
     },
     {
-      "name": "Sweet Scent",
+      "name": "Double Slap",
       "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Burst 2, Friendly",
-      "effect": "Targets hit by Sweet Scent gain a -2 Penalty to Evasion. (Total Evasion may not be lowered to a negative value. )"
+      "category": "Physical",
+      "db": 2,
+      "damageRoll": "1d6+3 / 7",
+      "frequency": "At-Will",
+      "ac": 4,
+      "range": "Melee, 1 Target, Five Strike",
+      "effect": "None"
     },
     {
       "name": "Smog",
@@ -97,6 +107,15 @@
       "ac": 7,
       "range": "Line 2",
       "effect": "Smog Poisons the target on an Even-Numbered Roll."
+    },
+    {
+      "name": "Dragon Rage",
+      "type": "Dragon",
+      "category": "Special",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "4, 1 Target",
+      "effect": "If it hits, Dragon Rage causes the target to lose 15 Hit Points. Dragon Rage is Special and interacts with other moves and effects as such (Special Evasion may be applied to avoid it, Mirror Coat can reflect it, etc.)."
     }
   ],
   "abilities": [

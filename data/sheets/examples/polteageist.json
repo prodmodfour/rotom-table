@@ -2,7 +2,7 @@
   "slug": "examples-polteageist",
   "nickname": "Polteageist",
   "species": "Polteageist",
-  "level": 20,
+  "level": 30,
   "gender": "No Gender",
   "shiny": false,
   "nature": "Timid",
@@ -12,27 +12,27 @@
   "stats": {
     "hp": {
       "base": 0,
-      "added": 1,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": -1,
-      "added": 1,
+      "added": 4,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 7,
+      "added": 9,
       "stage": 0
     },
     "spd": {
@@ -42,21 +42,40 @@
     }
   },
   "combat": {
-    "maxHp": 51,
-    "currentHp": 51,
-    "tick": 5,
+    "maxHp": 73,
+    "currentHp": 73,
+    "tick": 7,
     "evasion": {
       "vsAtk": 2,
-      "vsSatk": 3,
+      "vsSatk": 4,
       "vsAny": 3
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 7,
     "spent": 0
   },
   "movelist": [
+    {
+      "name": "Aromatherapy",
+      "type": "Grass",
+      "category": "Status",
+      "frequency": "Scene",
+      "range": "Burst 1",
+      "effect": "All allies in the burst are cured of one status condition of their choice."
+    },
+    {
+      "name": "Sucker Punch",
+      "type": "Dark",
+      "category": "Physical",
+      "db": 7,
+      "damageRoll": "2d6+10 / 17",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Melee, 1 Target, Interrupt, Trigger",
+      "effect": "If an adjacent foe targets the user with a Damaging Attack, Sucker Punch may be used as an Interrupt Move against the triggering foe."
+    },
     {
       "name": "Protect",
       "type": "Normal",
@@ -64,14 +83,6 @@
       "frequency": "Scene",
       "range": "Self, Interrupt, Shield, Trigger",
       "effect": "If the user is hit by a Move, the user may use Protect. The user is instead not hit by the Move. You do not take any damage nor are you affected by any of the Move’s effects."
-    },
-    {
-      "name": "Aromatic Mist",
-      "type": "Fairy",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 1",
-      "effect": "All allies in Aromatic Mist’s area of effect have their Special Defense raised 1 Combat Stage."
     },
     {
       "name": "Mega Drain",
@@ -83,17 +94,27 @@
       "ac": 2,
       "range": "6, 1 Target",
       "effect": "After the target takes damage, the user gains Hit Points equal to half of the damage they dealt to the target."
+    },
+    {
+      "name": "Aromatic Mist",
+      "type": "Fairy",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Burst 1",
+      "effect": "All allies in Aromatic Mist’s area of effect have their Special Defense raised 1 Combat Stage."
     }
   ],
   "abilities": [
     {
       "name": "Cursed Body",
       "frequency": "Scene – Free Action",
+      "trigger": "The user is hit by a Damaging Move.",
       "effect": "The Move becomes Disabled."
     },
     {
       "name": "Weak Armor",
       "frequency": "At-Will – Free Action",
+      "trigger": "The user takes Physical damage.",
       "effect": "The user may lower its Defense by 1 Combat Stage, and gain +1 Speed Combat Stage. This is done after the triggering damage is resolved."
     }
   ],

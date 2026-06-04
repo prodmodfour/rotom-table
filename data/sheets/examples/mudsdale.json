@@ -2,7 +2,7 @@
   "slug": "examples-mudsdale",
   "nickname": "Mudsdale",
   "species": "Mudsdale",
-  "level": 20,
+  "level": 35,
   "gender": "Female",
   "shiny": false,
   "nature": "Distracted",
@@ -12,69 +12,88 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 7,
+      "added": 10,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 9,
+      "added": 11,
       "stage": 0
     },
     "def": {
       "base": -1,
-      "added": 3,
+      "added": 7,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 2,
+      "added": 5,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 8,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 3,
+      "added": 4,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 84,
-    "currentHp": 84,
-    "tick": 8,
+    "maxHp": 108,
+    "currentHp": 108,
+    "tick": 10,
     "evasion": {
-      "vsAtk": 2,
+      "vsAtk": 3,
       "vsSatk": 3,
       "vsAny": 1
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 8,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Mud Sport",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "EOT",
-      "range": "Burst 2",
-      "effect": "All targets in the burst, including the user, gain a Coat which grants them 1 Step of Resistance to Electric Type Moves. After a target has been hit by a damaging Electric Type Move, the coat is removed."
-    },
-    {
-      "name": "Bulldoze",
-      "type": "Ground",
+      "name": "Heavy Slam",
+      "type": "Steel",
       "category": "Physical",
-      "db": 8,
-      "damageRoll": "2d8+10",
+      "db": 4,
+      "damageRoll": "1d8+6 / 11",
       "frequency": "EOT",
       "ac": 2,
-      "range": "Burst 1",
-      "effect": "All Legal Targets are lowered 1 Speed Combat Stage."
+      "range": "Melee, 1 Target",
+      "effect": "For each weight class the user is above the target, increase Heavy Slam’s damage base by +2."
+    },
+    {
+      "name": "Iron Defense",
+      "type": "Steel",
+      "category": "Status",
+      "frequency": "EOT",
+      "range": "Self",
+      "effect": "Raise the user’s Defense 2 Combat Stages."
+    },
+    {
+      "name": "High Horsepower",
+      "type": "Ground",
+      "category": "Physical",
+      "db": 12,
+      "damageRoll": "3d12+10",
+      "frequency": "Scene x2",
+      "ac": 3,
+      "range": "Melee, 1 Target",
+      "effect": "High Horsepower may be used as a Free Action at the end of a Sprint Maneuver taken as a Standard Action, as long as the user Shifted at least 3 meters in a straight line towards the target. When used this way, High Horsepower gains Smite."
+    },
+    {
+      "name": "Bide",
+      "type": "Normal",
+      "category": "Physical",
+      "frequency": "Scene",
+      "range": "Burst 1, Friendly",
+      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
     },
     {
       "name": "Stomp",
@@ -86,14 +105,6 @@
       "ac": 2,
       "range": "Melee, 1 Target",
       "effect": "Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage."
-    },
-    {
-      "name": "Rototiller",
-      "type": "Ground",
-      "category": "Status",
-      "frequency": "Scene",
-      "range": "Burst 2",
-      "effect": "All Grass-type Pokémon in the area raise their Attack and Special Attack 1 Combat Stage."
     },
     {
       "name": "Double Kick",
@@ -109,7 +120,10 @@
   ],
   "abilities": [
     {
-      "name": "Stamina"
+      "name": "Stamina",
+      "frequency": "At-Will – Free Action",
+      "trigger": "The user is hit by a Damaging Attack",
+      "effect": "The user receives +1 Defense Combat Stage. Defensive."
     },
     {
       "name": "Inner Focus",

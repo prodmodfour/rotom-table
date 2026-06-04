@@ -34,6 +34,26 @@ describe('pokemon sheet derived helpers', () => {
     expect(computeMaxHp(sheet, hp?.total ?? 0)).toBe(28)
   })
 
+  it('uses manual base rows when a species only has placement reference data', () => {
+    const stats = resolveStats({
+      slug: 'test-galar-darmanitan',
+      nickname: 'Test Galar Darmanitan',
+      species: 'Darmanitan Galar Standard Mode',
+      level: 40,
+      stats: {
+        hp: { base: 10, added: 10 },
+        atk: { base: 14, added: 13 },
+        def: { base: 6, added: 6 },
+        satk: { base: 3, added: 3 },
+        sdef: { base: 8, added: 8 },
+        spd: { base: 10, added: 10 },
+      },
+    })
+
+    expect(stats.find((row) => row.key === 'hp')).toMatchObject({ species: 10, base: 10, added: 10, total: 20 })
+    expect(validateBaseRelations(stats)).toHaveLength(0)
+  })
+
   it('validates PTU base relation ordering', () => {
     const stats = resolveStats(makeAbraSheet({ stats: { satk: { added: 0 }, atk: { added: 9 } } }))
 

@@ -2,7 +2,7 @@
   "slug": "examples-lickitung",
   "nickname": "Lickitung",
   "species": "Lickitung",
-  "level": 20,
+  "level": 10,
   "gender": "Female",
   "shiny": false,
   "nature": "Patient",
@@ -12,12 +12,12 @@
   "stats": {
     "hp": {
       "base": 1,
-      "added": 9,
+      "added": 5,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 2,
+      "added": 3,
       "stage": 0
     },
     "def": {
@@ -27,54 +27,36 @@
     },
     "satk": {
       "base": 0,
-      "added": 4,
+      "added": 3,
       "stage": 0
     },
     "sdef": {
       "base": 0,
-      "added": 6,
+      "added": 4,
       "stage": 0
     },
     "spd": {
       "base": -1,
-      "added": 5,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 87,
-    "currentHp": 87,
-    "tick": 8,
+    "maxHp": 65,
+    "currentHp": 65,
+    "tick": 6,
     "evasion": {
       "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [
-    {
-      "name": "Wrap",
-      "type": "Normal",
-      "category": "Static",
-      "frequency": "Static",
-      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
-    },
-    {
-      "name": "Knock Off",
-      "type": "Dark",
-      "category": "Physical",
-      "db": 7,
-      "damageRoll": "2d6+10 / 17",
-      "frequency": "Scene",
-      "ac": 2,
-      "range": "Melee, 1 Target",
-      "effect": "Choose one of the target’s Held Items or Accessory Slot Items. It is knocked to the ground."
-    },
     {
       "name": "Defense Curl",
       "type": "Normal",
@@ -108,12 +90,8 @@
     {
       "name": "Tonguelash",
       "frequency": "Scene x2 – Free Action",
+      "trigger": "The user hits a target with Lick",
       "effect": "Connection – Lick. Lick automatically Paralyzes and Flinches its target."
-    },
-    {
-      "name": "Own Tempo",
-      "frequency": "Static",
-      "effect": "The user is immune to Confusion. Defensive."
     }
   ],
   "natureMod": {

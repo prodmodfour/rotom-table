@@ -2,7 +2,7 @@
   "slug": "examples-pumpkaboo-super-size",
   "nickname": "Pumpkaboo Super Size",
   "species": "Pumpkaboo Super Size",
-  "level": 20,
+  "level": 10,
   "gender": "Male",
   "shiny": false,
   "nature": "Relaxed",
@@ -23,12 +23,12 @@
     },
     "def": {
       "base": 1,
-      "added": 8,
+      "added": 5,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 5,
+      "added": 2,
       "stage": 0
     },
     "sdef": {
@@ -38,23 +38,23 @@
     },
     "spd": {
       "base": -1,
-      "added": 5,
+      "added": 1,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 60,
-    "currentHp": 60,
-    "tick": 6,
+    "maxHp": 50,
+    "currentHp": 50,
+    "tick": 5,
     "evasion": {
-      "vsAtk": 3,
+      "vsAtk": 2,
       "vsSatk": 2,
-      "vsAny": 1
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 3,
     "spent": 0
   },
   "movelist": [],
@@ -63,11 +63,6 @@
       "name": "Frisk",
       "frequency": "Static",
       "effect": "The user gains a +2 Bonus to all Accuracy Rolls against adjacent targets."
-    },
-    {
-      "name": "Insomnia",
-      "frequency": "Static",
-      "effect": "The user is immune to the Sleep condition, and cannot use the move Rest. Defensive."
     }
   ],
   "natureMod": {

@@ -2,7 +2,7 @@
   "slug": "examples-shuckle",
   "nickname": "Shuckle",
   "species": "Shuckle",
-  "level": 20,
+  "level": 25,
   "gender": "Female",
   "shiny": false,
   "nature": "Dreamy",
@@ -13,78 +13,61 @@
   "stats": {
     "hp": {
       "base": -1,
-      "added": 2,
+      "added": 1,
       "stage": 0
     },
     "atk": {
       "base": 0,
-      "added": 3,
+      "added": 1,
       "stage": 0
     },
     "def": {
       "base": 0,
-      "added": 7,
+      "added": 15,
       "stage": 0
     },
     "satk": {
       "base": 0,
-      "added": 8,
+      "added": 1,
       "stage": 0
     },
     "sdef": {
       "base": 1,
-      "added": 6,
+      "added": 17,
       "stage": 0
     },
     "spd": {
       "base": 0,
-      "added": 4,
+      "added": 0,
       "stage": 0
     }
   },
   "combat": {
-    "maxHp": 39,
-    "currentHp": 39,
-    "tick": 3,
+    "maxHp": 41,
+    "currentHp": 41,
+    "tick": 4,
     "evasion": {
-      "vsAtk": 6,
-      "vsSatk": 6,
-      "vsAny": 1
+      "vsAtk": 7,
+      "vsSatk": 8,
+      "vsAny": 0
     },
     "dr": 0
   },
   "tutorPoints": {
-    "earned": 5,
+    "earned": 6,
     "spent": 0
   },
   "movelist": [
     {
-      "name": "Encore",
-      "type": "Normal",
-      "category": "Status",
-      "frequency": "Scene x2",
-      "ac": 2,
-      "range": "4, 1 Target, Social",
-      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
-    },
-    {
-      "name": "Struggle Bug",
-      "type": "Bug",
-      "category": "Special",
+      "name": "Rock Throw",
+      "type": "Rock",
+      "category": "Physical",
       "db": 7,
       "damageRoll": "2d6+10",
       "frequency": "At-Will",
-      "ac": 2,
-      "range": "Cone 2",
-      "effect": "On hit, lowers the target’s Special Attack by -1 CS."
-    },
-    {
-      "name": "Withdraw",
-      "type": "Water",
-      "category": "Status",
-      "frequency": "At-Will",
-      "range": "Self",
-      "effect": "The user’s Defense is raised 1 Combat Stage."
+      "ac": 4,
+      "range": "6, 1 Target",
+      "effect": "None"
     },
     {
       "name": "Rest",
@@ -103,12 +86,31 @@
       "effect": "Blessing – Any user affected by Safeguard may activate it when receiving a Status Affliction to ignore the effects of that Status Affliction on their next turn. Safeguard may be activated 3 times, and then disappears."
     },
     {
-      "name": "Bide",
+      "name": "Struggle Bug",
+      "type": "Bug",
+      "category": "Special",
+      "db": 7,
+      "damageRoll": "2d6+10",
+      "frequency": "At-Will",
+      "ac": 2,
+      "range": "Cone 2",
+      "effect": "On hit, lowers the target’s Special Attack by -1 CS."
+    },
+    {
+      "name": "Wrap",
       "type": "Normal",
-      "category": "Physical",
-      "frequency": "Scene",
-      "range": "Burst 1, Friendly",
-      "effect": "The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’)."
+      "category": "Static",
+      "frequency": "Static",
+      "effect": "The user gains a +1 Bonus to Accuracy Rolls made to initiate Grapple Maneuvers, and +2 to Skill Checks made to initiate Grapple Maneuvers or gain Dominance. Whenever the user gains Dominance in a Grapple, the target of the Grapple loses a Tick of Hit Points."
+    },
+    {
+      "name": "Encore",
+      "type": "Normal",
+      "category": "Status",
+      "frequency": "Scene x2",
+      "ac": 2,
+      "range": "4, 1 Target, Social",
+      "effect": "Roll 1d6. On a result of 1 or 2, the target becomes Confused; on a result of 3 or 4 the target becomes Suppressed; on a result of 5 or 6 the target becomes Enraged."
     }
   ],
   "abilities": [
