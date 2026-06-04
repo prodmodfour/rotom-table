@@ -33,6 +33,10 @@ ROTOM_CAMPAIGN_ROOT=../my-rotom-campaign npm run dev
 
 See [Campaign repositories](docs/campaign-repositories.md) for the expected layout.
 
+## Private VPS hosting
+
+Rotom Table remains local-first by default. For an always-online table, use the private trusted-table VPS path only behind an outer access gate; the GM/Player picker is not public authentication, and the app is not a public multi-user service. Start with the [private VPS hosting runbook](docs/private-vps-hosting.md), then follow the [deployment smoke checklist](docs/private-vps-deployment-smoke-checklist.md) and [backup runbook](docs/private-vps-backups.md) for host-specific validation and recovery practice.
+
 Recommended verification commands:
 
 ```bash
