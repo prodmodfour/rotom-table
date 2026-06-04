@@ -2,6 +2,8 @@
 
 Rotom Table's normal player workflow uses persistent player profiles, not live-session map attachment. A player profile is a local campaign identity that owns links to existing Pokémon and trainer sheets.
 
+The GM/Player picker and remembered player profile are trust-based table workflow controls, not public authentication. If this flow is reachable through a private VPS, tunnel, or reverse proxy, restrict access first with an outer layer such as VPN/Tailscale, Cloudflare Access, reverse-proxy auth, or a private network.
+
 ## Normal table flow
 
 1. The GM starts the app with the usual local development command, such as `npm run dev`.

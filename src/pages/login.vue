@@ -99,10 +99,16 @@ onMounted(() => {
           {{ appThemeToggleText }}
         </button>
       </div>
-      <h1 id="login-title">Choose a login</h1>
+      <h1 id="login-title">Choose your table role</h1>
       <p class="login-copy">
-        For now this uses the table's trust system: no passwords, just pick the role
-        you are using for local-first access.
+        Use this trust-based table role picker only with people already allowed to
+        reach your private table. It has no passwords or accounts, and it is not
+        public authentication.
+      </p>
+      <p class="login-warning" role="note">
+        For private VPS, tunnel, or LAN hosting, restrict access first with
+        VPN/Tailscale, Cloudflare Access, reverse-proxy auth, or another outer
+        access gate.
       </p>
 
       <div class="login-actions" role="group" aria-label="Login options">
@@ -282,6 +288,16 @@ h2 {
   margin: 0.75rem 0 1.1rem;
   color: var(--ink-soft);
   line-height: 1.55;
+}
+
+.login-warning {
+  margin: -0.35rem 0 1.1rem;
+  border: 1px solid rgba(255, 31, 45, 0.46);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  background: var(--accent-soft);
+  color: var(--ink);
+  line-height: 1.45;
 }
 
 .login-actions {
