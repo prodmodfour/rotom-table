@@ -18,6 +18,33 @@ The built Nitro server can be used for private host smoke checks with Node.js 24
 
 Use the placeholder-only [`.env.vps.example`](../.env.vps.example) as a starting point for a private host's service manager environment or for an untracked `.env` file loaded by the deployment. It sets `NODE_ENV=production`, loopback Nitro bind settings, and an example `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign` so campaign-owned JSON stays outside the application checkout. Replace paths and bind settings for your host, but keep real `.env` files, hostnames, credentials, and campaign data out of Git.
 
+## VPS campaign data layout
+
+A simple private VPS can keep the app, campaign data, and backups under one operator-controlled parent while still separating the public/shareable app checkout from private campaign JSON:
+
+```text
+/srv/rotom-table/
+  app/                    # application checkout and built .output/ server
+  campaign/               # ROTOM_CAMPAIGN_ROOT; private campaign JSON only
+    data/
+      maps/
+      sheets/
+      trainers/
+      player-profiles/
+    encounter_tables/
+  backups/                # private backup archives or restore staging, not Git
+```
+
+With that layout, run the built app from `/srv/rotom-table/app` and set:
+
+```bash
+ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign
+```
+
+Rotom Table then resolves campaign-owned paths under the campaign root: maps at `/srv/rotom-table/campaign/data/maps/`, Pokémon sheets at `/srv/rotom-table/campaign/data/sheets/`, trainer sheets at `/srv/rotom-table/campaign/data/trainers/`, player profiles at `/srv/rotom-table/campaign/data/player-profiles/`, and encounter tables at `/srv/rotom-table/campaign/encounter_tables/`. App-owned reference data such as `data/reference/` remains in the application checkout.
+
+Do not store private maps, sheets, trainers, player profiles, encounter tables, backups, or unreleased campaign notes in a public or shared app repository checkout. Keep `/srv/rotom-table/campaign` and `/srv/rotom-table/backups` private to the operator and exclude real `.env` files and generated archives from Git.
+
 ## Hosted write policy
 
 Private VPS filesystem writes must fail closed in production unless the operator explicitly opts in. The selected flag is `ROTOM_ENABLE_HOSTED_WRITES`, enforced by server-side write policy on map, sheet, encounter-table, persistent encounter-generation, player-profile, Pokédex maintenance, and campaign next-day routes that have been moved off the older production-only block.
