@@ -62,6 +62,39 @@ Ensure the `rotom-table` service user can read `/srv/rotom-table/app` and write 
 
 Docker and Compose are not the primary deployment path for the initial private VPS target. Keep the Node service bound to loopback until a reverse proxy and outer access gate are configured.
 
+## Reverse proxy example
+
+Use one private reverse proxy in front of the loopback-only Node service. The primary example below uses Caddy because it can terminate HTTPS and proxy WebSocket upgrades without extra upgrade-header wiring. Replace `rotom-table.example.com` with the private DNS name for the host, and do not make that name reachable by arbitrary internet users unless a separate outer access gate is already in place.
+
+```caddyfile
+# /etc/caddy/Caddyfile
+rotom-table.example.com {
+  encode zstd gzip
+
+  # Caddy terminates HTTPS here and forwards plain HTTP only to the
+  # loopback Nitro server supervised by systemd.
+  reverse_proxy 127.0.0.1:3000
+}
+```
+
+The matching Nitro environment should keep the app on loopback:
+
+```bash
+NITRO_HOST=127.0.0.1
+NITRO_PORT=3000
+```
+
+After reloading the proxy, verify both the direct loopback health check and the proxied HTTPS health check:
+
+```bash
+curl -fsS http://127.0.0.1:3000/api/health
+curl -fsS https://rotom-table.example.com/api/health
+```
+
+WebSocket upgrade support must work end-to-end for legacy `/sessions` maintenance surfaces such as `WebSocket /api/sessions/socket` and for any future realtime endpoints. Caddy's `reverse_proxy` handles WebSocket upgrades by default; if you replace this example with nginx or another proxy, explicitly configure HTTP/1.1 upgrade forwarding and test the socket path before sharing the host with players.
+
+The reverse proxy is only transport and TLS plumbing. It is not Rotom Table authentication, not the GM/Player role picker, and not a public-hosting safety layer by itself. Keep the Node service unexposed on `127.0.0.1`, restrict the HTTPS URL with the required outer access gate for the trusted table, and keep real hostnames, credentials, certificates, access-policy exports, and proxy logs out of Git.
+
 ## VPS campaign data layout
 
 A simple private VPS can keep the app, campaign data, and backups under one operator-controlled parent while still separating the public/shareable app checkout from private campaign JSON:
