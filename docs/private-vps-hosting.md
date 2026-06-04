@@ -9,24 +9,24 @@ Use this mode only when all of these are true:
 - the VPS is operated by the GM or another trusted table operator;
 - access to the app is restricted by an outer gate such as a private network, VPN/Tailscale, reverse-proxy authentication, Cloudflare Access, SSH tunnel, or equivalent provider controls; see [Outer access gate](#outer-access-gate) before sharing the URL;
 - participants are known table members who already trust the GM/operator and campaign data;
-- campaign JSON stays in private operator-controlled storage, preferably through `ROTOM_CAMPAIGN_ROOT` as described in [Campaign repositories](campaign-repositories.md);
+- campaign JSON and campaign-owned reference override diffs stay in private operator-controlled storage, preferably through `ROTOM_CAMPAIGN_ROOT` as described in [Campaign repositories](campaign-repositories.md);
 - the operator understands the local-first filesystem model in [Local development](local-development.md) and the security expectations in [Security](../SECURITY.md).
 
 The built Nitro server can be used for private host smoke checks with Node.js 24 LTS, `npm run build`, `npm run start`, and the no-secret `/api/health` endpoint. After every deploy, follow the [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) before sharing the private URL with players. Keep normal profile-based play intact: the GM manages profiles from `/players`, players choose **Player Login**, and players open the regular player-visible routes such as `/maps/<slug>`.
 
 ## Environment example
 
-Use the placeholder-only [`.env.vps.example`](../.env.vps.example) as a starting point for a private host's service manager environment or for an untracked `.env` file loaded by the deployment. It sets `NODE_ENV=production`, loopback Nitro bind settings, and an example `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign` so campaign-owned JSON stays outside the application checkout. Replace paths and bind settings for your host, but keep real `.env` files, hostnames, credentials, and campaign data out of Git.
+Use the placeholder-only [`.env.vps.example`](../.env.vps.example) as a starting point for a private host's service manager environment or for an untracked `.env` file loaded by the deployment. It sets `NODE_ENV=production`, loopback Nitro bind settings, and an example `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign` so campaign-owned JSON and reference override diffs stay outside the application checkout. Replace paths and bind settings for your host, but keep real `.env` files, hostnames, credentials, and campaign data out of Git.
 
 ## Branch and data separation strategy
 
 If a private VPS deployment process names a Git branch, keep the branch model simple: prefer `main` as the deployable production-code line plus short-lived feature branches for review. Avoid maintaining long-lived `dev` and `production` branches unless there is a real staging environment with its own service, access gate, backups, and isolated campaign data.
 
-Data separation matters more than branch names. The app checkout and `ROTOM_CAMPAIGN_ROOT` are separate operational boundaries; branch naming must not decide which campaign JSON is writable. If a staging environment is added later, never point staging and production at the same writable `ROTOM_CAMPAIGN_ROOT`, and record the app commit, tag, or release identifier deployed with each private campaign backup.
+Data separation matters more than branch names. The app checkout and `ROTOM_CAMPAIGN_ROOT` are separate operational boundaries; branch naming must not decide which campaign JSON or reference override diff is writable. If a staging environment is added later, never point staging and production at the same writable `ROTOM_CAMPAIGN_ROOT`, and record the app commit, tag, or release identifier deployed with each private campaign backup.
 
 ## Primary process management path
 
-The primary private VPS process-management path is **systemd with a direct Node.js 24 runtime**. This keeps Rotom Table close to the existing local-first filesystem model: the service runs the built Nitro server from the app checkout, while campaign JSON stays in `/srv/rotom-table/campaign` through `ROTOM_CAMPAIGN_ROOT`.
+The primary private VPS process-management path is **systemd with a direct Node.js 24 runtime**. This keeps Rotom Table close to the existing local-first filesystem model: the service runs the built Nitro server from the app checkout, while campaign JSON and reference override diffs stay in `/srv/rotom-table/campaign` through `ROTOM_CAMPAIGN_ROOT`.
 
 A manual smoke for the same command that systemd should supervise is:
 
@@ -124,17 +124,18 @@ Before sharing a host URL, confirm these checks:
 
 ## VPS campaign data layout
 
-A simple private VPS can keep the app, campaign data, and backups under one operator-controlled parent while still separating the public/shareable app checkout from private campaign JSON:
+A simple private VPS can keep the app, campaign data, and backups under one operator-controlled parent while still separating the public/shareable app checkout from private campaign JSON and reference override diffs:
 
 ```text
 /srv/rotom-table/
   app/                    # application checkout and built .output/ server
-  campaign/               # ROTOM_CAMPAIGN_ROOT; private campaign JSON only
+  campaign/               # ROTOM_CAMPAIGN_ROOT; private campaign JSON and reference override diffs
     data/
       maps/
       sheets/
       trainers/
       player-profiles/
+      reference-overrides/
     encounter_tables/
   backups/                # private backup archives or restore staging, not Git
 ```
@@ -145,9 +146,9 @@ With that layout, run the built app from `/srv/rotom-table/app` and set:
 ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign
 ```
 
-Rotom Table then resolves campaign-owned paths under the campaign root: maps at `/srv/rotom-table/campaign/data/maps/`, Pokémon sheets at `/srv/rotom-table/campaign/data/sheets/`, trainer sheets at `/srv/rotom-table/campaign/data/trainers/`, player profiles at `/srv/rotom-table/campaign/data/player-profiles/`, and encounter tables at `/srv/rotom-table/campaign/encounter_tables/`. App-owned reference data such as `data/reference/` remains in the application checkout.
+Rotom Table then resolves campaign-owned paths under the campaign root: maps at `/srv/rotom-table/campaign/data/maps/`, Pokémon sheets at `/srv/rotom-table/campaign/data/sheets/`, trainer sheets at `/srv/rotom-table/campaign/data/trainers/`, player profiles at `/srv/rotom-table/campaign/data/player-profiles/`, campaign reference override diffs at `/srv/rotom-table/campaign/data/reference-overrides/`, and encounter tables at `/srv/rotom-table/campaign/encounter_tables/`. App-owned reference data such as `data/reference/` remains in the application checkout; GM Pokédex maintenance writes `data/reference-overrides/pokedex.json` under `ROTOM_CAMPAIGN_ROOT` instead of rewriting app-owned reference JSON.
 
-Do not store private maps, sheets, trainers, player profiles, encounter tables, backups, or unreleased campaign notes in a public or shared app repository checkout. Keep `/srv/rotom-table/campaign` and `/srv/rotom-table/backups` private to the operator and exclude real `.env` files and generated archives from Git.
+Do not store private maps, sheets, trainers, player profiles, campaign-specific reference overrides, encounter tables, backups, or unreleased campaign notes in a public or shared app repository checkout. Keep `/srv/rotom-table/campaign` and `/srv/rotom-table/backups` private to the operator and exclude real `.env` files and generated archives from Git.
 
 For step-by-step private archives before and after a session, plus a temporary restore smoke check, use the [Private VPS backup runbook](private-vps-backups.md).
 
@@ -156,7 +157,7 @@ For step-by-step private archives before and after a session, plus a temporary r
 Private VPS filesystem writes must fail closed in production unless the operator explicitly opts in. The selected flag is `ROTOM_ENABLE_HOSTED_WRITES`, enforced by server-side write policy on map, sheet, encounter-table, persistent encounter-generation, player-profile, Pokédex maintenance, and campaign next-day routes that have been moved off the older production-only block.
 
 - **Disabled by default:** when `NODE_ENV=production`, hosted writes are disabled if the flag is unset or set to anything other than exactly `1`. Values such as `true`, `yes`, `on`, or `enabled` do not enable writes. Routes covered by the hosted-write policy reject with a clear 403-style message instead of writing.
-- **Enabled for private hosts:** `NODE_ENV=production` plus `ROTOM_ENABLE_HOSTED_WRITES=1` opts the private instance into covered filesystem writes for trusted table use. Use this only with an outer access gate and operator-controlled campaign storage such as `ROTOM_CAMPAIGN_ROOT`.
+- **Enabled for private hosts:** `NODE_ENV=production` plus `ROTOM_ENABLE_HOSTED_WRITES=1` opts the private instance into covered filesystem writes for trusted table use. Use this only with an outer access gate and operator-controlled campaign storage such as `ROTOM_CAMPAIGN_ROOT`; covered Pokédex maintenance writes are stored as campaign reference override diffs, not as app-checkout reference edits.
 - **Development remains unchanged:** non-production local development writes keep working without the hosted-write flag, so `npm run dev` and existing local campaign workflows are not gated by VPS settings.
 - **Scope:** the flag controls server-side filesystem persistence only. It is not authentication, authorization, a public-hosting safety layer, or a substitute for backups and route review. See the [API route mutation audit](api-route-mutation-audit.md) for the current route-by-route coverage, including map routes. GM map library writes still require GM role, and player map/token writes still require player-visible maps plus selected-profile token control.
 
@@ -182,7 +183,7 @@ Until those pieces are verified for the specific host, keep hosted use private, 
 
 - [Security](../SECURITY.md) — trust-based security expectations and public-exposure non-goals.
 - [Local development](local-development.md) — local-first filesystem behaviour, checks, and production write limitations.
-- [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON separate from the app checkout.
+- [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON and campaign reference override diffs separate from the app checkout.
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy install, validation, start, health, outer-gated profile play, persistence, Git hygiene, and legacy `/sessions` boundary checks.
 - [Private VPS backup runbook](private-vps-backups.md) — creating private campaign and deployment-config backups before and after sessions, then smoke-checking a temporary restore without committing archives.
 - [API route mutation audit](api-route-mutation-audit.md) — current non-GET route classifications, hosted-write coverage, and remaining limitations.

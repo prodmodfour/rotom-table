@@ -97,7 +97,7 @@ This glossary defines the vocabulary used by the GM-hosted live session roadmap,
 | Local-first JSON persistence | Continued use of local JSON files for app and session state instead of a hosted database service. |
 | Whole-map autosave | Existing-style persistence of an entire map document. It remains useful in local mode but must not be the main live-session concurrency mechanism. |
 | Cloud database | Hosted persistence such as Postgres, Redis, Durable Objects, or another managed service. Adding one is out of scope for Live session. |
-| Private campaign data | User-created maps, sheets, generated campaign files, secrets, keys, tokens, private `.env` files, and similar local data that must not be committed. |
+| Private campaign data | User-created maps, sheets, generated campaign files, campaign reference overrides, secrets, keys, tokens, private `.env` files, and similar local data that must not be committed. |
 
 ## Command lifecycle shorthand
 

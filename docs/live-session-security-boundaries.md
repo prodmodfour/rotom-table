@@ -14,7 +14,7 @@ The current Live session boundary is acceptable for the locked product shape whe
 - the GM checks `/sessions` through the same origin players will use and resolves any safety-banner warnings before sharing a code;
 - players are trusted table participants who receive only the player-facing URL and the current join code;
 - live map/table actions happen through `WebSocket /api/sessions/socket` and server-authoritative command handlers, not through live-client whole-map autosave;
-- snapshots, event logs, maps, sheets, trainer files, backups, GM keys, join codes, tunnel credentials, private keys, and real `.env` files stay local/private and out of git;
+- snapshots, event logs, maps, sheets, trainer files, campaign reference overrides, backups, GM keys, join codes, tunnel credentials, private keys, and real `.env` files stay local/private and out of git;
 - the GM stops the tunnel/server, forgets unneeded browser identities, and rotates the session by starting a fresh GM session if credentials or URLs are shared too broadly.
 
 If any of those assumptions are false, do not treat Live session as secure enough for public exposure. Use local mode only, or add a separate hardened authentication/deployment design outside Live session.
@@ -98,7 +98,7 @@ Use this when something is shared too broadly or the host appears exposed unexpe
 4. Use **Forget in this browser** on shared, stale, or accidentally exposed browser profiles.
 5. Remove or disable unexpected DNS/CNAME/tunnel routes; delete retired tunnels and local credentials when they are no longer needed.
 6. Review Cloudflare Access/WAF/cache rules before re-enabling a public hostname.
-7. Check git status and shared evidence for private maps, sheets, snapshots, event logs, screenshots, join codes, GM keys, tunnel credentials, tokens, private keys, or real `.env` files.
+7. Check git status and shared evidence for private maps, sheets, campaign reference overrides, snapshots, event logs, screenshots, join codes, GM keys, tunnel credentials, tokens, private keys, or real `.env` files.
 8. Restore only from trusted private backups. Do not overwrite server snapshots with player browser state.
 
 ## Maintainer checklist

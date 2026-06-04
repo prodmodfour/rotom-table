@@ -15,6 +15,7 @@ const expectedCampaignSubfolders = [
   'data/sheets/',
   'data/trainers/',
   'data/player-profiles/',
+  'data/reference-overrides/',
   'encounter_tables/',
 ]
 
@@ -39,6 +40,6 @@ describe('VPS campaign data layout docs', () => {
     expect(privateVpsDoc).toContain('ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign')
     expect(campaignRepositoriesDoc).toContain('Do not put private campaign JSON')
     expect(campaignRepositoriesDoc).toContain('app checkout at `/srv/rotom-table/app`')
-    expect(privateVpsDoc).toContain('Do not store private maps, sheets, trainers, player profiles, encounter tables, backups, or unreleased campaign notes')
+    expect(privateVpsDoc).toContain('Do not store private maps, sheets, trainers, player profiles, campaign-specific reference overrides, encounter tables, backups, or unreleased campaign notes')
   })
 })

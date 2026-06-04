@@ -41,7 +41,7 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 - `server/useCases/` — behaviour-oriented server application logic separated from route handlers.
 - `server/utils/` — filesystem paths, JSON persistence, storage helpers, policies, and runtime adapters.
 - `shared/` — auth, path, realtime, sheet, and encounter helpers used on both client and server.
-- `data/`, `data/reference/`, and `encounter_tables/` — local campaign data, app-owned reference data, and encounter definitions consumed by the app. `ptu-data/` is documentary upstream/source material.
+- `data/`, `data/reference/`, `data/reference-overrides/`, and `encounter_tables/` — local campaign data, app-owned reference data, campaign reference override diffs, and encounter definitions consumed by the app. `ptu-data/` is documentary upstream/source material.
 - `tests/` — Vitest coverage for server use cases, composables, shared helpers, and pure domain utilities.
 
 ## Key scripts

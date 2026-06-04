@@ -1,6 +1,6 @@
 # Private VPS backup runbook
 
-Use this runbook to create private backups of a trusted-table VPS campaign before and after play sessions, then smoke-check a restore before trusting an archive. It covers campaign JSON stored under `ROTOM_CAMPAIGN_ROOT` and the private deployment settings needed to recreate the host. It does not make Rotom Table a public hosted service, and it does not encrypt archives for you.
+Use this runbook to create private backups of a trusted-table VPS campaign before and after play sessions, then smoke-check a restore before trusting an archive. It covers campaign JSON and campaign reference override diffs stored under `ROTOM_CAMPAIGN_ROOT`, plus the private deployment settings needed to recreate the host. It does not make Rotom Table a public hosted service, and it does not encrypt archives for you.
 
 ## What to back up
 
@@ -10,6 +10,7 @@ Back up the entire configured campaign root, not only the file you edited most r
 - `data/sheets/`
 - `data/trainers/`
 - `data/player-profiles/`
+- `data/reference-overrides/` for campaign-owned reference override diffs such as Pokédex edits
 - `encounter_tables/`
 - any private campaign assets or notes intentionally kept under the campaign root
 
@@ -28,7 +29,7 @@ For the safest copy, pause table activity and stop the service while taking the 
 sudo systemctl stop rotom-table.service
 ```
 
-If you cannot stop the service, ask everyone to pause changes, wait for autosaves to finish, then archive immediately. Avoid copying while a large map, sheet, profile, or encounter-table write is in progress.
+If you cannot stop the service, ask everyone to pause changes, wait for autosaves to finish, then archive immediately. Avoid copying while a large map, sheet, profile, Pokédex override, or encounter-table write is in progress.
 
 ## Timestamped campaign archive
 
@@ -104,6 +105,7 @@ test -d "$RESTORED_CAMPAIGN_ROOT/data/sheets"
 test -d "$RESTORED_CAMPAIGN_ROOT/data/trainers"
 test -d "$RESTORED_CAMPAIGN_ROOT/data/player-profiles"
 test -d "$RESTORED_CAMPAIGN_ROOT/encounter_tables"
+test ! -d "$RESTORED_CAMPAIGN_ROOT/data/reference-overrides" || test -f "$RESTORED_CAMPAIGN_ROOT/data/reference-overrides/pokedex.json"
 ```
 
 Boot a separate loopback-only app process against that temporary campaign root. Use a different port from the real service so the live table can remain stopped or isolated while you inspect the restore. The exact hosted-write flag is included here only so the disposable test write below can prove persistence in the restored copy.
@@ -124,7 +126,8 @@ In a browser on the host or through the same private access path, verify the res
 - open `/maps` and load at least one restored map;
 - open `/sheets` and load at least one restored Pokémon sheet and one trainer sheet;
 - open `/players` and confirm restored player profiles and linked character references are present;
-- open `/encounter-tables` and confirm restored encounter-table regions and tables are listed.
+- open `/encounter-tables` and confirm restored encounter-table regions and tables are listed;
+- if the campaign has Pokédex overrides, open `/pokedex` and confirm one campaign-specific entry reflects the restored override.
 
 Then verify a test write persists after restart:
 
@@ -143,7 +146,7 @@ case "$RESTORE_ROOT" in
 esac
 ```
 
-If the app cannot boot with the temporary `ROTOM_CAMPAIGN_ROOT`, any expected folder is missing, restored maps/sheets/trainers/player profiles/encounter tables do not load, or the test write disappears after restart, treat the archive as unverified and create a new backup before the next session.
+If the app cannot boot with the temporary `ROTOM_CAMPAIGN_ROOT`, any expected folder is missing, restored maps/sheets/trainers/player profiles/reference overrides/encounter tables do not load, or the test write disappears after restart, treat the archive as unverified and create a new backup before the next session.
 
 ## Retention guidance
 
@@ -159,7 +162,7 @@ Rotom Table archives can contain private maps, player details, unreleased story 
 
 ## Git hygiene
 
-Do not create backup archives under `/srv/rotom-table/app`, `docs/`, or any other tracked repository path. Do not run `git add` on `.tar`, `.tar.gz`, `.tgz`, `.zip`, copied `.env` files, campaign JSON, or generated restore staging directories.
+Do not create backup archives under `/srv/rotom-table/app`, `docs/`, or any other tracked repository path. Do not run `git add` on `.tar`, `.tar.gz`, `.tgz`, `.zip`, copied `.env` files, campaign JSON, campaign reference overrides, or generated restore staging directories.
 
 Before committing product changes, run this from the app checkout and confirm that no backup archives or private campaign files are staged:
 

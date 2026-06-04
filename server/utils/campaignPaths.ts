@@ -24,6 +24,8 @@ export const CAMPAIGN_MAPS_ROOT = campaignPath('data', 'maps')
 export const CAMPAIGN_POKEMON_SHEETS_ROOT = campaignPath('data', 'sheets')
 export const CAMPAIGN_TRAINER_SHEETS_ROOT = campaignPath('data', 'trainers')
 export const CAMPAIGN_PLAYER_PROFILES_ROOT = campaignPath('data', 'player-profiles')
+export const CAMPAIGN_REFERENCE_OVERRIDES_ROOT = campaignPath('data', 'reference-overrides')
+export const CAMPAIGN_POKEDEX_OVERRIDES_PATH = campaignPath('data', 'reference-overrides', 'pokedex.json')
 export const CAMPAIGN_ENCOUNTER_TABLES_ROOT = campaignPath('encounter_tables')
 
 export const pathIsInsideRoot = (root: string, target: string): boolean => {

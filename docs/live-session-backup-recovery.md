@@ -8,7 +8,7 @@ Normal play uses saved maps, sheets, trainer files, and player profiles. Players
 
 - `data/sessions/<sessionId>/snapshot.json`
 - optional `data/sessions/<sessionId>/events.jsonl`
-- referenced private campaign data such as `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, and `encounter_tables/`
+- referenced private campaign data such as `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, and `encounter_tables/`
 - external private assets that are intentionally part of the GM's local campaign copy
 
 Keep backups outside the repository and outside public folders. Rotom Table does not encrypt these archives.

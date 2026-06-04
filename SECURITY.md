@@ -12,7 +12,7 @@ Private VPS hosting is still private trusted-table hosting. It can keep a known 
 
 Private VPS mode still requires an outer access gate such as VPN/Tailscale, Cloudflare Access, private network controls, or reverse-proxy basic authentication for the trusted table. That gate is separate from the GM/Player role picker; **GM Login is not enough** to protect a URL that arbitrary internet users can reach. See [docs/private-vps-hosting.md](docs/private-vps-hosting.md) for the current private VPS boundary and access-gate checklist.
 
-Covered filesystem writes fail closed in production unless the private operator explicitly sets `ROTOM_ENABLE_HOSTED_WRITES=1`, but that flag is not authentication, authorization, rate limiting, abuse monitoring, or a replacement for backups. Campaign JSON, private deployment configuration, and backup archives remain sensitive operator-controlled data and should stay outside the public/shareable app checkout.
+Covered filesystem writes fail closed in production unless the private operator explicitly sets `ROTOM_ENABLE_HOSTED_WRITES=1`, but that flag is not authentication, authorization, rate limiting, abuse monitoring, or a replacement for backups. Campaign JSON, private deployment configuration, and backup archives remain sensitive operator-controlled data and should stay outside the public/shareable app checkout. Campaign-owned reference override diffs, such as Pokédex edits under `data/reference-overrides/`, are treated as private campaign data rather than public/static app reference data.
 
 ## Public service mode is separate
 

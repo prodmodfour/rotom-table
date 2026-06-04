@@ -58,7 +58,7 @@ Before committing any branch, run `git status` from the target repository and co
 
 - real session snapshots or event logs;
 - GM keys, join codes, tunnel credentials, private keys, tokens, or real `.env` files;
-- private campaign maps, sheets, trainers, generated wild sheets, player notes, or unreleased story material.
+- private campaign maps, sheets, trainers, campaign reference overrides, generated wild sheets, player notes, or unreleased story material.
 
 Synthetic fixtures for tests are acceptable only when they use fake data and live under test-controlled paths, not under the runtime `data/sessions/` directory.
 
@@ -67,7 +67,7 @@ Synthetic fixtures for tests are acceptable only when they use fake data and liv
 The dedicated [Live session backup and recovery runbook](live-session-backup-recovery.md) has the current operator checklist and example archive commands. In short, for a recoverable campaign backup, copy the whole local data set that the session may reference, not just the latest session file:
 
 - `data/sessions/<sessionId>/` for Live session snapshots and optional event logs;
-- `data/maps/`, `data/sheets/`, and `data/trainers/` for local campaign documents that may still be referenced by session state;
+- `data/maps/`, `data/sheets/`, `data/trainers/`, and `data/reference-overrides/` for local campaign documents that may still be referenced by session state;
 - `encounter_tables/` if the campaign relies on local encounter data;
 - any private assets the GM intentionally keeps outside source control.
 

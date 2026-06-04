@@ -14,7 +14,7 @@ Normal play uses persistent player profiles, regular saved maps, and document-ba
 ## Backup and restore reminders
 
 - Back up `data/sessions/` only when maintaining or recovering a legacy session.
-- Include referenced `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `encounter_tables/`, and private assets if a full local campaign restore is needed.
+- Include referenced `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, `encounter_tables/`, and private assets if a full local campaign restore is needed.
 - Keep archives outside the repository and treat them as sensitive campaign data.
 - Do not edit snapshot revisions, player IDs, client IDs, assignments, or map documents by hand as a shortcut.
 - If join codes, GM keys, screenshots, snapshots, or tunnel credentials leak, stop exposure and start fresh rather than treating old backups as public auth.

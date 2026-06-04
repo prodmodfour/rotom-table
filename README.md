@@ -25,7 +25,7 @@ npm run dev
 
 Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose the GM-created persistent player profile for this browser. GMs can open `/players` to create profiles and link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping map/sheet libraries, Pokédex, and reference pages available; direct map-control and editable sheet routes ask profileless players to choose a profile before continuing. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map, session-map management controls, or the legacy session lobby.
 
-To keep private campaign JSON in a separate Git repository, start Nuxt with a campaign root:
+To keep private campaign JSON and campaign-owned reference override diffs in a separate Git repository, start Nuxt with a campaign root:
 
 ```bash
 ROTOM_CAMPAIGN_ROOT=../my-rotom-campaign npm run dev
@@ -72,7 +72,7 @@ npm run build
 - **Reference library** — browse moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges.
 - **Encounter tools** — manage JSON encounter tables, roll previews, and generate wild Pokémon sheets into the sheet library.
 - **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes; Player Login asks for a persistent player profile before continuing, and linked characters grant sheet editing plus map-token control.
-- **Filesystem-backed data** — maps, sheets, trainers, player profiles, and encounter tables are stored as JSON in the app checkout by default, or under `ROTOM_CAMPAIGN_ROOT` when using a separate private campaign repo, for easy inspection, backup, and diffing.
+- **Filesystem-backed data** — maps, sheets, trainers, player profiles, encounter tables, and campaign reference override diffs are stored as JSON in the app checkout by default, or under `ROTOM_CAMPAIGN_ROOT` when using a separate private campaign repo, for easy inspection, backup, and diffing.
 
 
 
@@ -90,7 +90,7 @@ npm run build
 - `src/` contains the Nuxt app: pages, components, composables, assets, and browser-side utilities.
 - `server/` contains Nitro API routes, use cases, and filesystem persistence helpers.
 - `shared/` contains auth, path, realtime, sheet, and encounter helpers shared by app and server code.
-- `data/reference/` holds app-owned PTU JSON/TypeScript data consumed at runtime; campaign-owned `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, and `encounter_tables/` can live in the app checkout or under `ROTOM_CAMPAIGN_ROOT`; `ptu-data/` is documentary upstream/source material and parser tooling.
+- `data/reference/` holds app-owned PTU JSON/TypeScript data consumed at runtime; campaign-owned `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, and `encounter_tables/` can live in the app checkout or under `ROTOM_CAMPAIGN_ROOT`; `ptu-data/` is documentary upstream/source material and parser tooling.
 - `tests/` contains Vitest coverage across server use cases, composables, shared helpers, and domain utilities.
 
 See [docs/architecture.md](docs/architecture.md) for more detail.
@@ -118,7 +118,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 
 ## Data layout
 
-Campaign-owned paths (`data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, and `encounter_tables/`) are resolved under `ROTOM_CAMPAIGN_ROOT` when set; otherwise they use the app checkout.
+Campaign-owned paths (`data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, and `encounter_tables/`) are resolved under `ROTOM_CAMPAIGN_ROOT` when set; otherwise they use the app checkout. Base PTU reference files stay app-owned under `data/reference/`; Pokédex maintenance writes campaign overrides under `data/reference-overrides/pokedex.json`.
 
 | Path | What it contains |
 | --- | --- |
@@ -127,6 +127,7 @@ Campaign-owned paths (`data/maps/`, `data/sheets/`, `data/trainers/`, `data/play
 | `data/sheets/` | Pokémon character-sheet JSON, including generated wild sheets. |
 | `data/trainers/` | Trainer sheet JSON. |
 | `encounter_tables/` | Encounter-table JSON, grouped by folder/region. Resolved under `ROTOM_CAMPAIGN_ROOT` when set. |
+| `data/reference-overrides/` | Campaign-owned reference override diffs, currently Pokédex maintenance entries. Resolved under `ROTOM_CAMPAIGN_ROOT` when set. |
 | `data/reference/` | App-owned PTU reference JSON used by runtime pages, sheets, lookup helpers, and automation. |
 | `books/markdown/` | Markdown source/reference content. |
 | `ptu-data/` | Documentary upstream PTU parsing/source helpers; not the runtime source of truth. |
@@ -137,7 +138,7 @@ Campaign-owned paths (`data/maps/`, `data/sheets/`, `data/trainers/`, `data/play
 | `shared/` | Shared auth/path/sheet helpers used by both app and server. |
 | `tests/` | Vitest coverage for shared logic, utilities, composables, and server helpers. |
 
-Saved sheets, maps, and player profiles are edited by the app itself. Legacy live session snapshots and optional event logs live under `data/sessions/` only when the legacy session host is used for maintenance smoke checks. In development, Nuxt/Vite ignores changes under `data/sheets`, `data/trainers`, `data/player-profiles`, and `data/maps` so autosaves do not force a full page reload. `.gitignore` is configured to keep personal campaign data and session runtime files out of the repository while allowing curated examples to remain inspectable.
+Saved sheets, maps, player profiles, and campaign reference overrides are edited by the app itself. Legacy live session snapshots and optional event logs live under `data/sessions/` only when the legacy session host is used for maintenance smoke checks. In development, Nuxt/Vite ignores changes under `data/sheets`, `data/trainers`, `data/player-profiles`, `data/maps`, and `data/reference-overrides` so autosaves and admin edits do not force a full page reload. `.gitignore` is configured to keep personal campaign data, campaign reference overrides, and session runtime files out of the repository while allowing curated examples to remain inspectable.
 
 
 

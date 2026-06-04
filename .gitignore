@@ -19,9 +19,10 @@ temp/
 
 # Local campaign content
 # Keep generated example sheets and curated sample encounter tables trackable while
-# ignoring personal/campaign maps, sheets, trainers, profiles, sessions, and tables.
+# ignoring personal/campaign maps, sheets, trainers, profiles, reference overrides, sessions, and tables.
 data/maps/
 data/player-profiles/
+data/reference-overrides/
 data/sessions/
 data/sheets/*
 !data/sheets/examples/

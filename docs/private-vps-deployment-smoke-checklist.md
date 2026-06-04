@@ -1,8 +1,8 @@
 # Private VPS deployment smoke checklist
 
-Run this checklist after every private VPS deploy before sharing the private URL with players or resuming a campaign session. It assumes the private trusted-table scope described in [Private VPS hosting scope](private-vps-hosting.md): Node.js 24 LTS, the built Nitro server started with `npm run start`, campaign JSON outside the app checkout through `ROTOM_CAMPAIGN_ROOT`, and an outer access gate in front of the app.
+Run this checklist after every private VPS deploy before sharing the private URL with players or resuming a campaign session. It assumes the private trusted-table scope described in [Private VPS hosting scope](private-vps-hosting.md): Node.js 24 LTS, the built Nitro server started with `npm run start`, campaign JSON and reference override diffs outside the app checkout through `ROTOM_CAMPAIGN_ROOT`, and an outer access gate in front of the app.
 
-Use synthetic or clearly disposable campaign edits for smoke checks. Do not put real environment files, hostnames, credentials, player details, logs, screenshots, backup archives, or private campaign JSON into the app repository while running this checklist.
+Use synthetic or clearly disposable campaign edits for smoke checks. Do not put real environment files, hostnames, credentials, player details, logs, screenshots, backup archives, private campaign JSON, or campaign-specific reference overrides into the app repository while running this checklist.
 
 ## Preconditions
 
@@ -73,7 +73,7 @@ Run this section with disposable data. If hosted writes are intentionally disabl
 
 - [ ] Create or edit a clearly disposable map item, such as moving a smoke-test token on a player-visible map or creating a temporary map/folder named `Deploy Smoke <date>`.
 - [ ] Create or edit a clearly disposable sheet field on a synthetic Pokémon or trainer sheet, or on a sheet the table explicitly agrees to modify for the smoke check.
-- [ ] Confirm the corresponding JSON changes are under `ROTOM_CAMPAIGN_ROOT` rather than inside `/srv/rotom-table/app`.
+- [ ] Confirm the corresponding JSON changes are under `ROTOM_CAMPAIGN_ROOT` rather than inside `/srv/rotom-table/app`. If you deliberately smoke-test Pokédex maintenance, confirm it writes `data/reference-overrides/pokedex.json` under the campaign root and leaves app-owned `data/reference/pokedex.json` unchanged.
 - [ ] Restart the built process:
 
   ```bash
@@ -98,7 +98,7 @@ git status --short
 Confirm that no private data is staged in Git:
 
 - [ ] no real `.env`, `.env.*`, systemd environment file, proxy config, tunnel credential, password file, token, private key, or provider export;
-- [ ] no private `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `encounter_tables/`, or `data/sessions/` files from the smoke pass;
+- [ ] no private `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, `encounter_tables/`, or `data/sessions/` files from the smoke pass;
 - [ ] no backup archive such as `.tar`, `.tar.gz`, `.tgz`, or `.zip`;
 - [ ] no screenshots, logs, player details, unreleased campaign notes, or generated restore staging directories.
 

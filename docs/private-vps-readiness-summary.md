@@ -15,7 +15,7 @@ Rotom Table's VPS update is ready for review as **private trusted-table hosting*
 - Primary private VPS path: **systemd with a direct Node.js runtime**.
 - Build and boot command: run `npm run build`, then have systemd start the built Nitro server through `npm run start` from the app checkout. The equivalent direct command is `node .output/server/index.mjs`.
 - Network boundary: Nitro should bind to loopback, for example `NITRO_HOST=127.0.0.1` and `NITRO_PORT=3000`, behind a private reverse proxy and an outer access gate.
-- Environment boundary: private host settings live outside Git, for example `/etc/rotom-table/rotom-table.env`; campaign JSON lives outside the app checkout through `ROTOM_CAMPAIGN_ROOT`.
+- Environment boundary: private host settings live outside Git, for example `/etc/rotom-table/rotom-table.env`; campaign JSON and campaign reference override diffs live outside the app checkout through `ROTOM_CAMPAIGN_ROOT`.
 - Docker and Compose were intentionally not added because systemd plus direct Node runtime is the selected initial deployment path.
 
 ## Hosted-write policy summary
@@ -28,7 +28,7 @@ ROTOM_ENABLE_HOSTED_WRITES=1
 
 When `NODE_ENV=production`, an unset flag or any value other than exactly `1` keeps covered writes disabled. Non-production local development writes remain available without the hosted-write flag, preserving the local-first flow.
 
-Covered routes include map, sheet, encounter-table, persistent encounter-generation, player-profile, Pokédex maintenance, and campaign next-day writes. The flag controls filesystem persistence only; it is not authentication, authorization, rate limiting, abuse monitoring, or a backup substitute. Private VPS use still requires an outer access gate before the app.
+Covered routes include map, sheet, encounter-table, persistent encounter-generation, player-profile, Pokédex maintenance, and campaign next-day writes. Pokédex maintenance persists a campaign-owned reference override diff, not an app-checkout reference edit. The flag controls filesystem persistence only; it is not authentication, authorization, rate limiting, abuse monitoring, or a backup substitute. Private VPS use still requires an outer access gate before the app.
 
 ## Final validation evidence
 
