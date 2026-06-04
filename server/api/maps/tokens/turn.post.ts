@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../../utils/auth'
-import { badRequest, expectSlug, expectString, readObjectBody } from '../../../utils/http'
+import { badRequest, expectSlug, expectString, readObjectBody, requireWritableCampaignMode } from '../../../utils/http'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../../utils/useCaseHttp'
 import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
 import { turnMapTokenUseCase } from '../../../useCases/applyMapTokenAction'
@@ -23,6 +23,8 @@ const expectTokenFacingDirection = (value: unknown): TokenFacingDirection => {
 
 export default defineEventHandler(async (event) => {
   const role = requireAuthRole(event)
+  requireWritableCampaignMode()
+
   const body = await readObjectBody<TurnTokenBody>(event)
   const slug = expectSlug(body.slug)
   const placementId = expectString(body.placementId, 'placementId', { maxLength: 120 })

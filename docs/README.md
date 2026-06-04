@@ -11,7 +11,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
 - [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to local-first/security docs.
-- [API route mutation audit](api-route-mutation-audit.md) — non-GET API route classifications, hosted-write coverage, and remaining map-route limitation.
+- [API route mutation audit](api-route-mutation-audit.md) — non-GET API route classifications, hosted-write coverage, and remaining limitations.
 - [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.
 - [Map rendering performance roadmap](map-rendering-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
 - [Live session roadmap](live-session-roadmap.md) — legacy GM-hosted live session scope, lifecycle, concurrency model, roadmap phases, and non-goals; not the normal profile-based play path.

@@ -9,6 +9,7 @@
  */
 import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
+import { requireWritableCampaignMode } from '../../utils/http'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { moveMapUseCase } from '../../useCases/moveMap'
 import { normalizeRealtimeClientId } from '#shared/realtime'
@@ -21,6 +22,8 @@ interface MoveBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
+  requireWritableCampaignMode()
+
   const body = await readBody<MoveBody | null>(event)
 
   try {

@@ -8,6 +8,7 @@
  */
 import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
+import { requireWritableCampaignMode } from '../../utils/http'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { deleteMapUseCase } from '../../useCases/deleteMap'
 import { normalizeRealtimeClientId } from '#shared/realtime'
@@ -19,6 +20,8 @@ interface DeleteBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
+  requireWritableCampaignMode()
+
   const body = await readBody<DeleteBody | null>(event)
 
   try {

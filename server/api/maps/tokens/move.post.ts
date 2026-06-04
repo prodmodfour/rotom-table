@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../../utils/auth'
-import { badRequest, expectRecord, expectSlug, expectString, readObjectBody } from '../../../utils/http'
+import { badRequest, expectRecord, expectSlug, expectString, readObjectBody, requireWritableCampaignMode } from '../../../utils/http'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../../utils/useCaseHttp'
 import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
 import { moveMapTokenUseCase } from '../../../useCases/applyMapTokenAction'
@@ -40,6 +40,8 @@ const optionalPathLength = (value: unknown): number | null => {
 
 export default defineEventHandler(async (event) => {
   const role = requireAuthRole(event)
+  requireWritableCampaignMode()
+
   const body = await readObjectBody<MoveTokenBody>(event)
   const slug = expectSlug(body.slug)
   const placementId = expectString(body.placementId, 'placementId', { maxLength: 120 })

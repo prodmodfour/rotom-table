@@ -8,7 +8,7 @@ GET routes are omitted unless they are relevant to the notes below; current GET 
 
 `ROTOM_ENABLE_HOSTED_WRITES=1` is the exact production opt-in for persistent hosted filesystem writes on routes that are covered by the hosted-write policy. In non-production local development, these writes remain available without the flag.
 
-Map write routes are intentionally called out separately. They still need the dedicated hosted-mode map review before remote map editing should be treated as a covered private VPS write path. Until that review is complete, do not rely on private VPS map editing as a supported hosted-write surface.
+Map write routes are covered by the same hosted-write policy. GM map library/admin routes still require GM role, while player-facing map/token routes keep the existing player-visible map and selected-profile token-control checks used by local profile play.
 
 Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_HOST=1` guard and session-local credentials. They are not normal profile-based play routes and are not a substitute for the hosted-write flag on covered filesystem routes.
 
@@ -26,20 +26,20 @@ Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_
 | `/api/encounters/move` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves an encounter-table JSON file between folders. |
 | `/api/encounters/rename` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Renames an encounter-table JSON file. |
 | `/api/encounters/save` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Rewrites an encounter-table JSON file. |
-| `/api/maps/create-folder` | GM-only admin write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Creates a map folder under the campaign map root. Keep remote map administration disabled operationally until map hosted mode is reviewed. |
-| `/api/maps/create` | GM-only admin write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Creates a saved map JSON document and publishes map library events. |
-| `/api/maps/delete-folder` | GM-only admin write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Recursively removes a map folder and publishes map library events. |
-| `/api/maps/delete` | GM-only admin write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Removes a saved map JSON document and prunes empty parent folders. |
-| `/api/maps/move-folder` | GM-only admin write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Moves a map folder. |
-| `/api/maps/move` | GM-only admin write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Moves a saved map JSON document between folders. |
-| `/api/maps/rename` | GM-only admin write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Renames a saved map and may move the JSON file when the slug changes. |
-| `/api/maps/save` | Player-authorized profile/map/sheet write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | GM saves rewrite the full map. Player saves are limited by player-visible map checks and linked-profile token-control policy. |
-| `/api/maps/tokens/move` | Player-authorized profile/map/sheet write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Moves a controllable token in a saved map, updates movement metadata, and publishes map events. |
-| `/api/maps/tokens/turn` | Player-authorized profile/map/sheet write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Turns a controllable token in a saved map and publishes map events. |
-| `/api/maps/tokens/use-ability` | Player-authorized profile/map/sheet write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Writes map combat-log metadata and may update linked Pokémon/trainer sheet state for automated abilities. |
-| `/api/maps/tokens/use-maneuver` | Player-authorized profile/map/sheet write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Writes map combat-log metadata for maneuver use. |
-| `/api/maps/tokens/use-order` | Player-authorized profile/map/sheet write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Writes map combat-log metadata and active-order effect state. |
-| `/api/maps/use-move` | Player-authorized profile/map/sheet write | Pending map hosted-mode review; not yet covered by the hosted-write flag. | Records EOT/Scene usage on the map or Daily usage on the linked sheet, depending on move frequency. |
+| `/api/maps/create-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a map folder under the campaign map root. |
+| `/api/maps/create` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a saved map JSON document and publishes map library events. |
+| `/api/maps/delete-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Recursively removes a map folder and publishes map library events. |
+| `/api/maps/delete` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Removes a saved map JSON document and prunes empty parent folders. |
+| `/api/maps/move-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a map folder. |
+| `/api/maps/move` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a saved map JSON document between folders. |
+| `/api/maps/rename` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Renames a saved map and may move the JSON file when the slug changes. |
+| `/api/maps/save` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | GM saves rewrite the full map. Player saves require a player-visible map and only merge linked-profile token movement/facing. |
+| `/api/maps/tokens/move` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a controllable token in a saved map, updates movement metadata, and publishes map events. Players must select a profile linked to that token's sheet. |
+| `/api/maps/tokens/turn` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Turns a controllable token in a saved map and publishes map events. Players must select a profile linked to that token's sheet. |
+| `/api/maps/tokens/use-ability` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Writes map combat-log metadata and may update linked Pokémon/trainer sheet state for automated abilities. Players must select a profile linked to the acting token's sheet. |
+| `/api/maps/tokens/use-maneuver` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Writes map combat-log metadata for maneuver use. Players must select a profile linked to the acting token's sheet. |
+| `/api/maps/tokens/use-order` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Writes map combat-log metadata and active-order effect state. Players must select a profile linked to the acting token's sheet. |
+| `/api/maps/use-move` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Records EOT/Scene usage on the map or Daily usage on the linked sheet, depending on move frequency. Players must select a profile linked to the acting token's sheet. |
 | `/api/player-profiles/create` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a persistent player profile JSON file under `data/player-profiles/`. |
 | `/api/player-profiles/update` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Updates persistent player profile display names and linked character refs. |
 | `/api/pokedex/restore-from-books` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Rewrites an app-owned Pokédex reference entry from local markdown source material. |
@@ -61,6 +61,5 @@ Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_
 
 ## Remaining limitations
 
-- Map write routes are the only audited normal campaign-write group that remains outside the hosted-write policy. Treat remote map editing as pending until map save and token-action behavior are reviewed for hosted mode.
 - The hosted-write flag does not make the trust-based GM/Player role picker public authentication. Private VPS use still requires an outer access gate.
 - Legacy session routes remain maintenance-only surfaces with their own runtime flag and credentials. They should not be used to justify public exposure of normal campaign routes.

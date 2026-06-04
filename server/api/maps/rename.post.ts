@@ -14,6 +14,7 @@
  */
 import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
+import { requireWritableCampaignMode } from '../../utils/http'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { renameMapUseCase } from '../../useCases/renameMap'
 import { normalizeRealtimeClientId } from '#shared/realtime'
@@ -26,6 +27,8 @@ interface RenameBody {
 
 export default defineEventHandler(async (event) => {
   requireGm(event)
+  requireWritableCampaignMode()
+
   const body = await readBody<RenameBody | null>(event)
 
   try {

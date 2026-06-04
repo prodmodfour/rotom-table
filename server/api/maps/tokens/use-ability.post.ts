@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../../utils/auth'
-import { expectSlug, expectString, readObjectBody } from '../../../utils/http'
+import { expectSlug, expectString, readObjectBody, requireWritableCampaignMode } from '../../../utils/http'
 import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../../utils/useCaseHttp'
 import { useMapTokenAbilityUseCase } from '../../../useCases/applyMapTokenTableAction'
@@ -22,6 +22,8 @@ const optionalPlacementId = (value: unknown): string | undefined => {
 
 export default defineEventHandler(async (event) => {
   const role = requireAuthRole(event)
+  requireWritableCampaignMode()
+
   const body = await readObjectBody<UseAbilityBody>(event)
   const slug = expectSlug(body.slug)
   const placementId = expectString(body.placementId, 'placementId', { maxLength: 120 })
