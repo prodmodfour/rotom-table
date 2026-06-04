@@ -143,6 +143,8 @@ Rotom Table then resolves campaign-owned paths under the campaign root: maps at 
 
 Do not store private maps, sheets, trainers, player profiles, encounter tables, backups, or unreleased campaign notes in a public or shared app repository checkout. Keep `/srv/rotom-table/campaign` and `/srv/rotom-table/backups` private to the operator and exclude real `.env` files and generated archives from Git.
 
+For step-by-step private archives before and after a session, use the [Private VPS backup runbook](private-vps-backups.md).
+
 ## Hosted write policy
 
 Private VPS filesystem writes must fail closed in production unless the operator explicitly opts in. The selected flag is `ROTOM_ENABLE_HOSTED_WRITES`, enforced by server-side write policy on map, sheet, encounter-table, persistent encounter-generation, player-profile, Pokédex maintenance, and campaign next-day routes that have been moved off the older production-only block.
@@ -166,15 +168,16 @@ The **GM / Player** picker and persistent player profiles are table workflow con
 
 ## Out of scope for the initial target
 
-Before treating a hosted instance as a regular remote table, document and verify the remaining operational pieces for that host: environment variable values, production write policy enforcement, route mutation review, process management, reverse proxy behaviour, access-gate configuration, backups, restores, and deployment smoke checks.
+Before treating a hosted instance as a regular remote table, document and verify the remaining operational pieces for that host: environment variable values, production write policy enforcement, route mutation review, process management, reverse proxy behaviour, access-gate configuration, backup practice, restores, and deployment smoke checks.
 
-Until those pieces are documented for the specific host, keep hosted use private, conservative, and reversible. If the trust boundary is unclear, run Rotom Table locally instead.
+Until those pieces are verified for the specific host, keep hosted use private, conservative, and reversible. If the trust boundary is unclear, run Rotom Table locally instead.
 
 ## Related docs
 
 - [Security](../SECURITY.md) — trust-based security expectations and public-exposure non-goals.
 - [Local development](local-development.md) — local-first filesystem behaviour, checks, and production write limitations.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON separate from the app checkout.
+- [Private VPS backup runbook](private-vps-backups.md) — creating private campaign and deployment-config backups before and after sessions without committing archives.
 - [API route mutation audit](api-route-mutation-audit.md) — current non-GET route classifications, hosted-write coverage, and remaining limitations.
 - [Player profiles and linked character control](player-profiles.md) — normal GM/player profile flow for table play.
 - [Live session security boundaries](live-session-security-boundaries.md) — legacy live-session exposure risks and non-goals.
