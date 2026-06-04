@@ -1,6 +1,6 @@
 # Private VPS hosting scope
 
-Rotom Table's first VPS target is **private trusted-table hosting**: one GM/operator-controlled Node/Nitro process for a known campaign group. It extends the local-first workflow to a private host, but it does not turn Rotom Table into a public website or managed service.
+Rotom Table's first VPS target is **private trusted-table hosting**: one GM/operator-controlled Node/Nitro process for a known campaign group. It runs the same filesystem-backed campaign workflow on a private host, but it does not turn Rotom Table into a public website or managed service.
 
 ## Safe first use
 
@@ -10,7 +10,7 @@ Use this mode only when all of these are true:
 - access to the app is restricted by an outer gate such as a private network, VPN/Tailscale, reverse-proxy authentication, Cloudflare Access, SSH tunnel, or equivalent provider controls; see [Outer access gate](#outer-access-gate) before sharing the URL;
 - participants are known table members who already trust the GM/operator and campaign data;
 - campaign JSON and campaign-owned reference override diffs stay in private operator-controlled storage, preferably through `ROTOM_CAMPAIGN_ROOT` as described in [Campaign repositories](campaign-repositories.md);
-- the operator understands the local-first filesystem model in [Local development](local-development.md) and the security expectations in [Security](../SECURITY.md).
+- the operator understands the filesystem-backed campaign model in [Local development](local-development.md) and the security expectations in [Security](../SECURITY.md).
 
 The built Nitro server can be used for private host smoke checks with Node.js 24 LTS, `npm run build`, `npm run start`, and the no-secret `/api/health` endpoint. After every deploy, follow the [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) before sharing the private URL with players. Keep normal profile-based play intact: the GM manages profiles from `/players`, players choose **Player Login**, and players open the regular player-visible routes such as `/maps/<slug>`.
 
@@ -26,7 +26,7 @@ Data separation matters more than branch names. The app checkout and `ROTOM_CAMP
 
 ## Primary process management path
 
-The primary private VPS process-management path is **systemd with a direct Node.js 24 runtime**. This keeps Rotom Table close to the existing local-first filesystem model: the service runs the built Nitro server from the app checkout, while campaign JSON and reference override diffs stay in `/srv/rotom-table/campaign` through `ROTOM_CAMPAIGN_ROOT`.
+The primary private VPS process-management path is **systemd with a direct Node.js 24 runtime**. This keeps Rotom Table close to the existing filesystem-backed campaign model: the service runs the built Nitro server from the app checkout, while campaign JSON and reference override diffs stay in `/srv/rotom-table/campaign` through `ROTOM_CAMPAIGN_ROOT`.
 
 A manual smoke for the same command that systemd should supervise is:
 
@@ -182,7 +182,7 @@ Until those pieces are verified for the specific host, keep hosted use private, 
 ## Related docs
 
 - [Security](../SECURITY.md) — trust-based security expectations and public-exposure non-goals.
-- [Local development](local-development.md) — local-first filesystem behaviour, checks, and production write limitations.
+- [Local development](local-development.md) — filesystem-backed behaviour, checks, and production write limitations.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON and campaign reference override diffs separate from the app checkout.
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy install, validation, start, health, outer-gated profile play, persistence, Git hygiene, and legacy `/sessions` boundary checks.
 - [Private VPS backup runbook](private-vps-backups.md) — creating private campaign and deployment-config backups before and after sessions, then smoke-checking a temporary restore without committing archives.

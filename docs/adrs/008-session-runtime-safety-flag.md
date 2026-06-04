@@ -6,7 +6,7 @@ Status: Accepted
 
 ## Context
 
-Live session lets a GM-hosted Rotom Table process accept browser connections from multiple devices. That is a meaningful exposure change from the existing local-first workflow, where the GM/player role picker is a trusted table convenience and app data usually stays on one machine.
+Live session lets a GM-hosted Rotom Table process accept browser connections from multiple devices. That is a meaningful exposure change from the existing filesystem-backed trusted-table workflow, where the GM/player role picker is a trusted table convenience and app data usually stays in operator-controlled storage.
 
 The supported hosting paths are LAN first and named Cloudflare Tunnel second. Both can make the app reachable by people beyond the GM's browser, and a named tunnel can make it reachable from the public internet. Live session therefore needs a deliberate runtime safety gate before any session-hosting routes, WebSocket endpoints, lobby flows, or public join surfaces are enabled.
 
@@ -28,7 +28,7 @@ The flag is a runtime safety gate, not a secret and not authentication. Once hos
 
 Implementation and follow-up changes must preserve these behaviours:
 
-- **Default disabled:** a normal local development or local-first run does not host Live sessions unless the flag is explicitly enabled.
+- **Default disabled:** a normal local development run does not host Live sessions unless the flag is explicitly enabled.
 - **Fail closed:** session endpoints and sockets reject or hide themselves when the flag is absent, empty, misspelled, or set to any value other than the documented enabled value.
 - **Visible opt-in:** server logs, UI banners, and hosting docs should make the enabled/disabled state clear to the GM.
 - **No role-picker escalation:** the existing trusted GM/player role picker remains a local convenience and must not be treated as public auth for session hosting.
@@ -49,7 +49,7 @@ When a GM binds the server to a LAN interface or places it behind a named Cloudf
 - Quick Tunnel, when mentioned, is only a temporary development smoke-test path;
 - Live session does not provide full accounts, tenant isolation, abuse handling, or hardened public auth.
 
-This boundary is especially important while legacy local-first and non-session functionality coexists with session mode. The safety gate ensures the app does not accidentally publish a session API, but it does not replace route-level validation, permission checks, or conservative docs.
+This boundary is especially important while legacy non-session functionality coexists with session mode. The safety gate ensures the app does not accidentally publish a session API, but it does not replace route-level validation, permission checks, or conservative docs.
 
 ## Rejected alternatives
 
@@ -88,7 +88,7 @@ Reviewers can validate this ADR by checking that live-session work:
 
 - keeps session hosting disabled unless `ROTOM_ENABLE_SESSION_HOST=1` is present;
 - fails closed for session routes and sockets when the flag is absent or invalid;
-- preserves existing local-first app workflows outside session mode;
+- preserves existing file-backed app workflows outside session mode;
 - does not expose the local role picker as public authentication;
 - requires GM keys, join codes, player/client IDs, assignments, and command permissions even when hosting is enabled;
 - warns clearly before LAN or named-tunnel exposure;

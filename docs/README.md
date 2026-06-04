@@ -5,12 +5,12 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 ## Start here
 
 - [Review guide](review-guide.md) — what to inspect first, key routes, source areas, scripts, and production caveats.
-- [Architecture](architecture.md) — high-level Nuxt/Nitro/local-first architecture.
+- [Architecture](architecture.md) — high-level Nuxt/Nitro/filesystem-backed architecture.
 - [Data model](data-model.md) — maps, sheets, trainers, player profiles, encounter tables, campaign reference overrides, app-owned PTU reference content, generated sheets, and local data hygiene.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON and campaign reference override diffs in a separate Git repository.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
-- [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to local-first/security docs.
+- [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to filesystem/security docs.
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy private VPS checks for install, validation, built-server start, health, outer-gated profile play, write persistence after restart, Git hygiene, and legacy `/sessions` boundaries.
 - [Private VPS readiness summary](private-vps-readiness-summary.md) — selected Node 24 runtime, systemd deployment path, hosted-write policy, final validation evidence, and known public-service follow-ups.
 - [Private VPS backup runbook](private-vps-backups.md) — before/after-session campaign archives, temporary restore smoke checks, private deployment config notes, retention guidance, and Git hygiene.
@@ -37,7 +37,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session implementation maintenance](live-session-implementation-maintenance.md) — product docs, source areas, validation evidence, and known limitations.
 - [Live session product readiness review](live-session-product-readiness-review.md) — concise product/developer readiness review for architecture, table flow, validation, limits, and operator checks.
 - [Live session readiness summary](live-session-readiness-summary.md) — product/developer readiness summary for validation, evidence links, and architecture confirmation.
-- [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md) — local-first maintenance checks for plain map/sheet workflows, profile play, legacy SSE, and legacy session isolation.
+- [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md) — maintenance checks for plain map/sheet workflows, profile play, legacy SSE, and legacy session isolation.
 - [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md) — temporary development smoke-test boundary, campaign-session rejection, and legacy SSE limitations.
 - [live session storage](live-session-storage.md) — default snapshot/event-log paths, ignored/private data boundaries, backup guidance, cleanup behaviour, and recovery limitations.
 - [Live session backup and recovery](live-session-backup-recovery.md) — private backup/restore runbook for snapshots, optional event logs, referenced campaign data, and local-only recovery limits.
@@ -48,10 +48,10 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
 - [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.
 - [ADR 003: Session socket transport](adrs/003-session-socket-transport.md) — decision record for using the session socket for live session commands, acks/rejections, broadcasts, heartbeat, and reconnect.
-- [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md) — decision record for command envelopes instead of live whole-map autosave, including local-first compatibility boundaries.
+- [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md) — decision record for command envelopes instead of live whole-map autosave, including file-backed compatibility boundaries.
 - [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md) — decision record for session-local GM/player identity, join codes, display names, assignments, and server-enforced permissions without full accounts.
 - [ADR 006: Revisions and conflict rules](adrs/006-revisions-and-conflict-rules.md) — decision record for monotonic revisions, `opId` idempotency, stale command handling, GM precedence, and per-resource conflicts.
-- [ADR 007: JSON snapshots and optional event log](adrs/007-json-snapshots-and-optional-event-log.md) — decision record for local-first session snapshots, atomic writes, optional append-only event logs, and recovery expectations.
+- [ADR 007: JSON snapshots and optional event log](adrs/007-json-snapshots-and-optional-event-log.md) — decision record for filesystem-backed session snapshots, atomic writes, optional append-only event logs, and recovery expectations.
 - [ADR 008: Session runtime safety flag](adrs/008-session-runtime-safety-flag.md) — decision record for the explicit session-host opt-in flag, fail-closed session routes, and public exposure warnings.
 - [Isometric render scheduler architecture](render-scheduler-architecture.md) — dirty rendering flow, active animation sources, and how to add future invalidation reasons.
 - [Performance benchmark scenarios](performance-benchmark-scenarios.md) — empty, typical campaign, and stress map scenarios plus before/after PR metrics to record.

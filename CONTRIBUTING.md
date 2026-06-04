@@ -1,6 +1,6 @@
 # Contributing
 
-Rotom Table is a local-first fan project and long-running hobby tool. Contributions should preserve that shape unless a future project direction explicitly changes it.
+Rotom Table is a private trusted-table fan project and long-running hobby tool with filesystem-backed campaign data. Contributions should preserve that shape unless a future project direction explicitly changes it.
 
 ## Local setup
 
@@ -47,7 +47,7 @@ For move VFX work, copy the PR checklist from `docs/move-animations.md#copyable-
 
 - Update or add tests for behaviour changes.
 - Keep server route handlers, use cases, shared helpers, and UI utilities separated by responsibility.
-- Preserve local-first assumptions unless the change explicitly includes a reviewed persistence/auth design.
+- Preserve private trusted-table and filesystem-backed assumptions unless the change explicitly includes a reviewed persistence/auth design.
 - Avoid changing application behaviour in documentation-only or presentation-only passes.
 
 ## Fan-project boundaries

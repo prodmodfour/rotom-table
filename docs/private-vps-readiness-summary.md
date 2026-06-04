@@ -1,6 +1,6 @@
 # Private VPS readiness summary
 
-Rotom Table's VPS update is ready for review as **private trusted-table hosting** support. It keeps the local-first campaign workflow, adds a reviewed private host path, and does not claim public SaaS or public multi-user-service readiness.
+Rotom Table's VPS update is ready for review as **private trusted-table hosting** support. It keeps the filesystem-backed campaign workflow, adds a reviewed private host path, and does not claim public SaaS or public multi-user-service readiness.
 
 ## Selected Node runtime
 
@@ -26,7 +26,7 @@ Production hosted filesystem writes fail closed unless a private operator explic
 ROTOM_ENABLE_HOSTED_WRITES=1
 ```
 
-When `NODE_ENV=production`, an unset flag or any value other than exactly `1` keeps covered writes disabled. Non-production local development writes remain available without the hosted-write flag, preserving the local-first flow.
+When `NODE_ENV=production`, an unset flag or any value other than exactly `1` keeps covered writes disabled. Non-production local development writes remain available without the hosted-write flag, preserving the standard local editing flow.
 
 Covered routes include map, sheet, encounter-table, persistent encounter-generation, player-profile, Pokédex maintenance, and campaign next-day writes. Pokédex maintenance persists a campaign-owned reference override diff, not an app-checkout reference edit. The flag controls filesystem persistence only; it is not authentication, authorization, rate limiting, abuse monitoring, or a backup substitute. Private VPS use still requires an outer access gate before the app.
 

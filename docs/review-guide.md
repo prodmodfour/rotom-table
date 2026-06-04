@@ -1,10 +1,10 @@
 # Review guide
 
-Rotom Table is best reviewed as a local-first product-style application: it has a real campaign workflow, a large typed domain, filesystem persistence, and substantial UI surface area.
+Rotom Table is best reviewed as a private trusted-table product-style application: it has a real campaign workflow, a large typed domain, filesystem persistence, and substantial UI surface area.
 
 ## What to inspect first
 
-1. **README positioning** — the first screen explains the project, local-first caveats, fan-project boundaries, and quick start.
+1. **README positioning** — the first screen explains the project, private trusted-table caveats, fan-project boundaries, and quick start.
 2. **Architecture notes** — read [architecture.md](architecture.md) for the high-level shape before diving into code.
 3. **Data model notes** — read [data-model.md](data-model.md) to understand why the repository uses JSON data files instead of a hosted database.
 4. **Map workflow** — inspect `src/pages/maps/[slug].vue`, `src/components/IsometricGrid.client.vue`, `src/components/map/`, `src/composables/map-editor/`, and `src/utils/isometric/`.
@@ -17,13 +17,13 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 | Route | Why it matters |
 | --- | --- |
 | `/login` | Shows the trust-based GM/Player role picker and player profile selection flow. |
-| `/settings` | GM-only settings and local campaign folder controls. |
+| `/settings` | GM-only settings and campaign folder controls. |
 | `/players` | GM-only profile list plus Pokémon/trainer sheet link management. |
-| `/maps` | Local map library and folder management. |
+| `/maps` | Map library and folder management. |
 | `/maps/:slug` | Main isometric table, terrain editing, token placement, initiative, field effects, and automation controls. |
 | `/sheets` | Pokémon and trainer sheet library. |
-| `/sheets/:slug` | Pokémon sheet editor backed by local JSON. |
-| `/sheets/trainers/:slug` | Trainer sheet editor backed by local JSON. |
+| `/sheets/:slug` | Pokémon sheet editor backed by filesystem JSON. |
+| `/sheets/trainers/:slug` | Trainer sheet editor backed by filesystem JSON. |
 | `/pokedex` and `/pokedex/:pokemon_name` | Search/filter/detail flow over reference data. |
 | `/generate` | GM-only encounter generation from JSON encounter tables. |
 | `/encounter-tables` | GM-only encounter-table browser/editor. |
@@ -41,7 +41,7 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 - `server/useCases/` — behaviour-oriented server application logic separated from route handlers.
 - `server/utils/` — filesystem paths, JSON persistence, storage helpers, policies, and runtime adapters.
 - `shared/` — auth, path, realtime, sheet, and encounter helpers used on both client and server.
-- `data/`, `data/reference/`, `data/reference-overrides/`, and `encounter_tables/` — local campaign data, app-owned reference data, campaign reference override diffs, and encounter definitions consumed by the app. `ptu-data/` is documentary upstream/source material.
+- `data/`, `data/reference/`, `data/reference-overrides/`, and `encounter_tables/` — filesystem-backed campaign data, app-owned reference data, campaign reference override diffs, and encounter definitions consumed by the app. `ptu-data/` is documentary upstream/source material.
 - `tests/` — Vitest coverage for server use cases, composables, shared helpers, and pure domain utilities.
 
 ## Key scripts
@@ -62,16 +62,16 @@ Rotom Table is best reviewed as a local-first product-style application: it has 
 ## What the project demonstrates
 
 - A long-running personal tool with real users/workflows rather than a small sample app.
-- Product thinking: GM/player modes, persistent player profiles, linked-character control, route organisation, local data safety, autosave, search, libraries, editors, and dense tabletop controls.
+- Product thinking: GM/player modes, persistent player profiles, linked-character control, route organisation, private data safety, autosave, search, libraries, editors, and dense tabletop controls.
 - TypeScript/Nuxt structure across pages, composables, utilities, server routes, shared helpers, and tests.
 - Interactive UI complexity: Three.js isometric map rendering, token interactions, initiative, field effects, hazards, and sheet-driven map state.
 - Domain modelling for 3D tabletop maps, Pokémon sheets, trainer sheets, encounter tables, app-owned PTU reference content, and generated wild sheets.
-- Data-management discipline: JSON files remain human-inspectable and suitable for Git diffing, backups, and local campaign ownership.
+- Data-management discipline: JSON files remain human-inspectable and suitable for Git diffing, backups, and private campaign ownership.
 
 ## Intentionally not production-grade
 
-- **Authentication** — the GM/Player picker and persistent player profiles are trust-based local-table conveniences. They are appropriate for a local table, not a public identity system.
-- **Persistence** — data is written to the repository filesystem in local development. A hosted version should replace this with an explicit persistence design.
+- **Authentication** — the GM/Player picker and persistent player profiles are trust-based table conveniences. They are appropriate for a private trusted table, not a public identity system.
+- **Persistence** — data is written to filesystem-backed JSON in local development and private trusted-table hosting. A public hosted version should replace this with an explicit persistence design.
 - **Production writes** — several mutating API routes are disabled in production mode by design.
 - **Multi-tenancy/collaboration** — this is not a SaaS app, public VTT, or shared database platform.
 - **IP/licensing posture** — this is an unofficial fan-made utility and does not claim ownership of Pokémon/PTU names, images, or concepts.

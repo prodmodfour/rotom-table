@@ -8,7 +8,7 @@ This maintenance note records the current non-session map/sheet behaviour. Plain
 - Player token control is derived from the selected persistent player profile's linked Pokémon/trainer sheet refs.
 - Players without a selected profile can still browse map/sheet libraries, Pokédex pages, PTU reference pages, login, and informational routes.
 - Player map actions that mutate linked tokens use document-backed APIs and publish regular realtime map updates.
-- GM map and sheet editing remains local-first and unrestricted by player profiles.
+- GM map and sheet editing remains filesystem-backed and unrestricted by player profiles.
 - Legacy live-session identity/socket code must not become a prerequisite for normal map play.
 
 ## Regression checks

@@ -80,7 +80,7 @@ Rejected for Live session. Accounts would add registration, login, password or p
 
 ### Public multi-tenant identity
 
-Rejected. A tenant/user/membership model would imply SaaS deployment, tenant isolation, hosted persistence, and broader public security hardening. Rotom Table Live session remains GM-hosted and local-first.
+Rejected. A tenant/user/membership model would imply SaaS deployment, tenant isolation, hosted persistence, and broader public security hardening. Rotom Table Live session remains GM-hosted and filesystem-backed.
 
 ### Display-name based permissions
 

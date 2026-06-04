@@ -6,7 +6,7 @@ Status: Accepted
 
 ## Context
 
-Rotom Table's existing local-first workflows persist maps, sheets, trainers, and related campaign files as inspectable JSON on the machine running the app. That model is appropriate for local mode, where one trusted user edits the campaign state directly and whole-map saves are easy to inspect, back up, and repair.
+Rotom Table's existing file-backed workflows persist maps, sheets, trainers, and related campaign files as inspectable JSON on the machine running the app or under `ROTOM_CAMPAIGN_ROOT`. That model is appropriate for non-session editing, where trusted table users edit campaign state through the app and document saves are easy to inspect, back up, and repair.
 
 Live session adds live GM-hosted sessions where several browser clients may act at the same time. In that environment, whole-map autosave from each live client would make the browser that saved last the accidental authority. It would also make it difficult to explain which player was allowed to change a resource, why a stale move overwrote a newer one, whether a retry was applied twice, and what state a reconnecting client should trust.
 
@@ -64,17 +64,17 @@ A client may retry a command after a network blip, and a browser may optimistica
 
 Accepted commands can produce compact patches/events, such as "token A moved to position B at revision 42." This avoids sending an entire map document for every live action and gives the server a natural point to fan out only to clients connected to the same session.
 
-### Preserve local-first ownership
+### Preserve file-backed ownership
 
-Server-authoritative commands do not require a cloud database or SaaS backend. The GM-hosted server remains the authority for one session and persists recoverable state as local JSON snapshots plus optional local event logs. Campaign ownership stays with the GM's machine.
+Server-authoritative commands do not require a cloud database or SaaS backend. The GM-hosted server remains the authority for one session and persists recoverable state as filesystem-backed JSON snapshots plus optional local event logs. Campaign ownership stays with the GM/operator-controlled storage.
 
 ## Compatibility boundaries
 
-- **Local mode keeps local-first saves.** Existing non-session map and sheet editing may continue to load and save whole JSON documents through the app's local-first workflows.
+- **Local mode keeps file-backed saves.** Existing non-session map and sheet editing may continue to load and save whole JSON documents through the app's filesystem-backed workflows.
 - **Session mode is additive and guarded.** The command path applies when a Live session is active and session hosting has been explicitly enabled.
 - **Server snapshots are allowed.** The server may write whole authoritative session snapshots for recovery. That is not the same as accepting whole-map autosaves from multiple live clients.
 - **Imports, exports, setup, and GM maintenance can remain document-oriented outside live play.** Those workflows should not become the session concurrency mechanism.
-- **Legacy non-session realtime paths may remain during migration.** Existing SSE or local-sync behaviour can continue outside the new WebSocket session command channel.
+- **Legacy non-session realtime paths may remain during migration.** Existing SSE behaviour can continue outside the new WebSocket session command channel.
 - **Map rendering quality and map functionality must remain intact.** Session commands should feed authoritative state into the existing map experience without reducing visual quality or removing local map features.
 
 ## Rejected alternatives
@@ -93,7 +93,7 @@ Rejected. Letting browsers apply state changes directly and reconcile later woul
 
 ### Database-mediated conflict resolution
 
-Rejected for Live session. Adding a hosted database or queue would conflict with the local-first GM-hosted architecture. Conflict decisions belong in the session command application layer, backed by local JSON snapshots and optional event logs.
+Rejected for Live session. Adding a hosted database or queue would conflict with the GM-hosted, filesystem-backed architecture. Conflict decisions belong in the session command application layer, backed by local JSON snapshots and optional event logs.
 
 ## Consequences
 
@@ -102,7 +102,7 @@ Rejected for Live session. Adding a hosted database or queue would conflict with
 - Client session mode must dispatch commands instead of directly saving whole maps for live table actions.
 - Optimistic UI must reconcile against server acks, rejections, and authoritative patches.
 - Tests must cover command validation, permission denials, duplicate `opId` handling, stale/conflict rejection, revision increments, reconnect recovery, and local/session mode boundaries.
-- Documentation must continue to distinguish local-first editing from guarded live session concurrency.
+- Documentation must continue to distinguish non-session file-backed editing from guarded live session concurrency.
 
 ## Validation notes
 

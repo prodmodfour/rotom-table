@@ -21,4 +21,4 @@ This page records the readiness maintenance for the map rendering performance wo
 - Keep visual output and table functionality unchanged unless a future product change explicitly documents and validates the difference.
 - Keep benchmark fixtures public and reproducible without private campaign data.
 - Keep render-scheduler and invalidation notes current when future map-performance work changes the renderer.
-- Keep local-first map and sheet workflows unaffected by performance-only changes.
+- Keep map and sheet workflows unaffected by performance-only changes.

@@ -75,6 +75,6 @@ For the current supported map-control smoke, use [Player profiles and linked cha
 - Legacy LAN session hosting is not hardened public authentication.
 - Do not port-forward the dev server or improvise public exposure.
 - Do not add a database, cloud persistence layer, SaaS deployment target, share link, invite link, per-map ACL, or shared-document autosave model to keep this legacy path alive.
-- Keep map rendering quality, local JSON workflows, profile-linked control, and regular `/maps/<slug>` play intact.
+- Keep map rendering quality, filesystem-backed JSON workflows, profile-linked control, and regular `/maps/<slug>` play intact.
 
 See [live session host runtime scripts](live-session-host-runtime.md), [Live session public exposure checks](live-session-public-exposure-checks.md), [Live session security boundaries](live-session-security-boundaries.md), and [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for the remaining legacy-session boundaries.

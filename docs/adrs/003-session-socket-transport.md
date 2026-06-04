@@ -8,7 +8,7 @@ Status: Accepted
 
 Live session adds live GM-hosted table sessions where the GM's Rotom Table server is the authority for session state. During a session, multiple browser clients need to send table commands, receive command acknowledgements or rejections, see presence updates, receive accepted map/table patches, and reconnect without losing the authoritative revision.
 
-The existing app may keep local-first and non-session realtime behaviour during migration, including any Server-Sent Events (SSE) paths that are still useful outside session mode. The new live session channel, however, needs bidirectional messaging with explicit ordering and session-scoped fanout. It also must work for the supported hosting modes: LAN first, and named Cloudflare Tunnel for remote players.
+The existing app may keep non-session realtime behaviour during migration, including any Server-Sent Events (SSE) paths that are still useful outside session mode. The new live session channel, however, needs bidirectional messaging with explicit ordering and session-scoped fanout. It also must work for the supported hosting modes: LAN first, and named Cloudflare Tunnel for remote players.
 
 ## Decision
 
@@ -24,7 +24,7 @@ Each live GM/player client connects to a session WebSocket endpoint after the GM
 - heartbeat/keepalive messages;
 - transport-level errors and safe close reasons.
 
-Existing SSE code may remain for non-session or local-sync routes during the migration, but new Live session concurrency must not rely on SSE, polling, or whole-map autosave as the primary live transport.
+Existing SSE code may remain for non-session realtime routes during the migration, but new Live session concurrency must not rely on SSE, polling, or whole-map autosave as the primary live transport.
 
 The TypeScript message unions, validators, endpoint shape, and client composables are defined in the live-session implementation. This ADR locks the transport expectation they must follow.
 
@@ -78,7 +78,7 @@ Rejected for Live session. Peer-to-peer transport would complicate NAT traversal
 
 ### Hosted realtime service
 
-Rejected for Live session. A managed realtime service would introduce cloud dependency and operational assumptions that conflict with the local-first GM-hosted architecture. The session channel should run in the GM-controlled Rotom Table process.
+Rejected for Live session. A managed realtime service would introduce cloud dependency and operational assumptions that conflict with the GM-hosted, filesystem-backed architecture. The session channel should run in the GM-controlled Rotom Table process.
 
 ## Consequences
 
@@ -86,7 +86,7 @@ Rejected for Live session. A managed realtime service would introduce cloud depe
 - Message schema work must include hello, heartbeat, command, ack/reject, snapshot, patch/event, presence, and error messages.
 - Transport tests must cover handshake validation, heartbeat, malformed messages, reconnect, and session isolation.
 - Hosting docs must account for WebSocket behaviour on LAN and through a named Cloudflare Tunnel.
-- Legacy local-first workflows remain supported; this ADR only locks the transport for new live session concurrency.
+- Legacy file-backed workflows remain supported; this ADR only locks the transport for new live session concurrency.
 
 ## Validation notes
 

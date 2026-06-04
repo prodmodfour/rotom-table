@@ -4,7 +4,7 @@ This readiness maintenance records the current Live session security and secret-
 
 Review date: 2026-05-26
 
-Current readiness baseline: the locked live-session trusted-table posture is ready within explicit limitations. The implemented session surfaces preserve the GM-hosted, local-first architecture: session hosting stays opt-in through `ROTOM_ENABLE_SESSION_HOST=1`, players join with session-local identity, live session mutations use `WebSocket /api/sessions/socket` server-authoritative commands, and the docs continue to reject public-auth, SaaS, cloud-database, generic shared-document, and Quick Tunnel campaign-session models.
+Current readiness baseline: the locked live-session trusted-table posture is ready within explicit limitations. The implemented session surfaces preserve the GM-hosted, filesystem-backed architecture: session hosting stays opt-in through `ROTOM_ENABLE_SESSION_HOST=1`, players join with session-local identity, live session mutations use `WebSocket /api/sessions/socket` server-authoritative commands, and the docs continue to reject public-auth, SaaS, cloud-database, generic shared-document, and Quick Tunnel campaign-session models.
 
 This readiness maintenance covers auth/session/cookie/permission boundaries, public exposure warnings, secret-hygiene checks, and remaining non-goals. It did not create a live public tunnel, inspect private campaign data, record a real GM key or join code, or add a new authentication system. It reviewed source boundaries, existing focused tests, runbooks, tracked-file hygiene, and no-secret documentation.
 
@@ -21,7 +21,7 @@ The review covered these security-sensitive boundaries:
 - public exposure warnings for LAN and named Cloudflare Tunnel hosting;
 - remaining non-goals that are still intentionally outside Live session.
 
-The review intentionally did not harden legacy local-first routes for arbitrary public internet users, add accounts/OAuth/MFA, add rate limiting or CAPTCHA, encrypt local backups, introduce a hosted database, or turn the app into public multi-tenant infrastructure.
+The review intentionally did not harden legacy trust-based routes for arbitrary public internet users, add accounts/OAuth/MFA, add rate limiting or CAPTCHA, encrypt local backups, introduce a hosted database, or turn the app into public multi-tenant infrastructure.
 
 ## Evidence summary
 
@@ -83,7 +83,7 @@ The accepted limitation is that command-specific bugs could still exist. Live se
 
 The public-exposure review confirms the warnings remain aligned with the locked hosting model:
 
-- Plain `npm run dev` remains local-first and does not enable session hosting.
+- Plain `npm run dev` remains the standard local development path and does not enable session hosting.
 - `npm run dev:session:lan` explicitly enables the runtime flag and binds to `0.0.0.0` for same-Wi-Fi/LAN play.
 - `npm run dev:session:tunnel` explicitly enables the runtime flag and binds to `127.0.0.1` for a named Cloudflare Tunnel that provides the remote stable hostname.
 - `GET /api/sessions/safety` is intentionally readable while hosting is disabled so the lobby can explain fail-closed status. When enabled, it reports no-secret counts/readiness and exposure classification.
@@ -120,7 +120,7 @@ These limitations are still explicit and acceptable for Live session:
 - no production-grade internet abuse controls such as IP rate limiting, CAPTCHA, bot detection, WAF-managed app auth, or centralized abuse monitoring;
 - no encrypted-at-rest session snapshots/backups, automatic credential rotation, tamper-proof audit log, or secrets-management service;
 - no hosted database, Redis, Postgres, Durable Objects, cloud object storage, or cloud-first persistence layer;
-- no hardening claim for every legacy local-first mutating route when the whole app is exposed to arbitrary public users;
+- no hardening claim for every legacy trust-based mutating route when the whole app is exposed to arbitrary public users;
 - no browser-owned recovery authority from local storage, screenshots, stale optimistic state, or copied map JSON;
 - no Quick Tunnel campaign hosting and no legacy SSE session command transport.
 

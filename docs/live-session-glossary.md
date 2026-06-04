@@ -8,7 +8,7 @@ This glossary defines the vocabulary used by the GM-hosted live session roadmap,
 | --- | --- |
 | Live session | The workstream that adds GM-hosted multi-device session concurrency to Rotom Table. |
 | GM-hosted session | A table session run by the GM on their own machine or a small machine they control. Players connect by browser. |
-| Local mode | The existing local-first workflow where maps and sheets are edited through app routes and persisted as inspectable JSON files. |
+| Local mode | The non-session workflow where maps and sheets are edited through app routes and persisted as inspectable JSON files. |
 | Session mode | The guarded live-session workflow where live clients send commands to a server-authoritative session instead of autosaving whole map documents. |
 | LAN hosting | The primary supported Live session deployment path: GM and players are on the same local network or Wi-Fi. |
 | Named Cloudflare Tunnel | The supported remote Live session path: a stable public hostname forwards to the private GM-hosted Rotom Table server. |
@@ -94,8 +94,8 @@ This glossary defines the vocabulary used by the GM-hosted live session roadmap,
 | --- | --- |
 | Session-host runtime flag | Explicit opt-in environment flag or equivalent setting, such as `ROTOM_ENABLE_SESSION_HOST=1`, required before hosting session endpoints/sockets. |
 | Safety boundary | A documented limit that prevents local trust assumptions from being mistaken for public security guarantees. |
-| Local-first JSON persistence | Continued use of local JSON files for app and session state instead of a hosted database service. |
-| Whole-map autosave | Existing-style persistence of an entire map document. It remains useful in local mode but must not be the main live-session concurrency mechanism. |
+| Filesystem-backed JSON persistence | Continued use of server-side JSON files for app and session state instead of a hosted database service. |
+| Whole-map autosave | Existing-style persistence of an entire map document. It remains useful in non-session editing but must not be the main live-session concurrency mechanism. |
 | Cloud database | Hosted persistence such as Postgres, Redis, Durable Objects, or another managed service. Adding one is out of scope for Live session. |
 | Private campaign data | User-created maps, sheets, generated campaign files, campaign reference overrides, secrets, keys, tokens, private `.env` files, and similar local data that must not be committed. |
 

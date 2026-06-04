@@ -88,7 +88,7 @@ const createDeps = (existing: TabletopMap = baseMap(), options: { now?: number }
 }
 
 describe('save map use case', () => {
-  it('preserves GM whole-map local-first saves', () => {
+  it('preserves GM whole-map document-backed saves', () => {
     const existing = baseMap({ playerVisible: false })
     const incoming = baseMap({
       name: 'GM Revised Arena',

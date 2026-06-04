@@ -157,7 +157,7 @@ Patch payloads are intentionally narrow. Clients that need a full recovery after
 ## Current limitations and migration notes
 
 - The server and WebSocket command boundaries remain covered by focused tests for legacy maintenance, but the old client session-map command helpers and explicit session-map UI have been removed. Normal map play uses profile-derived document-backed APIs instead of this legacy command client.
-- Legacy local mode still uses local-first JSON saves and legacy SSE where applicable. Remaining server-side session command tests must stay isolated from normal profile-based map play.
+- Legacy local mode still uses filesystem-backed JSON saves and legacy SSE where applicable. Remaining server-side session command tests must stay isolated from normal profile-based map play.
 - This is not public authentication. The existing local role picker remains a trust switch, while Live session commands rely on the session-host flag, hello/auth handshake, GM key, join code, player IDs, client IDs, and server-side assignments.
 - The optional event log is not a full replay guarantee in Live session. Reconnect remains snapshot-safe when replay is unavailable.
 - Ability automation is deliberately limited to known active/session-safe boundaries. Passive abilities or abilities without a Live session automation boundary reject instead of pretending automation happened.

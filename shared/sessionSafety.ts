@@ -295,7 +295,7 @@ const actionTextForExposure = (exposure: SessionSafetyExposure): readonly string
   switch (exposure) {
     case 'disabled':
       return [
-        'Use local-first Rotom Table normally, or restart with the explicit session-host flag only when intentionally hosting.',
+        'Use Rotom Table normally, or restart with the explicit session-host flag only when intentionally hosting.',
       ]
     case 'local':
       return [

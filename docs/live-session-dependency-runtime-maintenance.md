@@ -8,7 +8,7 @@ Live session remains a GM-hosted table session. It does not require a package, a
 
 - **No new direct runtime dependency is required for live session hosting.** The session host uses the existing Nuxt/Nitro app, TypeScript shared contracts, browser `WebSocket`, and Node built-ins.
 - **The live session socket depends on Nitro's WebSocket support through Nuxt/Nitro**, not on a separately added `ws`, Socket.IO, Yjs, Hocuspocus, or collaborative-document server package.
-- **No hosted persistence package is imported, configured, or required by Rotom Table.** Session state remains local JSON snapshots plus the optional local JSON-lines event log. `package.json` has no direct Postgres, Redis, Durable Objects, cloud object storage, or SaaS persistence dependency; Nuxt/Nitro may still bring optional transitive packages in the lockfile that Live session does not use.
+- **No hosted persistence package is imported, configured, or required by Rotom Table.** Session state remains filesystem-backed JSON snapshots plus the optional JSON-lines event log. `package.json` has no direct Postgres, Redis, Durable Objects, cloud object storage, or SaaS persistence dependency; Nuxt/Nitro may still bring optional transitive packages in the lockfile that Live session does not use.
 - **`cloudflared` is an external operator tool, not an npm dependency.** The app does not start Cloudflare, store tunnel credentials, or require Cloudflare SDK packages.
 - **Session hosting still requires the exact runtime gate `ROTOM_ENABLE_SESSION_HOST=1`.** Plain `npm run dev` keeps session endpoints and `/api/sessions/socket` fail-closed.
 
@@ -20,11 +20,11 @@ The current dependency shape is intentionally small:
 | --- | --- | --- |
 | App/server framework | `nuxt` in `package.json` (lockfile currently resolves Nuxt 3.x) | Provides the Vue app and Nitro server used by the GM-hosted process. |
 | Nitro WebSocket support | `nitro.experimental.websocket = true` in `nuxt.config.ts`; Nuxt/Nitro transitive packages include Nitro/H3/CrossWS implementations in the lockfile | Required for `defineWebSocketHandler` at `WebSocket /api/sessions/socket`; do not replace this with a separate realtime server without another architecture check. |
-| Optional transitive packages | Nuxt/Nitro/devtools may place packages such as `ws` or `ioredis` in `package-lock.json` | These are not direct Rotom Table dependencies, are not imported by Live session code, and do not change the local JSON persistence or Nitro WebSocket architecture. |
+| Optional transitive packages | Nuxt/Nitro/devtools may place packages such as `ws` or `ioredis` in `package-lock.json` | These are not direct Rotom Table dependencies, are not imported by Live session code, and do not change the filesystem-backed JSON persistence or Nitro WebSocket architecture. |
 | Renderer | `three` plus `@types/three` | Existing map rendering dependency; Live session must not degrade render quality to simplify hosting. |
 | UI assets | `@fontsource/*`, `@phosphor-icons/vue` | Existing presentation/UI dependencies, not session authority. |
 | Type/test tooling | `typescript`, `vue-tsc`, `vitest`, `@types/node` | Used by `npm run typecheck`, `npm test`, and documentation/runtime regression coverage. |
-| Node built-ins | `node:fs`, `node:path`, `node:crypto`, `node:child_process`, `node:process` | Used for local JSON persistence, ID generation, and helper scripts; no extra service is introduced. |
+| Node built-ins | `node:fs`, `node:path`, `node:crypto`, `node:child_process`, `node:process` | Used for filesystem-backed JSON persistence, ID generation, and helper scripts; no extra service is introduced. |
 | Operator tools | `cloudflared` CLI, optional Python/`just` helpers | Installed and run by the GM/operator outside npm dependencies. Tunnel credentials stay outside the repository. |
 
 If a future Live session change adds a package that changes live transport, persistence, hosting, authentication, encryption, proxying, or Cloudflare integration, update this maintenance guide and add focused tests before merging that change.
@@ -38,7 +38,7 @@ Do **not** add these to satisfy live session hosting-hardening work without a ne
 - Cloudflare SDKs, Workers/Wrangler, Miniflare, Access SDKs, or tunnel credential helpers as app dependencies;
 - public auth providers, OAuth/OIDC clients, account systems, CAPTCHA, or multi-tenant SaaS packages as a silent replacement for the session-local model.
 
-The current allowed model is still: GM-controlled Nuxt/Nitro process, WebSocket command envelopes, local JSON snapshots/event logs, session-local GM/player identity, and explicit LAN or named-tunnel exposure.
+The current allowed model is still: GM-controlled Nuxt/Nitro process, WebSocket command envelopes, filesystem-backed JSON snapshots/event logs, session-local GM/player identity, and explicit LAN or named-tunnel exposure.
 
 ## Runtime flags and scripts
 
@@ -54,7 +54,7 @@ Supported helper scripts:
 
 | Script | Binding | Intended use |
 | --- | --- | --- |
-| `npm run dev` | Nuxt default local dev binding | Local-first development; live session hosting disabled. |
+| `npm run dev` | Nuxt default local dev binding | Standard local development; live session hosting disabled. |
 | `npm run dev:session:lan` | `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000` | Trusted same-Wi-Fi/LAN sessions. |
 | `npm run dev:session:tunnel` | `ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 127.0.0.1 --port 3000` | Named Cloudflare Tunnel sessions through a stable hostname. |
 
@@ -65,7 +65,7 @@ Both session-host helpers support `--port <port>` and `--print-only`. They set t
 - Use Node.js 24 LTS for development, validation, and any private Node/Nuxt/Nitro host. Node 22 LTS is a fallback only if a concrete Nuxt/Nitro or dependency incompatibility is documented. The project uses ESM, modern Node built-ins, `@types/node`, and Nuxt/Nitro WebSocket support.
 - Run live session hosting on the normal Node/Nuxt/Nitro server process. Static hosting, edge/serverless adapters, Cloudflare Workers, Durable Objects, or serverless functions are not supported live-session hosts.
 - `nuxt.config.ts` intentionally enables `nitro.experimental.websocket = true`. Removing that flag, changing the server adapter, or moving the socket route away from H3/Nitro requires re-running WebSocket transport tests and updating this maintenance guide.
-- The GM host must have filesystem access for local JSON reads/writes under the expected repository data paths, including `data/sessions/` for snapshots/event logs. A read-only deployment is not a supported live-session host.
+- The GM host must have filesystem access for JSON reads/writes under the expected repository data paths, including `data/sessions/` for snapshots/event logs. A read-only deployment is not a supported live-session host.
 - Production-like hosting remains out of scope for Live session. If the app is ever packaged as a long-running production Node service, repeat this review for process management, TLS termination, backups, log redaction, file permissions, and route hardening.
 
 ## Cloudflare Tunnel assumptions
@@ -95,7 +95,7 @@ Before accepting dependency or runtime changes that affect live session hosting:
 
 - [ ] `package.json` and `package-lock.json` were checked for new realtime, database, auth, Cloudflare, or hosted-service packages.
 - [ ] `nuxt.config.ts` still enables Nitro WebSockets for the Node/Nuxt host.
-- [ ] `npm run dev` remains the disabled-by-default local-first path.
+- [ ] `npm run dev` remains the disabled-by-default local development path.
 - [ ] `npm run dev:session:lan -- --print-only` shows `ROTOM_ENABLE_SESSION_HOST=1`, `--host 0.0.0.0`, and the selected port.
 - [ ] `npm run dev:session:tunnel -- --print-only` shows `ROTOM_ENABLE_SESSION_HOST=1`, `--host 127.0.0.1`, and the selected port.
 - [ ] The full validation passes: `npm run typecheck`, `npm test`, and `npm run build`.
@@ -107,4 +107,4 @@ Before accepting dependency or runtime changes that affect live session hosting:
 - Live session does not support static export, public SaaS hosting, Cloudflare Workers, Durable Objects, serverless Node adapters, public multi-tenancy, or cloud databases as supported session hosts.
 - Nitro WebSocket support is still explicitly enabled through an experimental configuration flag. Keep focused WebSocket transport tests in the validation and re-check upstream Nuxt/Nitro release notes before major version upgrades.
 - The app does not encrypt local snapshots/backups, manage Cloudflare credentials, rotate secrets automatically, or provide production-grade internet abuse controls.
-- Legacy `/api/events` SSE remains only for local-first non-session paths. It is not a dependency or runtime path for Live session commands, acknowledgements/rejections, presence, heartbeat, reconnect, or conflict handling.
+- Legacy `/api/events` SSE remains only for non-session map/sheet/library paths. It is not a dependency or runtime path for Live session commands, acknowledgements/rejections, presence, heartbeat, reconnect, or conflict handling.

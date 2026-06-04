@@ -84,4 +84,4 @@ Commit and push the campaign repo normally with Git. Rotom Table does not run Gi
 
 - Restart Nuxt after changing `ROTOM_CAMPAIGN_ROOT`; the paths are resolved when server modules load.
 - `scripts/roll.py` and `just encounter` also respect `ROTOM_CAMPAIGN_ROOT`.
-- If the variable is unset, Rotom Table keeps the existing local-first behavior and uses the app checkout as the campaign root.
+- If the variable is unset, Rotom Table uses the app checkout as the campaign root for local development.

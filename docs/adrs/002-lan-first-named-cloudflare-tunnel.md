@@ -11,7 +11,7 @@ Live session keeps Rotom Table shaped as a GM-hosted table session. A GM runs th
 1. everyone is on the same local network; and
 2. one or more players need remote access over the internet.
 
-The hosting path must preserve local-first ownership and avoid implying that Rotom Table has become a public SaaS service or a hardened multi-tenant deployment. It also must be compatible with session socket transport, reconnect behaviour, and explicit session-host safety gates.
+The hosting path must preserve GM/operator ownership of the filesystem-backed campaign data and avoid implying that Rotom Table has become a public SaaS service or a hardened multi-tenant deployment. It also must be compatible with session socket transport, reconnect behaviour, and explicit session-host safety gates.
 
 ## Decision
 
@@ -28,7 +28,7 @@ This decision does not add a cloud database, public multi-tenant hosting, full a
 
 ### LAN first
 
-LAN hosting best matches the existing local-first app and the tabletop use case:
+LAN hosting best matches the existing filesystem-backed app and the tabletop use case:
 
 - the GM keeps maps, sheets, generated data, and session snapshots on a machine they control;
 - the server is reachable only by people on the trusted local network unless the GM deliberately exposes it;
@@ -90,4 +90,4 @@ Reviewers can validate this ADR by checking that live-session work:
 - documents named Cloudflare Tunnel as the supported remote path with a stable hostname;
 - avoids presenting Quick Tunnel as the campaign-session recommendation;
 - keeps session hosting behind an explicit safety flag;
-- preserves local-first JSON persistence and GM-owned authority rather than adding cloud persistence or public multi-tenancy.
+- preserves filesystem-backed JSON persistence and GM-owned authority rather than adding cloud persistence or public multi-tenancy.

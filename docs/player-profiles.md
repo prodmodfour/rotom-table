@@ -1,12 +1,12 @@
 # Player profiles and linked character control
 
-Rotom Table's normal player workflow uses persistent player profiles, not live-session map attachment. A player profile is a local campaign identity that owns links to existing Pokémon and trainer sheets.
+Rotom Table's normal player workflow uses persistent player profiles, not live-session map attachment. A player profile is a campaign identity that owns links to existing Pokémon and trainer sheets.
 
 The GM/Player picker and remembered player profile are trust-based table workflow controls, not public authentication. If this flow is reachable through a private VPS, tunnel, or reverse proxy, restrict access first with an outer layer such as VPN/Tailscale, Cloudflare Access, reverse-proxy auth, or a private network.
 
 ## Normal table flow
 
-1. The GM starts the app with the usual local development command, such as `npm run dev`.
+1. The GM starts or opens the app in local development or on a private trusted-table host.
 2. The GM chooses **GM Login** on `/login`.
 3. The GM prepares sheets and a player-visible saved map as normal.
 4. The GM opens `/players`, creates or selects player profiles, and links the existing Pokémon or trainer sheets each player should control.
@@ -60,7 +60,7 @@ These browsing routes do not require a live session or map-specific invitation.
 
 Players cannot create player profiles, create maps, delete maps, create sheets, delete sheets, manage encounter tables, generate encounter sheets, manage player profile links, or use GM-only map-building/admin controls such as terrain building, hazards, field effects, token spawning/deletion, or resource library file management.
 
-The role picker remains a trust-based local-table convenience. It is not hardened public authentication and should not be exposed as a public multi-user service without a separate security design.
+The role picker remains a trust-based table convenience. It is not hardened public authentication and should not be exposed as a public multi-user service without a separate security design.
 
 ## Troubleshooting
 

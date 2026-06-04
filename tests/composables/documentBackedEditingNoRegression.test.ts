@@ -67,7 +67,7 @@ const flushPromises = async () => {
   await Promise.resolve()
 }
 
-describe('local-first editing no-regression boundaries', () => {
+describe('document-backed editing no-regression boundaries', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     localMocks.getJson.mockReset()

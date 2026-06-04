@@ -1,6 +1,6 @@
 # Data model
 
-Rotom Table is built around local, inspectable data. By default the app edits JSON in the application checkout during local development so campaign data and campaign-owned reference override diffs can be backed up, reviewed in Git, and repaired manually when needed. Set `ROTOM_CAMPAIGN_ROOT` to point those campaign-owned paths at a separate private campaign repository; see [Campaign repositories](campaign-repositories.md).
+Rotom Table is built around filesystem-backed, inspectable campaign data. By default the app edits JSON in the application checkout during local development so campaign data and campaign-owned reference override diffs can be backed up, reviewed in Git, and repaired manually when needed. Set `ROTOM_CAMPAIGN_ROOT` to point those campaign-owned paths at a separate private campaign repository or private host directory; see [Campaign repositories](campaign-repositories.md).
 
 ## Maps
 
@@ -18,7 +18,7 @@ A map stores the state the tabletop needs to render and run a scene:
 - light placements
 - initiative round/current-turn state
 
-The map renderer and map editor treat the JSON document as the source of truth for the local table. During player play, token control is derived from the selected player profile: a player can act with placements whose `sheetKind` and `sheetSlug` match a linked character sheet on that profile.
+The map renderer and map editor treat the JSON document as the source of truth for table play. During player play, token control is derived from the selected player profile: a player can act with placements whose `sheetKind` and `sheetSlug` match a linked character sheet on that profile.
 
 ## Sheets
 
@@ -99,7 +99,7 @@ The browser `/generate` page can also preview or write generated results dependi
 
 ## Local campaign data and `.gitignore`
 
-The repository is configured for local campaign ownership. If `ROTOM_CAMPAIGN_ROOT` is unset, campaign paths are under the app checkout. If it is set, maps, profiles, sheets, trainers, campaign reference override diffs, and encounter tables are resolved under that campaign root instead. Base PTU reference data stays app-owned under `data/reference/`; Pokédex maintenance writes campaign overrides under `data/reference-overrides/pokedex.json`.
+The repository is configured for private campaign data ownership. If `ROTOM_CAMPAIGN_ROOT` is unset, campaign paths are under the app checkout. If it is set, maps, profiles, sheets, trainers, campaign reference override diffs, and encounter tables are resolved under that campaign root instead. Base PTU reference data stays app-owned under `data/reference/`; Pokédex maintenance writes campaign overrides under `data/reference-overrides/pokedex.json`.
 
 The default app repository hygiene is:
 

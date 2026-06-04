@@ -1,8 +1,8 @@
 # Security
 
-## Local-first trust model
+## Private trusted-table trust model
 
-Rotom Table is currently a local-first, trust-based tabletop tool. The GM/Player local role model is a role picker backed by a cookie; it is not hardened public authentication.
+Rotom Table is currently a private trusted-table, filesystem-backed tabletop tool. The GM/Player local role model is a role picker backed by a cookie; it is not hardened public authentication.
 
 GM-hosted live sessions add a guarded session-local join flow for trusted tables, but they do not turn Rotom Table into a hardened public service. See [docs/live-session-security-boundaries.md](docs/live-session-security-boundaries.md) for the current live session trust boundaries, join-code limits, tunnel exposure risks, and non-goals. See [docs/live-session-security-secret-hygiene-readiness.md](docs/live-session-security-secret-hygiene-readiness.md) for the current review of auth/session/cookie/permission boundaries, public exposure warnings, committed-data hygiene, and remaining security non-goals. See [docs/live-session-persistence-recovery-maintenance.md](docs/live-session-persistence-recovery-maintenance.md) for the current review of session snapshots, optional event logs, backup/recovery docs, and local data hygiene. See [docs/live-session-dependency-runtime-maintenance.md](docs/live-session-dependency-runtime-maintenance.md) for the reviewed dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
 
@@ -40,4 +40,4 @@ If you find a security issue, report it privately to the repository owner/mainta
 - affected routes or files, if known
 - whether private data, filesystem writes, or role boundaries are involved
 
-Because this is a hobby/local-first project, response times may vary, but reports that affect data safety or public exposure assumptions should be treated seriously.
+Because this is a hobby/private trusted-table project, response times may vary, but reports that affect data safety or public exposure assumptions should be treated seriously.

@@ -74,7 +74,7 @@ describe('useEditableMap autosave boundary', () => {
     vi.useRealTimers()
   })
 
-  it('autosaves whole-map edits through local-first persistence when enabled', async () => {
+  it('autosaves whole-map edits through document-backed persistence when enabled', async () => {
     const autosaveEnabled = ref(true)
     const editable = useEditableMap('arena-map', { debounceMs: 10, autosaveEnabled })
     await flushPromises()
@@ -276,7 +276,7 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
-  it('pauses whole-map autosave while disabled and resumes it for local-first editing', async () => {
+  it('pauses whole-map autosave while disabled and resumes it for document-backed editing', async () => {
     const autosaveEnabled = ref(false)
     const editable = useEditableMap('arena-map', { debounceMs: 10, autosaveEnabled })
     await flushPromises()

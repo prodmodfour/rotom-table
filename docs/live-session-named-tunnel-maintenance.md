@@ -27,7 +27,7 @@ This checklist compares Rotom Table docs against current Cloudflare documentatio
 | Cloudflare Tunnels FAQ: <https://developers.cloudflare.com/cloudflare-one/faq/cloudflare-tunnels-faq/> | Cloudflare Tunnel supports WebSockets, matching the Live session same-origin `wss://table.example.com/api/sessions/socket` expectation. |
 | Cloudflare Cache Rules settings: <https://developers.cloudflare.com/cache/how-to/cache-rules/settings/> | Cache rules can intentionally bypass or alter cache eligibility; Rotom Table docs correctly require no caching for session paths and WebSocket traffic. |
 | Cloudflare Tunnel permissions: <https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/local-management/tunnel-permissions/> | `cert.pem` and tunnel credentials JSON files are credentials with management/run authority and must stay outside the repository. |
-| Live session ADRs, roadmap, runtime, WebSocket, security, dependency, backup, and deployment smoke docs | The named-tunnel instructions preserve the GM-hosted, local JSON, WebSocket, session-local identity, no-public-auth, no-SaaS, no-cloud-database architecture. |
+| Live session ADRs, roadmap, runtime, WebSocket, security, dependency, backup, and deployment smoke docs | The named-tunnel instructions preserve the GM-hosted, filesystem-backed JSON, WebSocket, session-local identity, no-public-auth, no-SaaS, no-cloud-database architecture. |
 
 Cloudflare dashboard labels and Zero Trust navigation can change over time. The Rotom Table runbook intentionally documents the CLI/local-managed path as the repeatable baseline and allows dashboard-managed tunnels only when they preserve the same stable hostname, local service target, WebSocket route, no-cache rules, and credential hygiene.
 
@@ -50,7 +50,7 @@ Cloudflare dashboard labels and Zero Trust navigation can change over time. The 
 
 - `cloudflared` is an operator-installed CLI outside npm dependencies. Rotom Table does not start it, manage tunnel credentials, or import Cloudflare SDKs.
 - The public hostname should forward to a normal local HTTP Nuxt origin such as `http://localhost:3000`; the player's browser should see HTTPS and same-origin WebSocket URLs.
-- The GM machine must stay awake, online, and able to write local JSON session snapshots/event logs for the duration of play.
+- The GM machine must stay awake, online, and able to write filesystem-backed JSON session snapshots/event logs for the duration of play.
 - If a dashboard-managed tunnel is used instead of the documented local config file, its public hostname must still point to the same local Rotom Table service and preserve `/api/sessions/socket` upgrade behaviour.
 - Optional Cloudflare Access/WAF/cache changes must be smoke-tested before a session; Access challenges or cache rules can interrupt or mislead WebSocket/session UI even though they are not Rotom Table authority.
 - This maintenance check does not run a live public tunnel. A live named-tunnel deployment smoke still requires a real Cloudflare account, DNS zone, and stable hostname plus remote clients; use the [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) to record that environment-specific result.

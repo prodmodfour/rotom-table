@@ -22,15 +22,15 @@ npm run dev
 
 Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and choose **GM Login** or **Player Login**. The selected role is stored in the `rotom-role` cookie. Player Login then opens the persistent player profile picker for this browser.
 
-## Local-first profile play and legacy live-session hosting
+## Profile play and legacy live-session hosting
 
-Plain `npm run dev` is local-first mode. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` save local JSON through autosave and keep using legacy `/api/events` realtime updates for same-machine or trusted-LAN local editing.
+Plain `npm run dev` is the standard local development path. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` save filesystem-backed JSON through autosave and keep using legacy `/api/events` realtime updates for same-machine or trusted-LAN editing.
 
 Normal map play uses the saved map document at `/maps/<slug>` with profile-linked token control. GMs manage profile links at `/players`; players select a profile after Player Login, then navigate to the relevant player-visible map and act with linked characters. Players can also browse Pokédex, sheet-library, and PTU reference routes without joining a live session.
 
 Legacy live-session hosting remains behind `ROTOM_ENABLE_SESSION_HOST=1` for direct-only session lobby/socket maintenance, but the map-attachment endpoint and session-owned normal map path have been removed. Normal play no longer requires `/sessions`, a join code, attaching a saved map, or a special session query on map URLs. See [Player profiles and linked character control](player-profiles.md) for the current product flow.
 
-For the automated and source-level no-regression evidence around local map autosave, sheet autosave, legacy local sync, and non-session navigation, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
+For the automated and source-level no-regression evidence around local map autosave, sheet autosave, legacy `/api/events` sync, and non-session navigation, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
 
 ## Legacy live session lobby smoke testing
 
@@ -138,7 +138,7 @@ Nuxt/Vite are configured to ignore app-written sheet/map/reference-override data
 
 ## Production write limitations
 
-Rotom Table is strongest as a local table tool. Production hosted writes are fail-closed unless a private operator explicitly opts in. Use `npm run dev` when you need unrestricted local browser editing, autosave, encounter generation, or local JSON management.
+Rotom Table is strongest as a local-development and private trusted-table tool. Production hosted writes are fail-closed unless a private operator explicitly opts in. Use `npm run dev` when you need unrestricted local browser editing, autosave, encounter generation, or filesystem JSON management.
 
 The private VPS hosted-write policy uses `ROTOM_ENABLE_HOSTED_WRITES=1` as the exact production opt-in for covered filesystem writes. When `NODE_ENV=production`, an unset flag or any value other than exactly `1` keeps covered hosted writes disabled with a 403-style error; non-production development writes remain unchanged. See [Private VPS hosting scope](private-vps-hosting.md) for the full flag semantics and private trusted-table boundary, and see the [API route mutation audit](api-route-mutation-audit.md) for route-by-route coverage.
 

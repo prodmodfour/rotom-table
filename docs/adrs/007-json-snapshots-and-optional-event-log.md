@@ -6,7 +6,7 @@ Status: Accepted
 
 ## Context
 
-Rotom Table is local-first: campaign maps, sheets, generated data, and related table state are files owned by the person running the app. Live session adds a GM-hosted session authority, but it does not change the product into a hosted database service. The session server still runs on the GM's machine or another small machine they control.
+Rotom Table is filesystem-backed: campaign maps, sheets, generated data, and related table state are files owned by the person or operator running the app. Live session adds a GM-hosted session authority, but it does not change the product into a hosted database service. The session server still runs on the GM's machine or another small machine they control.
 
 Live sessions need recoverable state for reconnects, restarts, crashes, and manual backups. At the same time, persistence must not reintroduce live client whole-map last-writer-wins saves, and it must not require Postgres, Redis, Durable Objects, or another cloud persistence layer.
 
@@ -18,7 +18,7 @@ A session snapshot is the latest server-authoritative representation of one sess
 
 An event log, when enabled, records append-only command/event entries associated with accepted authoritative changes. It can support replay after reconnect, troubleshooting, and recovery after the last snapshot. The event log is optional: the latest valid snapshot remains the required recovery source, and clients must receive a current snapshot when replay is unavailable, disabled, truncated, or unsafe.
 
-All session persistence remains local-first JSON under app-owned local data paths that are ignored by git. Private campaign state, generated sheets, session keys, join codes, snapshots, event logs, backups, and real `.env` files must not be committed.
+All session persistence remains filesystem-backed JSON under app-owned local data paths that are ignored by git. Private campaign state, generated sheets, session keys, join codes, snapshots, event logs, backups, and real `.env` files must not be committed.
 
 ## Snapshot contents
 
@@ -102,7 +102,7 @@ Session persistence is local operational data, not source code. Storage docs and
 
 ### Hosted database persistence
 
-Rejected for Live session. Postgres, Redis, Durable Objects, managed document databases, and SaaS persistence conflict with the locked GM-hosted local-first architecture.
+Rejected for Live session. Postgres, Redis, Durable Objects, managed document databases, and SaaS persistence conflict with the locked GM-hosted, filesystem-backed architecture.
 
 ### Client-owned whole-map saves for live recovery
 
@@ -128,7 +128,7 @@ Rejected. Tests may use synthetic fixtures, but real snapshots, logs, campaign m
 - Reconnect logic must prefer replay when valid event history is available and fall back to a current snapshot when it is not.
 - Duplicate `opId` handling needs enough persisted metadata to avoid applying retried operations twice after reconnect or restart.
 - Tests must cover atomic write behaviour, corrupted snapshot handling, event-log append/replay, recovery fallback, revision continuity, and private-data hygiene.
-- Documentation must continue to distinguish local-first server snapshots from live client whole-map autosave.
+- Documentation must continue to distinguish server-owned filesystem snapshots from live client whole-map autosave.
 
 ## Validation notes
 

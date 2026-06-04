@@ -6,7 +6,7 @@ Status: Accepted
 
 ## Context
 
-Live session adds real multi-device play so a GM can host a Rotom Table session and players can keep the app open during the game. The existing app is local-first: campaign maps, sheets, trainers, and encounter tables are inspectable JSON files on the machine running Rotom Table, and the current GM/player role picker is a trusted local-table convenience rather than hardened public authentication.
+Live session adds real multi-device play so a GM can host a Rotom Table session and players can keep the app open during the game. The existing app uses filesystem-backed campaign data: campaign maps, sheets, trainers, and encounter tables are inspectable JSON files on the machine running Rotom Table or under `ROTOM_CAMPAIGN_ROOT`, and the current GM/player role picker is a trusted table convenience rather than hardened public authentication.
 
 The concurrency problem Live session solves is table-session coordination, not general document collaboration or public product hosting. Live players need authoritative outcomes for moves, HP changes, initiative, visibility, and assignments. They also need clear acknowledgements, rejections, and reconnect behaviour. Those requirements are tied to tabletop domain rules and permissions, not just shared text/document editing.
 
@@ -23,7 +23,7 @@ This decision means Live session is intentionally not:
 - a generic collaborative document editor;
 - a cloud-first database application.
 
-Existing local-first workflows remain supported outside session mode. Live session adds a guarded session mode beside them rather than replacing the whole app with a hosted collaboration platform.
+Existing file-backed workflows remain supported outside session mode. Live session adds a guarded session mode beside them rather than replacing the whole app with a hosted collaboration platform.
 
 ## Rejected alternatives
 
@@ -59,6 +59,6 @@ Reviewers can validate this ADR by checking that live-session work:
 
 - keeps LAN and GM-controlled remote access as the user story;
 - avoids tenant/account/cloud-database requirements;
-- preserves local-first JSON workflows outside session mode;
+- preserves filesystem-backed JSON workflows outside session mode;
 - scopes permissions, presence, commands, and broadcasts to one GM-hosted session;
 - documents any public exposure risks instead of implying production-grade public auth.
