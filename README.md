@@ -5,14 +5,14 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict%20app-3178C6?logo=typescript&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-tested-6E9F18?logo=vitest&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT%20(original%20code)-22c55e)
-![Local-first](https://img.shields.io/badge/local--first-filesystem%20JSON-334155)
+![Private VPS](https://img.shields.io/badge/private%20VPS-trusted%20table-334155)
 ![Fan project](https://img.shields.io/badge/fan%20project-unofficial-f59e0b)
 
-Rotom Table is a long-running hobby/passion project: a local-first Nuxt 3 tabletop companion for Pokémon Tabletop United campaigns. It brings an isometric map table, editable Pokémon and trainer sheets, encounter-table tooling, a searchable Pokédex, and PTU reference pages into one browser app backed by inspectable JSON files.
+Rotom Table is a long-running hobby/passion project: a private-hostable Nuxt 3 tabletop companion for Pokémon Tabletop United campaigns. It brings an isometric map table, editable Pokémon and trainer sheets, encounter-table tooling, a searchable Pokédex, and PTU reference pages into one browser app backed by inspectable campaign JSON files.
 
-The project is intentionally product-shaped rather than tutorial-sized. It demonstrates TypeScript/Nuxt application structure, complex Vue UI, Three.js scene management, domain modelling for tabletop rules, filesystem-backed persistence, data-management workflows, and long-term ownership of a feature-rich tool.
+The project is intentionally product-shaped rather than tutorial-sized. It demonstrates TypeScript/Nuxt application structure, complex Vue UI, Three.js scene management, domain modelling for tabletop rules, hosted/private deployment workflows, campaign JSON persistence, and long-term ownership of a feature-rich tool.
 
-Rotom Table is a fan-made tabletop utility, not an official or commercial Pokémon product. It uses a trust-based **GM / Player** role picker for local campaign use; it is **not hardened public authentication** and should not be exposed as a public multi-user service without replacing those assumptions.
+Rotom Table is a fan-made tabletop utility, not an official or commercial Pokémon product. It uses a trust-based **GM / Player** role picker for trusted campaign-table use; it is **not hardened public authentication** and should not be exposed as a public multi-user service without replacing those assumptions.
 
 ## Quick start
 
@@ -25,7 +25,7 @@ npm run dev
 
 Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose the GM-created persistent player profile for this browser. GMs can open `/players` to create profiles and link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping map/sheet libraries, Pokédex, and reference pages available; direct map-control and editable sheet routes ask profileless players to choose a profile before continuing. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map, session-map management controls, or the legacy session lobby.
 
-To keep private campaign JSON and campaign-owned reference override diffs in a separate Git repository, start Nuxt with a campaign root:
+To keep private campaign JSON and campaign-owned reference override diffs in a separate workspace or Git repository, start Nuxt with a campaign root:
 
 ```bash
 ROTOM_CAMPAIGN_ROOT=../my-rotom-campaign npm run dev
@@ -35,7 +35,7 @@ See [Campaign repositories](docs/campaign-repositories.md) for the expected layo
 
 ## Private VPS hosting
 
-Rotom Table remains local-first by default. For an always-online table, use the private trusted-table VPS path only behind an outer access gate; the GM/Player picker is not public authentication, and the app is not a public multi-user service. Start with the [private VPS hosting runbook](docs/private-vps-hosting.md), then follow the [deployment smoke checklist](docs/private-vps-deployment-smoke-checklist.md) and [backup runbook](docs/private-vps-backups.md) for host-specific validation and recovery practice.
+Rotom Table's primary deployment shape is now private trusted-table hosting: run the built Nitro server for a known campaign group, keep campaign JSON in an operator-controlled `ROTOM_CAMPAIGN_ROOT`, and put the URL behind an outer access gate. Production filesystem writes fail closed unless the private operator explicitly sets `ROTOM_ENABLE_HOSTED_WRITES=1`. The GM/Player picker is still not public authentication, and the app is not a public multi-user service. Start with the [private VPS hosting runbook](docs/private-vps-hosting.md), then follow the [deployment smoke checklist](docs/private-vps-deployment-smoke-checklist.md) and [backup runbook](docs/private-vps-backups.md) for host-specific validation and recovery practice.
 
 Recommended verification commands:
 
@@ -50,7 +50,7 @@ npm run build
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start the Nuxt development server without enabling live session hosting. |
+| `npm run dev` | Start the Nuxt development server for local development. |
 | `npm run dev:session:lan` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and LAN binding (`0.0.0.0:3000`). |
 | `npm run dev:session:tunnel` | Start a guarded live session host with `ROTOM_ENABLE_SESSION_HOST=1` and loopback binding (`127.0.0.1:3000`) for a named tunnel. |
 | `npm run build` | Build the Nuxt app. |
@@ -72,7 +72,7 @@ npm run build
 - **Reference library** — browse moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges.
 - **Encounter tools** — manage JSON encounter tables, roll previews, and generate wild Pokémon sheets into the sheet library.
 - **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes; Player Login asks for a persistent player profile before continuing, and linked characters grant sheet editing plus map-token control.
-- **Filesystem-backed data** — maps, sheets, trainers, player profiles, encounter tables, and campaign reference override diffs are stored as JSON in the app checkout by default, or under `ROTOM_CAMPAIGN_ROOT` when using a separate private campaign repo, for easy inspection, backup, and diffing.
+- **Campaign JSON storage** — maps, sheets, trainers, player profiles, encounter tables, and campaign reference override diffs are stored as inspectable JSON under `ROTOM_CAMPAIGN_ROOT` for private hosted campaigns, or in the app checkout during local development, for easy inspection, backup, and diffing.
 
 
 
@@ -101,9 +101,9 @@ See [docs/architecture.md](docs/architecture.md) for more detail.
 | --- | --- |
 | `/` | Redirects to the map library. |
 | `/api/health` | No-secret JSON health check for private host and reverse-proxy monitoring. |
-| `/login` | Choose the local GM role or select a GM-created persistent player profile for Player Login. |
+| `/login` | Choose the GM role or select a GM-created persistent player profile for Player Login. |
 | `/sessions` | Direct-only legacy live-session identity/socket lobby for maintenance smoke checks; not linked from normal app navigation or required for profile-based play. |
-| `/settings` | GM-only campaign settings and local campaign folder controls. |
+| `/settings` | GM-only campaign settings and campaign folder controls. |
 | `/players` | GM-only player profile list plus Pokémon/trainer sheet link and unlink management. |
 | `/maps` | Map library and folders; players see player-visible maps only. |
 | `/maps/:slug` | Map editor/table view with profile-linked player token control. |
@@ -122,7 +122,7 @@ Campaign-owned paths (`data/maps/`, `data/sheets/`, `data/trainers/`, `data/play
 
 | Path | What it contains |
 | --- | --- |
-| `data/maps/` | Saved map JSON and map-adjacent local files. Resolved under `ROTOM_CAMPAIGN_ROOT` when set. |
+| `data/maps/` | Saved map JSON and map-adjacent files. Resolved under `ROTOM_CAMPAIGN_ROOT` when set. |
 | `data/player-profiles/` | Persistent player profile JSON with linked Pokémon/trainer character refs; ignored/private campaign data. |
 | `data/sheets/` | Pokémon character-sheet JSON, including generated wild sheets. |
 | `data/trainers/` | Trainer sheet JSON. |
@@ -172,25 +172,25 @@ just encounter --clear
 
 ## Working with encounter tables
 
-Encounter tables live in `encounter_tables/` and are exposed through the GM-only `/encounter-tables` route. A table has a name, level range, and weighted entries with species/level data. The app can create, rename, move, delete, and save encounter tables during local development.
+Encounter tables live in `encounter_tables/` and are exposed through the GM-only `/encounter-tables` route. A table has a name, level range, and weighted entries with species/level data. The app can create, rename, move, delete, and save encounter tables during development or private hosted play with hosted writes enabled.
 
 The `/generate` page rolls from those tables and can either preview generated sheets or write them into the sheet data tree.
 
 ## Auth and access model
 
-Rotom Table currently uses a trust-based role picker, not password authentication:
+Rotom Table uses a trust-based role picker, not password authentication:
 
 - **GM** — full map, sheet, encounter, and settings access.
 - **Player** — player-facing view with player-visible maps, public/linked sheets, Pokédex, reference pages, and linked-character token control.
 - **Guest** — redirected to `/login`.
 
-Players choose a GM-created persistent player profile after Player Login. The selected profile's linked Pokémon/trainer sheets are the source of player-specific sheet editing and map-token control. Server routes also check the session role and selected profile for protected actions. See [docs/player-profiles.md](docs/player-profiles.md) for the full player profile flow. Treat this as a local/campaign-table workflow, not a hardened public authentication system.
+Players choose a GM-created persistent player profile after Player Login. The selected profile's linked Pokémon/trainer sheets are the source of player-specific sheet editing and map-token control. Server routes also check the session role and selected profile for protected actions. See [docs/player-profiles.md](docs/player-profiles.md) for the full player profile flow. Treat this as a private trusted-table workflow, not a hardened public authentication system.
 
 
 ## Contributing, security, and notices
 
 - See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, checks, data hygiene, and fan-project boundaries.
-- See [SECURITY.md](SECURITY.md) for local-first/trust-based security expectations and reporting guidance.
+- See [SECURITY.md](SECURITY.md) for private trusted-table security expectations and reporting guidance.
 - See [NOTICE.md](NOTICE.md) and [docs/fan-project-notice.md](docs/fan-project-notice.md) for fan project and reuse boundaries.
 
 ## License
