@@ -96,6 +96,8 @@ npm test
 npm run build
 ```
 
+For a local workspace that more closely mirrors the private Ranger VPS process style (`NODE_ENV=production`, loopback Nitro binding, external campaign root, hosted-write opt-in, `npm run start` after build), use the checked-in tools under [`deploy/local-prodlike/`](../deploy/local-prodlike/). They keep campaign data, backups, logs, and env files outside the app checkout by default.
+
 ## Optional `just` commands
 
 If `just` is installed, run:

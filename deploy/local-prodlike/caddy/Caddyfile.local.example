@@ -1,0 +1,18 @@
+# Optional local-only Caddy mimic for Ranger Rotom Table.
+# This is NOT required for local setup success.
+#
+# It listens only on 127.0.0.1:8080 and proxies to the local Nuxt/Nitro server
+# started by ../bin/start-prodlike.sh at 127.0.0.1:3000.
+#
+# Generate a placeholder password hash with:
+#   caddy hash-password --plaintext 'change-me'
+# Then replace <PASTE_CADDY_HASH_HERE> below. Do not store real shared or
+# production passwords in this repository.
+
+127.0.0.1:8080 {
+	basic_auth {
+		ranger <PASTE_CADDY_HASH_HERE>
+	}
+
+	reverse_proxy 127.0.0.1:3000
+}

@@ -5,6 +5,7 @@ node_modules
 .output
 .nitro
 .cache
+.npm/
 .playwright-cli
 .pi/logs/
 .pi/refactor-loop.lock/
@@ -16,6 +17,14 @@ temp/
 .env.*
 !.env.example
 !.env.vps.example
+
+# Local prodlike workspace/runtime artifacts if a developer chooses to keep them
+# inside the app checkout instead of the default parent workspace.
+campaigns/
+backups/
+logs/
+run/
+env/*.local
 
 # Local campaign content
 # Keep generated example sheets and curated sample encounter tables trackable while
