@@ -43,7 +43,7 @@ export const useSheetLibraryPage = () => {
   } = usePlayerProfiles()
   if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
-  const canDrag = computed<boolean>(() => Boolean(import.meta.dev && isGm.value))
+  const canDrag = computed<boolean>(() => isGm.value)
 
   const {
     items,

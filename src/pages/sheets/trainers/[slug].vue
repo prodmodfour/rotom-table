@@ -40,7 +40,7 @@ const sheetLoadQuery = computed(() => buildSheetLoadQuery({
 }))
 const { data: runtimeSheetResult, error: runtimeSheetError } = await useFetch<{ sheet: TrainerSheet } | null>(SHEET_API_PATHS.load, {
   default: () => null,
-  immediate: import.meta.dev,
+  immediate: true,
   key: `trainer-sheet-${slug}`,
   query: sheetLoadQuery,
   server: !isPlayer.value,

@@ -44,7 +44,7 @@ const sheetLoadQuery = computed(() => buildSheetLoadQuery({
 }))
 const { data: runtimeSheetResult, error: runtimeSheetError } = await useFetch<{ sheet: CharacterSheet } | null>(SHEET_API_PATHS.load, {
   default: () => null,
-  immediate: import.meta.dev,
+  immediate: true,
   key: `pokemon-sheet-${slug}`,
   query: sheetLoadQuery,
   server: !isPlayer.value,
