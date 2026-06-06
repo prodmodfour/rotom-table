@@ -16,7 +16,7 @@
  * `updated` events; we replace the local sheet contents (and the
  * "last server snapshot" so the watcher doesn't echo a save).
  */
-import { getCurrentInstance, onBeforeUnmount, ref, watch, type Ref } from 'vue'
+import { getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { isRealtimeEcho, sheetChannel } from '#shared/realtime'
 import { slugify } from '#shared/paths'
@@ -243,8 +243,8 @@ export function useEditableSheet<T extends { slug: string }>(
 
   let removeUnloadFlushers: (() => void) | null = bindAutosaveUnloadFlushers(flushWithBeacon)
 
-  if (getCurrentInstance()) {
-    onBeforeUnmount(() => {
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
       if (hasUnsavedChanges()) void autosave.saveNow()
       unsubscribe?.()
       unsubscribe = null

@@ -27,7 +27,7 @@ import { isEscapeKey } from '~/utils/keyboardShortcuts'
 export const useEncounterTableLibraryPage = () => {
   const { postJson } = useApiClient()
   const { isGm: rawIsGm } = useAuth()
-  const canManage = computed<boolean>(() => rawIsGm.value === true && import.meta.dev === true)
+  const canManage = computed<boolean>(() => rawIsGm.value === true)
 
   const {
     tables,

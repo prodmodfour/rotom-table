@@ -38,14 +38,24 @@ const sheetLoadQuery = computed(() => buildSheetLoadQuery({
   slug,
   profileContext: currentSheetProfileContext(),
 }))
-const { data: runtimeSheetResult, error: runtimeSheetError } = await useFetch<{ sheet: TrainerSheet } | null>(SHEET_API_PATHS.load, {
+const {
+  data: runtimeSheetResult,
+  error: runtimeSheetError,
+  status: runtimeSheetStatus,
+} = await useFetch<{ sheet: TrainerSheet } | null>(SHEET_API_PATHS.load, {
   default: () => null,
   immediate: true,
   key: `trainer-sheet-${slug}`,
   query: sheetLoadQuery,
   server: !isPlayer.value,
 })
-const baseSheet = runtimeSheetResult.value?.sheet ?? (import.meta.dev ? null : staticBaseSheet)
+const runtimeSheetLoading = computed(() => runtimeSheetStatus.value === 'idle' || runtimeSheetStatus.value === 'pending')
+const staticFallbackSheet = import.meta.dev ? null : staticBaseSheet
+const baseSheet = computed(() => {
+  if (runtimeSheetResult.value?.sheet) return runtimeSheetResult.value.sheet
+  if (isPlayer.value && runtimeSheetLoading.value && !runtimeSheetError.value) return null
+  return staticFallbackSheet
+})
 const {
   sheet,
   editorCapabilities,
@@ -76,7 +86,13 @@ const sheetLoadErrorMessage = computed(() => {
   }
   return message
 })
-const sheetNotFoundMessage = computed(() => sheetLoadErrorMessage.value ?? 'No trainer for slug')
+const sheetNotFoundTitle = computed(() => (
+  runtimeSheetLoading.value && !runtimeSheetError.value ? 'Opening trainer sheet…' : 'Trainer not found'
+))
+const sheetNotFoundMessage = computed(() => {
+  if (runtimeSheetLoading.value && !runtimeSheetError.value) return 'Loading live campaign trainer sheet for slug'
+  return sheetLoadErrorMessage.value ?? 'No trainer for slug'
+})
 const sheetPathLabel = computed(() => {
   if (!sheet.value) return null
   return sheet.value.name || sheet.value.slug
@@ -118,7 +134,7 @@ useHead(() => ({
 
     <template #not-found>
       <SheetNotFoundCard
-        title="Trainer not found"
+        :title="sheetNotFoundTitle"
         :message="sheetNotFoundMessage"
         :slug="slug"
       />

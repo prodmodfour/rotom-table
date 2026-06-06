@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 
@@ -77,6 +77,30 @@ describe('useEditableSheetResource', () => {
     })
 
     expect(resource.sheet.value?.slug).toBe('linked-sheet')
+    expect(resource.editorCapabilities.value).toMatchObject({
+      accessMode: 'profile-linked',
+      canEditSheet: true,
+      canManagePlayerAccess: false,
+    })
+  })
+
+  it('creates the editor when an async runtime sheet arrives after page setup', async () => {
+    const baseSheet = ref<TestSheet | null>(null)
+    const resource = useEditableSheetResource<TestSheet>({
+      baseSheet,
+      kind: 'pokemon',
+      isPlayer: computed(() => true),
+      normalize: (sheet) => sheet,
+    })
+
+    expect(resource.editor).toBeNull()
+    expect(resource.sheet.value).toBeNull()
+
+    baseSheet.value = { slug: 'campaign-only-sheet', playerProfileAccessible: true }
+    await nextTick()
+
+    expect(resource.editor).not.toBeNull()
+    expect(resource.sheet.value?.slug).toBe('campaign-only-sheet')
     expect(resource.editorCapabilities.value).toMatchObject({
       accessMode: 'profile-linked',
       canEditSheet: true,

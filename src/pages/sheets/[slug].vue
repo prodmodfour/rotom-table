@@ -42,14 +42,24 @@ const sheetLoadQuery = computed(() => buildSheetLoadQuery({
   slug,
   profileContext: currentSheetProfileContext(),
 }))
-const { data: runtimeSheetResult, error: runtimeSheetError } = await useFetch<{ sheet: CharacterSheet } | null>(SHEET_API_PATHS.load, {
+const {
+  data: runtimeSheetResult,
+  error: runtimeSheetError,
+  status: runtimeSheetStatus,
+} = await useFetch<{ sheet: CharacterSheet } | null>(SHEET_API_PATHS.load, {
   default: () => null,
   immediate: true,
   key: `pokemon-sheet-${slug}`,
   query: sheetLoadQuery,
   server: !isPlayer.value,
 })
-const baseSheet = runtimeSheetResult.value?.sheet ?? (import.meta.dev ? null : staticBaseSheet)
+const runtimeSheetLoading = computed(() => runtimeSheetStatus.value === 'idle' || runtimeSheetStatus.value === 'pending')
+const staticFallbackSheet = import.meta.dev ? null : staticBaseSheet
+const baseSheet = computed(() => {
+  if (runtimeSheetResult.value?.sheet) return runtimeSheetResult.value.sheet
+  if (isPlayer.value && runtimeSheetLoading.value && !runtimeSheetError.value) return null
+  return staticFallbackSheet
+})
 const {
   sheet,
   editorCapabilities,
@@ -81,7 +91,13 @@ const sheetLoadErrorMessage = computed(() => {
   }
   return message
 })
-const sheetNotFoundMessage = computed(() => sheetLoadErrorMessage.value ?? 'No sheet exists for slug')
+const sheetNotFoundTitle = computed(() => (
+  runtimeSheetLoading.value && !runtimeSheetError.value ? 'Opening sheet…' : 'Sheet not found'
+))
+const sheetNotFoundMessage = computed(() => {
+  if (runtimeSheetLoading.value && !runtimeSheetError.value) return 'Loading live campaign sheet for slug'
+  return sheetLoadErrorMessage.value ?? 'No sheet exists for slug'
+})
 const sheetPathLabel = computed(() => {
   if (!sheet.value) return null
   return sheet.value.nickname || sheet.value.slug
@@ -117,7 +133,7 @@ useHead(() => ({
 
     <template #not-found>
       <SheetNotFoundCard
-        title="Sheet not found"
+        :title="sheetNotFoundTitle"
         :message="sheetNotFoundMessage"
         :slug="slug"
       />
