@@ -13,6 +13,8 @@ import {
   buildLinkedCharacterManagementView,
   buildPlayerProfileManagementDetail,
   filterAvailableLinkableCharacterOptions,
+  filterNonExampleLinkableCharacterOptions,
+  isExampleSheetFolder,
   playerProfileLinkedCharacterCountLabel,
   playerProfileLinkedCharacterLabel,
 } from '~/utils/playerProfileManagement'
@@ -104,6 +106,31 @@ describe('player profile management helpers', () => {
     expect(filterAvailableLinkableCharacterOptions(options, [
       { sheetKind: 'pokemon', sheetSlug: 'pikachu' },
     ]).map((option) => option.key)).toEqual(['trainer:brock'])
+  })
+
+  it('identifies and filters example folders from link picker options', () => {
+    expect(isExampleSheetFolder('examples')).toBe(true)
+    expect(isExampleSheetFolder('Examples/generated')).toBe(true)
+    expect(isExampleSheetFolder('players/examples')).toBe(false)
+    expect(isExampleSheetFolder('')).toBe(false)
+    expect(isExampleSheetFolder(undefined)).toBe(false)
+
+    const options = buildLinkableCharacterSheetOptions({
+      pokemonSheets: [
+        { slug: 'example-pikachu', nickname: 'Example Pikachu', species: 'Pikachu', folder: 'examples' },
+        { slug: 'nested-example', nickname: 'Nested Example', species: 'Pichu', folder: 'examples/generated' },
+        { slug: 'player-eevee', nickname: 'Player Eevee', species: 'Eevee', folder: 'players/examples' },
+      ],
+      trainerSheets: [
+        { slug: 'example-trainer', name: 'Example Trainer', folder: 'examples/trainers' },
+        { slug: 'misty', name: 'Misty', folder: 'leaders' },
+      ],
+    })
+
+    expect(filterNonExampleLinkableCharacterOptions(options).map((option) => option.key)).toEqual([
+      'trainer:misty',
+      'pokemon:player-eevee',
+    ])
   })
 
   it('builds a detail view model for the selected profile', () => {

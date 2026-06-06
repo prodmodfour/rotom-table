@@ -5,6 +5,7 @@ import {
 } from '#shared/playerProfiles'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { isExamplesFolderPath } from '~/utils/sheetFolders'
 import { sheetEditorPath, sheetKindLabel } from '~/utils/sheetRoutes'
 
 export const PLAYER_PROFILE_MANAGEMENT_EMPTY_TEXT =
@@ -66,6 +67,12 @@ const normalizeDisplayText = (value: unknown, fallback: string): string => {
 }
 
 const folderSuffix = (folder: string): string => (folder.length > 0 ? ` · ${folder}` : '')
+
+export const isExampleSheetFolder = isExamplesFolderPath
+
+export const filterNonExampleLinkableCharacterOptions = <TOption extends { readonly folder: string }>(
+  options: ReadonlyArray<TOption>,
+): TOption[] => options.filter((option) => !isExampleSheetFolder(option.folder))
 
 export const buildLinkableCharacterSheetOptions = ({
   pokemonSheets,

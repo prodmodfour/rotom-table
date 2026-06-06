@@ -82,6 +82,10 @@ export interface FolderGroup<T> {
 
 const ROOT_LABEL = 'Default'
 
+export const isExamplesFolderPath = (folder: string | undefined): boolean => (
+  (folder ?? '').split('/')[0]?.toLocaleLowerCase() === 'examples'
+)
+
 /**
  * Group items by their ``folder`` field. The empty / undefined folder is
  * surfaced first as ``"Default"`` so unfoldered sheets remain visible

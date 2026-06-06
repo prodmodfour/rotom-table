@@ -1,5 +1,6 @@
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { isExamplesFolderPath } from '~/utils/sheetFolders'
 
 export const TRAINER_TEAM_LIMIT = 6
 
@@ -41,9 +42,7 @@ export interface BuildTrainerPokemonBrowserEntriesOptions {
 
 const normalizeSearchText = (value: string): string => value.trim().toLocaleLowerCase()
 
-export const isExamplePokemonFolder = (folder: string | undefined): boolean => (
-  (folder ?? '').split('/')[0]?.toLocaleLowerCase() === 'examples'
-)
+export const isExamplePokemonFolder = isExamplesFolderPath
 
 export const isTrainerPokemonBrowserCandidate = (
   sheet: CharacterSheet,

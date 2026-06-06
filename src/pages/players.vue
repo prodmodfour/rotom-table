@@ -7,6 +7,7 @@ import {
   PLAYER_PROFILE_MANAGEMENT_NO_LINKS_TEXT,
   PLAYER_PROFILE_MANAGEMENT_NO_SELECTION_TEXT,
   buildPlayerProfileManagementDetail,
+  filterNonExampleLinkableCharacterOptions,
   linkableCharacterOptionByKey,
 } from '~/utils/playerProfileManagement'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
@@ -49,9 +50,15 @@ const selectedProfileDetail = computed(() => buildPlayerProfileManagementDetail(
   linkableCharacterOptions.value,
 ))
 const linkedCharacterCount = computed(() => selectedProfile.value?.linkedCharacters.length ?? 0)
+const linkableNonExampleCharacterOptions = computed(() => (
+  filterNonExampleLinkableCharacterOptions(linkableCharacterOptions.value)
+))
+const availableNonExampleLinkOptions = computed(() => (
+  filterNonExampleLinkableCharacterOptions(availableLinkOptions.value)
+))
 const selectedLinkCandidate = computed(() => (
   linkCandidateKey.value
-    ? linkableCharacterOptionByKey(availableLinkOptions.value, linkCandidateKey.value)
+    ? linkableCharacterOptionByKey(availableNonExampleLinkOptions.value, linkCandidateKey.value)
     : null
 ))
 const trimmedNewProfileDisplayName = computed(() => newProfileDisplayName.value.trim())
@@ -259,6 +266,7 @@ onMounted(() => {
                 <h3 id="linked-characters-title">Linked characters</h3>
                 <p class="state-text">
                   Select existing Pokémon or trainer sheets from the current sheet library.
+                  Example sheets are hidden from this picker.
                 </p>
               </div>
               <button
@@ -277,10 +285,10 @@ onMounted(() => {
                 <select
                   id="link-character-select"
                   v-model="linkCandidateKey"
-                  :disabled="loadingLinkableCharacters || savingProfileLinks || availableLinkOptions.length === 0"
+                  :disabled="loadingLinkableCharacters || savingProfileLinks || availableNonExampleLinkOptions.length === 0"
                 >
                   <option value="">Choose a Pokémon or trainer sheet…</option>
-                  <option v-for="option in availableLinkOptions" :key="option.key" :value="option.key">
+                  <option v-for="option in availableNonExampleLinkOptions" :key="option.key" :value="option.key">
                     {{ option.label }} — {{ option.detailsLabel }}
                   </option>
                 </select>
@@ -293,11 +301,11 @@ onMounted(() => {
                 </button>
               </div>
               <p v-if="loadingLinkableCharacters" class="state-text">Loading sheet library…</p>
-              <p v-else-if="linkableCharacterOptions.length === 0" class="state-text">
-                No Pokémon or trainer sheets are available to link.
+              <p v-else-if="linkableNonExampleCharacterOptions.length === 0" class="state-text">
+                No non-example Pokémon or trainer sheets are available to link.
               </p>
-              <p v-else-if="availableLinkOptions.length === 0" class="state-text">
-                Every loaded character sheet is already linked to this profile.
+              <p v-else-if="availableNonExampleLinkOptions.length === 0" class="state-text">
+                Every non-example character sheet is already linked to this profile.
               </p>
             </form>
 
