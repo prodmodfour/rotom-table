@@ -1,6 +1,8 @@
 This is a Nuxt 3 and three.js project.
 
+## Production deployment boundaries
 
+When fixing production issues, modify this repository and validate locally/prodlike. Do not directly edit, copy files into, rebuild, restart, or otherwise change the production app runtime as a code deployment mechanism. Production app-code deployment is handled by the user through the project's GitHub-based deployment path.
 
 ## Software Practices
 When writing software, we explicitly always adhere to the following principles:

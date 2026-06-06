@@ -3,8 +3,8 @@
  * sync with the server via SSE.
  *
  * Bootstrapped from the static `import.meta.glob` data so the first
- * paint has full info, then hydrated from the dev runtime sheet list so
- * newly-created files missed by the glob are present. Thereafter, save /
+ * paint has full info, then hydrated from the runtime sheet list so
+ * external campaign sheets or files missed by the glob are present. Thereafter, save /
  * rename / move / delete events mutate the store so any component reading
  * from it (map editor, sheet links, etc.) stays current with cross-tab edits.
  *
@@ -90,11 +90,12 @@ export const useLiveSheets = (): LiveSheetsApi => {
     }
     unsubscribe = subscribeChannel(sheetsChannel, handler)
 
-    // The static import glob is baked when Vite builds the client module, so
-    // sheets created through the dev API can be missing when this store first
-    // starts. Hydrate from the runtime list endpoint so Link Pokémon and map
-    // spawners see newly-created sheets even if their creation event was missed.
-    if (import.meta.dev && !runtimeLoadStarted) {
+    // The static import glob is baked when Vite builds the client module, and
+    // production private hosts can keep campaign sheets outside the app checkout
+    // via ROTOM_CAMPAIGN_ROOT. Hydrate from the runtime list endpoint whenever
+    // the client store first starts so Link Pokémon and map spawners see the
+    // active campaign sheets in both dev and production.
+    if (!runtimeLoadStarted) {
       runtimeLoadStarted = true
       void hydrateRuntimeSheets(cached)
     }
