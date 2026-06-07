@@ -7,10 +7,9 @@ const props = defineProps<{
   rows: DisplayedEncounterRow[]
 }>()
 
-const spriteUrlForSpecies = (species: string): string | null => {
-  const catalogEntry = pokemonCatalogBySpecies.get(species)
-  return catalogEntry?.profileSpriteUrl ?? catalogEntry?.spriteUrl ?? null
-}
+const spriteUrlForSpecies = (species: string): string | null => (
+  pokemonCatalogBySpecies.get(species)?.spriteUrl ?? null
+)
 
 const rowsWithSprites = computed(() => props.rows.map((row) => ({
   ...row,
