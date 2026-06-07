@@ -302,9 +302,11 @@ watch(isPlayer, (nextIsPlayer) => {
   min-width: 2.4rem;
   flex-basis: 2.4rem;
   padding: 0;
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--rule-soft));
+  border-color: transparent;
+  background: transparent;
   color: var(--accent);
   letter-spacing: 0;
+  outline: none;
 }
 
 .nav-link--theme :deep(svg) {
@@ -313,8 +315,9 @@ watch(isPlayer, (nextIsPlayer) => {
 
 .nav-link--theme:hover,
 .nav-link--theme:focus-visible {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: transparent;
+  background: transparent;
+  outline: none;
 }
 
 .app-navigation--vertical {
