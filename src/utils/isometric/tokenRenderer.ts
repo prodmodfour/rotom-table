@@ -1,7 +1,13 @@
 import * as THREE from 'three'
 import type { LayerVisibility } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
-import { buildVolumeMaterials, paintVolumeMaterials } from '~/utils/isometric/materials'
+import {
+  accentVolumeFacePalette,
+  buildVolumeMaterials,
+  paintVolumeFacePalette,
+  paintVolumeMaterials,
+  resolveVolumeAccentColor,
+} from '~/utils/isometric/materials'
 import { disposeObject3D } from '~/utils/isometric/resourceDisposal'
 import {
   buildTokenCombatStageGlass,
@@ -495,18 +501,43 @@ export const applyPokemonRenderObjectPosition = (
 export const paintPokemonRenderObjectStyle = (
   renderObject: PokemonRenderObject,
   selected: boolean,
+  options: { hovered?: boolean } = {},
 ) => {
+  const hovered = options.hovered === true
+
   // Re-tint the per-face material array with the appropriate tactical
-  // theme ramp instead of a single solid color.
-  paintVolumeMaterials(
-    renderObject.volume.material,
-    selected ? 'selected' : 'idle',
-    selected ? 0.32 : 0.28,
-  )
-  ;(renderObject.edges.material as THREE.LineBasicMaterial).color.set(selected ? 0xf7f7f2 : 0xaeb5bd)
-  // Idle edges fade so the cage reads via faces; selection sharpens
-  // them back up so the active token has a clear hard outline.
-  ;(renderObject.edges.material as THREE.LineBasicMaterial).opacity = selected ? 0.95 : 0.35
+  // theme ramp instead of a single solid color. Hover uses the token's
+  // trainer/app accent so the cage identifies ownership without changing
+  // the persistent selected-token lift state.
+  if (hovered) {
+    paintVolumeFacePalette(
+      renderObject.volume.material,
+      accentVolumeFacePalette(renderObject.accentColor),
+      selected ? 0.38 : 0.34,
+    )
+  } else {
+    paintVolumeMaterials(
+      renderObject.volume.material,
+      selected ? 'selected' : 'idle',
+      selected ? 0.32 : 0.28,
+    )
+  }
+
+  const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
+  const edgeColor = hovered
+    ? resolveVolumeAccentColor(renderObject.accentColor)
+    : selected ? 0xf7f7f2 : 0xaeb5bd
+  const edgeOpacity = hovered
+    ? selected ? 1 : 0.9
+    : selected ? 0.95 : 0.35
+
+  edgeMaterial.color.set(edgeColor)
+  // Idle edges fade so the cage reads via faces; selection/hover sharpens
+  // them back up so the active pointer target has a clear hard outline.
+  edgeMaterial.opacity = edgeOpacity
+  edgeMaterial.transparent = edgeOpacity < 1
+  edgeMaterial.depthTest = true
+  edgeMaterial.depthWrite = false
   renderObject.liftTarget = selectionLiftTarget(selected)
 }
 

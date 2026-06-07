@@ -1,5 +1,9 @@
 import * as THREE from 'three'
 import { BLOCK_FACE_ROLES, applyVoxelFaceMaterialStyle, type VoxelRenderStyle } from './blockTextures'
+import {
+  DEFAULT_TRAINER_ACCENT_COLOR,
+  normalizeTrainerAccentColor,
+} from '~/utils/trainerAccent'
 
 /**
  * Black / white / orange / red terrain palette for isometric face shading.
@@ -14,6 +18,58 @@ import { BLOCK_FACE_ROLES, applyVoxelFaceMaterialStyle, type VoxelRenderStyle } 
  * are always the "side" axis, and ±Y is top/bottom.
  */
 export const TACTICAL_SELECTION_HIGHLIGHT_COLOR = 0xffb84d
+
+export interface VolumeFacePalette {
+  top: number
+  side: number
+  shadow: number
+  bottom: number
+}
+
+const DEFAULT_VOLUME_ACCENT_COLOR = Number.parseInt(DEFAULT_TRAINER_ACCENT_COLOR.slice(1), 16)
+
+const clampColorChannel = (value: number): number => Math.min(255, Math.max(0, Math.round(value)))
+
+const scaleColorChannel = (color: number, shift: number, factor: number): number => (
+  clampColorChannel(((color >> shift) & 0xff) * factor)
+)
+
+const scaleColor = (color: number, factor: number): number => (
+  (scaleColorChannel(color, 16, factor) << 16) |
+  (scaleColorChannel(color, 8, factor) << 8) |
+  scaleColorChannel(color, 0, factor)
+)
+
+const mixColorChannel = (from: number, to: number, shift: number, amount: number): number => {
+  const fromChannel = (from >> shift) & 0xff
+  const toChannel = (to >> shift) & 0xff
+  return clampColorChannel(fromChannel + (toChannel - fromChannel) * amount)
+}
+
+const mixColor = (from: number, to: number, amount: number): number => (
+  (mixColorChannel(from, to, 16, amount) << 16) |
+  (mixColorChannel(from, to, 8, amount) << 8) |
+  mixColorChannel(from, to, 0, amount)
+)
+
+export const resolveVolumeAccentColor = (accentColor: unknown): number => {
+  const normalized = normalizeTrainerAccentColor(accentColor) ?? DEFAULT_TRAINER_ACCENT_COLOR
+  const parsed = Number.parseInt(normalized.slice(1), 16)
+  return Number.isNaN(parsed) ? DEFAULT_VOLUME_ACCENT_COLOR : parsed
+}
+
+export const accentVolumeFacePalette = (accentColor: unknown): VolumeFacePalette => {
+  const baseColor = resolveVolumeAccentColor(accentColor)
+
+  return {
+    // Keep the actual trainer/app colour on the strongest side while using
+    // isometric light/shadow ramps so the translucent cage still reads as a box.
+    top: mixColor(baseColor, 0xffffff, 0.46),
+    side: mixColor(baseColor, 0xffffff, 0.14),
+    shadow: scaleColor(baseColor, 0.68),
+    bottom: scaleColor(baseColor, 0.4),
+  }
+}
 
 export const TERRAIN_PALETTE = {
   idle: {
@@ -42,9 +98,18 @@ export const TERRAIN_PALETTE = {
     shadow: 0x9d0b1c,
     bottom: 0x5a0710,
   },
-} as const
+} as const satisfies Record<string, VolumeFacePalette>
 
 export type TerrainVariant = keyof typeof TERRAIN_PALETTE
+
+const volumeMaterialColors = (palette: VolumeFacePalette): ReadonlyArray<number> => [
+  palette.shadow, // +X
+  palette.shadow, // -X
+  palette.top,    // +Y
+  palette.bottom, // -Y
+  palette.side,   // +Z
+  palette.side,   // -Z
+]
 
 /**
  * Build a 6-material array for a ``THREE.BoxGeometry`` with theme-aware
@@ -68,14 +133,7 @@ export const buildVolumeMaterials = (
       depthWrite: false,
     })
 
-  return [
-    make(palette.shadow), // +X — "right" visible from default isometric
-    make(palette.shadow), // -X — becomes "right" after 180° rotation
-    make(palette.top),    // +Y — top
-    make(palette.bottom), // -Y — bottom
-    make(palette.side),   // +Z — "left" visible from default isometric
-    make(palette.side),   // -Z — becomes "left" after 180° rotation
-  ]
+  return volumeMaterialColors(palette).map(make)
 }
 
 /**
@@ -83,20 +141,12 @@ export const buildVolumeMaterials = (
  * disposing/recreating materials when state flips (selected,
  * reachable, etc.).
  */
-export const paintVolumeMaterials = (
+export const paintVolumeFacePalette = (
   materials: THREE.MeshBasicMaterial[],
-  variant: TerrainVariant,
+  palette: VolumeFacePalette,
   opacity: number,
 ) => {
-  const palette = TERRAIN_PALETTE[variant]
-  const colors: ReadonlyArray<number> = [
-    palette.shadow, // +X
-    palette.shadow, // -X
-    palette.top,    // +Y
-    palette.bottom, // -Y
-    palette.side,   // +Z
-    palette.side,   // -Z
-  ]
+  const colors = volumeMaterialColors(palette)
   for (let i = 0; i < materials.length; i += 1) {
     materials[i].color.setHex(colors[i])
     materials[i].opacity = opacity
@@ -105,6 +155,12 @@ export const paintVolumeMaterials = (
     materials[i].depthWrite = false
   }
 }
+
+export const paintVolumeMaterials = (
+  materials: THREE.MeshBasicMaterial[],
+  variant: TerrainVariant,
+  opacity: number,
+) => paintVolumeFacePalette(materials, TERRAIN_PALETTE[variant], opacity)
 
 /**
  * Build a 6-material array for a textured voxel block. BoxGeometry face

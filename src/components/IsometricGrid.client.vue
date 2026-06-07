@@ -730,8 +730,6 @@ const hoverController = createIsometricTokenHoverController({
   onHoverChange: () => requestScheduledSceneFrame('token-style'),
 })
 
-const setHoveredPokemonId = hoverController.set
-
 const buildRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject =>
   createPokemonRenderObject(pokemon, {
     scene,
@@ -754,9 +752,17 @@ const refreshPokemonStyles = () => {
     renderObjects,
     pokemons: props.pokemons,
     selectedId: props.selectedId,
-    paintRenderObjectStyle: (renderObject, selected) => paintPokemonRenderObjectStyle(renderObject, selected),
+    paintRenderObjectStyle: (renderObject, selected) => paintPokemonRenderObjectStyle(renderObject, selected, {
+      hovered: hoverController.id() === renderObject.id,
+    }),
   })
   applyLayerVisibility({ force: true })
+}
+
+const setHoveredPokemonId = (nextId: string | null): boolean => {
+  const changed = hoverController.set(nextId)
+  if (changed) refreshPokemonStyles()
+  return changed
 }
 
 const onCreateRenderObject = (renderObject: PokemonRenderObject) => {

@@ -4,9 +4,14 @@ import type { SpawnedPokemon } from '~/types/pokemon'
 import type { PokemonRenderObject, WorldSpriteState } from '~/utils/isometric/types'
 import {
   disposePokemonRenderObject,
+  paintPokemonRenderObjectStyle,
   updatePokemonRenderObjectFromSpawn,
 } from '~/utils/isometric/tokenRenderer'
 import { createTokenRenderGeometryCache } from '~/utils/isometric/tokenGeometryCache'
+import {
+  accentVolumeFacePalette,
+  resolveVolumeAccentColor,
+} from '~/utils/isometric/materials'
 
 const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
   species: 'Trainer',
@@ -82,9 +87,12 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     },
     volume: new THREE.Mesh(
       new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base),
-      [new THREE.MeshBasicMaterial()],
+      Array.from({ length: 6 }, () => new THREE.MeshBasicMaterial()),
     ) as PokemonRenderObject['volume'],
-    edges: new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base))),
+    edges: new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base)),
+      new THREE.LineBasicMaterial(),
+    ),
     proxy: new THREE.Mesh(
       new THREE.BoxGeometry(pokemon.base, pokemon.clearance, pokemon.base),
       new THREE.MeshBasicMaterial(),
@@ -111,12 +119,57 @@ const makeRenderObject = (pokemon: SpawnedPokemon): PokemonRenderObject => {
     combatStages: pokemon.combatStages,
     conditions: pokemon.conditions,
     tokenItems: pokemon.tokenItems,
+    accentColor: pokemon.accentColor,
     liftFactor: 0,
     liftTarget: 0,
   }
 }
 
+const volumeMaterialColorHexes = (renderObject: PokemonRenderObject): number[] =>
+  renderObject.volume.material.map((material) => material.color.getHex())
+
+const volumePaletteColorHexes = (palette: ReturnType<typeof accentVolumeFacePalette>): number[] => [
+  palette.shadow,
+  palette.shadow,
+  palette.top,
+  palette.bottom,
+  palette.side,
+  palette.side,
+]
+
 describe('token renderer', () => {
+  it('highlights hovered token cages with their app accent color', () => {
+    const pokemon = spawnedPokemon({ accentColor: '#2e77d0' })
+    const renderObject = makeRenderObject(pokemon)
+
+    paintPokemonRenderObjectStyle(renderObject, false, { hovered: true })
+
+    expect(volumeMaterialColorHexes(renderObject)).toEqual(
+      volumePaletteColorHexes(accentVolumeFacePalette('#2e77d0')),
+    )
+    for (const material of renderObject.volume.material) {
+      expect(material.opacity).toBeCloseTo(0.34)
+    }
+    const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
+    expect(edgeMaterial.color.getHex()).toBe(resolveVolumeAccentColor('#2e77d0'))
+    expect(edgeMaterial.opacity).toBeCloseTo(0.9)
+    expect(edgeMaterial.transparent).toBe(true)
+    expect(renderObject.liftTarget).toBe(0)
+  })
+
+  it('keeps selected hover cages in their app accent color without clearing selection lift', () => {
+    const pokemon = spawnedPokemon({ accentColor: '#7c3aed' })
+    const renderObject = makeRenderObject(pokemon)
+
+    paintPokemonRenderObjectStyle(renderObject, true, { hovered: true })
+
+    const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
+    expect(edgeMaterial.color.getHex()).toBe(resolveVolumeAccentColor('#7c3aed'))
+    expect(edgeMaterial.opacity).toBe(1)
+    expect(edgeMaterial.transparent).toBe(false)
+    expect(renderObject.liftTarget).toBe(1)
+  })
+
   it('resizes live token render objects when spawned dimensions change', () => {
     const renderObject = makeRenderObject(spawnedPokemon())
     const resized = spawnedPokemon({ width: 0.85, height: 1.7, clearance: 2 })
