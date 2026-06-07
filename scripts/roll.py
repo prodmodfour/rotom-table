@@ -157,6 +157,10 @@ def normalize_entry(entry, fallback_min, fallback_max, previous_ceiling=0):
     return weight, species, min_level, max_level, ceiling
 
 
+def sort_entries_by_weight(entries):
+    return sorted(entries, key=lambda entry: (is_nothing_species(entry[1]), -entry[0]))
+
+
 def normalize_entries(entries, min_level, max_level):
     normalized = []
     previous_ceiling = 0
@@ -168,7 +172,7 @@ def normalize_entries(entries, min_level, max_level):
             previous_ceiling,
         )
         normalized.append((weight, species, entry_min, entry_max))
-    return normalized
+    return sort_entries_by_weight(normalized)
 
 
 def roll(entries, min_level, max_level):

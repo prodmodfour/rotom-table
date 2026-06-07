@@ -24,8 +24,8 @@ describe('encounter table editing helpers', () => {
 
     expect(model.name).toBe('Forest')
     expect(model.rows.map(({ species, weight, minLevel, maxLevel }) => ({ species, weight, minLevel, maxLevel }))).toEqual([
-      { species: 'Pidgey', weight: 25, minLevel: 4, maxLevel: 8 },
       { species: 'Oddish', weight: 75, minLevel: 6, maxLevel: 9 },
+      { species: 'Pidgey', weight: 25, minLevel: 4, maxLevel: 8 },
       { species: 'Nothing', weight: 60, minLevel: 4, maxLevel: 8 },
     ])
     expect(encounterTableEditTotalWeight(model.rows)).toBe(160)
@@ -71,8 +71,8 @@ describe('encounter table editing helpers', () => {
       min_level: 4,
       max_level: 9,
       entries: [
-        { weight: 25, species: 'Pidgey', min_level: 4, max_level: 8 },
         { weight: 75, species: 'Oddish', min_level: 6, max_level: 9 },
+        { weight: 25, species: 'Pidgey', min_level: 4, max_level: 8 },
         { weight: 60, species: 'Nothing' },
       ],
     })

@@ -11,6 +11,7 @@ import {
   formatEncounterEntryLevelRange,
   isNormalizedEncounterNothingEntry,
   normalizeEncounterTableRollEntriesWithDefaultNothing,
+  orderEncounterTableRollEntriesByWeight,
   randomEncounterInt,
   selectWeightedEncounterEntry,
   totalEncounterWeight,
@@ -108,7 +109,9 @@ export const rollEncounter = (
   random: () => number = Math.random,
 ): RolledEncounter | null => {
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  const entries = normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback)
+  const entries = orderEncounterTableRollEntriesByWeight(
+    normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback),
+  )
   const selection = selectWeightedEncounterEntry(entries, random)
   const entry = selection.entry
 
@@ -155,7 +158,9 @@ export const describeEntries = (
   table: EncounterTable,
 ): DisplayedEncounterRow[] => {
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  const entries = normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback)
+  const entries = orderEncounterTableRollEntriesByWeight(
+    normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback),
+  )
   const totalWeight = totalEncounterWeight(entries)
   let previousWeight = 0
 

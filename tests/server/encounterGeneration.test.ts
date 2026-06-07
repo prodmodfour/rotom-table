@@ -108,10 +108,10 @@ describe('server encounter generation helpers', () => {
     expect(randomEncounterGenerateCount({ min: 2, max: 4 }, () => 0.99)).toBe(4)
 
     const first = rollEncounterTable(table, () => 0)
-    expect(first).toEqual({ species: 'Pidgey', level: 3, roll: 1 })
+    expect(first).toEqual({ species: 'Rattata', level: 3, roll: 1 })
 
     const second = rollEncounterTable(table, sequenceRandom(0.05, 0.99))
-    expect(second).toEqual({ species: 'Rattata', level: 5, roll: 4 })
+    expect(second).toEqual({ species: 'Pidgey', level: 5, roll: 4 })
 
     expect(rollEncounterTable(table, () => 0.99)).toBeNull()
 

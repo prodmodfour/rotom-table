@@ -9,6 +9,7 @@ import {
   normalizeEncounterTableRollEntries,
   normalizeEncounterTableRollEntriesWithDefaultNothing,
   normalizeEncounterTableRollEntry,
+  orderEncounterTableRollEntriesByWeight,
   serializeEncounterTableRollEntry,
   totalEncounterWeight,
 } from '#shared/encounterTables'
@@ -65,6 +66,20 @@ describe('shared encounter table helpers', () => {
       weight: DEFAULT_ENCOUNTER_NOTHING_WEIGHT,
       species: ENCOUNTER_NOTHING_SPECIES,
     })
+  })
+
+  it('orders normalized entries by descending weight while pinning Nothing last', () => {
+    const ordered = orderEncounterTableRollEntriesByWeight([
+      { species: ENCOUNTER_NOTHING_SPECIES, weight: 60, min_level: 1, max_level: 1 },
+      { species: 'Pidgey', weight: 5, min_level: 1, max_level: 1 },
+      { species: 'Oddish', weight: 25, min_level: 1, max_level: 1 },
+    ])
+
+    expect(ordered.map(({ species, weight }) => ({ species, weight }))).toEqual([
+      { species: 'Oddish', weight: 25 },
+      { species: 'Pidgey', weight: 5 },
+      { species: ENCOUNTER_NOTHING_SPECIES, weight: 60 },
+    ])
   })
 
   it('serializes weighted entries and formats level ranges/chances', () => {

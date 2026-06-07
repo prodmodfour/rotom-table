@@ -3,6 +3,7 @@ import { join as joinPath, resolve, sep } from 'node:path'
 import {
   isNormalizedEncounterNothingEntry,
   normalizeEncounterTableRollEntriesWithDefaultNothing,
+  orderEncounterTableRollEntriesByWeight,
   randomEncounterInt as sharedRandomEncounterInt,
   selectWeightedEncounterEntry,
 } from '#shared/encounterTables'
@@ -130,7 +131,9 @@ export const rollEncounterTable = (
   random: () => number = Math.random,
 ): RolledEncounter | null => {
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  const entries = normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback)
+  const entries = orderEncounterTableRollEntriesByWeight(
+    normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback),
+  )
   const selection = selectWeightedEncounterEntry(entries, random)
   const entry = selection.entry
 

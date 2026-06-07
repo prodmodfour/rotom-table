@@ -3,6 +3,7 @@ import {
   isNormalizedEncounterNothingEntry,
   normalizeEncounterLevelRange,
   normalizeEncounterTableRollEntriesWithDefaultNothing,
+  orderEncounterTableRollEntriesByWeight,
   serializeEncounterTableRollEntry,
 } from '#shared/encounterTables'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -196,15 +197,17 @@ export const normalizeEncounterTableForSave = (value: unknown): EncounterTable =
     throw new EncounterTableLibraryUseCaseError(400, 'table.entries must contain at least one Pokémon row')
   }
 
-  const entries = normalizedEntries.map((entry, index) => {
+  normalizedEntries.forEach((entry, index) => {
     if (!entry.species) {
       throw new EncounterTableLibraryUseCaseError(400, `Row ${index + 1}: species is required`)
     }
     if (!Number.isInteger(entry.weight) || entry.weight < 1) {
       throw new EncounterTableLibraryUseCaseError(400, `Row ${index + 1}: weight must be a positive integer`)
     }
-    return serializeEncounterTableRollEntry(entry)
   })
+
+  const entries = orderEncounterTableRollEntriesByWeight(normalizedEntries)
+    .map(serializeEncounterTableRollEntry)
 
   return {
     name,

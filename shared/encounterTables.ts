@@ -88,6 +88,23 @@ export const isNormalizedEncounterNothingEntry = (
   entry: Pick<NormalizedEncounterTableRollEntry, 'species'>,
 ): boolean => isEncounterNothingSpecies(entry.species)
 
+export const compareEncounterTableRollEntriesByWeight = (
+  a: Pick<NormalizedEncounterTableRollEntry, 'species' | 'weight'>,
+  b: Pick<NormalizedEncounterTableRollEntry, 'species' | 'weight'>,
+): number => {
+  const aIsNothing = isNormalizedEncounterNothingEntry(a)
+  const bIsNothing = isNormalizedEncounterNothingEntry(b)
+  if (aIsNothing !== bIsNothing) return aIsNothing ? 1 : -1
+  if (aIsNothing && bIsNothing) return 0
+  return clampEncounterWeight(b.weight) - clampEncounterWeight(a.weight)
+}
+
+type WeightedEncounterEntryIdentity = Pick<NormalizedEncounterTableRollEntry, 'species' | 'weight'>
+
+export const orderEncounterTableRollEntriesByWeight = <T extends WeightedEncounterEntryIdentity>(
+  entries: ReadonlyArray<T>,
+): T[] => [...entries].sort(compareEncounterTableRollEntriesByWeight)
+
 export const withDefaultNothingEncounterEntry = (
   entries: ReadonlyArray<EncounterTableRollEntry>,
 ): EncounterTableRollEntry[] => (

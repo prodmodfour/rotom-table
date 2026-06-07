@@ -6,6 +6,7 @@ import {
   isNormalizedEncounterNothingEntry,
   normalizeEncounterLevelRange,
   normalizeEncounterTableRollEntriesWithDefaultNothing,
+  orderEncounterTableRollEntriesByWeight,
   serializeEncounterTableRollEntry,
   withDefaultNothingNormalizedEncounterEntry,
   type NormalizedEncounterTableRollEntry,
@@ -59,7 +60,9 @@ export const createEncounterTableEditRow = (
 
 export const encounterTableToEditModel = (table: EncounterTable): EncounterTableEditModel => {
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  const rows = normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback)
+  const rows = orderEncounterTableRollEntriesByWeight(
+    normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback),
+  )
     .map((entry, index): EncounterTableEditRow => ({
       id: rowId(index),
       species: entry.species,
@@ -136,7 +139,9 @@ export const encounterTableEditModelToTable = (
   const validation = validateEncounterTableEditModel(model)
   if (!validation.valid) throw new Error(validation.errors[0] ?? 'Invalid encounter table.')
 
-  const normalizedEntries = withDefaultNothingNormalizedEncounterEntry(model.rows.map(normalizeEditRow))
+  const normalizedEntries = orderEncounterTableRollEntriesByWeight(
+    withDefaultNothingNormalizedEncounterEntry(model.rows.map(normalizeEditRow)),
+  )
   const entries = normalizedEntries.map(serializeEncounterTableRollEntry)
   const pokemonEntries = normalizedEntries.filter((entry) => !isNormalizedEncounterNothingEntry(entry))
 
