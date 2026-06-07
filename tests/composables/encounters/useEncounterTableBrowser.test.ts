@@ -31,7 +31,7 @@ describe('useEncounterTableBrowser', () => {
     expect(browser.selectedRegion.value).toBe('alpha_region')
     expect(browser.selectedKey.value).toBe('forest')
     expect(browser.selectedEntry.value?.table.name).toBe('Alpha Forest')
-    expect(browser.selectedRows.value.map((row) => row.species)).toEqual(['Pikachu', 'Oddish'])
+    expect(browser.selectedRows.value.map((row) => row.species)).toEqual(['Pikachu', 'Oddish', 'Nothing'])
   })
 
   it('filters tables by table/species/region search', () => {
@@ -57,16 +57,28 @@ describe('useEncounterTableBrowser', () => {
     expect(browser.selectedRegion.value).toBe('beta_region')
     expect(browser.selectedKey.value).toBe('lake')
     expect(browser.selectedEntry.value).toBe(entries[2])
-    expect(browser.selectedRows.value).toEqual([{
-      range: '01–100',
-      weight: 100,
-      percent: 100,
-      chancePercentLabel: '100%',
-      species: 'Magikarp',
-      minLevel: 6,
-      maxLevel: 10,
-      levelRange: 'Lv 6–10',
-    }])
+    expect(browser.selectedRows.value).toEqual([
+      {
+        range: '01–100',
+        weight: 100,
+        percent: 62.5,
+        chancePercentLabel: '62.5%',
+        species: 'Magikarp',
+        minLevel: 6,
+        maxLevel: 10,
+        levelRange: 'Lv 6–10',
+      },
+      {
+        range: '101–160',
+        weight: 60,
+        percent: 37.5,
+        chancePercentLabel: '37.5%',
+        species: 'Nothing',
+        minLevel: 6,
+        maxLevel: 10,
+        levelRange: '—',
+      },
+    ])
   })
 
   it('handles an empty table collection', () => {

@@ -91,6 +91,23 @@ describe('generateEncountersUseCase', () => {
     expect(runPokegen).toHaveBeenCalledTimes(3)
   })
 
+  it('omits Nothing rolls from generated Pokémon output', async () => {
+    const { dependencies, runPokegen } = createDependencies({
+      random: sequenceRandom(0.99, 0, 0, 0.5),
+    })
+
+    const result = await generateEncountersUseCase({
+      region: 'vale',
+      table: 'forest',
+      count: 3,
+      preview: true,
+    }, dependencies)
+
+    expect(result.count).toBe(3)
+    expect(result.rolled).toEqual([{ species: 'Pidgey', level: 5, roll: 1 }])
+    expect(runPokegen).toHaveBeenCalledTimes(1)
+  })
+
   it('uses a temp output directory for previews, returns generated content, and cleans up', async () => {
     const { dependencies, cleanupDirectory, runPokegen } = createDependencies()
 

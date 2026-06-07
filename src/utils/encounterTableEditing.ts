@@ -1,10 +1,13 @@
 import {
   clampEncounterLevel,
   clampEncounterWeight,
-  formatEncounterLevelRange,
+  formatEncounterEntryLevelRange,
+  isEncounterNothingSpecies,
+  isNormalizedEncounterNothingEntry,
   normalizeEncounterLevelRange,
-  normalizeEncounterTableRollEntries,
+  normalizeEncounterTableRollEntriesWithDefaultNothing,
   serializeEncounterTableRollEntry,
+  withDefaultNothingNormalizedEncounterEntry,
   type NormalizedEncounterTableRollEntry,
 } from '#shared/encounterTables'
 import type { EncounterTable } from '~/types/encounterTable'
@@ -56,7 +59,7 @@ export const createEncounterTableEditRow = (
 
 export const encounterTableToEditModel = (table: EncounterTable): EncounterTableEditModel => {
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  const rows = normalizeEncounterTableRollEntries(table.entries, fallback)
+  const rows = normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback)
     .map((entry, index): EncounterTableEditRow => ({
       id: rowId(index),
       species: entry.species,
@@ -70,6 +73,12 @@ export const encounterTableToEditModel = (table: EncounterTable): EncounterTable
     rows: rows.length ? rows : [createEncounterTableEditRow()],
   }
 }
+
+export const encounterEditRowIsNothing = (row: Pick<EncounterTableEditRow, 'species'>): boolean =>
+  isEncounterNothingSpecies(row.species)
+
+export const encounterEditRowHasLevelRange = (row: Pick<EncounterTableEditRow, 'species'>): boolean =>
+  !encounterEditRowIsNothing(row)
 
 const normalizeEditRow = (
   row: EncounterTableEditRow,
@@ -92,7 +101,10 @@ export const validateEncounterTableEditModel = (
   const name = model.name.trim()
   if (!name) errors.push('Table name is required.')
   if (name.length > 80) errors.push('Table name must be 80 characters or fewer.')
-  if (model.rows.length === 0) errors.push('Add at least one Pokémon row.')
+  const pokemonRows = model.rows.filter((row) => !encounterEditRowIsNothing(row))
+  const nothingRows = model.rows.filter(encounterEditRowIsNothing)
+  if (pokemonRows.length === 0) errors.push('Add at least one Pokémon row.')
+  if (nothingRows.length > 1) errors.push('Only one Nothing row is allowed.')
 
   model.rows.forEach((row, index) => {
     if (!row.species.trim()) errors.push(`Row ${index + 1}: species is required.`)
@@ -100,6 +112,8 @@ export const validateEncounterTableEditModel = (
     if (!Number.isInteger(weight) || weight < 1) {
       errors.push(`Row ${index + 1}: weight must be a positive integer.`)
     }
+    if (!encounterEditRowHasLevelRange(row)) return
+
     const minLevel = Number(row.minLevel)
     const maxLevel = Number(row.maxLevel)
     if (!Number.isInteger(minLevel) || minLevel < 1 || minLevel > 100) {
@@ -122,12 +136,12 @@ export const encounterTableEditModelToTable = (
   const validation = validateEncounterTableEditModel(model)
   if (!validation.valid) throw new Error(validation.errors[0] ?? 'Invalid encounter table.')
 
-  const entries = model.rows
-    .map(normalizeEditRow)
-    .map(serializeEncounterTableRollEntry)
+  const normalizedEntries = withDefaultNothingNormalizedEncounterEntry(model.rows.map(normalizeEditRow))
+  const entries = normalizedEntries.map(serializeEncounterTableRollEntry)
+  const pokemonEntries = normalizedEntries.filter((entry) => !isNormalizedEncounterNothingEntry(entry))
 
-  const minLevel = Math.min(...entries.map((entry) => clampEncounterLevel(entry.min_level)))
-  const maxLevel = Math.max(...entries.map((entry) => clampEncounterLevel(entry.max_level)))
+  const minLevel = Math.min(...pokemonEntries.map((entry) => clampEncounterLevel(entry.min_level)))
+  const maxLevel = Math.max(...pokemonEntries.map((entry) => clampEncounterLevel(entry.max_level)))
 
   return {
     name: model.name.trim(),
@@ -138,4 +152,4 @@ export const encounterTableEditModelToTable = (
 }
 
 export const encounterEditRowLevelRange = (row: EncounterTableEditRow): string =>
-  formatEncounterLevelRange({ min_level: row.minLevel, max_level: row.maxLevel })
+  formatEncounterEntryLevelRange({ species: row.species, min_level: row.minLevel, max_level: row.maxLevel })

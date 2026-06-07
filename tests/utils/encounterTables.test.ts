@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   countEncounterRegionTables,
   encounterRegionsForEntries,
+  encounterTableDisplayEntryCountLabel,
   encounterTableEntryId,
   describeEntries,
   filterEncounterTablesByRegion,
@@ -39,6 +40,7 @@ describe('encounter table browser helpers', () => {
     expect(formatRegionLabel('iron_islands/deep-cave')).toBe('Iron Islands Deep Cave')
     expect(encounterRegionsForEntries(entries)).toEqual(['iron_islands', 'thickerby_vale'])
     expect(encounterTableEntryId(entries[0])).toBe('thickerby_vale/forest_path')
+    expect(encounterTableDisplayEntryCountLabel(entries[0].table)).toBe('3 entries')
     expect(firstEncounterTable(entries)).toBe(entries[0])
     expect(firstEncounterTable([])).toBeNull()
     expect(findEncounterTableInEntries(entries, 'thickerby_vale', 'river')).toBe(entries[1])
@@ -56,8 +58,9 @@ describe('encounter table browser helpers', () => {
         { weight: 3, species: 'Oddish', min_level: 8, max_level: 10 },
       ],
     })).toEqual([
-      { range: '01', weight: 1, percent: 25, chancePercentLabel: '25%', species: 'Pidgey', minLevel: 2, maxLevel: 6, levelRange: 'Lv 2–6' },
-      { range: '02–04', weight: 3, percent: 75, chancePercentLabel: '75%', species: 'Oddish', minLevel: 8, maxLevel: 10, levelRange: 'Lv 8–10' },
+      { range: '01', weight: 1, percent: 1.5625, chancePercentLabel: '1.56%', species: 'Pidgey', minLevel: 2, maxLevel: 6, levelRange: 'Lv 2–6' },
+      { range: '02–04', weight: 3, percent: 4.6875, chancePercentLabel: '4.69%', species: 'Oddish', minLevel: 8, maxLevel: 10, levelRange: 'Lv 8–10' },
+      { range: '05–64', weight: 60, percent: 93.75, chancePercentLabel: '93.8%', species: 'Nothing', minLevel: 2, maxLevel: 6, levelRange: '—' },
     ])
   })
 

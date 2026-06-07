@@ -75,6 +75,7 @@ export const generateEncountersUseCase = async (
     })
     const count = randomEncounterGenerateCount(request.countRange, runtime.random)
     const rolled = Array.from({ length: count }, () => rollEncounterTable(table, runtime.random))
+      .filter((encounter): encounter is RolledEncounter => Boolean(encounter))
     const output = createEncounterOutputPlan({
       tableKey: request.tableKey,
       count,

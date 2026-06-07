@@ -26,8 +26,9 @@ describe('encounter table editing helpers', () => {
     expect(model.rows.map(({ species, weight, minLevel, maxLevel }) => ({ species, weight, minLevel, maxLevel }))).toEqual([
       { species: 'Pidgey', weight: 25, minLevel: 4, maxLevel: 8 },
       { species: 'Oddish', weight: 75, minLevel: 6, maxLevel: 9 },
+      { species: 'Nothing', weight: 60, minLevel: 4, maxLevel: 8 },
     ])
-    expect(encounterTableEditTotalWeight(model.rows)).toBe(100)
+    expect(encounterTableEditTotalWeight(model.rows)).toBe(160)
   })
 
   it('creates rows with a default weight', () => {
@@ -47,6 +48,17 @@ describe('encounter table editing helpers', () => {
     expect(validation.errors).toContain('Row 1: minimum level cannot exceed maximum level.')
   })
 
+  it('treats Nothing as a level-less required table row', () => {
+    const validation = validateEncounterTableEditModel({
+      name: 'Empty Field',
+      rows: [{ id: 'row-0', species: 'Nothing', weight: 60, minLevel: 99, maxLevel: 1 }],
+    })
+
+    expect(validation.valid).toBe(false)
+    expect(validation.errors).toContain('Add at least one Pokémon row.')
+    expect(validation.errors).not.toContain('Row 1: minimum level cannot exceed maximum level.')
+  })
+
   it('converts edit models to persisted weighted object entries', () => {
     expect(encounterTableEditModelToTable({
       name: 'Forest',
@@ -61,6 +73,7 @@ describe('encounter table editing helpers', () => {
       entries: [
         { weight: 25, species: 'Pidgey', min_level: 4, max_level: 8 },
         { weight: 75, species: 'Oddish', min_level: 6, max_level: 9 },
+        { weight: 60, species: 'Nothing' },
       ],
     })
   })

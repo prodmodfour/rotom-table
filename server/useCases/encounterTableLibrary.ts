@@ -1,7 +1,8 @@
 import {
   clampEncounterLevel,
+  isNormalizedEncounterNothingEntry,
   normalizeEncounterLevelRange,
-  normalizeEncounterTableRollEntries,
+  normalizeEncounterTableRollEntriesWithDefaultNothing,
   serializeEncounterTableRollEntry,
 } from '#shared/encounterTables'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -185,7 +186,17 @@ export const normalizeEncounterTableForSave = (value: unknown): EncounterTable =
     throw new EncounterTableLibraryUseCaseError(400, 'table.entries must contain at least one row')
   }
 
-  const entries = normalizeEncounterTableRollEntries(rawEntries, fallback).map((entry, index) => {
+  const normalizedEntries = normalizeEncounterTableRollEntriesWithDefaultNothing(rawEntries, fallback)
+  const nothingEntries = normalizedEntries.filter(isNormalizedEncounterNothingEntry)
+  const pokemonEntries = normalizedEntries.filter((entry) => !isNormalizedEncounterNothingEntry(entry))
+  if (nothingEntries.length > 1) {
+    throw new EncounterTableLibraryUseCaseError(400, 'Only one Nothing row is allowed')
+  }
+  if (pokemonEntries.length === 0) {
+    throw new EncounterTableLibraryUseCaseError(400, 'table.entries must contain at least one Pokémon row')
+  }
+
+  const entries = normalizedEntries.map((entry, index) => {
     if (!entry.species) {
       throw new EncounterTableLibraryUseCaseError(400, `Row ${index + 1}: species is required`)
     }
@@ -197,8 +208,8 @@ export const normalizeEncounterTableForSave = (value: unknown): EncounterTable =
 
   return {
     name,
-    min_level: Math.min(...entries.map((entry) => clampEncounterLevel(entry.min_level))),
-    max_level: Math.max(...entries.map((entry) => clampEncounterLevel(entry.max_level))),
+    min_level: Math.min(...pokemonEntries.map((entry) => clampEncounterLevel(entry.min_level))),
+    max_level: Math.max(...pokemonEntries.map((entry) => clampEncounterLevel(entry.max_level))),
     entries,
   }
 }

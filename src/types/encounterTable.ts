@@ -16,14 +16,16 @@ export interface EncounterTable {
   max_level: number
   /**
    * Weighted roll table. Edited entries are objects with a relative ``weight``
-   * plus optional per-Pokémon ``min_level`` / ``max_level``.
+   * plus optional per-Pokémon ``min_level`` / ``max_level``. A special
+   * ``species: "Nothing"`` row has no level range and means no Pokémon is
+   * found for that rolled slot.
    * Legacy cumulative ``ceiling`` entries and ``[ceiling, species]`` tuples are
    * still accepted and converted to weights while loading.
    */
   entries: EncounterTableRollEntry[]
 }
 
-/** A single rolled encounter (species + level). */
+/** A single rolled Pokémon encounter (Nothing slots are omitted). */
 export interface RolledEncounter {
   species: string
   level: number

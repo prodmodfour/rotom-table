@@ -1,4 +1,4 @@
-import { normalizeEncounterTableRollEntries } from '#shared/encounterTables'
+import { normalizeEncounterTableRollEntriesWithDefaultNothing } from '#shared/encounterTables'
 import type { EncounterTableEntry } from '~/types/encounterTable'
 import {
   isInsideFolder,
@@ -31,7 +31,7 @@ export const encounterTableMatchesQuery = (
   item: EncounterTableEntry,
   normalizedQuery: string,
 ): boolean => {
-  const normalizedEntries = normalizeEncounterTableRollEntries(item.table.entries, {
+  const normalizedEntries = normalizeEncounterTableRollEntriesWithDefaultNothing(item.table.entries, {
     min_level: item.table.min_level,
     max_level: item.table.max_level,
   })

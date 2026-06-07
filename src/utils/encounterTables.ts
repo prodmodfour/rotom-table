@@ -8,8 +8,9 @@
 import {
   encounterChancePercent,
   formatEncounterChancePercent,
-  formatEncounterLevelRange,
-  normalizeEncounterTableRollEntries,
+  formatEncounterEntryLevelRange,
+  isNormalizedEncounterNothingEntry,
+  normalizeEncounterTableRollEntriesWithDefaultNothing,
   randomEncounterInt,
   selectWeightedEncounterEntry,
   totalEncounterWeight,
@@ -100,26 +101,39 @@ export const tablesInRegion = (region: string): EncounterTableEntry[] =>
 
 /**
  * Roll once on an encounter table. Returns the rolled species + level along
- * with the underlying weighted roll so the UI can show which slot was hit.
+ * with the underlying weighted roll, or null when the Nothing slot is hit.
  */
-export const rollEncounter = (table: EncounterTable): RolledEncounter => {
+export const rollEncounter = (
+  table: EncounterTable,
+  random: () => number = Math.random,
+): RolledEncounter | null => {
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  const entries = normalizeEncounterTableRollEntries(table.entries, fallback)
-  const selection = selectWeightedEncounterEntry(entries)
+  const entries = normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback)
+  const selection = selectWeightedEncounterEntry(entries, random)
   const entry = selection.entry
 
+  if (!entry || isNormalizedEncounterNothingEntry(entry)) return null
+
   return {
-    species: entry?.species || 'Magikarp',
-    level: randomEncounterInt(entry?.min_level ?? table.min_level, entry?.max_level ?? table.max_level),
+    species: entry.species,
+    level: randomEncounterInt(entry.min_level, entry.max_level, random),
     roll: selection.roll,
   }
 }
 
-/** Convenience: roll N times. */
+/** Convenience: roll N encounter slots, omitting slots where no Pokémon is found. */
 export const rollEncounters = (
   table: EncounterTable,
   count: number,
-): RolledEncounter[] => Array.from({ length: count }, () => rollEncounter(table))
+  random: () => number = Math.random,
+): RolledEncounter[] => {
+  const rolled: RolledEncounter[] = []
+  for (let index = 0; index < count; index += 1) {
+    const encounter = rollEncounter(table, random)
+    if (encounter) rolled.push(encounter)
+  }
+  return rolled
+}
 
 /* ------------------------------------------------------------------ */
 /* Display helpers                                                    */
@@ -141,7 +155,7 @@ export const describeEntries = (
   table: EncounterTable,
 ): DisplayedEncounterRow[] => {
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  const entries = normalizeEncounterTableRollEntries(table.entries, fallback)
+  const entries = normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback)
   const totalWeight = totalEncounterWeight(entries)
   let previousWeight = 0
 
@@ -157,9 +171,17 @@ export const describeEntries = (
       species: entry.species,
       minLevel: entry.min_level,
       maxLevel: entry.max_level,
-      levelRange: formatEncounterLevelRange(entry),
+      levelRange: formatEncounterEntryLevelRange(entry),
     }
   })
+}
+
+export const encounterTableDisplayEntryCount = (table: EncounterTable): number =>
+  describeEntries(table).length
+
+export const encounterTableDisplayEntryCountLabel = (table: EncounterTable): string => {
+  const count = encounterTableDisplayEntryCount(table)
+  return `${count} entr${count === 1 ? 'y' : 'ies'}`
 }
 
 const pad = (n: number): string => String(n).padStart(2, '0')
@@ -208,7 +230,7 @@ export const filterEncounterTablesByRegion = (
       const visibleTables = regionMatches
         ? allTables
         : allTables.filter((entry) => {
-            const normalizedEntries = normalizeEncounterTableRollEntries(entry.table.entries, {
+            const normalizedEntries = normalizeEncounterTableRollEntriesWithDefaultNothing(entry.table.entries, {
               min_level: entry.table.min_level,
               max_level: entry.table.max_level,
             })

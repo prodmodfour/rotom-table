@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  encounterTableDisplayEntryCountLabel,
   formatRegionLabel,
   formatTableLabel,
 } from '~/utils/encounterTables'
@@ -22,7 +23,7 @@ defineProps<{
     </div>
     <div class="detail-pills">
       <span class="badge">Lv {{ selectedEntry.table.min_level }}–{{ selectedEntry.table.max_level }}</span>
-      <span class="badge">{{ selectedEntry.table.entries.length }} entries</span>
+      <span class="badge">{{ encounterTableDisplayEntryCountLabel(selectedEntry.table) }}</span>
     </div>
   </header>
 </template>

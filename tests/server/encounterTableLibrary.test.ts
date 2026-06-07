@@ -116,6 +116,7 @@ describe('encounter table library use cases', () => {
           entries: [
             { weight: 2, species: 'Pidgey', min_level: 3, max_level: 4 },
             { weight: 98, species: 'Oddish', min_level: 6, max_level: 9 },
+            { weight: 60, species: 'Nothing' },
           ],
         },
       },

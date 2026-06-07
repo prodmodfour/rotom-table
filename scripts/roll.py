@@ -21,6 +21,10 @@ Legacy entries are also accepted:
     [ceiling, species]
     [ceiling, species, min_level, max_level]
     {"ceiling": int, "species": str, "min_level": int, "max_level": int}
+
+Every table also gets a default {"weight": 60, "species": "Nothing"} row unless
+one already exists. Rolling Nothing means no Pokémon is found for that slot, so
+counted rolls can print fewer Pokémon than requested.
 """
 
 import json
@@ -43,6 +47,8 @@ def configured_campaign_root():
 
 
 ROOT = configured_campaign_root() / "encounter_tables"
+NOTHING_SPECIES = "Nothing"
+DEFAULT_NOTHING_WEIGHT = 60
 
 
 def list_regions():
@@ -97,9 +103,34 @@ def normalize_range(min_level, max_level, fallback_min, fallback_max):
     return (lo, hi) if lo <= hi else (hi, lo)
 
 
+def is_nothing_species(species):
+    return str(species or "").strip().lower() == NOTHING_SPECIES.lower()
+
+
+def normalize_species(species):
+    value = str(species or "").strip()
+    return NOTHING_SPECIES if is_nothing_species(value) else value
+
+
+def default_nothing_entry():
+    return {"weight": DEFAULT_NOTHING_WEIGHT, "species": NOTHING_SPECIES}
+
+
+def entry_species(entry):
+    if isinstance(entry, dict):
+        return entry.get("species", "")
+    return entry[1] if len(entry) > 1 else ""
+
+
+def entries_with_default_nothing(entries):
+    if any(is_nothing_species(entry_species(entry)) for entry in entries):
+        return list(entries)
+    return [*entries, default_nothing_entry()]
+
+
 def normalize_entry(entry, fallback_min, fallback_max, previous_ceiling=0):
     if isinstance(entry, dict):
-        species = str(entry.get("species", "")).strip()
+        species = normalize_species(entry.get("species", ""))
         min_level, max_level = normalize_range(
             entry.get("min_level"),
             entry.get("max_level"),
@@ -115,7 +146,7 @@ def normalize_entry(entry, fallback_min, fallback_max, previous_ceiling=0):
         return weight, species, min_level, max_level, ceiling
 
     ceiling = coerce_ceiling(entry[0])
-    species = str(entry[1]).strip()
+    species = normalize_species(entry[1])
     min_level, max_level = normalize_range(
         entry[2] if len(entry) > 2 else None,
         entry[3] if len(entry) > 3 else None,
@@ -129,7 +160,7 @@ def normalize_entry(entry, fallback_min, fallback_max, previous_ceiling=0):
 def normalize_entries(entries, min_level, max_level):
     normalized = []
     previous_ceiling = 0
-    for raw_entry in entries:
+    for raw_entry in entries_with_default_nothing(entries):
         weight, species, entry_min, entry_max, previous_ceiling = normalize_entry(
             raw_entry,
             min_level,
@@ -144,7 +175,7 @@ def roll(entries, min_level, max_level):
     normalized_entries = normalize_entries(entries, min_level, max_level)
     total_weight = sum(entry[0] for entry in normalized_entries)
     if total_weight < 1:
-        return 1, "Magikarp", random.randint(min_level, max_level)
+        return 1, NOTHING_SPECIES, None
 
     r = random.randint(1, total_weight)
     cumulative = 0
@@ -153,14 +184,20 @@ def roll(entries, min_level, max_level):
         cumulative += weight
         last = (species, entry_min, entry_max)
         if r <= cumulative:
+            if is_nothing_species(species):
+                return r, species, None
             return r, species, random.randint(entry_min, entry_max)
     if last:
         species, entry_min, entry_max = last
+        if is_nothing_species(species):
+            return r, species, None
         return r, species, random.randint(entry_min, entry_max)
-    return r, "Magikarp", random.randint(min_level, max_level)
+    return r, NOTHING_SPECIES, None
 
 
 def level_label(min_level, max_level):
+    if min_level is None or max_level is None:
+        return "—"
     return f"Lv {min_level}" if min_level == max_level else f"Lv {min_level}-{max_level}"
 
 
@@ -237,7 +274,9 @@ def main():
             hi = prev + weight
             span = f"{prev + 1:>3d}-{hi:<3d}" if hi > prev + 1 else f"    {hi:<3d}"
             pct = percent_label(weight, total_weight)
-            print(f"  {span}  (w {weight:>3d}, {pct:>6s})  {species:16s}  {level_label(entry_min, entry_max)}")
+            shown_min = None if is_nothing_species(species) else entry_min
+            shown_max = None if is_nothing_species(species) else entry_max
+            print(f"  {span}  (w {weight:>3d}, {pct:>6s})  {species:16s}  {level_label(shown_min, shown_max)}")
             prev = hi
         sys.exit(0)
 
@@ -245,6 +284,8 @@ def main():
     print(f"--- {table['name']} (Lv {lv_range}) ---")
     for _ in range(count):
         r, species, level = roll(table["entries"], table["min_level"], table["max_level"])
+        if level is None:
+            continue
         print(f"{species} (Lv {level})")
 
 

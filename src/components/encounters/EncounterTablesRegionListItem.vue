@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EncounterTableEntry } from '~/types/encounterTable'
+import { encounterTableDisplayEntryCountLabel } from '~/utils/encounterTables'
 
 defineProps<{
   entry: EncounterTableEntry
@@ -20,7 +21,7 @@ const emit = defineEmits<{
     <span class="table-name">{{ entry.table.name }}</span>
     <span class="table-meta">
       Lv {{ entry.table.min_level }}–{{ entry.table.max_level }} ·
-      {{ entry.table.entries.length }} entries
+      {{ encounterTableDisplayEntryCountLabel(entry.table) }}
     </span>
   </button>
 </template>

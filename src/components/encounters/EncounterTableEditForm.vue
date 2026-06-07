@@ -4,6 +4,8 @@ import { formatEncounterChancePercent } from '#shared/encounterTables'
 import type { EncounterTable } from '~/types/encounterTable'
 import {
   createEncounterTableEditRow,
+  encounterEditRowHasLevelRange,
+  encounterEditRowIsNothing,
   encounterTableEditModelToTable,
   encounterTableEditTotalWeight,
   encounterTableToEditModel,
@@ -42,6 +44,8 @@ watch(
 )
 
 const totalWeight = computed(() => encounterTableEditTotalWeight(model.value.rows))
+const pokemonRowCount = computed(() => model.value.rows.filter((row) => !encounterEditRowIsNothing(row)).length)
+const nothingRowCount = computed(() => model.value.rows.filter(encounterEditRowIsNothing).length)
 const encounterChanceLabel = (weight: number): string => {
   const numericWeight = Number(weight)
   if (!Number.isFinite(numericWeight) || numericWeight <= 0 || totalWeight.value <= 0) return '—'
@@ -58,11 +62,17 @@ const addRow = () => {
   }
 }
 
+const canRemoveRow = (row: EncounterTableEditModel['rows'][number]): boolean => {
+  if (encounterEditRowIsNothing(row)) return nothingRowCount.value > 1
+  return pokemonRowCount.value > 1
+}
+
 const removeRow = (id: string) => {
-  if (model.value.rows.length <= 1) return
+  const row = model.value.rows.find((candidate) => candidate.id === id)
+  if (!row || !canRemoveRow(row)) return
   model.value = {
     ...model.value,
-    rows: model.value.rows.filter((row) => row.id !== id),
+    rows: model.value.rows.filter((candidate) => candidate.id !== id),
   }
 }
 
@@ -107,7 +117,7 @@ const save = () => {
     </section>
 
     <div class="table-heading">
-      <span>Pokémon</span>
+      <span>Entry</span>
       <span>Weight</span>
       <span>Min Lv</span>
       <span>Max Lv</span>
@@ -128,21 +138,23 @@ const save = () => {
         <span class="sr-only">Row {{ index + 1 }} encounter weight</span>
         <input v-model.number="row.weight" type="number" min="1" :disabled="saving" />
       </label>
-      <label class="field">
+      <label v-if="encounterEditRowHasLevelRange(row)" class="field">
         <span class="sr-only">Row {{ index + 1 }} minimum level</span>
         <input v-model.number="row.minLevel" type="number" min="1" max="100" :disabled="saving" />
       </label>
-      <label class="field">
+      <div v-else class="no-level-range" aria-label="No level range for Nothing">—</div>
+      <label v-if="encounterEditRowHasLevelRange(row)" class="field">
         <span class="sr-only">Row {{ index + 1 }} maximum level</span>
         <input v-model.number="row.maxLevel" type="number" min="1" max="100" :disabled="saving" />
       </label>
+      <div v-else class="no-level-range" aria-label="No level range for Nothing">—</div>
       <output class="row-chance" :aria-label="`Row ${index + 1} calculated encounter chance`">
         {{ encounterChanceLabel(row.weight) }}
       </output>
       <button
         type="button"
         class="row-remove"
-        :disabled="saving || model.rows.length <= 1"
+        :disabled="saving || !canRemoveRow(row)"
         @click="removeRow(row.id)"
       >
         Remove
@@ -151,7 +163,7 @@ const save = () => {
 
     <div class="edit-summary">
       Total weight: {{ totalWeight }}
-      <span class="summary-note">Chances are calculated from relative weights when rolling.</span>
+      <span class="summary-note">Nothing has no level range; when rolled, that slot produces no Pokémon.</span>
     </div>
 
     <ul v-if="validationErrors.length || localError || error" class="edit-errors">
@@ -315,18 +327,27 @@ input:disabled {
   position: relative;
 }
 
-.row-chance {
+.row-chance,
+.no-level-range {
   display: inline-flex;
   align-items: center;
   min-height: 2.5rem;
   border: 1px solid var(--rule-soft);
   background: var(--paper-inset);
-  color: var(--good);
   padding: 0.55rem 0.7rem;
   font-family: var(--font-mono);
   font-size: 0.86rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.row-chance {
+  color: var(--good);
+}
+
+.no-level-range {
+  justify-content: center;
+  color: var(--ink-muted);
 }
 
 .row-remove,

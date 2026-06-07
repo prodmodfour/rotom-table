@@ -1,3 +1,6 @@
+export const ENCOUNTER_NOTHING_SPECIES = 'Nothing'
+export const DEFAULT_ENCOUNTER_NOTHING_WEIGHT = 60
+
 export interface EncounterTableRollEntryObject {
   /** Relative chance weight for this row. Preferred for newly edited tables. */
   weight?: number
@@ -32,6 +35,19 @@ export interface EncounterTableRollEntryNormalizationContext {
 
 const DEFAULT_LEVEL_RANGE: EncounterTableLevelRange = { min_level: 1, max_level: 1 }
 
+export const isEncounterNothingSpecies = (species: unknown): boolean =>
+  String(species ?? '').trim().toLowerCase() === ENCOUNTER_NOTHING_SPECIES.toLowerCase()
+
+const normalizeEncounterSpecies = (species: unknown): string => {
+  const normalized = String(species ?? '').trim()
+  return isEncounterNothingSpecies(normalized) ? ENCOUNTER_NOTHING_SPECIES : normalized
+}
+
+export const defaultNothingEncounterRollEntry = (): EncounterTableRollEntryObject => ({
+  weight: DEFAULT_ENCOUNTER_NOTHING_WEIGHT,
+  species: ENCOUNTER_NOTHING_SPECIES,
+})
+
 const coerceInteger = (value: unknown, fallback: number): number => {
   const numberValue = Number(value)
   return Number.isFinite(numberValue) ? Math.round(numberValue) : fallback
@@ -61,6 +77,24 @@ export const normalizeEncounterLevelRange = (
 const isEncounterRollEntryObject = (
   entry: EncounterTableRollEntry,
 ): entry is EncounterTableRollEntryObject => !Array.isArray(entry)
+
+const encounterRollEntrySpecies = (entry: EncounterTableRollEntry): unknown =>
+  isEncounterRollEntryObject(entry) ? entry.species : entry[1]
+
+export const isEncounterNothingRollEntry = (entry: EncounterTableRollEntry): boolean =>
+  isEncounterNothingSpecies(encounterRollEntrySpecies(entry))
+
+export const isNormalizedEncounterNothingEntry = (
+  entry: Pick<NormalizedEncounterTableRollEntry, 'species'>,
+): boolean => isEncounterNothingSpecies(entry.species)
+
+export const withDefaultNothingEncounterEntry = (
+  entries: ReadonlyArray<EncounterTableRollEntry>,
+): EncounterTableRollEntry[] => (
+  entries.some(isEncounterNothingRollEntry)
+    ? [...entries]
+    : [...entries, defaultNothingEncounterRollEntry()]
+)
 
 const hasOwnDefinedProperty = (record: Record<string, unknown>, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key) && record[key] !== undefined && record[key] !== null
@@ -96,7 +130,7 @@ export const normalizeEncounterTableRollEntry = (
     const levels = normalizeEncounterLevelRange(entry.min_level, entry.max_level, fallback)
     return {
       weight: weightForEntry(entry, context.previousCeiling ?? 0),
-      species: String(entry.species ?? '').trim(),
+      species: normalizeEncounterSpecies(entry.species),
       ...levels,
     }
   }
@@ -104,10 +138,19 @@ export const normalizeEncounterTableRollEntry = (
   const levels = normalizeEncounterLevelRange(entry[2], entry[3], fallback)
   return {
     weight: weightForEntry(entry, context.previousCeiling ?? 0),
-    species: String(entry[1] ?? '').trim(),
+    species: normalizeEncounterSpecies(entry[1]),
     ...levels,
   }
 }
+
+export const withDefaultNothingNormalizedEncounterEntry = (
+  entries: ReadonlyArray<NormalizedEncounterTableRollEntry>,
+  fallback: EncounterTableLevelRange = DEFAULT_LEVEL_RANGE,
+): NormalizedEncounterTableRollEntry[] => (
+  entries.some(isNormalizedEncounterNothingEntry)
+    ? [...entries]
+    : [...entries, normalizeEncounterTableRollEntry(defaultNothingEncounterRollEntry(), fallback)]
+)
 
 export const normalizeEncounterTableRollEntries = (
   entries: ReadonlyArray<EncounterTableRollEntry>,
@@ -121,14 +164,30 @@ export const normalizeEncounterTableRollEntries = (
   })
 }
 
+export const normalizeEncounterTableRollEntriesWithDefaultNothing = (
+  entries: ReadonlyArray<EncounterTableRollEntry>,
+  fallback: EncounterTableLevelRange,
+): NormalizedEncounterTableRollEntry[] =>
+  normalizeEncounterTableRollEntries(withDefaultNothingEncounterEntry(entries), fallback)
+
 export const serializeEncounterTableRollEntry = (
   entry: NormalizedEncounterTableRollEntry,
-): EncounterTableRollEntryObject => ({
-  weight: clampEncounterWeight(entry.weight),
-  species: String(entry.species ?? '').trim(),
-  min_level: clampEncounterLevel(entry.min_level),
-  max_level: clampEncounterLevel(entry.max_level),
-})
+): EncounterTableRollEntryObject => {
+  const species = normalizeEncounterSpecies(entry.species)
+  if (isEncounterNothingSpecies(species)) {
+    return {
+      weight: clampEncounterWeight(entry.weight),
+      species: ENCOUNTER_NOTHING_SPECIES,
+    }
+  }
+
+  return {
+    weight: clampEncounterWeight(entry.weight),
+    species,
+    min_level: clampEncounterLevel(entry.min_level),
+    max_level: clampEncounterLevel(entry.max_level),
+  }
+}
 
 export const totalEncounterWeight = (
   entries: ReadonlyArray<Pick<NormalizedEncounterTableRollEntry, 'weight'>>,
@@ -179,3 +238,7 @@ export const formatEncounterLevelRange = (range: EncounterTableLevelRange): stri
   range.min_level === range.max_level
     ? `Lv ${range.min_level}`
     : `Lv ${range.min_level}–${range.max_level}`
+
+export const formatEncounterEntryLevelRange = (
+  entry: Pick<NormalizedEncounterTableRollEntry, 'species' | 'min_level' | 'max_level'>,
+): string => isNormalizedEncounterNothingEntry(entry) ? '—' : formatEncounterLevelRange(entry)

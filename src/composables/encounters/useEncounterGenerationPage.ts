@@ -37,6 +37,7 @@ export interface UseEncounterGenerationPageOptions {
   fetchGenerate?: (body: EncounterGenerateRequestBody) => Promise<EncounterGenerateResult>
   fetchSpawn?: (body: EncounterSpawnRequestBody) => Promise<EncounterGenerateResult>
   clientId?: () => string
+  random?: () => number
 }
 
 export const useEncounterGenerationPage = ({
@@ -47,6 +48,7 @@ export const useEncounterGenerationPage = ({
   fetchGenerate = (body) => useApiClient().postJson<EncounterGenerateResult>(ENCOUNTER_API_PATHS.generate, body),
   fetchSpawn = (body) => useApiClient().postJson<EncounterGenerateResult>(ENCOUNTER_API_PATHS.spawn, body),
   clientId = getClientId,
+  random = Math.random,
 }: UseEncounterGenerationPageOptions) => {
   const allTables = computed(() => Array.from(toValue(entries)))
   const allMaps = computed(() => Array.from(toValue(maps)))
@@ -100,8 +102,8 @@ export const useEncounterGenerationPage = ({
   const rolledPreview = ref<RolledEncounter[]>([])
   const rollPreview = () => {
     if (!selectedTable.value) return
-    const encounterCount = randomEncounterGenerateCount({ min: countMin.value, max: countMax.value })
-    rolledPreview.value = rollEncounters(selectedTable.value.table, encounterCount)
+    const encounterCount = randomEncounterGenerateCount({ min: countMin.value, max: countMax.value }, random)
+    rolledPreview.value = rollEncounters(selectedTable.value.table, encounterCount, random)
   }
 
   watch(

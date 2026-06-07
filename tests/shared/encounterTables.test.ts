@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DEFAULT_ENCOUNTER_NOTHING_WEIGHT,
+  ENCOUNTER_NOTHING_SPECIES,
   formatEncounterChancePercent,
+  formatEncounterEntryLevelRange,
   formatEncounterLevelRange,
   normalizeEncounterLevelRange,
   normalizeEncounterTableRollEntries,
+  normalizeEncounterTableRollEntriesWithDefaultNothing,
   normalizeEncounterTableRollEntry,
   serializeEncounterTableRollEntry,
   totalEncounterWeight,
@@ -45,6 +49,22 @@ describe('shared encounter table helpers', () => {
       { species: 'Oddish', weight: 75 },
     ])
     expect(totalEncounterWeight(entries)).toBe(100)
+  })
+
+  it('adds a default Nothing row when table-level entries omit it', () => {
+    const entries = normalizeEncounterTableRollEntriesWithDefaultNothing([
+      { weight: 40, species: 'Pidgey', min_level: 2, max_level: 4 },
+    ], { min_level: 2, max_level: 4 })
+
+    expect(entries.map(({ species, weight }) => ({ species, weight }))).toEqual([
+      { species: 'Pidgey', weight: 40 },
+      { species: ENCOUNTER_NOTHING_SPECIES, weight: DEFAULT_ENCOUNTER_NOTHING_WEIGHT },
+    ])
+    expect(formatEncounterEntryLevelRange(entries[1])).toBe('—')
+    expect(serializeEncounterTableRollEntry(entries[1])).toEqual({
+      weight: DEFAULT_ENCOUNTER_NOTHING_WEIGHT,
+      species: ENCOUNTER_NOTHING_SPECIES,
+    })
   })
 
   it('serializes weighted entries and formats level ranges/chances', () => {

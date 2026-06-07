@@ -61,7 +61,10 @@ describe('encounter table storage', () => {
     const created = createEncounterTableFile('vale', 'Forest Path', root)
     expect(created.entry.region).toBe('vale')
     expect(created.entry.key).toBe('forest-path')
-    expect(created.entry.table.entries).toEqual([{ weight: 1, species: 'Pidgey', min_level: 1, max_level: 5 }])
+    expect(created.entry.table.entries).toEqual([
+      { weight: 1, species: 'Pidgey', min_level: 1, max_level: 5 },
+      { weight: 60, species: 'Nothing' },
+    ])
 
     const renamed = renameEncounterTableFile('vale', 'forest-path', 'River Bank', root)
     expect(renamed?.entry).toMatchObject({ region: 'vale', key: 'river-bank' })

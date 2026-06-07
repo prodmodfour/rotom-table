@@ -30,6 +30,11 @@ const statusMessageFor = (fn: () => unknown): string | undefined => {
   return error?.statusMessage ?? error?.message
 }
 
+const sequenceRandom = (...values: number[]) => {
+  let index = 0
+  return () => values[index++] ?? values[values.length - 1] ?? 0
+}
+
 const table: EncounterTable = {
   name: 'Test Table',
   min_level: 3,
@@ -105,8 +110,10 @@ describe('server encounter generation helpers', () => {
     const first = rollEncounterTable(table, () => 0)
     expect(first).toEqual({ species: 'Pidgey', level: 3, roll: 1 })
 
-    const second = rollEncounterTable(table, () => 0.99)
+    const second = rollEncounterTable(table, sequenceRandom(0.05, 0.99))
     expect(second).toEqual({ species: 'Rattata', level: 5, roll: 4 })
+
+    expect(rollEncounterTable(table, () => 0.99)).toBeNull()
 
     const perRow = rollEncounterTable({
       ...table,
@@ -117,7 +124,7 @@ describe('server encounter generation helpers', () => {
     }, () => 0)
     expect(perRow).toEqual({ species: 'Oddish', level: 10, roll: 1 })
 
-    expect(rollEncounterTable({ ...table, entries: [] }, () => 0.5).species).toBe('Magikarp')
+    expect(rollEncounterTable({ ...table, entries: [] }, () => 0.5)).toBeNull()
   })
 
   it('allocates unique output directories without touching the filesystem', () => {

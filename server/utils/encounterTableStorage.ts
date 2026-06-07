@@ -8,6 +8,10 @@ import {
   unlinkSync,
 } from 'node:fs'
 import { basename, dirname, relative, resolve, sep } from 'node:path'
+import {
+  DEFAULT_ENCOUNTER_NOTHING_WEIGHT,
+  ENCOUNTER_NOTHING_SPECIES,
+} from '#shared/encounterTables'
 import { SAFE_FOLDER_SEGMENT_RE, slugify as sharedSlugify } from '#shared/paths'
 import type { EncounterTable, EncounterTableEntry } from '~/types/encounterTable'
 import { CAMPAIGN_ENCOUNTER_TABLES_ROOT, campaignPathLabel } from './campaignPaths'
@@ -45,7 +49,10 @@ export const defaultEncounterTable = (name = DEFAULT_ENCOUNTER_TABLE_NAME): Enco
   name,
   min_level: 1,
   max_level: 5,
-  entries: [{ weight: 1, species: 'Pidgey', min_level: 1, max_level: 5 }],
+  entries: [
+    { weight: 1, species: 'Pidgey', min_level: 1, max_level: 5 },
+    { weight: DEFAULT_ENCOUNTER_NOTHING_WEIGHT, species: ENCOUNTER_NOTHING_SPECIES },
+  ],
 })
 
 export const ensureEncounterTablesRoot = (root = ENCOUNTER_TABLES_ROOT): void => {

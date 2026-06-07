@@ -4,7 +4,7 @@ import LibraryCardBadge from '~/components/library/LibraryCardBadge.vue'
 import LibraryCardMedia from '~/components/library/LibraryCardMedia.vue'
 import LibraryCardMetaList from '~/components/library/LibraryCardMetaList.vue'
 import LibraryCardText from '~/components/library/LibraryCardText.vue'
-import { formatRegionLabel, formatTableLabel } from '~/utils/encounterTables'
+import { encounterTableDisplayEntryCountLabel, formatRegionLabel, formatTableLabel } from '~/utils/encounterTables'
 import type { EncounterTableEntry } from '~/types/encounterTable'
 
 defineProps<{
@@ -42,7 +42,7 @@ const emit = defineEmits<{
 
     <LibraryCardText
       :title="item.table.name"
-      :subtitle="`Lv ${item.table.min_level}–${item.table.max_level} · ${item.table.entries.length} entr${item.table.entries.length === 1 ? 'y' : 'ies'}`"
+      :subtitle="`Lv ${item.table.min_level}–${item.table.max_level} · ${encounterTableDisplayEntryCountLabel(item.table)}`"
       title-size="compact"
       subtitle-tone="muted"
       subtitle-size="compact"

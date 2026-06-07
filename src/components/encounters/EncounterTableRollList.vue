@@ -11,7 +11,7 @@ defineProps<{
     <div class="entry-row entry-row--head">
       <span class="entry-weight">Weight</span>
       <span class="entry-chance">Chance</span>
-      <span class="entry-species">Species</span>
+      <span class="entry-species">Entry</span>
       <span class="entry-levels">Levels</span>
     </div>
     <div

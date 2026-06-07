@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EncounterTableEntry } from '~/types/encounterTable'
-import { formatRegionLabel, formatTableLabel } from '~/utils/encounterTables'
+import { encounterTableDisplayEntryCountLabel, formatRegionLabel, formatTableLabel } from '~/utils/encounterTables'
 
 defineProps<{
   selectedTable: EncounterTableEntry | null
@@ -13,7 +13,7 @@ defineProps<{
       Lv {{ selectedTable.table.min_level }}–{{ selectedTable.table.max_level }}
     </span>
     <span class="meta-pill">
-      {{ selectedTable.table.entries.length }} entries
+      {{ encounterTableDisplayEntryCountLabel(selectedTable.table) }}
     </span>
     <span class="meta-pill subtle">
       {{ formatRegionLabel(selectedTable.region) }} /

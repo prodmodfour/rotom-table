@@ -19,6 +19,8 @@ const maps: MapSummary[] = [
   },
 ]
 
+const avoidNothing = () => 0
+
 const result = (body: EncounterGenerateRequestBody): EncounterGenerateResult => ({
   ok: true,
   dir: '/tmp/out',
@@ -36,6 +38,7 @@ describe('useEncounterGenerationPage', () => {
     const page = useEncounterGenerationPage({
       query: { region: firstEntry!.region, table: firstEntry!.key },
       fetchGenerate: async (body) => result(body),
+      random: avoidNothing,
     })
 
     await nextTick()
@@ -53,6 +56,7 @@ describe('useEncounterGenerationPage', () => {
       query: { region: firstEntry!.region, table: firstEntry!.key },
       replaceQuery,
       fetchGenerate: async (body) => result(body),
+      random: avoidNothing,
     })
 
     page.region.value = alternateRegion
@@ -68,6 +72,7 @@ describe('useEncounterGenerationPage', () => {
     const page = useEncounterGenerationPage({
       query: { region: firstEntry!.region, table: firstEntry!.key },
       fetchGenerate: async (body) => result(body),
+      random: avoidNothing,
     })
 
     page.countMin.value = 4
@@ -88,6 +93,7 @@ describe('useEncounterGenerationPage', () => {
     const page = useEncounterGenerationPage({
       query: { region: firstEntry!.region, table: firstEntry!.key },
       fetchGenerate,
+      random: avoidNothing,
     })
     page.countMin.value = 0
     page.countMax.value = 999
@@ -127,6 +133,7 @@ describe('useEncounterGenerationPage', () => {
       fetchGenerate: async (body) => result(body),
       fetchSpawn,
       clientId: () => 'client-1',
+      random: avoidNothing,
     })
     page.outRoot.value = 'data/sheets/test'
 
@@ -154,6 +161,7 @@ describe('useEncounterGenerationPage', () => {
       maps,
       fetchGenerate: async (body) => result(body),
       fetchSpawn,
+      random: avoidNothing,
     })
     page.preview.value = true
 
@@ -167,6 +175,7 @@ describe('useEncounterGenerationPage', () => {
     const page = useEncounterGenerationPage({
       query: { region: firstEntry!.region, table: firstEntry!.key },
       fetchGenerate: async () => { throw { data: { statusMessage: 'Generation failed' } } },
+      random: avoidNothing,
     })
     page.result.value = result({ region: firstEntry!.region, table: firstEntry!.key, countMin: 1, countMax: 1, outRoot: 'x', preview: false })
 
@@ -185,6 +194,7 @@ describe('useEncounterGenerationPage', () => {
       query: { region: 'custom', table: 'forest' },
       entries,
       fetchGenerate: async (body) => result(body),
+      random: avoidNothing,
     })
 
     expect(page.regions.value).toEqual(['custom'])
@@ -205,6 +215,7 @@ describe('useEncounterGenerationPage', () => {
       query: {},
       entries,
       fetchGenerate: async (body) => result(body),
+      random: avoidNothing,
     })
 
     expect(page.selectedTable.value).toBeNull()
@@ -223,6 +234,7 @@ describe('useEncounterGenerationPage', () => {
     const page = useEncounterGenerationPage({
       query: { region: firstEntry!.region, table: firstEntry!.key },
       fetchGenerate: async (body) => result(body),
+      random: avoidNothing,
     })
 
     expect(page.isOpen('a.json')).toBe(false)

@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs'
 import { join as joinPath, resolve, sep } from 'node:path'
 import {
-  normalizeEncounterTableRollEntries,
+  isNormalizedEncounterNothingEntry,
+  normalizeEncounterTableRollEntriesWithDefaultNothing,
   randomEncounterInt as sharedRandomEncounterInt,
   selectWeightedEncounterEntry,
 } from '#shared/encounterTables'
@@ -127,15 +128,17 @@ export const randomEncounterGenerateCount = randomEncounterGenerateCountFromRang
 export const rollEncounterTable = (
   table: EncounterTable,
   random: () => number = Math.random,
-): RolledEncounter => {
+): RolledEncounter | null => {
   const fallback = { min_level: table.min_level, max_level: table.max_level }
-  const entries = normalizeEncounterTableRollEntries(table.entries, fallback)
+  const entries = normalizeEncounterTableRollEntriesWithDefaultNothing(table.entries, fallback)
   const selection = selectWeightedEncounterEntry(entries, random)
   const entry = selection.entry
 
+  if (!entry || isNormalizedEncounterNothingEntry(entry)) return null
+
   return {
-    species: entry?.species || 'Magikarp',
-    level: randomEncounterInt(entry?.min_level ?? table.min_level, entry?.max_level ?? table.max_level, random),
+    species: entry.species,
+    level: randomEncounterInt(entry.min_level, entry.max_level, random),
     roll: selection.roll,
   }
 }
