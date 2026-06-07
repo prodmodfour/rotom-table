@@ -14730,418 +14730,6 @@
     "clearance": 2
   },
   {
-    "species": "Hp:",
-    "types": [
-      "Normal",
-      "Flying"
-    ],
-    "base_stats": {
-      "hp": 5,
-      "atk": 7,
-      "def": 6,
-      "spatk": 6,
-      "spdef": 6,
-      "spd": 6
-    },
-    "abilities": {
-      "basic": [
-        "Keen Eye",
-        "Inner Focus"
-      ],
-      "advanced": [
-        "Defiant",
-        "Super Luck"
-      ],
-      "high": [
-        "Leek Mastery"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Farfetch’d",
-        "min_level": 0
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 0,
-    "size": "Huge",
-    "weight": 2,
-    "genderless": false,
-    "male_pct": 50,
-    "female_pct": 50,
-    "egg_groups": [
-      "Flying",
-      "Field"
-    ],
-    "hatch_rate": "10 Days",
-    "diet": [
-      "Herbivore"
-    ],
-    "habitat": [
-      "Freshwater",
-      "Grassland",
-      "Marsh"
-    ],
-    "capabilities": {
-      "overland": 3,
-      "sky": 7,
-      "swim": 2,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "2/2",
-      "power": 3,
-      "other": [
-        "Underdog",
-        "Wielder"
-      ]
-    },
-    "skills": {
-      "Athletics": "4d6+1",
-      "Acrobatics": "4d6+2",
-      "Combat": "4d6",
-      "Stealth": "4d6+2",
-      "Perception": "4d6+2",
-      "Focus": "3d6+2"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Leer",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Peck",
-        "type": "Flying"
-      },
-      {
-        "level": 1,
-        "name": "Sand Attack",
-        "type": "Ground"
-      },
-      {
-        "level": 7,
-        "name": "Fury Attack",
-        "type": "Normal"
-      },
-      {
-        "level": 9,
-        "name": "Knock Off",
-        "type": "Dark"
-      },
-      {
-        "level": 13,
-        "name": "Aerial Ace",
-        "type": "Flying"
-      },
-      {
-        "level": 19,
-        "name": "Slash",
-        "type": "Normal"
-      },
-      {
-        "level": 21,
-        "name": "Air Cutter",
-        "type": "Flying"
-      },
-      {
-        "level": 25,
-        "name": "Swords Dance",
-        "type": "Normal"
-      },
-      {
-        "level": 31,
-        "name": "Agility",
-        "type": "Psychic"
-      },
-      {
-        "level": 33,
-        "name": "Night Slash",
-        "type": "Dark"
-      },
-      {
-        "level": 37,
-        "name": "Acrobatics",
-        "type": "Flying"
-      },
-      {
-        "level": 43,
-        "name": "Feint",
-        "type": "Normal"
-      },
-      {
-        "level": 45,
-        "name": "False Swipe",
-        "type": "Normal"
-      },
-      {
-        "level": 49,
-        "name": "Air Slash",
-        "type": "Flying"
-      },
-      {
-        "level": 55,
-        "name": "Brave Bird",
-        "type": "Flying"
-      }
-    ],
-    "tm_hm_moves": [
-      {
-        "kind": "HM",
-        "number": "01",
-        "name": "Cut"
-      },
-      {
-        "kind": "HM",
-        "number": "02",
-        "name": "Fly"
-      },
-      {
-        "kind": "TM",
-        "number": "06",
-        "name": "Toxic"
-      },
-      {
-        "kind": "TM",
-        "number": "10",
-        "name": "Hidden Power"
-      },
-      {
-        "kind": "TM",
-        "number": "11",
-        "name": "Sunny Day"
-      },
-      {
-        "kind": "TM",
-        "number": "17",
-        "name": "Protect"
-      },
-      {
-        "kind": "TM",
-        "number": "19",
-        "name": "Roost"
-      },
-      {
-        "kind": "TM",
-        "number": "21",
-        "name": "Frustration"
-      },
-      {
-        "kind": "TM",
-        "number": "27",
-        "name": "Return"
-      },
-      {
-        "kind": "TM",
-        "number": "32",
-        "name": "Double Team"
-      },
-      {
-        "kind": "TM",
-        "number": "40",
-        "name": "Aerial Ace"
-      },
-      {
-        "kind": "TM",
-        "number": "42",
-        "name": "Facade"
-      },
-      {
-        "kind": "TM",
-        "number": "44",
-        "name": "Rest"
-      },
-      {
-        "kind": "TM",
-        "number": "45",
-        "name": "Attract"
-      },
-      {
-        "kind": "TM",
-        "number": "46",
-        "name": "Thief"
-      },
-      {
-        "kind": "TM",
-        "number": "48",
-        "name": "Round"
-      },
-      {
-        "kind": "TM",
-        "number": "51",
-        "name": "Steel Wing"
-      },
-      {
-        "kind": "TM",
-        "number": "54",
-        "name": "False Swipe"
-      },
-      {
-        "kind": "TM",
-        "number": "62",
-        "name": "Acrobatics"
-      },
-      {
-        "kind": "TM",
-        "number": "67",
-        "name": "Retaliate"
-      },
-      {
-        "kind": "TM",
-        "number": "75",
-        "name": "Swords Dance"
-      },
-      {
-        "kind": "TM",
-        "number": "77",
-        "name": "Psych Up"
-      },
-      {
-        "kind": "TM",
-        "number": "84",
-        "name": "Poison Jab"
-      },
-      {
-        "kind": "TM",
-        "number": "87",
-        "name": "Swagger"
-      },
-      {
-        "kind": "TM",
-        "number": "88",
-        "name": "Sleep Talk"
-      },
-      {
-        "kind": "TM",
-        "number": "89",
-        "name": "U-Turn"
-      },
-      {
-        "kind": "TM",
-        "number": "90",
-        "name": "Substitute"
-      }
-    ],
-    "egg_moves": [
-      "Covet",
-      "Curse",
-      "Feather Dance",
-      "Flail",
-      "Foresight",
-      "Gust",
-      "Leaf Blade",
-      "Mirror Move",
-      "Mud-Slap",
-      "Night Slash",
-      "Quick Attack",
-      "Revenge",
-      "Roost",
-      "Simple Beam",
-      "Steel Wing",
-      "Trump Card"
-    ],
-    "tutor_moves": [
-      {
-        "name": "Air Cutter",
-        "heart_scale": false
-      },
-      {
-        "name": "Body Slam",
-        "heart_scale": false
-      },
-      {
-        "name": "Brave Bird",
-        "heart_scale": true
-      },
-      {
-        "name": "Covet",
-        "heart_scale": false
-      },
-      {
-        "name": "Double-Edge",
-        "heart_scale": false
-      },
-      {
-        "name": "Fury Cutter",
-        "heart_scale": true
-      },
-      {
-        "name": "Heat Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Helping Hand",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Tail",
-        "heart_scale": false
-      },
-      {
-        "name": "Knock Off",
-        "heart_scale": false
-      },
-      {
-        "name": "Last Resort",
-        "heart_scale": false
-      },
-      {
-        "name": "Mud-Slap",
-        "heart_scale": false
-      },
-      {
-        "name": "Ominous Wind",
-        "heart_scale": false
-      },
-      {
-        "name": "Pluck",
-        "heart_scale": false
-      },
-      {
-        "name": "Poison Jab",
-        "heart_scale": true
-      },
-      {
-        "name": "Roost",
-        "heart_scale": false
-      },
-      {
-        "name": "Sky Attack",
-        "heart_scale": false
-      },
-      {
-        "name": "Sleep Talk",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Swift",
-        "heart_scale": false
-      },
-      {
-        "name": "Tailwind",
-        "heart_scale": false
-      },
-      {
-        "name": "Twister",
-        "heart_scale": false
-      },
-      {
-        "name": "Uproar",
-        "heart_scale": false
-      },
-      {
-        "name": "Work Up",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen1"
-  },
-  {
     "species": "Fearow",
     "types": [
       "Normal",
@@ -36300,748 +35888,6 @@
     "height": 1.3,
     "base": 1,
     "clearance": 1
-  },
-  {
-    "species": "Hp:",
-    "types": [
-      "Poison"
-    ],
-    "base_stats": {
-      "hp": 6,
-      "atk": 5,
-      "def": 5,
-      "spatk": 4,
-      "spdef": 4,
-      "spd": 4
-    },
-    "abilities": {
-      "basic": [
-        "Poison Point",
-        "Rivalry"
-      ],
-      "advanced": [
-        "Hustle",
-        "Celebrate"
-      ],
-      "high": [
-        "Bodyguard"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Nidoran F",
-        "min_level": 0
-      },
-      {
-        "stage": 2,
-        "species": "Nidorina",
-        "min_level": 15
-      },
-      {
-        "stage": 3,
-        "species": "Nidoqueen",
-        "min_level": 25
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
-    "size": "Huge",
-    "weight": 1,
-    "genderless": false,
-    "male_pct": 0,
-    "female_pct": 100,
-    "egg_groups": [
-      "Monster",
-      "Field"
-    ],
-    "hatch_rate": "10 Days",
-    "diet": [
-      "Herbivore"
-    ],
-    "habitat": [
-      "Grassland"
-    ],
-    "capabilities": {
-      "overland": 5,
-      "sky": 0,
-      "swim": 3,
-      "levitate": 0,
-      "burrow": 2,
-      "jump": "1/1",
-      "power": 2,
-      "other": [
-        "Naturewalk (Grassland)",
-        "Underdog"
-      ]
-    },
-    "skills": {
-      "Athletics": "2d6+1",
-      "Acrobatics": "2d6",
-      "Combat": "3d6",
-      "Stealth": "3d6+1",
-      "Perception": "2d6",
-      "Focus": "2d6"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Growl",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Scratch",
-        "type": "Normal"
-      },
-      {
-        "level": 7,
-        "name": "Tail Whip",
-        "type": "Normal"
-      },
-      {
-        "level": 9,
-        "name": "Double Kick",
-        "type": "Fighting"
-      },
-      {
-        "level": 13,
-        "name": "Poison Sting",
-        "type": "Poison"
-      },
-      {
-        "level": 19,
-        "name": "Fury Swipes",
-        "type": "Normal"
-      },
-      {
-        "level": 21,
-        "name": "Bite",
-        "type": "Dark"
-      },
-      {
-        "level": 25,
-        "name": "Helping Hand",
-        "type": "Normal"
-      },
-      {
-        "level": 31,
-        "name": "Toxic Spikes",
-        "type": "Poison"
-      },
-      {
-        "level": 33,
-        "name": "Flatter",
-        "type": "Dark"
-      },
-      {
-        "level": 37,
-        "name": "Crunch",
-        "type": "Dark"
-      },
-      {
-        "level": 43,
-        "name": "Captivate",
-        "type": "Normal"
-      },
-      {
-        "level": 45,
-        "name": "Poison Fang",
-        "type": "Poison"
-      }
-    ],
-    "tm_hm_moves": [
-      {
-        "kind": "HM",
-        "number": "01",
-        "name": "Cut"
-      },
-      {
-        "kind": "HM",
-        "number": "04",
-        "name": "Strength"
-      },
-      {
-        "kind": "TM",
-        "number": "01",
-        "name": "Hone Claws"
-      },
-      {
-        "kind": "TM",
-        "number": "06",
-        "name": "Toxic"
-      },
-      {
-        "kind": "TM",
-        "number": "09",
-        "name": "Venoshock"
-      },
-      {
-        "kind": "TM",
-        "number": "10",
-        "name": "Hidden Power"
-      },
-      {
-        "kind": "TM",
-        "number": "11",
-        "name": "Sunny Day"
-      },
-      {
-        "kind": "TM",
-        "number": "13",
-        "name": "Ice Beam"
-      },
-      {
-        "kind": "TM",
-        "number": "14",
-        "name": "Blizzard"
-      },
-      {
-        "kind": "TM",
-        "number": "17",
-        "name": "Protect"
-      },
-      {
-        "kind": "TM",
-        "number": "18",
-        "name": "Rain Dance"
-      },
-      {
-        "kind": "TM",
-        "number": "21",
-        "name": "Frustration"
-      },
-      {
-        "kind": "TM",
-        "number": "24",
-        "name": "Thunderbolt"
-      },
-      {
-        "kind": "TM",
-        "number": "25",
-        "name": "Thunder"
-      },
-      {
-        "kind": "TM",
-        "number": "27",
-        "name": "Return"
-      },
-      {
-        "kind": "TM",
-        "number": "28",
-        "name": "Dig"
-      },
-      {
-        "kind": "TM",
-        "number": "32",
-        "name": "Double Team"
-      },
-      {
-        "kind": "TM",
-        "number": "36",
-        "name": "Sludge Bomb"
-      },
-      {
-        "kind": "TM",
-        "number": "40",
-        "name": "Aerial Ace"
-      },
-      {
-        "kind": "TM",
-        "number": "42",
-        "name": "Facade"
-      },
-      {
-        "kind": "TM",
-        "number": "44",
-        "name": "Rest"
-      },
-      {
-        "kind": "TM",
-        "number": "45",
-        "name": "Attract"
-      },
-      {
-        "kind": "TM",
-        "number": "46",
-        "name": "Thief"
-      },
-      {
-        "kind": "TM",
-        "number": "48",
-        "name": "Round"
-      },
-      {
-        "kind": "TM",
-        "number": "65",
-        "name": "Shadow Claw"
-      },
-      {
-        "kind": "TM",
-        "number": "84",
-        "name": "Poison Jab"
-      },
-      {
-        "kind": "TM",
-        "number": "87",
-        "name": "Swagger"
-      },
-      {
-        "kind": "TM",
-        "number": "88",
-        "name": "Sleep Talk"
-      },
-      {
-        "kind": "TM",
-        "number": "90",
-        "name": "Substitute"
-      },
-      {
-        "kind": "TM",
-        "number": "94",
-        "name": "Rock Smash"
-      }
-    ],
-    "egg_moves": [
-      "Beat Up",
-      "Charm",
-      "Chip Away",
-      "Counter",
-      "Disable",
-      "Endure",
-      "Focus Energy",
-      "Iron Tail",
-      "Poison Tail",
-      "Pursuit",
-      "Supersonic",
-      "Take Down",
-      "Venom Drench"
-    ],
-    "tutor_moves": [
-      {
-        "name": "Body Slam",
-        "heart_scale": false
-      },
-      {
-        "name": "Defense Curl",
-        "heart_scale": false
-      },
-      {
-        "name": "Double-Edge",
-        "heart_scale": false
-      },
-      {
-        "name": "Helping Hand",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Tail",
-        "heart_scale": false
-      },
-      {
-        "name": "Mud-Slap",
-        "heart_scale": false
-      },
-      {
-        "name": "Shock Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Sleep Talk",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Super Fang",
-        "heart_scale": false
-      },
-      {
-        "name": "Water Pulse",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen1"
-  },
-  {
-    "species": "Hp:",
-    "types": [
-      "Poison"
-    ],
-    "base_stats": {
-      "hp": 5,
-      "atk": 6,
-      "def": 4,
-      "spatk": 4,
-      "spdef": 4,
-      "spd": 5
-    },
-    "abilities": {
-      "basic": [
-        "Poison Point",
-        "Rivalry"
-      ],
-      "advanced": [
-        "Hustle",
-        "Celebrate"
-      ],
-      "high": [
-        "Bodyguard"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Nidoran M",
-        "min_level": 0
-      },
-      {
-        "stage": 2,
-        "species": "Nidorino",
-        "min_level": 15
-      },
-      {
-        "stage": 3,
-        "species": "Nidoking",
-        "min_level": 25
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 2,
-    "size": "Huge",
-    "weight": 1,
-    "genderless": false,
-    "male_pct": 100,
-    "female_pct": 0,
-    "egg_groups": [
-      "Monster",
-      "Field"
-    ],
-    "hatch_rate": "10 Days",
-    "diet": [
-      "Herbivore"
-    ],
-    "habitat": [
-      "Grassland"
-    ],
-    "capabilities": {
-      "overland": 5,
-      "sky": 0,
-      "swim": 3,
-      "levitate": 0,
-      "burrow": 2,
-      "jump": "1/1",
-      "power": 2,
-      "other": [
-        "Naturewalk (Grassland)",
-        "Underdog"
-      ]
-    },
-    "skills": {
-      "Athletics": "2d6+1",
-      "Acrobatics": "2d6",
-      "Combat": "3d6",
-      "Stealth": "3d6+1",
-      "Perception": "2d6",
-      "Focus": "2d6"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Leer",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Peck",
-        "type": "Flying"
-      },
-      {
-        "level": 7,
-        "name": "Focus Energy",
-        "type": "Normal"
-      },
-      {
-        "level": 9,
-        "name": "Double Kick",
-        "type": "Fighting"
-      },
-      {
-        "level": 13,
-        "name": "Poison Sting",
-        "type": "Poison"
-      },
-      {
-        "level": 19,
-        "name": "Fury Attack",
-        "type": "Normal"
-      },
-      {
-        "level": 21,
-        "name": "Horn Attack",
-        "type": "Normal"
-      },
-      {
-        "level": 25,
-        "name": "Helping Hand",
-        "type": "Normal"
-      },
-      {
-        "level": 31,
-        "name": "Toxic Spikes",
-        "type": "Poison"
-      },
-      {
-        "level": 33,
-        "name": "Flatter",
-        "type": "Dark"
-      },
-      {
-        "level": 37,
-        "name": "Poison Jab",
-        "type": "Poison"
-      },
-      {
-        "level": 43,
-        "name": "Captivate",
-        "type": "Normal"
-      },
-      {
-        "level": 45,
-        "name": "Horn Drill",
-        "type": "Normal"
-      }
-    ],
-    "tm_hm_moves": [
-      {
-        "kind": "HM",
-        "number": "01",
-        "name": "Cut"
-      },
-      {
-        "kind": "HM",
-        "number": "04",
-        "name": "Strength"
-      },
-      {
-        "kind": "TM",
-        "number": "01",
-        "name": "Hone Claws"
-      },
-      {
-        "kind": "TM",
-        "number": "06",
-        "name": "Toxic"
-      },
-      {
-        "kind": "TM",
-        "number": "09",
-        "name": "Venoshock"
-      },
-      {
-        "kind": "TM",
-        "number": "10",
-        "name": "Hidden Power"
-      },
-      {
-        "kind": "TM",
-        "number": "11",
-        "name": "Sunny Day"
-      },
-      {
-        "kind": "TM",
-        "number": "13",
-        "name": "Ice Beam"
-      },
-      {
-        "kind": "TM",
-        "number": "14",
-        "name": "Blizzard"
-      },
-      {
-        "kind": "TM",
-        "number": "17",
-        "name": "Protect"
-      },
-      {
-        "kind": "TM",
-        "number": "18",
-        "name": "Rain Dance"
-      },
-      {
-        "kind": "TM",
-        "number": "21",
-        "name": "Frustration"
-      },
-      {
-        "kind": "TM",
-        "number": "24",
-        "name": "Thunderbolt"
-      },
-      {
-        "kind": "TM",
-        "number": "25",
-        "name": "Thunder"
-      },
-      {
-        "kind": "TM",
-        "number": "27",
-        "name": "Return"
-      },
-      {
-        "kind": "TM",
-        "number": "28",
-        "name": "Dig"
-      },
-      {
-        "kind": "TM",
-        "number": "32",
-        "name": "Double Team"
-      },
-      {
-        "kind": "TM",
-        "number": "36",
-        "name": "Sludge Bomb"
-      },
-      {
-        "kind": "TM",
-        "number": "42",
-        "name": "Facade"
-      },
-      {
-        "kind": "TM",
-        "number": "44",
-        "name": "Rest"
-      },
-      {
-        "kind": "TM",
-        "number": "45",
-        "name": "Attract"
-      },
-      {
-        "kind": "TM",
-        "number": "46",
-        "name": "Thief"
-      },
-      {
-        "kind": "TM",
-        "number": "48",
-        "name": "Round"
-      },
-      {
-        "kind": "TM",
-        "number": "49",
-        "name": "Echoed Voice"
-      },
-      {
-        "kind": "TM",
-        "number": "65",
-        "name": "Shadow Claw"
-      },
-      {
-        "kind": "TM",
-        "number": "84",
-        "name": "Poison Jab"
-      },
-      {
-        "kind": "TM",
-        "number": "87",
-        "name": "Swagger"
-      },
-      {
-        "kind": "TM",
-        "number": "88",
-        "name": "Sleep Talk"
-      },
-      {
-        "kind": "TM",
-        "number": "90",
-        "name": "Substitute"
-      },
-      {
-        "kind": "TM",
-        "number": "94",
-        "name": "Rock Smash"
-      },
-      {
-        "kind": "TM",
-        "number": "98",
-        "name": "Power-Up Punch"
-      }
-    ],
-    "egg_moves": [
-      "Amnesia",
-      "Beat Up",
-      "Confusion",
-      "Counter",
-      "Disable",
-      "Sucker Punch",
-      "Supersonic",
-      "Take Down",
-      "Venom Drench",
-      "Head Smash",
-      "Chip Away",
-      "Endure",
-      "Iron Tail",
-      "Poison Tail"
-    ],
-    "tutor_moves": [
-      {
-        "name": "Body Slam",
-        "heart_scale": false
-      },
-      {
-        "name": "Defense Curl",
-        "heart_scale": false
-      },
-      {
-        "name": "Double-Edge",
-        "heart_scale": false
-      },
-      {
-        "name": "Drill Run",
-        "heart_scale": false
-      },
-      {
-        "name": "Helping Hand",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Tail",
-        "heart_scale": false
-      },
-      {
-        "name": "Mud-Slap",
-        "heart_scale": false
-      },
-      {
-        "name": "Shock Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Sleep Talk",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Sucker Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Super Fang",
-        "heart_scale": false
-      },
-      {
-        "name": "Water Pulse",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen1"
   },
   {
     "species": "Nidorina",
@@ -188008,463 +186854,6 @@
     "clearance": 1
   },
   {
-    "species": "Hp:",
-    "types": [
-      "Psychic",
-      "Fairy"
-    ],
-    "base_stats": {
-      "hp": 2,
-      "atk": 3,
-      "def": 5,
-      "spatk": 7,
-      "spdef": 9,
-      "spd": 6
-    },
-    "abilities": {
-      "basic": [
-        "Soundproof",
-        "Filter"
-      ],
-      "advanced": [
-        "Technician",
-        "Copy Master"
-      ],
-      "high": [
-        "Wallmaster"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Mime Jr.",
-        "min_level": 0
-      },
-      {
-        "stage": 2,
-        "species": "Mr. Mime Learn Mimic",
-        "min_level": 0
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
-    "size": "Huge",
-    "weight": 2,
-    "genderless": false,
-    "male_pct": 50,
-    "female_pct": 50,
-    "egg_groups": [
-      "Humanshape"
-    ],
-    "hatch_rate": "13 Days",
-    "diet": [
-      "Omnivore"
-    ],
-    "habitat": [
-      "Urban"
-    ],
-    "capabilities": {
-      "overland": 3,
-      "sky": 0,
-      "swim": 1,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "1/1",
-      "power": 2,
-      "other": [
-        "Underdog"
-      ]
-    },
-    "skills": {
-      "Athletics": "2d6+1",
-      "Acrobatics": "3d6+1",
-      "Combat": "1d6",
-      "Stealth": "2d6+1",
-      "Perception": "2d6",
-      "Focus": "3d6+1"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Tickle",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Barrier",
-        "type": "Psychic"
-      },
-      {
-        "level": 1,
-        "name": "Confusion",
-        "type": "Psychic"
-      },
-      {
-        "level": 4,
-        "name": "Copycat",
-        "type": "Normal"
-      },
-      {
-        "level": 8,
-        "name": "Meditate",
-        "type": "Psychic"
-      },
-      {
-        "level": 11,
-        "name": "Double Slap",
-        "type": "Normal"
-      },
-      {
-        "level": 15,
-        "name": "Mimic",
-        "type": "Normal"
-      },
-      {
-        "level": 18,
-        "name": "Encore",
-        "type": "Normal"
-      },
-      {
-        "level": 22,
-        "name": "Light Screen",
-        "type": "Psychic"
-      },
-      {
-        "level": 22,
-        "name": "Reflect",
-        "type": "Psychic"
-      },
-      {
-        "level": 25,
-        "name": "Psybeam",
-        "type": "Psychic"
-      },
-      {
-        "level": 29,
-        "name": "Substitute",
-        "type": "Normal"
-      },
-      {
-        "level": 32,
-        "name": "Recycle",
-        "type": "Normal"
-      },
-      {
-        "level": 36,
-        "name": "Trick",
-        "type": "Psychic"
-      },
-      {
-        "level": 39,
-        "name": "Psychic",
-        "type": "Psychic"
-      },
-      {
-        "level": 43,
-        "name": "Role Play",
-        "type": "Psychic"
-      },
-      {
-        "level": 46,
-        "name": "Baton Pass",
-        "type": "Normal"
-      },
-      {
-        "level": 50,
-        "name": "Safeguard",
-        "type": "Normal"
-      }
-    ],
-    "tm_hm_moves": [
-      {
-        "kind": "TM",
-        "number": "03",
-        "name": "Psyshock"
-      },
-      {
-        "kind": "TM",
-        "number": "04",
-        "name": "Calm Mind"
-      },
-      {
-        "kind": "TM",
-        "number": "06",
-        "name": "Toxic"
-      },
-      {
-        "kind": "TM",
-        "number": "10",
-        "name": "Hidden Power"
-      },
-      {
-        "kind": "TM",
-        "number": "11",
-        "name": "Sunny Day"
-      },
-      {
-        "kind": "TM",
-        "number": "12",
-        "name": "Taunt"
-      },
-      {
-        "kind": "TM",
-        "number": "16",
-        "name": "Light Screen"
-      },
-      {
-        "kind": "TM",
-        "number": "17",
-        "name": "Protect"
-      },
-      {
-        "kind": "TM",
-        "number": "18",
-        "name": "Rain Dance"
-      },
-      {
-        "kind": "TM",
-        "number": "20",
-        "name": "Safeguard"
-      },
-      {
-        "kind": "TM",
-        "number": "21",
-        "name": "Frustration"
-      },
-      {
-        "kind": "TM",
-        "number": "22",
-        "name": "Solar Beam"
-      },
-      {
-        "kind": "TM",
-        "number": "24",
-        "name": "Thunderbolt"
-      },
-      {
-        "kind": "TM",
-        "number": "25",
-        "name": "Thunder"
-      },
-      {
-        "kind": "TM",
-        "number": "27",
-        "name": "Return"
-      },
-      {
-        "kind": "TM",
-        "number": "29",
-        "name": "Psychic"
-      },
-      {
-        "kind": "TM",
-        "number": "30",
-        "name": "Shadow Ball"
-      },
-      {
-        "kind": "TM",
-        "number": "31",
-        "name": "Brick Break"
-      },
-      {
-        "kind": "TM",
-        "number": "32",
-        "name": "Double Team"
-      },
-      {
-        "kind": "TM",
-        "number": "33",
-        "name": "Reflect"
-      },
-      {
-        "kind": "TM",
-        "number": "41",
-        "name": "Torment"
-      },
-      {
-        "kind": "TM",
-        "number": "42",
-        "name": "Facade"
-      },
-      {
-        "kind": "TM",
-        "number": "44",
-        "name": "Rest"
-      },
-      {
-        "kind": "TM",
-        "number": "45",
-        "name": "Attract"
-      },
-      {
-        "kind": "TM",
-        "number": "46",
-        "name": "Thief"
-      },
-      {
-        "kind": "TM",
-        "number": "48",
-        "name": "Round"
-      },
-      {
-        "kind": "TM",
-        "number": "56",
-        "name": "Fling"
-      },
-      {
-        "kind": "TM",
-        "number": "57",
-        "name": "Charge Beam"
-      },
-      {
-        "kind": "TM",
-        "number": "70",
-        "name": "Flash"
-      },
-      {
-        "kind": "TM",
-        "number": "73",
-        "name": "Thunder Wave"
-      },
-      {
-        "kind": "TM",
-        "number": "77",
-        "name": "Psych Up"
-      },
-      {
-        "kind": "TM",
-        "number": "83",
-        "name": "Infestation"
-      },
-      {
-        "kind": "TM",
-        "number": "85",
-        "name": "Dream Eater"
-      },
-      {
-        "kind": "TM",
-        "number": "86",
-        "name": "Grass Knot"
-      },
-      {
-        "kind": "TM",
-        "number": "87",
-        "name": "Swagger"
-      },
-      {
-        "kind": "TM",
-        "number": "88",
-        "name": "Sleep Talk"
-      },
-      {
-        "kind": "TM",
-        "number": "90",
-        "name": "Substitute"
-      },
-      {
-        "kind": "TM",
-        "number": "92",
-        "name": "Trick Room"
-      }
-    ],
-    "egg_moves": [
-      "Charm",
-      "Confuse Ray",
-      "Fake Out",
-      "Future Sight",
-      "Healing Wish",
-      "Hypnosis",
-      "Icy Wind",
-      "Magic Room",
-      "Mimic",
-      "Nasty Plot",
-      "Power Split",
-      "Psych Up",
-      "Teeter Dance",
-      "Trick",
-      "Wake-Up Slap"
-    ],
-    "tutor_moves": [
-      {
-        "name": "Covet",
-        "heart_scale": false
-      },
-      {
-        "name": "Drain Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Focus Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Helping Hand",
-        "heart_scale": false
-      },
-      {
-        "name": "Magic Coat",
-        "heart_scale": false
-      },
-      {
-        "name": "Magic Room",
-        "heart_scale": false
-      },
-      {
-        "name": "Mud-Slap",
-        "heart_scale": false
-      },
-      {
-        "name": "Recycle",
-        "heart_scale": false
-      },
-      {
-        "name": "Role Play",
-        "heart_scale": false
-      },
-      {
-        "name": "Shock Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Signal Beam",
-        "heart_scale": false
-      },
-      {
-        "name": "Skill Swap",
-        "heart_scale": false
-      },
-      {
-        "name": "Sleep Talk",
-        "heart_scale": false
-      },
-      {
-        "name": "Snatch",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Telekinesis",
-        "heart_scale": false
-      },
-      {
-        "name": "Trick",
-        "heart_scale": false
-      },
-      {
-        "name": "Uproar",
-        "heart_scale": false
-      },
-      {
-        "name": "Wonder Room",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen4"
-  },
-  {
     "species": "Mismagius",
     "types": [
       "Ghost"
@@ -338637,775 +337026,6 @@
     "clearance": 2
   },
   {
-    "species": "Hp:",
-    "types": [
-      "Dragon",
-      "Ground"
-    ],
-    "base_stats": {
-      "hp": 5,
-      "atk": 10,
-      "def": 7,
-      "spatk": 6,
-      "spdef": 9,
-      "spd": 12
-    },
-    "abilities": {
-      "basic": [
-        "Aura Break"
-      ],
-      "advanced": [
-        "Interference",
-        "Air Lock",
-        "Filter"
-      ],
-      "high": [
-        "Pressure"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Zygarde",
-        "min_level": 0
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 0,
-    "size": "Huge",
-    "weight": 3,
-    "genderless": true,
-    "male_pct": null,
-    "female_pct": null,
-    "egg_groups": [],
-    "hatch_rate": "75 Days",
-    "diet": [
-      "Nullivore"
-    ],
-    "habitat": [
-      "Cave"
-    ],
-    "capabilities": {
-      "overland": 9,
-      "sky": 0,
-      "swim": 6,
-      "levitate": 0,
-      "burrow": 3,
-      "jump": "3/3",
-      "power": 5,
-      "other": [
-        "Darkvision",
-        "Forme Change",
-        "Groundshaper",
-        "Tremorsense",
-        "Zygarde Cells"
-      ]
-    },
-    "skills": {
-      "Athletics": "4d6+2",
-      "Acrobatics": "4d6",
-      "Combat": "3d6",
-      "Stealth": "5d6+2",
-      "Perception": "4d6+2",
-      "Focus": "3d6"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Glare",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Bulldoze",
-        "type": "Ground"
-      },
-      {
-        "level": 1,
-        "name": "Dragon Breath",
-        "type": "Dragon"
-      },
-      {
-        "level": 1,
-        "name": "Bite",
-        "type": "Dark"
-      },
-      {
-        "level": 5,
-        "name": "Safeguard",
-        "type": "Normal"
-      },
-      {
-        "level": 10,
-        "name": "Dig",
-        "type": "Ground"
-      },
-      {
-        "level": 18,
-        "name": "Bind",
-        "type": "Normal"
-      },
-      {
-        "level": 26,
-        "name": "Land’s Wrath",
-        "type": "Ground"
-      },
-      {
-        "level": 35,
-        "name": "Sandstorm",
-        "type": "Ground"
-      },
-      {
-        "level": 44,
-        "name": "Haze",
-        "type": "Ice"
-      },
-      {
-        "level": 51,
-        "name": "Crunch",
-        "type": "Dark"
-      },
-      {
-        "level": 55,
-        "name": "Earthquake",
-        "type": "Ground"
-      },
-      {
-        "level": 59,
-        "name": "Camouflage",
-        "type": "Normal"
-      },
-      {
-        "level": 63,
-        "name": "Dragon Pulse",
-        "type": "Dragon"
-      },
-      {
-        "level": 72,
-        "name": "Coil",
-        "type": "Poison"
-      },
-      {
-        "level": 80,
-        "name": "Outrage",
-        "type": "Dragon"
-      }
-    ],
-    "tm_hm_moves": [
-      {
-        "kind": "HM",
-        "number": "04",
-        "name": "Strength"
-      },
-      {
-        "kind": "TM",
-        "number": "06",
-        "name": "Toxic"
-      },
-      {
-        "kind": "TM",
-        "number": "10",
-        "name": "Hidden Power"
-      },
-      {
-        "kind": "TM",
-        "number": "11",
-        "name": "Sunny Day"
-      },
-      {
-        "kind": "TM",
-        "number": "15",
-        "name": "Hyper Beam"
-      },
-      {
-        "kind": "TM",
-        "number": "17",
-        "name": "Protect"
-      },
-      {
-        "kind": "TM",
-        "number": "20",
-        "name": "Safeguard"
-      },
-      {
-        "kind": "TM",
-        "number": "21",
-        "name": "Frustration"
-      },
-      {
-        "kind": "TM",
-        "number": "26",
-        "name": "Earthquake"
-      },
-      {
-        "kind": "TM",
-        "number": "27",
-        "name": "Return"
-      },
-      {
-        "kind": "TM",
-        "number": "28",
-        "name": "Dig"
-      },
-      {
-        "kind": "TM",
-        "number": "31",
-        "name": "Brick Break"
-      },
-      {
-        "kind": "TM",
-        "number": "32",
-        "name": "Double Team"
-      },
-      {
-        "kind": "TM",
-        "number": "34",
-        "name": "Sludge Wave"
-      },
-      {
-        "kind": "TM",
-        "number": "37",
-        "name": "Sandstorm"
-      },
-      {
-        "kind": "TM",
-        "number": "42",
-        "name": "Facade"
-      },
-      {
-        "kind": "TM",
-        "number": "44",
-        "name": "Rest"
-      },
-      {
-        "kind": "TM",
-        "number": "48",
-        "name": "Round"
-      },
-      {
-        "kind": "TM",
-        "number": "52",
-        "name": "Focus Blast"
-      },
-      {
-        "kind": "TM",
-        "number": "68",
-        "name": "Giga Impact"
-      },
-      {
-        "kind": "TM",
-        "number": "71",
-        "name": "Stone Edge"
-      },
-      {
-        "kind": "TM",
-        "number": "78",
-        "name": "Bulldoze"
-      },
-      {
-        "kind": "TM",
-        "number": "80",
-        "name": "Rock Slide"
-      },
-      {
-        "kind": "TM",
-        "number": "82",
-        "name": "Dragon Tail"
-      },
-      {
-        "kind": "TM",
-        "number": "86",
-        "name": "Grass Knot"
-      },
-      {
-        "kind": "TM",
-        "number": "87",
-        "name": "Swagger"
-      },
-      {
-        "kind": "TM",
-        "number": "88",
-        "name": "Sleep Talk"
-      },
-      {
-        "kind": "TM",
-        "number": "90",
-        "name": "Substitute"
-      },
-      {
-        "kind": "TM",
-        "number": "94",
-        "name": "Rock Smash"
-      },
-      {
-        "kind": "TM",
-        "number": "100",
-        "name": "Confide"
-      }
-    ],
-    "egg_moves": [],
-    "tutor_moves": [
-      {
-        "name": "Bind",
-        "heart_scale": false
-      },
-      {
-        "name": "Block",
-        "heart_scale": false
-      },
-      {
-        "name": "Draco Meteor",
-        "heart_scale": false
-      },
-      {
-        "name": "Dragon Pulse",
-        "heart_scale": false
-      },
-      {
-        "name": "Earth Power",
-        "heart_scale": false
-      },
-      {
-        "name": "Hyper Voice",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Tail",
-        "heart_scale": false
-      },
-      {
-        "name": "Outrage",
-        "heart_scale": false
-      },
-      {
-        "name": "Pain Split",
-        "heart_scale": false
-      },
-      {
-        "name": "Shock Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Spite",
-        "heart_scale": false
-      },
-      {
-        "name": "Stomping Tantrum",
-        "heart_scale": false
-      },
-      {
-        "name": "Superpower",
-        "heart_scale": false
-      },
-      {
-        "name": "Dragon Dance",
-        "heart_scale": false
-      },
-      {
-        "name": "Extreme Speed",
-        "heart_scale": false
-      },
-      {
-        "name": "Thousand Arrows",
-        "heart_scale": false
-      },
-      {
-        "name": "Thousand Waves",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen7"
-  },
-  {
-    "species": "Hp:",
-    "types": [
-      "Dragon",
-      "Ground"
-    ],
-    "base_stats": {
-      "hp": 11,
-      "atk": 10,
-      "def": 12,
-      "spatk": 8,
-      "spdef": 10,
-      "spd": 10
-    },
-    "abilities": {
-      "basic": [
-        "Aura Break"
-      ],
-      "advanced": [
-        "Interference",
-        "Air Lock",
-        "Filter"
-      ],
-      "high": [
-        "Pressure"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Zygarde",
-        "min_level": 0
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 0,
-    "size": "Huge",
-    "weight": 6,
-    "genderless": true,
-    "male_pct": null,
-    "female_pct": null,
-    "egg_groups": [],
-    "hatch_rate": "75 Days",
-    "diet": [
-      "Nullivore"
-    ],
-    "habitat": [
-      "Cave"
-    ],
-    "capabilities": {
-      "overland": 7,
-      "sky": 0,
-      "swim": 5,
-      "levitate": 0,
-      "burrow": 9,
-      "jump": "2/2",
-      "power": 9,
-      "other": [
-        "Darkvision",
-        "Forme Change",
-        "Groundshaper",
-        "Mountable 4",
-        "Tremorsense",
-        "Zygarde Cells"
-      ]
-    },
-    "skills": {
-      "Athletics": "4d6+2",
-      "Acrobatics": "3d6",
-      "Combat": "4d6",
-      "Stealth": "4d6+2",
-      "Perception": "6d6+2",
-      "Focus": "5d6"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Glare",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Bulldoze",
-        "type": "Ground"
-      },
-      {
-        "level": 1,
-        "name": "Dragon Breath",
-        "type": "Dragon"
-      },
-      {
-        "level": 1,
-        "name": "Bite",
-        "type": "Dark"
-      },
-      {
-        "level": 5,
-        "name": "Safeguard",
-        "type": "Normal"
-      },
-      {
-        "level": 10,
-        "name": "Dig",
-        "type": "Ground"
-      },
-      {
-        "level": 18,
-        "name": "Bind",
-        "type": "Normal"
-      },
-      {
-        "level": 26,
-        "name": "Land’s Wrath",
-        "type": "Ground"
-      },
-      {
-        "level": 35,
-        "name": "Sandstorm",
-        "type": "Ground"
-      },
-      {
-        "level": 44,
-        "name": "Haze",
-        "type": "Ice"
-      },
-      {
-        "level": 51,
-        "name": "Crunch",
-        "type": "Dark"
-      },
-      {
-        "level": 55,
-        "name": "Earthquake",
-        "type": "Ground"
-      },
-      {
-        "level": 59,
-        "name": "Camouflage",
-        "type": "Normal"
-      },
-      {
-        "level": 63,
-        "name": "Dragon Pulse",
-        "type": "Dragon"
-      },
-      {
-        "level": 72,
-        "name": "Coil",
-        "type": "Poison"
-      },
-      {
-        "level": 80,
-        "name": "Outrage",
-        "type": "Dragon"
-      }
-    ],
-    "tm_hm_moves": [
-      {
-        "kind": "HM",
-        "number": "04",
-        "name": "Strength"
-      },
-      {
-        "kind": "TM",
-        "number": "06",
-        "name": "Toxic"
-      },
-      {
-        "kind": "TM",
-        "number": "10",
-        "name": "Hidden Power"
-      },
-      {
-        "kind": "TM",
-        "number": "11",
-        "name": "Sunny Day"
-      },
-      {
-        "kind": "TM",
-        "number": "15",
-        "name": "Hyper Beam"
-      },
-      {
-        "kind": "TM",
-        "number": "17",
-        "name": "Protect"
-      },
-      {
-        "kind": "TM",
-        "number": "20",
-        "name": "Safeguard"
-      },
-      {
-        "kind": "TM",
-        "number": "21",
-        "name": "Frustration"
-      },
-      {
-        "kind": "TM",
-        "number": "26",
-        "name": "Earthquake"
-      },
-      {
-        "kind": "TM",
-        "number": "27",
-        "name": "Return"
-      },
-      {
-        "kind": "TM",
-        "number": "28",
-        "name": "Dig"
-      },
-      {
-        "kind": "TM",
-        "number": "31",
-        "name": "Brick Break"
-      },
-      {
-        "kind": "TM",
-        "number": "32",
-        "name": "Double Team"
-      },
-      {
-        "kind": "TM",
-        "number": "34",
-        "name": "Sludge Wave"
-      },
-      {
-        "kind": "TM",
-        "number": "37",
-        "name": "Sandstorm"
-      },
-      {
-        "kind": "TM",
-        "number": "42",
-        "name": "Facade"
-      },
-      {
-        "kind": "TM",
-        "number": "44",
-        "name": "Rest"
-      },
-      {
-        "kind": "TM",
-        "number": "48",
-        "name": "Round"
-      },
-      {
-        "kind": "TM",
-        "number": "52",
-        "name": "Focus Blast"
-      },
-      {
-        "kind": "TM",
-        "number": "68",
-        "name": "Giga Impact"
-      },
-      {
-        "kind": "TM",
-        "number": "71",
-        "name": "Stone Edge"
-      },
-      {
-        "kind": "TM",
-        "number": "78",
-        "name": "Bulldoze"
-      },
-      {
-        "kind": "TM",
-        "number": "80",
-        "name": "Rock Slide"
-      },
-      {
-        "kind": "TM",
-        "number": "82",
-        "name": "Dragon Tail"
-      },
-      {
-        "kind": "TM",
-        "number": "86",
-        "name": "Grass Knot"
-      },
-      {
-        "kind": "TM",
-        "number": "87",
-        "name": "Swagger"
-      },
-      {
-        "kind": "TM",
-        "number": "88",
-        "name": "Sleep Talk"
-      },
-      {
-        "kind": "TM",
-        "number": "90",
-        "name": "Substitute"
-      },
-      {
-        "kind": "TM",
-        "number": "94",
-        "name": "Rock Smash"
-      },
-      {
-        "kind": "TM",
-        "number": "100",
-        "name": "Confide"
-      }
-    ],
-    "egg_moves": [],
-    "tutor_moves": [
-      {
-        "name": "Bind",
-        "heart_scale": false
-      },
-      {
-        "name": "Block",
-        "heart_scale": false
-      },
-      {
-        "name": "Draco Meteor",
-        "heart_scale": false
-      },
-      {
-        "name": "Dragon Pulse",
-        "heart_scale": false
-      },
-      {
-        "name": "Earth Power",
-        "heart_scale": false
-      },
-      {
-        "name": "Hyper Voice",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Tail",
-        "heart_scale": false
-      },
-      {
-        "name": "Outrage",
-        "heart_scale": false
-      },
-      {
-        "name": "Pain Split",
-        "heart_scale": false
-      },
-      {
-        "name": "Shock Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Spite",
-        "heart_scale": false
-      },
-      {
-        "name": "Stomping Tantrum",
-        "heart_scale": false
-      },
-      {
-        "name": "Superpower",
-        "heart_scale": false
-      },
-      {
-        "name": "Dragon Dance",
-        "heart_scale": false
-      },
-      {
-        "name": "Extreme Speed",
-        "heart_scale": false
-      },
-      {
-        "name": "Thousand Arrows",
-        "heart_scale": false
-      },
-      {
-        "name": "Thousand Waves",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen7"
-  },
-  {
     "species": "Zygarde Complete Forme",
     "types": [
       "Dragon",
@@ -344897,430 +342517,6 @@
     "clearance": 1
   },
   {
-    "species": "Hp:",
-    "types": [
-      "Ice"
-    ],
-    "base_stats": {
-      "hp": 11,
-      "atk": 14,
-      "def": 6,
-      "spatk": 3,
-      "spdef": 6,
-      "spd": 10
-    },
-    "abilities": {
-      "basic": [
-        "Gorilla Tactics",
-        "Ice Body"
-      ],
-      "advanced": [
-        "Inner Focus",
-        "Winter’s Kiss"
-      ],
-      "high": [
-        "Zen Snowed"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Darumaka (G)",
-        "min_level": 0
-      },
-      {
-        "stage": 2,
-        "species": "Darmanitan (G),",
-        "min_level": 30
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
-    "size": "Huge",
-    "weight": 5,
-    "genderless": false,
-    "male_pct": 50,
-    "female_pct": 50,
-    "egg_groups": [
-      "Field"
-    ],
-    "hatch_rate": null,
-    "diet": [
-      "Omnivore"
-    ],
-    "habitat": [
-      "Mountain",
-      "Tundra"
-    ],
-    "capabilities": {
-      "overland": 7,
-      "sky": 0,
-      "swim": 3,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "1/2",
-      "power": 8,
-      "other": [
-        "Chilled",
-        "Forme Change",
-        "Freezer",
-        "Naturewalk (Tundra,  Mountain)"
-      ]
-    },
-    "skills": {
-      "Athletics": "5d6+2",
-      "Acrobatics": "3d6+1",
-      "Combat": "4d6",
-      "Stealth": "3d6+2",
-      "Perception": "3d6",
-      "Focus": "4d6+1"
-    },
-    "level_up_moves": [
-      {
-        "level": 4,
-        "name": "Taunt",
-        "type": "Dark"
-      },
-      {
-        "level": 8,
-        "name": "Bite",
-        "type": "Dark"
-      },
-      {
-        "level": 12,
-        "name": "Avalanche",
-        "type": "Ice"
-      },
-      {
-        "level": 16,
-        "name": "Work Up",
-        "type": "Normal"
-      },
-      {
-        "level": 20,
-        "name": "Ice Fang",
-        "type": "Ice"
-      },
-      {
-        "level": 24,
-        "name": "Headbutt",
-        "type": "Normal"
-      },
-      {
-        "level": 28,
-        "name": "Ice Punch",
-        "type": "Ice"
-      },
-      {
-        "level": 32,
-        "name": "Uproar",
-        "type": "Normal"
-      },
-      {
-        "level": 38,
-        "name": "Belly Drum",
-        "type": "Normal"
-      },
-      {
-        "level": 44,
-        "name": "Blizzard",
-        "type": "Ice"
-      },
-      {
-        "level": 50,
-        "name": "Thrash",
-        "type": "Normal"
-      },
-      {
-        "level": 56,
-        "name": "Superpower",
-        "type": "Fighting"
-      }
-    ],
-    "tm_hm_moves": [],
-    "egg_moves": [],
-    "tutor_moves": [
-      {
-        "name": "Avalanche",
-        "heart_scale": false
-      },
-      {
-        "name": "Body Press",
-        "heart_scale": false
-      },
-      {
-        "name": "Body Slam",
-        "heart_scale": false
-      },
-      {
-        "name": "Endure",
-        "heart_scale": false
-      },
-      {
-        "name": "Fire Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Focus Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Heat Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Ice Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Defense",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Head",
-        "heart_scale": false
-      },
-      {
-        "name": "Mega Kick",
-        "heart_scale": false
-      },
-      {
-        "name": "Mega Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Superpower",
-        "heart_scale": false
-      },
-      {
-        "name": "Uproar",
-        "heart_scale": false
-      },
-      {
-        "name": "Zen Headbutt",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen8"
-  },
-  {
-    "species": "Hp:",
-    "types": [
-      "Ice",
-      "Fire"
-    ],
-    "base_stats": {
-      "hp": 11,
-      "atk": 16,
-      "def": 6,
-      "spatk": 3,
-      "spdef": 6,
-      "spd": 14
-    },
-    "abilities": {
-      "basic": [
-        "Gorilla Tactics",
-        "Ice Body"
-      ],
-      "advanced": [
-        "Inner Focus",
-        "Winter’s Kiss"
-      ],
-      "high": [
-        "Zen Snowed"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Darumaka (G)",
-        "min_level": 0
-      },
-      {
-        "stage": 2,
-        "species": "Darmanitan (G),",
-        "min_level": 30
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
-    "size": "Huge",
-    "weight": 5,
-    "genderless": false,
-    "male_pct": 50,
-    "female_pct": 50,
-    "egg_groups": [
-      "Field"
-    ],
-    "hatch_rate": null,
-    "diet": [
-      "Omnivore"
-    ],
-    "habitat": [
-      "Mountain",
-      "Tundra"
-    ],
-    "capabilities": {
-      "overland": 9,
-      "sky": 0,
-      "swim": 3,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "1/2",
-      "power": 8,
-      "other": [
-        "Chilled",
-        "Firestarter",
-        "Forme Change",
-        "Freezer",
-        "Naturewalk  (Tundra, Mountain)"
-      ]
-    },
-    "skills": {
-      "Athletics": "5d6+2",
-      "Acrobatics": "3d6+1",
-      "Combat": "5d6+2",
-      "Stealth": "3d6+2",
-      "Perception": "3d6",
-      "Focus": "4d6+1"
-    },
-    "level_up_moves": [
-      {
-        "level": 4,
-        "name": "Taunt",
-        "type": "Dark"
-      },
-      {
-        "level": 8,
-        "name": "Bite",
-        "type": "Dark"
-      },
-      {
-        "level": 12,
-        "name": "Avalanche",
-        "type": "Ice"
-      },
-      {
-        "level": 16,
-        "name": "Work Up",
-        "type": "Normal"
-      },
-      {
-        "level": 20,
-        "name": "Ice Fang",
-        "type": "Ice"
-      },
-      {
-        "level": 24,
-        "name": "Headbutt",
-        "type": "Normal"
-      },
-      {
-        "level": 28,
-        "name": "Ice Punch",
-        "type": "Ice"
-      },
-      {
-        "level": 32,
-        "name": "Uproar",
-        "type": "Normal"
-      },
-      {
-        "level": 38,
-        "name": "Belly Drum",
-        "type": "Normal"
-      },
-      {
-        "level": 44,
-        "name": "Blizzard",
-        "type": "Ice"
-      },
-      {
-        "level": 50,
-        "name": "Thrash",
-        "type": "Normal"
-      },
-      {
-        "level": 56,
-        "name": "Superpower",
-        "type": "Fighting"
-      }
-    ],
-    "tm_hm_moves": [],
-    "egg_moves": [],
-    "tutor_moves": [
-      {
-        "name": "Avalanche",
-        "heart_scale": false
-      },
-      {
-        "name": "Body Press",
-        "heart_scale": false
-      },
-      {
-        "name": "Body Slam",
-        "heart_scale": false
-      },
-      {
-        "name": "Endure",
-        "heart_scale": false
-      },
-      {
-        "name": "Fire Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Focus Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Heat Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Ice Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Defense",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Head",
-        "heart_scale": false
-      },
-      {
-        "name": "Mega Kick",
-        "heart_scale": false
-      },
-      {
-        "name": "Mega Punch",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Superpower",
-        "heart_scale": false
-      },
-      {
-        "name": "Uproar",
-        "heart_scale": false
-      },
-      {
-        "name": "Zen Headbutt",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen8"
-  },
-  {
     "species": "Darumaka Galar",
     "types": [
       "Ice"
@@ -348386,222 +345582,6 @@
     "height": 3,
     "base": 3,
     "clearance": 3
-  },
-  {
-    "species": "Hp:",
-    "types": [
-      "Fighting"
-    ],
-    "base_stats": {
-      "hp": 5,
-      "atk": 10,
-      "def": 6,
-      "spatk": 6,
-      "spdef": 6,
-      "spd": 6
-    },
-    "abilities": {
-      "basic": [
-        "Scrappy",
-        "Steadfast"
-      ],
-      "advanced": [
-        "Defiant",
-        "Super Luck"
-      ],
-      "high": [
-        "Thrust"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Farfetch'd (G)",
-        "min_level": 0
-      },
-      {
-        "stage": 2,
-        "species": "Sirfetch'd",
-        "min_level": 25
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
-    "size": "Huge",
-    "weight": 3,
-    "genderless": false,
-    "male_pct": 50,
-    "female_pct": 50,
-    "egg_groups": [
-      "Flying",
-      "Field"
-    ],
-    "hatch_rate": "10 Days",
-    "diet": [
-      "Herbivore"
-    ],
-    "habitat": [
-      "Grassland"
-    ],
-    "capabilities": {
-      "overland": 6,
-      "sky": 2,
-      "swim": 2,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "2/2",
-      "power": 5,
-      "other": [
-        "Underdog",
-        "Wielder"
-      ]
-    },
-    "skills": {
-      "Athletics": "4d6+1",
-      "Acrobatics": "3d6",
-      "Combat": "4d6+2",
-      "Stealth": "4d6+2",
-      "Perception": "4d6",
-      "Focus": "4d6+2"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Peck",
-        "type": "Flying"
-      },
-      {
-        "level": 1,
-        "name": "Sand Attack",
-        "type": "Ground"
-      },
-      {
-        "level": 5,
-        "name": "Leer",
-        "type": "Normal"
-      },
-      {
-        "level": 10,
-        "name": "Fury Cutter",
-        "type": "Bug"
-      },
-      {
-        "level": 15,
-        "name": "Rock Smash",
-        "type": "Fighting"
-      },
-      {
-        "level": 20,
-        "name": "Brutal Swing",
-        "type": "Dark"
-      },
-      {
-        "level": 25,
-        "name": "Detect",
-        "type": "Fighting"
-      },
-      {
-        "level": 30,
-        "name": "Knock Off",
-        "type": "Dark"
-      },
-      {
-        "level": 35,
-        "name": "Defog",
-        "type": "Flying"
-      },
-      {
-        "level": 40,
-        "name": "Brick Break",
-        "type": "Fighting"
-      },
-      {
-        "level": 45,
-        "name": "Swords Dance",
-        "type": "Normal"
-      },
-      {
-        "level": 50,
-        "name": "Slam",
-        "type": "Normal"
-      },
-      {
-        "level": 55,
-        "name": "Leaf Blade",
-        "type": "Grass"
-      },
-      {
-        "level": 60,
-        "name": "Final Gambit",
-        "type": "Fighting"
-      },
-      {
-        "level": 65,
-        "name": "Brave Bird",
-        "type": "Flying"
-      }
-    ],
-    "tm_hm_moves": [],
-    "egg_moves": [
-      "Counter",
-      "Covet",
-      "Curse",
-      "Double-Edge",
-      "Feint",
-      "Flail",
-      "Night Slash",
-      "Quick Attack",
-      "Quick Guard",
-      "Simple Beam",
-      "Sky Attack"
-    ],
-    "tutor_moves": [
-      {
-        "name": "Body Slam",
-        "heart_scale": false
-      },
-      {
-        "name": "Covet",
-        "heart_scale": false
-      },
-      {
-        "name": "Defog",
-        "heart_scale": false
-      },
-      {
-        "name": "Double-Edge",
-        "heart_scale": false
-      },
-      {
-        "name": "Endure",
-        "heart_scale": false
-      },
-      {
-        "name": "Helping Hand",
-        "heart_scale": false
-      },
-      {
-        "name": "Knock Off",
-        "heart_scale": false
-      },
-      {
-        "name": "Sky Attack",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Superpower",
-        "heart_scale": false
-      },
-      {
-        "name": "Throat Chop",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen8"
   },
   {
     "species": "Flapple",
@@ -357890,216 +354870,6 @@
     "clearance": 1
   },
   {
-    "species": "Hp:",
-    "types": [
-      "Fighting"
-    ],
-    "base_stats": {
-      "hp": 6,
-      "atk": 14,
-      "def": 10,
-      "spatk": 7,
-      "spdef": 8,
-      "spd": 7
-    },
-    "abilities": {
-      "basic": [
-        "Scrappy",
-        "Steadfast"
-      ],
-      "advanced": [
-        "Lancer",
-        "Super Luck"
-      ],
-      "high": [
-        "Parry"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Farfetch'd (G)",
-        "min_level": 0
-      },
-      {
-        "stage": 2,
-        "species": "Sirfetch'd",
-        "min_level": 25
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
-    "size": "Huge",
-    "weight": 5,
-    "genderless": false,
-    "male_pct": 50,
-    "female_pct": 50,
-    "egg_groups": [
-      "Flying",
-      "Field"
-    ],
-    "hatch_rate": null,
-    "diet": [
-      "Herbivore"
-    ],
-    "habitat": [
-      "Grassland"
-    ],
-    "capabilities": {
-      "overland": 8,
-      "sky": 2,
-      "swim": 3,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "3/3",
-      "power": 7,
-      "other": [
-        "Wielder"
-      ]
-    },
-    "skills": {
-      "Athletics": "5d6+1",
-      "Acrobatics": "3d6",
-      "Combat": "6d6+1",
-      "Stealth": "4d6",
-      "Perception": "5d6",
-      "Focus": "5d6+2"
-    },
-    "level_up_moves": [
-      {
-        "level": 5,
-        "name": "Leer",
-        "type": "Normal"
-      },
-      {
-        "level": 10,
-        "name": "Fury Cutter",
-        "type": "Bug"
-      },
-      {
-        "level": 15,
-        "name": "Rock Smash",
-        "type": "Fighting"
-      },
-      {
-        "level": 20,
-        "name": "Brutal Swing",
-        "type": "Dark"
-      },
-      {
-        "level": 25,
-        "name": "Detect",
-        "type": "Fighting"
-      },
-      {
-        "level": 30,
-        "name": "Knock Off",
-        "type": "Dark"
-      },
-      {
-        "level": 35,
-        "name": "Defog",
-        "type": "Flying"
-      },
-      {
-        "level": 40,
-        "name": "Brick Break",
-        "type": "Fighting"
-      },
-      {
-        "level": 45,
-        "name": "Swords Dance",
-        "type": "Normal"
-      },
-      {
-        "level": 50,
-        "name": "Slam",
-        "type": "Normal"
-      },
-      {
-        "level": 55,
-        "name": "Leaf Blade",
-        "type": "Grass"
-      },
-      {
-        "level": 60,
-        "name": "Final Gambit",
-        "type": "Fighting"
-      },
-      {
-        "level": 65,
-        "name": "Brave Bird",
-        "type": "Flying"
-      },
-      {
-        "level": 70,
-        "name": "Meteor Assault",
-        "type": "Fighting"
-      }
-    ],
-    "tm_hm_moves": [],
-    "egg_moves": [],
-    "tutor_moves": [
-      {
-        "name": "Body Slam",
-        "heart_scale": false
-      },
-      {
-        "name": "Covet",
-        "heart_scale": false
-      },
-      {
-        "name": "Defog",
-        "heart_scale": false
-      },
-      {
-        "name": "Double-Edge",
-        "heart_scale": false
-      },
-      {
-        "name": "Endure",
-        "heart_scale": false
-      },
-      {
-        "name": "First Impression",
-        "heart_scale": true
-      },
-      {
-        "name": "Helping Hand",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Defense",
-        "heart_scale": true
-      },
-      {
-        "name": "Knock Off",
-        "heart_scale": false
-      },
-      {
-        "name": "Meteor Assault",
-        "heart_scale": true
-      },
-      {
-        "name": "Sky Attack",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Superpower",
-        "heart_scale": false
-      },
-      {
-        "name": "Throat Chop",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen8"
-  },
-  {
     "species": "Sizzlipede",
     "types": [
       "Fire",
@@ -362555,191 +359325,6 @@
     "clearance": 3
   },
   {
-    "species": "Hp:",
-    "types": [
-      "Fairy"
-    ],
-    "base_stats": {
-      "hp": 9,
-      "atk": 13,
-      "def": 12,
-      "spatk": 8,
-      "spdef": 12,
-      "spd": 14
-    },
-    "abilities": {
-      "basic": [
-        "Intrepid Sword"
-      ],
-      "advanced": [
-        "Defiant",
-        "Mold Breaker",
-        "Fade Away"
-      ],
-      "high": [
-        "Tough Claws"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Zacian",
-        "min_level": 0
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 0,
-    "size": "Huge",
-    "weight": 5,
-    "genderless": true,
-    "male_pct": null,
-    "female_pct": null,
-    "egg_groups": [],
-    "hatch_rate": "75 Days",
-    "diet": [
-      "Omnivore"
-    ],
-    "habitat": [
-      "Forest"
-    ],
-    "capabilities": {
-      "overland": 10,
-      "sky": 0,
-      "swim": 5,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "3/3",
-      "power": 8,
-      "other": [
-        "Aura  Reader",
-        "Forme Change",
-        "Invisibility",
-        "Mountable 2",
-        "Phasing",
-        "Weapon Bond"
-      ]
-    },
-    "skills": {
-      "Athletics": "5d6",
-      "Acrobatics": "4d6+2",
-      "Combat": "5d6",
-      "Stealth": "5d6",
-      "Perception": "4d6+2",
-      "Focus": "4d6"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Metal Claw",
-        "type": "Steel"
-      },
-      {
-        "level": 1,
-        "name": "Howl",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Quick Attack",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Bite",
-        "type": "Dark"
-      },
-      {
-        "level": 11,
-        "name": "Slash",
-        "type": "Normal"
-      },
-      {
-        "level": 22,
-        "name": "Swords Dance",
-        "type": "Normal"
-      },
-      {
-        "level": 33,
-        "name": "Iron Head",
-        "type": "Steel"
-      },
-      {
-        "level": 44,
-        "name": "Laser Focus",
-        "type": "Normal"
-      },
-      {
-        "level": 55,
-        "name": "Crunch",
-        "type": "Dark"
-      },
-      {
-        "level": 66,
-        "name": "Moonblast",
-        "type": "Fairy"
-      },
-      {
-        "level": 77,
-        "name": "Close Combat",
-        "type": "Fighting"
-      },
-      {
-        "level": 88,
-        "name": "Giga Impact",
-        "type": "Normal"
-      }
-    ],
-    "tm_hm_moves": [],
-    "egg_moves": [],
-    "tutor_moves": [
-      {
-        "name": "Endure",
-        "heart_scale": false
-      },
-      {
-        "name": "Helping Hand",
-        "heart_scale": false
-      },
-      {
-        "name": "Hyper Voice",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Head",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Tail",
-        "heart_scale": false
-      },
-      {
-        "name": "Laser Focus",
-        "heart_scale": false
-      },
-      {
-        "name": "Quick Guard",
-        "heart_scale": false
-      },
-      {
-        "name": "Sacred Sword",
-        "heart_scale": true
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Steel Beam",
-        "heart_scale": false
-      },
-      {
-        "name": "Swift",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen8"
-  },
-  {
     "species": "Zamazenta Crowned Shield Forme",
     "types": [
       "Fighting",
@@ -362931,195 +359516,6 @@
     "height": 2.9,
     "base": 3,
     "clearance": 3
-  },
-  {
-    "species": "Hp:",
-    "types": [
-      "Fighting"
-    ],
-    "base_stats": {
-      "hp": 9,
-      "atk": 13,
-      "def": 12,
-      "spatk": 8,
-      "spdef": 12,
-      "spd": 14
-    },
-    "abilities": {
-      "basic": [
-        "Dauntless Shield"
-      ],
-      "advanced": [
-        "Stamina",
-        "Friend Guard",
-        "Fade Away"
-      ],
-      "high": [
-        "Bulletproof"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Zamazenta",
-        "min_level": 0
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 0,
-    "size": "Huge",
-    "weight": 6,
-    "genderless": true,
-    "male_pct": null,
-    "female_pct": null,
-    "egg_groups": [],
-    "hatch_rate": "75 Days",
-    "diet": [
-      "Omnivore"
-    ],
-    "habitat": [
-      "Forest"
-    ],
-    "capabilities": {
-      "overland": 9,
-      "sky": 0,
-      "swim": 5,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "3/3",
-      "power": 9,
-      "other": [
-        "Aura  Reader",
-        "Forme Change",
-        "Invisibility",
-        "Mountable 2",
-        "Phasing",
-        "Weapon Bond"
-      ]
-    },
-    "skills": {
-      "Athletics": "5d6+2",
-      "Acrobatics": "4d6",
-      "Combat": "5d6",
-      "Stealth": "5d6",
-      "Perception": "4d6",
-      "Focus": "4d6+2"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Metal Claw",
-        "type": "Steel"
-      },
-      {
-        "level": 1,
-        "name": "Howl",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Quick Attack",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Bite",
-        "type": "Dark"
-      },
-      {
-        "level": 11,
-        "name": "Slash",
-        "type": "Normal"
-      },
-      {
-        "level": 22,
-        "name": "Iron Defense",
-        "type": "Steel"
-      },
-      {
-        "level": 33,
-        "name": "Iron Head",
-        "type": "Steel"
-      },
-      {
-        "level": 44,
-        "name": "Laser Focus",
-        "type": "Normal"
-      },
-      {
-        "level": 55,
-        "name": "Crunch",
-        "type": "Dark"
-      },
-      {
-        "level": 66,
-        "name": "Moonblast",
-        "type": "Fairy"
-      },
-      {
-        "level": 77,
-        "name": "Close Combat",
-        "type": "Fighting"
-      },
-      {
-        "level": 88,
-        "name": "Giga Impact",
-        "type": "Normal"
-      }
-    ],
-    "tm_hm_moves": [],
-    "egg_moves": [],
-    "tutor_moves": [
-      {
-        "name": "Endure",
-        "heart_scale": false
-      },
-      {
-        "name": "Helping Hand",
-        "heart_scale": false
-      },
-      {
-        "name": "Hyper Voice",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Defense",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Head",
-        "heart_scale": false
-      },
-      {
-        "name": "Iron Tail",
-        "heart_scale": false
-      },
-      {
-        "name": "Laser Focus",
-        "heart_scale": false
-      },
-      {
-        "name": "Metal Burst",
-        "heart_scale": true
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Steel Beam",
-        "heart_scale": false
-      },
-      {
-        "name": "Swift",
-        "heart_scale": false
-      },
-      {
-        "name": "Wide Guard",
-        "heart_scale": true
-      }
-    ],
-    "source_gen": "gen8"
   },
   {
     "species": "Zapdos Galar",
@@ -371446,7 +367842,415 @@
   },
   {
     "species": "Farfetch’d",
+    "types": [
+      "Normal",
+      "Flying"
+    ],
+    "base_stats": {
+      "hp": 5,
+      "atk": 7,
+      "def": 6,
+      "spatk": 6,
+      "spdef": 6,
+      "spd": 6
+    },
+    "abilities": {
+      "basic": [
+        "Keen Eye",
+        "Inner Focus"
+      ],
+      "advanced": [
+        "Defiant",
+        "Super Luck"
+      ],
+      "high": [
+        "Leek Mastery"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Farfetch’d",
+        "min_level": 0
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 0,
     "size": "Small",
+    "weight": 2,
+    "genderless": false,
+    "male_pct": 50.0,
+    "female_pct": 50.0,
+    "egg_groups": [
+      "Flying",
+      "Field"
+    ],
+    "hatch_rate": "10 Days",
+    "diet": [
+      "Herbivore"
+    ],
+    "habitat": [
+      "Freshwater",
+      "Grassland",
+      "Marsh"
+    ],
+    "capabilities": {
+      "overland": 3,
+      "sky": 7,
+      "swim": 2,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "2/2",
+      "power": 3,
+      "other": [
+        "Underdog",
+        "Wielder"
+      ]
+    },
+    "skills": {
+      "Athletics": "4d6+1",
+      "Acrobatics": "4d6+2",
+      "Combat": "4d6",
+      "Stealth": "4d6+2",
+      "Perception": "4d6+2",
+      "Focus": "3d6+2"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Leer",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Peck",
+        "type": "Flying"
+      },
+      {
+        "level": 1,
+        "name": "Sand Attack",
+        "type": "Ground"
+      },
+      {
+        "level": 7,
+        "name": "Fury Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 9,
+        "name": "Knock Off",
+        "type": "Dark"
+      },
+      {
+        "level": 13,
+        "name": "Aerial Ace",
+        "type": "Flying"
+      },
+      {
+        "level": 19,
+        "name": "Slash",
+        "type": "Normal"
+      },
+      {
+        "level": 21,
+        "name": "Air Cutter",
+        "type": "Flying"
+      },
+      {
+        "level": 25,
+        "name": "Swords Dance",
+        "type": "Normal"
+      },
+      {
+        "level": 31,
+        "name": "Agility",
+        "type": "Psychic"
+      },
+      {
+        "level": 33,
+        "name": "Night Slash",
+        "type": "Dark"
+      },
+      {
+        "level": 37,
+        "name": "Acrobatics",
+        "type": "Flying"
+      },
+      {
+        "level": 43,
+        "name": "Feint",
+        "type": "Normal"
+      },
+      {
+        "level": 45,
+        "name": "False Swipe",
+        "type": "Normal"
+      },
+      {
+        "level": 49,
+        "name": "Air Slash",
+        "type": "Flying"
+      },
+      {
+        "level": 55,
+        "name": "Brave Bird",
+        "type": "Flying"
+      }
+    ],
+    "tm_hm_moves": [
+      {
+        "kind": "HM",
+        "number": "01",
+        "name": "Cut"
+      },
+      {
+        "kind": "HM",
+        "number": "02",
+        "name": "Fly"
+      },
+      {
+        "kind": "TM",
+        "number": "06",
+        "name": "Toxic"
+      },
+      {
+        "kind": "TM",
+        "number": "10",
+        "name": "Hidden Power"
+      },
+      {
+        "kind": "TM",
+        "number": "11",
+        "name": "Sunny Day"
+      },
+      {
+        "kind": "TM",
+        "number": "17",
+        "name": "Protect"
+      },
+      {
+        "kind": "TM",
+        "number": "19",
+        "name": "Roost"
+      },
+      {
+        "kind": "TM",
+        "number": "21",
+        "name": "Frustration"
+      },
+      {
+        "kind": "TM",
+        "number": "27",
+        "name": "Return"
+      },
+      {
+        "kind": "TM",
+        "number": "32",
+        "name": "Double Team"
+      },
+      {
+        "kind": "TM",
+        "number": "40",
+        "name": "Aerial Ace"
+      },
+      {
+        "kind": "TM",
+        "number": "42",
+        "name": "Facade"
+      },
+      {
+        "kind": "TM",
+        "number": "44",
+        "name": "Rest"
+      },
+      {
+        "kind": "TM",
+        "number": "45",
+        "name": "Attract"
+      },
+      {
+        "kind": "TM",
+        "number": "46",
+        "name": "Thief"
+      },
+      {
+        "kind": "TM",
+        "number": "48",
+        "name": "Round"
+      },
+      {
+        "kind": "TM",
+        "number": "51",
+        "name": "Steel Wing"
+      },
+      {
+        "kind": "TM",
+        "number": "54",
+        "name": "False Swipe"
+      },
+      {
+        "kind": "TM",
+        "number": "62",
+        "name": "Acrobatics"
+      },
+      {
+        "kind": "TM",
+        "number": "67",
+        "name": "Retaliate"
+      },
+      {
+        "kind": "TM",
+        "number": "75",
+        "name": "Swords Dance"
+      },
+      {
+        "kind": "TM",
+        "number": "77",
+        "name": "Psych Up"
+      },
+      {
+        "kind": "TM",
+        "number": "84",
+        "name": "Poison Jab"
+      },
+      {
+        "kind": "TM",
+        "number": "87",
+        "name": "Swagger"
+      },
+      {
+        "kind": "TM",
+        "number": "88",
+        "name": "Sleep Talk"
+      },
+      {
+        "kind": "TM",
+        "number": "89",
+        "name": "U-Turn"
+      },
+      {
+        "kind": "TM",
+        "number": "90",
+        "name": "Substitute"
+      }
+    ],
+    "egg_moves": [
+      "Covet",
+      "Curse",
+      "Feather Dance",
+      "Flail",
+      "Foresight",
+      "Gust",
+      "Leaf Blade",
+      "Mirror Move",
+      "Mud-Slap",
+      "Night Slash",
+      "Quick Attack",
+      "Revenge",
+      "Roost",
+      "Simple Beam",
+      "Steel Wing",
+      "Trump Card"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Air Cutter",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Brave Bird",
+        "heart_scale": true
+      },
+      {
+        "name": "Covet",
+        "heart_scale": false
+      },
+      {
+        "name": "Double-Edge",
+        "heart_scale": false
+      },
+      {
+        "name": "Fury Cutter",
+        "heart_scale": true
+      },
+      {
+        "name": "Heat Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Helping Hand",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Tail",
+        "heart_scale": false
+      },
+      {
+        "name": "Knock Off",
+        "heart_scale": false
+      },
+      {
+        "name": "Last Resort",
+        "heart_scale": false
+      },
+      {
+        "name": "Mud-Slap",
+        "heart_scale": false
+      },
+      {
+        "name": "Ominous Wind",
+        "heart_scale": false
+      },
+      {
+        "name": "Pluck",
+        "heart_scale": false
+      },
+      {
+        "name": "Poison Jab",
+        "heart_scale": true
+      },
+      {
+        "name": "Roost",
+        "heart_scale": false
+      },
+      {
+        "name": "Sky Attack",
+        "heart_scale": false
+      },
+      {
+        "name": "Sleep Talk",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Swift",
+        "heart_scale": false
+      },
+      {
+        "name": "Tailwind",
+        "heart_scale": false
+      },
+      {
+        "name": "Twister",
+        "heart_scale": false
+      },
+      {
+        "name": "Uproar",
+        "heart_scale": false
+      },
+      {
+        "name": "Work Up",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen1",
     "width": 0.75,
     "height": 0.8,
     "base": 1,
@@ -371454,7 +368258,367 @@
   },
   {
     "species": "Nidoran (F)",
+    "types": [
+      "Poison"
+    ],
+    "base_stats": {
+      "hp": 6,
+      "atk": 5,
+      "def": 5,
+      "spatk": 4,
+      "spdef": 4,
+      "spd": 4
+    },
+    "abilities": {
+      "basic": [
+        "Poison Point",
+        "Rivalry"
+      ],
+      "advanced": [
+        "Hustle",
+        "Celebrate"
+      ],
+      "high": [
+        "Bodyguard"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Nidoran F",
+        "min_level": 0
+      },
+      {
+        "stage": 2,
+        "species": "Nidorina",
+        "min_level": 15
+      },
+      {
+        "stage": 3,
+        "species": "Nidoqueen",
+        "min_level": 25
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 2,
     "size": "Small",
+    "weight": 1,
+    "genderless": false,
+    "male_pct": 0.0,
+    "female_pct": 100.0,
+    "egg_groups": [
+      "Monster",
+      "Field"
+    ],
+    "hatch_rate": "10 Days",
+    "diet": [
+      "Herbivore"
+    ],
+    "habitat": [
+      "Grassland"
+    ],
+    "capabilities": {
+      "overland": 5,
+      "sky": 0,
+      "swim": 3,
+      "levitate": 0,
+      "burrow": 2,
+      "jump": "1/1",
+      "power": 2,
+      "other": [
+        "Naturewalk (Grassland)",
+        "Underdog"
+      ]
+    },
+    "skills": {
+      "Athletics": "2d6+1",
+      "Acrobatics": "2d6",
+      "Combat": "3d6",
+      "Stealth": "3d6+1",
+      "Perception": "2d6",
+      "Focus": "2d6"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Growl",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Scratch",
+        "type": "Normal"
+      },
+      {
+        "level": 7,
+        "name": "Tail Whip",
+        "type": "Normal"
+      },
+      {
+        "level": 9,
+        "name": "Double Kick",
+        "type": "Fighting"
+      },
+      {
+        "level": 13,
+        "name": "Poison Sting",
+        "type": "Poison"
+      },
+      {
+        "level": 19,
+        "name": "Fury Swipes",
+        "type": "Normal"
+      },
+      {
+        "level": 21,
+        "name": "Bite",
+        "type": "Dark"
+      },
+      {
+        "level": 25,
+        "name": "Helping Hand",
+        "type": "Normal"
+      },
+      {
+        "level": 31,
+        "name": "Toxic Spikes",
+        "type": "Poison"
+      },
+      {
+        "level": 33,
+        "name": "Flatter",
+        "type": "Dark"
+      },
+      {
+        "level": 37,
+        "name": "Crunch",
+        "type": "Dark"
+      },
+      {
+        "level": 43,
+        "name": "Captivate",
+        "type": "Normal"
+      },
+      {
+        "level": 45,
+        "name": "Poison Fang",
+        "type": "Poison"
+      }
+    ],
+    "tm_hm_moves": [
+      {
+        "kind": "HM",
+        "number": "01",
+        "name": "Cut"
+      },
+      {
+        "kind": "HM",
+        "number": "04",
+        "name": "Strength"
+      },
+      {
+        "kind": "TM",
+        "number": "01",
+        "name": "Hone Claws"
+      },
+      {
+        "kind": "TM",
+        "number": "06",
+        "name": "Toxic"
+      },
+      {
+        "kind": "TM",
+        "number": "09",
+        "name": "Venoshock"
+      },
+      {
+        "kind": "TM",
+        "number": "10",
+        "name": "Hidden Power"
+      },
+      {
+        "kind": "TM",
+        "number": "11",
+        "name": "Sunny Day"
+      },
+      {
+        "kind": "TM",
+        "number": "13",
+        "name": "Ice Beam"
+      },
+      {
+        "kind": "TM",
+        "number": "14",
+        "name": "Blizzard"
+      },
+      {
+        "kind": "TM",
+        "number": "17",
+        "name": "Protect"
+      },
+      {
+        "kind": "TM",
+        "number": "18",
+        "name": "Rain Dance"
+      },
+      {
+        "kind": "TM",
+        "number": "21",
+        "name": "Frustration"
+      },
+      {
+        "kind": "TM",
+        "number": "24",
+        "name": "Thunderbolt"
+      },
+      {
+        "kind": "TM",
+        "number": "25",
+        "name": "Thunder"
+      },
+      {
+        "kind": "TM",
+        "number": "27",
+        "name": "Return"
+      },
+      {
+        "kind": "TM",
+        "number": "28",
+        "name": "Dig"
+      },
+      {
+        "kind": "TM",
+        "number": "32",
+        "name": "Double Team"
+      },
+      {
+        "kind": "TM",
+        "number": "36",
+        "name": "Sludge Bomb"
+      },
+      {
+        "kind": "TM",
+        "number": "40",
+        "name": "Aerial Ace"
+      },
+      {
+        "kind": "TM",
+        "number": "42",
+        "name": "Facade"
+      },
+      {
+        "kind": "TM",
+        "number": "44",
+        "name": "Rest"
+      },
+      {
+        "kind": "TM",
+        "number": "45",
+        "name": "Attract"
+      },
+      {
+        "kind": "TM",
+        "number": "46",
+        "name": "Thief"
+      },
+      {
+        "kind": "TM",
+        "number": "48",
+        "name": "Round"
+      },
+      {
+        "kind": "TM",
+        "number": "65",
+        "name": "Shadow Claw"
+      },
+      {
+        "kind": "TM",
+        "number": "84",
+        "name": "Poison Jab"
+      },
+      {
+        "kind": "TM",
+        "number": "87",
+        "name": "Swagger"
+      },
+      {
+        "kind": "TM",
+        "number": "88",
+        "name": "Sleep Talk"
+      },
+      {
+        "kind": "TM",
+        "number": "90",
+        "name": "Substitute"
+      },
+      {
+        "kind": "TM",
+        "number": "94",
+        "name": "Rock Smash"
+      }
+    ],
+    "egg_moves": [
+      "Beat Up",
+      "Charm",
+      "Chip Away",
+      "Counter",
+      "Disable",
+      "Endure",
+      "Focus Energy",
+      "Iron Tail",
+      "Poison Tail",
+      "Pursuit",
+      "Supersonic",
+      "Take Down",
+      "Venom Drench"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Defense Curl",
+        "heart_scale": false
+      },
+      {
+        "name": "Double-Edge",
+        "heart_scale": false
+      },
+      {
+        "name": "Helping Hand",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Tail",
+        "heart_scale": false
+      },
+      {
+        "name": "Mud-Slap",
+        "heart_scale": false
+      },
+      {
+        "name": "Shock Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Sleep Talk",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Super Fang",
+        "heart_scale": false
+      },
+      {
+        "name": "Water Pulse",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen1",
     "width": 0.4,
     "height": 0.4,
     "base": 1,
@@ -371462,7 +368626,381 @@
   },
   {
     "species": "Nidoran (M)",
+    "types": [
+      "Poison"
+    ],
+    "base_stats": {
+      "hp": 5,
+      "atk": 6,
+      "def": 4,
+      "spatk": 4,
+      "spdef": 4,
+      "spd": 5
+    },
+    "abilities": {
+      "basic": [
+        "Poison Point",
+        "Rivalry"
+      ],
+      "advanced": [
+        "Hustle",
+        "Celebrate"
+      ],
+      "high": [
+        "Bodyguard"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Nidoran M",
+        "min_level": 0
+      },
+      {
+        "stage": 2,
+        "species": "Nidorino",
+        "min_level": 15
+      },
+      {
+        "stage": 3,
+        "species": "Nidoking",
+        "min_level": 25
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 2,
     "size": "Small",
+    "weight": 1,
+    "genderless": false,
+    "male_pct": 100.0,
+    "female_pct": 0.0,
+    "egg_groups": [
+      "Monster",
+      "Field"
+    ],
+    "hatch_rate": "10 Days",
+    "diet": [
+      "Herbivore"
+    ],
+    "habitat": [
+      "Grassland"
+    ],
+    "capabilities": {
+      "overland": 5,
+      "sky": 0,
+      "swim": 3,
+      "levitate": 0,
+      "burrow": 2,
+      "jump": "1/1",
+      "power": 2,
+      "other": [
+        "Naturewalk (Grassland)",
+        "Underdog"
+      ]
+    },
+    "skills": {
+      "Athletics": "2d6+1",
+      "Acrobatics": "2d6",
+      "Combat": "3d6",
+      "Stealth": "3d6+1",
+      "Perception": "2d6",
+      "Focus": "2d6"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Leer",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Peck",
+        "type": "Flying"
+      },
+      {
+        "level": 7,
+        "name": "Focus Energy",
+        "type": "Normal"
+      },
+      {
+        "level": 9,
+        "name": "Double Kick",
+        "type": "Fighting"
+      },
+      {
+        "level": 13,
+        "name": "Poison Sting",
+        "type": "Poison"
+      },
+      {
+        "level": 19,
+        "name": "Fury Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 21,
+        "name": "Horn Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 25,
+        "name": "Helping Hand",
+        "type": "Normal"
+      },
+      {
+        "level": 31,
+        "name": "Toxic Spikes",
+        "type": "Poison"
+      },
+      {
+        "level": 33,
+        "name": "Flatter",
+        "type": "Dark"
+      },
+      {
+        "level": 37,
+        "name": "Poison Jab",
+        "type": "Poison"
+      },
+      {
+        "level": 43,
+        "name": "Captivate",
+        "type": "Normal"
+      },
+      {
+        "level": 45,
+        "name": "Horn Drill",
+        "type": "Normal"
+      }
+    ],
+    "tm_hm_moves": [
+      {
+        "kind": "HM",
+        "number": "01",
+        "name": "Cut"
+      },
+      {
+        "kind": "HM",
+        "number": "04",
+        "name": "Strength"
+      },
+      {
+        "kind": "TM",
+        "number": "01",
+        "name": "Hone Claws"
+      },
+      {
+        "kind": "TM",
+        "number": "06",
+        "name": "Toxic"
+      },
+      {
+        "kind": "TM",
+        "number": "09",
+        "name": "Venoshock"
+      },
+      {
+        "kind": "TM",
+        "number": "10",
+        "name": "Hidden Power"
+      },
+      {
+        "kind": "TM",
+        "number": "11",
+        "name": "Sunny Day"
+      },
+      {
+        "kind": "TM",
+        "number": "13",
+        "name": "Ice Beam"
+      },
+      {
+        "kind": "TM",
+        "number": "14",
+        "name": "Blizzard"
+      },
+      {
+        "kind": "TM",
+        "number": "17",
+        "name": "Protect"
+      },
+      {
+        "kind": "TM",
+        "number": "18",
+        "name": "Rain Dance"
+      },
+      {
+        "kind": "TM",
+        "number": "21",
+        "name": "Frustration"
+      },
+      {
+        "kind": "TM",
+        "number": "24",
+        "name": "Thunderbolt"
+      },
+      {
+        "kind": "TM",
+        "number": "25",
+        "name": "Thunder"
+      },
+      {
+        "kind": "TM",
+        "number": "27",
+        "name": "Return"
+      },
+      {
+        "kind": "TM",
+        "number": "28",
+        "name": "Dig"
+      },
+      {
+        "kind": "TM",
+        "number": "32",
+        "name": "Double Team"
+      },
+      {
+        "kind": "TM",
+        "number": "36",
+        "name": "Sludge Bomb"
+      },
+      {
+        "kind": "TM",
+        "number": "42",
+        "name": "Facade"
+      },
+      {
+        "kind": "TM",
+        "number": "44",
+        "name": "Rest"
+      },
+      {
+        "kind": "TM",
+        "number": "45",
+        "name": "Attract"
+      },
+      {
+        "kind": "TM",
+        "number": "46",
+        "name": "Thief"
+      },
+      {
+        "kind": "TM",
+        "number": "48",
+        "name": "Round"
+      },
+      {
+        "kind": "TM",
+        "number": "49",
+        "name": "Echoed Voice"
+      },
+      {
+        "kind": "TM",
+        "number": "65",
+        "name": "Shadow Claw"
+      },
+      {
+        "kind": "TM",
+        "number": "84",
+        "name": "Poison Jab"
+      },
+      {
+        "kind": "TM",
+        "number": "87",
+        "name": "Swagger"
+      },
+      {
+        "kind": "TM",
+        "number": "88",
+        "name": "Sleep Talk"
+      },
+      {
+        "kind": "TM",
+        "number": "90",
+        "name": "Substitute"
+      },
+      {
+        "kind": "TM",
+        "number": "94",
+        "name": "Rock Smash"
+      },
+      {
+        "kind": "TM",
+        "number": "98",
+        "name": "Power-Up Punch"
+      }
+    ],
+    "egg_moves": [
+      "Amnesia",
+      "Beat Up",
+      "Confusion",
+      "Counter",
+      "Disable",
+      "Sucker Punch",
+      "Supersonic",
+      "Take Down",
+      "Venom Drench",
+      "Head Smash",
+      "Chip Away",
+      "Endure",
+      "Iron Tail",
+      "Poison Tail"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Defense Curl",
+        "heart_scale": false
+      },
+      {
+        "name": "Double-Edge",
+        "heart_scale": false
+      },
+      {
+        "name": "Drill Run",
+        "heart_scale": false
+      },
+      {
+        "name": "Helping Hand",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Tail",
+        "heart_scale": false
+      },
+      {
+        "name": "Mud-Slap",
+        "heart_scale": false
+      },
+      {
+        "name": "Shock Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Sleep Talk",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Sucker Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Super Fang",
+        "heart_scale": false
+      },
+      {
+        "name": "Water Pulse",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen1",
     "width": 0.47,
     "height": 0.5,
     "base": 1,
@@ -371470,7 +369008,460 @@
   },
   {
     "species": "Mime Jr.",
+    "types": [
+      "Psychic",
+      "Fairy"
+    ],
+    "base_stats": {
+      "hp": 2,
+      "atk": 3,
+      "def": 5,
+      "spatk": 7,
+      "spdef": 9,
+      "spd": 6
+    },
+    "abilities": {
+      "basic": [
+        "Soundproof",
+        "Filter"
+      ],
+      "advanced": [
+        "Technician",
+        "Copy Master"
+      ],
+      "high": [
+        "Wallmaster"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Mime Jr.",
+        "min_level": 0
+      },
+      {
+        "stage": 2,
+        "species": "Mr. Mime Learn Mimic",
+        "min_level": 0
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 1,
     "size": "Small",
+    "weight": 2,
+    "genderless": false,
+    "male_pct": 50.0,
+    "female_pct": 50.0,
+    "egg_groups": [
+      "Humanshape"
+    ],
+    "hatch_rate": "13 Days",
+    "diet": [
+      "Omnivore"
+    ],
+    "habitat": [
+      "Urban"
+    ],
+    "capabilities": {
+      "overland": 3,
+      "sky": 0,
+      "swim": 1,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "1/1",
+      "power": 2,
+      "other": [
+        "Underdog"
+      ]
+    },
+    "skills": {
+      "Athletics": "2d6+1",
+      "Acrobatics": "3d6+1",
+      "Combat": "1d6",
+      "Stealth": "2d6+1",
+      "Perception": "2d6",
+      "Focus": "3d6+1"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Tickle",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Barrier",
+        "type": "Psychic"
+      },
+      {
+        "level": 1,
+        "name": "Confusion",
+        "type": "Psychic"
+      },
+      {
+        "level": 4,
+        "name": "Copycat",
+        "type": "Normal"
+      },
+      {
+        "level": 8,
+        "name": "Meditate",
+        "type": "Psychic"
+      },
+      {
+        "level": 11,
+        "name": "Double Slap",
+        "type": "Normal"
+      },
+      {
+        "level": 15,
+        "name": "Mimic",
+        "type": "Normal"
+      },
+      {
+        "level": 18,
+        "name": "Encore",
+        "type": "Normal"
+      },
+      {
+        "level": 22,
+        "name": "Light Screen",
+        "type": "Psychic"
+      },
+      {
+        "level": 22,
+        "name": "Reflect",
+        "type": "Psychic"
+      },
+      {
+        "level": 25,
+        "name": "Psybeam",
+        "type": "Psychic"
+      },
+      {
+        "level": 29,
+        "name": "Substitute",
+        "type": "Normal"
+      },
+      {
+        "level": 32,
+        "name": "Recycle",
+        "type": "Normal"
+      },
+      {
+        "level": 36,
+        "name": "Trick",
+        "type": "Psychic"
+      },
+      {
+        "level": 39,
+        "name": "Psychic",
+        "type": "Psychic"
+      },
+      {
+        "level": 43,
+        "name": "Role Play",
+        "type": "Psychic"
+      },
+      {
+        "level": 46,
+        "name": "Baton Pass",
+        "type": "Normal"
+      },
+      {
+        "level": 50,
+        "name": "Safeguard",
+        "type": "Normal"
+      }
+    ],
+    "tm_hm_moves": [
+      {
+        "kind": "TM",
+        "number": "03",
+        "name": "Psyshock"
+      },
+      {
+        "kind": "TM",
+        "number": "04",
+        "name": "Calm Mind"
+      },
+      {
+        "kind": "TM",
+        "number": "06",
+        "name": "Toxic"
+      },
+      {
+        "kind": "TM",
+        "number": "10",
+        "name": "Hidden Power"
+      },
+      {
+        "kind": "TM",
+        "number": "11",
+        "name": "Sunny Day"
+      },
+      {
+        "kind": "TM",
+        "number": "12",
+        "name": "Taunt"
+      },
+      {
+        "kind": "TM",
+        "number": "16",
+        "name": "Light Screen"
+      },
+      {
+        "kind": "TM",
+        "number": "17",
+        "name": "Protect"
+      },
+      {
+        "kind": "TM",
+        "number": "18",
+        "name": "Rain Dance"
+      },
+      {
+        "kind": "TM",
+        "number": "20",
+        "name": "Safeguard"
+      },
+      {
+        "kind": "TM",
+        "number": "21",
+        "name": "Frustration"
+      },
+      {
+        "kind": "TM",
+        "number": "22",
+        "name": "Solar Beam"
+      },
+      {
+        "kind": "TM",
+        "number": "24",
+        "name": "Thunderbolt"
+      },
+      {
+        "kind": "TM",
+        "number": "25",
+        "name": "Thunder"
+      },
+      {
+        "kind": "TM",
+        "number": "27",
+        "name": "Return"
+      },
+      {
+        "kind": "TM",
+        "number": "29",
+        "name": "Psychic"
+      },
+      {
+        "kind": "TM",
+        "number": "30",
+        "name": "Shadow Ball"
+      },
+      {
+        "kind": "TM",
+        "number": "31",
+        "name": "Brick Break"
+      },
+      {
+        "kind": "TM",
+        "number": "32",
+        "name": "Double Team"
+      },
+      {
+        "kind": "TM",
+        "number": "33",
+        "name": "Reflect"
+      },
+      {
+        "kind": "TM",
+        "number": "41",
+        "name": "Torment"
+      },
+      {
+        "kind": "TM",
+        "number": "42",
+        "name": "Facade"
+      },
+      {
+        "kind": "TM",
+        "number": "44",
+        "name": "Rest"
+      },
+      {
+        "kind": "TM",
+        "number": "45",
+        "name": "Attract"
+      },
+      {
+        "kind": "TM",
+        "number": "46",
+        "name": "Thief"
+      },
+      {
+        "kind": "TM",
+        "number": "48",
+        "name": "Round"
+      },
+      {
+        "kind": "TM",
+        "number": "56",
+        "name": "Fling"
+      },
+      {
+        "kind": "TM",
+        "number": "57",
+        "name": "Charge Beam"
+      },
+      {
+        "kind": "TM",
+        "number": "70",
+        "name": "Flash"
+      },
+      {
+        "kind": "TM",
+        "number": "73",
+        "name": "Thunder Wave"
+      },
+      {
+        "kind": "TM",
+        "number": "77",
+        "name": "Psych Up"
+      },
+      {
+        "kind": "TM",
+        "number": "83",
+        "name": "Infestation"
+      },
+      {
+        "kind": "TM",
+        "number": "85",
+        "name": "Dream Eater"
+      },
+      {
+        "kind": "TM",
+        "number": "86",
+        "name": "Grass Knot"
+      },
+      {
+        "kind": "TM",
+        "number": "87",
+        "name": "Swagger"
+      },
+      {
+        "kind": "TM",
+        "number": "88",
+        "name": "Sleep Talk"
+      },
+      {
+        "kind": "TM",
+        "number": "90",
+        "name": "Substitute"
+      },
+      {
+        "kind": "TM",
+        "number": "92",
+        "name": "Trick Room"
+      }
+    ],
+    "egg_moves": [
+      "Charm",
+      "Confuse Ray",
+      "Fake Out",
+      "Future Sight",
+      "Healing Wish",
+      "Hypnosis",
+      "Icy Wind",
+      "Magic Room",
+      "Mimic",
+      "Nasty Plot",
+      "Power Split",
+      "Psych Up",
+      "Teeter Dance",
+      "Trick",
+      "Wake-Up Slap"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Covet",
+        "heart_scale": false
+      },
+      {
+        "name": "Drain Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Focus Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Helping Hand",
+        "heart_scale": false
+      },
+      {
+        "name": "Magic Coat",
+        "heart_scale": false
+      },
+      {
+        "name": "Magic Room",
+        "heart_scale": false
+      },
+      {
+        "name": "Mud-Slap",
+        "heart_scale": false
+      },
+      {
+        "name": "Recycle",
+        "heart_scale": false
+      },
+      {
+        "name": "Role Play",
+        "heart_scale": false
+      },
+      {
+        "name": "Shock Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Signal Beam",
+        "heart_scale": false
+      },
+      {
+        "name": "Skill Swap",
+        "heart_scale": false
+      },
+      {
+        "name": "Sleep Talk",
+        "heart_scale": false
+      },
+      {
+        "name": "Snatch",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Telekinesis",
+        "heart_scale": false
+      },
+      {
+        "name": "Trick",
+        "heart_scale": false
+      },
+      {
+        "name": "Uproar",
+        "heart_scale": false
+      },
+      {
+        "name": "Wonder Room",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen4",
     "width": 0.41,
     "height": 0.6,
     "base": 1,
@@ -371478,7 +369469,387 @@
   },
   {
     "species": "Zygarde 10% Forme",
+    "types": [
+      "Dragon",
+      "Ground"
+    ],
+    "base_stats": {
+      "hp": 5,
+      "atk": 10,
+      "def": 7,
+      "spatk": 6,
+      "spdef": 9,
+      "spd": 12
+    },
+    "abilities": {
+      "basic": [
+        "Aura Break"
+      ],
+      "advanced": [
+        "Interference",
+        "Air Lock",
+        "Filter"
+      ],
+      "high": [
+        "Pressure"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Zygarde",
+        "min_level": 0
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 0,
     "size": "Medium",
+    "weight": 3,
+    "genderless": true,
+    "male_pct": null,
+    "female_pct": null,
+    "egg_groups": [],
+    "hatch_rate": "75 Days",
+    "diet": [
+      "Nullivore"
+    ],
+    "habitat": [
+      "Cave"
+    ],
+    "capabilities": {
+      "overland": 9,
+      "sky": 0,
+      "swim": 6,
+      "levitate": 0,
+      "burrow": 3,
+      "jump": "3/3",
+      "power": 5,
+      "other": [
+        "Darkvision",
+        "Forme Change",
+        "Groundshaper",
+        "Tremorsense",
+        "Zygarde Cells"
+      ]
+    },
+    "skills": {
+      "Athletics": "4d6+2",
+      "Acrobatics": "4d6",
+      "Combat": "3d6",
+      "Stealth": "5d6+2",
+      "Perception": "4d6+2",
+      "Focus": "3d6"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Glare",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Bulldoze",
+        "type": "Ground"
+      },
+      {
+        "level": 1,
+        "name": "Dragon Breath",
+        "type": "Dragon"
+      },
+      {
+        "level": 1,
+        "name": "Bite",
+        "type": "Dark"
+      },
+      {
+        "level": 5,
+        "name": "Safeguard",
+        "type": "Normal"
+      },
+      {
+        "level": 10,
+        "name": "Dig",
+        "type": "Ground"
+      },
+      {
+        "level": 18,
+        "name": "Bind",
+        "type": "Normal"
+      },
+      {
+        "level": 26,
+        "name": "Land’s Wrath",
+        "type": "Ground"
+      },
+      {
+        "level": 35,
+        "name": "Sandstorm",
+        "type": "Ground"
+      },
+      {
+        "level": 44,
+        "name": "Haze",
+        "type": "Ice"
+      },
+      {
+        "level": 51,
+        "name": "Crunch",
+        "type": "Dark"
+      },
+      {
+        "level": 55,
+        "name": "Earthquake",
+        "type": "Ground"
+      },
+      {
+        "level": 59,
+        "name": "Camouflage",
+        "type": "Normal"
+      },
+      {
+        "level": 63,
+        "name": "Dragon Pulse",
+        "type": "Dragon"
+      },
+      {
+        "level": 72,
+        "name": "Coil",
+        "type": "Poison"
+      },
+      {
+        "level": 80,
+        "name": "Outrage",
+        "type": "Dragon"
+      }
+    ],
+    "tm_hm_moves": [
+      {
+        "kind": "HM",
+        "number": "04",
+        "name": "Strength"
+      },
+      {
+        "kind": "TM",
+        "number": "06",
+        "name": "Toxic"
+      },
+      {
+        "kind": "TM",
+        "number": "10",
+        "name": "Hidden Power"
+      },
+      {
+        "kind": "TM",
+        "number": "11",
+        "name": "Sunny Day"
+      },
+      {
+        "kind": "TM",
+        "number": "15",
+        "name": "Hyper Beam"
+      },
+      {
+        "kind": "TM",
+        "number": "17",
+        "name": "Protect"
+      },
+      {
+        "kind": "TM",
+        "number": "20",
+        "name": "Safeguard"
+      },
+      {
+        "kind": "TM",
+        "number": "21",
+        "name": "Frustration"
+      },
+      {
+        "kind": "TM",
+        "number": "26",
+        "name": "Earthquake"
+      },
+      {
+        "kind": "TM",
+        "number": "27",
+        "name": "Return"
+      },
+      {
+        "kind": "TM",
+        "number": "28",
+        "name": "Dig"
+      },
+      {
+        "kind": "TM",
+        "number": "31",
+        "name": "Brick Break"
+      },
+      {
+        "kind": "TM",
+        "number": "32",
+        "name": "Double Team"
+      },
+      {
+        "kind": "TM",
+        "number": "34",
+        "name": "Sludge Wave"
+      },
+      {
+        "kind": "TM",
+        "number": "37",
+        "name": "Sandstorm"
+      },
+      {
+        "kind": "TM",
+        "number": "42",
+        "name": "Facade"
+      },
+      {
+        "kind": "TM",
+        "number": "44",
+        "name": "Rest"
+      },
+      {
+        "kind": "TM",
+        "number": "48",
+        "name": "Round"
+      },
+      {
+        "kind": "TM",
+        "number": "52",
+        "name": "Focus Blast"
+      },
+      {
+        "kind": "TM",
+        "number": "68",
+        "name": "Giga Impact"
+      },
+      {
+        "kind": "TM",
+        "number": "71",
+        "name": "Stone Edge"
+      },
+      {
+        "kind": "TM",
+        "number": "78",
+        "name": "Bulldoze"
+      },
+      {
+        "kind": "TM",
+        "number": "80",
+        "name": "Rock Slide"
+      },
+      {
+        "kind": "TM",
+        "number": "82",
+        "name": "Dragon Tail"
+      },
+      {
+        "kind": "TM",
+        "number": "86",
+        "name": "Grass Knot"
+      },
+      {
+        "kind": "TM",
+        "number": "87",
+        "name": "Swagger"
+      },
+      {
+        "kind": "TM",
+        "number": "88",
+        "name": "Sleep Talk"
+      },
+      {
+        "kind": "TM",
+        "number": "90",
+        "name": "Substitute"
+      },
+      {
+        "kind": "TM",
+        "number": "94",
+        "name": "Rock Smash"
+      },
+      {
+        "kind": "TM",
+        "number": "100",
+        "name": "Confide"
+      }
+    ],
+    "egg_moves": [],
+    "tutor_moves": [
+      {
+        "name": "Bind",
+        "heart_scale": false
+      },
+      {
+        "name": "Block",
+        "heart_scale": false
+      },
+      {
+        "name": "Draco Meteor",
+        "heart_scale": false
+      },
+      {
+        "name": "Dragon Pulse",
+        "heart_scale": false
+      },
+      {
+        "name": "Earth Power",
+        "heart_scale": false
+      },
+      {
+        "name": "Hyper Voice",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Tail",
+        "heart_scale": false
+      },
+      {
+        "name": "Outrage",
+        "heart_scale": false
+      },
+      {
+        "name": "Pain Split",
+        "heart_scale": false
+      },
+      {
+        "name": "Shock Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Spite",
+        "heart_scale": false
+      },
+      {
+        "name": "Stomping Tantrum",
+        "heart_scale": false
+      },
+      {
+        "name": "Superpower",
+        "heart_scale": false
+      },
+      {
+        "name": "Dragon Dance",
+        "heart_scale": false
+      },
+      {
+        "name": "Extreme Speed",
+        "heart_scale": false
+      },
+      {
+        "name": "Thousand Arrows",
+        "heart_scale": false
+      },
+      {
+        "name": "Thousand Waves",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen7",
     "width": 0.95,
     "height": 1.2,
     "base": 1,
@@ -371486,15 +369857,603 @@
   },
   {
     "species": "Zygarde 50% Forme",
+    "types": [
+      "Dragon",
+      "Ground"
+    ],
+    "base_stats": {
+      "hp": 11,
+      "atk": 10,
+      "def": 12,
+      "spatk": 8,
+      "spdef": 10,
+      "spd": 10
+    },
+    "abilities": {
+      "basic": [
+        "Aura Break"
+      ],
+      "advanced": [
+        "Interference",
+        "Air Lock",
+        "Filter"
+      ],
+      "high": [
+        "Pressure"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Zygarde",
+        "min_level": 0
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 0,
     "size": "Huge",
+    "weight": 6,
+    "genderless": true,
+    "male_pct": null,
+    "female_pct": null,
+    "egg_groups": [],
+    "hatch_rate": "75 Days",
+    "diet": [
+      "Nullivore"
+    ],
+    "habitat": [
+      "Cave"
+    ],
+    "capabilities": {
+      "overland": 7,
+      "sky": 0,
+      "swim": 5,
+      "levitate": 0,
+      "burrow": 9,
+      "jump": "2/2",
+      "power": 9,
+      "other": [
+        "Darkvision",
+        "Forme Change",
+        "Groundshaper",
+        "Mountable 4",
+        "Tremorsense",
+        "Zygarde Cells"
+      ]
+    },
+    "skills": {
+      "Athletics": "4d6+2",
+      "Acrobatics": "3d6",
+      "Combat": "4d6",
+      "Stealth": "4d6+2",
+      "Perception": "6d6+2",
+      "Focus": "5d6"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Glare",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Bulldoze",
+        "type": "Ground"
+      },
+      {
+        "level": 1,
+        "name": "Dragon Breath",
+        "type": "Dragon"
+      },
+      {
+        "level": 1,
+        "name": "Bite",
+        "type": "Dark"
+      },
+      {
+        "level": 5,
+        "name": "Safeguard",
+        "type": "Normal"
+      },
+      {
+        "level": 10,
+        "name": "Dig",
+        "type": "Ground"
+      },
+      {
+        "level": 18,
+        "name": "Bind",
+        "type": "Normal"
+      },
+      {
+        "level": 26,
+        "name": "Land’s Wrath",
+        "type": "Ground"
+      },
+      {
+        "level": 35,
+        "name": "Sandstorm",
+        "type": "Ground"
+      },
+      {
+        "level": 44,
+        "name": "Haze",
+        "type": "Ice"
+      },
+      {
+        "level": 51,
+        "name": "Crunch",
+        "type": "Dark"
+      },
+      {
+        "level": 55,
+        "name": "Earthquake",
+        "type": "Ground"
+      },
+      {
+        "level": 59,
+        "name": "Camouflage",
+        "type": "Normal"
+      },
+      {
+        "level": 63,
+        "name": "Dragon Pulse",
+        "type": "Dragon"
+      },
+      {
+        "level": 72,
+        "name": "Coil",
+        "type": "Poison"
+      },
+      {
+        "level": 80,
+        "name": "Outrage",
+        "type": "Dragon"
+      }
+    ],
+    "tm_hm_moves": [
+      {
+        "kind": "HM",
+        "number": "04",
+        "name": "Strength"
+      },
+      {
+        "kind": "TM",
+        "number": "06",
+        "name": "Toxic"
+      },
+      {
+        "kind": "TM",
+        "number": "10",
+        "name": "Hidden Power"
+      },
+      {
+        "kind": "TM",
+        "number": "11",
+        "name": "Sunny Day"
+      },
+      {
+        "kind": "TM",
+        "number": "15",
+        "name": "Hyper Beam"
+      },
+      {
+        "kind": "TM",
+        "number": "17",
+        "name": "Protect"
+      },
+      {
+        "kind": "TM",
+        "number": "20",
+        "name": "Safeguard"
+      },
+      {
+        "kind": "TM",
+        "number": "21",
+        "name": "Frustration"
+      },
+      {
+        "kind": "TM",
+        "number": "26",
+        "name": "Earthquake"
+      },
+      {
+        "kind": "TM",
+        "number": "27",
+        "name": "Return"
+      },
+      {
+        "kind": "TM",
+        "number": "28",
+        "name": "Dig"
+      },
+      {
+        "kind": "TM",
+        "number": "31",
+        "name": "Brick Break"
+      },
+      {
+        "kind": "TM",
+        "number": "32",
+        "name": "Double Team"
+      },
+      {
+        "kind": "TM",
+        "number": "34",
+        "name": "Sludge Wave"
+      },
+      {
+        "kind": "TM",
+        "number": "37",
+        "name": "Sandstorm"
+      },
+      {
+        "kind": "TM",
+        "number": "42",
+        "name": "Facade"
+      },
+      {
+        "kind": "TM",
+        "number": "44",
+        "name": "Rest"
+      },
+      {
+        "kind": "TM",
+        "number": "48",
+        "name": "Round"
+      },
+      {
+        "kind": "TM",
+        "number": "52",
+        "name": "Focus Blast"
+      },
+      {
+        "kind": "TM",
+        "number": "68",
+        "name": "Giga Impact"
+      },
+      {
+        "kind": "TM",
+        "number": "71",
+        "name": "Stone Edge"
+      },
+      {
+        "kind": "TM",
+        "number": "78",
+        "name": "Bulldoze"
+      },
+      {
+        "kind": "TM",
+        "number": "80",
+        "name": "Rock Slide"
+      },
+      {
+        "kind": "TM",
+        "number": "82",
+        "name": "Dragon Tail"
+      },
+      {
+        "kind": "TM",
+        "number": "86",
+        "name": "Grass Knot"
+      },
+      {
+        "kind": "TM",
+        "number": "87",
+        "name": "Swagger"
+      },
+      {
+        "kind": "TM",
+        "number": "88",
+        "name": "Sleep Talk"
+      },
+      {
+        "kind": "TM",
+        "number": "90",
+        "name": "Substitute"
+      },
+      {
+        "kind": "TM",
+        "number": "94",
+        "name": "Rock Smash"
+      },
+      {
+        "kind": "TM",
+        "number": "100",
+        "name": "Confide"
+      }
+    ],
+    "egg_moves": [],
+    "tutor_moves": [
+      {
+        "name": "Bind",
+        "heart_scale": false
+      },
+      {
+        "name": "Block",
+        "heart_scale": false
+      },
+      {
+        "name": "Draco Meteor",
+        "heart_scale": false
+      },
+      {
+        "name": "Dragon Pulse",
+        "heart_scale": false
+      },
+      {
+        "name": "Earth Power",
+        "heart_scale": false
+      },
+      {
+        "name": "Hyper Voice",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Tail",
+        "heart_scale": false
+      },
+      {
+        "name": "Outrage",
+        "heart_scale": false
+      },
+      {
+        "name": "Pain Split",
+        "heart_scale": false
+      },
+      {
+        "name": "Shock Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Spite",
+        "heart_scale": false
+      },
+      {
+        "name": "Stomping Tantrum",
+        "heart_scale": false
+      },
+      {
+        "name": "Superpower",
+        "heart_scale": false
+      },
+      {
+        "name": "Dragon Dance",
+        "heart_scale": false
+      },
+      {
+        "name": "Extreme Speed",
+        "heart_scale": false
+      },
+      {
+        "name": "Thousand Arrows",
+        "heart_scale": false
+      },
+      {
+        "name": "Thousand Waves",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen7",
     "width": 4.48,
-    "height": 5,
+    "height": 5.0,
     "base": 3,
     "clearance": 5
   },
   {
     "species": "Darmanitan Galar Standard Mode",
+    "types": [
+      "Ice"
+    ],
+    "base_stats": {
+      "hp": 11,
+      "atk": 14,
+      "def": 6,
+      "spatk": 3,
+      "spdef": 6,
+      "spd": 10
+    },
+    "abilities": {
+      "basic": [
+        "Gorilla Tactics",
+        "Ice Body"
+      ],
+      "advanced": [
+        "Inner Focus",
+        "Winter’s Kiss"
+      ],
+      "high": [
+        "Zen Snowed"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Darumaka (G)",
+        "min_level": 0
+      },
+      {
+        "stage": 2,
+        "species": "Darmanitan (G),",
+        "min_level": 30
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 1,
     "size": "Medium",
+    "weight": 5,
+    "genderless": false,
+    "male_pct": 50.0,
+    "female_pct": 50.0,
+    "egg_groups": [
+      "Field"
+    ],
+    "hatch_rate": null,
+    "diet": [
+      "Omnivore"
+    ],
+    "habitat": [
+      "Mountain",
+      "Tundra"
+    ],
+    "capabilities": {
+      "overland": 7,
+      "sky": 0,
+      "swim": 3,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "1/2",
+      "power": 8,
+      "other": [
+        "Chilled",
+        "Forme Change",
+        "Freezer",
+        "Naturewalk (Tundra,  Mountain)"
+      ]
+    },
+    "skills": {
+      "Athletics": "5d6+2",
+      "Acrobatics": "3d6+1",
+      "Combat": "4d6",
+      "Stealth": "3d6+2",
+      "Perception": "3d6",
+      "Focus": "4d6+1"
+    },
+    "level_up_moves": [
+      {
+        "level": 4,
+        "name": "Taunt",
+        "type": "Dark"
+      },
+      {
+        "level": 8,
+        "name": "Bite",
+        "type": "Dark"
+      },
+      {
+        "level": 12,
+        "name": "Avalanche",
+        "type": "Ice"
+      },
+      {
+        "level": 16,
+        "name": "Work Up",
+        "type": "Normal"
+      },
+      {
+        "level": 20,
+        "name": "Ice Fang",
+        "type": "Ice"
+      },
+      {
+        "level": 24,
+        "name": "Headbutt",
+        "type": "Normal"
+      },
+      {
+        "level": 28,
+        "name": "Ice Punch",
+        "type": "Ice"
+      },
+      {
+        "level": 32,
+        "name": "Uproar",
+        "type": "Normal"
+      },
+      {
+        "level": 38,
+        "name": "Belly Drum",
+        "type": "Normal"
+      },
+      {
+        "level": 44,
+        "name": "Blizzard",
+        "type": "Ice"
+      },
+      {
+        "level": 50,
+        "name": "Thrash",
+        "type": "Normal"
+      },
+      {
+        "level": 56,
+        "name": "Superpower",
+        "type": "Fighting"
+      }
+    ],
+    "tm_hm_moves": [],
+    "egg_moves": [],
+    "tutor_moves": [
+      {
+        "name": "Avalanche",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Press",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Endure",
+        "heart_scale": false
+      },
+      {
+        "name": "Fire Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Focus Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Heat Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Ice Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Defense",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Head",
+        "heart_scale": false
+      },
+      {
+        "name": "Mega Kick",
+        "heart_scale": false
+      },
+      {
+        "name": "Mega Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Superpower",
+        "heart_scale": false
+      },
+      {
+        "name": "Uproar",
+        "heart_scale": false
+      },
+      {
+        "name": "Zen Headbutt",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen8",
     "width": 1.73,
     "height": 1.7,
     "base": 1,
@@ -371502,7 +370461,216 @@
   },
   {
     "species": "Darmanitan Galar Zen Mode",
+    "types": [
+      "Ice",
+      "Fire"
+    ],
+    "base_stats": {
+      "hp": 11,
+      "atk": 16,
+      "def": 6,
+      "spatk": 3,
+      "spdef": 6,
+      "spd": 14
+    },
+    "abilities": {
+      "basic": [
+        "Gorilla Tactics",
+        "Ice Body"
+      ],
+      "advanced": [
+        "Inner Focus",
+        "Winter’s Kiss"
+      ],
+      "high": [
+        "Zen Snowed"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Darumaka (G)",
+        "min_level": 0
+      },
+      {
+        "stage": 2,
+        "species": "Darmanitan (G),",
+        "min_level": 30
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 1,
     "size": "Medium",
+    "weight": 5,
+    "genderless": false,
+    "male_pct": 50.0,
+    "female_pct": 50.0,
+    "egg_groups": [
+      "Field"
+    ],
+    "hatch_rate": null,
+    "diet": [
+      "Omnivore"
+    ],
+    "habitat": [
+      "Mountain",
+      "Tundra"
+    ],
+    "capabilities": {
+      "overland": 9,
+      "sky": 0,
+      "swim": 3,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "1/2",
+      "power": 8,
+      "other": [
+        "Chilled",
+        "Firestarter",
+        "Forme Change",
+        "Freezer",
+        "Naturewalk  (Tundra, Mountain)"
+      ]
+    },
+    "skills": {
+      "Athletics": "5d6+2",
+      "Acrobatics": "3d6+1",
+      "Combat": "5d6+2",
+      "Stealth": "3d6+2",
+      "Perception": "3d6",
+      "Focus": "4d6+1"
+    },
+    "level_up_moves": [
+      {
+        "level": 4,
+        "name": "Taunt",
+        "type": "Dark"
+      },
+      {
+        "level": 8,
+        "name": "Bite",
+        "type": "Dark"
+      },
+      {
+        "level": 12,
+        "name": "Avalanche",
+        "type": "Ice"
+      },
+      {
+        "level": 16,
+        "name": "Work Up",
+        "type": "Normal"
+      },
+      {
+        "level": 20,
+        "name": "Ice Fang",
+        "type": "Ice"
+      },
+      {
+        "level": 24,
+        "name": "Headbutt",
+        "type": "Normal"
+      },
+      {
+        "level": 28,
+        "name": "Ice Punch",
+        "type": "Ice"
+      },
+      {
+        "level": 32,
+        "name": "Uproar",
+        "type": "Normal"
+      },
+      {
+        "level": 38,
+        "name": "Belly Drum",
+        "type": "Normal"
+      },
+      {
+        "level": 44,
+        "name": "Blizzard",
+        "type": "Ice"
+      },
+      {
+        "level": 50,
+        "name": "Thrash",
+        "type": "Normal"
+      },
+      {
+        "level": 56,
+        "name": "Superpower",
+        "type": "Fighting"
+      }
+    ],
+    "tm_hm_moves": [],
+    "egg_moves": [],
+    "tutor_moves": [
+      {
+        "name": "Avalanche",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Press",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Endure",
+        "heart_scale": false
+      },
+      {
+        "name": "Fire Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Focus Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Heat Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Ice Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Defense",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Head",
+        "heart_scale": false
+      },
+      {
+        "name": "Mega Kick",
+        "heart_scale": false
+      },
+      {
+        "name": "Mega Punch",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Superpower",
+        "heart_scale": false
+      },
+      {
+        "name": "Uproar",
+        "heart_scale": false
+      },
+      {
+        "name": "Zen Headbutt",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen8",
     "width": 2.18,
     "height": 1.7,
     "base": 1,
@@ -371510,7 +370678,219 @@
   },
   {
     "species": "Farfetch’d Galar",
+    "types": [
+      "Fighting"
+    ],
+    "base_stats": {
+      "hp": 5,
+      "atk": 10,
+      "def": 6,
+      "spatk": 6,
+      "spdef": 6,
+      "spd": 6
+    },
+    "abilities": {
+      "basic": [
+        "Scrappy",
+        "Steadfast"
+      ],
+      "advanced": [
+        "Defiant",
+        "Super Luck"
+      ],
+      "high": [
+        "Thrust"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Farfetch'd (G)",
+        "min_level": 0
+      },
+      {
+        "stage": 2,
+        "species": "Sirfetch'd",
+        "min_level": 25
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 1,
     "size": "Small",
+    "weight": 3,
+    "genderless": false,
+    "male_pct": 50.0,
+    "female_pct": 50.0,
+    "egg_groups": [
+      "Flying",
+      "Field"
+    ],
+    "hatch_rate": "10 Days",
+    "diet": [
+      "Herbivore"
+    ],
+    "habitat": [
+      "Grassland"
+    ],
+    "capabilities": {
+      "overland": 6,
+      "sky": 2,
+      "swim": 2,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "2/2",
+      "power": 5,
+      "other": [
+        "Underdog",
+        "Wielder"
+      ]
+    },
+    "skills": {
+      "Athletics": "4d6+1",
+      "Acrobatics": "3d6",
+      "Combat": "4d6+2",
+      "Stealth": "4d6+2",
+      "Perception": "4d6",
+      "Focus": "4d6+2"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Peck",
+        "type": "Flying"
+      },
+      {
+        "level": 1,
+        "name": "Sand Attack",
+        "type": "Ground"
+      },
+      {
+        "level": 5,
+        "name": "Leer",
+        "type": "Normal"
+      },
+      {
+        "level": 10,
+        "name": "Fury Cutter",
+        "type": "Bug"
+      },
+      {
+        "level": 15,
+        "name": "Rock Smash",
+        "type": "Fighting"
+      },
+      {
+        "level": 20,
+        "name": "Brutal Swing",
+        "type": "Dark"
+      },
+      {
+        "level": 25,
+        "name": "Detect",
+        "type": "Fighting"
+      },
+      {
+        "level": 30,
+        "name": "Knock Off",
+        "type": "Dark"
+      },
+      {
+        "level": 35,
+        "name": "Defog",
+        "type": "Flying"
+      },
+      {
+        "level": 40,
+        "name": "Brick Break",
+        "type": "Fighting"
+      },
+      {
+        "level": 45,
+        "name": "Swords Dance",
+        "type": "Normal"
+      },
+      {
+        "level": 50,
+        "name": "Slam",
+        "type": "Normal"
+      },
+      {
+        "level": 55,
+        "name": "Leaf Blade",
+        "type": "Grass"
+      },
+      {
+        "level": 60,
+        "name": "Final Gambit",
+        "type": "Fighting"
+      },
+      {
+        "level": 65,
+        "name": "Brave Bird",
+        "type": "Flying"
+      }
+    ],
+    "tm_hm_moves": [],
+    "egg_moves": [
+      "Counter",
+      "Covet",
+      "Curse",
+      "Double-Edge",
+      "Feint",
+      "Flail",
+      "Night Slash",
+      "Quick Attack",
+      "Quick Guard",
+      "Simple Beam",
+      "Sky Attack"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Covet",
+        "heart_scale": false
+      },
+      {
+        "name": "Defog",
+        "heart_scale": false
+      },
+      {
+        "name": "Double-Edge",
+        "heart_scale": false
+      },
+      {
+        "name": "Endure",
+        "heart_scale": false
+      },
+      {
+        "name": "Helping Hand",
+        "heart_scale": false
+      },
+      {
+        "name": "Knock Off",
+        "heart_scale": false
+      },
+      {
+        "name": "Sky Attack",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Superpower",
+        "heart_scale": false
+      },
+      {
+        "name": "Throat Chop",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen8",
     "width": 1.35,
     "height": 0.8,
     "base": 1,
@@ -371518,7 +370898,213 @@
   },
   {
     "species": "Sirfetch’d",
+    "types": [
+      "Fighting"
+    ],
+    "base_stats": {
+      "hp": 6,
+      "atk": 14,
+      "def": 10,
+      "spatk": 7,
+      "spdef": 8,
+      "spd": 7
+    },
+    "abilities": {
+      "basic": [
+        "Scrappy",
+        "Steadfast"
+      ],
+      "advanced": [
+        "Lancer",
+        "Super Luck"
+      ],
+      "high": [
+        "Parry"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Farfetch'd (G)",
+        "min_level": 0
+      },
+      {
+        "stage": 2,
+        "species": "Sirfetch'd",
+        "min_level": 25
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 1,
     "size": "Small",
+    "weight": 5,
+    "genderless": false,
+    "male_pct": 50.0,
+    "female_pct": 50.0,
+    "egg_groups": [
+      "Flying",
+      "Field"
+    ],
+    "hatch_rate": null,
+    "diet": [
+      "Herbivore"
+    ],
+    "habitat": [
+      "Grassland"
+    ],
+    "capabilities": {
+      "overland": 8,
+      "sky": 2,
+      "swim": 3,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "3/3",
+      "power": 7,
+      "other": [
+        "Wielder"
+      ]
+    },
+    "skills": {
+      "Athletics": "5d6+1",
+      "Acrobatics": "3d6",
+      "Combat": "6d6+1",
+      "Stealth": "4d6",
+      "Perception": "5d6",
+      "Focus": "5d6+2"
+    },
+    "level_up_moves": [
+      {
+        "level": 5,
+        "name": "Leer",
+        "type": "Normal"
+      },
+      {
+        "level": 10,
+        "name": "Fury Cutter",
+        "type": "Bug"
+      },
+      {
+        "level": 15,
+        "name": "Rock Smash",
+        "type": "Fighting"
+      },
+      {
+        "level": 20,
+        "name": "Brutal Swing",
+        "type": "Dark"
+      },
+      {
+        "level": 25,
+        "name": "Detect",
+        "type": "Fighting"
+      },
+      {
+        "level": 30,
+        "name": "Knock Off",
+        "type": "Dark"
+      },
+      {
+        "level": 35,
+        "name": "Defog",
+        "type": "Flying"
+      },
+      {
+        "level": 40,
+        "name": "Brick Break",
+        "type": "Fighting"
+      },
+      {
+        "level": 45,
+        "name": "Swords Dance",
+        "type": "Normal"
+      },
+      {
+        "level": 50,
+        "name": "Slam",
+        "type": "Normal"
+      },
+      {
+        "level": 55,
+        "name": "Leaf Blade",
+        "type": "Grass"
+      },
+      {
+        "level": 60,
+        "name": "Final Gambit",
+        "type": "Fighting"
+      },
+      {
+        "level": 65,
+        "name": "Brave Bird",
+        "type": "Flying"
+      },
+      {
+        "level": 70,
+        "name": "Meteor Assault",
+        "type": "Fighting"
+      }
+    ],
+    "tm_hm_moves": [],
+    "egg_moves": [],
+    "tutor_moves": [
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Covet",
+        "heart_scale": false
+      },
+      {
+        "name": "Defog",
+        "heart_scale": false
+      },
+      {
+        "name": "Double-Edge",
+        "heart_scale": false
+      },
+      {
+        "name": "Endure",
+        "heart_scale": false
+      },
+      {
+        "name": "First Impression",
+        "heart_scale": true
+      },
+      {
+        "name": "Helping Hand",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Defense",
+        "heart_scale": true
+      },
+      {
+        "name": "Knock Off",
+        "heart_scale": false
+      },
+      {
+        "name": "Meteor Assault",
+        "heart_scale": true
+      },
+      {
+        "name": "Sky Attack",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Superpower",
+        "heart_scale": false
+      },
+      {
+        "name": "Throat Chop",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen8",
     "width": 0.44,
     "height": 0.8,
     "base": 1,
@@ -371526,7 +371112,188 @@
   },
   {
     "species": "Zacian Hero Of Many Battles Forme",
+    "types": [
+      "Fairy"
+    ],
+    "base_stats": {
+      "hp": 9,
+      "atk": 13,
+      "def": 12,
+      "spatk": 8,
+      "spdef": 12,
+      "spd": 14
+    },
+    "abilities": {
+      "basic": [
+        "Intrepid Sword"
+      ],
+      "advanced": [
+        "Defiant",
+        "Mold Breaker",
+        "Fade Away"
+      ],
+      "high": [
+        "Tough Claws"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Zacian",
+        "min_level": 0
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 0,
     "size": "Huge",
+    "weight": 5,
+    "genderless": true,
+    "male_pct": null,
+    "female_pct": null,
+    "egg_groups": [],
+    "hatch_rate": "75 Days",
+    "diet": [
+      "Omnivore"
+    ],
+    "habitat": [
+      "Forest"
+    ],
+    "capabilities": {
+      "overland": 10,
+      "sky": 0,
+      "swim": 5,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "3/3",
+      "power": 8,
+      "other": [
+        "Aura  Reader",
+        "Forme Change",
+        "Invisibility",
+        "Mountable 2",
+        "Phasing",
+        "Weapon Bond"
+      ]
+    },
+    "skills": {
+      "Athletics": "5d6",
+      "Acrobatics": "4d6+2",
+      "Combat": "5d6",
+      "Stealth": "5d6",
+      "Perception": "4d6+2",
+      "Focus": "4d6"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Metal Claw",
+        "type": "Steel"
+      },
+      {
+        "level": 1,
+        "name": "Howl",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Quick Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Bite",
+        "type": "Dark"
+      },
+      {
+        "level": 11,
+        "name": "Slash",
+        "type": "Normal"
+      },
+      {
+        "level": 22,
+        "name": "Swords Dance",
+        "type": "Normal"
+      },
+      {
+        "level": 33,
+        "name": "Iron Head",
+        "type": "Steel"
+      },
+      {
+        "level": 44,
+        "name": "Laser Focus",
+        "type": "Normal"
+      },
+      {
+        "level": 55,
+        "name": "Crunch",
+        "type": "Dark"
+      },
+      {
+        "level": 66,
+        "name": "Moonblast",
+        "type": "Fairy"
+      },
+      {
+        "level": 77,
+        "name": "Close Combat",
+        "type": "Fighting"
+      },
+      {
+        "level": 88,
+        "name": "Giga Impact",
+        "type": "Normal"
+      }
+    ],
+    "tm_hm_moves": [],
+    "egg_moves": [],
+    "tutor_moves": [
+      {
+        "name": "Endure",
+        "heart_scale": false
+      },
+      {
+        "name": "Helping Hand",
+        "heart_scale": false
+      },
+      {
+        "name": "Hyper Voice",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Head",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Tail",
+        "heart_scale": false
+      },
+      {
+        "name": "Laser Focus",
+        "heart_scale": false
+      },
+      {
+        "name": "Quick Guard",
+        "heart_scale": false
+      },
+      {
+        "name": "Sacred Sword",
+        "heart_scale": true
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Steel Beam",
+        "heart_scale": false
+      },
+      {
+        "name": "Swift",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen8",
     "width": 2.47,
     "height": 2.8,
     "base": 3,
@@ -371534,8 +371301,193 @@
   },
   {
     "species": "Zamazenta Hero Of Many Battles Forme",
+    "types": [
+      "Fighting"
+    ],
+    "base_stats": {
+      "hp": 9,
+      "atk": 13,
+      "def": 12,
+      "spatk": 8,
+      "spdef": 12,
+      "spd": 14
+    },
+    "abilities": {
+      "basic": [
+        "Dauntless Shield"
+      ],
+      "advanced": [
+        "Stamina",
+        "Friend Guard",
+        "Fade Away"
+      ],
+      "high": [
+        "Bulletproof"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Zamazenta",
+        "min_level": 0
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 0,
     "size": "Huge",
-    "width": 3,
+    "weight": 6,
+    "genderless": true,
+    "male_pct": null,
+    "female_pct": null,
+    "egg_groups": [],
+    "hatch_rate": "75 Days",
+    "diet": [
+      "Omnivore"
+    ],
+    "habitat": [
+      "Forest"
+    ],
+    "capabilities": {
+      "overland": 9,
+      "sky": 0,
+      "swim": 5,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "3/3",
+      "power": 9,
+      "other": [
+        "Aura  Reader",
+        "Forme Change",
+        "Invisibility",
+        "Mountable 2",
+        "Phasing",
+        "Weapon Bond"
+      ]
+    },
+    "skills": {
+      "Athletics": "5d6+2",
+      "Acrobatics": "4d6",
+      "Combat": "5d6",
+      "Stealth": "5d6",
+      "Perception": "4d6",
+      "Focus": "4d6+2"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Metal Claw",
+        "type": "Steel"
+      },
+      {
+        "level": 1,
+        "name": "Howl",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Quick Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Bite",
+        "type": "Dark"
+      },
+      {
+        "level": 11,
+        "name": "Slash",
+        "type": "Normal"
+      },
+      {
+        "level": 22,
+        "name": "Iron Defense",
+        "type": "Steel"
+      },
+      {
+        "level": 33,
+        "name": "Iron Head",
+        "type": "Steel"
+      },
+      {
+        "level": 44,
+        "name": "Laser Focus",
+        "type": "Normal"
+      },
+      {
+        "level": 55,
+        "name": "Crunch",
+        "type": "Dark"
+      },
+      {
+        "level": 66,
+        "name": "Moonblast",
+        "type": "Fairy"
+      },
+      {
+        "level": 77,
+        "name": "Close Combat",
+        "type": "Fighting"
+      },
+      {
+        "level": 88,
+        "name": "Giga Impact",
+        "type": "Normal"
+      }
+    ],
+    "tm_hm_moves": [],
+    "egg_moves": [],
+    "tutor_moves": [
+      {
+        "name": "Endure",
+        "heart_scale": false
+      },
+      {
+        "name": "Helping Hand",
+        "heart_scale": false
+      },
+      {
+        "name": "Hyper Voice",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Defense",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Head",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Tail",
+        "heart_scale": false
+      },
+      {
+        "name": "Laser Focus",
+        "heart_scale": false
+      },
+      {
+        "name": "Metal Burst",
+        "heart_scale": true
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Steel Beam",
+        "heart_scale": false
+      },
+      {
+        "name": "Swift",
+        "heart_scale": false
+      },
+      {
+        "name": "Wide Guard",
+        "heart_scale": true
+      }
+    ],
+    "source_gen": "gen8",
+    "width": 3.0,
     "height": 2.9,
     "base": 3,
     "clearance": 3

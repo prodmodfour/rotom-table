@@ -14731,7 +14731,7 @@
     "clearance": 2
   },
   {
-    "species": "Hp:",
+    "species": "Farfetch’d",
     "types": [
       "Normal",
       "Flying"
@@ -14766,7 +14766,7 @@
     ],
     "evolution_stage": 1,
     "evolutions_remaining": 0,
-    "size": "Huge",
+    "size": "Small",
     "weight": 2,
     "genderless": false,
     "male_pct": 50.0,
@@ -15140,7 +15140,11 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen1"
+    "source_gen": "gen1",
+    "width": 0.75,
+    "height": 0.8,
+    "base": 1,
+    "clearance": 1
   },
   {
     "species": "Fearow",
@@ -36303,7 +36307,7 @@
     "clearance": 1
   },
   {
-    "species": "Hp:",
+    "species": "Nidoran (F)",
     "types": [
       "Poison"
     ],
@@ -36347,7 +36351,7 @@
     ],
     "evolution_stage": 1,
     "evolutions_remaining": 2,
-    "size": "Huge",
+    "size": "Small",
     "weight": 1,
     "genderless": false,
     "male_pct": 0.0,
@@ -36664,10 +36668,14 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen1"
+    "source_gen": "gen1",
+    "width": 0.4,
+    "height": 0.4,
+    "base": 1,
+    "clearance": 1
   },
   {
-    "species": "Hp:",
+    "species": "Nidoran (M)",
     "types": [
       "Poison"
     ],
@@ -36711,7 +36719,7 @@
     ],
     "evolution_stage": 1,
     "evolutions_remaining": 2,
-    "size": "Huge",
+    "size": "Small",
     "weight": 1,
     "genderless": false,
     "male_pct": 100.0,
@@ -37042,7 +37050,11 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen1"
+    "source_gen": "gen1",
+    "width": 0.47,
+    "height": 0.5,
+    "base": 1,
+    "clearance": 1
   },
   {
     "species": "Nidorina",
@@ -82593,7 +82605,7 @@
       },
       {
         "stage": 2,
-        "species": "Mismagius,",
+        "species": "Mismagius",
         "min_level": 20
       }
     ],
@@ -96590,8 +96602,8 @@
       },
       {
         "stage": 2,
-        "species": "Sunflora MInimum 20",
-        "min_level": 0
+        "species": "Sunflora",
+        "min_level": 20
       }
     ],
     "evolution_stage": 1,
@@ -135393,7 +135405,7 @@
       },
       {
         "stage": 2,
-        "species": "Milotic 6 Beauty Dice or Minimum",
+        "species": "Milotic 6 Beauty Dice or",
         "min_level": 0
       }
     ],
@@ -137268,8 +137280,8 @@
       },
       {
         "stage": 2,
-        "species": "Probopass 1.5 mi. above sea level, minimum 25",
-        "min_level": 0
+        "species": "Probopass 1.5 mi. above sea level",
+        "min_level": 25
       }
     ],
     "evolution_stage": 1,
@@ -188009,7 +188021,7 @@
     "clearance": 1
   },
   {
-    "species": "Hp:",
+    "species": "Mime Jr.",
     "types": [
       "Psychic",
       "Fairy"
@@ -188049,7 +188061,7 @@
     ],
     "evolution_stage": 1,
     "evolutions_remaining": 1,
-    "size": "Huge",
+    "size": "Small",
     "weight": 2,
     "genderless": false,
     "male_pct": 50.0,
@@ -188463,7 +188475,11 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen4"
+    "source_gen": "gen4",
+    "width": 0.41,
+    "height": 0.6,
+    "base": 1,
+    "clearance": 1
   },
   {
     "species": "Mismagius",
@@ -192672,8 +192688,8 @@
       },
       {
         "stage": 2,
-        "species": "Probopass 1.5 mi. above sea level, minimum 25",
-        "min_level": 0
+        "species": "Probopass 1.5 mi. above sea level",
+        "min_level": 25
       }
     ],
     "evolution_stage": 1,
@@ -338638,7 +338654,7 @@
     "clearance": 2
   },
   {
-    "species": "Hp:",
+    "species": "Zygarde 10% Forme",
     "types": [
       "Dragon",
       "Ground"
@@ -338673,7 +338689,7 @@
     ],
     "evolution_stage": 1,
     "evolutions_remaining": 0,
-    "size": "Huge",
+    "size": "Medium",
     "weight": 3,
     "genderless": true,
     "male_pct": null,
@@ -339019,10 +339035,14 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen7"
+    "source_gen": "gen7",
+    "width": 0.95,
+    "height": 1.2,
+    "base": 1,
+    "clearance": 1
   },
   {
-    "species": "Hp:",
+    "species": "Zygarde 50% Forme",
     "types": [
       "Dragon",
       "Ground"
@@ -339404,7 +339424,11 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen7"
+    "source_gen": "gen7",
+    "width": 4.48,
+    "height": 5.0,
+    "base": 3,
+    "clearance": 5
   },
   {
     "species": "Zygarde Complete Forme",
@@ -344898,7 +344922,7 @@
     "clearance": 1
   },
   {
-    "species": "Hp:",
+    "species": "Darmanitan Galar Standard Mode",
     "types": [
       "Ice"
     ],
@@ -344937,7 +344961,7 @@
     ],
     "evolution_stage": 1,
     "evolutions_remaining": 1,
-    "size": "Huge",
+    "size": "Medium",
     "weight": 5,
     "genderless": false,
     "male_pct": 50.0,
@@ -345106,10 +345130,14 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen8"
+    "source_gen": "gen8",
+    "width": 1.73,
+    "height": 1.7,
+    "base": 1,
+    "clearance": 2
   },
   {
-    "species": "Hp:",
+    "species": "Darmanitan Galar Zen Mode",
     "types": [
       "Ice",
       "Fire"
@@ -345149,7 +345177,7 @@
     ],
     "evolution_stage": 1,
     "evolutions_remaining": 1,
-    "size": "Huge",
+    "size": "Medium",
     "weight": 5,
     "genderless": false,
     "male_pct": 50.0,
@@ -345319,7 +345347,11 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen8"
+    "source_gen": "gen8",
+    "width": 2.18,
+    "height": 1.7,
+    "base": 1,
+    "clearance": 2
   },
   {
     "species": "Darumaka Galar",
@@ -348389,7 +348421,7 @@
     "clearance": 3
   },
   {
-    "species": "Hp:",
+    "species": "Farfetch’d Galar",
     "types": [
       "Fighting"
     ],
@@ -348428,7 +348460,7 @@
     ],
     "evolution_stage": 1,
     "evolutions_remaining": 1,
-    "size": "Huge",
+    "size": "Small",
     "weight": 3,
     "genderless": false,
     "male_pct": 50.0,
@@ -348602,7 +348634,11 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen8"
+    "source_gen": "gen8",
+    "width": 1.35,
+    "height": 0.8,
+    "base": 1,
+    "clearance": 1
   },
   {
     "species": "Flapple",
@@ -357891,7 +357927,7 @@
     "clearance": 1
   },
   {
-    "species": "Hp:",
+    "species": "Sirfetch’d",
     "types": [
       "Fighting"
     ],
@@ -357930,7 +357966,7 @@
     ],
     "evolution_stage": 1,
     "evolutions_remaining": 1,
-    "size": "Huge",
+    "size": "Small",
     "weight": 5,
     "genderless": false,
     "male_pct": 50.0,
@@ -358098,7 +358134,11 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen8"
+    "source_gen": "gen8",
+    "width": 0.44,
+    "height": 0.8,
+    "base": 1,
+    "clearance": 1
   },
   {
     "species": "Sizzlipede",
@@ -362556,7 +362596,7 @@
     "clearance": 3
   },
   {
-    "species": "Hp:",
+    "species": "Zacian Hero Of Many Battles Forme",
     "types": [
       "Fairy"
     ],
@@ -362738,7 +362778,11 @@
         "heart_scale": false
       }
     ],
-    "source_gen": "gen8"
+    "source_gen": "gen8",
+    "width": 2.47,
+    "height": 2.8,
+    "base": 3,
+    "clearance": 3
   },
   {
     "species": "Zamazenta Crowned Shield Forme",
@@ -362934,7 +362978,7 @@
     "clearance": 3
   },
   {
-    "species": "Hp:",
+    "species": "Zamazenta Hero Of Many Battles Forme",
     "types": [
       "Fighting"
     ],
@@ -363120,7 +363164,11 @@
         "heart_scale": true
       }
     ],
-    "source_gen": "gen8"
+    "source_gen": "gen8",
+    "width": 3.0,
+    "height": 2.9,
+    "base": 3,
+    "clearance": 3
   },
   {
     "species": "Zapdos Galar",
@@ -364777,6 +364825,371 @@
     "clearance": 1
   },
   {
+    "species": "Kilowattrel",
+    "types": [
+      "Electric",
+      "Flying"
+    ],
+    "base_stats": {
+      "hp": 7,
+      "atk": 7,
+      "def": 6,
+      "spatk": 11,
+      "spdef": 6,
+      "spd": 13
+    },
+    "abilities": {
+      "basic": [
+        "Wind Power",
+        "Motor Drive"
+      ],
+      "advanced": [
+        "Keen Eye",
+        "Early Bird"
+      ],
+      "high": [
+        "Competitive"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Wattrel",
+        "min_level": 0
+      },
+      {
+        "stage": 2,
+        "species": "Kilowattrel",
+        "min_level": 25
+      }
+    ],
+    "evolution_stage": 2,
+    "evolutions_remaining": 0,
+    "size": "Medium",
+    "weight": 3,
+    "genderless": false,
+    "male_pct": 50.0,
+    "female_pct": 50.0,
+    "egg_groups": [
+      "Flying",
+      "Water 1"
+    ],
+    "hatch_rate": "10 Days",
+    "diet": [
+      "Carnivore"
+    ],
+    "habitat": [
+      "Beach",
+      "Ocean"
+    ],
+    "capabilities": {
+      "overland": 4,
+      "sky": 10,
+      "swim": 2,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "2/3",
+      "power": 3,
+      "other": [
+        "Guster",
+        "Zapper",
+        "Mountable 1"
+      ]
+    },
+    "skills": {
+      "Athletics": "4d6",
+      "Acrobatics": "5d6",
+      "Combat": "3d6",
+      "Stealth": "3d6",
+      "Perception": "4d6",
+      "Focus": "4d6+1"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Growl",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Peck",
+        "type": "Flying"
+      },
+      {
+        "level": 1,
+        "name": "Electro Ball",
+        "type": "Electric"
+      },
+      {
+        "level": 4,
+        "name": "Thunder Shock",
+        "type": "Electric"
+      },
+      {
+        "level": 7,
+        "name": "Quick Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 11,
+        "name": "Pluck",
+        "type": "Flying"
+      },
+      {
+        "level": 15,
+        "name": "Spark",
+        "type": "Electric"
+      },
+      {
+        "level": 19,
+        "name": "Uproar",
+        "type": "Normal"
+      },
+      {
+        "level": 24,
+        "name": "Roost",
+        "type": "Flying"
+      },
+      {
+        "level": 30,
+        "name": "Dual Wingbeat",
+        "type": "Flying"
+      },
+      {
+        "level": 36,
+        "name": "Agility",
+        "type": "Psychic"
+      },
+      {
+        "level": 43,
+        "name": "Volt Switch",
+        "type": "Electric"
+      },
+      {
+        "level": 48,
+        "name": "Discharge",
+        "type": "Electric"
+      },
+      {
+        "level": 55,
+        "name": "Hurricane",
+        "type": "Flying"
+      }
+    ],
+    "tm_hm_moves": [
+      {
+        "kind": "HM",
+        "number": "02",
+        "name": "Fly"
+      },
+      {
+        "kind": "TM",
+        "number": "06",
+        "name": "Toxic"
+      },
+      {
+        "kind": "TM",
+        "number": "10",
+        "name": "Hidden Power"
+      },
+      {
+        "kind": "TM",
+        "number": "15",
+        "name": "Hyper Beam"
+      },
+      {
+        "kind": "TM",
+        "number": "17",
+        "name": "Protect"
+      },
+      {
+        "kind": "TM",
+        "number": "19",
+        "name": "Roost"
+      },
+      {
+        "kind": "TM",
+        "number": "21",
+        "name": "Frustration"
+      },
+      {
+        "kind": "TM",
+        "number": "24",
+        "name": "Thunderbolt"
+      },
+      {
+        "kind": "TM",
+        "number": "25",
+        "name": "Thunder"
+      },
+      {
+        "kind": "TM",
+        "number": "27",
+        "name": "Return"
+      },
+      {
+        "kind": "TM",
+        "number": "32",
+        "name": "Double Team"
+      },
+      {
+        "kind": "TM",
+        "number": "40",
+        "name": "Aerial Ace"
+      },
+      {
+        "kind": "TM",
+        "number": "42",
+        "name": "Facade"
+      },
+      {
+        "kind": "TM",
+        "number": "44",
+        "name": "Rest"
+      },
+      {
+        "kind": "TM",
+        "number": "45",
+        "name": "Attract"
+      },
+      {
+        "kind": "TM",
+        "number": "48",
+        "name": "Round"
+      },
+      {
+        "kind": "TM",
+        "number": "57",
+        "name": "Charge Beam"
+      },
+      {
+        "kind": "TM",
+        "number": "62",
+        "name": "Acrobatics"
+      },
+      {
+        "kind": "TM",
+        "number": "68",
+        "name": "Giga Impact"
+      },
+      {
+        "kind": "TM",
+        "number": "72",
+        "name": "Volt Switch"
+      },
+      {
+        "kind": "TM",
+        "number": "73",
+        "name": "Thunder Wave"
+      },
+      {
+        "kind": "TM",
+        "number": "87",
+        "name": "Swagger"
+      },
+      {
+        "kind": "TM",
+        "number": "88",
+        "name": "Sleep Talk"
+      },
+      {
+        "kind": "TM",
+        "number": "89",
+        "name": "U-Turn"
+      },
+      {
+        "kind": "TM",
+        "number": "90",
+        "name": "Substitute"
+      },
+      {
+        "kind": "TM",
+        "number": "93",
+        "name": "Wild Charge"
+      },
+      {
+        "kind": "TM",
+        "number": "100",
+        "name": "Confide"
+      }
+    ],
+    "egg_moves": [
+      "Endeavor",
+      "Feather Dance",
+      "Spit Up",
+      "Stockpile",
+      "Swallow",
+      "Weather Ball"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Air Cutter",
+        "heart_scale": false
+      },
+      {
+        "name": "Air Slash",
+        "heart_scale": false
+      },
+      {
+        "name": "Dual Wingbeat",
+        "heart_scale": false
+      },
+      {
+        "name": "Electroweb",
+        "heart_scale": false
+      },
+      {
+        "name": "Endeavor",
+        "heart_scale": false
+      },
+      {
+        "name": "Feather Dance",
+        "heart_scale": false
+      },
+      {
+        "name": "Hurricane",
+        "heart_scale": false
+      },
+      {
+        "name": "Pluck",
+        "heart_scale": false
+      },
+      {
+        "name": "Roost",
+        "heart_scale": false
+      },
+      {
+        "name": "Shock Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Swift",
+        "heart_scale": false
+      },
+      {
+        "name": "Tailwind",
+        "heart_scale": false
+      },
+      {
+        "name": "Uproar",
+        "heart_scale": false
+      },
+      {
+        "name": "Weather Ball",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen9",
+    "width": 1.78,
+    "height": 1.4,
+    "base": 1,
+    "clearance": 1
+  },
+  {
     "species": "Palafin Hero",
     "types": [
       "Water"
@@ -365756,6 +366169,347 @@
     "source_gen": "gen9",
     "width": 0.21,
     "height": 0.3,
+    "base": 1,
+    "clearance": 1
+  },
+  {
+    "species": "Wattrel",
+    "types": [
+      "Electric",
+      "Flying"
+    ],
+    "base_stats": {
+      "hp": 4,
+      "atk": 4,
+      "def": 4,
+      "spatk": 6,
+      "spdef": 4,
+      "spd": 7
+    },
+    "abilities": {
+      "basic": [
+        "Wind Power",
+        "Motor Drive"
+      ],
+      "advanced": [
+        "Keen Eye",
+        "Early Bird"
+      ],
+      "high": [
+        "Competitive"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Wattrel",
+        "min_level": 0
+      },
+      {
+        "stage": 2,
+        "species": "Kilowattrel",
+        "min_level": 25
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 1,
+    "size": "Small",
+    "weight": 1,
+    "genderless": false,
+    "male_pct": 50.0,
+    "female_pct": 50.0,
+    "egg_groups": [
+      "Flying",
+      "Water 1"
+    ],
+    "hatch_rate": "10 Days",
+    "diet": [
+      "Carnivore"
+    ],
+    "habitat": [
+      "Beach",
+      "Ocean"
+    ],
+    "capabilities": {
+      "overland": 3,
+      "sky": 6,
+      "swim": 3,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "2/2",
+      "power": 1,
+      "other": [
+        "Guster",
+        "Zapper",
+        "Underdog"
+      ]
+    },
+    "skills": {
+      "Athletics": "2d6",
+      "Acrobatics": "4d6",
+      "Combat": "2d6",
+      "Stealth": "3d6",
+      "Perception": "3d6",
+      "Focus": "3d6"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Growl",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Peck",
+        "type": "Flying"
+      },
+      {
+        "level": 4,
+        "name": "Thunder Shock",
+        "type": "Electric"
+      },
+      {
+        "level": 7,
+        "name": "Quick Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 11,
+        "name": "Pluck",
+        "type": "Flying"
+      },
+      {
+        "level": 15,
+        "name": "Spark",
+        "type": "Electric"
+      },
+      {
+        "level": 19,
+        "name": "Uproar",
+        "type": "Normal"
+      },
+      {
+        "level": 23,
+        "name": "Roost",
+        "type": "Flying"
+      },
+      {
+        "level": 27,
+        "name": "Dual Wingbeat",
+        "type": "Flying"
+      },
+      {
+        "level": 32,
+        "name": "Agility",
+        "type": "Psychic"
+      },
+      {
+        "level": 37,
+        "name": "Volt Switch",
+        "type": "Electric"
+      },
+      {
+        "level": 43,
+        "name": "Discharge",
+        "type": "Electric"
+      }
+    ],
+    "tm_hm_moves": [
+      {
+        "kind": "HM",
+        "number": "02",
+        "name": "Fly"
+      },
+      {
+        "kind": "TM",
+        "number": "06",
+        "name": "Toxic"
+      },
+      {
+        "kind": "TM",
+        "number": "10",
+        "name": "Hidden Power"
+      },
+      {
+        "kind": "TM",
+        "number": "17",
+        "name": "Protect"
+      },
+      {
+        "kind": "TM",
+        "number": "19",
+        "name": "Roost"
+      },
+      {
+        "kind": "TM",
+        "number": "21",
+        "name": "Frustration"
+      },
+      {
+        "kind": "TM",
+        "number": "24",
+        "name": "Thunderbolt"
+      },
+      {
+        "kind": "TM",
+        "number": "25",
+        "name": "Thunder"
+      },
+      {
+        "kind": "TM",
+        "number": "27",
+        "name": "Return"
+      },
+      {
+        "kind": "TM",
+        "number": "32",
+        "name": "Double Team"
+      },
+      {
+        "kind": "TM",
+        "number": "40",
+        "name": "Aerial Ace"
+      },
+      {
+        "kind": "TM",
+        "number": "42",
+        "name": "Facade"
+      },
+      {
+        "kind": "TM",
+        "number": "44",
+        "name": "Rest"
+      },
+      {
+        "kind": "TM",
+        "number": "45",
+        "name": "Attract"
+      },
+      {
+        "kind": "TM",
+        "number": "48",
+        "name": "Round"
+      },
+      {
+        "kind": "TM",
+        "number": "57",
+        "name": "Charge Beam"
+      },
+      {
+        "kind": "TM",
+        "number": "62",
+        "name": "Acrobatics"
+      },
+      {
+        "kind": "TM",
+        "number": "72",
+        "name": "Volt Switch"
+      },
+      {
+        "kind": "TM",
+        "number": "73",
+        "name": "Thunder Wave"
+      },
+      {
+        "kind": "TM",
+        "number": "87",
+        "name": "Swagger"
+      },
+      {
+        "kind": "TM",
+        "number": "88",
+        "name": "Sleep Talk"
+      },
+      {
+        "kind": "TM",
+        "number": "89",
+        "name": "U-Turn"
+      },
+      {
+        "kind": "TM",
+        "number": "90",
+        "name": "Substitute"
+      },
+      {
+        "kind": "TM",
+        "number": "93",
+        "name": "Wild Charge"
+      },
+      {
+        "kind": "TM",
+        "number": "100",
+        "name": "Confide"
+      }
+    ],
+    "egg_moves": [
+      "Endeavor",
+      "Feather Dance",
+      "Spit Up",
+      "Stockpile",
+      "Swallow",
+      "Weather Ball"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Air Cutter",
+        "heart_scale": false
+      },
+      {
+        "name": "Air Slash",
+        "heart_scale": false
+      },
+      {
+        "name": "Dual Wingbeat",
+        "heart_scale": false
+      },
+      {
+        "name": "Electroweb",
+        "heart_scale": false
+      },
+      {
+        "name": "Endeavor",
+        "heart_scale": false
+      },
+      {
+        "name": "Feather Dance",
+        "heart_scale": false
+      },
+      {
+        "name": "Pluck",
+        "heart_scale": false
+      },
+      {
+        "name": "Roost",
+        "heart_scale": false
+      },
+      {
+        "name": "Shock Wave",
+        "heart_scale": false
+      },
+      {
+        "name": "Snore",
+        "heart_scale": false
+      },
+      {
+        "name": "Swift",
+        "heart_scale": false
+      },
+      {
+        "name": "Tailwind",
+        "heart_scale": false
+      },
+      {
+        "name": "Uproar",
+        "heart_scale": false
+      },
+      {
+        "name": "Weather Ball",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen9",
+    "width": 0.84,
+    "height": 0.4,
     "base": 1,
     "clearance": 1
   },
@@ -371446,102 +372200,6 @@
     "clearance": 1
   },
   {
-    "species": "Farfetch’d",
-    "size": "Small",
-    "width": 0.75,
-    "height": 0.8,
-    "base": 1,
-    "clearance": 1
-  },
-  {
-    "species": "Nidoran (F)",
-    "size": "Small",
-    "width": 0.4,
-    "height": 0.4,
-    "base": 1,
-    "clearance": 1
-  },
-  {
-    "species": "Nidoran (M)",
-    "size": "Small",
-    "width": 0.47,
-    "height": 0.5,
-    "base": 1,
-    "clearance": 1
-  },
-  {
-    "species": "Mime Jr.",
-    "size": "Small",
-    "width": 0.41,
-    "height": 0.6,
-    "base": 1,
-    "clearance": 1
-  },
-  {
-    "species": "Zygarde 10% Forme",
-    "size": "Medium",
-    "width": 0.95,
-    "height": 1.2,
-    "base": 1,
-    "clearance": 1
-  },
-  {
-    "species": "Zygarde 50% Forme",
-    "size": "Huge",
-    "width": 4.48,
-    "height": 5.0,
-    "base": 3,
-    "clearance": 5
-  },
-  {
-    "species": "Darmanitan Galar Standard Mode",
-    "size": "Medium",
-    "width": 1.73,
-    "height": 1.7,
-    "base": 1,
-    "clearance": 2
-  },
-  {
-    "species": "Darmanitan Galar Zen Mode",
-    "size": "Medium",
-    "width": 2.18,
-    "height": 1.7,
-    "base": 1,
-    "clearance": 2
-  },
-  {
-    "species": "Farfetch’d Galar",
-    "size": "Small",
-    "width": 1.35,
-    "height": 0.8,
-    "base": 1,
-    "clearance": 1
-  },
-  {
-    "species": "Sirfetch’d",
-    "size": "Small",
-    "width": 0.44,
-    "height": 0.8,
-    "base": 1,
-    "clearance": 1
-  },
-  {
-    "species": "Zacian Hero Of Many Battles Forme",
-    "size": "Huge",
-    "width": 2.47,
-    "height": 2.8,
-    "base": 3,
-    "clearance": 3
-  },
-  {
-    "species": "Zamazenta Hero Of Many Battles Forme",
-    "size": "Huge",
-    "width": 3.0,
-    "height": 2.9,
-    "base": 3,
-    "clearance": 3
-  },
-  {
     "species": "Annihilape",
     "size": "Medium",
     "width": 1.14,
@@ -371993,371 +372651,6 @@
     "species": "Iron Valiant",
     "size": "Medium",
     "width": 1.42,
-    "height": 1.4,
-    "base": 1,
-    "clearance": 1
-  },
-  {
-    "species": "Kilowattrel",
-    "types": [
-      "Electric",
-      "Flying"
-    ],
-    "base_stats": {
-      "hp": 7,
-      "atk": 7,
-      "def": 6,
-      "spatk": 11,
-      "spdef": 6,
-      "spd": 13
-    },
-    "abilities": {
-      "basic": [
-        "Wind Power",
-        "Motor Drive"
-      ],
-      "advanced": [
-        "Keen Eye",
-        "Early Bird"
-      ],
-      "high": [
-        "Competitive"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Wattrel",
-        "min_level": 0
-      },
-      {
-        "stage": 2,
-        "species": "Kilowattrel",
-        "min_level": 25
-      }
-    ],
-    "evolution_stage": 2,
-    "evolutions_remaining": 0,
-    "size": "Medium",
-    "weight": 3,
-    "genderless": false,
-    "male_pct": 50,
-    "female_pct": 50,
-    "egg_groups": [
-      "Flying",
-      "Water 1"
-    ],
-    "hatch_rate": "10 Days",
-    "diet": [
-      "Carnivore"
-    ],
-    "habitat": [
-      "Beach",
-      "Ocean"
-    ],
-    "capabilities": {
-      "overland": 4,
-      "sky": 10,
-      "swim": 2,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "2/3",
-      "power": 3,
-      "other": [
-        "Guster",
-        "Zapper",
-        "Mountable 1"
-      ]
-    },
-    "skills": {
-      "Athletics": "4d6",
-      "Acrobatics": "5d6",
-      "Combat": "3d6",
-      "Stealth": "3d6",
-      "Perception": "4d6",
-      "Focus": "4d6+1"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Growl",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Peck",
-        "type": "Flying"
-      },
-      {
-        "level": 1,
-        "name": "Electro Ball",
-        "type": "Electric"
-      },
-      {
-        "level": 4,
-        "name": "Thunder Shock",
-        "type": "Electric"
-      },
-      {
-        "level": 7,
-        "name": "Quick Attack",
-        "type": "Normal"
-      },
-      {
-        "level": 11,
-        "name": "Pluck",
-        "type": "Flying"
-      },
-      {
-        "level": 15,
-        "name": "Spark",
-        "type": "Electric"
-      },
-      {
-        "level": 19,
-        "name": "Uproar",
-        "type": "Normal"
-      },
-      {
-        "level": 24,
-        "name": "Roost",
-        "type": "Flying"
-      },
-      {
-        "level": 30,
-        "name": "Dual Wingbeat",
-        "type": "Flying"
-      },
-      {
-        "level": 36,
-        "name": "Agility",
-        "type": "Psychic"
-      },
-      {
-        "level": 43,
-        "name": "Volt Switch",
-        "type": "Electric"
-      },
-      {
-        "level": 48,
-        "name": "Discharge",
-        "type": "Electric"
-      },
-      {
-        "level": 55,
-        "name": "Hurricane",
-        "type": "Flying"
-      }
-    ],
-    "tm_hm_moves": [
-      {
-        "kind": "HM",
-        "number": "02",
-        "name": "Fly"
-      },
-      {
-        "kind": "TM",
-        "number": "06",
-        "name": "Toxic"
-      },
-      {
-        "kind": "TM",
-        "number": "10",
-        "name": "Hidden Power"
-      },
-      {
-        "kind": "TM",
-        "number": "15",
-        "name": "Hyper Beam"
-      },
-      {
-        "kind": "TM",
-        "number": "17",
-        "name": "Protect"
-      },
-      {
-        "kind": "TM",
-        "number": "19",
-        "name": "Roost"
-      },
-      {
-        "kind": "TM",
-        "number": "21",
-        "name": "Frustration"
-      },
-      {
-        "kind": "TM",
-        "number": "24",
-        "name": "Thunderbolt"
-      },
-      {
-        "kind": "TM",
-        "number": "25",
-        "name": "Thunder"
-      },
-      {
-        "kind": "TM",
-        "number": "27",
-        "name": "Return"
-      },
-      {
-        "kind": "TM",
-        "number": "32",
-        "name": "Double Team"
-      },
-      {
-        "kind": "TM",
-        "number": "40",
-        "name": "Aerial Ace"
-      },
-      {
-        "kind": "TM",
-        "number": "42",
-        "name": "Facade"
-      },
-      {
-        "kind": "TM",
-        "number": "44",
-        "name": "Rest"
-      },
-      {
-        "kind": "TM",
-        "number": "45",
-        "name": "Attract"
-      },
-      {
-        "kind": "TM",
-        "number": "48",
-        "name": "Round"
-      },
-      {
-        "kind": "TM",
-        "number": "57",
-        "name": "Charge Beam"
-      },
-      {
-        "kind": "TM",
-        "number": "62",
-        "name": "Acrobatics"
-      },
-      {
-        "kind": "TM",
-        "number": "68",
-        "name": "Giga Impact"
-      },
-      {
-        "kind": "TM",
-        "number": "72",
-        "name": "Volt Switch"
-      },
-      {
-        "kind": "TM",
-        "number": "73",
-        "name": "Thunder Wave"
-      },
-      {
-        "kind": "TM",
-        "number": "87",
-        "name": "Swagger"
-      },
-      {
-        "kind": "TM",
-        "number": "88",
-        "name": "Sleep Talk"
-      },
-      {
-        "kind": "TM",
-        "number": "89",
-        "name": "U-Turn"
-      },
-      {
-        "kind": "TM",
-        "number": "90",
-        "name": "Substitute"
-      },
-      {
-        "kind": "TM",
-        "number": "93",
-        "name": "Wild Charge"
-      },
-      {
-        "kind": "TM",
-        "number": "100",
-        "name": "Confide"
-      }
-    ],
-    "egg_moves": [
-      "Endeavor",
-      "Feather Dance",
-      "Spit Up",
-      "Stockpile",
-      "Swallow",
-      "Weather Ball"
-    ],
-    "tutor_moves": [
-      {
-        "name": "Air Cutter",
-        "heart_scale": false
-      },
-      {
-        "name": "Air Slash",
-        "heart_scale": false
-      },
-      {
-        "name": "Dual Wingbeat",
-        "heart_scale": false
-      },
-      {
-        "name": "Electroweb",
-        "heart_scale": false
-      },
-      {
-        "name": "Endeavor",
-        "heart_scale": false
-      },
-      {
-        "name": "Feather Dance",
-        "heart_scale": false
-      },
-      {
-        "name": "Hurricane",
-        "heart_scale": false
-      },
-      {
-        "name": "Pluck",
-        "heart_scale": false
-      },
-      {
-        "name": "Roost",
-        "heart_scale": false
-      },
-      {
-        "name": "Shock Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Swift",
-        "heart_scale": false
-      },
-      {
-        "name": "Tailwind",
-        "heart_scale": false
-      },
-      {
-        "name": "Uproar",
-        "heart_scale": false
-      },
-      {
-        "name": "Weather Ball",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen9",
-    "width": 1.78,
     "height": 1.4,
     "base": 1,
     "clearance": 1
@@ -372929,347 +373222,6 @@
     "height": 3.5,
     "base": 4,
     "clearance": 4
-  },
-  {
-    "species": "Wattrel",
-    "types": [
-      "Electric",
-      "Flying"
-    ],
-    "base_stats": {
-      "hp": 4,
-      "atk": 4,
-      "def": 4,
-      "spatk": 6,
-      "spdef": 4,
-      "spd": 7
-    },
-    "abilities": {
-      "basic": [
-        "Wind Power",
-        "Motor Drive"
-      ],
-      "advanced": [
-        "Keen Eye",
-        "Early Bird"
-      ],
-      "high": [
-        "Competitive"
-      ]
-    },
-    "evolutions": [
-      {
-        "stage": 1,
-        "species": "Wattrel",
-        "min_level": 0
-      },
-      {
-        "stage": 2,
-        "species": "Kilowattrel",
-        "min_level": 25
-      }
-    ],
-    "evolution_stage": 1,
-    "evolutions_remaining": 1,
-    "size": "Small",
-    "weight": 1,
-    "genderless": false,
-    "male_pct": 50,
-    "female_pct": 50,
-    "egg_groups": [
-      "Flying",
-      "Water 1"
-    ],
-    "hatch_rate": "10 Days",
-    "diet": [
-      "Carnivore"
-    ],
-    "habitat": [
-      "Beach",
-      "Ocean"
-    ],
-    "capabilities": {
-      "overland": 3,
-      "sky": 6,
-      "swim": 3,
-      "levitate": 0,
-      "burrow": 0,
-      "jump": "2/2",
-      "power": 1,
-      "other": [
-        "Guster",
-        "Zapper",
-        "Underdog"
-      ]
-    },
-    "skills": {
-      "Athletics": "2d6",
-      "Acrobatics": "4d6",
-      "Combat": "2d6",
-      "Stealth": "3d6",
-      "Perception": "3d6",
-      "Focus": "3d6"
-    },
-    "level_up_moves": [
-      {
-        "level": 1,
-        "name": "Growl",
-        "type": "Normal"
-      },
-      {
-        "level": 1,
-        "name": "Peck",
-        "type": "Flying"
-      },
-      {
-        "level": 4,
-        "name": "Thunder Shock",
-        "type": "Electric"
-      },
-      {
-        "level": 7,
-        "name": "Quick Attack",
-        "type": "Normal"
-      },
-      {
-        "level": 11,
-        "name": "Pluck",
-        "type": "Flying"
-      },
-      {
-        "level": 15,
-        "name": "Spark",
-        "type": "Electric"
-      },
-      {
-        "level": 19,
-        "name": "Uproar",
-        "type": "Normal"
-      },
-      {
-        "level": 23,
-        "name": "Roost",
-        "type": "Flying"
-      },
-      {
-        "level": 27,
-        "name": "Dual Wingbeat",
-        "type": "Flying"
-      },
-      {
-        "level": 32,
-        "name": "Agility",
-        "type": "Psychic"
-      },
-      {
-        "level": 37,
-        "name": "Volt Switch",
-        "type": "Electric"
-      },
-      {
-        "level": 43,
-        "name": "Discharge",
-        "type": "Electric"
-      }
-    ],
-    "tm_hm_moves": [
-      {
-        "kind": "HM",
-        "number": "02",
-        "name": "Fly"
-      },
-      {
-        "kind": "TM",
-        "number": "06",
-        "name": "Toxic"
-      },
-      {
-        "kind": "TM",
-        "number": "10",
-        "name": "Hidden Power"
-      },
-      {
-        "kind": "TM",
-        "number": "17",
-        "name": "Protect"
-      },
-      {
-        "kind": "TM",
-        "number": "19",
-        "name": "Roost"
-      },
-      {
-        "kind": "TM",
-        "number": "21",
-        "name": "Frustration"
-      },
-      {
-        "kind": "TM",
-        "number": "24",
-        "name": "Thunderbolt"
-      },
-      {
-        "kind": "TM",
-        "number": "25",
-        "name": "Thunder"
-      },
-      {
-        "kind": "TM",
-        "number": "27",
-        "name": "Return"
-      },
-      {
-        "kind": "TM",
-        "number": "32",
-        "name": "Double Team"
-      },
-      {
-        "kind": "TM",
-        "number": "40",
-        "name": "Aerial Ace"
-      },
-      {
-        "kind": "TM",
-        "number": "42",
-        "name": "Facade"
-      },
-      {
-        "kind": "TM",
-        "number": "44",
-        "name": "Rest"
-      },
-      {
-        "kind": "TM",
-        "number": "45",
-        "name": "Attract"
-      },
-      {
-        "kind": "TM",
-        "number": "48",
-        "name": "Round"
-      },
-      {
-        "kind": "TM",
-        "number": "57",
-        "name": "Charge Beam"
-      },
-      {
-        "kind": "TM",
-        "number": "62",
-        "name": "Acrobatics"
-      },
-      {
-        "kind": "TM",
-        "number": "72",
-        "name": "Volt Switch"
-      },
-      {
-        "kind": "TM",
-        "number": "73",
-        "name": "Thunder Wave"
-      },
-      {
-        "kind": "TM",
-        "number": "87",
-        "name": "Swagger"
-      },
-      {
-        "kind": "TM",
-        "number": "88",
-        "name": "Sleep Talk"
-      },
-      {
-        "kind": "TM",
-        "number": "89",
-        "name": "U-Turn"
-      },
-      {
-        "kind": "TM",
-        "number": "90",
-        "name": "Substitute"
-      },
-      {
-        "kind": "TM",
-        "number": "93",
-        "name": "Wild Charge"
-      },
-      {
-        "kind": "TM",
-        "number": "100",
-        "name": "Confide"
-      }
-    ],
-    "egg_moves": [
-      "Endeavor",
-      "Feather Dance",
-      "Spit Up",
-      "Stockpile",
-      "Swallow",
-      "Weather Ball"
-    ],
-    "tutor_moves": [
-      {
-        "name": "Air Cutter",
-        "heart_scale": false
-      },
-      {
-        "name": "Air Slash",
-        "heart_scale": false
-      },
-      {
-        "name": "Dual Wingbeat",
-        "heart_scale": false
-      },
-      {
-        "name": "Electroweb",
-        "heart_scale": false
-      },
-      {
-        "name": "Endeavor",
-        "heart_scale": false
-      },
-      {
-        "name": "Feather Dance",
-        "heart_scale": false
-      },
-      {
-        "name": "Pluck",
-        "heart_scale": false
-      },
-      {
-        "name": "Roost",
-        "heart_scale": false
-      },
-      {
-        "name": "Shock Wave",
-        "heart_scale": false
-      },
-      {
-        "name": "Snore",
-        "heart_scale": false
-      },
-      {
-        "name": "Swift",
-        "heart_scale": false
-      },
-      {
-        "name": "Tailwind",
-        "heart_scale": false
-      },
-      {
-        "name": "Uproar",
-        "heart_scale": false
-      },
-      {
-        "name": "Weather Ball",
-        "heart_scale": false
-      }
-    ],
-    "source_gen": "gen9",
-    "width": 0.84,
-    "height": 0.4,
-    "base": 1,
-    "clearance": 1
   },
   {
     "species": "Wiglett",

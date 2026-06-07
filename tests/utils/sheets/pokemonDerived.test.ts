@@ -36,9 +36,9 @@ describe('pokemon sheet derived helpers', () => {
 
   it('uses manual base rows when a species only has placement reference data', () => {
     const stats = resolveStats({
-      slug: 'test-galar-darmanitan',
-      nickname: 'Test Galar Darmanitan',
-      species: 'Darmanitan Galar Standard Mode',
+      slug: 'test-annihilape',
+      nickname: 'Test Annihilape',
+      species: 'Annihilape',
       level: 40,
       stats: {
         hp: { base: 10, added: 10 },

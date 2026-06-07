@@ -10,6 +10,7 @@ import unicodedata
 POKEDEX_DIR = os.path.join(os.path.dirname(__file__), "..", "books", "markdown", "pokedexes")
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data")
 PLACEMENT_FIELDS = ("species", "size", "width", "height", "base", "clearance")
+PLACEMENT_GEOMETRY_FIELDS = ("width", "height", "base", "clearance")
 
 # Anchors that can appear after a move section. Used to bound TM/HM, Egg and
 # Tutor move list extraction so that following sections (Mega Evolution stat
@@ -211,9 +212,84 @@ def _extract_section(text: str, start_label: str, terminators: tuple[str, ...]) 
     return rest[:end_pos]
 
 
+BASE_STATS_HEADING_RE = re.compile(r"^\s*Base Stats\s*:", re.IGNORECASE | re.MULTILINE)
+PAGE_MARKER_RE = re.compile(r"^\s*##\s*Page\b", re.IGNORECASE)
+PAGE_NUMBER_RE = re.compile(r"^\s*\d+\s*$")
+PARENTHETICAL_TITLE_TOKEN_RE = re.compile(r"^\([^)]*\)$")
+
+
 def normalize_species_name(value: str) -> str:
     value = unicodedata.normalize("NFKD", value).casefold()
     return "".join(char for char in value if char.isalnum())
+
+
+def title_case_species_token(token: str) -> str:
+    """Title-case all-caps title tokens without upper-casing after apostrophes."""
+    if not any(char.isalpha() for char in token):
+        return token
+    if PARENTHETICAL_TITLE_TOKEN_RE.match(token):
+        return token
+    if any(char.islower() for char in token):
+        return token
+
+    lowered = token.lower()
+    return re.sub(
+        r"(^|-)([^\W\d_])",
+        lambda match: f"{match.group(1)}{match.group(2).upper()}",
+        lowered,
+    )
+
+
+def normalize_species_title(raw: str) -> str:
+    title = re.sub(r"\s+", " ", raw).strip()
+    return " ".join(title_case_species_token(token) for token in title.split(" "))
+
+
+def is_species_title_candidate(line: str) -> bool:
+    if not any(char.isalpha() for char in line):
+        return False
+
+    first_token = line.split()[0]
+    return any(char.isalpha() for char in first_token) and not any(char.islower() for char in first_token)
+
+
+def extract_species_name(text: str) -> str | None:
+    """Extract the entry title before Base Stats, ignoring page markers.
+
+    Some legal Pokémon names contain punctuation that the old all-caps regex did
+    not allow (``NIDORAN (F)``, ``FARFETCH’D``, ``ZYGARDE 10% Forme``). When the
+    title did not match, the regex kept scanning and misidentified ``HP:`` in the
+    Base Stats table as the species. Restricting the search to the title preamble
+    prevents stat labels from becoming bogus Pokédex entries.
+    """
+    base_stats_match = BASE_STATS_HEADING_RE.search(text)
+    preamble = text[:base_stats_match.start()] if base_stats_match else text
+
+    title_lines = []
+    for raw_line in preamble.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if PAGE_MARKER_RE.match(line) or PAGE_NUMBER_RE.match(line):
+            continue
+        if line.startswith("#"):
+            continue
+        if not any(char.isalpha() for char in line):
+            continue
+        title_lines.append(line)
+
+    for index, line in enumerate(title_lines):
+        if not is_species_title_candidate(line):
+            continue
+
+        title_parts = [line]
+        for continuation in title_lines[index + 1:]:
+            if is_species_title_candidate(continuation):
+                break
+            title_parts.append(continuation)
+        return normalize_species_title(" ".join(title_parts))
+
+    return normalize_species_title(title_lines[0]) if title_lines else None
 
 
 def load_existing_pokedex(path: str) -> list[dict]:
@@ -252,7 +328,7 @@ def merge_existing_placement_data(parsed_pokemon: list[dict], existing_pokemon: 
     for normalized_species, entry in existing_by_species.items():
         if normalized_species in used_keys:
             continue
-        if not any(entry.get(field) is not None for field in PLACEMENT_FIELDS if field != "species"):
+        if not any(entry.get(field) is not None for field in PLACEMENT_GEOMETRY_FIELDS):
             continue
         merged.append(entry)
 
@@ -599,27 +675,9 @@ def parse_pokemon_file(filepath: str) -> dict | None:
     with open(filepath, "r", encoding="utf-8") as f:
         text = f.read()
 
-    # Extract species name: first ALL-CAPS word on its own line, optionally
-    # followed by a form suffix like "Zero", "Hero", "Solo", "Galar Zen-Mode", etc.
-    # Examples matched:
-    #   SMOLIV
-    #   PALAFIN Zero
-    #   WISHIWASHI Solo
-    #   DARMANITAN Galar Zen-Mode
-    #   FARFETCH'D
-    species_match = re.search(
-        r"^\s*([A-ZÉ][A-ZÉ\-'♀♂.:0-9]*(?:\s+[A-ZÉ][A-Za-zÉé\-']*)*)\s*$",
-        text,
-        re.MULTILINE,
-    )
-    if not species_match:
+    species = extract_species_name(text)
+    if not species:
         return None
-    species = species_match.group(1).strip()
-    # Title-case it, but preserve inner capitalization of already-mixed-case form
-    # suffixes. We only title-case the leading all-caps word.
-    parts = species.split()
-    parts[0] = parts[0].title()
-    species = " ".join(parts).replace("'S", "'s")
 
     base_stats = parse_base_stats(text)
     if not base_stats or len(base_stats) < 6:
