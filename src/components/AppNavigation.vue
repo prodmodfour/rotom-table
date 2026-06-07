@@ -138,7 +138,7 @@ watch(isPlayer, (nextIsPlayer) => {
       v-if="showRoleBadge"
       :class="['role-badge', { 'role-badge--profile': roleBadgeShowsPlayerName }]"
     >{{ roleBadgeLabel }}</span>
-    <button type="button" class="nav-link nav-link--button" @click="handleLogout">
+    <button type="button" class="nav-link nav-link--button nav-link--logout" @click="handleLogout">
       Logout
     </button>
   </nav>
@@ -230,9 +230,9 @@ watch(isPlayer, (nextIsPlayer) => {
   justify-content: center;
   min-height: 1.75rem;
   padding: 0.25rem 0.5rem;
-  border: 1px solid var(--rule-soft);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--paper);
+  background: transparent;
   color: var(--accent);
   cursor: pointer;
   font: inherit;
@@ -249,8 +249,8 @@ watch(isPlayer, (nextIsPlayer) => {
 
 .profile-action:hover,
 .profile-action:focus-visible {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: transparent;
+  background: transparent;
   color: #ff5c67;
   outline: none;
 }
@@ -267,8 +267,8 @@ watch(isPlayer, (nextIsPlayer) => {
   flex: 0 0 auto;
   padding: 0.55rem 0.85rem;
   border-radius: 10px;
-  border: 1px solid var(--rule-soft);
-  background: var(--paper);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--ink);
   text-decoration: none;
   font-weight: 600;
@@ -281,19 +281,31 @@ watch(isPlayer, (nextIsPlayer) => {
 }
 
 .nav-link:hover {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
+  border-color: transparent;
+  background: transparent;
   color: var(--ink-bright);
 }
 
 .nav-link.active {
-  border-color: var(--accent);
-  background: var(--paper-active);
+  border-color: transparent;
+  background: transparent;
   color: var(--accent);
 }
 
 .nav-link--button {
   cursor: pointer;
+}
+
+.nav-link--logout {
+  border-color: var(--rule-soft);
+  background: var(--paper);
+}
+
+.nav-link--logout:hover,
+.nav-link--logout:focus-visible {
+  border-color: var(--rule-strong);
+  background: var(--paper-hover);
+  color: var(--ink-bright);
 }
 
 .nav-link--theme {
