@@ -249,6 +249,7 @@ const {
   mapGroundLevelY,
   mapSpecificYMin,
   mapSpecificYMax,
+  setMapPlayerVisible,
   setGroundLevelY,
 } = useMapDimensionControls({ map, canEditMap, isGm })
 
@@ -1172,8 +1173,10 @@ useMapDimensionReconciliation({
         :map-ground-level-y="mapGroundLevelY"
         :map-specific-y-min="mapSpecificYMin"
         :map-specific-y-max="mapSpecificYMax"
+        :player-visible="map.playerVisible"
         @close="adminPanelOpen = false"
         @set-ground-level-y="setGroundLevelY"
+        @update-player-visible="setMapPlayerVisible"
       />
     </template>
   </MapEditorLayout>

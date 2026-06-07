@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { checkedValueFromEvent } from '~/utils/domEvents'
 
-defineProps<{
+withDefaults(defineProps<{
   playerVisible?: boolean
-}>()
+  label?: string
+}>(), {
+  label: 'Player visible',
+})
 
 const emit = defineEmits<{
   (event: 'update-player-visible', value: boolean): void
@@ -17,7 +20,7 @@ const emit = defineEmits<{
       type="checkbox"
       @change="emit('update-player-visible', checkedValueFromEvent($event))"
     />
-    Player visible
+    {{ label }}
   </label>
 </template>
 
