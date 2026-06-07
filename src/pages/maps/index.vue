@@ -52,29 +52,31 @@ const {
     <template #header>
       <AppNavigation />
 
-      <MapLibraryIntroPanel
-        v-model:search-term="searchTerm"
-        :is-gm="isGm"
-        :creating="creating"
-        :load-error="loadError"
-        :create-error="createError"
-        :move-error="moveError"
-        @create-map="createNewMap"
-        @create-folder="createNewFolder"
-      />
+      <div class="map-library-controls">
+        <MapLibraryIntroPanel
+          v-model:search-term="searchTerm"
+          :is-gm="isGm"
+          :creating="creating"
+          :load-error="loadError"
+          :create-error="createError"
+          :move-error="moveError"
+          @create-map="createNewMap"
+          @create-folder="createNewFolder"
+        />
 
-      <FolderBreadcrumbNav
-        :breadcrumbs="breadcrumbs"
-        :current-path="currentPath"
-        :hover-target="hoverTarget"
-        :is-dragging="drag !== null"
-        :can-drop-on="canDropOn"
-        @navigate="goToFolder"
-        @dragenter="onDropEnter"
-        @dragover="onDropOver"
-        @dragleave="onDropLeave"
-        @drop="onDrop"
-      />
+        <FolderBreadcrumbNav
+          :breadcrumbs="breadcrumbs"
+          :current-path="currentPath"
+          :hover-target="hoverTarget"
+          :is-dragging="drag !== null"
+          :can-drop-on="canDropOn"
+          @navigate="goToFolder"
+          @dragenter="onDropEnter"
+          @dragover="onDropOver"
+          @dragleave="onDropLeave"
+          @drop="onDrop"
+        />
+      </div>
     </template>
 
     <MapLibraryGrid
@@ -121,3 +123,31 @@ const {
     />
   </LibraryPageLayout>
 </template>
+
+<style scoped>
+.map-library-controls {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-soft);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.map-library-controls :deep(.library-intro-panel),
+.map-library-controls :deep(.breadcrumbs.panel-card) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.map-library-controls :deep(.library-intro-panel) {
+  padding: 0.95rem 0.95rem 0.8rem;
+}
+
+.map-library-controls :deep(.breadcrumbs.panel-card) {
+  padding: 0 0.65rem 0.5rem;
+}
+</style>
