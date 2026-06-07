@@ -177,9 +177,9 @@ watch(isPlayer, (nextIsPlayer) => {
   max-width: min(100%, 16rem);
   overflow: hidden;
   padding: 0.42rem 0.7rem;
-  border: 1px solid var(--rule-soft);
+  border: 0;
   border-radius: 999px;
-  background: var(--accent-soft);
+  background: transparent;
   color: var(--accent);
   font-size: 0.76rem;
   font-weight: 700;
