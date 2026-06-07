@@ -25,6 +25,9 @@ const campaignFolderStatus = computed(() => (
     ? `Selected folder: ${selectedCampaignFolderName.value}`
     : 'No campaign folder selected.'
 ))
+const campaignFolderToggleText = computed(() => (
+  selectedCampaignFolderName.value ? 'Change folder' : 'Select folder'
+))
 
 const {
   appThemeModeLabel,
@@ -68,27 +71,34 @@ const handleCampaignFolderSelection = (event: Event) => {
     <AppNavigation />
 
     <section class="settings-panel panel-card" aria-label="Settings">
-      <button
-        type="button"
-        class="campaign-folder-button"
-        @click="openCampaignFolderBrowser"
-      >
-        Select campaign folder
-      </button>
+      <section class="settings-group" aria-labelledby="campaign-folder-settings-title">
+        <div class="settings-group__copy">
+          <h2 id="campaign-folder-settings-title">Campaign folder</h2>
+          <p aria-live="polite">{{ campaignFolderStatus }}</p>
+        </div>
 
-      <input
-        ref="campaignFolderInput"
-        class="campaign-folder-input"
-        type="file"
-        multiple
-        aria-label="Campaign folder"
-        v-bind="campaignFolderPickerAttrs"
-        @change="handleCampaignFolderSelection"
-      >
+        <div class="settings-group__control">
+          <span class="settings-status">Local files</span>
+          <button
+            type="button"
+            class="settings-toggle"
+            @click="openCampaignFolderBrowser"
+          >
+            <span class="settings-toggle__eyebrow">Campaign</span>
+            <span>{{ campaignFolderToggleText }}</span>
+          </button>
 
-      <p class="campaign-folder-status" aria-live="polite">
-        {{ campaignFolderStatus }}
-      </p>
+          <input
+            ref="campaignFolderInput"
+            class="campaign-folder-input"
+            type="file"
+            multiple
+            aria-label="Campaign folder"
+            v-bind="campaignFolderPickerAttrs"
+            @change="handleCampaignFolderSelection"
+          >
+        </div>
+      </section>
 
       <section class="settings-group" aria-labelledby="appearance-settings-title">
         <div class="settings-group__copy">
@@ -228,32 +238,6 @@ const handleCampaignFolderSelection = (event: Event) => {
 }
 
 
-.campaign-folder-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.6rem;
-  padding: 0.65rem 1rem;
-  border: 1px solid var(--accent);
-  background: var(--accent-soft);
-  color: var(--ink-bright);
-  cursor: pointer;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    color 0.15s ease;
-}
-
-.campaign-folder-button:hover,
-.campaign-folder-button:focus-visible {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--accent);
-  outline: none;
-}
 
 .campaign-folder-input {
   position: absolute;
@@ -263,11 +247,6 @@ const handleCampaignFolderSelection = (event: Event) => {
   pointer-events: none;
 }
 
-.campaign-folder-status {
-  margin: 0;
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
 
 .settings-toggle {
   display: inline-flex;
