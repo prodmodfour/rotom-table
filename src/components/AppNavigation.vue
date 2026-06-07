@@ -123,6 +123,7 @@ watch(isPlayer, (nextIsPlayer) => {
         </button>
       </span>
     </div>
+    <span class="nav-divider" aria-hidden="true" />
     <button
       type="button"
       class="nav-link nav-link--button nav-link--theme"
