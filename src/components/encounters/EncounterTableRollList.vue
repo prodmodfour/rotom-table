@@ -9,7 +9,6 @@ defineProps<{
 <template>
   <div class="entry-list">
     <div class="entry-row entry-row--head">
-      <span class="entry-roll">Roll</span>
       <span class="entry-weight">Weight</span>
       <span class="entry-chance">Chance</span>
       <span class="entry-species">Species</span>
@@ -20,7 +19,6 @@ defineProps<{
       :key="`${row.species}-${index}`"
       class="entry-row"
     >
-      <span class="entry-roll">{{ row.range }}</span>
       <span class="entry-weight">{{ row.weight }}</span>
       <span class="entry-chance">{{ row.chancePercentLabel }}</span>
       <span class="entry-species">{{ row.species }}</span>
@@ -39,7 +37,7 @@ defineProps<{
 
 .entry-row {
   display: grid;
-  grid-template-columns: 6.5rem 4.5rem 4.5rem minmax(0, 1fr) 6.5rem;
+  grid-template-columns: 4.5rem 4.5rem minmax(0, 1fr) 6.5rem;
   align-items: baseline;
   gap: 0.6rem;
   padding: 0.45rem 0.65rem;
@@ -63,16 +61,6 @@ defineProps<{
   margin-bottom: 0.2rem;
 }
 
-.entry-roll {
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.entry-row--head .entry-roll {
-  color: var(--ink-muted);
-  font-weight: 600;
-}
-
 .entry-weight,
 .entry-chance,
 .entry-levels {
@@ -89,11 +77,7 @@ defineProps<{
 
 @media (max-width: 640px) {
   .entry-row {
-    grid-template-columns: 5.5rem 3rem 3.6rem 1fr;
-  }
-
-  .entry-levels {
-    grid-column: 4;
+    grid-template-columns: 3rem 3.6rem minmax(0, 1fr) 5rem;
   }
 
   .entry-row--head .entry-levels {
