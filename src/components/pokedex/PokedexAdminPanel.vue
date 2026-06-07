@@ -27,7 +27,7 @@ const emit = defineEmits<{
     >
       <header class="pokedex-admin-panel__header">
         <div>
-          <p class="pokedex-admin-panel__eyebrow">Admin · Ctrl+A</p>
+          <p class="pokedex-admin-panel__eyebrow">Admin · Ctrl+Shift+A</p>
           <h2 id="pokedex-admin-title">Pokédex admin</h2>
         </div>
         <button

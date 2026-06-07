@@ -6,7 +6,7 @@ import { useApiClient } from '~/composables/useApiClient'
 import { useAuth } from '~/composables/useAuth'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { POKEDEX_API_PATHS } from '~/utils/apiRoutes'
-import { isCtrlLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
+import { isCtrlLetter, isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
 import type { PokedexEntryMutationResponse } from '~/utils/pokedex/admin'
 import { pokedexEntryPath, type PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 import { isPokedexPath } from '~/utils/pokedex/routes'
@@ -133,7 +133,7 @@ useWindowKeydown((event) => {
     return
   }
 
-  if (isCtrlLetter(event, 'a')) {
+  if (isCtrlShiftLetter(event, 'a')) {
     if (!isGm.value || isTextEntryTarget(event.target)) return
 
     event.preventDefault()
