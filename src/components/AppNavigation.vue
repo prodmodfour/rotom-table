@@ -251,7 +251,7 @@ watch(isPlayer, (nextIsPlayer) => {
 .profile-action:focus-visible {
   border-color: transparent;
   background: transparent;
-  color: #ff5c67;
+  color: var(--accent);
   outline: none;
 }
 
@@ -283,7 +283,7 @@ watch(isPlayer, (nextIsPlayer) => {
 .nav-link:hover {
   border-color: transparent;
   background: transparent;
-  color: var(--ink-bright);
+  color: var(--accent);
 }
 
 .nav-link.active {
