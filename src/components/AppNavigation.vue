@@ -297,15 +297,16 @@ watch(isPlayer, (nextIsPlayer) => {
 }
 
 .nav-link--logout {
-  border-color: var(--rule-soft);
-  background: var(--paper);
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-bright);
 }
 
 .nav-link--logout:hover,
 .nav-link--logout:focus-visible {
-  border-color: var(--rule-strong);
-  background: var(--paper-hover);
-  color: var(--ink-bright);
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
 }
 
 .nav-link--theme {
