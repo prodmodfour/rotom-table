@@ -5,14 +5,24 @@ import {
   randomEncounterInt as sharedRandomEncounterInt,
   selectWeightedEncounterEntry,
 } from '#shared/encounterTables'
-import { DEFAULT_ENCOUNTER_OUT_ROOT } from '~/utils/encounterGeneration'
+import {
+  DEFAULT_ENCOUNTER_OUT_ROOT,
+  exactEncounterGenerateCountRange,
+  MAX_ENCOUNTER_COUNT,
+  MIN_ENCOUNTER_COUNT,
+  randomEncounterGenerateCount as randomEncounterGenerateCountFromRange,
+  type EncounterGenerateCountRange,
+} from '~/utils/encounterGeneration'
 import type { EncounterTable, RolledEncounter } from '~/types/encounterTable'
 import { UseCaseHttpError } from './useCaseErrors'
 
 export interface GenerateEncounterBody {
   region?: string
   table?: string
+  /** Legacy exact count. Prefer countMin/countMax for ranged generation. */
   count?: number
+  countMin?: number
+  countMax?: number
   outRoot?: string
   preview?: boolean
 }
@@ -78,12 +88,19 @@ export const sanitizeEncounterOutRoot = (value: string): string => {
   return segments.join('/')
 }
 
-export const sanitizeEncounterCount = (value: unknown): number => {
+export const sanitizeEncounterCount = (value: unknown, label = 'count'): number => {
   const count = Number(value ?? 0)
-  if (!Number.isInteger(count) || count < 1 || count > 30) {
-    badEncounterInput('count must be an integer between 1 and 30')
+  if (!Number.isInteger(count) || count < MIN_ENCOUNTER_COUNT || count > MAX_ENCOUNTER_COUNT) {
+    badEncounterInput(`${label} must be an integer between ${MIN_ENCOUNTER_COUNT} and ${MAX_ENCOUNTER_COUNT}`)
   }
   return count
+}
+
+export const sanitizeEncounterCountRange = (minValue: unknown, maxValue: unknown): EncounterGenerateCountRange => {
+  const min = sanitizeEncounterCount(minValue, 'countMin')
+  const max = sanitizeEncounterCount(maxValue, 'countMax')
+  if (min > max) badEncounterInput('countMin must be less than or equal to countMax')
+  return { min, max }
 }
 
 export const slugifyEncounterOutputPath = (value: string): string =>
@@ -105,6 +122,7 @@ export const assertEncounterPathInsideRoot = (projectRoot: string, path: string)
 }
 
 export const randomEncounterInt = sharedRandomEncounterInt
+export const randomEncounterGenerateCount = randomEncounterGenerateCountFromRange
 
 export const rollEncounterTable = (
   table: EncounterTable,
@@ -134,10 +152,17 @@ export const uniqueEncounterOutputDir = (
   return joinPath(parent, `${baseName}-${n}`)
 }
 
-export const readEncounterGenerateRequest = (body: GenerateEncounterBody | null | undefined) => ({
-  region: sanitizeEncounterFolderPath(String(body?.region ?? ''), 'region', true),
-  tableKey: sanitizeEncounterNameComponent(String(body?.table ?? ''), 'table'),
-  outRoot: sanitizeEncounterOutRoot(String(body?.outRoot ?? DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT)),
-  count: sanitizeEncounterCount(body?.count),
-  preview: Boolean(body?.preview),
-})
+export const readEncounterGenerateRequest = (body: GenerateEncounterBody | null | undefined) => {
+  const hasCountRange = body?.countMin !== undefined || body?.countMax !== undefined
+  const countRange = hasCountRange
+    ? sanitizeEncounterCountRange(body?.countMin, body?.countMax)
+    : exactEncounterGenerateCountRange(sanitizeEncounterCount(body?.count))
+
+  return {
+    region: sanitizeEncounterFolderPath(String(body?.region ?? ''), 'region', true),
+    tableKey: sanitizeEncounterNameComponent(String(body?.table ?? ''), 'table'),
+    outRoot: sanitizeEncounterOutRoot(String(body?.outRoot ?? DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT)),
+    countRange,
+    preview: Boolean(body?.preview),
+  }
+}

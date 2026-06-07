@@ -64,12 +64,31 @@ describe('generateEncountersUseCase', () => {
       failures: 0,
       preview: false,
       beforeCount: 0,
+      count: 1,
     })
     expect(result.rolled).toEqual([{ species: 'Pidgey', level: 5, roll: 1 }])
     expect(result.files).toEqual([{ name: 'wild-forest-1-pidgey.json', content: undefined }])
     expect(ensureDirectory).toHaveBeenNthCalledWith(1, '/repo/data/sheets/wild')
     expect(ensureDirectory).toHaveBeenNthCalledWith(2, '/repo/data/sheets/wild/forest_1')
     expect(runPokegen).toHaveBeenCalledWith('Pidgey', 5, '/repo/data/sheets/wild/forest_1', 'wild-forest-1')
+  })
+
+  it('chooses encounter count from the requested range', async () => {
+    const { dependencies, runPokegen } = createDependencies({
+      random: sequenceRandom(0.99, 0, 0, 0, 0, 0, 0),
+    })
+
+    const result = await generateEncountersUseCase({
+      region: 'vale',
+      table: 'forest',
+      countMin: 1,
+      countMax: 3,
+      preview: true,
+    }, dependencies)
+
+    expect(result.count).toBe(3)
+    expect(result.rolled).toHaveLength(3)
+    expect(runPokegen).toHaveBeenCalledTimes(3)
   })
 
   it('uses a temp output directory for previews, returns generated content, and cleans up', async () => {

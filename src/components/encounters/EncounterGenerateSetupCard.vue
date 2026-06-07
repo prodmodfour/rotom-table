@@ -3,7 +3,8 @@ import type { EncounterTableEntry } from '~/types/encounterTable'
 
 const region = defineModel<string>('region', { required: true })
 const tableKey = defineModel<string>('tableKey', { required: true })
-const count = defineModel<number>('count', { required: true })
+const countMin = defineModel<number>('countMin', { required: true })
+const countMax = defineModel<number>('countMax', { required: true })
 const outRoot = defineModel<string>('outRoot', { required: true })
 const preview = defineModel<boolean>('preview', { required: true })
 
@@ -27,7 +28,8 @@ const emit = defineEmits<{
     <EncounterGenerateSetupFields
       v-model:region="region"
       v-model:table-key="tableKey"
-      v-model:count="count"
+      v-model:count-min="countMin"
+      v-model:count-max="countMax"
       v-model:out-root="outRoot"
       v-model:preview="preview"
       :regions="regions"

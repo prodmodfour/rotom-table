@@ -12,10 +12,11 @@ import {
   buildEncounterGenerateRequestBody,
   clampEncounterGenerateCount,
   coerceTableKeyForRegion,
-  DEFAULT_ENCOUNTER_COUNT,
+  DEFAULT_ENCOUNTER_COUNT_RANGE,
   DEFAULT_ENCOUNTER_OUT_ROOT,
   errorMessageForEncounterGenerate,
   initialEncounterGenerationSelection,
+  randomEncounterGenerateCount,
   toggleOpenGenerateFile,
   type EncounterGenerateRequestBody,
   type EncounterGenerateResult,
@@ -41,7 +42,8 @@ export const useEncounterGenerationPage = ({
   const initialSelection = initialEncounterGenerationSelection(query, initialEntry)
   const region = ref<string>(initialSelection.region)
   const tableKey = ref<string>(initialSelection.tableKey)
-  const count = ref<number>(DEFAULT_ENCOUNTER_COUNT)
+  const countMin = ref<number>(DEFAULT_ENCOUNTER_COUNT_RANGE.min)
+  const countMax = ref<number>(DEFAULT_ENCOUNTER_COUNT_RANGE.max)
   const outRoot = ref<string>(DEFAULT_ENCOUNTER_OUT_ROOT)
   const preview = ref<boolean>(false)
 
@@ -63,14 +65,27 @@ export const useEncounterGenerationPage = ({
   const tablesForRegion = computed(() => tablesInRegionFromEntries(allTables.value, region.value))
   const selectedTable = computed(() => findEncounterTableInEntries(allTables.value, region.value, tableKey.value))
 
+  watch(countMin, (next) => {
+    const clamped = clampEncounterGenerateCount(next)
+    if (countMin.value !== clamped) countMin.value = clamped
+    if (countMax.value < clamped) countMax.value = clamped
+  })
+
+  watch(countMax, (next) => {
+    const clamped = clampEncounterGenerateCount(next)
+    if (countMax.value !== clamped) countMax.value = clamped
+    if (countMin.value > clamped) countMin.value = clamped
+  })
+
   const rolledPreview = ref<RolledEncounter[]>([])
   const rollPreview = () => {
     if (!selectedTable.value) return
-    rolledPreview.value = rollEncounters(selectedTable.value.table, clampEncounterGenerateCount(count.value))
+    const encounterCount = randomEncounterGenerateCount({ min: countMin.value, max: countMax.value })
+    rolledPreview.value = rollEncounters(selectedTable.value.table, encounterCount)
   }
 
   watch(
-    [selectedTable, count],
+    [selectedTable, countMin, countMax],
     () => {
       if (selectedTable.value) rollPreview()
     },
@@ -90,7 +105,8 @@ export const useEncounterGenerationPage = ({
       result.value = await fetchGenerate(buildEncounterGenerateRequestBody({
         region: region.value,
         tableKey: tableKey.value,
-        count: count.value,
+        countMin: countMin.value,
+        countMax: countMax.value,
         outRoot: outRoot.value,
         preview: preview.value,
       }))
@@ -115,7 +131,8 @@ export const useEncounterGenerationPage = ({
     region,
     regions,
     tableKey,
-    count,
+    countMin,
+    countMax,
     outRoot,
     preview,
     tablesForRegion,

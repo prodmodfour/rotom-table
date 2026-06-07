@@ -3,9 +3,11 @@ import {
   EncounterGenerationInputError,
   assertEncounterPathInsideRoot,
   readEncounterGenerateRequest,
+  randomEncounterGenerateCount,
   rollEncounterTable,
   safeEncounterTablePath,
   sanitizeEncounterCount,
+  sanitizeEncounterCountRange,
   sanitizeEncounterFolderPath,
   sanitizeEncounterNameComponent,
   sanitizeEncounterOutRoot,
@@ -58,17 +60,28 @@ describe('server encounter generation helpers', () => {
     expect(statusMessageFor(() => sanitizeEncounterOutRoot('data/sheets/bad name'))).toContain('outRoot segment')
   })
 
-  it('sanitizes count and whole request bodies', () => {
+  it('sanitizes count ranges and whole request bodies', () => {
     expect(sanitizeEncounterCount(1)).toBe(1)
     expect(sanitizeEncounterCount('30')).toBe(30)
     expect(statusMessageFor(() => sanitizeEncounterCount(0))).toBe('count must be an integer between 1 and 30')
     expect(statusMessageFor(() => sanitizeEncounterCount(31))).toBe('count must be an integer between 1 and 30')
+    expect(sanitizeEncounterCountRange(2, '5')).toEqual({ min: 2, max: 5 })
+    expect(statusMessageFor(() => sanitizeEncounterCountRange(0, 5))).toBe('countMin must be an integer between 1 and 30')
+    expect(statusMessageFor(() => sanitizeEncounterCountRange(5, 31))).toBe('countMax must be an integer between 1 and 30')
+    expect(statusMessageFor(() => sanitizeEncounterCountRange(5, 2))).toBe('countMin must be less than or equal to countMax')
 
     expect(readEncounterGenerateRequest({ region: 'r', table: 't', count: 2, preview: true })).toEqual({
       region: 'r',
       tableKey: 't',
       outRoot: 'data/sheets/wild',
-      count: 2,
+      countRange: { min: 2, max: 2 },
+      preview: true,
+    })
+    expect(readEncounterGenerateRequest({ region: 'r', table: 't', countMin: 2, countMax: 5, preview: true })).toEqual({
+      region: 'r',
+      tableKey: 't',
+      outRoot: 'data/sheets/wild',
+      countRange: { min: 2, max: 5 },
       preview: true,
     })
   })
@@ -87,6 +100,8 @@ describe('server encounter generation helpers', () => {
   })
 
   it('rolls weighted encounter tables with injectable randomness and per-row level ranges', () => {
+    expect(randomEncounterGenerateCount({ min: 2, max: 4 }, () => 0.99)).toBe(4)
+
     const first = rollEncounterTable(table, () => 0)
     expect(first).toEqual({ species: 'Pidgey', level: 3, roll: 1 })
 

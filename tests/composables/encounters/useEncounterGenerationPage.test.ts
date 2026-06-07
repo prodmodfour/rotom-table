@@ -16,6 +16,7 @@ const result = (body: EncounterGenerateRequestBody): EncounterGenerateResult => 
   files: [{ name: `${body.table}.json`, content: '{}' }],
   failures: 0,
   preview: body.preview,
+  count: body.countMax ?? body.count ?? 0,
 })
 
 describe('useEncounterGenerationPage', () => {
@@ -52,13 +53,33 @@ describe('useEncounterGenerationPage', () => {
     expect(replaceQuery).toHaveBeenLastCalledWith({ region: alternateRegion, table: firstAlternateTable?.key })
   })
 
+  it('keeps count ranges ordered and rerolls previews at the selected size', async () => {
+    const page = useEncounterGenerationPage({
+      query: { region: firstEntry!.region, table: firstEntry!.key },
+      fetchGenerate: async (body) => result(body),
+    })
+
+    page.countMin.value = 4
+    await nextTick()
+
+    expect(page.countMax.value).toBe(4)
+    expect(page.rolledPreview.value).toHaveLength(4)
+
+    page.countMax.value = 2
+    await nextTick()
+
+    expect(page.countMin.value).toBe(2)
+    expect(page.rolledPreview.value).toHaveLength(2)
+  })
+
   it('generates with clamped request body and stores successful results', async () => {
     const fetchGenerate = vi.fn(async (body: EncounterGenerateRequestBody) => result(body))
     const page = useEncounterGenerationPage({
       query: { region: firstEntry!.region, table: firstEntry!.key },
       fetchGenerate,
     })
-    page.count.value = 999
+    page.countMin.value = 0
+    page.countMax.value = 999
     page.outRoot.value = 'data/sheets/test'
     page.preview.value = true
 
@@ -67,7 +88,8 @@ describe('useEncounterGenerationPage', () => {
     expect(fetchGenerate).toHaveBeenCalledWith({
       region: firstEntry!.region,
       table: firstEntry!.key,
-      count: 30,
+      countMin: 1,
+      countMax: 30,
       outRoot: 'data/sheets/test',
       preview: true,
     })
@@ -81,7 +103,7 @@ describe('useEncounterGenerationPage', () => {
       query: { region: firstEntry!.region, table: firstEntry!.key },
       fetchGenerate: async () => { throw { data: { statusMessage: 'Generation failed' } } },
     })
-    page.result.value = result({ region: firstEntry!.region, table: firstEntry!.key, count: 1, outRoot: 'x', preview: false })
+    page.result.value = result({ region: firstEntry!.region, table: firstEntry!.key, countMin: 1, countMax: 1, outRoot: 'x', preview: false })
 
     await page.generate()
 

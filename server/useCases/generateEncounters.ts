@@ -1,6 +1,7 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import {
   EncounterGenerationInputError,
+  randomEncounterGenerateCount,
   readEncounterGenerateRequest,
   rollEncounterTable,
   type GenerateEncounterBody,
@@ -32,6 +33,7 @@ export interface GenerateEncountersResult {
   failures: number
   preview: boolean
   beforeCount: number
+  count: number
 }
 
 export type GenerateEncountersDependencies = GenerateEncountersRuntimeOverrides
@@ -71,8 +73,14 @@ export const generateEncountersUseCase = async (
       pathExists: runtime.pathExists,
       readTextFile: runtime.readTextFile,
     })
-    const rolled = Array.from({ length: request.count }, () => rollEncounterTable(table, runtime.random))
-    const output = createEncounterOutputPlan(request, {
+    const count = randomEncounterGenerateCount(request.countRange, runtime.random)
+    const rolled = Array.from({ length: count }, () => rollEncounterTable(table, runtime.random))
+    const output = createEncounterOutputPlan({
+      tableKey: request.tableKey,
+      count,
+      outRoot: request.outRoot,
+      preview: request.preview,
+    }, {
       projectRoot: runtime.projectRoot,
       pathExists: runtime.pathExists,
       ensureDirectory: runtime.ensureDirectory,
@@ -103,6 +111,7 @@ export const generateEncountersUseCase = async (
       failures: batch.failures,
       preview: request.preview,
       beforeCount: batch.beforeCount,
+      count,
     }
   } catch (error) {
     throw normalizeGenerateEncountersError(error)

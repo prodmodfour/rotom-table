@@ -1,3 +1,4 @@
+import { randomEncounterInt } from '#shared/encounterTables'
 import type { EncounterTableEntry, RolledEncounter } from '~/types/encounterTable'
 
 export interface EncounterGenerateFile {
@@ -14,14 +15,24 @@ export interface EncounterGenerateResult {
   files: EncounterGenerateFile[]
   failures: number
   preview: boolean
+  /** Actual count selected for this generation. Older servers omit this. */
+  count?: number
 }
 
 export interface EncounterGenerateRequestBody {
   region: string
   table: string
-  count: number
+  /** Legacy exact count accepted by the server for older clients. */
+  count?: number
+  countMin?: number
+  countMax?: number
   outRoot: string
   preview: boolean
+}
+
+export interface EncounterGenerateCountRange {
+  min: number
+  max: number
 }
 
 export interface EncounterGenerationSelection {
@@ -33,10 +44,38 @@ export const DEFAULT_ENCOUNTER_COUNT = 3
 export const DEFAULT_ENCOUNTER_OUT_ROOT = 'data/sheets/wild'
 export const MIN_ENCOUNTER_COUNT = 1
 export const MAX_ENCOUNTER_COUNT = 30
+export const DEFAULT_ENCOUNTER_COUNT_RANGE: EncounterGenerateCountRange = {
+  min: DEFAULT_ENCOUNTER_COUNT,
+  max: DEFAULT_ENCOUNTER_COUNT,
+}
 
-export const clampEncounterGenerateCount = (value: number): number => {
-  if (!Number.isFinite(value)) return MIN_ENCOUNTER_COUNT
-  return Math.max(MIN_ENCOUNTER_COUNT, Math.min(MAX_ENCOUNTER_COUNT, Math.floor(value)))
+export const clampEncounterGenerateCount = (value: unknown): number => {
+  const count = Number(value)
+  if (!Number.isFinite(count)) return MIN_ENCOUNTER_COUNT
+  return Math.max(MIN_ENCOUNTER_COUNT, Math.min(MAX_ENCOUNTER_COUNT, Math.floor(count)))
+}
+
+export const exactEncounterGenerateCountRange = (value: unknown): EncounterGenerateCountRange => {
+  const count = clampEncounterGenerateCount(value)
+  return { min: count, max: count }
+}
+
+export const normalizeEncounterGenerateCountRange = (
+  minValue: unknown,
+  maxValue: unknown,
+): EncounterGenerateCountRange => {
+  const min = clampEncounterGenerateCount(minValue)
+  const max = clampEncounterGenerateCount(maxValue)
+  return min <= max ? { min, max } : { min: max, max: min }
+}
+
+export const randomEncounterGenerateCount = (
+  range: EncounterGenerateCountRange,
+  random: () => number = Math.random,
+): number => {
+  const normalized = normalizeEncounterGenerateCountRange(range.min, range.max)
+  if (normalized.min === normalized.max) return normalized.min
+  return randomEncounterInt(normalized.min, normalized.max, random)
 }
 
 const queryString = (value: unknown, fallback: string): string => String(value ?? fallback)
@@ -61,17 +100,22 @@ export const buildEncounterGenerateRequestBody = (
   options: {
     region: string
     tableKey: string
-    count: number
+    countMin: number
+    countMax: number
     outRoot: string
     preview: boolean
   },
-): EncounterGenerateRequestBody => ({
-  region: options.region,
-  table: options.tableKey,
-  count: clampEncounterGenerateCount(options.count),
-  outRoot: options.outRoot,
-  preview: options.preview,
-})
+): EncounterGenerateRequestBody => {
+  const countRange = normalizeEncounterGenerateCountRange(options.countMin, options.countMax)
+  return {
+    region: options.region,
+    table: options.tableKey,
+    countMin: countRange.min,
+    countMax: countRange.max,
+    outRoot: options.outRoot,
+    preview: options.preview,
+  }
+}
 
 export const toggleOpenGenerateFile = (
   openFiles: ReadonlySet<string>,

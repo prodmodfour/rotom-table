@@ -5,6 +5,8 @@ import {
   coerceTableKeyForRegion,
   errorMessageForEncounterGenerate,
   initialEncounterGenerationSelection,
+  normalizeEncounterGenerateCountRange,
+  randomEncounterGenerateCount,
   toggleOpenGenerateFile,
 } from '~/utils/encounterGeneration'
 import type { EncounterTableEntry } from '~/types/encounterTable'
@@ -15,11 +17,21 @@ const entries: EncounterTableEntry[] = [
 ]
 
 describe('encounter generation helpers', () => {
-  it('clamps generation count to the supported range', () => {
+  it('clamps generation counts and normalizes count ranges', () => {
     expect(clampEncounterGenerateCount(Number.NaN)).toBe(1)
     expect(clampEncounterGenerateCount(0)).toBe(1)
     expect(clampEncounterGenerateCount(3.9)).toBe(3)
     expect(clampEncounterGenerateCount(99)).toBe(30)
+    expect(normalizeEncounterGenerateCountRange(8, 2)).toEqual({ min: 2, max: 8 })
+    expect(normalizeEncounterGenerateCountRange(99, 0)).toEqual({ min: 1, max: 30 })
+  })
+
+  it('rolls a random count inside a normalized range', () => {
+    expect(randomEncounterGenerateCount({ min: 2, max: 4 }, () => 0)).toBe(2)
+    expect(randomEncounterGenerateCount({ min: 2, max: 4 }, () => 0.99)).toBe(4)
+    expect(randomEncounterGenerateCount({ min: 3, max: 3 }, () => {
+      throw new Error('exact counts do not need randomness')
+    })).toBe(3)
   })
 
   it('derives initial selection from route query or fallback entry', () => {
@@ -41,13 +53,15 @@ describe('encounter generation helpers', () => {
     expect(buildEncounterGenerateRequestBody({
       region: 'vale',
       tableKey: 'river',
-      count: 99,
+      countMin: 99,
+      countMax: 2,
       outRoot: 'data/sheets/wild',
       preview: true,
     })).toEqual({
       region: 'vale',
       table: 'river',
-      count: 30,
+      countMin: 2,
+      countMax: 30,
       outRoot: 'data/sheets/wild',
       preview: true,
     })

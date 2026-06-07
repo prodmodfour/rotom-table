@@ -14,7 +14,8 @@ const {
   region,
   regions,
   tableKey,
-  count,
+  countMin,
+  countMax,
   outRoot,
   preview,
   tablesForRegion,
@@ -46,7 +47,8 @@ const {
       <EncounterGenerateSetupCard
         v-model:region="region"
         v-model:table-key="tableKey"
-        v-model:count="count"
+        v-model:count-min="countMin"
+        v-model:count-max="countMax"
         v-model:out-root="outRoot"
         v-model:preview="preview"
         :regions="regions"
@@ -68,7 +70,7 @@ const {
         v-if="result"
         :result="result"
         :table-key="tableKey"
-        :count="count"
+        :count="result.count ?? result.rolled.length"
         :open-files="openFiles"
         @toggle-file="toggleFile"
       />

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { EncounterTableEntry } from '~/types/encounterTable'
+import { MAX_ENCOUNTER_COUNT, MIN_ENCOUNTER_COUNT } from '~/utils/encounterGeneration'
 import { formatRegionLabel } from '~/utils/encounterTables'
 
 const region = defineModel<string>('region', { required: true })
 const tableKey = defineModel<string>('tableKey', { required: true })
-const count = defineModel<number>('count', { required: true })
+const countMin = defineModel<number>('countMin', { required: true })
+const countMax = defineModel<number>('countMax', { required: true })
 const outRoot = defineModel<string>('outRoot', { required: true })
 const preview = defineModel<boolean>('preview', { required: true })
 
@@ -39,16 +41,31 @@ defineProps<{
       </select>
     </label>
 
-    <label class="field">
-      <span class="field-label">Count</span>
-      <input
-        v-model.number="count"
-        type="number"
-        min="1"
-        max="30"
-        :disabled="generating"
-      />
-    </label>
+    <fieldset class="field fieldset">
+      <legend class="field-label">Count range</legend>
+      <div class="range-row">
+        <label class="subfield">
+          <span class="subfield-label">Min</span>
+          <input
+            v-model.number="countMin"
+            type="number"
+            :min="MIN_ENCOUNTER_COUNT"
+            :max="MAX_ENCOUNTER_COUNT"
+            :disabled="generating"
+          />
+        </label>
+        <label class="subfield">
+          <span class="subfield-label">Max</span>
+          <input
+            v-model.number="countMax"
+            type="number"
+            :min="MIN_ENCOUNTER_COUNT"
+            :max="MAX_ENCOUNTER_COUNT"
+            :disabled="generating"
+          />
+        </label>
+      </div>
+    </fieldset>
 
     <label class="field">
       <span class="field-label">Output root</span>
@@ -76,11 +93,38 @@ defineProps<{
   gap: 0.3rem;
 }
 
+.fieldset {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
 .field-label {
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-muted);
+}
+
+.range-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.subfield {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.subfield-label {
+  color: var(--ink-muted);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 select,
