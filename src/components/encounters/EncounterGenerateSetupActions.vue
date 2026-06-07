@@ -4,18 +4,22 @@ const preview = defineModel<boolean>('preview', { required: true })
 defineProps<{
   hasSelectedTable: boolean
   generating: boolean
+  busy: boolean
+  spawning: boolean
+  canSpawn: boolean
 }>()
 
 const emit = defineEmits<{
   (event: 'roll-preview'): void
   (event: 'generate'): void
+  (event: 'spawn'): void
 }>()
 </script>
 
 <template>
   <div class="form-actions">
     <label class="checkbox-field">
-      <input v-model="preview" type="checkbox" :disabled="generating" />
+      <input v-model="preview" type="checkbox" :disabled="busy" />
       <span>Preview only — write to a tempdir, stream contents back, discard.</span>
     </label>
 
@@ -23,7 +27,7 @@ const emit = defineEmits<{
       <button
         type="button"
         class="ghost-button"
-        :disabled="!hasSelectedTable || generating"
+        :disabled="!hasSelectedTable || busy"
         @click="emit('roll-preview')"
       >
         Re-roll preview
@@ -31,10 +35,19 @@ const emit = defineEmits<{
       <button
         type="button"
         class="primary-button"
-        :disabled="!hasSelectedTable || generating"
+        :disabled="!hasSelectedTable || busy"
         @click="emit('generate')"
       >
         {{ generating ? 'Generating…' : preview ? 'Preview generation' : 'Generate folder' }}
+      </button>
+      <button
+        type="button"
+        class="spawn-button"
+        :disabled="!canSpawn || busy"
+        :title="preview ? 'Disable Preview only before spawning onto a map.' : undefined"
+        @click="emit('spawn')"
+      >
+        {{ spawning ? 'Spawning…' : 'Spawn' }}
       </button>
     </div>
   </div>
@@ -70,7 +83,8 @@ const emit = defineEmits<{
 }
 
 .primary-button,
-.ghost-button {
+.ghost-button,
+.spawn-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -82,13 +96,15 @@ const emit = defineEmits<{
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.primary-button {
+.primary-button,
+.spawn-button {
   border: 1px solid var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
 }
 
-.primary-button:hover:not(:disabled) {
+.primary-button:hover:not(:disabled),
+.spawn-button:hover:not(:disabled) {
   background: rgba(255, 31, 45, 0.22);
   color: var(--ink-bright);
 }
@@ -106,7 +122,8 @@ const emit = defineEmits<{
 }
 
 .primary-button:disabled,
-.ghost-button:disabled {
+.ghost-button:disabled,
+.spawn-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -117,7 +134,8 @@ const emit = defineEmits<{
   }
 
   .button-row .primary-button,
-  .button-row .ghost-button {
+  .button-row .ghost-button,
+  .button-row .spawn-button {
     flex: 1;
   }
 }

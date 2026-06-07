@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useEncounterGenerationPage } from '~/composables/encounters/useEncounterGenerationPage'
 import { useEncounterTableLibraryData } from '~/composables/encounters/useEncounterTableLibraryData'
+import { useMapLibraryData } from '~/composables/library/useMapLibraryData'
+import { getClientId } from '~/utils/clientId'
 
 useHead({
   title: 'Generate · Rotom Table',
@@ -9,6 +12,10 @@ useHead({
 const route = useRoute()
 const router = useRouter()
 const encounterTableData = useEncounterTableLibraryData()
+const mapLibraryData = useMapLibraryData({ clientId: getClientId() })
+const mapsLoading = mapLibraryData.loading
+const mapsLoadError = mapLibraryData.loadError
+const spawnMaps = computed(() => Array.from(mapLibraryData.maps.values()))
 
 const {
   region,
@@ -18,19 +25,25 @@ const {
   countMax,
   outRoot,
   preview,
+  spawnMapSlug,
   tablesForRegion,
   selectedTable,
   rolledPreview,
   rollPreview,
   generating,
+  spawning,
+  busy,
+  canSpawn,
   error,
   result,
   generate,
+  spawn,
   openFiles,
   toggleFile,
 } = useEncounterGenerationPage({
   query: route.query,
   entries: encounterTableData.items,
+  maps: spawnMaps,
   replaceQuery: async (query) => {
     await router.replace({ query })
   },
@@ -51,12 +64,20 @@ const {
         v-model:count-max="countMax"
         v-model:out-root="outRoot"
         v-model:preview="preview"
+        v-model:spawn-map-slug="spawnMapSlug"
         :regions="regions"
         :tables-for-region="tablesForRegion"
         :selected-table="selectedTable"
-        :generating="generating"
+        :spawn-maps="spawnMaps"
+        :maps-loading="mapsLoading"
+        :maps-load-error="mapsLoadError"
+        :generating="busy"
+        :folder-generating="generating"
+        :spawning="spawning"
+        :can-spawn="canSpawn"
         @roll-preview="rollPreview"
         @generate="generate"
+        @spawn="spawn"
       />
 
       <EncounterRolledPreviewCard

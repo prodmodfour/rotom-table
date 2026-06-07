@@ -1,25 +1,38 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+import { mapEditorPath } from '~/utils/mapRoutes'
+import type { EncounterSpawnSummary } from '~/utils/encounterGeneration'
+
+const props = defineProps<{
   preview: boolean
   failures: number
   relDir: string
   fileCount: number
   tableKey: string
   count: number
+  spawn?: EncounterSpawnSummary
 }>()
+
+const spawnMapPath = computed(() => props.spawn ? mapEditorPath(props.spawn.mapSlug) : '')
 </script>
 
 <template>
   <header class="result-heading">
     <h2 class="panel-title">
-      {{ preview ? 'Preview generated' : 'Generated folder' }}
+      {{ spawn ? 'Generated & spawned' : preview ? 'Preview generated' : 'Generated folder' }}
       <span v-if="failures > 0" class="panel-subtle warn">
-        {{ failures }} failure(s)
+        {{ failures }} generation failure(s)
+      </span>
+      <span v-if="spawn && spawn.failures > 0" class="panel-subtle warn">
+        {{ spawn.failures }} spawn failure(s)
       </span>
     </h2>
     <div class="result-pills">
       <span v-if="!preview" class="badge">{{ relDir }}</span>
       <span class="badge">{{ fileCount }} file(s)</span>
+      <NuxtLink v-if="spawn" class="badge badge-link" :to="spawnMapPath">
+        {{ spawn.spawned }} spawned · {{ spawn.mapName }}
+      </NuxtLink>
     </div>
   </header>
 
@@ -28,6 +41,10 @@ defineProps<{
     <code>{{ relDir }}/</code>.
     The folder name auto-increments (<code>{{ tableKey }}_{{ count }}</code>,
     <code>{{ tableKey }}_{{ count }}-2</code>…) so repeat runs don't clobber.
+    <template v-if="spawn">
+      Spawned {{ spawn.spawned }} token(s) onto
+      <NuxtLink :to="spawnMapPath" class="inline-link">{{ spawn.mapName }}</NuxtLink>.
+    </template>
   </p>
 </template>
 
@@ -69,6 +86,16 @@ defineProps<{
   font-size: 0.74rem;
   letter-spacing: 0.06em;
   white-space: nowrap;
+}
+
+.badge-link,
+.inline-link {
+  text-decoration: none;
+}
+
+.badge-link:hover,
+.inline-link:hover {
+  color: var(--ink-bright);
 }
 
 code {

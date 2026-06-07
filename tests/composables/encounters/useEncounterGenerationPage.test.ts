@@ -2,11 +2,22 @@ import { nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { encounterTables, tablesInRegion } from '~/utils/encounterTables'
 import { useEncounterGenerationPage } from '~/composables/encounters/useEncounterGenerationPage'
-import type { EncounterGenerateRequestBody, EncounterGenerateResult } from '~/utils/encounterGeneration'
+import type { EncounterGenerateRequestBody, EncounterGenerateResult, EncounterSpawnRequestBody } from '~/utils/encounterGeneration'
 import type { EncounterTableEntry } from '~/types/encounterTable'
+import type { MapSummary } from '~/types/map'
 
 const firstEntry = encounterTables[0]
 const alternateRegion = encounterTables.find((entry) => entry.region !== firstEntry?.region)?.region
+
+const maps: MapSummary[] = [
+  {
+    slug: 'forest-map',
+    name: 'Forest Map',
+    folder: '',
+    dimensions: { x: 10, y: 3, z: 10 },
+    placementCount: 0,
+  },
+]
 
 const result = (body: EncounterGenerateRequestBody): EncounterGenerateResult => ({
   ok: true,
@@ -96,6 +107,60 @@ describe('useEncounterGenerationPage', () => {
     expect(page.result.value?.preview).toBe(true)
     expect(page.error.value).toBeNull()
     expect(page.generating.value).toBe(false)
+  })
+
+  it('generates and spawns onto the selected map with persistent output', async () => {
+    const fetchSpawn = vi.fn(async (body: EncounterSpawnRequestBody): Promise<EncounterGenerateResult> => ({
+      ...result(body),
+      preview: false,
+      spawn: {
+        mapSlug: body.mapSlug,
+        mapName: 'Forest Map',
+        spawned: 1,
+        failures: 0,
+        placements: [{ file: 'a.json', slug: 'a', placementId: 'token-1', position: { x: 0, y: 0, z: 0 } }],
+      },
+    }))
+    const page = useEncounterGenerationPage({
+      query: { region: firstEntry!.region, table: firstEntry!.key, map: 'forest-map' },
+      maps,
+      fetchGenerate: async (body) => result(body),
+      fetchSpawn,
+      clientId: () => 'client-1',
+    })
+    page.outRoot.value = 'data/sheets/test'
+
+    await page.spawn()
+
+    expect(page.selectedSpawnMap.value?.slug).toBe('forest-map')
+    expect(fetchSpawn).toHaveBeenCalledWith({
+      region: firstEntry!.region,
+      table: firstEntry!.key,
+      countMin: 3,
+      countMax: 3,
+      outRoot: 'data/sheets/test',
+      preview: false,
+      mapSlug: 'forest-map',
+      clientId: 'client-1',
+    })
+    expect(page.result.value?.spawn?.spawned).toBe(1)
+    expect(page.spawning.value).toBe(false)
+  })
+
+  it('does not spawn while preview-only is enabled', async () => {
+    const fetchSpawn = vi.fn(async (body: EncounterSpawnRequestBody) => result(body))
+    const page = useEncounterGenerationPage({
+      query: { region: firstEntry!.region, table: firstEntry!.key, map: 'forest-map' },
+      maps,
+      fetchGenerate: async (body) => result(body),
+      fetchSpawn,
+    })
+    page.preview.value = true
+
+    await page.spawn()
+
+    expect(fetchSpawn).not.toHaveBeenCalled()
+    expect(page.canSpawn.value).toBe(false)
   })
 
   it('stores normalized error messages and clears stale results', async () => {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EncounterTableEntry } from '~/types/encounterTable'
+import type { MapSummary } from '~/types/map'
 import { MAX_ENCOUNTER_COUNT, MIN_ENCOUNTER_COUNT } from '~/utils/encounterGeneration'
 import { formatRegionLabel } from '~/utils/encounterTables'
 
@@ -9,12 +10,18 @@ const countMin = defineModel<number>('countMin', { required: true })
 const countMax = defineModel<number>('countMax', { required: true })
 const outRoot = defineModel<string>('outRoot', { required: true })
 const preview = defineModel<boolean>('preview', { required: true })
+const spawnMapSlug = defineModel<string>('spawnMapSlug', { required: true })
 
 defineProps<{
   regions: string[]
   tablesForRegion: EncounterTableEntry[]
+  spawnMaps: MapSummary[]
+  mapsLoading: boolean
+  mapsLoadError: string | null
   generating: boolean
 }>()
+
+const mapOptionLabel = (map: MapSummary): string => map.folder ? `${map.folder} / ${map.name}` : map.name
 </script>
 
 <template>
@@ -76,6 +83,27 @@ defineProps<{
         placeholder="data/sheets/wild"
       />
     </label>
+
+    <label class="field">
+      <span class="field-label">Spawn map</span>
+      <select
+        v-model="spawnMapSlug"
+        :disabled="generating || mapsLoading || spawnMaps.length === 0"
+      >
+        <option value="">
+          {{ mapsLoading ? 'Loading maps…' : 'Select map…' }}
+        </option>
+        <option
+          v-for="map in spawnMaps"
+          :key="map.slug"
+          :value="map.slug"
+        >
+          {{ mapOptionLabel(map) }}
+        </option>
+      </select>
+      <span v-if="mapsLoadError" class="field-hint error">Maps unavailable: {{ mapsLoadError }}</span>
+      <span v-else-if="!mapsLoading && spawnMaps.length === 0" class="field-hint">Create a map before using Spawn.</span>
+    </label>
   </div>
 </template>
 
@@ -105,6 +133,16 @@ defineProps<{
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-muted);
+}
+
+.field-hint {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.field-hint.error {
+  color: var(--bad);
 }
 
 .range-row {

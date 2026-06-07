@@ -59,6 +59,7 @@ export const ENCOUNTER_API_PATHS = {
   list: '/api/encounters/list',
   folders: '/api/encounters/folders',
   generate: '/api/encounters/generate',
+  spawn: '/api/encounters/spawn',
   create: '/api/encounters/create',
   createFolder: '/api/encounters/create-folder',
   save: '/api/encounters/save',

@@ -10,6 +10,7 @@ import {
 } from '~/utils/encounterTables'
 import {
   buildEncounterGenerateRequestBody,
+  buildEncounterSpawnRequestBody,
   clampEncounterGenerateCount,
   coerceTableKeyForRegion,
   DEFAULT_ENCOUNTER_COUNT_RANGE,
@@ -20,23 +21,35 @@ import {
   toggleOpenGenerateFile,
   type EncounterGenerateRequestBody,
   type EncounterGenerateResult,
+  type EncounterSpawnRequestBody,
 } from '~/utils/encounterGeneration'
+import { getClientId } from '~/utils/clientId'
 import type { EncounterTableEntry, RolledEncounter } from '~/types/encounterTable'
+import type { MapSummary } from '~/types/map'
+
+const queryString = (value: unknown, fallback = ''): string => String(value ?? fallback)
 
 export interface UseEncounterGenerationPageOptions {
   query: Record<string, unknown>
-  replaceQuery?: (query: { region: string; table: string }) => void | Promise<void>
+  replaceQuery?: (query: { region: string; table: string; map?: string }) => void | Promise<void>
   entries?: MaybeRefOrGetter<readonly EncounterTableEntry[]>
+  maps?: MaybeRefOrGetter<readonly MapSummary[]>
   fetchGenerate?: (body: EncounterGenerateRequestBody) => Promise<EncounterGenerateResult>
+  fetchSpawn?: (body: EncounterSpawnRequestBody) => Promise<EncounterGenerateResult>
+  clientId?: () => string
 }
 
 export const useEncounterGenerationPage = ({
   query,
   replaceQuery,
   entries = encounterTables,
+  maps = [],
   fetchGenerate = (body) => useApiClient().postJson<EncounterGenerateResult>(ENCOUNTER_API_PATHS.generate, body),
+  fetchSpawn = (body) => useApiClient().postJson<EncounterGenerateResult>(ENCOUNTER_API_PATHS.spawn, body),
+  clientId = getClientId,
 }: UseEncounterGenerationPageOptions) => {
   const allTables = computed(() => Array.from(toValue(entries)))
+  const allMaps = computed(() => Array.from(toValue(maps)))
   const regions = computed(() => encounterRegionsForEntries(allTables.value))
   const initialEntry = allTables.value[0] ?? null
   const initialSelection = initialEncounterGenerationSelection(query, initialEntry)
@@ -46,6 +59,7 @@ export const useEncounterGenerationPage = ({
   const countMax = ref<number>(DEFAULT_ENCOUNTER_COUNT_RANGE.max)
   const outRoot = ref<string>(DEFAULT_ENCOUNTER_OUT_ROOT)
   const preview = ref<boolean>(false)
+  const spawnMapSlug = ref<string>(queryString(query.map, ''))
 
   watch(region, (next) => {
     tableKey.value = coerceTableKeyForRegion(tableKey.value, tablesInRegionFromEntries(allTables.value, next))
@@ -64,6 +78,12 @@ export const useEncounterGenerationPage = ({
 
   const tablesForRegion = computed(() => tablesInRegionFromEntries(allTables.value, region.value))
   const selectedTable = computed(() => findEncounterTableInEntries(allTables.value, region.value, tableKey.value))
+  const selectedSpawnMap = computed(() => allMaps.value.find((map) => map.slug === spawnMapSlug.value) ?? null)
+
+  watch(allMaps, (next) => {
+    if (next.length === 0) return
+    if (!next.some((map) => map.slug === spawnMapSlug.value)) spawnMapSlug.value = next[0]?.slug ?? ''
+  }, { immediate: true })
 
   watch(countMin, (next) => {
     const clamped = clampEncounterGenerateCount(next)
@@ -93,11 +113,13 @@ export const useEncounterGenerationPage = ({
   )
 
   const generating = ref(false)
+  const spawning = ref(false)
+  const busy = computed(() => generating.value || spawning.value)
   const error = ref<string | null>(null)
   const result = ref<EncounterGenerateResult | null>(null)
 
   const generate = async () => {
-    if (!selectedTable.value) return
+    if (!selectedTable.value || busy.value) return
     generating.value = true
     error.value = null
     result.value = null
@@ -117,14 +139,42 @@ export const useEncounterGenerationPage = ({
     }
   }
 
+  const spawn = async () => {
+    if (!selectedTable.value || !selectedSpawnMap.value || preview.value || busy.value) return
+    spawning.value = true
+    error.value = null
+    result.value = null
+    try {
+      result.value = await fetchSpawn(buildEncounterSpawnRequestBody({
+        region: region.value,
+        tableKey: tableKey.value,
+        countMin: countMin.value,
+        countMax: countMax.value,
+        outRoot: outRoot.value,
+        mapSlug: spawnMapSlug.value,
+        clientId: clientId(),
+      }))
+    } catch (err: unknown) {
+      error.value = errorMessageForEncounterGenerate(err)
+    } finally {
+      spawning.value = false
+    }
+  }
+
+  const canSpawn = computed(() => Boolean(selectedTable.value && selectedSpawnMap.value && !preview.value))
+
   const openFiles = ref<Set<string>>(new Set())
   const toggleFile = (name: string) => {
     openFiles.value = toggleOpenGenerateFile(openFiles.value, name)
   }
   const isOpen = (name: string) => openFiles.value.has(name)
 
-  watch([region, tableKey], () => {
-    void replaceQuery?.({ region: region.value, table: tableKey.value })
+  watch([region, tableKey, spawnMapSlug], () => {
+    void replaceQuery?.({
+      region: region.value,
+      table: tableKey.value,
+      ...(spawnMapSlug.value ? { map: spawnMapSlug.value } : {}),
+    })
   })
 
   return {
@@ -135,14 +185,21 @@ export const useEncounterGenerationPage = ({
     countMax,
     outRoot,
     preview,
+    spawnMapSlug,
+    spawnMaps: allMaps,
     tablesForRegion,
     selectedTable,
+    selectedSpawnMap,
     rolledPreview,
     rollPreview,
     generating,
+    spawning,
+    busy,
+    canSpawn,
     error,
     result,
     generate,
+    spawn,
     openFiles,
     toggleFile,
     isOpen,

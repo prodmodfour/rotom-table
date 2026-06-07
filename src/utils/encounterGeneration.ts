@@ -1,10 +1,27 @@
 import { randomEncounterInt } from '#shared/encounterTables'
+import type { GridAnchor } from '~/types/map'
 import type { EncounterTableEntry, RolledEncounter } from '~/types/encounterTable'
 
 export interface EncounterGenerateFile {
   name: string
   error?: string
   content?: string
+}
+
+export interface EncounterSpawnedPlacement {
+  file: string
+  slug: string
+  placementId?: string
+  position?: GridAnchor
+  error?: string
+}
+
+export interface EncounterSpawnSummary {
+  mapSlug: string
+  mapName: string
+  spawned: number
+  failures: number
+  placements: EncounterSpawnedPlacement[]
 }
 
 export interface EncounterGenerateResult {
@@ -17,6 +34,7 @@ export interface EncounterGenerateResult {
   preview: boolean
   /** Actual count selected for this generation. Older servers omit this. */
   count?: number
+  spawn?: EncounterSpawnSummary
 }
 
 export interface EncounterGenerateRequestBody {
@@ -28,6 +46,11 @@ export interface EncounterGenerateRequestBody {
   countMax?: number
   outRoot: string
   preview: boolean
+}
+
+export interface EncounterSpawnRequestBody extends EncounterGenerateRequestBody {
+  mapSlug: string
+  clientId?: string
 }
 
 export interface EncounterGenerateCountRange {
@@ -116,6 +139,29 @@ export const buildEncounterGenerateRequestBody = (
     preview: options.preview,
   }
 }
+
+export const buildEncounterSpawnRequestBody = (
+  options: {
+    region: string
+    tableKey: string
+    countMin: number
+    countMax: number
+    outRoot: string
+    mapSlug: string
+    clientId?: string
+  },
+): EncounterSpawnRequestBody => ({
+  ...buildEncounterGenerateRequestBody({
+    region: options.region,
+    tableKey: options.tableKey,
+    countMin: options.countMin,
+    countMax: options.countMax,
+    outRoot: options.outRoot,
+    preview: false,
+  }),
+  mapSlug: options.mapSlug,
+  ...(options.clientId ? { clientId: options.clientId } : {}),
+})
 
 export const toggleOpenGenerateFile = (
   openFiles: ReadonlySet<string>,
