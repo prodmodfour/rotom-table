@@ -68,10 +68,6 @@ const handleCampaignFolderSelection = (event: Event) => {
     <AppNavigation />
 
     <section class="settings-panel panel-card" aria-label="Settings">
-      <div>
-        <p class="eyebrow">Settings</p>
-      </div>
-
       <button
         type="button"
         class="campaign-folder-button"
@@ -231,14 +227,6 @@ const handleCampaignFolderSelection = (event: Event) => {
   color: var(--ink-muted);
 }
 
-.eyebrow {
-  margin: 0 0 0.35rem;
-  color: var(--accent);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
 
 .campaign-folder-button {
   display: inline-flex;
