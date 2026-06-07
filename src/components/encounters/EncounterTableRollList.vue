@@ -1,27 +1,47 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
 import type { DisplayedEncounterRow } from '~/utils/encounterTables'
 
-defineProps<{
+const props = defineProps<{
   rows: DisplayedEncounterRow[]
 }>()
+
+const spriteUrlForSpecies = (species: string): string | null => {
+  const catalogEntry = pokemonCatalogBySpecies.get(species)
+  return catalogEntry?.profileSpriteUrl ?? catalogEntry?.spriteUrl ?? null
+}
+
+const rowsWithSprites = computed(() => props.rows.map((row) => ({
+  ...row,
+  spriteUrl: spriteUrlForSpecies(row.species),
+})))
 </script>
 
 <template>
   <div class="entry-list">
     <div class="entry-row entry-row--head">
-      <span class="entry-weight">Weight</span>
-      <span class="entry-chance">Chance</span>
-      <span class="entry-species">Entry</span>
-      <span class="entry-levels">Levels</span>
+      <span>Entry</span>
+      <span>Chance</span>
+      <span>Levels</span>
     </div>
     <div
-      v-for="(row, index) in rows"
+      v-for="(row, index) in rowsWithSprites"
       :key="`${row.species}-${index}`"
       class="entry-row"
     >
-      <span class="entry-weight">{{ row.weight }}</span>
+      <span class="entry-species">
+        <img
+          v-if="row.spriteUrl"
+          class="entry-sprite"
+          :src="row.spriteUrl"
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+        <span class="entry-species-name">{{ row.species }}</span>
+      </span>
       <span class="entry-chance">{{ row.chancePercentLabel }}</span>
-      <span class="entry-species">{{ row.species }}</span>
       <span class="entry-levels">{{ row.levelRange }}</span>
     </div>
   </div>
@@ -37,8 +57,8 @@ defineProps<{
 
 .entry-row {
   display: grid;
-  grid-template-columns: 4.5rem 4.5rem minmax(0, 1fr) 6.5rem;
-  align-items: baseline;
+  grid-template-columns: minmax(0, 1fr) 5rem 6.5rem;
+  align-items: center;
   gap: 0.6rem;
   padding: 0.45rem 0.65rem;
   border-radius: 8px;
@@ -49,6 +69,7 @@ defineProps<{
 }
 
 .entry-row--head {
+  align-items: end;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -61,7 +82,12 @@ defineProps<{
   margin-bottom: 0.2rem;
 }
 
-.entry-weight,
+.entry-row--head span:not(:first-child),
+.entry-chance,
+.entry-levels {
+  text-align: right;
+}
+
 .entry-chance,
 .entry-levels {
   color: var(--ink-soft);
@@ -69,19 +95,34 @@ defineProps<{
 }
 
 .entry-species {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
   color: var(--ink);
   font-family: var(--font-book);
   font-size: 1.02rem;
   letter-spacing: 0.02em;
 }
 
+.entry-sprite {
+  width: 1.65rem;
+  height: 1.65rem;
+  flex: 0 0 1.65rem;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.entry-species-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 640px) {
   .entry-row {
-    grid-template-columns: 3rem 3.6rem minmax(0, 1fr) 5rem;
-  }
-
-  .entry-row--head .entry-levels {
-    display: none;
+    grid-template-columns: minmax(0, 1fr) 4.25rem 5rem;
   }
 }
 </style>
