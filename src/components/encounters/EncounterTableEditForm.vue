@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { formatEncounterChancePercent } from '#shared/encounterTables'
 import type { EncounterTable } from '~/types/encounterTable'
 import {
   createEncounterTableEditRow,
@@ -41,6 +42,11 @@ watch(
 )
 
 const totalWeight = computed(() => encounterTableEditTotalWeight(model.value.rows))
+const encounterChanceLabel = (weight: number): string => {
+  const numericWeight = Number(weight)
+  if (!Number.isFinite(numericWeight) || numericWeight <= 0 || totalWeight.value <= 0) return '—'
+  return formatEncounterChancePercent(numericWeight, totalWeight.value)
+}
 const validation = computed(() => validateEncounterTableEditModel(model.value))
 const validationErrors = computed(() => validation.value.errors)
 const canSave = computed(() => validation.value.valid && !props.saving)
@@ -105,6 +111,7 @@ const save = () => {
       <span>Weight</span>
       <span>Min Lv</span>
       <span>Max Lv</span>
+      <span>Chance</span>
       <span class="sr-only">Actions</span>
     </div>
 
@@ -129,6 +136,9 @@ const save = () => {
         <span class="sr-only">Row {{ index + 1 }} maximum level</span>
         <input v-model.number="row.maxLevel" type="number" min="1" max="100" :disabled="saving" />
       </label>
+      <output class="row-chance" :aria-label="`Row ${index + 1} calculated encounter chance`">
+        {{ encounterChanceLabel(row.weight) }}
+      </output>
       <button
         type="button"
         class="row-remove"
@@ -289,7 +299,7 @@ input:disabled {
 .table-heading,
 .table-row {
   display: grid;
-  grid-template-columns: minmax(9rem, 1fr) 5.5rem 5rem 5rem auto;
+  grid-template-columns: minmax(7rem, 1fr) 4.5rem 4.25rem 4.25rem 4.75rem 4.75rem;
   gap: 0.5rem;
   align-items: center;
 }
@@ -305,6 +315,19 @@ input:disabled {
   position: relative;
 }
 
+.row-chance {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper-inset);
+  color: var(--good);
+  padding: 0.55rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 .row-remove,
 .secondary-button,
@@ -403,6 +426,20 @@ button:disabled {
     border: 1px solid var(--rule-soft);
     border-radius: 12px;
     background: var(--paper-inset);
+  }
+
+  .row-chance {
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .row-chance::before {
+    content: 'Chance';
+    color: var(--ink-muted);
+    font-family: var(--font-ui);
+    font-size: 0.68rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
   }
 
   .row-remove {
