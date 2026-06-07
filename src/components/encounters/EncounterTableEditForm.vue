@@ -24,6 +24,14 @@ const emit = defineEmits<{
 const model = ref<EncounterTableEditModel>(encounterTableToEditModel(props.table))
 const localError = ref<string | null>(null)
 
+const rarityWeightGuide = [
+  { rarity: 'Common', weight: 60, feel: 'Seen constantly' },
+  { rarity: 'Uncommon', weight: 25, feel: 'Seen regularly' },
+  { rarity: 'Rare', weight: 10, feel: 'Noticeably special' },
+  { rarity: 'Very Rare', weight: 4, feel: 'Takes some searching' },
+  { rarity: 'Extremely Rare', weight: 1, feel: 'Exciting when it appears' },
+] as const
+
 watch(
   () => props.table,
   (table) => {
@@ -68,6 +76,29 @@ const save = () => {
       <span class="field-label">Table name</span>
       <input v-model.trim="model.name" type="text" maxlength="80" :disabled="saving" />
     </label>
+
+    <section class="weight-guide" aria-labelledby="weight-guide-title">
+      <div class="weight-guide-copy">
+        <h3 id="weight-guide-title">Weighting guide</h3>
+        <p>Optional reference only; these rarity labels and weights are not enforced.</p>
+      </div>
+      <table class="weight-guide-table">
+        <thead>
+          <tr>
+            <th scope="col">Rarity</th>
+            <th scope="col">Weight</th>
+            <th scope="col">Approx. feel</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="guide in rarityWeightGuide" :key="guide.rarity">
+            <td class="weight-guide-rarity">{{ guide.rarity }}</td>
+            <td class="weight-guide-weight">{{ guide.weight }}</td>
+            <td>{{ guide.feel }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
     <div class="table-heading">
       <span>Pokémon</span>
@@ -181,6 +212,78 @@ input:focus {
 input:disabled {
   opacity: 0.65;
   cursor: progress;
+}
+
+.weight-guide {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 12px;
+  background: var(--paper-inset);
+  padding: 0.75rem 0.85rem;
+}
+
+.weight-guide-copy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  align-items: baseline;
+}
+
+.weight-guide h3,
+.weight-guide p {
+  margin: 0;
+}
+
+.weight-guide h3 {
+  color: var(--ink-bright);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.weight-guide p {
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.weight-guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.weight-guide-table th,
+.weight-guide-table td {
+  padding: 0.3rem 0.45rem;
+  text-align: left;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.weight-guide-table th {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.weight-guide-table th:nth-child(2),
+.weight-guide-weight {
+  text-align: right;
+}
+
+.weight-guide-weight {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.weight-guide-rarity {
+  color: var(--ink-bright);
+  font-weight: 700;
 }
 
 .table-heading,
