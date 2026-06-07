@@ -15,7 +15,6 @@ const {
   visibleMaps,
   visibleFolders,
   hasAnything,
-  mapCount,
   currentPath,
   breadcrumbs,
   goToFolder,
@@ -55,7 +54,6 @@ const {
 
       <MapLibraryIntroPanel
         v-model:search-term="searchTerm"
-        :map-count="mapCount"
         :is-gm="isGm"
         :creating="creating"
         :load-error="loadError"

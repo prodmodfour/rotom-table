@@ -3,13 +3,11 @@ import { PhFolder, PhPlus } from '@phosphor-icons/vue'
 import LibraryIntroActionButton from '~/components/library/LibraryIntroActionButton.vue'
 import LibraryIntroActionRow from '~/components/library/LibraryIntroActionRow.vue'
 import LibraryIntroControls from '~/components/library/LibraryIntroControls.vue'
-import LibraryIntroCopy from '~/components/library/LibraryIntroCopy.vue'
 import LibraryIntroErrors from '~/components/library/LibraryIntroErrors.vue'
 import LibraryIntroPanelCard from '~/components/library/LibraryIntroPanelCard.vue'
 import LibraryIntroSearchField from '~/components/library/LibraryIntroSearchField.vue'
 
 defineProps<{
-  mapCount: number
   isGm: boolean
   searchTerm: string
   creating: boolean
@@ -26,30 +24,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <LibraryIntroPanelCard
-    title="Tabletop Maps"
-    :badge="`${mapCount} map${mapCount === 1 ? '' : 's'}`"
-  >
-    <LibraryIntroCopy>
-      Saved tabletop layouts. Each map stores its own dimensions and the
-      set of trainer / Pokémon tokens placed on it. Sheets are managed
-      separately under <code>/sheets</code> — maps only reference them, so
-      a token's HP, sprite, or class shows up live on every map that
-      has it placed.
-      <template #hint>
-        <template v-if="isGm">
-          Click a map to open it. Drag cards or folders to organise them.
-          Right-click anything for Move / Rename / Delete. Multiple tabs and
-          devices stay in sync as you edit.
-        </template>
-        <template v-else>
-          You are seeing only maps the GM has marked as player visible.
-          On a map, your selected player profile can control tokens whose
-          character sheets are linked to that profile.
-        </template>
-      </template>
-    </LibraryIntroCopy>
-
+  <LibraryIntroPanelCard>
     <LibraryIntroControls>
       <LibraryIntroSearchField
         :model-value="searchTerm"
