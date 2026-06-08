@@ -90,8 +90,12 @@ export interface TrainerSkillBackground {
 /* edges.json — minimal extra fields here for sheet-specific notes).  */
 /* ------------------------------------------------------------------ */
 
+export type TrainerEntryChoices = Record<string, string>
+
 export interface TrainerFeatureEntry {
   name: string
+  /** Sheet-specific selections for Features that branch when chosen (type, stat, ability, etc.). */
+  choices?: TrainerEntryChoices
   /** Optional GM/player override of the feature's source frequency line. */
   frequency?: string
   notes?: string
@@ -101,6 +105,8 @@ export interface TrainerFeatureEntry {
 
 export interface TrainerEdgeEntry {
   name: string
+  /** Sheet-specific selections for Edges that branch when chosen (type, skill, category, etc.). */
+  choices?: TrainerEntryChoices
   /** For the Basic Skills Edge, the skill being raised. */
   basicSkill?: TrainerSkillKey
   notes?: string

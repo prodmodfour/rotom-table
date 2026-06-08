@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PhPlus, PhX } from '@phosphor-icons/vue'
+import type { EditableCellValue } from '~/utils/editableCell'
 import type { TrainerFeatureEntry, TrainerSheet } from '~/types/trainerSheet'
 import {
   TRAINER_FEATURE_AUTOFILL_COLUMNS,
@@ -8,6 +9,11 @@ import {
   trainerFeatureFieldValue,
   type TrainerFeatureAutofillField,
 } from '~/utils/sheets/trainerFeatures'
+import {
+  stripTrainerEntryChoiceSuffix,
+  trainerFeatureSubchoices,
+  updateTrainerChoiceEntryName,
+} from '~/utils/sheets/trainerSubchoices'
 
 defineProps<{
   sheet: TrainerSheet
@@ -20,6 +26,10 @@ const emit = defineEmits<{
 
 const autofillValue = (feature: TrainerFeatureEntry, field: TrainerFeatureAutofillField): string =>
   trainerFeatureFieldValue(feature, field)
+
+const setFeatureName = (feature: TrainerFeatureEntry, value: EditableCellValue) => {
+  updateTrainerChoiceEntryName(feature, value, trainerFeatureSubchoices)
+}
 </script>
 
 <template>
@@ -46,11 +56,18 @@ const autofillValue = (feature: TrainerFeatureEntry, field: TrainerFeatureAutofi
           <tbody>
             <tr v-for="(feature, index) in sheet.features" :key="index">
               <th class="feature-name-col">
-                <EditableCell
-                  v-model="feature.name"
-                  type="select"
-                  :options="TRAINER_FEATURE_NAME_OPTIONS"
-                />
+                <div class="feature-name-stack">
+                  <EditableCell
+                    :model-value="stripTrainerEntryChoiceSuffix(feature.name)"
+                    type="select"
+                    :options="TRAINER_FEATURE_NAME_OPTIONS"
+                    @update:model-value="(value) => setFeatureName(feature, value)"
+                  />
+                  <TrainerEntrySubchoiceControls
+                    :entry="feature"
+                    :definitions="trainerFeatureSubchoices(feature)"
+                  />
+                </div>
               </th>
               <td
                 v-for="column in TRAINER_FEATURE_AUTOFILL_COLUMNS"
@@ -182,6 +199,13 @@ const autofillValue = (feature: TrainerFeatureEntry, field: TrainerFeatureAutofi
 
 .feature-name-col {
   min-width: 12rem;
+}
+
+.feature-name-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
 }
 
 .auto-fill-col {

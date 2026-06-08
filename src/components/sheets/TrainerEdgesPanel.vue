@@ -6,13 +6,14 @@ import {
   TRAINER_EDGE_AUTOFILL_COLUMNS,
   TRAINER_EDGE_NAME_COLUMN,
   TRAINER_EDGE_NAME_OPTIONS,
-  TRAINER_EDGE_SKILL_OPTIONS,
-  isBasicSkillsEdge,
-  isTrainerSkillKey,
   trainerEdgeFieldValue,
-  trainerSkillLabel,
   type TrainerEdgeAutofillField,
 } from '~/utils/sheets/trainerEdges'
+import {
+  stripTrainerEntryChoiceSuffix,
+  trainerEdgeSubchoices,
+  updateTrainerChoiceEntryName,
+} from '~/utils/sheets/trainerSubchoices'
 
 defineProps<{
   sheet: TrainerSheet
@@ -27,17 +28,8 @@ const autofillValue = (edge: TrainerEdgeEntry, field: TrainerEdgeAutofillField):
   trainerEdgeFieldValue(edge, field)
 
 const setEdgeName = (edge: TrainerEdgeEntry, value: EditableCellValue) => {
-  edge.name = typeof value === 'string' ? value : ''
-  if (!isBasicSkillsEdge(edge)) delete edge.basicSkill
+  updateTrainerChoiceEntryName(edge, value, trainerEdgeSubchoices)
 }
-
-const setBasicSkill = (edge: TrainerEdgeEntry, value: EditableCellValue) => {
-  if (isTrainerSkillKey(value)) edge.basicSkill = value
-  else delete edge.basicSkill
-}
-
-const formatBasicSkill = (value: EditableCellValue): string =>
-  typeof value === 'string' ? trainerSkillLabel(value) : ''
 </script>
 
 <template>
@@ -66,21 +58,15 @@ const formatBasicSkill = (value: EditableCellValue): string =>
               <th class="edge-name-col">
                 <div class="edge-name-stack">
                   <EditableCell
-                    :model-value="edge.name"
+                    :model-value="stripTrainerEntryChoiceSuffix(edge.name)"
                     type="select"
                     :options="TRAINER_EDGE_NAME_OPTIONS"
                     @update:model-value="(value) => setEdgeName(edge, value)"
                   />
-                  <label v-if="isBasicSkillsEdge(edge)" class="edge-extra-control">
-                    <span class="edge-extra-label">Skill</span>
-                    <EditableCell
-                      :model-value="edge.basicSkill"
-                      type="select"
-                      :options="TRAINER_EDGE_SKILL_OPTIONS"
-                      :format="formatBasicSkill"
-                      @update:model-value="(value) => setBasicSkill(edge, value)"
-                    />
-                  </label>
+                  <TrainerEntrySubchoiceControls
+                    :entry="edge"
+                    :definitions="trainerEdgeSubchoices(edge)"
+                  />
                 </div>
               </th>
               <td
@@ -220,21 +206,6 @@ const formatBasicSkill = (value: EditableCellValue): string =>
   flex-direction: column;
   align-items: flex-start;
   gap: 0.35rem;
-}
-
-.edge-extra-control {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  color: var(--ink-soft);
-  font-weight: 400;
-}
-
-.edge-extra-label {
-  color: var(--ink-muted);
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .auto-fill-col {

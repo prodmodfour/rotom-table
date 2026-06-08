@@ -64,6 +64,17 @@ describe('trainer training helpers', () => {
     expect(trainerExperienceTrainingBonus(sheet)).toBe(15)
   })
 
+  it('detects Virtuoso Command stored as a subchoice selection', () => {
+    const sheet = trainer({
+      skills: { command: { rank: 'Master' } },
+      edges: [{ name: 'Virtuoso', choices: { skill: 'command' } }],
+    })
+
+    expect(trainerSkillRankNameForTraining(sheet)).toBe('Virtuoso')
+    expect(trainerExperienceTrainingLimit(sheet)).toBe(8)
+    expect(trainerExperienceTrainingBonus(sheet)).toBe(15)
+  })
+
   it('gates per-Pokémon Training Feature selection behind Elite Trainer', () => {
     expect(trainerCanSelectPerPokemonTrainingFeatures(trainer())).toBe(false)
     expect(trainerCanSelectPerPokemonTrainingFeatures(trainer({

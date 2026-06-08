@@ -67,8 +67,10 @@ const entrySpecializesSkill = (
   const name = normalizeLooseText(entry.name)
   const parenthetical = normalizeLooseText(entry.name.match(/\(([^)]*)\)/)?.[1])
   const notes = normalizeLooseText(entry.notes)
+  const choices = Object.values(entry.choices ?? {}).map(normalizeLooseText)
   return skillAliases(skillKey).some((alias) => (
     parenthetical === alias ||
+    choices.includes(alias) ||
     name.includes(` ${alias}`) ||
     notes.includes(alias)
   ))
