@@ -76,6 +76,7 @@ const setSelectedMiscModifier = (event: Event): void => {
           <button
             type="button"
             class="skill-rank-button"
+            :data-skill-rank="s.rank"
             :title="`Show ${s.label} skill sources`"
             @click="openSkillModal(s.key)"
           >
@@ -115,7 +116,7 @@ const setSelectedMiscModifier = (event: Event): void => {
         <div class="skill-modal-summary">
           <div>
             <span class="summary-label">Rank</span>
-            <strong>{{ selectedSkill.rank }}</strong>
+            <strong class="skill-rank-value" :data-skill-rank="selectedSkill.rank">{{ selectedSkill.rank }}</strong>
           </div>
           <div>
             <span class="summary-label">Roll</span>
@@ -244,19 +245,50 @@ const setSelectedMiscModifier = (event: Event): void => {
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
   background: var(--paper);
-  color: var(--ink-soft);
+  color: var(--skill-rank-color, var(--ink-soft));
   padding: 0.12rem 0.48rem;
   font: inherit;
+  font-weight: 700;
   letter-spacing: inherit;
   cursor: pointer;
 }
 
 .skill-rank-button:hover,
 .skill-rank-button:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--skill-rank-color, var(--accent));
+  color: var(--skill-rank-color, var(--accent));
+  background: color-mix(in srgb, var(--skill-rank-color, var(--accent)) 16%, transparent);
   outline: none;
+}
+
+.skill-rank-button[data-skill-rank='Pathetic'],
+.skill-rank-value[data-skill-rank='Pathetic'] {
+  --skill-rank-color: var(--bad);
+}
+
+.skill-rank-button[data-skill-rank='Untrained'],
+.skill-rank-value[data-skill-rank='Untrained'] {
+  --skill-rank-color: var(--ink-muted);
+}
+
+.skill-rank-button[data-skill-rank='Novice'],
+.skill-rank-value[data-skill-rank='Novice'] {
+  --skill-rank-color: var(--info);
+}
+
+.skill-rank-button[data-skill-rank='Adept'],
+.skill-rank-value[data-skill-rank='Adept'] {
+  --skill-rank-color: var(--good);
+}
+
+.skill-rank-button[data-skill-rank='Expert'],
+.skill-rank-value[data-skill-rank='Expert'] {
+  --skill-rank-color: var(--warn);
+}
+
+.skill-rank-button[data-skill-rank='Master'],
+.skill-rank-value[data-skill-rank='Master'] {
+  --skill-rank-color: var(--magic);
 }
 
 .skill-dice {
@@ -373,6 +405,10 @@ const setSelectedMiscModifier = (event: Event): void => {
 .skill-modal-summary strong {
   color: var(--accent);
   font-size: 1rem;
+}
+
+.skill-modal-summary .skill-rank-value {
+  color: var(--skill-rank-color, var(--accent));
 }
 
 .skill-modal > .skill-modal-note {
