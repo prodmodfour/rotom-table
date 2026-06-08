@@ -1,7 +1,7 @@
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
-export const DEFAULT_TRAINER_ACCENT_COLOR = '#ff1f2d'
+export const DEFAULT_TRAINER_ACCENT_COLOR = '#ffffff'
 
 export const TRAINER_ACCENT_CSS_VARIABLE_NAMES = [
   '--accent',
