@@ -383,6 +383,11 @@ const moveTargetingAccentStyle = computed(() => {
   const accentColor = userId ? props.pokemons.find((pokemon) => pokemon.id === userId)?.accentColor : null
   return accentColor ? trainerAccentCssVariables(accentColor) : undefined
 })
+const attackOfOpportunityAnchorStyle = (button: AttackOfOpportunityButton): Record<string, string> => ({
+  left: `${button.left}px`,
+  top: `${button.top}px`,
+  ...(button.attackerAccentColor ? trainerAccentCssVariables(button.attackerAccentColor) : {}),
+})
 
 const emptyMovementPreview = (): PreviewState => ({ position: null, reachable: false, pathLength: 0 })
 const movementPreviewState = ref<PreviewState>(emptyMovementPreview())
@@ -1401,6 +1406,7 @@ const syncAttackOfOpportunityButtons = (): boolean => {
     return old?.id === entry.id
       && Math.abs(old.left - entry.left) < 0.5
       && Math.abs(old.top - entry.top) < 0.5
+      && old.attackerAccentColor === entry.attackerAccentColor
       && old.struggleOptions.length === entry.struggleOptions.length
       && old.struggleOptions.every((move, moveIndex) => move.name === entry.struggleOptions[moveIndex]?.name)
   })
@@ -1864,7 +1870,7 @@ useIsometricSceneWatchers({
         v-for="button in attackOfOpportunityButtons"
         :key="button.id"
         class="attack-of-opportunity-anchor"
-        :style="{ left: `${button.left}px`, top: `${button.top}px` }"
+        :style="attackOfOpportunityAnchorStyle(button)"
       >
         <button
           class="attack-of-opportunity-button"
@@ -2235,11 +2241,11 @@ useIsometricSceneWatchers({
 }
 
 .attack-of-opportunity-button {
-  border: 1px solid color-mix(in srgb, var(--bad) 76%, white 18%);
+  border: 1px solid color-mix(in srgb, var(--accent) 76%, white 18%);
   border-radius: 999px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bad) 88%, white 12%), var(--bad));
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32), 0 0 0 2px rgba(255, 255, 255, 0.28);
-  color: var(--ink-bright);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white 12%), var(--accent));
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32), 0 0 0 2px rgba(var(--accent-rgb), 0.28);
+  color: var(--accent-contrast);
   font: inherit;
   font-size: 0.75rem;
   font-weight: 950;
@@ -2284,7 +2290,7 @@ useIsometricSceneWatchers({
 }
 
 .attack-of-opportunity-menu__heading strong {
-  color: var(--bad);
+  color: var(--accent);
   font-size: 0.82rem;
 }
 
@@ -2306,8 +2312,8 @@ useIsometricSceneWatchers({
 
 .attack-of-opportunity-menu__item:hover,
 .attack-of-opportunity-menu__item:focus-visible {
-  border-color: color-mix(in srgb, var(--bad) 55%, var(--rule-strong));
-  background: color-mix(in srgb, var(--bad) 11%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule-strong));
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
 }
 
 .attack-of-opportunity-menu__item span {

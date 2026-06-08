@@ -154,7 +154,7 @@ describe('useAttackOfOpportunityPanel', () => {
     const map = ref(mapFixture())
     const tokens = ref([
       token('provoker', 1, 1),
-      token('attacker', 0, 1),
+      token('attacker', 0, 1, { accentColor: '#2e77d0' }),
     ])
     const performStruggleAttack = vi.fn(async () => true)
     const panel = useAttackOfOpportunityPanel({
@@ -174,6 +174,7 @@ describe('useAttackOfOpportunityPanel', () => {
     })
 
     expect(panel.attackOfOpportunityPrompts.value).toHaveLength(1)
+    expect(panel.attackOfOpportunityPrompts.value[0]?.attackerAccentColor).toBe('#2e77d0')
     expect(panel.attackOfOpportunityPrompts.value[0]?.struggleOptions.map((move) => move.name)).toEqual([
       'Struggle',
       'Struggle (Zapper Special)',

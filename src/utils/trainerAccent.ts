@@ -8,6 +8,7 @@ export const TRAINER_ACCENT_CSS_VARIABLE_NAMES = [
   '--accent-rgb',
   '--accent-soft',
   '--accent-muted',
+  '--accent-contrast',
   '--rule-active',
   '--paper-active',
 ] as const
@@ -42,6 +43,20 @@ const scaleRgb = (rgb: RgbColor, factor: number): RgbColor => ({
   g: scaleChannel(rgb.g, factor),
   b: scaleChannel(rgb.b, factor),
 })
+
+const srgbChannelToLinear = (value: number): number => {
+  const channel = value / 255
+  return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+}
+
+const readableTextColorForRgb = (rgb: RgbColor): string => {
+  const luminance = 0.2126 * srgbChannelToLinear(rgb.r)
+    + 0.7152 * srgbChannelToLinear(rgb.g)
+    + 0.0722 * srgbChannelToLinear(rgb.b)
+  const darkContrast = (luminance + 0.05) / 0.05
+  const lightContrast = 1.05 / (luminance + 0.05)
+  return darkContrast >= lightContrast ? '#050608' : '#f7f7f2'
+}
 
 export const normalizeTrainerAccentColor = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
@@ -94,6 +109,7 @@ export const trainerAccentCssVariables = (value: unknown): Record<string, string
     '--accent-rgb': rgbChannels,
     '--accent-soft': `rgba(${rgbChannels}, 0.16)`,
     '--accent-muted': rgbToHex(scaleRgb(rgb, 0.72)),
+    '--accent-contrast': readableTextColorForRgb(rgb),
     '--rule-active': `rgba(${rgbChannels}, 0.68)`,
     '--paper-active': `rgba(${rgbChannels}, 0.12)`,
   }

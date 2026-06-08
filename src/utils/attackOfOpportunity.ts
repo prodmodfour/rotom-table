@@ -28,6 +28,7 @@ interface AttackOfOpportunityPromptRecord {
 }
 
 export interface AttackOfOpportunityPrompt extends AttackOfOpportunityPromptRecord {
+  attackerAccentColor?: string
   struggleOptions: AttackOfOpportunityStruggleOption[]
 }
 
@@ -179,10 +180,14 @@ export const useAttackOfOpportunityPanel = ({
 
   const attackOfOpportunityPrompts = computed<AttackOfOpportunityPrompt[]>(() => pendingRecords.value
     .filter(promptIsStillUsable)
-    .map((record) => ({
-      ...record,
-      struggleOptions: struggleOptionsForAttacker(record.attackerId),
-    })))
+    .map((record) => {
+      const attacker = tokenById(record.attackerId)
+      return {
+        ...record,
+        ...(attacker?.accentColor ? { attackerAccentColor: attacker.accentColor } : {}),
+        struggleOptions: struggleOptionsForAttacker(record.attackerId),
+      }
+    }))
 
   const clearAttackOfOpportunityPrompts = () => {
     if (pendingRecords.value.length) pendingRecords.value = []
