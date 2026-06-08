@@ -132,11 +132,15 @@ describe('useTrainerSheetRowActions', () => {
     const actions = useTrainerSheetRowActions(sheet)
 
     actions.setSkillRank('focus', 'Adept')
+    actions.setSkillRankBonus('focus', 1)
     actions.setSkillModifier('focus', 2)
-    expect(sheet.value?.skills?.focus).toEqual({ rank: 'Adept', modifier: 2 })
+    expect(sheet.value?.skills?.focus).toEqual({ rank: 'Adept', rankBonus: 1, modifier: 2 })
     expect(actions.skillModifier('focus')).toBe(2)
 
     actions.setSkillRank('focus', undefined)
+    expect(sheet.value?.skills?.focus).toEqual({ rankBonus: 1, modifier: 2 })
+
+    actions.setSkillRankBonus('focus', 0)
     expect(sheet.value?.skills?.focus).toEqual({ modifier: 2 })
 
     actions.setSkillModifier('focus', 0)
@@ -152,6 +156,7 @@ describe('useTrainerSheetRowActions', () => {
     actions.setStatField('atk', 'base', 10)
     actions.setAccuracyStage(1)
     actions.setSkillRank('focus', 'Adept')
+    actions.setSkillRankBonus('focus', 1)
 
     expect(sheet.value).toBeNull()
     expect(actions.skillModifier('focus')).toBe(0)

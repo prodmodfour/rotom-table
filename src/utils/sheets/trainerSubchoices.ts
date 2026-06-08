@@ -1,5 +1,5 @@
 import { edges, features, moves, toSlug } from '~~/data/ptuReference'
-import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
+import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
 import type { EditableCellOption, EditableCellValue } from '~/utils/editableCell'
 import type { TrainerEdgeEntry, TrainerFeatureEntry, TrainerSkillKey } from '~/types/trainerSheet'
 

@@ -1,16 +1,16 @@
 import type {
-  SkillRank,
   TrainerCapabilities,
   TrainerSheet,
-  TrainerSkillEntry,
   TrainerSkillKey,
   TrainerStatKey,
 } from '~/types/trainerSheet'
 import { computeInjuryAdjustedMaxHp, computeTrainerFormulaMaxHp } from '~/utils/ptuHp'
+import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
 import {
-  SKILL_RANK_TO_DICE,
-  SKILL_RANK_TO_VALUE,
-} from '~/utils/skillRanks'
+  resolveTrainerSkillCalculations,
+  type TrainerSkillCalculation,
+} from '~/utils/sheets/trainerSkillCalculation'
+import { SKILL_RANK_TO_VALUE } from '~/utils/skillRanks'
 
 // ---------------------------------------------------------------------------
 // Stat resolution
@@ -101,76 +101,15 @@ export const computeTrainerMaxAp = (sheet: TrainerSheet): number => {
 // Skills
 // ---------------------------------------------------------------------------
 
-export const TRAINER_SKILL_ORDER: Array<[TrainerSkillKey, string]> = [
-  ['acrobatics',  'Acrobatics'],
-  ['athletics',   'Athletics'],
-  ['charm',       'Charm'],
-  ['combat',      'Combat'],
-  ['command',     'Command'],
-  ['generalEd',   'General Ed'],
-  ['medicineEd',  'Medicine Ed'],
-  ['occultEd',    'Occult Ed'],
-  ['pokeEd',      'Pokémon Ed'],
-  ['techEd',      'Technology Ed'],
-  ['focus',       'Focus'],
-  ['guile',       'Guile'],
-  ['intimidate',  'Intimidate'],
-  ['intuition',   'Intuition'],
-  ['perception',  'Perception'],
-  ['stealth',     'Stealth'],
-  ['survival',    'Survival'],
-]
-
-export interface ResolvedTrainerSkill {
-  key: TrainerSkillKey
-  label: string
-  rank: SkillRank
-  rankValue: number
-  modifier: number
-  /** ``"2d6"`` etc. Modifier is appended in the renderer. */
-  dice: string
-  /** True when the background bumped this skill above untrained / below it. */
-  raised: boolean
-  lowered: boolean
-}
-
-const asArray = <T>(value: T | T[] | undefined): T[] => {
-  if (value === undefined) return []
-  return Array.isArray(value) ? value : [value]
-}
+export { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
+export type ResolvedTrainerSkill = TrainerSkillCalculation
 
 /**
- * Apply the trainer's Skill Background to derive a per-skill rank, then layer
- * any explicit `sheet.skills[key]` overrides on top.
- *
- * Background semantics (PTU 1.05): a single Adept skill, a single Novice skill,
- * and any number of Pathetic skills.
+ * Resolve trainer skills from default rank, Skill Background choices, skill
+ * rank/bonus Edges, and any legacy manual rank or miscellaneous bonus fields.
  */
-export const resolveTrainerSkills = (sheet: TrainerSheet): ResolvedTrainerSkill[] => {
-  const adeptKeys: TrainerSkillKey[]  = asArray(sheet.skillBackground?.adept)
-  const noviceKeys: TrainerSkillKey[] = asArray(sheet.skillBackground?.novice)
-  const patheticKeys                  = sheet.skillBackground?.pathetic ?? []
-
-  return TRAINER_SKILL_ORDER.map(([key, label]) => {
-    const override: TrainerSkillEntry | undefined = sheet.skills?.[key]
-    let rank: SkillRank = 'Untrained'
-    if (patheticKeys.includes(key)) rank = 'Pathetic'
-    if (noviceKeys.includes(key))   rank = 'Novice'
-    if (adeptKeys.includes(key))    rank = 'Adept'
-    if (override?.rank) rank = override.rank
-    const modifier = override?.modifier ?? 0
-    return {
-      key,
-      label,
-      rank,
-      rankValue: SKILL_RANK_TO_VALUE[rank],
-      modifier,
-      dice: SKILL_RANK_TO_DICE[rank],
-      raised:  rank === 'Adept' || rank === 'Novice',
-      lowered: rank === 'Pathetic',
-    }
-  })
-}
+export const resolveTrainerSkills = (sheet: TrainerSheet): ResolvedTrainerSkill[] =>
+  resolveTrainerSkillCalculations(sheet)
 
 // ---------------------------------------------------------------------------
 // Capabilities

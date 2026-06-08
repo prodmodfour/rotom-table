@@ -1,5 +1,5 @@
 import type { TrainerSkillKey } from '~/types/trainerSheet'
-import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
+import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
 import { parseCsvList } from '~/utils/sheets/csvFields'
 
 const TRAINER_SKILL_LABELS_BY_KEY = new Map<TrainerSkillKey, string>(TRAINER_SKILL_ORDER)

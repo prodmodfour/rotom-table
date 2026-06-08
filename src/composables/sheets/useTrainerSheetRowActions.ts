@@ -132,23 +132,45 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
     setSheetAccuracyStage(sheet.value, value)
   }
 
-  /** Update a skill's rank/modifier override. */
+  /** Update a skill's legacy rank override, misc rank bonus, or non-rank roll modifier. */
   const setSkillRank = (key: TrainerSkillKey, rank: SkillRank | undefined) => {
-    if (!sheet.value?.skills) return
-    const existing = sheet.value.skills[key] ?? {}
+    if (!sheet.value) return
+    const existing = sheet.value.skills?.[key] ?? {}
+    if (!rank && existing.rank == null && existing.rankBonus == null && existing.modifier == null) return
+
+    const skills = sheet.value.skills ?? (sheet.value.skills = {})
     if (!rank) delete existing.rank
     else existing.rank = rank
-    if (existing.rank == null && existing.modifier == null) delete sheet.value.skills[key]
-    else sheet.value.skills[key] = existing
+    if (existing.rank == null && existing.rankBonus == null && existing.modifier == null) delete skills[key]
+    else skills[key] = existing
+  }
+
+  const setSkillRankBonus = (key: TrainerSkillKey, rankBonus: number | undefined) => {
+    if (!sheet.value) return
+    const normalizedRankBonus = typeof rankBonus !== 'number' || !Number.isFinite(rankBonus) || rankBonus === 0
+      ? undefined
+      : Math.trunc(rankBonus)
+    const existing = sheet.value.skills?.[key] ?? {}
+    if (normalizedRankBonus == null && existing.rank == null && existing.rankBonus == null && existing.modifier == null) return
+
+    const skills = sheet.value.skills ?? (sheet.value.skills = {})
+    if (normalizedRankBonus == null) delete existing.rankBonus
+    else existing.rankBonus = normalizedRankBonus
+    if (existing.rank == null && existing.rankBonus == null && existing.modifier == null) delete skills[key]
+    else skills[key] = existing
   }
 
   const setSkillModifier = (key: TrainerSkillKey, modifier: number | undefined) => {
-    if (!sheet.value?.skills) return
-    const existing = sheet.value.skills[key] ?? {}
-    if (modifier === undefined || modifier === 0) delete existing.modifier
-    else existing.modifier = modifier
-    if (existing.rank == null && existing.modifier == null) delete sheet.value.skills[key]
-    else sheet.value.skills[key] = existing
+    if (!sheet.value) return
+    const normalizedModifier = modifier === undefined || modifier === 0 ? undefined : modifier
+    const existing = sheet.value.skills?.[key] ?? {}
+    if (normalizedModifier == null && existing.rank == null && existing.rankBonus == null && existing.modifier == null) return
+
+    const skills = sheet.value.skills ?? (sheet.value.skills = {})
+    if (normalizedModifier == null) delete existing.modifier
+    else existing.modifier = normalizedModifier
+    if (existing.rank == null && existing.rankBonus == null && existing.modifier == null) delete skills[key]
+    else skills[key] = existing
   }
 
   const skillModifier = (key: TrainerSkillKey): number =>
@@ -182,6 +204,7 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
     setEvasionBonus,
     setAccuracyStage,
     setSkillRank,
+    setSkillRankBonus,
     setSkillModifier,
     skillModifier,
   }

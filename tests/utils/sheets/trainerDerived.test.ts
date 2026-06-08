@@ -46,16 +46,52 @@ describe('trainer sheet derived helpers', () => {
     expect(computeTrainerMaxAp(makeTrainer({ level: 14, ap: { max: 12 } }))).toBe(12)
   })
 
-  it('applies skill background and explicit skill overrides', () => {
+  it('applies skill background, skill edges, and explicit legacy skill overrides', () => {
     const skills = resolveTrainerSkills(makeTrainer({
       skillBackground: { adept: 'command', novice: ['focus'], pathetic: ['stealth'] },
-      skills: { combat: { rank: 'Master', modifier: 2 } },
+      edges: [
+        { name: 'Basic Skills', basicSkill: 'stealth' },
+        { name: 'Basic Skills (Stealth)' },
+        { name: 'Adept Skills', choices: { skill: 'focus' } },
+        { name: 'Expert Skills (Focus)' },
+        { name: 'Skill Enhancement', choices: { skill: 'focus', skill2: 'stealth' } },
+        { name: 'Skill Enhancement (Focus, Combat)' },
+      ],
+      skills: { combat: { rank: 'Master', modifier: 2 }, focus: { rankBonus: 1, modifier: 1 } },
     }))
 
     expect(skills.find((row) => row.key === 'command')).toMatchObject({ rank: 'Adept', dice: '4d6', raised: true })
-    expect(skills.find((row) => row.key === 'focus')).toMatchObject({ rank: 'Novice', dice: '3d6', raised: true })
-    expect(skills.find((row) => row.key === 'stealth')).toMatchObject({ rank: 'Pathetic', dice: '1d6', lowered: true })
-    expect(skills.find((row) => row.key === 'combat')).toMatchObject({ rank: 'Master', rankValue: 6, modifier: 2 })
+    const focus = skills.find((row) => row.key === 'focus')
+    expect(focus).toMatchObject({
+      rank: 'Master',
+      automaticRank: 'Expert',
+      rankBonus: 1,
+      dice: '6d6',
+      modifier: 3,
+      edgeModifier: 2,
+      miscModifier: 1,
+      raised: true,
+    })
+    expect(focus?.rankSources.map((source) => source.label)).toEqual([
+      'Base',
+      'Skill Background',
+      'Edge #3: Adept Skills',
+      'Edge #4: Expert Skills',
+      'Miscellaneous rank bonus',
+    ])
+    expect(focus?.modifierSources.map((source) => source.modifier)).toEqual([2, 0])
+    expect(skills.find((row) => row.key === 'stealth')).toMatchObject({
+      rank: 'Novice',
+      dice: '3d6',
+      modifier: 2,
+      raised: true,
+    })
+    expect(skills.find((row) => row.key === 'combat')).toMatchObject({
+      rank: 'Master',
+      automaticRank: 'Untrained',
+      rankValue: 6,
+      modifier: 4,
+    })
   })
 
   it('computes default trainer capabilities from skill ranks using Core formulas', () => {

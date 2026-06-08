@@ -1,5 +1,5 @@
 import { edges, findEdge } from '~~/data/ptuReference'
-import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
+import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
 import type { PtuEdge } from '~/types/ptuReference'
 import type { TrainerEdgeEntry, TrainerSkillKey } from '~/types/trainerSheet'
 

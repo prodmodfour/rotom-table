@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ResolvedTrainerSkill } from '~/utils/sheets/trainerDerived'
 import type {
-  SkillRank,
   TrainerSheet,
   TrainerSkillKey,
 } from '~/types/trainerSheet'
@@ -13,17 +12,15 @@ const patheticCsv = defineModel<string>('patheticCsv', { required: true })
 defineProps<{
   sheet: TrainerSheet
   skills: readonly ResolvedTrainerSkill[]
-  rankOptions: readonly SkillRank[]
-  skillModifier: (key: TrainerSkillKey) => number
 }>()
 
 const emit = defineEmits<{
-  setSkillRank: [key: TrainerSkillKey, rank: SkillRank | undefined]
+  setSkillRankBonus: [key: TrainerSkillKey, rankBonus: number | undefined]
   setSkillModifier: [key: TrainerSkillKey, modifier: number | undefined]
 }>()
 
-const forwardSetSkillRank = (key: TrainerSkillKey, rank: SkillRank | undefined) =>
-  emit('setSkillRank', key, rank)
+const forwardSetSkillRankBonus = (key: TrainerSkillKey, rankBonus: number | undefined) =>
+  emit('setSkillRankBonus', key, rankBonus)
 
 const forwardSetSkillModifier = (key: TrainerSkillKey, modifier: number | undefined) =>
   emit('setSkillModifier', key, modifier)
@@ -40,9 +37,7 @@ const forwardSetSkillModifier = (key: TrainerSkillKey, modifier: number | undefi
 
     <TrainerSkillsPanel
       :skills="skills"
-      :rank-options="rankOptions"
-      :skill-modifier="skillModifier"
-      @set-skill-rank="forwardSetSkillRank"
+      @set-skill-rank-bonus="forwardSetSkillRankBonus"
       @set-skill-modifier="forwardSetSkillModifier"
     />
   </section>

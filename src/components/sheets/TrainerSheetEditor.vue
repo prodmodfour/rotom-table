@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { trainerCatalog } from '~~/data/trainerCatalog'
 import TrainerPokemonTabPanel from './TrainerPokemonTabPanel.vue'
-import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerDerived'
+import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
 import { useTrainerSheetDerived } from '~/composables/sheets/useTrainerSheetDerived'
 import { useTrainerPortraitPicker } from '~/composables/sheets/useTrainerPortraitPicker'
 import { useTrainerSheetCsvFields } from '~/composables/sheets/useTrainerSheetCsvFields'
@@ -10,7 +10,6 @@ import { useTrainerSheetRowActions } from '~/composables/sheets/useTrainerSheetR
 import { useTrainerSheetTabs } from '~/composables/sheets/useTrainerSheetTabs'
 import { normalizeTrainerAccentColor, trainerAccentCssVariables } from '~/utils/trainerAccent'
 import type {
-  SkillRank,
   TrainerSheet,
   TrainerSkillKey,
 } from '~/types/trainerSheet'
@@ -30,7 +29,6 @@ const setTrainerAccentColor = (value: unknown) => {
   else delete sheet.value.accentColor
 }
 const SKILL_KEYS: TrainerSkillKey[] = TRAINER_SKILL_ORDER.map(([key]) => key)
-const RANK_OPTIONS: SkillRank[] = ['Pathetic', 'Untrained', 'Novice', 'Adept', 'Expert', 'Master']
 
 const { tabs, activeTab, setActiveTab } = useTrainerSheetTabs()
 const healingModalOpen = ref(false)
@@ -95,9 +93,8 @@ const {
   setStatField,
   setEvasionBonus,
   setAccuracyStage,
-  setSkillRank,
+  setSkillRankBonus,
   setSkillModifier,
-  skillModifier,
 } = useTrainerSheetRowActions(sheet)
 
 const {
@@ -159,9 +156,7 @@ const {
       v-model:pathetic-csv="patheticCsv"
       :sheet="sheet"
       :skills="skills"
-      :rank-options="RANK_OPTIONS"
-      :skill-modifier="skillModifier"
-      @set-skill-rank="setSkillRank"
+      @set-skill-rank-bonus="setSkillRankBonus"
       @set-skill-modifier="setSkillModifier"
     />
 
