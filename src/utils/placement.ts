@@ -15,6 +15,7 @@ import {
   trainerHpSnapshot,
 } from '~/utils/sheetSpawn'
 import { sheetAbilityNames } from '~/utils/sheetAbilities'
+import { deriveTrainerAutomaticAbilities } from '~/utils/sheets/trainerCombatDerivations'
 import { pokemonHeldItemNames, trainerEquippedItemNames } from '~/utils/sheetItemNames'
 import { normalizeTrainerAccentColor, trainerAccentColorForPokemonSlug } from '~/utils/trainerAccent'
 import {
@@ -35,7 +36,10 @@ const pokemonTokenAbilityNames = (sheet: CharacterSheet): string[] =>
   sheetAbilityNames(sheet.abilities)
 
 const trainerTokenAbilityNames = (sheet: TrainerSheet): string[] =>
-  sheetAbilityNames(sheet.abilities)
+  sheetAbilityNames([
+    ...deriveTrainerAutomaticAbilities(sheet).map((ability) => ability.entry),
+    ...(sheet.abilities ?? []),
+  ])
 
 
 export const placementToSpawned = (

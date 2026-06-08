@@ -52,6 +52,7 @@ const {
   totalRow,
   moveRows,
   abilityRows,
+  orderRows,
   trainerAccuracy,
   trainerEvasion,
   tickValue,
@@ -182,6 +183,7 @@ const {
       :condition-effects="conditionEffects"
       :move-rows="moveRows"
       :ability-rows="abilityRows"
+      :order-rows="orderRows"
       :order-tags-csv="orderTagsCsv"
       @set-current-hp="setCurrentHp"
       @set-evasion-bonus="setEvasionBonus"

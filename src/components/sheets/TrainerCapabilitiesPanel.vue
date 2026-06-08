@@ -5,6 +5,7 @@ import MovementCapabilityEditableCell from '~/components/sheets/MovementCapabili
 import OtherMovementCapabilityAdjustments from '~/components/sheets/OtherMovementCapabilityAdjustments.vue'
 import { useTrainerCapabilityModels } from '~/composables/sheets/useTrainerCapabilityModels'
 import { conditionAdjustedCombatStage } from '~/utils/sheetConditionEffects'
+import { deriveTrainerAutomaticAbilities } from '~/utils/sheets/trainerCombatDerivations'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -19,11 +20,15 @@ const combatConditions = computed(() => mergeLegacyConditions(
   props.sheet.conditions,
   props.sheet.statusAfflictions,
 ))
+const trainerAbilities = computed(() => [
+  ...deriveTrainerAutomaticAbilities(props.sheet).map((ability) => ability.entry),
+  ...(props.sheet.abilities ?? []),
+])
 const speedCombatStage = computed(() => conditionAdjustedCombatStage(
   props.sheet.stats?.spd?.stage ?? props.sheet.combatStages?.spd,
   combatConditions.value,
   'spd',
-  { abilities: props.sheet.abilities },
+  { abilities: trainerAbilities.value },
 ))
 const {
   overland,

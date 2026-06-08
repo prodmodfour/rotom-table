@@ -42,7 +42,7 @@ const {
   <section class="panel-card">
     <h2 class="panel-title">
       Movelist
-      <span class="panel-subtle">name editable · details from moves.json · Struggle auto-added</span>
+      <span class="panel-subtle">name editable · details from moves.json · Struggle/features auto-added</span>
       <button type="button" class="row-add" @click="emit('add')">
         <PhPlus :size="14" weight="bold" /> Add row
       </button>
@@ -107,7 +107,7 @@ const {
                 :readonly="row.automatic"
                 @update:model-value="(v) => setLookupMoveName(row.move, v)"
               />
-              <span v-if="row.automatic" class="move-auto-badge" title="Auto-added from Struggle rules and capabilities">auto</span>
+              <span v-if="row.automatic" class="move-auto-badge" :title="`Auto-added from ${row.sourceLabel || 'trainer features and capabilities'}`">auto</span>
             </td>
             <td>
               <TypeBadge v-if="row.reference?.type" :type="row.reference.type" size="xs" />
@@ -147,7 +147,7 @@ const {
               >
                 <PhX :size="14" weight="bold" />
               </button>
-              <span v-else class="row-auto-note" title="Auto-added from Struggle rules and capabilities">Auto</span>
+              <span v-else class="row-auto-note" :title="`Auto-added from ${row.sourceLabel || 'trainer features and capabilities'}`">Auto</span>
             </td>
           </tr>
           <tr v-if="!moveRows.length">

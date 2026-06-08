@@ -1,4 +1,5 @@
 import { findFeature, toSlug } from '~~/data/ptuReference'
+import { trainerCombatFeatureSources } from '~/utils/sheets/trainerCombatDerivations'
 import type { PtuFeature } from '~/types/ptuReference'
 import type { SheetPlacement } from '~/types/map'
 import type { TrainerFeatureEntry, TrainerOrder, TrainerSheet } from '~/types/trainerSheet'
@@ -181,29 +182,7 @@ const grantedOrdersFromFeatureReference = (feature: OrderReference): FeatureOrde
   })
 }
 
-const optionFromTrainingFeature = (trainingFeature: string | null | undefined): TokenOrderMenuOption[] => {
-  const name = trainingFeature?.trim()
-  if (!name) return []
-
-  const reference = findFeature(name)
-  if (reference) {
-    return featureCanBeUsedAsOrder(reference)
-      ? [optionFromFeatureOrder({ name }, reference, 'Training Feature')]
-      : []
-  }
-
-  return [optionFromFeatureOrder({ name }, {
-    name,
-    tags: ['Training', 'Orders'],
-    frequency: null,
-    trigger: null,
-    target: null,
-    condition: null,
-    effect: null,
-  }, 'Training Feature')]
-}
-
-const optionsFromFeature = (feature: TrainerFeatureEntry): TokenOrderMenuOption[] => {
+const optionsFromFeature = (feature: TrainerFeatureEntry, sourceLabel = 'Feature'): TokenOrderMenuOption[] => {
   const reference = findFeature(feature.name)
   if (!reference) {
     if (!hasOrderUseTag(feature.tags)) return []
@@ -215,12 +194,12 @@ const optionsFromFeature = (feature: TrainerFeatureEntry): TokenOrderMenuOption[
       target: null,
       condition: null,
       effect: feature.notes ?? null,
-    })]
+    }, sourceLabel)]
   }
 
   return [
     ...(featureCanBeUsedAsOrder(reference) || hasOrderUseTag(feature.tags)
-      ? [optionFromFeatureOrder(feature, reference)]
+      ? [optionFromFeatureOrder(feature, reference, sourceLabel)]
       : []),
     ...grantedOrdersFromFeatureReference(reference).map(optionFromGrantedFeatureOrder),
   ]
@@ -229,8 +208,7 @@ const optionsFromFeature = (feature: TrainerFeatureEntry): TokenOrderMenuOption[
 export const trainerOrderOptionsForSheet = (sheet: TrainerSheet): TokenOrderMenuOption[] =>
   dedupeOrderOptions([
     ...(sheet.orders ?? []).map(optionFromManualOrder),
-    ...optionFromTrainingFeature(sheet.trainingFeature),
-    ...(sheet.features ?? []).flatMap(optionsFromFeature),
+    ...trainerCombatFeatureSources(sheet).flatMap((source) => optionsFromFeature(source.entry, source.sourceLabel)),
   ])
 
 export const orderOptionsForPlacement = (

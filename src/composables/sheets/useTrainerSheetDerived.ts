@@ -1,10 +1,15 @@
 import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { applyCombatStageToStatTotal } from '~/utils/combatStageStats'
-import { makeAbilityLookupRows } from '~/utils/sheetAbilityLookup'
+import { makeAbilityLookupRows, type AbilityLookupRow } from '~/utils/sheetAbilityLookup'
 import { clampHpValue, computeHpThresholds, computeTickValue } from '~/utils/ptuHp'
 import { computeTrainerLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
+import {
+  deriveTrainerAutomaticAbilities,
+  deriveTrainerAutomaticMoves,
+} from '~/utils/sheets/trainerCombatDerivations'
+import { trainerOrderOptionsForSheet, type TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import { trainerEquippedItemNames } from '~/utils/sheetItemNames'
 import { buildSheetAccuracySummary } from '~/utils/sheetAccuracy'
 import { sheetItemsInitiativeBonus } from '~/utils/sheetHeldItemEffects'
@@ -30,11 +35,24 @@ import {
   describeSheetConditionEffects,
 } from '~/utils/sheetConditionEffects'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
-import type { TrainerMove, TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
+import type { TrainerAbilityEntry, TrainerMove, TrainerOrder, TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
 
 export type TrainerSheetRef = Ref<TrainerSheet | null> | ComputedRef<TrainerSheet | null>
 
 export type TrainerSheetMoveLookupRow = MoveLookupRow<TrainerMove> & {
+  automatic: boolean
+  sheetIndex: number | null
+  sourceLabel?: string | null
+}
+
+export type TrainerSheetAbilityLookupRow = AbilityLookupRow<TrainerAbilityEntry> & {
+  automatic: boolean
+  sheetIndex: number | null
+  sourceLabel?: string | null
+}
+
+export interface TrainerSheetOrderRow extends TokenOrderMenuOption {
+  order: TrainerOrder | null
   automatic: boolean
   sheetIndex: number | null
 }
@@ -55,10 +73,15 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     sheet.value?.conditions,
     sheet.value?.statusAfflictions,
   ))
+  const automaticTrainerAbilities = computed(() => deriveTrainerAutomaticAbilities(sheet.value))
+  const trainerAbilities = computed<TrainerAbilityEntry[]>(() => [
+    ...automaticTrainerAbilities.value.map((ability) => ability.entry),
+    ...(sheet.value?.abilities ?? []),
+  ])
   const stats = computed(() => {
     if (!sheet.value) return []
     const conditions = combatConditions.value
-    const abilities = sheet.value.abilities
+    const abilities = trainerAbilities.value
     return resolveTrainerStats(sheet.value).map((row) => {
       if (row.key === 'hp') return row
       const conditionStageModifier = conditionCombatStageModifier(conditions, row.key, { abilities })
@@ -102,8 +125,12 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
   const attackTotal = computed(() => totalRow('atk'))
   const specialAttackTotal = computed(() => totalRow('satk'))
 
+  const automaticTrainerMoves = computed(() => deriveTrainerAutomaticMoves(sheet.value))
   const automaticStruggleMoves = computed(() =>
-    makeAutomaticStruggleMoves<TrainerMove>(sheet.value?.capabilities?.other, sheet.value?.movelist),
+    makeAutomaticStruggleMoves<TrainerMove>(
+      sheet.value?.capabilities?.other,
+      [...automaticTrainerMoves.value.map((move) => move.entry), ...(sheet.value?.movelist ?? [])],
+    ),
   )
 
   const moveRows = computed<TrainerSheetMoveLookupRow[]>(() => {
@@ -112,23 +139,50 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
       specialAttack: baseTotalForStat(stats.value, 'satk'),
       physicalAttackStage: effectiveStageForStat(stats.value, 'atk'),
       specialAttackStage: effectiveStageForStat(stats.value, 'satk'),
-      abilities: sheet.value?.abilities,
+      abilities: trainerAbilities.value,
       combatSkillRankValue: combatSkillRankValue.value,
     }
     const manualRows = makeMoveLookupRows(sheet.value?.movelist, options)
-      .map((row, i) => ({ ...row, automatic: false, sheetIndex: i }))
-    const automaticRows = makeMoveLookupRows(automaticStruggleMoves.value, options)
-      .map((row) => ({ ...row, automatic: true, sheetIndex: null }))
+      .map((row, i) => ({ ...row, automatic: false, sheetIndex: i, sourceLabel: null }))
+    const automaticStruggleRows = makeMoveLookupRows(automaticStruggleMoves.value, options)
+      .map((row) => ({ ...row, automatic: true, sheetIndex: null, sourceLabel: 'Struggle rules' }))
+    const automaticFeatureRows = makeMoveLookupRows(automaticTrainerMoves.value.map((move) => move.entry), options)
+      .map((row, i) => ({ ...row, automatic: true, sheetIndex: null, sourceLabel: automaticTrainerMoves.value[i]?.sourceLabel ?? 'Feature' }))
+    return [...automaticStruggleRows, ...automaticFeatureRows, ...manualRows]
+  })
+
+  const abilityRows = computed<TrainerSheetAbilityLookupRow[]>(() => {
+    const automaticAbilities = automaticTrainerAbilities.value
+    const automaticRows = makeAbilityLookupRows(automaticAbilities.map((ability) => ability.entry))
+      .map((row, i) => ({ ...row, automatic: true, sheetIndex: null, sourceLabel: automaticAbilities[i]?.sourceLabel ?? 'Feature' }))
+    const manualRows = makeAbilityLookupRows(sheet.value?.abilities)
+      .map((row, i) => ({ ...row, automatic: false, sheetIndex: i, sourceLabel: null }))
     return [...automaticRows, ...manualRows]
   })
 
-  const abilityRows = computed(() => makeAbilityLookupRows(sheet.value?.abilities))
+  const orderRows = computed<TrainerSheetOrderRow[]>(() => {
+    const manualOrderBySlug = new Map<string, { order: TrainerOrder; index: number }>()
+    for (const [index, order] of (sheet.value?.orders ?? []).entries()) {
+      const key = String(order.name ?? '').trim().toLowerCase()
+      if (key && !manualOrderBySlug.has(key)) manualOrderBySlug.set(key, { order, index })
+    }
+
+    return sheet.value ? trainerOrderOptionsForSheet(sheet.value).map((option) => {
+      const manual = manualOrderBySlug.get(String(option.name ?? '').trim().toLowerCase())
+      return {
+        ...option,
+        order: manual?.order ?? null,
+        automatic: !manual,
+        sheetIndex: manual?.index ?? null,
+      }
+    }) : []
+  })
 
   const trainerAccuracy = computed(() => buildSheetAccuracySummary({
     stage: sheet.value?.combatStages?.acc,
     conditions: combatConditions.value,
     includeHeldItemBonus: false,
-    abilities: sheet.value?.abilities,
+    abilities: trainerAbilities.value,
   }))
 
   const trainerEvasion = computed(() => {
@@ -145,7 +199,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
           combatStage: sheet.value?.stats?.spd?.stage ?? sheet.value?.combatStages?.spd,
           bonus: speedBonus,
           conditions,
-          abilities: sheet.value?.abilities,
+          abilities: trainerAbilities.value,
           statStageKey: 'spd',
           kind: 'speed',
         }),
@@ -157,7 +211,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
           combatStage: sheet.value?.stats?.def?.stage ?? sheet.value?.combatStages?.def,
           bonus: physicalBonus,
           conditions,
-          abilities: sheet.value?.abilities,
+          abilities: trainerAbilities.value,
           statStageKey: 'def',
           kind: 'physical',
         }),
@@ -169,7 +223,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
           combatStage: sheet.value?.stats?.sdef?.stage ?? sheet.value?.combatStages?.sdef,
           bonus: specialBonus,
           conditions,
-          abilities: sheet.value?.abilities,
+          abilities: trainerAbilities.value,
           statStageKey: 'sdef',
           kind: 'special',
         }),
@@ -182,7 +236,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
   const hpThresholds = computed(() => computeHpThresholds(fullMaxHp.value))
   const conditionEffects = computed(() => describeSheetConditionEffects(
     combatConditions.value,
-    { tickValue: tickValue.value, abilities: sheet.value?.abilities },
+    { tickValue: tickValue.value, abilities: trainerAbilities.value },
   ))
   const equippedItemNames = computed(() => sheet.value ? trainerEquippedItemNames(sheet.value) : [])
   const initiativeItemBonus = computed(() => sheetItemsInitiativeBonus(equippedItemNames.value))
@@ -190,7 +244,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     conditionAdjustedInitiative(
       totalRow('spd') + initiativeItemBonus.value,
       combatConditions.value,
-      { abilities: sheet.value?.abilities },
+      { abilities: trainerAbilities.value },
     ),
   )
 
@@ -216,6 +270,7 @@ export function useTrainerSheetDerived(sheet: TrainerSheetRef) {
     specialAttackTotal,
     moveRows,
     abilityRows,
+    orderRows,
     trainerAccuracy,
     trainerEvasion,
     tickValue,

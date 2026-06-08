@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import type { AbilityLookupRow } from '~/utils/sheetAbilityLookup'
-import type { TrainerSheetMoveLookupRow } from '~/composables/sheets/useTrainerSheetDerived'
+import type {
+  TrainerSheetAbilityLookupRow,
+  TrainerSheetMoveLookupRow,
+  TrainerSheetOrderRow,
+} from '~/composables/sheets/useTrainerSheetDerived'
 import type { TrainerEvasionBonusKey } from '~/composables/sheets/useTrainerSheetRowActions'
 import type { SheetAccuracySummary } from '~/utils/sheetAccuracy'
 import type { ConditionEffectSummary } from '~/utils/sheetConditionEffects'
 import type {
-  TrainerAbilityEntry,
   TrainerOrder,
   TrainerSheet,
 } from '~/types/trainerSheet'
@@ -45,7 +47,8 @@ defineProps<{
   trainerEvasion: TrainerEvasionSummary
   conditionEffects: readonly ConditionEffectSummary[]
   moveRows: readonly TrainerSheetMoveLookupRow[]
-  abilityRows: readonly AbilityLookupRow<TrainerAbilityEntry>[]
+  abilityRows: readonly TrainerSheetAbilityLookupRow[]
+  orderRows: readonly TrainerSheetOrderRow[]
   orderTagsCsv: (order: TrainerOrder) => string
 }>()
 
@@ -102,6 +105,7 @@ const forwardReorderMove = (fromIndex: number, toIndex: number) =>
       :sheet="sheet"
       :move-rows="moveRows"
       :ability-rows="abilityRows"
+      :order-rows="orderRows"
       :order-tags-csv="orderTagsCsv"
       @add-move="emit('addMove')"
       @remove-move="emit('removeMove', $event)"

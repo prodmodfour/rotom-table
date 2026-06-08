@@ -1,4 +1,5 @@
 import { lookupAbilityReference } from '~/utils/sheetAbilityLookup'
+import { deriveTrainerAutomaticAbilities } from '~/utils/sheets/trainerCombatDerivations'
 import {
   getAbilityAutomation,
   type AbilityAutomationDefinition,
@@ -38,6 +39,7 @@ export const pokemonAbilityEntriesForSheet = (sheet: CharacterSheet): TokenSheet
 ]
 
 export const trainerAbilityEntriesForSheet = (sheet: TrainerSheet): TokenSheetAbility[] => [
+  ...deriveTrainerAutomaticAbilities(sheet).map((ability) => ability.entry),
   ...(sheet.abilities ?? []),
 ]
 

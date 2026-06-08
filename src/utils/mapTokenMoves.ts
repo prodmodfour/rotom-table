@@ -3,6 +3,7 @@ import { explicitScriptForMove } from '~/utils/moveAutomation'
 import { resolvePokemonOtherCapabilities } from '~/utils/sheets/pokemonCapabilities'
 import { resolveMoveGrantedCapabilities } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
 import { makeAutomaticStruggleMoves } from '~/utils/struggleMoves'
+import { deriveTrainerAutomaticMoves } from '~/utils/sheets/trainerCombatDerivations'
 import { makeMoveLookupRows, type MoveLookupRow } from '~/utils/sheetMoveLookup'
 import { isPokemonLoyaltyDamageBaseMove } from '~/utils/sheets/pokemonLoyalty'
 import { moveConditionUseBlock, type MoveConditionUseBlock } from '~/utils/moveConditionRestrictions'
@@ -104,11 +105,17 @@ export const pokemonMoveEntriesForSheet = (sheet: CharacterSheet): TokenSheetMov
   ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
 ]
 
-export const trainerMoveEntriesForSheet = (sheet: TrainerSheet): TokenSheetMoveEntry[] => [
-  ...makeAutomaticStruggleMoves<TrainerMove>(trainerStruggleCapabilities(sheet), sheet.movelist)
-    .map((move) => ({ move, automatic: true })),
-  ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
-]
+export const trainerMoveEntriesForSheet = (sheet: TrainerSheet): TokenSheetMoveEntry[] => {
+  const automaticTrainerMoves = deriveTrainerAutomaticMoves(sheet)
+  return [
+    ...makeAutomaticStruggleMoves<TrainerMove>(
+      trainerStruggleCapabilities(sheet),
+      [...automaticTrainerMoves.map((move) => move.entry), ...(sheet.movelist ?? [])],
+    ).map((move) => ({ move, automatic: true })),
+    ...automaticTrainerMoves.map((move) => ({ move: move.entry, automatic: true })),
+    ...(sheet.movelist ?? []).map((move) => ({ move, automatic: false })),
+  ]
+}
 
 export const moveEntriesForPlacement = (
   placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'> | null | undefined,
