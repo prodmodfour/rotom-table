@@ -62,7 +62,6 @@ const setSelectedMiscModifier = (event: Event): void => {
 
 <template>
   <div class="block">
-    <h2 class="block-title">Skills</h2>
     <div class="skills-grid">
       <div
         v-for="s in skills"
@@ -200,22 +199,9 @@ const setSelectedMiscModifier = (event: Event): void => {
   padding: 0.7rem 0.85rem;
 }
 
-.block-title {
-  margin: 0 0 0.5rem;
-  font-family: var(--font-book);
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-bright);
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-}
-
 .skills-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.35rem;
 }
 

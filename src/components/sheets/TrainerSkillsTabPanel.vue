@@ -28,25 +28,32 @@ const forwardSetSkillModifier = (key: TrainerSkillKey, modifier: number | undefi
 
 <template>
   <section class="tab-panel">
+    <TrainerSkillsPanel
+      :skills="skills"
+      @set-skill-rank-bonus="forwardSetSkillRankBonus"
+      @set-skill-modifier="forwardSetSkillModifier"
+    />
+
     <TrainerSkillBackgroundPanel
       v-model:adept-csv="adeptCsv"
       v-model:novice-csv="noviceCsv"
       v-model:pathetic-csv="patheticCsv"
       :sheet="sheet"
     />
-
-    <TrainerSkillsPanel
-      :skills="skills"
-      @set-skill-rank-bonus="forwardSetSkillRankBonus"
-      @set-skill-modifier="forwardSetSkillModifier"
-    />
   </section>
 </template>
 
 <style scoped>
 .tab-panel {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(20rem, 32rem) minmax(18rem, 28rem);
   gap: 0.85rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .tab-panel {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

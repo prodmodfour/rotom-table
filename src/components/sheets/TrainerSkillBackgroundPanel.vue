@@ -12,7 +12,7 @@ defineProps<{
 
 <template>
   <div class="block">
-    <h2 class="block-title">Skill Background</h2>
+    <h2 class="block-title">Background</h2>
     <div class="bg-card">
       <div class="bg-name">
         <EditableCell v-model="sheet.skillBackground!.name" placeholder="Background name" />
