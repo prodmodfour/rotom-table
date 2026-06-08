@@ -11,6 +11,7 @@ import type { SheetMoveUsageState } from '~/types/moveUsage'
  */
 
 export type StatKey = 'hp' | 'atk' | 'def' | 'satk' | 'sdef' | 'spd'
+export type PokemonTrainedStatKey = Exclude<StatKey, 'hp'>
 
 export interface CharacterSheetStat {
   /** Legacy/manual Base override. Used as a fallback only when species reference Base Stats are unavailable. */
@@ -191,6 +192,8 @@ export interface CharacterSheet {
   combat?: CharacterSheetCombat
   /** Active [Training] Feature currently applied to this Pokémon, such as Agility Training or Inspired Training. */
   activeTrainingFeature?: string
+  /** Ace Trainer's current Trained Stat. The selected non-HP stat defaults to at least +1 Combat Stage until Extended Rest. */
+  trainedStat?: PokemonTrainedStatKey
   items?: CharacterSheetItems
   weapon?: CharacterSheetWeapon
 

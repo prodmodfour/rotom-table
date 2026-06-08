@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  applyAceTrainerTrainedStat,
+  normalizeAceTrainerStatKey,
   pokemonTrainingExperienceGain,
+  trainerCanApplyAceTrainerTraining,
   trainerCanSelectPerPokemonTrainingFeatures,
   trainerExperienceTrainingBonus,
   trainerExperienceTrainingLimit,
   trainerSkillRankNameForTraining,
 } from '~/utils/sheets/trainerTraining'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 const trainer = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
@@ -80,5 +84,37 @@ describe('trainer training helpers', () => {
     expect(trainerCanSelectPerPokemonTrainingFeatures(trainer({
       features: [{ name: 'Elite Trainer' }],
     }))).toBe(true)
+  })
+
+  it('gates Ace Trainer trained stats behind the Ace Trainer class feature', () => {
+    expect(trainerCanApplyAceTrainerTraining(trainer())).toBe(false)
+    expect(trainerCanApplyAceTrainerTraining(trainer({
+      features: [{ name: 'Ace Trainer' }],
+    }))).toBe(true)
+    expect(trainerCanApplyAceTrainerTraining(trainer({
+      classes: [{ name: 'Ace Trainer' }],
+    }))).toBe(true)
+  })
+
+  it('normalizes and applies Ace Trainer trained stats to Pokémon sheets', () => {
+    expect(normalizeAceTrainerStatKey('Sp. Atk')).toBe('satk')
+    expect(normalizeAceTrainerStatKey('HP')).toBeNull()
+
+    const pokemon: CharacterSheet = {
+      slug: 'pikachu',
+      nickname: 'Pikachu',
+      species: 'Pikachu',
+      level: 10,
+      trainedStat: 'atk',
+      stats: {
+        atk: { stage: 1 },
+        spd: { stage: 3 },
+      },
+    }
+
+    expect(applyAceTrainerTrainedStat(pokemon, 'Speed')).toBe('spd')
+    expect(pokemon.trainedStat).toBe('spd')
+    expect(pokemon.stats?.atk?.stage).toBe(0)
+    expect(pokemon.stats?.spd?.stage).toBe(3)
   })
 })

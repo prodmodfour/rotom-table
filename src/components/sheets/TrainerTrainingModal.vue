@@ -14,13 +14,19 @@ import {
   resolvePokemonTrainingFeatureEffects,
 } from '~/utils/sheets/pokemonTrainingFeatures'
 import {
+  ACE_TRAINER_STAT_OPTIONS,
   TRAINING_SESSION_TARGET_LIMIT,
   TRAINING_SKILL_LABELS,
+  aceTrainerStatLabel,
+  applyAceTrainerTrainedStat,
+  normalizeAceTrainerStatKey,
   pokemonTrainingExperienceGain,
+  trainerCanApplyAceTrainerTraining,
   trainerCanSelectPerPokemonTrainingFeatures,
   trainerExperienceTrainingLimit,
   trainerHasEdgeNamed,
   trainerSkillRankNameForTraining,
+  type AceTrainerStatKey,
   type TrainerTrainingSkillKey,
 } from '~/utils/sheets/trainerTraining'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
@@ -62,7 +68,9 @@ interface TrainingRosterRow {
   level: number | null
   spriteUrl: string | null
   activeTrainingFeature: string
+  trainedStat: AceTrainerStatKey | null
   selectedTrainingFeature: string
+  selectedAceTrainerStat: AceTrainerStatKey | ''
   trainingExp: number
   totalExp: number | null
   selectedForSession: boolean
@@ -81,7 +89,10 @@ const selectedTrainingSlugs = ref<Set<string>>(new Set())
 const selectedExperienceSlugs = ref<Set<string>>(new Set())
 const selectedTrainingFeature = ref('')
 const selectedTrainingFeatureBySlug = ref<Record<string, string>>({})
+const selectedAceTrainerStat = ref<AceTrainerStatKey | ''>('atk')
+const selectedAceTrainerStatBySlug = ref<Record<string, AceTrainerStatKey | ''>>({})
 const applyTrainingFeature = ref(true)
+const applyAceTrainerStat = ref(false)
 const experienceSkill = ref<TrainerTrainingSkillKey>('command')
 const saving = ref(false)
 const statusMessage = ref<string | null>(null)
@@ -133,6 +144,7 @@ const selectedTrainingFeatureEffects = computed(() =>
   resolvePokemonTrainingFeatureEffects(selectedTrainingFeature.value),
 )
 const canSelectPerPokemonTrainingFeatures = computed(() => trainerCanSelectPerPokemonTrainingFeatures(props.sheet))
+const canApplyAceTrainerStat = computed(() => trainerCanApplyAceTrainerTraining(props.sheet))
 
 const initialTrainingFeature = () => {
   const savedDefault = normalizePokemonTrainingFeatureName(props.sheet.trainingFeature)
@@ -182,6 +194,45 @@ const setSelectedRowsToDefaultTrainingFeature = (): void => {
   selectedTrainingFeatureBySlug.value = next
 }
 
+const selectedAceTrainerStatForSlug = (slug: string): AceTrainerStatKey | '' => {
+  if (Object.prototype.hasOwnProperty.call(selectedAceTrainerStatBySlug.value, slug)) {
+    return normalizeAceTrainerStatKey(selectedAceTrainerStatBySlug.value[slug]) ?? ''
+  }
+  return normalizeAceTrainerStatKey(selectedAceTrainerStat.value) ?? ''
+}
+
+const setAceTrainerStatForSlug = (slug: string, value: unknown): void => {
+  selectedAceTrainerStatBySlug.value = {
+    ...selectedAceTrainerStatBySlug.value,
+    [slug]: normalizeAceTrainerStatKey(value) ?? '',
+  }
+}
+
+const setAceTrainerStatForSlugFromEvent = (slug: string, event: Event): void => {
+  const target = event.target
+  if (!(target instanceof HTMLSelectElement)) return
+  setAceTrainerStatForSlug(slug, target.value)
+}
+
+const ensureAceTrainerStatChoices = (slugs: readonly string[]): void => {
+  const next = { ...selectedAceTrainerStatBySlug.value }
+  const fallback = normalizeAceTrainerStatKey(selectedAceTrainerStat.value) ?? 'atk'
+  for (const slug of slugs) {
+    const current = normalizeAceTrainerStatKey(next[slug])
+    if (current) continue
+    next[slug] = normalizeAceTrainerStatKey(availablePokemonBySlug.value.get(slug)?.trainedStat) ?? fallback
+  }
+  selectedAceTrainerStatBySlug.value = next
+}
+
+const setSelectedRowsToDefaultAceTrainerStat = (): void => {
+  const normalized = normalizeAceTrainerStatKey(selectedAceTrainerStat.value)
+  if (!normalized) return
+  const next = { ...selectedAceTrainerStatBySlug.value }
+  for (const slug of selectedTrainingSlugs.value) next[slug] = normalized
+  selectedAceTrainerStatBySlug.value = next
+}
+
 const experienceSkillOptions = computed<Array<{ key: TrainerTrainingSkillKey; label: string }>>(() => {
   const options: Array<{ key: TrainerTrainingSkillKey; label: string }> = [
     { key: 'command', label: TRAINING_SKILL_LABELS.command },
@@ -209,7 +260,9 @@ const rosterRows = computed<TrainingRosterRow[]>(() => rosterEntries.value.map((
     level,
     spriteUrl: pokemon ? getSpriteUrl(pokemon.species) : null,
     activeTrainingFeature: pokemon?.activeTrainingFeature ?? '',
+    trainedStat: normalizeAceTrainerStatKey(pokemon?.trainedStat),
     selectedTrainingFeature: selectedTrainingFeatureForSlug(slug),
+    selectedAceTrainerStat: selectedAceTrainerStatForSlug(slug),
     trainingExp: pokemon?.combat?.trainingExp ?? 0,
     totalExp: typeof pokemon?.totalExp === 'number' ? pokemon.totalExp : null,
     selectedForSession: selectedTrainingSlugs.value.has(slug),
@@ -223,10 +276,14 @@ const selectedExperienceRows = computed(() => rosterRows.value.filter((row) => r
 const selectedRowsWithTrainingFeature = computed(() => selectedRowsWithSheets.value.filter(
   (row) => Boolean(normalizePokemonTrainingFeatureName(row.selectedTrainingFeature)),
 ))
+const selectedRowsWithAceTrainerStat = computed(() => selectedRowsWithSheets.value.filter(
+  (row) => Boolean(normalizeAceTrainerStatKey(row.selectedAceTrainerStat)),
+))
 
 const canApplyTraining = computed(() => (
   selectedRowsWithSheets.value.length > 0 && (
     (applyTrainingFeature.value && selectedRowsWithTrainingFeature.value.length > 0) ||
+    (canApplyAceTrainerStat.value && applyAceTrainerStat.value && selectedRowsWithAceTrainerStat.value.length > 0) ||
     selectedExperienceRows.value.length > 0
   )
 ))
@@ -255,7 +312,11 @@ watch(rosterSlugs, (slugs) => {
   selectedTrainingFeatureBySlug.value = Object.fromEntries(
     Object.entries(selectedTrainingFeatureBySlug.value).filter(([slug]) => valid.has(slug)),
   )
+  selectedAceTrainerStatBySlug.value = Object.fromEntries(
+    Object.entries(selectedAceTrainerStatBySlug.value).filter(([slug]) => valid.has(slug)),
+  )
   ensureTrainingFeatureChoices(selected)
+  ensureAceTrainerStatChoices(selected)
 }, { immediate: true })
 
 watch([experienceLimit, selectedTrainingSlugs], () => {
@@ -272,6 +333,7 @@ const setSelectedTrainingSlugs = (slugs: readonly string[]) => {
   selectedTrainingSlugs.value = new Set(selected)
   selectedExperienceSlugs.value = new Set([...selectedExperienceSlugs.value].filter((slug) => selectedTrainingSlugs.value.has(slug)))
   ensureTrainingFeatureChoices(selected)
+  ensureAceTrainerStatChoices(selected)
 }
 
 const selectTeam = () => setSelectedTrainingSlugs(teamSlugs.value)
@@ -300,6 +362,7 @@ const toggleTrainingTarget = (slug: string) => {
     }
     next.add(slug)
     ensureTrainingFeatureChoices([slug])
+    ensureAceTrainerStatChoices([slug])
   }
   selectedTrainingSlugs.value = next
 }
@@ -384,11 +447,18 @@ const applyTraining = async () => {
       if (feature) trainingFeatureBySlug.set(row.slug, feature)
     }
   }
+  const aceTrainerStatBySlug = new Map<string, AceTrainerStatKey>()
+  if (canApplyAceTrainerStat.value && applyAceTrainerStat.value) {
+    for (const row of selectedRowsWithSheets.value) {
+      const stat = normalizeAceTrainerStatKey(row.selectedAceTrainerStat)
+      if (stat) aceTrainerStatBySlug.set(row.slug, stat)
+    }
+  }
   const experienceBySlug = new Map(selectedExperienceRows.value.map((row) => [row.slug, row.experienceGain]))
   const appliedExperienceTotal = [...experienceBySlug.values()].reduce((sum, gain) => sum + gain, 0)
   const shouldApplyFeature = trainingFeatureBySlug.size > 0
   const targetRows = selectedRowsWithSheets.value.filter((row) => (
-    trainingFeatureBySlug.has(row.slug) || experienceBySlug.has(row.slug)
+    trainingFeatureBySlug.has(row.slug) || aceTrainerStatBySlug.has(row.slug) || experienceBySlug.has(row.slug)
   ))
 
   try {
@@ -399,6 +469,11 @@ const applyTraining = async () => {
       const rowTrainingFeature = trainingFeatureBySlug.get(row.slug)
       if (rowTrainingFeature) {
         updated.activeTrainingFeature = rowTrainingFeature
+      }
+
+      const rowAceTrainerStat = aceTrainerStatBySlug.get(row.slug)
+      if (rowAceTrainerStat) {
+        applyAceTrainerTrainedStat(updated, rowAceTrainerStat)
       }
 
       const experienceGain = experienceBySlug.get(row.slug)
@@ -421,7 +496,8 @@ const applyTraining = async () => {
       const savedTrainer = await saveTrainerSheet(props.sheet)
       emit('trainerUpdated', { ...savedTrainer, folder: props.sheet.folder })
     }
-    statusMessage.value = `Trained ${savedSheets.length} Pokémon${appliedExperienceTotal ? ` and awarded ${appliedExperienceTotal} EXP` : ''}.`
+    const aceTrainerSummary = aceTrainerStatBySlug.size ? `, set ${aceTrainerStatBySlug.size} Trained Stat${aceTrainerStatBySlug.size === 1 ? '' : 's'}` : ''
+    statusMessage.value = `Trained ${savedSheets.length} Pokémon${aceTrainerSummary}${appliedExperienceTotal ? `, and awarded ${appliedExperienceTotal} EXP` : ''}.`
   } catch (error) {
     errorMessage.value = getErrorMessage(error)
   } finally {
@@ -482,6 +558,11 @@ onBeforeUnmount(() => {
             <small v-if="canSelectPerPokemonTrainingFeatures">Each Pokémon row can override this default.</small>
             <small v-else>Applied to all selected Pokémon unless a feature permits per-Pokémon choices.</small>
           </div>
+          <div v-if="canApplyAceTrainerStat" class="training-summary-card">
+            <span class="summary-label">Ace Trainer</span>
+            <strong>{{ applyAceTrainerStat ? aceTrainerStatLabel(selectedAceTrainerStat) : 'Off' }}</strong>
+            <small>Choose one non-HP Trained Stat per selected Pokémon.</small>
+          </div>
         </div>
 
         <section class="training-controls">
@@ -514,6 +595,32 @@ onBeforeUnmount(() => {
             </p>
           </div>
 
+          <div v-if="canApplyAceTrainerStat" class="training-control-block training-control-block--ace">
+            <label class="check-row">
+              <input v-model="applyAceTrainerStat" type="checkbox" />
+              <span>Apply Ace Trainer Trained Stats</span>
+            </label>
+            <label>
+              Default stat
+              <select v-model="selectedAceTrainerStat" :disabled="!applyAceTrainerStat || saving" title="Default Ace Trainer stat for newly selected Pokémon">
+                <option v-for="option in ACE_TRAINER_STAT_OPTIONS" :key="option.key" :value="option.key">
+                  {{ option.label }}
+                </option>
+              </select>
+            </label>
+            <p class="feature-effect">
+              Ace Trainer marks one stat besides HP as Trained and raises it to at least +1 Combat Stage until Extended Rest. Drain 1 AP manually.
+            </p>
+            <button
+              type="button"
+              class="training-control-inline-button"
+              :disabled="!applyAceTrainerStat || !selectedSessionCount || saving"
+              @click="setSelectedRowsToDefaultAceTrainerStat"
+            >
+              Set selected Pokémon to default stat
+            </button>
+          </div>
+
           <div class="training-control-block">
             <label>
               Experience rank source
@@ -538,12 +645,13 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <section class="training-roster" aria-label="Trainer Pokémon training targets">
+        <section class="training-roster" :class="{ 'training-roster--ace': canApplyAceTrainerStat }" aria-label="Trainer Pokémon training targets">
           <div class="training-roster__head">
             <span>Pokémon</span>
             <span>Roster</span>
             <span>Current Training</span>
             <span>New Feature</span>
+            <span v-if="canApplyAceTrainerStat">Ace Stat</span>
             <span>Session</span>
             <span>EXP</span>
           </div>
@@ -568,6 +676,7 @@ onBeforeUnmount(() => {
               <span class="training-row__badge">{{ row.roster === 'team' ? 'Team' : 'Box' }}</span>
               <span class="training-row__muted">
                 {{ row.activeTrainingFeature || '—' }}
+                <small v-if="canApplyAceTrainerStat && row.trainedStat">Trained {{ aceTrainerStatLabel(row.trainedStat) }}</small>
                 <small v-if="row.totalExp != null">Total EXP {{ row.totalExp }}</small>
                 <small v-if="row.trainingExp">Training EXP {{ row.trainingExp }}</small>
               </span>
@@ -586,6 +695,18 @@ onBeforeUnmount(() => {
                 <span v-else class="training-row__feature-locked">
                   {{ applyTrainingFeature && selectedTrainingFeature ? selectedTrainingFeature : '—' }}
                 </span>
+              </span>
+              <span v-if="canApplyAceTrainerStat" class="training-row__ace-stat">
+                <select
+                  :value="row.selectedAceTrainerStat"
+                  :disabled="!row.sheet || !row.selectedForSession || !applyAceTrainerStat || saving"
+                  @change="setAceTrainerStatForSlugFromEvent(row.slug, $event)"
+                >
+                  <option value="">No stat</option>
+                  <option v-for="option in ACE_TRAINER_STAT_OPTIONS" :key="`${row.slug}-${option.key}`" :value="option.key">
+                    {{ option.label }}
+                  </option>
+                </select>
               </span>
               <label class="training-row__toggle">
                 <input
@@ -714,7 +835,7 @@ onBeforeUnmount(() => {
 
 .training-summary-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.65rem;
   margin-bottom: 0.85rem;
 }
@@ -819,7 +940,8 @@ onBeforeUnmount(() => {
 .training-control-inline-button:disabled,
 .apply-button:disabled,
 .training-control-block select:disabled,
-.training-row__feature-select select:disabled {
+.training-row__feature-select select:disabled,
+.training-row__ace-stat select:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -834,6 +956,11 @@ onBeforeUnmount(() => {
   grid-template-columns: minmax(220px, 1.3fr) 84px minmax(150px, 0.9fr) minmax(150px, 0.85fr) 92px 116px;
   align-items: center;
   gap: 0.6rem;
+}
+
+.training-roster--ace .training-roster__head,
+.training-roster--ace .training-row {
+  grid-template-columns: minmax(200px, 1.25fr) 76px minmax(140px, 0.82fr) minmax(140px, 0.82fr) minmax(120px, 0.72fr) 84px 110px;
 }
 
 .training-roster__head {
@@ -915,7 +1042,8 @@ onBeforeUnmount(() => {
 }
 
 .training-row__feature-select select,
-.training-row__feature-locked {
+.training-row__feature-locked,
+.training-row__ace-stat select {
   width: 100%;
   min-width: 0;
   border: 1px solid var(--rule-soft);
