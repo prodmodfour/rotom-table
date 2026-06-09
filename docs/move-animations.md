@@ -943,7 +943,7 @@ The optional `npm run check:move-automation` coverage command remains unrelated 
 
 ## Manual QA checklist
 
-The repeatable human review plan for the playable basic move-animation build lives in [Move animation manual QA checklist](move-animation-manual-qa.md). Run it after the automated `npm run typecheck`, `npm test`, and `npm run build` checks, and record blockers separately from polish follow-up issues. The first triaged issue list from VFX-086 is recorded in [Move VFX first-playtest follow-up issues](move-vfx-follow-up-issues.md).
+The repeatable human review plan for the playable basic move-animation build lives in [Move animation manual QA checklist](move-animation-manual-qa.md). Realtime same-map visual sync coverage for splashes, move VFX, feedback overlays, Poké Ball UI, duplicate prevention, second-map isolation, and per-client motion settings lives in [Realtime map action events manual QA](realtime-map-action-events-manual-qa.md). Run the relevant checklist after the automated `npm run typecheck`, `npm test`, and `npm run build` checks, and record blockers separately from polish follow-up issues. The first triaged issue list from VFX-086 is recorded in [Move VFX first-playtest follow-up issues](move-vfx-follow-up-issues.md).
 
 ## Maintenance decisions
 
