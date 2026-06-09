@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MapAdminCombatLogControl from '~/components/map/MapAdminCombatLogControl.vue'
 import MapAdminGroundLevelControl from '~/components/map/MapAdminGroundLevelControl.vue'
 import MapAdminHeader from '~/components/map/MapAdminHeader.vue'
 import MapAdminModalShell from '~/components/map/MapAdminModalShell.vue'
@@ -11,12 +12,14 @@ defineProps<{
   mapSpecificYMin: number
   mapSpecificYMax: number
   playerVisible?: boolean
+  combatLogEntryCount: number
 }>()
 
 const emit = defineEmits<{
   (event: 'close'): void
   (event: 'set-ground-level-y', value: string): void
   (event: 'update-player-visible', value: boolean): void
+  (event: 'clear-combat-log'): void
 }>()
 
 </script>
@@ -29,6 +32,11 @@ const emit = defineEmits<{
       label="Make player visible"
       :player-visible="playerVisible"
       @update-player-visible="emit('update-player-visible', $event)"
+    />
+
+    <MapAdminCombatLogControl
+      :entry-count="combatLogEntryCount"
+      @clear-combat-log="emit('clear-combat-log')"
     />
 
     <MapAdminGroundLevelControl

@@ -23,6 +23,8 @@ export interface CombatLogBuildOptions {
   actorAccents?: Iterable<CombatLogActorAccent>
 }
 
+export type CombatLogMetadata = Record<string, unknown>
+
 interface CombatLogSourceConfig {
   source: CombatLogSource
   metadataKey: string
@@ -59,6 +61,10 @@ const COMBAT_LOG_SOURCES: readonly CombatLogSourceConfig[] = [
   { source: 'movement', metadataKey: 'movementLog', actionKey: 'actionName', fallbackActionName: 'Movement' },
   { source: 'capture', metadataKey: 'captureLog', actionKey: 'actionName', fallbackActionName: 'Capture' },
 ]
+
+export const COMBAT_LOG_METADATA_KEYS: readonly string[] = COMBAT_LOG_SOURCES.map(
+  ({ metadataKey }) => metadataKey,
+)
 
 const HIDDEN_LOG_LINE_PATTERNS: readonly RegExp[] = [
   /^Explicit move script v\d+ used\.$/i,
@@ -202,8 +208,30 @@ const buildActorAccentMap = (
   return accentById
 }
 
+export const countCombatLogMessages = (
+  metadata: CombatLogMetadata | null | undefined,
+): number => {
+  if (!metadata) return 0
+
+  const noActorAccents = new Map<string, string>()
+  return COMBAT_LOG_SOURCES.reduce(
+    (count, source, sourceOrder) => count + readEntriesForSource(metadata, source, sourceOrder, noActorAccents).length,
+    0,
+  )
+}
+
+export const clearCombatLogMetadata = (
+  metadata: CombatLogMetadata | null | undefined,
+): CombatLogMetadata | undefined => {
+  if (!metadata) return undefined
+
+  const next = { ...metadata }
+  for (const key of COMBAT_LOG_METADATA_KEYS) delete next[key]
+  return Object.keys(next).length ? next : undefined
+}
+
 export const buildCombatLogMessages = (
-  metadata: Record<string, unknown> | null | undefined,
+  metadata: CombatLogMetadata | null | undefined,
   options: CombatLogBuildOptions = {},
 ): CombatLogMessage[] => {
   if (!metadata) return []

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { buildCombatLogMessages } from '~/utils/combatLog'
+import {
+  buildCombatLogMessages,
+  clearCombatLogMetadata,
+  countCombatLogMessages,
+} from '~/utils/combatLog'
 
-describe('buildCombatLogMessages', () => {
+describe('combatLog utilities', () => {
   it('combines move, ability, order, maneuver, and movement entries in chronological order', () => {
     const messages = buildCombatLogMessages({
       moveLog: [
@@ -157,5 +161,35 @@ describe('buildCombatLogMessages', () => {
         details: [],
       },
     ])
+  })
+
+  it('counts displayable combat log messages', () => {
+    expect(countCombatLogMessages({
+      moveLog: [
+        { at: 100, userName: 'Foil', moveName: 'Ember', lines: ['Foil used Ember.'] },
+        { at: 200, userName: 'Hidden', moveName: 'Hidden', lines: ['Explicit move script v1 used.'] },
+      ],
+      movementLog: [
+        { at: 300, userName: 'Doug', actionName: 'Movement', lines: ['Doug moved from here to there.'] },
+      ],
+    })).toBe(2)
+  })
+
+  it('clears combat log metadata while preserving unrelated metadata', () => {
+    expect(clearCombatLogMetadata({
+      moveLog: [{ at: 100, userName: 'Foil', moveName: 'Ember', lines: ['Foil used Ember.'] }],
+      abilityLog: [{ at: 110, userName: 'Lux', abilityName: 'Intimidate', lines: ['Lux used Intimidate.'] }],
+      orderLog: [{ at: 120, userName: 'Lenora', orderName: 'Mobilize', lines: ['Lenora used Mobilize.'] }],
+      maneuverLog: [{ at: 130, userName: 'Pike', maneuverName: 'Trip', lines: ['Pike used Trip.'] }],
+      movementLog: [{ at: 140, userName: 'Doug', actionName: 'Movement', lines: ['Doug moved.'] }],
+      captureLog: [{ at: 150, userName: 'Lenora', actionName: 'Throw Basic Ball', lines: ['Lenora threw a ball.'] }],
+      encounterName: 'Route 1',
+    })).toEqual({ encounterName: 'Route 1' })
+  })
+
+  it('returns undefined when clearing leaves no metadata', () => {
+    expect(clearCombatLogMetadata({
+      moveLog: [{ at: 100, userName: 'Foil', moveName: 'Ember', lines: ['Foil used Ember.'] }],
+    })).toBeUndefined()
   })
 })

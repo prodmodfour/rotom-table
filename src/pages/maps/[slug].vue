@@ -40,6 +40,7 @@ import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { buildClientPlayerProfileTokenControlModel } from '~/utils/playerProfileTokenControl'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
+import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLog'
 import { applyPokeballCaptureOutcomeToTrainerSheet } from '~/utils/pokeballCapture'
 import { isSameAnchor } from '~/utils/gridGeometry'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
@@ -446,6 +447,22 @@ const {
   clearAllFieldEffects,
   applyMoveFieldEffect,
 } = useFieldEffectsEditor({ map, canEditMap })
+
+const combatLogEntryCount = computed(() => countCombatLogMessages(map.value?.metadata))
+
+const clearCombatLog = () => {
+  if (!map.value || !canEditMap.value || combatLogEntryCount.value <= 0) return
+
+  const count = combatLogEntryCount.value
+  const ok = typeof window === 'undefined' || window.confirm(
+    `Clear ${count} combat log ${count === 1 ? 'entry' : 'entries'}? This cannot be undone.`,
+  )
+  if (!ok) return
+
+  const nextMetadata = clearCombatLogMetadata(map.value.metadata)
+  if (nextMetadata) map.value.metadata = nextMetadata
+  else delete map.value.metadata
+}
 
 const setWeatherCoexistNext = (value: boolean) => {
   weatherCoexistNext.value = value
@@ -1174,9 +1191,11 @@ useMapDimensionReconciliation({
         :map-specific-y-min="mapSpecificYMin"
         :map-specific-y-max="mapSpecificYMax"
         :player-visible="map.playerVisible"
+        :combat-log-entry-count="combatLogEntryCount"
         @close="adminPanelOpen = false"
         @set-ground-level-y="setGroundLevelY"
         @update-player-visible="setMapPlayerVisible"
+        @clear-combat-log="clearCombatLog"
       />
     </template>
   </MapEditorLayout>
