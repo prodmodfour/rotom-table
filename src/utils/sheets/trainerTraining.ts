@@ -3,11 +3,12 @@ import type {
   SkillRank,
   TrainerClassEntry,
   TrainerEdgeEntry,
-  TrainerFeatureEntry,
   TrainerSheet,
   TrainerSkillKey,
 } from '~/types/trainerSheet'
 import { SKILL_RANK_TO_VALUE } from '~/utils/skillRanks'
+import { trainerCombatFeatureSources } from '~/utils/sheets/trainerCombatDerivations'
+import { normalizePokemonTrainingFeatureName } from '~/utils/sheets/pokemonTrainingFeatures'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 
 export type TrainerTrainingSkillKey = Extract<TrainerSkillKey, 'command' | 'intimidate' | 'generalEd' | 'pokeEd'>
@@ -49,8 +50,11 @@ const namedEntry = <T extends { name?: string }>(entries: readonly T[] | undefin
   return entries?.find((entry) => normalizeName(entry.name) === key) ?? null
 }
 
-export const trainerHasFeatureNamed = (sheet: TrainerSheet, name: string): boolean =>
-  Boolean(namedEntry<TrainerFeatureEntry>(sheet.features, name))
+export const trainerHasFeatureNamed = (sheet: TrainerSheet, name: string): boolean => {
+  const key = normalizeName(name)
+  if (!key) return false
+  return trainerCombatFeatureSources(sheet).some((source) => normalizeName(source.entry.name) === key)
+}
 
 export const trainerHasClassNamed = (sheet: TrainerSheet, name: string): boolean =>
   Boolean(namedEntry<TrainerClassEntry>(sheet.classes, name))
@@ -65,6 +69,20 @@ export const trainerCanApplyAceTrainerTraining = (sheet: TrainerSheet): boolean 
 /** Elite Trainer permits using multiple Training Features during a training session. */
 export const trainerCanSelectPerPokemonTrainingFeatures = (sheet: TrainerSheet): boolean =>
   trainerHasFeatureNamed(sheet, 'Elite Trainer')
+
+export const trainerOwnedPokemonTrainingFeatures = (sheet: TrainerSheet): ReadonlySet<string> => {
+  const owned = new Set<string>()
+  const add = (value: unknown): void => {
+    const feature = normalizePokemonTrainingFeatureName(value)
+    if (feature) owned.add(feature)
+  }
+
+  for (const source of trainerCombatFeatureSources(sheet)) add(source.entry.name)
+  for (const order of sheet.orders ?? []) add(order.name)
+  add(sheet.trainingFeature)
+
+  return owned
+}
 
 const ACE_TRAINER_STAT_LABELS = new Map<AceTrainerStatKey, string>(
   ACE_TRAINER_STAT_OPTIONS.map((option) => [option.key, option.label]),

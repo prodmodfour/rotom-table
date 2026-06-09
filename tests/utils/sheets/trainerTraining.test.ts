@@ -7,6 +7,7 @@ import {
   trainerCanSelectPerPokemonTrainingFeatures,
   trainerExperienceTrainingBonus,
   trainerExperienceTrainingLimit,
+  trainerOwnedPokemonTrainingFeatures,
   trainerSkillRankNameForTraining,
 } from '~/utils/sheets/trainerTraining'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -84,6 +85,29 @@ describe('trainer training helpers', () => {
     expect(trainerCanSelectPerPokemonTrainingFeatures(trainer({
       features: [{ name: 'Elite Trainer' }],
     }))).toBe(true)
+  })
+
+  it('detects Training Features granted through Elite Trainer subchoices', () => {
+    const sheet = trainer({
+      features: [{ name: 'Elite Trainer', choices: { trainingFeature: 'Focused Training' } }],
+    })
+
+    expect([...trainerOwnedPokemonTrainingFeatures(sheet)]).toEqual(['Focused Training'])
+  })
+
+  it('detects nested subchoice-granted Elite Trainer training features', () => {
+    const sheet = trainer({
+      features: [{
+        name: 'Dilettante',
+        choices: {
+          feature: 'Elite Trainer',
+          'feature.trainingFeature': 'Focused Training',
+        },
+      }],
+    })
+
+    expect(trainerCanSelectPerPokemonTrainingFeatures(sheet)).toBe(true)
+    expect([...trainerOwnedPokemonTrainingFeatures(sheet)]).toEqual(['Focused Training'])
   })
 
   it('gates Ace Trainer trained stats behind the Ace Trainer class feature', () => {

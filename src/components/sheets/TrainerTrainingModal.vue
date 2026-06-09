@@ -25,6 +25,7 @@ import {
   trainerCanSelectPerPokemonTrainingFeatures,
   trainerExperienceTrainingLimit,
   trainerHasEdgeNamed,
+  trainerOwnedPokemonTrainingFeatures,
   trainerSkillRankNameForTraining,
   type AceTrainerStatKey,
   type TrainerTrainingSkillKey,
@@ -119,20 +120,7 @@ const rosterEntries = computed(() => [
 
 const rosterSlugs = computed(() => rosterEntries.value.map((entry) => entry.slug))
 
-const trainerOwnedTrainingFeatures = computed(() => {
-  const owned = new Set<string>()
-  for (const feature of props.sheet.features ?? []) {
-    const name = normalizePokemonTrainingFeatureName(feature.name)
-    if (name) owned.add(name)
-  }
-  for (const order of props.sheet.orders ?? []) {
-    const name = normalizePokemonTrainingFeatureName(order.name)
-    if (name) owned.add(name)
-  }
-  const savedDefault = normalizePokemonTrainingFeatureName(props.sheet.trainingFeature)
-  if (savedDefault) owned.add(savedDefault)
-  return owned
-})
+const trainerOwnedTrainingFeatures = computed(() => trainerOwnedPokemonTrainingFeatures(props.sheet))
 
 const trainingFeatureOptions = computed(() => {
   const owned = trainerOwnedTrainingFeatures.value
