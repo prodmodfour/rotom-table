@@ -83,6 +83,7 @@ const props = defineProps<{
   moveAnimationsReducedMotion?: boolean
   moveVfxDebugHarnessEnabled?: boolean
   actionSplash?: MapActionSplashState | null
+  actionSplashSpeedLinesDurationMs?: number
   moveUsageError?: string | null
   spiteReactionPrompts?: MoveAutomationSpitePrompt[]
   cuteCharmReactionPrompts?: MoveAutomationCuteCharmPrompt[]
@@ -248,7 +249,10 @@ defineExpose({ focusPokemon })
         :messages="combatLogMessages"
       />
 
-      <MapActionSplash :splash="props.actionSplash ?? null" />
+      <MapActionSplash
+        :splash="props.actionSplash ?? null"
+        :speed-lines-duration-ms="props.actionSplashSpeedLinesDurationMs"
+      />
 
       <div v-if="props.moveUsageError" class="move-usage-error" role="status">
         {{ props.moveUsageError }}

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import InitiativeProfileImage from '~/components/map/InitiativeProfileImage.vue'
+import { resolveActionSplashSpeedLinesDurationMs } from '~/utils/actionSplashSettings'
 import type { MapActionSplashState } from '~/types/mapActionSplash'
 
 const props = defineProps<{
   splash: MapActionSplashState | null
+  speedLinesDurationMs?: number
 }>()
 
 const profileEntry = computed(() => props.splash?.profileEntry ?? null)
@@ -20,6 +22,7 @@ const initials = computed(() => {
 
 const splashStyle = computed(() => ({
   '--action-splash-accent': props.splash?.accentColor?.trim() || 'var(--accent)',
+  '--action-splash-speed-lines-duration': `${resolveActionSplashSpeedLinesDurationMs(props.speedLinesDurationMs)}ms`,
 }))
 </script>
 
@@ -70,6 +73,7 @@ const splashStyle = computed(() => ({
   --action-splash-edge-hot: color-mix(in srgb, var(--action-splash-accent) 86%, #111018 14%);
   --action-splash-center: color-mix(in srgb, var(--action-splash-accent) 52%, white 48%);
   --action-splash-line: color-mix(in srgb, var(--action-splash-accent) 24%, white 76%);
+  --action-splash-speed-lines-duration: 800ms;
 
   position: absolute;
   inset: 0;
@@ -140,7 +144,7 @@ const splashStyle = computed(() => ({
   background-repeat: repeat-x;
   background-size: 30rem 3px, 36rem 2px, 24rem 2px, 42rem 3px, 28rem 2px, 34rem 2px;
   mix-blend-mode: screen;
-  animation: map-action-splash-speed-lines 800ms linear infinite;
+  animation: map-action-splash-speed-lines var(--action-splash-speed-lines-duration, 800ms) linear infinite;
   will-change: background-position;
 }
 

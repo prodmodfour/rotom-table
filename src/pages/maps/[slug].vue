@@ -33,6 +33,7 @@ import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiStat
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
+import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
 import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import {
@@ -164,6 +165,7 @@ const {
   moveAnimationsEnabled,
   moveAnimationsReducedMotion,
 } = useMoveAnimationSettings()
+const { actionSplashSpeedLinesDurationMs } = useActionSplashSettings()
 
 const {
   activeMoveAnimations,
@@ -1163,6 +1165,7 @@ useMapDimensionReconciliation({
         :move-animations-reduced-motion="moveAnimationsReducedMotion"
         :move-vfx-debug-harness-enabled="moveVfxDebugHarnessEnabled"
         :action-splash="actionSplash"
+        :action-splash-speed-lines-duration-ms="actionSplashSpeedLinesDurationMs"
         :move-usage-error="sceneActionError"
         :spite-reaction-prompts="spiteReactionPrompts"
         :cute-charm-reaction-prompts="cuteCharmReactionPrompts"

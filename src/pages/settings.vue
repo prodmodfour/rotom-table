@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
 import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
+import {
+  ACTION_SPLASH_SPEED_LINES_DURATION_STEP_MS,
+  DEFAULT_ACTION_SPLASH_SPEED_LINES_DURATION_MS,
+  MAX_ACTION_SPLASH_SPEED_LINES_DURATION_MS,
+  MIN_ACTION_SPLASH_SPEED_LINES_DURATION_MS,
+} from '~/utils/actionSplashSettings'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
 
 useHead({ title: 'Settings · Rotom Table' })
@@ -44,6 +51,18 @@ const {
   moveAnimationsToggleLabel,
   toggleMoveAnimationsEnabled,
 } = useMoveAnimationSettings()
+const {
+  actionSplashSpeedLinesDurationMs,
+  actionSplashSpeedLinesDurationLabel,
+  actionSplashSpeedLinesDurationTitle,
+  setActionSplashSpeedLinesDurationMs,
+  resetActionSplashSpeedLinesDurationMs,
+} = useActionSplashSettings()
+
+const actionSplashSpeedLinesDurationRange = computed({
+  get: () => actionSplashSpeedLinesDurationMs.value,
+  set: (durationMs: number) => setActionSplashSpeedLinesDurationMs(durationMs),
+})
 
 const appThemeToggleText = computed(() => (
   isLightAppTheme.value ? 'Light mode' : 'Dark mode'
@@ -119,6 +138,35 @@ const handleCampaignFolderSelection = (event: Event) => {
           >
             <span class="settings-toggle__eyebrow">Theme</span>
             <span>{{ appThemeToggleText }}</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="settings-group" aria-labelledby="action-splash-settings-title">
+        <div class="settings-group__copy">
+          <h2 id="action-splash-settings-title">Action splash</h2>
+          <p>{{ actionSplashSpeedLinesDurationTitle }}</p>
+        </div>
+
+        <div class="settings-group__control settings-group__control--wide">
+          <span class="settings-status">{{ actionSplashSpeedLinesDurationLabel }}</span>
+          <label class="settings-range">
+            <span class="settings-toggle__eyebrow">Speed lines</span>
+            <input
+              v-model.number="actionSplashSpeedLinesDurationRange"
+              type="range"
+              :min="MIN_ACTION_SPLASH_SPEED_LINES_DURATION_MS"
+              :max="MAX_ACTION_SPLASH_SPEED_LINES_DURATION_MS"
+              :step="ACTION_SPLASH_SPEED_LINES_DURATION_STEP_MS"
+              :aria-valuetext="actionSplashSpeedLinesDurationLabel"
+            >
+          </label>
+          <button
+            type="button"
+            class="settings-reset"
+            @click="resetActionSplashSpeedLinesDurationMs"
+          >
+            Reset to {{ DEFAULT_ACTION_SPLASH_SPEED_LINES_DURATION_MS }} ms
           </button>
         </div>
       </section>
@@ -223,6 +271,42 @@ const handleCampaignFolderSelection = (event: Event) => {
   display: grid;
   gap: 0.4rem;
   justify-items: start;
+}
+
+.settings-group__control--wide {
+  min-width: min(16rem, 100%);
+}
+
+.settings-range {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  color: var(--ink-bright);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.settings-range input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.settings-reset {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--accent) 82%, var(--ink-bright));
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.settings-reset:hover,
+.settings-reset:focus-visible {
+  color: var(--accent);
+  outline: none;
+  text-decoration: underline;
 }
 
 .settings-status {
