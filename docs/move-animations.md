@@ -8,6 +8,8 @@ Basic move animations now play on the isometric map when a scripted move resolve
 
 These animations are visual-only: move automation, rolls, HP/status/combat-stage updates, token placement, logs, permissions, and saved map data remain the source of truth. If a VFX cue is skipped or fails, the move still resolves through the normal automation flow.
 
+When realtime is connected, planned move-animation batches are also sent as transient map action events so other authorized viewers on the same map can enqueue the same VFX. Each receiving browser still applies its own **Move VFX** toggle and reduced-motion preference, and remote VFX never apply gameplay mechanics or save animation data.
+
 To reduce or disable motion:
 
 - Use the map overlay **Move VFX** toggle to turn the basic move-animation layer off for this browser. The preference is local to the browser, not a campaign or map setting.
@@ -244,9 +246,9 @@ Move usage logs may continue to mention the move and its mechanical results thro
 
 ### Persistence, JSON, and logs boundary
 
-Move animation events exist only in the runtime chain `planMoveAnimations()` -> `useMoveAnimationQueue()` -> the map renderer. They are not part of `SavedMap`, spawned Pokémon, trainer sheets, move automation transactions, live-session state, or any storage payload. Optional VFX source metadata such as `sourceKind` and `sourceLabel` follows the same transient-only rule.
+Move animation events are runtime-only. The local rendering chain is `planMoveAnimations()` -> `useMoveAnimationQueue()` -> the map renderer; when realtime is connected, the map page may also copy a planned batch through the bounded `/api/maps/action-event` `move-animations` payload so authorized viewers on the same map can enqueue the same transient VFX. These events are not part of `SavedMap`, spawned Pokémon, trainer sheets, move automation transactions, live-session state, or any storage payload. Optional VFX source metadata such as `sourceKind` and `sourceLabel` follows the same transient-only rule.
 
-- Do not add `moveAnimations`, `activeMoveAnimations`, queue snapshots, `move-vfx-*` ids, `sourceKind`/`sourceLabel`, palette data, VFX timings, or renderer debug snapshots to persisted map JSON, sheet JSON, campaign/session state, local storage, realtime payloads, or server API payloads. The only local storage entry related to this feature is the app-level boolean enable/disable preference; it must not contain event data or move outcomes.
+- Do not add `moveAnimations`, `activeMoveAnimations`, queue snapshots, `move-vfx-*` ids, `sourceKind`/`sourceLabel`, palette data, VFX timings, or renderer debug snapshots to persisted map JSON, sheet JSON, campaign/session state, local storage, saved logs, or durable server storage. The only server API/realtime use allowed for these events is the transient map action event path, and it must remain visual-only. The only local storage entry related to this feature is the app-level boolean enable/disable preference; it must not contain event data or move outcomes.
 - Do not introduce a map/schema migration for basic move animations; renderer/page integration should create a fresh per-map queue at runtime and clear it on navigation, unmount, or map reset.
 - Existing move automation transactions and movement/action logs may still be saved or displayed when they would have been saved without VFX. Those records describe mechanical results; they should not store VFX ids, durations, palette data, or renderer lifecycle state.
 - Manual verification for integration tickets: after resolving a move and saving/exporting/reloading a map, inspect the generated JSON for absence of `moveAnimations`, `activeMoveAnimations`, `move-vfx`, VFX `kind`, VFX `durationMs`, or palette fields outside normal move metadata.
@@ -282,7 +284,7 @@ Renderer, scheduler, primitive, and move-automation integration tickets must ref
 
 ### Data and mechanics boundary
 
-- `MoveAnimationEvent` objects are transient client-side display requests. Their foundational TypeScript contract lives in `src/types/moveAnimation.ts`, and they must not be serialized into map JSON, sheet JSON, trainer JSON, campaign/session state, local runtime state, or server API payloads unless a future ticket explicitly changes the architecture.
+- `MoveAnimationEvent` objects are transient display requests. Their foundational TypeScript contract lives in `src/types/moveAnimation.ts`, and they must not be serialized into map JSON, sheet JSON, trainer JSON, campaign/session state, local runtime state, or durable server storage. The only network serialization path is the visual-only map action event payload used for same-map realtime replay.
 - Generic visual effect kinds are centralized in `src/types/moveVfx.ts` as `MOVE_VFX_KIND`, `MoveVfxKind`, and `MoveAnimationEffectKind`. These are renderer/VFX categories, not move script kinds or move names; future per-move overrides should select from this generic catalog before adding bespoke choreography in a later milestone.
 - Generic type and semantic VFX colours are centralized in `src/utils/moveAnimationPalette.ts`. Unknown or custom move types fall back to the neutral readable palette; healing, status, buff, debuff, miss, and crit outcomes should use semantic tone helpers when type colour would be misleading.
 - VFX code must not directly mutate saved token placement, HP, combat stages, statuses, hazards, weather, field effects, move usage logs, or permissions.

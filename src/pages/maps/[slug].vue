@@ -17,6 +17,7 @@ import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
 import { useMapAccess, useMapGmModeGuard } from '~/composables/map-editor/useMapAccess'
 import { useMapActionEventSync } from '~/composables/map-editor/useMapActionEventSync'
+import { useMapActionMoveAnimations, type MapActionMoveAnimationsPublishHandler } from '~/composables/map-editor/useMapActionMoveAnimations'
 import { useMapActionSplash, type MapActionSplashPublishHandler } from '~/composables/map-editor/useMapActionSplash'
 import {
   useMapDimensionControls,
@@ -133,7 +134,7 @@ const {
 
 const {
   activeMoveAnimations,
-  enqueueMoveAnimations,
+  enqueueMoveAnimations: enqueueLocalMoveAnimations,
   clearMoveAnimations,
   pruneExpiredMoveAnimations,
 } = useMoveAnimationQueue({ moveAnimationsEnabled })
@@ -286,7 +287,7 @@ const enqueueMoveVfxDebugPreview = (kind: MoveVfxKind | 'all') => {
   })
 
   if (events.length === 0) return
-  enqueueMoveAnimations(events)
+  enqueueLocalMoveAnimations(events)
 }
 
 const previewMoveVfxDebugKind = (kind: MoveVfxKind) => {
@@ -481,6 +482,7 @@ const {
 })
 
 let publishSyncedActionSplash: MapActionSplashPublishHandler | null = null
+let publishSyncedMoveAnimations: MapActionMoveAnimationsPublishHandler | null = null
 const {
   actionSplash,
   showActionSplash,
@@ -490,6 +492,13 @@ const {
   spawnedPokemon,
   initiativeRows,
   publishActionSplash: (request) => publishSyncedActionSplash?.(request),
+})
+const {
+  enqueueAndBroadcastMoveAnimations,
+  replayMoveAnimations,
+} = useMapActionMoveAnimations({
+  enqueueLocalMoveAnimations,
+  publishMoveAnimations: (request) => publishSyncedMoveAnimations?.(request),
 })
 
 const mapActionEventSync = useMapActionEventSync({
@@ -501,9 +510,13 @@ const mapActionEventSync = useMapActionEventSync({
       actionName: event.payload.actionName,
       verb: event.payload.verb,
     }),
+    onMoveAnimations: async (event) => {
+      await replayMoveAnimations(event.payload.events)
+    },
   },
 })
 publishSyncedActionSplash = (request) => mapActionEventSync.publishActionSplash(request)
+publishSyncedMoveAnimations = (request) => mapActionEventSync.publishMoveAnimations(request)
 
 onBeforeUnmount(() => {
   clearActionSplash()
@@ -680,7 +693,7 @@ const {
   applyMoveFieldEffect: applyMoveFieldEffectFromScene,
   placeHazard: placeHazardFromScene,
   recordMoveUsage,
-  enqueueMoveAnimations,
+  enqueueMoveAnimations: enqueueAndBroadcastMoveAnimations,
   onMoveUse: (event) => showActionSplash({ userId: event.userId, actionName: event.moveName }),
   onBeforeNonImmediateAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
