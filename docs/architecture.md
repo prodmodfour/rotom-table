@@ -40,7 +40,7 @@ This makes data easy to inspect, back up, diff, and repair while developing or r
 
 The `shared/` directory contains small helpers used by both app and server code, such as auth role values, path validation, sheet kinds, realtime message shapes, and encounter-table normalization. Keeping these definitions shared reduces drift between browser and server assumptions.
 
-`shared/mapActionEvents.ts` defines the transient map action event contract for map-scoped visual cues such as action splashes, move VFX, move feedback, and Poké Ball UI. These events are visual-only: they are not saved as map, sheet, campaign, session, metadata, or log state, and receiving clients must not apply mechanics from them. Existing map and sheet API flows remain authoritative for persisted game state.
+`shared/mapActionEvents.ts` defines the transient map action event contract for map-scoped visual cues such as action splashes, move VFX, move feedback, and Poké Ball UI. The `/api/maps/action-event` route validates the target map, actor placement, selected player-profile token control, event kind, and bounded payload before publishing a `map-action` realtime event on that map's channel. These events are visual-only: they are not saved as map, sheet, campaign, session, metadata, or log state, and receiving clients must not apply mechanics from them. Existing map and sheet API flows remain authoritative for persisted game state.
 
 ## GM/player trust-based access and player profiles
 

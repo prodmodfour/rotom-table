@@ -96,6 +96,8 @@ export interface MapActionRealtimeEvent extends RealtimeEvent<MapActionEventEnve
 export interface MapActionEventPublishRequest {
   slug: string
   event: MapActionEventEnvelope
+  /** Selected player profile id used by player requests for token-control checks. */
+  profileId?: string | null
 }
 
 const mapActionEventKindSet: ReadonlySet<string> = new Set(MAP_ACTION_EVENT_KINDS)

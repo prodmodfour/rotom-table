@@ -27,6 +27,7 @@ export const MAP_API_PATHS = {
   load: '/api/maps/load',
   save: '/api/maps/save',
   useMove: '/api/maps/use-move',
+  actionEvent: '/api/maps/action-event',
   moveToken: '/api/maps/tokens/move',
   turnToken: '/api/maps/tokens/turn',
   useManeuver: '/api/maps/tokens/use-maneuver',
