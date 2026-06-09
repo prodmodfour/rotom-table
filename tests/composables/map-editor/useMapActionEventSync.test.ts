@@ -1,0 +1,255 @@
+import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { computed, ref } from 'vue'
+import { useMapActionEventSync, rebaseMoveAnimationEventsForReceiver } from '~/composables/map-editor/useMapActionEventSync'
+import { MAP_API_PATHS } from '~/utils/apiRoutes'
+import {
+  MAP_ACTION_EVENT_SCHEMA_VERSION,
+  MAP_ACTION_REALTIME_EVENT_TYPE,
+  type MapActionEventEnvelope,
+  type MapActionEventKind,
+  type MapActionEventPayloadByKind,
+  type MapActionMoveAnimationsPayload,
+  type MapActionMoveFeedbackPayload,
+} from '#shared/mapActionEvents'
+import { mapChannel, type RealtimeEvent } from '#shared/realtime'
+
+const mocks = vi.hoisted(() => ({
+  postJson: vi.fn(),
+  realtimeSubscriptions: [] as Array<{ channel: string; handler: (event: RealtimeEvent) => void }>,
+}))
+
+vi.mock('~/composables/useApiClient', () => ({
+  useApiClient: () => ({
+    postJson: mocks.postJson,
+  }),
+}))
+
+vi.mock('~/composables/useRealtime', () => ({
+  useRealtimeChannel: vi.fn((channel: string, handler: (event: RealtimeEvent) => void) => {
+    mocks.realtimeSubscriptions.push({ channel, handler })
+    return vi.fn()
+  }),
+}))
+
+const feedbackState = {
+  id: 'feedback-1',
+  userId: 'actor-1',
+  targetId: 'target-1',
+  moveName: 'Thunderbolt',
+  phase: 'rolling',
+  naturalRoll: 18,
+  modifiedRoll: 20,
+  accuracyCheck: 4,
+  userAccuracy: 1,
+  targetEvasion: 0,
+  targetEvasionLabel: 'Evasion 0',
+  hit: true,
+  crit: false,
+  effectiveness: null,
+  damageResolved: true,
+  damageLoss: 24,
+  conditions: [],
+} satisfies MapActionMoveFeedbackPayload['feedback']
+
+const moveAnimationEvent = {
+  id: 'vfx-1',
+  kind: 'projectile',
+  moveName: 'Thunderbolt',
+  userId: 'actor-1',
+  targetId: 'target-1',
+  createdAtMs: 1_000,
+  durationMs: 600,
+  startOffsetMs: 200,
+} satisfies MapActionMoveAnimationsPayload['events'][number]
+
+const mapActionEvent = <Kind extends MapActionEventKind>(
+  kind: Kind,
+  payload: MapActionEventPayloadByKind[Kind],
+  overrides: Partial<MapActionEventEnvelope> = {},
+): MapActionEventEnvelope => ({
+  schemaVersion: MAP_ACTION_EVENT_SCHEMA_VERSION,
+  id: `event-${kind}`,
+  kind,
+  actorPlacementId: 'actor-1',
+  sourceClientId: 'remote-client',
+  createdAt: 1_700_000_000_000,
+  payload,
+  ...overrides,
+} as MapActionEventEnvelope)
+
+const realtimeMapActionEvent = (
+  event: MapActionEventEnvelope,
+  overrides: Partial<RealtimeEvent<MapActionEventEnvelope>> = {},
+): RealtimeEvent<MapActionEventEnvelope> => ({
+  channel: mapChannel('arena'),
+  type: MAP_ACTION_REALTIME_EVENT_TYPE,
+  clientId: event.sourceClientId,
+  timestamp: 1_700_000_000_010,
+  data: event,
+  ...overrides,
+})
+
+const latestHandler = () => {
+  const subscription = mocks.realtimeSubscriptions.at(-1)
+  if (!subscription) throw new Error('expected realtime subscription')
+  return subscription.handler
+}
+
+describe('useMapActionEventSync', () => {
+  beforeEach(() => {
+    mocks.postJson.mockReset()
+    mocks.postJson.mockResolvedValue({ ok: true })
+    mocks.realtimeSubscriptions.length = 0
+  })
+
+  it('subscribes to the current map channel and publishes through the action-event endpoint', async () => {
+    const profileId = computed(() => 'profile_ash00000')
+    const sync = useMapActionEventSync({
+      slug: 'arena',
+      profileId,
+      clientId: 'local-client',
+      wallClockNow: () => 1_700_000_123_000,
+    })
+
+    await sync.publishActionSplash({
+      actorPlacementId: 'actor-1',
+      eventId: 'event-local-1',
+      payload: { actionName: 'Quick Attack', verb: 'uses' },
+    })
+
+    expect(mocks.realtimeSubscriptions).toEqual([
+      expect.objectContaining({ channel: mapChannel('arena') }),
+    ])
+    expect(mocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.actionEvent, {
+      slug: 'arena',
+      profileId: 'profile_ash00000',
+      event: {
+        schemaVersion: MAP_ACTION_EVENT_SCHEMA_VERSION,
+        id: 'event-local-1',
+        kind: 'action-splash',
+        actorPlacementId: 'actor-1',
+        sourceClientId: 'local-client',
+        createdAt: 1_700_000_123_000,
+        payload: { actionName: 'Quick Attack', verb: 'uses' },
+      },
+    })
+  })
+
+  it('ignores non-action realtime events, local echoes, invalid payloads, and duplicate event ids', () => {
+    const onActionSplash = vi.fn()
+    useMapActionEventSync({
+      slug: 'arena',
+      clientId: 'local-client',
+      handlers: { onActionSplash },
+    })
+    const handler = latestHandler()
+    const splash = mapActionEvent('action-splash', { actionName: 'Tackle' })
+
+    handler({ channel: mapChannel('arena'), type: 'updated', timestamp: 1, data: splash })
+    handler(realtimeMapActionEvent({ ...splash, sourceClientId: 'local-client' }, { clientId: 'local-client' }))
+    handler(realtimeMapActionEvent({ ...splash, id: '' }))
+    handler(realtimeMapActionEvent(splash))
+    handler(realtimeMapActionEvent(splash))
+
+    expect(onActionSplash).toHaveBeenCalledTimes(1)
+    expect(onActionSplash).toHaveBeenCalledWith(splash)
+  })
+
+  it('rebases remote move animation timestamps onto the receiver animation clock', () => {
+    const onMoveAnimations = vi.fn()
+    const originalEvents = [
+      moveAnimationEvent,
+      { ...moveAnimationEvent, id: 'vfx-2', createdAtMs: 1_250, startOffsetMs: 0 },
+    ] satisfies MapActionMoveAnimationsPayload['events']
+    const event = mapActionEvent('move-animations', { events: originalEvents })
+    useMapActionEventSync({
+      slug: 'arena',
+      clientId: 'local-client',
+      nowMs: () => 5_000,
+      handlers: { onMoveAnimations },
+    })
+
+    latestHandler()(realtimeMapActionEvent(event))
+
+    expect(onMoveAnimations).toHaveBeenCalledTimes(1)
+    expect(onMoveAnimations.mock.calls[0][0]).toMatchObject({
+      id: event.id,
+      kind: 'move-animations',
+      payload: {
+        events: [
+          expect.objectContaining({ id: 'vfx-1', createdAtMs: 5_000, startOffsetMs: 200 }),
+          expect.objectContaining({ id: 'vfx-2', createdAtMs: 5_250, startOffsetMs: 0 }),
+        ],
+      },
+    })
+    expect(originalEvents[0]?.createdAtMs).toBe(1_000)
+  })
+
+  it('dispatches each supported remote visual event kind to its matching handler', () => {
+    const handlers = {
+      onActionSplash: vi.fn(),
+      onMoveAnimations: vi.fn(),
+      onMoveFeedback: vi.fn(),
+      onPokeballFeedback: vi.fn(),
+      onPokeballResult: vi.fn(),
+    }
+    useMapActionEventSync({ slug: 'arena', clientId: 'local-client', handlers })
+    const handler = latestHandler()
+
+    const splash = mapActionEvent('action-splash', { actionName: 'Growl' })
+    const animations = mapActionEvent('move-animations', { events: [moveAnimationEvent] })
+    const moveFeedback = mapActionEvent('move-feedback', { feedback: feedbackState })
+    const pokeballFeedback = mapActionEvent('pokeball-feedback', {
+      feedback: { ...feedbackState, id: 'pokeball-feedback-1', moveName: 'Throw Basic Ball' },
+    })
+    const pokeballResult = mapActionEvent('pokeball-result', {
+      result: null,
+      error: 'The Poké Ball missed.',
+    })
+
+    for (const event of [splash, animations, moveFeedback, pokeballFeedback, pokeballResult]) {
+      handler(realtimeMapActionEvent(event))
+    }
+
+    expect(handlers.onActionSplash).toHaveBeenCalledWith(splash)
+    expect(handlers.onMoveAnimations).toHaveBeenCalledTimes(1)
+    expect(handlers.onMoveFeedback).toHaveBeenCalledWith(moveFeedback)
+    expect(handlers.onPokeballFeedback).toHaveBeenCalledWith(pokeballFeedback)
+    expect(handlers.onPokeballResult).toHaveBeenCalledWith(pokeballResult)
+  })
+
+  it('uses reactive slug/profile values when publishing future local events', async () => {
+    const slug = ref('arena')
+    const profileId = ref<string | null>('profile_ash00000')
+    const sync = useMapActionEventSync({ slug, profileId, clientId: 'local-client' })
+
+    slug.value = 'second-arena'
+    profileId.value = null
+    await sync.publishMapActionEvent('pokeball-result', {
+      actorPlacementId: 'actor-1',
+      eventId: 'event-capture-error',
+      createdAt: 42,
+      payload: { result: null, error: 'Choose a Poké Ball with quantity remaining.' },
+    })
+
+    expect(mocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.actionEvent, expect.objectContaining({
+      slug: 'second-arena',
+      profileId: null,
+    }))
+  })
+})
+
+describe('rebaseMoveAnimationEventsForReceiver', () => {
+  it('preserves in-batch timing offsets without mutating the input batch', () => {
+    const events = [
+      moveAnimationEvent,
+      { ...moveAnimationEvent, id: 'vfx-2', createdAtMs: 1_090 },
+    ] satisfies MapActionMoveAnimationsPayload['events']
+
+    expect(rebaseMoveAnimationEventsForReceiver(events, 8_000)).toEqual([
+      expect.objectContaining({ id: 'vfx-1', createdAtMs: 8_000 }),
+      expect.objectContaining({ id: 'vfx-2', createdAtMs: 8_090 }),
+    ])
+    expect(events[1]?.createdAtMs).toBe(1_090)
+  })
+})
