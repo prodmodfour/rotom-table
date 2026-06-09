@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   MapTokenActionUseCaseError,
   moveMapTokenUseCase,
+  spawnMapTokenUseCase,
   turnMapTokenUseCase,
 } from '../../server/useCases/applyMapTokenAction'
 import { MAPS_ROOT } from '../../server/utils/mapPaths'
@@ -79,6 +80,79 @@ const createDeps = (existing: TabletopMap = baseMap(), options: { now?: number }
 }
 
 describe('document-backed map token actions', () => {
+  it('spawns a GM token through a focused map document write without rewriting from the client payload', () => {
+    const existing = baseMap({ playerVisible: false })
+    const { deps, path, writes } = createDeps(existing, { now: 1500 })
+
+    const result = spawnMapTokenUseCase({
+      role: 'gm',
+      slug: 'arena',
+      placement: {
+        id: 'spawned-eevee',
+        sheetKind: 'pokemon',
+        sheetSlug: 'eevee',
+        position: { x: 99, y: -1, z: 3 },
+        facing: 'south-east',
+        turned: false,
+      },
+      clientId: 'gm-client',
+    }, deps)
+
+    expect(writes).toHaveLength(1)
+    expect(writes[0]?.path).toBe(path)
+    const persisted = writes[0]!.map
+    expect(persisted.placements).toHaveLength(3)
+    expect(persisted.placements[2]).toMatchObject({
+      id: 'spawned-eevee',
+      sheetKind: 'pokemon',
+      sheetSlug: 'eevee',
+      position: { x: 5, y: 0, z: 3 },
+      facing: 'south-east',
+      turned: false,
+    })
+    expect(persisted.voxels).toEqual(existing.voxels)
+    expect(persisted.hazards).toEqual(existing.hazards)
+    expect(persisted.updatedAt).toBe(1500)
+    expect(result.map).toBe(persisted)
+    expect(result.placement).toEqual(persisted.placements[2])
+    expect(result.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
+    expect(result.events[0]).toMatchObject({ type: 'updated', clientId: 'gm-client', data: persisted })
+  })
+
+  it('treats duplicate focused spawn retries for the same placement as already persisted', () => {
+    const existing = baseMap()
+    const placement = existing.placements[0]!
+    const { deps, writes } = createDeps(existing)
+
+    const result = spawnMapTokenUseCase({
+      role: 'gm',
+      slug: 'arena',
+      placement,
+      clientId: 'gm-client',
+    }, deps)
+
+    expect(writes).toEqual([])
+    expect(result.map).toBe(existing)
+    expect(result.placement).toBe(placement)
+    expect(result.events).toEqual([])
+  })
+
+  it('rejects player token spawns without writing', () => {
+    const { deps, writes } = createDeps(baseMap())
+
+    expect(() => spawnMapTokenUseCase({
+      role: 'player',
+      slug: 'arena',
+      placement: {
+        id: 'player-spawn',
+        sheetKind: 'pokemon',
+        sheetSlug: 'eevee',
+        position: { x: 3, y: 0, z: 3 },
+      },
+    }, deps)).toThrow(MapTokenActionUseCaseError)
+    expect(writes).toEqual([])
+  })
+
   it('moves a linked player token in the saved map document and publishes map updates', () => {
     const existing = baseMap()
     const { deps, path, writes } = createDeps(existing, { now: 2000 })

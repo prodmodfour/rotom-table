@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   moveMapUseCase: vi.fn(),
   renameMapUseCase: vi.fn(),
   saveMapUseCase: vi.fn(),
+  spawnMapTokenUseCase: vi.fn(),
   moveMapTokenUseCase: vi.fn(),
   turnMapTokenUseCase: vi.fn(),
   useMapTokenAbilityUseCase: vi.fn(),
@@ -46,6 +47,7 @@ vi.mock('../../server/useCases/saveMap', () => ({
   saveMapUseCase: mocks.saveMapUseCase,
 }))
 vi.mock('../../server/useCases/applyMapTokenAction', () => ({
+  spawnMapTokenUseCase: mocks.spawnMapTokenUseCase,
   moveMapTokenUseCase: mocks.moveMapTokenUseCase,
   turnMapTokenUseCase: mocks.turnMapTokenUseCase,
 }))
@@ -69,6 +71,7 @@ const moveFolderRoute = (await import('../../server/api/maps/move-folder.post'))
 const moveRoute = (await import('../../server/api/maps/move.post')).default
 const renameRoute = (await import('../../server/api/maps/rename.post')).default
 const saveRoute = (await import('../../server/api/maps/save.post')).default
+const tokenSpawnRoute = (await import('../../server/api/maps/tokens/spawn.post')).default
 const tokenMoveRoute = (await import('../../server/api/maps/tokens/move.post')).default
 const tokenTurnRoute = (await import('../../server/api/maps/tokens/turn.post')).default
 const abilityRoute = (await import('../../server/api/maps/tokens/use-ability.post')).default
@@ -150,6 +153,14 @@ describe('map hosted-write API routes', () => {
       { route: moveRoute, body: { slug: 'arena', folder: 'dungeon' }, mock: mocks.moveMapUseCase },
       { route: renameRoute, body: { slug: 'arena', name: 'Arena Revised' }, mock: mocks.renameMapUseCase },
       { route: saveRoute, body: { slug: 'arena', map: mapFixture() }, mock: mocks.saveMapUseCase },
+      {
+        route: tokenSpawnRoute,
+        body: {
+          slug: 'arena',
+          placement: { id: 'token-2', sheetKind: 'pokemon', sheetSlug: 'eevee', position: { x: 1, y: 0, z: 1 } },
+        },
+        mock: mocks.spawnMapTokenUseCase,
+      },
     ]
 
     for (const routeCase of routeCases) {

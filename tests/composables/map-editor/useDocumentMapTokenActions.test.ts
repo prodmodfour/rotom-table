@@ -7,6 +7,11 @@ import type { TabletopMap } from '~/types/map'
 
 const apiMocks = vi.hoisted(() => ({
   postJson: vi.fn(),
+  sendJsonWithUnloadFallback: vi.fn(),
+}))
+
+vi.mock('~/utils/autosaveUnload', () => ({
+  sendJsonWithUnloadFallback: apiMocks.sendJsonWithUnloadFallback,
 }))
 
 vi.mock('~/composables/useApiClient', () => ({
@@ -43,6 +48,45 @@ const mapFixture = (): TabletopMap => ({
 describe('useDocumentMapTokenActions', () => {
   beforeEach(() => {
     apiMocks.postJson.mockReset()
+    apiMocks.sendJsonWithUnloadFallback.mockReset()
+  })
+
+  it('posts document-backed spawn actions with an unload-safe small payload when requested', async () => {
+    const map = mapFixture()
+    const applyPersistedMap = vi.fn()
+    const placement = {
+      id: 'token-eevee',
+      sheetKind: 'pokemon' as const,
+      sheetSlug: 'eevee',
+      position: { x: 2, y: 0, z: 2 },
+      facing: 'south-east' as const,
+      turned: false,
+    }
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      path: 'data/maps/arena-map.json',
+      map,
+      placement,
+    })
+
+    const actions = useDocumentMapTokenActions({
+      slug: 'arena-map',
+      applyPersistedMap,
+    })
+    const result = await actions.spawnToken({ placement, unloadFallback: true })
+
+    const expectedBody = {
+      slug: 'arena-map',
+      clientId: 'ssr',
+      placement,
+    }
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.sendJsonWithUnloadFallback).toHaveBeenCalledWith(
+      MAP_API_PATHS.spawnToken,
+      JSON.stringify(expectedBody),
+    )
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.spawnToken, expectedBody)
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
   it('posts document-backed move actions with the selected player profile id', async () => {

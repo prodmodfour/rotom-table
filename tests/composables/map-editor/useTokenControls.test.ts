@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   pokedexPathForSpecies,
   sheetPathForPlacement,
@@ -50,6 +50,7 @@ const makeControls = (
     isGm?: boolean
     nextId?: string
     now?: () => number
+    persistSpawnedPlacement?: (placement: TabletopMap['placements'][number]) => void
     tokenControl?: {
       readonly enabled: { readonly value: boolean }
       readonly controllablePlacementIds: { readonly value: readonly string[] }
@@ -72,15 +73,17 @@ const makeControls = (
       canDeleteTokens: isGm,
       tokenControl: options.tokenControl,
       createPlacementId: () => options.nextId ?? 'token-1',
+      persistSpawnedPlacement: options.persistSpawnedPlacement,
       now: options.now,
     }),
   }
 }
 
 describe('useTokenControls', () => {
-  it('spawns a selected sheet onto the first available map position', () => {
+  it('spawns a selected sheet onto the first available map position and queues a focused spawn persist', () => {
     const sheet = pokemon()
-    const { map, controls } = makeControls({ pokemonSheets: [sheet], nextId: 'spawned-1' })
+    const persistSpawnedPlacement = vi.fn()
+    const { map, controls } = makeControls({ pokemonSheets: [sheet], nextId: 'spawned-1', persistSpawnedPlacement })
 
     controls.updatePreview({ position: { x: 1, y: 0, z: 1 }, reachable: true, pathLength: 2 })
     controls.spawnSheet({ kind: 'pokemon', sheet })
@@ -96,6 +99,7 @@ describe('useTokenControls', () => {
     expect(map.value.placements[0].position.x).toBeGreaterThanOrEqual(0)
     expect(controls.previewState.value).toEqual({ position: null, reachable: false, pathLength: 0 })
     expect(controls.spawnedPokemon.value[0]?.id).toBe('spawned-1')
+    expect(persistSpawnedPlacement).toHaveBeenCalledWith(map.value.placements[0])
   })
 
   it('uses explicit profile-derived token control and keeps deletion GM-only', () => {

@@ -5,12 +5,14 @@ import { subscribeRealtime } from '~~/server/utils/realtime'
 import type { TabletopMap } from '~/types/map'
 
 const mocks = vi.hoisted(() => ({
+  spawnMapTokenUseCase: vi.fn(),
   moveMapTokenUseCase: vi.fn(),
   turnMapTokenUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
 vi.mock('../../server/useCases/applyMapTokenAction', () => ({
+  spawnMapTokenUseCase: mocks.spawnMapTokenUseCase,
   moveMapTokenUseCase: mocks.moveMapTokenUseCase,
   turnMapTokenUseCase: mocks.turnMapTokenUseCase,
 }))
@@ -18,6 +20,7 @@ vi.mock('../../server/policies/playerProfilePolicy', () => ({
   resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
 }))
 
+const spawnRoute = (await import('../../server/api/maps/tokens/spawn.post')).default
 const moveRoute = (await import('../../server/api/maps/tokens/move.post')).default
 const turnRoute = (await import('../../server/api/maps/tokens/turn.post')).default
 
@@ -62,6 +65,36 @@ const invokeRoute = async (
 describe('map token action API routes', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('persists GM token spawns through a focused document-backed route', async () => {
+    const map = mapFixture()
+    const placement = {
+      id: 'token-eevee',
+      sheetKind: 'pokemon' as const,
+      sheetSlug: 'eevee',
+      position: { x: 2, y: 0, z: 2 },
+      facing: 'south-east' as const,
+      turned: false,
+    }
+    mocks.spawnMapTokenUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, placement, events: [] })
+
+    await expect(invokeRoute(spawnRoute, {
+      role: 'gm',
+      body: {
+        slug: 'arena',
+        placement,
+        clientId: 'gm-client',
+      },
+    })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map, placement })
+
+    expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
+    expect(mocks.spawnMapTokenUseCase).toHaveBeenCalledWith({
+      role: 'gm',
+      slug: 'arena',
+      placement,
+      clientId: 'gm-client',
+    })
   })
 
   it('resolves selected player profiles before document-backed token moves', async () => {

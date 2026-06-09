@@ -57,7 +57,7 @@ import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { GridAnchor, TabletopMap } from '~/types/map'
+import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -113,6 +113,12 @@ const playerProfileTokenControlModel = computed(() => buildClientPlayerProfileTo
   profile: selectedProfile.value,
   placements: map.value?.placements ?? [],
 }))
+const persistSpawnedPlacement = (placement: SheetPlacement) => {
+  void documentTokenActions.spawnToken({
+    placement: deepCloneJson(placement),
+    unloadFallback: true,
+  })
+}
 const tokenControlNotice = computed(() => {
   if (isPlayer.value && documentTokenActions.lastError.value) {
     return `Token action failed: ${documentTokenActions.lastError.value}`
@@ -274,6 +280,7 @@ const {
   mapGroundLevelY,
   canSpawnTokens,
   canControlAllTokens: isGm,
+  persistSpawnedPlacement,
   tokenControl: {
     enabled: computed(() => true),
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),

@@ -5,6 +5,7 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import { appendMovementLogEntry, sameGridAnchor } from '~/utils/mapMovementLog'
+import { sameJsonValue } from '~/utils/serialization'
 import {
   isTokenFacingDirection,
   tokenFacingForPlacement,
@@ -19,7 +20,14 @@ import { canSaveMap, clampAnchorToDimensions } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import { toPersistedMap } from './saveMap'
 
-export class MapTokenActionUseCaseError extends UseCaseHttpError<400 | 403 | 404> {}
+export class MapTokenActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
+
+export interface SpawnMapTokenInput {
+  role: AuthRole
+  slug: string
+  placement: SheetPlacement
+  clientId?: string
+}
 
 export interface MoveMapTokenInput {
   role: AuthRole
@@ -62,10 +70,13 @@ export interface MapTokenActionResult {
   events: Array<Omit<RealtimeEvent, 'timestamp'>>
 }
 
-interface ResolvedMapTokenActionContext {
+interface ResolvedMapWriteContext {
   mapPath: string
   relativePath: string
   map: TabletopMap
+}
+
+interface ResolvedMapTokenActionContext extends ResolvedMapWriteContext {
   placement: SheetPlacement
 }
 
@@ -97,10 +108,10 @@ const noChangeResult = (
   events: [],
 })
 
-const resolveContext = (
-  input: Pick<MoveMapTokenInput, 'role' | 'slug' | 'placementId' | 'playerProfile'>,
+const resolveMapWriteContext = (
+  input: Pick<MoveMapTokenInput, 'role' | 'slug'>,
   dependencies: Required<Pick<MapTokenActionDependencies, 'findMapPath' | 'readMap' | 'relativePath'>>,
-): ResolvedMapTokenActionContext => {
+): ResolvedMapWriteContext => {
   const mapPath = dependencies.findMapPath(input.slug)
   if (!mapPath) throw new MapTokenActionUseCaseError(404, `Map ${input.slug}.json not found`)
 
@@ -109,7 +120,19 @@ const resolveContext = (
     throw new MapTokenActionUseCaseError(403, 'Map is not player visible')
   }
 
-  const placement = map.placements.find((candidate) => candidate.id === input.placementId)
+  return {
+    mapPath,
+    relativePath: dependencies.relativePath(mapPath),
+    map,
+  }
+}
+
+const resolveContext = (
+  input: Pick<MoveMapTokenInput, 'role' | 'slug' | 'placementId' | 'playerProfile'>,
+  dependencies: Required<Pick<MapTokenActionDependencies, 'findMapPath' | 'readMap' | 'relativePath'>>,
+): ResolvedMapTokenActionContext => {
+  const context = resolveMapWriteContext(input, dependencies)
+  const placement = context.map.placements.find((candidate) => candidate.id === input.placementId)
   if (!placement) {
     throw new MapTokenActionUseCaseError(404, `Placement ${input.placementId} not found`)
   }
@@ -126,9 +149,7 @@ const resolveContext = (
   }
 
   return {
-    mapPath,
-    relativePath: dependencies.relativePath(mapPath),
-    map,
+    ...context,
     placement,
   }
 }
@@ -197,6 +218,69 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
   relativePath: dependencies.relativePath ?? campaignPathLabel,
   maxMovementLogEntries: dependencies.maxMovementLogEntries,
 })
+
+const clonePosition = (position: GridAnchor): GridAnchor => ({
+  x: position.x,
+  y: position.y,
+  z: position.z,
+})
+
+const normalizeSpawnPlacement = (
+  placement: SheetPlacement,
+  map: TabletopMap,
+): SheetPlacement => {
+  const position = clampAnchorToDimensions(placement.position, placement.position, map.dimensions)
+  const facing = tokenFacingForPlacement(placement)
+  return {
+    id: placement.id,
+    sheetKind: placement.sheetKind,
+    sheetSlug: placement.sheetSlug,
+    position: clonePosition(position),
+    facing,
+    turned: tokenFacingStoresLegacyTurned(facing),
+    ...(placement.initiative === undefined ? {} : { initiative: placement.initiative }),
+  }
+}
+
+const duplicateSpawnResult = (
+  context: ResolvedMapWriteContext,
+  placement: SheetPlacement,
+): MapTokenActionResult => ({
+  ok: true,
+  path: context.relativePath,
+  map: context.map,
+  placement,
+  events: [],
+})
+
+export const spawnMapTokenUseCase = (
+  input: SpawnMapTokenInput,
+  dependencies: MapTokenActionDependencies = {},
+): MapTokenActionResult => {
+  if (input.role !== 'gm') {
+    throw new MapTokenActionUseCaseError(403, 'Only GMs can spawn map tokens')
+  }
+
+  const deps = actionDependencies(dependencies)
+  const context = resolveMapWriteContext(input, deps)
+  const nextPlacement = normalizeSpawnPlacement(input.placement, context.map)
+  const existingPlacement = context.map.placements.find((placement) => placement.id === nextPlacement.id)
+
+  if (existingPlacement) {
+    if (sameJsonValue(existingPlacement, nextPlacement)) {
+      return duplicateSpawnResult(context, existingPlacement)
+    }
+    throw new MapTokenActionUseCaseError(409, `Placement ${nextPlacement.id} already exists`)
+  }
+
+  return writeActionMap(input, {
+    ...context,
+    placement: nextPlacement,
+  }, {
+    ...context.map,
+    placements: [...context.map.placements, nextPlacement],
+  }, deps)
+}
 
 export const moveMapTokenUseCase = (
   input: MoveMapTokenInput,

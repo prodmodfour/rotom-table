@@ -66,6 +66,7 @@ export interface UseTokenControlsOptions {
   selectionDisabled?: BooleanRef
   tokenControl?: TokenControlOverrideLike
   createPlacementId?: () => string
+  persistSpawnedPlacement?: (placement: SheetPlacement) => void
   now?: () => number
   maxMovementLogEntries?: number
 }
@@ -108,6 +109,7 @@ export const useTokenControls = ({
   selectionDisabled,
   tokenControl,
   createPlacementId = defaultCreatePlacementId,
+  persistSpawnedPlacement,
   now,
   maxMovementLogEntries,
 }: UseTokenControlsOptions) => {
@@ -205,14 +207,16 @@ export const useTokenControls = ({
     )
     if (!position) return
 
-    map.value.placements.push({
+    const placement: SheetPlacement = {
       id: createPlacementId(),
       sheetKind: selection.kind,
       sheetSlug: selection.sheet.slug,
       position,
       facing: DEFAULT_TOKEN_FACING_DIRECTION,
       turned: false,
-    })
+    }
+    map.value.placements.push(placement)
+    persistSpawnedPlacement?.(placement)
     clearSelection()
   }
 
@@ -254,14 +258,16 @@ export const useTokenControls = ({
   const sendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): boolean => {
     if (!map.value || !sendOutPokemonContext(payload)) return false
 
-    map.value.placements.push({
+    const placement: SheetPlacement = {
       id: createPlacementId(),
       sheetKind: 'pokemon',
       sheetSlug: payload.pokemonSlug,
       position: payload.position,
       facing: DEFAULT_TOKEN_FACING_DIRECTION,
       turned: false,
-    })
+    }
+    map.value.placements.push(placement)
+    persistSpawnedPlacement?.(placement)
     clearSelection()
     return true
   }
