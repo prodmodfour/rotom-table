@@ -29,6 +29,19 @@ describe('trainer feature and edge field values', () => {
     expect(effect).toContain('Feature — Tutoring: When activating this Feature')
   })
 
+  it('appends nested subchoice descriptions beneath selected subchoice references', () => {
+    const feature: TrainerFeatureEntry = {
+      name: 'Dilettante',
+      choices: { feature: 'Tutoring', 'feature.move': 'Thunderbolt' },
+    }
+
+    const effect = trainerFeatureFieldValue(feature, 'effect')
+
+    expect(effect).toContain('Feature — Tutoring: When activating this Feature')
+    expect(effect).toContain('Feature / Move — Thunderbolt: Electric')
+    expect(effect).toContain('DB 9 (2d10+10 / 21)')
+  })
+
   it('appends custom descriptions for non-reference subchoices', () => {
     const feature: TrainerFeatureEntry = {
       name: 'Capture Specialist',

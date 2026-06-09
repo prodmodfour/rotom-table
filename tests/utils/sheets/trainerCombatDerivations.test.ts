@@ -51,6 +51,21 @@ describe('trainer combat derivations', () => {
     ])
   })
 
+  it('propagates nested choices when a subchoice grants a feature with its own choices', () => {
+    const sheet = trainer({
+      features: [{
+        name: 'Dilettante',
+        choices: {
+          feature: 'Aura Guardian',
+          'feature.move': 'Detect',
+          'feature.move2': 'Force Palm',
+        },
+      }],
+    })
+
+    expect(deriveTrainerAutomaticMoves(sheet).map((move) => move.entry.name)).toEqual(['Detect', 'Force Palm'])
+  })
+
   it('feeds derived moves and abilities into map token action menus', () => {
     const sheet = trainer({
       features: [

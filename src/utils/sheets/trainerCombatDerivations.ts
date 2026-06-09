@@ -73,12 +73,29 @@ const addEdgeSource = (
   out.push({ entry: { ...entry, name }, reference: findEdge(name), sourceLabel })
 }
 
-const selectedGrantedFeatureNames = (feature: TrainerFeatureEntry): string[] => {
+const choiceKeyLeaf = (key: string): string => key.split('.').at(-1) ?? key
+
+const nestedChoicesForDefinition = (
+  entry: TrainerFeatureEntry,
+  definition: TrainerSubchoiceDefinition,
+): TrainerFeatureEntry['choices'] | undefined => {
+  const prefix = `${definition.key}.`
+  const choices = Object.entries(entry.choices ?? {})
+    .filter(([key]) => key.startsWith(prefix))
+    .map(([key, value]) => [key.slice(prefix.length), value] as const)
+  return choices.length ? Object.fromEntries(choices) : undefined
+}
+
+const selectedGrantedFeatures = (feature: TrainerFeatureEntry): TrainerFeatureEntry[] => {
   const definitions = trainerFeatureSubchoices(feature)
   return definitions
-    .filter((definition) => GRANTED_FEATURE_CHOICE_KEYS.has(definition.key))
-    .map((definition) => trainerSubchoiceValue(feature, definition, definitions))
-    .filter((value): value is string => Boolean(value?.trim()))
+    .filter((definition) => GRANTED_FEATURE_CHOICE_KEYS.has(choiceKeyLeaf(definition.key)))
+    .flatMap((definition) => {
+      const name = trainerSubchoiceValue(feature, definition, definitions)
+      if (!name.trim()) return []
+      const choices = nestedChoicesForDefinition(feature, definition)
+      return choices ? [{ name, choices }] : [{ name }]
+    })
 }
 
 /**
@@ -98,8 +115,8 @@ export const trainerCombatFeatureSources = (sheet: TrainerSheet | null | undefin
   for (const trainerClass of sheet.classes ?? []) addFeatureSource(out, seen, { name: featureName(trainerClass) }, trainerClass.name)
 
   for (const feature of sheet.features ?? []) {
-    for (const name of selectedGrantedFeatureNames(feature)) {
-      addFeatureSource(out, seen, { name }, feature.name)
+    for (const selectedFeature of selectedGrantedFeatures(feature)) {
+      addFeatureSource(out, seen, selectedFeature, feature.name)
     }
   }
 

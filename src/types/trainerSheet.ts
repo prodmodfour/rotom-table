@@ -93,6 +93,8 @@ export interface TrainerSkillBackground {
 /* edges.json — minimal extra fields here for sheet-specific notes).  */
 /* ------------------------------------------------------------------ */
 
+// Dotted keys represent nested selections, e.g. a Dilettante Feature choice of
+// Tutoring can store the mastered Move as `feature.move`.
 export type TrainerEntryChoices = Record<string, string>
 
 export interface TrainerFeatureEntry {

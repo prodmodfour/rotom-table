@@ -16,8 +16,10 @@ export interface TrainerSubchoiceDefinition {
   options: readonly EditableCellOption[]
   placeholder?: string
   legacyField?: 'basicSkill'
+  legacyKeys?: readonly string[]
   referenceKinds?: readonly TrainerSubchoiceReferenceKind[]
   descriptions?: Readonly<Record<string, string>>
+  subchoicesByValue?: Readonly<Record<string, readonly TrainerSubchoiceDefinition[]>>
 }
 
 export interface TrainerSubchoiceDescription {
@@ -370,14 +372,17 @@ const chroniclerArchiveDescriptions: Readonly<Record<string, string>> = {
   'Technique Archive': 'You may place Records of Moves in your Technique Archive. You and your Pokémon gain +2 Evasion against Moves in your Technique Archives.',
   'Travel Archive': 'You may place Records of Locations in your Travel Archive. When you gain Travel Archive, choose Keen Eye or Perception. While you are in a Location in your Travel Archive, you have the chosen Ability and gain a +2 bonus to Perception Checks to notice the environment.',
 }
+const travelArchiveAbilitySelector = limitedAbilitySelector('travelArchiveAbility', 'Travel ability', ['Keen Eye', 'Perception'])
 const chroniclerArchiveSelector: TrainerSubchoiceDefinition = {
   key: 'archive',
   label: 'Archive',
   placeholder: 'Choose archive',
   options: options(['Profile Archive', 'Technique Archive', 'Travel Archive']),
   descriptions: chroniclerArchiveDescriptions,
+  subchoicesByValue: {
+    'Travel Archive': [travelArchiveAbilitySelector],
+  },
 }
-const travelArchiveAbilitySelector = limitedAbilitySelector('travelArchiveAbility', 'Travel ability', ['Keen Eye', 'Perception'])
 
 const martialAbilitySelector = limitedAbilitySelector(
   'ability',
@@ -488,7 +493,7 @@ const featureChoiceMap = defineChoiceMap([
   [['Chakra Crystal'], [statSelector]],
   [['Rainbow Gem'], [statSelector]],
   [['Researcher'], [researcherFieldSelector, secondResearcherFieldSelector]],
-  [['Chronicler', 'Archival Training'], [chroniclerArchiveSelector, travelArchiveAbilitySelector]],
+  [['Chronicler', 'Archival Training'], [chroniclerArchiveSelector]],
   [['Playing God'], [speciesSelector]],
   [['Weather Systems'], [limitedMoveSelector('move', 'Move', ['Hail', 'Rain Dance', 'Sandstorm', 'Sunny Day'])]],
   [['Survivalist'], [terrainSelector]],
@@ -536,14 +541,6 @@ const edgeChoiceMap = defineChoiceMap([
   [['Elemental Connection'], [typeSelector]],
 ])
 
-export const trainerFeatureSubchoices = (
-  feature: Pick<TrainerFeatureEntry, 'name'>,
-): readonly TrainerSubchoiceDefinition[] => featureChoiceMap.get(entryBaseSlug(feature)) ?? []
-
-export const trainerEdgeSubchoices = (
-  edge: Pick<TrainerEdgeEntry, 'name'>,
-): readonly TrainerSubchoiceDefinition[] => edgeChoiceMap.get(entryBaseSlug(edge)) ?? []
-
 const entryChoices = (entry: TrainerChoiceEntry): Record<string, string> | undefined => entry.choices
 
 const legacySelectionValue = (
@@ -556,11 +553,29 @@ const legacySelectionValue = (
   return ''
 }
 
+const storedSelectionValue = (
+  entry: TrainerChoiceEntry,
+  definition: TrainerSubchoiceDefinition,
+): string => {
+  const choices = entryChoices(entry)
+  if (!choices) return ''
+  const storedValue = choices[definition.key]
+  if (storedValue) return storedValue
+  for (const legacyKey of definition.legacyKeys ?? []) {
+    const legacyValue = choices[legacyKey]
+    if (legacyValue) return legacyValue
+  }
+  return ''
+}
+
+const isNestedSubchoiceDefinition = (definition: TrainerSubchoiceDefinition): boolean => definition.key.includes('.')
+
 const parentheticalSelectionValue = (
   entry: TrainerChoiceEntry,
   definition: TrainerSubchoiceDefinition,
   definitions: readonly TrainerSubchoiceDefinition[],
 ): string => {
+  if (isNestedSubchoiceDefinition(definition)) return ''
   const raw = trailingChoiceText(entry.name ?? '')
   if (!raw) return ''
   const tokens = splitChoiceTokens(raw)
@@ -577,11 +592,105 @@ export const trainerSubchoiceValue = (
   const legacyValue = legacySelectionValue(entry, definition)
   if (legacyValue) return coerceChoiceValue(definition, legacyValue)
 
-  const storedValue = entryChoices(entry)?.[definition.key]
+  const storedValue = storedSelectionValue(entry, definition)
   if (storedValue) return coerceChoiceValue(definition, storedValue)
 
   return parentheticalSelectionValue(entry, definition, definitions)
 }
+
+const NESTED_SUBCHOICE_MAX_DEPTH = 6
+
+type NestedChoiceReferenceKind = Extract<TrainerSubchoiceReferenceKind, 'edge' | 'feature'>
+
+const isNestedChoiceReferenceKind = (kind: TrainerSubchoiceReferenceKind): kind is NestedChoiceReferenceKind => (
+  kind === 'edge' || kind === 'feature'
+)
+
+const nestedReferenceKinds = (definition: TrainerSubchoiceDefinition): NestedChoiceReferenceKind[] => (
+  (definition.referenceKinds ?? []).filter(isNestedChoiceReferenceKind)
+)
+
+const referencedSubchoiceDefinitions = (
+  kind: NestedChoiceReferenceKind,
+  name: string,
+): readonly TrainerSubchoiceDefinition[] => {
+  const slug = toSlug(stripTrainerEntryChoiceSuffix(name))
+  return kind === 'feature'
+    ? featureChoiceMap.get(slug) ?? []
+    : edgeChoiceMap.get(slug) ?? []
+}
+
+const explicitSubchoicesForValue = (
+  definition: TrainerSubchoiceDefinition,
+  value: string,
+): readonly TrainerSubchoiceDefinition[] => {
+  const subchoicesByValue = definition.subchoicesByValue
+  if (!subchoicesByValue) return []
+  const exact = subchoicesByValue[value]
+  if (exact) return exact
+  const normalizedValue = normalizeChoiceToken(value)
+  const loose = Object.entries(subchoicesByValue).find(([key]) => normalizeChoiceToken(key) === normalizedValue)
+  return loose?.[1] ?? []
+}
+
+const uniqueStrings = (values: readonly string[]): string[] => [...new Set(values.filter(Boolean))]
+
+const scopedNestedDefinition = (
+  parent: TrainerSubchoiceDefinition,
+  definition: TrainerSubchoiceDefinition,
+  preserveLegacyKey = false,
+): TrainerSubchoiceDefinition => {
+  const { legacyField: _legacyField, legacyKeys, ...rest } = definition
+  return {
+    ...rest,
+    key: `${parent.key}.${definition.key}`,
+    label: `${parent.label} / ${definition.label}`,
+    legacyKeys: preserveLegacyKey ? uniqueStrings([...(legacyKeys ?? []), definition.key]) : legacyKeys,
+  }
+}
+
+const resolveTrainerSubchoices = (
+  entry: TrainerChoiceEntry,
+  baseDefinitions: readonly TrainerSubchoiceDefinition[],
+  seenReferences: ReadonlySet<string> = new Set(),
+  depth = 0,
+): readonly TrainerSubchoiceDefinition[] => {
+  if (depth >= NESTED_SUBCHOICE_MAX_DEPTH) return baseDefinitions
+
+  const resolved: TrainerSubchoiceDefinition[] = []
+  for (const definition of baseDefinitions) {
+    resolved.push(definition)
+
+    const value = trainerSubchoiceValue(entry, definition, baseDefinitions)
+    if (!value) continue
+
+    const explicitDefinitions = explicitSubchoicesForValue(definition, value)
+    if (explicitDefinitions.length) {
+      const scoped = explicitDefinitions.map((nestedDefinition) => scopedNestedDefinition(definition, nestedDefinition, true))
+      resolved.push(...resolveTrainerSubchoices(entry, scoped, seenReferences, depth + 1))
+    }
+
+    for (const kind of nestedReferenceKinds(definition)) {
+      const referenceKey = `${kind}:${toSlug(stripTrainerEntryChoiceSuffix(value))}`
+      if (seenReferences.has(referenceKey)) continue
+      const referencedDefinitions = referencedSubchoiceDefinitions(kind, value)
+      if (!referencedDefinitions.length) continue
+      const scoped = referencedDefinitions.map((nestedDefinition) => scopedNestedDefinition(definition, nestedDefinition))
+      const nextSeenReferences = new Set(seenReferences)
+      nextSeenReferences.add(referenceKey)
+      resolved.push(...resolveTrainerSubchoices(entry, scoped, nextSeenReferences, depth + 1))
+    }
+  }
+  return resolved
+}
+
+export const trainerFeatureSubchoices = (
+  feature: Pick<TrainerFeatureEntry, 'name' | 'choices'>,
+): readonly TrainerSubchoiceDefinition[] => resolveTrainerSubchoices(feature, featureChoiceMap.get(entryBaseSlug(feature)) ?? [])
+
+export const trainerEdgeSubchoices = (
+  edge: Pick<TrainerEdgeEntry, 'name' | 'choices' | 'basicSkill'>,
+): readonly TrainerSubchoiceDefinition[] => resolveTrainerSubchoices(edge, edgeChoiceMap.get(entryBaseSlug(edge)) ?? [])
 
 export const trainerSubchoiceDescriptions = (
   entry: TrainerChoiceEntry,
@@ -623,12 +732,46 @@ export const trainerSubchoiceDescriptionLines = (
   `${description.label} — ${description.choiceLabel || description.referenceName}: ${description.description}`
 ))
 
+const pruneEmptyChoices = (entry: TrainerChoiceEntry): void => {
+  if (entry.choices && Object.keys(entry.choices).length === 0) delete entry.choices
+}
+
+const deleteChoiceValue = (
+  entry: TrainerChoiceEntry,
+  definition: TrainerSubchoiceDefinition,
+): void => {
+  delete entry.choices?.[definition.key]
+  for (const legacyKey of definition.legacyKeys ?? []) delete entry.choices?.[legacyKey]
+}
+
+const explicitDescendantLegacyKeys = (definition: TrainerSubchoiceDefinition): string[] => uniqueStrings(
+  Object.values(definition.subchoicesByValue ?? {}).flatMap((definitions) => definitions.flatMap((child) => [
+    child.key,
+    ...(child.legacyKeys ?? []),
+    ...explicitDescendantLegacyKeys(child),
+  ])),
+)
+
+const clearDescendantSubchoiceValues = (
+  entry: TrainerChoiceEntry,
+  definition: TrainerSubchoiceDefinition,
+): void => {
+  if (!entry.choices) return
+  const nestedKeyPrefix = `${definition.key}.`
+  for (const key of Object.keys(entry.choices)) {
+    if (key.startsWith(nestedKeyPrefix)) delete entry.choices[key]
+  }
+  for (const key of explicitDescendantLegacyKeys(definition)) delete entry.choices[key]
+  pruneEmptyChoices(entry)
+}
+
 export const setTrainerSubchoiceValue = (
   entry: TrainerChoiceEntry,
   definition: TrainerSubchoiceDefinition,
   value: EditableCellValue,
 ): void => {
   const selection = coerceChoiceValue(definition, typeof value === 'string' ? value : '')
+  const previousSelection = trainerSubchoiceValue(entry, definition, [definition])
   entry.name = stripTrainerEntryChoiceSuffix(entry.name ?? '')
 
   if (definition.legacyField === 'basicSkill') {
@@ -638,14 +781,17 @@ export const setTrainerSubchoiceValue = (
     return
   }
 
+  if (previousSelection !== selection) clearDescendantSubchoiceValues(entry, definition)
+
   if (!selection) {
-    delete entry.choices?.[definition.key]
-    if (entry.choices && Object.keys(entry.choices).length === 0) delete entry.choices
+    deleteChoiceValue(entry, definition)
+    pruneEmptyChoices(entry)
     return
   }
 
   entry.choices ??= {}
   entry.choices[definition.key] = selection
+  for (const legacyKey of definition.legacyKeys ?? []) delete entry.choices[legacyKey]
 }
 
 export const clearTrainerSubchoiceValues = (entry: TrainerChoiceEntry): void => {
@@ -670,6 +816,14 @@ export const updateTrainerChoiceEntryName = <T extends TrainerChoiceEntry>(
 
   for (const [index, definition] of definitions.entries()) {
     const token = tokens[index] ?? (definitions.length === 1 ? parenthetical : '')
+    if (!token) continue
+    setTrainerSubchoiceValue(entry, definition, token)
+  }
+
+  const parsedDefinitionKeys = new Set(definitions.map((definition) => definition.key))
+  const expandedDefinitions = resolver(entry).filter((definition) => !parsedDefinitionKeys.has(definition.key))
+  for (const [index, definition] of expandedDefinitions.entries()) {
+    const token = tokens[definitions.length + index]
     if (!token) continue
     setTrainerSubchoiceValue(entry, definition, token)
   }
