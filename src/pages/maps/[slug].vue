@@ -19,6 +19,11 @@ import { useMapAccess, useMapGmModeGuard } from '~/composables/map-editor/useMap
 import { useMapActionEventSync } from '~/composables/map-editor/useMapActionEventSync'
 import { useMapActionMoveAnimations, type MapActionMoveAnimationsPublishHandler } from '~/composables/map-editor/useMapActionMoveAnimations'
 import { useMapActionMoveFeedback, type MapActionMoveFeedbackPublishHandler } from '~/composables/map-editor/useMapActionMoveFeedback'
+import {
+  useMapActionPokeballCapture,
+  type MapActionPokeballFeedbackPublishHandler,
+  type MapActionPokeballResultPublishHandler,
+} from '~/composables/map-editor/useMapActionPokeballCapture'
 import { useMapActionSplash, type MapActionSplashPublishHandler } from '~/composables/map-editor/useMapActionSplash'
 import {
   useMapDimensionControls,
@@ -485,6 +490,8 @@ const {
 let publishSyncedActionSplash: MapActionSplashPublishHandler | null = null
 let publishSyncedMoveAnimations: MapActionMoveAnimationsPublishHandler | null = null
 let publishSyncedMoveFeedback: MapActionMoveFeedbackPublishHandler | null = null
+let publishSyncedPokeballFeedback: MapActionPokeballFeedbackPublishHandler | null = null
+let publishSyncedPokeballResult: MapActionPokeballResultPublishHandler | null = null
 const {
   actionSplash,
   showActionSplash,
@@ -510,6 +517,22 @@ const {
 } = useMapActionMoveFeedback({
   publishMoveFeedback: (request) => publishSyncedMoveFeedback?.(request),
 })
+const {
+  remotePokeballCaptureFeedback,
+  remotePokeballCaptureResult,
+  remotePokeballCaptureError,
+  enqueueAndBroadcastPokeballThrow,
+  broadcastPokeballFeedback,
+  replayPokeballFeedback,
+  broadcastPokeballResult,
+  replayPokeballResult,
+  clearRemotePokeballCapture,
+  dismissRemotePokeballCaptureResult,
+} = useMapActionPokeballCapture({
+  enqueueAndBroadcastMoveAnimations,
+  publishPokeballFeedback: (request) => publishSyncedPokeballFeedback?.(request),
+  publishPokeballResult: (request) => publishSyncedPokeballResult?.(request),
+})
 
 const mapActionEventSync = useMapActionEventSync({
   slug,
@@ -524,21 +547,34 @@ const mapActionEventSync = useMapActionEventSync({
       await replayMoveAnimations(event.payload.events)
     },
     onMoveFeedback: (event) => {
+      clearRemotePokeballCapture()
       replayMoveFeedback(event.payload.feedback)
+    },
+    onPokeballFeedback: (event) => {
+      clearRemoteMoveFeedback()
+      replayPokeballFeedback(event.payload.feedback)
+    },
+    onPokeballResult: (event) => {
+      clearRemoteMoveFeedback()
+      replayPokeballResult(event.payload)
     },
   },
 })
 publishSyncedActionSplash = (request) => mapActionEventSync.publishActionSplash(request)
 publishSyncedMoveAnimations = (request) => mapActionEventSync.publishMoveAnimations(request)
 publishSyncedMoveFeedback = (request) => mapActionEventSync.publishMoveFeedback(request)
+publishSyncedPokeballFeedback = (request) => mapActionEventSync.publishPokeballFeedback(request)
+publishSyncedPokeballResult = (request) => mapActionEventSync.publishPokeballResult(request)
 
 watch(mapDataRevision, () => {
   clearRemoteMoveFeedback()
+  clearRemotePokeballCapture()
 })
 
 onBeforeUnmount(() => {
   clearActionSplash()
   clearRemoteMoveFeedback()
+  clearRemotePokeballCapture()
 })
 
 let expireActiveOrdersAfterInitiativeAdvance: (advance: {
@@ -716,6 +752,7 @@ const {
   onMoveUse: (event) => showActionSplash({ userId: event.userId, actionName: event.moveName }),
   onMoveFeedback: (event) => {
     clearRemoteMoveFeedback()
+    clearRemotePokeballCapture()
     broadcastMoveFeedback(event.feedback)
   },
   onBeforeNonImmediateAction: () => {
@@ -866,10 +903,32 @@ const {
     actionName: event.pokeballName,
     verb: 'throws',
   }),
+  onPokeballThrow: (event) => {
+    clearRemoteMoveFeedback()
+    clearRemotePokeballCapture()
+    enqueueAndBroadcastPokeballThrow(event)
+  },
+  onPokeballFeedback: (event) => {
+    clearRemoteMoveFeedback()
+    clearRemotePokeballCapture()
+    broadcastPokeballFeedback(event.feedback)
+  },
+  onPokeballResult: (event) => {
+    broadcastPokeballResult(event)
+  },
 })
 
+const displayedPokeballCaptureResult = computed(() => (
+  pokeballCaptureResult.value ?? remotePokeballCaptureResult.value
+))
+
+const dismissDisplayedPokeballCaptureResult = () => {
+  if (pokeballCaptureResult.value) dismissPokeballCaptureResult()
+  else dismissRemotePokeballCaptureResult()
+}
+
 const pokeballCaptureTrainerAccentColor = computed(() => {
-  const result = pokeballCaptureResult.value
+  const result = displayedPokeballCaptureResult.value
   if (!result) return null
 
   const trainerToken = spawnedPokemon.value.find((pokemon) => pokemon.id === result.trainerId)
@@ -891,6 +950,7 @@ const actionAutomationTargeting = computed(() =>
 const actionAutomationFeedback = computed(() => (
   moveAutomationFeedback.value
   ?? pokeballCaptureFeedback.value
+  ?? remotePokeballCaptureFeedback.value
   ?? remoteMoveAutomationFeedback.value
 ))
 
@@ -903,6 +963,7 @@ const openMoveAutomationFromContext = (payload: { id: string; moveName?: string 
 }
 
 const openPokeballCaptureFromContext = (payload: { id: string; pokeballName: string }) => {
+  clearRemotePokeballCapture()
   cancelMoveAutomationTargeting()
   cancelAbilityAutomationTargeting()
   cancelManeuverActionTargeting()
@@ -955,7 +1016,11 @@ const selectActionAutomationTarget = (targetId: string) => {
 }
 
 const sceneActionError = computed(() => (
-  documentTokenActions.lastError.value ?? tokenSheetMutationError.value ?? pokeballCaptureError.value ?? moveUsageError.value
+  documentTokenActions.lastError.value
+  ?? tokenSheetMutationError.value
+  ?? pokeballCaptureError.value
+  ?? remotePokeballCaptureError.value
+  ?? moveUsageError.value
 ))
 
 const cancelActionAutomationTargeting = () => {
@@ -1136,10 +1201,10 @@ useMapDimensionReconciliation({
 
     <template #modals>
       <PokeballCaptureResultModal
-        v-if="pokeballCaptureResult"
-        :result="pokeballCaptureResult"
+        v-if="displayedPokeballCaptureResult"
+        :result="displayedPokeballCaptureResult"
         :accent-color="pokeballCaptureTrainerAccentColor"
-        @close="dismissPokeballCaptureResult"
+        @close="dismissDisplayedPokeballCaptureResult"
       />
 
       <FieldEffectsMenuModal

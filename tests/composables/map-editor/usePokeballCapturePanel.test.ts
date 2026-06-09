@@ -61,6 +61,7 @@ const trainerSheet = (): TrainerSheet => ({
 const buildPanel = (
   applyCaptureOutcome = vi.fn(),
   onBeforePokeballThrow?: (event: { userId: string; pokeballName: string }) => unknown,
+  callbacks: Partial<Pick<Parameters<typeof usePokeballCapturePanel>[0], 'onPokeballThrow' | 'onPokeballFeedback' | 'onPokeballResult'>> = {},
 ) => {
   const trainer = trainerSheet()
   const map = ref(mapDoc())
@@ -75,6 +76,7 @@ const buildPanel = (
     canControlPlacement: (id) => id === 'trainer',
     applyCaptureOutcome,
     onBeforePokeballThrow,
+    ...callbacks,
     now: () => 100,
   })
 
@@ -154,6 +156,72 @@ describe('usePokeballCapturePanel', () => {
     expect(panel.pokeballCaptureFeedback.value).toMatchObject({
       phase: 'rolling',
       moveName: 'Throw Basic Ball',
+    })
+  })
+
+  it('notifies visual sync callbacks for throw, feedback, and result UI without waiting for mechanics', () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random')
+      .mockReturnValueOnce(0.99)
+      .mockReturnValueOnce(0)
+    const applyCaptureOutcome = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 250)))
+    const onPokeballThrow = vi.fn()
+    const onPokeballFeedback = vi.fn()
+    const onPokeballResult = vi.fn()
+    const { panel } = buildPanel(applyCaptureOutcome, undefined, {
+      onPokeballThrow,
+      onPokeballFeedback,
+      onPokeballResult,
+    })
+
+    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
+    panel.selectPokeballCaptureTarget('pidgey')
+
+    expect(onPokeballThrow).toHaveBeenCalledWith({
+      userId: 'trainer',
+      targetId: 'pidgey',
+      pokeballName: 'Basic Ball',
+      resultId: 'capture-trainer-pidgey-100',
+    })
+    expect(onPokeballFeedback).toHaveBeenCalledWith({
+      feedback: expect.objectContaining({
+        id: 'capture-trainer-pidgey-100',
+        userId: 'trainer',
+        targetId: 'pidgey',
+        moveName: 'Throw Basic Ball',
+        phase: 'rolling',
+      }),
+    })
+    expect(onPokeballResult).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(2100)
+
+    expect(onPokeballResult).toHaveBeenCalledWith({
+      trainerId: 'trainer',
+      result: expect.objectContaining({
+        id: 'capture-trainer-pidgey-100',
+        hit: true,
+        success: true,
+      }),
+      error: null,
+    })
+    expect(applyCaptureOutcome).toHaveBeenCalledTimes(1)
+  })
+
+  it('notifies result UI callbacks for a missed Poké Ball without exposing a modal result', () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    const onPokeballResult = vi.fn()
+    const { panel } = buildPanel(vi.fn(), undefined, { onPokeballResult })
+
+    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
+    panel.selectPokeballCaptureTarget('pidgey')
+    vi.advanceTimersByTime(2100)
+
+    expect(onPokeballResult).toHaveBeenCalledWith({
+      trainerId: 'trainer',
+      result: null,
+      error: 'The Poké Ball missed.',
     })
   })
 
