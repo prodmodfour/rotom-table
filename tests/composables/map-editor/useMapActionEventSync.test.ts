@@ -89,6 +89,11 @@ const realtimeMapActionEvent = (
   ...overrides,
 })
 
+const uniqueRemoteCopy = (event: MapActionEventEnvelope): MapActionEventEnvelope => ({
+  ...event,
+  id: `${event.id}-unique`,
+} as MapActionEventEnvelope)
+
 const latestHandler = () => {
   const subscription = mocks.realtimeSubscriptions.at(-1)
   if (!subscription) throw new Error('expected realtime subscription')
@@ -185,7 +190,7 @@ describe('useMapActionEventSync', () => {
     expect(originalEvents[0]?.createdAtMs).toBe(1_000)
   })
 
-  it('dispatches each supported remote visual event kind to its matching handler', () => {
+  it('ignores local echo realtime events before dispatching any supported visual handler', () => {
     const handlers = {
       onActionSplash: vi.fn(),
       onMoveAnimations: vi.fn(),
@@ -195,27 +200,106 @@ describe('useMapActionEventSync', () => {
     }
     useMapActionEventSync({ slug: 'arena', clientId: 'local-client', handlers })
     const handler = latestHandler()
+    const events = [
+      mapActionEvent('action-splash', { actionName: 'Growl' }),
+      mapActionEvent('move-animations', { events: [moveAnimationEvent] }),
+      mapActionEvent('move-feedback', { feedback: feedbackState }),
+      mapActionEvent('pokeball-feedback', {
+        feedback: { ...feedbackState, id: 'pokeball-feedback-1', moveName: 'Throw Basic Ball' },
+      }),
+      mapActionEvent('pokeball-result', {
+        result: null,
+        error: 'The Poké Ball missed.',
+      }),
+    ]
+
+    for (const event of events) {
+      const echo = { ...event, sourceClientId: 'local-client' } as MapActionEventEnvelope
+      handler(realtimeMapActionEvent(echo, { clientId: 'local-client' }))
+    }
+
+    expect(handlers.onActionSplash).not.toHaveBeenCalled()
+    expect(handlers.onMoveAnimations).not.toHaveBeenCalled()
+    expect(handlers.onMoveFeedback).not.toHaveBeenCalled()
+    expect(handlers.onPokeballFeedback).not.toHaveBeenCalled()
+    expect(handlers.onPokeballResult).not.toHaveBeenCalled()
+  })
+
+  it('dispatches each supported remote visual event kind once per unique event id', () => {
+    const handlers = {
+      onActionSplash: vi.fn(),
+      onMoveAnimations: vi.fn(),
+      onMoveFeedback: vi.fn(),
+      onPokeballFeedback: vi.fn(),
+      onPokeballResult: vi.fn(),
+    }
+    useMapActionEventSync({
+      slug: 'arena',
+      clientId: 'local-client',
+      nowMs: () => 9_000,
+      handlers,
+    })
+    const handler = latestHandler()
 
     const splash = mapActionEvent('action-splash', { actionName: 'Growl' })
+    const splashUnique = uniqueRemoteCopy(splash)
     const animations = mapActionEvent('move-animations', { events: [moveAnimationEvent] })
+    const animationsUnique = uniqueRemoteCopy(animations)
     const moveFeedback = mapActionEvent('move-feedback', { feedback: feedbackState })
+    const moveFeedbackUnique = uniqueRemoteCopy(moveFeedback)
     const pokeballFeedback = mapActionEvent('pokeball-feedback', {
       feedback: { ...feedbackState, id: 'pokeball-feedback-1', moveName: 'Throw Basic Ball' },
     })
+    const pokeballFeedbackUnique = uniqueRemoteCopy(pokeballFeedback)
     const pokeballResult = mapActionEvent('pokeball-result', {
       result: null,
       error: 'The Poké Ball missed.',
     })
+    const pokeballResultUnique = uniqueRemoteCopy(pokeballResult)
 
-    for (const event of [splash, animations, moveFeedback, pokeballFeedback, pokeballResult]) {
+    for (const [event, uniqueEvent] of [
+      [splash, splashUnique],
+      [animations, animationsUnique],
+      [moveFeedback, moveFeedbackUnique],
+      [pokeballFeedback, pokeballFeedbackUnique],
+      [pokeballResult, pokeballResultUnique],
+    ] as const) {
       handler(realtimeMapActionEvent(event))
+      handler(realtimeMapActionEvent(event))
+      handler(realtimeMapActionEvent(uniqueEvent))
     }
 
-    expect(handlers.onActionSplash).toHaveBeenCalledWith(splash)
-    expect(handlers.onMoveAnimations).toHaveBeenCalledTimes(1)
-    expect(handlers.onMoveFeedback).toHaveBeenCalledWith(moveFeedback)
-    expect(handlers.onPokeballFeedback).toHaveBeenCalledWith(pokeballFeedback)
-    expect(handlers.onPokeballResult).toHaveBeenCalledWith(pokeballResult)
+    expect(handlers.onActionSplash).toHaveBeenCalledTimes(2)
+    expect(handlers.onActionSplash).toHaveBeenNthCalledWith(1, splash)
+    expect(handlers.onActionSplash).toHaveBeenNthCalledWith(2, splashUnique)
+
+    expect(handlers.onMoveAnimations).toHaveBeenCalledTimes(2)
+    expect(handlers.onMoveAnimations).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      id: animations.id,
+      kind: 'move-animations',
+      payload: {
+        events: [expect.objectContaining({ id: moveAnimationEvent.id, createdAtMs: 9_000 })],
+      },
+    }))
+    expect(handlers.onMoveAnimations).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      id: animationsUnique.id,
+      kind: 'move-animations',
+      payload: {
+        events: [expect.objectContaining({ id: moveAnimationEvent.id, createdAtMs: 9_000 })],
+      },
+    }))
+
+    expect(handlers.onMoveFeedback).toHaveBeenCalledTimes(2)
+    expect(handlers.onMoveFeedback).toHaveBeenNthCalledWith(1, moveFeedback)
+    expect(handlers.onMoveFeedback).toHaveBeenNthCalledWith(2, moveFeedbackUnique)
+
+    expect(handlers.onPokeballFeedback).toHaveBeenCalledTimes(2)
+    expect(handlers.onPokeballFeedback).toHaveBeenNthCalledWith(1, pokeballFeedback)
+    expect(handlers.onPokeballFeedback).toHaveBeenNthCalledWith(2, pokeballFeedbackUnique)
+
+    expect(handlers.onPokeballResult).toHaveBeenCalledTimes(2)
+    expect(handlers.onPokeballResult).toHaveBeenNthCalledWith(1, pokeballResult)
+    expect(handlers.onPokeballResult).toHaveBeenNthCalledWith(2, pokeballResultUnique)
   })
 
   it('uses reactive slug/profile values when publishing future local events', async () => {
