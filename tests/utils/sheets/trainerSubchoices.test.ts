@@ -64,4 +64,34 @@ describe('trainer subchoice helpers', () => {
       },
     })
   })
+
+  it('exposes Capture Specialist technique choices', () => {
+    const feature: TrainerFeatureEntry = { name: 'Capture Specialist' }
+    const definitions = trainerFeatureSubchoices(feature)
+
+    expect(definitions.map((definition) => definition.key)).toEqual(['captureTechnique', 'captureTechnique2'])
+    expect(trainerFeatureSubchoices({ name: 'Advanced Capture Techniques' }).map((definition) => definition.key))
+      .toEqual(['captureTechnique', 'captureTechnique2'])
+    expect(definitions[0].options.map((option) => option.value)).toEqual([
+      'Capture Skills',
+      'Curve Ball',
+      'Devitalizing Throw',
+      'Fast Pitch',
+      'Snare',
+      'Tools of the Trade',
+      'Catch Combo',
+      'False Strike',
+      'Relentless Pursuit',
+    ])
+
+    updateTrainerChoiceEntryName(feature, 'Capture Specialist (Curve Ball, Fast Pitch)', trainerFeatureSubchoices)
+
+    expect(feature).toMatchObject({
+      name: 'Capture Specialist',
+      choices: {
+        captureTechnique: 'Curve Ball',
+        captureTechnique2: 'Fast Pitch',
+      },
+    })
+  })
 })

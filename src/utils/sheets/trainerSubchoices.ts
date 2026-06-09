@@ -110,6 +110,17 @@ const skillCategoryOptions = options(['Body', 'Mind', 'Spirit'])
 const damageClassOptions = options(['Physical', 'Special'])
 const tasteOptions = options(['Salty', 'Sour', 'Spicy', 'Dry', 'Sweet'])
 const equipmentSlotOptions = options(['Accessory', 'Head', 'Main Hand', 'Off-Hand'])
+const captureTechniqueOptions = options([
+  'Capture Skills',
+  'Curve Ball',
+  'Devitalizing Throw',
+  'Fast Pitch',
+  'Snare',
+  'Tools of the Trade',
+  'Catch Combo',
+  'False Strike',
+  'Relentless Pursuit',
+])
 
 const moveOptions: readonly EditableCellOption[] = moves.map((move) => option(move.name))
 const featureOptions: readonly EditableCellOption[] = features.map((feature) => option(feature.name))
@@ -154,6 +165,18 @@ const moveSelector: TrainerSubchoiceDefinition = {
   label: 'Move',
   placeholder: 'Choose move',
   options: moveOptions,
+}
+const captureTechniqueSelector: TrainerSubchoiceDefinition = {
+  key: 'captureTechnique',
+  label: 'Technique 1',
+  placeholder: 'Choose technique',
+  options: captureTechniqueOptions,
+}
+const secondCaptureTechniqueSelector: TrainerSubchoiceDefinition = {
+  key: 'captureTechnique2',
+  label: 'Technique 2',
+  placeholder: 'Choose technique',
+  options: captureTechniqueOptions,
 }
 const limitedAbilitySelector = (
   key: string,
@@ -294,6 +317,10 @@ const featureChoiceMap = defineChoiceMap([
     },
   ]],
   [['Elite Trainer'], [trainingFeatureSelector]],
+  [['Capture Specialist', 'Advanced Capture Techniques'], [
+    captureTechniqueSelector,
+    secondCaptureTechniqueSelector,
+  ]],
   [['Commander'], [orderFeatureSelector]],
   [['Dilettante'], [edgeSelector, featureSelector]],
   [['Effective Methods'], [limitedAbilitySelector('ability', 'Ability', ['Exploit', 'Tolerance'])]],
