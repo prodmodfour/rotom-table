@@ -195,6 +195,70 @@ describe('save map use case', () => {
     expect(result.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
   })
 
+  it('merges controlled player combat log appends from whole-map saves', () => {
+    const existingMoveLogEntry = {
+      at: 100,
+      userId: 'linked-token',
+      userName: 'Pikachu',
+      moveName: 'Quick Attack',
+      lines: ['Pikachu used Quick Attack.'],
+    }
+    const existing = baseMap({
+      metadata: {
+        owner: 'gm',
+        moveLog: [existingMoveLogEntry],
+      },
+    })
+    const controlledMoveLogEntry = {
+      at: 250,
+      userId: 'linked-token',
+      userName: 'Pikachu',
+      moveName: 'Thunderbolt',
+      lines: ['Pikachu used Thunderbolt.', 'Giovanni: 22 damage.'],
+    }
+    const blockedMoveLogEntry = {
+      at: 300,
+      userId: 'unlinked-token',
+      userName: 'Giovanni',
+      moveName: 'Pay Day',
+      lines: ['Giovanni used Pay Day.'],
+    }
+    const controlledCaptureLogEntry = {
+      at: 350,
+      userId: 'linked-token',
+      userName: 'Pikachu',
+      actionName: 'Throw Basic Ball',
+      lines: ['Pikachu threw Basic Ball at Rattata.', 'Result: Rattata broke free.'],
+    }
+    const incoming = baseMap({
+      metadata: {
+        owner: 'player',
+        moveLog: [existingMoveLogEntry, controlledMoveLogEntry, blockedMoveLogEntry],
+        captureLog: [controlledCaptureLogEntry],
+      },
+    })
+    const { deps, writes } = createDeps(existing, { now: 3000 })
+
+    const result = saveMapUseCase({
+      role: 'player',
+      slug: 'arena',
+      map: incoming,
+      clientId: 'player-client',
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }]),
+    }, deps)
+
+    expect(writes).toHaveLength(1)
+    const persisted = writes[0]!.map
+    expect(persisted.metadata).toEqual({
+      owner: 'gm',
+      moveLog: [existingMoveLogEntry, controlledMoveLogEntry],
+      captureLog: [controlledCaptureLogEntry],
+    })
+    expect(persisted.updatedAt).toBe(3000)
+    expect(result.map).toBe(persisted)
+    expect(result.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
+  })
+
   it('does not write when an unlinked player only attempts blocked map or token edits', () => {
     const existing = baseMap()
     const incoming = baseMap({
