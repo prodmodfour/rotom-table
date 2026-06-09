@@ -1,4 +1,8 @@
 import { features, findFeature } from '~~/data/ptuReference'
+import {
+  trainerFeatureSubchoices,
+  trainerSubchoiceDescriptionLines,
+} from '~/utils/sheets/trainerSubchoices'
 import type { PtuFeature } from '~/types/ptuReference'
 import type { TrainerFeatureEntry } from '~/types/trainerSheet'
 
@@ -50,12 +54,21 @@ const formatFeatureDataValue = (value: PtuFeature[TrainerFeatureDataField] | und
   return value
 }
 
+const appendFeatureSubchoiceDescriptions = (
+  feature: Pick<TrainerFeatureEntry, 'name' | 'choices'>,
+  parentEffect: string,
+): string => {
+  const lines = trainerSubchoiceDescriptionLines(feature, trainerFeatureSubchoices(feature))
+  return [parentEffect, ...lines].filter(Boolean).join('\n\n')
+}
+
 export const trainerFeatureFieldValue = (
-  feature: Pick<TrainerFeatureEntry, 'name'>,
+  feature: Pick<TrainerFeatureEntry, 'name' | 'choices'>,
   field: TrainerFeatureDataField,
 ): string => {
   if (field === 'name') return feature.name
   const reference = resolveTrainerFeatureReference(feature)
   if (!reference) return ''
-  return formatFeatureDataValue(reference[field])
+  const value = formatFeatureDataValue(reference[field])
+  return field === 'effect' ? appendFeatureSubchoiceDescriptions(feature, value) : value
 }

@@ -1,4 +1,4 @@
-import { edges, features, moves, toSlug } from '~~/data/ptuReference'
+import { edges, features, findAbility, findEdge, findFeature, findMove, moves, toSlug } from '~~/data/ptuReference'
 import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
 import type { EditableCellOption, EditableCellValue } from '~/utils/editableCell'
 import type { TrainerEdgeEntry, TrainerFeatureEntry, TrainerSkillKey } from '~/types/trainerSheet'
@@ -8,12 +8,25 @@ export type TrainerChoiceResolver<T extends TrainerChoiceEntry = TrainerChoiceEn
   entry: T,
 ) => readonly TrainerSubchoiceDefinition[]
 
+export type TrainerSubchoiceReferenceKind = 'ability' | 'edge' | 'feature' | 'move'
+
 export interface TrainerSubchoiceDefinition {
   key: string
   label: string
   options: readonly EditableCellOption[]
   placeholder?: string
   legacyField?: 'basicSkill'
+  referenceKinds?: readonly TrainerSubchoiceReferenceKind[]
+  descriptions?: Readonly<Record<string, string>>
+}
+
+export interface TrainerSubchoiceDescription {
+  key: string
+  label: string
+  choiceLabel: string
+  referenceKind?: TrainerSubchoiceReferenceKind
+  referenceName: string
+  description: string
 }
 
 const option = (value: string, label = value): EditableCellOption => ({ value, label })
@@ -22,6 +35,79 @@ const options = (values: readonly string[]): readonly EditableCellOption[] => va
 const optionLabelByValue = (definition: TrainerSubchoiceDefinition): Map<string, string> => (
   new Map(definition.options.map((opt) => [opt.value, opt.label]))
 )
+
+const compactDescription = (...parts: readonly (string | null | undefined)[]): string => parts
+  .map((part) => part?.trim() ?? '')
+  .filter((part) => part && !/^none$/i.test(part))
+  .join('\n')
+
+const customDescription = (
+  definition: TrainerSubchoiceDefinition,
+  value: string,
+): Pick<TrainerSubchoiceDescription, 'referenceName' | 'description'> | null => {
+  const description = compactDescription(definition.descriptions?.[value])
+  if (!description) return null
+  return {
+    referenceName: trainerSubchoiceDisplayValue(definition, value) || value,
+    description,
+  }
+}
+
+const featureOrEdgeDescription = (
+  effect: string | null | undefined,
+  frequency: string | null | undefined,
+): string => compactDescription(effect, effect ? undefined : frequency)
+
+const inlineDescription = (...parts: readonly (string | null | undefined)[]): string => parts
+  .map((part) => part?.trim() ?? '')
+  .filter(Boolean)
+  .join(' · ')
+
+const moveReferenceDescription = (name: string): Pick<TrainerSubchoiceDescription, 'referenceName' | 'description'> | null => {
+  const reference = findMove(name)
+  if (!reference) return null
+  const damage = reference.damage_base == null
+    ? ''
+    : `DB ${reference.damage_base}${reference.damage_roll ? ` (${reference.damage_roll})` : ''}`
+  const ac = reference.ac == null ? '' : `AC ${reference.ac}`
+  const summary = inlineDescription(
+    reference.type,
+    reference.frequency,
+    reference.damage_class,
+    damage,
+    ac,
+    reference.range ? `Range: ${reference.range}` : '',
+  )
+  const description = compactDescription(summary, reference.effect, reference.special ? `Special: ${reference.special}` : undefined)
+  return description ? { referenceName: reference.name, description } : null
+}
+
+const referenceDescription = (
+  kind: TrainerSubchoiceReferenceKind,
+  name: string,
+): Pick<TrainerSubchoiceDescription, 'referenceName' | 'description'> | null => {
+  switch (kind) {
+    case 'ability': {
+      const reference = findAbility(name)
+      const description = compactDescription(reference?.effect, reference?.bonus)
+      return reference && description ? { referenceName: reference.name, description } : null
+    }
+    case 'edge': {
+      const reference = findEdge(name)
+      const description = featureOrEdgeDescription(reference?.effect, reference?.frequency)
+      return reference && description ? { referenceName: reference.name, description } : null
+    }
+    case 'feature': {
+      const reference = findFeature(name)
+      const description = featureOrEdgeDescription(reference?.effect, reference?.frequency)
+      return reference && description ? { referenceName: reference.name, description } : null
+    }
+    case 'move':
+      return moveReferenceDescription(name)
+    default:
+      return null
+  }
+}
 
 const normalizeChoiceToken = (value: unknown): string => (
   typeof value === 'string'
@@ -121,6 +207,14 @@ const captureTechniqueOptions = options([
   'False Strike',
   'Relentless Pursuit',
 ])
+const captureTechniqueDescriptions: Readonly<Record<string, string>> = {
+  'Capture Skills': 'Static\nYou gain a Skill Edge for which you qualify. It must be applied to Acrobatics, Athletics, Stealth, Survival, Guile, or Perception. You may take Capture Skills up to two times.',
+  'Curve Ball': 'Static\nWhenever you hit a target with a Poké Ball, you may deal damage as if you had hit them with a Struggle Attack. This damage triggers before any of the Poké Ball’s functions, such as making a Capture Check or releasing a Pokémon.',
+  'Devitalizing Throw': '1 AP – Free Action\nTrigger: A Pokémon escapes from a Poké Ball you threw.\nChoose One Effect: The triggering target becomes Slowed; the triggering target loses one Combat Stage in a Stat of your choice; or the triggering target suffers a -3 penalty to their next Save Roll.',
+  'Fast Pitch': '1 AP – Standard Action, Priority (Advanced)\nYou immediately throw a Poké Ball.',
+  'Snare': 'Static\nYou subtract -10 from Capture Rolls made against Pokémon drawn into an encounter by Bait, that are currently distracted by Bait, or are in a Hand Net, Lasso, Weighted Net, or Stuck because of a Glue Cannon.',
+  'Tools of the Trade': 'Static\nAdd +2 to all Accuracy Rolls made with Poké Balls, Hand Nets, Lassos, Weighted Nets, and Glue Cannons. Add +2 to Athletics Checks made when reeling in a Pokémon with a Fishing Rod, and add +4 to 1d20 rolls made to see if a Pokémon is attracted by Bait or a Fishing Lure.',
+}
 
 const moveOptions: readonly EditableCellOption[] = moves.map((move) => option(move.name))
 const featureOptions: readonly EditableCellOption[] = features.map((feature) => option(feature.name))
@@ -165,18 +259,23 @@ const moveSelector: TrainerSubchoiceDefinition = {
   label: 'Move',
   placeholder: 'Choose move',
   options: moveOptions,
+  referenceKinds: ['move'],
 }
 const captureTechniqueSelector: TrainerSubchoiceDefinition = {
   key: 'captureTechnique',
   label: 'Technique 1',
   placeholder: 'Choose technique',
   options: captureTechniqueOptions,
+  referenceKinds: ['feature'],
+  descriptions: captureTechniqueDescriptions,
 }
 const secondCaptureTechniqueSelector: TrainerSubchoiceDefinition = {
   key: 'captureTechnique2',
   label: 'Technique 2',
   placeholder: 'Choose technique',
   options: captureTechniqueOptions,
+  referenceKinds: ['feature'],
+  descriptions: captureTechniqueDescriptions,
 }
 const limitedAbilitySelector = (
   key: string,
@@ -187,6 +286,7 @@ const limitedAbilitySelector = (
   label,
   placeholder: `Choose ${label.toLowerCase()}`,
   options: options(values),
+  referenceKinds: ['ability'],
 })
 
 const limitedMoveSelector = (
@@ -198,6 +298,7 @@ const limitedMoveSelector = (
   label,
   placeholder: `Choose ${label.toLowerCase()}`,
   options: options(values),
+  referenceKinds: ['move'],
 })
 
 const trainingFeatureSelector: TrainerSubchoiceDefinition = {
@@ -205,6 +306,7 @@ const trainingFeatureSelector: TrainerSubchoiceDefinition = {
   label: 'Training feature',
   placeholder: 'Choose feature',
   options: options(['Agility Training', 'Brutal Training', 'Focused Training', 'Inspired Training']),
+  referenceKinds: ['feature'],
 }
 
 const orderFeatureSelector: TrainerSubchoiceDefinition = {
@@ -212,6 +314,7 @@ const orderFeatureSelector: TrainerSubchoiceDefinition = {
   label: 'Orders feature',
   placeholder: 'Choose orders',
   options: options(['Ravager Orders', 'Marksman Orders', 'Trickster Orders', 'Guardian Orders', 'Precision Orders']),
+  referenceKinds: ['feature'],
 }
 
 const featureSelector: TrainerSubchoiceDefinition = {
@@ -219,6 +322,7 @@ const featureSelector: TrainerSubchoiceDefinition = {
   label: 'Feature',
   placeholder: 'Choose feature',
   options: featureOptions,
+  referenceKinds: ['feature'],
 }
 
 const edgeSelector: TrainerSubchoiceDefinition = {
@@ -226,6 +330,7 @@ const edgeSelector: TrainerSubchoiceDefinition = {
   label: 'Edge',
   placeholder: 'Choose edge',
   options: edgeOptions,
+  referenceKinds: ['edge'],
 }
 
 const researcherFieldOptions = options([
@@ -243,12 +348,14 @@ const researcherFieldSelector: TrainerSubchoiceDefinition = {
   label: 'Field 1',
   placeholder: 'Choose field',
   options: researcherFieldOptions,
+  referenceKinds: ['feature'],
 }
 const secondResearcherFieldSelector: TrainerSubchoiceDefinition = {
   key: 'researcherField2',
   label: 'Field 2',
   placeholder: 'Choose field',
   options: researcherFieldOptions,
+  referenceKinds: ['feature'],
 }
 
 const terrainSelector: TrainerSubchoiceDefinition = {
@@ -258,11 +365,17 @@ const terrainSelector: TrainerSubchoiceDefinition = {
   options: options(['Grassland', 'Forest', 'Wetlands', 'Ocean', 'Tundra', 'Mountain', 'Cave', 'Urban', 'Desert']),
 }
 
+const chroniclerArchiveDescriptions: Readonly<Record<string, string>> = {
+  'Profile Archive': 'You may place Records of Pokémon and Trainers in your Profile Archive. You gain a +2 bonus to Charm, Guile, Command, Intimidate, and Intuition Checks targeting Pokémon and Trainers in your Profile Archive.',
+  'Technique Archive': 'You may place Records of Moves in your Technique Archive. You and your Pokémon gain +2 Evasion against Moves in your Technique Archives.',
+  'Travel Archive': 'You may place Records of Locations in your Travel Archive. When you gain Travel Archive, choose Keen Eye or Perception. While you are in a Location in your Travel Archive, you have the chosen Ability and gain a +2 bonus to Perception Checks to notice the environment.',
+}
 const chroniclerArchiveSelector: TrainerSubchoiceDefinition = {
   key: 'archive',
   label: 'Archive',
   placeholder: 'Choose archive',
   options: options(['Profile Archive', 'Technique Archive', 'Travel Archive']),
+  descriptions: chroniclerArchiveDescriptions,
 }
 const travelArchiveAbilitySelector = limitedAbilitySelector('travelArchiveAbility', 'Travel ability', ['Keen Eye', 'Perception'])
 
@@ -308,12 +421,14 @@ const featureChoiceMap = defineChoiceMap([
       label: 'Technique',
       placeholder: 'Choose technique',
       options: options(['Field Clinic', 'Medic Training']),
+      referenceKinds: ['feature', 'edge'],
     },
     {
       key: 'doctorSupport',
       label: 'Support',
       placeholder: 'Choose support',
       options: options(['Nurse', 'First Aid Expertise']),
+      referenceKinds: ['feature'],
     },
   ]],
   [['Elite Trainer'], [trainingFeatureSelector]],
@@ -467,6 +582,46 @@ export const trainerSubchoiceValue = (
 
   return parentheticalSelectionValue(entry, definition, definitions)
 }
+
+export const trainerSubchoiceDescriptions = (
+  entry: TrainerChoiceEntry,
+  definitions: readonly TrainerSubchoiceDefinition[],
+): TrainerSubchoiceDescription[] => definitions.flatMap((definition) => {
+  const value = trainerSubchoiceValue(entry, definition, definitions)
+  if (!value) return []
+  const choiceLabel = trainerSubchoiceDisplayValue(definition, value)
+  const custom = customDescription(definition, value)
+  if (custom) {
+    return [{
+      key: definition.key,
+      label: definition.label,
+      choiceLabel,
+      referenceName: custom.referenceName,
+      description: custom.description,
+    }]
+  }
+
+  for (const kind of definition.referenceKinds ?? []) {
+    const reference = referenceDescription(kind, value)
+    if (!reference) continue
+    return [{
+      key: definition.key,
+      label: definition.label,
+      choiceLabel,
+      referenceKind: kind,
+      referenceName: reference.referenceName,
+      description: reference.description,
+    }]
+  }
+  return []
+})
+
+export const trainerSubchoiceDescriptionLines = (
+  entry: TrainerChoiceEntry,
+  definitions: readonly TrainerSubchoiceDefinition[],
+): string[] => trainerSubchoiceDescriptions(entry, definitions).map((description) => (
+  `${description.label} — ${description.choiceLabel || description.referenceName}: ${description.description}`
+))
 
 export const setTrainerSubchoiceValue = (
   entry: TrainerChoiceEntry,

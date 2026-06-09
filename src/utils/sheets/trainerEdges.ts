@@ -1,5 +1,9 @@
 import { edges, findEdge } from '~~/data/ptuReference'
 import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
+import {
+  trainerEdgeSubchoices,
+  trainerSubchoiceDescriptionLines,
+} from '~/utils/sheets/trainerSubchoices'
 import type { PtuEdge } from '~/types/ptuReference'
 import type { TrainerEdgeEntry, TrainerSkillKey } from '~/types/trainerSheet'
 
@@ -67,12 +71,21 @@ const formatEdgeDataValue = (value: PtuEdge[TrainerEdgeDataField] | undefined): 
   return value
 }
 
+const appendEdgeSubchoiceDescriptions = (
+  edge: Pick<TrainerEdgeEntry, 'name' | 'choices' | 'basicSkill'>,
+  parentEffect: string,
+): string => {
+  const lines = trainerSubchoiceDescriptionLines(edge, trainerEdgeSubchoices(edge))
+  return [parentEffect, ...lines].filter(Boolean).join('\n\n')
+}
+
 export const trainerEdgeFieldValue = (
-  edge: Pick<TrainerEdgeEntry, 'name'>,
+  edge: Pick<TrainerEdgeEntry, 'name' | 'choices' | 'basicSkill'>,
   field: TrainerEdgeDataField,
 ): string => {
   if (field === 'name') return edge.name
   const reference = resolveTrainerEdgeReference(edge)
   if (!reference) return ''
-  return formatEdgeDataValue(reference[field])
+  const value = formatEdgeDataValue(reference[field])
+  return field === 'effect' ? appendEdgeSubchoiceDescriptions(edge, value) : value
 }
