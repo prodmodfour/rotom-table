@@ -219,6 +219,7 @@ describe('useMoveAutomationPanel', () => {
       movelist: [{ name: 'Psywave' }],
     } as CharacterSheet
     const calls: string[] = []
+    const onMoveFeedback = vi.fn()
     const panel = useMoveAutomationPanel({
       map,
       spawnedPokemon: computed(() => [
@@ -234,6 +235,7 @@ describe('useMoveAutomationPanel', () => {
       modifyConditions: () => undefined,
       applyMoveFieldEffect: () => undefined,
       placeHazard: () => undefined,
+      onMoveFeedback,
     })
     const random = vi.spyOn(Math, 'random')
     random.mockReturnValue(0.1)
@@ -259,6 +261,16 @@ describe('useMoveAutomationPanel', () => {
         crit: false,
         damageLoss: 20,
       })
+      expect(onMoveFeedback).toHaveBeenCalledWith({
+        feedback: expect.objectContaining({
+          moveName: 'Psywave',
+          userId: 'user-token',
+          targetId: 'target-token',
+          phase: 'rolling',
+          damageLoss: 20,
+        }),
+      })
+      expect(calls).toEqual([])
 
       await vi.advanceTimersByTimeAsync(MOVE_FEEDBACK_DAMAGE_FINAL_MS)
 

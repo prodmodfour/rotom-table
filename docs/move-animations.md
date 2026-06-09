@@ -8,7 +8,7 @@ Basic move animations now play on the isometric map when a scripted move resolve
 
 These animations are visual-only: move automation, rolls, HP/status/combat-stage updates, token placement, logs, permissions, and saved map data remain the source of truth. If a VFX cue is skipped or fails, the move still resolves through the normal automation flow.
 
-When realtime is connected, planned move-animation batches are also sent as transient map action events so other authorized viewers on the same map can enqueue the same VFX. Each receiving browser still applies its own **Move VFX** toggle and reduced-motion preference, and remote VFX never apply gameplay mechanics or save animation data.
+When realtime is connected, planned move-animation batches are also sent as transient map action events so other authorized viewers on the same map can enqueue the same VFX. Move roll, hit/miss, crit, effectiveness, and damage feedback snapshots are likewise broadcast as transient visual events so other map viewers see the same overlay phases. Each receiving browser still applies its own **Move VFX** toggle and reduced-motion preference, and remote VFX/feedback never apply gameplay mechanics or save animation data.
 
 To reduce or disable motion:
 
@@ -565,6 +565,8 @@ Self-resolving moves use the same record-before-plan order: if usage recording f
 Accuracy-roll move VFX now derive their `startOffsetMs` values from the same phase durations used by `useMoveAutomationPanel` feedback timers: 650 ms for the rolling d20, 850 ms for the visible hit-roll formula, 600 ms for the hit/miss result, and 700 ms for the optional effectiveness phase. Launch/contact events start after the hit/miss callout has had its visible window, at 2100 ms. Hit flashes, miss puffs, and crit bursts start after the normal launch-travel duration, at 2600 ms.
 
 Semantic transaction follow-ups use a separate planner timing hint from the impact offset. If the feedback has a damage final phase, damage application and its callout wait until the launch plus quick impact cue has finished, at 2820 ms; optional effectiveness still appears at 2100 ms and remains visible before the damage result. Non-damage final condition/status feedback keeps the existing final visual resolution timing. If the feedback has no final resolution phase, semantic follow-ups use the impact offset. These offsets remain transient VFX hints only; they add no timers, persistence, gameplay changes, permission changes, or renderer loops, and the existing feedback transaction application remains authoritative.
+
+When a local accuracy-roll feedback sequence starts, the map page broadcasts a bounded `move-feedback` map action event containing the same feedback snapshot. Receiving tabs replay only the overlay phases through page-local remote feedback state; they do not call move automation or apply the transaction, and local move/Poké Ball feedback stays visually preferred over remote feedback if both are active.
 
 ### Permission and visibility invariants for VFX-065
 

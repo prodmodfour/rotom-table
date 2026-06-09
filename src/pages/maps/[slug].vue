@@ -18,6 +18,7 @@ import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTrac
 import { useMapAccess, useMapGmModeGuard } from '~/composables/map-editor/useMapAccess'
 import { useMapActionEventSync } from '~/composables/map-editor/useMapActionEventSync'
 import { useMapActionMoveAnimations, type MapActionMoveAnimationsPublishHandler } from '~/composables/map-editor/useMapActionMoveAnimations'
+import { useMapActionMoveFeedback, type MapActionMoveFeedbackPublishHandler } from '~/composables/map-editor/useMapActionMoveFeedback'
 import { useMapActionSplash, type MapActionSplashPublishHandler } from '~/composables/map-editor/useMapActionSplash'
 import {
   useMapDimensionControls,
@@ -483,6 +484,7 @@ const {
 
 let publishSyncedActionSplash: MapActionSplashPublishHandler | null = null
 let publishSyncedMoveAnimations: MapActionMoveAnimationsPublishHandler | null = null
+let publishSyncedMoveFeedback: MapActionMoveFeedbackPublishHandler | null = null
 const {
   actionSplash,
   showActionSplash,
@@ -500,6 +502,14 @@ const {
   enqueueLocalMoveAnimations,
   publishMoveAnimations: (request) => publishSyncedMoveAnimations?.(request),
 })
+const {
+  remoteMoveAutomationFeedback,
+  broadcastMoveFeedback,
+  replayMoveFeedback,
+  clearRemoteMoveFeedback,
+} = useMapActionMoveFeedback({
+  publishMoveFeedback: (request) => publishSyncedMoveFeedback?.(request),
+})
 
 const mapActionEventSync = useMapActionEventSync({
   slug,
@@ -513,13 +523,22 @@ const mapActionEventSync = useMapActionEventSync({
     onMoveAnimations: async (event) => {
       await replayMoveAnimations(event.payload.events)
     },
+    onMoveFeedback: (event) => {
+      replayMoveFeedback(event.payload.feedback)
+    },
   },
 })
 publishSyncedActionSplash = (request) => mapActionEventSync.publishActionSplash(request)
 publishSyncedMoveAnimations = (request) => mapActionEventSync.publishMoveAnimations(request)
+publishSyncedMoveFeedback = (request) => mapActionEventSync.publishMoveFeedback(request)
+
+watch(mapDataRevision, () => {
+  clearRemoteMoveFeedback()
+})
 
 onBeforeUnmount(() => {
   clearActionSplash()
+  clearRemoteMoveFeedback()
 })
 
 let expireActiveOrdersAfterInitiativeAdvance: (advance: {
@@ -695,6 +714,10 @@ const {
   recordMoveUsage,
   enqueueMoveAnimations: enqueueAndBroadcastMoveAnimations,
   onMoveUse: (event) => showActionSplash({ userId: event.userId, actionName: event.moveName }),
+  onMoveFeedback: (event) => {
+    clearRemoteMoveFeedback()
+    broadcastMoveFeedback(event.feedback)
+  },
   onBeforeNonImmediateAction: () => {
     attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
   },
@@ -865,7 +888,11 @@ const actionAutomationTargeting = computed(() =>
   ?? maneuverActionTargeting.value
   ?? orderActionTargeting.value,
 )
-const actionAutomationFeedback = computed(() => moveAutomationFeedback.value ?? pokeballCaptureFeedback.value)
+const actionAutomationFeedback = computed(() => (
+  moveAutomationFeedback.value
+  ?? pokeballCaptureFeedback.value
+  ?? remoteMoveAutomationFeedback.value
+))
 
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
   cancelPokeballCaptureTargeting()

@@ -106,6 +106,10 @@ type MaybePromise<T> = T | Promise<T>
 
 export type MoveAnimationEnqueueHandler = (events: readonly MoveAnimationEvent[]) => MaybePromise<unknown>
 
+export interface MoveAutomationFeedbackEvent {
+  feedback: MoveAutomationFeedbackState
+}
+
 type SheetUpdateOptions = { allowAnyTarget?: boolean }
 
 type MoveUsageRecordRequest = { placementId: string; moveName: string }
@@ -158,6 +162,7 @@ export interface UseMoveAutomationPanelOptions {
   enqueueMoveAnimations?: MoveAnimationEnqueueHandler
   onBeforeNonImmediateAction?: (event: MoveAutomationNonImmediateActionEvent) => void
   onMoveUse?: (event: MoveAutomationActionUseEvent) => MaybePromise<unknown>
+  onMoveFeedback?: (event: MoveAutomationFeedbackEvent) => MaybePromise<unknown>
   onRangedAttackOfOpportunity?: (event: MoveAutomationRangedAttackOfOpportunityEvent) => void
   now?: () => number
   maxLogEntries?: number
@@ -295,6 +300,7 @@ export const useMoveAutomationPanel = ({
   enqueueMoveAnimations = noopEnqueueMoveAnimations,
   onBeforeNonImmediateAction,
   onMoveUse,
+  onMoveFeedback,
   onRangedAttackOfOpportunity,
   now,
   maxLogEntries = DEFAULT_MAX_LOG_ENTRIES,
@@ -636,6 +642,20 @@ export const useMoveAutomationPanel = ({
 
   const notifyMoveUse = (request: Pick<ActiveMoveTargetingRequest, 'userId' | 'moveName'>): MaybePromise<unknown> =>
     onMoveUse?.({ userId: request.userId, moveName: request.moveName })
+
+  const warnMoveFeedbackEmissionFailure = (error: unknown) => {
+    console.warn('[useMoveAutomationPanel] move feedback callback failed', error)
+  }
+
+  const notifyMoveFeedback = (feedback: MoveAutomationFeedbackState) => {
+    if (!onMoveFeedback) return
+
+    try {
+      void Promise.resolve(onMoveFeedback({ feedback })).catch(warnMoveFeedbackEmissionFailure)
+    } catch (error) {
+      warnMoveFeedbackEmissionFailure(error)
+    }
+  }
 
   const notifyRangedAttackOfOpportunity = (
     request: ActiveMoveTargetingRequest,
@@ -1252,12 +1272,14 @@ export const useMoveAutomationPanel = ({
       scheduleFeedbackStep(finalDelay + FINAL_RESULT_VISIBLE_MS, () => {
         if (feedbackStillCurrent()) moveAutomationFeedback.value = null
       })
+      notifyMoveFeedback(feedback)
       return
     }
 
     scheduleFeedbackStep(outcomeDelay + HIT_RESULT_VISIBLE_MS, () => {
       if (feedbackStillCurrent()) moveAutomationFeedback.value = null
     })
+    notifyMoveFeedback(feedback)
   }
 
   const prependTransactionLogLine = (
