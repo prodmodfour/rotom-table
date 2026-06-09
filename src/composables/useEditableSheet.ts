@@ -89,8 +89,15 @@ export function useEditableSheet<T extends { slug: string }>(
     return typeof displayName === 'string' ? displayName.trim() : ''
   }
   const canSyncSlug = (): boolean => options.allowSlugSync?.() !== false
+  let slugSyncBaselineDisplayName = displayNameFor(initial)
+  const displayNameChangedSinceSlugSyncBaseline = (value: T): boolean => (
+    displayNameFor(value) !== slugSyncBaselineDisplayName
+  )
+  const shouldAllowSlugSyncFor = (value: T): boolean => (
+    canSyncSlug() && displayNameChangedSinceSlugSyncBaseline(value)
+  )
   const needsSlugSync = (value: T): boolean => {
-    if (!canSyncSlug()) return false
+    if (!shouldAllowSlugSyncFor(value)) return false
     const desiredSlug = slugify(displayNameFor(value))
     return Boolean(desiredSlug && desiredSlug !== value.slug)
   }
@@ -103,7 +110,7 @@ export function useEditableSheet<T extends { slug: string }>(
     clientId,
     profileContext: currentProfileContext(),
     requireSelectedPlayerProfile: requiresSelectedPlayerProfile(),
-    allowSlugSync: canSyncSlug(),
+    allowSlugSync: shouldAllowSlugSyncFor(sheet.value),
   })
 
   const jsonFor = (value: T): string => stablePersistableSheetJson(value)
@@ -134,6 +141,7 @@ export function useEditableSheet<T extends { slug: string }>(
       const incoming = deepCloneJson(payload.sheet)
       autosave.snapshot.markClean(incoming)
       sheet.value = incoming
+      slugSyncBaselineDisplayName = displayNameFor(incoming)
       if (incoming.slug) subscribeToSheetSlug(incoming.slug)
       saveStatus.value = 'saved'
     } else if (event.type === 'renamed' && payload?.newSlug) {
@@ -146,6 +154,7 @@ export function useEditableSheet<T extends { slug: string }>(
         sheet.value.slug = payload.newSlug
         autosave.snapshot.markClean(sheet.value)
       }
+      slugSyncBaselineDisplayName = displayNameFor(sheet.value)
       subscribeToSheetSlug(payload.newSlug)
       renamedTo.value = payload.newSlug
       saveStatus.value = 'saved'
@@ -186,10 +195,13 @@ export function useEditableSheet<T extends { slug: string }>(
 
         if (persistedSheet) {
           autosave.snapshot.markClean(persistedSheet)
+          slugSyncBaselineDisplayName = displayNameFor(persistedSheet)
         } else if (persistedSlug && persistedSlug !== payload.slug) {
           autosave.snapshot.markCleanJson(stablePersistableSheetJson({ ...payload, slug: persistedSlug }))
+          slugSyncBaselineDisplayName = displayNameFor(sheet.value)
         } else {
           autosave.snapshot.markCleanJson(payloadJson)
+          slugSyncBaselineDisplayName = displayNameFor(sheet.value)
         }
       },
       error: { logPrefix: '[useEditableSheet] save failed' },

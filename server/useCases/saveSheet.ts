@@ -22,6 +22,11 @@ import {
   writeSheetFile,
   type AllocateSheetSlugOptions,
 } from '../utils/sheetStorage'
+import {
+  retargetMapSheetPlacements,
+  type RetargetMapSheetPlacementsResult,
+} from '../utils/mapStorage'
+import { mapRetargetRealtimeEvents } from '../utils/mapRetargetRealtime'
 import { tryReadJsonFile } from '../utils/jsonFiles'
 
 export class SaveSheetUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -49,6 +54,11 @@ export interface SaveSheetDependencies {
   readExistingSheet?: (path: string) => Record<string, unknown>
   listTrainerSheets?: () => Iterable<PlayerProfileLinkedTrainerSheet>
   writeSheet?: (path: string, sheet: Record<string, unknown>) => void
+  retargetMapSheetPlacements?: (
+    kind: SheetKind,
+    oldSlug: string,
+    newSlug: string,
+  ) => RetargetMapSheetPlacementsResult[]
   pathExists?: (path: string) => boolean
   renameSheetPath?: (from: string, to: string) => void
   allocateSlug?: (kind: SheetKind, base: string, options?: AllocateSheetSlugOptions) => string
@@ -118,6 +128,7 @@ export const saveSheetUseCase = (
   const listTrainerSheets = dependencies.listTrainerSheets
     ?? (() => listSheetFilesWithFolders<TrainerSheet>('trainer'))
   const writeSheet = dependencies.writeSheet ?? writeSheetFile
+  const retargetMapPlacements = dependencies.retargetMapSheetPlacements ?? retargetMapSheetPlacements
   const pathExists = dependencies.pathExists ?? existsSync
   const renameSheetPath = dependencies.renameSheetPath ?? renameSync
   const allocateSlug = dependencies.allocateSlug ?? allocateSheetSlug
@@ -168,20 +179,26 @@ export const saveSheetUseCase = (
   sheet.slug = target.slug
   if (input.role === 'player') sheet.player = playerPublicAccess || existingSheet.player === true
   writeSheet(target.path, sheet)
+  const mapUpdates = target.slug !== input.slug
+    ? retargetMapPlacements(input.kind, input.slug, target.slug)
+    : []
 
   const data = { kind: input.kind, slug: target.slug, sheet }
   const renameData = { kind: input.kind, slug: target.slug, oldSlug: input.slug, newSlug: target.slug, sheet }
   const clientId = input.clientId
-  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = target.slug !== input.slug
-    ? [
-        { channel: sheetChannel(input.kind, input.slug), type: 'renamed', clientId, data: renameData },
-        { channel: sheetChannel(input.kind, target.slug), type: 'updated', clientId, data },
-        { channel: sheetsChannel, type: 'renamed', clientId, data: renameData },
-      ]
-    : [
-        { channel: sheetChannel(input.kind, input.slug), type: 'updated', clientId, data },
-        { channel: sheetsChannel, type: 'updated', clientId, data },
-      ]
+  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = [
+    ...(target.slug !== input.slug
+      ? [
+          { channel: sheetChannel(input.kind, input.slug), type: 'renamed', clientId, data: renameData },
+          { channel: sheetChannel(input.kind, target.slug), type: 'updated', clientId, data },
+          { channel: sheetsChannel, type: 'renamed', clientId, data: renameData },
+        ]
+      : [
+          { channel: sheetChannel(input.kind, input.slug), type: 'updated', clientId, data },
+          { channel: sheetsChannel, type: 'updated', clientId, data },
+        ]),
+    ...mapRetargetRealtimeEvents(mapUpdates, clientId),
+  ]
 
   return {
     ok: true,

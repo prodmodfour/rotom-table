@@ -3,6 +3,7 @@ import { requireAuthRole } from '../../utils/auth'
 import { playerProfileCanAccessSheet, resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { getPlayerSessionAccessGrant, playerSessionCanAccessSheet } from '../../utils/sessionPlayerAccess'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { playerVisibleMapSheetAccessKeys } from '../../utils/mapStorage'
 import { listSheetsUseCase } from '../../useCases/listSheets'
 
 const markPlayerAccessibleSheet = <TSheet extends { slug: string; player?: unknown }>(
@@ -23,13 +24,17 @@ export default defineEventHandler((event) => {
   try {
     const query = getQuery(event)
     const sessionAccess = role === 'player' ? getPlayerSessionAccessGrant(event) : null
+    const mapSheetAccess = role === 'player' ? playerVisibleMapSheetAccessKeys() : null
     const playerProfile = role === 'player'
       ? resolvePlayerProfileForPolicy(query.profileId)
       : null
     const result = listSheetsUseCase({
       role,
       playerProfile,
-      canAccessPlayerSheet: (kind, slug) => playerSessionCanAccessSheet(sessionAccess, kind, slug),
+      canAccessPlayerSheet: (kind, slug) => (
+        playerSessionCanAccessSheet(sessionAccess, kind, slug)
+        || mapSheetAccess?.has(`${kind}:${slug}`) === true
+      ),
     })
 
     if (role !== 'player') return result

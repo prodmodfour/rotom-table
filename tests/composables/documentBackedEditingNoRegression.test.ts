@@ -149,6 +149,7 @@ describe('document-backed editing no-regression boundaries', () => {
       slug: 'local-pikachu',
       sheet: { slug: 'local-pikachu', nickname: 'local pikachu', level: 6 },
       clientId: 'local-client',
+      allowSlugSync: false,
     })
     expect(localMocks.postJson.mock.calls.flat().join(' ')).not.toContain('/api/sessions')
     expect(localMocks.sheetSubscriptions.map((subscription) => subscription.channel).join(' ')).not.toContain(

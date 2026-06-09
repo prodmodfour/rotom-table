@@ -17,13 +17,14 @@ describe('rename sheet use case', () => {
       name,
       sheet: { slug: 'spark', nickname: name },
     }))
+    const retargetMapSheetPlacements = vi.fn(() => [])
 
     const result = renameSheetUseCase({
       kind: 'pokemon',
       slug: 'spark',
       name: 'Spark Prime',
       clientId: 'client-1',
-    }, { renameSheet })
+    }, { renameSheet, retargetMapSheetPlacements })
 
     expect(renameSheet).toHaveBeenCalledWith('pokemon', 'spark', 'Spark Prime')
     expect(result).toMatchObject({
@@ -65,13 +66,14 @@ describe('rename sheet use case', () => {
       filePath: '/repo/data/sheets/spark-prime.json',
       relativePath: 'data/sheets/spark-prime.json',
     }))
+    const retargetMapSheetPlacements = vi.fn(() => [])
 
     const result = renameSheetUseCase({
       kind: 'pokemon',
       slug: 'spark',
       name: 'Spark Prime',
       clientId: 'client-1',
-    }, { renameSheet })
+    }, { renameSheet, retargetMapSheetPlacements })
 
     expect(result).toMatchObject({
       ok: true,
@@ -79,6 +81,7 @@ describe('rename sheet use case', () => {
       path: 'data/sheets/spark-prime.json',
       sheet: { slug: 'spark-prime', nickname: 'Spark Prime' },
     })
+    expect(retargetMapSheetPlacements).toHaveBeenCalledWith('pokemon', 'spark', 'spark-prime')
     expect(result.events).toEqual([
       {
         channel: 'sheet:pokemon:spark',
@@ -112,6 +115,66 @@ describe('rename sheet use case', () => {
           oldSlug: 'spark',
           newSlug: 'spark-prime',
           sheet: { slug: 'spark-prime', nickname: 'Spark Prime' },
+        },
+      },
+    ])
+  })
+
+  it('emits map updates when a sheet rename retargets existing map placements', () => {
+    const arenaMap = {
+      schemaVersion: 2 as const,
+      slug: 'arena',
+      name: 'Arena',
+      folder: '',
+      dimensions: { x: 8, y: 1, z: 8 },
+      voxels: [],
+      placements: [
+        {
+          id: 'token-1',
+          sheetKind: 'trainer' as const,
+          sheetSlug: 'misty-prime',
+          position: { x: 2, y: 0, z: 2 },
+        },
+      ],
+      updatedAt: 321,
+    }
+    const renameSheet = vi.fn((_kind: SheetKind, _slug: string, name: string) => ({
+      slug: 'misty-prime',
+      name,
+      sheet: { slug: 'misty-prime', name },
+      filePath: '/repo/data/trainers/misty-prime.json',
+      relativePath: 'data/trainers/misty-prime.json',
+    }))
+    const retargetMapSheetPlacements = vi.fn(() => [{ path: '/repo/data/maps/arena.json', map: arenaMap, placementCount: 1 }])
+
+    const result = renameSheetUseCase({
+      kind: 'trainer',
+      slug: 'misty',
+      name: 'Misty Prime',
+      clientId: 'client-1',
+    }, { renameSheet, retargetMapSheetPlacements })
+
+    expect(retargetMapSheetPlacements).toHaveBeenCalledWith('trainer', 'misty', 'misty-prime')
+    expect(result.events.slice(-2)).toEqual([
+      {
+        channel: 'map:arena',
+        type: 'updated',
+        clientId: 'client-1',
+        data: arenaMap,
+      },
+      {
+        channel: 'maps',
+        type: 'updated',
+        clientId: 'client-1',
+        data: {
+          slug: 'arena',
+          name: 'Arena',
+          folder: '',
+          dimensions: { x: 8, y: 1, z: 8 },
+          placementCount: 1,
+          playerVisible: false,
+          schemaVersion: 2,
+          updatedAt: 321,
         },
       },
     ])

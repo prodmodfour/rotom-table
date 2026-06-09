@@ -30,6 +30,7 @@ const createDeps = () => {
       writeSheet: vi.fn((path: string, sheet: Record<string, unknown>) => {
         writes.push({ path, sheet })
       }),
+      retargetMapSheetPlacements: vi.fn(() => []),
       relativePath: vi.fn((path: string) => path.replace('/repo/', '')),
     },
   }
@@ -262,6 +263,7 @@ describe('save sheet use case', () => {
       writeSheet: vi.fn((path: string, sheet: Record<string, unknown>) => {
         writes.push({ path, sheet })
       }),
+      retargetMapSheetPlacements: vi.fn(() => []),
       pathExists: vi.fn((path: string) => existingPaths.has(path)),
       renameSheetPath: vi.fn((from: string, to: string) => {
         renames.push({ from, to })
@@ -329,6 +331,83 @@ describe('save sheet use case', () => {
           newSlug: 'spark-prime',
           sheet: { slug: 'spark-prime', nickname: 'Spark Prime', player: false },
         },
+      },
+    ])
+  })
+
+  it('retargets map placements and emits map updates when a save renames a sheet slug', () => {
+    const writes: Array<{ path: string; sheet: Record<string, unknown> }> = []
+    const arenaMap = {
+      schemaVersion: 2 as const,
+      slug: 'arena',
+      name: 'Arena',
+      folder: 'routes',
+      dimensions: { x: 10, y: 1, z: 10 },
+      voxels: [],
+      placements: [
+        {
+          id: 'token-1',
+          sheetKind: 'pokemon' as const,
+          sheetSlug: 'pika-prime',
+          position: { x: 1, y: 0, z: 1 },
+        },
+      ],
+      playerVisible: true,
+      updatedAt: 123,
+    }
+    const deps = {
+      findSheetPath: vi.fn((_kind: SheetKind, slug: string): string | null => (
+        slug === 'pika' ? '/repo/data/sheets/pika.json' : null
+      )),
+      findSlugPath: vi.fn(() => null),
+      isPlayerAccessible: vi.fn(() => true),
+      stripDerivedFields: vi.fn((sheet: Record<string, unknown>) => ({ ...sheet })),
+      writeSheet: vi.fn((path: string, sheet: Record<string, unknown>) => {
+        writes.push({ path, sheet })
+      }),
+      retargetMapSheetPlacements: vi.fn(() => [{ path: '/repo/data/maps/arena.json', map: arenaMap, placementCount: 1 }]),
+      pathExists: vi.fn(() => false),
+      renameSheetPath: vi.fn(),
+      allocateSlug: vi.fn(),
+      relativePath: vi.fn((path: string) => path.replace('/repo/', '')),
+    }
+
+    const result = saveSheetUseCase({
+      role: 'gm',
+      kind: 'pokemon',
+      slug: 'pika',
+      sheet: { slug: 'pika', nickname: 'Pika Prime', player: false },
+      clientId: 'client-1',
+    }, deps)
+
+    expect(deps.retargetMapSheetPlacements).toHaveBeenCalledWith('pokemon', 'pika', 'pika-prime')
+    expect(result.events.slice(-2)).toEqual([
+      {
+        channel: 'map:arena',
+        type: 'updated',
+        clientId: 'client-1',
+        data: arenaMap,
+      },
+      {
+        channel: 'maps',
+        type: 'updated',
+        clientId: 'client-1',
+        data: {
+          slug: 'arena',
+          name: 'Arena',
+          folder: 'routes',
+          dimensions: { x: 10, y: 1, z: 10 },
+          placementCount: 1,
+          playerVisible: true,
+          schemaVersion: 2,
+          updatedAt: 123,
+        },
+      },
+    ])
+    expect(writes).toEqual([
+      {
+        path: '/repo/data/sheets/pika-prime.json',
+        sheet: { slug: 'pika-prime', nickname: 'Pika Prime', player: false },
       },
     ])
   })

@@ -84,9 +84,54 @@ describe('useEditableSheet profile-aware requests', () => {
       sheet: { slug: 'pikachu', nickname: 'Pikachu', level: 6 },
       clientId: 'sheet-client',
       profileId,
+      allowSlugSync: false,
     })
     expect(editable.saveStatus.value).toBe('saved')
     expect(editable.saveError.value).toBeNull()
+  })
+
+  it('prevents legacy display-name slug mismatches from renaming on open or unrelated edits', async () => {
+    const editable = useEditableSheet<TestSheet>(
+      { slug: 'examples-abra', nickname: 'Abra', level: 5 },
+      'pokemon',
+      { debounceMs: 10 },
+    )
+
+    await flushPromises()
+    expect(mocks.postJson).not.toHaveBeenCalled()
+
+    editable.sheet.value.level = 6
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(mocks.postJson).toHaveBeenCalledWith(SHEET_API_PATHS.save, {
+      kind: 'pokemon',
+      slug: 'examples-abra',
+      sheet: { slug: 'examples-abra', nickname: 'Abra', level: 6 },
+      clientId: 'sheet-client',
+      allowSlugSync: false,
+    })
+  })
+
+  it('allows slug sync when the sheet display name changes after opening', async () => {
+    const editable = useEditableSheet<TestSheet>(
+      { slug: 'examples-abra', nickname: 'Abra', level: 5 },
+      'pokemon',
+      { debounceMs: 10 },
+    )
+
+    editable.sheet.value.nickname = 'Abra Prime'
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(mocks.postJson).toHaveBeenCalledWith(SHEET_API_PATHS.save, {
+      kind: 'pokemon',
+      slug: 'examples-abra',
+      sheet: { slug: 'examples-abra', nickname: 'Abra Prime', level: 5 },
+      clientId: 'sheet-client',
+    })
   })
 
   it('shows a clear save error instead of posting a linked sheet without a selected profile', async () => {
