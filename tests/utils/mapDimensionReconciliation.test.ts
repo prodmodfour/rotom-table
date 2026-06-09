@@ -99,6 +99,31 @@ describe('map dimension reconciliation', () => {
     expect(result.selectedPlacementRemoved).toBe(true)
   })
 
+  it('preserves placements whose sheets have not resolved yet', () => {
+    const unresolvedPlacement = {
+      id: 'runtime-sheet-token',
+      sheetKind: 'pokemon' as const,
+      sheetSlug: 'runtime-abra',
+      position: { x: 1, y: 0, z: 1 },
+    }
+    const result = reconcileMapForDimensions({
+      map: mapFixture({
+        placements: [
+          { id: 'token-1', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 5, y: 0, z: 5 } },
+          unresolvedPlacement,
+        ],
+      }),
+      spawnedPokemon: [pokemon({ id: 'token-1', position: { x: 5, y: 0, z: 5 } })],
+      selectedId: 'runtime-sheet-token',
+    })
+
+    expect(result.placements).toEqual([
+      { id: 'token-1', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 1, y: 0, z: 1 } },
+      unresolvedPlacement,
+    ])
+    expect(result.selectedPlacementRemoved).toBe(false)
+  })
+
   it('leaves absent ground-level metadata absent', () => {
     const result = reconcileMapForDimensions({
       map: mapFixture({ groundLevelY: undefined }),
