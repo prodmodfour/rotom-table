@@ -140,7 +140,7 @@ const splashStyle = computed(() => ({
   background-repeat: repeat-x;
   background-size: 30rem 3px, 36rem 2px, 24rem 2px, 42rem 3px, 28rem 2px, 34rem 2px;
   mix-blend-mode: screen;
-  animation: map-action-splash-speed-lines 1200ms linear infinite;
+  animation: map-action-splash-speed-lines 800ms linear infinite;
   will-change: background-position;
 }
 
