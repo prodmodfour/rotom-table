@@ -703,18 +703,7 @@ const removeVoxelFromScene: typeof removeVoxel = (cell) => {
 
 const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {
   if (!canSendOutPokemon(payload)) return false
-
-  const option = tokenSendOutOptionsById.value[payload.trainerId]
-    ?.find((entry) => entry.pokemonSlug === payload.pokemonSlug)
-  void (async () => {
-    await showActionSplash({
-      userId: payload.trainerId,
-      actionName: option?.label ?? payload.pokemonSlug,
-      verb: 'sends out',
-    })
-    sendOutPokemon(payload)
-  })()
-  return true
+  return sendOutPokemon(payload)
 }
 
 const {
