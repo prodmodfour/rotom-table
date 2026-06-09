@@ -24,7 +24,9 @@ import { getClientId } from '~/utils/clientId'
 import { isRealtimeEcho, mapChannel } from '#shared/realtime'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
+import { bindAutosaveUnloadFlushers, sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
+import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { clonePersistableMapPayload, stablePersistableMapJson } from '~/utils/maps/persistence'
 import { useApiClient } from './useApiClient'
@@ -40,6 +42,13 @@ interface ReadonlyValueRef<T> {
 
 interface BooleanRef {
   readonly value: boolean
+}
+
+interface MapSaveBody {
+  slug: string
+  map: TabletopMap
+  clientId: string
+  profileId?: PlayerProfileId
 }
 
 export interface UseEditableMapOptions {
@@ -97,6 +106,16 @@ export const useEditableMap = (
 
   const clientId = getClientId()
   const { getJson, postJson } = useApiClient()
+  const currentPlayerProfileId = (): PlayerProfileId | null => playerProfileIdRef?.value ?? null
+  const buildMapSaveBody = (snapshot: TabletopMap): MapSaveBody => {
+    const playerProfileId = currentPlayerProfileId()
+    return {
+      slug,
+      map: snapshot,
+      clientId,
+      ...(playerProfileId ? { profileId: playerProfileId } : {}),
+    }
+  }
   const autosave = createAutosaveResourceController<TabletopMap, MapSaveStatus>({
     refs: { status, error },
     labels: { saving: 'saving', saved: 'saved', error: 'error' },
@@ -200,17 +219,11 @@ export const useEditableMap = (
     }
 
     const snapshot = clonePersistableMapPayload(map.value)
-    const playerProfileId = playerProfileIdRef?.value ?? null
 
     await runLatestAutosave({
       guard: autosave.guard,
       status: autosave.statusController,
-      save: () => postJson<{ map: TabletopMap }>(MAP_API_PATHS.save, {
-        slug,
-        map: snapshot,
-        clientId,
-        ...(playerProfileId ? { profileId: playerProfileId } : {}),
-      }),
+      save: () => postJson<{ map: TabletopMap }>(MAP_API_PATHS.save, buildMapSaveBody(snapshot)),
       onSuccess: (result, { latest }) => {
         if (!latest || isStalePersistedMap(result.map)) return
         // Adopt the persisted version (server stamps `updatedAt`).
@@ -266,6 +279,48 @@ export const useEditableMap = (
     autosave.scheduleIfDirty(map.value)
   })
 
+  const hasUnsavedChanges = (): boolean => (
+    map.value !== null && autosave.snapshot.isDirty(map.value)
+  )
+
+  const flushWithBeacon = () => {
+    if (!autosaveEnabled.value || !map.value) return
+
+    let dirty: boolean
+    try {
+      dirty = hasUnsavedChanges()
+    } catch (err) {
+      status.value = 'error'
+      error.value = getErrorMessage(err)
+      return
+    }
+    if (!dirty) return
+
+    autosave.cancelPendingSave()
+
+    let body: string
+    let payloadJson: string
+    try {
+      const snapshot = clonePersistableMapPayload(map.value)
+      body = JSON.stringify(buildMapSaveBody(snapshot))
+      payloadJson = stablePersistableMapJson(map.value)
+    } catch (err) {
+      status.value = 'error'
+      error.value = getErrorMessage(err)
+      return
+    }
+
+    sendJsonWithUnloadFallback(MAP_API_PATHS.save, body)
+
+    // Treat this tab as clean once the unload request was attempted so
+    // `beforeunload` + `pagehide` do not queue duplicate whole-map writes.
+    autosave.snapshot.markCleanJson(payloadJson)
+    status.value = 'saved'
+    error.value = null
+  }
+
+  let removeUnloadFlushers: (() => void) | null = bindAutosaveUnloadFlushers(flushWithBeacon)
+
   useRealtimeChannel(mapChannel(slug), (event) => {
     if (isRealtimeEcho(event, clientId)) return
     if (event.type === 'updated' && event.data) {
@@ -290,6 +345,9 @@ export const useEditableMap = (
   })
 
   onBeforeUnmount(() => {
+    removeUnloadFlushers?.()
+    removeUnloadFlushers = null
+
     if (!autosave.task.hasPending()) return
     // Skip flushing the pending save when the slug was renamed away
     // from us — the old filename no longer exists on disk. Also cancel

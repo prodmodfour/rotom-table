@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { trainerCatalog } from '~~/data/trainerCatalog'
-import { placementToSpawned } from '~/utils/placement'
+import { placementToSpawned, placementsToSpawned, unresolvedPlacementReferences } from '~/utils/placement'
 import { moveAutomationUserAccuracy } from '~/utils/moveAutomationAccuracy'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { SheetPlacement } from '~/types/map'
+import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 describe('placement helpers', () => {
@@ -46,6 +46,43 @@ describe('placement helpers', () => {
     expect(spawned ? moveAutomationUserAccuracy(spawned) : null).toBe(4)
     expect(spawned?.facing).toBe('north-east')
     expect(spawned?.turned).toBe(false)
+  })
+
+  it('skips unresolved placements for rendering without removing them from the map document', () => {
+    const map: TabletopMap = {
+      schemaVersion: 2,
+      slug: 'runtime-sheet-map',
+      name: 'Runtime Sheet Map',
+      dimensions: { x: 4, y: 1, z: 4 },
+      groundLevelY: 0,
+      playerVisible: true,
+      voxels: [],
+      hazards: [],
+      fieldEffects: { weather: [], terrains: [], rooms: [] },
+      placements: [
+        {
+          id: 'runtime-token',
+          sheetKind: 'pokemon',
+          sheetSlug: 'runtime-pokemon',
+          position: { x: 0, y: 0, z: 0 },
+        },
+      ],
+      lights: [],
+      initiative: { activeId: null, round: 1 },
+    }
+    const lookup = { pokemon: new Map<string, CharacterSheet>(), trainer: new Map<string, TrainerSheet>() }
+
+    expect(placementsToSpawned(map, lookup)).toEqual([])
+    expect(unresolvedPlacementReferences(map, lookup)).toEqual([
+      {
+        id: 'runtime-token',
+        sheetKind: 'pokemon',
+        sheetSlug: 'runtime-pokemon',
+        reason: 'missing-sheet',
+      },
+    ])
+    expect(map.placements).toHaveLength(1)
+    expect(map.placements[0]?.sheetSlug).toBe('runtime-pokemon')
   })
 
   it('scales trainer sprite dimensions to the trainer sheet height in metres', () => {

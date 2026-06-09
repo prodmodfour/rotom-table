@@ -12,6 +12,10 @@ const apiMocks = vi.hoisted(() => ({
   realtimeHandlers: [] as Array<(event: RealtimeEvent) => void>,
 }))
 
+vi.mock('~/utils/clientId', () => ({
+  getClientId: () => 'map-client',
+}))
+
 vi.mock('~/composables/useApiClient', () => ({
   useApiClient: () => ({
     getJson: apiMocks.getJson,
@@ -57,6 +61,57 @@ const flushPromises = async () => {
   await Promise.resolve()
 }
 
+type UnloadEventType = 'pagehide' | 'beforeunload'
+
+let restoreUnloadGlobals: (() => void) | null = null
+
+const installUnloadGlobals = () => {
+  const listeners = new Map<UnloadEventType, Set<() => void>>()
+  const addEventListener = vi.fn((type: UnloadEventType, listener: () => void) => {
+    const bucket = listeners.get(type) ?? new Set<() => void>()
+    bucket.add(listener)
+    listeners.set(type, bucket)
+  })
+  const removeEventListener = vi.fn((type: UnloadEventType, listener: () => void) => {
+    listeners.get(type)?.delete(listener)
+  })
+  const sendBeacon = vi.fn((_url: string, _data: BodyInit) => true)
+  const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
+  const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { addEventListener, removeEventListener },
+  })
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: { sendBeacon },
+  })
+
+  restoreUnloadGlobals = () => {
+    if (windowDescriptor) Object.defineProperty(globalThis, 'window', windowDescriptor)
+    else Reflect.deleteProperty(globalThis, 'window')
+
+    if (navigatorDescriptor) Object.defineProperty(globalThis, 'navigator', navigatorDescriptor)
+    else Reflect.deleteProperty(globalThis, 'navigator')
+  }
+
+  return {
+    addEventListener,
+    removeEventListener,
+    sendBeacon,
+    dispatch: (type: UnloadEventType) => {
+      for (const listener of listeners.get(type) ?? []) listener()
+    },
+  }
+}
+
+const readLastBeaconJson = async (sendBeacon: { mock: { calls: unknown[][] } }): Promise<Record<string, unknown>> => {
+  const body = sendBeacon.mock.calls.at(-1)?.[1]
+  if (!(body instanceof Blob)) throw new Error('Expected beacon body to be a Blob')
+  return JSON.parse(await body.text()) as Record<string, unknown>
+}
+
 describe('useEditableMap autosave boundary', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -72,6 +127,8 @@ describe('useEditableMap autosave boundary', () => {
   afterEach(() => {
     vi.runOnlyPendingTimers()
     vi.useRealTimers()
+    restoreUnloadGlobals?.()
+    restoreUnloadGlobals = null
   })
 
   it('autosaves whole-map edits through document-backed persistence when enabled', async () => {
@@ -92,10 +149,37 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.save, {
       slug: 'arena-map',
       map: expect.objectContaining({ name: 'Renamed Arena' }),
-      clientId: 'ssr',
+      clientId: 'map-client',
     })
     expect(editable.status.value).toBe('saved')
     expect(editable.map.value?.updatedAt).toBe(200)
+  })
+
+  it('autosaves newly added token placements through the normal debounce path', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    editable.map.value!.placements.push({
+      id: 'token-eevee',
+      sheetKind: 'pokemon',
+      sheetSlug: 'eevee',
+      position: { x: 2, y: 0, z: 2 },
+      facing: 'south-east',
+      turned: false,
+    })
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.save, {
+      slug: 'arena-map',
+      map: expect.objectContaining({
+        placements: expect.arrayContaining([
+          expect.objectContaining({ id: 'token-eevee', sheetSlug: 'eevee' }),
+        ]),
+      }),
+      clientId: 'map-client',
+    })
   })
 
   it('increments a map data revision for full persisted replacements without treating autosave as a reload', async () => {
@@ -133,9 +217,127 @@ describe('useEditableMap autosave boundary', () => {
       map: expect.objectContaining({
         placements: [expect.objectContaining({ position: { x: 2, y: 0, z: 1 } })],
       }),
-      clientId: 'ssr',
+      clientId: 'map-client',
       profileId: 'profile_ash00000',
     })
+  })
+
+  it('flushes dirty pending map placements through pagehide beacon and cancels the debounced save', async () => {
+    const unload = installUnloadGlobals()
+    const editable = useEditableMap('arena-map', { debounceMs: 50 })
+    await flushPromises()
+
+    editable.map.value!.placements.push({
+      id: 'token-eevee',
+      sheetKind: 'pokemon',
+      sheetSlug: 'eevee',
+      position: { x: 2, y: 0, z: 2 },
+      facing: 'south-east',
+      turned: false,
+    })
+    await nextTick()
+
+    expect(editable.status.value).toBe('saving')
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    unload.dispatch('pagehide')
+
+    expect(unload.sendBeacon).toHaveBeenCalledTimes(1)
+    expect(unload.sendBeacon).toHaveBeenCalledWith(MAP_API_PATHS.save, expect.any(Blob))
+    expect(await readLastBeaconJson(unload.sendBeacon)).toMatchObject({
+      slug: 'arena-map',
+      clientId: 'map-client',
+      map: {
+        placements: expect.arrayContaining([
+          expect.objectContaining({ id: 'token-eevee', sheetSlug: 'eevee' }),
+        ]),
+      },
+    })
+    expect(editable.status.value).toBe('saved')
+    expect(editable.error.value).toBeNull()
+
+    unload.dispatch('beforeunload')
+    expect(unload.sendBeacon).toHaveBeenCalledTimes(1)
+
+    await vi.advanceTimersByTimeAsync(50)
+    await flushPromises()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('flushes newly spawned placements even before the debounce watcher runs', async () => {
+    const unload = installUnloadGlobals()
+    const editable = useEditableMap('arena-map', { debounceMs: 50 })
+    await flushPromises()
+
+    editable.map.value!.placements.push({
+      id: 'token-immediate',
+      sheetKind: 'trainer',
+      sheetSlug: 'runtime-trainer',
+      position: { x: 3, y: 0, z: 3 },
+    })
+
+    unload.dispatch('beforeunload')
+
+    expect(unload.sendBeacon).toHaveBeenCalledTimes(1)
+    expect(await readLastBeaconJson(unload.sendBeacon)).toMatchObject({
+      map: {
+        placements: expect.arrayContaining([
+          expect.objectContaining({ id: 'token-immediate', sheetSlug: 'runtime-trainer' }),
+        ]),
+      },
+    })
+
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(50)
+    await flushPromises()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('does not unload-write when the map is clean', async () => {
+    const unload = installUnloadGlobals()
+    useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    unload.dispatch('pagehide')
+
+    expect(unload.sendBeacon).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('does not unload-write while map autosave is disabled', async () => {
+    const unload = installUnloadGlobals()
+    const autosaveEnabled = ref(false)
+    const editable = useEditableMap('arena-map', { debounceMs: 10, autosaveEnabled })
+    await flushPromises()
+
+    editable.map.value!.placements.push({
+      id: 'token-disabled',
+      sheetKind: 'pokemon',
+      sheetSlug: 'eevee',
+      position: { x: 2, y: 0, z: 2 },
+    })
+    await nextTick()
+    unload.dispatch('beforeunload')
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(unload.sendBeacon).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('does not unload-write when the map failed to load', async () => {
+    const unload = installUnloadGlobals()
+    apiMocks.getJson.mockRejectedValueOnce({ statusCode: 404 })
+    const editable = useEditableMap('missing-map', { debounceMs: 10 })
+    await flushPromises()
+
+    expect(editable.map.value).toBeNull()
+    expect(editable.status.value).toBe('not-found')
+
+    unload.dispatch('pagehide')
+
+    expect(unload.sendBeacon).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
   it('adopts document-backed token action responses without scheduling another whole-map save', async () => {
@@ -209,7 +411,7 @@ describe('useEditableMap autosave boundary', () => {
     apiMocks.realtimeHandlers[0]?.({
       channel: 'map:arena-map',
       type: 'updated',
-      clientId: 'ssr',
+      clientId: 'map-client',
       timestamp: 300,
       data: mapFixture({ name: 'Echoed Arena', updatedAt: 300 }),
     })
@@ -303,7 +505,7 @@ describe('useEditableMap autosave boundary', () => {
       map: expect.objectContaining({
         placements: [expect.objectContaining({ position: { x: 2, y: 0, z: 1 } })],
       }),
-      clientId: 'ssr',
+      clientId: 'map-client',
     })
   })
 })

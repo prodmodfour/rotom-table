@@ -32,6 +32,15 @@ export interface SheetLookup {
   trainer: Map<string, TrainerSheet>
 }
 
+export type UnresolvedPlacementReason = 'missing-sheet' | 'missing-catalog'
+
+export interface UnresolvedPlacementReference {
+  id: string
+  sheetKind: SheetPlacement['sheetKind']
+  sheetSlug: string
+  reason: UnresolvedPlacementReason
+}
+
 const pokemonTokenAbilityNames = (sheet: CharacterSheet): string[] =>
   sheetAbilityNames(sheet.abilities)
 
@@ -41,6 +50,63 @@ const trainerTokenAbilityNames = (sheet: TrainerSheet): string[] =>
     ...(sheet.abilities ?? []),
   ])
 
+const unresolvedReferenceForPlacement = (
+  placement: SheetPlacement,
+  sheets: SheetLookup,
+): UnresolvedPlacementReference | null => {
+  if (placement.sheetKind === 'pokemon') {
+    const sheet = sheets.pokemon.get(placement.sheetSlug)
+    if (!sheet) {
+      return {
+        id: placement.id,
+        sheetKind: placement.sheetKind,
+        sheetSlug: placement.sheetSlug,
+        reason: 'missing-sheet',
+      }
+    }
+    if (!catalogEntryForPokemonSheet(sheet)) {
+      return {
+        id: placement.id,
+        sheetKind: placement.sheetKind,
+        sheetSlug: placement.sheetSlug,
+        reason: 'missing-catalog',
+      }
+    }
+    return null
+  }
+
+  const sheet = sheets.trainer.get(placement.sheetSlug)
+  if (!sheet) {
+    return {
+      id: placement.id,
+      sheetKind: placement.sheetKind,
+      sheetSlug: placement.sheetSlug,
+      reason: 'missing-sheet',
+    }
+  }
+  if (!catalogEntryForTrainerSheet(sheet)) {
+    return {
+      id: placement.id,
+      sheetKind: placement.sheetKind,
+      sheetSlug: placement.sheetSlug,
+      reason: 'missing-catalog',
+    }
+  }
+  return null
+}
+
+export const unresolvedPlacementReferences = (
+  map: TabletopMap | null,
+  sheets: SheetLookup,
+): UnresolvedPlacementReference[] => {
+  if (!map) return []
+  const out: UnresolvedPlacementReference[] = []
+  for (const placement of map.placements) {
+    const unresolved = unresolvedReferenceForPlacement(placement, sheets)
+    if (unresolved) out.push(unresolved)
+  }
+  return out
+}
 
 export const placementToSpawned = (
   placement: SheetPlacement,

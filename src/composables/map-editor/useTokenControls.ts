@@ -8,7 +8,9 @@ import { toPokedexSlug as normalizePokedexSlug } from '~/utils/pokedex/searchTex
 import {
   createPlacementId as defaultCreatePlacementId,
   placementsToSpawned,
+  unresolvedPlacementReferences,
   type SheetLookup,
+  type UnresolvedPlacementReference,
 } from '~/utils/placement'
 import {
   catalogEntryForPokemonSheet,
@@ -71,6 +73,15 @@ export interface UseTokenControlsOptions {
 const EMPTY_POKEMON_SHEETS = new Map<string, CharacterSheet>()
 const EMPTY_TRAINER_SHEETS = new Map<string, TrainerSheet>()
 
+const isDevRuntime = (): boolean => (
+  (import.meta as ImportMeta & { readonly dev?: boolean }).dev === true
+)
+
+const unresolvedPlacementWarningKey = (
+  mapSlug: string,
+  placement: UnresolvedPlacementReference,
+): string => `${mapSlug}:${placement.id}:${placement.sheetKind}:${placement.sheetSlug}:${placement.reason}`
+
 export const emptyPreviewState = (): PreviewState => ({
   position: null,
   reachable: false,
@@ -107,11 +118,31 @@ export const useTokenControls = ({
     pokemon: pokemonBySlug.value ?? EMPTY_POKEMON_SHEETS,
     trainer: trainerBySlug.value ?? EMPTY_TRAINER_SHEETS,
   }))
+  const warnedUnresolvedPlacements = new Set<string>()
+  const warnUnresolvedPlacements = (currentMap: TabletopMap, lookup: SheetLookup) => {
+    if (!isDevRuntime()) return
+
+    const newlyUnresolved = unresolvedPlacementReferences(currentMap, lookup).filter((placement) => {
+      const key = unresolvedPlacementWarningKey(currentMap.slug, placement)
+      if (warnedUnresolvedPlacements.has(key)) return false
+      warnedUnresolvedPlacements.add(key)
+      return true
+    })
+    if (newlyUnresolved.length === 0) return
+
+    console.warn(
+      '[useTokenControls] skipped unresolved map placement(s) while rendering tokens; placements remain in the map document and will render once their sheets are available.',
+      { mapSlug: currentMap.slug, placements: newlyUnresolved },
+    )
+  }
 
   const spawnedPokemon = computed<SpawnedPokemon[]>(() => {
     const currentMap = map.value
     if (!currentMap) return []
-    return placementsToSpawned(currentMap, sheetLookup.value)
+    const lookup = sheetLookup.value
+    const spawned = placementsToSpawned(currentMap, lookup)
+    warnUnresolvedPlacements(currentMap, lookup)
+    return spawned
   })
 
   const placementIdsFromOverride = (
