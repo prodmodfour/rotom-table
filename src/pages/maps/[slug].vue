@@ -43,10 +43,17 @@ import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActi
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
-import { useAttackOfOpportunityPanel } from '~/utils/attackOfOpportunity'
+import {
+  useAttackOfOpportunityPanel,
+  type AttackOfOpportunitySuppressionContext,
+} from '~/utils/attackOfOpportunity'
 import { useTokenSheetMutations } from '~/composables/map-editor/useTokenSheetMutations'
 import { useTokenControls } from '~/composables/map-editor/useTokenControls'
 import { buildClientPlayerProfileTokenControlModel } from '~/utils/playerProfileTokenControl'
+import {
+  isPlayerCharacterAttackOfOpportunityPair,
+  playerCharacterSheetKeysForProfiles,
+} from '~/utils/playerCharacterTokens'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLog'
@@ -70,6 +77,7 @@ const router = useRouter()
 const { role, isGm, isPlayer } = useAuth()
 const slug = routeSlugParam(route.params)
 const {
+  profiles: playerProfiles,
   selectedProfile,
   selectedProfileId,
   loadRememberedProfile,
@@ -113,6 +121,19 @@ const playerProfileTokenControlModel = computed(() => buildClientPlayerProfileTo
   profile: selectedProfile.value,
   placements: map.value?.placements ?? [],
 }))
+const playerCharacterSheetKeys = computed(() => playerCharacterSheetKeysForProfiles(playerProfiles.value))
+const shouldSuppressPlayerCharacterAttackOfOpportunity = ({
+  attacker,
+  provoker,
+}: Pick<AttackOfOpportunitySuppressionContext, 'attacker' | 'provoker'>) => (
+  isPlayerCharacterAttackOfOpportunityPair({
+    attacker,
+    provoker,
+    playerCharacterSheetKeys: playerCharacterSheetKeys.value,
+    pokemonBySlug: pokemonBySlug.value,
+    trainerBySlug: trainerBySlug.value,
+  })
+)
 const persistSpawnedPlacement = (placement: SheetPlacement) => {
   void documentTokenActions.spawnToken({
     placement: deepCloneJson(placement),
@@ -197,15 +218,18 @@ onBeforeUnmount(() => {
 
 if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
-const syncPlayerProfileForMapControl = async () => {
-  if (!import.meta.client || !isPlayer.value) return
-  loadRememberedProfile()
+const syncPlayerProfilesForMapControl = async () => {
+  if (!import.meta.client || (!isGm.value && !isPlayer.value)) return
+  if (isPlayer.value) loadRememberedProfile()
   try {
-    await reloadProfiles({ clearMissingSelection: true })
+    await reloadProfiles({
+      silent: !isPlayer.value,
+      clearMissingSelection: isPlayer.value,
+    })
   } catch {
     // Keep the map view available; token-control notices surface the profile loading problem.
   }
-  await reloadRuntimeSheets({ profileId: selectedProfileId.value })
+  if (isPlayer.value) await reloadRuntimeSheets({ profileId: selectedProfileId.value })
 }
 
 onMounted(() => {
@@ -224,11 +248,11 @@ onMounted(() => {
     }
   }
 
-  void syncPlayerProfileForMapControl()
+  void syncPlayerProfilesForMapControl()
 })
 
-watch(isPlayer, (nextIsPlayer) => {
-  if (nextIsPlayer) void syncPlayerProfileForMapControl()
+watch([isGm, isPlayer], ([nextIsGm, nextIsPlayer]) => {
+  if (nextIsGm || nextIsPlayer) void syncPlayerProfilesForMapControl()
 })
 
 const {
@@ -764,6 +788,7 @@ attackOfOpportunityPanel = useAttackOfOpportunityPanel({
   spawnedPokemon,
   tokenMoveOptionsById,
   canControlPlacement,
+  shouldSuppressAttackOfOpportunity: shouldSuppressPlayerCharacterAttackOfOpportunity,
   performStruggleAttack: ({ attackerId, targetId, moveName, prompt }) => useMoveAgainstTarget({
     id: attackerId,
     targetId,

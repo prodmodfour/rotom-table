@@ -150,6 +150,42 @@ describe('attack of opportunity helpers', () => {
 })
 
 describe('useAttackOfOpportunityPanel', () => {
+  it('does not queue prompts suppressed by the table relationship policy', () => {
+    const map = ref(mapFixture())
+    const tokens = ref([
+      token('provoker', 1, 1),
+      token('attacker', 0, 1),
+    ])
+    const playerCharacterIds = new Set(['provoker', 'attacker'])
+    const panel = useAttackOfOpportunityPanel({
+      map,
+      spawnedPokemon: computed(() => tokens.value),
+      tokenMoveOptionsById: computed(() => ({
+        attacker: [moveOption('Struggle')],
+      })),
+      canControlPlacement: (id) => id === 'attacker',
+      shouldSuppressAttackOfOpportunity: ({ attacker, provoker }) => (
+        playerCharacterIds.has(attacker.id) && playerCharacterIds.has(provoker.id)
+      ),
+      performStruggleAttack: vi.fn(async () => true),
+    })
+
+    panel.provokeMovementAttackOfOpportunity({
+      provokerId: 'provoker',
+      from: { x: 1, y: 0, z: 1 },
+      to: { x: 2, y: 0, z: 1 },
+    })
+    expect(panel.attackOfOpportunityPrompts.value).toEqual([])
+
+    playerCharacterIds.delete('provoker')
+    panel.provokeMovementAttackOfOpportunity({
+      provokerId: 'provoker',
+      from: { x: 1, y: 0, z: 1 },
+      to: { x: 2, y: 0, z: 1 },
+    })
+    expect(panel.attackOfOpportunityPrompts.value).toHaveLength(1)
+  })
+
   it('queues pressable prompts with Struggle variants and enforces once per round', async () => {
     const map = ref(mapFixture())
     const tokens = ref([

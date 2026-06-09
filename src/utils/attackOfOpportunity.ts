@@ -39,11 +39,18 @@ export interface AttackOfOpportunityMoveRequest {
   prompt: AttackOfOpportunityPrompt
 }
 
+export interface AttackOfOpportunitySuppressionContext {
+  attacker: SpawnedPokemon
+  provoker: SpawnedPokemon
+  reason: AttackOfOpportunityReason
+}
+
 export interface UseAttackOfOpportunityPanelOptions {
   map: Ref<TabletopMap | null>
   spawnedPokemon: ComputedRef<SpawnedPokemon[]>
   tokenMoveOptionsById: ComputedRef<Record<string, TokenMoveMenuOption[]>>
   canControlPlacement: (id: string) => boolean
+  shouldSuppressAttackOfOpportunity?: (context: AttackOfOpportunitySuppressionContext) => boolean
   performStruggleAttack: (request: AttackOfOpportunityMoveRequest) => boolean | Promise<boolean>
 }
 
@@ -141,6 +148,7 @@ export const useAttackOfOpportunityPanel = ({
   spawnedPokemon,
   tokenMoveOptionsById,
   canControlPlacement,
+  shouldSuppressAttackOfOpportunity,
   performStruggleAttack,
 }: UseAttackOfOpportunityPanelOptions) => {
   const pendingRecords = ref<AttackOfOpportunityPromptRecord[]>([])
@@ -171,6 +179,7 @@ export const useAttackOfOpportunityPanel = ({
     return Boolean(
       attacker
       && provoker
+      && !shouldSuppressAttackOfOpportunity?.({ attacker, provoker, reason: record.reason })
       && canControlPlacement(record.attackerId)
       && canMakeAttackOfOpportunity(attacker)
       && !attackerHasUsedThisRound(record.attackerId)
@@ -208,6 +217,7 @@ export const useAttackOfOpportunityPanel = ({
     const records = input.attackerIds.flatMap((attackerId): AttackOfOpportunityPromptRecord[] => {
       const attacker = tokenById(attackerId)
       if (!attacker) return []
+      if (shouldSuppressAttackOfOpportunity?.({ attacker, provoker, reason: input.reason })) return []
       if (!canControlPlacement(attacker.id)) return []
       if (!canMakeAttackOfOpportunity(attacker)) return []
       if (attackerHasUsedThisRound(attacker.id)) return []
