@@ -16,6 +16,8 @@ import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsE
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
 import { useMapAccess, useMapGmModeGuard } from '~/composables/map-editor/useMapAccess'
+import { useMapActionEventSync } from '~/composables/map-editor/useMapActionEventSync'
+import { useMapActionSplash, type MapActionSplashPublishHandler } from '~/composables/map-editor/useMapActionSplash'
 import {
   useMapDimensionControls,
   useMapDimensionReconciliation,
@@ -49,7 +51,6 @@ import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, TabletopMap } from '~/types/map'
-import type { MapActionSplashState } from '~/types/mapActionSplash'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -141,18 +142,6 @@ const visibleMoveAnimations = computed(() => (
   moveAnimationsEnabled.value ? activeMoveAnimations.value : []
 ))
 
-const ACTION_SPLASH_DURATION_MS = 1850
-const ACTION_SPLASH_LEAD_IN_MS = ACTION_SPLASH_DURATION_MS
-const actionSplash = ref<MapActionSplashState | null>(null)
-let actionSplashSequence = 0
-let actionSplashTimer: ReturnType<typeof setTimeout> | null = null
-
-const clearActionSplashTimer = () => {
-  if (!actionSplashTimer) return
-  clearTimeout(actionSplashTimer)
-  actionSplashTimer = null
-}
-
 const pruneSettledMoveAnimations = ({ nowMs }: { nowMs: number }) => {
   pruneExpiredMoveAnimations(nowMs)
 }
@@ -190,8 +179,6 @@ let cleanupMoveAnimationVisibilityChange: (() => void) | null = null
 onBeforeUnmount(() => {
   cleanupMoveAnimationVisibilityChange?.()
   cleanupMoveAnimationVisibilityChange = null
-  clearActionSplashTimer()
-  actionSplash.value = null
   clearMoveAnimations()
 })
 
@@ -285,37 +272,6 @@ const {
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
   },
 })
-
-const showActionSplash = (event: { userId: string; actionName: string; verb?: string }): Promise<void> => {
-  const actionName = event.actionName.trim()
-  if (!actionName) return Promise.resolve()
-
-  const actor = spawnedPokemon.value.find((pokemon) => pokemon.id === event.userId)
-  if (!actor) return Promise.resolve()
-
-  const profileEntry = initiativeRows.value.find((entry) => entry.id === actor.id)
-  if (!profileEntry) return Promise.resolve()
-
-  const id = ++actionSplashSequence
-  actionSplash.value = {
-    id,
-    userId: actor.id,
-    actorName: actor.species,
-    actionLabel: `${event.verb ?? 'uses'} ${actionName}`,
-    profileEntry,
-    accentColor: actor.accentColor ?? null,
-  }
-
-  clearActionSplashTimer()
-  actionSplashTimer = setTimeout(() => {
-    if (actionSplash.value?.id === id) actionSplash.value = null
-    actionSplashTimer = null
-  }, ACTION_SPLASH_DURATION_MS)
-
-  return new Promise((resolve) => {
-    setTimeout(resolve, Math.min(ACTION_SPLASH_LEAD_IN_MS, ACTION_SPLASH_DURATION_MS))
-  })
-}
 
 const enqueueMoveVfxDebugPreview = (kind: MoveVfxKind | 'all') => {
   const selectedTokenId = selectedId.value
@@ -522,6 +478,35 @@ const {
   focusEntry: (id) => {
     gridRef.value?.focusPokemon(id)
   },
+})
+
+let publishSyncedActionSplash: MapActionSplashPublishHandler | null = null
+const {
+  actionSplash,
+  showActionSplash,
+  replayActionSplash,
+  clearActionSplash,
+} = useMapActionSplash({
+  spawnedPokemon,
+  initiativeRows,
+  publishActionSplash: (request) => publishSyncedActionSplash?.(request),
+})
+
+const mapActionEventSync = useMapActionEventSync({
+  slug,
+  profileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  handlers: {
+    onActionSplash: (event) => replayActionSplash({
+      userId: event.actorPlacementId,
+      actionName: event.payload.actionName,
+      verb: event.payload.verb,
+    }),
+  },
+})
+publishSyncedActionSplash = (request) => mapActionEventSync.publishActionSplash(request)
+
+onBeforeUnmount(() => {
+  clearActionSplash()
 })
 
 let expireActiveOrdersAfterInitiativeAdvance: (advance: {
@@ -840,6 +825,11 @@ const {
   trainerBySlug,
   canControlPlacement,
   applyCaptureOutcome: applyPokeballCaptureOutcome,
+  onBeforePokeballThrow: (event) => showActionSplash({
+    userId: event.userId,
+    actionName: event.pokeballName,
+    verb: 'throws',
+  }),
 })
 
 const pokeballCaptureTrainerAccentColor = computed(() => {

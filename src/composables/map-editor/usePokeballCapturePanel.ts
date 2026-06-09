@@ -25,6 +25,16 @@ const D20_ROLL_ANIMATION_MS = 650
 const HIT_ROLL_VISIBLE_MS = 850
 const HIT_RESULT_VISIBLE_MS = 600
 
+const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => (
+  value !== null
+  && (typeof value === 'object' || typeof value === 'function')
+  && typeof (value as { then?: unknown }).then === 'function'
+)
+
+const warnPokeballThrowNotificationFailure = (error: unknown) => {
+  console.warn('[usePokeballCapturePanel] Poké Ball throw notification failed', error)
+}
+
 export interface UsePokeballCapturePanelOptions {
   map: Ref<TabletopMap | null>
   spawnedPokemon: ComputedRef<SpawnedPokemon[]>
@@ -32,6 +42,7 @@ export interface UsePokeballCapturePanelOptions {
   trainerBySlug: SheetMapRef<TrainerSheet>
   canControlPlacement: (id: string) => boolean
   applyCaptureOutcome?: (event: PokeballCaptureOutcomeEvent) => MaybePromise<void>
+  onBeforePokeballThrow?: (event: { userId: string; pokeballName: string }) => MaybePromise<unknown>
   now?: () => number
   maxLogEntries?: number
 }
@@ -49,6 +60,7 @@ export const usePokeballCapturePanel = ({
   trainerBySlug,
   canControlPlacement,
   applyCaptureOutcome,
+  onBeforePokeballThrow,
   now,
   maxLogEntries,
 }: UsePokeballCapturePanelOptions) => {
@@ -263,7 +275,7 @@ export const usePokeballCapturePanel = ({
     activePokeballCapture.value = null
   }
 
-  const selectPokeballCaptureTarget = (targetId: string) => {
+  const selectPokeballCaptureTarget = async (targetId: string) => {
     const request = activePokeballCapture.value
     if (!request) return
 
@@ -282,12 +294,26 @@ export const usePokeballCapturePanel = ({
       return
     }
 
+    try {
+      const notification = onBeforePokeballThrow?.({ userId: user.id, pokeballName: livePokeball.name })
+      if (isPromiseLike(notification)) await notification
+    } catch (error) {
+      warnPokeballThrowNotificationFailure(error)
+    }
+    if (activePokeballCapture.value !== request || !canControlPlacement(request.trainerId)) return
+
+    const currentUser = findToken(request.trainerId)
+    const currentTrainer = trainerSheetForToken(currentUser)
+    const currentTarget = findToken(targetId)
+    const currentPokeball = findPokeballOption(request.trainerId, livePokeball.name)
+    if (!currentUser || !currentTrainer || !currentTarget || !currentPokeball) return
+
     const result = resolvePokeballCaptureAttempt({
-      trainer,
-      user,
-      target,
-      targetSheet: pokemonSheetForToken(target),
-      pokeball: livePokeball,
+      trainer: currentTrainer,
+      user: currentUser,
+      target: currentTarget,
+      targetSheet: pokemonSheetForToken(currentTarget),
+      pokeball: currentPokeball,
       pokemonBySlug: pokemonBySlug.value,
       currentRound: map.value?.initiative?.round ?? null,
       now,
@@ -299,8 +325,8 @@ export const usePokeballCapturePanel = ({
     showPokeballCaptureResolution({
       trainerId: request.trainerId,
       targetId,
-      targetSlug: target.sheetSlug,
-      pokeballName: livePokeball.name,
+      targetSlug: currentTarget.sheetSlug,
+      pokeballName: currentPokeball.name,
       result,
     })
   }

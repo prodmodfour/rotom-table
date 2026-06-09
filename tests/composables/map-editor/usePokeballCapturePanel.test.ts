@@ -58,7 +58,10 @@ const trainerSheet = (): TrainerSheet => ({
   },
 })
 
-const buildPanel = (applyCaptureOutcome = vi.fn()) => {
+const buildPanel = (
+  applyCaptureOutcome = vi.fn(),
+  onBeforePokeballThrow?: (event: { userId: string; pokeballName: string }) => unknown,
+) => {
   const trainer = trainerSheet()
   const map = ref(mapDoc())
   const panel = usePokeballCapturePanel({
@@ -71,6 +74,7 @@ const buildPanel = (applyCaptureOutcome = vi.fn()) => {
     trainerBySlug: ref(new Map([[trainer.slug, trainer]])),
     canControlPlacement: (id) => id === 'trainer',
     applyCaptureOutcome,
+    onBeforePokeballThrow,
     now: () => 100,
   })
 
@@ -129,6 +133,28 @@ describe('usePokeballCapturePanel', () => {
       pokeballName: 'Basic Ball',
       result: expect.objectContaining({ hit: false, failureReason: 'The Poké Ball missed.' }),
     }))
+  })
+
+  it('waits for the throw splash hook before starting capture feedback', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    const onBeforePokeballThrow = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 100)))
+    const { panel } = buildPanel(vi.fn(), onBeforePokeballThrow)
+
+    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
+    const capture = panel.selectPokeballCaptureTarget('pidgey')
+
+    expect(onBeforePokeballThrow).toHaveBeenCalledWith({ userId: 'trainer', pokeballName: 'Basic Ball' })
+    expect(panel.pokeballCaptureFeedback.value).toBeNull()
+    expect(panel.pokeballCaptureResult.value).toBeNull()
+
+    await vi.advanceTimersByTimeAsync(100)
+    await capture
+
+    expect(panel.pokeballCaptureFeedback.value).toMatchObject({
+      phase: 'rolling',
+      moveName: 'Throw Basic Ball',
+    })
   })
 
   it('exposes the capture result modal once the Poké Ball hit roll finishes', () => {
