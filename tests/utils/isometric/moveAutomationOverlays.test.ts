@@ -97,7 +97,7 @@ describe('move automation CSS overlay renderers', () => {
   it('reports move feedback CSS changes and anchors roll/result phases correctly', () => {
     const scene = new THREE.Scene()
     const renderer = createMoveAutomationFeedbackRenderer(scene)
-    const user = makeRenderObject({ id: 'user-1' })
+    const user = makeRenderObject({ id: 'user-1', accentColor: '#33aaff' })
     const target = makeRenderObject({
       id: 'target-1',
       currentCenter: new THREE.Vector3(6, 4, 8),
@@ -121,6 +121,10 @@ describe('move automation CSS overlay renderers', () => {
     expect(renderer.update(updateOptions)).toBe(false)
 
     const feedbackSprite = scene.children.find((child) => child instanceof THREE.Object3D && child.visible) as (THREE.Object3D & { element?: HTMLElement }) | undefined
+    const rollBody = feedbackSprite?.element?.querySelector<HTMLElement>('.move-automation-roll')
+    expect(rollBody?.innerHTML).toContain('move-automation-roll__d20')
+    expect(rollBody?.className).toContain('is-rolling')
+    expect((feedbackSprite?.element?.style as unknown as Record<string, string>)?.['--accent']).toBe('#33aaff')
     expect(feedbackSprite?.position.x).toBe(user.currentCenter.x)
     expect(feedbackSprite?.position.y).toBeCloseTo(user.currentCenter.y + Math.max(user.height, user.clearance) + 0.95)
     expect(feedbackSprite?.position.z).toBe(user.currentCenter.z)
