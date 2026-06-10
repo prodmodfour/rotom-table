@@ -154,6 +154,16 @@ export interface DisplayedEncounterRow {
   levelRange: string
 }
 
+// View mode keeps Nothing visually first without changing roll/edit ordering.
+const orderDisplayedEncounterRows = (
+  rows: ReadonlyArray<DisplayedEncounterRow>,
+): DisplayedEncounterRow[] => [...rows].sort((a, b) => {
+  const aIsNothing = isNormalizedEncounterNothingEntry(a)
+  const bIsNothing = isNormalizedEncounterNothingEntry(b)
+  if (aIsNothing === bIsNothing) return 0
+  return aIsNothing ? -1 : 1
+})
+
 export const describeEntries = (
   table: EncounterTable,
 ): DisplayedEncounterRow[] => {
@@ -164,7 +174,7 @@ export const describeEntries = (
   const totalWeight = totalEncounterWeight(entries)
   let previousWeight = 0
 
-  return entries.map((entry) => {
+  const rows = entries.map((entry) => {
     const lo = previousWeight + 1
     const hi = previousWeight + entry.weight
     previousWeight = hi
@@ -179,6 +189,8 @@ export const describeEntries = (
       levelRange: formatEncounterEntryLevelRange(entry),
     }
   })
+
+  return orderDisplayedEncounterRows(rows)
 }
 
 export const encounterTableDisplayEntryCount = (table: EncounterTable): number =>
