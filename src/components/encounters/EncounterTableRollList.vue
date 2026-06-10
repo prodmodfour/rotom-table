@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { isEncounterNothingSpecies } from '#shared/encounterTables'
 import { pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
+import { pokedexEntryPathForSpecies } from '~/utils/pokedex/routes'
 import type { DisplayedEncounterRow } from '~/utils/encounterTables'
 
 const props = defineProps<{
@@ -11,9 +13,14 @@ const spriteUrlForSpecies = (species: string): string | null => (
   pokemonCatalogBySpecies.get(species)?.spriteUrl ?? null
 )
 
+const pokedexPathForSpecies = (species: string): string | null => (
+  isEncounterNothingSpecies(species) ? null : pokedexEntryPathForSpecies(species)
+)
+
 const rowsWithSprites = computed(() => props.rows.map((row) => ({
   ...row,
   spriteUrl: spriteUrlForSpecies(row.species),
+  pokedexPath: pokedexPathForSpecies(row.species),
 })))
 </script>
 
@@ -38,7 +45,13 @@ const rowsWithSprites = computed(() => props.rows.map((row) => ({
           loading="lazy"
           decoding="async"
         />
-        <span class="entry-species-name">{{ row.species }}</span>
+        <NuxtLink
+          v-if="row.pokedexPath"
+          class="entry-species-name entry-species-link"
+          :to="row.pokedexPath"
+          prefetch-on="interaction"
+        >{{ row.species }}</NuxtLink>
+        <span v-else class="entry-species-name">{{ row.species }}</span>
       </span>
       <span class="entry-chance">{{ row.chancePercentLabel }}</span>
       <span class="entry-levels">{{ row.levelRange }}</span>
@@ -117,6 +130,29 @@ const rowsWithSprites = computed(() => props.rows.map((row) => ({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.entry-species-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-decoration-thickness: 1px;
+  text-decoration-style: dotted;
+  text-underline-offset: 0.18em;
+  transition: color 0.12s ease, text-decoration-color 0.12s ease;
+}
+
+.entry-species-link:hover,
+.entry-species-link:focus-visible {
+  color: var(--ink-bright);
+  text-decoration-color: var(--accent);
+  text-decoration-style: solid;
+}
+
+.entry-species-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 
 @media (max-width: 640px) {
