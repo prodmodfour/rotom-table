@@ -6,7 +6,7 @@ import {
 } from '~/utils/combatLog'
 
 describe('combatLog utilities', () => {
-  it('combines move, ability, order, maneuver, and movement entries in chronological order', () => {
+  it('combines move, ability, order, maneuver, movement, and initiative entries in chronological order', () => {
     const messages = buildCombatLogMessages({
       moveLog: [
         {
@@ -58,6 +58,14 @@ describe('combatLog utilities', () => {
           lines: ['Crockefeller moved 3 squares from (0, 0, 0) to (3, 0, 0).'],
         },
       ],
+      initiativeLog: [
+        {
+          at: 180,
+          userName: 'Crockefeller',
+          actionName: 'Initiative',
+          lines: ['Crockefeller has gained initiative!'],
+        },
+      ],
     })
 
     expect(messages.map((message) => message.title)).toEqual([
@@ -66,6 +74,7 @@ describe('combatLog utilities', () => {
       'Lenora used Mobilize.',
       'Pike used Trip.',
       'Crockefeller Moves',
+      'Crockefeller has gained initiative!',
       'Foil used Ember.',
     ])
     expect(messages.map((message) => message.source)).toEqual([
@@ -74,12 +83,14 @@ describe('combatLog utilities', () => {
       'order',
       'maneuver',
       'movement',
+      'initiative',
       'move',
     ])
     expect(messages[2]?.details).toEqual(['Target: Any Ally'])
     expect(messages[3]?.details).toEqual(['Target: Doug'])
     expect(messages[4]?.details).toEqual(['3 squares from (0, 0, 0) to (3, 0, 0).'])
-    expect(messages[5]?.details).toEqual(['Crockefeller: 9 damage.'])
+    expect(messages[5]?.details).toEqual([])
+    expect(messages[6]?.details).toEqual(['Crockefeller: 9 damage.'])
   })
 
   it('includes Poké Ball capture attempts', () => {
@@ -172,7 +183,10 @@ describe('combatLog utilities', () => {
       movementLog: [
         { at: 300, userName: 'Doug', actionName: 'Movement', lines: ['Doug moved from here to there.'] },
       ],
-    })).toBe(2)
+      initiativeLog: [
+        { at: 400, userName: 'Doug', actionName: 'Initiative', lines: ['Doug has gained initiative!'] },
+      ],
+    })).toBe(3)
   })
 
   it('clears combat log metadata while preserving unrelated metadata', () => {
@@ -182,6 +196,7 @@ describe('combatLog utilities', () => {
       orderLog: [{ at: 120, userName: 'Lenora', orderName: 'Mobilize', lines: ['Lenora used Mobilize.'] }],
       maneuverLog: [{ at: 130, userName: 'Pike', maneuverName: 'Trip', lines: ['Pike used Trip.'] }],
       movementLog: [{ at: 140, userName: 'Doug', actionName: 'Movement', lines: ['Doug moved.'] }],
+      initiativeLog: [{ at: 145, userName: 'Doug', actionName: 'Initiative', lines: ['Doug has gained initiative!'] }],
       captureLog: [{ at: 150, userName: 'Lenora', actionName: 'Throw Basic Ball', lines: ['Lenora threw a ball.'] }],
       encounterName: 'Route 1',
     })).toEqual({ encounterName: 'Route 1' })

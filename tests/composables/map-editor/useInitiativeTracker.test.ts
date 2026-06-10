@@ -238,6 +238,47 @@ describe('useInitiativeTracker', () => {
     expect(map.value?.placements[0].initiative).toBe(row.baseInitiative)
   })
 
+  it('appends combat log entries when characters gain initiative', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'fast', sheetKind: 'pokemon', sheetSlug: 'fast', position: { x: 0, y: 0, z: 0 }, initiative: 30 },
+      { id: 'slow', sheetKind: 'pokemon', sheetSlug: 'slow', position: { x: 1, y: 0, z: 0 }, initiative: 10 },
+    ]))
+    let currentTime = 100
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'fast', sheetSlug: 'fast', species: 'Fast' }),
+        token({ id: 'slow', sheetSlug: 'slow', species: 'Slow' }),
+      ]),
+      pokemonBySlug: ref(new Map([['fast', sheet('fast')], ['slow', sheet('slow')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+      now: () => currentTime,
+    })
+
+    tracker.setActiveInitiative('fast')
+    tracker.setActiveInitiative('fast')
+    currentTime = 200
+    tracker.nextInitiative()
+
+    expect(map.value?.metadata?.initiativeLog).toEqual([
+      {
+        at: 100,
+        userId: 'fast',
+        userName: 'Fast',
+        actionName: 'Initiative',
+        lines: ['Fast has gained initiative!'],
+      },
+      {
+        at: 200,
+        userId: 'slow',
+        userName: 'Slow',
+        actionName: 'Initiative',
+        lines: ['Slow has gained initiative!'],
+      },
+    ])
+  })
+
   it('does not mutate initiative state without manage permission', () => {
     const map = ref<TabletopMap | null>(mapWithPlacements([
       { id: 'player-token', sheetKind: 'pokemon', sheetSlug: 'player-token', position: { x: 0, y: 0, z: 0 }, initiative: 12 },
@@ -265,5 +306,6 @@ describe('useInitiativeTracker', () => {
 
     expect(map.value?.placements[0].initiative).toBe(12)
     expect(map.value?.initiative).toEqual({ activeId: null, round: 1 })
+    expect(map.value?.metadata).toBeUndefined()
   })
 })

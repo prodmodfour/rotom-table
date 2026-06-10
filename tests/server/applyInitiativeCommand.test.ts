@@ -195,6 +195,13 @@ const createNextCommand = (
   ...overrides,
 })
 
+const readInitiativeSheet = (_kind: 'pokemon' | 'trainer', slug: string) => ({
+  path: `/tmp/${slug}.json`,
+  sheet: slug === 'bulbasaur'
+    ? { slug, nickname: 'Bulby', species: 'Bulbasaur' }
+    : { slug, species: 'Pikachu' },
+})
+
 const createSnapshotWriter = (calls: AuthoritativeSessionState<TabletopMapV2>[]) => (
   state: AuthoritativeSessionState<TabletopMapV2>,
   options = {},
@@ -222,6 +229,7 @@ describe('applyInitiativeCommandUseCase', () => {
       operationTracker: tracker,
       clock: () => processedAt,
       writeSnapshot: createSnapshotWriter(snapshotCalls),
+      readSheet: readInitiativeSheet,
     })
 
     expect(result.status).toBe('accepted')
@@ -275,6 +283,22 @@ describe('applyInitiativeCommandUseCase', () => {
     expect(storedMap?.document.initiative).toEqual({ activeId: 'token-bulbasaur', round: 2 })
     expect(storedMap?.document.placements.find((placement) => placement.id === 'token-bulbasaur')?.initiative)
       .toBe(22)
+    expect(storedMap?.document.metadata?.initiativeLog).toEqual([
+      {
+        at: Date.parse(processedAt),
+        userId: 'token-bulbasaur',
+        userName: 'Bulby',
+        actionName: 'Initiative',
+        lines: ['Bulby has gained initiative!'],
+      },
+    ])
+    expect(result.patchEvent.payload.logEntry).toEqual({
+      at: Date.parse(processedAt),
+      userId: 'token-bulbasaur',
+      userName: 'Bulby',
+      actionName: 'Initiative',
+      lines: ['Bulby has gained initiative!'],
+    })
     expect(JSON.stringify(result.patchEvent.payload)).not.toContain('voxels')
   })
 

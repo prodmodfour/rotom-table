@@ -31,7 +31,12 @@ import {
   type InitiativeCommandType,
   type SetInitiativeCommandPayload,
 } from '#shared/sessionInitiativeCommands'
-import type { InitiativeTrackerState, SheetPlacement, TabletopMapV2 } from '~/types/map'
+import type { InitiativeTrackerState, SheetKind, SheetPlacement, TabletopMapV2 } from '~/types/map'
+import {
+  appendInitiativeLogRecord,
+  createInitiativeLogEntry,
+  type InitiativeLogEntry,
+} from '~/utils/initiativeLog'
 import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
 import {
   sessionOperationTracker,
@@ -48,6 +53,7 @@ import {
   type WriteSessionSnapshotOptions,
   type WriteSessionSnapshotResult,
 } from '../utils/sessionSnapshots'
+import { readSheetFile } from '../utils/sheetStorage'
 import {
   sessionStore,
   type InMemorySessionStore,
@@ -86,6 +92,7 @@ export interface InitiativePatchPayload {
   readonly previous: InitiativeLaneState
   readonly current: InitiativeLaneState
   readonly changedTokenIds: readonly string[]
+  readonly logEntry?: InitiativeLogEntry
 }
 
 export type InitiativePatchEvent = AcceptedSessionCommandPatchEvent<
@@ -122,12 +129,19 @@ export type ApplyInitiativeCommandSnapshotWriter = (
   options?: WriteSessionSnapshotOptions<TabletopMapV2>,
 ) => WriteSessionSnapshotResult<TabletopMapV2>
 
+export type InitiativeSheetReader = (
+  kind: SheetKind,
+  slug: string,
+) => { readonly path: string; readonly sheet: Record<string, unknown> } | null
+
 export interface ApplyInitiativeCommandDependencies {
   readonly env?: SessionHostRuntimeEnv
   readonly store?: InMemorySessionStore<AuthoritativeSessionState<TabletopMapV2>>
   readonly operationTracker?: InMemorySessionOperationTracker | false
   readonly clock?: ApplyInitiativeCommandClock
   readonly writeSnapshot?: ApplyInitiativeCommandSnapshotWriter
+  readonly readSheet?: InitiativeSheetReader
+  readonly maxInitiativeLogEntries?: number
 }
 
 export interface AppliedInitiativeSessionDetails {
@@ -192,6 +206,15 @@ type ResolvedInitiativeMap = {
 
 const defaultClock: ApplyInitiativeCommandClock = () => new Date().toISOString()
 
+const defaultReadSheet: InitiativeSheetReader = (kind, slug) => {
+  const result = readSheetFile<Record<string, unknown>>(kind, slug)
+  if (result === null) return null
+  return {
+    path: result.path,
+    sheet: result.sheet,
+  }
+}
+
 const messageFromError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
@@ -205,6 +228,41 @@ const metadataForResult = (
 
 const issueSummary = (issues: readonly SessionCommandValidationIssue[]): string =>
   issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+
+const nonEmptyString = (value: unknown): string | null => {
+  const text = typeof value === 'string' ? value.trim() : ''
+  return text || null
+}
+
+const fallbackPlacementName = (placement: Pick<SheetPlacement, 'sheetSlug'>): string => placement.sheetSlug
+
+const placementDisplayName = (
+  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
+  readSheet: InitiativeSheetReader,
+): string => {
+  try {
+    const sheet = readSheet(placement.sheetKind, placement.sheetSlug)?.sheet
+    if (!sheet) return fallbackPlacementName(placement)
+
+    if (placement.sheetKind === 'pokemon') {
+      return nonEmptyString(sheet.nickname)
+        ?? nonEmptyString(sheet.species)
+        ?? nonEmptyString(sheet.slug)
+        ?? fallbackPlacementName(placement)
+    }
+
+    return nonEmptyString(sheet.name)
+      ?? nonEmptyString(sheet.slug)
+      ?? fallbackPlacementName(placement)
+  } catch {
+    return fallbackPlacementName(placement)
+  }
+}
+
+const timestampForProcessedAt = (processedAt: string): number => {
+  const timestamp = Date.parse(processedAt)
+  return Number.isFinite(timestamp) ? timestamp : Date.now()
+}
 
 const normalizeRound = (round: unknown): number => {
   const value = Math.floor(Number(round ?? 1))
@@ -584,6 +642,11 @@ const placementCount = (
   tokenId: string,
 ): number => placements.filter((placement) => placement.id === tokenId).length
 
+const firstPlacementById = (
+  placements: readonly SheetPlacement[],
+  tokenId: string,
+): SheetPlacement | undefined => placements.find((placement) => placement.id === tokenId)
+
 const initiativeOrder = (placements: readonly SheetPlacement[]): readonly string[] =>
   [...placements]
     .sort((left, right) => {
@@ -602,6 +665,60 @@ const initiativeOrder = (placements: readonly SheetPlacement[]): readonly string
 const mapWithUpdatedAt = (map: TabletopMapV2, processedAt: string): TabletopMapV2 => {
   const updatedAtMs = Date.parse(processedAt)
   return Number.isFinite(updatedAtMs) ? { ...map, updatedAt: updatedAtMs } : { ...map }
+}
+
+const commandGrantsInitiative = (
+  command: InitiativeCommand,
+  previous: InitiativeLaneState,
+  current: InitiativeLaneState,
+): boolean => {
+  if (!current.activeId) return false
+
+  if (command.type === SET_INITIATIVE_COMMAND_TYPE) {
+    return command.payload.activeId !== undefined && current.activeId !== previous.activeId
+  }
+
+  return current.activeId !== previous.activeId || current.round !== previous.round
+}
+
+const createInitiativeGainLogEntry = (
+  command: InitiativeCommand,
+  previous: InitiativeLaneState,
+  current: InitiativeLaneState,
+  document: TabletopMapV2,
+  processedAt: string,
+  readSheet: InitiativeSheetReader,
+): InitiativeLogEntry | undefined => {
+  if (!commandGrantsInitiative(command, previous, current)) return undefined
+
+  const activeId = current.activeId
+  if (!activeId) return undefined
+
+  const placement = firstPlacementById(document.placements, activeId)
+  if (!placement) return undefined
+
+  return createInitiativeLogEntry({
+    userId: activeId,
+    userName: placementDisplayName(placement, readSheet),
+  }, {
+    now: () => timestampForProcessedAt(processedAt),
+  })
+}
+
+const mapWithInitiativeLogEntry = (
+  map: TabletopMapV2,
+  logEntry: InitiativeLogEntry | undefined,
+  maxLogEntries: number | undefined,
+): TabletopMapV2 => {
+  if (logEntry === undefined) return map
+  return {
+    ...map,
+    metadata: appendInitiativeLogRecord(
+      map.metadata,
+      logEntry,
+      maxLogEntries === undefined ? {} : { maxLogEntries },
+    ),
+  }
 }
 
 const applySetInitiativePayload = (
@@ -818,6 +935,7 @@ export const applyInitiativeCommandUseCase = (
   const tracker = dependencies.operationTracker ?? sessionOperationTracker
   const clock = dependencies.clock ?? defaultClock
   const snapshotWriter = dependencies.writeSnapshot ?? writeSessionSnapshot
+  const readSheet = dependencies.readSheet ?? defaultReadSheet
 
   const envelope = validateEnvelopeForInitiative(input.command)
   const record = getActiveInitiativeRecord(activeStore, envelope)
@@ -922,6 +1040,20 @@ export const applyInitiativeCommandUseCase = (
     return rejectionOutcome(envelope, record, record.state, result)
   }
 
+  const logEntry = createInitiativeGainLogEntry(
+    commandValidation.command,
+    previousInitiative.initiative,
+    currentPreview.initiative,
+    change.document,
+    processedAt,
+    readSheet,
+  )
+  const document = mapWithInitiativeLogEntry(
+    change.document,
+    logEntry,
+    dependencies.maxInitiativeLogEntries,
+  )
+
   const applied = applyAcceptedSessionCommandEffect({
     state: record.state,
     command: commandValidation.command,
@@ -932,11 +1064,12 @@ export const applyInitiativeCommandUseCase = (
       previous: cloneLaneState(previousInitiative.initiative),
       current: cloneLaneState(currentPreview.initiative),
       changedTokenIds: changedTokenIdsBetween(previousInitiative.initiative, currentPreview.initiative),
+      ...(logEntry === undefined ? {} : { logEntry }),
     },
     mapEffects: [
       {
         mapSlug: targetResult.target.mapSlug,
-        document: change.document,
+        document,
       },
     ],
   }, {

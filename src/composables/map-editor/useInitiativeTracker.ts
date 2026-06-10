@@ -1,4 +1,5 @@
 import { computed, watch, type ComputedRef, type Ref } from 'vue'
+import { appendInitiativeLogEntry } from '~/utils/initiativeLog'
 import { trimmedTextValueFromEvent } from '~/utils/domEvents'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
@@ -69,6 +70,8 @@ export interface UseInitiativeTrackerOptions {
   trainerBySlug: SheetMapRef<TrainerSheet>
   canManageInitiative: ComputedRef<boolean>
   focusEntry?: (id: string) => void
+  now?: () => number
+  maxInitiativeLogEntries?: number
 }
 
 export const normalizeInitiativeValue = (value: unknown): number | null => {
@@ -76,6 +79,11 @@ export const normalizeInitiativeValue = (value: unknown): number | null => {
   const n = Number(value)
   if (!Number.isFinite(n)) return null
   return Math.trunc(n)
+}
+
+const normalizeInitiativeRound = (value: unknown): number => {
+  const round = Math.floor(Number(value ?? 1))
+  return Number.isFinite(round) && round > 0 ? round : 1
 }
 
 const initiativeSpriteScale = (width: number, height: number): number =>
@@ -130,6 +138,8 @@ export const useInitiativeTracker = ({
   trainerBySlug,
   canManageInitiative,
   focusEntry,
+  now,
+  maxInitiativeLogEntries,
 }: UseInitiativeTrackerOptions) => {
   const baseSpeedForPlacement = (kind: InitiativeKind, sheetSlug: string): number => {
     if (kind === 'pokemon') {
@@ -226,10 +236,7 @@ export const useInitiativeTracker = ({
     const id = map.value?.initiative?.activeId ?? null
     return id && validInitiativeIds.value.has(id) ? id : null
   })
-  const initiativeRound = computed(() => {
-    const round = Math.floor(Number(map.value?.initiative?.round ?? 1))
-    return Number.isFinite(round) && round > 0 ? round : 1
-  })
+  const initiativeRound = computed(() => normalizeInitiativeRound(map.value?.initiative?.round))
   const hasInitiativeValues = computed(() =>
     (map.value?.placements ?? []).some((placement) => normalizeInitiativeValue(placement.initiative) !== null),
   )
@@ -239,18 +246,41 @@ export const useInitiativeTracker = ({
     if (!map.value.initiative || typeof map.value.initiative !== 'object') {
       map.value.initiative = { activeId: null, round: 1 }
     }
-    const round = Math.floor(Number(map.value.initiative.round ?? 1))
-    map.value.initiative.round = Number.isFinite(round) && round > 0 ? round : 1
+    map.value.initiative.round = normalizeInitiativeRound(map.value.initiative.round)
     return map.value.initiative
   }
 
   const placementById = (id: string) => map.value?.placements.find((placement) => placement.id === id) ?? null
 
+  const initiativeCharacterName = (id: string): string =>
+    initiativeRows.value.find((row) => row.id === id)?.name
+    ?? placementById(id)?.sheetSlug
+    ?? id
+
+  const appendInitiativeGainLog = (id: string) => {
+    if (!map.value) return
+    map.value.metadata = appendInitiativeLogEntry(map.value.metadata, {
+      userId: id,
+      userName: initiativeCharacterName(id),
+    }, {
+      ...(now ? { now } : {}),
+      ...(maxInitiativeLogEntries === undefined ? {} : { maxLogEntries: maxInitiativeLogEntries }),
+    })
+  }
+
+  const activeInitiativeChanged = (
+    before: { readonly activeId: string | null; readonly round: number },
+    after: { readonly activeId: string | null; readonly round: number },
+  ): boolean => Boolean(after.activeId) && (after.activeId !== before.activeId || after.round !== before.round)
+
   const setActiveInitiative = (id: string) => {
     if (!canManageInitiative.value) return
     const state = ensureInitiativeState()
     if (!state) return
+    const previousActiveId = state.activeId ?? null
+    if (previousActiveId === id) return
     state.activeId = id
+    appendInitiativeGainLog(id)
   }
 
   const focusInitiativeEntry = (id: string) => {
@@ -328,11 +358,15 @@ export const useInitiativeTracker = ({
     const state = ensureInitiativeState()
     if (!state) return
 
+    const before = { activeId: state.activeId ?? null, round: initiativeRound.value }
     const ids = order.map((entry) => entry.id)
     const currentIndex = state.activeId ? ids.indexOf(state.activeId) : -1
     const nextIndex = currentIndex >= 0 && currentIndex < ids.length - 1 ? currentIndex + 1 : 0
     if (currentIndex === ids.length - 1) state.round = initiativeRound.value + 1
     state.activeId = ids[nextIndex]
+
+    const after = { activeId: state.activeId ?? null, round: normalizeInitiativeRound(state.round) }
+    if (activeInitiativeChanged(before, after) && after.activeId) appendInitiativeGainLog(after.activeId)
   }
 
   const previousInitiative = () => {
@@ -342,11 +376,15 @@ export const useInitiativeTracker = ({
     const state = ensureInitiativeState()
     if (!state) return
 
+    const before = { activeId: state.activeId ?? null, round: initiativeRound.value }
     const ids = order.map((entry) => entry.id)
     const currentIndex = state.activeId ? ids.indexOf(state.activeId) : -1
     const previousIndex = currentIndex > 0 ? currentIndex - 1 : ids.length - 1
     if (currentIndex === 0) state.round = Math.max(1, initiativeRound.value - 1)
     state.activeId = ids[previousIndex]
+
+    const after = { activeId: state.activeId ?? null, round: normalizeInitiativeRound(state.round) }
+    if (activeInitiativeChanged(before, after) && after.activeId) appendInitiativeGainLog(after.activeId)
   }
 
   watch(
