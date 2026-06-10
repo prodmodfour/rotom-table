@@ -469,11 +469,10 @@ samp {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 7px 9px;
-  border: 2px solid var(--rule-active);
-  border-radius: 14px;
-  background: rgba(5, 6, 8, 0.9);
-  color: var(--ink-bright);
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
   font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 900;
@@ -482,10 +481,16 @@ samp {
   white-space: nowrap;
   user-select: none;
   pointer-events: none;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.42),
-    0 0 10px rgba(var(--accent-rgb), 0.35);
+  -webkit-text-stroke: 0.8px rgba(0, 0, 0, 0.96);
+  paint-order: stroke fill;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.98),
+    1px 0 0 rgba(0, 0, 0, 0.98),
+    -1px 0 0 rgba(0, 0, 0, 0.98),
+    0 -1px 0 rgba(0, 0, 0, 0.98),
+    0 2px 3px rgba(0, 0, 0, 0.85),
+    0 0 6px rgba(0, 0, 0, 0.72);
+  box-shadow: none;
 }
 
 .move-automation-roll.is-rolling {
@@ -497,6 +502,8 @@ samp {
   background: transparent;
   color: var(--accent);
   box-shadow: none;
+  -webkit-text-stroke: 0;
+  paint-order: normal;
   text-shadow: none;
 }
 
@@ -523,27 +530,11 @@ samp {
   vector-effect: non-scaling-stroke;
 }
 
-.move-automation-roll.is-result.is-hit-roll {
-  border-color: var(--rule-active);
-  color: var(--ink-bright);
-}
-
-.move-automation-roll.is-result.is-hit {
-  border-color: var(--good);
-  color: #8cff9a;
-}
-
-.move-automation-roll.is-result.is-miss {
-  border-color: var(--bad);
-  color: #ff6b73;
-}
-
+.move-automation-roll.is-result.is-hit-roll,
+.move-automation-roll.is-result.is-hit,
+.move-automation-roll.is-result.is-miss,
 .move-automation-roll.is-result.is-crit {
-  border-color: var(--accent);
-  color: var(--accent);
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.45),
-    0 0 16px rgba(var(--accent-rgb), 0.78);
+  color: #fff;
 }
 
 @keyframes move-automation-d20-roll {
