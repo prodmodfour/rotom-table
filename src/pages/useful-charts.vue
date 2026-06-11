@@ -7,14 +7,12 @@ import {
   USEFUL_CHART_DAMAGE_ROWS,
   USEFUL_CHART_EFFECTIVENESS_LADDER,
   USEFUL_CHART_POWER_ROWS,
-  USEFUL_CHART_SOURCE,
   USEFUL_CHART_TYPE_ORDER,
   USEFUL_CHART_TYPE_QUIRKS,
   USEFUL_CHART_TYPE_ROWS,
   USEFUL_CHART_WEIGHT_CLASS_ROWS,
   type UsefulChartDamageEntry,
   type UsefulChartDamageMultiplier,
-  type UsefulChartPokemonType,
   type UsefulChartTypeCell,
   type UsefulChartTypeRelation,
 } from '~/utils/usefulCharts'
@@ -64,27 +62,6 @@ const STAT_LABELS: Record<StatKey, string> = {
   spd: 'Speed',
 }
 
-const TYPE_ABBREVIATIONS: Record<UsefulChartPokemonType, string> = {
-  Normal: 'NOR',
-  Fire: 'FIR',
-  Water: 'WAT',
-  Electric: 'ELE',
-  Grass: 'GRA',
-  Ice: 'ICE',
-  Fighting: 'FIG',
-  Poison: 'POI',
-  Ground: 'GRO',
-  Flying: 'FLY',
-  Psychic: 'PSY',
-  Bug: 'BUG',
-  Rock: 'ROC',
-  Ghost: 'GHO',
-  Dragon: 'DRA',
-  Dark: 'DAR',
-  Steel: 'STE',
-  Fairy: 'FAI',
-}
-
 const TYPE_RELATION_LABELS: Record<UsefulChartTypeRelation, string> = {
   immune: 'Immune',
   resisted: 'Resisted',
@@ -96,8 +73,6 @@ const statLabel = (stat: StatKey): string => STAT_LABELS[stat]
 const natureName = (nature: (typeof PTU_NATURES)[number]): string => (
   nature.plus === nature.minus ? `${nature.name}*` : nature.name
 )
-const typeAbbreviation = (type: UsefulChartPokemonType): string => TYPE_ABBREVIATIONS[type]
-
 const formatTypeDamageMultiplier = (multiplier: UsefulChartDamageMultiplier): string => {
   if (multiplier === 0.5) return '×½'
   return `×${multiplier}`
@@ -118,12 +93,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
     <AppNavigation />
 
     <header class="panel-card useful-charts-hero">
-      <p class="useful-charts-eyebrow">{{ USEFUL_CHART_SOURCE }}</p>
-      <h1>Useful Charts</h1>
-      <p>
-        Quick Pokémon Tabletop United references for experience, damage, type matchups,
-        natures, power, and weight classes.
-      </p>
       <div class="chart-tab-list" role="tablist" aria-label="Useful chart sections">
         <button
           v-for="tab in CHART_TABS"
@@ -148,13 +117,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
       role="tabpanel"
       aria-labelledby="chart-tab-experience"
     >
-      <div class="chart-card__header">
-        <div>
-          <p class="chart-card__eyebrow">Pokémon</p>
-          <h2>Pokémon Experience Chart</h2>
-        </div>
-      </div>
-
       <div class="table-scroll">
         <table class="chart-table chart-table--experience">
           <caption>Experience needed for Pokémon levels 1 through 100.</caption>
@@ -186,10 +148,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
       aria-labelledby="chart-tab-damage"
     >
       <div class="chart-card__header">
-        <div>
-          <p class="chart-card__eyebrow">Combat</p>
-          <h2>Damage Charts</h2>
-        </div>
         <p class="chart-card__note">Set damage is shown as minimum / average / maximum.</p>
       </div>
 
@@ -259,14 +217,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
       role="tabpanel"
       aria-labelledby="chart-tab-type-effectiveness"
     >
-      <div class="chart-card__header">
-        <div>
-          <p class="chart-card__eyebrow">Combat</p>
-          <h2>Type Effectiveness Chart</h2>
-        </div>
-        <p class="chart-card__note">Rows attack; columns defend. Neutral matchups are left blank.</p>
-      </div>
-
       <div class="table-scroll type-table-scroll">
         <table class="chart-table type-chart-table">
           <caption>Single-type attack effectiveness against single defending types.</caption>
@@ -282,16 +232,14 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
                 scope="col"
                 class="type-heading type-heading--column"
               >
-                <TypeBadge :type="type" size="xs" decorative />
-                <span>{{ typeAbbreviation(type) }}</span>
+                <TypeBadge :type="type" size="xs" />
               </th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="row in USEFUL_CHART_TYPE_ROWS" :key="`attacker-${row.attacker}`">
               <th scope="row" class="type-heading type-heading--row sticky-col">
-                <TypeBadge :type="row.attacker" size="xs" decorative />
-                <span>{{ typeAbbreviation(row.attacker) }}</span>
+                <TypeBadge :type="row.attacker" size="xs" />
               </th>
               <td
                 v-for="cell in row.cells"
@@ -334,13 +282,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
       role="tabpanel"
       aria-labelledby="chart-tab-natures"
     >
-      <div class="chart-card__header">
-        <div>
-          <p class="chart-card__eyebrow">Pokémon</p>
-          <h2>Pokémon Nature Chart</h2>
-        </div>
-      </div>
-
       <div class="table-scroll">
         <table class="chart-table chart-table--nature">
           <caption>Natures and the base stats they raise and lower.</caption>
@@ -376,13 +317,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
       role="tabpanel"
       aria-labelledby="chart-tab-power-weight"
     >
-      <div class="chart-card__header">
-        <div>
-          <p class="chart-card__eyebrow">Capabilities</p>
-          <h2>Power Chart &amp; Weight Class Chart</h2>
-        </div>
-      </div>
-
       <div class="power-weight-grid">
         <article class="subchart-card">
           <h3>Power Chart</h3>
@@ -451,18 +385,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
   gap: 0.65rem;
 }
 
-.useful-charts-eyebrow,
-.chart-card__eyebrow {
-  margin: 0;
-  color: var(--accent);
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.useful-charts-hero h1,
-.chart-card h2,
 .subchart-card h3,
 .reference-note-card h3 {
   margin: 0;
@@ -471,13 +393,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
   line-height: 1.1;
 }
 
-.useful-charts-hero h1 {
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.useful-charts-hero p:not(.useful-charts-eyebrow),
 .chart-card__note,
 .chart-footnote {
   margin: 0;
@@ -528,13 +443,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
   align-items: flex-end;
   justify-content: space-between;
   gap: 0.8rem;
-}
-
-.chart-card h2 {
-  margin-top: 0.1rem;
-  font-size: clamp(1.45rem, 3vw, 2.15rem);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .chart-card__note {
@@ -662,8 +570,7 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
   line-height: 1.35;
 }
 
-.type-corner span,
-.type-heading span {
+.type-corner span {
   display: block;
 }
 
@@ -679,12 +586,7 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
 }
 
 .type-heading--row :deep(.type-badge) {
-  margin-right: 0.22rem;
   vertical-align: text-bottom;
-}
-
-.type-heading--row span {
-  display: inline;
 }
 
 .sticky-col {
