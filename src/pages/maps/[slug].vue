@@ -165,7 +165,10 @@ const {
   moveAnimationsEnabled,
   moveAnimationsReducedMotion,
 } = useMoveAnimationSettings()
-const { actionSplashSpeedLinesDurationMs } = useActionSplashSettings()
+const {
+  actionSplashDisplayDurationMs,
+  actionSplashSpeedLinesDurationMs,
+} = useActionSplashSettings()
 
 const {
   activeMoveAnimations,
@@ -534,6 +537,8 @@ const {
   spawnedPokemon,
   initiativeRows,
   publishActionSplash: (request) => publishSyncedActionSplash?.(request),
+  durationMs: actionSplashDisplayDurationMs,
+  leadInMs: actionSplashDisplayDurationMs,
 })
 const {
   enqueueAndBroadcastMoveAnimations,

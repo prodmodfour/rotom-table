@@ -1,10 +1,11 @@
-import { ref, type ComputedRef } from 'vue'
+import { ref, toValue, type ComputedRef, type MaybeRefOrGetter } from 'vue'
 import type { MapActionSplashPayload } from '#shared/mapActionEvents'
 import type { MapActionSplashProfileEntry, MapActionSplashState } from '~/types/mapActionSplash'
+import { DEFAULT_ACTION_SPLASH_DISPLAY_DURATION_MS } from '~/utils/actionSplashSettings'
 
 type MaybePromise<T> = T | Promise<T>
 
-export const ACTION_SPLASH_DURATION_MS = 1850
+export const ACTION_SPLASH_DURATION_MS = DEFAULT_ACTION_SPLASH_DISPLAY_DURATION_MS
 export const ACTION_SPLASH_LEAD_IN_MS = ACTION_SPLASH_DURATION_MS
 
 export interface MapActionSplashRequest {
@@ -36,8 +37,8 @@ export interface UseMapActionSplashOptions {
   spawnedPokemon: ComputedRef<readonly ActionSplashActor[]>
   initiativeRows: ComputedRef<readonly ActionSplashInitiativeEntry[]>
   publishActionSplash?: MapActionSplashPublishHandler
-  durationMs?: number
-  leadInMs?: number
+  durationMs?: MaybeRefOrGetter<number>
+  leadInMs?: MaybeRefOrGetter<number>
 }
 
 interface NormalizedActionSplashRequest {
@@ -77,9 +78,30 @@ const normalizeActionSplashRequest = (
   }
 }
 
+const resolveNonNegativeDurationMs = (
+  value: MaybeRefOrGetter<number> | undefined,
+  fallback: number,
+): number => {
+  const resolved = Number(value === undefined ? fallback : toValue(value))
+  return Number.isFinite(resolved) ? Math.max(0, resolved) : fallback
+}
+
+const resolveActionSplashTiming = (
+  options: Pick<UseMapActionSplashOptions, 'durationMs' | 'leadInMs'>,
+): { durationMs: number, leadInMs: number } => {
+  const durationMs = resolveNonNegativeDurationMs(options.durationMs, ACTION_SPLASH_DURATION_MS)
+  const leadInFallback = options.leadInMs === undefined && options.durationMs !== undefined
+    ? durationMs
+    : ACTION_SPLASH_LEAD_IN_MS
+  const leadInMs = Math.min(
+    resolveNonNegativeDurationMs(options.leadInMs, leadInFallback),
+    durationMs,
+  )
+
+  return { durationMs, leadInMs }
+}
+
 export const useMapActionSplash = (options: UseMapActionSplashOptions) => {
-  const durationMs = Math.max(0, options.durationMs ?? ACTION_SPLASH_DURATION_MS)
-  const leadInMs = Math.max(0, Math.min(options.leadInMs ?? ACTION_SPLASH_LEAD_IN_MS, durationMs))
   const actionSplash = ref<MapActionSplashState | null>(null)
   let actionSplashSequence = 0
   let actionSplashTimer: ReturnType<typeof setTimeout> | null = null
@@ -96,6 +118,7 @@ export const useMapActionSplash = (options: UseMapActionSplashOptions) => {
   }
 
   const renderActionSplash = (normalized: NormalizedActionSplashRequest): Promise<void> => {
+    const { durationMs, leadInMs } = resolveActionSplashTiming(options)
     const id = ++actionSplashSequence
     actionSplash.value = {
       id,

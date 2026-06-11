@@ -4,9 +4,13 @@ import AppNavigation from '~/components/AppNavigation.vue'
 import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
 import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
 import {
+  ACTION_SPLASH_DISPLAY_DURATION_STEP_MS,
   ACTION_SPLASH_SPEED_LINES_DURATION_STEP_MS,
+  DEFAULT_ACTION_SPLASH_DISPLAY_DURATION_MS,
   DEFAULT_ACTION_SPLASH_SPEED_LINES_DURATION_MS,
+  MAX_ACTION_SPLASH_DISPLAY_DURATION_MS,
   MAX_ACTION_SPLASH_SPEED_LINES_DURATION_MS,
+  MIN_ACTION_SPLASH_DISPLAY_DURATION_MS,
   MIN_ACTION_SPLASH_SPEED_LINES_DURATION_MS,
 } from '~/utils/actionSplashSettings'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
@@ -52,12 +56,22 @@ const {
   toggleMoveAnimationsEnabled,
 } = useMoveAnimationSettings()
 const {
+  actionSplashDisplayDurationMs,
+  actionSplashDisplayDurationLabel,
+  actionSplashDisplayDurationTitle,
+  setActionSplashDisplayDurationMs,
+  resetActionSplashDisplayDurationMs,
   actionSplashSpeedLinesDurationMs,
   actionSplashSpeedLinesDurationLabel,
   actionSplashSpeedLinesDurationTitle,
   setActionSplashSpeedLinesDurationMs,
   resetActionSplashSpeedLinesDurationMs,
 } = useActionSplashSettings()
+
+const actionSplashDisplayDurationRange = computed({
+  get: () => actionSplashDisplayDurationMs.value,
+  set: (durationMs: number) => setActionSplashDisplayDurationMs(durationMs),
+})
 
 const actionSplashSpeedLinesDurationRange = computed({
   get: () => actionSplashSpeedLinesDurationMs.value,
@@ -145,29 +159,54 @@ const handleCampaignFolderSelection = (event: Event) => {
       <section class="settings-group" aria-labelledby="action-splash-settings-title">
         <div class="settings-group__copy">
           <h2 id="action-splash-settings-title">Action splash</h2>
+          <p>{{ actionSplashDisplayDurationTitle }}</p>
           <p>{{ actionSplashSpeedLinesDurationTitle }}</p>
         </div>
 
-        <div class="settings-group__control settings-group__control--wide">
-          <span class="settings-status">{{ actionSplashSpeedLinesDurationLabel }}</span>
-          <label class="settings-range">
-            <span class="settings-toggle__eyebrow">Speed lines</span>
-            <input
-              v-model.number="actionSplashSpeedLinesDurationRange"
-              type="range"
-              :min="MIN_ACTION_SPLASH_SPEED_LINES_DURATION_MS"
-              :max="MAX_ACTION_SPLASH_SPEED_LINES_DURATION_MS"
-              :step="ACTION_SPLASH_SPEED_LINES_DURATION_STEP_MS"
-              :aria-valuetext="actionSplashSpeedLinesDurationLabel"
+        <div class="settings-group__control settings-group__control--wide settings-range-stack">
+          <div class="settings-range-control">
+            <span class="settings-status">{{ actionSplashDisplayDurationLabel }}</span>
+            <label class="settings-range">
+              <span class="settings-toggle__eyebrow">Display duration</span>
+              <input
+                v-model.number="actionSplashDisplayDurationRange"
+                type="range"
+                :min="MIN_ACTION_SPLASH_DISPLAY_DURATION_MS"
+                :max="MAX_ACTION_SPLASH_DISPLAY_DURATION_MS"
+                :step="ACTION_SPLASH_DISPLAY_DURATION_STEP_MS"
+                :aria-valuetext="actionSplashDisplayDurationLabel"
+              >
+            </label>
+            <button
+              type="button"
+              class="settings-reset"
+              @click="resetActionSplashDisplayDurationMs"
             >
-          </label>
-          <button
-            type="button"
-            class="settings-reset"
-            @click="resetActionSplashSpeedLinesDurationMs"
-          >
-            Reset to {{ DEFAULT_ACTION_SPLASH_SPEED_LINES_DURATION_MS }} ms
-          </button>
+              Reset to {{ DEFAULT_ACTION_SPLASH_DISPLAY_DURATION_MS }} ms
+            </button>
+          </div>
+
+          <div class="settings-range-control">
+            <span class="settings-status">{{ actionSplashSpeedLinesDurationLabel }}</span>
+            <label class="settings-range">
+              <span class="settings-toggle__eyebrow">Speed lines</span>
+              <input
+                v-model.number="actionSplashSpeedLinesDurationRange"
+                type="range"
+                :min="MIN_ACTION_SPLASH_SPEED_LINES_DURATION_MS"
+                :max="MAX_ACTION_SPLASH_SPEED_LINES_DURATION_MS"
+                :step="ACTION_SPLASH_SPEED_LINES_DURATION_STEP_MS"
+                :aria-valuetext="actionSplashSpeedLinesDurationLabel"
+              >
+            </label>
+            <button
+              type="button"
+              class="settings-reset"
+              @click="resetActionSplashSpeedLinesDurationMs"
+            >
+              Reset to {{ DEFAULT_ACTION_SPLASH_SPEED_LINES_DURATION_MS }} ms
+            </button>
+          </div>
         </div>
       </section>
 
@@ -275,6 +314,16 @@ const handleCampaignFolderSelection = (event: Event) => {
 
 .settings-group__control--wide {
   min-width: min(16rem, 100%);
+}
+
+.settings-range-stack {
+  gap: 0.85rem;
+}
+
+.settings-range-control {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
 }
 
 .settings-range {
