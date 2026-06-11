@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhX } from '@phosphor-icons/vue'
 import { onMounted, ref } from 'vue'
 
 withDefaults(defineProps<{
@@ -61,7 +62,7 @@ onMounted(() => {
           :aria-label="`Close ${title} menu`"
           @click="emit('close')"
         >
-          ×
+          <PhX :size="18" weight="bold" aria-hidden="true" />
         </button>
       </header>
 
@@ -192,7 +193,6 @@ onMounted(() => {
   color: var(--ink-bright);
   cursor: pointer;
   font: inherit;
-  font-size: 1.35rem;
   line-height: 1;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }

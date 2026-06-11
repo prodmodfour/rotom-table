@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { PhX } from '@phosphor-icons/vue'
+
 defineProps<{
   titleId: string
 }>()
@@ -20,7 +22,7 @@ const emit = defineEmits<{
       aria-label="Close admin control panel"
       @click="emit('close')"
     >
-      ×
+      <PhX :size="18" weight="bold" aria-hidden="true" />
     </button>
   </div>
 </template>
@@ -50,15 +52,17 @@ const emit = defineEmits<{
 }
 
 .admin-panel__close {
+  display: inline-grid;
   width: 34px;
   height: 34px;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
   background: var(--paper-soft);
   color: var(--ink);
   cursor: pointer;
   font: inherit;
-  font-size: 1.4rem;
   line-height: 1;
 }
 

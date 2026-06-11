@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { PhX } from '@phosphor-icons/vue'
 import type { ResolvedTrainerSkill } from '~/utils/sheets/trainerDerived'
 import type { TrainerSkillKey } from '~/types/trainerSheet'
 
@@ -110,7 +111,9 @@ const setSelectedMiscModifier = (event: Event): void => {
             <p class="skill-modal-eyebrow">Skill calculation</p>
             <h3 :id="skillModalTitleId">{{ selectedSkill.label }}</h3>
           </div>
-          <button type="button" class="skill-modal-close" aria-label="Close" @click="closeSkillModal">×</button>
+          <button type="button" class="skill-modal-close" aria-label="Close" @click="closeSkillModal">
+            <PhX :size="18" weight="bold" aria-hidden="true" />
+          </button>
         </header>
 
         <div class="skill-modal-summary">
@@ -361,14 +364,16 @@ const setSelectedMiscModifier = (event: Event): void => {
 }
 
 .skill-modal-close {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
   background: var(--paper);
   color: var(--ink-soft);
-  width: 2rem;
-  height: 2rem;
   font: inherit;
-  font-size: 1.3rem;
   line-height: 1;
   cursor: pointer;
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { PhX } from '@phosphor-icons/vue'
 import type { ConditionTagSize } from '~/utils/conditionTagArt'
 import { addAppliedCondition } from '~/utils/conditionApplication'
 import {
@@ -225,7 +226,7 @@ watch(crushOptions, (options) => {
       >
         <ConditionTag :name="name" :size="tagSize" />
         <span v-if="conditionDetail(name)" class="condition-picker__active-detail">{{ activeConditionLabel(name) }}</span>
-        <span aria-hidden="true" class="condition-picker__remove">×</span>
+        <PhX :size="12" weight="bold" aria-hidden="true" class="condition-picker__remove" />
         <span class="sr-only">Remove {{ conditionDisplayName(name) }}</span>
       </button>
       <button
@@ -407,9 +408,8 @@ watch(crushOptions, (options) => {
 }
 
 .condition-picker__remove {
+  flex: 0 0 auto;
   color: var(--ink-soft);
-  font-weight: 900;
-  line-height: 1;
 }
 
 .condition-picker__clear {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhX } from '@phosphor-icons/vue'
 import type { MapEffectDefinition } from '~/utils/mapFieldEffectDefinitions'
 
 export interface FieldEffectChip {
@@ -52,7 +53,7 @@ const emit = defineEmits<{
         :aria-label="`Remove ${definition(effect.kind).label}`"
         @click="emit('remove', effect.kind)"
       >
-        ×
+        <PhX :size="14" weight="bold" aria-hidden="true" />
       </button>
     </article>
   </div>
@@ -132,17 +133,18 @@ const emit = defineEmits<{
 }
 
 .chip-remove {
+  display: inline-grid;
   width: 1.9rem;
   height: 1.9rem;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--rule-soft);
   border-radius: 999px;
   background: var(--paper);
   color: var(--ink-soft);
   cursor: pointer;
   font: inherit;
-  font-size: 1.05rem;
   line-height: 1;
-  padding: 0;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
