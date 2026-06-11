@@ -5,7 +5,6 @@ import { PTU_NATURES } from '~/utils/ptuNatures'
 import type { StatKey } from '~/types/characterSheet'
 import {
   USEFUL_CHART_DAMAGE_ROWS,
-  USEFUL_CHART_EFFECTIVENESS_LADDER,
   USEFUL_CHART_POWER_ROWS,
   USEFUL_CHART_TYPE_ORDER,
   USEFUL_CHART_TYPE_QUIRKS,
@@ -257,15 +256,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
       </div>
 
       <div class="type-reference-grid">
-        <article class="reference-note-card">
-          <h3>Effectiveness Ladder</h3>
-          <ul class="definition-list">
-            <li v-for="entry in USEFUL_CHART_EFFECTIVENESS_LADDER" :key="entry.label">
-              <strong>{{ entry.label }}:</strong>
-              <span>{{ entry.multiplier }}</span>
-            </li>
-          </ul>
-        </article>
         <article class="reference-note-card">
           <h3>Type Quirks</h3>
           <ul>
@@ -627,23 +617,6 @@ const damageKey = (entry: UsefulChartDamageEntry, prefix: string): string => `${
   padding-left: 1.15rem;
   color: var(--ink-soft);
   line-height: 1.45;
-}
-
-.definition-list {
-  list-style: none;
-  padding-left: 0 !important;
-}
-
-.definition-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  border-bottom: 1px dashed var(--rule-soft);
-  padding-bottom: 0.25rem;
-}
-
-.definition-list strong {
-  color: var(--ink-bright);
 }
 
 .chart-table--nature tbody td.stat-raise {
