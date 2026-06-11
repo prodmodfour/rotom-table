@@ -68,7 +68,7 @@ const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationSc
 })
 
 describe('move automation transaction helpers', () => {
-  it('builds transactions for damage, suggestions, hazards, fields, stages, and notes', () => {
+  it('builds transactions for damage, suggestions, hazards, fields, and stages', () => {
     const user = token({ id: 'u', species: 'Caster', currentHp: 30, maxHp: 40 })
     const target = token({ id: 't', species: 'Target', currentHp: 25, maxHp: 30, conditions: ['Burned'] })
     const s = script({
@@ -125,10 +125,8 @@ describe('move automation transaction helpers', () => {
     expect(transaction.fieldEffectsToApply).toEqual([{ kind: 'weather', value: 'sunny', source: 'Test Move' }])
     expect(transaction.logLines).toEqual(expect.arrayContaining([
       'Caster used Test Move.',
-      'Target: 16 damage (critical flagged).',
+      'Target: 16 damage (Critical!).',
       'Target damage breakdown: (12 roll + 8 Atk − 4 Def) × 1 = 16.',
-      'Note: Manual note',
-      'Note: Check secondary effects.',
     ]))
   })
 

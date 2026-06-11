@@ -58,7 +58,7 @@ describe('move automation log line helpers', () => {
     }
 
     expect(formatMoveAutomationDamageLogLine('Target', 12)).toBe('Target: 12 damage.')
-    expect(formatMoveAutomationDamageLogLine('Target', 12, true)).toBe('Target: 12 damage (critical flagged).')
+    expect(formatMoveAutomationDamageLogLine('Target', 12, true)).toBe('Target: 12 damage (Critical!).')
     expect(formatMoveAutomationDamageBreakdownLogLine('Target', {
       kind: 'standard',
       hpLoss: 22,
@@ -77,7 +77,7 @@ describe('move automation log line helpers', () => {
       kind: 'manual',
       hpLoss: 7,
       manualHpLoss: 7,
-    })).toBe('Target damage breakdown: manual override = 7.')
+    })).toBeNull()
     expect(formatMoveAutomationHpSuggestionLogLine('Caster', hpSuggestion, 10)).toBe('Caster: Recover (10 HP).')
     expect(formatMoveAutomationHpSuggestionLogLine('Caster', hpSuggestion, 0)).toBe('Caster: Recover.')
   })
@@ -107,10 +107,10 @@ describe('move automation log line helpers', () => {
     expect(formatMoveAutomationStageSuggestionLogLine(stageSuggestion, [])).toBeNull()
   })
 
-  it('formats manual and automation notes', () => {
-    expect(formatMoveAutomationManualNoteLogLine('  Check weather.  ')).toBe('Note: Check weather.')
+  it('omits manual and automation notes from combat log lines', () => {
+    expect(formatMoveAutomationManualNoteLogLine('  Check weather.  ')).toBeNull()
     expect(formatMoveAutomationManualNoteLogLine('   ')).toBeNull()
     expect(formatMoveAutomationAutomationNoteLogLines(['Verify text.', 'Track duration.']))
-      .toEqual(['Note: Verify text.', 'Note: Track duration.'])
+      .toEqual([])
   })
 })

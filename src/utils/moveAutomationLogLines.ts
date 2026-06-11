@@ -22,7 +22,7 @@ export const formatMoveAutomationDamageLogLine = (
   targetName: string,
   hpLoss: number,
   critical: boolean | undefined = false,
-): string => `${targetName}: ${hpLoss} damage${critical ? ' (critical flagged)' : ''}.`
+): string => `${targetName}: ${hpLoss} damage${critical ? ' (Critical!)' : ''}.`
 
 const formatDamageBreakdownTerm = (
   term: MoveAutomationDamageBreakdownTerm,
@@ -41,9 +41,7 @@ export const formatMoveAutomationDamageBreakdownLogLine = (
   breakdown: MoveAutomationDamageBreakdown,
 ): string | null => {
   if (breakdown.kind === 'none' || breakdown.kind === 'direct') return null
-  if (breakdown.kind === 'manual') {
-    return `${targetName} damage breakdown: manual override = ${breakdown.manualHpLoss}.`
-  }
+  if (breakdown.kind === 'manual') return null
 
   const result = breakdown.minimumDamageApplied
     ? `${breakdown.scaledDamage} → minimum ${breakdown.hpLoss}`
@@ -96,10 +94,6 @@ export const formatMoveAutomationStageSuggestionLogLine = (
   return `${suggestion.label} on ${recipientNames(recipients)}.`
 }
 
-export const formatMoveAutomationManualNoteLogLine = (manualNote: string): string | null => {
-  const trimmed = manualNote.trim()
-  return trimmed ? `Note: ${trimmed}` : null
-}
+export const formatMoveAutomationManualNoteLogLine = (_manualNote: string): string | null => null
 
-export const formatMoveAutomationAutomationNoteLogLines = (notes: readonly string[]): string[] =>
-  notes.map((note) => `Note: ${note}`)
+export const formatMoveAutomationAutomationNoteLogLines = (_notes: readonly string[]): string[] => []
