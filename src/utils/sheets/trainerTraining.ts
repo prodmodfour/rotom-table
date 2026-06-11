@@ -230,7 +230,10 @@ export const pokemonTrainingExperienceGain = (
   sheet: TrainerSheet,
   pokemon: Pick<CharacterSheet, 'level'>,
   skillKey: TrainerTrainingSkillKey = 'command',
-): number => Math.floor(Math.max(1, pokemon.level ?? 1) / 2) + trainerExperienceTrainingBonus(sheet, skillKey)
+): number => Math.max(
+  1,
+  Math.floor(Math.max(1, pokemon.level ?? 1) / 2) + trainerExperienceTrainingBonus(sheet, skillKey),
+)
 
 export const trainerSkillRankNameForTraining = (
   sheet: TrainerSheet,

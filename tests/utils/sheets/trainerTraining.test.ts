@@ -31,6 +31,14 @@ describe('trainer training helpers', () => {
     expect(pokemonTrainingExperienceGain(sheet, { level: 13 })).toBe(11)
   })
 
+  it('awards at least 1 Experience Training XP', () => {
+    const sheet = trainer({
+      skills: { command: { rank: 'Untrained' } },
+    })
+
+    expect(pokemonTrainingExperienceGain(sheet, { level: 1 })).toBe(1)
+  })
+
   it('includes Train the Reserves and Trainer of Champions', () => {
     const sheet = trainer({
       skills: { command: { rank: 'Expert' } },

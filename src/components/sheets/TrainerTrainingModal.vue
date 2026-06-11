@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { PhX } from '@phosphor-icons/vue'
 import { getSpriteUrl } from '~~/data/characterSheets'
 import { getClientId } from '~/utils/clientId'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
@@ -7,11 +8,11 @@ import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson } from '~/utils/serialization'
 import { buildSheetSaveBody, sheetApiProfileContext } from '~/utils/sheetApiRequests'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
+import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import { POKEMON_EXPERIENCE_CHART, calculatePokemonLevelFromExperience } from '~/utils/sheets/pokemonExperience'
 import {
   POKEMON_TRAINING_FEATURE_OPTIONS,
   normalizePokemonTrainingFeatureName,
-  resolvePokemonTrainingFeatureEffects,
 } from '~/utils/sheets/pokemonTrainingFeatures'
 import {
   ACE_TRAINER_STAT_OPTIONS,
@@ -22,11 +23,9 @@ import {
   normalizeAceTrainerStatKey,
   pokemonTrainingExperienceGain,
   trainerCanApplyAceTrainerTraining,
-  trainerCanSelectPerPokemonTrainingFeatures,
   trainerExperienceTrainingLimit,
   trainerHasEdgeNamed,
   trainerOwnedPokemonTrainingFeatures,
-  trainerSkillRankNameForTraining,
   type AceTrainerStatKey,
   type TrainerTrainingSkillKey,
 } from '~/utils/sheets/trainerTraining'
@@ -58,11 +57,8 @@ interface SaveSheetResponse<TSheet> {
   sheet: TSheet
 }
 
-type RosterKind = 'team' | 'box'
-
 interface TrainingRosterRow {
   slug: string
-  roster: RosterKind
   sheet: CharacterSheet | null
   displayName: string
   species: string
@@ -92,7 +88,6 @@ const selectedTrainingFeature = ref('')
 const selectedTrainingFeatureBySlug = ref<Record<string, string>>({})
 const selectedAceTrainerStat = ref<AceTrainerStatKey | ''>('atk')
 const selectedAceTrainerStatBySlug = ref<Record<string, AceTrainerStatKey | ''>>({})
-const applyTrainingFeature = ref(true)
 const applyAceTrainerStat = ref(false)
 const experienceSkill = ref<TrainerTrainingSkillKey>('command')
 const saving = ref(false)
@@ -108,17 +103,7 @@ const teamSlugs = computed(() => (
   normalizePokemonSlugList(props.sheet.currentTeam).slice(0, TRAINER_TEAM_LIMIT)
 ))
 
-const boxedSlugs = computed(() => {
-  const team = new Set(normalizePokemonSlugList(props.sheet.currentTeam))
-  return normalizePokemonSlugList(props.sheet.boxedPokemon).filter((slug) => !team.has(slug))
-})
-
-const rosterEntries = computed(() => [
-  ...teamSlugs.value.map((slug) => ({ slug, roster: 'team' as const })),
-  ...boxedSlugs.value.map((slug) => ({ slug, roster: 'box' as const })),
-])
-
-const rosterSlugs = computed(() => rosterEntries.value.map((entry) => entry.slug))
+const rosterSlugs = computed(() => teamSlugs.value)
 
 const trainerOwnedTrainingFeatures = computed(() => trainerOwnedPokemonTrainingFeatures(props.sheet))
 
@@ -128,11 +113,8 @@ const trainingFeatureOptions = computed(() => {
   return ownedOptions.length ? ownedOptions : POKEMON_TRAINING_FEATURE_OPTIONS
 })
 
-const selectedTrainingFeatureEffects = computed(() =>
-  resolvePokemonTrainingFeatureEffects(selectedTrainingFeature.value),
-)
-const canSelectPerPokemonTrainingFeatures = computed(() => trainerCanSelectPerPokemonTrainingFeatures(props.sheet))
 const canApplyAceTrainerStat = computed(() => trainerCanApplyAceTrainerTraining(props.sheet))
+const trainerAccentStyle = computed(() => trainerAccentCssVariables(props.sheet.accentColor))
 
 const initialTrainingFeature = () => {
   const savedDefault = normalizePokemonTrainingFeatureName(props.sheet.trainingFeature)
@@ -140,14 +122,24 @@ const initialTrainingFeature = () => {
   return trainingFeatureOptions.value[0] ?? ''
 }
 
+const currentTrainingFeatureForSlug = (slug: string): string => (
+  normalizePokemonTrainingFeatureName(availablePokemonBySlug.value.get(slug)?.activeTrainingFeature) ?? ''
+)
+
 const selectedTrainingFeatureForSlug = (slug: string): string => {
-  if (!canSelectPerPokemonTrainingFeatures.value) {
-    return normalizePokemonTrainingFeatureName(selectedTrainingFeature.value) ?? ''
-  }
   if (Object.prototype.hasOwnProperty.call(selectedTrainingFeatureBySlug.value, slug)) {
     return normalizePokemonTrainingFeatureName(selectedTrainingFeatureBySlug.value[slug]) ?? ''
   }
-  return normalizePokemonTrainingFeatureName(selectedTrainingFeature.value) ?? ''
+  return currentTrainingFeatureForSlug(slug)
+}
+
+const trainingFeatureOptionsForRow = (row: TrainingRosterRow): string[] => {
+  const options = new Set(trainingFeatureOptions.value)
+  const currentFeature = normalizePokemonTrainingFeatureName(row.activeTrainingFeature)
+  const selectedFeature = normalizePokemonTrainingFeatureName(row.selectedTrainingFeature)
+  if (currentFeature) options.add(currentFeature)
+  if (selectedFeature) options.add(selectedFeature)
+  return [...options]
 }
 
 const setTrainingFeatureForSlug = (slug: string, value: unknown): void => {
@@ -158,27 +150,23 @@ const setTrainingFeatureForSlug = (slug: string, value: unknown): void => {
   }
 }
 
-const setTrainingFeatureForSlugFromEvent = (slug: string, event: Event): void => {
+const setTrainingFeatureChoiceFromEvent = (slug: string, event: Event): void => {
   const target = event.target
   if (!(target instanceof HTMLSelectElement)) return
-  setTrainingFeatureForSlug(slug, target.value)
+  const normalized = normalizePokemonTrainingFeatureName(target.value) ?? ''
+  setTrainingFeatureForSlug(slug, normalized)
+  selectedTrainingFeature.value = normalized
 }
 
 const ensureTrainingFeatureChoices = (slugs: readonly string[]): void => {
   const next = { ...selectedTrainingFeatureBySlug.value }
-  const fallback = normalizePokemonTrainingFeatureName(selectedTrainingFeature.value) ?? initialTrainingFeature()
   for (const slug of slugs) {
-    const current = normalizePokemonTrainingFeatureName(next[slug])
-    if (!current) next[slug] = fallback
+    if (Object.prototype.hasOwnProperty.call(next, slug)) {
+      next[slug] = normalizePokemonTrainingFeatureName(next[slug]) ?? ''
+      continue
+    }
+    next[slug] = currentTrainingFeatureForSlug(slug)
   }
-  selectedTrainingFeatureBySlug.value = next
-}
-
-const setSelectedRowsToDefaultTrainingFeature = (): void => {
-  const normalized = normalizePokemonTrainingFeatureName(selectedTrainingFeature.value)
-  if (!normalized) return
-  const next = { ...selectedTrainingFeatureBySlug.value }
-  for (const slug of selectedTrainingSlugs.value) next[slug] = normalized
   selectedTrainingFeatureBySlug.value = next
 }
 
@@ -232,16 +220,14 @@ const experienceSkillOptions = computed<Array<{ key: TrainerTrainingSkillKey; la
 })
 
 const experienceLimit = computed(() => trainerExperienceTrainingLimit(props.sheet, experienceSkill.value))
-const experienceRankName = computed(() => trainerSkillRankNameForTraining(props.sheet, experienceSkill.value))
 const selectedSessionCount = computed(() => selectedTrainingSlugs.value.size)
 const selectedExperienceCount = computed(() => selectedExperienceSlugs.value.size)
 
-const rosterRows = computed<TrainingRosterRow[]>(() => rosterEntries.value.map(({ slug, roster }) => {
+const rosterRows = computed<TrainingRosterRow[]>(() => rosterSlugs.value.map((slug) => {
   const pokemon = availablePokemonBySlug.value.get(slug) ?? null
   const level = pokemon?.level ?? null
   return {
     slug,
-    roster,
     sheet: pokemon,
     displayName: pokemon?.nickname || slug,
     species: pokemon?.species ?? 'Missing sheet',
@@ -270,7 +256,7 @@ const selectedRowsWithAceTrainerStat = computed(() => selectedRowsWithSheets.val
 
 const canApplyTraining = computed(() => (
   selectedRowsWithSheets.value.length > 0 && (
-    (applyTrainingFeature.value && selectedRowsWithTrainingFeature.value.length > 0) ||
+    selectedRowsWithTrainingFeature.value.length > 0 ||
     (canApplyAceTrainerStat.value && applyAceTrainerStat.value && selectedRowsWithAceTrainerStat.value.length > 0) ||
     selectedExperienceRows.value.length > 0
   )
@@ -315,25 +301,6 @@ watch([experienceLimit, selectedTrainingSlugs], () => {
       .slice(0, experienceLimit.value),
   )
 })
-
-const setSelectedTrainingSlugs = (slugs: readonly string[]) => {
-  const selected = slugs.slice(0, TRAINING_SESSION_TARGET_LIMIT)
-  selectedTrainingSlugs.value = new Set(selected)
-  selectedExperienceSlugs.value = new Set([...selectedExperienceSlugs.value].filter((slug) => selectedTrainingSlugs.value.has(slug)))
-  ensureTrainingFeatureChoices(selected)
-  ensureAceTrainerStatChoices(selected)
-}
-
-const selectTeam = () => setSelectedTrainingSlugs(teamSlugs.value)
-const selectFirstSix = () => setSelectedTrainingSlugs(rosterSlugs.value)
-const clearSelection = () => {
-  selectedTrainingSlugs.value = new Set()
-  selectedExperienceSlugs.value = new Set()
-}
-
-const selectExperienceFirst = () => {
-  selectedExperienceSlugs.value = new Set([...selectedTrainingSlugs.value].slice(0, experienceLimit.value))
-}
 
 const toggleTrainingTarget = (slug: string) => {
   errorMessage.value = null
@@ -429,11 +396,9 @@ const applyTraining = async () => {
 
   const selectedFeature = normalizePokemonTrainingFeatureName(selectedTrainingFeature.value)
   const trainingFeatureBySlug = new Map<string, string>()
-  if (applyTrainingFeature.value) {
-    for (const row of selectedRowsWithSheets.value) {
-      const feature = normalizePokemonTrainingFeatureName(row.selectedTrainingFeature)
-      if (feature) trainingFeatureBySlug.set(row.slug, feature)
-    }
+  for (const row of selectedRowsWithSheets.value) {
+    const feature = normalizePokemonTrainingFeatureName(row.selectedTrainingFeature)
+    if (feature) trainingFeatureBySlug.set(row.slug, feature)
   }
   const aceTrainerStatBySlug = new Map<string, AceTrainerStatKey>()
   if (canApplyAceTrainerStat.value && applyAceTrainerStat.value) {
@@ -508,45 +473,30 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div class="trainer-training-modal-backdrop" @pointerdown.self="emit('close')">
+    <div class="trainer-training-modal-backdrop" :style="trainerAccentStyle" @pointerdown.self="emit('close')">
       <section
         class="trainer-training-modal"
+        :class="{ 'trainer-training-modal--with-sprite': sheet.portraitUrl }"
         role="dialog"
         aria-modal="true"
         :aria-labelledby="titleId"
         @pointerdown.stop
       >
-        <header class="trainer-training-modal__header">
+        <aside v-if="sheet.portraitUrl" class="trainer-training-modal__sprite" aria-hidden="true">
+          <img :src="sheet.portraitUrl" alt="" />
+        </aside>
+        <div class="trainer-training-modal__content">
+          <header class="trainer-training-modal__header">
           <div>
-            <p class="trainer-training-modal__eyebrow">PTU downtime training</p>
             <h2 :id="titleId">Training · {{ sheet.name || 'Trainer' }}</h2>
-            <p class="trainer-training-modal__subtitle">
-              One hour trains up to 6 Pokémon. Experience Training is capped by trainer rank.
-            </p>
           </div>
-          <button type="button" class="trainer-training-modal__close" @click="emit('close')">
-            Close
+          <button type="button" class="trainer-training-modal__close" aria-label="Close" title="Close" @click="emit('close')">
+            <PhX :size="18" weight="bold" aria-hidden="true" />
           </button>
         </header>
 
-        <div class="training-summary-grid">
+        <div v-if="canApplyAceTrainerStat" class="training-summary-grid">
           <div class="training-summary-card">
-            <span class="summary-label">Session targets</span>
-            <strong>{{ selectedSessionCount }}/{{ TRAINING_SESSION_TARGET_LIMIT }}</strong>
-            <small>Pokémon affected by the hour-long session.</small>
-          </div>
-          <div class="training-summary-card">
-            <span class="summary-label">Experience Training</span>
-            <strong>{{ selectedExperienceCount }}/{{ experienceLimit }}</strong>
-            <small>{{ TRAINING_SKILL_LABELS[experienceSkill] }} {{ experienceRankName }} rank.</small>
-          </div>
-          <div class="training-summary-card">
-            <span class="summary-label">Default Feature</span>
-            <strong>{{ selectedTrainingFeature || 'None' }}</strong>
-            <small v-if="canSelectPerPokemonTrainingFeatures">Each Pokémon row can override this default.</small>
-            <small v-else>Applied to all selected Pokémon unless a feature permits per-Pokémon choices.</small>
-          </div>
-          <div v-if="canApplyAceTrainerStat" class="training-summary-card">
             <span class="summary-label">Ace Trainer</span>
             <strong>{{ applyAceTrainerStat ? aceTrainerStatLabel(selectedAceTrainerStat) : 'Off' }}</strong>
             <small>Choose one non-HP Trained Stat per selected Pokémon.</small>
@@ -554,35 +504,6 @@ onBeforeUnmount(() => {
         </div>
 
         <section class="training-controls">
-          <div class="training-control-block training-control-block--feature">
-            <label class="check-row">
-              <input v-model="applyTrainingFeature" type="checkbox" />
-              <span>Apply Training Features</span>
-            </label>
-            <select v-model="selectedTrainingFeature" :disabled="!applyTrainingFeature || saving" title="Default Training Feature for newly selected Pokémon">
-              <option value="">No Feature</option>
-              <option v-for="name in trainingFeatureOptions" :key="name" :value="name">
-                {{ name }}<template v-if="trainerOwnedTrainingFeatures.has(name)"> · owned</template>
-              </option>
-            </select>
-            <p v-if="selectedTrainingFeatureEffects" class="feature-effect">
-              <strong>{{ selectedTrainingFeatureEffects.stateName }}:</strong>
-              {{ selectedTrainingFeatureEffects.reference?.effect ?? 'Training bonus is applied to selected Pokémon.' }}
-            </p>
-            <button
-              v-if="canSelectPerPokemonTrainingFeatures"
-              type="button"
-              class="training-control-inline-button"
-              :disabled="!applyTrainingFeature || !selectedSessionCount || saving"
-              @click="setSelectedRowsToDefaultTrainingFeature"
-            >
-              Set selected Pokémon to default
-            </button>
-            <p v-else class="feature-effect">
-              Per-Pokémon Training Feature choices require Elite Trainer.
-            </p>
-          </div>
-
           <div v-if="canApplyAceTrainerStat" class="training-control-block training-control-block--ace">
             <label class="check-row">
               <input v-model="applyAceTrainerStat" type="checkbox" />
@@ -611,37 +532,24 @@ onBeforeUnmount(() => {
 
           <div class="training-control-block">
             <label>
-              Experience rank source
+              Training Skill
               <select v-model="experienceSkill" :disabled="saving">
                 <option v-for="option in experienceSkillOptions" :key="option.key" :value="option.key">
                   {{ option.label }}
                 </option>
               </select>
             </label>
-            <p class="feature-effect">
-              EXP per selected Pokémon: half its level + rank bonus.
-              <template v-if="trainerHasEdgeNamed(sheet, 'Train the Reserves')"> Train the Reserves is included.</template>
-              <template v-if="trainerHasEdgeNamed(sheet, 'Trainer of Champions')"> Trainer of Champions adds +5.</template>
-            </p>
           </div>
 
-          <div class="training-actions-row">
-            <button type="button" @click="selectTeam" :disabled="saving">Select team</button>
-            <button type="button" @click="selectFirstSix" :disabled="saving">Select first 6</button>
-            <button type="button" @click="selectExperienceFirst" :disabled="saving || !selectedSessionCount">EXP first eligible</button>
-            <button type="button" @click="clearSelection" :disabled="saving">Clear</button>
-          </div>
         </section>
 
         <section class="training-roster" :class="{ 'training-roster--ace': canApplyAceTrainerStat }" aria-label="Trainer Pokémon training targets">
           <div class="training-roster__head">
             <span>Pokémon</span>
-            <span>Roster</span>
-            <span>Current Training</span>
-            <span>New Feature</span>
+            <span>Training Feature</span>
             <span v-if="canApplyAceTrainerStat">Ace Stat</span>
             <span>Session</span>
-            <span>EXP</span>
+            <span>EXP ({{ selectedExperienceCount }}/{{ experienceLimit }})</span>
           </div>
 
           <div v-if="rosterRows.length" class="training-roster__rows">
@@ -661,28 +569,18 @@ onBeforeUnmount(() => {
                   <small>{{ row.species }}<template v-if="row.level"> · Lv {{ row.level }}</template></small>
                 </span>
               </div>
-              <span class="training-row__badge">{{ row.roster === 'team' ? 'Team' : 'Box' }}</span>
-              <span class="training-row__muted">
-                {{ row.activeTrainingFeature || '—' }}
-                <small v-if="canApplyAceTrainerStat && row.trainedStat">Trained {{ aceTrainerStatLabel(row.trainedStat) }}</small>
-                <small v-if="row.totalExp != null">Total EXP {{ row.totalExp }}</small>
-                <small v-if="row.trainingExp">Training EXP {{ row.trainingExp }}</small>
-              </span>
               <span class="training-row__feature-select">
                 <select
-                  v-if="canSelectPerPokemonTrainingFeatures"
                   :value="row.selectedTrainingFeature"
-                  :disabled="!row.sheet || !row.selectedForSession || !applyTrainingFeature || saving"
-                  @change="setTrainingFeatureForSlugFromEvent(row.slug, $event)"
+                  :disabled="!row.sheet || !row.selectedForSession || saving"
+                  title="Training Feature for this Pokémon"
+                  @change="setTrainingFeatureChoiceFromEvent(row.slug, $event)"
                 >
-                  <option value="">No Feature</option>
-                  <option v-for="name in trainingFeatureOptions" :key="`${row.slug}-${name}`" :value="name">
-                    {{ name }}
+                  <option value="">None</option>
+                  <option v-for="name in trainingFeatureOptionsForRow(row)" :key="`${row.slug}-${name}`" :value="name">
+                    {{ name }}<template v-if="trainerOwnedTrainingFeatures.has(name)"> · owned</template>
                   </option>
                 </select>
-                <span v-else class="training-row__feature-locked">
-                  {{ applyTrainingFeature && selectedTrainingFeature ? selectedTrainingFeature : '—' }}
-                </span>
               </span>
               <span v-if="canApplyAceTrainerStat" class="training-row__ace-stat">
                 <select
@@ -716,20 +614,18 @@ onBeforeUnmount(() => {
               </label>
             </article>
           </div>
-          <p v-else class="training-empty-state">No linked Pokémon. Add Pokémon to this trainer before training.</p>
+          <p v-else class="training-empty-state">No team Pokémon. Add Pokémon to this trainer's team before training.</p>
         </section>
 
         <p v-if="errorMessage" class="training-message training-message--error">{{ errorMessage }}</p>
         <p v-else-if="statusMessage" class="training-message training-message--success">{{ statusMessage }}</p>
 
-        <footer class="trainer-training-modal__footer">
-          <p>
-            Note: the modal enforces the session size and daily EXP cap, but it does not track whether a Pokémon already received Experience Training today.
-          </p>
-          <button type="button" class="apply-button" :disabled="!canApplyTraining || saving" @click="applyTraining">
-            {{ saving ? 'Applying…' : 'Apply Training' }}
-          </button>
-        </footer>
+          <footer class="trainer-training-modal__footer">
+            <button type="button" class="apply-button" :disabled="!canApplyTraining || saving" @click="applyTraining">
+              {{ saving ? 'Applying…' : 'Apply Training' }}
+            </button>
+          </footer>
+        </div>
       </section>
     </div>
   </Teleport>
@@ -748,7 +644,7 @@ onBeforeUnmount(() => {
 }
 
 .trainer-training-modal {
-  width: min(1100px, 100%);
+  width: min(860px, 100%);
   max-height: min(92vh, 860px);
   overflow: auto;
   border: 1px solid var(--rule);
@@ -756,6 +652,42 @@ onBeforeUnmount(() => {
   background: var(--paper-soft);
   box-shadow: var(--shadow-card);
   padding: 0.95rem;
+}
+
+.trainer-training-modal--with-sprite {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.85rem;
+}
+
+.trainer-training-modal__sprite {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  align-self: stretch;
+  min-height: 100%;
+  margin: -0.95rem 0 -0.95rem -0.95rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.trainer-training-modal__sprite img {
+  position: relative;
+  z-index: 1;
+  width: auto;
+  height: calc(100% - 1rem);
+  min-height: 100%;
+  max-width: none;
+  object-fit: contain;
+  object-position: center bottom;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 18px 18px rgba(5, 6, 8, 0.45));
+}
+
+.trainer-training-modal__content {
+  min-width: 0;
 }
 
 .trainer-training-modal__header,
@@ -770,22 +702,6 @@ onBeforeUnmount(() => {
   margin-bottom: 0.85rem;
 }
 
-.trainer-training-modal__eyebrow,
-.trainer-training-modal__subtitle {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.trainer-training-modal__subtitle {
-  margin-top: 0.25rem;
-  color: var(--ink-soft);
-  letter-spacing: 0.02em;
-  text-transform: none;
-}
-
 .trainer-training-modal__header h2 {
   margin: 0.15rem 0 0;
   color: var(--ink-bright);
@@ -793,8 +709,20 @@ onBeforeUnmount(() => {
   font-size: 1.3rem;
 }
 
-.trainer-training-modal__close,
-.training-actions-row button,
+.trainer-training-modal__close {
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-bright);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
 .training-control-inline-button,
 .apply-button {
   border: 1px solid var(--rule-soft);
@@ -809,9 +737,12 @@ onBeforeUnmount(() => {
 }
 
 .trainer-training-modal__close:hover,
-.trainer-training-modal__close:focus-visible,
-.training-actions-row button:hover:not(:disabled),
-.training-actions-row button:focus-visible:not(:disabled),
+.trainer-training-modal__close:focus-visible {
+  color: var(--accent);
+  background: transparent;
+  outline: none;
+}
+
 .training-control-inline-button:hover:not(:disabled),
 .training-control-inline-button:focus-visible:not(:disabled),
 .apply-button:hover:not(:disabled),
@@ -857,9 +788,7 @@ onBeforeUnmount(() => {
 
 .training-summary-card small,
 .feature-effect,
-.trainer-training-modal__footer p,
-.training-row small,
-.training-row__muted {
+.training-row small {
   color: var(--ink-muted);
   font-size: 0.78rem;
   line-height: 1.35;
@@ -867,19 +796,13 @@ onBeforeUnmount(() => {
 
 .training-controls {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.65rem;
   margin-bottom: 0.85rem;
 }
 
 .training-control-block {
   padding: 0.75rem;
-}
-
-.training-control-block--feature {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
 }
 
 .training-control-block label,
@@ -917,14 +840,6 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 
-.training-actions-row {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.training-actions-row button:disabled,
 .training-control-inline-button:disabled,
 .apply-button:disabled,
 .training-control-block select:disabled,
@@ -941,14 +856,14 @@ onBeforeUnmount(() => {
 .training-roster__head,
 .training-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.3fr) 84px minmax(150px, 0.9fr) minmax(150px, 0.85fr) 92px 116px;
+  grid-template-columns: minmax(220px, 1.3fr) minmax(150px, 0.85fr) 92px 116px;
   align-items: center;
   gap: 0.6rem;
 }
 
 .training-roster--ace .training-roster__head,
 .training-roster--ace .training-row {
-  grid-template-columns: minmax(200px, 1.25fr) 76px minmax(140px, 0.82fr) minmax(140px, 0.82fr) minmax(120px, 0.72fr) 84px 110px;
+  grid-template-columns: minmax(200px, 1.25fr) minmax(140px, 0.82fr) minmax(120px, 0.72fr) 84px 110px;
 }
 
 .training-roster__head {
@@ -983,8 +898,7 @@ onBeforeUnmount(() => {
 }
 
 .training-row__pokemon strong,
-.training-row__pokemon small,
-.training-row__muted small {
+.training-row__pokemon small {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1016,21 +930,7 @@ onBeforeUnmount(() => {
   padding: 3px;
 }
 
-.training-row__badge {
-  justify-self: start;
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  background: rgba(var(--accent-rgb), 0.12);
-  color: var(--accent);
-  padding: 0.16rem 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .training-row__feature-select select,
-.training-row__feature-locked,
 .training-row__ace-stat select {
   width: 100%;
   min-width: 0;
@@ -1041,15 +941,6 @@ onBeforeUnmount(() => {
   padding: 0.36rem 0.45rem;
   font: inherit;
   font-size: 0.78rem;
-}
-
-.training-row__feature-locked {
-  display: inline-block;
-  color: var(--ink-muted);
-  background: rgba(5, 6, 8, 0.18);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .training-row__toggle {
@@ -1090,13 +981,10 @@ onBeforeUnmount(() => {
 
 .trainer-training-modal__footer {
   align-items: center;
+  justify-content: flex-end;
   margin-top: 0.9rem;
   border-top: 1px solid var(--rule-soft);
   padding-top: 0.75rem;
-}
-
-.trainer-training-modal__footer p {
-  margin: 0;
 }
 
 .apply-button {
@@ -1106,6 +994,14 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 860px) {
+  .trainer-training-modal--with-sprite {
+    display: block;
+  }
+
+  .trainer-training-modal__sprite {
+    display: none;
+  }
+
   .trainer-training-modal__header,
   .trainer-training-modal__footer {
     flex-direction: column;
