@@ -5,7 +5,7 @@ import {
   filterAppNavItems,
   isAppNavItemActive,
 } from '~/utils/appNavigation'
-import { CAMPAIGN_PATH, LOGIN_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
+import { CAMPAIGN_PATH, LOGIN_PATH, SETTINGS_PATH, USEFUL_CHARTS_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import {
@@ -42,6 +42,7 @@ describe('app navigation helpers', () => {
       '/capabilities',
       '/conditions',
       '/rules',
+      USEFUL_CHARTS_PATH,
       '/items',
       '/features',
       '/edges',
