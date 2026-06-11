@@ -1,4 +1,4 @@
-import { CAMPAIGN_PATH, HOME_PATH, SETTINGS_PATH, isHomePath, isSettingsPath } from '~/utils/appRoutes'
+import { CAMPAIGN_PATH, HOME_PATH, SETTINGS_PATH, USEFUL_CHARTS_PATH, isHomePath, isSettingsPath } from '~/utils/appRoutes'
 import { ENCOUNTER_GENERATOR_PATH, ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { isLegacyGridPath } from '~/utils/legacyGridRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
@@ -33,6 +33,7 @@ export const REFERENCE_APP_NAV_ITEMS: AppNavItem[] = [
   { path: referenceIndexPath('capability'), label: 'Capabilities' },
   { path: referenceIndexPath('condition'), label: 'Conditions' },
   { path: referenceIndexPath('rule'), label: 'Rules' },
+  { path: USEFUL_CHARTS_PATH, label: 'Charts' },
   { path: referenceIndexPath('item'), label: 'Items' },
   { path: referenceIndexPath('feature'), label: 'Features' },
   { path: referenceIndexPath('edge'), label: 'Edges' },

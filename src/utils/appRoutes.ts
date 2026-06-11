@@ -2,6 +2,7 @@ export const HOME_PATH = '/'
 export const LOGIN_PATH = '/login'
 export const CAMPAIGN_PATH = '/campaign'
 export const SETTINGS_PATH = '/settings'
+export const USEFUL_CHARTS_PATH = '/useful-charts'
 export const SESSION_LOBBY_PATH = '/sessions'
 export const SESSION_LOBBY_GM_SECTION_ID = 'gm-lobby-title'
 export const SESSION_LOBBY_PLAYER_SECTION_ID = 'player-lobby-title'
@@ -22,6 +23,8 @@ export const loginPath = (): typeof LOGIN_PATH => LOGIN_PATH
 export const campaignPath = (): typeof CAMPAIGN_PATH => CAMPAIGN_PATH
 
 export const settingsPath = (): typeof SETTINGS_PATH => SETTINGS_PATH
+
+export const usefulChartsPath = (): typeof USEFUL_CHARTS_PATH => USEFUL_CHARTS_PATH
 
 export const sessionLobbyPath = (): typeof SESSION_LOBBY_PATH => SESSION_LOBBY_PATH
 
