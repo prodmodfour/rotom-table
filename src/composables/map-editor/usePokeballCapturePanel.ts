@@ -299,7 +299,7 @@ export const usePokeballCapturePanel = ({
       mode: 'target',
       rangeLabel: `${request.rangeMeters}m Throwing Range`,
       rangeMeters: request.rangeMeters,
-      targetPrompt: `Choose an unlinked Pokémon within ${request.rangeMeters}m. Percent is chance to hit and capture.`,
+      targetPrompt: `Choose a wild Pokémon within ${request.rangeMeters}m. Percent is chance to hit and capture.`,
       candidateIds: targets.map((target) => target.id),
       hitChances,
     }
