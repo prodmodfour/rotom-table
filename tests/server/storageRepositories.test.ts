@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -17,6 +17,8 @@ import { getStorageSchemaVersion, LATEST_STORAGE_SCHEMA_VERSION } from '~~/serve
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
+import { importMapsFromJson } from '~~/server/storage/importMapsFromJson'
+import type { TabletopMap } from '~/types/map'
 
 const tempRoots: string[] = []
 const openDatabases: RotomDatabase[] = []
@@ -51,6 +53,27 @@ const tableNames = (database: RotomDatabase): string[] => database.connection.pr
   WHERE type = 'table'
   ORDER BY name ASC
 `).all().map((row) => String(row.name))
+
+const mapDocument = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'training-yard',
+  name: 'Training Yard',
+  folder: '',
+  revision: 4,
+  dimensions: { x: 6, y: 3, z: 6 },
+  groundLevelY: 0,
+  playerVisible: true,
+  voxels: [],
+  hazards: [],
+  fieldEffects: { weather: [], terrains: [], rooms: [] },
+  placements: [],
+  lights: [],
+  initiative: { activeId: null, round: 1 },
+  metadata: { owner: 'gm' },
+  createdAt: 1_700_000_000_000,
+  updatedAt: 1_700_000_000_100,
+  ...overrides,
+})
 
 describe('SQLite storage foundation', () => {
   it('resolves configured database paths under the campaign root by default', () => {
@@ -133,6 +156,82 @@ describe('SQLite storage foundation', () => {
     })
     expect(sheets.delete('trainer', 'brock')).toBe(true)
     expect(sheets.get('trainer', 'brock')).toBeNull()
+  })
+
+  it('imports JSON map documents into SQLite idempotently with folders and revisions', async () => {
+    const database = openTempDatabase()
+    const mapsRoot = join(makeTempRoot(), 'data', 'maps')
+    mkdirSync(join(mapsRoot, 'region-one'), { recursive: true })
+    writeFileSync(join(mapsRoot, 'legacy-map.json'), JSON.stringify({
+      ...mapDocument({ slug: 'legacy-map', name: 'Legacy Map', revision: undefined, metadata: { note: 'old' } }),
+      folder: 'ignored-document-folder',
+    }), 'utf8')
+    writeFileSync(join(mapsRoot, 'region-one', 'nested-map.json'), JSON.stringify(mapDocument({
+      slug: 'nested-map',
+      name: 'Nested Map',
+      folder: undefined,
+      revision: 7,
+      metadata: { region: 'one' },
+      updatedAt: 1_700_000_000_700,
+    })), 'utf8')
+
+    const repository = createSqliteMapRepository<TabletopMap>(database)
+    const first = await importMapsFromJson({ mapsRoot, repository })
+    const second = await importMapsFromJson({ mapsRoot, repository })
+
+    expect(first.count).toBe(2)
+    expect(second.count).toBe(2)
+    await expect(repository.getBySlug('legacy-map')).resolves.toMatchObject({
+      slug: 'legacy-map',
+      folder: '',
+      revision: 0,
+      metadata: { note: 'old' },
+    })
+    await expect(repository.getBySlug('nested-map')).resolves.toMatchObject({
+      slug: 'nested-map',
+      folder: 'region-one',
+      revision: 7,
+      metadata: { region: 'one' },
+      updatedAt: 1_700_000_000_700,
+    })
+    expect(repository.list().map((map) => `${map.slug}:${map.revision}`)).toEqual(['legacy-map:0', 'nested-map:7'])
+  })
+
+  it('applies live-play map updates only when the expected revision matches', async () => {
+    const database = openTempDatabase()
+    const maps = createSqliteMapRepository<TabletopMap>(database)
+    await maps.saveSetupMap(mapDocument())
+
+    const stale = await maps.applyLivePlayUpdate({
+      slug: 'training-yard',
+      expectedRevision: 3,
+      nextMap: mapDocument({ name: 'Stale Overwrite', revision: 4, updatedAt: 1_700_000_000_300 }),
+    })
+    expect(stale).toBe('stale')
+    await expect(maps.getBySlug('training-yard')).resolves.toMatchObject({
+      name: 'Training Yard',
+      revision: 4,
+      updatedAt: 1_700_000_000_100,
+    })
+
+    const applied = await maps.applyLivePlayUpdate({
+      slug: 'training-yard',
+      expectedRevision: 4,
+      nextMap: mapDocument({
+        name: 'Accepted Update',
+        revision: 999,
+        placements: [{ id: 'token-1', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 2, y: 0, z: 1 } }],
+        updatedAt: 1_700_000_000_500,
+      }),
+    })
+
+    expect(applied).toBe('applied')
+    await expect(maps.getBySlug('training-yard')).resolves.toMatchObject({
+      name: 'Accepted Update',
+      revision: 5,
+      updatedAt: 1_700_000_000_500,
+      placements: [{ id: 'token-1', sheetKind: 'pokemon', sheetSlug: 'pikachu', position: { x: 2, y: 0, z: 1 } }],
+    })
   })
 
   it('rolls back repository writes when an outer transaction fails', () => {

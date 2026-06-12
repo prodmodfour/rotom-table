@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import {
   LIVE_PLAY_COMMAND_TYPES,
@@ -26,6 +27,7 @@ import {
   tokenFacingTowardPoint,
 } from '~/utils/tokenFacing'
 import { campaignPathLabel } from '../utils/campaignPaths'
+import { MAPS_ROOT } from '../utils/mapPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { readSheetFile } from '../utils/sheetStorage'
 import {
@@ -40,6 +42,7 @@ import {
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
+import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { toPersistedMap } from './saveMap'
 
 export class MapTokenActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -106,6 +109,7 @@ export interface MapTokenActionDependencies {
   relativePath?: (path: string) => string
   maxMovementLogEntries?: number
   commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
+  mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
 }
 
@@ -252,8 +256,34 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
   relativePath: dependencies.relativePath ?? campaignPathLabel,
   maxMovementLogEntries: dependencies.maxMovementLogEntries,
   commandExecutor: dependencies.commandExecutor ?? { execute: executeAuthoritativeLivePlayCommand },
+  mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
 })
+
+type MapTokenActionDependencySet = ReturnType<typeof actionDependencies>
+
+const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => (
+  map.folder ? join(MAPS_ROOT, map.folder, `${map.slug}.json`) : join(MAPS_ROOT, `${map.slug}.json`)
+)
+
+const resolveLivePlayMapWriteContext = async (
+  input: Pick<MoveMapTokenInput, 'role' | 'slug'>,
+  dependencies: MapTokenActionDependencySet,
+): Promise<ResolvedMapWriteContext> => {
+  const map = await dependencies.mapRepository.getBySlug(input.slug)
+  if (!map) throw new MapTokenActionUseCaseError(404, `Map ${input.slug}.json not found`)
+
+  if (!canSaveMap(input.role, map)) {
+    throw new MapTokenActionUseCaseError(403, 'Map is not player visible')
+  }
+
+  const mapPath = mapPathForDocument(map)
+  return {
+    mapPath,
+    relativePath: dependencies.relativePath(mapPath),
+    map,
+  }
+}
 
 const clonePosition = (position: GridAnchor): GridAnchor => ({
   x: position.x,
@@ -580,16 +610,16 @@ const placementIdFromAcceptedResult = (result: LivePlayCommandAccepted): string 
   result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId ?? null
 )
 
-const currentContextForAcceptedResult = (
+const currentContextForAcceptedResult = async (
   result: LivePlayCommandAccepted,
   role: AuthRole,
-  dependencies: ReturnType<typeof actionDependencies>,
-): ResolvedMapTokenActionContext | null => {
+  dependencies: MapTokenActionDependencySet,
+): Promise<ResolvedMapTokenActionContext | null> => {
   const placementId = placementIdFromAcceptedResult(result)
   if (!placementId) return null
 
   try {
-    const context = resolveMapWriteContext({ role, slug: result.mapSlug }, dependencies)
+    const context = await resolveLivePlayMapWriteContext({ role, slug: result.mapSlug }, dependencies)
     const placement = context.map.placements.find((candidate) => candidate.id === placementId)
     return placement ? { ...context, placement } : null
   } catch {
@@ -611,7 +641,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
       clientId: input.clientId,
       playerProfile: input.playerProfile,
     },
-    readMap: ({ command }) => resolveMapWriteContext({ role: input.role, slug: command.mapSlug }, deps),
+    readMap: ({ command }) => resolveLivePlayMapWriteContext({ role: input.role, slug: command.mapSlug }, deps),
     getMapRevision: (context) => normalizeRevision(context.map.revision),
     authorize: ({ command, actor, map }) => {
       if (input.expectedType && command.type !== input.expectedType) {
@@ -676,19 +706,27 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         patches: [commandPatch(command, revision, change.placement)],
       }
     },
-    persist: ({ actor, nextMap, result }) => {
-      const updatedAt = nextMap.map.updatedAt ?? deps.now()
-      const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, updatedAt, { revision: result.revision })
-      deps.writeMap(nextMap.mapPath, persisted)
+    persist: async ({ actor, currentRevision, nextMap, result }) => {
+      const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, deps.now(), { revision: result.revision })
+      const updateResult = await deps.mapRepository.applyLivePlayUpdate({
+        slug: result.mapSlug,
+        expectedRevision: currentRevision,
+        nextMap: persisted,
+      })
+      if (updateResult === 'stale') {
+        throw new MapTokenActionUseCaseError(409, `Map ${result.mapSlug} changed before the live-play command could be persisted`)
+      }
+      const storedMap = await deps.mapRepository.getBySlug(result.mapSlug)
+      const authoritativeMap = storedMap ?? persisted
       const placementId = result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId
       const placement = placementId
-        ? persisted.placements.find((candidate) => candidate.id === placementId)
+        ? authoritativeMap.placements.find((candidate) => candidate.id === placementId)
         : undefined
       if (!placement) throw new MapTokenActionUseCaseError(404, 'Token command applied but persisted placement was not found')
       persistedContext = {
         mapPath: nextMap.mapPath,
         relativePath: nextMap.relativePath,
-        map: persisted,
+        map: authoritativeMap,
         placement,
       }
       void actor
@@ -703,6 +741,6 @@ export const executeMapTokenLivePlayCommandUseCase = async (
   })
 
   const responseContext = persistedContext
-    ?? (isAcceptedResult(result) ? currentContextForAcceptedResult(result, input.role, deps) : null)
+    ?? (isAcceptedResult(result) ? await currentContextForAcceptedResult(result, input.role, deps) : null)
   return persistedCommandResponse(result, responseContext)
 }

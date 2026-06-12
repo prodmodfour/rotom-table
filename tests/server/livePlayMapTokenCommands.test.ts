@@ -1,3 +1,5 @@
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -15,6 +17,8 @@ import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/c
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
+import { openRotomDatabase } from '~~/server/storage/database'
+import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
 import type { TabletopMap } from '~/types/map'
 
@@ -88,13 +92,20 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     opStore: createInMemoryLivePlayOpStore(),
     queue: createInProcessMapWriteQueue(),
   })
-  const deps = {
-    findMapPath: vi.fn((slug: string) => (slug === 'arena' ? path : null)),
-    readMap: vi.fn(() => storedMap),
-    writeMap: vi.fn((_filePath: string, map: TabletopMap) => {
-      storedMap = map
-      writes.push(map)
+  const mapRepository = {
+    getBySlug: vi.fn(async (slug: string) => (slug === 'arena' ? storedMap : null)),
+    applyLivePlayUpdate: vi.fn(async (input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
+      if (input.slug !== 'arena' || input.expectedRevision !== storedMap.revision) return 'stale' as const
+      storedMap = {
+        ...input.nextMap,
+        revision: input.expectedRevision + 1,
+      }
+      writes.push(storedMap)
+      return 'applied' as const
     }),
+  }
+  const deps = {
+    mapRepository,
     readSheet: vi.fn((kind: string, slug: string) => ({
       sheet: kind === 'pokemon'
         ? { slug, nickname: 'Bolt', species: 'Pikachu' }
@@ -251,6 +262,49 @@ describe('live-play map token commands', () => {
     expect(harness.writes).toHaveLength(1)
     expect(harness.storedMap.revision).toBe(5)
     expect(harness.storedMap.metadata?.movementLog).toHaveLength(1)
+  })
+
+  it('persists live-play moves through the SQLite map repository', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rotom-live-map-'))
+    const database = openRotomDatabase({ path: join(root, 'campaign.sqlite') })
+
+    try {
+      const mapRepository = createSqliteMapRepository<TabletopMap>(database)
+      await mapRepository.saveSetupMap(baseMap())
+      const executor = createAuthoritativeLivePlayCommandExecutor({
+        opStore: createInMemoryLivePlayOpStore(),
+        queue: createInProcessMapWriteQueue(),
+      })
+
+      const response = await executeMapTokenLivePlayCommandUseCase({
+        role: 'player',
+        command: moveCommand({ opId: 'op_sqlitemapmove1' }),
+        playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }]),
+        expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      }, {
+        mapRepository,
+        commandExecutor: executor,
+        readSheet: vi.fn((kind: string, slug: string) => ({
+          sheet: kind === 'pokemon'
+            ? { slug, nickname: 'Bolt', species: 'Pikachu' }
+            : { slug, name: 'Boss' },
+        })),
+        now: vi.fn(() => 2_000),
+        publishRealtimeEvent: vi.fn(),
+      })
+
+      expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+      const stored = await mapRepository.getBySlug('arena')
+      expect(stored).toMatchObject({ revision: 5, updatedAt: 2_000 })
+      expect(stored?.placements.find((placement) => placement.id === 'linked-token')).toMatchObject({
+        id: 'linked-token',
+        position: { x: 4, y: 0, z: 1 },
+        facing: 'north-east',
+      })
+    } finally {
+      database.close()
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   it('rejects no-op moves without advancing revision or writing', async () => {
