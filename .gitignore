@@ -33,6 +33,7 @@ data/maps/
 data/player-profiles/
 data/reference-overrides/
 data/sessions/
+data/live-play-ops/
 data/sheets/*
 !data/sheets/examples/
 !data/sheets/examples/**
