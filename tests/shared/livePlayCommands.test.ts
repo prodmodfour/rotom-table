@@ -29,6 +29,8 @@ import {
   parseLivePlayMapSlug,
   parseLivePlayOpId,
   validateLivePlayCommandEnvelope,
+  type BuildTerrainVoxelLivePlayCommand,
+  type BuildTerrainVoxelPayload,
   type LivePlayBaseRevision,
   type LivePlayCommandEnvelope,
   type LivePlayCommandResult,
@@ -42,6 +44,8 @@ import {
   type LivePlayTokenScopeField,
   type PlaceHazardLivePlayCommand,
   type PlaceHazardPayload,
+  type RemoveTerrainVoxelLivePlayCommand,
+  type RemoveTerrainVoxelPayload,
   type SetFieldEffectLivePlayCommand,
   type SetFieldEffectPayload,
   type SetInitiativeLivePlayCommand,
@@ -121,6 +125,7 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('placeHazard')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setFieldEffect')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('buildTerrainVoxel')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('removeTerrainVoxel')
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayCommandType('teleportToken')).toBe(false)
     expect(parseLivePlayCommandType('useMove')).toBe('useMove')
@@ -232,6 +237,31 @@ describe('live-play command contract', () => {
     expect(fieldEffectCommand.type).toBe('setFieldEffect')
     expect(fieldEffectCommand.payload).toEqual({ category: 'weather', kind: 'sunny', rounds: 5, weatherMode: 'replace' })
 
+    const buildTerrainCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
+      scopes: [{ kind: 'map', lane: 'terrain' }],
+      payload: { voxel: { x: 1, y: 0, z: 2, materialId: 'meadow_grass' } },
+    } as const satisfies BuildTerrainVoxelLivePlayCommand
+
+    const removeTerrainCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
+      scopes: [{ kind: 'map', lane: 'terrain' }],
+      payload: { cell: { x: 1, y: 0, z: 2 } },
+    } as const satisfies RemoveTerrainVoxelLivePlayCommand
+
+    expect(buildTerrainCommand.type).toBe('buildTerrainVoxel')
+    expect(buildTerrainCommand.payload.voxel).toEqual({ x: 1, y: 0, z: 2, materialId: 'meadow_grass' })
+    expect(removeTerrainCommand.type).toBe('removeTerrainVoxel')
+    expect(removeTerrainCommand.payload.cell).toEqual({ x: 1, y: 0, z: 2 })
+
     expectTypeOf(command).toEqualTypeOf<
       LivePlayCommandEnvelope<typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN, MoveTokenPayload, LivePlayTokenScope>
     >()
@@ -239,6 +269,8 @@ describe('live-play command contract', () => {
     expectTypeOf(initiativeCommand.payload).toMatchTypeOf<SetInitiativePayload>()
     expectTypeOf(hazardCommand.payload).toMatchTypeOf<PlaceHazardPayload>()
     expectTypeOf(fieldEffectCommand.payload).toMatchTypeOf<SetFieldEffectPayload>()
+    expectTypeOf(buildTerrainCommand.payload).toMatchTypeOf<BuildTerrainVoxelPayload>()
+    expectTypeOf(removeTerrainCommand.payload).toMatchTypeOf<RemoveTerrainVoxelPayload>()
   })
 
   it('builds accepted, rejected, and duplicate results with reusable shapes', () => {

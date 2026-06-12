@@ -6,6 +6,7 @@ import type {
   MapHazardV2,
   MapRoomKind,
   MapTerrainKind,
+  MapVoxelV2,
   MapWeatherKind,
 } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
@@ -259,6 +260,14 @@ export interface TickFieldEffectDurationsPayload {
   readonly amount?: number
 }
 
+export interface BuildTerrainVoxelPayload {
+  readonly voxel: MapVoxelV2
+}
+
+export interface RemoveTerrainVoxelPayload {
+  readonly cell: GridAnchor
+}
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -343,6 +352,18 @@ export type TickFieldEffectDurationsLivePlayCommand = LivePlayCommandEnvelope<
   LivePlayMapScope
 >
 
+export type BuildTerrainVoxelLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
+  BuildTerrainVoxelPayload,
+  LivePlayMapScope
+>
+
+export type RemoveTerrainVoxelLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
+  RemoveTerrainVoxelPayload,
+  LivePlayMapScope
+>
+
 export type LivePlayInitiativeCommand =
   | SetInitiativeLivePlayCommand
   | NextInitiativeLivePlayCommand
@@ -354,6 +375,10 @@ export type LivePlayMapEffectCommand =
   | SetFieldEffectLivePlayCommand
   | RemoveFieldEffectLivePlayCommand
   | TickFieldEffectDurationsLivePlayCommand
+
+export type LivePlayTerrainCommand =
+  | BuildTerrainVoxelLivePlayCommand
+  | RemoveTerrainVoxelLivePlayCommand
 
 export type LivePlaySheetCommand =
   | ModifyHpLivePlayCommand

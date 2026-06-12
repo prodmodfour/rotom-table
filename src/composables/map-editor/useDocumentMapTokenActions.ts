@@ -3,6 +3,7 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   createLivePlayOpId,
+  type BuildTerrainVoxelPayload,
   type LivePlayCommandDuplicate,
   type LivePlayCommandResult,
   type LivePlayMapScope,
@@ -16,6 +17,7 @@ import {
   type PlaceHazardPayload,
   type RemoveFieldEffectPayload,
   type RemoveHazardPayload,
+  type RemoveTerrainVoxelPayload,
   type SetFieldEffectPayload,
   type SetInitiativePayload,
   type TickFieldEffectDurationsPayload,
@@ -128,6 +130,8 @@ export interface UseDocumentMapTokenActionsReturn {
   removeHazard: (payload: {
     cell: RemoveHazardPayload['cell']
   }) => Promise<DocumentMapTokenActionDispatchResult>
+  buildTerrainVoxel: (payload: BuildTerrainVoxelPayload) => Promise<DocumentMapTokenActionDispatchResult>
+  removeTerrainVoxel: (payload: RemoveTerrainVoxelPayload) => Promise<DocumentMapTokenActionDispatchResult>
   setFieldEffect: (payload: SetFieldEffectPayload) => Promise<DocumentMapTokenActionDispatchResult>
   removeFieldEffect: (payload: RemoveFieldEffectPayload) => Promise<DocumentMapTokenActionDispatchResult>
   tickFieldEffectDurations: (payload?: TickFieldEffectDurationsPayload) => Promise<DocumentMapTokenActionDispatchResult>
@@ -160,6 +164,8 @@ type LivePlayDocumentCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE
   | typeof LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD
+  | typeof LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL
+  | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
@@ -175,6 +181,8 @@ type LivePlayTokenCommandPayload =
 type LivePlayMapEffectsCommandPayload =
   | PlaceHazardPayload
   | RemoveHazardPayload
+  | BuildTerrainVoxelPayload
+  | RemoveTerrainVoxelPayload
   | SetFieldEffectPayload
   | RemoveFieldEffectPayload
   | TickFieldEffectDurationsPayload
@@ -494,6 +502,24 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
+  const buildTerrainVoxel: UseDocumentMapTokenActionsReturn['buildTerrainVoxel'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.buildTerrainVoxel,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
+      { voxel: payload.voxel },
+      [mapScope('terrain')],
+    ),
+  )
+
+  const removeTerrainVoxel: UseDocumentMapTokenActionsReturn['removeTerrainVoxel'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.removeTerrainVoxel,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
+      { cell: payload.cell },
+      [mapScope('terrain')],
+    ),
+  )
+
   const setFieldEffect: UseDocumentMapTokenActionsReturn['setFieldEffect'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.setFieldEffect,
     commandBody(
@@ -564,6 +590,8 @@ export const useDocumentMapTokenActions = (
     previousInitiative,
     placeHazard,
     removeHazard,
+    buildTerrainVoxel,
+    removeTerrainVoxel,
     setFieldEffect,
     removeFieldEffect,
     tickFieldEffectDurations,

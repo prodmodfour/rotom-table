@@ -647,7 +647,7 @@ const {
   clearSelection,
 })
 
-const setupEditModeActive = computed(() => isGm.value && (buildMode.value || adminPanelOpen.value))
+const setupEditModeActive = computed(() => isGm.value && adminPanelOpen.value)
 watch(setupEditModeActive, (active) => {
   mapInteractionMode.value = active ? MAP_INTERACTION_MODES.SETUP_EDIT : MAP_INTERACTION_MODES.LIVE_PLAY
 }, { immediate: true })
@@ -902,11 +902,21 @@ const removeHazardFromScene = async (cell: Parameters<typeof removeHazard>[0]) =
 }
 
 const placeVoxelFromScene: typeof placeVoxel = (voxel) => {
-  placeVoxel(voxel)
+  if (isSetupEditMode()) {
+    placeVoxel(voxel)
+    return
+  }
+  if (!canEditMap.value) return
+  void documentTokenActions.buildTerrainVoxel({ voxel })
 }
 
 const removeVoxelFromScene: typeof removeVoxel = (cell) => {
-  removeVoxel(cell)
+  if (isSetupEditMode()) {
+    removeVoxel(cell)
+    return
+  }
+  if (!canEditMap.value) return
+  void documentTokenActions.removeTerrainVoxel({ cell })
 }
 
 const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {

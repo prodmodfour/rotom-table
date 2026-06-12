@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   executeLivePlayUseMoveCommandUseCase: vi.fn(),
   executeLivePlayInitiativeCommandUseCase: vi.fn(),
   executeLivePlayMapEffectsCommandUseCase: vi.fn(),
+  executeLivePlayTerrainCommandUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
@@ -69,6 +70,9 @@ vi.mock('../../server/useCases/applyLivePlayInitiativeCommand', () => ({
 vi.mock('../../server/useCases/applyLivePlayMapEffectsCommand', () => ({
   executeLivePlayMapEffectsCommandUseCase: mocks.executeLivePlayMapEffectsCommandUseCase,
 }))
+vi.mock('../../server/useCases/applyLivePlayTerrainCommand', () => ({
+  executeLivePlayTerrainCommandUseCase: mocks.executeLivePlayTerrainCommandUseCase,
+}))
 vi.mock('../../server/policies/playerProfilePolicy', () => ({
   resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
 }))
@@ -93,6 +97,8 @@ const nextInitiativeRoute = (await import('../../server/api/maps/initiative/next
 const previousInitiativeRoute = (await import('../../server/api/maps/initiative/previous.post')).default
 const placeHazardRoute = (await import('../../server/api/maps/hazards/place.post')).default
 const removeHazardRoute = (await import('../../server/api/maps/hazards/remove.post')).default
+const buildTerrainRoute = (await import('../../server/api/maps/terrain/build.post')).default
+const removeTerrainRoute = (await import('../../server/api/maps/terrain/remove.post')).default
 const setFieldEffectRoute = (await import('../../server/api/maps/field-effects/set.post')).default
 const removeFieldEffectRoute = (await import('../../server/api/maps/field-effects/remove.post')).default
 const tickFieldEffectDurationsRoute = (await import('../../server/api/maps/field-effects/tick.post')).default
@@ -217,6 +223,32 @@ describe('map hosted-write API routes', () => {
           payload: { cell: { x: 1, y: 0, z: 1 } },
         },
         mock: mocks.executeLivePlayMapEffectsCommandUseCase,
+      },
+      {
+        route: buildTerrainRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedtrn1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'buildTerrainVoxel',
+          scopes: [{ kind: 'map', lane: 'terrain' }],
+          payload: { voxel: { x: 1, y: 0, z: 1, materialId: 'meadow_grass' } },
+        },
+        mock: mocks.executeLivePlayTerrainCommandUseCase,
+      },
+      {
+        route: removeTerrainRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedrtrn',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'removeTerrainVoxel',
+          scopes: [{ kind: 'map', lane: 'terrain' }],
+          payload: { cell: { x: 1, y: 0, z: 1 } },
+        },
+        mock: mocks.executeLivePlayTerrainCommandUseCase,
       },
       {
         route: setFieldEffectRoute,

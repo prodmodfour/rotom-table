@@ -309,7 +309,7 @@ describe('useDocumentMapTokenActions', () => {
     }))
   })
 
-  it('posts live-play hazard and field-effect commands through the command dispatcher', async () => {
+  it('posts live-play hazard, terrain, and field-effect commands through the command dispatcher', async () => {
     const map = mapFixture()
     const mapRevision = ref(4)
     const applyPersistedMap = vi.fn()
@@ -340,6 +340,25 @@ describe('useDocumentMapTokenActions', () => {
       scopes: [{ kind: 'map', lane: 'hazards' }],
       payload: { hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
       clientId: 'ssr',
+    }))
+
+    await actions.buildTerrainVoxel({ voxel: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' } })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.buildTerrainVoxel, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
+      scopes: [{ kind: 'map', lane: 'terrain' }],
+      payload: { voxel: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' } },
+      clientId: 'ssr',
+    }))
+
+    await actions.removeTerrainVoxel({ cell: { x: 2, y: 0, z: 2 } })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.removeTerrainVoxel, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
+      scopes: [{ kind: 'map', lane: 'terrain' }],
+      payload: { cell: { x: 2, y: 0, z: 2 } },
     }))
 
     await actions.setFieldEffect({ category: 'weather', kind: 'sunny', rounds: 5, weatherMode: 'replace' })
