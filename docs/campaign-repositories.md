@@ -22,8 +22,12 @@ With the variable set, Rotom Table reads and writes campaign-owned files under t
 | `data/player-profiles/` | Local player profile JSON. |
 | `data/reference-overrides/` | Campaign-owned reference override diffs, currently Pokédex maintenance entries. |
 | `encounter_tables/` | Encounter-table JSON. |
+| `rotom-table.sqlite` | SQLite database for command-backed live-play maps, sheets, and operation results as routes migrate to database repositories. |
+| `rotom-table.sqlite-wal`, `rotom-table.sqlite-shm` | SQLite WAL sidecar files when the database is open in WAL mode. |
 
 App-owned PTU reference data stays in the app repo under `data/reference/`. GM Pokédex maintenance writes a campaign override diff at `data/reference-overrides/pokedex.json` instead of rewriting the app-owned `data/reference/pokedex.json` file. The override file stores replacement Pokédex entries keyed by the original app-reference slug; when a saved entry matches the app reference again, its campaign override is removed from the diff.
+
+The default live-play database path is `${ROTOM_CAMPAIGN_ROOT}/rotom-table.sqlite`. Set `ROTOM_DB_PATH` only when the database should live at a different operator-controlled path; relative `ROTOM_DB_PATH` values are resolved under `ROTOM_CAMPAIGN_ROOT`.
 
 ## Private VPS layout example
 
@@ -75,10 +79,16 @@ Suggested campaign `.gitignore`:
 .env.*
 temp/
 *.tmp
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.db-wal
+*.db-shm
 .DS_Store
 ```
 
-Commit and push the campaign repo normally with Git. Rotom Table does not run Git operations itself; it only reads and writes the JSON files in the configured campaign root.
+Commit and push JSON campaign material normally with Git when that fits your private workflow. Treat live SQLite database files as runtime state: prefer private backups or explicit export/migration artifacts over committing the database and WAL sidecars directly. Rotom Table does not run Git operations itself; it only reads and writes files in the configured campaign root.
 
 ## Notes
 

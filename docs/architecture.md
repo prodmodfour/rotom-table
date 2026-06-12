@@ -36,6 +36,12 @@ Rotom Table uses server-side filesystem-backed JSON persistence. Campaign state 
 
 This makes data easy to inspect, back up, diff, and repair while developing or running a home campaign.
 
+## SQLite persistence foundation
+
+Authoritative live play is gaining a SQLite document store behind server-only repository interfaces. The implementation uses Node 24's built-in `node:sqlite` module, so there is no additional native SQLite package. `server/storage/database.ts` resolves `ROTOM_DB_PATH` or defaults to `ROTOM_CAMPAIGN_ROOT/rotom-table.sqlite`, opens the database on first repository access, enables WAL for file-backed databases, and applies deterministic migrations from `server/storage/migrations.ts`.
+
+The initial repositories keep SQL out of use cases and UI code. Map, sheet, and live-play operation records are stored with explicit revision and timestamp columns while preserving JSON document payloads during the migration. Existing filesystem-backed JSON routes remain active until individual map and sheet persistence flows move to these repositories.
+
 ## Shared helpers
 
 The `shared/` directory contains small helpers used by both app and server code, such as auth role values, path validation, sheet kinds, realtime message shapes, and encounter-table normalization. Keeping these definitions shared reduces drift between browser and server assumptions.

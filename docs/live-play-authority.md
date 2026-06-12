@@ -44,9 +44,9 @@ Server command routes use the authoritative live-play command executor as the cr
 
 Persisted map and sheet documents carry a server-owned numeric `revision`. Legacy JSON documents that do not yet contain a revision load as revision `0`, and saves keep `updatedAt` only for display/sorting metadata rather than command conflict control. Accepted map-affecting commands advance the map revision once; accepted sheet-backed commands advance the affected sheet revision once; no-op or rejected commands do not advance revisions.
 
-Database-backed persistence is the target for authoritative live play. The database layer should provide transactional document/state writes, revision updates, idempotency records, and migration support.
+Database-backed persistence is the target for authoritative live play. The storage foundation uses Node 24's built-in `node:sqlite` module rather than an added native package, keeps SQL behind server-side repository modules, and migrates deterministically on first database access. The default database path is `rotom-table.sqlite` under `ROTOM_CAMPAIGN_ROOT`; operators can override it with `ROTOM_DB_PATH`, for example `/srv/rotom-table/campaign/rotom-table.sqlite`. File-backed databases enable WAL mode, and the initial schema stores map documents, sheet documents, and live-play operation results with revisions.
 
-JSON files remain useful for setup/edit storage, local data inspection, backups, exports, migration source/target artifacts, and temporary compatibility during the migration. JSON file writes must not be treated as concurrent live gameplay authority.
+JSON files remain useful for setup/edit storage, local data inspection, backups, exports, migration source/target artifacts, and temporary compatibility during the migration. Current JSON-backed routes continue to run until the relevant map and sheet repositories are migrated in later work. JSON file writes must not be treated as concurrent live gameplay authority.
 
 ## Realtime direction
 

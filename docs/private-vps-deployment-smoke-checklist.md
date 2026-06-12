@@ -7,7 +7,7 @@ Use synthetic or clearly disposable campaign edits for smoke checks. Do not put 
 ## Preconditions
 
 - [ ] The deployed checkout is the intended app revision under `/srv/rotom-table/app` or the operator's equivalent app path; if branch names are part of the deploy process, prefer `main` plus short-lived feature branches instead of unnecessary long-lived branch tiers.
-- [ ] `ROTOM_CAMPAIGN_ROOT` points outside the app checkout, for example `/srv/rotom-table/campaign`; branch names are not data-isolation boundaries, and staging plus production must never share the same writable campaign root.
+- [ ] `ROTOM_CAMPAIGN_ROOT` points outside the app checkout, for example `/srv/rotom-table/campaign`; branch names are not data-isolation boundaries, and staging plus production must never share the same writable campaign root. If `ROTOM_DB_PATH` is set, it points to a private operator-controlled database path rather than the app checkout.
 - [ ] The Node service binds to loopback, for example `NITRO_HOST=127.0.0.1` and `NITRO_PORT=3000`, unless the private host uses an equivalent non-public bind.
 - [ ] The private host is protected by an outer access gate before Rotom Table's `/login` page and `/api/*` routes are reachable.
 - [ ] A current private backup exists or the operator is comfortable discarding the disposable smoke edits. See the [Private VPS backup runbook](private-vps-backups.md).
@@ -98,7 +98,7 @@ git status --short
 Confirm that no private data is staged in Git:
 
 - [ ] no real `.env`, `.env.*`, systemd environment file, proxy config, tunnel credential, password file, token, private key, or provider export;
-- [ ] no private `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, `encounter_tables/`, or `data/sessions/` files from the smoke pass;
+- [ ] no private `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, `encounter_tables/`, `data/sessions/`, SQLite database, or SQLite WAL sidecar files from the smoke pass;
 - [ ] no backup archive such as `.tar`, `.tar.gz`, `.tgz`, or `.zip`;
 - [ ] no screenshots, logs, player details, unreleased campaign notes, or generated restore staging directories.
 

@@ -41,6 +41,8 @@ ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign \
 npm run start
 ```
 
+No `ROTOM_DB_PATH` value is required for the standard VPS layout because the SQLite database defaults to `/srv/rotom-table/campaign/rotom-table.sqlite`. Set `ROTOM_DB_PATH` in the same process environment only if the database should live at another private operator-controlled path.
+
 Then confirm the built server is reachable only through the intended private path:
 
 ```bash
@@ -49,7 +51,7 @@ curl -fsS http://127.0.0.1:3000/api/health
 
 For unattended VPS operation, use the example unit at [`deploy/systemd/rotom-table.service`](../deploy/systemd/rotom-table.service) as a reviewable starting point and install the reviewed copy as `/etc/systemd/system/rotom-table.service`. The example runs as a non-root `rotom-table` user/group, sets `WorkingDirectory=/srv/rotom-table/app`, loads app settings from `EnvironmentFile=/etc/rotom-table/rotom-table.env`, starts the built server with `npm run start`, and defines `Restart=on-failure` with a short `RestartSec` delay. If an operator does not want the npm wrapper, the equivalent command is `node .output/server/index.mjs` from the same working directory.
 
-The real systemd environment file should live outside the app checkout, for example at `/etc/rotom-table/rotom-table.env`, and should be copied from `.env.vps.example` or written with the same key names and host-specific values. Keep it untracked and root-readable only, for example `0600`, because it may contain private paths or future secrets. It should set the selected private host values such as `NODE_ENV=production`, `NITRO_HOST=127.0.0.1`, `NITRO_PORT=3000`, `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign`, and the optional exact hosted-write opt-in only when the private host is ready for campaign writes.
+The real systemd environment file should live outside the app checkout, for example at `/etc/rotom-table/rotom-table.env`, and should be copied from `.env.vps.example` or written with the same key names and host-specific values. Keep it untracked and root-readable only, for example `0600`, because it may contain private paths or future secrets. It should set the selected private host values such as `NODE_ENV=production`, `NITRO_HOST=127.0.0.1`, `NITRO_PORT=3000`, `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign`, optional `ROTOM_DB_PATH` only when the SQLite database should not use the campaign-root default, and the optional exact hosted-write opt-in only when the private host is ready for campaign writes.
 
 A minimal install flow after creating `/srv/rotom-table/app` and building the app is:
 
@@ -129,7 +131,8 @@ A simple private VPS can keep the app, campaign data, and backups under one oper
 ```text
 /srv/rotom-table/
   app/                    # application checkout and built .output/ server
-  campaign/               # ROTOM_CAMPAIGN_ROOT; private campaign JSON and reference override diffs
+  campaign/               # ROTOM_CAMPAIGN_ROOT; private campaign JSON, database, and reference override diffs
+    rotom-table.sqlite     # default SQLite database path as live-play repositories migrate
     data/
       maps/
       sheets/
@@ -146,7 +149,7 @@ With that layout, run the built app from `/srv/rotom-table/app` and set:
 ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign
 ```
 
-Rotom Table then resolves campaign-owned paths under the campaign root: maps at `/srv/rotom-table/campaign/data/maps/`, Pokémon sheets at `/srv/rotom-table/campaign/data/sheets/`, trainer sheets at `/srv/rotom-table/campaign/data/trainers/`, player profiles at `/srv/rotom-table/campaign/data/player-profiles/`, campaign reference override diffs at `/srv/rotom-table/campaign/data/reference-overrides/`, and encounter tables at `/srv/rotom-table/campaign/encounter_tables/`. App-owned reference data such as `data/reference/` remains in the application checkout; GM Pokédex maintenance writes `data/reference-overrides/pokedex.json` under `ROTOM_CAMPAIGN_ROOT` instead of rewriting app-owned reference JSON.
+Rotom Table then resolves campaign-owned paths under the campaign root: maps at `/srv/rotom-table/campaign/data/maps/`, Pokémon sheets at `/srv/rotom-table/campaign/data/sheets/`, trainer sheets at `/srv/rotom-table/campaign/data/trainers/`, player profiles at `/srv/rotom-table/campaign/data/player-profiles/`, campaign reference override diffs at `/srv/rotom-table/campaign/data/reference-overrides/`, and encounter tables at `/srv/rotom-table/campaign/encounter_tables/`. The SQLite live-play database defaults to `/srv/rotom-table/campaign/rotom-table.sqlite` and can be moved with `ROTOM_DB_PATH` if needed. App-owned reference data such as `data/reference/` remains in the application checkout; GM Pokédex maintenance writes `data/reference-overrides/pokedex.json` under `ROTOM_CAMPAIGN_ROOT` instead of rewriting app-owned reference JSON.
 
 Do not store private maps, sheets, trainers, player profiles, campaign-specific reference overrides, encounter tables, backups, or unreleased campaign notes in a public or shared app repository checkout. Keep `/srv/rotom-table/campaign` and `/srv/rotom-table/backups` private to the operator and exclude real `.env` files and generated archives from Git.
 

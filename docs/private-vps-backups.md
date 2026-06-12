@@ -12,9 +12,10 @@ Back up the entire configured campaign root, not only the file you edited most r
 - `data/player-profiles/`
 - `data/reference-overrides/` for campaign-owned reference override diffs such as Pokédex edits
 - `encounter_tables/`
+- `rotom-table.sqlite` plus `rotom-table.sqlite-wal` and `rotom-table.sqlite-shm` when live-play SQLite repositories have created them, or the configured `ROTOM_DB_PATH` if it points elsewhere
 - any private campaign assets or notes intentionally kept under the campaign root
 
-For the documented VPS layout, the app runs from `/srv/rotom-table/app`, campaign data lives in `/srv/rotom-table/campaign`, and private archives live outside the app checkout in `/srv/rotom-table/backups`.
+For the documented VPS layout, the app runs from `/srv/rotom-table/app`, campaign data lives in `/srv/rotom-table/campaign`, the default SQLite database path is `/srv/rotom-table/campaign/rotom-table.sqlite`, and private archives live outside the app checkout in `/srv/rotom-table/backups`. If `ROTOM_DB_PATH` points outside the campaign root, include that database path and sidecars in a separate private backup step.
 
 ## Backup timing
 
@@ -29,7 +30,7 @@ For the safest copy, pause table activity and stop the service while taking the 
 sudo systemctl stop rotom-table.service
 ```
 
-If you cannot stop the service, ask everyone to pause changes, wait for autosaves to finish, then archive immediately. Avoid copying while a large map, sheet, profile, Pokédex override, or encounter-table write is in progress.
+If you cannot stop the service, ask everyone to pause changes, wait for autosaves and command-backed writes to finish, then archive immediately. Avoid copying while a large map, sheet, profile, Pokédex override, encounter-table write, or SQLite transaction is in progress. Stopping the service is preferred once the SQLite database contains live play state because it lets the main database and WAL sidecar files settle before the archive is created.
 
 ## Timestamped campaign archive
 
@@ -106,6 +107,7 @@ test -d "$RESTORED_CAMPAIGN_ROOT/data/trainers"
 test -d "$RESTORED_CAMPAIGN_ROOT/data/player-profiles"
 test -d "$RESTORED_CAMPAIGN_ROOT/encounter_tables"
 test ! -d "$RESTORED_CAMPAIGN_ROOT/data/reference-overrides" || test -f "$RESTORED_CAMPAIGN_ROOT/data/reference-overrides/pokedex.json"
+test ! -f "$RESTORED_CAMPAIGN_ROOT/rotom-table.sqlite" || test -r "$RESTORED_CAMPAIGN_ROOT/rotom-table.sqlite"
 ```
 
 Boot a separate loopback-only app process against that temporary campaign root. Use a different port from the real service so the live table can remain stopped or isolated while you inspect the restore. The exact hosted-write flag is included here only so the disposable test write below can prove persistence in the restored copy.
