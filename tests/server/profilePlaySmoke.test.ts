@@ -6,7 +6,10 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createPlayerProfileUseCase } from '~~/server/useCases/createPlayerProfile'
 import { loadMapUseCase } from '~~/server/useCases/loadMap'
 import { loadSheetUseCase, type LoadedSheet } from '~~/server/useCases/loadSheet'
-import { moveMapTokenUseCase } from '~~/server/useCases/applyMapTokenAction'
+import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
+import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
+import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
+import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { saveSheetUseCase } from '~~/server/useCases/saveSheet'
 import { updatePlayerProfileUseCase } from '~~/server/useCases/updatePlayerProfile'
 import {
@@ -20,6 +23,7 @@ import type { ApiClient } from '~/utils/apiClient'
 import { PLAYER_PROFILE_API_PATHS } from '~/utils/apiRoutes'
 import type { PlayerProfileSelectionStorage } from '~/utils/playerProfileSelectionStorage'
 import { usePlayerProfiles } from '~/composables/usePlayerProfiles'
+import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import type { SheetKind } from '#shared/sheets'
 import type {
@@ -93,6 +97,7 @@ const createPlayerProfileApiClient = (profileRoot: string): ApiClient => ({
 
 const createArenaMap = (): TabletopMap => ({
   schemaVersion: 2,
+  revision: 0,
   slug: 'arena',
   name: 'Arena',
   dimensions: { x: 6, y: 2, z: 6 },
@@ -213,16 +218,45 @@ describe('profile-based play smoke flow', () => {
       slug: 'arena',
     }, mapDeps).map).toEqual(storedMap)
 
-    const moveResult = moveMapTokenUseCase({
+    const liveCommandExecutor = createAuthoritativeLivePlayCommandExecutor({
+      opStore: createInMemoryLivePlayOpStore(),
+      queue: createInProcessMapWriteQueue(),
+    })
+    const liveMapRepository = {
+      getBySlug: async (slug: string) => (slug === storedMap.slug ? storedMap : null),
+      applyLivePlayUpdate: async (input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
+        if (input.slug !== storedMap.slug || (storedMap.revision ?? 0) !== input.expectedRevision) return 'stale' as const
+        storedMap = { ...input.nextMap, revision: input.expectedRevision + 1 }
+        mapWrites.push(storedMap)
+        return 'applied' as const
+      },
+    }
+
+    const moveCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: 'op_profilemove',
+      mapSlug: 'arena',
+      baseRevision: 0,
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token' as const, placementId: 'linked-token', field: 'position' as const }],
+      payload: { placementId: 'linked-token', position: { x: 4, y: 0, z: 2 }, pathLength: 3 },
+      clientId: 'player-client',
+    }
+    const moveResult = await executeMapTokenLivePlayCommandUseCase({
       role: 'player',
-      slug: 'arena',
-      placementId: 'linked-token',
-      position: { x: 4, y: 0, z: 2 },
-      pathLength: 3,
+      command: moveCommand,
       clientId: 'player-client',
       playerProfile: selectedProfile,
-    }, mapDeps)
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, {
+      commandExecutor: liveCommandExecutor,
+      mapRepository: liveMapRepository,
+      readSheet: mapDeps.readSheet,
+      now: mapDeps.now,
+      relativePath: mapDeps.relativePath,
+    })
 
+    expect(moveResult.result).toMatchObject({ ok: true, revision: 1 })
     expect(moveResult.path).toBe('data/maps/arena.json')
     expect(moveResult.placement).toMatchObject({
       id: 'linked-token',
@@ -234,7 +268,9 @@ describe('profile-based play smoke flow', () => {
     expect(storedMap.placements.find((placement) => placement.id === 'unlinked-token')).toMatchObject({
       position: { x: 3, y: 0, z: 3 },
     })
-    expect(moveResult.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
+    expect('patches' in moveResult.result ? moveResult.result.patches : []).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'token.position', mapSlug: 'arena', revision: 1 }),
+    ]))
 
     const linkedSheetLoad = loadSheetUseCase({
       role: 'player',
@@ -309,13 +345,27 @@ describe('profile-based play smoke flow', () => {
       },
     ])
 
-    expect(() => moveMapTokenUseCase({
+    const deniedMove = await executeMapTokenLivePlayCommandUseCase({
       role: 'player',
-      slug: 'arena',
-      placementId: 'unlinked-token',
-      position: { x: 5, y: 0, z: 5 },
+      command: {
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        opId: 'op_profiledeny',
+        mapSlug: 'arena',
+        baseRevision: 1,
+        type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+        scopes: [{ kind: 'token' as const, placementId: 'unlinked-token', field: 'position' as const }],
+        payload: { placementId: 'unlinked-token', position: { x: 5, y: 0, z: 5 } },
+      },
       playerProfile: selectedProfile,
-    }, mapDeps)).toThrow('Token is not linked to selected player profile')
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, {
+      commandExecutor: liveCommandExecutor,
+      mapRepository: liveMapRepository,
+      readSheet: mapDeps.readSheet,
+      now: mapDeps.now,
+      relativePath: mapDeps.relativePath,
+    })
+    expect(deniedMove.result).toMatchObject({ ok: false, reason: 'unauthorized', message: 'Token is not linked to selected player profile' })
     expect(mapWrites).toHaveLength(1)
     expect(storedMap.placements.find((placement) => placement.id === 'unlinked-token')).toMatchObject({
       position: { x: 3, y: 0, z: 3 },

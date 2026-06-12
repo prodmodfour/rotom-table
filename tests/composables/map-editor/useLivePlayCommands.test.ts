@@ -43,6 +43,14 @@ const mapFixture = (): TabletopMap => ({
       facing: 'south-east',
       turned: false,
     },
+    {
+      id: 'target-token',
+      sheetKind: 'pokemon',
+      sheetSlug: 'bulbasaur',
+      position: { x: 2, y: 0, z: 1 },
+      facing: 'north-west',
+      turned: false,
+    },
   ],
   lights: [],
   initiative: { activeId: null, round: 1 },
@@ -632,6 +640,11 @@ describe('useLivePlayCommands', () => {
     }
     apiMocks.postJson.mockResolvedValue({
       ok: true,
+      opId: 'op_serverability',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
       path: 'data/maps/arena-map.json',
       map,
       action: { type: 'ability', placementId: 'token-pikachu', name: 'Healer' },
@@ -641,6 +654,8 @@ describe('useLivePlayCommands', () => {
     const actions = useLivePlayCommands({
       slug: 'arena-map',
       playerProfileId: profileId,
+      map: ref(map),
+      mapRevision: ref(4),
       applyPersistedMap,
       applySheetUpdate,
     })
@@ -655,20 +670,21 @@ describe('useLivePlayCommands', () => {
       schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
       opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
       mapSlug: 'arena-map',
-      baseRevision: 0,
+      baseRevision: 4,
       type: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
-      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
+      scopes: [
+        { kind: 'token', placementId: 'token-pikachu', field: 'action' },
+        { kind: 'map', lane: 'metadata' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'ability' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'bulbasaur', field: 'ability' },
+      ],
       payload: {
         placementId: 'token-pikachu',
         abilityName: 'Healer',
         targetPlacementId: 'target-token',
       },
-      slug: 'arena-map',
       clientId: 'ssr',
       profileId: 'profile_ash00000',
-      placementId: 'token-pikachu',
-      abilityName: 'Healer',
-      targetPlacementId: 'target-token',
     }))
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
     expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)

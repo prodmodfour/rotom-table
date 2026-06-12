@@ -1,23 +1,26 @@
 import { defineEventHandler } from 'h3'
-import { requireAuthRole } from '../../../utils/auth'
-import { expectSlug, expectString, readObjectBody, requireWritableCampaignMode } from '../../../utils/http'
-import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../../utils/useCaseHttp'
-import { useMapTokenAbilityUseCase } from '../../../useCases/applyMapTokenTableAction'
+import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
 import { normalizeRealtimeClientId } from '#shared/realtime'
+import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
+import { executeLivePlayTableActionCommandUseCase, type LivePlayTableActionCommandResponse } from '../../../useCases/applyMapTokenTableAction'
+import { requireAuthRole } from '../../../utils/auth'
+import { readObjectBody, requireWritableCampaignMode } from '../../../utils/http'
+import { throwUseCaseHttpError } from '../../../utils/useCaseHttp'
 
-interface UseAbilityBody {
-  slug?: unknown
-  placementId?: unknown
-  abilityName?: unknown
-  targetPlacementId?: unknown
-  clientId?: unknown
-  profileId?: unknown
-}
+type UseAbilityBody = Record<string, unknown>
 
-const optionalPlacementId = (value: unknown): string | undefined => {
-  const text = expectString(value, 'targetPlacementId', { required: false, maxLength: 120 })
-  return text || undefined
+const bodyField = (body: UseAbilityBody, key: string): unknown => body[key]
+
+const routeResponse = (response: LivePlayTableActionCommandResponse) => {
+  if (!response.result.ok) return response.result
+  return {
+    ...response.result,
+    ...(response.path === undefined ? {} : { path: response.path }),
+    ...(response.map === undefined ? {} : { map: response.map }),
+    ...(response.placement === undefined ? {} : { placement: response.placement }),
+    ...(response.action === undefined ? {} : { action: response.action }),
+    ...(response.sheetUpdates === undefined ? {} : { sheetUpdates: response.sheetUpdates }),
+  }
 }
 
 export default defineEventHandler(async (event) => {
@@ -25,32 +28,19 @@ export default defineEventHandler(async (event) => {
   requireWritableCampaignMode()
 
   const body = await readObjectBody<UseAbilityBody>(event)
-  const slug = expectSlug(body.slug)
-  const placementId = expectString(body.placementId, 'placementId', { maxLength: 120 })
-  const abilityName = expectString(body.abilityName, 'abilityName', { maxLength: 120 })
-  const targetPlacementId = optionalPlacementId(body.targetPlacementId)
 
   try {
     const playerProfile = role === 'player'
-      ? resolvePlayerProfileForPolicy(body.profileId)
+      ? resolvePlayerProfileForPolicy(bodyField(body, 'profileId'))
       : null
-    const result = useMapTokenAbilityUseCase({
+    const response = await executeLivePlayTableActionCommandUseCase({
       role,
-      slug,
-      placementId,
-      abilityName,
-      ...(targetPlacementId ? { targetPlacementId } : {}),
-      clientId: normalizeRealtimeClientId(body.clientId),
+      command: body,
+      clientId: normalizeRealtimeClientId(bodyField(body, 'clientId')),
       playerProfile,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
     })
-    publishUseCaseRealtimeEvents(result.events)
-    return {
-      ok: result.ok,
-      path: result.path,
-      map: result.map,
-      action: result.action,
-      sheetUpdates: result.sheetUpdates,
-    }
+    return routeResponse(response)
   } catch (err) {
     throwUseCaseHttpError(err)
   }

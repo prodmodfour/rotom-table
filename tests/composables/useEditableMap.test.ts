@@ -393,7 +393,7 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
-  it('adopts document-backed token action responses without scheduling another whole-map save', async () => {
+  it('adopts authoritative map responses without scheduling another whole-map save', async () => {
     const editable = useEditableMap('arena-map', { debounceMs: 10 })
     await flushPromises()
 

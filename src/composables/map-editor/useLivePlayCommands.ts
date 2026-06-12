@@ -55,21 +55,6 @@ export interface LivePlayCommandSheetUpdate {
   sheet: Record<string, unknown>
 }
 
-export interface MapTokenTableActionResponse {
-  ok: true
-  path: string
-  map: TabletopMap
-  placement?: SheetPlacement
-  action?: {
-    type: 'maneuver' | 'ability' | 'order'
-    placementId: string
-    targetPlacementId?: string
-    name: string
-    category?: string
-  }
-  sheetUpdates?: LivePlayCommandSheetUpdate[]
-}
-
 export type LivePlayCommandResponse = LivePlayCommandResult & {
   path?: string
   map?: TabletopMap
@@ -80,7 +65,7 @@ export type LivePlayCommandResponse = LivePlayCommandResult & {
 export interface LivePlayCommandDispatchResult {
   dispatched: boolean
   message?: string
-  response?: MapTokenTableActionResponse | LivePlayCommandResponse
+  response?: LivePlayCommandResponse
 }
 
 export interface UseLivePlayCommandsOptions {
@@ -94,7 +79,7 @@ export interface UseLivePlayCommandsOptions {
   applySheetUpdate?: (update: LivePlayCommandSheetUpdate) => void
   requestReconciliation?: (reason: LivePlayCommandReconciliationRequest) => void | Promise<void>
   onCommandStarted?: () => void
-  onCommandAccepted?: (response: MapTokenTableActionResponse | LivePlayCommandResponse) => void
+  onCommandAccepted?: (response: LivePlayCommandResponse) => void
   onCommandRejected?: (transition: {
     reason?: LivePlayCommandRejectionReason | null
     message: string
@@ -316,11 +301,11 @@ export const useLivePlayCommands = (
     options.map?.value?.placements.find((placement) => placement.id === payload.placementId) ?? null
   )
 
-  const sheetScope = (
-    payload: LivePlayTokenCommandPayload,
+  const sheetScopeForPlacementId = (
+    placementId: string,
     field: string,
   ): LivePlaySheetScope | null => {
-    const placement = placementForPayload(payload)
+    const placement = options.map?.value?.placements.find((candidate) => candidate.id === placementId) ?? null
     if (!placement) return null
     return {
       kind: 'sheet',
@@ -329,6 +314,11 @@ export const useLivePlayCommands = (
       field,
     }
   }
+
+  const sheetScope = (
+    payload: LivePlayTokenCommandPayload,
+    field: string,
+  ): LivePlaySheetScope | null => sheetScopeForPlacementId(payload.placementId, field)
 
   const commandBody = (
     type: LivePlayClientCommandType,
@@ -368,44 +358,18 @@ export const useLivePlayCommands = (
   const tableActionCommandBody = (
     type: typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER | typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY | typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
     payload: UseManeuverPayload | UseAbilityPayload | UseOrderPayload,
-  ): Record<string, unknown> => ({
-    ...commandBody(type, payload, [tokenScope(payload, 'action')]),
-    // Table action routes still read these compatibility fields while their
-    // server-side command executors are migrated; keep the canonical envelope
-    // fields beside them so the UI does not own endpoint-specific context.
-    slug: options.slug,
-    ...payload,
-  })
-
-  const runAction = async (
-    request: string,
-    body: Record<string, unknown>,
-  ): Promise<LivePlayCommandDispatchResult> => {
-    const blockedMessage = blockedCommandMessage()
-    if (blockedMessage) {
-      status.value = 'error'
-      lastError.value = blockedMessage
-      options.onCommandBlocked?.(blockedMessage)
-      return { dispatched: false, message: blockedMessage }
-    }
-
-    status.value = 'saving'
-    lastError.value = null
-    options.onCommandStarted?.()
-    try {
-      const response = await postJson<MapTokenTableActionResponse>(request, body)
-      options.applyPersistedMap?.(response.map)
-      for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
-      status.value = 'idle'
-      options.onCommandAccepted?.(response)
-      return { dispatched: true, response }
-    } catch (error) {
-      const message = getErrorMessage(error, { fallback: 'Token action failed' })
-      status.value = 'error'
-      lastError.value = message
-      options.onCommandFailed?.(message)
-      return { dispatched: false, message }
-    }
+  ): Record<string, unknown> => {
+    const sheetScopes = type === LIVE_PLAY_COMMAND_TYPES.USE_ABILITY
+      ? [
+          sheetScopeForPlacementId(payload.placementId, 'ability'),
+          ...(payload.targetPlacementId ? [sheetScopeForPlacementId(payload.targetPlacementId, 'ability')] : []),
+        ].filter((scope): scope is LivePlaySheetScope => scope !== null)
+      : []
+    return commandBody(type, payload, [
+      tokenScope(payload, 'action'),
+      mapScope('metadata'),
+      ...sheetScopes,
+    ])
   }
 
   const runLivePlayCommand = async (
@@ -655,7 +619,7 @@ export const useLivePlayCommands = (
     ),
   )
 
-  const useManeuver: UseLivePlayCommandsReturn['useManeuver'] = (payload) => runAction(
+  const useManeuver: UseLivePlayCommandsReturn['useManeuver'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.useManeuver,
     tableActionCommandBody(
       LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
@@ -667,7 +631,7 @@ export const useLivePlayCommands = (
     ),
   )
 
-  const useAbility: UseLivePlayCommandsReturn['useAbility'] = (payload) => runAction(
+  const useAbility: UseLivePlayCommandsReturn['useAbility'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.useAbility,
     tableActionCommandBody(
       LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
@@ -679,7 +643,7 @@ export const useLivePlayCommands = (
     ),
   )
 
-  const useOrder: UseLivePlayCommandsReturn['useOrder'] = (payload) => runAction(
+  const useOrder: UseLivePlayCommandsReturn['useOrder'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.useOrder,
     tableActionCommandBody(
       LIVE_PLAY_COMMAND_TYPES.USE_ORDER,

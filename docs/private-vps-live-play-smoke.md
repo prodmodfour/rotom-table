@@ -15,7 +15,7 @@ Run this checklist after the normal [Private VPS deployment smoke checklist](pri
 ## Backup and rollback checkpoint
 
 - [ ] Confirm the chosen backup archive listing includes `rotom-table.sqlite` when the campaign has been migrated to database-backed live play, plus any `rotom-table.sqlite-wal` and `rotom-table.sqlite-shm` sidecars that existed at backup time.
-- [ ] Confirm residual JSON campaign files are in the same backup, including `data/player-profiles/`, encounter tables, and setup/edit map or sheet JSON that still exists during the migration phase.
+- [ ] Confirm residual JSON campaign files are in the same backup, including `data/player-profiles/`, encounter tables, and any setup/edit map or sheet JSON kept for inspection, imports, exports, or maintenance.
 - [ ] If this smoke follows a deploy, keep the pre-deploy/pre-session archive until the deploy and live-play smoke pass. If the deploy fails, stop the service and follow the backup runbook's [rollback after a bad deploy](private-vps-backups.md#rollback-after-a-bad-deploy) steps instead of continuing to play on questionable state.
 - [ ] After a successful smoke on a real campaign, create a `SESSION_TAG=post-session`, `SESSION_TAG=post-smoke`, or `SESSION_TAG=post-deploy` archive so the verified live-play SQLite state can be restored later.
 

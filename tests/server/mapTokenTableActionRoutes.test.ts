@@ -4,16 +4,12 @@ import { UseCaseHttpError } from '~~/server/utils/useCaseErrors'
 import type { TabletopMap } from '~/types/map'
 
 const mocks = vi.hoisted(() => ({
-  useMapTokenAbilityUseCase: vi.fn(),
-  useMapTokenManeuverUseCase: vi.fn(),
-  useMapTokenOrderUseCase: vi.fn(),
+  executeLivePlayTableActionCommandUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
 vi.mock('../../server/useCases/applyMapTokenTableAction', () => ({
-  useMapTokenAbilityUseCase: mocks.useMapTokenAbilityUseCase,
-  useMapTokenManeuverUseCase: mocks.useMapTokenManeuverUseCase,
-  useMapTokenOrderUseCase: mocks.useMapTokenOrderUseCase,
+  executeLivePlayTableActionCommandUseCase: mocks.executeLivePlayTableActionCommandUseCase,
 }))
 vi.mock('../../server/policies/playerProfilePolicy', () => ({
   resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
@@ -61,12 +57,43 @@ const invokeRoute = async (
   } as unknown as H3Event)
 }
 
+const abilityCommand = () => ({
+  schemaVersion: 1,
+  opId: 'op_routeabil',
+  mapSlug: 'arena',
+  baseRevision: 0,
+  type: 'useAbility',
+  scopes: [
+    { kind: 'token', placementId: 'actor', field: 'action' },
+    { kind: 'map', lane: 'metadata' },
+    { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'sandile', field: 'ability' },
+    { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'target', field: 'ability' },
+  ],
+  payload: { placementId: 'actor', abilityName: 'Intimidate', targetPlacementId: 'target' },
+  clientId: 'client-1',
+  profileId: 'profile_ash00000',
+})
+
+const orderCommand = () => ({
+  schemaVersion: 1,
+  opId: 'op_routeordr',
+  mapSlug: 'arena',
+  baseRevision: 0,
+  type: 'useOrder',
+  scopes: [
+    { kind: 'token', placementId: 'trainer', field: 'action' },
+    { kind: 'map', lane: 'metadata' },
+  ],
+  payload: { placementId: 'trainer', orderName: 'Agility Training' },
+  profileId: 'profile_ash00000',
+})
+
 describe('map token table action API routes', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('resolves selected player profiles before document-backed ability use', async () => {
+  it('resolves selected player profiles before canonical ability commands', async () => {
     const map = mapFixture()
     const profile = {
       schemaVersion: 1,
@@ -74,28 +101,33 @@ describe('map token table action API routes', () => {
       displayName: 'Ash',
       linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'sandile' }],
     }
+    const command = abilityCommand()
     mocks.resolvePlayerProfileForPolicy.mockReturnValue(profile)
-    mocks.useMapTokenAbilityUseCase.mockReturnValue({
-      ok: true,
+    mocks.executeLivePlayTableActionCommandUseCase.mockResolvedValue({
+      result: {
+        ok: true,
+        opId: 'op_routeabil',
+        mapSlug: 'arena',
+        previousRevision: 0,
+        revision: 1,
+        patches: [],
+      },
       path: 'data/maps/arena.json',
       map,
       action: { type: 'ability', placementId: 'actor', targetPlacementId: 'target', name: 'Intimidate' },
       sheetUpdates: [],
-      events: [],
     })
 
     await expect(invokeRoute(abilityRoute, {
       role: 'player',
-      body: {
-        slug: 'arena',
-        placementId: 'actor',
-        abilityName: 'Intimidate',
-        targetPlacementId: 'target',
-        clientId: 'client-1',
-        profileId: 'profile_ash00000',
-      },
+      body: command,
     })).resolves.toEqual({
       ok: true,
+      opId: 'op_routeabil',
+      mapSlug: 'arena',
+      previousRevision: 0,
+      revision: 1,
+      patches: [],
       path: 'data/maps/arena.json',
       map,
       action: { type: 'ability', placementId: 'actor', targetPlacementId: 'target', name: 'Intimidate' },
@@ -103,46 +135,45 @@ describe('map token table action API routes', () => {
     })
 
     expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenCalledWith('profile_ash00000')
-    expect(mocks.useMapTokenAbilityUseCase).toHaveBeenCalledWith({
+    expect(mocks.executeLivePlayTableActionCommandUseCase).toHaveBeenCalledWith({
       role: 'player',
-      slug: 'arena',
-      placementId: 'actor',
-      abilityName: 'Intimidate',
-      targetPlacementId: 'target',
+      command,
       clientId: 'client-1',
       playerProfile: profile,
+      expectedType: 'useAbility',
     })
   })
 
   it('keeps GM table action routes independent from player profile selection', async () => {
     const map = mapFixture()
-    mocks.useMapTokenOrderUseCase.mockReturnValue({
-      ok: true,
+    const command = orderCommand()
+    mocks.executeLivePlayTableActionCommandUseCase.mockResolvedValue({
+      result: {
+        ok: true,
+        opId: 'op_routeordr',
+        mapSlug: 'arena',
+        previousRevision: 0,
+        revision: 1,
+        patches: [],
+      },
       path: 'data/maps/arena.json',
       map,
       action: { type: 'order', placementId: 'trainer', name: 'Agility Training' },
       sheetUpdates: [],
-      events: [],
     })
 
     await expect(invokeRoute(orderRoute, {
       role: 'gm',
-      body: {
-        slug: 'arena',
-        placementId: 'trainer',
-        orderName: 'Agility Training',
-        profileId: 'profile_ash00000',
-      },
+      body: command,
     })).resolves.toMatchObject({ ok: true, action: { type: 'order' } })
 
     expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
-    expect(mocks.useMapTokenOrderUseCase).toHaveBeenCalledWith({
+    expect(mocks.executeLivePlayTableActionCommandUseCase).toHaveBeenCalledWith({
       role: 'gm',
-      slug: 'arena',
-      placementId: 'trainer',
-      orderName: 'Agility Training',
+      command,
       clientId: undefined,
       playerProfile: null,
+      expectedType: 'useOrder',
     })
   })
 
@@ -154,15 +185,22 @@ describe('map token table action API routes', () => {
     await expect(invokeRoute(maneuverRoute, {
       role: 'player',
       body: {
-        slug: 'arena',
-        placementId: 'actor',
-        maneuverName: 'Trip',
+        schemaVersion: 1,
+        opId: 'op_routemane',
+        mapSlug: 'arena',
+        baseRevision: 0,
+        type: 'useManeuver',
+        scopes: [
+          { kind: 'token', placementId: 'actor', field: 'action' },
+          { kind: 'map', lane: 'metadata' },
+        ],
+        payload: { placementId: 'actor', maneuverName: 'Trip' },
         profileId: 'profile_missing1',
       },
     })).rejects.toMatchObject({
       statusCode: 404,
       statusMessage: 'Player profile profile_missing1 not found',
     })
-    expect(mocks.useMapTokenManeuverUseCase).not.toHaveBeenCalled()
+    expect(mocks.executeLivePlayTableActionCommandUseCase).not.toHaveBeenCalled()
   })
 })

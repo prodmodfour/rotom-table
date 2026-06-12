@@ -1,12 +1,20 @@
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createAuthoritativeLivePlayCommandExecutor } from '../../server/livePlay/commandExecutor'
+import { createInProcessMapWriteQueue } from '../../server/livePlay/mapWriteQueue'
+import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
+import { createSqliteLivePlayOpRepository } from '../../server/storage/opRepository'
+import { createSqliteMapRepository } from '../../server/storage/mapRepository'
+import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
+import { executeLivePlayTableActionCommandUseCase } from '../../server/useCases/applyMapTokenTableAction'
 import {
-  MapTokenTableActionUseCaseError,
-  useMapTokenAbilityUseCase,
-  useMapTokenManeuverUseCase,
-  useMapTokenOrderUseCase,
-} from '../../server/useCases/applyMapTokenTableAction'
-import { MAPS_ROOT } from '../../server/utils/mapPaths'
+  LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  LIVE_PLAY_COMMAND_TYPES,
+  LIVE_PLAY_PATCH_TYPES,
+  type LivePlayScope,
+} from '../../shared/livePlayCommands'
 import {
   PLAYER_PROFILE_SCHEMA_VERSION,
   type PlayerProfile,
@@ -16,6 +24,9 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+
+const tempRoots: string[] = []
+const databases: RotomDatabase[] = []
 
 const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
   schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
@@ -79,9 +90,18 @@ const createDeps = (options: {
   now?: number
   idFactory?: () => string
 } = {}) => {
-  const path = join(MAPS_ROOT, 'arena.json')
-  const mapWrites: Array<{ path: string; map: TabletopMap }> = []
-  const sheetWrites: Array<{ path: string; sheet: Record<string, unknown> }> = []
+  const root = mkdtempSync(join(tmpdir(), 'rotom-table-actions-'))
+  tempRoots.push(root)
+  const database = openRotomDatabase({ path: join(root, 'rotom.sqlite'), enableWal: false })
+  databases.push(database)
+  const mapRepository = createSqliteMapRepository(database)
+  const sheetRepository = createSqliteSheetRepository(database)
+  const opRepository = createSqliteLivePlayOpRepository({ database, clock: () => options.now ?? 5000 })
+  const commandExecutor = createAuthoritativeLivePlayCommandExecutor({
+    opStore: opRepository,
+    queue: createInProcessMapWriteQueue(),
+  })
+  const events: unknown[] = []
   const sheets = options.sheets ?? {
     'pokemon:sandile': pokemonSheet(),
     'pokemon:target': pokemonSheet({
@@ -94,46 +114,79 @@ const createDeps = (options: {
     'trainer:lenora': trainerSheet(),
   }
 
-  const deps = {
-    findMapPath: vi.fn((slug: string) => (slug === 'arena' ? path : null)),
-    readMap: vi.fn(() => options.map ?? baseMap()),
-    writeMap: vi.fn((filePath: string, map: TabletopMap) => {
-      mapWrites.push({ path: filePath, map })
-    }),
-    readSheet: vi.fn((kind: 'pokemon' | 'trainer', slug: string) => {
-      const sheet = sheets[`${kind}:${slug}`]
-      return sheet ? { path: `/repo/data/${kind}/${slug}.json`, sheet } : null
-    }),
-    writeSheet: vi.fn((filePath: string, sheet: Record<string, unknown>) => {
-      sheetWrites.push({ path: filePath, sheet })
-    }),
-    now: vi.fn(() => options.now ?? 5000),
-    idFactory: options.idFactory,
-    relativePath: vi.fn((filePath: string) => filePath.replace('/repo/', '')),
+  const map = options.map ?? baseMap()
+  mapRepository.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: map.updatedAt ?? 20 })
+  for (const [key, sheet] of Object.entries(sheets)) {
+    const [kind, slug] = key.split(':') as ['pokemon' | 'trainer', string]
+    sheetRepository.save({ kind, slug, document: sheet, revision: sheet.revision ?? 0, updatedAt: 30 })
   }
 
-  return { deps, path, mapWrites, sheetWrites }
+  return {
+    deps: {
+      commandExecutor,
+      mapRepository,
+      sheetRepository,
+      database,
+      now: vi.fn(() => options.now ?? 5000),
+      idFactory: options.idFactory,
+      publishRealtimeEvent: vi.fn((event) => events.push(event)),
+      relativePath: vi.fn((path: string) => path.replace(/.*data\//, 'data/')),
+    },
+    mapRepository,
+    sheetRepository,
+    opRepository,
+    events,
+  }
 }
 
-describe('document-backed map token table actions', () => {
-  it('persists linked player maneuver usage on the saved map document', () => {
-    const { deps, path, mapWrites, sheetWrites } = createDeps({ now: 1111 })
+const command = (
+  type: (typeof LIVE_PLAY_COMMAND_TYPES)[keyof typeof LIVE_PLAY_COMMAND_TYPES],
+  opId: string,
+  payload: Record<string, unknown>,
+  scopes: readonly LivePlayScope[],
+) => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId,
+  mapSlug: 'arena',
+  baseRevision: 7,
+  type,
+  scopes,
+  payload,
+})
 
-    const result = useMapTokenManeuverUseCase({
+const metadataScope = { kind: 'map' as const, lane: 'metadata' as const }
+const tokenActionScope = (placementId: string) => ({ kind: 'token' as const, placementId, field: 'action' as const })
+const sheetAbilityScope = (sheetSlug: string) => ({ kind: 'sheet' as const, sheetKind: 'pokemon' as const, sheetSlug, field: 'ability' })
+
+afterEach(() => {
+  for (const database of databases.splice(0)) database.close()
+  for (const root of tempRoots.splice(0)) rmSync(root, { recursive: true, force: true })
+})
+
+describe('live-play map token table action commands', () => {
+  it('persists linked player maneuver usage through SQLite and publishes an accepted patch', async () => {
+    const { deps, mapRepository, events } = createDeps({ now: 1111 })
+    const request = command(
+      LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+      'op_actionman1',
+      { placementId: 'actor', maneuverName: 'Trip', targetPlacementId: 'target' },
+      [tokenActionScope('actor'), metadataScope],
+    )
+
+    const response = await executeLivePlayTableActionCommandUseCase({
       role: 'player',
-      slug: 'arena',
-      placementId: 'actor',
-      maneuverName: 'Trip',
-      targetPlacementId: 'target',
+      command: request,
       playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
       clientId: 'client-1',
+      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
     }, deps)
 
-    expect(sheetWrites).toEqual([])
-    expect(mapWrites).toHaveLength(1)
-    expect(mapWrites[0]?.path).toBe(path)
-    expect(mapWrites[0]?.map.revision).toBe(8)
-    expect(mapWrites[0]?.map.metadata?.maneuverLog).toMatchObject([
+    expect(response.result).toMatchObject({ ok: true, opId: 'op_actionman1', previousRevision: 7, revision: 8 })
+    expect(response.action).toMatchObject({ type: 'maneuver', placementId: 'actor', targetPlacementId: 'target', name: 'Trip' })
+    expect('patches' in response.result ? response.result.patches[0] : null).toMatchObject({ type: LIVE_PLAY_PATCH_TYPES.MAP_METADATA })
+    const storedMap = await mapRepository.getBySlug('arena')
+    expect(storedMap?.revision).toBe(8)
+    expect(storedMap?.metadata?.maneuverLog).toMatchObject([
       {
         at: 1111,
         userId: 'actor',
@@ -141,120 +194,115 @@ describe('document-backed map token table actions', () => {
         lines: expect.arrayContaining(['Sandile used Trip.', 'Target: Target']),
       },
     ])
-    expect(result.action).toMatchObject({ type: 'maneuver', placementId: 'actor', targetPlacementId: 'target', name: 'Trip' })
-    expect(result.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchObject({ channel: 'map:arena', type: 'live-play-command-accepted' })
   })
 
-  it('lets a linked player ability update target sheet state and map logs without target control', () => {
-    const { deps, mapWrites, sheetWrites } = createDeps({ now: 2222 })
+  it('updates ability target sheet state in the same accepted command transaction', async () => {
+    const { deps, mapRepository, sheetRepository, events } = createDeps({ now: 2222 })
+    const request = command(
+      LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+      'op_actionabil',
+      { placementId: 'actor', abilityName: 'Intimidate', targetPlacementId: 'target' },
+      [
+        tokenActionScope('actor'),
+        metadataScope,
+        sheetAbilityScope('sandile'),
+        sheetAbilityScope('target'),
+      ],
+    )
 
-    const result = useMapTokenAbilityUseCase({
+    const response = await executeLivePlayTableActionCommandUseCase({
       role: 'player',
-      slug: 'arena',
-      placementId: 'actor',
-      abilityName: 'Intimidate',
-      targetPlacementId: 'target',
+      command: request,
       playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'sandile' }]),
       clientId: 'client-2',
+      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
     }, deps)
 
-    expect(mapWrites).toHaveLength(1)
-    expect(mapWrites[0]?.map.revision).toBe(8)
-    expect(mapWrites[0]?.map.metadata?.abilityLog).toMatchObject([
-      {
-        at: 2222,
-        userId: 'actor',
-        abilityName: 'Intimidate',
-        category: 'map',
-      },
+    expect(response.result).toMatchObject({ ok: true, revision: 8 })
+    expect(response.action).toMatchObject({ type: 'ability', placementId: 'actor', targetPlacementId: 'target', name: 'Intimidate', category: 'map' })
+    expect(response.sheetUpdates).toHaveLength(1)
+    expect(response.sheetUpdates?.[0]).toMatchObject({ kind: 'pokemon', slug: 'target', sheet: { revision: 4, stats: { atk: { stage: 1 } } } })
+    expect((await mapRepository.getBySlug('arena'))?.metadata?.abilityLog).toMatchObject([
+      { at: 2222, userId: 'actor', abilityName: 'Intimidate', category: 'map' },
     ])
-    expect(sheetWrites).toHaveLength(1)
-    expect(sheetWrites[0]).toMatchObject({ path: '/repo/data/pokemon/target.json' })
-    expect(sheetWrites[0]?.sheet.revision).toBe(4)
-    expect(sheetWrites[0]?.sheet.stats).toMatchObject({ atk: { stage: 1 } })
-    expect(result.sheetUpdates).toHaveLength(1)
-    expect(result.events.map((event) => event.channel)).toEqual([
-      'map:arena',
-      'maps',
-      'sheet:pokemon:target',
-      'sheets',
-    ])
+    expect((await sheetRepository.getByRef('pokemon', 'target'))?.sheet).toMatchObject({ revision: 4, stats: { atk: { stage: 1 } } })
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ channel: 'sheet:pokemon:target', type: 'updated' }),
+      expect.objectContaining({ channel: 'sheets', type: 'updated' }),
+      expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted' }),
+    ]))
   })
 
-  it('persists linked trainer orders and active order effects', () => {
-    const { deps, mapWrites } = createDeps({ now: 3333, idFactory: () => 'order-effect' })
+  it('replays duplicate opId table actions without applying effects twice', async () => {
+    const { deps, mapRepository, opRepository } = createDeps({ now: 3333, idFactory: () => 'order-effect' })
+    const request = command(
+      LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
+      'op_actionordr',
+      { placementId: 'trainer', orderName: 'Agility Training', targetPlacementId: 'actor' },
+      [tokenActionScope('trainer'), metadataScope],
+    )
 
-    useMapTokenOrderUseCase({
+    const first = await executeLivePlayTableActionCommandUseCase({
       role: 'player',
-      slug: 'arena',
-      placementId: 'trainer',
-      orderName: 'Agility Training',
-      targetPlacementId: 'actor',
+      command: request,
       playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'lenora' }]),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
+    }, deps)
+    const second = await executeLivePlayTableActionCommandUseCase({
+      role: 'player',
+      command: request,
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'lenora' }]),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
     }, deps)
 
-    expect(mapWrites).toHaveLength(1)
-    expect(mapWrites[0]?.map.revision).toBe(8)
-    expect(mapWrites[0]?.map.metadata?.activeOrderEffects).toMatchObject([
-      {
-        id: 'order-effect',
-        userId: 'trainer',
-        orderName: 'Agility Training',
-        targetId: 'actor',
-      },
-    ])
-    expect(mapWrites[0]?.map.metadata?.orderLog).toMatchObject([
-      {
-        at: 3333,
-        orderName: 'Agility Training',
-        lines: expect.arrayContaining(['Lenora used Agility Training.', 'Target: Sandile']),
-      },
-    ])
+    expect(first.result).toMatchObject({ ok: true, revision: 8 })
+    expect(second.result).toMatchObject({ ok: true, revision: 8 })
+    const storedMap = await mapRepository.getBySlug('arena')
+    expect(storedMap?.revision).toBe(8)
+    expect(storedMap?.metadata?.orderLog).toHaveLength(1)
+    expect(opRepository.listAcceptedOpsSinceRevision({ mapSlug: 'arena', baseRevision: 7, currentRevision: 8 })).toHaveLength(1)
   })
 
-  it('rejects unlinked player table actions before writing', () => {
-    const { deps, mapWrites, sheetWrites } = createDeps()
+  it('rejects unlinked player table actions before advancing map or sheet revisions', async () => {
+    const { deps, mapRepository, sheetRepository } = createDeps()
+    const request = command(
+      LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+      'op_actiondeny',
+      { placementId: 'actor', abilityName: 'Intimidate', targetPlacementId: 'target' },
+      [tokenActionScope('actor'), metadataScope, sheetAbilityScope('sandile'), sheetAbilityScope('target')],
+    )
 
-    expect(() => useMapTokenManeuverUseCase({
+    const response = await executeLivePlayTableActionCommandUseCase({
       role: 'player',
-      slug: 'arena',
-      placementId: 'actor',
-      maneuverName: 'Trip',
+      command: request,
       playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'lenora' }]),
-    }, deps)).toThrow(MapTokenTableActionUseCaseError)
+      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+    }, deps)
 
-    try {
-      useMapTokenAbilityUseCase({
-        role: 'player',
-        slug: 'arena',
-        placementId: 'actor',
-        abilityName: 'Intimidate',
-        targetPlacementId: 'target',
-        playerProfile: null,
-      }, deps)
-    } catch (err) {
-      expect(err).toMatchObject({
-        statusCode: 403,
-        message: 'Select a player profile to control linked map tokens',
-      })
-    }
-    expect(mapWrites).toEqual([])
-    expect(sheetWrites).toEqual([])
+    expect(response.result).toMatchObject({ ok: false, reason: 'unauthorized', currentRevision: 7 })
+    expect((await mapRepository.getBySlug('arena'))?.revision).toBe(7)
+    expect((await sheetRepository.getByRef('pokemon', 'target'))?.revision).toBe(3)
   })
 
-  it('keeps GM table actions unrestricted on hidden maps', () => {
-    const { deps, mapWrites } = createDeps({ map: baseMap({ playerVisible: false }) })
+  it('keeps GM table actions available on hidden maps through the command path', async () => {
+    const { deps, mapRepository } = createDeps({ map: baseMap({ playerVisible: false }) })
+    const request = command(
+      LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+      'op_actiongm01',
+      { placementId: 'actor', maneuverName: 'Trip', targetPlacementId: 'target' },
+      [tokenActionScope('actor'), metadataScope],
+    )
 
-    useMapTokenManeuverUseCase({
+    const response = await executeLivePlayTableActionCommandUseCase({
       role: 'gm',
-      slug: 'arena',
-      placementId: 'actor',
-      maneuverName: 'Trip',
-      targetPlacementId: 'target',
+      command: request,
       playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
     }, deps)
 
-    expect(mapWrites).toHaveLength(1)
-    expect(mapWrites[0]?.map.metadata?.maneuverLog).toHaveLength(1)
+    expect(response.result).toMatchObject({ ok: true, revision: 8 })
+    expect((await mapRepository.getBySlug('arena'))?.metadata?.maneuverLog).toHaveLength(1)
   })
 })

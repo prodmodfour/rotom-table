@@ -10,7 +10,7 @@ Rotom Table's normal multiplayer workflow now uses persistent player profiles on
 
 Older live-session documents and `/sessions` routes describe a guarded session-local identity/socket surface. Those documents are archived under [Archived legacy live-session documents](../archive/live-session/README.md), and the surface is retained only for legacy maintenance while it exists. It is not the direction for normal profile-based play.
 
-The remaining architecture gap is live gameplay authority. Browser-owned whole-map autosave is useful for GM setup/edit workflows and local single-user maintenance, but it is not a safe concurrency model for live table play. If multiple browsers can change gameplay state at once, the server must validate explicit player/GM intent, apply it once, advance revisions, persist it, and broadcast the accepted result.
+Live gameplay authority belongs to the server. Browser-owned whole-map autosave is useful for GM setup/edit workflows and local single-user maintenance, but it is not a safe concurrency model for live table play. If multiple browsers can change gameplay state at once, the server must validate explicit player/GM intent, apply it once, advance revisions, persist it, and broadcast the accepted result.
 
 ## Decision
 
@@ -25,7 +25,7 @@ The live-play model is:
 - **Revisions:** accepted commands increment authoritative map and/or sheet revisions. Rejected commands do not advance revisions.
 - **Idempotency:** commands are idempotent by client-generated `opId`. Retrying the same `opId` returns the previous accepted/rejected result without applying effects twice.
 - **Realtime:** accepted commands broadcast patches or authoritative accepted results. Realtime delivery never asks another client to infer live gameplay state from a browser-owned whole-map save.
-- **Persistence:** database-backed persistence is the target for authoritative live play. JSON files remain setup/edit storage, migration input/output, backup/export material, or temporary compatibility storage during the migration.
+- **Persistence:** database-backed persistence is the authority for live play. JSON files remain setup/edit storage, migration input/output, backup/export material, and local inspection/maintenance data rather than live gameplay authority.
 
 ## Mode split
 

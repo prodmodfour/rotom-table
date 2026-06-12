@@ -12,13 +12,9 @@ const mocks = vi.hoisted(() => ({
   moveMapUseCase: vi.fn(),
   renameMapUseCase: vi.fn(),
   saveMapUseCase: vi.fn(),
-  spawnMapTokenUseCase: vi.fn(),
   executeMapTokenLivePlayCommandUseCase: vi.fn(),
   executeLivePlaySheetCommandUseCase: vi.fn(),
-  useMapTokenAbilityUseCase: vi.fn(),
-  useMapTokenManeuverUseCase: vi.fn(),
-  useMapTokenOrderUseCase: vi.fn(),
-  recordMoveUsageUseCase: vi.fn(),
+  executeLivePlayTableActionCommandUseCase: vi.fn(),
   executeLivePlayUseMoveCommandUseCase: vi.fn(),
   executeLivePlayInitiativeCommandUseCase: vi.fn(),
   executeLivePlayMapEffectsCommandUseCase: vi.fn(),
@@ -51,19 +47,13 @@ vi.mock('../../server/useCases/saveMap', () => ({
   saveMapUseCase: mocks.saveMapUseCase,
 }))
 vi.mock('../../server/useCases/applyMapTokenAction', () => ({
-  spawnMapTokenUseCase: mocks.spawnMapTokenUseCase,
   executeMapTokenLivePlayCommandUseCase: mocks.executeMapTokenLivePlayCommandUseCase,
 }))
 vi.mock('../../server/useCases/applyLivePlaySheetCommand', () => ({
   executeLivePlaySheetCommandUseCase: mocks.executeLivePlaySheetCommandUseCase,
 }))
 vi.mock('../../server/useCases/applyMapTokenTableAction', () => ({
-  useMapTokenAbilityUseCase: mocks.useMapTokenAbilityUseCase,
-  useMapTokenManeuverUseCase: mocks.useMapTokenManeuverUseCase,
-  useMapTokenOrderUseCase: mocks.useMapTokenOrderUseCase,
-}))
-vi.mock('../../server/useCases/recordMoveUsage', () => ({
-  recordMoveUsageUseCase: mocks.recordMoveUsageUseCase,
+  executeLivePlayTableActionCommandUseCase: mocks.executeLivePlayTableActionCommandUseCase,
 }))
 vi.mock('../../server/useCases/applyLivePlayUseMoveCommand', () => ({
   executeLivePlayUseMoveCommandUseCase: mocks.executeLivePlayUseMoveCommandUseCase,
@@ -415,7 +405,7 @@ describe('map hosted-write API routes', () => {
           abilityName: 'Overgrow',
           profileId: 'profile_ash00000',
         },
-        mock: mocks.useMapTokenAbilityUseCase,
+        mock: mocks.executeLivePlayTableActionCommandUseCase,
       },
       {
         route: maneuverRoute,
@@ -425,7 +415,7 @@ describe('map hosted-write API routes', () => {
           maneuverName: 'Trip',
           profileId: 'profile_ash00000',
         },
-        mock: mocks.useMapTokenManeuverUseCase,
+        mock: mocks.executeLivePlayTableActionCommandUseCase,
       },
       {
         route: orderRoute,
@@ -435,7 +425,7 @@ describe('map hosted-write API routes', () => {
           orderName: 'Agility Training',
           profileId: 'profile_ash00000',
         },
-        mock: mocks.useMapTokenOrderUseCase,
+        mock: mocks.executeLivePlayTableActionCommandUseCase,
       },
       {
         route: useMoveRoute,

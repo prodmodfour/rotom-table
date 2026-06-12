@@ -349,19 +349,19 @@ export type UseMoveLivePlayCommand = LivePlayCommandEnvelope<
 export type UseManeuverLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
   UseManeuverPayload,
-  LivePlayTokenScope
+  LivePlayScope
 >
 
 export type UseAbilityLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
   UseAbilityPayload,
-  LivePlayTokenScope
+  LivePlayScope
 >
 
 export type UseOrderLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
   UseOrderPayload,
-  LivePlayTokenScope
+  LivePlayScope
 >
 
 export type SetInitiativeLivePlayCommand = LivePlayCommandEnvelope<

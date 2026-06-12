@@ -24,7 +24,6 @@ import { isSheetKind } from '#shared/sheets'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import { appendMovementLogEntry, sameGridAnchor } from '~/utils/mapMovementLog'
-import { sameJsonValue } from '~/utils/serialization'
 import {
   isTokenFacingDirection,
   tokenFacingForPlacement,
@@ -33,12 +32,8 @@ import {
 } from '~/utils/tokenFacing'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
-import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { readSheetFile } from '../utils/sheetStorage'
-import {
-  livePlayCommandAcceptedRealtimeEvent,
-  mapDocumentUpdatedRealtimeEvents,
-} from '../utils/mapRealtimeEvents'
+import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { canAccessMapForRole, clampAnchorToDimensions } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
@@ -52,13 +47,6 @@ import { sqliteLivePlayOpRepository } from '../storage/opRepository'
 import { toPersistedMap } from './saveMap'
 
 export class MapTokenActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
-
-export interface SpawnMapTokenInput {
-  role: AuthRole
-  slug: string
-  placement: SheetPlacement
-  clientId?: string
-}
 
 export interface MoveMapTokenInput {
   role: AuthRole
@@ -117,9 +105,6 @@ interface SheetFileRecord {
 }
 
 export interface MapTokenActionDependencies {
-  findMapPath?: (slug: string) => string | null
-  readMap?: (path: string) => TabletopMap
-  writeMap?: (path: string, map: TabletopMap) => void
   readSheet?: (kind: SheetKind, slug: string) => SheetFileRecord | null
   now?: () => number
   relativePath?: (path: string) => string
@@ -127,14 +112,6 @@ export interface MapTokenActionDependencies {
   commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
-}
-
-export interface MapTokenActionResult {
-  ok: true
-  path: string
-  map: TabletopMap
-  placement: SheetPlacement
-  events: Array<Omit<RealtimeEvent, 'timestamp'>>
 }
 
 interface ResolvedMapWriteContext {
@@ -149,87 +126,6 @@ interface ResolvedMapTokenActionContext extends ResolvedMapWriteContext {
 
 interface ResolvedMapTokenCommandResponseContext extends ResolvedMapWriteContext {
   placement?: SheetPlacement
-}
-
-const mapEvents = (
-  map: TabletopMap,
-  clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => mapDocumentUpdatedRealtimeEvents(map, clientId)
-
-const noChangeResult = (
-  context: ResolvedMapTokenActionContext,
-): MapTokenActionResult => ({
-  ok: true,
-  path: context.relativePath,
-  map: context.map,
-  placement: context.placement,
-  events: [],
-})
-
-const resolveMapWriteContext = (
-  input: Pick<MoveMapTokenInput, 'role' | 'slug'>,
-  dependencies: Required<Pick<MapTokenActionDependencies, 'findMapPath' | 'readMap' | 'relativePath'>>,
-): ResolvedMapWriteContext => {
-  const mapPath = dependencies.findMapPath(input.slug)
-  if (!mapPath) throw new MapTokenActionUseCaseError(404, `Map ${input.slug}.json not found`)
-
-  const map = dependencies.readMap(mapPath)
-  if (!canAccessMapForRole(input.role, map)) {
-    throw new MapTokenActionUseCaseError(403, 'Map is not player visible')
-  }
-
-  return {
-    mapPath,
-    relativePath: dependencies.relativePath(mapPath),
-    map,
-  }
-}
-
-const resolveContext = (
-  input: Pick<MoveMapTokenInput, 'role' | 'slug' | 'placementId' | 'playerProfile'>,
-  dependencies: Required<Pick<MapTokenActionDependencies, 'findMapPath' | 'readMap' | 'relativePath'>>,
-): ResolvedMapTokenActionContext => {
-  const context = resolveMapWriteContext(input, dependencies)
-  const placement = context.map.placements.find((candidate) => candidate.id === input.placementId)
-  if (!placement) {
-    throw new MapTokenActionUseCaseError(404, `Placement ${input.placementId} not found`)
-  }
-
-  if (!actorCanControlMapPlacement({
-    role: input.role,
-    profile: input.playerProfile,
-    placement,
-  })) {
-    const message = input.role === 'player' && !input.playerProfile
-      ? 'Select a player profile to control linked map tokens'
-      : 'Token is not linked to selected player profile'
-    throw new MapTokenActionUseCaseError(403, message)
-  }
-
-  return {
-    ...context,
-    placement,
-  }
-}
-
-const writeActionMap = (
-  input: Pick<MoveMapTokenInput, 'clientId'>,
-  context: ResolvedMapTokenActionContext,
-  nextMap: TabletopMap,
-  dependencies: Required<Pick<MapTokenActionDependencies, 'writeMap' | 'now'>>,
-): MapTokenActionResult => {
-  const persisted = toPersistedMap(nextMap, context.mapPath, dependencies.now(), { advanceRevision: true })
-  dependencies.writeMap(context.mapPath, persisted)
-  const placement = persisted.placements.find((candidate) => candidate.id === context.placement.id)
-    ?? context.placement
-
-  return {
-    ok: true,
-    path: context.relativePath,
-    map: persisted,
-    placement,
-    events: mapEvents(persisted, input.clientId),
-  }
 }
 
 const optionalText = (value: unknown): string | null => {
@@ -272,9 +168,6 @@ const livePlayMapTokenCommandExecutor = createAuthoritativeLivePlayCommandExecut
 })
 
 const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
-  findMapPath: dependencies.findMapPath ?? findMapFile,
-  readMap: dependencies.readMap ?? readMapFile,
-  writeMap: dependencies.writeMap ?? writeMapFile,
   readSheet: dependencies.readSheet ?? readDefaultSheet,
   now: dependencies.now ?? Date.now,
   relativePath: dependencies.relativePath ?? campaignPathLabel,
@@ -314,63 +207,6 @@ const clonePosition = (position: GridAnchor): GridAnchor => ({
   y: position.y,
   z: position.z,
 })
-
-const normalizeSpawnPlacement = (
-  placement: SheetPlacement,
-  map: TabletopMap,
-): SheetPlacement => {
-  const position = clampAnchorToDimensions(placement.position, placement.position, map.dimensions)
-  const facing = tokenFacingForPlacement(placement)
-  return {
-    id: placement.id,
-    sheetKind: placement.sheetKind,
-    sheetSlug: placement.sheetSlug,
-    position: clonePosition(position),
-    facing,
-    turned: tokenFacingStoresLegacyTurned(facing),
-    ...(placement.initiative === undefined ? {} : { initiative: placement.initiative }),
-  }
-}
-
-const duplicateSpawnResult = (
-  context: ResolvedMapWriteContext,
-  placement: SheetPlacement,
-): MapTokenActionResult => ({
-  ok: true,
-  path: context.relativePath,
-  map: context.map,
-  placement,
-  events: [],
-})
-
-export const spawnMapTokenUseCase = (
-  input: SpawnMapTokenInput,
-  dependencies: MapTokenActionDependencies = {},
-): MapTokenActionResult => {
-  if (input.role !== 'gm') {
-    throw new MapTokenActionUseCaseError(403, 'Only GMs can spawn map tokens')
-  }
-
-  const deps = actionDependencies(dependencies)
-  const context = resolveMapWriteContext(input, deps)
-  const nextPlacement = normalizeSpawnPlacement(input.placement, context.map)
-  const existingPlacement = context.map.placements.find((placement) => placement.id === nextPlacement.id)
-
-  if (existingPlacement) {
-    if (sameJsonValue(existingPlacement, nextPlacement)) {
-      return duplicateSpawnResult(context, existingPlacement)
-    }
-    throw new MapTokenActionUseCaseError(409, `Placement ${nextPlacement.id} already exists`)
-  }
-
-  return writeActionMap(input, {
-    ...context,
-    placement: nextPlacement,
-  }, {
-    ...context.map,
-    placements: [...context.map.placements, nextPlacement],
-  }, deps)
-}
 
 interface AppliedMapTokenChange {
   readonly nextMap: TabletopMap
@@ -533,33 +369,6 @@ const applyDeleteTokenToMap = (
     },
     placement,
   }
-}
-
-export const moveMapTokenUseCase = (
-  input: MoveMapTokenInput,
-  dependencies: MapTokenActionDependencies = {},
-): MapTokenActionResult => {
-  const deps = actionDependencies(dependencies)
-  const context = resolveContext(input, deps)
-  const change = applyMoveTokenToMap(input, context, deps)
-  if (!change) return noChangeResult(context)
-
-  return writeActionMap(input, context, change.nextMap, {
-    ...deps,
-    now: () => change.timestamp ?? deps.now(),
-  })
-}
-
-export const turnMapTokenUseCase = (
-  input: TurnMapTokenInput,
-  dependencies: MapTokenActionDependencies = {},
-): MapTokenActionResult => {
-  const deps = actionDependencies(dependencies)
-  const context = resolveContext(input, deps)
-  const change = applyTurnTokenToMap(input, context)
-  if (!change) return noChangeResult(context)
-
-  return writeActionMap(input, context, change.nextMap, deps)
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
