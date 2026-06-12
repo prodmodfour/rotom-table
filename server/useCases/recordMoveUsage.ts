@@ -1,6 +1,5 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
-import { findMove } from '~~/data/ptuReference'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind } from '#shared/sheets'
@@ -12,13 +11,13 @@ import {
   getMapMoveUsageEntry,
   getSheetDailyMoveUsageEntry,
   limitedMoveUsageState,
-  moveUsageKey,
   normalizeMoveUsageRound,
   normalizeSheetMoveUsage,
   parseMoveFrequency,
   recordMapMoveUsage,
   recordSheetDailyMoveUsage,
 } from '~/utils/moveUsage'
+import { resolveSheetMoveForUsage, type ResolvedSheetMove } from '~/utils/moveUsageResolution'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { mapDocumentUpdatedRealtimeEvents } from '../utils/mapRealtimeEvents'
@@ -81,64 +80,6 @@ export interface RecordMoveUsageResult {
   sheetKind?: SheetKind
   sheetSlug?: string
   events: Array<Omit<RealtimeEvent, 'timestamp'>>
-}
-
-interface SheetMoveRecord {
-  name: string
-  frequency?: string
-}
-
-interface ResolvedSheetMove {
-  moveName: string
-  moveKey: string
-  frequency: string
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value && typeof value === 'object' && !Array.isArray(value))
-
-const nonEmptyString = (value: unknown): string | null => {
-  const text = typeof value === 'string' ? value.trim() : ''
-  return text || null
-}
-
-const sheetMoves = (sheet: Record<string, unknown>): SheetMoveRecord[] => {
-  const movelist = sheet.movelist
-  if (!Array.isArray(movelist)) return []
-  return movelist.flatMap((move): SheetMoveRecord[] => {
-    if (!isRecord(move)) return []
-    const name = nonEmptyString(move.name)
-    if (!name) return []
-    const frequency = nonEmptyString(move.frequency)
-    return [{ name, ...(frequency ? { frequency } : {}) }]
-  })
-}
-
-const resolveSheetMove = (
-  sheet: Record<string, unknown>,
-  requestedMoveName: string,
-): ResolvedSheetMove | null => {
-  const requestedKey = moveUsageKey(requestedMoveName)
-  if (!requestedKey) return null
-
-  for (const move of sheetMoves(sheet)) {
-    const reference = findMove(move.name)
-    const canonicalName = reference?.name ?? move.name
-    const candidateKeys = new Set([
-      moveUsageKey(move.name),
-      moveUsageKey(canonicalName),
-    ])
-    if (!candidateKeys.has(requestedKey)) continue
-
-    const frequency = nonEmptyString(reference?.frequency) ?? nonEmptyString(move.frequency)
-    return {
-      moveName: canonicalName,
-      moveKey: moveUsageKey(canonicalName) || requestedKey,
-      frequency: frequency ?? '',
-    }
-  }
-
-  return null
 }
 
 const maxUsesFor = (frequency: ParsedMoveFrequency): number =>
@@ -368,7 +309,7 @@ export const recordMoveUsageUseCase = (
     throw new RecordMoveUsageUseCaseError(404, `Sheet ${placement.sheetSlug}.json not found`)
   }
 
-  const move = resolveSheetMove(sheetFile.sheet, input.moveName)
+  const move = resolveSheetMoveForUsage(sheetFile.sheet, input.moveName)
   if (!move) {
     throw new RecordMoveUsageUseCaseError(404, `Move ${input.moveName} not found on ${placement.sheetSlug}`)
   }

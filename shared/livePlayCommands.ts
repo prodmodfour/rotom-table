@@ -196,6 +196,11 @@ export interface ModifyConditionsPayload {
   readonly conditions: readonly string[]
 }
 
+export interface UseMovePayload {
+  readonly placementId: string
+  readonly moveName: string
+}
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -223,6 +228,12 @@ export type ModifyCombatStagesLivePlayCommand = LivePlayCommandEnvelope<
 export type ModifyConditionsLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
   ModifyConditionsPayload,
+  LivePlayScope
+>
+
+export type UseMoveLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.USE_MOVE,
+  UseMovePayload,
   LivePlayScope
 >
 

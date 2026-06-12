@@ -38,6 +38,8 @@ Server command routes use the authoritative live-play command executor as the cr
 
 HP, injury, combat-stage, and condition controls in live play use `modifyHp`, `modifyCombatStages`, and `modifyConditions` command envelopes. The server resolves the placement's backing sheet, checks GM authority or selected-profile token control, applies the same sheet normalization helpers used by setup/edit flows, writes the map revision, sheet revision, and `opId` result transactionally through SQLite, then broadcasts map, sheet, and accepted-command events. The client adopts the returned authoritative map and sheet update; live-play controls do not post `/api/sheets/save`.
 
+Map-scoped move usage now has the `useMove` command foundation with `placementId` and `moveName` in the payload. The server resolves the placed token and backing sheet, determines the move frequency, records EOT and Scene usage on the authoritative map document, records untracked move use as an ordered map combat-log action, persists the map revision and `opId` result through the live-play executor, and returns map patches. Daily move usage remains sheet-scoped and must be completed through the same command path before direct sheet usage writes are removed.
+
 Commands that update both map state and sheet-backed state must use the executor's accepted-result commit hook with the SQLite map, sheet, and operation repositories inside one database transaction. The command result is stored in the same transaction as the map/sheet revisions, so stale or failed commands roll back all durable changes and duplicate `opId` retries cannot apply HP, condition, combat-stage, daily move usage, ability, or capture sheet effects twice.
 
 ## Shared command contract

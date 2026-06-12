@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   useMapTokenManeuverUseCase: vi.fn(),
   useMapTokenOrderUseCase: vi.fn(),
   recordMoveUsageUseCase: vi.fn(),
+  executeLivePlayUseMoveCommandUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
@@ -56,6 +57,9 @@ vi.mock('../../server/useCases/applyMapTokenTableAction', () => ({
 }))
 vi.mock('../../server/useCases/recordMoveUsage', () => ({
   recordMoveUsageUseCase: mocks.recordMoveUsageUseCase,
+}))
+vi.mock('../../server/useCases/applyLivePlayUseMoveCommand', () => ({
+  executeLivePlayUseMoveCommandUseCase: mocks.executeLivePlayUseMoveCommandUseCase,
 }))
 vi.mock('../../server/policies/playerProfilePolicy', () => ({
   resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
