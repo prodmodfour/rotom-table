@@ -10,7 +10,14 @@ Run this checklist after the normal [Private VPS deployment smoke checklist](pri
 - [ ] The same outer access gate protects page loads, `/api/events`, `/api/health`, all `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths that exist now or are added later.
 - [ ] Production writes are intentionally enabled with exactly `ROTOM_ENABLE_HOSTED_WRITES=1` if this smoke should persist map or sheet changes.
 - [ ] The current private campaign has a player-visible smoke map with at least two controllable tokens linked to two different persistent player profiles, plus a separate GM browser profile.
-- [ ] The operator has a current private backup or is comfortable discarding the disposable smoke changes.
+- [ ] For a real campaign host, the operator created a current `SESSION_TAG=pre-session` or `SESSION_TAG=pre-deploy` backup with the [Private VPS backup runbook](private-vps-backups.md). Disposable throwaway campaigns may skip this only when the entire campaign root can be deleted.
+
+## Backup and rollback checkpoint
+
+- [ ] Confirm the chosen backup archive listing includes `rotom-table.sqlite` when the campaign has been migrated to database-backed live play, plus any `rotom-table.sqlite-wal` and `rotom-table.sqlite-shm` sidecars that existed at backup time.
+- [ ] Confirm residual JSON campaign files are in the same backup, including `data/player-profiles/`, encounter tables, and setup/edit map or sheet JSON that still exists during the migration phase.
+- [ ] If this smoke follows a deploy, keep the pre-deploy/pre-session archive until the deploy and live-play smoke pass. If the deploy fails, stop the service and follow the backup runbook's [rollback after a bad deploy](private-vps-backups.md#rollback-after-a-bad-deploy) steps instead of continuing to play on questionable state.
+- [ ] After a successful smoke on a real campaign, create a `SESSION_TAG=post-session`, `SESSION_TAG=post-smoke`, or `SESSION_TAG=post-deploy` archive so the verified live-play SQLite state can be restored later.
 
 ## Browser setup
 
@@ -52,7 +59,7 @@ Confirm both player browsers can see only player-visible content and can control
 
 ## Cleanup
 
-Delete disposable smoke data or keep it only in the private campaign store if the table intentionally wants an audit trail. Before committing app changes, confirm no smoke data, SQLite databases, WAL sidecars, logs, screenshots, backups, real `.env` files, hostnames, or access-gate exports are staged.
+Delete disposable smoke data or keep it only in the private campaign store if the table intentionally wants an audit trail. If the smoke modified a real campaign and the table is keeping those changes, take the post-smoke or post-session backup described above before inviting players. Before committing app changes, confirm no smoke data, SQLite databases, WAL sidecars, logs, screenshots, backups, real `.env` files, hostnames, or access-gate exports are staged.
 
 ## Related docs
 
