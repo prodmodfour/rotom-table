@@ -8,7 +8,7 @@ Status: Accepted
 
 Rotom Table's normal multiplayer workflow now uses persistent player profiles on the regular saved-map routes. Players select a GM-created profile after Player Login, open player-visible maps at `/maps/<slug>`, and control tokens whose placed sheet refs match that profile's linked characters.
 
-Older live-session documents and `/sessions` routes describe a guarded session-local identity/socket surface. That surface is retained only for legacy maintenance while it exists. It is not the direction for normal profile-based play.
+Older live-session documents and `/sessions` routes describe a guarded session-local identity/socket surface. Those documents are archived under [Archived legacy live-session documents](../archive/live-session/README.md), and the surface is retained only for legacy maintenance while it exists. It is not the direction for normal profile-based play.
 
 The remaining architecture gap is live gameplay authority. Browser-owned whole-map autosave is useful for GM setup/edit workflows and local single-user maintenance, but it is not a safe concurrency model for live table play. If multiple browsers can change gameplay state at once, the server must validate explicit player/GM intent, apply it once, advance revisions, persist it, and broadcast the accepted result.
 
@@ -53,7 +53,7 @@ Conflict checks are domain-scoped, not generic JSON merges. A stale token move c
 
 ## Legacy `/sessions` boundary
 
-Legacy `/sessions` pages, routes, socket messages, session snapshots, and session-local identities are archival or maintenance-only. They may remain behind their explicit runtime guard while maintainers need smoke tests for the old surface, but they must not be documented as the normal product path.
+Legacy `/sessions` pages, routes, socket messages, session snapshots, and session-local identities are archival or maintenance-only. They may remain behind their explicit runtime guard while maintainers need smoke tests for the old surface, but they must not be documented as the normal product path. The archived legacy ADRs and runbooks live under [Archived legacy live-session documents](../archive/live-session/README.md).
 
 Normal play uses persistent player profiles, regular saved-map URLs, server-authoritative command/revision/idempotency contracts, and the profile/token-control policies already used by the map and sheet routes.
 
@@ -64,7 +64,7 @@ Normal play uses persistent player profiles, regular saved-map URLs, server-auth
 - UI code should dispatch commands and reconcile against accepted results, rejections, patches, or revision reconciliation data rather than saving whole documents for live gameplay.
 - Setup/edit autosave may remain available, but product docs and source comments must keep it separate from live play authority.
 - Database repositories and migration tools must eventually replace JSON files as the authoritative live-play persistence layer.
-- Legacy session docs should be labeled historical, archival, or maintenance-only whenever they remain in the repository.
+- Legacy session docs remain in the archive and should be treated as historical, archival, or maintenance-only.
 
 ## Rejected alternatives
 

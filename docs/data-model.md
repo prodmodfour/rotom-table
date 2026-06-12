@@ -108,4 +108,4 @@ The default app repository hygiene is:
 - generated wild sheets should be reviewed before committing, if they are ever meant to be examples
 - JSON should stay readable and inspectable rather than hidden behind opaque binary formats
 
-Before publishing or sharing a branch, check `git status` and make sure private campaign notes, player profile data, player information, unreleased story material, session files, and one-off local data are not included. See [Player profiles and linked character control](player-profiles.md) for current profile behaviour and [live session storage](live-session-storage.md) for legacy session snapshot/event-log backup and recovery guidance.
+Before publishing or sharing a branch, check `git status` and make sure private campaign notes, player profile data, player information, unreleased story material, session files, and one-off local data are not included. See [Player profiles and linked character control](player-profiles.md) for current profile behaviour and [live session storage](archive/live-session/live-session-storage.md) for legacy session snapshot/event-log backup and recovery guidance.

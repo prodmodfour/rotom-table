@@ -191,4 +191,4 @@ Until those pieces are verified for the specific host, keep hosted use private, 
 - [Private VPS backup runbook](private-vps-backups.md) — creating private campaign and deployment-config backups before and after sessions, then smoke-checking a temporary restore without committing archives.
 - [API route mutation audit](api-route-mutation-audit.md) — current non-GET route classifications, hosted-write coverage, and remaining limitations.
 - [Player profiles and linked character control](player-profiles.md) — normal GM/player profile flow for table play.
-- [Live session security boundaries](live-session-security-boundaries.md) — legacy live-session exposure risks and non-goals.
+- [Live session security boundaries](archive/live-session/live-session-security-boundaries.md) — legacy live-session exposure risks and non-goals.

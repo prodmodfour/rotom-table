@@ -64,7 +64,7 @@ Normal multiplayer play stays on persistent profiles and regular `/maps/<slug>` 
 
 Setup/edit mode may continue using whole-document JSON saves and debounced autosave for GM preparation and maintenance. Live gameplay must not use browser-owned whole-map autosave or last-writer-wins document replacement as its concurrency strategy. Existing document-backed token action routes are compatibility surfaces during the migration; they are not permission to reintroduce whole-map live saves.
 
-Legacy `/sessions` routes and documents are maintenance-only for the old guarded session-local socket/lobby surface. They are not the normal profile-play architecture. See [Live play authority](live-play-authority.md) and [ADR 009: Server-authoritative profile play](adrs/009-server-authoritative-profile-play.md).
+Legacy `/sessions` routes and archived documents are maintenance-only for the old guarded session-local socket/lobby surface. They are not the normal profile-play architecture. See [Live play authority](live-play-authority.md), [Archived legacy live-session documents](archive/live-session/README.md), and [ADR 009: Server-authoritative profile play](adrs/009-server-authoritative-profile-play.md).
 
 ## Three.js/isometric map area
 

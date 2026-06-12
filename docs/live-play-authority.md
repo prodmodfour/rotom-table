@@ -78,7 +78,7 @@ Realtime must not rely on every browser saving or receiving whole map documents 
 
 ## Legacy `/sessions` boundary
 
-Documents and code with `session` or `/sessions` names describe the legacy guarded session-local surface unless they explicitly say otherwise. That surface may stay available for direct maintenance and smoke checks behind its runtime guard, but it is not normal profile play.
+Documents and code with `session` or `/sessions` names describe the legacy guarded session-local surface unless they explicitly say otherwise. The legacy documentation is archived under [Archived legacy live-session documents](archive/live-session/README.md). That surface may stay available for direct maintenance and smoke checks behind its runtime guard, but it is not normal profile play.
 
 Normal profile play has no join code, map attachment step, session-owned map copy, share link, invite link, or per-map invite. Players choose a persistent profile and open player-visible maps through the normal app navigation.
 

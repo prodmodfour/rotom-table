@@ -108,4 +108,4 @@ If the campaign root is its own private Git repository, review that repository s
 
 This checklist verifies the current private VPS profile-play path: `/login`, `/players`, `/maps`, `/maps/<slug>`, `/sheets`, Pokédex, and reference pages. It does not require players to use `/sessions`, join codes, session-map attachment, or special session map URLs.
 
-Use [Legacy live-session deployment smoke checklist](live-session-deployment-smoke-checklist.md) only when maintaining the guarded legacy session lobby/socket endpoints. Keep those legacy checks isolated from normal private VPS profile play.
+Use [Legacy live-session deployment smoke checklist](archive/live-session/live-session-deployment-smoke-checklist.md) only when maintaining the guarded legacy session lobby/socket endpoints. Keep those legacy checks isolated from normal private VPS profile play.
