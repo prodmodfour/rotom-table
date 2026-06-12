@@ -32,6 +32,10 @@ Live play commands must be server-authoritative. A client can optimistically pre
 6. If invalid, unauthorized, stale, or conflicting, the server rejects the command without advancing revisions.
 7. If retried with the same `opId`, the server returns the stored result without applying effects twice.
 
+## Shared command contract
+
+`shared/livePlayCommands.ts` is the canonical client/server-safe contract for live-play command envelopes, command type constants, patch type constants, resource scopes, `opId`/`baseRevision`/map slug validators, and reusable accepted/rejected/duplicate result builders. Command routes and client dispatchers should import these definitions instead of inventing local request or rejection shapes.
+
 ## Persistence direction
 
 Database-backed persistence is the target for authoritative live play. The database layer should provide transactional document/state writes, revision updates, idempotency records, and migration support.
