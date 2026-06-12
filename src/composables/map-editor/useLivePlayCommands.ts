@@ -5,6 +5,7 @@ import {
   createLivePlayOpId,
   type BuildTerrainVoxelPayload,
   type DeleteTokenPayload,
+  type LivePlayCommandAccepted,
   type LivePlayCommandDuplicate,
   type LivePlayCommandRejectionReason,
   type LivePlayCommandResult,
@@ -33,6 +34,7 @@ import {
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
+import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { useApiClient } from '~/composables/useApiClient'
 import type { PlayerProfileId } from '#shared/playerProfiles'
@@ -257,6 +259,12 @@ const acceptedResultRequiresReconciliation = (response: LivePlayCommandResponse)
   acceptedResultPatches(response).length > 0
 )
 
+const acceptedPatchResult = (response: LivePlayCommandResponse): LivePlayCommandAccepted | null => {
+  if (!response.ok) return null
+  if (isDuplicateResult(response)) return response.original.ok ? response.original : null
+  return response
+}
+
 const rejectionNeedsStateTransition = (reason: LivePlayCommandRejectionReason | null): boolean => (
   reason === 'stale-revision' || reason === 'persistence-failed'
 )
@@ -419,8 +427,18 @@ export const useLivePlayCommands = (
         return { dispatched: false, message, response }
       }
 
+      const patchResult = acceptedPatchResult(response)
       if (response.map) options.applyPersistedMap?.(response.map)
-      else if (acceptedResultRequiresReconciliation(response)) {
+      else if (patchResult && options.map?.value) {
+        const applied = applyLivePlayPatchesToMap({
+          map: options.map.value,
+          mapSlug: patchResult.mapSlug,
+          previousRevision: patchResult.previousRevision,
+          revision: patchResult.revision,
+          patches: patchResult.patches,
+        })
+        if (!applied.ok) await options.requestReconciliation?.({ request, response })
+      } else if (acceptedResultRequiresReconciliation(response)) {
         await options.requestReconciliation?.({ request, response })
       }
       for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)

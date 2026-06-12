@@ -41,6 +41,7 @@ import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { clonePersistableMapPayload, stablePersistableMapJson } from '~/utils/maps/persistence'
+import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import { useApiClient } from './useApiClient'
 import { subscribeRealtimeConnection, useRealtimeChannel } from './useRealtime'
 import type { PlayerProfileId } from '#shared/playerProfiles'
@@ -446,11 +447,33 @@ export const useEditableMap = (
       const incoming = event.data as TabletopMap
       applyPersistedMap(incoming)
     } else if (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED) {
-      const commandEventIsAhead = incomingRevision !== null
-        && currentRevision !== null
-        && incomingRevision > currentRevision
-      if (revisionGapRequiresReconcile(event) || commandEventIsAhead) {
+      if (incomingRevision === null || !event.patches?.length) {
         void reconcileAuthoritativeMap()
+        return
+      }
+      if (currentRevision !== null && incomingRevision <= currentRevision) return
+      if (revisionGapRequiresReconcile(event)) {
+        void reconcileAuthoritativeMap()
+        return
+      }
+
+      const patchResult = applyLivePlayPatchesToMap({
+        map: map.value,
+        mapSlug: (event as { mapSlug?: string }).mapSlug ?? slug,
+        previousRevision: event.previousRevision,
+        revision: incomingRevision,
+        patches: event.patches,
+      })
+      if (!patchResult.ok) {
+        console.warn('[useEditableMap] live-play patch reconcile required', patchResult.message)
+        void reconcileAuthoritativeMap()
+        return
+      }
+      if (patchResult.applied && map.value) {
+        autosave.cancelPendingSave()
+        autosave.snapshot.markClean(map.value)
+        status.value = 'idle'
+        error.value = null
       }
     } else if (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.MAP_RECONCILED) {
       if (event.data && !revisionGapRequiresReconcile(event)) {

@@ -198,10 +198,9 @@ describe('live-play useMove commands', () => {
         }),
       }),
     ])
-    expect(harness.published).toEqual(expect.arrayContaining([
-      expect.objectContaining({ channel: 'map:arena', type: 'updated', revision: 5, clientId: 'gm-client' }),
+    expect(harness.published).toEqual([
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_usemove001' }),
-    ]))
+    ])
   })
 
   it('records Scene move usage on the map and returns remaining map-scoped usage', async () => {
@@ -361,7 +360,6 @@ describe('live-play useMove commands', () => {
       }),
     ])
     expect(harness.published).toEqual(expect.arrayContaining([
-      expect.objectContaining({ channel: 'map:arena', type: 'updated', revision: 5, clientId: 'gm-client' }),
       expect.objectContaining({ channel: 'sheet:pokemon:pikachu', type: 'updated', clientId: 'gm-client' }),
       expect.objectContaining({ channel: 'sheets', type: 'updated', clientId: 'gm-client' }),
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_usemove_daily1' }),

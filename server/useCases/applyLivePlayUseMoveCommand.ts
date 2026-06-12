@@ -49,10 +49,7 @@ import {
 } from '../storage/sheetRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
-import {
-  livePlayCommandAcceptedRealtimeEvent,
-  mapDocumentUpdatedRealtimeEvents,
-} from '../utils/mapRealtimeEvents'
+import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
@@ -718,11 +715,6 @@ const applyUseMove = (
   return applyUntrackedUseMove(command, context, move, frequency, currentRevision, updatedAt, dependencies)
 }
 
-const mapEvents = (
-  map: TabletopMap,
-  clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => mapDocumentUpdatedRealtimeEvents(map, clientId)
-
 const sheetEvents = (
   updates: readonly LivePlayUseMoveCommandSheetUpdate[],
   clientId: string | undefined,
@@ -906,9 +898,6 @@ export const executeLivePlayUseMoveCommandUseCase = async (
     },
     publish: ({ actor, result }) => {
       if (!persistedContext) return
-      for (const event of mapEvents(persistedContext.map, actor.clientId)) {
-        deps.publishRealtimeEvent(event)
-      }
       for (const event of sheetEvents(persistedContext.sheetUpdate ? [persistedContext.sheetUpdate] : [], actor.clientId)) {
         deps.publishRealtimeEvent(event)
       }

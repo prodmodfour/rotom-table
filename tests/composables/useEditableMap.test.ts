@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
-import type { RealtimeEvent } from '#shared/realtime'
+import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
+import { LIVE_PLAY_REALTIME_EVENT_TYPES, type RealtimeEvent } from '#shared/realtime'
 import type { TabletopMap } from '~/types/map'
 
 const apiMocks = vi.hoisted(() => ({
@@ -454,6 +455,83 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.map.value?.updatedAt).toBe(300)
     expect(editable.status.value).toBe('idle')
     expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('applies accepted live-play command patches without reloading or replacing terrain', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+    const originalVoxels = editable.map.value?.voxels
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
+      mapSlug: 'arena-map',
+      previousRevision: 1,
+      revision: 2,
+      opId: 'op_patchmove001',
+      clientId: 'other-tab',
+      timestamp: 350,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: 'arena-map',
+        revision: 2,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+        payload: {
+          placementId: 'token-pikachu',
+          position: { x: 4, y: 0, z: 2 },
+          facing: 'north-west',
+          turned: true,
+        },
+      }],
+    } as RealtimeEvent & { mapSlug: string })
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(1)
+    expect(editable.map.value?.placements[0]).toMatchObject({
+      position: { x: 4, y: 0, z: 2 },
+      facing: 'north-west',
+      turned: true,
+    })
+    expect(editable.map.value?.voxels).toBe(originalVoxels)
+    expect(editable.mapRevision.value).toBe(2)
+    expect(editable.mapDataRevision.value).toBe(1)
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('reloads when an accepted live-play command patch is unknown', async () => {
+    apiMocks.getJson
+      .mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+      .mockResolvedValueOnce({ map: mapFixture({ revision: 2, name: 'Reloaded After Unknown Patch' }), revision: 2 })
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
+      mapSlug: 'arena-map',
+      previousRevision: 1,
+      revision: 2,
+      opId: 'op_unknownpatch',
+      clientId: 'other-tab',
+      timestamp: 360,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: 'unknown.patch',
+        mapSlug: 'arena-map',
+        revision: 2,
+        scopes: [{ kind: 'map', lane: 'metadata' }],
+        payload: {},
+      }],
+    } as unknown as RealtimeEvent & { mapSlug: string })
+    await flushPromises()
+
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(2)
+    expect(editable.map.value?.name).toBe('Reloaded After Unknown Patch')
+    expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
   })
 
   it('drops own realtime echoes so a local tab does not overwrite itself', async () => {

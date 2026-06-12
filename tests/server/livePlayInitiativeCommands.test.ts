@@ -182,11 +182,9 @@ describe('live-play initiative commands', () => {
         },
       }),
     ])
-    expect(harness.published).toEqual(expect.arrayContaining([
-      expect.objectContaining({ channel: 'map:arena', type: 'updated', revision: 5, clientId: 'gm-client' }),
-      expect.objectContaining({ channel: 'maps', type: 'updated', revision: 5, clientId: 'gm-client' }),
+    expect(harness.published).toEqual([
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_setinit001', revision: 5 }),
-    ]))
+    ])
   })
 
   it('advances initiative to the next token and records an initiative log entry', async () => {

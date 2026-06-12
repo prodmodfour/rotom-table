@@ -154,10 +154,9 @@ describe('live-play terrain commands', () => {
         },
       }),
     ])
-    expect(harness.published).toEqual(expect.arrayContaining([
-      expect.objectContaining({ channel: 'map:arena', type: 'updated', revision: 5, clientId: 'gm-client' }),
+    expect(harness.published).toEqual([
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_buildterrain1', revision: 5 }),
-    ]))
+    ])
   })
 
   it('removes terrain through the authoritative executor', async () => {

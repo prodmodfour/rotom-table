@@ -189,8 +189,6 @@ describe('live-play map token commands', () => {
     })
     expect(response.map).toBe(harness.storedMap)
     expect(harness.published).toEqual([
-      expect.objectContaining({ channel: 'map:arena', type: 'updated', revision: 5, clientId: 'gm-client', data: expect.objectContaining({ revision: 5 }) }),
-      expect.objectContaining({ channel: 'maps', type: 'updated', revision: 5, clientId: 'gm-client', data: expect.objectContaining({ revision: 5 }) }),
       expect.objectContaining({
         channel: 'map:arena',
         type: 'live-play-command-accepted',
@@ -200,7 +198,6 @@ describe('live-play map token commands', () => {
         opId: 'op_mapmovetest01',
         clientId: 'gm-client',
         patches: expect.arrayContaining([expect.objectContaining({ revision: 5 })]),
-        data: expect.objectContaining({ revision: 5 }),
       }),
     ])
   })

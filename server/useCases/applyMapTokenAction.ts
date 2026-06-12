@@ -762,12 +762,23 @@ const commandPlacementId = (command: MapTokenLivePlayCommand): string => {
   return 'placement' in payload ? payload.placement.id : payload.placementId
 }
 
+const latestMetadataEntry = (
+  metadata: Record<string, unknown> | undefined,
+  key: string,
+): Record<string, unknown> | undefined => {
+  const entries = metadata?.[key]
+  const entry = Array.isArray(entries) ? entries.at(-1) : undefined
+  return isRecord(entry) ? entry : undefined
+}
+
 const commandPatch = (
   command: MapTokenLivePlayCommand,
   revision: number,
-  placement: SheetPlacement,
+  change: AppliedMapTokenChange,
 ): LivePlayPatch => {
+  const placement = change.placement
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) {
+    const movementLogEntry = latestMetadataEntry(change.nextMap.metadata, 'movementLog')
     return {
       schemaVersion: command.schemaVersion,
       type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
@@ -779,6 +790,7 @@ const commandPatch = (
         position: placement.position,
         ...(placement.facing === undefined ? {} : { facing: placement.facing }),
         ...(placement.turned === undefined ? {} : { turned: placement.turned }),
+        ...(movementLogEntry === undefined ? {} : { movementLogEntry }),
       },
     }
   }
@@ -979,7 +991,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         nextMap: nextContext,
         previousRevision: currentRevision,
         revision,
-        patches: [commandPatch(command, revision, change.placement)],
+        patches: [commandPatch(command, revision, change)],
       }
     },
     persist: async ({ actor, command, currentRevision, nextMap, result }) => {
@@ -1011,9 +1023,6 @@ export const executeMapTokenLivePlayCommandUseCase = async (
     },
     publish: ({ actor, result }) => {
       if (!persistedContext) return
-      for (const event of mapEvents(persistedContext.map, actor.clientId)) {
-        deps.publishRealtimeEvent(event)
-      }
       deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))
     },
   })

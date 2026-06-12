@@ -452,6 +452,50 @@ describe('useLivePlayCommands', () => {
     expect(actions.lastError.value).toBe('Reconnected. Reloading the authoritative map before live play resumes.')
   })
 
+  it('applies accepted patch-only command responses when the current map revision matches', async () => {
+    const map = ref(mapFixture())
+    const requestReconciliation = vi.fn()
+    const applyPersistedMap = vi.fn()
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applyPersistedMap,
+      requestReconciliation,
+    })
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_patchonly1',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: 'arena-map',
+        revision: 5,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+        payload: {
+          placementId: 'token-pikachu',
+          position: { x: 3, y: 0, z: 2 },
+          facing: 'north-east',
+          turned: false,
+        },
+      }],
+    })
+
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 3, y: 0, z: 2 },
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(map.value.revision).toBe(5)
+    expect(map.value.placements[0]).toMatchObject({ position: { x: 3, y: 0, z: 2 }, facing: 'north-east' })
+    expect(applyPersistedMap).not.toHaveBeenCalled()
+    expect(requestReconciliation).not.toHaveBeenCalled()
+  })
+
   it('requests reconciliation when an accepted command returns a reconciliation patch instead of a map', async () => {
     const requestReconciliation = vi.fn()
     const actions = useLivePlayCommands({

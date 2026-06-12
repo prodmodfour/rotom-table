@@ -265,7 +265,6 @@ describe('live-play sheet commands', () => {
       sheet: { currentHp: 11, currentInjuries: 1, revision: 6 },
     })
     expect(harness.published).toEqual(expect.arrayContaining([
-      expect.objectContaining({ channel: 'map:arena', type: 'updated', revision: 5, clientId: 'gm-client' }),
       expect.objectContaining({ channel: 'sheet:trainer:giovanni', type: 'updated', clientId: 'gm-client' }),
       expect.objectContaining({
         channel: 'map:arena',

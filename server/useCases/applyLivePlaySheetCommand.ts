@@ -53,10 +53,7 @@ import {
 } from '../storage/sheetRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
-import {
-  livePlayCommandAcceptedRealtimeEvent,
-  mapDocumentUpdatedRealtimeEvents,
-} from '../utils/mapRealtimeEvents'
+import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
@@ -413,11 +410,6 @@ const sheetRealtimeEvents = (
   ]
 })
 
-const mapEvents = (
-  map: TabletopMap,
-  clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => mapDocumentUpdatedRealtimeEvents(map, clientId)
-
 const sheetFieldPatch = (
   command: LivePlaySheetCommand,
   revision: number,
@@ -760,9 +752,6 @@ export const executeLivePlaySheetCommandUseCase = async (
     },
     publish: ({ actor, result }) => {
       if (!persistedContext) return
-      for (const event of mapEvents(persistedContext.map, actor.clientId)) {
-        deps.publishRealtimeEvent(event)
-      }
       for (const event of sheetRealtimeEvents(persistedContext.sheetUpdate ? [persistedContext.sheetUpdate] : [], actor.clientId)) {
         deps.publishRealtimeEvent(event)
       }

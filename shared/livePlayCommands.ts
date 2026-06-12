@@ -2,6 +2,7 @@ import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
 import { isSheetKind, type SheetKind } from './sheets'
 import type {
   GridAnchor,
+  MapFieldEffects,
   MapHazardKind,
   MapHazardV2,
   MapRoomKind,
@@ -461,6 +462,160 @@ export interface LivePlayPatch<
   readonly scopes: readonly TScope[]
   readonly payload: TPayload
 }
+
+export interface TokenMovedPatchPayload {
+  readonly placementId: string
+  readonly position: GridAnchor
+  readonly facing?: TokenFacingDirection
+  readonly turned?: boolean
+  readonly movementLogEntry?: Record<string, unknown>
+}
+
+export interface TokenTurnedPatchPayload {
+  readonly placementId: string
+  readonly facing?: TokenFacingDirection
+  readonly turned?: boolean
+}
+
+export interface SheetHpModifiedPatchPayload {
+  readonly placementId: string
+  readonly sheetKind: SheetKind
+  readonly sheetSlug: string
+  readonly previous: Record<string, unknown>
+  readonly current: Record<string, unknown>
+  readonly sheetRevision: number
+}
+
+export interface CombatStagesModifiedPatchPayload {
+  readonly placementId: string
+  readonly sheetKind: SheetKind
+  readonly sheetSlug: string
+  readonly previous: Record<string, unknown>
+  readonly current: Record<string, unknown>
+  readonly sheetRevision: number
+}
+
+export interface ConditionsModifiedPatchPayload {
+  readonly placementId: string
+  readonly sheetKind: SheetKind
+  readonly sheetSlug: string
+  readonly previous: readonly string[]
+  readonly current: readonly string[]
+  readonly sheetRevision: number
+}
+
+export interface MoveUsedPatchPayload {
+  readonly placementId: string
+  readonly sheetKind: SheetKind
+  readonly sheetSlug: string
+  readonly moveName: string
+  readonly moveKey: string
+  readonly frequency: string
+  readonly frequencyKind: string
+  readonly tracking: 'map' | 'sheet' | 'none'
+  readonly previousUsage: Record<string, unknown>
+  readonly usage: Record<string, unknown>
+  readonly sheetRevision?: number
+  readonly moveLogEntry?: Record<string, unknown>
+}
+
+export interface InitiativePatchEntryState {
+  readonly tokenId: string
+  readonly initiative: number | null
+}
+
+export interface InitiativePatchLaneState {
+  readonly activeId: string | null
+  readonly round: number
+  readonly entries: readonly InitiativePatchEntryState[]
+}
+
+export interface InitiativeUpdatedPatchPayload {
+  readonly command:
+    | typeof LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
+    | typeof LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE
+    | typeof LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE
+  readonly previous: InitiativePatchLaneState
+  readonly current: InitiativePatchLaneState
+  readonly changedTokenIds: readonly string[]
+  readonly logEntry?: Record<string, unknown>
+}
+
+export interface HazardsUpdatedPatchPayload {
+  readonly command:
+    | typeof LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD
+    | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD
+  readonly cell: GridAnchor
+  readonly previous: readonly MapHazardV2[]
+  readonly current: readonly MapHazardV2[]
+  readonly placed?: MapHazardV2
+  readonly removed: readonly MapHazardV2[]
+}
+
+export interface FieldEffectsUpdatedPatchPayload {
+  readonly command:
+    | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
+    | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
+    | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
+  readonly previous: MapFieldEffects
+  readonly current: MapFieldEffects
+  readonly category?: FieldEffectRemoveCategory
+  readonly kind?: FieldEffectKind
+  readonly tickAmount?: number
+}
+
+export interface TerrainVoxelsUpdatedPatchPayload {
+  readonly command:
+    | typeof LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL
+    | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL
+  readonly cell: GridAnchor
+  readonly previous: MapVoxelV2 | null
+  readonly current: MapVoxelV2 | null
+  readonly built?: MapVoxelV2
+  readonly removed?: MapVoxelV2
+  readonly rendererInvalidation?: readonly string[]
+}
+
+export interface TokenSpawnedPatchPayload {
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+  readonly placementId: string
+  readonly previous: null
+  readonly current: SheetPlacement
+}
+
+export interface TokenDeletedPatchPayload {
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
+  readonly placementId: string
+  readonly previous: SheetPlacement
+  readonly current: null
+}
+
+export type TokenMovedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION, TokenMovedPatchPayload, LivePlayTokenScope>
+export type TokenTurnedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_FACING, TokenTurnedPatchPayload, LivePlayTokenScope>
+export type SheetHpModifiedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_HP, SheetHpModifiedPatchPayload, LivePlayScope>
+export type ConditionsModifiedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_CONDITIONS, ConditionsModifiedPatchPayload, LivePlayScope>
+export type CombatStagesModifiedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_COMBAT_STAGES, CombatStagesModifiedPatchPayload, LivePlayScope>
+export type MoveUsedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE | typeof LIVE_PLAY_PATCH_TYPES.TOKEN_ACTION, MoveUsedPatchPayload, LivePlayScope>
+export type InitiativeUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE, InitiativeUpdatedPatchPayload, LivePlayMapScope>
+export type HazardsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS, HazardsUpdatedPatchPayload, LivePlayMapScope>
+export type FieldEffectsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS, FieldEffectsUpdatedPatchPayload, LivePlayMapScope>
+export type TerrainVoxelsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN, TerrainVoxelsUpdatedPatchPayload, LivePlayMapScope>
+export type TokenSpawnedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS, TokenSpawnedPatchPayload, LivePlayTokenScope>
+export type TokenDeletedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS, TokenDeletedPatchPayload, LivePlayTokenScope>
+
+export type KnownLivePlayPatch =
+  | TokenMovedPatch
+  | TokenTurnedPatch
+  | SheetHpModifiedPatch
+  | ConditionsModifiedPatch
+  | CombatStagesModifiedPatch
+  | MoveUsedPatch
+  | InitiativeUpdatedPatch
+  | HazardsUpdatedPatch
+  | FieldEffectsUpdatedPatch
+  | TerrainVoxelsUpdatedPatch
+  | TokenSpawnedPatch
+  | TokenDeletedPatch
 
 export const LIVE_PLAY_COMMAND_REJECTION_REASONS = [
   'invalid',

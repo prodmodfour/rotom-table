@@ -31,10 +31,7 @@ import { sqliteLivePlayOpRepository } from '../storage/opRepository'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
-import {
-  livePlayCommandAcceptedRealtimeEvent,
-  mapDocumentUpdatedRealtimeEvents,
-} from '../utils/mapRealtimeEvents'
+import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import type { RealtimeEvent } from '#shared/realtime'
@@ -615,9 +612,6 @@ export const executeLivePlayInitiativeCommandUseCase = async (
     },
     publish: ({ actor, result }) => {
       if (!persistedContext) return
-      for (const event of mapDocumentUpdatedRealtimeEvents(persistedContext.map, actor.clientId)) {
-        deps.publishRealtimeEvent(event)
-      }
       deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))
     },
   })

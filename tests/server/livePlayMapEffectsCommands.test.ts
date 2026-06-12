@@ -178,10 +178,9 @@ describe('live-play hazard and field-effect commands', () => {
         },
       }),
     ])
-    expect(harness.published).toEqual(expect.arrayContaining([
-      expect.objectContaining({ channel: 'map:arena', type: 'updated', revision: 5, clientId: 'gm-client' }),
+    expect(harness.published).toEqual([
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_placehaz01', revision: 5 }),
-    ]))
+    ])
   })
 
   it('removes hazards through the authoritative executor', async () => {

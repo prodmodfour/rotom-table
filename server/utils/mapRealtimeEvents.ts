@@ -49,7 +49,7 @@ export const mapDocumentUpdatedRealtimeEvents = (
 export const livePlayCommandAcceptedRealtimeEvent = (
   result: LivePlayCommandAccepted,
   clientId: string | undefined,
-): LivePlayRealtimeEventDraft<LivePlayCommandAccepted> => ({
+): LivePlayRealtimeEventDraft => ({
   channel: mapChannel(result.mapSlug),
   type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
   mapSlug: result.mapSlug,
@@ -58,5 +58,4 @@ export const livePlayCommandAcceptedRealtimeEvent = (
   opId: result.opId,
   patches: [...result.patches],
   clientId,
-  data: result,
 })
