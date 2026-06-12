@@ -13,6 +13,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
 - [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to filesystem/security docs.
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy private VPS checks for install, validation, built-server start, health, outer-gated profile play, write persistence after restart, Git hygiene, and legacy `/sessions` boundaries.
+- [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md) — multi-browser command/revision, SSE reconnect, conflict, refresh, and restart checks for private hosted profile play.
 - [Private VPS readiness summary](private-vps-readiness-summary.md) — selected Node 24 runtime, systemd deployment path, hosted-write policy, final validation evidence, and known public-service follow-ups.
 - [Private VPS backup runbook](private-vps-backups.md) — before/after-session campaign archives, temporary restore smoke checks, private deployment config notes, retention guidance, and Git hygiene.
 - [API route mutation audit](api-route-mutation-audit.md) — non-GET API route classifications, hosted-write coverage, and remaining limitations.

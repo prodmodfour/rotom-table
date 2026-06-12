@@ -41,12 +41,12 @@ npm test
 npm run build
 ```
 
-The chosen boot path was also smoke-checked by starting the built Nitro server with `npm run start` on a loopback smoke port and verifying the no-secret `/api/health` endpoint.
+The chosen boot path was also smoke-checked by starting the built Nitro server with `npm run start` on a loopback smoke port and verifying the no-secret `/api/health` endpoint. That endpoint is process health only; live-play readiness still requires the multi-browser `/api/events`, command/revision, reconnect, conflict, refresh, and restart checks in the private VPS live-play smoke checklist.
 
 ## Known follow-ups and limits
 
 - Public service mode is separate work. It still needs real authentication and authorization, hosted persistence designed for multi-user operation, route-by-route public hardening, rate limiting or abuse controls, content/asset rights review, private/public data separation, and incident-response practices.
-- Every real private host still needs host-specific validation of its outer access gate, reverse proxy, firewall, WebSocket forwarding, backup and restore practice, private campaign root, and exact hosted-write flag state before players use it.
+- Every real private host still needs host-specific validation of its outer access gate, reverse proxy, firewall, `/api/events` SSE streaming, WebSocket forwarding for current or future socket paths, backup and restore practice, private campaign root, exact hosted-write flag state, and live-play command/revision behavior before players use it.
 - Legacy `/sessions` surfaces remain guarded maintenance paths, not the normal private VPS profile-play flow.
 - Docker/Compose deployment can be added later only if it is selected and validated as a separate deployment path.
 
@@ -54,6 +54,7 @@ The chosen boot path was also smoke-checked by starting the built Nitro server w
 
 - [Private VPS hosting scope](private-vps-hosting.md)
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md)
+- [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md)
 - [Private VPS backup runbook](private-vps-backups.md)
 - [API route mutation audit](api-route-mutation-audit.md)
 - [Security](../SECURITY.md)

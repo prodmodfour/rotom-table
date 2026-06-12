@@ -1,4 +1,12 @@
 export const SSE_KEEPALIVE_MS = 15_000
+export const SSE_HEARTBEAT_COMMENT = 'heartbeat'
+
+let sseConnectionSequence = 0
+
+export const createSseConnectionId = (): string => {
+  sseConnectionSequence += 1
+  return `sse-${Date.now().toString(36)}-${sseConnectionSequence.toString(36)}`
+}
 
 export interface SseResponse {
   setHeader(name: string, value: string): void
@@ -11,7 +19,9 @@ export interface SseRequest {
 }
 
 export interface SseLogger {
-  error(message?: unknown, ...optionalParams: unknown[]): void
+  info?(message?: unknown, ...optionalParams: unknown[]): void
+  warn?(message?: unknown, ...optionalParams: unknown[]): void
+  error?(message?: unknown, ...optionalParams: unknown[]): void
 }
 
 export type SseUnsubscribe = () => void
@@ -23,6 +33,8 @@ export interface OpenSseEventStreamOptions<TEvent> {
   subscribe: SseSubscriber<TEvent>
   keepaliveMs?: number
   logger?: SseLogger
+  connectionId?: string
+  connectionLabel?: string
 }
 
 export const setSseHeaders = (res: SseResponse): void => {
@@ -52,23 +64,31 @@ export const openSseEventStream = async <TEvent>({
   subscribe,
   keepaliveMs = SSE_KEEPALIVE_MS,
   logger = console,
+  connectionId = createSseConnectionId(),
+  connectionLabel,
 }: OpenSseEventStreamOptions<TEvent>): Promise<void> => {
+  const logContext = {
+    connectionId,
+    ...(connectionLabel ? { connectionLabel } : {}),
+  }
+
   setSseHeaders(res)
   // Initial comment so the browser flushes the response head and fires
   // ``onopen`` immediately.
   writeSseComment(res, 'ok')
+  logger.info?.('[events] SSE connected', { ...logContext, keepaliveMs })
 
   const unsubscribe = subscribe((event) => {
     try {
       writeSseData(res, event)
     } catch (err) {
-      logger.error('[events] write failed', err)
+      logger.error?.('[events] write failed', err)
     }
   })
 
   const keepalive = setInterval(() => {
     try {
-      writeSseComment(res, 'ping')
+      writeSseComment(res, SSE_HEARTBEAT_COMMENT)
     } catch {
       /* socket already gone — close handler will clean up */
     }
@@ -76,14 +96,16 @@ export const openSseEventStream = async <TEvent>({
 
   await new Promise<void>((resolve) => {
     let cleaned = false
-    const cleanup = () => {
+    const cleanup = (reason: 'close' | 'error') => {
       if (cleaned) return
       cleaned = true
       clearInterval(keepalive)
       unsubscribe()
+      const log = reason === 'error' ? (logger.warn ?? logger.info) : logger.info
+      log?.('[events] SSE disconnected', { ...logContext, reason })
       resolve()
     }
-    req.on('close', cleanup)
-    req.on('error', cleanup)
+    req.on('close', () => cleanup('close'))
+    req.on('error', () => cleanup('error'))
   })
 }

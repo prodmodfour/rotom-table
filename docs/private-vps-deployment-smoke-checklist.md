@@ -1,6 +1,6 @@
 # Private VPS deployment smoke checklist
 
-Run this checklist after every private VPS deploy before sharing the private URL with players or resuming a campaign session. It assumes the private trusted-table scope described in [Private VPS hosting scope](private-vps-hosting.md): Node.js 24 LTS, the built Nitro server started with `npm run start`, campaign JSON and reference override diffs outside the app checkout through `ROTOM_CAMPAIGN_ROOT`, and an outer access gate in front of the app.
+Run this checklist after every private VPS deploy before sharing the private URL with players or resuming a campaign session. It assumes the private trusted-table scope described in [Private VPS hosting scope](private-vps-hosting.md): Node.js 24 LTS, the built Nitro server started with `npm run start`, campaign JSON and reference override diffs outside the app checkout through `ROTOM_CAMPAIGN_ROOT`, and an outer access gate in front of the app. For multi-browser command/revision checks after this deployment smoke passes, use the [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md).
 
 Use synthetic or clearly disposable campaign edits for smoke checks. Do not put real environment files, hostnames, credentials, player details, logs, screenshots, backup archives, private campaign JSON, or campaign-specific reference overrides into the app repository while running this checklist.
 
@@ -9,7 +9,7 @@ Use synthetic or clearly disposable campaign edits for smoke checks. Do not put 
 - [ ] The deployed checkout is the intended app revision under `/srv/rotom-table/app` or the operator's equivalent app path; if branch names are part of the deploy process, prefer `main` plus short-lived feature branches instead of unnecessary long-lived branch tiers.
 - [ ] `ROTOM_CAMPAIGN_ROOT` points outside the app checkout, for example `/srv/rotom-table/campaign`; branch names are not data-isolation boundaries, and staging plus production must never share the same writable campaign root. If `ROTOM_DB_PATH` is set, it points to a private operator-controlled database path rather than the app checkout.
 - [ ] The Node service binds to loopback, for example `NITRO_HOST=127.0.0.1` and `NITRO_PORT=3000`, unless the private host uses an equivalent non-public bind.
-- [ ] The private host is protected by an outer access gate before Rotom Table's `/login` page and `/api/*` routes are reachable.
+- [ ] The private host is protected by an outer access gate before Rotom Table's `/login` page, `/api/events`, `/api/health`, all `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths are reachable.
 - [ ] A current private backup exists or the operator is comfortable discarding the disposable smoke edits. See the [Private VPS backup runbook](private-vps-backups.md).
 - [ ] If this deployment is intended to save campaign changes in production, the real service environment intentionally sets exactly `ROTOM_ENABLE_HOSTED_WRITES=1`. If the flag is absent or set to any other value, covered production writes should fail closed instead of persisting.
 
@@ -46,6 +46,8 @@ journalctl -u rotom-table.service -n 80 --no-pager
 
 ## Health and access-gate checks
 
+`/api/health` is a no-secret process health check only. It does not prove that `/api/events` SSE streaming, live-play command routes, revision reconciliation, conflict handling, or persistence are ready; run the live-play smoke checklist for those checks.
+
 - [ ] From the VPS itself, the loopback health endpoint succeeds and returns no secrets:
 
   ```bash
@@ -53,7 +55,7 @@ journalctl -u rotom-table.service -n 80 --no-pager
   ```
 
 - [ ] From an authorized device through the private reverse proxy or gate, `/api/health` succeeds over the intended private URL.
-- [ ] From an unauthenticated or off-network browser, the outer access gate blocks `/login`, `/api/health`, other `/api/*` routes, and WebSocket upgrade paths before Rotom Table responds.
+- [ ] From an unauthenticated or off-network browser, the outer access gate blocks `/login`, `/api/health`, `/api/events`, other `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths before Rotom Table responds.
 - [ ] The Node port such as `:3000` is not reachable directly from arbitrary internet clients; only the intended private proxy/gate can reach the loopback service.
 
 ## GM and player profile-play checks

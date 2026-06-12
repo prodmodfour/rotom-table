@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  SSE_HEARTBEAT_COMMENT,
   formatSseComment,
   formatSseData,
   openSseEventStream,
@@ -48,10 +49,11 @@ describe('SSE stream helpers', () => {
     expect(res.flushHeaders).toHaveBeenCalledOnce()
   })
 
-  it('opens a realtime event stream, writes subscribed events, pings, and cleans up once', async () => {
+  it('opens a realtime event stream, writes subscribed events, heartbeats, logs, and cleans up once', async () => {
     vi.useFakeTimers()
     const req = new EventEmitter()
     const { headers, writes, res } = createResponse()
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
     const unsubscribe = vi.fn()
     let handler: (event: RealtimeEvent) => void = () => {
       throw new Error('Realtime handler was not registered')
@@ -61,6 +63,9 @@ describe('SSE stream helpers', () => {
       req,
       res,
       keepaliveMs: 25,
+      logger,
+      connectionId: 'sse-test-1',
+      connectionLabel: 'role:gm',
       subscribe: vi.fn((next) => {
         handler = next
         return unsubscribe
@@ -69,18 +74,55 @@ describe('SSE stream helpers', () => {
 
     expect(headers.get('Content-Type')).toBe('text/event-stream; charset=utf-8')
     expect(writes).toEqual([': ok\n\n'])
+    expect(logger.info).toHaveBeenCalledWith('[events] SSE connected', {
+      connectionId: 'sse-test-1',
+      connectionLabel: 'role:gm',
+      keepaliveMs: 25,
+    })
 
     handler({ channel: 'maps', type: 'updated', timestamp: 123 })
     expect(writes.at(-1)).toBe('data: {"channel":"maps","type":"updated","timestamp":123}\n\n')
 
     await vi.advanceTimersByTimeAsync(25)
-    expect(writes.at(-1)).toBe(': ping\n\n')
+    expect(writes.at(-1)).toBe(formatSseComment(SSE_HEARTBEAT_COMMENT))
 
     req.emit('close')
     req.emit('error')
     await stream
 
     expect(unsubscribe).toHaveBeenCalledOnce()
+    expect(logger.info).toHaveBeenCalledWith('[events] SSE disconnected', {
+      connectionId: 'sse-test-1',
+      connectionLabel: 'role:gm',
+      reason: 'close',
+    })
+    expect(logger.warn).not.toHaveBeenCalled()
+  })
+
+  it('logs SSE error disconnects separately from ordinary closes', async () => {
+    vi.useFakeTimers()
+    const req = new EventEmitter()
+    const { res } = createResponse()
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const unsubscribe = vi.fn()
+
+    const stream = openSseEventStream<RealtimeEvent>({
+      req,
+      res,
+      keepaliveMs: 25,
+      logger,
+      connectionId: 'sse-test-error',
+      subscribe: () => unsubscribe,
+    })
+
+    req.emit('error')
+    await stream
+
+    expect(unsubscribe).toHaveBeenCalledOnce()
+    expect(logger.warn).toHaveBeenCalledWith('[events] SSE disconnected', {
+      connectionId: 'sse-test-error',
+      reason: 'error',
+    })
   })
 
   it('logs event write failures without dropping stream cleanup', async () => {
@@ -95,7 +137,7 @@ describe('SSE stream helpers', () => {
         if (chunk.startsWith('data:')) throw writeError
       }),
     }
-    const logger = { error: vi.fn() }
+    const logger = { info: vi.fn(), error: vi.fn() }
     const unsubscribe = vi.fn()
     let handler: (event: RealtimeEvent) => void = () => {
       throw new Error('Realtime handler was not registered')
@@ -106,6 +148,7 @@ describe('SSE stream helpers', () => {
       res,
       keepaliveMs: 25,
       logger,
+      connectionId: 'sse-test-write-failure',
       subscribe: (next) => {
         handler = next
         return unsubscribe

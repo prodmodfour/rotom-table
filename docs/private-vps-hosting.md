@@ -12,7 +12,7 @@ Use this mode only when all of these are true:
 - campaign JSON and campaign-owned reference override diffs stay in private operator-controlled storage, preferably through `ROTOM_CAMPAIGN_ROOT` as described in [Campaign repositories](campaign-repositories.md);
 - the operator understands the filesystem-backed campaign model in [Local development](local-development.md) and the security expectations in [Security](../SECURITY.md).
 
-The built Nitro server can be used for private host smoke checks with Node.js 24 LTS, `npm run build`, `npm run start`, and the no-secret `/api/health` endpoint. After every deploy, follow the [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) before sharing the private URL with players. Keep normal profile-based play intact: the GM manages profiles from `/players`, players choose **Player Login**, and players open the regular player-visible routes such as `/maps/<slug>`.
+The built Nitro server can be used for private host smoke checks with Node.js 24 LTS, `npm run build`, `npm run start`, and the no-secret `/api/health` endpoint. `/api/health` is only a process health check; it does not prove that live-play SSE, command routes, revisions, conflict handling, or persistence are ready. After every deploy, follow the [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md), then run the [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md) before sharing the private URL with players for a session. Keep normal profile-based play intact: the GM manages profiles from `/players`, players choose **Player Login**, and players open the regular player-visible routes such as `/maps/<slug>`.
 
 ## Environment example
 
@@ -99,13 +99,15 @@ curl -fsS http://127.0.0.1:3000/api/health
 curl -fsS https://rotom-table.example.com/api/health
 ```
 
-WebSocket upgrade support must work end-to-end for legacy `/sessions` maintenance surfaces such as `WebSocket /api/sessions/socket` and for any future realtime endpoints. Caddy's `reverse_proxy` handles WebSocket upgrades by default; if you replace this example with nginx or another proxy, explicitly configure HTTP/1.1 upgrade forwarding and test the socket path before sharing the host with players.
+Those health checks are not live-play readiness checks. Live profile play also needs the long-lived `GET /api/events` SSE stream to stay open, plus normal HTTP POST command routes under `/api/maps/*` to reach the same Node process without proxy caching or buffering. The SSE endpoint sends heartbeat comments so common reverse proxies and Cloudflare do not treat an otherwise quiet table as idle, and browsers treat reconnect as a possible missed-event gap that triggers revision reconciliation. In browser developer tools, `/api/events` should remain pending as `text/event-stream`; it should not be served from cache, buffered until the response ends, or challenged after the page has already loaded.
+
+WebSocket upgrade support must work end-to-end for legacy `/sessions` maintenance surfaces such as `WebSocket /api/sessions/socket` and for any future realtime endpoints. Caddy's `reverse_proxy` handles SSE streaming and WebSocket upgrades by default; if you replace this example with nginx or another proxy, explicitly configure HTTP/1.1 upgrade forwarding, disable response buffering for `/api/events`, avoid caching `/maps/*` and `/api/maps/*`, and test the socket path before sharing the host with players.
 
 The reverse proxy is only transport and TLS plumbing. It is not Rotom Table authentication, not the GM/Player role picker, and not a public-hosting safety layer by itself. Keep the Node service unexposed on `127.0.0.1`, restrict the HTTPS URL with the required outer access gate for the trusted table, and keep real hostnames, credentials, certificates, access-policy exports, and proxy logs out of Git.
 
 ## Outer access gate
 
-A private VPS URL must not be reachable by arbitrary internet users. Put an outer access gate in front of the Rotom Table origin before sharing the URL with players, and verify that the gate protects the app before the `/login` page, `/api/health`, other `/api/*` routes, and WebSocket upgrade paths.
+A private VPS URL must not be reachable by arbitrary internet users. Put an outer access gate in front of the Rotom Table origin before sharing the URL with players, and verify that the gate protects the app before the `/login` page, `/api/events`, `/api/health`, other `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths.
 
 Acceptable gate examples include the following. Choose the one that fits the host and table; no single vendor is required.
 
@@ -117,11 +119,13 @@ Acceptable gate examples include the following. Choose the one that fits the hos
 
 The outer gate is separate from Rotom Table's GM/Player role picker. **GM Login is not enough** for a private VPS: it is a table workflow role choice after a visitor has reached the app, not a password, account system, or public authentication layer. Anyone who can reach the app may be able to choose a local role, so the gate should admit only known table members who already trust the GM/operator.
 
+If Cloudflare Access or a similar identity-aware proxy is used, apply the policy to the whole app origin or to path rules that include page loads, `/api/events`, `/api/health`, all `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths. Protecting only `/login`, `/maps/*`, or the HTML page loads is not enough because live-play commands and realtime reconciliation happen through API requests after the page loads.
+
 Before sharing a host URL, confirm these checks:
 
 - the Nitro process still binds to `127.0.0.1`, and the VPS firewall blocks direct public access to the Node port such as `:3000`;
-- an off-network or unauthenticated browser cannot load `/login` or `/api/health`;
-- the same outer gate covers normal page loads, mutating API routes, and WebSocket upgrades;
+- an off-network or unauthenticated browser cannot load `/login`, `/api/health`, `/api/events`, or a mutating `/api/maps/*` command route;
+- the same outer gate covers normal page loads, `/api/events`, `/api/health`, all other `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrades;
 - access-gate configs, basic-auth password files, tunnel credentials, private hostnames, provider policy exports, and logs stay out of Git.
 
 ## VPS campaign data layout
@@ -188,6 +192,7 @@ Until those pieces are verified for the specific host, keep hosted use private, 
 - [Local development](local-development.md) — filesystem-backed behaviour, checks, and production write limitations.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON and campaign reference override diffs separate from the app checkout.
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy install, validation, start, health, outer-gated profile play, persistence, Git hygiene, and legacy `/sessions` boundary checks.
+- [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md) — multi-browser command/revision, `/api/events` SSE reconnect, conflict, refresh, and restart checks before table play.
 - [Private VPS backup runbook](private-vps-backups.md) — creating private campaign and deployment-config backups before and after sessions, then smoke-checking a temporary restore without committing archives.
 - [API route mutation audit](api-route-mutation-audit.md) — current non-GET route classifications, hosted-write coverage, and remaining limitations.
 - [Player profiles and linked character control](player-profiles.md) — normal GM/player profile flow for table play.
