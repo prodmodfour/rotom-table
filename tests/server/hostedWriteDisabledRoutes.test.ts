@@ -67,6 +67,7 @@ describe('hosted-write disabled route behavior', () => {
         slug: 'pikachu',
         sheet: { slug: 'pikachu' },
         clientId: 'client-1',
+        interactionMode: 'setup-edit',
       },
     })).rejects.toMatchObject({
       statusCode: 403,

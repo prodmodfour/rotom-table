@@ -23,6 +23,7 @@ export interface RotomDatabase {
   readonly connection: DatabaseSync
   readonly journalMode: string | null
   withTransaction<T>(work: () => T): T
+  withAsyncTransaction<T>(work: () => Promise<T>): Promise<T>
   close(): void
 }
 
@@ -81,25 +82,48 @@ export const openRotomDatabase = (options: OpenRotomDatabaseOptions = {}): Rotom
     if (closed) throw new Error('Rotom database connection is closed')
   }
 
+  const beginTransaction = (): boolean => {
+    assertOpen()
+    if (transactionDepth > 0) return false
+
+    transactionDepth += 1
+    connection.exec('BEGIN IMMEDIATE')
+    return true
+  }
+
+  const finishTransaction = (started: boolean): void => {
+    if (!started) return
+    transactionDepth -= 1
+  }
+
   return {
     path,
     connection,
     journalMode,
     withTransaction: <T>(work: () => T): T => {
-      assertOpen()
-      if (transactionDepth > 0) return work()
-
-      transactionDepth += 1
-      connection.exec('BEGIN IMMEDIATE')
+      const started = beginTransaction()
       try {
         const result = work()
-        connection.exec('COMMIT')
+        if (started) connection.exec('COMMIT')
         return result
       } catch (error) {
-        connection.exec('ROLLBACK')
+        if (started) connection.exec('ROLLBACK')
         throw error
       } finally {
-        transactionDepth -= 1
+        finishTransaction(started)
+      }
+    },
+    withAsyncTransaction: async <T>(work: () => Promise<T>): Promise<T> => {
+      const started = beginTransaction()
+      try {
+        const result = await work()
+        if (started) connection.exec('COMMIT')
+        return result
+      } catch (error) {
+        if (started) connection.exec('ROLLBACK')
+        throw error
+      } finally {
+        finishTransaction(started)
       }
     },
     close: () => {

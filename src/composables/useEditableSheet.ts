@@ -3,8 +3,8 @@
  *
  * Takes a static sheet (loaded via `import.meta.glob`) and produces a
  * deep, reactive copy. Any mutation to the returned `ref` deep-watches
- * and POSTs the full updated sheet to `/api/sheets/save`, which persists
- * it to disk.
+ * and POSTs the full updated sheet to setup/edit `/api/sheets/save`, which
+ * persists it to disk.
  *
  * Saves are debounced (default 200 ms after the last edit) so a flurry
  * of keystrokes coalesces into a single write. The composable exposes

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { MAP_INTERACTION_MODES } from '../../shared/mapInteractionMode'
 import { SaveSheetUseCaseError, saveSheetUseCase } from '../../server/useCases/saveSheet'
 import {
   PLAYER_PROFILE_SCHEMA_VERSION,
@@ -42,6 +43,7 @@ describe('save sheet use case', () => {
 
     const result = saveSheetUseCase({
       role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'pika',
       sheet: { slug: 'pika', nickname: 'Pika', folder: 'party', player: false },
@@ -94,6 +96,7 @@ describe('save sheet use case', () => {
 
     const result = saveSheetUseCase({
       role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'pika',
       sheet: { slug: 'pika', nickname: 'Pika' },
@@ -108,6 +111,7 @@ describe('save sheet use case', () => {
 
     const result = saveSheetUseCase({
       role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'pika',
       sheet: { revision: 11, slug: 'pika', nickname: 'Pika' },
@@ -122,6 +126,7 @@ describe('save sheet use case', () => {
 
     const result = saveSheetUseCase({
       role: 'player',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'trainer',
       slug: 'brock',
       sheet: { slug: 'brock', name: 'Brock', folder: 'gym', player: false },
@@ -151,6 +156,7 @@ describe('save sheet use case', () => {
 
     const result = saveSheetUseCase({
       role: 'player',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'trainer',
       slug: 'brock',
       sheet: {
@@ -191,6 +197,7 @@ describe('save sheet use case', () => {
 
     expect(saveSheetUseCase({
       role: 'player',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'pika',
       sheet: { slug: 'pika', nickname: 'Pika Prime', player: true, playerProfileAccessible: true },
@@ -220,6 +227,7 @@ describe('save sheet use case', () => {
 
     const result = saveSheetUseCase({
       role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'pika',
       sheet: { slug: 'pika', nickname: 'Pika' },
@@ -239,6 +247,7 @@ describe('save sheet use case', () => {
 
     const result = saveSheetUseCase({
       role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'examples-abra',
       sheet: { revision: 0, slug: 'examples-abra', nickname: 'Abra', player: false },
@@ -308,6 +317,7 @@ describe('save sheet use case', () => {
 
     const result = saveSheetUseCase({
       role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'pika',
       sheet: { slug: 'pika', nickname: 'Spark Prime', player: false },
@@ -407,6 +417,7 @@ describe('save sheet use case', () => {
 
     const result = saveSheetUseCase({
       role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'pika',
       sheet: { revision: 0, slug: 'pika', nickname: 'Pika Prime', player: false },
@@ -448,18 +459,33 @@ describe('save sheet use case', () => {
     ])
   })
 
+  it('rejects live-play whole-sheet saves before persistence', () => {
+    const { deps, writes } = createDeps()
+
+    expect(() => saveSheetUseCase({
+      role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+      kind: 'pokemon',
+      slug: 'pika',
+      sheet: { slug: 'pika' },
+    }, deps)).toThrow('Whole-sheet saves are setup/edit-only; live play must use sheet command routes')
+    expect(deps.findSheetPath).not.toHaveBeenCalled()
+    expect(writes).toEqual([])
+  })
+
   it('rejects payload slug mismatches before persistence', () => {
     const { deps, writes } = createDeps()
 
     expect(() => saveSheetUseCase({
       role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'pika',
       sheet: { slug: 'raichu' },
     }, deps)).toThrow(SaveSheetUseCaseError)
 
     try {
-      saveSheetUseCase({ role: 'gm', kind: 'pokemon', slug: 'pika', sheet: { slug: 'raichu' } }, deps)
+      saveSheetUseCase({ role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT, kind: 'pokemon', slug: 'pika', sheet: { slug: 'raichu' } }, deps)
     } catch (err) {
       expect(err).toMatchObject({
         statusCode: 400,
@@ -476,13 +502,14 @@ describe('save sheet use case', () => {
 
     expect(() => saveSheetUseCase({
       role: 'gm',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'missing',
       sheet: { slug: 'missing' },
     }, deps)).toThrow('Sheet missing.json not found')
 
     try {
-      saveSheetUseCase({ role: 'gm', kind: 'pokemon', slug: 'missing', sheet: { slug: 'missing' } }, deps)
+      saveSheetUseCase({ role: 'gm', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT, kind: 'pokemon', slug: 'missing', sheet: { slug: 'missing' } }, deps)
     } catch (err) {
       expect(err).toMatchObject({ statusCode: 404 })
     }
@@ -495,13 +522,14 @@ describe('save sheet use case', () => {
 
     expect(() => saveSheetUseCase({
       role: 'player',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'locked',
       sheet: { slug: 'locked', player: false },
     }, deps)).toThrow('Sheet is not marked as player accessible or linked to the selected player profile')
 
     try {
-      saveSheetUseCase({ role: 'player', kind: 'pokemon', slug: 'locked', sheet: { slug: 'locked' } }, deps)
+      saveSheetUseCase({ role: 'player', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT, kind: 'pokemon', slug: 'locked', sheet: { slug: 'locked' } }, deps)
     } catch (err) {
       expect(err).toMatchObject({ statusCode: 403 })
     }

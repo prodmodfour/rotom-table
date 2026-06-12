@@ -18,6 +18,7 @@ import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { importMapsFromJson } from '~~/server/storage/importMapsFromJson'
+import { importSheetsFromJson } from '~~/server/storage/importSheetsFromJson'
 import type { TabletopMap } from '~/types/map'
 
 const tempRoots: string[] = []
@@ -195,6 +196,110 @@ describe('SQLite storage foundation', () => {
       updatedAt: 1_700_000_000_700,
     })
     expect(repository.list().map((map) => `${map.slug}:${map.revision}`)).toEqual(['legacy-map:0', 'nested-map:7'])
+  })
+
+  it('imports JSON sheet documents into SQLite idempotently with folders and revisions', async () => {
+    const database = openTempDatabase()
+    const root = makeTempRoot()
+    const pokemonRoot = join(root, 'data', 'sheets')
+    const trainerRoot = join(root, 'data', 'trainers')
+    mkdirSync(join(pokemonRoot, 'party'), { recursive: true })
+    mkdirSync(trainerRoot, { recursive: true })
+    writeFileSync(join(pokemonRoot, 'party', 'pikachu.json'), JSON.stringify({
+      slug: 'pikachu',
+      nickname: 'Pika',
+      revision: 6,
+      folder: 'derived-folder',
+    }), 'utf8')
+    writeFileSync(join(trainerRoot, 'brock.json'), JSON.stringify({
+      name: 'Brock',
+      revision: undefined,
+    }), 'utf8')
+
+    const repository = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const first = await importSheetsFromJson({
+      roots: { pokemon: pokemonRoot, trainer: trainerRoot },
+      repository,
+      updatedAtForFile: (path) => path.includes('pikachu') ? 1_700_000_000_600 : 1_700_000_000_100,
+    })
+    const second = await importSheetsFromJson({
+      roots: { pokemon: pokemonRoot, trainer: trainerRoot },
+      repository,
+      updatedAtForFile: (path) => path.includes('pikachu') ? 1_700_000_000_600 : 1_700_000_000_100,
+    })
+
+    expect(first.count).toBe(2)
+    expect(second.count).toBe(2)
+    expect(first.imported).toEqual([
+      {
+        kind: 'pokemon',
+        slug: 'pikachu',
+        folder: 'party',
+        revision: 6,
+        updatedAt: 1_700_000_000_600,
+        sourcePath: join(pokemonRoot, 'party', 'pikachu.json'),
+      },
+      {
+        kind: 'trainer',
+        slug: 'brock',
+        folder: '',
+        revision: 0,
+        updatedAt: 1_700_000_000_100,
+        sourcePath: join(trainerRoot, 'brock.json'),
+      },
+    ])
+    await expect(repository.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+      kind: 'pokemon',
+      slug: 'pikachu',
+      revision: 6,
+      sheet: { slug: 'pikachu', nickname: 'Pika', revision: 6, updatedAt: 1_700_000_000_600 },
+      updatedAt: 1_700_000_000_600,
+    })
+    await expect(repository.getByRef('trainer', 'brock')).resolves.toMatchObject({
+      kind: 'trainer',
+      slug: 'brock',
+      revision: 0,
+      sheet: { slug: 'brock', name: 'Brock', revision: 0, updatedAt: 1_700_000_000_100 },
+      updatedAt: 1_700_000_000_100,
+    })
+  })
+
+  it('applies live-play sheet updates only when the expected revision matches', async () => {
+    const database = openTempDatabase()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    await sheets.saveSetupSheet('pokemon', 'pikachu', {
+      slug: 'pikachu',
+      nickname: 'Pika',
+      combat: { currentHp: 20 },
+      revision: 3,
+      updatedAt: 1_700_000_000_300,
+    })
+
+    const stale = await sheets.applyLivePlayUpdate({
+      kind: 'pokemon',
+      slug: 'pikachu',
+      expectedRevision: 2,
+      nextSheet: { slug: 'pikachu', nickname: 'Stale', combat: { currentHp: 1 }, updatedAt: 1_700_000_000_400 },
+    })
+    expect(stale).toBe('stale')
+    await expect(sheets.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+      revision: 3,
+      sheet: { nickname: 'Pika', combat: { currentHp: 20 }, revision: 3 },
+    })
+
+    const applied = await sheets.applyLivePlayUpdate({
+      kind: 'pokemon',
+      slug: 'pikachu',
+      expectedRevision: 3,
+      nextSheet: { slug: 'pikachu', nickname: 'Pika', combat: { currentHp: 12 }, updatedAt: 1_700_000_000_500 },
+    })
+
+    expect(applied).toBe('applied')
+    await expect(sheets.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+      revision: 4,
+      updatedAt: 1_700_000_000_500,
+      sheet: { slug: 'pikachu', nickname: 'Pika', combat: { currentHp: 12 }, revision: 4 },
+    })
   })
 
   it('applies live-play map updates only when the expected revision matches', async () => {

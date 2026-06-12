@@ -1,3 +1,4 @@
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { parsePlayerProfileId, type PlayerProfileId } from '#shared/playerProfiles'
 import type { SheetKind } from '#shared/sheets'
 import type { ApiGetOptions, ApiRequestParams } from '~/utils/apiClient'
@@ -90,6 +91,7 @@ export const buildSheetSaveBody = (
     kind: options.kind,
     slug: options.slug,
     sheet: options.sheet,
+    interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
     ...(options.clientId ? { clientId: options.clientId } : {}),
     ...(profileId ? { profileId } : {}),
     ...(options.allowSlugSync === false ? { allowSlugSync: false } : {}),

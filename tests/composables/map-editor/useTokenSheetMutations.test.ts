@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { parsePlayerProfileId } from '#shared/playerProfiles'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -38,6 +39,7 @@ const makeMutations = (options: {
   profileId?: ReturnType<typeof parsePlayerProfileId> | null
   saveSheet?: (request: SavePlacedSheetRequest) => Promise<void>
   logError?: (label: string, error: unknown) => void
+  interactionMode?: typeof MAP_INTERACTION_MODES.SETUP_EDIT | typeof MAP_INTERACTION_MODES.LIVE_PLAY
 } = {}) => {
   const map = ref(mapFixture())
   const pokemonSheet = pokemon()
@@ -57,6 +59,7 @@ const makeMutations = (options: {
       sheetLookup: computed(() => ({ pokemon: pokemonSheets, trainer: trainerSheets })),
       canControlPlacement: () => options.canControl ?? true,
       playerProfileId: ref(options.profileId),
+      interactionMode: ref(options.interactionMode),
       getClientId: () => 'client-1',
       saveSheet,
       logError: options.logError,
@@ -85,6 +88,7 @@ describe('useTokenSheetMutations', () => {
       clientId: 'client-1',
       profileId: 'profile_ash00000',
       allowSlugSync: false,
+      interactionMode: 'setup-edit',
     })
     expect(saved[0].sheet).not.toHaveProperty('folder')
     expect(saved[0].sheet).toMatchObject({ slug: 'bolt' })
@@ -107,6 +111,7 @@ describe('useTokenSheetMutations', () => {
       kind: 'pokemon',
       slug: 'examples-abra',
       allowSlugSync: false,
+      interactionMode: 'setup-edit',
     })
     expect(saved[0].sheet).toMatchObject({ slug: 'examples-abra' })
   })
@@ -118,6 +123,21 @@ describe('useTokenSheetMutations', () => {
 
     expect(pokemonSheets.get('bolt')?.abilities?.[0]).toMatchObject({ name: 'Sand Veil', activated: true })
     expect(saved).toHaveLength(1)
+  })
+
+  it('does not locally commit live-play sheet mutations before server authority', async () => {
+    const { mutations, pokemonSheets, saved } = makeMutations({ interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY })
+
+    const ok = await mutations.updatePlacedSheet(
+      'token-1',
+      (kind, sheet) => applyConditionsToSheet(kind, sheet, ['Poisoned']),
+      'testUpdate',
+    )
+
+    expect(ok).toBe(false)
+    expect(pokemonSheets.get('bolt')?.combat?.conditions).toEqual([])
+    expect(saved).toHaveLength(0)
+    expect(mutations.lastError.value).toBe('Live-play sheet changes must use server-authoritative sheet command routes')
   })
 
   it('rolls back the optimistic update when persistence fails', async () => {

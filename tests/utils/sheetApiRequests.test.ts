@@ -48,6 +48,7 @@ describe('sheet API profile request helpers', () => {
       kind: 'pokemon',
       slug: 'pikachu',
       sheet: { slug: 'pikachu', nickname: 'Pikachu' },
+      interactionMode: 'setup-edit',
       clientId: 'client-1',
       profileId,
     })
@@ -63,6 +64,7 @@ describe('sheet API profile request helpers', () => {
       kind: 'pokemon',
       slug: 'examples-abra',
       sheet: { slug: 'examples-abra', nickname: 'Abra' },
+      interactionMode: 'setup-edit',
       allowSlugSync: false,
     })
   })

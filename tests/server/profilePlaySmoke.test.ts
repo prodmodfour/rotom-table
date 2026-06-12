@@ -20,6 +20,7 @@ import type { ApiClient } from '~/utils/apiClient'
 import { PLAYER_PROFILE_API_PATHS } from '~/utils/apiRoutes'
 import type { PlayerProfileSelectionStorage } from '~/utils/playerProfileSelectionStorage'
 import { usePlayerProfiles } from '~/composables/usePlayerProfiles'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import type { SheetKind } from '#shared/sheets'
 import type {
   PlayerProfile,
@@ -252,6 +253,7 @@ describe('profile-based play smoke flow', () => {
     const sheetWrites: Array<{ path: string; sheet: Record<string, unknown> }> = []
     const savedSheet = saveSheetUseCase({
       role: 'player',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       kind: 'pokemon',
       slug: 'pikachu',
       sheet: {

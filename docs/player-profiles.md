@@ -39,7 +39,7 @@ Profile links are character references, not sheet copies. A link points at an ex
 
 A selected player profile grants control only through its linked character refs:
 
-- **Sheets:** players can load and save linked Pokémon/trainer sheets through the normal sheet editor. They can edit the same UI-editable fields the sheet editor exposes while derived/system fields remain protected by the existing save pipeline.
+- **Sheets:** players can load and save linked Pokémon/trainer sheets through the normal sheet editor for setup/edit-style sheet maintenance outside live map commands. They can edit the same UI-editable fields the sheet editor exposes while derived/system fields remain protected by the existing save pipeline.
 - **Maps:** players can open player-visible maps and control placed tokens whose `sheetKind`/`sheetSlug` matches a linked character.
 - **Token actions:** linked tokens can move, turn, spend move usage, use supported table actions, and update token-scoped combat resources. Current document-backed action routes are transitional compatibility surfaces; the live-play direction is explicit server-authoritative commands, not player-owned whole-map autosave.
 

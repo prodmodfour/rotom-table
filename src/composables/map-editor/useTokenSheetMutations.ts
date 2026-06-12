@@ -1,5 +1,6 @@
 import { ref, type ComputedRef, type Ref } from 'vue'
 import { useApiClient } from '~/composables/useApiClient'
+import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId as defaultGetClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
@@ -35,6 +36,7 @@ export interface SavePlacedSheetRequest {
   clientId: string
   profileId?: PlayerProfileId
   allowSlugSync?: boolean
+  interactionMode?: MapInteractionMode
 }
 
 export type SavePlacedSheet = (request: SavePlacedSheetRequest) => Promise<void>
@@ -48,6 +50,7 @@ export interface UseTokenSheetMutationsOptions {
   sheetLookup: ComputedRef<SheetLookupMaps>
   canControlPlacement: (id: string) => boolean
   playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
+  interactionMode?: ReadonlyValueRef<MapInteractionMode | null | undefined>
   getClientId?: () => string
   saveSheet?: SavePlacedSheet
   logError?: (label: string, error: unknown) => void
@@ -62,6 +65,7 @@ export const useTokenSheetMutations = ({
   sheetLookup,
   canControlPlacement,
   playerProfileId,
+  interactionMode,
   getClientId = defaultGetClientId,
   saveSheet = savePlacedSheetWithFetch,
   logError = (label, error) => console.error(`[${label}] save failed`, error),
@@ -76,6 +80,7 @@ export const useTokenSheetMutations = ({
     const profileId = playerProfileId?.value ?? null
     return profileId ? { profileId } : {}
   }
+  const currentInteractionMode = (): MapInteractionMode => interactionMode?.value ?? MAP_INTERACTION_MODES.SETUP_EDIT
 
   const updatePlacedSheet = async (
     id: string,
@@ -83,6 +88,10 @@ export const useTokenSheetMutations = ({
     logLabel: string,
     options: SheetUpdateOptions = {},
   ): Promise<boolean> => {
+    if (currentInteractionMode() !== MAP_INTERACTION_MODES.SETUP_EDIT) {
+      lastError.value = 'Live-play sheet changes must use server-authoritative sheet command routes'
+      return false
+    }
     if (!map.value || (!options.allowAnyTarget && !canControlPlacement(id))) return false
     const placement = map.value.placements.find((item) => item.id === id)
     if (!placement) return false
@@ -105,6 +114,7 @@ export const useTokenSheetMutations = ({
         sheet: sheetPayload,
         clientId: getClientId(),
         allowSlugSync: false,
+        interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
         ...profileRequestFields(),
       })
       return true

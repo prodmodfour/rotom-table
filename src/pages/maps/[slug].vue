@@ -644,6 +644,7 @@ const {
   sheetLookup,
   canControlPlacement,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  interactionMode: mapInteractionMode,
 })
 
 const modifyHpFromScene: typeof modifyHp = async (payload, options) => {

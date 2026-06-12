@@ -58,7 +58,7 @@ Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_
 | `/api/sheets/move-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a Pokémon/trainer sheet folder. |
 | `/api/sheets/move` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a Pokémon or trainer sheet JSON file and publishes sheet events. |
 | `/api/sheets/rename` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Renames a Pokémon or trainer sheet and may move the JSON file when the slug changes. |
-| `/api/sheets/save` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Saves a Pokémon/trainer sheet. GM saves are unrestricted by profile; player saves require selected-profile sheet access. |
+| `/api/sheets/save` | Setup/edit sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Requires explicit `interactionMode: "setup-edit"`. Saves a Pokémon/trainer sheet for sheet editor/setup workflows. GM saves are unrestricted by profile; player saves outside live play still require selected-profile sheet access or public sheet access. Live map combat mutations must use command routes instead of direct whole-sheet saves. |
 
 ## Remaining limitations
 

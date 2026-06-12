@@ -16,7 +16,7 @@ import {
   type LivePlayCommandHash,
   type StorableLivePlayCommandResult,
 } from './opResult'
-import { livePlayOpStore, type LivePlayOpRecord, type LivePlayOpStore } from './opStore'
+import { livePlayOpStore, type LivePlayOpRecord, type LivePlayOpStore, type SaveLivePlayOpResultInput } from './opStore'
 import { livePlayMapWriteQueue, type MapWriteQueue } from './mapWriteQueue'
 
 export type MaybePromise<T> = T | Promise<T>
@@ -112,6 +112,15 @@ export interface LivePlayCommandPersistContext<
   readonly result: LivePlayCommandAccepted
 }
 
+export interface LivePlayCommandCommitContext<
+  TCommand extends LivePlayCommandEnvelope,
+  TActor,
+  TMap,
+> extends LivePlayCommandPersistContext<TCommand, TActor, TMap> {
+  readonly commandHash: LivePlayCommandHash
+  saveOpResult(): LivePlayOpRecord
+}
+
 export interface LivePlayCommandPublishContext<
   TCommand extends LivePlayCommandEnvelope,
   TActor,
@@ -145,6 +154,9 @@ export interface ExecuteAuthoritativeLivePlayCommandOptions<
   readonly persist: (
     context: LivePlayCommandPersistContext<TCommand, TActor, TMap>,
   ) => MaybePromise<void>
+  readonly commit?: (
+    context: LivePlayCommandCommitContext<TCommand, TActor, TMap>,
+  ) => MaybePromise<void>
   readonly publish?: (
     context: LivePlayCommandPublishContext<TCommand, TActor, TMap>,
   ) => MaybePromise<void>
@@ -168,6 +180,9 @@ interface ValidCommandExecutionContext<
 }
 
 type RawCommandRecord = Record<string, unknown>
+type CommandRecordingOpStore = LivePlayOpStore & {
+  saveCommandResult(input: SaveLivePlayOpResultInput & { readonly command: unknown }): LivePlayOpRecord
+}
 
 const isRecord = (value: unknown): value is RawCommandRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -306,6 +321,10 @@ const createStaleRevisionResult = (
   currentRevision,
 })
 
+const canRecordCommand = (store: LivePlayOpStore): store is CommandRecordingOpStore => (
+  typeof (store as { readonly saveCommandResult?: unknown }).saveCommandResult === 'function'
+)
+
 export class AuthoritativeLivePlayCommandExecutor {
   private readonly opStore: LivePlayOpStore
   private readonly queue: MapWriteQueue
@@ -397,20 +416,15 @@ export class AuthoritativeLivePlayCommandExecutor {
 
       const result = this.acceptedResult(command, map, application, options)
       try {
-        await options.persist({
+        await this.commitAcceptedResult({
           command,
+          commandHash,
+          options,
           actor,
           map,
           currentRevision,
           nextMap: application.nextMap,
           result,
-        })
-        this.opStore.saveOpResult({
-          mapSlug: command.mapSlug,
-          opId: command.opId,
-          commandHash,
-          result,
-          recordedAt: options.recordedAt,
         })
       } catch (error) {
         return persistenceFailedResult(command, error, currentRevision)
@@ -429,6 +443,50 @@ export class AuthoritativeLivePlayCommandExecutor {
     } catch (error) {
       const rejection = rejectionFromError(command, error, currentRevision)
       return this.saveResult(command, commandHash, rejection)
+    }
+  }
+
+  private async commitAcceptedResult<
+    TCommand extends LivePlayCommandEnvelope,
+    TMap,
+    TActorInput,
+    TActor,
+  >(context: ValidCommandExecutionContext<TCommand, TMap, TActorInput, TActor> & {
+    readonly actor: TActor
+    readonly map: TMap
+    readonly currentRevision: number
+    readonly nextMap: TMap
+    readonly result: LivePlayCommandAccepted
+  }): Promise<void> {
+    const { command, commandHash, options, actor, map, currentRevision, nextMap, result } = context
+    const persistContext: LivePlayCommandPersistContext<TCommand, TActor, TMap> = {
+      command,
+      actor,
+      map,
+      currentRevision,
+      nextMap,
+      result,
+    }
+
+    if (!options.commit) {
+      await options.persist(persistContext)
+      this.saveOpResult(command, commandHash, result, options.recordedAt)
+      return
+    }
+
+    let savedRecord: LivePlayOpRecord | null = null
+    await options.commit({
+      ...persistContext,
+      commandHash,
+      saveOpResult: () => {
+        if (savedRecord) return savedRecord
+        savedRecord = this.saveOpResult(command, commandHash, result, options.recordedAt)
+        return savedRecord
+      },
+    })
+
+    if (!savedRecord) {
+      throw new Error('accepted live-play command commit did not save its operation result')
     }
   }
 
@@ -464,18 +522,31 @@ export class AuthoritativeLivePlayCommandExecutor {
     })
   }
 
+  private saveOpResult(
+    command: LivePlayCommandEnvelope,
+    commandHash: LivePlayCommandHash,
+    result: StorableLivePlayCommandResult,
+    recordedAt?: string,
+  ): LivePlayOpRecord {
+    const input = {
+      mapSlug: command.mapSlug,
+      opId: command.opId,
+      commandHash,
+      result,
+      ...(recordedAt === undefined ? {} : { recordedAt }),
+    }
+    return canRecordCommand(this.opStore)
+      ? this.opStore.saveCommandResult({ ...input, command })
+      : this.opStore.saveOpResult(input)
+  }
+
   private saveResult(
     command: LivePlayCommandEnvelope,
     commandHash: LivePlayCommandHash,
     result: StorableLivePlayCommandResult,
   ): LivePlayCommandRejected | StorableLivePlayCommandResult {
     try {
-      this.opStore.saveOpResult({
-        mapSlug: command.mapSlug,
-        opId: command.opId,
-        commandHash,
-        result,
-      })
+      this.saveOpResult(command, commandHash, result)
       return result
     } catch (error) {
       return persistenceFailedResult(command, error, result.ok ? result.previousRevision : result.currentRevision ?? 0)

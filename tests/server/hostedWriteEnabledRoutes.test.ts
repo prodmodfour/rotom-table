@@ -75,6 +75,7 @@ describe('hosted-write enabled route behavior', () => {
         slug: 'pikachu',
         sheet: savedSheet,
         clientId: 'client-1',
+        interactionMode: 'setup-edit',
       },
     })).resolves.toEqual({
       ok: true,
@@ -91,6 +92,7 @@ describe('hosted-write enabled route behavior', () => {
       sheet: savedSheet,
       clientId: 'client-1',
       playerProfile: null,
+      interactionMode: 'setup-edit',
       allowSlugSync: undefined,
     })
     expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()

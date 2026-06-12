@@ -1,7 +1,9 @@
 import { defineEventHandler } from 'h3'
+import { parseMapInteractionMode } from '#shared/mapInteractionMode'
 import { requireAuthRole } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import {
+  badRequest,
   expectRecord,
   expectSheetKind,
   expectSlug,
@@ -19,6 +21,7 @@ interface SaveBody {
   clientId?: unknown
   profileId?: unknown
   allowSlugSync?: unknown
+  interactionMode?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -29,6 +32,8 @@ export default defineEventHandler(async (event) => {
   const kind = expectSheetKind(body.kind)
   const slug = expectSlug(body.slug)
   const sheet = expectRecord(body.sheet, 'sheet')
+  const interactionMode = parseMapInteractionMode(body.interactionMode)
+    ?? badRequest('interactionMode must be "setup-edit" or "live-play"')
 
   try {
     const playerProfile = role === 'player'
@@ -41,6 +46,7 @@ export default defineEventHandler(async (event) => {
       sheet,
       clientId: normalizeRealtimeClientId(body.clientId),
       playerProfile,
+      interactionMode,
       allowSlugSync: body.allowSlugSync === false ? false : undefined,
     })
     publishUseCaseRealtimeEvents(result.events)

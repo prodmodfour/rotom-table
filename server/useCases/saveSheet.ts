@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
+import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type { SheetKind } from '#shared/sheets'
@@ -39,6 +40,7 @@ export interface SaveSheetInput {
   sheet: Record<string, unknown>
   clientId?: string
   playerProfile?: PlayerProfile | null
+  interactionMode: MapInteractionMode
   /**
    * When false, persist the supplied sheet under the current resource slug even
    * if its display name would normally derive a different slug. Map token
@@ -121,6 +123,10 @@ export const saveSheetUseCase = (
   input: SaveSheetInput,
   dependencies: SaveSheetDependencies = {},
 ): SaveSheetResult => {
+  if (input.interactionMode !== MAP_INTERACTION_MODES.SETUP_EDIT) {
+    throw new SaveSheetUseCaseError(403, 'Whole-sheet saves are setup/edit-only; live play must use sheet command routes')
+  }
+
   const findSheetPath = dependencies.findSheetPath ?? findPersistedSheetFile
   const findSlugPath = dependencies.findSlugPath ?? findPersistedSheetFile
   const isPlayerAccessible = dependencies.isPlayerAccessible ?? sheetIsPlayerAccessible
