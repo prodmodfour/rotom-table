@@ -64,6 +64,8 @@ The map repository stores normalized map documents with explicit revision and `u
 
 The sheet repository stores Pokémon and trainer sheet documents with explicit revision and `updatedAt` columns. `server/storage/importSheetsFromJson.ts` can import existing `data/sheets/**/*.json` and `data/trainers/**/*.json` documents into SQLite idempotently, preserving sheet revisions, deriving folders for import reporting, and defaulting older documents to revision `0`. Live-play sheet-backed commands must update sheets through the repository's revision-checked update path inside the same transaction as any map update and accepted command result.
 
+Operators can migrate an existing private campaign with `npm run migrate:sqlite` after setting an explicit external `ROTOM_CAMPAIGN_ROOT`. The command creates a pre-migration backup, imports maps plus Pokémon/trainer sheets into SQLite, validates JSON-backed player profile files, validates that imported maps/sheets can be loaded from the database, leaves JSON source files in place, and reports imported/skipped/error counts so reruns are safe.
+
 JSON files remain useful for setup/edit storage, local data inspection, backups, exports, migration source/target artifacts, and temporary compatibility during the migration. Current JSON-backed setup and library routes continue to run until the relevant map and sheet repositories are fully migrated. `/api/sheets/save` is a setup/edit sheet editing endpoint and requires explicit setup/edit mode; live map combat sheet mutations must use command routes instead of direct whole-sheet saves. JSON file writes must not be treated as concurrent live gameplay authority.
 
 ## Realtime direction

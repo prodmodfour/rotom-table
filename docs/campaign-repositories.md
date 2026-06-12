@@ -88,7 +88,7 @@ temp/
 .DS_Store
 ```
 
-Commit and push JSON campaign material normally with Git when that fits your private workflow. Treat live SQLite database files as runtime state: prefer private backups or explicit export/migration artifacts over committing the database and WAL sidecars directly. Existing map JSON can be imported into the live-play database through the server-side `server/storage/importMapsFromJson.ts` helper; existing Pokémon/trainer sheet JSON can be imported through `server/storage/importSheetsFromJson.ts`. Both importers are repeatable, preserve revisions, report source folders, and leave the source JSON files in place. Rotom Table does not run Git operations itself; it only reads and writes files in the configured campaign root.
+Commit and push JSON campaign material normally with Git when that fits your private workflow. Treat live SQLite database files as runtime state: prefer private backups or explicit export/migration artifacts over committing the database and WAL sidecars directly. Existing map JSON, Pokémon sheet JSON, and trainer sheet JSON can be imported into the live-play database with `ROTOM_CAMPAIGN_ROOT=/path/to/campaign npm run migrate:sqlite -- --backup-root /path/to/private/backups`. The command creates a pre-migration backup, validates JSON-backed player profiles, preserves revisions, leaves source JSON files in place, reports imported and skipped rows, and is safe to rerun. Rotom Table does not run Git operations itself; it only reads and writes files in the configured campaign root.
 
 ## Notes
 

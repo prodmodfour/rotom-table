@@ -12,6 +12,7 @@
     "build": "nuxt build",
     "start": "node .output/server/index.mjs",
     "preview": "nuxt preview",
+    "migrate:sqlite": "node scripts/migrate-campaign-to-sqlite.mjs",
     "postinstall": "NODE_ENV=development nuxt prepare",
     "typecheck": "NODE_ENV=development nuxt typecheck",
     "test": "vitest run",

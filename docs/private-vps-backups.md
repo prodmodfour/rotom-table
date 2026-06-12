@@ -30,6 +30,8 @@ For the safest copy, pause table activity and stop the service while taking the 
 sudo systemctl stop rotom-table.service
 ```
 
+The SQLite migration command also creates a pre-migration backup when importing existing JSON into the database. Treat that migration backup as an extra safety checkpoint, not a replacement for the normal pre-session and post-session campaign archives in this runbook.
+
 If you cannot stop the service, ask everyone to pause changes, wait for autosaves and command-backed writes to finish, then archive immediately. Avoid copying while a large map, sheet, profile, Pokédex override, encounter-table write, or SQLite transaction is in progress. Stopping the service is preferred once the SQLite database contains live play state because it lets the main database and WAL sidecar files settle before the archive is created.
 
 ## Timestamped campaign archive

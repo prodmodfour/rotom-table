@@ -159,6 +159,22 @@ Do not store private maps, sheets, trainers, player profiles, campaign-specific 
 
 For step-by-step private archives before and after a session, plus a temporary restore smoke check, use the [Private VPS backup runbook](private-vps-backups.md).
 
+## Migrating JSON campaign data to SQLite
+
+Before relying on database-backed live play for an existing private campaign, stop the service or pause table activity, make sure the campaign root is external to the app checkout, then run the repeatable migration command from the app directory:
+
+```bash
+cd /srv/rotom-table/app
+ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign \
+  npm run migrate:sqlite -- --backup-root /srv/rotom-table/backups
+```
+
+If `ROTOM_DB_PATH` is unset, the command writes `/srv/rotom-table/campaign/rotom-table.sqlite`. Set `ROTOM_DB_PATH` only when the database should live at another private operator-controlled path. The migration refuses to run without an explicit existing `ROTOM_CAMPAIGN_ROOT`, refuses campaign/database/backup paths inside the app checkout, creates a pre-migration backup under the selected backup root, leaves the source JSON files in place, and imports map JSON, Pokémon sheet JSON, and trainer sheet JSON into SQLite. Current persistent player profiles remain JSON-backed; the command validates those profile files and includes them in the backup instead of deleting or moving them.
+
+The command logs the database path, backup path, maps imported, sheets imported, skipped unchanged rows, validated player profiles, SQLite load-validation counts, and errors. It is safe to rerun after JSON setup/edit changes: unchanged map and sheet rows are skipped, changed rows are updated, and a fresh pre-migration backup is created each run. Keep migration backups, SQLite files, WAL sidecars, real environment files, and campaign JSON out of Git.
+
+After migration, restart the service with the same `ROTOM_CAMPAIGN_ROOT` and `ROTOM_DB_PATH` values and run the [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md) before inviting players.
+
 ## Hosted write policy
 
 Private VPS filesystem writes must fail closed in production unless the operator explicitly opts in. The selected flag is `ROTOM_ENABLE_HOSTED_WRITES`, enforced by server-side write policy on map, sheet, encounter-table, persistent encounter-generation, player-profile, Pokédex maintenance, and campaign next-day routes that have been moved off the older production-only block.

@@ -1,0 +1,745 @@
+#!/usr/bin/env node
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
+import { homedir } from 'node:os'
+import {
+  basename,
+  dirname,
+  extname,
+  isAbsolute,
+  join,
+  parse as parsePath,
+  relative,
+  resolve,
+  sep,
+} from 'node:path'
+import process from 'node:process'
+import { DatabaseSync } from 'node:sqlite'
+import { fileURLToPath } from 'node:url'
+
+export const ROTOM_CAMPAIGN_ROOT_ENV = 'ROTOM_CAMPAIGN_ROOT'
+export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
+export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
+export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
+export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
+export const STORAGE_SCHEMA_VERSION = 2
+
+const scriptPath = fileURLToPath(import.meta.url)
+const appRoot = resolve(dirname(scriptPath), '..')
+const sqliteMemoryPath = ':memory:'
+const slugRe = /^[a-z0-9-]+$/
+const playerProfileIdRe = /^profile_[A-Za-z0-9_-]{8,64}$/
+const playerProfileDisplayNameMaxLength = 64
+const sheetKinds = ['pokemon', 'trainer']
+const knownCampaignDirectories = [
+  'data/maps',
+  'data/sheets',
+  'data/trainers',
+  'data/player-profiles',
+  'data/reference-overrides',
+  'encounter_tables',
+]
+
+const HELP_TEXT = `Rotom Table JSON-to-SQLite campaign migration
+
+Usage:
+  ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign npm run migrate:sqlite -- [options]
+  ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign node scripts/migrate-campaign-to-sqlite.mjs [options]
+
+Options:
+  --backup-root <path>  Directory for the pre-migration backup. Defaults to a sibling "${DEFAULT_MIGRATION_BACKUP_DIRNAME}" directory beside ROTOM_CAMPAIGN_ROOT.
+  --help, -h            Show this help.
+
+The command requires ROTOM_CAMPAIGN_ROOT to point at an existing private campaign directory outside the app checkout. JSON source files are left in place.
+`
+
+export class CampaignSqliteMigrationError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = 'CampaignSqliteMigrationError'
+  }
+}
+
+const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const messageFromError = (error) => error instanceof Error ? error.message : String(error)
+
+const pathIsInsideRoot = (root, target) => {
+  const resolvedRoot = resolve(root)
+  const resolvedTarget = resolve(target)
+  const rel = relative(resolvedRoot, resolvedTarget)
+  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))
+}
+
+const assertPathOutsideAppCheckout = (path, label) => {
+  if (pathIsInsideRoot(appRoot, path)) {
+    throw new CampaignSqliteMigrationError(
+      `${label} must not be inside the Rotom Table app checkout; choose a private campaign/backups path outside Git`,
+    )
+  }
+}
+
+const expandHome = (value) => {
+  if (value === '~' || value.startsWith('~/')) return `${homedir()}${value.slice(1)}`
+  return value
+}
+
+const resolveConfiguredPath = (rawValue, baseDir) => {
+  const expanded = expandHome(String(rawValue ?? '').trim())
+  if (!expanded) return ''
+  return isAbsolute(expanded) ? resolve(expanded) : resolve(baseDir, expanded)
+}
+
+const assertDirectoryExists = (path, label) => {
+  let stats
+  try {
+    stats = statSync(path)
+  } catch {
+    throw new CampaignSqliteMigrationError(`${label} does not exist: ${path}`)
+  }
+
+  if (!stats.isDirectory()) throw new CampaignSqliteMigrationError(`${label} must be a directory: ${path}`)
+}
+
+const assertNotDangerousRoot = (path, label) => {
+  const root = parsePath(path).root
+  if (path === root) throw new CampaignSqliteMigrationError(`${label} must not be the filesystem root`)
+  if (path === homedir()) throw new CampaignSqliteMigrationError(`${label} must not be the user's home directory`)
+}
+
+export const parseMigrationCliArgs = (args = []) => {
+  const options = {
+    backupRoot: null,
+    help: false,
+  }
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]
+    switch (arg) {
+      case '--backup-root': {
+        const value = args[index + 1]
+        if (value === undefined || value.startsWith('--')) {
+          throw new CampaignSqliteMigrationError('--backup-root requires a path')
+        }
+        options.backupRoot = value
+        index += 1
+        break
+      }
+      case '--help':
+      case '-h':
+        options.help = true
+        break
+      default:
+        throw new CampaignSqliteMigrationError(`Unknown option: ${arg}`)
+    }
+  }
+
+  return options
+}
+
+const resolveCampaignRoot = (env) => {
+  const rawRoot = env[ROTOM_CAMPAIGN_ROOT_ENV]
+  if (!rawRoot || !rawRoot.trim()) {
+    throw new CampaignSqliteMigrationError(
+      `${ROTOM_CAMPAIGN_ROOT_ENV} must be set to an existing private campaign directory before running the SQLite migration`,
+    )
+  }
+
+  const campaignRoot = resolveConfiguredPath(rawRoot, appRoot)
+  assertDirectoryExists(campaignRoot, ROTOM_CAMPAIGN_ROOT_ENV)
+  assertNotDangerousRoot(campaignRoot, ROTOM_CAMPAIGN_ROOT_ENV)
+  assertPathOutsideAppCheckout(campaignRoot, ROTOM_CAMPAIGN_ROOT_ENV)
+  if (pathIsInsideRoot(campaignRoot, appRoot)) {
+    throw new CampaignSqliteMigrationError(
+      `${ROTOM_CAMPAIGN_ROOT_ENV} must not contain the Rotom Table app checkout; point it at the private campaign directory itself`,
+    )
+  }
+  return campaignRoot
+}
+
+const resolveDatabasePath = (env, campaignRoot) => {
+  const rawPath = env[ROTOM_DB_PATH_ENV]
+  if (!rawPath || !rawPath.trim()) return resolve(campaignRoot, DEFAULT_ROTOM_DB_FILENAME)
+
+  const trimmed = rawPath.trim()
+  if (trimmed === sqliteMemoryPath) {
+    throw new CampaignSqliteMigrationError(`${ROTOM_DB_PATH_ENV}=${sqliteMemoryPath} is not valid for campaign migration`)
+  }
+
+  const databasePath = resolveConfiguredPath(trimmed, campaignRoot)
+  assertPathOutsideAppCheckout(databasePath, ROTOM_DB_PATH_ENV)
+  return databasePath
+}
+
+const resolveBackupRoot = (rawBackupRoot, campaignRoot) => {
+  const backupRoot = rawBackupRoot
+    ? resolveConfiguredPath(rawBackupRoot, appRoot)
+    : resolve(dirname(campaignRoot), DEFAULT_MIGRATION_BACKUP_DIRNAME)
+
+  assertNotDangerousRoot(backupRoot, 'backup root')
+  assertPathOutsideAppCheckout(backupRoot, 'backup root')
+  if (pathIsInsideRoot(campaignRoot, backupRoot)) {
+    throw new CampaignSqliteMigrationError('backup root must not be inside ROTOM_CAMPAIGN_ROOT; choose a sibling/private backup directory')
+  }
+  return backupRoot
+}
+
+const timestampForBackup = (date = new Date()) => date.toISOString().replace(/[-:]/g, '').replace('.', '')
+
+const uniqueBackupDirectory = (backupRoot, now = new Date()) => {
+  const stamp = timestampForBackup(now)
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const suffix = attempt === 0 ? '' : `-${attempt}`
+    const candidate = join(backupRoot, `${SQLITE_MIGRATION_BACKUP_PREFIX}${stamp}${suffix}`)
+    if (!existsSync(candidate)) return candidate
+  }
+  throw new CampaignSqliteMigrationError('Could not allocate a unique migration backup directory')
+}
+
+const relativePath = (fromRoot, target) => relative(fromRoot, target).split(sep).join('/')
+
+const copyIfExists = (sourcePath, targetPath, copied) => {
+  if (!existsSync(sourcePath)) return
+  mkdirSync(dirname(targetPath), { recursive: true, mode: 0o750 })
+  cpSync(sourcePath, targetPath, { recursive: true, errorOnExist: false, force: true, preserveTimestamps: true })
+  copied.push(targetPath)
+}
+
+const databaseSidecarPaths = (databasePath) => [databasePath, `${databasePath}-wal`, `${databasePath}-shm`]
+
+export const createMigrationBackup = ({ campaignRoot, backupRoot, databasePath, now = new Date() }) => {
+  mkdirSync(backupRoot, { recursive: true, mode: 0o750 })
+  const backupPath = uniqueBackupDirectory(backupRoot, now)
+  const campaignBackupRoot = join(backupPath, 'campaign')
+  const copied = []
+
+  for (const relativeSource of knownCampaignDirectories) {
+    const source = resolve(campaignRoot, relativeSource)
+    const target = resolve(campaignBackupRoot, relativeSource)
+    copyIfExists(source, target, copied)
+  }
+
+  for (const source of databaseSidecarPaths(databasePath)) {
+    if (pathIsInsideRoot(campaignRoot, source)) {
+      const target = resolve(campaignBackupRoot, relativePath(campaignRoot, source))
+      copyIfExists(source, target, copied)
+    } else {
+      const target = resolve(backupPath, 'database', basename(source))
+      copyIfExists(source, target, copied)
+    }
+  }
+
+  const manifest = {
+    schemaVersion: 1,
+    createdAt: new Date(now.getTime()).toISOString(),
+    campaignRoot,
+    databasePath,
+    copiedPaths: copied.map((path) => relativePath(backupPath, path)),
+    note: 'Pre-migration private backup. Keep outside Git and operator-controlled.',
+  }
+  mkdirSync(backupPath, { recursive: true, mode: 0o750 })
+  writeFileSync(join(backupPath, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o600 })
+
+  return {
+    path: backupPath,
+    copiedCount: copied.length,
+  }
+}
+
+const isJsonFile = (entry) => entry.isFile() && entry.name.endsWith('.json') && !entry.name.startsWith('.')
+
+const walkJsonFiles = (root) => {
+  if (!existsSync(root)) return []
+
+  const files = []
+  const walk = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name)
+      if (entry.isDirectory()) {
+        if (!entry.name.startsWith('.')) walk(path)
+        continue
+      }
+      if (isJsonFile(entry)) files.push(path)
+    }
+  }
+
+  walk(root)
+  return files.sort((left, right) => left.localeCompare(right))
+}
+
+const parseJsonFile = (path, label) => {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'))
+  } catch (error) {
+    throw new Error(`${label} is not valid JSON: ${messageFromError(error)}`)
+  }
+}
+
+const validateSlug = (value, label) => {
+  const slug = String(value ?? '')
+  if (!slugRe.test(slug)) throw new Error(`${label} must match /^[a-z0-9-]+$/`)
+  return slug
+}
+
+const normalizeRevision = (value) => Number.isSafeInteger(value) && value >= 0 ? value : 0
+
+const timestampFromFile = (path) => Math.max(0, Math.round(statSync(path).mtimeMs))
+
+const normalizeTimestamp = (value, fallback) => Number.isSafeInteger(value) && value >= 0 ? value : fallback
+
+const folderFromRoot = (root, filePath) => {
+  const directory = dirname(relative(root, filePath)).split(sep).join('/')
+  return directory === '.' ? '' : directory
+}
+
+const assertObjectDocument = (value, label) => {
+  if (!isRecord(value)) throw new Error(`${label} must contain a JSON object`)
+  return value
+}
+
+const assertMapDimensions = (dimensions, label) => {
+  if (!isRecord(dimensions)) throw new Error(`${label} dimensions must be an object`)
+  for (const axis of ['x', 'y', 'z']) {
+    const value = dimensions[axis]
+    if (!Number.isInteger(value) || value < 1 || value > 200) {
+      throw new Error(`${label} dimensions.${axis} must be an integer 1..200`)
+    }
+  }
+}
+
+const assertMapVoxels = (voxels, label) => {
+  if (!Array.isArray(voxels)) throw new Error(`${label} voxels must be an array`)
+  for (const [index, voxel] of voxels.entries()) {
+    if (!isRecord(voxel)) throw new Error(`${label} voxels[${index}] must be an object`)
+    for (const axis of ['x', 'y', 'z']) {
+      if (!Number.isInteger(voxel[axis])) throw new Error(`${label} voxels[${index}].${axis} must be an integer`)
+    }
+    if (typeof voxel.materialId !== 'string' || !voxel.materialId.trim()) {
+      throw new Error(`${label} voxels[${index}].materialId must be a non-empty string`)
+    }
+  }
+}
+
+const assertLoadableMapDocument = (map, label) => {
+  if (!isRecord(map)) throw new Error(`${label} document must be an object`)
+  if (map.schemaVersion !== 2) throw new Error(`${label} schemaVersion must be 2`)
+  validateSlug(map.slug, `${label} slug`)
+  if (typeof map.name !== 'string' || !map.name.trim()) throw new Error(`${label} name must be a non-empty string`)
+  assertMapDimensions(map.dimensions, label)
+  assertMapVoxels(map.voxels, label)
+}
+
+const normalizeMapFile = (mapsRoot, sourcePath) => {
+  const map = assertObjectDocument(parseJsonFile(sourcePath, `Map ${sourcePath}`), `Map ${sourcePath}`)
+  assertLoadableMapDocument(map, `Map ${sourcePath}`)
+  const slug = validateSlug(map.slug, `Map ${sourcePath} slug`)
+
+  const revision = normalizeRevision(map.revision)
+  const updatedAt = normalizeTimestamp(map.updatedAt, timestampFromFile(sourcePath))
+  return {
+    slug,
+    document: {
+      ...map,
+      revision,
+      slug,
+      folder: folderFromRoot(mapsRoot, sourcePath),
+      updatedAt,
+    },
+    revision,
+    updatedAt,
+    sourcePath,
+  }
+}
+
+const slugFromFilePath = (path) => validateSlug(basename(path, extname(path)), `sheet file ${path} slug`)
+
+const normalizeSheetFile = (kind, root, sourcePath) => {
+  const sheet = assertObjectDocument(parseJsonFile(sourcePath, `${kind} sheet ${sourcePath}`), `${kind} sheet ${sourcePath}`)
+  const slug = validateSlug(typeof sheet.slug === 'string' && sheet.slug.trim() ? sheet.slug : slugFromFilePath(sourcePath), `${kind} sheet ${sourcePath} slug`)
+  const revision = normalizeRevision(sheet.revision)
+  const updatedAt = normalizeTimestamp(sheet.updatedAt, timestampFromFile(sourcePath))
+
+  return {
+    kind,
+    slug,
+    folder: folderFromRoot(root, sourcePath),
+    document: {
+      ...sheet,
+      slug,
+      revision,
+      updatedAt,
+    },
+    revision,
+    updatedAt,
+    sourcePath,
+  }
+}
+
+const validatePlayerProfileFile = (profilesRoot, sourcePath) => {
+  const profile = assertObjectDocument(parseJsonFile(sourcePath, `Player profile ${sourcePath}`), `Player profile ${sourcePath}`)
+  const expectedId = basename(sourcePath, extname(sourcePath))
+  if (!playerProfileIdRe.test(String(profile.id ?? ''))) throw new Error(`Player profile ${sourcePath} id must match /^profile_[A-Za-z0-9_-]{8,64}$/`)
+  if (profile.id !== expectedId) throw new Error(`Player profile ${sourcePath} id must match the file name`)
+  if (profile.schemaVersion !== 1) throw new Error(`Player profile ${sourcePath} schemaVersion must be 1`)
+  if (typeof profile.displayName !== 'string' || profile.displayName.length < 1 || Array.from(profile.displayName).length > playerProfileDisplayNameMaxLength) {
+    throw new Error(`Player profile ${sourcePath} displayName must be 1-${playerProfileDisplayNameMaxLength} characters`)
+  }
+  if (!Array.isArray(profile.linkedCharacters)) throw new Error(`Player profile ${sourcePath} linkedCharacters must be an array`)
+  for (const [index, ref] of profile.linkedCharacters.entries()) {
+    if (!isRecord(ref)) throw new Error(`Player profile ${sourcePath} linkedCharacters[${index}] must be an object`)
+    if (!sheetKinds.includes(ref.sheetKind)) throw new Error(`Player profile ${sourcePath} linkedCharacters[${index}].sheetKind must be pokemon or trainer`)
+    validateSlug(ref.sheetSlug, `Player profile ${sourcePath} linkedCharacters[${index}].sheetSlug`)
+  }
+  return {
+    id: profile.id,
+    sourcePath,
+    folder: folderFromRoot(profilesRoot, sourcePath),
+  }
+}
+
+const collectWithErrors = (files, normalize) => {
+  const records = []
+  const errors = []
+  for (const file of files) {
+    try {
+      records.push(normalize(file))
+    } catch (error) {
+      errors.push(`${file}: ${messageFromError(error)}`)
+    }
+  }
+  return { records, errors }
+}
+
+export const createMigrationPlan = (campaignRoot) => {
+  const mapsRoot = resolve(campaignRoot, 'data/maps')
+  const pokemonSheetsRoot = resolve(campaignRoot, 'data/sheets')
+  const trainerSheetsRoot = resolve(campaignRoot, 'data/trainers')
+  const profilesRoot = resolve(campaignRoot, 'data/player-profiles')
+
+  const mapPlan = collectWithErrors(walkJsonFiles(mapsRoot), (path) => normalizeMapFile(mapsRoot, path))
+  const sheetPlan = { records: [], errors: [] }
+  for (const [kind, root] of [['pokemon', pokemonSheetsRoot], ['trainer', trainerSheetsRoot]]) {
+    const plan = collectWithErrors(walkJsonFiles(root), (path) => normalizeSheetFile(kind, root, path))
+    sheetPlan.records.push(...plan.records)
+    sheetPlan.errors.push(...plan.errors)
+  }
+  const profilePlan = collectWithErrors(walkJsonFiles(profilesRoot), (path) => validatePlayerProfileFile(profilesRoot, path))
+
+  return {
+    roots: {
+      maps: mapsRoot,
+      pokemonSheets: pokemonSheetsRoot,
+      trainerSheets: trainerSheetsRoot,
+      playerProfiles: profilesRoot,
+    },
+    maps: mapPlan.records,
+    sheets: sheetPlan.records,
+    playerProfiles: profilePlan.records,
+    errors: [...mapPlan.errors, ...sheetPlan.errors, ...profilePlan.errors],
+  }
+}
+
+const readUserVersion = (connection) => {
+  const row = connection.prepare('PRAGMA user_version').get()
+  const version = row?.user_version
+  if (!Number.isSafeInteger(version) || version < 0) throw new Error('SQLite user_version must be a safe non-negative integer')
+  return version
+}
+
+const setUserVersion = (connection, version) => {
+  connection.exec(`PRAGMA user_version = ${version}`)
+}
+
+const applyStorageMigrations = (connection) => {
+  const fromVersion = readUserVersion(connection)
+  if (fromVersion > STORAGE_SCHEMA_VERSION) {
+    throw new Error(`SQLite schema version ${fromVersion} is newer than this migration supports (${STORAGE_SCHEMA_VERSION})`)
+  }
+
+  connection.exec('BEGIN IMMEDIATE')
+  try {
+    if (fromVersion < 1) {
+      connection.exec(`
+        CREATE TABLE IF NOT EXISTS maps (
+          slug TEXT PRIMARY KEY,
+          document_json TEXT NOT NULL,
+          revision INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS sheets (
+          kind TEXT NOT NULL,
+          slug TEXT NOT NULL,
+          document_json TEXT NOT NULL,
+          revision INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          PRIMARY KEY (kind, slug)
+        );
+
+        CREATE TABLE IF NOT EXISTS live_play_ops (
+          op_id TEXT PRIMARY KEY,
+          map_slug TEXT NOT NULL,
+          command_hash TEXT NOT NULL,
+          command_json TEXT NOT NULL,
+          result_json TEXT NOT NULL,
+          result_revision INTEGER,
+          created_at INTEGER NOT NULL
+        );
+      `)
+      setUserVersion(connection, 1)
+    }
+    if (fromVersion < 2) {
+      connection.exec(`
+        CREATE INDEX IF NOT EXISTS live_play_ops_map_revision_idx
+          ON live_play_ops (map_slug, result_revision);
+      `)
+      setUserVersion(connection, 2)
+    }
+    connection.exec('COMMIT')
+  } catch (error) {
+    connection.exec('ROLLBACK')
+    throw error
+  }
+}
+
+const openMigrationDatabase = (databasePath) => {
+  mkdirSync(dirname(databasePath), { recursive: true, mode: 0o750 })
+  const connection = new DatabaseSync(databasePath)
+  connection.exec('PRAGMA foreign_keys = ON')
+  connection.exec('PRAGMA busy_timeout = 5000')
+  connection.exec('PRAGMA journal_mode = WAL')
+  applyStorageMigrations(connection)
+  return connection
+}
+
+const stringifyDocument = (document) => {
+  const json = JSON.stringify(document)
+  if (json === undefined) throw new Error('document must be JSON-serializable')
+  return json
+}
+
+const storedDocumentUnchanged = (row, documentJson, revision, updatedAt) => (
+  row
+  && row.document_json === documentJson
+  && Number(row.revision) === revision
+  && Number(row.updated_at) === updatedAt
+)
+
+const upsertMapRecord = (connection, record) => {
+  const documentJson = stringifyDocument(record.document)
+  const existing = connection.prepare(`
+    SELECT document_json, revision, updated_at
+    FROM maps
+    WHERE slug = ?
+  `).get(record.slug)
+  if (storedDocumentUnchanged(existing, documentJson, record.revision, record.updatedAt)) return false
+
+  connection.prepare(`
+    INSERT INTO maps (slug, document_json, revision, updated_at)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(slug) DO UPDATE SET
+      document_json = excluded.document_json,
+      revision = excluded.revision,
+      updated_at = excluded.updated_at
+  `).run(record.slug, documentJson, record.revision, record.updatedAt)
+  return true
+}
+
+const upsertSheetRecord = (connection, record) => {
+  const documentJson = stringifyDocument(record.document)
+  const existing = connection.prepare(`
+    SELECT document_json, revision, updated_at
+    FROM sheets
+    WHERE kind = ? AND slug = ?
+  `).get(record.kind, record.slug)
+  if (storedDocumentUnchanged(existing, documentJson, record.revision, record.updatedAt)) return false
+
+  connection.prepare(`
+    INSERT INTO sheets (kind, slug, document_json, revision, updated_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(kind, slug) DO UPDATE SET
+      document_json = excluded.document_json,
+      revision = excluded.revision,
+      updated_at = excluded.updated_at
+  `).run(record.kind, record.slug, documentJson, record.revision, record.updatedAt)
+  return true
+}
+
+const applyImportPlan = (connection, plan) => {
+  const counts = {
+    mapsImported: 0,
+    sheetsImported: 0,
+    skippedUnchanged: 0,
+  }
+
+  connection.exec('BEGIN IMMEDIATE')
+  try {
+    for (const map of plan.maps) {
+      if (upsertMapRecord(connection, map)) counts.mapsImported += 1
+      else counts.skippedUnchanged += 1
+    }
+    for (const sheet of plan.sheets) {
+      if (upsertSheetRecord(connection, sheet)) counts.sheetsImported += 1
+      else counts.skippedUnchanged += 1
+    }
+    connection.exec('COMMIT')
+  } catch (error) {
+    connection.exec('ROLLBACK')
+    throw error
+  }
+
+  return counts
+}
+
+const parseStoredJson = (json, label) => {
+  try {
+    return JSON.parse(json)
+  } catch (error) {
+    throw new Error(`${label} document_json could not be parsed: ${messageFromError(error)}`)
+  }
+}
+
+const validateMapRow = (row, record) => {
+  if (!row) throw new Error(`Imported map ${record.slug} is missing from SQLite`)
+  if (Number(row.revision) !== record.revision) throw new Error(`Imported map ${record.slug} revision mismatch`)
+  const document = parseStoredJson(row.document_json, `map ${record.slug}`)
+  assertLoadableMapDocument(document, `Imported map ${record.slug}`)
+  if (document.slug !== record.slug) throw new Error(`Imported map ${record.slug} document slug mismatch`)
+}
+
+const validateSheetRow = (row, record) => {
+  if (!row) throw new Error(`Imported ${record.kind} sheet ${record.slug} is missing from SQLite`)
+  if (Number(row.revision) !== record.revision) throw new Error(`Imported ${record.kind} sheet ${record.slug} revision mismatch`)
+  const document = parseStoredJson(row.document_json, `${record.kind} sheet ${record.slug}`)
+  if (!isRecord(document)) throw new Error(`Imported ${record.kind} sheet ${record.slug} document must be an object`)
+  if (document.slug !== record.slug) throw new Error(`Imported ${record.kind} sheet ${record.slug} document slug mismatch`)
+}
+
+const validateMigratedDatabase = (connection, plan) => {
+  let mapsLoaded = 0
+  let sheetsLoaded = 0
+
+  for (const map of plan.maps) {
+    const row = connection.prepare(`
+      SELECT document_json, revision, updated_at
+      FROM maps
+      WHERE slug = ?
+    `).get(map.slug)
+    validateMapRow(row, map)
+    mapsLoaded += 1
+  }
+
+  for (const sheet of plan.sheets) {
+    const row = connection.prepare(`
+      SELECT document_json, revision, updated_at
+      FROM sheets
+      WHERE kind = ? AND slug = ?
+    `).get(sheet.kind, sheet.slug)
+    validateSheetRow(row, sheet)
+    sheetsLoaded += 1
+  }
+
+  return {
+    mapsLoaded,
+    sheetsLoaded,
+  }
+}
+
+export const runCampaignSqliteMigration = ({ argv = [], env = process.env, now = new Date() } = {}) => {
+  const options = parseMigrationCliArgs(argv)
+  if (options.help) {
+    return {
+      help: true,
+      text: HELP_TEXT,
+      exitCode: 0,
+    }
+  }
+
+  const campaignRoot = resolveCampaignRoot(env)
+  const databasePath = resolveDatabasePath(env, campaignRoot)
+  const backupRoot = resolveBackupRoot(options.backupRoot, campaignRoot)
+  const backup = createMigrationBackup({ campaignRoot, backupRoot, databasePath, now })
+  const plan = createMigrationPlan(campaignRoot)
+  const errors = [...plan.errors]
+  let counts = {
+    mapsImported: 0,
+    sheetsImported: 0,
+    skippedUnchanged: 0,
+  }
+  let validation = {
+    mapsLoaded: 0,
+    sheetsLoaded: 0,
+  }
+
+  if (errors.length === 0) {
+    let connection
+    try {
+      connection = openMigrationDatabase(databasePath)
+      counts = applyImportPlan(connection, plan)
+      validation = validateMigratedDatabase(connection, plan)
+    } catch (error) {
+      errors.push(messageFromError(error))
+    } finally {
+      connection?.close()
+    }
+  }
+
+  return {
+    help: false,
+    exitCode: errors.length === 0 ? 0 : 1,
+    campaignRoot,
+    databasePath,
+    backup,
+    plan,
+    counts,
+    validation,
+    errors,
+  }
+}
+
+export const formatMigrationResult = (result) => {
+  if (result.help) return result.text
+
+  const lines = [
+    'Rotom Table SQLite campaign migration',
+    `Campaign root: ${result.campaignRoot}`,
+    `Database path: ${result.databasePath}`,
+    `Backup created: ${result.backup.path}`,
+    `Backup entries copied: ${result.backup.copiedCount}`,
+    `Maps imported: ${result.counts.mapsImported}`,
+    `Sheets imported: ${result.counts.sheetsImported}`,
+    `Skipped unchanged: ${result.counts.skippedUnchanged}`,
+    `Player profiles validated: ${result.plan.playerProfiles.length} (current profile storage remains JSON-backed)`,
+    `Validation: loaded ${result.validation.mapsLoaded} maps and ${result.validation.sheetsLoaded} sheets from SQLite`,
+    `Errors: ${result.errors.length}`,
+  ]
+
+  for (const error of result.errors) lines.push(`- ${error}`)
+  return `${lines.join('\n')}\n`
+}
+
+export const runMigrationCli = (argv = process.argv.slice(2), env = process.env) => {
+  let result
+  try {
+    result = runCampaignSqliteMigration({ argv, env })
+  } catch (error) {
+    process.stderr.write(`${messageFromError(error)}\n\n${HELP_TEXT}`)
+    return error instanceof CampaignSqliteMigrationError ? 2 : 1
+  }
+
+  const output = formatMigrationResult(result)
+  if (result.exitCode === 0 || result.help) process.stdout.write(output)
+  else process.stderr.write(output)
+  return result.exitCode
+}
+
+if (scriptPath === resolve(process.argv[1] ?? '')) {
+  process.exitCode = runMigrationCli()
+}
