@@ -116,6 +116,7 @@ const applyDocumentSheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: s
 const documentTokenActions = useDocumentMapTokenActions({
   slug,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  map,
   mapRevision,
   livePlayCommandBlocked: livePlayCommandsBlocked,
   livePlayCommandBlockedMessage: livePlayRealtimeNotice,
@@ -634,9 +635,9 @@ const nextInitiativeAndExpireAoo = () => {
 
 const {
   lastError: tokenSheetMutationError,
-  modifyHp,
-  modifyCombatStages,
-  modifyConditions,
+  modifyHp: modifyHpViaSetupSheetSave,
+  modifyCombatStages: modifyCombatStagesViaSetupSheetSave,
+  modifyConditions: modifyConditionsViaSetupSheetSave,
   modifyAbilityActivation,
   updatePlacedSheet,
 } = useTokenSheetMutations({
@@ -647,16 +648,39 @@ const {
   interactionMode: mapInteractionMode,
 })
 
-const modifyHpFromScene: typeof modifyHp = async (payload, options) => {
-  await modifyHp(payload, options)
+const modifyHpFromScene: typeof modifyHpViaSetupSheetSave = async (payload, options) => {
+  if (mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT) {
+    await modifyHpViaSetupSheetSave(payload, options)
+    return
+  }
+  await documentTokenActions.modifyHp({
+    placementId: payload.id,
+    currentHp: payload.currentHp,
+    ...(payload.injuries === undefined ? {} : { injuries: payload.injuries }),
+  })
 }
 
-const modifyCombatStagesFromScene: typeof modifyCombatStages = async (payload, options) => {
-  await modifyCombatStages(payload, options)
+const modifyCombatStagesFromScene: typeof modifyCombatStagesViaSetupSheetSave = async (payload, options) => {
+  if (mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT) {
+    await modifyCombatStagesViaSetupSheetSave(payload, options)
+    return
+  }
+  await documentTokenActions.modifyCombatStages({
+    placementId: payload.id,
+    stages: payload.stages,
+  })
 }
 
-const modifyConditionsFromScene: typeof modifyConditions = async (payload, options) => {
-  await modifyConditions(payload, options)
+const modifyConditionsFromScene: typeof modifyConditionsViaSetupSheetSave = async (payload, options) => {
+  if (mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT) {
+    await modifyConditionsViaSetupSheetSave(payload, options)
+    return
+  }
+  await documentTokenActions.modifyConditions({
+    placementId: payload.id,
+    action: 'replace',
+    conditions: payload.conditions,
+  })
 }
 
 interface RecordMoveUsageResponse {

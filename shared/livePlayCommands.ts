@@ -170,6 +170,32 @@ export interface TurnTokenPayload {
   readonly facing: TokenFacingDirection
 }
 
+export interface ModifyHpPayload {
+  readonly placementId: string
+  readonly currentHp: number
+  readonly injuries?: number
+}
+
+export interface ModifyCombatStagesPayload {
+  readonly placementId: string
+  readonly stages: {
+    readonly atk: number
+    readonly def: number
+    readonly satk: number
+    readonly sdef: number
+    readonly spd: number
+    readonly acc: number
+  }
+}
+
+export type ModifyConditionsAction = 'add' | 'remove' | 'replace'
+
+export interface ModifyConditionsPayload {
+  readonly placementId: string
+  readonly action: ModifyConditionsAction
+  readonly conditions: readonly string[]
+}
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -181,6 +207,29 @@ export type TurnTokenLivePlayCommand = LivePlayCommandEnvelope<
   TurnTokenPayload,
   LivePlayTokenScope
 >
+
+export type ModifyHpLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+  ModifyHpPayload,
+  LivePlayScope
+>
+
+export type ModifyCombatStagesLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES,
+  ModifyCombatStagesPayload,
+  LivePlayScope
+>
+
+export type ModifyConditionsLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+  ModifyConditionsPayload,
+  LivePlayScope
+>
+
+export type LivePlaySheetCommand =
+  | ModifyHpLivePlayCommand
+  | ModifyCombatStagesLivePlayCommand
+  | ModifyConditionsLivePlayCommand
 
 export interface LivePlayPatch<
   TType extends string = LivePlayPatchType,

@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDocumentMapTokenActions } from '~/composables/map-editor/useDocumentMapTokenActions'
-import { MAP_API_PATHS } from '~/utils/apiRoutes'
+import { MAP_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -142,6 +142,66 @@ describe('useDocumentMapTokenActions', () => {
       profileId: 'profile_ash00000',
     }))
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
+  })
+
+  it('posts live-play HP sheet commands to map token command routes and applies returned sheet updates', async () => {
+    const map = mapFixture()
+    const mapRevision = ref(4)
+    const applyPersistedMap = vi.fn()
+    const applySheetUpdate = vi.fn()
+    const sheetUpdate = {
+      kind: 'pokemon' as const,
+      slug: 'pikachu',
+      sheet: { slug: 'pikachu', combat: { currentHp: 8, injuries: 1 }, revision: 3 },
+    }
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_serverhp001',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+      placement: map.placements[0],
+      sheetUpdates: [sheetUpdate],
+    })
+
+    const actions = useDocumentMapTokenActions({
+      slug: 'arena-map',
+      map: ref(map),
+      mapRevision,
+      applyPersistedMap,
+      applySheetUpdate,
+    })
+    const result = await actions.modifyHp({
+      placementId: 'token-pikachu',
+      currentHp: 8,
+      injuries: 1,
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson).not.toHaveBeenCalledWith(SHEET_API_PATHS.save, expect.anything())
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.modifyHp, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+      scopes: [
+        { kind: 'token', placementId: 'token-pikachu', field: 'hp' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'hp' },
+      ],
+      payload: {
+        placementId: 'token-pikachu',
+        currentHp: 8,
+        injuries: 1,
+      },
+      clientId: 'ssr',
+    }))
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
+    expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
   })
 
   it('blocks live-play token commands while realtime reconciliation is pending', async () => {

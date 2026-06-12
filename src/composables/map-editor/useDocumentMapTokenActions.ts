@@ -5,7 +5,12 @@ import {
   createLivePlayOpId,
   type LivePlayCommandDuplicate,
   type LivePlayCommandResult,
+  type LivePlayScope,
+  type LivePlaySheetScope,
   type LivePlayTokenScope,
+  type ModifyCombatStagesPayload,
+  type ModifyConditionsPayload,
+  type ModifyHpPayload,
   type MoveTokenPayload,
   type TurnTokenPayload,
 } from '#shared/livePlayCommands'
@@ -28,7 +33,7 @@ export type DocumentMapTokenActionStatus = 'idle' | 'saving' | 'error'
 export interface DocumentMapTokenActionSheetUpdate {
   kind: 'pokemon' | 'trainer'
   slug: string
-  path: string
+  path?: string
   sheet: Record<string, unknown>
 }
 
@@ -51,6 +56,7 @@ export type LivePlayMapTokenActionResponse = LivePlayCommandResult & {
   path?: string
   map?: TabletopMap
   placement?: SheetPlacement
+  sheetUpdates?: DocumentMapTokenActionSheetUpdate[]
 }
 
 export interface DocumentMapTokenActionDispatchResult {
@@ -62,6 +68,7 @@ export interface DocumentMapTokenActionDispatchResult {
 export interface UseDocumentMapTokenActionsOptions {
   slug: string
   playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
+  map?: ReadonlyValueRef<TabletopMap | null | undefined>
   mapRevision?: ReadonlyValueRef<number | null | undefined>
   livePlayCommandBlocked?: ReadonlyValueRef<boolean>
   livePlayCommandBlockedMessage?: ReadonlyValueRef<string | null | undefined>
@@ -86,6 +93,20 @@ export interface UseDocumentMapTokenActionsReturn {
     placementId: string
     facing: TokenFacingDirection
   }) => Promise<DocumentMapTokenActionDispatchResult>
+  modifyHp: (payload: {
+    placementId: string
+    currentHp: number
+    injuries?: number
+  }) => Promise<DocumentMapTokenActionDispatchResult>
+  modifyCombatStages: (payload: {
+    placementId: string
+    stages: ModifyCombatStagesPayload['stages']
+  }) => Promise<DocumentMapTokenActionDispatchResult>
+  modifyConditions: (payload: {
+    placementId: string
+    action?: ModifyConditionsPayload['action']
+    conditions: readonly string[]
+  }) => Promise<DocumentMapTokenActionDispatchResult>
   useManeuver: (payload: {
     placementId: string
     maneuverName: string
@@ -103,9 +124,19 @@ export interface UseDocumentMapTokenActionsReturn {
   }) => Promise<DocumentMapTokenActionDispatchResult>
 }
 
-type TokenCommandType = typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+type LivePlayDocumentCommandType =
+  | typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
+  | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
+  | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS
 
-type TokenCommandPayload = MoveTokenPayload | TurnTokenPayload
+type LivePlayDocumentCommandPayload =
+  | MoveTokenPayload
+  | TurnTokenPayload
+  | ModifyHpPayload
+  | ModifyCombatStagesPayload
+  | ModifyConditionsPayload
 
 const isDuplicateResult = (response: LivePlayMapTokenActionResponse): response is LivePlayCommandDuplicate & LivePlayMapTokenActionResponse => (
   response.ok === true && 'duplicate' in response && response.duplicate === true
@@ -146,27 +177,64 @@ export const useDocumentMapTokenActions = (
     ...body,
   })
 
-  const tokenScope = (payload: TokenCommandPayload, field: LivePlayTokenScope['field']): LivePlayTokenScope => ({
+  const tokenScope = (payload: LivePlayDocumentCommandPayload, field: LivePlayTokenScope['field']): LivePlayTokenScope => ({
     kind: 'token',
     placementId: payload.placementId,
     field,
   })
 
+  const placementForPayload = (payload: LivePlayDocumentCommandPayload): SheetPlacement | null => (
+    options.map?.value?.placements.find((placement) => placement.id === payload.placementId) ?? null
+  )
+
+  const sheetScope = (
+    payload: LivePlayDocumentCommandPayload,
+    field: string,
+  ): LivePlaySheetScope | null => {
+    const placement = placementForPayload(payload)
+    if (!placement) return null
+    return {
+      kind: 'sheet',
+      sheetKind: placement.sheetKind,
+      sheetSlug: placement.sheetSlug,
+      field,
+    }
+  }
+
   const commandBody = (
-    type: TokenCommandType,
-    payload: TokenCommandPayload,
-    field: LivePlayTokenScope['field'],
+    type: LivePlayDocumentCommandType,
+    payload: LivePlayDocumentCommandPayload,
+    scopes: readonly LivePlayScope[],
   ): Record<string, unknown> => ({
     schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
     opId: createLivePlayOpId(),
     mapSlug: options.slug,
     baseRevision: normalizeRevision(options.mapRevision?.value),
     type,
-    scopes: [tokenScope(payload, field)],
+    scopes,
     payload,
     clientId: getClientId(),
     ...profileBody(),
   })
+
+  const tokenCommandBody = (
+    type: typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
+    payload: MoveTokenPayload | TurnTokenPayload,
+    field: LivePlayTokenScope['field'],
+  ): Record<string, unknown> => commandBody(type, payload, [tokenScope(payload, field)])
+
+  const sheetCommandBody = (
+    type: typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+    payload: ModifyHpPayload | ModifyCombatStagesPayload | ModifyConditionsPayload,
+    field: LivePlayTokenScope['field'],
+    sheetField: string,
+  ): Record<string, unknown> => {
+    const sheet = sheetScope(payload, sheetField)
+    return commandBody(type, payload, [
+      tokenScope(payload, field),
+      ...(sheet ? [sheet] : []),
+    ])
+  }
 
   const sendActionWithUnloadFallback = (
     request: string,
@@ -203,7 +271,7 @@ export const useDocumentMapTokenActions = (
     }
   }
 
-  const runLivePlayTokenCommand = async (
+  const runLivePlayCommand = async (
     request: string,
     body: Record<string, unknown>,
   ): Promise<DocumentMapTokenActionDispatchResult> => {
@@ -227,6 +295,7 @@ export const useDocumentMapTokenActions = (
       }
 
       if (response.map) options.applyPersistedMap?.(response.map)
+      for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
       status.value = 'idle'
       return { dispatched: true, response }
     } catch (error) {
@@ -243,9 +312,9 @@ export const useDocumentMapTokenActions = (
     return runAction(MAP_API_PATHS.spawnToken, body)
   }
 
-  const moveToken: UseDocumentMapTokenActionsReturn['moveToken'] = (payload) => runLivePlayTokenCommand(
+  const moveToken: UseDocumentMapTokenActionsReturn['moveToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.moveToken,
-    commandBody(
+    tokenCommandBody(
       LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
       {
         placementId: payload.placementId,
@@ -256,15 +325,56 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const turnToken: UseDocumentMapTokenActionsReturn['turnToken'] = (payload) => runLivePlayTokenCommand(
+  const turnToken: UseDocumentMapTokenActionsReturn['turnToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.turnToken,
-    commandBody(
+    tokenCommandBody(
       LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
       {
         placementId: payload.placementId,
         facing: payload.facing,
       },
       'facing',
+    ),
+  )
+
+  const modifyHp: UseDocumentMapTokenActionsReturn['modifyHp'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.modifyHp,
+    sheetCommandBody(
+      LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+      {
+        placementId: payload.placementId,
+        currentHp: payload.currentHp,
+        ...(payload.injuries === undefined ? {} : { injuries: payload.injuries }),
+      },
+      'hp',
+      'hp',
+    ),
+  )
+
+  const modifyCombatStages: UseDocumentMapTokenActionsReturn['modifyCombatStages'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.modifyCombatStages,
+    sheetCommandBody(
+      LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES,
+      {
+        placementId: payload.placementId,
+        stages: payload.stages,
+      },
+      'combatStages',
+      'combatStages',
+    ),
+  )
+
+  const modifyConditions: UseDocumentMapTokenActionsReturn['modifyConditions'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.modifyConditions,
+    sheetCommandBody(
+      LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+      {
+        placementId: payload.placementId,
+        action: payload.action ?? 'replace',
+        conditions: payload.conditions,
+      },
+      'conditions',
+      'conditions',
     ),
   )
 
@@ -302,6 +412,9 @@ export const useDocumentMapTokenActions = (
     spawnToken,
     moveToken,
     turnToken,
+    modifyHp,
+    modifyCombatStages,
+    modifyConditions,
     useManeuver,
     useAbility,
     useOrder,
