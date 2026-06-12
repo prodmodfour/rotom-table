@@ -7,6 +7,7 @@
  * The functions take a *clone* (the editable sheet, not the static one)
  * and mutate it in place.
  */
+import { normalizeRevision } from '#shared/sessionRevisions'
 import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 import type { TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
@@ -29,6 +30,7 @@ const ensureArr = <T>(host: any, key: string): T[] => {
 }
 
 export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet => {
+  sheet.revision = normalizeRevision(sheet.revision)
   if (typeof sheet.player !== 'boolean') sheet.player = false
   const loyalty = normalizePokemonLoyalty(sheet.loyalty)
   if (loyalty == null) delete sheet.loyalty
@@ -78,6 +80,7 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
 }
 
 export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
+  sheet.revision = normalizeRevision(sheet.revision)
   if (typeof sheet.player !== 'boolean') sheet.player = false
   const accentColor = normalizeTrainerAccentColor(sheet.accentColor)
   if (accentColor) sheet.accentColor = accentColor

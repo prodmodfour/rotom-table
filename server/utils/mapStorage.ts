@@ -6,6 +6,7 @@
  * drag-drop UX can be reused.
  */
 import { readFileSync } from 'node:fs'
+import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { MapSummary, SheetKind, TabletopMap } from '~/types/map'
 import { toPersistableMapPayload } from '~/utils/maps/persistence'
 import {
@@ -102,6 +103,7 @@ export const retargetMapSheetPlacements = (
 
     const nextMap: TabletopMap = {
       ...map,
+      revision: nextRevision(normalizeRevision(map.revision)),
       placements,
       updatedAt: options.now?.() ?? Date.now(),
     }

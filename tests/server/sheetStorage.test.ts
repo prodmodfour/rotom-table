@@ -35,6 +35,7 @@ describe('sheet storage helpers', () => {
     )
 
     expect(withFolder).toEqual({
+      revision: 0,
       slug: 'new-trainer-1',
       name: 'New Trainer',
       level: 1,
@@ -77,6 +78,7 @@ describe('sheet storage helpers', () => {
 
   it('builds default Pokémon sheets without a selected species', () => {
     expect(buildDefaultSheet('pokemon', 'new-pokemon')).toMatchObject({
+      revision: 0,
       slug: 'new-pokemon',
       nickname: 'New Pokémon',
       species: '',
@@ -89,6 +91,7 @@ describe('sheet storage helpers', () => {
     const sheet = buildDefaultSheet('trainer', 'new-trainer')
 
     expect(sheet).toMatchObject({
+      revision: 0,
       slug: 'new-trainer',
       name: 'New Trainer',
       level: 1,

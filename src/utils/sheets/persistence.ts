@@ -1,3 +1,4 @@
+import { normalizeRevision, nextRevision } from '#shared/sessionRevisions'
 import { stableJsonStringify } from '../serialization'
 
 type DerivedSheetRuntimeField = 'folder' | 'sessionPlayerAccessible' | 'playerProfileAccessible'
@@ -22,8 +23,17 @@ export const stripDerivedSheetRuntimeFields = <T extends object>(sheet: T): Omit
 
 export const stripDerivedSheetFolder = stripDerivedSheetRuntimeFields
 
-export const toPersistableSheetPayload = <T extends object>(sheet: T): Record<string, unknown> =>
-  stripDerivedSheetRuntimeFields(sheet) as Record<string, unknown>
+export const toPersistableSheetPayload = <T extends object>(sheet: T): Record<string, unknown> => {
+  const payload = stripDerivedSheetRuntimeFields(sheet) as Record<string, unknown>
+  payload.revision = normalizeRevision(payload.revision)
+  return payload
+}
+
+export const toNextRevisionSheetPayload = <T extends object>(sheet: T): Record<string, unknown> => {
+  const payload = toPersistableSheetPayload(sheet)
+  payload.revision = nextRevision(payload.revision as number)
+  return payload
+}
 
 export const stablePersistableSheetJson = <T extends object>(sheet: T): string =>
   stableJsonStringify(toPersistableSheetPayload(sheet))

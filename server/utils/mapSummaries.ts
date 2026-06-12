@@ -8,6 +8,7 @@ export const summarizeMap = (map: TabletopMap): MapSummary => ({
   placementCount: map.placements?.length ?? 0,
   playerVisible: map.playerVisible === true,
   schemaVersion: map.schemaVersion,
+  ...(map.revision === undefined ? {} : { revision: map.revision }),
   updatedAt: map.updatedAt,
 })
 

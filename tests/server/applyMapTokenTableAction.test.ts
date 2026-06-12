@@ -26,6 +26,7 @@ const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): Pla
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
+  revision: 7,
   slug: 'arena',
   name: 'Arena',
   dimensions: { x: 8, y: 3, z: 8 },
@@ -48,6 +49,7 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
 })
 
 const pokemonSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
+  revision: 3,
   slug: 'sandile',
   nickname: 'Sandile',
   species: 'Sandile',
@@ -60,6 +62,7 @@ const pokemonSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet =
 } as CharacterSheet)
 
 const trainerSheet = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
+  revision: 3,
   slug: 'lenora',
   name: 'Lenora',
   level: 5,
@@ -129,6 +132,7 @@ describe('document-backed map token table actions', () => {
     expect(sheetWrites).toEqual([])
     expect(mapWrites).toHaveLength(1)
     expect(mapWrites[0]?.path).toBe(path)
+    expect(mapWrites[0]?.map.revision).toBe(8)
     expect(mapWrites[0]?.map.metadata?.maneuverLog).toMatchObject([
       {
         at: 1111,
@@ -155,6 +159,7 @@ describe('document-backed map token table actions', () => {
     }, deps)
 
     expect(mapWrites).toHaveLength(1)
+    expect(mapWrites[0]?.map.revision).toBe(8)
     expect(mapWrites[0]?.map.metadata?.abilityLog).toMatchObject([
       {
         at: 2222,
@@ -165,6 +170,7 @@ describe('document-backed map token table actions', () => {
     ])
     expect(sheetWrites).toHaveLength(1)
     expect(sheetWrites[0]).toMatchObject({ path: '/repo/data/pokemon/target.json' })
+    expect(sheetWrites[0]?.sheet.revision).toBe(4)
     expect(sheetWrites[0]?.sheet.stats).toMatchObject({ atk: { stage: 1 } })
     expect(result.sheetUpdates).toHaveLength(1)
     expect(result.events.map((event) => event.channel)).toEqual([
@@ -188,6 +194,7 @@ describe('document-backed map token table actions', () => {
     }, deps)
 
     expect(mapWrites).toHaveLength(1)
+    expect(mapWrites[0]?.map.revision).toBe(8)
     expect(mapWrites[0]?.map.metadata?.activeOrderEffects).toMatchObject([
       {
         id: 'order-effect',

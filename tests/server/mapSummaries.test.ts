@@ -4,6 +4,7 @@ import { compareMapSummaries, sortMapSummaries, summarizeMap } from '../../serve
 
 const makeMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
+  revision: 6,
   slug: 'city-square',
   name: 'City Square',
   folder: 'helix/maps',
@@ -32,6 +33,7 @@ describe('map summary helpers', () => {
       placementCount: 1,
       playerVisible: true,
       schemaVersion: 2,
+      revision: 6,
       updatedAt: 123,
     })
 

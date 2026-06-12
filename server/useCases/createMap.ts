@@ -88,6 +88,7 @@ export const createMapUseCase = (
   const timestamp = now()
   const map: TabletopMap = {
     schemaVersion: 2,
+    revision: 0,
     slug,
     name,
     folder,

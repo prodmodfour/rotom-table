@@ -69,6 +69,7 @@ import {
   type SessionStoreRecord,
   type SessionStoreStatus,
 } from '../utils/sessionStore'
+import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import {
   readSheetFile,
   stripDerivedSheetFields,
@@ -1003,7 +1004,7 @@ const planUseMoveApplication = (
       moveName: sheet.move.moveName,
       usedAt: Date.parse(processedAt),
     })
-    const sheetToWrite = stripDerivedSheetFields({ ...sheet.original, moveUsage })
+    const sheetToWrite = toNextRevisionSheetPayload(stripDerivedSheetFields({ ...sheet.original, moveUsage }))
     const after = limitedMoveUsageState(
       getSheetDailyMoveUsageEntry(moveUsage, sheet.move.moveKey),
       maxUses,

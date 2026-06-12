@@ -81,7 +81,7 @@ describe('useEditableSheet profile-aware requests', () => {
     expect(mocks.postJson).toHaveBeenCalledWith(SHEET_API_PATHS.save, {
       kind: 'pokemon',
       slug: 'pikachu',
-      sheet: { slug: 'pikachu', nickname: 'Pikachu', level: 6 },
+      sheet: { revision: 0, slug: 'pikachu', nickname: 'Pikachu', level: 6 },
       clientId: 'sheet-client',
       profileId,
       allowSlugSync: false,
@@ -108,7 +108,7 @@ describe('useEditableSheet profile-aware requests', () => {
     expect(mocks.postJson).toHaveBeenCalledWith(SHEET_API_PATHS.save, {
       kind: 'pokemon',
       slug: 'examples-abra',
-      sheet: { slug: 'examples-abra', nickname: 'Abra', level: 6 },
+      sheet: { revision: 0, slug: 'examples-abra', nickname: 'Abra', level: 6 },
       clientId: 'sheet-client',
       allowSlugSync: false,
     })
@@ -129,7 +129,7 @@ describe('useEditableSheet profile-aware requests', () => {
     expect(mocks.postJson).toHaveBeenCalledWith(SHEET_API_PATHS.save, {
       kind: 'pokemon',
       slug: 'examples-abra',
-      sheet: { slug: 'examples-abra', nickname: 'Abra Prime', level: 5 },
+      sheet: { revision: 0, slug: 'examples-abra', nickname: 'Abra Prime', level: 5 },
       clientId: 'sheet-client',
     })
   })

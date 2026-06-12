@@ -6,6 +6,7 @@ import {
 
 const validMap = () => ({
   schemaVersion: 2,
+  revision: 12,
   slug: 'test-map',
   name: 'Test Map',
   folder: 'stale/persisted-folder',
@@ -58,6 +59,7 @@ describe('map document normalization', () => {
 
     expect(normalized).toMatchObject({
       schemaVersion: 2,
+      revision: 12,
       slug: 'test-map',
       name: 'Test Map',
       folder: 'actual',
@@ -98,6 +100,13 @@ describe('map document normalization', () => {
     expect(fieldEffects.rooms).toEqual([{ kind: 'trick', rounds: 1, startsNextRound: true }])
     expect(normalized.placements).toEqual([{ id: 'token-1' }])
     expect(normalized.lights).toEqual([{ id: 'light-1' }])
+  })
+
+  it('defaults missing legacy revisions to zero', () => {
+    const map = validMap()
+    delete (map as Record<string, unknown>).revision
+
+    expect(normalizeMapDocument(map, { sourceLabel: 'legacy-map.json' }).revision).toBe(0)
   })
 
   it('falls back to safe defaults for optional collections and visibility', () => {

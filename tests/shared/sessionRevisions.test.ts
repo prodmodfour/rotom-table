@@ -19,6 +19,7 @@ import {
   nextMapRevision,
   nextRevision,
   nextSessionRevision,
+  normalizeRevision,
   parseMapRevision,
   parseRevision,
   parseSessionRevision,
@@ -73,6 +74,9 @@ describe('session revision helpers', () => {
     expect(() => parseMapRevision(1.5)).toThrow(
       'mapRevision must be a safe non-negative integer revision',
     )
+    expect(normalizeRevision(5)).toBe(5)
+    expect(normalizeRevision(undefined)).toBe(INITIAL_REVISION_VALUE)
+    expect(normalizeRevision('5')).toBe(INITIAL_REVISION_VALUE)
   })
 
   it('increments revisions one step at a time and guards against overflow', () => {

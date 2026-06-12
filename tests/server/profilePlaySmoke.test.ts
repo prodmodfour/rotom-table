@@ -285,6 +285,7 @@ describe('profile-based play smoke flow', () => {
       ok: true,
       slug: 'pikachu',
       sheet: {
+        revision: 0,
         slug: 'pikachu',
         nickname: 'Sparky',
         species: 'Pikachu',
@@ -296,6 +297,7 @@ describe('profile-based play smoke flow', () => {
       {
         path: '/memory/sheets/pokemon/pikachu.json',
         sheet: {
+          revision: 0,
           slug: 'pikachu',
           nickname: 'Sparky',
           species: 'Pikachu',

@@ -4,6 +4,7 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import type { SheetKind } from '#shared/sheets'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
@@ -173,6 +174,9 @@ export const saveSheetUseCase = (
     : { slug: input.slug, path }
 
   const sheet = stripClientOnlySheetAccessFields(stripDerivedFields(input.sheet))
+  sheet.revision = Object.prototype.hasOwnProperty.call(input.sheet, 'revision')
+    ? normalizeRevision(input.sheet.revision)
+    : normalizeRevision(existingSheet.revision)
   if (!Object.prototype.hasOwnProperty.call(input.sheet, 'moveUsage') && existingSheet.moveUsage !== undefined) {
     sheet.moveUsage = existingSheet.moveUsage
   }

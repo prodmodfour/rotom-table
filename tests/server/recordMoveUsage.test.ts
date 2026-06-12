@@ -16,6 +16,7 @@ import type { SheetKind } from '#shared/sheets'
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
+  revision: 2,
   slug: 'arena',
   name: 'Arena',
   dimensions: { x: 6, y: 3, z: 6 },
@@ -97,6 +98,7 @@ describe('record move usage use case', () => {
 
     expect(mapWrites).toHaveLength(1)
     expect(mapWrites[0]?.path).toBe(mapPath)
+    expect(mapWrites[0]?.map.revision).toBe(3)
     expect(mapWrites[0]?.map.moveUsage).toEqual({
       byPlacementId: {
         'token-1': {
@@ -144,6 +146,7 @@ describe('record move usage use case', () => {
       {
         path: sheetPath,
         sheet: {
+          revision: 1,
           slug: 'pika',
           nickname: 'Pika',
           movelist: [{ name: 'Custom Daily Move', frequency: 'Daily x2' }],

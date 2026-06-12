@@ -9,6 +9,7 @@ import type { TabletopMap } from '~/types/map'
 
 const makeMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
+  revision: 2,
   slug: 'old-map',
   name: 'Old Map',
   folder: 'folder',
@@ -73,7 +74,7 @@ describe('rename map use case', () => {
     expect(writes).toHaveLength(1)
     expect(writes[0]?.path).toBe('/repo/data/maps/folder/old-map.json')
     expect(result).toMatchObject({ ok: true, slug: 'old-map', name: 'Old Map', path: 'data/maps/folder/old-map.json' })
-    expect(result.map).toMatchObject({ slug: 'old-map', name: 'Old Map', updatedAt: 999 })
+    expect(result.map).toMatchObject({ slug: 'old-map', name: 'Old Map', revision: 2, updatedAt: 999 })
     expect(result.events).toEqual([
       {
         channel: 'map:old-map',
@@ -93,6 +94,7 @@ describe('rename map use case', () => {
           placementCount: 0,
           playerVisible: false,
           schemaVersion: 2,
+          revision: 2,
           updatedAt: 999,
         },
       },
@@ -115,7 +117,7 @@ describe('rename map use case', () => {
     expect(writes[0]).toEqual({ path: '/repo/data/maps/folder/sky-atrium.json', map: result.map })
     expect(result.slug).toBe('sky-atrium')
     expect(result.path).toBe('data/maps/folder/sky-atrium.json')
-    expect(result.map).toMatchObject({ slug: 'sky-atrium', name: 'Sky Atrium', updatedAt: 999 })
+    expect(result.map).toMatchObject({ slug: 'sky-atrium', name: 'Sky Atrium', revision: 3, updatedAt: 999 })
     expect(result.events).toEqual([
       {
         channel: 'map:old-map',
@@ -143,6 +145,7 @@ describe('rename map use case', () => {
             placementCount: 0,
             playerVisible: false,
             schemaVersion: 2,
+            revision: 3,
             updatedAt: 999,
           },
         },

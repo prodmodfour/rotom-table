@@ -2,6 +2,7 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { dirname, join } from 'node:path'
 import { existsSync, renameSync } from 'node:fs'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { TabletopMap } from '~/types/map'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { allocateSlug, findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
@@ -90,7 +91,11 @@ export const renameMapUseCase = (
     map.slug = newSlug
   }
 
+  const documentChanged = newSlug !== slug || map.name !== name
   map.name = name
+  map.revision = documentChanged
+    ? nextRevision(normalizeRevision(map.revision))
+    : normalizeRevision(map.revision)
   map.updatedAt = now()
   writeMap(newPath, map)
 

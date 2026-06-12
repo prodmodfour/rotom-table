@@ -3,6 +3,7 @@ import {
   stablePersistableSheetJson,
   stripDerivedSheetFolder,
   stripDerivedSheetRuntimeFields,
+  toNextRevisionSheetPayload,
   toPersistableSheetPayload,
 } from '~/utils/sheets/persistence'
 
@@ -35,9 +36,14 @@ describe('sheet persistence helpers', () => {
       playerProfileAccessible: true,
     })
 
-    expect(payload).toEqual({ slug: 'ace', player: true })
+    expect(payload).toEqual({ revision: 0, slug: 'ace', player: true })
     expect(payload).not.toHaveProperty('folder')
     expect(payload).not.toHaveProperty('playerProfileAccessible')
+  })
+
+  it('advances sheet revision payloads exactly one step', () => {
+    expect(toNextRevisionSheetPayload({ slug: 'ace', revision: 5 })).toEqual({ slug: 'ace', revision: 6 })
+    expect(toNextRevisionSheetPayload({ slug: 'legacy' })).toEqual({ slug: 'legacy', revision: 1 })
   })
 
   it('builds stable persisted JSON that ignores runtime-only fields and sorts keys', () => {
@@ -56,7 +62,7 @@ describe('sheet persistence helpers', () => {
       slug: 'ace',
     })
 
-    expect(first).toBe('{"level":5,"player":true,"slug":"ace"}')
+    expect(first).toBe('{"level":5,"player":true,"revision":0,"slug":"ace"}')
     expect(second).toBe(first)
   })
 })

@@ -1,5 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import { normalizeRevision, nextRevision } from '#shared/sessionRevisions'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapMoveUsage } from '~/utils/moveUsage'
 import { sameJsonValue } from '~/utils/serialization'
@@ -45,10 +46,16 @@ export interface SaveMapResult {
   events: Array<Omit<RealtimeEvent, 'timestamp'>>
 }
 
+export interface ToPersistedMapOptions {
+  revision?: number
+  advanceRevision?: boolean
+}
+
 export const toPersistedMap = (
   source: TabletopMap,
   filePath: string,
   updatedAt: number,
+  options: ToPersistedMapOptions = {},
 ): TabletopMap => {
   const initiative = source.initiative && typeof source.initiative === 'object'
     ? source.initiative
@@ -56,6 +63,9 @@ export const toPersistedMap = (
 
   return {
     schemaVersion: 2,
+    revision: options.revision ?? (options.advanceRevision
+      ? nextRevision(normalizeRevision(source.revision))
+      : normalizeRevision(source.revision)),
     slug: source.slug,
     name: source.name,
     folder: folderFromPath(filePath),
@@ -119,7 +129,11 @@ export const saveMapUseCase = (
     }
   }
 
-  const persisted = toPersistedMap(sourceWithMoveUsage, filePath, dependencies.now?.() ?? Date.now())
+  const persisted = toPersistedMap(sourceWithMoveUsage, filePath, dependencies.now?.() ?? Date.now(), {
+    revision: Object.prototype.hasOwnProperty.call(sourceWithMoveUsage, 'revision')
+      ? normalizeRevision(sourceWithMoveUsage.revision)
+      : normalizeRevision(existing.revision),
+  })
   writeMap(filePath, persisted)
 
   return {

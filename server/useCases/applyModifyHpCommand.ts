@@ -39,6 +39,7 @@ import {
   toPersistableSheetPayload,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
+import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
 import {
@@ -286,8 +287,10 @@ const tokenStateFromHp = (
 const hpValuesEqual = (left: ModifyHpValueState, right: ModifyHpValueState): boolean =>
   left.currentHp === right.currentHp && left.injuries === right.injuries
 
-const persistableSheet = (sheet: AnyLiveSheet): Record<string, unknown> =>
-  toPersistableSheetPayload(sheet as unknown as Record<string, unknown>)
+const persistableSheet = (sheet: AnyLiveSheet, options: { advanceRevision?: boolean } = {}): Record<string, unknown> => {
+  const payload = toPersistableSheetPayload(sheet as unknown as Record<string, unknown>)
+  return options.advanceRevision ? toNextRevisionSheetPayload(payload) : payload
+}
 
 const defaultReadSheet: ModifyHpSheetReader = (kind, slug) => {
   const result = readSheetFile<AnyLiveSheet>(kind, slug)
@@ -964,7 +967,7 @@ export const applyModifyHpCommandUseCase = (
   })
 
   try {
-    writeSheet(sheetResult.sheet.path, persistableSheet(sheetResult.sheet.updated))
+    writeSheet(sheetResult.sheet.path, persistableSheet(sheetResult.sheet.updated, { advanceRevision: true }))
   } catch (error) {
     throw new ApplyModifyHpCommandUseCaseError(
       500,

@@ -108,6 +108,7 @@ import {
   type SessionStoreRecord,
   type SessionStoreStatus,
 } from '../utils/sessionStore'
+import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import {
   readSheetFile,
   stripDerivedSheetFields,
@@ -1562,7 +1563,12 @@ const writePlannedSheets = (
   writeSheet: UseTableActionSheetWriter,
   plans: readonly SheetWritePlan[],
 ): void => {
-  for (const plan of plans) writeSheet(plan.path, stripDerivedSheetFields(plan.next) as AnyLiveSheet)
+  for (const plan of plans) {
+    writeSheet(
+      plan.path,
+      toNextRevisionSheetPayload(stripDerivedSheetFields(plan.next) as AnyLiveSheet) as unknown as AnyLiveSheet,
+    )
+  }
 }
 
 const rollbackWrittenSheets = (

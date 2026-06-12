@@ -39,6 +39,7 @@ import {
   toPersistableSheetPayload,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
+import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
@@ -285,8 +286,10 @@ const conditionsValuesEqual = (
   right: ModifyConditionsValueState,
 ): boolean => left.length === right.length && left.every((condition, index) => condition === right[index])
 
-const persistableSheet = (sheet: AnyLiveSheet): Record<string, unknown> =>
-  toPersistableSheetPayload(sheet as unknown as Record<string, unknown>)
+const persistableSheet = (sheet: AnyLiveSheet, options: { advanceRevision?: boolean } = {}): Record<string, unknown> => {
+  const payload = toPersistableSheetPayload(sheet as unknown as Record<string, unknown>)
+  return options.advanceRevision ? toNextRevisionSheetPayload(payload) : payload
+}
 
 const defaultReadSheet: ModifyConditionsSheetReader = (kind, slug) => {
   const result = readSheetFile<AnyLiveSheet>(kind, slug)
@@ -963,7 +966,7 @@ export const applyModifyConditionsCommandUseCase = (
   })
 
   try {
-    writeSheet(sheetResult.sheet.path, persistableSheet(sheetResult.sheet.updated))
+    writeSheet(sheetResult.sheet.path, persistableSheet(sheetResult.sheet.updated, { advanceRevision: true }))
   } catch (error) {
     throw new ApplyModifyConditionsCommandUseCaseError(
       500,

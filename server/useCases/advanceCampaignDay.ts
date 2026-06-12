@@ -2,7 +2,7 @@ import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtim
 import type { CampaignNextDayResult } from '#shared/campaign'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { stablePersistableSheetJson } from '~/utils/sheets/persistence'
+import { stablePersistableSheetJson, toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import {
   addHealingMutationSummary,
   applyPokemonNextDay,
@@ -69,8 +69,9 @@ const processSheet = <TSheet extends { slug: string }>(
     return { updated: false, slug, path: dependencies.relativePath(path), summary }
   }
 
-  dependencies.writeSheet(path, afterSheet)
-  const data = { kind, slug, sheet: afterSheet }
+  const persistedSheet = toNextRevisionSheetPayload(afterSheet)
+  dependencies.writeSheet(path, persistedSheet)
+  const data = { kind, slug, sheet: persistedSheet }
   return {
     updated: true,
     slug,

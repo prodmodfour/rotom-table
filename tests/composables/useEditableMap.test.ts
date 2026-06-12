@@ -32,6 +32,7 @@ vi.mock('~/composables/useRealtime', () => ({
 
 const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
+  revision: 1,
   slug: 'arena-map',
   name: 'Arena Map',
   dimensions: { x: 6, y: 2, z: 6 },
@@ -458,7 +459,7 @@ describe('useEditableMap autosave boundary', () => {
       type: 'updated',
       clientId: 'other-tab',
       timestamp: 500,
-      data: mapFixture({ name: 'Newer Arena', updatedAt: 500 }),
+      data: mapFixture({ revision: 2, name: 'Newer Arena', updatedAt: 500 }),
     })
     await nextTick()
 
@@ -467,7 +468,7 @@ describe('useEditableMap autosave boundary', () => {
       type: 'updated',
       clientId: 'other-tab',
       timestamp: 450,
-      data: mapFixture({ name: 'Older Arena', updatedAt: 450 }),
+      data: mapFixture({ revision: 1, name: 'Older Arena', updatedAt: 450 }),
     })
     await nextTick()
     await vi.advanceTimersByTimeAsync(10)

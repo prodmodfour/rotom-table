@@ -24,6 +24,7 @@ const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): Pla
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
+  revision: 4,
   slug: 'arena',
   name: 'Arena',
   dimensions: { x: 6, y: 3, z: 6 },
@@ -112,6 +113,7 @@ describe('document-backed map token actions', () => {
     })
     expect(persisted.voxels).toEqual(existing.voxels)
     expect(persisted.hazards).toEqual(existing.hazards)
+    expect(persisted.revision).toBe(5)
     expect(persisted.updatedAt).toBe(1500)
     expect(result.map).toBe(persisted)
     expect(result.placement).toEqual(persisted.placements[2])
@@ -180,6 +182,7 @@ describe('document-backed map token actions', () => {
     expect(persisted.voxels).toEqual(existing.voxels)
     expect(persisted.hazards).toEqual(existing.hazards)
     expect(persisted.initiative).toEqual(existing.initiative)
+    expect(persisted.revision).toBe(5)
     expect(persisted.updatedAt).toBe(2000)
     expect(persisted.metadata?.movementLog).toMatchObject([
       {
@@ -218,6 +221,7 @@ describe('document-backed map token actions', () => {
       turned: true,
     })
     expect(persisted.placements[1]).toEqual(existing.placements[1])
+    expect(persisted.revision).toBe(5)
     expect(persisted.metadata).toEqual(existing.metadata)
     expect(result.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
   })

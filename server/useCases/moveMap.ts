@@ -2,6 +2,7 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join, sep } from 'node:path'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { TabletopMap } from '~/types/map'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
@@ -96,6 +97,8 @@ export const moveMapUseCase = (
   }
 
   const map = readMap(destPath)
+  if (moved) map.revision = nextRevision(normalizeRevision(map.revision))
+  else map.revision = normalizeRevision(map.revision)
   map.updatedAt = now()
   writeMap(destPath, map)
 

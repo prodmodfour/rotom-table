@@ -11,6 +11,7 @@ const MAPS_ROOT = '/repo/data/maps'
 
 const makeMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
+  revision: 2,
   slug: 'old-map',
   name: 'Old Map',
   folder: 'old-folder',
@@ -96,7 +97,7 @@ describe('move map use case', () => {
     expect(writes).toHaveLength(1)
     expect(writes[0]?.path).toBe(`${MAPS_ROOT}/new-folder/old-map.json`)
     expect(result).toMatchObject({ ok: true, moved: true, path: 'data/maps/new-folder/old-map.json' })
-    expect(result.map).toMatchObject({ folder: 'new-folder', updatedAt: 999 })
+    expect(result.map).toMatchObject({ folder: 'new-folder', revision: 3, updatedAt: 999 })
     expect(result.events).toEqual([
       {
         channel: 'map:old-map',
@@ -116,6 +117,7 @@ describe('move map use case', () => {
           placementCount: 0,
           playerVisible: false,
           schemaVersion: 2,
+          revision: 3,
           updatedAt: 999,
         },
       },
@@ -133,6 +135,7 @@ describe('move map use case', () => {
     expect(pruned).toEqual([])
     expect(writes).toHaveLength(1)
     expect(writes[0]?.path).toBe(`${MAPS_ROOT}/old-folder/old-map.json`)
+    expect(result.map.revision).toBe(2)
     expect(result.map.updatedAt).toBe(999)
     expect(result.events).toHaveLength(2)
   })

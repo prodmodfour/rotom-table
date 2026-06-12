@@ -26,6 +26,7 @@
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { isRealtimeEcho, mapChannel } from '#shared/realtime'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
 import { bindAutosaveUnloadFlushers, sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
@@ -148,6 +149,7 @@ export const useEditableMap = (
 
   const applyServerMap = (incoming: TabletopMap) => {
     const next = deepCloneJson(incoming)
+    next.revision = normalizeRevision(next.revision)
     if (!map.value) {
       map.value = next
       return
@@ -160,6 +162,7 @@ export const useEditableMap = (
     // of voxel instances.
     const target = map.value
     target.schemaVersion = next.schemaVersion
+    target.revision = normalizeRevision(next.revision)
     target.slug = next.slug
     target.name = next.name
     if (next.folder === undefined) delete target.folder
@@ -191,15 +194,15 @@ export const useEditableMap = (
     assignIfChanged(target, 'updatedAt', next.updatedAt)
   }
 
-  const mapUpdatedAt = (candidate: TabletopMap | null | undefined): number | null => {
-    const value = candidate?.updatedAt
-    return typeof value === 'number' && Number.isFinite(value) ? value : null
+  const mapRevision = (candidate: TabletopMap | null | undefined): number | null => {
+    if (!candidate || !Object.prototype.hasOwnProperty.call(candidate, 'revision')) return null
+    return normalizeRevision(candidate.revision)
   }
 
   const isStalePersistedMap = (incoming: TabletopMap): boolean => {
-    const incomingUpdatedAt = mapUpdatedAt(incoming)
-    const currentUpdatedAt = mapUpdatedAt(map.value)
-    return incomingUpdatedAt !== null && currentUpdatedAt !== null && incomingUpdatedAt < currentUpdatedAt
+    const incomingRevision = mapRevision(incoming)
+    const currentRevision = mapRevision(map.value)
+    return incomingRevision !== null && currentRevision !== null && incomingRevision < currentRevision
   }
 
   const applyPersistedMap = (incoming: TabletopMap) => {
@@ -231,11 +234,14 @@ export const useEditableMap = (
       save: () => postJson<{ map: TabletopMap }>(MAP_API_PATHS.save, buildMapSaveBody(snapshot)),
       onSuccess: (result, { latest }) => {
         if (!latest || isStalePersistedMap(result.map)) return
-        // Adopt the persisted version (server stamps `updatedAt`).
+        // Adopt the persisted version (server stamps `updatedAt` and revision).
         autosave.snapshot.markClean(result.map)
-        // Splice in the new updatedAt without disturbing other fields the
+        // Splice in server-owned metadata without disturbing other fields the
         // user may have edited mid-flight.
-        if (map.value) map.value.updatedAt = result.map.updatedAt
+        if (map.value) {
+          map.value.revision = normalizeRevision(result.map.revision)
+          map.value.updatedAt = result.map.updatedAt
+        }
       },
       error: { logPrefix: '[useEditableMap] save failed' },
     })

@@ -44,6 +44,7 @@ describe('create map use case', () => {
     expect(writes[0]?.map).toEqual(result.map)
     expect(result.map).toMatchObject({
       schemaVersion: 2,
+      revision: 0,
       slug: 'sky-atrium',
       name: 'Sky Atrium',
       folder: 'helix/maps',
@@ -67,6 +68,7 @@ describe('create map use case', () => {
         data: {
           slug: 'sky-atrium',
           name: 'Sky Atrium',
+          revision: 0,
           folder: 'helix/maps',
           dimensions: { x: 2, y: 200, z: DEFAULT_MAP_DIMENSIONS.z },
           placementCount: 0,

@@ -5,6 +5,7 @@ import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind } from '#shared/sheets'
 import type { TabletopMap } from '~/types/map'
+import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import type { ParsedMoveFrequency, MoveFrequencyKind } from '~/utils/moveUsage'
 import {
   eotMoveUsageState,
@@ -212,7 +213,7 @@ const recordEotUsage = (
     currentRound,
     usedAt: timestamp,
   })
-  const persistedMap = toPersistedMap({ ...map, moveUsage }, mapPath, timestamp)
+  const persistedMap = toPersistedMap({ ...map, moveUsage }, mapPath, timestamp, { advanceRevision: true })
   dependencies.writeMap(mapPath, persistedMap)
   const after = eotMoveUsageState(
     getMapMoveUsageEntry(persistedMap.moveUsage, input.placementId, move.moveKey),
@@ -264,7 +265,7 @@ const recordSceneUsage = (
     currentRound,
     usedAt: timestamp,
   })
-  const persistedMap = toPersistedMap({ ...map, moveUsage }, mapPath, timestamp)
+  const persistedMap = toPersistedMap({ ...map, moveUsage }, mapPath, timestamp, { advanceRevision: true })
   dependencies.writeMap(mapPath, persistedMap)
   const after = limitedMoveUsageState(
     getMapMoveUsageEntry(persistedMap.moveUsage, input.placementId, move.moveKey),
@@ -314,7 +315,7 @@ const recordDailyUsage = (
     moveName: move.moveName,
     usedAt: timestamp,
   })
-  const sheet = stripDerivedSheetFields({ ...sheetFile.sheet, moveUsage })
+  const sheet = toNextRevisionSheetPayload(stripDerivedSheetFields({ ...sheetFile.sheet, moveUsage }))
   dependencies.writeSheet(sheetFile.path, sheet)
   const after = limitedMoveUsageState(getSheetDailyMoveUsageEntry(moveUsage, move.moveKey), maxUses)
 

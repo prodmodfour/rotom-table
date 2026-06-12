@@ -24,6 +24,7 @@ import {
   applyConditionsToSheet,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
+import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import {
   abilityEntriesForPlacement,
@@ -388,7 +389,7 @@ const persistSheetPlan = (
   writeSheet: NonNullable<MapTokenTableActionDependencies['writeSheet']>,
   relativePath: (path: string) => string,
 ): MapTokenTableActionSheetUpdate => {
-  const sheet = stripDerivedSheetFields(plan.next as unknown as Record<string, unknown>)
+  const sheet = toNextRevisionSheetPayload(stripDerivedSheetFields(plan.next as unknown as Record<string, unknown>))
   writeSheet(plan.path, sheet)
   return {
     kind: plan.kind,
@@ -407,7 +408,7 @@ const writeResult = (
   dependencies: Required<Pick<ReturnType<typeof actionDependencies>, 'writeMap' | 'writeSheet' | 'now' | 'relativePath'>>,
 ): MapTokenTableActionResult => {
   const timestamp = dependencies.now()
-  const persistedMap = toPersistedMap(nextMap, context.mapPath, timestamp)
+  const persistedMap = toPersistedMap(nextMap, context.mapPath, timestamp, { advanceRevision: true })
   const sheetUpdates = writePlans.map((plan) => persistSheetPlan(plan, dependencies.writeSheet, dependencies.relativePath))
   dependencies.writeMap(context.mapPath, persistedMap)
   return {

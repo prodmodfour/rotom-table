@@ -258,6 +258,8 @@ export interface TrainerEquipmentSlots {
 /* ------------------------------------------------------------------ */
 
 export interface TrainerSheet {
+  /** Server-owned document revision used for command conflict control. */
+  revision?: number
   /** URL slug for the sheet's subpage (``/sheets/trainers/<slug>``). */
   slug: string
   /**

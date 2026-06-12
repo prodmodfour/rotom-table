@@ -6,7 +6,7 @@ import {
 } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { sanitizeFolderPath, slugify, validateSlug } from '#shared/paths'
-import { stripDerivedSheetFolder } from '~/utils/sheets/persistence'
+import { stripDerivedSheetFolder, toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { campaignPathLabel } from './campaignPaths'
 import {
   joinSafeUnderRoot,
@@ -69,7 +69,7 @@ export const readSheetFile = <T extends object>(
 ): { path: string; sheet: T } | null => {
   const path = findPersistedSheetFile(kind, slug)
   if (!path) return null
-  return { path, sheet: readJsonFile<T>(path) }
+  return { path, sheet: toPersistableSheetPayload(readJsonFile<T>(path)) as T }
 }
 
 export const withDerivedSheetFolder = <T extends object>(
@@ -79,7 +79,7 @@ export const withDerivedSheetFolder = <T extends object>(
 ): T & { folder: string } => {
   const record = sheet as Record<string, unknown>
   return {
-    ...sheet,
+    ...(toPersistableSheetPayload(sheet) as T),
     folder: typeof record.folder === 'string' ? record.folder : folderFromSheetPath(kind, path),
   }
 }
@@ -107,7 +107,7 @@ export const listSheetFilesWithFolders = <T extends object>(
 export const stripDerivedSheetFields = stripDerivedSheetFolder
 
 export const writeSheetFile = (path: string, sheet: Record<string, unknown>): void => {
-  writeJsonFile(path, stripDerivedSheetFields(sheet))
+  writeJsonFile(path, toPersistableSheetPayload(sheet))
 }
 
 export const sheetNameFieldForKind = (kind: SheetKind): 'nickname' | 'name' =>
@@ -150,6 +150,7 @@ export const buildDefaultSheet = (
   const player = options.playerAccessible === true
   if (kind === 'pokemon') {
     return {
+      revision: 0,
       slug,
       nickname: 'New Pokémon',
       species: '',
@@ -159,6 +160,7 @@ export const buildDefaultSheet = (
   }
   const portraitUrl = pickRandomTrainerSpriteUrl()
   return {
+    revision: 0,
     slug,
     name: 'New Trainer',
     level: 1,

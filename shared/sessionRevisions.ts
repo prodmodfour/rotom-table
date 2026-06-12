@@ -48,6 +48,9 @@ export const isMapRevision = (value: unknown): value is MapRevision => isRevisio
 export const parseRevision = (value: unknown, label = 'revision'): Revision =>
   parseRevisionNumber(value, label) as Revision
 
+export const normalizeRevision = (value: unknown): number =>
+  isRevision(value) ? value : INITIAL_REVISION_VALUE
+
 export const parseSessionRevision = (value: unknown, label = 'sessionRevision'): SessionRevision =>
   parseRevisionNumber(value, label) as SessionRevision
 
@@ -65,7 +68,11 @@ export const incrementSessionRevision = (
 export const incrementMapRevision = (revision: MapRevision, label = 'mapRevision'): MapRevision =>
   incrementRevisionNumber(revision, label) as MapRevision
 
-export const nextRevision = incrementRevision
+export function nextRevision(current: Revision): Revision
+export function nextRevision(current: number): number
+export function nextRevision(current: number): number {
+  return incrementRevisionNumber(current, 'revision')
+}
 export const nextSessionRevision = incrementSessionRevision
 export const nextMapRevision = incrementMapRevision
 

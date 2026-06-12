@@ -41,6 +41,7 @@ import {
   toPersistableSheetPayload,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
+import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
 import {
@@ -279,8 +280,10 @@ const combatStagesValuesEqual = (
   right: ModifyCombatStagesValueState,
 ): boolean => SESSION_COMBAT_STAGE_KEYS.every((key) => left[key] === right[key])
 
-const persistableSheet = (sheet: AnyLiveSheet): Record<string, unknown> =>
-  toPersistableSheetPayload(sheet as unknown as Record<string, unknown>)
+const persistableSheet = (sheet: AnyLiveSheet, options: { advanceRevision?: boolean } = {}): Record<string, unknown> => {
+  const payload = toPersistableSheetPayload(sheet as unknown as Record<string, unknown>)
+  return options.advanceRevision ? toNextRevisionSheetPayload(payload) : payload
+}
 
 const defaultReadSheet: ModifyCombatStagesSheetReader = (kind, slug) => {
   const result = readSheetFile<AnyLiveSheet>(kind, slug)
@@ -956,7 +959,7 @@ export const applyModifyCombatStagesCommandUseCase = (
   })
 
   try {
-    writeSheet(sheetResult.sheet.path, persistableSheet(sheetResult.sheet.updated))
+    writeSheet(sheetResult.sheet.path, persistableSheet(sheetResult.sheet.updated, { advanceRevision: true }))
   } catch (error) {
     throw new ApplyModifyCombatStagesCommandUseCaseError(
       500,

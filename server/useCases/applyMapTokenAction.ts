@@ -160,7 +160,7 @@ const writeActionMap = (
   nextMap: TabletopMap,
   dependencies: Required<Pick<MapTokenActionDependencies, 'writeMap' | 'now'>>,
 ): MapTokenActionResult => {
-  const persisted = toPersistedMap(nextMap, context.mapPath, dependencies.now())
+  const persisted = toPersistedMap(nextMap, context.mapPath, dependencies.now(), { advanceRevision: true })
   dependencies.writeMap(context.mapPath, persisted)
   const placement = persisted.placements.find((candidate) => candidate.id === context.placement.id)
     ?? context.placement

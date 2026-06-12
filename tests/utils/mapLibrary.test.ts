@@ -43,6 +43,7 @@ describe('mapLibrary helpers', () => {
   it('converts tabletop maps to list summaries', () => {
     const map: TabletopMap = {
       schemaVersion: 2,
+      revision: 3,
       slug: 'atrium',
       name: 'Atrium',
       dimensions: { x: 20, y: 5, z: 20 },
@@ -60,6 +61,7 @@ describe('mapLibrary helpers', () => {
       placementCount: 1,
       playerVisible: true,
       schemaVersion: 2,
+      revision: 3,
       updatedAt: 456,
     })
   })

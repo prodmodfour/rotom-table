@@ -1,3 +1,4 @@
+import { normalizeRevision } from '#shared/sessionRevisions'
 import type { TabletopMap } from '~/types/map'
 import { stableJsonStringify } from '../serialization'
 
@@ -13,8 +14,11 @@ export const stripDerivedMapFolder = <T extends object>(map: T): Omit<T, 'folder
   return payload as Omit<T, 'folder'>
 }
 
-export const toPersistableMapPayload = <T extends object>(map: T): Record<string, unknown> =>
-  stripDerivedMapFolder(map) as Record<string, unknown>
+export const toPersistableMapPayload = <T extends object>(map: T): Record<string, unknown> => {
+  const payload = stripDerivedMapFolder(map) as Record<string, unknown>
+  payload.revision = normalizeRevision(payload.revision)
+  return payload
+}
 
 export const stablePersistableMapJson = <T extends object>(map: T): string =>
   stableJsonStringify(toPersistableMapPayload(map))

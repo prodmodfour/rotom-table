@@ -22,6 +22,7 @@ const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): Pla
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
+  revision: 4,
   slug: 'arena',
   name: 'Arena',
   dimensions: { x: 6, y: 3, z: 6 },
@@ -113,6 +114,7 @@ describe('save map use case', () => {
     expect(writes).toHaveLength(1)
     expect(writes[0]?.path).toBe(path)
     expect(writes[0]?.map).toMatchObject({
+      revision: 4,
       name: 'GM Revised Arena',
       playerVisible: false,
       voxels: [{ x: 3, y: 0, z: 3, materialId: 'stone' }],
@@ -123,6 +125,23 @@ describe('save map use case', () => {
     })
     expect(writes[0]?.map.placements).toHaveLength(1)
     expect(result.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
+  })
+
+  it('preserves an existing map revision when a compatibility save omits it', () => {
+    const existing = baseMap({ revision: 9 })
+    const incoming = baseMap({ name: 'Legacy client save' })
+    delete (incoming as unknown as Record<string, unknown>).revision
+    const { deps, writes } = createDeps(existing, { now: 1500 })
+
+    const result = saveMapUseCase({
+      role: 'gm',
+      slug: 'arena',
+      map: incoming,
+    }, deps)
+
+    expect(writes).toHaveLength(1)
+    expect(writes[0]?.map.revision).toBe(9)
+    expect(result.map.revision).toBe(9)
   })
 
   it('merges only linked player token movement and facing from whole-map saves', () => {

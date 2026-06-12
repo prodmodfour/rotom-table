@@ -9,6 +9,7 @@ import type { TabletopMap } from '~/types/map'
 
 const createMap = (folder = 'maps/a'): TabletopMap => ({
   schemaVersion: 2,
+  revision: 3,
   slug: 'test-map',
   name: 'Test Map',
   folder,
@@ -42,6 +43,7 @@ describe('map persistence helpers', () => {
 
     expect(payload.slug).toBe('test-map')
     expect(payload.name).toBe('Test Map')
+    expect(payload.revision).toBe(3)
     expect(payload).not.toHaveProperty('folder')
   })
 
@@ -49,7 +51,7 @@ describe('map persistence helpers', () => {
     const first = stablePersistableMapJson({ slug: 'arena', folder: 'a', name: 'Arena' })
     const second = stablePersistableMapJson({ name: 'Arena', folder: 'b', slug: 'arena' })
 
-    expect(first).toBe('{"name":"Arena","slug":"arena"}')
+    expect(first).toBe('{"name":"Arena","revision":0,"slug":"arena"}')
     expect(second).toBe(first)
   })
 

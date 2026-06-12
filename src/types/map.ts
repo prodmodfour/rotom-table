@@ -125,6 +125,8 @@ export interface MaterialDefinition {
 
 export interface TabletopMapV2 {
   schemaVersion: 2
+  /** Server-owned document revision used for command conflict control. */
+  revision?: number
   /** URL slug, also the on-disk filename stem (`<slug>.json`). */
   slug: string
   name: string
@@ -161,6 +163,7 @@ export interface MapSummary {
   placementCount: number
   playerVisible?: boolean
   schemaVersion?: number
+  revision?: number
   updatedAt?: number
 }
 

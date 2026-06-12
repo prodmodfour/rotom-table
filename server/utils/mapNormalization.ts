@@ -1,5 +1,6 @@
 import type { GridDimensions, MapHazardV2, MapVoxelV2, TabletopMapV2 } from '~/types/map'
 import { SLUG_RE } from '#shared/paths'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapHazard } from '~/utils/mapHazards'
 import { normalizeMaterialId } from '~/utils/mapMaterials'
@@ -103,6 +104,7 @@ export const normalizeMapDocument = (
 
   return {
     schemaVersion: 2,
+    revision: normalizeRevision(record.revision),
     slug: record.slug as string,
     name: record.name as string,
     folder: typeof options.folder === 'string'

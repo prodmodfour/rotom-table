@@ -147,7 +147,7 @@ describe('document-backed editing no-regression boundaries', () => {
     expect(localMocks.postJson).toHaveBeenCalledWith(SHEET_API_PATHS.save, {
       kind: 'pokemon',
       slug: 'local-pikachu',
-      sheet: { slug: 'local-pikachu', nickname: 'local pikachu', level: 6 },
+      sheet: { revision: 0, slug: 'local-pikachu', nickname: 'local pikachu', level: 6 },
       clientId: 'local-client',
       allowSlugSync: false,
     })

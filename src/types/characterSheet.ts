@@ -148,6 +148,8 @@ export interface CharacterSheetSkills {
 }
 
 export interface CharacterSheet {
+  /** Server-owned document revision used for command conflict control. */
+  revision?: number
   /** URL slug for the sheet's subpage (``/sheets/<slug>``). */
   slug: string
   /**
