@@ -27,7 +27,7 @@ With the variable set, Rotom Table reads and writes campaign-owned files under t
 
 App-owned PTU reference data stays in the app repo under `data/reference/`. GM Pokédex maintenance writes a campaign override diff at `data/reference-overrides/pokedex.json` instead of rewriting the app-owned `data/reference/pokedex.json` file. The override file stores replacement Pokédex entries keyed by the original app-reference slug; when a saved entry matches the app reference again, its campaign override is removed from the diff.
 
-The default live-play database path is `${ROTOM_CAMPAIGN_ROOT}/rotom-table.sqlite`. Set `ROTOM_DB_PATH` only when the database should live at a different operator-controlled path; relative `ROTOM_DB_PATH` values are resolved under `ROTOM_CAMPAIGN_ROOT`.
+The default live-play database path is `${ROTOM_CAMPAIGN_ROOT}/rotom-table.sqlite`. Set `ROTOM_DB_PATH` only when the database should live at a different private operator-controlled campaign-storage path outside the app checkout and included in backups; relative `ROTOM_DB_PATH` values are resolved under `ROTOM_CAMPAIGN_ROOT`.
 
 ## Private VPS layout example
 

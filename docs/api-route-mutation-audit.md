@@ -1,16 +1,16 @@
 # API route mutation audit
 
-This audit lists the non-GET Nitro API surfaces that can mutate server memory or filesystem-backed JSON. It is scoped to private trusted-table hosting and local development. It is not a public-hosting hardening review.
+This audit lists the non-GET Nitro API surfaces that can mutate server memory, filesystem-backed JSON, or SQLite-backed live-play state. It is scoped to private trusted-table hosting and local development. It is not a public-hosting hardening review.
 
 GET routes are omitted unless they are relevant to the notes below; current GET endpoints are treated as read-only project/campaign queries, health checks, legacy SSE, or static data lookups. The legacy session WebSocket is included because commands through it mutate session state and write session snapshots.
 
 ## Hosted-write policy summary
 
-`ROTOM_ENABLE_HOSTED_WRITES=1` is the exact production opt-in for persistent hosted filesystem writes on routes that are covered by the hosted-write policy. In non-production local development, these writes remain available without the flag.
+`ROTOM_ENABLE_HOSTED_WRITES=1` is the exact production opt-in for persistent hosted campaign writes on routes that are covered by the hosted-write policy, including filesystem-backed JSON writes and SQLite-backed live-play command writes. In non-production local development, these writes remain available without the flag. When the flag is absent or any value other than exactly `1` in production, covered routes fail closed with the shared 403-style message before invoking persistence use cases or player-profile resolution.
 
-Map write routes are covered by the same hosted-write policy. GM map library/admin routes still require GM role. `/api/maps/save` is restricted to explicit GM setup/edit whole-map saves; player-facing map/token routes keep the existing player-visible map and selected-profile token-control checks used by local profile play.
+Map write routes are covered by the same hosted-write policy. GM map library/admin routes still require GM role. `/api/maps/save` is restricted to explicit GM setup/edit whole-map saves; player-facing map/token command routes keep the existing player-visible map and selected-profile token-control checks used by local profile play after the hosted-write gate passes. Database-backed command routes write only to a database path in private operator-controlled campaign storage, with the default at `ROTOM_CAMPAIGN_ROOT/rotom-table.sqlite`; `ROTOM_DB_PATH` overrides must stay outside the app checkout and be included in backups.
 
-Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_HOST=1` guard and session-local credentials. They are not normal profile-based play routes and are not a substitute for the hosted-write flag on covered filesystem routes.
+Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_HOST=1` guard and session-local credentials. They are not normal profile-based play routes and are not a substitute for the hosted-write flag on covered campaign routes.
 
 ## Route table
 
@@ -78,4 +78,5 @@ Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_
 ## Remaining limitations
 
 - The hosted-write flag does not make the trust-based GM/Player role picker public authentication. Private VPS use still requires an outer access gate.
+- Hosted-write enablement does not run JSON-to-SQLite imports or schema/data migrations for the operator. Migration/import commands are explicit maintenance actions, and database/WAL files must be part of private backup and restore practice.
 - Legacy session routes remain maintenance-only surfaces with their own runtime flag and credentials. They should not be used to justify public exposure of normal campaign routes.

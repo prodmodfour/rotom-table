@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   saveMapUseCase: vi.fn(),
   spawnMapTokenUseCase: vi.fn(),
   executeMapTokenLivePlayCommandUseCase: vi.fn(),
+  executeLivePlaySheetCommandUseCase: vi.fn(),
   useMapTokenAbilityUseCase: vi.fn(),
   useMapTokenManeuverUseCase: vi.fn(),
   useMapTokenOrderUseCase: vi.fn(),
@@ -53,6 +54,9 @@ vi.mock('../../server/useCases/applyMapTokenAction', () => ({
   spawnMapTokenUseCase: mocks.spawnMapTokenUseCase,
   executeMapTokenLivePlayCommandUseCase: mocks.executeMapTokenLivePlayCommandUseCase,
 }))
+vi.mock('../../server/useCases/applyLivePlaySheetCommand', () => ({
+  executeLivePlaySheetCommandUseCase: mocks.executeLivePlaySheetCommandUseCase,
+}))
 vi.mock('../../server/useCases/applyMapTokenTableAction', () => ({
   useMapTokenAbilityUseCase: mocks.useMapTokenAbilityUseCase,
   useMapTokenManeuverUseCase: mocks.useMapTokenManeuverUseCase,
@@ -89,6 +93,9 @@ const tokenSpawnRoute = (await import('../../server/api/maps/tokens/spawn.post')
 const tokenDeleteRoute = (await import('../../server/api/maps/tokens/delete.post')).default
 const tokenMoveRoute = (await import('../../server/api/maps/tokens/move.post')).default
 const tokenTurnRoute = (await import('../../server/api/maps/tokens/turn.post')).default
+const modifyHpRoute = (await import('../../server/api/maps/tokens/modify-hp.post')).default
+const modifyCombatStagesRoute = (await import('../../server/api/maps/tokens/modify-combat-stages.post')).default
+const modifyConditionsRoute = (await import('../../server/api/maps/tokens/modify-conditions.post')).default
 const abilityRoute = (await import('../../server/api/maps/tokens/use-ability.post')).default
 const maneuverRoute = (await import('../../server/api/maps/tokens/use-maneuver.post')).default
 const orderRoute = (await import('../../server/api/maps/tokens/use-order.post')).default
@@ -154,6 +161,11 @@ const invokeRoute = async (
 const disableProductionWrites = (): void => {
   process.env.NODE_ENV = 'production'
   delete process.env.ROTOM_ENABLE_HOSTED_WRITES
+}
+
+const enableProductionWrites = (): void => {
+  process.env.NODE_ENV = 'production'
+  process.env.ROTOM_ENABLE_HOSTED_WRITES = '1'
 }
 
 describe('map hosted-write API routes', () => {
@@ -354,6 +366,48 @@ describe('map hosted-write API routes', () => {
         mock: mocks.executeMapTokenLivePlayCommandUseCase,
       },
       {
+        route: modifyHpRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedhp1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'modifyHp',
+          scopes: [{ kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'hp' }],
+          payload: { placementId: 'token-1', delta: -5 },
+          profileId: 'profile_ash00000',
+        },
+        mock: mocks.executeLivePlaySheetCommandUseCase,
+      },
+      {
+        route: modifyCombatStagesRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedstage',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'modifyCombatStages',
+          scopes: [{ kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'combatStages' }],
+          payload: { placementId: 'token-1', stages: { attack: 1 } },
+          profileId: 'profile_ash00000',
+        },
+        mock: mocks.executeLivePlaySheetCommandUseCase,
+      },
+      {
+        route: modifyConditionsRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedcond',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'modifyConditions',
+          scopes: [{ kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'conditions' }],
+          payload: { placementId: 'token-1', add: ['burned'] },
+          profileId: 'profile_ash00000',
+        },
+        mock: mocks.executeLivePlaySheetCommandUseCase,
+      },
+      {
         route: abilityRoute,
         body: {
           slug: 'arena',
@@ -436,5 +490,108 @@ describe('map hosted-write API routes', () => {
       expect(routeCase.mock).not.toHaveBeenCalled()
     }
     expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
+  })
+
+  it('allows representative live-play command routes in production when the exact hosted-write flag is set', async () => {
+    enableProductionWrites()
+
+    const map = mapFixture()
+    const placement = map.placements[0]!
+    const initiativeCommand = {
+      schemaVersion: 1,
+      opId: 'op_hostedok1',
+      mapSlug: 'arena',
+      baseRevision: 0,
+      type: 'setInitiative',
+      scopes: [{ kind: 'map', lane: 'initiative' }],
+      payload: { tokenId: 'token-1', initiative: 12 },
+      clientId: 'client-gm',
+    }
+    mocks.executeLivePlayInitiativeCommandUseCase.mockResolvedValueOnce({
+      result: {
+        ok: true,
+        status: 'accepted',
+        opId: 'op_hostedok1',
+        mapSlug: 'arena',
+        previousRevision: 0,
+        revision: 1,
+        patches: [],
+      },
+      map,
+      initiative: map.initiative,
+    })
+
+    await expect(invokeRoute(setInitiativeRoute, {
+      role: 'gm',
+      body: initiativeCommand,
+    })).resolves.toMatchObject({
+      ok: true,
+      opId: 'op_hostedok1',
+      mapSlug: 'arena',
+      revision: 1,
+      map,
+      initiative: map.initiative,
+    })
+    expect(mocks.executeLivePlayInitiativeCommandUseCase).toHaveBeenCalledWith({
+      role: 'gm',
+      command: initiativeCommand,
+      clientId: 'client-gm',
+      expectedType: 'setInitiative',
+    })
+
+    const playerProfile = {
+      schemaVersion: 1,
+      id: 'profile_ash00000',
+      displayName: 'Ash',
+      linkedCharacters: [],
+    }
+    const hpCommand = {
+      schemaVersion: 1,
+      opId: 'op_hostedok2',
+      mapSlug: 'arena',
+      baseRevision: 1,
+      type: 'modifyHp',
+      scopes: [{ kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'hp' }],
+      payload: { placementId: 'token-1', delta: -5 },
+      profileId: 'profile_ash00000',
+      clientId: 'client-player',
+    }
+    const sheetUpdates = [{ kind: 'pokemon', slug: 'pikachu', revision: 2, sheet: { slug: 'pikachu' } }]
+    mocks.resolvePlayerProfileForPolicy.mockReturnValueOnce(playerProfile)
+    mocks.executeLivePlaySheetCommandUseCase.mockResolvedValueOnce({
+      result: {
+        ok: true,
+        status: 'accepted',
+        opId: 'op_hostedok2',
+        mapSlug: 'arena',
+        previousRevision: 1,
+        revision: 2,
+        patches: [],
+      },
+      map,
+      placement,
+      sheetUpdates,
+    })
+
+    await expect(invokeRoute(modifyHpRoute, {
+      role: 'player',
+      body: hpCommand,
+    })).resolves.toMatchObject({
+      ok: true,
+      opId: 'op_hostedok2',
+      mapSlug: 'arena',
+      revision: 2,
+      map,
+      placement,
+      sheetUpdates,
+    })
+    expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenCalledWith('profile_ash00000')
+    expect(mocks.executeLivePlaySheetCommandUseCase).toHaveBeenCalledWith({
+      role: 'player',
+      command: hpCommand,
+      clientId: 'client-player',
+      playerProfile,
+      expectedType: 'modifyHp',
+    })
   })
 })

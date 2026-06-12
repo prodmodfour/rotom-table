@@ -7,7 +7,7 @@ Use synthetic or clearly disposable campaign edits for smoke checks. Do not put 
 ## Preconditions
 
 - [ ] The deployed checkout is the intended app revision under `/srv/rotom-table/app` or the operator's equivalent app path; if branch names are part of the deploy process, prefer `main` plus short-lived feature branches instead of unnecessary long-lived branch tiers.
-- [ ] `ROTOM_CAMPAIGN_ROOT` points outside the app checkout, for example `/srv/rotom-table/campaign`; branch names are not data-isolation boundaries, and staging plus production must never share the same writable campaign root. If `ROTOM_DB_PATH` is set, it points to a private operator-controlled database path rather than the app checkout.
+- [ ] `ROTOM_CAMPAIGN_ROOT` points outside the app checkout, for example `/srv/rotom-table/campaign`; branch names are not data-isolation boundaries, and staging plus production must never share the same writable campaign root. If `ROTOM_DB_PATH` is set, it points to private operator-controlled campaign storage rather than the app checkout, and the database plus WAL sidecars are included in backups.
 - [ ] The Node service binds to loopback, for example `NITRO_HOST=127.0.0.1` and `NITRO_PORT=3000`, unless the private host uses an equivalent non-public bind.
 - [ ] The private host is protected by an outer access gate before Rotom Table's `/login` page, `/api/events`, `/api/health`, all `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths are reachable.
 - [ ] A current private backup exists or the operator is comfortable discarding the disposable smoke edits. See the [Private VPS backup runbook](private-vps-backups.md).

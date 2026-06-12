@@ -49,6 +49,7 @@ describe('hosted write policy', () => {
     process.env.NODE_ENV = 'production'
     delete process.env.ROTOM_ENABLE_HOSTED_WRITES
 
+    expect(HOSTED_WRITES_DISABLED_MESSAGE).toContain('database-backed live-play commands')
     expect(() => requireWritableCampaignMode()).toThrow(HOSTED_WRITES_DISABLED_MESSAGE)
     try {
       requireWritableCampaignMode()

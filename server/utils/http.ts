@@ -21,7 +21,7 @@ export const conflict = (statusMessage: string): never => {
 export const HOSTED_WRITES_FLAG = 'ROTOM_ENABLE_HOSTED_WRITES'
 
 export const HOSTED_WRITES_DISABLED_MESSAGE =
-  `Hosted filesystem writes are disabled in production. Set ${HOSTED_WRITES_FLAG}=1 only for a private trusted-table host.`
+  `Hosted campaign writes, including database-backed live-play commands, are disabled in production. Set ${HOSTED_WRITES_FLAG}=1 only for a private trusted-table host.`
 
 type WritableCampaignEnv = Readonly<Record<string, string | undefined>>
 

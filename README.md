@@ -35,7 +35,7 @@ See [Campaign repositories](docs/campaign-repositories.md) for the expected layo
 
 ## Private VPS hosting
 
-Rotom Table's primary deployment shape is now private trusted-table hosting: run the built Nitro server for a known campaign group, keep campaign JSON in an operator-controlled `ROTOM_CAMPAIGN_ROOT`, and put the URL behind an outer access gate. Production filesystem writes fail closed unless the private operator explicitly sets `ROTOM_ENABLE_HOSTED_WRITES=1`. The GM/Player picker is still not public authentication, and the app is not a public multi-user service. Start with the [private VPS hosting runbook](docs/private-vps-hosting.md), then follow the [deployment smoke checklist](docs/private-vps-deployment-smoke-checklist.md) and [backup runbook](docs/private-vps-backups.md) for host-specific validation and recovery practice.
+Rotom Table's primary deployment shape is now private trusted-table hosting: run the built Nitro server for a known campaign group, keep campaign JSON and the live-play SQLite database in operator-controlled campaign storage such as `ROTOM_CAMPAIGN_ROOT`, and put the URL behind an outer access gate. Production campaign writes fail closed unless the private operator explicitly sets `ROTOM_ENABLE_HOSTED_WRITES=1`. The GM/Player picker is still not public authentication, and the app is not a public multi-user service. Start with the [private VPS hosting runbook](docs/private-vps-hosting.md), then follow the [deployment smoke checklist](docs/private-vps-deployment-smoke-checklist.md) and [backup runbook](docs/private-vps-backups.md) for host-specific validation and recovery practice.
 
 Recommended verification commands:
 
