@@ -34,6 +34,8 @@ Live play commands must be server-authoritative. A client can optimistically pre
 
 Idempotency records are keyed by map and `opId`. Each record stores the accepted or rejected result plus a deterministic hash of the normalized command envelope. A retry with the same map, `opId`, and command body returns the stored result without advancing map or sheet revisions. Reusing the same map/`opId` for a different command body is rejected as an idempotency conflict and does not replace the original record.
 
+Server command routes use the authoritative live-play command executor as the cross-cutting pipeline for envelope validation, actor resolution, duplicate `opId` checks, per-map write queueing, revision validation, authorization, conflict hooks, pure command application, persistence, idempotency-result storage, and realtime patch publishing. The initial queue is in-process: commands targeting the same map run sequentially, while commands targeting different maps can continue independently. Persistence or idempotency-storage failures return structured rejections and must not publish success patches.
+
 ## Shared command contract
 
 `shared/livePlayCommands.ts` is the canonical client/server-safe contract for live-play command envelopes, command type constants, patch type constants, resource scopes, `opId`/`baseRevision`/map slug validators, and reusable accepted/rejected/duplicate result builders. Command routes and client dispatchers should import these definitions instead of inventing local request or rejection shapes.
