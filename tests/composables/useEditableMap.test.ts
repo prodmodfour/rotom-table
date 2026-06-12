@@ -2,7 +2,7 @@ import { nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { useEditableMap } from '~/composables/useEditableMap'
-import { parsePlayerProfileId } from '#shared/playerProfiles'
+import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import type { RealtimeEvent } from '#shared/realtime'
 import type { TabletopMap } from '~/types/map'
 
@@ -113,6 +113,9 @@ const readLastBeaconJson = async (sendBeacon: { mock: { calls: unknown[][] } }):
   return JSON.parse(await body.text()) as Record<string, unknown>
 }
 
+const setupEditMode = () => ref<MapInteractionMode>(MAP_INTERACTION_MODES.SETUP_EDIT)
+const livePlayMode = () => ref<MapInteractionMode>(MAP_INTERACTION_MODES.LIVE_PLAY)
+
 describe('useEditableMap autosave boundary', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -132,9 +135,13 @@ describe('useEditableMap autosave boundary', () => {
     restoreUnloadGlobals = null
   })
 
-  it('autosaves whole-map edits through document-backed persistence when enabled', async () => {
+  it('autosaves whole-map edits through document-backed persistence when setup/edit mode is enabled', async () => {
     const autosaveEnabled = ref(true)
-    const editable = useEditableMap('arena-map', { debounceMs: 10, autosaveEnabled })
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      interactionMode: setupEditMode(),
+      autosaveEnabled,
+    })
     await flushPromises()
 
     editable.map.value!.name = 'Renamed Arena'
@@ -151,13 +158,14 @@ describe('useEditableMap autosave boundary', () => {
       slug: 'arena-map',
       map: expect.objectContaining({ name: 'Renamed Arena' }),
       clientId: 'map-client',
+      interactionMode: 'setup-edit',
     })
     expect(editable.status.value).toBe('saved')
     expect(editable.map.value?.updatedAt).toBe(200)
   })
 
-  it('autosaves newly added token placements through the normal debounce path', async () => {
-    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+  it('autosaves newly added setup/edit token placements through the normal debounce path', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10, interactionMode: setupEditMode() })
     await flushPromises()
 
     editable.map.value!.placements.push({
@@ -180,11 +188,12 @@ describe('useEditableMap autosave boundary', () => {
         ]),
       }),
       clientId: 'map-client',
+      interactionMode: 'setup-edit',
     })
   })
 
   it('increments a map data revision for full persisted replacements without treating autosave as a reload', async () => {
-    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    const editable = useEditableMap('arena-map', { debounceMs: 10, interactionMode: setupEditMode() })
     await flushPromises()
 
     expect(editable.mapDataRevision.value).toBe(1)
@@ -203,9 +212,8 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.mapDataRevision.value).toBe(2)
   })
 
-  it('includes the selected player profile id in whole-map save requests when available', async () => {
-    const playerProfileId = ref(parsePlayerProfileId('profile_ash00000'))
-    const editable = useEditableMap('arena-map', { debounceMs: 10, playerProfileId })
+  it('does not whole-map autosave live-play mutations by default', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
     await flushPromises()
 
     editable.map.value!.placements[0]!.position = { x: 2, y: 0, z: 1 }
@@ -213,19 +221,42 @@ describe('useEditableMap autosave boundary', () => {
     await vi.advanceTimersByTimeAsync(10)
     await flushPromises()
 
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    expect(editable.status.value).toBe('idle')
+  })
+
+  it('does not later save mutations that were made while in live-play mode', async () => {
+    const interactionMode = livePlayMode()
+    const editable = useEditableMap('arena-map', { debounceMs: 10, interactionMode })
+    await flushPromises()
+
+    editable.map.value!.name = 'Live-only local name'
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    interactionMode.value = MAP_INTERACTION_MODES.SETUP_EDIT
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    editable.map.value!.name = 'Setup edit name'
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
     expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.save, {
       slug: 'arena-map',
-      map: expect.objectContaining({
-        placements: [expect.objectContaining({ position: { x: 2, y: 0, z: 1 } })],
-      }),
+      map: expect.objectContaining({ name: 'Setup edit name' }),
       clientId: 'map-client',
-      profileId: 'profile_ash00000',
+      interactionMode: 'setup-edit',
     })
   })
 
-  it('flushes dirty pending map placements through pagehide beacon and cancels the debounced save', async () => {
+  it('flushes dirty pending setup/edit map placements through pagehide beacon and cancels the debounced save', async () => {
     const unload = installUnloadGlobals()
-    const editable = useEditableMap('arena-map', { debounceMs: 50 })
+    const editable = useEditableMap('arena-map', { debounceMs: 50, interactionMode: setupEditMode() })
     await flushPromises()
 
     editable.map.value!.placements.push({
@@ -248,6 +279,7 @@ describe('useEditableMap autosave boundary', () => {
     expect(await readLastBeaconJson(unload.sendBeacon)).toMatchObject({
       slug: 'arena-map',
       clientId: 'map-client',
+      interactionMode: 'setup-edit',
       map: {
         placements: expect.arrayContaining([
           expect.objectContaining({ id: 'token-eevee', sheetSlug: 'eevee' }),
@@ -265,9 +297,9 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
-  it('flushes newly spawned placements even before the debounce watcher runs', async () => {
+  it('flushes newly spawned setup/edit placements even before the debounce watcher runs', async () => {
     const unload = installUnloadGlobals()
-    const editable = useEditableMap('arena-map', { debounceMs: 50 })
+    const editable = useEditableMap('arena-map', { debounceMs: 50, interactionMode: setupEditMode() })
     await flushPromises()
 
     editable.map.value!.placements.push({
@@ -281,6 +313,7 @@ describe('useEditableMap autosave boundary', () => {
 
     expect(unload.sendBeacon).toHaveBeenCalledTimes(1)
     expect(await readLastBeaconJson(unload.sendBeacon)).toMatchObject({
+      interactionMode: 'setup-edit',
       map: {
         placements: expect.arrayContaining([
           expect.objectContaining({ id: 'token-immediate', sheetSlug: 'runtime-trainer' }),
@@ -305,10 +338,14 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
-  it('does not unload-write while map autosave is disabled', async () => {
+  it('does not unload-write while setup/edit map autosave is disabled', async () => {
     const unload = installUnloadGlobals()
     const autosaveEnabled = ref(false)
-    const editable = useEditableMap('arena-map', { debounceMs: 10, autosaveEnabled })
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      interactionMode: setupEditMode(),
+      autosaveEnabled,
+    })
     await flushPromises()
 
     editable.map.value!.placements.push({
@@ -425,8 +462,8 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
-  it('cancels pending dirty saves when another viewer publishes an authoritative map update', async () => {
-    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+  it('cancels pending dirty setup/edit saves when another viewer publishes an authoritative map update', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10, interactionMode: setupEditMode() })
     await flushPromises()
 
     editable.map.value!.name = 'Locally queued rename'
@@ -481,7 +518,11 @@ describe('useEditableMap autosave boundary', () => {
 
   it('pauses whole-map autosave while disabled and resumes it for document-backed editing', async () => {
     const autosaveEnabled = ref(false)
-    const editable = useEditableMap('arena-map', { debounceMs: 10, autosaveEnabled })
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      interactionMode: setupEditMode(),
+      autosaveEnabled,
+    })
     await flushPromises()
 
     editable.map.value!.placements[0]!.position = { x: 2, y: 0, z: 1 }
@@ -507,6 +548,7 @@ describe('useEditableMap autosave boundary', () => {
         placements: [expect.objectContaining({ position: { x: 2, y: 0, z: 1 } })],
       }),
       clientId: 'map-client',
+      interactionMode: 'setup-edit',
     })
   })
 })

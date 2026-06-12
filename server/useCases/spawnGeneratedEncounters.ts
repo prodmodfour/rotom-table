@@ -1,5 +1,6 @@
 import { basename, extname, join as joinPath } from 'node:path'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import { placementsToSpawned, type SheetLookup } from '~/utils/placement'
 import { catalogEntryForPokemonSheet, pokemonHpSnapshot } from '~/utils/sheetSpawn'
@@ -248,6 +249,7 @@ const defaultSaveMap = (slug: string, map: TabletopMap, clientId?: string): Save
   slug,
   map,
   clientId,
+  interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
 })
 
 const normalizeSpawnGeneratedEncountersError = (error: unknown): unknown => {

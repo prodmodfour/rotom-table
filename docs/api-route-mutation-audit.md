@@ -8,7 +8,7 @@ GET routes are omitted unless they are relevant to the notes below; current GET 
 
 `ROTOM_ENABLE_HOSTED_WRITES=1` is the exact production opt-in for persistent hosted filesystem writes on routes that are covered by the hosted-write policy. In non-production local development, these writes remain available without the flag.
 
-Map write routes are covered by the same hosted-write policy. GM map library/admin routes still require GM role, while player-facing map/token routes keep the existing player-visible map and selected-profile token-control checks used by local profile play.
+Map write routes are covered by the same hosted-write policy. GM map library/admin routes still require GM role. `/api/maps/save` is restricted to explicit GM setup/edit whole-map saves; player-facing map/token routes keep the existing player-visible map and selected-profile token-control checks used by local profile play.
 
 Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_HOST=1` guard and session-local credentials. They are not normal profile-based play routes and are not a substitute for the hosted-write flag on covered filesystem routes.
 
@@ -33,7 +33,7 @@ Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_
 | `/api/maps/move-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a map folder. |
 | `/api/maps/move` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a saved map JSON document between folders. |
 | `/api/maps/rename` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Renames a saved map and may move the JSON file when the slug changes. |
-| `/api/maps/save` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | GM saves rewrite the full map. Player saves require a player-visible map and only merge linked-profile token movement/facing. |
+| `/api/maps/save` | GM setup/edit whole-map write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Requires GM role and `interactionMode: "setup-edit"`; player requests and `interactionMode: "live-play"` are rejected. Live gameplay uses command routes instead of player whole-map merge saves. |
 | `/api/maps/action-event` | Player-authorized transient realtime broadcast | Not a hosted filesystem write. | Publishes bounded visual-only `map-action` events to `map:<slug>` after checking the map, actor placement, player-visible boundary, and selected-profile token control. It does not write map JSON, sheet JSON, logs, metadata, campaign state, or session snapshots. |
 | `/api/maps/tokens/move` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a controllable token in a saved map, updates movement metadata, and publishes map events. Players must select a profile linked to that token's sheet. |
 | `/api/maps/tokens/turn` | Player-authorized profile/map/sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Turns a controllable token in a saved map and publishes map events. Players must select a profile linked to that token's sheet. |

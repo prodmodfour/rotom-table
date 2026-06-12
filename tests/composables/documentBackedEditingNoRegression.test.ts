@@ -1,5 +1,6 @@
 import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { mapChannel, sheetChannel } from '#shared/realtime'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useEditableSheet } from '~/composables/useEditableSheet'
@@ -95,7 +96,10 @@ describe('document-backed editing no-regression boundaries', () => {
   })
 
   it('keeps plain map editing on local autosave and legacy realtime when session hosting is absent', async () => {
-    const editable = useEditableMap('local-arena', { debounceMs: 10 })
+    const editable = useEditableMap('local-arena', {
+      debounceMs: 10,
+      interactionMode: { value: MAP_INTERACTION_MODES.SETUP_EDIT },
+    })
     await flushPromises()
 
     expect(localMocks.getJson).toHaveBeenCalledWith(MAP_API_PATHS.load, { params: { slug: 'local-arena' } })
@@ -113,6 +117,7 @@ describe('document-backed editing no-regression boundaries', () => {
       slug: 'local-arena',
       map: expect.objectContaining({ name: 'Local Arena Revised' }),
       clientId: 'local-client',
+      interactionMode: 'setup-edit',
     })
     expect(localMocks.postJson.mock.calls.flat().join(' ')).not.toContain('/api/sessions')
     expect(localMocks.mapSubscriptions.map((subscription) => subscription.channel).join(' ')).not.toContain(

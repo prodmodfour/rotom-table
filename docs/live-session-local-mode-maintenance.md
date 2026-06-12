@@ -4,11 +4,11 @@ This maintenance note records the current non-session setup/edit and transitiona
 
 ## Current baseline
 
-- `/maps/<slug>` loads the persisted map document; setup/edit and compatibility workflows may save the whole document.
+- `/maps/<slug>` loads the persisted map document; explicit GM setup/edit workflows may save the whole document, while player and live-play mode map pages must not call `/api/maps/save`.
 - Player token control is derived from the selected persistent player profile's linked Pokémon/trainer sheet refs.
 - Players without a selected profile can still browse map/sheet libraries, Pokédex pages, PTU reference pages, login, and informational routes.
 - Player map actions that mutate linked tokens currently use document-backed APIs and publish regular realtime map updates as transitional compatibility; the live-play direction is explicit server-authoritative commands with revisions, `opId`, and patches.
-- GM map and sheet editing remains filesystem-backed and unrestricted by player profiles.
+- GM setup/edit map and sheet editing remains filesystem-backed and unrestricted by player profiles.
 - Legacy live-session identity/socket code must not become a prerequisite for normal map play.
 
 ## Regression checks

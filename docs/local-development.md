@@ -24,7 +24,7 @@ Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and
 
 ## Profile play and legacy live-session hosting
 
-Plain `npm run dev` is the standard local development path. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` can save filesystem-backed JSON through autosave for setup/edit, local maintenance, and compatibility workflows. Those document saves and legacy `/api/events` realtime updates are not the authority model for live multiplayer gameplay.
+Plain `npm run dev` is the standard local development path. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` can save filesystem-backed JSON through autosave for setup/edit, local maintenance, and compatibility workflows. Whole-map map saves are GM setup/edit-only and require the setup/edit interaction mode; they are not accepted from Player Login or from live-play mode. Those document saves and legacy `/api/events` realtime updates are not the authority model for live multiplayer gameplay.
 
 Normal map play uses the saved map document at `/maps/<slug>` with profile-linked token control. GMs manage profile links at `/players`; players select a profile after Player Login, then navigate to the relevant player-visible map and act with linked characters. Live gameplay mutations should move through server-authoritative command boundaries with revisions and idempotent `opId` handling; browser-owned whole-map autosave must not be used as the multiplayer strategy. Players can also browse Pokédex, sheet-library, and PTU reference routes without joining a live session.
 

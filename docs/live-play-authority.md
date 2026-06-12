@@ -14,13 +14,13 @@ A browser may use document autosave during GM setup/edit workflows, local mainte
 
 ### Setup/edit mode
 
-Setup/edit mode is map and sheet preparation or maintenance. It includes GM map building, terrain edits, library organization, visibility setup, sheet edits, imports/exports, and local data repair. Whole-document JSON saves and debounced autosave may remain in this mode because a GM/operator is preparing campaign data rather than resolving concurrent live table actions.
+Setup/edit mode is map and sheet preparation or maintenance. It includes GM map building, terrain edits, library organization, visibility setup, sheet edits, imports/exports, and local data repair. Whole-document JSON saves and debounced autosave may remain in this mode because a GM/operator is preparing campaign data rather than resolving concurrent live table actions. The map save route requires an explicit `interactionMode: "setup-edit"` marker and GM role for whole-map saves.
 
 ### Live play mode
 
 Live play mode is the multiplayer table state that players and the GM act on together. It uses persistent player profiles and regular `/maps/<slug>` URLs. Gameplay mutations are commands such as move token, turn token, modify HP, use move, advance initiative, place a hazard, edit terrain, spawn/delete token, or update sheet-backed combat state.
 
-Live play commands must be server-authoritative. A client can optimistically preview an action, but the accepted server result, rejection, patch, or reconciliation response determines durable state.
+Live play commands must be server-authoritative. A client can optimistically preview an action, but the accepted server result, rejection, patch, or reconciliation response determines durable state. Live play mode does not deep-watch the map document and does not call `/api/maps/save`; player requests and explicit `interactionMode: "live-play"` requests to that route are rejected.
 
 ## Command flow
 
@@ -34,7 +34,7 @@ Live play commands must be server-authoritative. A client can optimistically pre
 
 Idempotency records are keyed by map and `opId`. Each record stores the accepted or rejected result plus a deterministic hash of the normalized command envelope. A retry with the same map, `opId`, and command body returns the stored result without advancing map or sheet revisions. Reusing the same map/`opId` for a different command body is rejected as an idempotency conflict and does not replace the original record.
 
-Server command routes use the authoritative live-play command executor as the cross-cutting pipeline for envelope validation, actor resolution, duplicate `opId` checks, per-map write queueing, revision validation, authorization, conflict hooks, pure command application, persistence, idempotency-result storage, and realtime patch publishing. Token move and token turn on normal map play now use this path for both GM and player actions: the client sends `moveToken` or `turnToken` with `opId`, `baseRevision`, token scope, and selected profile context when applicable; the server persists the accepted map revision before broadcasting revisioned map and command events. The initial queue is in-process: commands targeting the same map run sequentially, while commands targeting different maps can continue independently. Persistence or idempotency-storage failures return structured rejections and must not publish success patches.
+Server command routes use the authoritative live-play command executor as the cross-cutting pipeline for envelope validation, actor resolution, duplicate `opId` checks, per-map write queueing, revision validation, authorization, conflict hooks, pure command application, persistence, idempotency-result storage, and realtime patch publishing. Token move and token turn on normal map play now use this path for both GM and player actions: the client sends `moveToken` or `turnToken` with `opId`, `baseRevision`, token scope, and selected profile context when applicable; the server persists the accepted map revision before broadcasting revisioned map and command events. The map page defaults to live-play mode, so these command-backed movement and facing actions do not rely on whole-map autosave. The initial queue is in-process: commands targeting the same map run sequentially, while commands targeting different maps can continue independently. Persistence or idempotency-storage failures return structured rejections and must not publish success patches.
 
 ## Shared command contract
 

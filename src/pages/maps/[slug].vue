@@ -43,6 +43,7 @@ import {
 import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActionPanel'
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
+import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import {
   useAttackOfOpportunityPanel,
@@ -86,6 +87,7 @@ const {
   lastError: playerProfileError,
 } = usePlayerProfiles()
 
+const mapInteractionMode = ref<MapInteractionMode>(MAP_INTERACTION_MODES.LIVE_PLAY)
 const {
   map,
   status,
@@ -94,6 +96,7 @@ const {
   mapDataRevision,
   applyPersistedMap,
 } = useEditableMap(slug, {
+  interactionMode: mapInteractionMode,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
 })
 const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
@@ -476,6 +479,11 @@ const {
   hazardMode,
   clearSelection,
 })
+
+const setupEditModeActive = computed(() => isGm.value && (buildMode.value || hazardMode.value || adminPanelOpen.value))
+watch(setupEditModeActive, (active) => {
+  mapInteractionMode.value = active ? MAP_INTERACTION_MODES.SETUP_EDIT : MAP_INTERACTION_MODES.LIVE_PLAY
+}, { immediate: true })
 
 const {
   initiativeRows,

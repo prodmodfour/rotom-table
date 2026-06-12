@@ -15,6 +15,8 @@ describe('map page route authority', () => {
 
     expect(mapPage).toContain('key: (route) => `map-${routeSlugParam(route.params)}`')
     expect(mapPage).toContain('useEditableMap(slug, {')
+    expect(mapPage).toContain('interactionMode: mapInteractionMode')
+    expect(mapPage).toContain('MAP_INTERACTION_MODES.LIVE_PLAY')
     expect(mapPage).not.toContain('route.query.session')
     expect(mapPage).not.toContain('isSessionModeQueryEnabled')
     expect(mapPage).not.toContain('useSessionMap(')

@@ -1,19 +1,16 @@
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { UseCaseHttpError } from '~~/server/utils/useCaseErrors'
 import { subscribeRealtime } from '~~/server/utils/realtime'
+import { UseCaseHttpError } from '~~/server/utils/useCaseErrors'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import type { TabletopMap } from '~/types/map'
 
 const mocks = vi.hoisted(() => ({
   saveMapUseCase: vi.fn(),
-  resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
 vi.mock('../../server/useCases/saveMap', () => ({
   saveMapUseCase: mocks.saveMapUseCase,
-}))
-vi.mock('../../server/policies/playerProfilePolicy', () => ({
-  resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
 }))
 
 const saveRoute = (await import('../../server/api/maps/save.post')).default
@@ -56,48 +53,35 @@ const invokeRoute = async (
 
 describe('map save API route', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
-  it('resolves selected player profiles before player map saves', async () => {
+  it('accepts explicit GM setup/edit map saves', async () => {
     const map = mapFixture()
-    const profile = {
-      schemaVersion: 1,
-      id: 'profile_ash00000',
-      displayName: 'Ash',
-      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }],
-    }
-    mocks.resolvePlayerProfileForPolicy.mockReturnValue(profile)
     mocks.saveMapUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, events: [] })
 
     await expect(invokeRoute(saveRoute, {
-      role: 'player',
+      role: 'gm',
       body: {
         slug: 'arena',
         map,
-        clientId: 'client-1',
+        clientId: 'gm-client',
         profileId: 'profile_ash00000',
+        interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       },
     })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map })
 
-    expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenCalledWith('profile_ash00000')
     expect(mocks.saveMapUseCase).toHaveBeenCalledWith({
-      role: 'player',
+      role: 'gm',
       slug: 'arena',
       map,
-      clientId: 'client-1',
-      playerProfile: profile,
+      clientId: 'gm-client',
+      interactionMode: 'setup-edit',
     })
   })
 
-  it('publishes linked-player whole-map save events to realtime subscribers', async () => {
+  it('publishes GM setup/edit whole-map save events to realtime subscribers', async () => {
     const map = mapFixture()
-    const profile = {
-      schemaVersion: 1,
-      id: 'profile_ash00000',
-      displayName: 'Ash',
-      linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }],
-    }
     const events = [
       { channel: 'map:arena', type: 'updated' as const, clientId: 'client-1', data: map },
       { channel: 'maps', type: 'updated' as const, clientId: 'client-1', data: { slug: 'arena', name: 'Arena' } },
@@ -107,16 +91,15 @@ describe('map save API route', () => {
     const now = vi.spyOn(Date, 'now').mockReturnValue(654_321)
 
     try {
-      mocks.resolvePlayerProfileForPolicy.mockReturnValue(profile)
       mocks.saveMapUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, events })
 
       await expect(invokeRoute(saveRoute, {
-        role: 'player',
+        role: 'gm',
         body: {
           slug: 'arena',
           map,
           clientId: 'client-1',
-          profileId: 'profile_ash00000',
+          interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
         },
       })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map })
     } finally {
@@ -130,43 +113,65 @@ describe('map save API route', () => {
     ])
   })
 
-  it('keeps GM map saves independent from player profile selection', async () => {
+  it('rejects player whole-map save requests', async () => {
     const map = mapFixture()
-    mocks.saveMapUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, events: [] })
+    mocks.saveMapUseCase.mockImplementation(() => {
+      throw new UseCaseHttpError(403, 'Whole-map saves are GM setup/edit-only')
+    })
+
+    await expect(invokeRoute(saveRoute, {
+      role: 'player',
+      body: {
+        slug: 'arena',
+        map,
+        clientId: 'player-client',
+        profileId: 'profile_ash00000',
+        interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      },
+    })).rejects.toMatchObject({
+      statusCode: 403,
+      statusMessage: 'Whole-map saves are GM setup/edit-only',
+    })
+
+    expect(mocks.saveMapUseCase).toHaveBeenCalledWith({
+      role: 'player',
+      slug: 'arena',
+      map,
+      clientId: 'player-client',
+      interactionMode: 'setup-edit',
+    })
+  })
+
+  it('rejects live-play whole-map save requests', async () => {
+    const map = mapFixture()
+    mocks.saveMapUseCase.mockImplementation(() => {
+      throw new UseCaseHttpError(403, 'Whole-map saves are setup/edit-only; live play uses commands')
+    })
 
     await expect(invokeRoute(saveRoute, {
       role: 'gm',
       body: {
         slug: 'arena',
         map,
-        clientId: 'gm-client',
-        profileId: 'profile_ash00000',
+        interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
       },
-    })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map })
-
-    expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
-    expect(mocks.saveMapUseCase).toHaveBeenCalledWith({
-      role: 'gm',
-      slug: 'arena',
-      map,
-      clientId: 'gm-client',
-      playerProfile: null,
+    })).rejects.toMatchObject({
+      statusCode: 403,
+      statusMessage: 'Whole-map saves are setup/edit-only; live play uses commands',
     })
   })
 
-  it('maps invalid or missing selected profile errors before saving', async () => {
+  it('requires an explicit map interaction mode', async () => {
     const map = mapFixture()
-    mocks.resolvePlayerProfileForPolicy.mockImplementation(() => {
-      throw new UseCaseHttpError(404, 'Player profile profile_missing1 not found')
-    })
 
     await expect(invokeRoute(saveRoute, {
-      role: 'player',
-      body: { slug: 'arena', map, profileId: 'profile_missing1' },
+      role: 'gm',
+      body: { slug: 'arena', map },
     })).rejects.toMatchObject({
-      statusCode: 404,
-      statusMessage: 'Player profile profile_missing1 not found',
+      statusCode: 400,
+      statusMessage: 'interactionMode must be "setup-edit" or "live-play"',
     })
+
     expect(mocks.saveMapUseCase).not.toHaveBeenCalled()
   })
 })

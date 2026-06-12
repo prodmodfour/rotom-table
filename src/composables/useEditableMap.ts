@@ -1,13 +1,14 @@
 /**
  * useEditableMap — reactive wrapper around a saved map document.
  *
- * This composable supports setup/edit, local maintenance, and temporary
- * document-backed compatibility flows. It is not the live gameplay authority
- * model: live multiplayer mutations must use server-authoritative commands
- * with revisions, `opId` idempotency, and authoritative patches/results.
+ * This composable supports map loading/realtime adoption plus explicit GM
+ * setup/edit document saves. It is not the live gameplay authority model:
+ * live multiplayer mutations must use server-authoritative commands with
+ * revisions, `opId` idempotency, and authoritative patches/results.
  *
  * Loads the map from `/api/maps/load`, debounces setup/edit saves through
- * `/api/maps/save`, and syncs with other tabs/devices via the `/api/events`
+ * `/api/maps/save` only when `interactionMode` is `setup-edit`, and syncs
+ * with other tabs/devices via the `/api/events`
  * SSE stream:
  *
  *   • Edits in *this* tab mutate the reactive ref → deep watcher
@@ -25,6 +26,7 @@
  */
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
+import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import { isRealtimeEcho, mapChannel } from '#shared/realtime'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
@@ -53,16 +55,22 @@ interface MapSaveBody {
   slug: string
   map: TabletopMap
   clientId: string
+  interactionMode: MapInteractionMode
   profileId?: PlayerProfileId
 }
 
 export interface UseEditableMapOptions {
   readonly debounceMs?: number
   /**
-   * Controls whether mutations to this persisted map ref may write through the
-   * document-backed whole-map autosave route for setup/edit or compatibility
-   * flows. External document actions can pause autosave while they adopt
-   * server-persisted map responses.
+   * Explicitly declares which interaction surface owns current mutations.
+   * Whole-map autosave is enabled only for `setup-edit`; omitted modes default
+   * to `live-play` so normal gameplay cannot accidentally call `/api/maps/save`.
+   */
+  readonly interactionMode?: ReadonlyValueRef<MapInteractionMode>
+  /**
+   * Additional setup/edit autosave switch. External document actions can pause
+   * autosave while they adopt server-persisted map responses, but this cannot
+   * override live-play mode into whole-map saving.
    */
   readonly autosaveEnabled?: BooleanRef
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
@@ -86,6 +94,7 @@ export interface UseEditableMapReturn {
 }
 
 const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pick<UseEditableMapOptions, 'debounceMs'>> & {
+  readonly interactionMode?: ReadonlyValueRef<MapInteractionMode>
   readonly autosaveEnabled?: BooleanRef
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
 } => (
@@ -93,6 +102,7 @@ const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pic
     ? { debounceMs: options }
     : {
         debounceMs: options.debounceMs ?? 200,
+        interactionMode: options.interactionMode,
         autosaveEnabled: options.autosaveEnabled,
         playerProfileId: options.playerProfileId,
       }
@@ -102,8 +112,16 @@ export const useEditableMap = (
   slug: string,
   options: number | UseEditableMapOptions = 200,
 ): UseEditableMapReturn => {
-  const { debounceMs, autosaveEnabled: autosaveEnabledRef, playerProfileId: playerProfileIdRef } = normalizeOptions(options)
-  const autosaveEnabled = computed(() => autosaveEnabledRef?.value ?? true)
+  const {
+    debounceMs,
+    interactionMode: interactionModeRef,
+    autosaveEnabled: autosaveEnabledRef,
+    playerProfileId: playerProfileIdRef,
+  } = normalizeOptions(options)
+  const currentInteractionMode = (): MapInteractionMode => interactionModeRef?.value ?? MAP_INTERACTION_MODES.LIVE_PLAY
+  const setupEditMode = computed(() => currentInteractionMode() === MAP_INTERACTION_MODES.SETUP_EDIT)
+  const setupEditAutosaveRequested = computed(() => autosaveEnabledRef?.value ?? true)
+  const setupEditAutosaveEnabled = computed(() => setupEditMode.value && setupEditAutosaveRequested.value)
   const map = ref<TabletopMap | null>(null)
   const status = ref<MapSaveStatus>('loading')
   const error = ref<string | null>(null)
@@ -119,6 +137,7 @@ export const useEditableMap = (
       slug,
       map: snapshot,
       clientId,
+      interactionMode: currentInteractionMode(),
       ...(playerProfileId ? { profileId: playerProfileId } : {}),
     }
   }
@@ -220,7 +239,7 @@ export const useEditableMap = (
   }
 
   const performSave = async () => {
-    if (!autosaveEnabled.value || !map.value) return
+    if (!setupEditAutosaveEnabled.value || !map.value) return
     if (autosave.snapshot.isClean(map.value)) {
       if (status.value === 'saving') autosave.statusController.markSaved()
       return
@@ -248,8 +267,9 @@ export const useEditableMap = (
   }
 
   const saveNow = async () => {
-    if (!autosaveEnabled.value) {
+    if (!setupEditAutosaveEnabled.value) {
       autosave.cancelPendingSave()
+      if (!setupEditMode.value && map.value) autosave.snapshot.markClean(map.value)
       return
     }
     await autosave.saveNow()
@@ -276,15 +296,25 @@ export const useEditableMap = (
   watch(
     map,
     (current) => {
-      if (!autosaveEnabled.value) return
+      if (!setupEditMode.value) {
+        autosave.cancelPendingSave()
+        if (current) autosave.snapshot.markClean(current)
+        if (status.value === 'saving') status.value = 'idle'
+        return
+      }
+      if (!setupEditAutosaveRequested.value) return
       autosave.scheduleIfDirty(current)
     },
     { deep: true },
   )
 
-  watch(autosaveEnabled, (enabled) => {
+  watch(setupEditAutosaveEnabled, (enabled) => {
     if (!enabled) {
       autosave.cancelPendingSave()
+      if (!setupEditMode.value && map.value) {
+        autosave.snapshot.markClean(map.value)
+        if (status.value === 'saving') status.value = 'idle'
+      }
       return
     }
     autosave.scheduleIfDirty(map.value)
@@ -295,7 +325,7 @@ export const useEditableMap = (
   )
 
   const flushWithBeacon = () => {
-    if (!autosaveEnabled.value || !map.value) return
+    if (!setupEditAutosaveEnabled.value || !map.value) return
 
     let dirty: boolean
     try {
@@ -363,8 +393,9 @@ export const useEditableMap = (
     // Skip flushing the pending save when the slug was renamed away
     // from us — the old filename no longer exists on disk. Also cancel
     // pending document-backed writes while autosave is intentionally paused
-    // so external document actions can remain the write authority.
-    if (renamedTo.value || !autosaveEnabled.value) {
+    // or the page is in live-play mode so external command/action paths remain
+    // the write authority.
+    if (renamedTo.value || !setupEditAutosaveEnabled.value) {
       autosave.cancelPendingSave()
       return
     }

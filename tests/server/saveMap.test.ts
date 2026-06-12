@@ -1,24 +1,12 @@
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import {
   SaveMapUseCaseError,
   saveMapUseCase,
 } from '../../server/useCases/saveMap'
 import { MAPS_ROOT } from '../../server/utils/mapPaths'
-import {
-  PLAYER_PROFILE_SCHEMA_VERSION,
-  type PlayerProfile,
-  type PlayerProfileDisplayName,
-  type PlayerProfileId,
-} from '../../shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
-
-const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
-  schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
-  id: 'profile_mapplayer' as PlayerProfileId,
-  displayName: 'Map Player' as PlayerProfileDisplayName,
-  linkedCharacters,
-})
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
@@ -88,8 +76,11 @@ const createDeps = (existing: TabletopMap = baseMap(), options: { now?: number }
   return { deps, path, writes }
 }
 
+const setupEditMode = MAP_INTERACTION_MODES.SETUP_EDIT
+const livePlayMode = MAP_INTERACTION_MODES.LIVE_PLAY
+
 describe('save map use case', () => {
-  it('preserves GM whole-map document-backed saves', () => {
+  it('preserves GM setup/edit whole-map document-backed saves', () => {
     const existing = baseMap({ playerVisible: false })
     const incoming = baseMap({
       name: 'GM Revised Arena',
@@ -109,6 +100,7 @@ describe('save map use case', () => {
       slug: 'arena',
       map: incoming,
       clientId: 'client-1',
+      interactionMode: setupEditMode,
     }, deps)
 
     expect(writes).toHaveLength(1)
@@ -127,7 +119,7 @@ describe('save map use case', () => {
     expect(result.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
   })
 
-  it('preserves an existing map revision when a compatibility save omits it', () => {
+  it('preserves an existing map revision when a setup/edit compatibility save omits it', () => {
     const existing = baseMap({ revision: 9 })
     const incoming = baseMap({ name: 'Legacy client save' })
     delete (incoming as unknown as Record<string, unknown>).revision
@@ -137,6 +129,7 @@ describe('save map use case', () => {
       role: 'gm',
       slug: 'arena',
       map: incoming,
+      interactionMode: setupEditMode,
     }, deps)
 
     expect(writes).toHaveLength(1)
@@ -144,202 +137,77 @@ describe('save map use case', () => {
     expect(result.map.revision).toBe(9)
   })
 
-  it('merges only linked player token movement and facing from whole-map saves', () => {
+  it('rejects player whole-map saves instead of merging token edits', () => {
     const existing = baseMap()
     const incoming = baseMap({
       name: 'Player tried to rename map',
-      playerVisible: false,
-      voxels: [{ x: 5, y: 0, z: 5, materialId: 'lava' }],
-      hazards: [{ kind: 'fire', x: 5, y: 0, z: 5 }],
-      fieldEffects: { weather: [{ kind: 'sandstorm', rounds: 9 }], terrains: [], rooms: [] },
-      lights: [],
-      initiative: { activeId: 'linked-token', round: 99 },
       placements: [
-        {
-          id: 'linked-token',
-          sheetKind: 'pokemon',
-          sheetSlug: 'pikachu',
-          position: { x: 99, y: -4, z: 3 },
-          facing: 'south-west',
-          turned: true,
-        },
-        {
-          id: 'unlinked-token',
-          sheetKind: 'trainer',
-          sheetSlug: 'giovanni',
-          position: { x: 0, y: 0, z: 0 },
-          facing: 'south-east',
-          turned: false,
-        },
-        {
-          id: 'player-created-token',
-          sheetKind: 'pokemon',
-          sheetSlug: 'pikachu',
-          position: { x: 1, y: 0, z: 1 },
-        },
+        { ...existing.placements[0]!, position: { x: 4, y: 0, z: 3 }, facing: 'south-west' },
       ],
-      metadata: { owner: 'player' },
     })
     const { deps, writes } = createDeps(existing, { now: 2000 })
-
-    const result = saveMapUseCase({
-      role: 'player',
-      slug: 'arena',
-      map: incoming,
-      clientId: 'client-1',
-      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }]),
-    }, deps)
-
-    expect(writes).toHaveLength(1)
-    const persisted = writes[0]!.map
-    expect(persisted.name).toBe(existing.name)
-    expect(persisted.playerVisible).toBe(true)
-    expect(persisted.voxels).toEqual(existing.voxels)
-    expect(persisted.hazards).toEqual(existing.hazards)
-    expect(persisted.fieldEffects).toEqual(existing.fieldEffects)
-    expect(persisted.lights).toEqual(existing.lights)
-    expect(persisted.initiative).toEqual(existing.initiative)
-    expect(persisted.moveUsage).toEqual(existing.moveUsage)
-    expect(persisted.metadata).toEqual(existing.metadata)
-    expect(persisted.placements).toHaveLength(2)
-    expect(persisted.placements[0]).toMatchObject({
-      id: 'linked-token',
-      position: { x: 5, y: 0, z: 3 },
-      facing: 'south-west',
-      turned: false,
-    })
-    expect(persisted.placements[1]).toEqual(existing.placements[1])
-    expect(persisted.updatedAt).toBe(2000)
-    expect(result.map).toBe(persisted)
-    expect(result.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
-  })
-
-  it('merges controlled player combat log appends from whole-map saves', () => {
-    const existingMoveLogEntry = {
-      at: 100,
-      userId: 'linked-token',
-      userName: 'Pikachu',
-      moveName: 'Quick Attack',
-      lines: ['Pikachu used Quick Attack.'],
-    }
-    const existing = baseMap({
-      metadata: {
-        owner: 'gm',
-        moveLog: [existingMoveLogEntry],
-      },
-    })
-    const controlledMoveLogEntry = {
-      at: 250,
-      userId: 'linked-token',
-      userName: 'Pikachu',
-      moveName: 'Thunderbolt',
-      lines: ['Pikachu used Thunderbolt.', 'Giovanni: 22 damage.'],
-    }
-    const blockedMoveLogEntry = {
-      at: 300,
-      userId: 'unlinked-token',
-      userName: 'Giovanni',
-      moveName: 'Pay Day',
-      lines: ['Giovanni used Pay Day.'],
-    }
-    const controlledCaptureLogEntry = {
-      at: 350,
-      userId: 'linked-token',
-      userName: 'Pikachu',
-      actionName: 'Throw Basic Ball',
-      lines: ['Pikachu threw Basic Ball at Rattata.', 'Result: Rattata broke free.'],
-    }
-    const incoming = baseMap({
-      metadata: {
-        owner: 'player',
-        moveLog: [existingMoveLogEntry, controlledMoveLogEntry, blockedMoveLogEntry],
-        captureLog: [controlledCaptureLogEntry],
-      },
-    })
-    const { deps, writes } = createDeps(existing, { now: 3000 })
-
-    const result = saveMapUseCase({
-      role: 'player',
-      slug: 'arena',
-      map: incoming,
-      clientId: 'player-client',
-      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }]),
-    }, deps)
-
-    expect(writes).toHaveLength(1)
-    const persisted = writes[0]!.map
-    expect(persisted.metadata).toEqual({
-      owner: 'gm',
-      moveLog: [existingMoveLogEntry, controlledMoveLogEntry],
-      captureLog: [controlledCaptureLogEntry],
-    })
-    expect(persisted.updatedAt).toBe(3000)
-    expect(result.map).toBe(persisted)
-    expect(result.events.map((event) => event.channel)).toEqual(['map:arena', 'maps'])
-  })
-
-  it('does not write when an unlinked player only attempts blocked map or token edits', () => {
-    const existing = baseMap()
-    const incoming = baseMap({
-      voxels: [],
-      hazards: [{ kind: 'fire', x: 0, y: 0, z: 0 }],
-      fieldEffects: { weather: [{ kind: 'hail', rounds: 1 }], terrains: [], rooms: [] },
-      initiative: { activeId: 'linked-token', round: 12 },
-      placements: [
-        {
-          id: 'linked-token',
-          sheetKind: 'pokemon',
-          sheetSlug: 'pikachu',
-          position: { x: 4, y: 0, z: 4 },
-          facing: 'north-east',
-        },
-        {
-          id: 'unlinked-token',
-          sheetKind: 'trainer',
-          sheetSlug: 'giovanni',
-          position: { x: 0, y: 0, z: 0 },
-          facing: 'south-east',
-        },
-      ],
-    })
-    const { deps, writes } = createDeps(existing)
-
-    const result = saveMapUseCase({
-      role: 'player',
-      slug: 'arena',
-      map: incoming,
-      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'misty' }]),
-    }, deps)
-
-    expect(writes).toEqual([])
-    expect(result.map).toBe(existing)
-    expect(result.events).toEqual([])
-  })
-
-  it('rejects hidden maps for player saves before merging token edits', () => {
-    const existing = baseMap({ playerVisible: false })
-    const { deps, writes } = createDeps(existing)
 
     expect(() => saveMapUseCase({
       role: 'player',
       slug: 'arena',
-      map: baseMap({ playerVisible: false }),
-      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }]),
+      map: incoming,
+      clientId: 'client-1',
+      interactionMode: setupEditMode,
     }, deps)).toThrow(SaveMapUseCaseError)
 
     try {
       saveMapUseCase({
         role: 'player',
         slug: 'arena',
-        map: baseMap({ playerVisible: false }),
-        playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }]),
+        map: incoming,
+        clientId: 'client-1',
+        interactionMode: setupEditMode,
       }, deps)
     } catch (err) {
       expect(err).toMatchObject({
         statusCode: 403,
-        message: 'Map is not player visible',
+        message: 'Whole-map saves are GM setup/edit-only',
       })
     }
+    expect(writes).toEqual([])
+  })
+
+  it('rejects live-play whole-map save requests for GMs', () => {
+    const { deps, writes } = createDeps(baseMap())
+
+    expect(() => saveMapUseCase({
+      role: 'gm',
+      slug: 'arena',
+      map: baseMap({ name: 'Live overwrite' }),
+      interactionMode: livePlayMode,
+    }, deps)).toThrow(SaveMapUseCaseError)
+
+    try {
+      saveMapUseCase({
+        role: 'gm',
+        slug: 'arena',
+        map: baseMap({ name: 'Live overwrite' }),
+        interactionMode: livePlayMode,
+      }, deps)
+    } catch (err) {
+      expect(err).toMatchObject({
+        statusCode: 403,
+        message: 'Whole-map saves are setup/edit-only; live play uses commands',
+      })
+    }
+    expect(writes).toEqual([])
+  })
+
+  it('rejects mismatched slugs before writing', () => {
+    const { deps, writes } = createDeps(baseMap())
+
+    expect(() => saveMapUseCase({
+      role: 'gm',
+      slug: 'arena',
+      map: baseMap({ slug: 'different-arena' }),
+      interactionMode: setupEditMode,
+    }, deps)).toThrow(SaveMapUseCaseError)
+
     expect(writes).toEqual([])
   })
 })
