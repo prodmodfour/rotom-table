@@ -3,12 +3,16 @@ import { UseCaseHttpError } from '../utils/useCaseErrors'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  type DeleteTokenLivePlayCommand,
+  type DeleteTokenPayload,
   type LivePlayCommandAccepted,
   type LivePlayCommandResult,
   type LivePlayPatch,
   type LivePlayTokenScope,
   type MoveTokenLivePlayCommand,
   type MoveTokenPayload,
+  type SpawnTokenLivePlayCommand,
+  type SpawnTokenPayload,
   type TurnTokenLivePlayCommand,
   type TurnTokenPayload,
 } from '#shared/livePlayCommands'
@@ -16,6 +20,7 @@ import type { RealtimeEvent } from '#shared/realtime'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
+import { isSheetKind } from '#shared/sheets'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import { appendMovementLogEntry, sameGridAnchor } from '~/utils/mapMovementLog'
@@ -38,11 +43,12 @@ import { publishRealtime } from '../utils/realtime'
 import { canSaveMap, clampAnchorToDimensions } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import {
-  executeAuthoritativeLivePlayCommand,
+  createAuthoritativeLivePlayCommandExecutor,
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { sqliteLivePlayOpRepository } from '../storage/opRepository'
 import { toPersistedMap } from './saveMap'
 
 export class MapTokenActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -73,7 +79,17 @@ export interface TurnMapTokenInput {
   playerProfile?: PlayerProfile | null
 }
 
-export type MapTokenLivePlayCommand = MoveTokenLivePlayCommand | TurnTokenLivePlayCommand
+export type MapTokenLivePlayCommand =
+  | MoveTokenLivePlayCommand
+  | TurnTokenLivePlayCommand
+  | SpawnTokenLivePlayCommand
+  | DeleteTokenLivePlayCommand
+
+export type MapTokenLivePlayCommandType =
+  | typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
 
 export interface MapTokenLivePlayActor {
   role: AuthRole
@@ -86,7 +102,7 @@ export interface ExecuteMapTokenLivePlayCommandInput {
   command: unknown
   clientId?: string
   playerProfile?: PlayerProfile | null
-  expectedType?: typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+  expectedType?: MapTokenLivePlayCommandType
 }
 
 export interface MapTokenLivePlayCommandResponse {
@@ -129,6 +145,10 @@ interface ResolvedMapWriteContext {
 
 interface ResolvedMapTokenActionContext extends ResolvedMapWriteContext {
   placement: SheetPlacement
+}
+
+interface ResolvedMapTokenCommandResponseContext extends ResolvedMapWriteContext {
+  placement?: SheetPlacement
 }
 
 const mapEvents = (
@@ -247,6 +267,10 @@ const normalizedPathLength = (value: number | null | undefined): number | null =
 const readDefaultSheet = (kind: SheetKind, slug: string): SheetFileRecord | null =>
   readSheetFile<Record<string, unknown>>(kind, slug)
 
+const livePlayMapTokenCommandExecutor = createAuthoritativeLivePlayCommandExecutor({
+  opStore: sqliteLivePlayOpRepository,
+})
+
 const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
   findMapPath: dependencies.findMapPath ?? findMapFile,
   readMap: dependencies.readMap ?? readMapFile,
@@ -255,7 +279,7 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
   now: dependencies.now ?? Date.now,
   relativePath: dependencies.relativePath ?? campaignPathLabel,
   maxMovementLogEntries: dependencies.maxMovementLogEntries,
-  commandExecutor: dependencies.commandExecutor ?? { execute: executeAuthoritativeLivePlayCommand },
+  commandExecutor: dependencies.commandExecutor ?? livePlayMapTokenCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
 })
@@ -438,6 +462,79 @@ const applyTurnTokenToMap = (
   }
 }
 
+const isPositionWithinMapBounds = (
+  position: GridAnchor,
+  map: Pick<TabletopMap, 'dimensions'>,
+): boolean => (
+  Number.isFinite(position.x)
+  && Number.isFinite(position.y)
+  && Number.isFinite(position.z)
+  && position.x >= 0
+  && position.y >= 0
+  && position.z >= 0
+  && position.x < map.dimensions.x
+  && position.y < map.dimensions.y
+  && position.z < map.dimensions.z
+)
+
+const normalizeLivePlaySpawnPlacement = (placement: SheetPlacement): SheetPlacement => {
+  const facing = tokenFacingForPlacement(placement)
+  return {
+    id: placement.id,
+    sheetKind: placement.sheetKind,
+    sheetSlug: placement.sheetSlug,
+    position: clonePosition(placement.position),
+    facing,
+    turned: tokenFacingStoresLegacyTurned(facing),
+    ...(placement.initiative === undefined ? {} : { initiative: placement.initiative }),
+  }
+}
+
+const applySpawnTokenToMap = (
+  payload: SpawnTokenPayload,
+  context: ResolvedMapWriteContext,
+): AppliedMapTokenChange => {
+  const placement = normalizeLivePlaySpawnPlacement(payload.placement)
+  if (!isPositionWithinMapBounds(placement.position, context.map)) {
+    rejectLivePlayCommand('invalid', `spawnToken placement ${placement.id} position is outside map bounds`)
+  }
+  if (context.map.placements.some((candidate) => candidate.id === placement.id)) {
+    rejectLivePlayCommand('conflict', `Placement ${placement.id} already exists`, {
+      currentRevision: normalizeRevision(context.map.revision),
+      currentState: context.map.placements.find((candidate) => candidate.id === placement.id),
+    })
+  }
+
+  return {
+    nextMap: {
+      ...context.map,
+      placements: [...context.map.placements, placement],
+    },
+    placement,
+  }
+}
+
+const applyDeleteTokenToMap = (
+  payload: DeleteTokenPayload,
+  context: ResolvedMapWriteContext,
+): AppliedMapTokenChange => {
+  const placement = context.map.placements.find((candidate) => candidate.id === payload.placementId)
+  if (!placement) throw new MapTokenActionUseCaseError(404, `Placement ${payload.placementId} not found`)
+
+  const nextInitiative = context.map.initiative?.activeId === payload.placementId
+    ? { ...context.map.initiative, activeId: null }
+    : context.map.initiative
+
+  return {
+    nextMap: {
+      ...context.map,
+      placements: context.map.placements.filter((candidate) => candidate.id !== payload.placementId),
+      ...(nextInitiative === undefined ? {} : { initiative: nextInitiative }),
+    },
+    placement,
+  }
+}
+
 export const moveMapTokenUseCase = (
   input: MoveMapTokenInput,
   dependencies: MapTokenActionDependencies = {},
@@ -535,6 +632,89 @@ const expectTurnTokenPayload = (payload: unknown): TurnTokenPayload => {
   }
 }
 
+const nonEmptyCommandString = (value: unknown): value is string => (
+  typeof value === 'string' && value.trim().length > 0
+)
+
+const expectSpawnTokenPayload = (payload: unknown): SpawnTokenPayload => {
+  if (!isRecord(payload)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload must be an object')
+  }
+  const placementInput = (payload as Record<string, unknown>).placement
+  if (!isRecord(placementInput)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement must be an object')
+  }
+  const placementRecord = placementInput as Record<string, unknown>
+  const id = placementRecord.id
+  const sheetKind = placementRecord.sheetKind
+  const sheetSlug = placementRecord.sheetSlug
+  const position = placementRecord.position
+  const facing = placementRecord.facing
+  const turned = placementRecord.turned
+  const initiative = placementRecord.initiative
+
+  if (!nonEmptyCommandString(id)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.id is required')
+  }
+  if ((id as string).length > 120) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.id must be at most 120 characters')
+  }
+  if (!isSheetKind(sheetKind)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.sheetKind must be pokemon or trainer')
+  }
+  if (!nonEmptyCommandString(sheetSlug)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.sheetSlug is required')
+  }
+  if ((sheetSlug as string).length > 200) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.sheetSlug must be at most 200 characters')
+  }
+  if (!isRecord(position)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.position must be an object')
+  }
+  const positionRecord = position as Record<string, unknown>
+  const x = positionRecord.x
+  const y = positionRecord.y
+  const z = positionRecord.z
+  if (!isFiniteCoordinate(x) || !isFiniteCoordinate(y) || !isFiniteCoordinate(z)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.position coordinates must be finite numbers')
+  }
+  if (facing !== undefined && !isTokenFacingDirection(facing)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.facing must be a token facing direction')
+  }
+  if (turned !== undefined && typeof turned !== 'boolean') {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.turned must be a boolean when provided')
+  }
+  if (initiative !== undefined && initiative !== null && !Number.isSafeInteger(initiative)) {
+    rejectLivePlayCommand('invalid', 'spawnToken payload.placement.initiative must be a safe integer or null when provided')
+  }
+
+  return {
+    placement: {
+      id: (id as string).trim(),
+      sheetKind: sheetKind as SheetKind,
+      sheetSlug: (sheetSlug as string).trim(),
+      position: { x: x as number, y: y as number, z: z as number },
+      ...(isTokenFacingDirection(facing) ? { facing } : {}),
+      ...(typeof turned === 'boolean' ? { turned } : {}),
+      ...(initiative === undefined ? {} : { initiative: initiative as number | null }),
+    },
+  }
+}
+
+const expectDeleteTokenPayload = (payload: unknown): DeleteTokenPayload => {
+  if (!isRecord(payload)) {
+    rejectLivePlayCommand('invalid', 'deleteToken payload must be an object')
+  }
+  const placementId = (payload as Record<string, unknown>).placementId
+  if (!nonEmptyCommandString(placementId)) {
+    rejectLivePlayCommand('invalid', 'deleteToken payload.placementId is required')
+  }
+  if ((placementId as string).length > 120) {
+    rejectLivePlayCommand('invalid', 'deleteToken payload.placementId must be at most 120 characters')
+  }
+  return { placementId: (placementId as string).trim() }
+}
+
 const tokenScopeMatches = (
   scopes: readonly LivePlayTokenScope[],
   placementId: string,
@@ -543,7 +723,9 @@ const tokenScopeMatches = (
   scope.kind === 'token' && scope.placementId === placementId && scope.field === field
 ))
 
-const expectCommandPayloadAndScope = (command: MapTokenLivePlayCommand): MoveTokenPayload | TurnTokenPayload => {
+const expectCommandPayloadAndScope = (
+  command: MapTokenLivePlayCommand,
+): MoveTokenPayload | TurnTokenPayload | SpawnTokenPayload | DeleteTokenPayload => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) {
     const payload = expectMoveTokenPayload(command.payload)
     if (!tokenScopeMatches(command.scopes, payload.placementId, 'position')) {
@@ -552,47 +734,88 @@ const expectCommandPayloadAndScope = (command: MapTokenLivePlayCommand): MoveTok
     return payload
   }
 
-  const payload = expectTurnTokenPayload(command.payload)
-  if (!tokenScopeMatches(command.scopes, payload.placementId, 'facing')) {
-    rejectLivePlayCommand('invalid', 'turnToken scopes must include the token facing scope for payload.placementId')
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {
+    const payload = expectTurnTokenPayload(command.payload)
+    if (!tokenScopeMatches(command.scopes, payload.placementId, 'facing')) {
+      rejectLivePlayCommand('invalid', 'turnToken scopes must include the token facing scope for payload.placementId')
+    }
+    return payload
+  }
+
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN) {
+    const payload = expectSpawnTokenPayload(command.payload)
+    if (!tokenScopeMatches(command.scopes, payload.placement.id, 'spawn')) {
+      rejectLivePlayCommand('invalid', 'spawnToken scopes must include the token spawn scope for payload.placement.id')
+    }
+    return payload
+  }
+
+  const payload = expectDeleteTokenPayload(command.payload)
+  if (!tokenScopeMatches(command.scopes, payload.placementId, 'delete')) {
+    rejectLivePlayCommand('invalid', 'deleteToken scopes must include the token delete scope for payload.placementId')
   }
   return payload
 }
 
 const commandPlacementId = (command: MapTokenLivePlayCommand): string => {
   const payload = expectCommandPayloadAndScope(command)
-  return payload.placementId
+  return 'placement' in payload ? payload.placement.id : payload.placementId
 }
 
 const commandPatch = (
   command: MapTokenLivePlayCommand,
   revision: number,
   placement: SheetPlacement,
-): LivePlayPatch => ({
-  schemaVersion: command.schemaVersion,
-  type: command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
-    ? LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION
-    : LIVE_PLAY_PATCH_TYPES.TOKEN_FACING,
-  mapSlug: command.mapSlug,
-  revision,
-  scopes: command.scopes,
-  payload: command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
-    ? {
+): LivePlayPatch => {
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) {
+    return {
+      schemaVersion: command.schemaVersion,
+      type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+      mapSlug: command.mapSlug,
+      revision,
+      scopes: command.scopes,
+      payload: {
         placementId: placement.id,
         position: placement.position,
         ...(placement.facing === undefined ? {} : { facing: placement.facing }),
         ...(placement.turned === undefined ? {} : { turned: placement.turned }),
-      }
-    : {
+      },
+    }
+  }
+
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {
+    return {
+      schemaVersion: command.schemaVersion,
+      type: LIVE_PLAY_PATCH_TYPES.TOKEN_FACING,
+      mapSlug: command.mapSlug,
+      revision,
+      scopes: command.scopes,
+      payload: {
         placementId: placement.id,
         facing: placement.facing,
         turned: placement.turned,
       },
-})
+    }
+  }
+
+  return {
+    schemaVersion: command.schemaVersion,
+    type: LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS,
+    mapSlug: command.mapSlug,
+    revision,
+    scopes: command.scopes,
+    payload: {
+      command: command.type,
+      placementId: placement.id,
+      previous: command.type === LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN ? placement : null,
+      current: command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN ? placement : null,
+    },
+  }
+}
 
 const persistedCommandResponse = (
   result: LivePlayCommandResult,
-  context: ResolvedMapTokenActionContext | null,
+  context: ResolvedMapTokenCommandResponseContext | null,
 ): MapTokenLivePlayCommandResponse => ({
   result,
   ...(context ? {
@@ -610,18 +833,37 @@ const placementIdFromAcceptedResult = (result: LivePlayCommandAccepted): string 
   result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId ?? null
 )
 
+const isSheetPlacementLike = (value: unknown): value is SheetPlacement => {
+  if (!isRecord(value)) return false
+  const record = value as Record<string, unknown>
+  return nonEmptyCommandString(record.id)
+    && isSheetKind(record.sheetKind)
+    && nonEmptyCommandString(record.sheetSlug)
+    && isRecord(record.position)
+}
+
+const placementFromPlacementPatch = (result: LivePlayCommandAccepted): SheetPlacement | undefined => {
+  const patch = result.patches.find((candidate) => candidate.type === LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS)
+  if (!patch || !isRecord(patch.payload)) return undefined
+  const payload = patch.payload as Record<string, unknown>
+  if (isSheetPlacementLike(payload.current)) return payload.current
+  if (isSheetPlacementLike(payload.previous)) return payload.previous
+  return undefined
+}
+
 const currentContextForAcceptedResult = async (
   result: LivePlayCommandAccepted,
   role: AuthRole,
   dependencies: MapTokenActionDependencySet,
-): Promise<ResolvedMapTokenActionContext | null> => {
+): Promise<ResolvedMapTokenCommandResponseContext | null> => {
   const placementId = placementIdFromAcceptedResult(result)
-  if (!placementId) return null
 
   try {
     const context = await resolveLivePlayMapWriteContext({ role, slug: result.mapSlug }, dependencies)
-    const placement = context.map.placements.find((candidate) => candidate.id === placementId)
-    return placement ? { ...context, placement } : null
+    const placement = placementId
+      ? context.map.placements.find((candidate) => candidate.id === placementId) ?? placementFromPlacementPatch(result)
+      : placementFromPlacementPatch(result)
+    return placement ? { ...context, placement } : context
   } catch {
     return null
   }
@@ -632,7 +874,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
   dependencies: MapTokenActionDependencies = {},
 ): Promise<MapTokenLivePlayCommandResponse> => {
   const deps = actionDependencies(dependencies)
-  let persistedContext: ResolvedMapTokenActionContext | null = null
+  let persistedContext: ResolvedMapTokenCommandResponseContext | null = null
 
   const result = await deps.commandExecutor.execute<MapTokenLivePlayCommand, ResolvedMapWriteContext, MapTokenLivePlayActor>({
     command: input.command,
@@ -650,13 +892,43 @@ export const executeMapTokenLivePlayCommandUseCase = async (
       if (
         command.type !== LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
         && command.type !== LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+        && command.type !== LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+        && command.type !== LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
       ) {
-        rejectLivePlayCommand('invalid', 'Map token live-play routes support moveToken and turnToken commands only')
+        rejectLivePlayCommand('invalid', 'Map token live-play routes support moveToken, turnToken, spawnToken, and deleteToken commands only')
+      }
+
+      if (command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN) {
+        if (actor.role !== 'gm') rejectLivePlayCommand('unauthorized', 'Only GMs can spawn map tokens')
+        const payload = expectSpawnTokenPayload(command.payload)
+        if (!tokenScopeMatches(command.scopes, payload.placement.id, 'spawn')) {
+          rejectLivePlayCommand('invalid', 'spawnToken scopes must include the token spawn scope for payload.placement.id')
+        }
+        if (!isPositionWithinMapBounds(payload.placement.position, map.map)) {
+          rejectLivePlayCommand('invalid', `spawnToken placement ${payload.placement.id} position is outside map bounds`)
+        }
+        const existingPlacement = map.map.placements.find((candidate) => candidate.id === payload.placement.id)
+        if (existingPlacement) {
+          rejectLivePlayCommand('conflict', `Placement ${payload.placement.id} already exists`, {
+            currentRevision: normalizeRevision(map.map.revision),
+            currentState: existingPlacement,
+          })
+        }
+        if (!deps.readSheet(payload.placement.sheetKind, payload.placement.sheetSlug)) {
+          rejectLivePlayCommand('not-found', `${payload.placement.sheetKind} sheet ${payload.placement.sheetSlug} not found`)
+        }
+        return
       }
 
       const placementId = commandPlacementId(command)
       const placement = map.map.placements.find((candidate) => candidate.id === placementId)
       if (!placement) throw new MapTokenActionUseCaseError(404, `Placement ${placementId} not found`)
+
+      if (command.type === LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN) {
+        if (actor.role !== 'gm') rejectLivePlayCommand('unauthorized', 'Only GMs can delete map tokens')
+        return
+      }
+
       if (!actorCanControlMapPlacement({
         role: actor.role,
         profile: actor.playerProfile,
@@ -670,20 +942,24 @@ export const executeMapTokenLivePlayCommandUseCase = async (
     },
     apply: ({ command, actor, map, currentRevision }) => {
       const placementId = commandPlacementId(command)
-      const placement = map.map.placements.find((candidate) => candidate.id === placementId)
-      if (!placement) throw new MapTokenActionUseCaseError(404, `Placement ${placementId} not found`)
-      const context: ResolvedMapTokenActionContext = { ...map, placement }
+      const existingPlacement = map.map.placements.find((candidate) => candidate.id === placementId)
+      const context = existingPlacement ? { ...map, placement: existingPlacement } : null
       const change = command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
-        ? applyMoveTokenToMap(command.payload, context, deps)
-        : applyTurnTokenToMap(command.payload, context)
+        ? (context ? applyMoveTokenToMap(command.payload, context, deps) : null)
+        : command.type === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+          ? (context ? applyTurnTokenToMap(command.payload, context) : null)
+          : command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+            ? applySpawnTokenToMap(expectSpawnTokenPayload(command.payload), map)
+            : applyDeleteTokenToMap(expectDeleteTokenPayload(command.payload), map)
 
       if (!change) {
+        if (!existingPlacement) throw new MapTokenActionUseCaseError(404, `Placement ${placementId} not found`)
         return {
           status: 'rejected',
           reason: 'no-op',
           message: `${command.type} did not change token ${placementId}`,
           currentRevision,
-          currentState: placement,
+          currentState: existingPlacement,
         }
       }
 
@@ -706,7 +982,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         patches: [commandPatch(command, revision, change.placement)],
       }
     },
-    persist: async ({ actor, currentRevision, nextMap, result }) => {
+    persist: async ({ actor, command, currentRevision, nextMap, result }) => {
       const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, deps.now(), { revision: result.revision })
       const updateResult = await deps.mapRepository.applyLivePlayUpdate({
         slug: result.mapSlug,
@@ -720,14 +996,16 @@ export const executeMapTokenLivePlayCommandUseCase = async (
       const authoritativeMap = storedMap ?? persisted
       const placementId = result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId
       const placement = placementId
-        ? authoritativeMap.placements.find((candidate) => candidate.id === placementId)
-        : undefined
-      if (!placement) throw new MapTokenActionUseCaseError(404, 'Token command applied but persisted placement was not found')
+        ? authoritativeMap.placements.find((candidate) => candidate.id === placementId) ?? placementFromPlacementPatch(result)
+        : placementFromPlacementPatch(result)
+      if (!placement && command.type !== LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN) {
+        throw new MapTokenActionUseCaseError(404, 'Token command applied but persisted placement was not found')
+      }
       persistedContext = {
         mapPath: nextMap.mapPath,
         relativePath: nextMap.relativePath,
         map: authoritativeMap,
-        placement,
+        ...(placement === undefined ? {} : { placement }),
       }
       void actor
     },

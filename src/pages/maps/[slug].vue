@@ -145,7 +145,6 @@ const shouldSuppressPlayerCharacterAttackOfOpportunity = ({
 const persistSpawnedPlacement = (placement: SheetPlacement) => {
   void documentTokenActions.spawnToken({
     placement: deepCloneJson(placement),
-    unloadFallback: true,
   })
 }
 const tokenControlNotice = computed(() => {
@@ -306,7 +305,6 @@ const {
   spawnSheet,
   sendOutPokemon,
   selectPlacement,
-  deletePlacement,
 } = useTokenControls({
   map,
   pokemonBySlug,
@@ -351,7 +349,10 @@ const selectPokemon = (id: string | null) => {
   selectPlacement(id)
 }
 const deletePokemon = (id: string) => {
-  deletePlacement(id)
+  if (!canControlPlacement(id)) return
+  void documentTokenActions.deleteToken({ placementId: id }).then((result) => {
+    if (result.dispatched) clearSelection()
+  })
 }
 const shouldUseDocumentTableActionRoutes = () => isPlayer.value
 
@@ -1093,7 +1094,10 @@ const applyPokeballCaptureOutcome = async (event: Parameters<typeof applyPokebal
     'throwPokeball',
   )
 
-  if (sheetUpdated && event.result.success && isGm.value) deletePlacement(event.targetId)
+  if (sheetUpdated && event.result.success && isGm.value) {
+    const result = await documentTokenActions.deleteToken({ placementId: event.targetId })
+    if (result.dispatched && selectedId.value === event.targetId) clearSelection()
+  }
 }
 
 const {

@@ -4,6 +4,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   createLivePlayOpId,
   type BuildTerrainVoxelPayload,
+  type DeleteTokenPayload,
   type LivePlayCommandDuplicate,
   type LivePlayCommandResult,
   type LivePlayMapScope,
@@ -20,13 +21,13 @@ import {
   type RemoveTerrainVoxelPayload,
   type SetFieldEffectPayload,
   type SetInitiativePayload,
+  type SpawnTokenPayload,
   type TickFieldEffectDurationsPayload,
   type TurnTokenPayload,
   type UseMovePayload,
 } from '#shared/livePlayCommands'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
-import { sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
 import { getClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { useApiClient } from '~/composables/useApiClient'
@@ -92,7 +93,9 @@ export interface UseDocumentMapTokenActionsReturn {
   clearError: () => void
   spawnToken: (payload: {
     placement: SheetPlacement
-    unloadFallback?: boolean
+  }) => Promise<DocumentMapTokenActionDispatchResult>
+  deleteToken: (payload: {
+    placementId: string
   }) => Promise<DocumentMapTokenActionDispatchResult>
   moveToken: (payload: {
     placementId: string
@@ -155,6 +158,8 @@ export interface UseDocumentMapTokenActionsReturn {
 type LivePlayDocumentCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS
@@ -173,6 +178,7 @@ type LivePlayDocumentCommandType =
 type LivePlayTokenCommandPayload =
   | MoveTokenPayload
   | TurnTokenPayload
+  | DeleteTokenPayload
   | ModifyHpPayload
   | ModifyCombatStagesPayload
   | ModifyConditionsPayload
@@ -189,6 +195,7 @@ type LivePlayMapEffectsCommandPayload =
 
 type LivePlayDocumentCommandPayload =
   | LivePlayTokenCommandPayload
+  | SpawnTokenPayload
   | SetInitiativePayload
   | LivePlayMapEffectsCommandPayload
   | Record<string, never>
@@ -296,21 +303,6 @@ export const useDocumentMapTokenActions = (
     ])
   }
 
-  const sendActionWithUnloadFallback = (
-    request: string,
-    body: Record<string, unknown>,
-  ): boolean => {
-    try {
-      sendJsonWithUnloadFallback(request, JSON.stringify(actionBody(body)))
-      return true
-    } catch (error) {
-      const message = getErrorMessage(error, { fallback: 'Token action failed' })
-      status.value = 'error'
-      lastError.value = message
-      return false
-    }
-  }
-
   const runAction = async (
     request: string,
     body: Record<string, unknown>,
@@ -366,11 +358,23 @@ export const useDocumentMapTokenActions = (
     }
   }
 
-  const spawnToken: UseDocumentMapTokenActionsReturn['spawnToken'] = (payload) => {
-    const body = { placement: payload.placement }
-    if (payload.unloadFallback) sendActionWithUnloadFallback(MAP_API_PATHS.spawnToken, body)
-    return runAction(MAP_API_PATHS.spawnToken, body)
-  }
+  const spawnToken: UseDocumentMapTokenActionsReturn['spawnToken'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.spawnToken,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
+      { placement: payload.placement },
+      [{ kind: 'token', placementId: payload.placement.id, field: 'spawn' }],
+    ),
+  )
+
+  const deleteToken: UseDocumentMapTokenActionsReturn['deleteToken'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.deleteToken,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+      { placementId: payload.placementId },
+      [{ kind: 'token', placementId: payload.placementId, field: 'delete' }],
+    ),
+  )
 
   const moveToken: UseDocumentMapTokenActionsReturn['moveToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.moveToken,
@@ -579,6 +583,7 @@ export const useDocumentMapTokenActions = (
     lastError,
     clearError,
     spawnToken,
+    deleteToken,
     moveToken,
     turnToken,
     modifyHp,

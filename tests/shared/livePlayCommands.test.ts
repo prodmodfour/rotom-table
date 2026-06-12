@@ -31,6 +31,8 @@ import {
   validateLivePlayCommandEnvelope,
   type BuildTerrainVoxelLivePlayCommand,
   type BuildTerrainVoxelPayload,
+  type DeleteTokenLivePlayCommand,
+  type DeleteTokenPayload,
   type LivePlayBaseRevision,
   type LivePlayCommandEnvelope,
   type LivePlayCommandResult,
@@ -47,6 +49,8 @@ import {
   type RemoveTerrainVoxelLivePlayCommand,
   type RemoveTerrainVoxelPayload,
   type SetFieldEffectLivePlayCommand,
+  type SpawnTokenLivePlayCommand,
+  type SpawnTokenPayload,
   type SetFieldEffectPayload,
   type SetInitiativeLivePlayCommand,
   type SetInitiativePayload,
@@ -126,6 +130,8 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setFieldEffect')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('buildTerrainVoxel')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('removeTerrainVoxel')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('spawnToken')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('deleteToken')
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayCommandType('teleportToken')).toBe(false)
     expect(parseLivePlayCommandType('useMove')).toBe('useMove')
@@ -154,6 +160,8 @@ describe('live-play command contract', () => {
       'combatStages',
       'moveUsage',
       'action',
+      'spawn',
+      'delete',
     ])
     expect(isLivePlayMapScopeLane('initiative')).toBe(true)
     expect(isLivePlayMapScopeLane('wholeMap')).toBe(false)
@@ -262,6 +270,40 @@ describe('live-play command contract', () => {
     expect(removeTerrainCommand.type).toBe('removeTerrainVoxel')
     expect(removeTerrainCommand.payload.cell).toEqual({ x: 1, y: 0, z: 2 })
 
+    const spawnTokenCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'placement-002', field: 'spawn' }],
+      payload: {
+        placement: {
+          id: 'placement-002',
+          sheetKind: 'pokemon',
+          sheetSlug: 'eevee',
+          position: { x: 2, y: 0, z: 2 },
+          facing: 'south-east',
+          turned: false,
+        },
+      },
+    } as const satisfies SpawnTokenLivePlayCommand
+
+    const deleteTokenCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'placement-002', field: 'delete' }],
+      payload: { placementId: 'placement-002' },
+    } as const satisfies DeleteTokenLivePlayCommand
+
+    expect(spawnTokenCommand.type).toBe('spawnToken')
+    expect(spawnTokenCommand.payload.placement.id).toBe('placement-002')
+    expect(deleteTokenCommand.type).toBe('deleteToken')
+    expect(deleteTokenCommand.payload).toEqual({ placementId: 'placement-002' })
+
     expectTypeOf(command).toEqualTypeOf<
       LivePlayCommandEnvelope<typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN, MoveTokenPayload, LivePlayTokenScope>
     >()
@@ -271,6 +313,8 @@ describe('live-play command contract', () => {
     expectTypeOf(fieldEffectCommand.payload).toMatchTypeOf<SetFieldEffectPayload>()
     expectTypeOf(buildTerrainCommand.payload).toMatchTypeOf<BuildTerrainVoxelPayload>()
     expectTypeOf(removeTerrainCommand.payload).toMatchTypeOf<RemoveTerrainVoxelPayload>()
+    expectTypeOf(spawnTokenCommand.payload).toMatchTypeOf<SpawnTokenPayload>()
+    expectTypeOf(deleteTokenCommand.payload).toMatchTypeOf<DeleteTokenPayload>()
   })
 
   it('builds accepted, rejected, and duplicate results with reusable shapes', () => {

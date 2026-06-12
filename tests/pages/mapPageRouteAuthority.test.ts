@@ -27,6 +27,8 @@ describe('map page route authority', () => {
     expect(mapPage).not.toContain('shouldUseDocumentTokenActions')
     expect(mapPage).not.toContain('turnPlacement,')
     expect(mapPage).not.toContain('movePlacement,')
+    expect(mapPage).toContain('documentTokenActions.spawnToken({')
+    expect(mapPage).toContain('documentTokenActions.deleteToken({ placementId: id })')
     expect(mapPage).toContain('documentTokenActions.useMove(request)')
     expect(mapPage).toContain('dispatchSetInitiative: (payload) => documentTokenActions.setInitiative(payload)')
     expect(mapPage).toContain('dispatchNextInitiative: () => documentTokenActions.nextInitiative()')
@@ -41,6 +43,7 @@ describe('map page route authority', () => {
     expect(mapPage).not.toContain('postJson<RecordMoveUsageResponse>')
     expect(mapPage).not.toContain('MAP_API_PATHS.useMove')
     expect(mapPage).not.toContain('applyRecordedSheetUsage')
+    expect(mapPage).not.toContain('unloadFallback: true')
 
     const scenePanel = readSource('src/components/map/MapScenePanel.vue')
     expect(scenePanel).not.toContain('SessionCommandRejectionBanner')

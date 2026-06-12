@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
+  type DeleteTokenLivePlayCommand,
   type MoveTokenLivePlayCommand,
+  type SpawnTokenLivePlayCommand,
   type TurnTokenLivePlayCommand,
 } from '#shared/livePlayCommands'
 import { UseCaseHttpError } from '~~/server/utils/useCaseErrors'
@@ -11,13 +13,11 @@ import { subscribeRealtime } from '~~/server/utils/realtime'
 import type { TabletopMap } from '~/types/map'
 
 const mocks = vi.hoisted(() => ({
-  spawnMapTokenUseCase: vi.fn(),
   executeMapTokenLivePlayCommandUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
 vi.mock('../../server/useCases/applyMapTokenAction', () => ({
-  spawnMapTokenUseCase: mocks.spawnMapTokenUseCase,
   executeMapTokenLivePlayCommandUseCase: mocks.executeMapTokenLivePlayCommandUseCase,
 }))
 vi.mock('../../server/policies/playerProfilePolicy', () => ({
@@ -25,6 +25,7 @@ vi.mock('../../server/policies/playerProfilePolicy', () => ({
 }))
 
 const spawnRoute = (await import('../../server/api/maps/tokens/spawn.post')).default
+const deleteRoute = (await import('../../server/api/maps/tokens/delete.post')).default
 const moveRoute = (await import('../../server/api/maps/tokens/move.post')).default
 const turnRoute = (await import('../../server/api/maps/tokens/turn.post')).default
 
@@ -68,6 +69,35 @@ const turnCommand = (): TurnTokenLivePlayCommand => ({
   payload: { placementId: 'token-1', facing: 'north-east' },
 })
 
+const spawnCommand = (): SpawnTokenLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_routespawn01',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
+  scopes: [{ kind: 'token', placementId: 'token-eevee', field: 'spawn' }],
+  payload: {
+    placement: {
+      id: 'token-eevee',
+      sheetKind: 'pokemon',
+      sheetSlug: 'eevee',
+      position: { x: 2, y: 0, z: 2 },
+      facing: 'south-east',
+      turned: false,
+    },
+  },
+})
+
+const deleteCommand = (): DeleteTokenLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_routedelete',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+  scopes: [{ kind: 'token', placementId: 'token-1', field: 'delete' }],
+  payload: { placementId: 'token-1' },
+})
+
 const invokeRoute = async (
   handler: MapTokenActionRouteHandler,
   options: { role?: 'gm' | 'player'; body?: unknown; method?: string } = {},
@@ -92,33 +122,39 @@ describe('map token action API routes', () => {
     vi.clearAllMocks()
   })
 
-  it('persists GM token spawns through a focused document-backed route', async () => {
+  it('routes GM token spawns through the live-play command executor', async () => {
     const map = mapFixture()
-    const placement = {
-      id: 'token-eevee',
-      sheetKind: 'pokemon' as const,
-      sheetSlug: 'eevee',
-      position: { x: 2, y: 0, z: 2 },
-      facing: 'south-east' as const,
-      turned: false,
-    }
-    mocks.spawnMapTokenUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, placement, events: [] })
+    const command = { ...spawnCommand(), clientId: 'gm-client' }
+    const placement = command.payload.placement
+    mocks.executeMapTokenLivePlayCommandUseCase.mockResolvedValue({
+      result: { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] },
+      path: 'data/maps/arena.json',
+      map,
+      placement,
+    })
 
     await expect(invokeRoute(spawnRoute, {
       role: 'gm',
-      body: {
-        slug: 'arena',
-        placement,
-        clientId: 'gm-client',
-      },
-    })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map, placement })
+      body: command,
+    })).resolves.toEqual({
+      ok: true,
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena.json',
+      map,
+      placement,
+    })
 
     expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
-    expect(mocks.spawnMapTokenUseCase).toHaveBeenCalledWith({
+    expect(mocks.executeMapTokenLivePlayCommandUseCase).toHaveBeenCalledWith({
       role: 'gm',
-      slug: 'arena',
-      placement,
+      command,
       clientId: 'gm-client',
+      playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
     })
   })
 
@@ -226,6 +262,32 @@ describe('map token action API routes', () => {
       clientId: 'gm-client',
       playerProfile: null,
       expectedType: LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
+    })
+  })
+
+  it('routes GM token deletes through the live-play command executor', async () => {
+    const map = { ...mapFixture(), placements: [] }
+    const placement = mapFixture().placements[0]!
+    const command = { ...deleteCommand(), clientId: 'gm-client' }
+    mocks.executeMapTokenLivePlayCommandUseCase.mockResolvedValue({
+      result: { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] },
+      path: 'data/maps/arena.json',
+      map,
+      placement,
+    })
+
+    await expect(invokeRoute(deleteRoute, {
+      role: 'gm',
+      body: command,
+    })).resolves.toMatchObject({ ok: true, revision: 5, map, placement })
+
+    expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
+    expect(mocks.executeMapTokenLivePlayCommandUseCase).toHaveBeenCalledWith({
+      role: 'gm',
+      command,
+      clientId: 'gm-client',
+      playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
     })
   })
 

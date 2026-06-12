@@ -8,6 +8,7 @@ import type {
   MapTerrainKind,
   MapVoxelV2,
   MapWeatherKind,
+  SheetPlacement,
 } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 
@@ -130,6 +131,8 @@ export const LIVE_PLAY_TOKEN_SCOPE_FIELDS = [
   'combatStages',
   'moveUsage',
   'action',
+  'spawn',
+  'delete',
 ] as const
 export type LivePlayTokenScopeField = (typeof LIVE_PLAY_TOKEN_SCOPE_FIELDS)[number]
 
@@ -176,6 +179,14 @@ export interface MoveTokenPayload {
 export interface TurnTokenPayload {
   readonly placementId: string
   readonly facing: TokenFacingDirection
+}
+
+export interface SpawnTokenPayload {
+  readonly placement: SheetPlacement
+}
+
+export interface DeleteTokenPayload {
+  readonly placementId: string
 }
 
 export interface ModifyHpPayload {
@@ -277,6 +288,18 @@ export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
 export type TurnTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
   TurnTokenPayload,
+  LivePlayTokenScope
+>
+
+export type SpawnTokenLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
+  SpawnTokenPayload,
+  LivePlayTokenScope
+>
+
+export type DeleteTokenLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+  DeleteTokenPayload,
   LivePlayTokenScope
 >
 

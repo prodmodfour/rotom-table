@@ -51,6 +51,7 @@ describe('API route constants', () => {
       useMove: '/api/maps/use-move',
       actionEvent: '/api/maps/action-event',
       spawnToken: '/api/maps/tokens/spawn',
+      deleteToken: '/api/maps/tokens/delete',
       moveToken: '/api/maps/tokens/move',
       turnToken: '/api/maps/tokens/turn',
       modifyHp: '/api/maps/tokens/modify-hp',

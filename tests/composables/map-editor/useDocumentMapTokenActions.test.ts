@@ -57,8 +57,9 @@ describe('useDocumentMapTokenActions', () => {
     apiMocks.sendJsonWithUnloadFallback.mockReset()
   })
 
-  it('posts document-backed spawn actions with an unload-safe small payload when requested', async () => {
+  it('posts live-play spawn commands without an unload fallback double-send', async () => {
     const map = mapFixture()
+    const mapRevision = ref(4)
     const applyPersistedMap = vi.fn()
     const placement = {
       id: 'token-eevee',
@@ -70,6 +71,11 @@ describe('useDocumentMapTokenActions', () => {
     }
     apiMocks.postJson.mockResolvedValue({
       ok: true,
+      opId: 'op_serverspawn',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
       path: 'data/maps/arena-map.json',
       map,
       placement,
@@ -77,21 +83,23 @@ describe('useDocumentMapTokenActions', () => {
 
     const actions = useDocumentMapTokenActions({
       slug: 'arena-map',
+      mapRevision,
       applyPersistedMap,
     })
-    const result = await actions.spawnToken({ placement, unloadFallback: true })
+    const result = await actions.spawnToken({ placement })
 
-    const expectedBody = {
-      slug: 'arena-map',
-      clientId: 'ssr',
-      placement,
-    }
     expect(result.dispatched).toBe(true)
-    expect(apiMocks.sendJsonWithUnloadFallback).toHaveBeenCalledWith(
-      MAP_API_PATHS.spawnToken,
-      JSON.stringify(expectedBody),
-    )
-    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.spawnToken, expectedBody)
+    expect(apiMocks.sendJsonWithUnloadFallback).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.spawnToken, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-eevee', field: 'spawn' }],
+      payload: { placement },
+      clientId: 'ssr',
+    }))
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
@@ -140,6 +148,42 @@ describe('useDocumentMapTokenActions', () => {
       },
       clientId: 'ssr',
       profileId: 'profile_ash00000',
+    }))
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
+  })
+
+  it('posts live-play delete commands through the command dispatcher', async () => {
+    const map = { ...mapFixture(), placements: [] }
+    const mapRevision = ref(4)
+    const applyPersistedMap = vi.fn()
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_serverdelete',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+    })
+
+    const actions = useDocumentMapTokenActions({
+      slug: 'arena-map',
+      mapRevision,
+      applyPersistedMap,
+    })
+    const result = await actions.deleteToken({ placementId: 'token-pikachu' })
+
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.deleteToken, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'delete' }],
+      payload: { placementId: 'token-pikachu' },
+      clientId: 'ssr',
     }))
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })

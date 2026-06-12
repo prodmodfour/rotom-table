@@ -86,6 +86,7 @@ const moveRoute = (await import('../../server/api/maps/move.post')).default
 const renameRoute = (await import('../../server/api/maps/rename.post')).default
 const saveRoute = (await import('../../server/api/maps/save.post')).default
 const tokenSpawnRoute = (await import('../../server/api/maps/tokens/spawn.post')).default
+const tokenDeleteRoute = (await import('../../server/api/maps/tokens/delete.post')).default
 const tokenMoveRoute = (await import('../../server/api/maps/tokens/move.post')).default
 const tokenTurnRoute = (await import('../../server/api/maps/tokens/turn.post')).default
 const abilityRoute = (await import('../../server/api/maps/tokens/use-ability.post')).default
@@ -180,10 +181,30 @@ describe('map hosted-write API routes', () => {
       {
         route: tokenSpawnRoute,
         body: {
-          slug: 'arena',
-          placement: { id: 'token-2', sheetKind: 'pokemon', sheetSlug: 'eevee', position: { x: 1, y: 0, z: 1 } },
+          schemaVersion: 1,
+          opId: 'op_hostedspawn',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'spawnToken',
+          scopes: [{ kind: 'token', placementId: 'token-2', field: 'spawn' }],
+          payload: {
+            placement: { id: 'token-2', sheetKind: 'pokemon', sheetSlug: 'eevee', position: { x: 1, y: 0, z: 1 } },
+          },
         },
-        mock: mocks.spawnMapTokenUseCase,
+        mock: mocks.executeMapTokenLivePlayCommandUseCase,
+      },
+      {
+        route: tokenDeleteRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hosteddel1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'deleteToken',
+          scopes: [{ kind: 'token', placementId: 'token-1', field: 'delete' }],
+          payload: { placementId: 'token-1' },
+        },
+        mock: mocks.executeMapTokenLivePlayCommandUseCase,
       },
       {
         route: setInitiativeRoute,
