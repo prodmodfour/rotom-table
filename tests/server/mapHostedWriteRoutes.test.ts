@@ -13,8 +13,7 @@ const mocks = vi.hoisted(() => ({
   renameMapUseCase: vi.fn(),
   saveMapUseCase: vi.fn(),
   spawnMapTokenUseCase: vi.fn(),
-  moveMapTokenUseCase: vi.fn(),
-  turnMapTokenUseCase: vi.fn(),
+  executeMapTokenLivePlayCommandUseCase: vi.fn(),
   useMapTokenAbilityUseCase: vi.fn(),
   useMapTokenManeuverUseCase: vi.fn(),
   useMapTokenOrderUseCase: vi.fn(),
@@ -48,8 +47,7 @@ vi.mock('../../server/useCases/saveMap', () => ({
 }))
 vi.mock('../../server/useCases/applyMapTokenAction', () => ({
   spawnMapTokenUseCase: mocks.spawnMapTokenUseCase,
-  moveMapTokenUseCase: mocks.moveMapTokenUseCase,
-  turnMapTokenUseCase: mocks.turnMapTokenUseCase,
+  executeMapTokenLivePlayCommandUseCase: mocks.executeMapTokenLivePlayCommandUseCase,
 }))
 vi.mock('../../server/useCases/applyMapTokenTableAction', () => ({
   useMapTokenAbilityUseCase: mocks.useMapTokenAbilityUseCase,
@@ -192,7 +190,7 @@ describe('map hosted-write API routes', () => {
           position: { x: 1, y: 0, z: 1 },
           profileId: 'profile_ash00000',
         },
-        mock: mocks.moveMapTokenUseCase,
+        mock: mocks.executeMapTokenLivePlayCommandUseCase,
       },
       {
         route: tokenTurnRoute,
@@ -202,7 +200,7 @@ describe('map hosted-write API routes', () => {
           facing: 'north-east',
           profileId: 'profile_ash00000',
         },
-        mock: mocks.turnMapTokenUseCase,
+        mock: mocks.executeMapTokenLivePlayCommandUseCase,
       },
       {
         route: abilityRoute,

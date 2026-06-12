@@ -1,20 +1,24 @@
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  LIVE_PLAY_COMMAND_TYPES,
+  type MoveTokenLivePlayCommand,
+  type TurnTokenLivePlayCommand,
+} from '#shared/livePlayCommands'
 import { UseCaseHttpError } from '~~/server/utils/useCaseErrors'
 import { subscribeRealtime } from '~~/server/utils/realtime'
 import type { TabletopMap } from '~/types/map'
 
 const mocks = vi.hoisted(() => ({
   spawnMapTokenUseCase: vi.fn(),
-  moveMapTokenUseCase: vi.fn(),
-  turnMapTokenUseCase: vi.fn(),
+  executeMapTokenLivePlayCommandUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
 vi.mock('../../server/useCases/applyMapTokenAction', () => ({
   spawnMapTokenUseCase: mocks.spawnMapTokenUseCase,
-  moveMapTokenUseCase: mocks.moveMapTokenUseCase,
-  turnMapTokenUseCase: mocks.turnMapTokenUseCase,
+  executeMapTokenLivePlayCommandUseCase: mocks.executeMapTokenLivePlayCommandUseCase,
 }))
 vi.mock('../../server/policies/playerProfilePolicy', () => ({
   resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
@@ -28,6 +32,7 @@ type MapTokenActionRouteHandler = EventHandler<EventHandlerRequest, unknown>
 
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2,
+  revision: 4,
   slug: 'arena',
   name: 'Arena',
   dimensions: { x: 4, y: 2, z: 4 },
@@ -41,6 +46,26 @@ const mapFixture = (): TabletopMap => ({
   ],
   lights: [],
   initiative: { activeId: null, round: 1 },
+})
+
+const moveCommand = (): MoveTokenLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_routemove001',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+  scopes: [{ kind: 'token', placementId: 'token-1', field: 'position' }],
+  payload: { placementId: 'token-1', position: { x: 2, y: 0, z: 1 }, pathLength: 3 },
+})
+
+const turnCommand = (): TurnTokenLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_routeturn001',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
+  scopes: [{ kind: 'token', placementId: 'token-1', field: 'facing' }],
+  payload: { placementId: 'token-1', facing: 'north-east' },
 })
 
 const invokeRoute = async (
@@ -97,7 +122,7 @@ describe('map token action API routes', () => {
     })
   })
 
-  it('resolves selected player profiles before document-backed token moves', async () => {
+  it('resolves selected player profiles before live-play token move commands', async () => {
     const map = mapFixture()
     const placement = map.placements[0]!
     const profile = {
@@ -106,103 +131,105 @@ describe('map token action API routes', () => {
       displayName: 'Ash',
       linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }],
     }
+    const command = { ...moveCommand(), clientId: 'client-1', profileId: 'profile_ash00000' }
     mocks.resolvePlayerProfileForPolicy.mockReturnValue(profile)
-    mocks.moveMapTokenUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, placement, events: [] })
+    mocks.executeMapTokenLivePlayCommandUseCase.mockResolvedValue({
+      result: { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] },
+      path: 'data/maps/arena.json',
+      map,
+      placement,
+    })
 
     await expect(invokeRoute(moveRoute, {
       role: 'player',
-      body: {
-        slug: 'arena',
-        placementId: 'token-1',
-        position: { x: 2, y: 0, z: 1 },
-        pathLength: 3,
-        clientId: 'client-1',
-        profileId: 'profile_ash00000',
-      },
-    })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map, placement })
+      body: command,
+    })).resolves.toEqual({
+      ok: true,
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena.json',
+      map,
+      placement,
+    })
 
     expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenCalledWith('profile_ash00000')
-    expect(mocks.moveMapTokenUseCase).toHaveBeenCalledWith({
+    expect(mocks.executeMapTokenLivePlayCommandUseCase).toHaveBeenCalledWith({
       role: 'player',
-      slug: 'arena',
-      placementId: 'token-1',
-      position: { x: 2, y: 0, z: 1 },
-      pathLength: 3,
+      command,
       clientId: 'client-1',
       playerProfile: profile,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
     })
   })
 
-  it('publishes linked-player token move events to realtime subscribers', async () => {
-    const map = mapFixture()
-    const placement = { ...map.placements[0]!, position: { x: 2, y: 0, z: 1 } }
+  it('returns live-play command rejections without publishing legacy route events', async () => {
+    const command = { ...moveCommand(), opId: 'op_routereject1', profileId: 'profile_ash00000' }
     const profile = {
       schemaVersion: 1,
       id: 'profile_ash00000',
       displayName: 'Ash',
       linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: 'pikachu' }],
     }
-    const events = [
-      { channel: 'map:arena', type: 'updated' as const, clientId: 'client-1', data: map },
-      { channel: 'maps', type: 'updated' as const, clientId: 'client-1', data: { slug: 'arena', name: 'Arena' } },
-    ]
+    mocks.resolvePlayerProfileForPolicy.mockReturnValue(profile)
+    mocks.executeMapTokenLivePlayCommandUseCase.mockResolvedValue({
+      result: {
+        ok: false,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        reason: 'stale-revision',
+        message: 'Command baseRevision 3 does not match current map revision 4',
+        currentRevision: 4,
+      },
+    })
+
     const received: unknown[] = []
     const unsubscribe = subscribeRealtime((event) => received.push(event))
-    const now = vi.spyOn(Date, 'now').mockReturnValue(123_456)
-
     try {
-      mocks.resolvePlayerProfileForPolicy.mockReturnValue(profile)
-      mocks.moveMapTokenUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, placement, events })
-
-      await expect(invokeRoute(moveRoute, {
-        role: 'player',
-        body: {
-          slug: 'arena',
-          placementId: 'token-1',
-          position: { x: 2, y: 0, z: 1 },
-          clientId: 'client-1',
-          profileId: 'profile_ash00000',
-        },
-      })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map, placement })
+      await expect(invokeRoute(moveRoute, { role: 'player', body: command })).resolves.toEqual({
+        ok: false,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        reason: 'stale-revision',
+        message: 'Command baseRevision 3 does not match current map revision 4',
+        currentRevision: 4,
+      })
     } finally {
       unsubscribe()
-      now.mockRestore()
     }
 
-    expect(received).toEqual([
-      { ...events[0], timestamp: 123_456 },
-      { ...events[1], timestamp: 123_456 },
-    ])
+    expect(received).toEqual([])
   })
 
-  it('keeps GM document-backed token turns independent from player profile selection', async () => {
+  it('keeps GM live-play token turns independent from player profile selection', async () => {
     const map = mapFixture()
     const placement = { ...map.placements[0]!, facing: 'north-east' as const, turned: false }
-    mocks.turnMapTokenUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, placement, events: [] })
+    const command = { ...turnCommand(), clientId: 'gm-client', profileId: 'profile_ash00000' }
+    mocks.executeMapTokenLivePlayCommandUseCase.mockResolvedValue({
+      result: { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] },
+      path: 'data/maps/arena.json',
+      map,
+      placement,
+    })
 
     await expect(invokeRoute(turnRoute, {
       role: 'gm',
-      body: {
-        slug: 'arena',
-        placementId: 'token-1',
-        facing: 'north-east',
-        clientId: 'gm-client',
-        profileId: 'profile_ash00000',
-      },
-    })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map, placement })
+      body: command,
+    })).resolves.toMatchObject({ ok: true, revision: 5, map, placement })
 
     expect(mocks.resolvePlayerProfileForPolicy).not.toHaveBeenCalled()
-    expect(mocks.turnMapTokenUseCase).toHaveBeenCalledWith({
+    expect(mocks.executeMapTokenLivePlayCommandUseCase).toHaveBeenCalledWith({
       role: 'gm',
-      slug: 'arena',
-      placementId: 'token-1',
-      facing: 'north-east',
+      command,
       clientId: 'gm-client',
       playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
     })
   })
 
-  it('maps missing selected profile errors before token actions run', async () => {
+  it('maps missing selected profile errors before token commands run', async () => {
     mocks.resolvePlayerProfileForPolicy.mockImplementation(() => {
       throw new UseCaseHttpError(404, 'Player profile profile_missing1 not found')
     })
@@ -210,15 +237,13 @@ describe('map token action API routes', () => {
     await expect(invokeRoute(turnRoute, {
       role: 'player',
       body: {
-        slug: 'arena',
-        placementId: 'token-1',
-        facing: 'south-east',
+        ...turnCommand(),
         profileId: 'profile_missing1',
       },
     })).rejects.toMatchObject({
       statusCode: 404,
       statusMessage: 'Player profile profile_missing1 not found',
     })
-    expect(mocks.turnMapTokenUseCase).not.toHaveBeenCalled()
+    expect(mocks.executeMapTokenLivePlayCommandUseCase).not.toHaveBeenCalled()
   })
 })

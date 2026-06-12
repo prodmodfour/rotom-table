@@ -133,9 +133,9 @@ describe('useTokenControls', () => {
     controls.deletePlacement('linked-token')
     expect(map.placements.map((placement) => placement.id)).toEqual(['public-token', 'linked-token', 'gm-token'])
 
-    controls.turnPlacement('linked-token')
+    controls.turnPlacementForSetupEdit('linked-token')
     expect(map.placements[1]).toMatchObject({ facing: 'north-east', turned: false })
-    controls.turnPlacement('linked-token')
+    controls.turnPlacementForSetupEdit('linked-token')
     expect(map.placements[1]).toMatchObject({ facing: 'north-west', turned: true })
   })
 
@@ -153,7 +153,7 @@ describe('useTokenControls', () => {
 
     expect(controls.controllablePlacementIds.value).toEqual([])
     controls.selectPlacement('public-token')
-    controls.turnPlacement('public-token')
+    controls.turnPlacementForSetupEdit('public-token')
     expect(controls.selectedId.value).toBeNull()
     expect(map.placements[0]?.facing).toBeUndefined()
   })
@@ -184,7 +184,7 @@ describe('useTokenControls', () => {
     })
 
     controls.updatePreview({ position: { x: 2, y: 0, z: 1 }, reachable: true, pathLength: 3 })
-    controls.movePlacement({ id: 'bolt-token', position: { x: 2, y: 0, z: 1 } })
+    controls.movePlacementForSetupEdit({ id: 'bolt-token', position: { x: 2, y: 0, z: 1 } })
 
     expect(map.placements[0]?.position).toEqual({ x: 2, y: 0, z: 1 })
     expect(map.placements[0]).toMatchObject({ facing: 'south-east', turned: false })
@@ -202,7 +202,7 @@ describe('useTokenControls', () => {
     ])
   })
 
-  it('moves a profile-controlled player token through normal map controls', () => {
+  it('moves a profile-controlled player token through setup/edit map controls', () => {
     const sheet = pokemon({ slug: 'linked-mon', player: false })
     const map = mapFixture()
     map.placements = [
@@ -221,7 +221,7 @@ describe('useTokenControls', () => {
 
     controls.selectPlacement('linked-token')
     controls.updatePreview({ position: { x: 2, y: 0, z: 1 }, reachable: true, pathLength: 3 })
-    controls.movePlacement({ id: 'linked-token', position: { x: 2, y: 0, z: 1 } })
+    controls.movePlacementForSetupEdit({ id: 'linked-token', position: { x: 2, y: 0, z: 1 } })
 
     expect(map.placements[0]?.position).toEqual({ x: 2, y: 0, z: 1 })
     expect(map.placements[0]).toMatchObject({ facing: 'south-east', turned: false })
@@ -248,7 +248,7 @@ describe('useTokenControls', () => {
     ]
     const { controls } = makeControls({ map, pokemonSheets: [sheet] })
 
-    controls.movePlacement({ id: 'bolt-token', position: { x: 1, y: 0, z: 2 } })
+    controls.movePlacementForSetupEdit({ id: 'bolt-token', position: { x: 1, y: 0, z: 2 } })
 
     expect(map.placements[0]).toMatchObject({ facing: 'south-west', turned: false })
   })
@@ -261,7 +261,7 @@ describe('useTokenControls', () => {
     ]
     const { controls } = makeControls({ map, pokemonSheets: [sheet] })
 
-    controls.movePlacement({ id: 'bolt-token', position: { x: 0, y: 0, z: 0 } })
+    controls.movePlacementForSetupEdit({ id: 'bolt-token', position: { x: 0, y: 0, z: 0 } })
 
     expect(map.placements[0]?.facing).toBeUndefined()
     expect(map.metadata?.movementLog).toBeUndefined()

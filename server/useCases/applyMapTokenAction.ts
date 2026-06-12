@@ -1,5 +1,18 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import {
+  LIVE_PLAY_COMMAND_TYPES,
+  LIVE_PLAY_PATCH_TYPES,
+  type LivePlayCommandAccepted,
+  type LivePlayCommandResult,
+  type LivePlayPatch,
+  type LivePlayTokenScope,
+  type MoveTokenLivePlayCommand,
+  type MoveTokenPayload,
+  type TurnTokenLivePlayCommand,
+  type TurnTokenPayload,
+} from '#shared/livePlayCommands'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
@@ -16,8 +29,14 @@ import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { readSheetFile } from '../utils/sheetStorage'
 import { summarizeMap } from '../utils/mapSummaries'
+import { publishRealtime } from '../utils/realtime'
 import { canSaveMap, clampAnchorToDimensions } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
+import {
+  executeAuthoritativeLivePlayCommand,
+  rejectLivePlayCommand,
+  type AuthoritativeLivePlayCommandExecutor,
+} from '../livePlay/commandExecutor'
 import { toPersistedMap } from './saveMap'
 
 export class MapTokenActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -48,6 +67,29 @@ export interface TurnMapTokenInput {
   playerProfile?: PlayerProfile | null
 }
 
+export type MapTokenLivePlayCommand = MoveTokenLivePlayCommand | TurnTokenLivePlayCommand
+
+export interface MapTokenLivePlayActor {
+  role: AuthRole
+  clientId?: string
+  playerProfile?: PlayerProfile | null
+}
+
+export interface ExecuteMapTokenLivePlayCommandInput {
+  role: AuthRole
+  command: unknown
+  clientId?: string
+  playerProfile?: PlayerProfile | null
+  expectedType?: typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+}
+
+export interface MapTokenLivePlayCommandResponse {
+  result: LivePlayCommandResult
+  path?: string
+  map?: TabletopMap
+  placement?: SheetPlacement
+}
+
 interface SheetFileRecord {
   sheet: Record<string, unknown>
 }
@@ -60,6 +102,8 @@ export interface MapTokenActionDependencies {
   now?: () => number
   relativePath?: (path: string) => string
   maxMovementLogEntries?: number
+  commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
+  publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
 }
 
 export interface MapTokenActionResult {
@@ -217,6 +261,8 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
   now: dependencies.now ?? Date.now,
   relativePath: dependencies.relativePath ?? campaignPathLabel,
   maxMovementLogEntries: dependencies.maxMovementLogEntries,
+  commandExecutor: dependencies.commandExecutor ?? { execute: executeAuthoritativeLivePlayCommand },
+  publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
 })
 
 const clonePosition = (position: GridAnchor): GridAnchor => ({
@@ -282,12 +328,17 @@ export const spawnMapTokenUseCase = (
   }, deps)
 }
 
-export const moveMapTokenUseCase = (
-  input: MoveMapTokenInput,
-  dependencies: MapTokenActionDependencies = {},
-): MapTokenActionResult => {
-  const deps = actionDependencies(dependencies)
-  const context = resolveContext(input, deps)
+interface AppliedMapTokenChange {
+  readonly nextMap: TabletopMap
+  readonly placement: SheetPlacement
+  readonly timestamp?: number
+}
+
+const applyMoveTokenToMap = (
+  input: Pick<MoveMapTokenInput, 'position' | 'pathLength'>,
+  context: ResolvedMapTokenActionContext,
+  dependencies: Required<Pick<MapTokenActionDependencies, 'readSheet' | 'now'>> & Pick<MapTokenActionDependencies, 'maxMovementLogEntries'>,
+): AppliedMapTokenChange | null => {
   const nextPosition = clampAnchorToDimensions(input.position, context.placement.position, context.map.dimensions)
   const currentPosition = context.placement.position
   const moving = !sameGridAnchor(currentPosition, nextPosition)
@@ -295,7 +346,7 @@ export const moveMapTokenUseCase = (
     ? tokenFacingTowardPoint(currentPosition, nextPosition, tokenFacingForPlacement(context.placement))
     : null
 
-  if (!moving && nextFacing === null) return noChangeResult(context)
+  if (!moving && nextFacing === null) return null
 
   const nextPlacement: SheetPlacement = {
     ...context.placement,
@@ -310,43 +361,43 @@ export const moveMapTokenUseCase = (
   const placements = context.map.placements.map((placement) => (
     placement.id === context.placement.id ? nextPlacement : placement
   ))
-  const timestamp = deps.now()
+  const timestamp = dependencies.now()
   const metadata = moving
     ? appendMovementLogEntry(context.map.metadata, {
         userId: context.placement.id,
-        userName: sheetDisplayName(context.placement, deps.readSheet),
+        userName: sheetDisplayName(context.placement, dependencies.readSheet),
         from: currentPosition,
         to: nextPosition,
         pathLength: normalizedPathLength(input.pathLength),
       }, {
         now: () => timestamp,
-        maxLogEntries: deps.maxMovementLogEntries,
+        maxLogEntries: dependencies.maxMovementLogEntries,
       })
     : context.map.metadata
 
-  return writeActionMap(input, context, {
-    ...context.map,
-    placements,
-    metadata,
-  }, {
-    ...deps,
-    now: () => timestamp,
-  })
+  return {
+    nextMap: {
+      ...context.map,
+      placements,
+      metadata,
+      updatedAt: timestamp,
+    },
+    placement: nextPlacement,
+    timestamp,
+  }
 }
 
-export const turnMapTokenUseCase = (
-  input: TurnMapTokenInput,
-  dependencies: MapTokenActionDependencies = {},
-): MapTokenActionResult => {
+const applyTurnTokenToMap = (
+  input: Pick<TurnMapTokenInput, 'facing'>,
+  context: ResolvedMapTokenActionContext,
+): AppliedMapTokenChange | null => {
   if (!isTokenFacingDirection(input.facing)) {
     throw new MapTokenActionUseCaseError(400, 'facing must be a token facing direction')
   }
 
-  const deps = actionDependencies(dependencies)
-  const context = resolveContext(input, deps)
   const turned = tokenFacingStoresLegacyTurned(input.facing)
   if (context.placement.facing === input.facing && context.placement.turned === turned) {
-    return noChangeResult(context)
+    return null
   }
 
   const nextPlacement: SheetPlacement = {
@@ -358,8 +409,315 @@ export const turnMapTokenUseCase = (
     placement.id === context.placement.id ? nextPlacement : placement
   ))
 
-  return writeActionMap(input, context, {
-    ...context.map,
-    placements,
-  }, deps)
+  return {
+    nextMap: {
+      ...context.map,
+      placements,
+    },
+    placement: nextPlacement,
+  }
+}
+
+export const moveMapTokenUseCase = (
+  input: MoveMapTokenInput,
+  dependencies: MapTokenActionDependencies = {},
+): MapTokenActionResult => {
+  const deps = actionDependencies(dependencies)
+  const context = resolveContext(input, deps)
+  const change = applyMoveTokenToMap(input, context, deps)
+  if (!change) return noChangeResult(context)
+
+  return writeActionMap(input, context, change.nextMap, {
+    ...deps,
+    now: () => change.timestamp ?? deps.now(),
+  })
+}
+
+export const turnMapTokenUseCase = (
+  input: TurnMapTokenInput,
+  dependencies: MapTokenActionDependencies = {},
+): MapTokenActionResult => {
+  const deps = actionDependencies(dependencies)
+  const context = resolveContext(input, deps)
+  const change = applyTurnTokenToMap(input, context)
+  if (!change) return noChangeResult(context)
+
+  return writeActionMap(input, context, change.nextMap, deps)
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+)
+
+const isFiniteCoordinate = (value: unknown): value is number => (
+  typeof value === 'number' && Number.isFinite(value)
+)
+
+const expectMoveTokenPayload = (payload: unknown): MoveTokenPayload => {
+  if (!isRecord(payload)) {
+    rejectLivePlayCommand('invalid', 'moveToken payload must be an object')
+  }
+  const record = payload as Record<string, unknown>
+  const placementId = record.placementId
+  const position = record.position
+  const pathLength = record.pathLength
+
+  if (typeof placementId !== 'string' || placementId.trim().length === 0) {
+    rejectLivePlayCommand('invalid', 'moveToken payload.placementId is required')
+  }
+  if (!isRecord(position)) {
+    rejectLivePlayCommand('invalid', 'moveToken payload.position must be an object')
+  }
+  const positionRecord = position as Record<string, unknown>
+  const x = positionRecord.x
+  const y = positionRecord.y
+  const z = positionRecord.z
+  if (!isFiniteCoordinate(x) || !isFiniteCoordinate(y) || !isFiniteCoordinate(z)) {
+    rejectLivePlayCommand('invalid', 'moveToken payload.position coordinates must be finite numbers')
+  }
+  if (
+    pathLength !== undefined
+    && pathLength !== null
+    && (typeof pathLength !== 'number' || !Number.isFinite(pathLength) || pathLength < 0)
+  ) {
+    rejectLivePlayCommand('invalid', 'moveToken payload.pathLength must be a non-negative finite number')
+  }
+
+  return {
+    placementId: placementId as string,
+    position: {
+      x: x as number,
+      y: y as number,
+      z: z as number,
+    },
+    ...(pathLength === undefined ? {} : { pathLength: pathLength as number | null }),
+  }
+}
+
+const expectTurnTokenPayload = (payload: unknown): TurnTokenPayload => {
+  if (!isRecord(payload)) {
+    rejectLivePlayCommand('invalid', 'turnToken payload must be an object')
+  }
+  const record = payload as Record<string, unknown>
+  const placementId = record.placementId
+  const facing = record.facing
+
+  if (typeof placementId !== 'string' || placementId.trim().length === 0) {
+    rejectLivePlayCommand('invalid', 'turnToken payload.placementId is required')
+  }
+  if (!isTokenFacingDirection(facing)) {
+    rejectLivePlayCommand('invalid', 'turnToken payload.facing must be a token facing direction')
+  }
+
+  return {
+    placementId: placementId as string,
+    facing: facing as TokenFacingDirection,
+  }
+}
+
+const tokenScopeMatches = (
+  scopes: readonly LivePlayTokenScope[],
+  placementId: string,
+  field: LivePlayTokenScope['field'],
+): boolean => scopes.some((scope) => (
+  scope.kind === 'token' && scope.placementId === placementId && scope.field === field
+))
+
+const expectCommandPayloadAndScope = (command: MapTokenLivePlayCommand): MoveTokenPayload | TurnTokenPayload => {
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) {
+    const payload = expectMoveTokenPayload(command.payload)
+    if (!tokenScopeMatches(command.scopes, payload.placementId, 'position')) {
+      rejectLivePlayCommand('invalid', 'moveToken scopes must include the token position scope for payload.placementId')
+    }
+    return payload
+  }
+
+  const payload = expectTurnTokenPayload(command.payload)
+  if (!tokenScopeMatches(command.scopes, payload.placementId, 'facing')) {
+    rejectLivePlayCommand('invalid', 'turnToken scopes must include the token facing scope for payload.placementId')
+  }
+  return payload
+}
+
+const commandPlacementId = (command: MapTokenLivePlayCommand): string => {
+  const payload = expectCommandPayloadAndScope(command)
+  return payload.placementId
+}
+
+const commandPatch = (
+  command: MapTokenLivePlayCommand,
+  revision: number,
+  placement: SheetPlacement,
+): LivePlayPatch => ({
+  schemaVersion: command.schemaVersion,
+  type: command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+    ? LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION
+    : LIVE_PLAY_PATCH_TYPES.TOKEN_FACING,
+  mapSlug: command.mapSlug,
+  revision,
+  scopes: command.scopes,
+  payload: command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+    ? {
+        placementId: placement.id,
+        position: placement.position,
+        ...(placement.facing === undefined ? {} : { facing: placement.facing }),
+        ...(placement.turned === undefined ? {} : { turned: placement.turned }),
+      }
+    : {
+        placementId: placement.id,
+        facing: placement.facing,
+        turned: placement.turned,
+      },
+})
+
+const persistedCommandResponse = (
+  result: LivePlayCommandResult,
+  context: ResolvedMapTokenActionContext | null,
+): MapTokenLivePlayCommandResponse => ({
+  result,
+  ...(context ? {
+    path: context.relativePath,
+    map: context.map,
+    placement: context.placement,
+  } : {}),
+})
+
+const isAcceptedResult = (result: LivePlayCommandResult): result is LivePlayCommandAccepted => (
+  result.ok === true && !('duplicate' in result)
+)
+
+const placementIdFromAcceptedResult = (result: LivePlayCommandAccepted): string | null => (
+  result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId ?? null
+)
+
+const currentContextForAcceptedResult = (
+  result: LivePlayCommandAccepted,
+  role: AuthRole,
+  dependencies: ReturnType<typeof actionDependencies>,
+): ResolvedMapTokenActionContext | null => {
+  const placementId = placementIdFromAcceptedResult(result)
+  if (!placementId) return null
+
+  try {
+    const context = resolveMapWriteContext({ role, slug: result.mapSlug }, dependencies)
+    const placement = context.map.placements.find((candidate) => candidate.id === placementId)
+    return placement ? { ...context, placement } : null
+  } catch {
+    return null
+  }
+}
+
+export const executeMapTokenLivePlayCommandUseCase = async (
+  input: ExecuteMapTokenLivePlayCommandInput,
+  dependencies: MapTokenActionDependencies = {},
+): Promise<MapTokenLivePlayCommandResponse> => {
+  const deps = actionDependencies(dependencies)
+  let persistedContext: ResolvedMapTokenActionContext | null = null
+
+  const result = await deps.commandExecutor.execute<MapTokenLivePlayCommand, ResolvedMapWriteContext, MapTokenLivePlayActor>({
+    command: input.command,
+    actor: {
+      role: input.role,
+      clientId: input.clientId,
+      playerProfile: input.playerProfile,
+    },
+    readMap: ({ command }) => resolveMapWriteContext({ role: input.role, slug: command.mapSlug }, deps),
+    getMapRevision: (context) => normalizeRevision(context.map.revision),
+    authorize: ({ command, actor, map }) => {
+      if (input.expectedType && command.type !== input.expectedType) {
+        rejectLivePlayCommand('invalid', `This route only accepts ${input.expectedType} commands`)
+      }
+      if (
+        command.type !== LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+        && command.type !== LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+      ) {
+        rejectLivePlayCommand('invalid', 'Map token live-play routes support moveToken and turnToken commands only')
+      }
+
+      const placementId = commandPlacementId(command)
+      const placement = map.map.placements.find((candidate) => candidate.id === placementId)
+      if (!placement) throw new MapTokenActionUseCaseError(404, `Placement ${placementId} not found`)
+      if (!actorCanControlMapPlacement({
+        role: actor.role,
+        profile: actor.playerProfile,
+        placement,
+      })) {
+        const message = actor.role === 'player' && !actor.playerProfile
+          ? 'Select a player profile to control linked map tokens'
+          : 'Token is not linked to selected player profile'
+        throw new MapTokenActionUseCaseError(403, message)
+      }
+    },
+    apply: ({ command, actor, map, currentRevision }) => {
+      const placementId = commandPlacementId(command)
+      const placement = map.map.placements.find((candidate) => candidate.id === placementId)
+      if (!placement) throw new MapTokenActionUseCaseError(404, `Placement ${placementId} not found`)
+      const context: ResolvedMapTokenActionContext = { ...map, placement }
+      const change = command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+        ? applyMoveTokenToMap(command.payload, context, deps)
+        : applyTurnTokenToMap(command.payload, context)
+
+      if (!change) {
+        return {
+          status: 'rejected',
+          reason: 'no-op',
+          message: `${command.type} did not change token ${placementId}`,
+          currentRevision,
+          currentState: placement,
+        }
+      }
+
+      const revision = nextRevision(currentRevision)
+      const nextMap = {
+        ...change.nextMap,
+        revision,
+      }
+      const nextContext: ResolvedMapWriteContext = {
+        mapPath: map.mapPath,
+        relativePath: map.relativePath,
+        map: nextMap,
+      }
+
+      return {
+        status: 'accepted',
+        nextMap: nextContext,
+        previousRevision: currentRevision,
+        revision,
+        patches: [commandPatch(command, revision, change.placement)],
+      }
+    },
+    persist: ({ actor, nextMap, result }) => {
+      const updatedAt = nextMap.map.updatedAt ?? deps.now()
+      const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, updatedAt, { revision: result.revision })
+      deps.writeMap(nextMap.mapPath, persisted)
+      const placementId = result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId
+      const placement = placementId
+        ? persisted.placements.find((candidate) => candidate.id === placementId)
+        : undefined
+      if (!placement) throw new MapTokenActionUseCaseError(404, 'Token command applied but persisted placement was not found')
+      persistedContext = {
+        mapPath: nextMap.mapPath,
+        relativePath: nextMap.relativePath,
+        map: persisted,
+        placement,
+      }
+      void actor
+    },
+    publish: ({ actor, result }) => {
+      if (!persistedContext) return
+      for (const event of mapEvents(persistedContext.map, actor.clientId)) {
+        deps.publishRealtimeEvent(event)
+      }
+      deps.publishRealtimeEvent({
+        channel: mapChannel(result.mapSlug),
+        type: 'live-play-command',
+        clientId: actor.clientId,
+        data: result,
+      })
+    },
+  })
+
+  const responseContext = persistedContext
+    ?? (isAcceptedResult(result) ? currentContextForAcceptedResult(result, input.role, deps) : null)
+  return persistedCommandResponse(result, responseContext)
 }

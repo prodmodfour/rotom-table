@@ -286,7 +286,7 @@ export const useTokenControls = ({
     if (selectedId.value === id) clearSelection()
   }
 
-  const turnPlacement = (id: string) => {
+  const turnPlacementForSetupEdit = (id: string) => {
     if (!map.value || !canControlPlacement(id)) return
     const placement = placementById(id)
     if (!placement) return
@@ -295,7 +295,7 @@ export const useTokenControls = ({
     setTokenFacingOnPlacement(placement, facing)
   }
 
-  const movePlacement = (payload: { id: string; position: GridAnchor }) => {
+  const movePlacementForSetupEdit = (payload: { id: string; position: GridAnchor }) => {
     if (!map.value || !canControlPlacement(payload.id)) return
     const placement = placementById(payload.id)
     if (!placement) return
@@ -348,7 +348,7 @@ export const useTokenControls = ({
     sendOutPokemon,
     selectPlacement,
     deletePlacement,
-    turnPlacement,
-    movePlacement,
+    turnPlacementForSetupEdit,
+    movePlacementForSetupEdit,
   }
 }

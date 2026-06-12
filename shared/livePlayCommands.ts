@@ -1,5 +1,7 @@
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
 import { isSheetKind, type SheetKind } from './sheets'
+import type { GridAnchor } from '~/types/map'
+import type { TokenFacingDirection } from '~/types/tokenFacing'
 
 type Brand<TValue, TName extends string> = TValue & { readonly __brand: TName }
 
@@ -156,6 +158,29 @@ export interface LivePlayCommandEnvelope<
   readonly scopes: readonly TScope[]
   readonly payload: TPayload
 }
+
+export interface MoveTokenPayload {
+  readonly placementId: string
+  readonly position: GridAnchor
+  readonly pathLength?: number | null
+}
+
+export interface TurnTokenPayload {
+  readonly placementId: string
+  readonly facing: TokenFacingDirection
+}
+
+export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+  MoveTokenPayload,
+  LivePlayTokenScope
+>
+
+export type TurnTokenLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
+  TurnTokenPayload,
+  LivePlayTokenScope
+>
 
 export interface LivePlayPatch<
   TType extends string = LivePlayPatchType,

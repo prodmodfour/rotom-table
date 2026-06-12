@@ -1,41 +1,24 @@
 import { defineEventHandler } from 'h3'
-import { requireAuthRole } from '../../../utils/auth'
-import { badRequest, expectRecord, expectSlug, expectString, readObjectBody, requireWritableCampaignMode } from '../../../utils/http'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../../utils/useCaseHttp'
-import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
-import { moveMapTokenUseCase } from '../../../useCases/applyMapTokenAction'
+import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
 import { normalizeRealtimeClientId } from '#shared/realtime'
-import type { GridAnchor } from '~/types/map'
+import { requireAuthRole } from '../../../utils/auth'
+import { readObjectBody, requireWritableCampaignMode } from '../../../utils/http'
+import { throwUseCaseHttpError } from '../../../utils/useCaseHttp'
+import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
+import { executeMapTokenLivePlayCommandUseCase, type MapTokenLivePlayCommandResponse } from '../../../useCases/applyMapTokenAction'
 
-interface MoveTokenBody {
-  slug?: unknown
-  placementId?: unknown
-  position?: unknown
-  pathLength?: unknown
-  clientId?: unknown
-  profileId?: unknown
-}
+type MoveTokenBody = Record<string, unknown>
 
-const expectCoordinate = (value: unknown, label: string): number => {
-  const numberValue = Number(value)
-  if (!Number.isFinite(numberValue)) badRequest(`${label} must be a finite number`)
-  return numberValue
-}
+const bodyField = (body: MoveTokenBody, key: string): unknown => body[key]
 
-const expectGridAnchor = (value: unknown, label: string): GridAnchor => {
-  const record = expectRecord(value, label)
+const routeResponse = (response: MapTokenLivePlayCommandResponse) => {
+  if (!response.result.ok) return response.result
   return {
-    x: expectCoordinate(record.x, `${label}.x`),
-    y: expectCoordinate(record.y, `${label}.y`),
-    z: expectCoordinate(record.z, `${label}.z`),
+    ...response.result,
+    ...(response.path === undefined ? {} : { path: response.path }),
+    ...(response.map === undefined ? {} : { map: response.map }),
+    ...(response.placement === undefined ? {} : { placement: response.placement }),
   }
-}
-
-const optionalPathLength = (value: unknown): number | null => {
-  if (value === undefined || value === null || value === '') return null
-  const numberValue = Number(value)
-  if (!Number.isFinite(numberValue) || numberValue < 0) badRequest('pathLength must be a non-negative finite number')
-  return numberValue
 }
 
 export default defineEventHandler(async (event) => {
@@ -43,31 +26,19 @@ export default defineEventHandler(async (event) => {
   requireWritableCampaignMode()
 
   const body = await readObjectBody<MoveTokenBody>(event)
-  const slug = expectSlug(body.slug)
-  const placementId = expectString(body.placementId, 'placementId', { maxLength: 120 })
-  const position = expectGridAnchor(body.position, 'position')
-  const pathLength = optionalPathLength(body.pathLength)
 
   try {
     const playerProfile = role === 'player'
-      ? resolvePlayerProfileForPolicy(body.profileId)
+      ? resolvePlayerProfileForPolicy(bodyField(body, 'profileId'))
       : null
-    const result = moveMapTokenUseCase({
+    const response = await executeMapTokenLivePlayCommandUseCase({
       role,
-      slug,
-      placementId,
-      position,
-      pathLength,
-      clientId: normalizeRealtimeClientId(body.clientId),
+      command: body,
+      clientId: normalizeRealtimeClientId(bodyField(body, 'clientId')),
       playerProfile,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
     })
-    publishUseCaseRealtimeEvents(result.events)
-    return {
-      ok: result.ok,
-      path: result.path,
-      map: result.map,
-      placement: result.placement,
-    }
+    return routeResponse(response)
   } catch (err) {
     throwUseCaseHttpError(err)
   }

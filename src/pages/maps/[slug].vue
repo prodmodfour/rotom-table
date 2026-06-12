@@ -110,6 +110,7 @@ const applyDocumentSheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: s
 const documentTokenActions = useDocumentMapTokenActions({
   slug,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  mapRevision: computed(() => map.value?.revision ?? 0),
   applyPersistedMap,
   applySheetUpdate: applyDocumentSheetUpdate,
 })
@@ -142,7 +143,7 @@ const persistSpawnedPlacement = (placement: SheetPlacement) => {
   })
 }
 const tokenControlNotice = computed(() => {
-  if (isPlayer.value && documentTokenActions.lastError.value) {
+  if (documentTokenActions.lastError.value) {
     return `Token action failed: ${documentTokenActions.lastError.value}`
   }
   if (isPlayer.value && playerProfileError.value) {
@@ -299,8 +300,6 @@ const {
   sendOutPokemon,
   selectPlacement,
   deletePlacement,
-  turnPlacement,
-  movePlacement,
 } = useTokenControls({
   map,
   pokemonBySlug,
@@ -347,19 +346,15 @@ const selectPokemon = (id: string | null) => {
 const deletePokemon = (id: string) => {
   deletePlacement(id)
 }
-const shouldUseDocumentTokenActions = () => isPlayer.value
+const shouldUseDocumentTableActionRoutes = () => isPlayer.value
 
 const turnPokemon = (id: string) => {
-  if (shouldUseDocumentTokenActions()) {
-    const placement = placementById(id)
-    if (!placement || !canControlPlacement(id)) return
-    const facing = nextTokenFacingForPlacement(placement)
-    void documentTokenActions.turnToken({ placementId: id, facing }).then((result) => {
-      if (result.dispatched) clearSelection()
-    })
-    return
-  }
-  turnPlacement(id)
+  const placement = placementById(id)
+  if (!placement || !canControlPlacement(id)) return
+  const facing = nextTokenFacingForPlacement(placement)
+  void documentTokenActions.turnToken({ placementId: id, facing }).then((result) => {
+    if (result.dispatched) clearSelection()
+  })
 }
 
 let attackOfOpportunityPanel: ReturnType<typeof useAttackOfOpportunityPanel> | null = null
@@ -368,36 +363,22 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
     ?? placementById(payload.id)?.position
   const previousPosition = from ? { ...from } : null
 
-  if (shouldUseDocumentTokenActions()) {
-    if (!canControlPlacement(payload.id)) return
-    void documentTokenActions.moveToken({
-      placementId: payload.id,
-      position: payload.position,
-      pathLength: previewState.value.pathLength,
-    }).then((result) => {
-      if (!result.dispatched) return
-      clearSelection()
-      const currentPosition = placementById(payload.id)?.position
-      if (!previousPosition || !currentPosition || isSameAnchor(previousPosition, currentPosition)) return
-      attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
-      attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({
-        provokerId: payload.id,
-        from: previousPosition,
-        to: { ...currentPosition },
-      })
+  if (!canControlPlacement(payload.id)) return
+  void documentTokenActions.moveToken({
+    placementId: payload.id,
+    position: payload.position,
+    pathLength: previewState.value.pathLength,
+  }).then((result) => {
+    if (!result.dispatched) return
+    clearSelection()
+    const currentPosition = placementById(payload.id)?.position
+    if (!previousPosition || !currentPosition || isSameAnchor(previousPosition, currentPosition)) return
+    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+    attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({
+      provokerId: payload.id,
+      from: previousPosition,
+      to: { ...currentPosition },
     })
-    return
-  }
-
-  movePlacement(payload)
-
-  const currentPosition = placementById(payload.id)?.position
-  if (!previousPosition || !currentPosition || isSameAnchor(previousPosition, currentPosition)) return
-  attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
-  attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({
-    provokerId: payload.id,
-    from: previousPosition,
-    to: { ...currentPosition },
   })
 }
 
@@ -826,7 +807,7 @@ const {
   modifyConditions: modifyConditionsFromScene,
   modifyAbilityActivation,
   dispatchAbilityUse: (event) => {
-    if (!shouldUseDocumentTokenActions()) return undefined
+    if (!shouldUseDocumentTableActionRoutes()) return undefined
     void documentTokenActions.useAbility({
       placementId: event.userId,
       abilityName: event.abilityName,
@@ -852,7 +833,7 @@ const {
   trainerBySlug,
   canControlPlacement,
   dispatchManeuverUse: (event) => {
-    if (!shouldUseDocumentTokenActions()) return undefined
+    if (!shouldUseDocumentTableActionRoutes()) return undefined
     void documentTokenActions.useManeuver({
       placementId: event.userId,
       maneuverName: event.maneuverName,
@@ -872,7 +853,7 @@ const orderActionPanel = useOrderActionPanel({
   trainerBySlug,
   canControlPlacement,
   dispatchOrderUse: (event) => {
-    if (!shouldUseDocumentTokenActions()) return undefined
+    if (!shouldUseDocumentTableActionRoutes()) return undefined
     void documentTokenActions.useOrder({
       placementId: event.userId,
       orderName: event.orderName,

@@ -22,6 +22,9 @@ describe('map page route authority', () => {
     expect(mapPage).not.toContain('useSessionMapSceneCommands')
     expect(mapPage).not.toContain('sessionMoveTokenEnabled')
     expect(mapPage).not.toContain('autosaveEnabled: computed(() => !session')
+    expect(mapPage).not.toContain('shouldUseDocumentTokenActions')
+    expect(mapPage).not.toContain('turnPlacement,')
+    expect(mapPage).not.toContain('movePlacement,')
 
     const scenePanel = readSource('src/components/map/MapScenePanel.vue')
     expect(scenePanel).not.toContain('SessionCommandRejectionBanner')

@@ -2,6 +2,11 @@ import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDocumentMapTokenActions } from '~/composables/map-editor/useDocumentMapTokenActions'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
+import {
+  LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  LIVE_PLAY_COMMAND_TYPES,
+  LIVE_PLAY_OP_ID_RE,
+} from '#shared/livePlayCommands'
 import { parsePlayerProfileId } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
 
@@ -22,6 +27,7 @@ vi.mock('~/composables/useApiClient', () => ({
 
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2,
+  revision: 4,
   slug: 'arena-map',
   name: 'Arena Map',
   dimensions: { x: 6, y: 2, z: 6 },
@@ -89,12 +95,18 @@ describe('useDocumentMapTokenActions', () => {
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
-  it('posts document-backed move actions with the selected player profile id', async () => {
+  it('posts live-play move commands with opId, baseRevision, and the selected player profile id', async () => {
     const map = mapFixture()
     const applyPersistedMap = vi.fn()
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
+    const mapRevision = ref(4)
     apiMocks.postJson.mockResolvedValue({
       ok: true,
+      opId: 'op_servermove01',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
       path: 'data/maps/arena-map.json',
       map,
       placement: map.placements[0],
@@ -103,6 +115,7 @@ describe('useDocumentMapTokenActions', () => {
     const actions = useDocumentMapTokenActions({
       slug: 'arena-map',
       playerProfileId: profileId,
+      mapRevision,
       applyPersistedMap,
     })
     const result = await actions.moveToken({
@@ -113,36 +126,57 @@ describe('useDocumentMapTokenActions', () => {
 
     expect(result.dispatched).toBe(true)
     expect(actions.status.value).toBe('idle')
-    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.moveToken, {
-      slug: 'arena-map',
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.moveToken, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+      payload: {
+        placementId: 'token-pikachu',
+        position: { x: 2, y: 0, z: 1 },
+        pathLength: 3,
+      },
       clientId: 'ssr',
       profileId: 'profile_ash00000',
-      placementId: 'token-pikachu',
-      position: { x: 2, y: 0, z: 1 },
-      pathLength: 3,
-    })
+    }))
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
-  it('posts document-backed turn actions and surfaces rejected actions', async () => {
-    const actions = useDocumentMapTokenActions({ slug: 'arena-map' })
-    apiMocks.postJson.mockRejectedValue({ statusMessage: 'Token is not linked to selected player profile' })
+  it('posts live-play turn commands and surfaces command rejections', async () => {
+    const actions = useDocumentMapTokenActions({ slug: 'arena-map', mapRevision: ref(4) })
+    apiMocks.postJson.mockResolvedValue({
+      ok: false,
+      opId: 'op_turnreject1',
+      mapSlug: 'arena-map',
+      reason: 'unauthorized',
+      message: 'Token is not linked to selected player profile',
+      currentRevision: 4,
+    })
 
     const result = await actions.turnToken({
       placementId: 'token-pikachu',
       facing: 'north-east',
     })
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       dispatched: false,
       message: 'Token is not linked to selected player profile',
     })
-    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.turnToken, {
-      slug: 'arena-map',
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.turnToken, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'facing' }],
+      payload: {
+        placementId: 'token-pikachu',
+        facing: 'north-east',
+      },
       clientId: 'ssr',
-      placementId: 'token-pikachu',
-      facing: 'north-east',
-    })
+    }))
     expect(actions.status.value).toBe('error')
     expect(actions.lastError.value).toBe('Token is not linked to selected player profile')
 

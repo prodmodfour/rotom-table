@@ -1,4 +1,15 @@
 import { ref, type Ref } from 'vue'
+import {
+  LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  LIVE_PLAY_COMMAND_TYPES,
+  createLivePlayOpId,
+  type LivePlayCommandDuplicate,
+  type LivePlayCommandResult,
+  type LivePlayTokenScope,
+  type MoveTokenPayload,
+  type TurnTokenPayload,
+} from '#shared/livePlayCommands'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
 import { getClientId } from '~/utils/clientId'
@@ -36,15 +47,22 @@ export interface DocumentMapTokenActionResponse {
   sheetUpdates?: DocumentMapTokenActionSheetUpdate[]
 }
 
+export type LivePlayMapTokenActionResponse = LivePlayCommandResult & {
+  path?: string
+  map?: TabletopMap
+  placement?: SheetPlacement
+}
+
 export interface DocumentMapTokenActionDispatchResult {
   dispatched: boolean
   message?: string
-  response?: DocumentMapTokenActionResponse
+  response?: DocumentMapTokenActionResponse | LivePlayMapTokenActionResponse
 }
 
 export interface UseDocumentMapTokenActionsOptions {
   slug: string
   playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
+  mapRevision?: ReadonlyValueRef<number | null | undefined>
   applyPersistedMap?: (map: TabletopMap) => void
   applySheetUpdate?: (update: DocumentMapTokenActionSheetUpdate) => void
 }
@@ -83,6 +101,25 @@ export interface UseDocumentMapTokenActionsReturn {
   }) => Promise<DocumentMapTokenActionDispatchResult>
 }
 
+type TokenCommandType = typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+
+type TokenCommandPayload = MoveTokenPayload | TurnTokenPayload
+
+const isDuplicateResult = (response: LivePlayMapTokenActionResponse): response is LivePlayCommandDuplicate & LivePlayMapTokenActionResponse => (
+  response.ok === true && 'duplicate' in response && response.duplicate === true
+)
+
+const livePlayResponseMessage = (response: LivePlayMapTokenActionResponse): string | null => {
+  if (!response.ok) return response.message
+  if (isDuplicateResult(response) && !response.original.ok) return response.original.message
+  return null
+}
+
+const acceptedLivePlayResponse = (response: LivePlayMapTokenActionResponse): boolean => {
+  if (!response.ok) return false
+  return !isDuplicateResult(response) || response.original.ok
+}
+
 export const useDocumentMapTokenActions = (
   options: UseDocumentMapTokenActionsOptions,
 ): UseDocumentMapTokenActionsReturn => {
@@ -105,6 +142,28 @@ export const useDocumentMapTokenActions = (
     clientId: getClientId(),
     ...profileBody(),
     ...body,
+  })
+
+  const tokenScope = (payload: TokenCommandPayload, field: LivePlayTokenScope['field']): LivePlayTokenScope => ({
+    kind: 'token',
+    placementId: payload.placementId,
+    field,
+  })
+
+  const commandBody = (
+    type: TokenCommandType,
+    payload: TokenCommandPayload,
+    field: LivePlayTokenScope['field'],
+  ): Record<string, unknown> => ({
+    schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+    opId: createLivePlayOpId(),
+    mapSlug: options.slug,
+    baseRevision: normalizeRevision(options.mapRevision?.value),
+    type,
+    scopes: [tokenScope(payload, field)],
+    payload,
+    clientId: getClientId(),
+    ...profileBody(),
   })
 
   const sendActionWithUnloadFallback = (
@@ -142,27 +201,61 @@ export const useDocumentMapTokenActions = (
     }
   }
 
+  const runLivePlayTokenCommand = async (
+    request: string,
+    body: Record<string, unknown>,
+  ): Promise<DocumentMapTokenActionDispatchResult> => {
+    status.value = 'saving'
+    lastError.value = null
+    try {
+      const response = await postJson<LivePlayMapTokenActionResponse>(request, body)
+      if (!acceptedLivePlayResponse(response)) {
+        const message = livePlayResponseMessage(response) ?? 'Token action was rejected'
+        status.value = 'error'
+        lastError.value = message
+        return { dispatched: false, message, response }
+      }
+
+      if (response.map) options.applyPersistedMap?.(response.map)
+      status.value = 'idle'
+      return { dispatched: true, response }
+    } catch (error) {
+      const message = getErrorMessage(error, { fallback: 'Token action failed' })
+      status.value = 'error'
+      lastError.value = message
+      return { dispatched: false, message }
+    }
+  }
+
   const spawnToken: UseDocumentMapTokenActionsReturn['spawnToken'] = (payload) => {
     const body = { placement: payload.placement }
     if (payload.unloadFallback) sendActionWithUnloadFallback(MAP_API_PATHS.spawnToken, body)
     return runAction(MAP_API_PATHS.spawnToken, body)
   }
 
-  const moveToken: UseDocumentMapTokenActionsReturn['moveToken'] = (payload) => runAction(
+  const moveToken: UseDocumentMapTokenActionsReturn['moveToken'] = (payload) => runLivePlayTokenCommand(
     MAP_API_PATHS.moveToken,
-    {
-      placementId: payload.placementId,
-      position: payload.position,
-      ...(payload.pathLength === undefined || payload.pathLength === null ? {} : { pathLength: payload.pathLength }),
-    },
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      {
+        placementId: payload.placementId,
+        position: payload.position,
+        ...(payload.pathLength === undefined || payload.pathLength === null ? {} : { pathLength: payload.pathLength }),
+      },
+      'position',
+    ),
   )
 
-  const turnToken: UseDocumentMapTokenActionsReturn['turnToken'] = (payload) => runAction(
+  const turnToken: UseDocumentMapTokenActionsReturn['turnToken'] = (payload) => runLivePlayTokenCommand(
     MAP_API_PATHS.turnToken,
-    {
-      placementId: payload.placementId,
-      facing: payload.facing,
-    },
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
+      {
+        placementId: payload.placementId,
+        facing: payload.facing,
+      },
+      'facing',
+    ),
   )
 
   const useManeuver: UseDocumentMapTokenActionsReturn['useManeuver'] = (payload) => runAction(

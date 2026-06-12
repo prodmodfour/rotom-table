@@ -1,24 +1,24 @@
 import { defineEventHandler } from 'h3'
-import { requireAuthRole } from '../../../utils/auth'
-import { badRequest, expectSlug, expectString, readObjectBody, requireWritableCampaignMode } from '../../../utils/http'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../../utils/useCaseHttp'
-import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
-import { turnMapTokenUseCase } from '../../../useCases/applyMapTokenAction'
+import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
 import { normalizeRealtimeClientId } from '#shared/realtime'
-import { isTokenFacingDirection } from '~/utils/tokenFacing'
-import type { TokenFacingDirection } from '~/types/tokenFacing'
+import { requireAuthRole } from '../../../utils/auth'
+import { readObjectBody, requireWritableCampaignMode } from '../../../utils/http'
+import { throwUseCaseHttpError } from '../../../utils/useCaseHttp'
+import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
+import { executeMapTokenLivePlayCommandUseCase, type MapTokenLivePlayCommandResponse } from '../../../useCases/applyMapTokenAction'
 
-interface TurnTokenBody {
-  slug?: unknown
-  placementId?: unknown
-  facing?: unknown
-  clientId?: unknown
-  profileId?: unknown
-}
+type TurnTokenBody = Record<string, unknown>
 
-const expectTokenFacingDirection = (value: unknown): TokenFacingDirection => {
-  if (isTokenFacingDirection(value)) return value
-  return badRequest('facing must be a token facing direction')
+const bodyField = (body: TurnTokenBody, key: string): unknown => body[key]
+
+const routeResponse = (response: MapTokenLivePlayCommandResponse) => {
+  if (!response.result.ok) return response.result
+  return {
+    ...response.result,
+    ...(response.path === undefined ? {} : { path: response.path }),
+    ...(response.map === undefined ? {} : { map: response.map }),
+    ...(response.placement === undefined ? {} : { placement: response.placement }),
+  }
 }
 
 export default defineEventHandler(async (event) => {
@@ -26,29 +26,19 @@ export default defineEventHandler(async (event) => {
   requireWritableCampaignMode()
 
   const body = await readObjectBody<TurnTokenBody>(event)
-  const slug = expectSlug(body.slug)
-  const placementId = expectString(body.placementId, 'placementId', { maxLength: 120 })
-  const facing = expectTokenFacingDirection(body.facing)
 
   try {
     const playerProfile = role === 'player'
-      ? resolvePlayerProfileForPolicy(body.profileId)
+      ? resolvePlayerProfileForPolicy(bodyField(body, 'profileId'))
       : null
-    const result = turnMapTokenUseCase({
+    const response = await executeMapTokenLivePlayCommandUseCase({
       role,
-      slug,
-      placementId,
-      facing,
-      clientId: normalizeRealtimeClientId(body.clientId),
+      command: body,
+      clientId: normalizeRealtimeClientId(bodyField(body, 'clientId')),
       playerProfile,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
     })
-    publishUseCaseRealtimeEvents(result.events)
-    return {
-      ok: result.ok,
-      path: result.path,
-      map: result.map,
-      placement: result.placement,
-    }
+    return routeResponse(response)
   } catch (err) {
     throwUseCaseHttpError(err)
   }
