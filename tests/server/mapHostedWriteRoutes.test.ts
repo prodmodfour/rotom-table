@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   useMapTokenOrderUseCase: vi.fn(),
   recordMoveUsageUseCase: vi.fn(),
   executeLivePlayUseMoveCommandUseCase: vi.fn(),
+  executeLivePlayInitiativeCommandUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
@@ -61,6 +62,9 @@ vi.mock('../../server/useCases/recordMoveUsage', () => ({
 vi.mock('../../server/useCases/applyLivePlayUseMoveCommand', () => ({
   executeLivePlayUseMoveCommandUseCase: mocks.executeLivePlayUseMoveCommandUseCase,
 }))
+vi.mock('../../server/useCases/applyLivePlayInitiativeCommand', () => ({
+  executeLivePlayInitiativeCommandUseCase: mocks.executeLivePlayInitiativeCommandUseCase,
+}))
 vi.mock('../../server/policies/playerProfilePolicy', () => ({
   resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
 }))
@@ -80,6 +84,9 @@ const abilityRoute = (await import('../../server/api/maps/tokens/use-ability.pos
 const maneuverRoute = (await import('../../server/api/maps/tokens/use-maneuver.post')).default
 const orderRoute = (await import('../../server/api/maps/tokens/use-order.post')).default
 const useMoveRoute = (await import('../../server/api/maps/use-move.post')).default
+const setInitiativeRoute = (await import('../../server/api/maps/initiative/set.post')).default
+const nextInitiativeRoute = (await import('../../server/api/maps/initiative/next.post')).default
+const previousInitiativeRoute = (await import('../../server/api/maps/initiative/previous.post')).default
 
 type MapRouteHandler = EventHandler<EventHandlerRequest, unknown>
 
@@ -162,6 +169,19 @@ describe('map hosted-write API routes', () => {
           placement: { id: 'token-2', sheetKind: 'pokemon', sheetSlug: 'eevee', position: { x: 1, y: 0, z: 1 } },
         },
         mock: mocks.spawnMapTokenUseCase,
+      },
+      {
+        route: setInitiativeRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedinit1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'setInitiative',
+          scopes: [{ kind: 'map', lane: 'initiative' }],
+          payload: { tokenId: 'token-1', initiative: 10 },
+        },
+        mock: mocks.executeLivePlayInitiativeCommandUseCase,
       },
     ]
 
@@ -249,6 +269,32 @@ describe('map hosted-write API routes', () => {
           profileId: 'profile_ash00000',
         },
         mock: mocks.executeLivePlayUseMoveCommandUseCase,
+      },
+      {
+        route: nextInitiativeRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostednext1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'nextInitiative',
+          scopes: [{ kind: 'map', lane: 'initiative' }],
+          payload: {},
+        },
+        mock: mocks.executeLivePlayInitiativeCommandUseCase,
+      },
+      {
+        route: previousInitiativeRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedprev1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'previousInitiative',
+          scopes: [{ kind: 'map', lane: 'initiative' }],
+          payload: {},
+        },
+        mock: mocks.executeLivePlayInitiativeCommandUseCase,
       },
     ]
 

@@ -40,6 +40,8 @@ import {
   type LivePlayScope,
   type LivePlayTokenScope,
   type LivePlayTokenScopeField,
+  type SetInitiativeLivePlayCommand,
+  type SetInitiativePayload,
   type UseMoveLivePlayCommand,
   type UseMovePayload,
 } from '#shared/livePlayCommands'
@@ -185,10 +187,24 @@ describe('live-play command contract', () => {
     expect(useMoveCommand.type).toBe('useMove')
     expect(useMoveCommand.payload).toEqual({ placementId: 'placement-001', moveName: 'Thunderbolt' })
 
+    const initiativeCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
+      scopes: [{ kind: 'map', lane: 'initiative' }],
+      payload: { tokenId: 'placement-001', initiative: 12, activeId: 'placement-001', round: 2 },
+    } as const satisfies SetInitiativeLivePlayCommand
+
+    expect(initiativeCommand.type).toBe('setInitiative')
+    expect(initiativeCommand.payload).toEqual({ tokenId: 'placement-001', initiative: 12, activeId: 'placement-001', round: 2 })
+
     expectTypeOf(command).toEqualTypeOf<
       LivePlayCommandEnvelope<typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN, MoveTokenPayload, LivePlayTokenScope>
     >()
     expectTypeOf(useMoveCommand.payload).toMatchTypeOf<UseMovePayload>()
+    expectTypeOf(initiativeCommand.payload).toMatchTypeOf<SetInitiativePayload>()
   })
 
   it('builds accepted, rejected, and duplicate results with reusable shapes', () => {

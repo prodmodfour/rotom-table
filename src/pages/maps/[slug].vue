@@ -510,6 +510,10 @@ const {
   pokemonBySlug,
   trainerBySlug,
   canManageInitiative,
+  interactionMode: computed(() => mapInteractionMode.value),
+  dispatchSetInitiative: (payload) => documentTokenActions.setInitiative(payload),
+  dispatchNextInitiative: () => documentTokenActions.nextInitiative(),
+  dispatchPreviousInitiative: () => documentTokenActions.previousInitiative(),
   focusEntry: (id) => {
     gridRef.value?.focusPokemon(id)
   },
@@ -617,15 +621,15 @@ const orderTimelinePoint = () => ({
   round: initiativeRound.value,
 })
 
-const previousInitiativeAndExpireAoo = () => {
+const previousInitiativeAndExpireAoo = async () => {
   attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
-  previousInitiative()
+  await Promise.resolve(previousInitiative())
 }
 
-const nextInitiativeAndExpireAoo = () => {
+const nextInitiativeAndExpireAoo = async () => {
   const before = orderTimelinePoint()
   attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
-  nextInitiative()
+  await Promise.resolve(nextInitiative())
   expireActiveOrdersAfterInitiativeAdvance({ before, after: orderTimelinePoint() })
 }
 

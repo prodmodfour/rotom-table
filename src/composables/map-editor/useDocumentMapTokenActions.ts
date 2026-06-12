@@ -5,6 +5,7 @@ import {
   createLivePlayOpId,
   type LivePlayCommandDuplicate,
   type LivePlayCommandResult,
+  type LivePlayMapScope,
   type LivePlayScope,
   type LivePlaySheetScope,
   type LivePlayTokenScope,
@@ -12,6 +13,7 @@ import {
   type ModifyConditionsPayload,
   type ModifyHpPayload,
   type MoveTokenPayload,
+  type SetInitiativePayload,
   type TurnTokenPayload,
   type UseMovePayload,
 } from '#shared/livePlayCommands'
@@ -112,6 +114,9 @@ export interface UseDocumentMapTokenActionsReturn {
     placementId: string
     moveName: string
   }) => Promise<DocumentMapTokenActionDispatchResult>
+  setInitiative: (payload: SetInitiativePayload) => Promise<DocumentMapTokenActionDispatchResult>
+  nextInitiative: () => Promise<DocumentMapTokenActionDispatchResult>
+  previousInitiative: () => Promise<DocumentMapTokenActionDispatchResult>
   useManeuver: (payload: {
     placementId: string
     maneuverName: string
@@ -136,14 +141,22 @@ type LivePlayDocumentCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_MOVE
+  | typeof LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
+  | typeof LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE
+  | typeof LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE
 
-type LivePlayDocumentCommandPayload =
+type LivePlayTokenCommandPayload =
   | MoveTokenPayload
   | TurnTokenPayload
   | ModifyHpPayload
   | ModifyCombatStagesPayload
   | ModifyConditionsPayload
   | UseMovePayload
+
+type LivePlayDocumentCommandPayload =
+  | LivePlayTokenCommandPayload
+  | SetInitiativePayload
+  | Record<string, never>
 
 const isDuplicateResult = (response: LivePlayMapTokenActionResponse): response is LivePlayCommandDuplicate & LivePlayMapTokenActionResponse => (
   response.ok === true && 'duplicate' in response && response.duplicate === true
@@ -184,18 +197,23 @@ export const useDocumentMapTokenActions = (
     ...body,
   })
 
-  const tokenScope = (payload: LivePlayDocumentCommandPayload, field: LivePlayTokenScope['field']): LivePlayTokenScope => ({
+  const tokenScope = (payload: LivePlayTokenCommandPayload, field: LivePlayTokenScope['field']): LivePlayTokenScope => ({
     kind: 'token',
     placementId: payload.placementId,
     field,
   })
 
-  const placementForPayload = (payload: LivePlayDocumentCommandPayload): SheetPlacement | null => (
+  const mapScope = (lane: LivePlayMapScope['lane']): LivePlayMapScope => ({
+    kind: 'map',
+    lane,
+  })
+
+  const placementForPayload = (payload: LivePlayTokenCommandPayload): SheetPlacement | null => (
     options.map?.value?.placements.find((placement) => placement.id === payload.placementId) ?? null
   )
 
   const sheetScope = (
-    payload: LivePlayDocumentCommandPayload,
+    payload: LivePlayTokenCommandPayload,
     field: string,
   ): LivePlaySheetScope | null => {
     const placement = placementForPayload(payload)
@@ -404,6 +422,33 @@ export const useDocumentMapTokenActions = (
     )
   }
 
+  const setInitiative: UseDocumentMapTokenActionsReturn['setInitiative'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.setInitiative,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
+      payload,
+      [mapScope('initiative')],
+    ),
+  )
+
+  const nextInitiative: UseDocumentMapTokenActionsReturn['nextInitiative'] = () => runLivePlayCommand(
+    MAP_API_PATHS.nextInitiative,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
+      {},
+      [mapScope('initiative')],
+    ),
+  )
+
+  const previousInitiative: UseDocumentMapTokenActionsReturn['previousInitiative'] = () => runLivePlayCommand(
+    MAP_API_PATHS.previousInitiative,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
+      {},
+      [mapScope('initiative')],
+    ),
+  )
+
   const useManeuver: UseDocumentMapTokenActionsReturn['useManeuver'] = (payload) => runAction(
     MAP_API_PATHS.useManeuver,
     {
@@ -442,6 +487,9 @@ export const useDocumentMapTokenActions = (
     modifyCombatStages,
     modifyConditions,
     useMove,
+    setInitiative,
+    nextInitiative,
+    previousInitiative,
     useManeuver,
     useAbility,
     useOrder,

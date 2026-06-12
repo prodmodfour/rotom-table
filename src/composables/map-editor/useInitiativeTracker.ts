@@ -18,6 +18,8 @@ import {
 } from '~/utils/hpBarDisplay'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SpawnedPokemon } from '~/types/pokemon'
+import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
+import type { SetInitiativePayload } from '#shared/livePlayCommands'
 import type { InitiativeTrackerState, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -69,6 +71,10 @@ export interface UseInitiativeTrackerOptions {
   pokemonBySlug: SheetMapRef<CharacterSheet>
   trainerBySlug: SheetMapRef<TrainerSheet>
   canManageInitiative: ComputedRef<boolean>
+  interactionMode?: ComputedRef<MapInteractionMode>
+  dispatchSetInitiative?: (payload: SetInitiativePayload) => Promise<unknown>
+  dispatchNextInitiative?: () => Promise<unknown>
+  dispatchPreviousInitiative?: () => Promise<unknown>
   focusEntry?: (id: string) => void
   now?: () => number
   maxInitiativeLogEntries?: number
@@ -137,6 +143,10 @@ export const useInitiativeTracker = ({
   pokemonBySlug,
   trainerBySlug,
   canManageInitiative,
+  interactionMode,
+  dispatchSetInitiative,
+  dispatchNextInitiative,
+  dispatchPreviousInitiative,
   focusEntry,
   now,
   maxInitiativeLogEntries,
@@ -241,6 +251,14 @@ export const useInitiativeTracker = ({
     (map.value?.placements ?? []).some((placement) => normalizeInitiativeValue(placement.initiative) !== null),
   )
 
+  const livePlayInitiativeCommandsEnabled = () => interactionMode?.value === MAP_INTERACTION_MODES.LIVE_PLAY
+
+  const dispatchLiveSetInitiative = (payload: SetInitiativePayload): boolean => {
+    if (!livePlayInitiativeCommandsEnabled() || !dispatchSetInitiative) return false
+    void dispatchSetInitiative(payload)
+    return true
+  }
+
   const ensureInitiativeState = (): InitiativeTrackerState | null => {
     if (!map.value) return null
     if (!map.value.initiative || typeof map.value.initiative !== 'object') {
@@ -275,6 +293,7 @@ export const useInitiativeTracker = ({
 
   const setActiveInitiative = (id: string) => {
     if (!canManageInitiative.value) return
+    if (dispatchLiveSetInitiative({ activeId: id })) return
     const state = ensureInitiativeState()
     if (!state) return
     const previousActiveId = state.activeId ?? null
@@ -294,42 +313,56 @@ export const useInitiativeTracker = ({
 
   const setInitiativeInput = (id: string, event: Event) => {
     if (!canManageInitiative.value) return
-    const placement = placementById(id)
-    if (!placement) return
     const raw = trimmedTextValueFromEvent(event)
     if (!raw) {
+      if (dispatchLiveSetInitiative({ tokenId: id, initiative: null })) return
+      const placement = placementById(id)
+      if (!placement) return
       delete placement.initiative
       return
     }
     const n = Number(raw)
     if (!Number.isFinite(n)) return
-    placement.initiative = Math.max(-999, Math.min(999, Math.trunc(n)))
+    const initiative = Math.max(-999, Math.min(999, Math.trunc(n)))
+    if (dispatchLiveSetInitiative({ tokenId: id, initiative })) return
+    const placement = placementById(id)
+    if (!placement) return
+    placement.initiative = initiative
   }
 
   const setInitiativeFromSpeed = (id: string, speed: number) => {
     if (!canManageInitiative.value) return
+    if (!Number.isFinite(speed)) return
+    const initiative = Math.max(-999, Math.min(999, Math.trunc(speed)))
+    if (dispatchLiveSetInitiative({ tokenId: id, initiative })) return
     const placement = placementById(id)
     if (!placement) return
-    if (!Number.isFinite(speed)) return
-    placement.initiative = Math.max(-999, Math.min(999, Math.trunc(speed)))
+    placement.initiative = initiative
   }
 
   const setInitiativeRound = (event: Event) => {
     if (!canManageInitiative.value) return
+    const raw = trimmedTextValueFromEvent(event)
+    const n = Number(raw)
+    const round = raw && Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1
+    if (dispatchLiveSetInitiative({ round })) return
     const state = ensureInitiativeState()
     if (!state) return
-    const raw = trimmedTextValueFromEvent(event)
-    if (!raw) {
-      state.round = 1
-      return
-    }
-    const n = Number(raw)
-    state.round = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1
+    state.round = round
   }
 
   const fillInitiativeFromSpeed = () => {
     if (!map.value || !canManageInitiative.value) return
     const baseInitiatives = new Map(initiativeRows.value.map((entry) => [entry.id, entry.baseInitiative]))
+    if (livePlayInitiativeCommandsEnabled() && dispatchSetInitiative) {
+      void (async () => {
+        for (const placement of map.value?.placements ?? []) {
+          const baseInitiative = baseInitiatives.get(placement.id)
+          if (baseInitiative !== undefined) await dispatchSetInitiative({ tokenId: placement.id, initiative: baseInitiative })
+        }
+      })()
+      return
+    }
     for (const placement of map.value.placements) {
       const baseInitiative = baseInitiatives.get(placement.id)
       if (baseInitiative !== undefined) placement.initiative = baseInitiative
@@ -338,6 +371,13 @@ export const useInitiativeTracker = ({
 
   const clearInitiativeValues = () => {
     if (!map.value || !canManageInitiative.value) return
+    if (livePlayInitiativeCommandsEnabled() && dispatchSetInitiative) {
+      void (async () => {
+        for (const placement of map.value?.placements ?? []) await dispatchSetInitiative({ tokenId: placement.id, initiative: null })
+        await dispatchSetInitiative({ activeId: null, round: 1 })
+      })()
+      return
+    }
     for (const placement of map.value.placements) delete placement.initiative
     const state = ensureInitiativeState()
     if (state) {
@@ -347,12 +387,15 @@ export const useInitiativeTracker = ({
   }
 
   const clearActiveInitiative = () => {
-    if (!map.value?.initiative || !canManageInitiative.value) return
+    if (!canManageInitiative.value) return
+    if (dispatchLiveSetInitiative({ activeId: null })) return
+    if (!map.value?.initiative) return
     map.value.initiative.activeId = null
   }
 
   const nextInitiative = () => {
     if (!canManageInitiative.value) return
+    if (livePlayInitiativeCommandsEnabled() && dispatchNextInitiative) return dispatchNextInitiative()
     const order = sortedInitiativeRows.value
     if (!order.length) return
     const state = ensureInitiativeState()
@@ -371,6 +414,7 @@ export const useInitiativeTracker = ({
 
   const previousInitiative = () => {
     if (!canManageInitiative.value) return
+    if (livePlayInitiativeCommandsEnabled() && dispatchPreviousInitiative) return dispatchPreviousInitiative()
     const order = sortedInitiativeRows.value
     if (!order.length) return
     const state = ensureInitiativeState()
@@ -390,7 +434,7 @@ export const useInitiativeTracker = ({
   watch(
     () => [map.value?.initiative?.activeId ?? null, initiativeRows.value.map((row) => row.id).join('|')] as const,
     ([activeId]) => {
-      if (!activeId || !map.value?.initiative) return
+      if (!activeId || !map.value?.initiative || livePlayInitiativeCommandsEnabled()) return
       if (!validInitiativeIds.value.has(activeId)) map.value.initiative.activeId = null
     },
   )

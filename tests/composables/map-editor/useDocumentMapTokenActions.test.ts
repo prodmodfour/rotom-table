@@ -266,6 +266,49 @@ describe('useDocumentMapTokenActions', () => {
     expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
   })
 
+  it('posts live-play initiative commands through the command dispatcher', async () => {
+    const map = mapFixture()
+    const mapRevision = ref(4)
+    const applyPersistedMap = vi.fn()
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_initclient1',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+    })
+
+    const actions = useDocumentMapTokenActions({
+      slug: 'arena-map',
+      mapRevision,
+      applyPersistedMap,
+    })
+    const result = await actions.setInitiative({ tokenId: 'token-pikachu', initiative: 17 })
+
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.setInitiative, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
+      scopes: [{ kind: 'map', lane: 'initiative' }],
+      payload: { tokenId: 'token-pikachu', initiative: 17 },
+      clientId: 'ssr',
+    }))
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
+
+    await actions.nextInitiative()
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.nextInitiative, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
+      scopes: [{ kind: 'map', lane: 'initiative' }],
+      payload: {},
+    }))
+  })
+
   it('blocks live-play token commands while realtime reconciliation is pending', async () => {
     const actions = useDocumentMapTokenActions({
       slug: 'arena-map',

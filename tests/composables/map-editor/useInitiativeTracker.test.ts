@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
@@ -277,6 +278,50 @@ describe('useInitiativeTracker', () => {
         lines: ['Slow has gained initiative!'],
       },
     ])
+  })
+
+  it('dispatches live-play initiative commands instead of mutating local map initiative', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'live-token', sheetKind: 'pokemon', sheetSlug: 'live-token', position: { x: 0, y: 0, z: 0 }, initiative: 12 },
+      { id: 'other-token', sheetKind: 'pokemon', sheetSlug: 'other-token', position: { x: 1, y: 0, z: 0 }, initiative: 8 },
+    ]))
+    map.value!.initiative = { activeId: null, round: 1 }
+    const dispatchSetInitiative = vi.fn(async () => undefined)
+    const dispatchNextInitiative = vi.fn(async () => undefined)
+    const dispatchPreviousInitiative = vi.fn(async () => undefined)
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'live-token', sheetSlug: 'live-token', species: 'Live Token' }),
+        token({ id: 'other-token', sheetSlug: 'other-token', species: 'Other Token' }),
+      ]),
+      pokemonBySlug: ref(new Map([['live-token', sheet('live-token')], ['other-token', sheet('other-token')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+      interactionMode: computed(() => MAP_INTERACTION_MODES.LIVE_PLAY),
+      dispatchSetInitiative,
+      dispatchNextInitiative,
+      dispatchPreviousInitiative,
+    })
+
+    tracker.setInitiativeInput('live-token', inputEvent('99'))
+    tracker.setInitiativeFromSpeed('other-token', 20)
+    tracker.setActiveInitiative('live-token')
+    tracker.setInitiativeRound(inputEvent('3'))
+    tracker.clearActiveInitiative()
+    tracker.nextInitiative()
+    tracker.previousInitiative()
+
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ tokenId: 'live-token', initiative: 99 })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ tokenId: 'other-token', initiative: 20 })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ activeId: 'live-token' })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ round: 3 })
+    expect(dispatchSetInitiative).toHaveBeenCalledWith({ activeId: null })
+    expect(dispatchNextInitiative).toHaveBeenCalledTimes(1)
+    expect(dispatchPreviousInitiative).toHaveBeenCalledTimes(1)
+    expect(map.value?.placements[0].initiative).toBe(12)
+    expect(map.value?.placements[1].initiative).toBe(8)
+    expect(map.value?.initiative).toEqual({ activeId: null, round: 1 })
   })
 
   it('does not mutate initiative state without manage permission', () => {

@@ -201,6 +201,21 @@ export interface UseMovePayload {
   readonly moveName: string
 }
 
+export const LIVE_PLAY_INITIATIVE_MIN_VALUE = -999 as const
+export const LIVE_PLAY_INITIATIVE_MAX_VALUE = 999 as const
+
+export interface SetInitiativePayload {
+  readonly tokenId?: string
+  readonly initiative?: number | null
+  readonly activeId?: string | null
+  readonly round?: number
+}
+
+export type AdvanceInitiativePayload = Record<string, never>
+
+export type NextInitiativePayload = AdvanceInitiativePayload
+export type PreviousInitiativePayload = AdvanceInitiativePayload
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -236,6 +251,29 @@ export type UseMoveLivePlayCommand = LivePlayCommandEnvelope<
   UseMovePayload,
   LivePlayScope
 >
+
+export type SetInitiativeLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
+  SetInitiativePayload,
+  LivePlayMapScope
+>
+
+export type NextInitiativeLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
+  NextInitiativePayload,
+  LivePlayMapScope
+>
+
+export type PreviousInitiativeLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
+  PreviousInitiativePayload,
+  LivePlayMapScope
+>
+
+export type LivePlayInitiativeCommand =
+  | SetInitiativeLivePlayCommand
+  | NextInitiativeLivePlayCommand
+  | PreviousInitiativeLivePlayCommand
 
 export type LivePlaySheetCommand =
   | ModifyHpLivePlayCommand
