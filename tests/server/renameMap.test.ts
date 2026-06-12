@@ -79,12 +79,14 @@ describe('rename map use case', () => {
       {
         channel: 'map:old-map',
         type: 'updated',
+        revision: 2,
         clientId: 'client-1',
         data: result.map,
       },
       {
         channel: 'maps',
         type: 'updated',
+        revision: 2,
         clientId: 'client-1',
         data: {
           slug: 'old-map',
@@ -122,18 +124,21 @@ describe('rename map use case', () => {
       {
         channel: 'map:old-map',
         type: 'renamed',
+        revision: 3,
         clientId: undefined,
         data: { oldSlug: 'old-map', newSlug: 'sky-atrium', map: result.map },
       },
       {
         channel: 'map:sky-atrium',
         type: 'updated',
+        revision: 3,
         clientId: undefined,
         data: result.map,
       },
       {
         channel: 'maps',
         type: 'renamed',
+        revision: 3,
         clientId: undefined,
         data: {
           oldSlug: 'old-map',

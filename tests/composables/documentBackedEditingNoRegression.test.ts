@@ -30,6 +30,7 @@ vi.mock('~/composables/useApiClient', () => ({
 }))
 
 vi.mock('~/composables/useRealtime', () => ({
+  subscribeRealtimeConnection: vi.fn(() => vi.fn()),
   useRealtimeChannel: vi.fn((channel: string, handler: (event: unknown) => void) => {
     localMocks.mapSubscriptions.push({ channel, handler })
     return vi.fn()

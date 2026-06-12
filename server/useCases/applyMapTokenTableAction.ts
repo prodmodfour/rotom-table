@@ -1,5 +1,5 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { mapChannel, mapsChannel, sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
+import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
@@ -10,7 +10,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import type { AbilityAutomationCategory } from '~/types/abilityAutomation'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
-import { summarizeMap } from '../utils/mapSummaries'
+import { mapDocumentUpdatedRealtimeEvents } from '../utils/mapRealtimeEvents'
 import { canSaveMap } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import {
@@ -154,20 +154,7 @@ interface ActionToken extends Pick<SpawnedPokemon,
 const mapEvents = (
   map: TabletopMap,
   clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => [
-  {
-    channel: mapChannel(map.slug),
-    type: 'updated',
-    clientId,
-    data: map,
-  },
-  {
-    channel: mapsChannel,
-    type: 'updated',
-    clientId,
-    data: summarizeMap(map),
-  },
-]
+): Array<Omit<RealtimeEvent, 'timestamp'>> => mapDocumentUpdatedRealtimeEvents(map, clientId)
 
 const sheetEvents = (
   updates: readonly MapTokenTableActionSheetUpdate[],

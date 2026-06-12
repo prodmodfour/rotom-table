@@ -11,7 +11,7 @@ import {
   type TurnTokenLivePlayCommand,
   type TurnTokenPayload,
 } from '#shared/livePlayCommands'
-import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import type { RealtimeEvent } from '#shared/realtime'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -28,7 +28,10 @@ import {
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { readSheetFile } from '../utils/sheetStorage'
-import { summarizeMap } from '../utils/mapSummaries'
+import {
+  livePlayCommandAcceptedRealtimeEvent,
+  mapDocumentUpdatedRealtimeEvents,
+} from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { canSaveMap, clampAnchorToDimensions } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
@@ -127,20 +130,7 @@ interface ResolvedMapTokenActionContext extends ResolvedMapWriteContext {
 const mapEvents = (
   map: TabletopMap,
   clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => [
-  {
-    channel: mapChannel(map.slug),
-    type: 'updated',
-    clientId,
-    data: map,
-  },
-  {
-    channel: mapsChannel,
-    type: 'updated',
-    clientId,
-    data: summarizeMap(map),
-  },
-]
+): Array<Omit<RealtimeEvent, 'timestamp'>> => mapDocumentUpdatedRealtimeEvents(map, clientId)
 
 const noChangeResult = (
   context: ResolvedMapTokenActionContext,
@@ -708,12 +698,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
       for (const event of mapEvents(persistedContext.map, actor.clientId)) {
         deps.publishRealtimeEvent(event)
       }
-      deps.publishRealtimeEvent({
-        channel: mapChannel(result.mapSlug),
-        type: 'live-play-command',
-        clientId: actor.clientId,
-        data: result,
-      })
+      deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))
     },
   })
 

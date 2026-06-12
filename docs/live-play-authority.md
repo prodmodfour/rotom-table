@@ -50,7 +50,9 @@ JSON files remain useful for setup/edit storage, local data inspection, backups,
 
 ## Realtime direction
 
-Realtime messages for live play are authoritative accepted results, patches, or reconciliation responses. Missed events are resolved through revision reconciliation: replay when retained history proves it is safe, otherwise fetch a current authoritative snapshot/state response.
+Realtime messages for live play are authoritative accepted results, patches, or reconciliation responses. Map-scoped realtime events carry a numeric `revision`; accepted command events use `live-play-command-accepted` with `previousRevision`, `opId`, and `patches`. Clients ignore stale revisions, detect gaps between their current map revision and incoming events, and reload the authoritative `/api/maps/load?slug=<slug>` snapshot when replay is not available.
+
+The map page exposes the current map revision for command `baseRevision` values. During SSE reconnect and reconciliation, live-play commands are paused and a visible status notice is shown; once the authoritative map reload completes, command dispatch resumes from the reconciled revision.
 
 Realtime must not rely on every browser saving or receiving whole map documents as a last-writer-wins conflict strategy.
 

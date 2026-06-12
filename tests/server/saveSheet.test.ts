@@ -418,12 +418,14 @@ describe('save sheet use case', () => {
       {
         channel: 'map:arena',
         type: 'updated',
+        revision: 2,
         clientId: 'client-1',
         data: arenaMap,
       },
       {
         channel: 'maps',
         type: 'updated',
+        revision: 2,
         clientId: 'client-1',
         data: {
           slug: 'arena',

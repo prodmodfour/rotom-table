@@ -63,6 +63,8 @@ export interface UseDocumentMapTokenActionsOptions {
   slug: string
   playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   mapRevision?: ReadonlyValueRef<number | null | undefined>
+  livePlayCommandBlocked?: ReadonlyValueRef<boolean>
+  livePlayCommandBlockedMessage?: ReadonlyValueRef<string | null | undefined>
   applyPersistedMap?: (map: TabletopMap) => void
   applySheetUpdate?: (update: DocumentMapTokenActionSheetUpdate) => void
 }
@@ -205,6 +207,14 @@ export const useDocumentMapTokenActions = (
     request: string,
     body: Record<string, unknown>,
   ): Promise<DocumentMapTokenActionDispatchResult> => {
+    if (options.livePlayCommandBlocked?.value) {
+      const message = options.livePlayCommandBlockedMessage?.value
+        ?? 'Live-play commands are paused until realtime reconciliation completes'
+      status.value = 'error'
+      lastError.value = message
+      return { dispatched: false, message }
+    }
+
     status.value = 'saving'
     lastError.value = null
     try {

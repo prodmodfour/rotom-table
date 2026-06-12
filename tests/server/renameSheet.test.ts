@@ -159,12 +159,14 @@ describe('rename sheet use case', () => {
       {
         channel: 'map:arena',
         type: 'updated',
+        revision: 0,
         clientId: 'client-1',
         data: arenaMap,
       },
       {
         channel: 'maps',
         type: 'updated',
+        revision: 0,
         clientId: 'client-1',
         data: {
           slug: 'arena',

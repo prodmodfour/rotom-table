@@ -102,12 +102,14 @@ describe('move map use case', () => {
       {
         channel: 'map:old-map',
         type: 'updated',
+        revision: 3,
         clientId: 'client-1',
         data: result.map,
       },
       {
         channel: 'maps',
         type: 'moved',
+        revision: 3,
         clientId: 'client-1',
         data: {
           slug: 'old-map',

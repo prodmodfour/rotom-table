@@ -8,6 +8,11 @@ import { campaignPathLabel } from '../utils/campaignPaths'
 import { allocateSlug, findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { SLUG_RE, slugify } from '../utils/mapPaths'
 import { summarizeMap } from '../utils/mapSummaries'
+import {
+  mapRevisionForRealtime,
+  mapSummaryUpdatedRealtimeEvent,
+  mapUpdatedRealtimeEvent,
+} from '../utils/mapRealtimeEvents'
 
 export class RenameMapUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
@@ -100,40 +105,28 @@ export const renameMapUseCase = (
   writeMap(newPath, map)
 
   const summary = summarizeMap(map)
+  const revision = mapRevisionForRealtime(map)
   const events: Array<Omit<RealtimeEvent, 'timestamp'>> = newSlug !== slug
     ? [
         {
           channel: mapChannel(slug),
           type: 'renamed',
+          revision,
           clientId: input.clientId,
           data: { oldSlug: slug, newSlug, map },
         },
-        {
-          channel: mapChannel(newSlug),
-          type: 'updated',
-          clientId: input.clientId,
-          data: map,
-        },
+        mapUpdatedRealtimeEvent(map, input.clientId),
         {
           channel: mapsChannel,
           type: 'renamed',
+          revision,
           clientId: input.clientId,
           data: { oldSlug: slug, summary },
         },
       ]
     : [
-        {
-          channel: mapChannel(slug),
-          type: 'updated',
-          clientId: input.clientId,
-          data: map,
-        },
-        {
-          channel: mapsChannel,
-          type: 'updated',
-          clientId: input.clientId,
-          data: summary,
-        },
+        mapUpdatedRealtimeEvent(map, input.clientId),
+        mapSummaryUpdatedRealtimeEvent(map, input.clientId),
       ]
 
   return {

@@ -8,6 +8,7 @@ import {
 
 const visibleMap: TabletopMap = {
   schemaVersion: 2,
+  revision: 7,
   slug: 'visible-map',
   name: 'Visible Map',
   folder: 'public',
@@ -57,8 +58,8 @@ describe('load map use case', () => {
   it('loads visible maps for players and hidden maps for GMs', () => {
     const deps = createDeps()
 
-    expect(loadMapUseCase({ role: 'player', slug: 'visible-map' }, deps)).toEqual({ map: visibleMap })
-    expect(loadMapUseCase({ role: 'gm', slug: 'hidden-map' }, deps)).toEqual({ map: hiddenMap })
+    expect(loadMapUseCase({ role: 'player', slug: 'visible-map' }, deps)).toEqual({ map: visibleMap, revision: 7 })
+    expect(loadMapUseCase({ role: 'gm', slug: 'hidden-map' }, deps)).toEqual({ map: hiddenMap, revision: 7 })
     expect(deps.findMapPath).toHaveBeenCalledWith('visible-map')
     expect(deps.findMapPath).toHaveBeenCalledWith('hidden-map')
     expect(deps.readMap).toHaveBeenCalledWith('/repo/data/maps/public/visible-map.json')

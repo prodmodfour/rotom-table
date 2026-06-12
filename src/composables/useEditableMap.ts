@@ -27,7 +27,12 @@
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
-import { isRealtimeEcho, mapChannel } from '#shared/realtime'
+import {
+  LIVE_PLAY_REALTIME_EVENT_TYPES,
+  isRealtimeEcho,
+  mapChannel,
+  type RealtimeEvent,
+} from '#shared/realtime'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
@@ -37,11 +42,12 @@ import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { clonePersistableMapPayload, stablePersistableMapJson } from '~/utils/maps/persistence'
 import { useApiClient } from './useApiClient'
-import { useRealtimeChannel } from './useRealtime'
+import { subscribeRealtimeConnection, useRealtimeChannel } from './useRealtime'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
 
 export type MapSaveStatus = 'idle' | 'loading' | 'saving' | 'saved' | 'error' | 'not-found'
+export type MapRealtimeReconciliationStatus = 'synced' | 'reconnecting' | 'reconciling' | 'reconciled' | 'error'
 
 interface ReadonlyValueRef<T> {
   readonly value: T
@@ -88,6 +94,14 @@ export interface UseEditableMapReturn {
    * this without treating autosave timestamp updates as a full map reload.
    */
   mapDataRevision: Ref<number>
+  /** Current authoritative map document revision for live-play command baseRevision values. */
+  mapRevision: Readonly<Ref<number>>
+  /** Realtime/reload reconciliation state for user-visible live-play connection notices. */
+  realtimeReconciliationStatus: Ref<MapRealtimeReconciliationStatus>
+  /** True while local live-play commands must wait for authoritative reconciliation. */
+  livePlayCommandsBlocked: Readonly<Ref<boolean>>
+  /** Short user-facing realtime reconciliation notice, if any. */
+  livePlayRealtimeNotice: Readonly<Ref<string | null>>
   saveNow: () => Promise<void>
   reload: () => Promise<void>
   applyPersistedMap: (incoming: TabletopMap) => void
@@ -127,6 +141,28 @@ export const useEditableMap = (
   const error = ref<string | null>(null)
   const renamedTo = ref<string | null>(null)
   const mapDataRevision = ref(0)
+  const realtimeReconciliationStatus = ref<MapRealtimeReconciliationStatus>('synced')
+  const mapRevision = computed(() => normalizeRevision(map.value?.revision))
+  const livePlayCommandsBlocked = computed(() => (
+    realtimeReconciliationStatus.value === 'reconnecting'
+    || realtimeReconciliationStatus.value === 'reconciling'
+    || realtimeReconciliationStatus.value === 'error'
+  ))
+  const livePlayRealtimeNotice = computed(() => {
+    const revision = mapRevision.value
+    switch (realtimeReconciliationStatus.value) {
+      case 'reconnecting':
+        return 'Realtime connection lost. Reconnecting before more live-play commands are sent.'
+      case 'reconciling':
+        return 'Reconnected. Reloading the authoritative map before live play resumes.'
+      case 'reconciled':
+        return `Live play reconciled at map revision ${revision}.`
+      case 'error':
+        return 'Realtime reconciliation failed. Reload the map before sending more live-play commands.'
+      default:
+        return null
+    }
+  })
 
   const clientId = getClientId()
   const { getJson, postJson } = useApiClient()
@@ -213,15 +249,35 @@ export const useEditableMap = (
     assignIfChanged(target, 'updatedAt', next.updatedAt)
   }
 
-  const mapRevision = (candidate: TabletopMap | null | undefined): number | null => {
+  const documentRevision = (candidate: TabletopMap | null | undefined): number | null => {
     if (!candidate || !Object.prototype.hasOwnProperty.call(candidate, 'revision')) return null
     return normalizeRevision(candidate.revision)
   }
 
   const isStalePersistedMap = (incoming: TabletopMap): boolean => {
-    const incomingRevision = mapRevision(incoming)
-    const currentRevision = mapRevision(map.value)
+    const incomingRevision = documentRevision(incoming)
+    const currentRevision = documentRevision(map.value)
     return incomingRevision !== null && currentRevision !== null && incomingRevision < currentRevision
+  }
+
+  const eventRevision = (event: Pick<RealtimeEvent, 'revision' | 'data'>): number | null => {
+    if (typeof event.revision === 'number') return normalizeRevision(event.revision)
+    return documentRevision(event.data as TabletopMap | null | undefined)
+  }
+
+  const eventPreviousRevision = (event: Pick<RealtimeEvent, 'previousRevision'>): number | null => (
+    typeof event.previousRevision === 'number' ? normalizeRevision(event.previousRevision) : null
+  )
+
+  const revisionGapRequiresReconcile = (event: Pick<RealtimeEvent, 'revision' | 'previousRevision' | 'data'>): boolean => {
+    const incomingRevision = eventRevision(event)
+    if (incomingRevision === null) return false
+    const currentRevision = documentRevision(map.value)
+    if (currentRevision === null || incomingRevision <= currentRevision) return false
+
+    const previousRevision = eventPreviousRevision(event)
+    if (previousRevision !== null) return previousRevision !== currentRevision
+    return incomingRevision > currentRevision + 1
   }
 
   const applyPersistedMap = (incoming: TabletopMap) => {
@@ -279,8 +335,11 @@ export const useEditableMap = (
     status.value = 'loading'
     error.value = null
     try {
-      const data = await getJson<{ map: TabletopMap }>(MAP_API_PATHS.load, { params: { slug } })
-      applyPersistedMap(data.map)
+      const data = await getJson<{ map: TabletopMap; revision?: number }>(MAP_API_PATHS.load, { params: { slug } })
+      applyPersistedMap({
+        ...data.map,
+        revision: data.revision ?? data.map.revision,
+      })
     } catch (err: unknown) {
       const e = err as { statusCode?: number; statusMessage?: string; message?: string }
       if (e?.statusCode === 404) {
@@ -291,6 +350,17 @@ export const useEditableMap = (
       }
       autosave.statusController.markError(err, { logPrefix: '[useEditableMap] load failed' })
     }
+  }
+
+  let reconciliationSequence = 0
+  const reconcileAuthoritativeMap = async () => {
+    const sequence = ++reconciliationSequence
+    realtimeReconciliationStatus.value = 'reconciling'
+    await reload()
+    if (sequence !== reconciliationSequence) return
+    realtimeReconciliationStatus.value = status.value === 'error' || status.value === 'not-found'
+      ? 'error'
+      : 'reconciled'
   }
 
   watch(
@@ -362,11 +432,35 @@ export const useEditableMap = (
 
   let removeUnloadFlushers: (() => void) | null = bindAutosaveUnloadFlushers(flushWithBeacon)
 
-  useRealtimeChannel(mapChannel(slug), (event) => {
+  const handleRealtimeMapEvent = (event: RealtimeEvent) => {
     if (isRealtimeEcho(event, clientId)) return
+    const incomingRevision = eventRevision(event)
+    const currentRevision = documentRevision(map.value)
+    if (incomingRevision !== null && currentRevision !== null && incomingRevision < currentRevision) return
+
     if (event.type === 'updated' && event.data) {
+      if (revisionGapRequiresReconcile(event)) {
+        void reconcileAuthoritativeMap()
+        return
+      }
       const incoming = event.data as TabletopMap
       applyPersistedMap(incoming)
+    } else if (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED) {
+      const commandEventIsAhead = incomingRevision !== null
+        && currentRevision !== null
+        && incomingRevision > currentRevision
+      if (revisionGapRequiresReconcile(event) || commandEventIsAhead) {
+        void reconcileAuthoritativeMap()
+      }
+    } else if (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.MAP_RECONCILED) {
+      if (event.data && !revisionGapRequiresReconcile(event)) {
+        applyPersistedMap(event.data as TabletopMap)
+        realtimeReconciliationStatus.value = 'reconciled'
+        return
+      }
+      if (incomingRevision !== null && currentRevision !== null && incomingRevision > currentRevision) {
+        void reconcileAuthoritativeMap()
+      }
     } else if (event.type === 'deleted') {
       status.value = 'not-found'
       map.value = null
@@ -383,9 +477,22 @@ export const useEditableMap = (
       status.value = 'idle'
       renamedTo.value = payload.newSlug
     }
+  }
+
+  const removeRealtimeConnection = subscribeRealtimeConnection((change) => {
+    if (change.state === 'reconnecting') {
+      realtimeReconciliationStatus.value = 'reconnecting'
+      return
+    }
+    if (change.state === 'connected' && change.reconnected) {
+      void reconcileAuthoritativeMap()
+    }
   })
 
+  useRealtimeChannel(mapChannel(slug), handleRealtimeMapEvent)
+
   onBeforeUnmount(() => {
+    removeRealtimeConnection()
     removeUnloadFlushers?.()
     removeUnloadFlushers = null
 
@@ -404,5 +511,18 @@ export const useEditableMap = (
 
   void reload()
 
-  return { map, status, error, renamedTo, mapDataRevision, saveNow, reload, applyPersistedMap }
+  return {
+    map,
+    status,
+    error,
+    renamedTo,
+    mapDataRevision,
+    mapRevision,
+    realtimeReconciliationStatus,
+    livePlayCommandsBlocked,
+    livePlayRealtimeNotice,
+    saveNow,
+    reload,
+    applyPersistedMap,
+  }
 }

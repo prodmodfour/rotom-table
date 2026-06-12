@@ -10,6 +10,11 @@ const apiMocks = vi.hoisted(() => ({
   getJson: vi.fn(),
   postJson: vi.fn(),
   realtimeHandlers: [] as Array<(event: RealtimeEvent) => void>,
+  connectionHandlers: [] as Array<(change: {
+    state: 'idle' | 'connecting' | 'connected' | 'reconnecting'
+    previousState: 'idle' | 'connecting' | 'connected' | 'reconnecting'
+    reconnected: boolean
+  }) => void>,
 }))
 
 vi.mock('~/utils/clientId', () => ({
@@ -24,6 +29,14 @@ vi.mock('~/composables/useApiClient', () => ({
 }))
 
 vi.mock('~/composables/useRealtime', () => ({
+  subscribeRealtimeConnection: vi.fn((handler: (change: {
+    state: 'idle' | 'connecting' | 'connected' | 'reconnecting'
+    previousState: 'idle' | 'connecting' | 'connected' | 'reconnecting'
+    reconnected: boolean
+  }) => void) => {
+    apiMocks.connectionHandlers.push(handler)
+    return vi.fn()
+  }),
   useRealtimeChannel: vi.fn((_channel: string, handler: (event: RealtimeEvent) => void) => {
     apiMocks.realtimeHandlers.push(handler)
     return vi.fn()
@@ -122,6 +135,7 @@ describe('useEditableMap autosave boundary', () => {
     apiMocks.getJson.mockReset()
     apiMocks.postJson.mockReset()
     apiMocks.realtimeHandlers.length = 0
+    apiMocks.connectionHandlers.length = 0
     apiMocks.getJson.mockResolvedValue({ map: mapFixture() })
     apiMocks.postJson.mockImplementation(async (_request: string, body: { map: TabletopMap }) => ({
       map: { ...body.map, updatedAt: 200 },
@@ -494,6 +508,7 @@ describe('useEditableMap autosave boundary', () => {
     apiMocks.realtimeHandlers[0]?.({
       channel: 'map:arena-map',
       type: 'updated',
+      revision: 2,
       clientId: 'other-tab',
       timestamp: 500,
       data: mapFixture({ revision: 2, name: 'Newer Arena', updatedAt: 500 }),
@@ -503,6 +518,7 @@ describe('useEditableMap autosave boundary', () => {
     apiMocks.realtimeHandlers[0]?.({
       channel: 'map:arena-map',
       type: 'updated',
+      revision: 1,
       clientId: 'other-tab',
       timestamp: 450,
       data: mapFixture({ revision: 1, name: 'Older Arena', updatedAt: 450 }),
@@ -513,7 +529,88 @@ describe('useEditableMap autosave boundary', () => {
 
     expect(editable.map.value?.name).toBe('Newer Arena')
     expect(editable.map.value?.updatedAt).toBe(500)
+    expect(editable.mapRevision.value).toBe(2)
     expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('reloads the authoritative map after an SSE reconnect so missed remote commands reconcile', async () => {
+    apiMocks.getJson
+      .mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+      .mockResolvedValueOnce({
+        revision: 2,
+        map: mapFixture({
+          revision: 2,
+          name: 'Remote Command Arena',
+          placements: [
+            {
+              id: 'token-pikachu',
+              sheetKind: 'pokemon',
+              sheetSlug: 'pikachu',
+              position: { x: 5, y: 0, z: 2 },
+              facing: 'north-east',
+              turned: false,
+            },
+          ],
+          updatedAt: 600,
+        }),
+      })
+
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    apiMocks.connectionHandlers[0]?.({
+      state: 'reconnecting',
+      previousState: 'connected',
+      reconnected: false,
+    })
+
+    expect(editable.livePlayCommandsBlocked.value).toBe(true)
+    expect(editable.livePlayRealtimeNotice.value).toContain('Realtime connection lost')
+
+    apiMocks.connectionHandlers[0]?.({
+      state: 'connected',
+      previousState: 'reconnecting',
+      reconnected: true,
+    })
+    await flushPromises()
+
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(2)
+    expect(editable.map.value).toMatchObject({
+      revision: 2,
+      name: 'Remote Command Arena',
+      placements: [expect.objectContaining({ position: { x: 5, y: 0, z: 2 } })],
+    })
+    expect(editable.mapRevision.value).toBe(2)
+    expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
+    expect(editable.livePlayCommandsBlocked.value).toBe(false)
+    expect(editable.livePlayRealtimeNotice.value).toContain('map revision 2')
+  })
+
+  it('reloads instead of applying a revision-gap realtime event directly', async () => {
+    apiMocks.getJson
+      .mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+      .mockResolvedValueOnce({
+        revision: 3,
+        map: mapFixture({ revision: 3, name: 'Reloaded Arena', updatedAt: 700 }),
+      })
+
+    const editable = useEditableMap('arena-map', { debounceMs: 10 })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: 'updated',
+      revision: 3,
+      clientId: 'other-tab',
+      timestamp: 650,
+      data: mapFixture({ revision: 3, name: 'Gap Event Arena', updatedAt: 650 }),
+    })
+    await flushPromises()
+
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(2)
+    expect(editable.map.value?.name).toBe('Reloaded Arena')
+    expect(editable.mapRevision.value).toBe(3)
+    expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
   })
 
   it('pauses whole-map autosave while disabled and resumes it for document-backed editing', async () => {

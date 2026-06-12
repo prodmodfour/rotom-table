@@ -94,6 +94,9 @@ const {
   error,
   renamedTo,
   mapDataRevision,
+  mapRevision,
+  livePlayCommandsBlocked,
+  livePlayRealtimeNotice,
   applyPersistedMap,
 } = useEditableMap(slug, {
   interactionMode: mapInteractionMode,
@@ -113,7 +116,9 @@ const applyDocumentSheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: s
 const documentTokenActions = useDocumentMapTokenActions({
   slug,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
-  mapRevision: computed(() => map.value?.revision ?? 0),
+  mapRevision,
+  livePlayCommandBlocked: livePlayCommandsBlocked,
+  livePlayCommandBlockedMessage: livePlayRealtimeNotice,
   applyPersistedMap,
   applySheetUpdate: applyDocumentSheetUpdate,
 })
@@ -146,6 +151,7 @@ const persistSpawnedPlacement = (placement: SheetPlacement) => {
   })
 }
 const tokenControlNotice = computed(() => {
+  if (livePlayRealtimeNotice.value) return livePlayRealtimeNotice.value
   if (documentTokenActions.lastError.value) {
     return `Token action failed: ${documentTokenActions.lastError.value}`
   }

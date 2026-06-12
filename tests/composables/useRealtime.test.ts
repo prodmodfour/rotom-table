@@ -24,6 +24,10 @@ class FakeEventSource {
     this.closed = true
   }
 
+  emitOpen(): void {
+    this.onopen?.()
+  }
+
   emitMessage(event: RealtimeEvent | string): void {
     const data = typeof event === 'string' ? event : JSON.stringify(event)
     this.onmessage?.({ data })
@@ -121,5 +125,32 @@ describe('useRealtime legacy SSE transport', () => {
 
     unsubscribe()
     expect(secondSource?.closed).toBe(true)
+  })
+
+  it('notifies connection subscribers when reconnecting creates a possible event gap', async () => {
+    vi.useFakeTimers()
+    installBrowserRealtimeGlobals()
+    const { subscribeChannel, subscribeRealtimeConnection } = await loadRealtimeModule()
+    const changes: unknown[] = []
+    const unsubscribeConnection = subscribeRealtimeConnection((change) => changes.push(change))
+
+    const unsubscribe = subscribeChannel('map:pallet-town', vi.fn())
+    const firstSource = FakeEventSource.instances[0]
+    firstSource?.emitOpen()
+    firstSource?.emitError()
+
+    await vi.advanceTimersByTimeAsync(1000)
+    const secondSource = FakeEventSource.instances[1]
+    secondSource?.emitOpen()
+
+    expect(changes).toEqual([
+      { state: 'connecting', previousState: 'idle', reconnected: false },
+      { state: 'connected', previousState: 'connecting', reconnected: false },
+      { state: 'reconnecting', previousState: 'connected', reconnected: false },
+      { state: 'connected', previousState: 'reconnecting', reconnected: true },
+    ])
+
+    unsubscribe()
+    unsubscribeConnection()
   })
 })

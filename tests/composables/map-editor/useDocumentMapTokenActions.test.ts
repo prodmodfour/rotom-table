@@ -144,6 +144,28 @@ describe('useDocumentMapTokenActions', () => {
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
+  it('blocks live-play token commands while realtime reconciliation is pending', async () => {
+    const actions = useDocumentMapTokenActions({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      livePlayCommandBlocked: ref(true),
+      livePlayCommandBlockedMessage: ref('Reconnected. Reloading the authoritative map before live play resumes.'),
+    })
+
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 2, y: 0, z: 1 },
+    })
+
+    expect(result).toEqual({
+      dispatched: false,
+      message: 'Reconnected. Reloading the authoritative map before live play resumes.',
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    expect(actions.status.value).toBe('error')
+    expect(actions.lastError.value).toBe('Reconnected. Reloading the authoritative map before live play resumes.')
+  })
+
   it('posts live-play turn commands and surfaces command rejections', async () => {
     const actions = useDocumentMapTokenActions({ slug: 'arena-map', mapRevision: ref(4) })
     apiMocks.postJson.mockResolvedValue({

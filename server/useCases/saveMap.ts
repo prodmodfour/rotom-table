@@ -1,6 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
-import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import type { RealtimeEvent } from '#shared/realtime'
 import { normalizeRevision, nextRevision } from '#shared/sessionRevisions'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapMoveUsage } from '~/utils/moveUsage'
@@ -9,7 +9,7 @@ import type { TabletopMap } from '~/types/map'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { folderFromPath } from '../utils/mapPaths'
-import { summarizeMap } from '../utils/mapSummaries'
+import { mapDocumentUpdatedRealtimeEvents } from '../utils/mapRealtimeEvents'
 import { normalizeMapGroundLevelY } from '../utils/mapNormalization'
 
 export class SaveMapUseCaseError extends UseCaseHttpError<400 | 403 | 404> {}
@@ -118,19 +118,6 @@ export const saveMapUseCase = (
     ok: true,
     path: relativePath(filePath),
     map: persisted,
-    events: [
-      {
-        channel: mapChannel(input.slug),
-        type: 'updated',
-        clientId: input.clientId,
-        data: persisted,
-      },
-      {
-        channel: mapsChannel,
-        type: 'updated',
-        clientId: input.clientId,
-        data: summarizeMap(persisted),
-      },
-    ],
+    events: mapDocumentUpdatedRealtimeEvents(persisted, input.clientId),
   }
 }

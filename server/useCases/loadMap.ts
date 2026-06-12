@@ -1,5 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import type { AuthRole } from '#shared/auth'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import type { TabletopMap } from '~/types/map'
 import { findMapFile, readMapFile } from '../utils/mapStorage'
 import { SLUG_RE } from '../utils/mapPaths'
@@ -18,6 +19,7 @@ export interface LoadMapDependencies {
 
 export interface LoadMapResult {
   map: TabletopMap
+  revision: number
 }
 
 const SLUG_ERROR = 'slug must match /^[a-z0-9-]+$/'
@@ -54,5 +56,5 @@ export const loadMapUseCase = (
     throw new LoadMapUseCaseError(403, 'Map is not player visible')
   }
 
-  return { map }
+  return { map, revision: normalizeRevision(map.revision) }
 }

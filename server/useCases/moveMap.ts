@@ -1,13 +1,14 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { join, sep } from 'node:path'
-import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { TabletopMap } from '~/types/map'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { MAPS_ROOT, SLUG_RE, pruneEmptyMapParents, sanitizeMapFolderPath } from '../utils/mapPaths'
 import { summarizeMap } from '../utils/mapSummaries'
+import { mapRevisionForRealtime, mapUpdatedRealtimeEvent } from '../utils/mapRealtimeEvents'
 
 export class MoveMapUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
@@ -108,15 +109,11 @@ export const moveMapUseCase = (
     path: relativePath(destPath),
     map,
     events: [
-      {
-        channel: mapChannel(slug),
-        type: 'updated',
-        clientId: input.clientId,
-        data: map,
-      },
+      mapUpdatedRealtimeEvent(map, input.clientId),
       {
         channel: mapsChannel,
         type: 'moved',
+        revision: mapRevisionForRealtime(map),
         clientId: input.clientId,
         data: summarizeMap(map),
       },

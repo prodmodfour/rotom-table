@@ -1,5 +1,5 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { mapChannel, mapsChannel, sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
+import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import { findMove } from '~~/data/ptuReference'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -21,7 +21,7 @@ import {
 } from '~/utils/moveUsage'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
-import { summarizeMap } from '../utils/mapSummaries'
+import { mapDocumentUpdatedRealtimeEvents } from '../utils/mapRealtimeEvents'
 import { canSaveMap } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import {
@@ -160,20 +160,7 @@ const untrackedUsageResult = (
 const mapUsageEvents = (
   map: TabletopMap,
   clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => [
-  {
-    channel: mapChannel(map.slug),
-    type: 'updated',
-    clientId,
-    data: map,
-  },
-  {
-    channel: mapsChannel,
-    type: 'updated',
-    clientId,
-    data: summarizeMap(map),
-  },
-]
+): Array<Omit<RealtimeEvent, 'timestamp'>> => mapDocumentUpdatedRealtimeEvents(map, clientId)
 
 const sheetUsageEvents = (
   kind: SheetKind,
