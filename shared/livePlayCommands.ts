@@ -1,6 +1,13 @@
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
 import { isSheetKind, type SheetKind } from './sheets'
-import type { GridAnchor } from '~/types/map'
+import type {
+  GridAnchor,
+  MapHazardKind,
+  MapHazardV2,
+  MapRoomKind,
+  MapTerrainKind,
+  MapWeatherKind,
+} from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 
 type Brand<TValue, TName extends string> = TValue & { readonly __brand: TName }
@@ -216,6 +223,42 @@ export type AdvanceInitiativePayload = Record<string, never>
 export type NextInitiativePayload = AdvanceInitiativePayload
 export type PreviousInitiativePayload = AdvanceInitiativePayload
 
+export interface PlaceHazardPayload {
+  readonly hazard: MapHazardV2
+}
+
+export interface RemoveHazardPayload {
+  readonly cell: {
+    readonly x: number
+    readonly y: number
+    readonly z: number
+    readonly kind?: MapHazardKind
+  }
+}
+
+export type FieldEffectCategory = 'weather' | 'terrain' | 'room'
+export type FieldEffectRemoveCategory = FieldEffectCategory | 'all'
+export type FieldEffectKind = MapWeatherKind | MapTerrainKind | MapRoomKind
+
+export interface SetFieldEffectPayload {
+  readonly category: FieldEffectCategory
+  readonly kind: FieldEffectKind
+  readonly rounds?: number | null
+  readonly source?: string
+  readonly weatherMode?: 'replace' | 'append'
+  readonly terrainScope?: 'field' | 'area'
+  readonly startsNextRound?: boolean
+}
+
+export interface RemoveFieldEffectPayload {
+  readonly category: FieldEffectRemoveCategory
+  readonly kind?: FieldEffectKind
+}
+
+export interface TickFieldEffectDurationsPayload {
+  readonly amount?: number
+}
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -270,10 +313,47 @@ export type PreviousInitiativeLivePlayCommand = LivePlayCommandEnvelope<
   LivePlayMapScope
 >
 
+export type PlaceHazardLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
+  PlaceHazardPayload,
+  LivePlayMapScope
+>
+
+export type RemoveHazardLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
+  RemoveHazardPayload,
+  LivePlayMapScope
+>
+
+export type SetFieldEffectLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
+  SetFieldEffectPayload,
+  LivePlayMapScope
+>
+
+export type RemoveFieldEffectLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
+  RemoveFieldEffectPayload,
+  LivePlayMapScope
+>
+
+export type TickFieldEffectDurationsLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
+  TickFieldEffectDurationsPayload,
+  LivePlayMapScope
+>
+
 export type LivePlayInitiativeCommand =
   | SetInitiativeLivePlayCommand
   | NextInitiativeLivePlayCommand
   | PreviousInitiativeLivePlayCommand
+
+export type LivePlayMapEffectCommand =
+  | PlaceHazardLivePlayCommand
+  | RemoveHazardLivePlayCommand
+  | SetFieldEffectLivePlayCommand
+  | RemoveFieldEffectLivePlayCommand
+  | TickFieldEffectDurationsLivePlayCommand
 
 export type LivePlaySheetCommand =
   | ModifyHpLivePlayCommand

@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   recordMoveUsageUseCase: vi.fn(),
   executeLivePlayUseMoveCommandUseCase: vi.fn(),
   executeLivePlayInitiativeCommandUseCase: vi.fn(),
+  executeLivePlayMapEffectsCommandUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
@@ -65,6 +66,9 @@ vi.mock('../../server/useCases/applyLivePlayUseMoveCommand', () => ({
 vi.mock('../../server/useCases/applyLivePlayInitiativeCommand', () => ({
   executeLivePlayInitiativeCommandUseCase: mocks.executeLivePlayInitiativeCommandUseCase,
 }))
+vi.mock('../../server/useCases/applyLivePlayMapEffectsCommand', () => ({
+  executeLivePlayMapEffectsCommandUseCase: mocks.executeLivePlayMapEffectsCommandUseCase,
+}))
 vi.mock('../../server/policies/playerProfilePolicy', () => ({
   resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
 }))
@@ -87,6 +91,11 @@ const useMoveRoute = (await import('../../server/api/maps/use-move.post')).defau
 const setInitiativeRoute = (await import('../../server/api/maps/initiative/set.post')).default
 const nextInitiativeRoute = (await import('../../server/api/maps/initiative/next.post')).default
 const previousInitiativeRoute = (await import('../../server/api/maps/initiative/previous.post')).default
+const placeHazardRoute = (await import('../../server/api/maps/hazards/place.post')).default
+const removeHazardRoute = (await import('../../server/api/maps/hazards/remove.post')).default
+const setFieldEffectRoute = (await import('../../server/api/maps/field-effects/set.post')).default
+const removeFieldEffectRoute = (await import('../../server/api/maps/field-effects/remove.post')).default
+const tickFieldEffectDurationsRoute = (await import('../../server/api/maps/field-effects/tick.post')).default
 
 type MapRouteHandler = EventHandler<EventHandlerRequest, unknown>
 
@@ -182,6 +191,71 @@ describe('map hosted-write API routes', () => {
           payload: { tokenId: 'token-1', initiative: 10 },
         },
         mock: mocks.executeLivePlayInitiativeCommandUseCase,
+      },
+      {
+        route: placeHazardRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedhaz1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'placeHazard',
+          scopes: [{ kind: 'map', lane: 'hazards' }],
+          payload: { hazard: { kind: 'spikes', x: 1, y: 0, z: 1 } },
+        },
+        mock: mocks.executeLivePlayMapEffectsCommandUseCase,
+      },
+      {
+        route: removeHazardRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedrhaz',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'removeHazard',
+          scopes: [{ kind: 'map', lane: 'hazards' }],
+          payload: { cell: { x: 1, y: 0, z: 1 } },
+        },
+        mock: mocks.executeLivePlayMapEffectsCommandUseCase,
+      },
+      {
+        route: setFieldEffectRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedfld1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'setFieldEffect',
+          scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+          payload: { category: 'weather', kind: 'sunny' },
+        },
+        mock: mocks.executeLivePlayMapEffectsCommandUseCase,
+      },
+      {
+        route: removeFieldEffectRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedrfld',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'removeFieldEffect',
+          scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+          payload: { category: 'weather', kind: 'sunny' },
+        },
+        mock: mocks.executeLivePlayMapEffectsCommandUseCase,
+      },
+      {
+        route: tickFieldEffectDurationsRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedtick',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'tickFieldEffectDurations',
+          scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+          payload: {},
+        },
+        mock: mocks.executeLivePlayMapEffectsCommandUseCase,
       },
     ]
 

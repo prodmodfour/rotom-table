@@ -309,6 +309,63 @@ describe('useDocumentMapTokenActions', () => {
     }))
   })
 
+  it('posts live-play hazard and field-effect commands through the command dispatcher', async () => {
+    const map = mapFixture()
+    const mapRevision = ref(4)
+    const applyPersistedMap = vi.fn()
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_mapeffect1',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+    })
+
+    const actions = useDocumentMapTokenActions({
+      slug: 'arena-map',
+      mapRevision,
+      applyPersistedMap,
+    })
+
+    await actions.placeHazard({ hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.placeHazard, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
+      scopes: [{ kind: 'map', lane: 'hazards' }],
+      payload: { hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
+      clientId: 'ssr',
+    }))
+
+    await actions.setFieldEffect({ category: 'weather', kind: 'sunny', rounds: 5, weatherMode: 'replace' })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.setFieldEffect, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
+      scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+      payload: { category: 'weather', kind: 'sunny', rounds: 5, weatherMode: 'replace' },
+    }))
+
+    await actions.removeFieldEffect({ category: 'weather', kind: 'sunny' })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.removeFieldEffect, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
+      scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+      payload: { category: 'weather', kind: 'sunny' },
+    }))
+
+    await actions.tickFieldEffectDurations()
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.tickFieldEffectDurations, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
+      scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+      payload: {},
+    }))
+
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
+  })
+
   it('blocks live-play token commands while realtime reconciliation is pending', async () => {
     const actions = useDocumentMapTokenActions({
       slug: 'arena-map',

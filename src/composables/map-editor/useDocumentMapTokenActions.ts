@@ -13,7 +13,12 @@ import {
   type ModifyConditionsPayload,
   type ModifyHpPayload,
   type MoveTokenPayload,
+  type PlaceHazardPayload,
+  type RemoveFieldEffectPayload,
+  type RemoveHazardPayload,
+  type SetFieldEffectPayload,
   type SetInitiativePayload,
+  type TickFieldEffectDurationsPayload,
   type TurnTokenPayload,
   type UseMovePayload,
 } from '#shared/livePlayCommands'
@@ -24,7 +29,7 @@ import { getClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { useApiClient } from '~/composables/useApiClient'
 import type { PlayerProfileId } from '#shared/playerProfiles'
-import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
+import type { GridAnchor, MapHazardV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 
 interface ReadonlyValueRef<TValue> {
@@ -117,6 +122,15 @@ export interface UseDocumentMapTokenActionsReturn {
   setInitiative: (payload: SetInitiativePayload) => Promise<DocumentMapTokenActionDispatchResult>
   nextInitiative: () => Promise<DocumentMapTokenActionDispatchResult>
   previousInitiative: () => Promise<DocumentMapTokenActionDispatchResult>
+  placeHazard: (payload: {
+    hazard: MapHazardV2
+  }) => Promise<DocumentMapTokenActionDispatchResult>
+  removeHazard: (payload: {
+    cell: RemoveHazardPayload['cell']
+  }) => Promise<DocumentMapTokenActionDispatchResult>
+  setFieldEffect: (payload: SetFieldEffectPayload) => Promise<DocumentMapTokenActionDispatchResult>
+  removeFieldEffect: (payload: RemoveFieldEffectPayload) => Promise<DocumentMapTokenActionDispatchResult>
+  tickFieldEffectDurations: (payload?: TickFieldEffectDurationsPayload) => Promise<DocumentMapTokenActionDispatchResult>
   useManeuver: (payload: {
     placementId: string
     maneuverName: string
@@ -144,6 +158,11 @@ type LivePlayDocumentCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
   | typeof LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE
   | typeof LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE
+  | typeof LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD
+  | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD
+  | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
+  | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
+  | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
 
 type LivePlayTokenCommandPayload =
   | MoveTokenPayload
@@ -153,9 +172,17 @@ type LivePlayTokenCommandPayload =
   | ModifyConditionsPayload
   | UseMovePayload
 
+type LivePlayMapEffectsCommandPayload =
+  | PlaceHazardPayload
+  | RemoveHazardPayload
+  | SetFieldEffectPayload
+  | RemoveFieldEffectPayload
+  | TickFieldEffectDurationsPayload
+
 type LivePlayDocumentCommandPayload =
   | LivePlayTokenCommandPayload
   | SetInitiativePayload
+  | LivePlayMapEffectsCommandPayload
   | Record<string, never>
 
 const isDuplicateResult = (response: LivePlayMapTokenActionResponse): response is LivePlayCommandDuplicate & LivePlayMapTokenActionResponse => (
@@ -449,6 +476,51 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
+  const placeHazard: UseDocumentMapTokenActionsReturn['placeHazard'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.placeHazard,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
+      { hazard: payload.hazard },
+      [mapScope('hazards')],
+    ),
+  )
+
+  const removeHazard: UseDocumentMapTokenActionsReturn['removeHazard'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.removeHazard,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
+      { cell: payload.cell },
+      [mapScope('hazards')],
+    ),
+  )
+
+  const setFieldEffect: UseDocumentMapTokenActionsReturn['setFieldEffect'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.setFieldEffect,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
+      payload,
+      [mapScope('fieldEffects')],
+    ),
+  )
+
+  const removeFieldEffect: UseDocumentMapTokenActionsReturn['removeFieldEffect'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.removeFieldEffect,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
+      payload,
+      [mapScope('fieldEffects')],
+    ),
+  )
+
+  const tickFieldEffectDurations: UseDocumentMapTokenActionsReturn['tickFieldEffectDurations'] = (payload = {}) => runLivePlayCommand(
+    MAP_API_PATHS.tickFieldEffectDurations,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
+      payload,
+      [mapScope('fieldEffects')],
+    ),
+  )
+
   const useManeuver: UseDocumentMapTokenActionsReturn['useManeuver'] = (payload) => runAction(
     MAP_API_PATHS.useManeuver,
     {
@@ -490,6 +562,11 @@ export const useDocumentMapTokenActions = (
     setInitiative,
     nextInitiative,
     previousInitiative,
+    placeHazard,
+    removeHazard,
+    setFieldEffect,
+    removeFieldEffect,
+    tickFieldEffectDurations,
     useManeuver,
     useAbility,
     useOrder,

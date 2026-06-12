@@ -40,6 +40,10 @@ import {
   type LivePlayScope,
   type LivePlayTokenScope,
   type LivePlayTokenScopeField,
+  type PlaceHazardLivePlayCommand,
+  type PlaceHazardPayload,
+  type SetFieldEffectLivePlayCommand,
+  type SetFieldEffectPayload,
   type SetInitiativeLivePlayCommand,
   type SetInitiativePayload,
   type UseMoveLivePlayCommand,
@@ -114,6 +118,8 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('moveToken')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('modifyHp')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setInitiative')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('placeHazard')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setFieldEffect')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('buildTerrainVoxel')
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayCommandType('teleportToken')).toBe(false)
@@ -200,11 +206,39 @@ describe('live-play command contract', () => {
     expect(initiativeCommand.type).toBe('setInitiative')
     expect(initiativeCommand.payload).toEqual({ tokenId: 'placement-001', initiative: 12, activeId: 'placement-001', round: 2 })
 
+    const hazardCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
+      scopes: [{ kind: 'map', lane: 'hazards' }],
+      payload: { hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
+    } as const satisfies PlaceHazardLivePlayCommand
+
+    expect(hazardCommand.type).toBe('placeHazard')
+    expect(hazardCommand.payload.hazard).toEqual({ kind: 'spikes', x: 1, y: 0, z: 2 })
+
+    const fieldEffectCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
+      scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+      payload: { category: 'weather', kind: 'sunny', rounds: 5, weatherMode: 'replace' },
+    } as const satisfies SetFieldEffectLivePlayCommand
+
+    expect(fieldEffectCommand.type).toBe('setFieldEffect')
+    expect(fieldEffectCommand.payload).toEqual({ category: 'weather', kind: 'sunny', rounds: 5, weatherMode: 'replace' })
+
     expectTypeOf(command).toEqualTypeOf<
       LivePlayCommandEnvelope<typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN, MoveTokenPayload, LivePlayTokenScope>
     >()
     expectTypeOf(useMoveCommand.payload).toMatchTypeOf<UseMovePayload>()
     expectTypeOf(initiativeCommand.payload).toMatchTypeOf<SetInitiativePayload>()
+    expectTypeOf(hazardCommand.payload).toMatchTypeOf<PlaceHazardPayload>()
+    expectTypeOf(fieldEffectCommand.payload).toMatchTypeOf<SetFieldEffectPayload>()
   })
 
   it('builds accepted, rejected, and duplicate results with reusable shapes', () => {

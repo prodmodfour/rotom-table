@@ -11,7 +11,7 @@ import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useDocumentMapTokenActions } from '~/composables/map-editor/useDocumentMapTokenActions'
-import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
+import { parseRoundInputValue, useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
 import { useMapAccess, useMapGmModeGuard } from '~/composables/map-editor/useMapAccess'
@@ -56,6 +56,7 @@ import {
   playerCharacterSheetKeysForProfiles,
 } from '~/utils/playerCharacterTokens'
 import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLog'
+import { textValueFromEvent } from '~/utils/domEvents'
 import { applyPokeballCaptureOutcomeToTrainerSheet } from '~/utils/pokeballCapture'
 import { isSameAnchor } from '~/utils/gridGeometry'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
@@ -63,7 +64,7 @@ import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { GridAnchor, SheetPlacement } from '~/types/map'
+import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind, SheetPlacement } from '~/types/map'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -418,20 +419,20 @@ const {
   weatherIsActive,
   terrainIsActive,
   roomIsActive,
-  setWeather,
-  removeWeather,
-  clearWeather,
-  toggleTerrain,
-  removeTerrain,
-  toggleRoom,
-  removeRoom,
-  setWeatherRounds,
-  setTerrainRounds,
-  setRoomRounds,
+  setWeather: setWeatherLocally,
+  removeWeather: removeWeatherLocally,
+  clearWeather: clearWeatherLocally,
+  toggleTerrain: toggleTerrainLocally,
+  removeTerrain: removeTerrainLocally,
+  toggleRoom: toggleRoomLocally,
+  removeRoom: removeRoomLocally,
+  setWeatherRounds: setWeatherRoundsLocally,
+  setTerrainRounds: setTerrainRoundsLocally,
+  setRoomRounds: setRoomRoundsLocally,
   durationLabel,
-  tickFieldEffectDurations,
-  clearAllFieldEffects,
-  applyMoveFieldEffect,
+  tickFieldEffectDurations: tickFieldEffectDurationsLocally,
+  clearAllFieldEffects: clearAllFieldEffectsLocally,
+  applyMoveFieldEffect: applyMoveFieldEffectLocally,
 } = useFieldEffectsEditor({ map, canEditMap })
 
 const combatLogEntryCount = computed(() => countCombatLogMessages(map.value?.metadata))
@@ -452,6 +453,169 @@ const clearCombatLog = () => {
 
 const setWeatherCoexistNext = (value: boolean) => {
   weatherCoexistNext.value = value
+}
+
+const isSetupEditMode = () => mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT
+
+const clearWeatherCoexistIfNoWeather = () => {
+  if (!activeWeatherEffects.value.length) weatherCoexistNext.value = false
+}
+
+const clearAllHazardsFromMenu = async () => {
+  if (isSetupEditMode()) {
+    clearAllHazards()
+    return
+  }
+  if (!canEditMap.value || !mapHazards.value.length) return
+  const count = mapHazards.value.length
+  const ok = typeof window === 'undefined' || window.confirm(
+    `Remove all ${count} hazard square${count === 1 ? '' : 's'}?`,
+  )
+  if (!ok) return
+
+  for (const hazard of mapHazards.value.map((item) => ({ ...item }))) {
+    const result = await documentTokenActions.removeHazard({
+      cell: { x: hazard.x, y: hazard.y, z: hazard.z, kind: hazard.kind },
+    })
+    if (!result.dispatched) break
+  }
+}
+
+const setWeatherFromMenu = async (kind: MapWeatherKind) => {
+  if (isSetupEditMode()) {
+    setWeatherLocally(kind)
+    return
+  }
+  if (!canEditMap.value) return
+  const append = weatherCoexistNext.value && activeWeatherEffects.value.length > 0
+  const result = await documentTokenActions.setFieldEffect({
+    category: 'weather',
+    kind,
+    weatherMode: append ? 'append' : 'replace',
+  })
+  if (result.dispatched && append) weatherCoexistNext.value = false
+}
+
+const removeWeatherFromMenu = async (kind: MapWeatherKind) => {
+  if (isSetupEditMode()) {
+    removeWeatherLocally(kind)
+    return
+  }
+  if (!canEditMap.value) return
+  const result = await documentTokenActions.removeFieldEffect({ category: 'weather', kind })
+  if (result.dispatched) clearWeatherCoexistIfNoWeather()
+}
+
+const clearWeatherFromMenu = async () => {
+  if (isSetupEditMode()) {
+    clearWeatherLocally()
+    return
+  }
+  if (!canEditMap.value) return
+  const result = await documentTokenActions.removeFieldEffect({ category: 'weather' })
+  if (result.dispatched) weatherCoexistNext.value = false
+}
+
+const toggleTerrainFromMenu = async (kind: MapTerrainKind) => {
+  if (isSetupEditMode()) {
+    toggleTerrainLocally(kind)
+    return
+  }
+  if (!canEditMap.value) return
+  if (terrainIsActive(kind)) await documentTokenActions.removeFieldEffect({ category: 'terrain', kind })
+  else await documentTokenActions.setFieldEffect({ category: 'terrain', kind })
+}
+
+const removeTerrainFromMenu = async (kind: MapTerrainKind) => {
+  if (isSetupEditMode()) {
+    removeTerrainLocally(kind)
+    return
+  }
+  if (!canEditMap.value) return
+  await documentTokenActions.removeFieldEffect({ category: 'terrain', kind })
+}
+
+const toggleRoomFromMenu = async (kind: MapRoomKind) => {
+  if (isSetupEditMode()) {
+    toggleRoomLocally(kind)
+    return
+  }
+  if (!canEditMap.value) return
+  if (roomIsActive(kind)) await documentTokenActions.removeFieldEffect({ category: 'room', kind })
+  else await documentTokenActions.setFieldEffect({ category: 'room', kind })
+}
+
+const removeRoomFromMenu = async (kind: MapRoomKind) => {
+  if (isSetupEditMode()) {
+    removeRoomLocally(kind)
+    return
+  }
+  if (!canEditMap.value) return
+  await documentTokenActions.removeFieldEffect({ category: 'room', kind })
+}
+
+const fieldEffectRoundsFromEvent = (event: Event): number | null =>
+  parseRoundInputValue(textValueFromEvent(event))
+
+const setWeatherRoundsFromMenu = async (kind: MapWeatherKind, event: Event) => {
+  if (isSetupEditMode()) {
+    setWeatherRoundsLocally(kind, event)
+    return
+  }
+  if (!canEditMap.value) return
+  const rounds = fieldEffectRoundsFromEvent(event)
+  if (rounds === 0) await removeWeatherFromMenu(kind)
+  else {
+    await documentTokenActions.setFieldEffect({
+      category: 'weather',
+      kind,
+      rounds,
+      weatherMode: activeWeatherEffects.value.length > 1 ? 'append' : 'replace',
+    })
+  }
+}
+
+const setTerrainRoundsFromMenu = async (kind: MapTerrainKind, event: Event) => {
+  if (isSetupEditMode()) {
+    setTerrainRoundsLocally(kind, event)
+    return
+  }
+  if (!canEditMap.value) return
+  const rounds = fieldEffectRoundsFromEvent(event)
+  if (rounds === 0) await removeTerrainFromMenu(kind)
+  else await documentTokenActions.setFieldEffect({ category: 'terrain', kind, rounds })
+}
+
+const setRoomRoundsFromMenu = async (kind: MapRoomKind, event: Event) => {
+  if (isSetupEditMode()) {
+    setRoomRoundsLocally(kind, event)
+    return
+  }
+  if (!canEditMap.value) return
+  const rounds = fieldEffectRoundsFromEvent(event)
+  if (rounds === 0) await removeRoomFromMenu(kind)
+  else await documentTokenActions.setFieldEffect({ category: 'room', kind, rounds })
+}
+
+const tickFieldEffectDurationsFromMenu = async () => {
+  if (isSetupEditMode()) {
+    tickFieldEffectDurationsLocally()
+    return
+  }
+  if (!canEditMap.value) return
+  await documentTokenActions.tickFieldEffectDurations()
+}
+
+const clearAllFieldEffectsFromMenu = async () => {
+  if (isSetupEditMode()) {
+    clearAllFieldEffectsLocally()
+    return
+  }
+  if (!canEditMap.value || fieldEffectCount.value === 0) return
+  const ok = typeof window === 'undefined' || window.confirm('Clear all active Weather, Terrain, and Room effects?')
+  if (!ok) return
+  const result = await documentTokenActions.removeFieldEffect({ category: 'all' })
+  if (result.dispatched) weatherCoexistNext.value = false
 }
 
 const {
@@ -483,7 +647,7 @@ const {
   clearSelection,
 })
 
-const setupEditModeActive = computed(() => isGm.value && (buildMode.value || hazardMode.value || adminPanelOpen.value))
+const setupEditModeActive = computed(() => isGm.value && (buildMode.value || adminPanelOpen.value))
 watch(setupEditModeActive, (active) => {
   mapInteractionMode.value = active ? MAP_INTERACTION_MODES.SETUP_EDIT : MAP_INTERACTION_MODES.LIVE_PLAY
 }, { immediate: true })
@@ -688,16 +852,53 @@ const recordMoveUsage = async (request: { placementId: string; moveName: string 
   if (!result.dispatched) throw new Error(result.message ?? 'Move usage could not be recorded.')
 }
 
-const applyMoveFieldEffectFromScene: typeof applyMoveFieldEffect = (effect) => {
-  applyMoveFieldEffect(effect)
+const applyMoveFieldEffectFromScene = async (effect: Parameters<typeof applyMoveFieldEffectLocally>[0]) => {
+  if (isSetupEditMode()) {
+    applyMoveFieldEffectLocally(effect)
+    return
+  }
+  if (!canEditMap.value) return
+  if (effect.kind === 'weather') {
+    await documentTokenActions.setFieldEffect({
+      category: 'weather',
+      kind: effect.value as MapWeatherKind,
+      source: effect.source ?? 'Move automation',
+    })
+    return
+  }
+  if (effect.kind === 'terrain') {
+    await documentTokenActions.setFieldEffect({
+      category: 'terrain',
+      kind: effect.value as MapTerrainKind,
+      source: effect.source ?? 'Move automation',
+    })
+    return
+  }
+  if (effect.kind === 'room') {
+    await documentTokenActions.setFieldEffect({
+      category: 'room',
+      kind: effect.value as MapRoomKind,
+      source: effect.source ?? 'Move automation',
+    })
+  }
 }
 
-const placeHazardFromScene: typeof placeHazard = (hazard) => {
-  placeHazard(hazard)
+const placeHazardFromScene = async (hazard: Parameters<typeof placeHazard>[0]) => {
+  if (isSetupEditMode()) {
+    placeHazard(hazard)
+    return
+  }
+  if (!canEditMap.value) return
+  await documentTokenActions.placeHazard({ hazard })
 }
 
-const removeHazardFromScene: typeof removeHazard = (cell) => {
-  removeHazard(cell)
+const removeHazardFromScene = async (cell: Parameters<typeof removeHazard>[0]) => {
+  if (isSetupEditMode()) {
+    removeHazard(cell)
+    return
+  }
+  if (!canEditMap.value) return
+  await documentTokenActions.removeHazard({ cell })
 }
 
 const placeVoxelFromScene: typeof placeVoxel = (voxel) => {
@@ -1240,20 +1441,20 @@ useMapDimensionReconciliation({
         @set-mode="setMode"
         @set-hazard-tool="setHazardTool"
         @select-hazard-kind="selectHazardKind"
-        @clear-all-hazards="clearAllHazards"
-        @set-weather="setWeather"
-        @remove-weather="removeWeather"
-        @clear-weather="clearWeather"
+        @clear-all-hazards="clearAllHazardsFromMenu"
+        @set-weather="setWeatherFromMenu"
+        @remove-weather="removeWeatherFromMenu"
+        @clear-weather="clearWeatherFromMenu"
         @update-weather-coexist-next="setWeatherCoexistNext"
-        @toggle-terrain="toggleTerrain"
-        @remove-terrain="removeTerrain"
-        @toggle-room="toggleRoom"
-        @remove-room="removeRoom"
-        @set-weather-rounds="setWeatherRounds"
-        @set-terrain-rounds="setTerrainRounds"
-        @set-room-rounds="setRoomRounds"
-        @tick-durations="tickFieldEffectDurations"
-        @clear-all="clearAllFieldEffects"
+        @toggle-terrain="toggleTerrainFromMenu"
+        @remove-terrain="removeTerrainFromMenu"
+        @toggle-room="toggleRoomFromMenu"
+        @remove-room="removeRoomFromMenu"
+        @set-weather-rounds="setWeatherRoundsFromMenu"
+        @set-terrain-rounds="setTerrainRoundsFromMenu"
+        @set-room-rounds="setRoomRoundsFromMenu"
+        @tick-durations="tickFieldEffectDurationsFromMenu"
+        @clear-all="clearAllFieldEffectsFromMenu"
       />
 
       <SheetsMenuModal
