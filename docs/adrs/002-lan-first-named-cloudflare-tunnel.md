@@ -4,6 +4,8 @@ Date: 2026-05-25
 
 Status: Accepted
 
+> Maintenance note: This ADR describes the legacy `/sessions` surface. Normal multiplayer play now uses persistent player profiles on `/maps/<slug>` and follows [ADR 009: Server-authoritative profile play](009-server-authoritative-profile-play.md).
+
 ## Context
 
 Live session keeps Rotom Table shaped as a GM-hosted table session. A GM runs the app on a machine they control, and players connect by browser for the duration of the session. That shape needs a practical hosting story for two cases:

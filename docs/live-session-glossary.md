@@ -1,15 +1,17 @@
-# Live session glossary
+# Legacy live-session glossary
 
-This glossary defines the vocabulary used by the GM-hosted live session roadmap, ADRs, [session protocol](live-session-protocol.md), implementation areas, and tests.
+This glossary defines vocabulary for the guarded legacy `/sessions` roadmap, ADRs, [session protocol](live-session-protocol.md), implementation areas, and tests. It is retained for maintenance while the old session-local lobby/socket surface exists.
+
+Normal multiplayer play uses persistent player profiles on regular `/maps/<slug>` routes and follows [Live play authority](live-play-authority.md). Do not use this legacy glossary to revive `/sessions` as the normal profile-play route.
 
 ## Product and hosting terms
 
 | Term | Meaning |
 | --- | --- |
-| Live session | The workstream that adds GM-hosted multi-device session concurrency to Rotom Table. |
+| Live session | Legacy workstream that added GM-hosted multi-device session concurrency to Rotom Table through `/sessions`; maintenance-only for normal profile play. |
 | GM-hosted session | A table session run by the GM on their own machine or a small machine they control. Players connect by browser. |
 | Local mode | The non-session workflow where maps and sheets are edited through app routes and persisted as inspectable JSON files. |
-| Session mode | The guarded live-session workflow where live clients send commands to a server-authoritative session instead of autosaving whole map documents. |
+| Session mode | The guarded legacy `/sessions` workflow where clients send commands to a server-authoritative session instead of autosaving whole map documents; not the normal profile-play route. |
 | LAN hosting | The primary supported Live session deployment path: GM and players are on the same local network or Wi-Fi. |
 | Named Cloudflare Tunnel | The supported remote Live session path: a stable public hostname forwards to the private GM-hosted Rotom Table server. |
 | Quick Tunnel | A temporary Cloudflare tunnel URL. It may be documented for development smoke tests only and is not the supported campaign-session path; see the [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md). |
@@ -94,7 +96,7 @@ This glossary defines the vocabulary used by the GM-hosted live session roadmap,
 | --- | --- |
 | Session-host runtime flag | Explicit opt-in environment flag or equivalent setting, such as `ROTOM_ENABLE_SESSION_HOST=1`, required before hosting session endpoints/sockets. |
 | Safety boundary | A documented limit that prevents local trust assumptions from being mistaken for public security guarantees. |
-| Filesystem-backed JSON persistence | Continued use of server-side JSON files for app and session state instead of a hosted database service. |
+| Filesystem-backed JSON persistence | Legacy session use of server-side JSON files for app/session state. For normal live play, database-backed authoritative persistence is the target while JSON remains setup/edit, migration, backup/export, or temporary compatibility storage. |
 | Whole-map autosave | Existing-style persistence of an entire map document. It remains useful in non-session editing but must not be the main live-session concurrency mechanism. |
 | Cloud database | Hosted persistence such as Postgres, Redis, Durable Objects, or another managed service. Adding one is out of scope for Live session. |
 | Private campaign data | User-created maps, sheets, generated campaign files, campaign reference overrides, secrets, keys, tokens, private `.env` files, and similar local data that must not be committed. |

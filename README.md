@@ -93,7 +93,7 @@ npm run build
 - `data/reference/` holds app-owned PTU JSON/TypeScript data consumed at runtime; campaign-owned `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, and `encounter_tables/` can live in the app checkout or under `ROTOM_CAMPAIGN_ROOT`; `ptu-data/` is documentary upstream/source material and parser tooling.
 - `tests/` contains Vitest coverage across server use cases, composables, shared helpers, and domain utilities.
 
-See [docs/architecture.md](docs/architecture.md) for more detail.
+See [docs/architecture.md](docs/architecture.md) for more detail. For the normal live-play command/revision/idempotency direction and the setup/edit autosave boundary, see [docs/live-play-authority.md](docs/live-play-authority.md).
 
 ## Common routes and endpoints
 
@@ -184,7 +184,7 @@ Rotom Table uses a trust-based role picker, not password authentication:
 - **Player** — player-facing view with player-visible maps, public/linked sheets, Pokédex, reference pages, and linked-character token control.
 - **Guest** — redirected to `/login`.
 
-Players choose a GM-created persistent player profile after Player Login. The selected profile's linked Pokémon/trainer sheets are the source of player-specific sheet editing and map-token control. Server routes also check the session role and selected profile for protected actions. See [docs/player-profiles.md](docs/player-profiles.md) for the full player profile flow. Treat this as a private trusted-table workflow, not a hardened public authentication system.
+Players choose a GM-created persistent player profile after Player Login. The selected profile's linked Pokémon/trainer sheets are the source of player-specific sheet editing and map-token control. Server routes also check the session role and selected profile for protected actions. Live gameplay authority is moving to explicit server-authoritative commands; browser-owned whole-map autosave is only a setup/edit or compatibility workflow, not a live multiplayer strategy. See [docs/player-profiles.md](docs/player-profiles.md) and [docs/live-play-authority.md](docs/live-play-authority.md). Treat this as a private trusted-table workflow, not a hardened public authentication system.
 
 
 ## Contributing, security, and notices

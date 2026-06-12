@@ -4,6 +4,8 @@ Date: 2026-05-25
 
 Status: Accepted
 
+> Maintenance note: This ADR describes the legacy `/sessions` surface. Normal multiplayer play now uses persistent player profiles on `/maps/<slug>` and follows [ADR 009: Server-authoritative profile play](009-server-authoritative-profile-play.md).
+
 ## Context
 
 live sessions use server-authoritative command envelopes instead of client autosaving whole map documents. Multiple GM and player browser clients can still act at nearly the same time, retry after transient network failures, or reconnect from stale local state. The server therefore needs deterministic rules for deciding when a command is new, duplicate, stale, conflicting, or safe to apply.

@@ -4,6 +4,8 @@ Date: 2026-05-25
 
 Status: Accepted
 
+> Maintenance note: This ADR describes the legacy `/sessions` surface. Normal multiplayer play now uses persistent player profiles on `/maps/<slug>` and follows [ADR 009: Server-authoritative profile play](009-server-authoritative-profile-play.md).
+
 ## Context
 
 Rotom Table is filesystem-backed: campaign maps, sheets, generated data, and related table state are files owned by the person or operator running the app. Live session adds a GM-hosted session authority, but it does not change the product into a hosted database service. The session server still runs on the GM's machine or another small machine they control.

@@ -24,13 +24,13 @@ Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and
 
 ## Profile play and legacy live-session hosting
 
-Plain `npm run dev` is the standard local development path. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` save filesystem-backed JSON through autosave and keep using legacy `/api/events` realtime updates for same-machine or trusted-LAN editing.
+Plain `npm run dev` is the standard local development path. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` can save filesystem-backed JSON through autosave for setup/edit, local maintenance, and compatibility workflows. Those document saves and legacy `/api/events` realtime updates are not the authority model for live multiplayer gameplay.
 
-Normal map play uses the saved map document at `/maps/<slug>` with profile-linked token control. GMs manage profile links at `/players`; players select a profile after Player Login, then navigate to the relevant player-visible map and act with linked characters. Players can also browse Pokédex, sheet-library, and PTU reference routes without joining a live session.
+Normal map play uses the saved map document at `/maps/<slug>` with profile-linked token control. GMs manage profile links at `/players`; players select a profile after Player Login, then navigate to the relevant player-visible map and act with linked characters. Live gameplay mutations should move through server-authoritative command boundaries with revisions and idempotent `opId` handling; browser-owned whole-map autosave must not be used as the multiplayer strategy. Players can also browse Pokédex, sheet-library, and PTU reference routes without joining a live session.
 
 Legacy live-session hosting remains behind `ROTOM_ENABLE_SESSION_HOST=1` for direct-only session lobby/socket maintenance, but the map-attachment endpoint and session-owned normal map path have been removed. Normal play no longer requires `/sessions`, a join code, attaching a saved map, or a special session query on map URLs. See [Player profiles and linked character control](player-profiles.md) for the current product flow.
 
-For the automated and source-level no-regression evidence around local map autosave, sheet autosave, legacy `/api/events` sync, and non-session navigation, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
+For the automated and source-level no-regression evidence around setup/edit map autosave, sheet autosave, legacy `/api/events` sync, and non-session navigation, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md). See [Live play authority](live-play-authority.md) for the normal command/revision direction.
 
 ## Legacy live session lobby smoke testing
 
@@ -54,7 +54,7 @@ ROTOM_ENABLE_SESSION_HOST=1 npm run dev -- --host 0.0.0.0 --port 3000
 
 See [live session host runtime scripts](live-session-host-runtime.md) for helper options, safe defaults, and shutdown notes. See [Live session public exposure checks](live-session-public-exposure-checks.md) for no-secret safety banner warnings around public/LAN startup before session-local credentials and authoritative state are ready. See [Live session LAN hosting runbook](live-session-lan-hosting.md), [Live session named Cloudflare Tunnel runbook](live-session-cloudflare-tunnel-hosting.md), and [Live session deployment smoke checklist](live-session-deployment-smoke-checklist.md) only when maintaining the legacy lobby/socket surfaces; they are not instructions for normal profile-based play. See [Live session Quick Tunnel caveat](live-session-quick-tunnel-caveat.md), [Live session security boundaries](live-session-security-boundaries.md), and [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) for the checked legacy boundaries. See [live session lobby and manual QA](live-session-lobby.md) for the direct-only legacy lobby checklist.
 
-The existing local GM/player picker remains a trust switch for local use, not public authentication. For the maintenance checks for plain `npm run dev`, `/maps/<slug>`, sheet autosave, profile-linked control, and legacy SSE local-mode behaviour, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
+The existing local GM/player picker remains a trust switch for local use, not public authentication. For the maintenance checks for plain `npm run dev`, `/maps/<slug>`, setup/edit sheet autosave, profile-linked control, and legacy SSE local-mode behaviour, see the [Live session local-mode maintenance checks](live-session-local-mode-maintenance.md).
 
 ## Checks
 

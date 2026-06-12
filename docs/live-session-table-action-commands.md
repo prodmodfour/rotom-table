@@ -1,8 +1,10 @@
-# Live session table action command reference
+# Legacy live-session table action command reference
 
-This guide documents the server-authoritative table action commands for live sessions. It is the developer-facing inventory for HP, combat-stage, condition, move/action, initiative, hazard, field-effect, and terrain command flows in the current implementation.
+This guide documents server-authoritative table action commands for the guarded legacy `/sessions` socket implementation. It is retained for maintainers of HP, combat-stage, condition, move/action, initiative, hazard, field-effect, and terrain command flows while that surface exists.
 
-The architecture remains the locked Live session model: a GM-hosted local server, explicit session-host runtime flag, WebSocket command transport, session-local identity, server-owned revisions, local JSON snapshots, and small same-session patches instead of live-client whole-map autosaves.
+Normal multiplayer play uses persistent player profiles on regular `/maps/<slug>` routes and follows [Live play authority](live-play-authority.md). Do not use this legacy session command reference to route normal profile play back through `/sessions`.
+
+The legacy architecture remains the locked Live session model: a GM-hosted local server, explicit session-host runtime flag, WebSocket command transport, session-local identity, server-owned revisions, local JSON snapshots, and small same-session patches instead of live-client whole-map autosaves.
 
 ## Common command flow
 

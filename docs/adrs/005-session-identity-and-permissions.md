@@ -4,6 +4,8 @@ Date: 2026-05-25
 
 Status: Accepted
 
+> Maintenance note: This ADR describes the legacy `/sessions` surface. Normal multiplayer play now uses persistent player profiles on `/maps/<slug>` and follows [ADR 009: Server-authoritative profile play](009-server-authoritative-profile-play.md).
+
 ## Context
 
 Live sessions are GM-hosted and session-scoped. A GM starts one table session on a machine they control, and players join from browsers over LAN or a named Cloudflare Tunnel. The existing local GM/player role picker is a trusted-table convenience and is not hardened public authentication.

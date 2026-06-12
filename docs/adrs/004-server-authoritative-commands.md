@@ -4,6 +4,8 @@ Date: 2026-05-25
 
 Status: Accepted
 
+> Maintenance note: This ADR describes the legacy `/sessions` surface. Normal multiplayer play now uses persistent player profiles on `/maps/<slug>` and follows [ADR 009: Server-authoritative profile play](009-server-authoritative-profile-play.md).
+
 ## Context
 
 Rotom Table's existing file-backed workflows persist maps, sheets, trainers, and related campaign files as inspectable JSON on the machine running the app or under `ROTOM_CAMPAIGN_ROOT`. That model is appropriate for non-session editing, where trusted table users edit campaign state through the app and document saves are easy to inspect, back up, and repair.

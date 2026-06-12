@@ -15,7 +15,7 @@ The GM/Player picker and remembered player profile are trust-based table workflo
 
 In short, players normally open the relevant player-visible map and act with linked characters; they do not enter a separate session map flow.
 
-Players do not need `/sessions`, a join code, a map attachment step, a special session-query map URL, a share link, or a per-map invite. Maps remain normal saved map documents; profile-linked characters decide player control.
+Players do not need `/sessions`, a join code, a map attachment step, a special session-query map URL, a share link, or a per-map invite. Maps remain normal saved map documents for setup/edit and compatibility storage; profile-linked characters decide player control, and live gameplay authority belongs at server-validated command boundaries.
 
 ## Player login and remembered profiles
 
@@ -41,7 +41,7 @@ A selected player profile grants control only through its linked character refs:
 
 - **Sheets:** players can load and save linked Pokémon/trainer sheets through the normal sheet editor. They can edit the same UI-editable fields the sheet editor exposes while derived/system fields remain protected by the existing save pipeline.
 - **Maps:** players can open player-visible maps and control placed tokens whose `sheetKind`/`sheetSlug` matches a linked character.
-- **Token actions:** linked tokens can move, turn, spend move usage, use supported table actions, and update token-scoped combat resources through document-backed map actions.
+- **Token actions:** linked tokens can move, turn, spend move usage, use supported table actions, and update token-scoped combat resources. Current document-backed action routes are transitional compatibility surfaces; the live-play direction is explicit server-authoritative commands, not player-owned whole-map autosave.
 
 GM users still control all sheets and map tokens.
 
@@ -61,6 +61,17 @@ These browsing routes do not require a live session or map-specific invitation.
 Players cannot create player profiles, create maps, delete maps, create sheets, delete sheets, manage encounter tables, generate encounter sheets, manage player profile links, or use GM-only map-building/admin controls such as terrain building, hazards, field effects, token spawning/deletion, or resource library file management.
 
 The role picker remains a trust-based table convenience. It is not hardened public authentication and should not be exposed as a public multi-user service without a separate security design.
+
+## Live play authority boundary
+
+Profile play distinguishes setup/edit mode from live play mode:
+
+- GM setup/edit workflows may continue to use whole-document map and sheet saves while preparing or maintaining campaign data.
+- Live gameplay mutations should flow through server-authoritative commands with `opId`, `baseRevision`, revision updates, conflict handling, and patch/result realtime.
+- Browser-owned whole-map autosave must not be treated as live multiplayer authority.
+- Legacy `/sessions` identity/socket flows are maintenance-only and should not be revived as the normal player route.
+
+See [Live play authority](live-play-authority.md) for the glossary and command/revision direction.
 
 ## Troubleshooting
 

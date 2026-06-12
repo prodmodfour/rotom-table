@@ -52,6 +52,14 @@ The app uses a simple role picker:
 
 The selected role is stored in a cookie and checked by client navigation and server routes. Player-specific authority comes from the selected persistent profile's linked Pokémon/trainer sheet refs, not from map shares or live-session assignments. This is a local table trust model, not hardened public authentication. See [Player profiles and linked character control](player-profiles.md) for the current play model.
 
+## Normal live-play authority direction
+
+Normal multiplayer play stays on persistent profiles and regular `/maps/<slug>` routes. The live-play direction is server-authoritative commands with `opId` idempotency, `baseRevision` checks, map/sheet revisions, profile/token-control validation, authoritative persistence, and patch/result realtime broadcasts.
+
+Setup/edit mode may continue using whole-document JSON saves and debounced autosave for GM preparation and maintenance. Live gameplay must not use browser-owned whole-map autosave or last-writer-wins document replacement as its concurrency strategy. Existing document-backed token action routes are compatibility surfaces during the migration; they are not permission to reintroduce whole-map live saves.
+
+Legacy `/sessions` routes and documents are maintenance-only for the old guarded session-local socket/lobby surface. They are not the normal profile-play architecture. See [Live play authority](live-play-authority.md) and [ADR 009: Server-authoritative profile play](adrs/009-server-authoritative-profile-play.md).
+
 ## Three.js/isometric map area
 
 The map table combines Vue controls with a Three.js-rendered isometric scene.

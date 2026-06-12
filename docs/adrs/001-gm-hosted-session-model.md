@@ -4,6 +4,8 @@ Date: 2026-05-25
 
 Status: Accepted
 
+> Maintenance note: This ADR describes the legacy `/sessions` surface. Normal multiplayer play now uses persistent player profiles on `/maps/<slug>` and follows [ADR 009: Server-authoritative profile play](009-server-authoritative-profile-play.md).
+
 ## Context
 
 Live session adds real multi-device play so a GM can host a Rotom Table session and players can keep the app open during the game. The existing app uses filesystem-backed campaign data: campaign maps, sheets, trainers, and encounter tables are inspectable JSON files on the machine running Rotom Table or under `ROTOM_CAMPAIGN_ROOT`, and the current GM/player role picker is a trusted table convenience rather than hardened public authentication.

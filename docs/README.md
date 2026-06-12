@@ -9,6 +9,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Data model](data-model.md) — maps, sheets, trainers, player profiles, encounter tables, campaign reference overrides, app-owned PTU reference content, generated sheets, and local data hygiene.
 - [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON and campaign reference override diffs in a separate Git repository.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
+- [Live play authority](live-play-authority.md) — normal `/maps/<slug>` profile-play command direction, setup/edit versus live-play boundaries, revision/idempotency glossary, and the rule forbidding browser-owned whole-map autosave for live gameplay.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
 - [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to filesystem/security docs.
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy private VPS checks for install, validation, built-server start, health, outer-gated profile play, write persistence after restart, Git hygiene, and legacy `/sessions` boundaries.
@@ -18,11 +19,11 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.
 - [Map rendering performance roadmap](map-rendering-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
 - [Live session roadmap](live-session-roadmap.md) — legacy GM-hosted live session scope, lifecycle, concurrency model, roadmap phases, and non-goals; not the normal profile-based play path.
-- [Live session glossary](live-session-glossary.md) — shared vocabulary for session identity, commands, revisions, session socket flow, persistence, and safety boundaries.
+- [Live session glossary](live-session-glossary.md) — legacy `/sessions` vocabulary for session identity, commands, revisions, session socket flow, persistence, and safety boundaries; maintenance-only for normal profile play.
 - [Live session validation matrix](live-session-validation-matrix.md) — current profile-play validation areas plus isolated legacy session maintenance checks.
 - [Live session protocol](live-session-protocol.md) — shared identity, command envelope, result, session socket message, ack/reject, duplicate, and reconnect contracts.
 - [Live session socket protocol](live-session-socket-protocol.md) — live session socket route, message examples, heartbeat, reconnect, command flow, and named-tunnel expectations.
-- [Live session table action commands](live-session-table-action-commands.md) — supported HP, condition, initiative, move/action, hazard, field-effect, and terrain session commands with permissions, conflicts, and limitations.
+- [Live session table action commands](live-session-table-action-commands.md) — legacy `/sessions` HP, condition, initiative, move/action, hazard, field-effect, and terrain command maintenance reference with permissions, conflicts, and limitations.
 - [Live session client integration](live-session-client-integration.md) — legacy live-session client boundary notes; normal play uses player profiles on `/maps/<slug>` and old session-map client helpers have been removed.
 - [live session lobby and manual QA](live-session-lobby.md) — direct-only legacy session identity/socket lobby boundaries and two-browser smoke checklist; not normal profile-based play.
 - [live session host runtime scripts](live-session-host-runtime.md) — npm helpers for guarded LAN and named-tunnel session host startup.
@@ -45,14 +46,15 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Live session security boundaries](live-session-security-boundaries.md) — trust boundaries, non-hardened areas, join-code limits, tunnel exposure risks, incident response, and security non-goals.
 - [Live session security and secret-hygiene readiness](live-session-security-secret-hygiene-readiness.md) — auth/session/cookie/permission boundaries, public exposure warnings, committed-data hygiene, and remaining non-goals.
 - [Live session dependency and runtime maintenance](live-session-dependency-runtime-maintenance.md) — dependency inventory, runtime flags, Node/Nitro compatibility, and Cloudflare tunnel assumptions.
-- [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
-- [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.
-- [ADR 003: Session socket transport](adrs/003-session-socket-transport.md) — decision record for using the session socket for live session commands, acks/rejections, broadcasts, heartbeat, and reconnect.
-- [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md) — decision record for command envelopes instead of live whole-map autosave, including file-backed compatibility boundaries.
-- [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md) — decision record for session-local GM/player identity, join codes, display names, assignments, and server-enforced permissions without full accounts.
-- [ADR 006: Revisions and conflict rules](adrs/006-revisions-and-conflict-rules.md) — decision record for monotonic revisions, `opId` idempotency, stale command handling, GM precedence, and per-resource conflicts.
-- [ADR 007: JSON snapshots and optional event log](adrs/007-json-snapshots-and-optional-event-log.md) — decision record for filesystem-backed session snapshots, atomic writes, optional append-only event logs, and recovery expectations.
-- [ADR 008: Session runtime safety flag](adrs/008-session-runtime-safety-flag.md) — decision record for the explicit session-host opt-in flag, fail-closed session routes, and public exposure warnings.
+- [ADR 001: GM-hosted session model](adrs/001-gm-hosted-session-model.md) — legacy `/sessions` decision record for GM-controlled sessions instead of SaaS, public multi-tenancy, or generic collaborative editing.
+- [ADR 002: LAN first and named Cloudflare Tunnel second](adrs/002-lan-first-named-cloudflare-tunnel.md) — legacy `/sessions` decision record for LAN-first hosting, named-tunnel remote access, and Quick Tunnel caveats.
+- [ADR 003: Session socket transport](adrs/003-session-socket-transport.md) — legacy `/sessions` decision record for using the session socket for commands, acks/rejections, broadcasts, heartbeat, and reconnect.
+- [ADR 004: Server-authoritative commands](adrs/004-server-authoritative-commands.md) — legacy `/sessions` decision record for command envelopes instead of live whole-map autosave, including file-backed compatibility boundaries.
+- [ADR 005: Session identity and permissions](adrs/005-session-identity-and-permissions.md) — legacy `/sessions` decision record for session-local GM/player identity, join codes, display names, assignments, and server-enforced permissions without full accounts.
+- [ADR 006: Revisions and conflict rules](adrs/006-revisions-and-conflict-rules.md) — legacy `/sessions` decision record for monotonic revisions, `opId` idempotency, stale command handling, GM precedence, and per-resource conflicts.
+- [ADR 007: JSON snapshots and optional event log](adrs/007-json-snapshots-and-optional-event-log.md) — legacy `/sessions` decision record for filesystem-backed session snapshots, atomic writes, optional append-only event logs, and recovery expectations.
+- [ADR 008: Session runtime safety flag](adrs/008-session-runtime-safety-flag.md) — legacy `/sessions` decision record for the explicit session-host opt-in flag, fail-closed session routes, and public exposure warnings.
+- [ADR 009: Server-authoritative profile play](adrs/009-server-authoritative-profile-play.md) — decision record for normal `/maps/<slug>` live play using persistent profiles, commands, revisions, idempotency, patches, and database-backed authority instead of browser-owned whole-map autosave.
 - [Isometric render scheduler architecture](render-scheduler-architecture.md) — dirty rendering flow, active animation sources, and how to add future invalidation reasons.
 - [Performance benchmark scenarios](performance-benchmark-scenarios.md) — empty, typical campaign, and stress map scenarios plus before/after PR metrics to record.
 - [Performance benchmark fixtures](performance-benchmark-fixtures.md) — local fixture generator and manual checklist for reproducing benchmark maps without private campaign data.

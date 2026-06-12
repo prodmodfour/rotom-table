@@ -1,9 +1,14 @@
 /**
  * useEditableMap — reactive wrapper around a saved map document.
  *
- * Loads the map from `/api/maps/load`, debounces saves through
- * `/api/maps/save`, and syncs with other tabs/devices via the
- * `/api/events` SSE stream:
+ * This composable supports setup/edit, local maintenance, and temporary
+ * document-backed compatibility flows. It is not the live gameplay authority
+ * model: live multiplayer mutations must use server-authoritative commands
+ * with revisions, `opId` idempotency, and authoritative patches/results.
+ *
+ * Loads the map from `/api/maps/load`, debounces setup/edit saves through
+ * `/api/maps/save`, and syncs with other tabs/devices via the `/api/events`
+ * SSE stream:
  *
  *   • Edits in *this* tab mutate the reactive ref → deep watcher
  *     debounces a save → the server broadcasts the post-save state
@@ -15,9 +20,8 @@
  *   • If another tab renames the map (so the slug changes on disk),
  *     we set `renamedTo` so the page can navigate to the new URL.
  *
- * Conflict resolution is last-writer-wins: simultaneous edits in two
- * tabs may overwrite each other within the ~200 ms debounce window,
- * which is acceptable for a single-user dev tool.
+ * This whole-document flow has last-writer-wins characteristics and must not
+ * be reused as live multiplayer conflict resolution.
  */
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
@@ -55,8 +59,9 @@ export interface UseEditableMapOptions {
   readonly debounceMs?: number
   /**
    * Controls whether mutations to this persisted map ref may write through the
-   * document-backed whole-map autosave route. External document actions can
-   * pause autosave while they adopt server-persisted map responses.
+   * document-backed whole-map autosave route for setup/edit or compatibility
+   * flows. External document actions can pause autosave while they adopt
+   * server-persisted map responses.
    */
   readonly autosaveEnabled?: BooleanRef
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>

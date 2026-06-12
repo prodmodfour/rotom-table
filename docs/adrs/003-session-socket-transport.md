@@ -4,6 +4,8 @@ Date: 2026-05-25
 
 Status: Accepted
 
+> Maintenance note: This ADR describes the legacy `/sessions` surface. Normal multiplayer play now uses persistent player profiles on `/maps/<slug>` and follows [ADR 009: Server-authoritative profile play](009-server-authoritative-profile-play.md).
+
 ## Context
 
 Live session adds live GM-hosted table sessions where the GM's Rotom Table server is the authority for session state. During a session, multiple browser clients need to send table commands, receive command acknowledgements or rejections, see presence updates, receive accepted map/table patches, and reconnect without losing the authoritative revision.
