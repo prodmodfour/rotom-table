@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -35,6 +35,7 @@ import { normalizeRevision } from '#shared/sessionRevisions'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
+import { bindPendingLivePlayCommandUnloadWarning } from '~/utils/livePlayCommandUnloadWarning'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { useApiClient } from '~/composables/useApiClient'
 import type { PlayerProfileId } from '#shared/playerProfiles'
@@ -275,6 +276,13 @@ export const useLivePlayCommands = (
   const { postJson } = useApiClient()
   const status = ref<LivePlayCommandStatus>('idle')
   const lastError = ref<string | null>(null)
+
+  if (getCurrentScope()) {
+    const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => status.value === 'saving')
+    onScopeDispose(() => {
+      removePendingCommandUnloadWarning?.()
+    })
+  }
 
   const clearError = () => {
     if (status.value === 'error') status.value = 'idle'

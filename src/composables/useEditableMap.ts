@@ -36,7 +36,7 @@ import {
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
-import { bindAutosaveUnloadFlushers, sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
+import { bindAutosaveUnloadFlushers, sendSetupEditJsonWithUnloadFallback } from '~/utils/autosaveUnload'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
@@ -422,7 +422,7 @@ export const useEditableMap = (
       return
     }
 
-    sendJsonWithUnloadFallback(MAP_API_PATHS.save, body)
+    sendSetupEditJsonWithUnloadFallback(MAP_API_PATHS.save, body)
 
     // Treat this tab as clean once the unload request was attempted so
     // `beforeunload` + `pagehide` do not queue duplicate whole-map writes.

@@ -5,12 +5,16 @@ import type {
 } from './autosaveTypes'
 
 /**
- * Best-effort JSON write for page-unload autosaves. Prefer sendBeacon when
- * available because browsers are allowed to abort ordinary async work during
- * unload; fall back to fetch(..., keepalive: true) for browsers/environments
- * without beacon support.
+ * Best-effort JSON write for setup/edit page-unload autosaves. Prefer
+ * sendBeacon when available because browsers are allowed to abort ordinary
+ * async work during unload; fall back to fetch(..., keepalive: true) for
+ * browsers/environments without beacon support.
+ *
+ * This helper is intentionally scoped to document setup/edit saves. Live-play
+ * commands use explicit command dispatch with opId idempotency and must not
+ * call unload/beacon fallback writes.
  */
-export const sendJsonWithUnloadFallback = (
+export const sendSetupEditJsonWithUnloadFallback = (
   url: string,
   body: string,
   transports: JsonUnloadRequestTransports = {},

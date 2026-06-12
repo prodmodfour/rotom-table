@@ -22,7 +22,7 @@ import { isRealtimeEcho, sheetChannel } from '#shared/realtime'
 import { slugify } from '#shared/paths'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
-import { bindAutosaveUnloadFlushers, sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
+import { bindAutosaveUnloadFlushers, sendSetupEditJsonWithUnloadFallback } from '~/utils/autosaveUnload'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson } from '~/utils/serialization'
@@ -245,7 +245,7 @@ export function useEditableSheet<T extends { slug: string }>(
       return
     }
 
-    sendJsonWithUnloadFallback(SHEET_API_PATHS.save, body)
+    sendSetupEditJsonWithUnloadFallback(SHEET_API_PATHS.save, body)
 
     // Treat this tab as clean once the unload request was attempted so
     // `beforeunload` + `pagehide` don't queue duplicate writes.

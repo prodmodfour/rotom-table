@@ -14,7 +14,7 @@ A browser may use document autosave during GM setup/edit workflows, local mainte
 
 ### Setup/edit mode
 
-Setup/edit mode is map and sheet preparation or maintenance. It includes GM map administration, library organization, visibility setup, sheet edits, imports/exports, and local data repair. Whole-document JSON saves and debounced autosave may remain in this mode because a GM/operator is preparing campaign data rather than resolving concurrent live table actions. The map save route requires an explicit `interactionMode: "setup-edit"` marker and GM role for whole-map saves.
+Setup/edit mode is map and sheet preparation or maintenance. It includes GM map administration, library organization, visibility setup, sheet edits, imports/exports, and local data repair. Whole-document JSON saves, debounced autosave, and explicitly setup/edit-named unload autosave fallbacks may remain in this mode because a GM/operator is preparing campaign data rather than resolving concurrent live table actions. The map save route requires an explicit `interactionMode: "setup-edit"` marker and GM role for whole-map saves.
 
 ### Live play mode
 
@@ -74,7 +74,7 @@ The map page exposes the current map revision for command `baseRevision` values.
 
 The normal live-play realtime stream is `GET /api/events` using Server-Sent Events. The server keeps quiet table sessions open with heartbeat comments and logs SSE connect/disconnect events for operator diagnostics; behind a reverse proxy those heartbeats must be allowed to stream instead of being buffered. A browser reconnect is treated as a possible missed-event gap, not as harmless packet loss. The client marks the map as reconnecting/reconciling, reloads the authoritative `/api/maps/load?slug=<slug>` snapshot, and resumes commands only from the reconciled revision.
 
-The map page drives command availability through a live-play state machine with `loading`, `ready`, `saving-command`, `reconnecting`, `reconciling`, `stale`, and `error` states. Commands are sent only from `ready`; stale command rejections move through the stale state and trigger reconciliation before further commands can be sent, while fatal command failures enter `error` with a user-visible message.
+The map page drives command availability through a live-play state machine with `loading`, `ready`, `saving-command`, `reconnecting`, `reconciling`, `stale`, and `error` states. Commands are sent only from `ready`; stale command rejections move through the stale state and trigger reconciliation before further commands can be sent, while fatal command failures enter `error` with a user-visible message. If a browser close or refresh occurs while a live-play command is in flight, the client may show the browser's generic unload warning; it must not silently send a beacon/keepalive whole-map save or a second fallback command.
 
 Realtime must not rely on every browser saving or receiving whole map documents as a last-writer-wins conflict strategy.
 

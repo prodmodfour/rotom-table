@@ -396,7 +396,7 @@ describe('live-play map token commands', () => {
     ]))
   })
 
-  it('returns the stored result for duplicate spawn opIds without adding the placement twice', async () => {
+  it('returns the stored result for duplicate spawn opIds without adding or publishing the placement twice', async () => {
     const harness = createHarness()
     const command = spawnCommand({ opId: 'op_dupspawn001' })
 
@@ -415,6 +415,7 @@ describe('live-play map token commands', () => {
 
     expect(second.result).toEqual(first.result)
     expect(harness.writes).toHaveLength(1)
+    expect(harness.published).toHaveLength(1)
     expect(harness.storedMap.placements.filter((placement) => placement.id === 'spawned-eevee')).toHaveLength(1)
   })
 

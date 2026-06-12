@@ -5,7 +5,7 @@ import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
 import { createAutosaveSnapshotTracker } from '~/utils/autosaveSnapshots'
 import { createAutosaveStatusController } from '~/utils/autosaveStatus'
 import { createDebouncedAutosaveTask, createLatestSaveGuard } from '~/utils/autosaveTasks'
-import { bindAutosaveUnloadFlushers, sendJsonWithUnloadFallback } from '~/utils/autosaveUnload'
+import { bindAutosaveUnloadFlushers, sendSetupEditJsonWithUnloadFallback } from '~/utils/autosaveUnload'
 
 describe('createAutosaveStatusController', () => {
   type TestStatus = 'idle' | 'saving' | 'saved' | 'error'
@@ -410,7 +410,7 @@ describe('createAutosaveSnapshotTracker', () => {
   })
 })
 
-describe('sendJsonWithUnloadFallback', () => {
+describe('sendSetupEditJsonWithUnloadFallback', () => {
   const blobFactory = (body: string, options: BlobPropertyBag): BodyInit =>
     ({ body, type: options.type }) as unknown as BodyInit
 
@@ -418,7 +418,7 @@ describe('sendJsonWithUnloadFallback', () => {
     const sendBeacon = vi.fn(() => true)
     const fetcher = vi.fn()
 
-    const result = sendJsonWithUnloadFallback('/api/save', '{"ok":true}', {
+    const result = sendSetupEditJsonWithUnloadFallback('/api/save', '{"ok":true}', {
       sendBeacon,
       fetch: fetcher,
       createBlob: blobFactory,
@@ -433,7 +433,7 @@ describe('sendJsonWithUnloadFallback', () => {
     const sendBeacon = vi.fn(() => false)
     const fetcher = vi.fn()
 
-    const result = sendJsonWithUnloadFallback('/api/save', '{"ok":true}', {
+    const result = sendSetupEditJsonWithUnloadFallback('/api/save', '{"ok":true}', {
       sendBeacon,
       fetch: fetcher,
       createBlob: blobFactory,
@@ -450,7 +450,7 @@ describe('sendJsonWithUnloadFallback', () => {
   })
 
   it('reports no queued unload request when both transports fail', () => {
-    const result = sendJsonWithUnloadFallback('/api/save', '{}', {
+    const result = sendSetupEditJsonWithUnloadFallback('/api/save', '{}', {
       sendBeacon: vi.fn(() => {
         throw new Error('beacon failed')
       }),

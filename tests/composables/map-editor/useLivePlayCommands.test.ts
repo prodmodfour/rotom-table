@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
@@ -13,11 +15,6 @@ import type { TabletopMap } from '~/types/map'
 
 const apiMocks = vi.hoisted(() => ({
   postJson: vi.fn(),
-  sendJsonWithUnloadFallback: vi.fn(),
-}))
-
-vi.mock('~/utils/autosaveUnload', () => ({
-  sendJsonWithUnloadFallback: apiMocks.sendJsonWithUnloadFallback,
 }))
 
 vi.mock('~/composables/useApiClient', () => ({
@@ -55,10 +52,19 @@ const mapFixture = (): TabletopMap => ({
 describe('useLivePlayCommands', () => {
   beforeEach(() => {
     apiMocks.postJson.mockReset()
-    apiMocks.sendJsonWithUnloadFallback.mockReset()
   })
 
-  it('posts live-play spawn commands without an unload fallback double-send', async () => {
+  it('keeps live-play command dispatch free of unload fallback helpers', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/composables/map-editor/useLivePlayCommands.ts'), 'utf8')
+
+    expect(source).not.toContain('sendJsonWithUnloadFallback')
+    expect(source).not.toContain('sendSetupEditJsonWithUnloadFallback')
+    expect(source).not.toContain('sendBeacon')
+    expect(source).not.toContain('pagehide')
+    expect(source).toContain('bindPendingLivePlayCommandUnloadWarning')
+  })
+
+  it('posts live-play spawn commands once through explicit opId command dispatch', async () => {
     const map = mapFixture()
     const mapRevision = ref(4)
     const applyPersistedMap = vi.fn()
@@ -90,7 +96,7 @@ describe('useLivePlayCommands', () => {
     const result = await actions.spawnToken({ placement })
 
     expect(result.dispatched).toBe(true)
-    expect(apiMocks.sendJsonWithUnloadFallback).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
     expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.spawnToken, expect.objectContaining({
       schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
       opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
