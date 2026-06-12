@@ -220,6 +220,24 @@ export interface UseMovePayload {
   readonly moveName: string
 }
 
+export interface UseManeuverPayload {
+  readonly placementId: string
+  readonly maneuverName: string
+  readonly targetPlacementId?: string
+}
+
+export interface UseAbilityPayload {
+  readonly placementId: string
+  readonly abilityName: string
+  readonly targetPlacementId?: string
+}
+
+export interface UseOrderPayload {
+  readonly placementId: string
+  readonly orderName: string
+  readonly targetPlacementId?: string
+}
+
 export const LIVE_PLAY_INITIATIVE_MIN_VALUE = -999 as const
 export const LIVE_PLAY_INITIATIVE_MAX_VALUE = 999 as const
 
@@ -327,6 +345,24 @@ export type UseMoveLivePlayCommand = LivePlayCommandEnvelope<
   LivePlayScope
 >
 
+export type UseManeuverLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+  UseManeuverPayload,
+  LivePlayTokenScope
+>
+
+export type UseAbilityLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+  UseAbilityPayload,
+  LivePlayTokenScope
+>
+
+export type UseOrderLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
+  UseOrderPayload,
+  LivePlayTokenScope
+>
+
 export type SetInitiativeLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
   SetInitiativePayload,
@@ -407,6 +443,11 @@ export type LivePlaySheetCommand =
   | ModifyHpLivePlayCommand
   | ModifyCombatStagesLivePlayCommand
   | ModifyConditionsLivePlayCommand
+
+export type LivePlayTableActionCommand =
+  | UseManeuverLivePlayCommand
+  | UseAbilityLivePlayCommand
+  | UseOrderLivePlayCommand
 
 export interface LivePlayPatch<
   TType extends string = LivePlayPatchType,

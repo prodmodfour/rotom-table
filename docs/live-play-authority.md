@@ -52,7 +52,7 @@ Commands that update both map state and sheet-backed state must use the executor
 
 ## Shared command contract
 
-`shared/livePlayCommands.ts` is the canonical client/server-safe contract for live-play command envelopes, command type constants, patch type constants, resource scopes, `opId`/`baseRevision`/map slug validators, and reusable accepted/rejected/duplicate result builders. Command routes and client dispatchers should import these definitions instead of inventing local request or rejection shapes.
+`shared/livePlayCommands.ts` is the canonical client/server-safe contract for live-play command envelopes, command type constants, patch type constants, resource scopes, `opId`/`baseRevision`/map slug validators, and reusable accepted/rejected/duplicate result builders. Command routes and client dispatchers should import these definitions instead of inventing local request or rejection shapes. The map UI uses `src/composables/map-editor/useLivePlayCommands.ts` as the single client dispatcher for live-play command envelopes, selected-profile context, authoritative map/sheet adoption, command rejection status, and reconciliation requests.
 
 ## Persistence direction
 

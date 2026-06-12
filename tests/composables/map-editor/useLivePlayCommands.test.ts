@@ -1,11 +1,12 @@
 import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useDocumentMapTokenActions } from '~/composables/map-editor/useDocumentMapTokenActions'
+import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
 import { MAP_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_OP_ID_RE,
+  LIVE_PLAY_PATCH_TYPES,
 } from '#shared/livePlayCommands'
 import { parsePlayerProfileId } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
@@ -51,7 +52,7 @@ const mapFixture = (): TabletopMap => ({
   updatedAt: 100,
 })
 
-describe('useDocumentMapTokenActions', () => {
+describe('useLivePlayCommands', () => {
   beforeEach(() => {
     apiMocks.postJson.mockReset()
     apiMocks.sendJsonWithUnloadFallback.mockReset()
@@ -81,7 +82,7 @@ describe('useDocumentMapTokenActions', () => {
       placement,
     })
 
-    const actions = useDocumentMapTokenActions({
+    const actions = useLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
       applyPersistedMap,
@@ -120,7 +121,7 @@ describe('useDocumentMapTokenActions', () => {
       placement: map.placements[0],
     })
 
-    const actions = useDocumentMapTokenActions({
+    const actions = useLivePlayCommands({
       slug: 'arena-map',
       playerProfileId: profileId,
       mapRevision,
@@ -167,7 +168,7 @@ describe('useDocumentMapTokenActions', () => {
       map,
     })
 
-    const actions = useDocumentMapTokenActions({
+    const actions = useLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
       applyPersistedMap,
@@ -211,7 +212,7 @@ describe('useDocumentMapTokenActions', () => {
       sheetUpdates: [sheetUpdate],
     })
 
-    const actions = useDocumentMapTokenActions({
+    const actions = useLivePlayCommands({
       slug: 'arena-map',
       map: ref(map),
       mapRevision,
@@ -275,7 +276,7 @@ describe('useDocumentMapTokenActions', () => {
       sheetUpdates: [sheetUpdate],
     })
 
-    const actions = useDocumentMapTokenActions({
+    const actions = useLivePlayCommands({
       slug: 'arena-map',
       map: ref(map),
       mapRevision,
@@ -325,7 +326,7 @@ describe('useDocumentMapTokenActions', () => {
       map,
     })
 
-    const actions = useDocumentMapTokenActions({
+    const actions = useLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
       applyPersistedMap,
@@ -368,7 +369,7 @@ describe('useDocumentMapTokenActions', () => {
       map,
     })
 
-    const actions = useDocumentMapTokenActions({
+    const actions = useLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
       applyPersistedMap,
@@ -430,7 +431,7 @@ describe('useDocumentMapTokenActions', () => {
   })
 
   it('blocks live-play token commands while realtime reconciliation is pending', async () => {
-    const actions = useDocumentMapTokenActions({
+    const actions = useLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
       livePlayCommandBlocked: ref(true),
@@ -451,8 +452,43 @@ describe('useDocumentMapTokenActions', () => {
     expect(actions.lastError.value).toBe('Reconnected. Reloading the authoritative map before live play resumes.')
   })
 
+  it('requests reconciliation when an accepted command returns a reconciliation patch instead of a map', async () => {
+    const requestReconciliation = vi.fn()
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      requestReconciliation,
+    })
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_reconcile1',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.RECONCILIATION_REQUIRED,
+        mapSlug: 'arena-map',
+        revision: 5,
+        scopes: [{ kind: 'map', lane: 'metadata' }],
+        payload: { reason: 'patch unavailable' },
+      }],
+    })
+
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 2, y: 0, z: 1 },
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(requestReconciliation).toHaveBeenCalledWith({
+      request: MAP_API_PATHS.moveToken,
+      response: expect.objectContaining({ opId: 'op_reconcile1', revision: 5 }),
+    })
+  })
+
   it('posts live-play turn commands and surfaces command rejections', async () => {
-    const actions = useDocumentMapTokenActions({ slug: 'arena-map', mapRevision: ref(4) })
+    const actions = useLivePlayCommands({ slug: 'arena-map', mapRevision: ref(4) })
     apiMocks.postJson.mockResolvedValue({
       ok: false,
       opId: 'op_turnreject1',
@@ -492,7 +528,7 @@ describe('useDocumentMapTokenActions', () => {
     expect(actions.lastError.value).toBeNull()
   })
 
-  it('posts document-backed table actions and applies returned sheet updates', async () => {
+  it('routes table action helpers through the shared dispatcher and applies returned sheet updates', async () => {
     const map = mapFixture()
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
     const applyPersistedMap = vi.fn()
@@ -511,7 +547,7 @@ describe('useDocumentMapTokenActions', () => {
       sheetUpdates: [sheetUpdate],
     })
 
-    const actions = useDocumentMapTokenActions({
+    const actions = useLivePlayCommands({
       slug: 'arena-map',
       playerProfileId: profileId,
       applyPersistedMap,
@@ -524,14 +560,25 @@ describe('useDocumentMapTokenActions', () => {
     })
 
     expect(result.dispatched).toBe(true)
-    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.useAbility, {
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.useAbility, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 0,
+      type: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
+      payload: {
+        placementId: 'token-pikachu',
+        abilityName: 'Healer',
+        targetPlacementId: 'target-token',
+      },
       slug: 'arena-map',
       clientId: 'ssr',
       profileId: 'profile_ash00000',
       placementId: 'token-pikachu',
       abilityName: 'Healer',
       targetPlacementId: 'target-token',
-    })
+    }))
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
     expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
   })

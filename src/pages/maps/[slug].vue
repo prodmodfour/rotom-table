@@ -10,7 +10,7 @@ import PokeballCaptureResultModal from '~/components/map/PokeballCaptureResultMo
 import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
-import { useDocumentMapTokenActions } from '~/composables/map-editor/useDocumentMapTokenActions'
+import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
 import { parseRoundInputValue, useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
@@ -95,13 +95,14 @@ const {
   mapRevision,
   livePlayCommandsBlocked,
   livePlayRealtimeNotice,
+  reload: reloadAuthoritativeMap,
   applyPersistedMap,
 } = useEditableMap(slug, {
   interactionMode: mapInteractionMode,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
 })
 const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
-const applyDocumentSheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: string; sheet: Record<string, unknown> }) => {
+const applyLivePlaySheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: string; sheet: Record<string, unknown> }) => {
   if (update.kind === 'pokemon') {
     const previous = pokemonBySlug.value.get(update.slug)
     pokemonBySlug.value.set(update.slug, { ...(previous ?? {}), ...update.sheet } as CharacterSheet)
@@ -110,7 +111,7 @@ const applyDocumentSheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: s
   const previous = trainerBySlug.value.get(update.slug)
   trainerBySlug.value.set(update.slug, { ...(previous ?? {}), ...update.sheet } as TrainerSheet)
 }
-const documentTokenActions = useDocumentMapTokenActions({
+const livePlayCommands = useLivePlayCommands({
   slug,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
   map,
@@ -118,7 +119,8 @@ const documentTokenActions = useDocumentMapTokenActions({
   livePlayCommandBlocked: livePlayCommandsBlocked,
   livePlayCommandBlockedMessage: livePlayRealtimeNotice,
   applyPersistedMap,
-  applySheetUpdate: applyDocumentSheetUpdate,
+  applySheetUpdate: applyLivePlaySheetUpdate,
+  requestReconciliation: () => reloadAuthoritativeMap(),
 })
 
 watch(renamedTo, (newSlug) => {
@@ -143,14 +145,14 @@ const shouldSuppressPlayerCharacterAttackOfOpportunity = ({
   })
 )
 const persistSpawnedPlacement = (placement: SheetPlacement) => {
-  void documentTokenActions.spawnToken({
+  void livePlayCommands.spawnToken({
     placement: deepCloneJson(placement),
   })
 }
 const tokenControlNotice = computed(() => {
   if (livePlayRealtimeNotice.value) return livePlayRealtimeNotice.value
-  if (documentTokenActions.lastError.value) {
-    return `Token action failed: ${documentTokenActions.lastError.value}`
+  if (livePlayCommands.lastError.value) {
+    return `Token action failed: ${livePlayCommands.lastError.value}`
   }
   if (isPlayer.value && playerProfileError.value) {
     return `Player profile unavailable: ${playerProfileError.value}`
@@ -202,7 +204,7 @@ watch(
 )
 
 // `useEditableMap` keeps the map object stable during authoritative reloads,
-// realtime replacements, document-backed token actions, and rename/delete
+// realtime replacements, live-play command results, and rename/delete
 // events. Watch its explicit data-revision signal so transient VFX are cleared
 // when the rendered scene adopts a new persisted map without tying cleanup to
 // ordinary local autosave timestamp updates.
@@ -350,17 +352,17 @@ const selectPokemon = (id: string | null) => {
 }
 const deletePokemon = (id: string) => {
   if (!canControlPlacement(id)) return
-  void documentTokenActions.deleteToken({ placementId: id }).then((result) => {
+  void livePlayCommands.deleteToken({ placementId: id }).then((result) => {
     if (result.dispatched) clearSelection()
   })
 }
-const shouldUseDocumentTableActionRoutes = () => isPlayer.value
+const shouldUseTableActionRoutes = () => isPlayer.value
 
 const turnPokemon = (id: string) => {
   const placement = placementById(id)
   if (!placement || !canControlPlacement(id)) return
   const facing = nextTokenFacingForPlacement(placement)
-  void documentTokenActions.turnToken({ placementId: id, facing }).then((result) => {
+  void livePlayCommands.turnToken({ placementId: id, facing }).then((result) => {
     if (result.dispatched) clearSelection()
   })
 }
@@ -372,7 +374,7 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
   const previousPosition = from ? { ...from } : null
 
   if (!canControlPlacement(payload.id)) return
-  void documentTokenActions.moveToken({
+  void livePlayCommands.moveToken({
     placementId: payload.id,
     position: payload.position,
     pathLength: previewState.value.pathLength,
@@ -475,7 +477,7 @@ const clearAllHazardsFromMenu = async () => {
   if (!ok) return
 
   for (const hazard of mapHazards.value.map((item) => ({ ...item }))) {
-    const result = await documentTokenActions.removeHazard({
+    const result = await livePlayCommands.removeHazard({
       cell: { x: hazard.x, y: hazard.y, z: hazard.z, kind: hazard.kind },
     })
     if (!result.dispatched) break
@@ -489,7 +491,7 @@ const setWeatherFromMenu = async (kind: MapWeatherKind) => {
   }
   if (!canEditMap.value) return
   const append = weatherCoexistNext.value && activeWeatherEffects.value.length > 0
-  const result = await documentTokenActions.setFieldEffect({
+  const result = await livePlayCommands.setFieldEffect({
     category: 'weather',
     kind,
     weatherMode: append ? 'append' : 'replace',
@@ -503,7 +505,7 @@ const removeWeatherFromMenu = async (kind: MapWeatherKind) => {
     return
   }
   if (!canEditMap.value) return
-  const result = await documentTokenActions.removeFieldEffect({ category: 'weather', kind })
+  const result = await livePlayCommands.removeFieldEffect({ category: 'weather', kind })
   if (result.dispatched) clearWeatherCoexistIfNoWeather()
 }
 
@@ -513,7 +515,7 @@ const clearWeatherFromMenu = async () => {
     return
   }
   if (!canEditMap.value) return
-  const result = await documentTokenActions.removeFieldEffect({ category: 'weather' })
+  const result = await livePlayCommands.removeFieldEffect({ category: 'weather' })
   if (result.dispatched) weatherCoexistNext.value = false
 }
 
@@ -523,8 +525,8 @@ const toggleTerrainFromMenu = async (kind: MapTerrainKind) => {
     return
   }
   if (!canEditMap.value) return
-  if (terrainIsActive(kind)) await documentTokenActions.removeFieldEffect({ category: 'terrain', kind })
-  else await documentTokenActions.setFieldEffect({ category: 'terrain', kind })
+  if (terrainIsActive(kind)) await livePlayCommands.removeFieldEffect({ category: 'terrain', kind })
+  else await livePlayCommands.setFieldEffect({ category: 'terrain', kind })
 }
 
 const removeTerrainFromMenu = async (kind: MapTerrainKind) => {
@@ -533,7 +535,7 @@ const removeTerrainFromMenu = async (kind: MapTerrainKind) => {
     return
   }
   if (!canEditMap.value) return
-  await documentTokenActions.removeFieldEffect({ category: 'terrain', kind })
+  await livePlayCommands.removeFieldEffect({ category: 'terrain', kind })
 }
 
 const toggleRoomFromMenu = async (kind: MapRoomKind) => {
@@ -542,8 +544,8 @@ const toggleRoomFromMenu = async (kind: MapRoomKind) => {
     return
   }
   if (!canEditMap.value) return
-  if (roomIsActive(kind)) await documentTokenActions.removeFieldEffect({ category: 'room', kind })
-  else await documentTokenActions.setFieldEffect({ category: 'room', kind })
+  if (roomIsActive(kind)) await livePlayCommands.removeFieldEffect({ category: 'room', kind })
+  else await livePlayCommands.setFieldEffect({ category: 'room', kind })
 }
 
 const removeRoomFromMenu = async (kind: MapRoomKind) => {
@@ -552,7 +554,7 @@ const removeRoomFromMenu = async (kind: MapRoomKind) => {
     return
   }
   if (!canEditMap.value) return
-  await documentTokenActions.removeFieldEffect({ category: 'room', kind })
+  await livePlayCommands.removeFieldEffect({ category: 'room', kind })
 }
 
 const fieldEffectRoundsFromEvent = (event: Event): number | null =>
@@ -567,7 +569,7 @@ const setWeatherRoundsFromMenu = async (kind: MapWeatherKind, event: Event) => {
   const rounds = fieldEffectRoundsFromEvent(event)
   if (rounds === 0) await removeWeatherFromMenu(kind)
   else {
-    await documentTokenActions.setFieldEffect({
+    await livePlayCommands.setFieldEffect({
       category: 'weather',
       kind,
       rounds,
@@ -584,7 +586,7 @@ const setTerrainRoundsFromMenu = async (kind: MapTerrainKind, event: Event) => {
   if (!canEditMap.value) return
   const rounds = fieldEffectRoundsFromEvent(event)
   if (rounds === 0) await removeTerrainFromMenu(kind)
-  else await documentTokenActions.setFieldEffect({ category: 'terrain', kind, rounds })
+  else await livePlayCommands.setFieldEffect({ category: 'terrain', kind, rounds })
 }
 
 const setRoomRoundsFromMenu = async (kind: MapRoomKind, event: Event) => {
@@ -595,7 +597,7 @@ const setRoomRoundsFromMenu = async (kind: MapRoomKind, event: Event) => {
   if (!canEditMap.value) return
   const rounds = fieldEffectRoundsFromEvent(event)
   if (rounds === 0) await removeRoomFromMenu(kind)
-  else await documentTokenActions.setFieldEffect({ category: 'room', kind, rounds })
+  else await livePlayCommands.setFieldEffect({ category: 'room', kind, rounds })
 }
 
 const tickFieldEffectDurationsFromMenu = async () => {
@@ -604,7 +606,7 @@ const tickFieldEffectDurationsFromMenu = async () => {
     return
   }
   if (!canEditMap.value) return
-  await documentTokenActions.tickFieldEffectDurations()
+  await livePlayCommands.tickFieldEffectDurations()
 }
 
 const clearAllFieldEffectsFromMenu = async () => {
@@ -615,7 +617,7 @@ const clearAllFieldEffectsFromMenu = async () => {
   if (!canEditMap.value || fieldEffectCount.value === 0) return
   const ok = typeof window === 'undefined' || window.confirm('Clear all active Weather, Terrain, and Room effects?')
   if (!ok) return
-  const result = await documentTokenActions.removeFieldEffect({ category: 'all' })
+  const result = await livePlayCommands.removeFieldEffect({ category: 'all' })
   if (result.dispatched) weatherCoexistNext.value = false
 }
 
@@ -676,9 +678,9 @@ const {
   trainerBySlug,
   canManageInitiative,
   interactionMode: computed(() => mapInteractionMode.value),
-  dispatchSetInitiative: (payload) => documentTokenActions.setInitiative(payload),
-  dispatchNextInitiative: () => documentTokenActions.nextInitiative(),
-  dispatchPreviousInitiative: () => documentTokenActions.previousInitiative(),
+  dispatchSetInitiative: (payload) => livePlayCommands.setInitiative(payload),
+  dispatchNextInitiative: () => livePlayCommands.nextInitiative(),
+  dispatchPreviousInitiative: () => livePlayCommands.previousInitiative(),
   focusEntry: (id) => {
     gridRef.value?.focusPokemon(id)
   },
@@ -818,7 +820,7 @@ const modifyHpFromScene: typeof modifyHpViaSetupSheetSave = async (payload, opti
     await modifyHpViaSetupSheetSave(payload, options)
     return
   }
-  await documentTokenActions.modifyHp({
+  await livePlayCommands.modifyHp({
     placementId: payload.id,
     currentHp: payload.currentHp,
     ...(payload.injuries === undefined ? {} : { injuries: payload.injuries }),
@@ -830,7 +832,7 @@ const modifyCombatStagesFromScene: typeof modifyCombatStagesViaSetupSheetSave = 
     await modifyCombatStagesViaSetupSheetSave(payload, options)
     return
   }
-  await documentTokenActions.modifyCombatStages({
+  await livePlayCommands.modifyCombatStages({
     placementId: payload.id,
     stages: payload.stages,
   })
@@ -841,7 +843,7 @@ const modifyConditionsFromScene: typeof modifyConditionsViaSetupSheetSave = asyn
     await modifyConditionsViaSetupSheetSave(payload, options)
     return
   }
-  await documentTokenActions.modifyConditions({
+  await livePlayCommands.modifyConditions({
     placementId: payload.id,
     action: 'replace',
     conditions: payload.conditions,
@@ -849,7 +851,7 @@ const modifyConditionsFromScene: typeof modifyConditionsViaSetupSheetSave = asyn
 }
 
 const recordMoveUsage = async (request: { placementId: string; moveName: string }) => {
-  const result = await documentTokenActions.useMove(request)
+  const result = await livePlayCommands.useMove(request)
   if (!result.dispatched) throw new Error(result.message ?? 'Move usage could not be recorded.')
 }
 
@@ -860,7 +862,7 @@ const applyMoveFieldEffectFromScene = async (effect: Parameters<typeof applyMove
   }
   if (!canEditMap.value) return
   if (effect.kind === 'weather') {
-    await documentTokenActions.setFieldEffect({
+    await livePlayCommands.setFieldEffect({
       category: 'weather',
       kind: effect.value as MapWeatherKind,
       source: effect.source ?? 'Move automation',
@@ -868,7 +870,7 @@ const applyMoveFieldEffectFromScene = async (effect: Parameters<typeof applyMove
     return
   }
   if (effect.kind === 'terrain') {
-    await documentTokenActions.setFieldEffect({
+    await livePlayCommands.setFieldEffect({
       category: 'terrain',
       kind: effect.value as MapTerrainKind,
       source: effect.source ?? 'Move automation',
@@ -876,7 +878,7 @@ const applyMoveFieldEffectFromScene = async (effect: Parameters<typeof applyMove
     return
   }
   if (effect.kind === 'room') {
-    await documentTokenActions.setFieldEffect({
+    await livePlayCommands.setFieldEffect({
       category: 'room',
       kind: effect.value as MapRoomKind,
       source: effect.source ?? 'Move automation',
@@ -890,7 +892,7 @@ const placeHazardFromScene = async (hazard: Parameters<typeof placeHazard>[0]) =
     return
   }
   if (!canEditMap.value) return
-  await documentTokenActions.placeHazard({ hazard })
+  await livePlayCommands.placeHazard({ hazard })
 }
 
 const removeHazardFromScene = async (cell: Parameters<typeof removeHazard>[0]) => {
@@ -899,7 +901,7 @@ const removeHazardFromScene = async (cell: Parameters<typeof removeHazard>[0]) =
     return
   }
   if (!canEditMap.value) return
-  await documentTokenActions.removeHazard({ cell })
+  await livePlayCommands.removeHazard({ cell })
 }
 
 const placeVoxelFromScene: typeof placeVoxel = (voxel) => {
@@ -908,7 +910,7 @@ const placeVoxelFromScene: typeof placeVoxel = (voxel) => {
     return
   }
   if (!canEditMap.value) return
-  void documentTokenActions.buildTerrainVoxel({ voxel })
+  void livePlayCommands.buildTerrainVoxel({ voxel })
 }
 
 const removeVoxelFromScene: typeof removeVoxel = (cell) => {
@@ -917,7 +919,7 @@ const removeVoxelFromScene: typeof removeVoxel = (cell) => {
     return
   }
   if (!canEditMap.value) return
-  void documentTokenActions.removeTerrainVoxel({ cell })
+  void livePlayCommands.removeTerrainVoxel({ cell })
 }
 
 const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {
@@ -1014,8 +1016,8 @@ const {
   modifyConditions: modifyConditionsFromScene,
   modifyAbilityActivation,
   dispatchAbilityUse: (event) => {
-    if (!shouldUseDocumentTableActionRoutes()) return undefined
-    void documentTokenActions.useAbility({
+    if (!shouldUseTableActionRoutes()) return undefined
+    void livePlayCommands.useAbility({
       placementId: event.userId,
       abilityName: event.abilityName,
       ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
@@ -1040,8 +1042,8 @@ const {
   trainerBySlug,
   canControlPlacement,
   dispatchManeuverUse: (event) => {
-    if (!shouldUseDocumentTableActionRoutes()) return undefined
-    void documentTokenActions.useManeuver({
+    if (!shouldUseTableActionRoutes()) return undefined
+    void livePlayCommands.useManeuver({
       placementId: event.userId,
       maneuverName: event.maneuverName,
       ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
@@ -1060,8 +1062,8 @@ const orderActionPanel = useOrderActionPanel({
   trainerBySlug,
   canControlPlacement,
   dispatchOrderUse: (event) => {
-    if (!shouldUseDocumentTableActionRoutes()) return undefined
-    void documentTokenActions.useOrder({
+    if (!shouldUseTableActionRoutes()) return undefined
+    void livePlayCommands.useOrder({
       placementId: event.userId,
       orderName: event.orderName,
       ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
@@ -1095,7 +1097,7 @@ const applyPokeballCaptureOutcome = async (event: Parameters<typeof applyPokebal
   )
 
   if (sheetUpdated && event.result.success && isGm.value) {
-    const result = await documentTokenActions.deleteToken({ placementId: event.targetId })
+    const result = await livePlayCommands.deleteToken({ placementId: event.targetId })
     if (result.dispatched && selectedId.value === event.targetId) clearSelection()
   }
 }
@@ -1235,7 +1237,7 @@ const selectActionAutomationTarget = (targetId: string) => {
 }
 
 const sceneActionError = computed(() => (
-  documentTokenActions.lastError.value
+  livePlayCommands.lastError.value
   ?? tokenSheetMutationError.value
   ?? pokeballCaptureError.value
   ?? remotePokeballCaptureError.value

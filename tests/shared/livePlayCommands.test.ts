@@ -54,6 +54,8 @@ import {
   type SetFieldEffectPayload,
   type SetInitiativeLivePlayCommand,
   type SetInitiativePayload,
+  type UseAbilityLivePlayCommand,
+  type UseAbilityPayload,
   type UseMoveLivePlayCommand,
   type UseMovePayload,
 } from '#shared/livePlayCommands'
@@ -125,6 +127,7 @@ describe('live-play command contract', () => {
   it('defines supported command, patch, and reusable resource scope constants', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('moveToken')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('modifyHp')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('useAbility')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setInitiative')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('placeHazard')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setFieldEffect')
@@ -205,6 +208,23 @@ describe('live-play command contract', () => {
 
     expect(useMoveCommand.type).toBe('useMove')
     expect(useMoveCommand.payload).toEqual({ placementId: 'placement-001', moveName: 'Thunderbolt' })
+
+    const useAbilityCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+      scopes: [{ kind: 'token', placementId: 'placement-001', field: 'action' }],
+      payload: { placementId: 'placement-001', abilityName: 'Healer', targetPlacementId: 'placement-002' },
+    } as const satisfies UseAbilityLivePlayCommand
+
+    expect(useAbilityCommand.type).toBe('useAbility')
+    expect(useAbilityCommand.payload).toEqual({
+      placementId: 'placement-001',
+      abilityName: 'Healer',
+      targetPlacementId: 'placement-002',
+    })
 
     const initiativeCommand = {
       schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -308,6 +328,7 @@ describe('live-play command contract', () => {
       LivePlayCommandEnvelope<typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN, MoveTokenPayload, LivePlayTokenScope>
     >()
     expectTypeOf(useMoveCommand.payload).toMatchTypeOf<UseMovePayload>()
+    expectTypeOf(useAbilityCommand.payload).toMatchTypeOf<UseAbilityPayload>()
     expectTypeOf(initiativeCommand.payload).toMatchTypeOf<SetInitiativePayload>()
     expectTypeOf(hazardCommand.payload).toMatchTypeOf<PlaceHazardPayload>()
     expectTypeOf(fieldEffectCommand.payload).toMatchTypeOf<SetFieldEffectPayload>()

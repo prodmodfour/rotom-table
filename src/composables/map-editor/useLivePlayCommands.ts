@@ -24,7 +24,10 @@ import {
   type SpawnTokenPayload,
   type TickFieldEffectDurationsPayload,
   type TurnTokenPayload,
+  type UseAbilityPayload,
+  type UseManeuverPayload,
   type UseMovePayload,
+  type UseOrderPayload,
 } from '#shared/livePlayCommands'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
@@ -39,16 +42,16 @@ interface ReadonlyValueRef<TValue> {
   readonly value: TValue
 }
 
-export type DocumentMapTokenActionStatus = 'idle' | 'saving' | 'error'
+export type LivePlayCommandStatus = 'idle' | 'saving' | 'error'
 
-export interface DocumentMapTokenActionSheetUpdate {
+export interface LivePlayCommandSheetUpdate {
   kind: 'pokemon' | 'trainer'
   slug: string
   path?: string
   sheet: Record<string, unknown>
 }
 
-export interface DocumentMapTokenActionResponse {
+export interface MapTokenTableActionResponse {
   ok: true
   path: string
   map: TabletopMap
@@ -60,23 +63,23 @@ export interface DocumentMapTokenActionResponse {
     name: string
     category?: string
   }
-  sheetUpdates?: DocumentMapTokenActionSheetUpdate[]
+  sheetUpdates?: LivePlayCommandSheetUpdate[]
 }
 
-export type LivePlayMapTokenActionResponse = LivePlayCommandResult & {
+export type LivePlayCommandResponse = LivePlayCommandResult & {
   path?: string
   map?: TabletopMap
   placement?: SheetPlacement
-  sheetUpdates?: DocumentMapTokenActionSheetUpdate[]
+  sheetUpdates?: LivePlayCommandSheetUpdate[]
 }
 
-export interface DocumentMapTokenActionDispatchResult {
+export interface LivePlayCommandDispatchResult {
   dispatched: boolean
   message?: string
-  response?: DocumentMapTokenActionResponse | LivePlayMapTokenActionResponse
+  response?: MapTokenTableActionResponse | LivePlayCommandResponse
 }
 
-export interface UseDocumentMapTokenActionsOptions {
+export interface UseLivePlayCommandsOptions {
   slug: string
   playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   map?: ReadonlyValueRef<TabletopMap | null | undefined>
@@ -84,78 +87,84 @@ export interface UseDocumentMapTokenActionsOptions {
   livePlayCommandBlocked?: ReadonlyValueRef<boolean>
   livePlayCommandBlockedMessage?: ReadonlyValueRef<string | null | undefined>
   applyPersistedMap?: (map: TabletopMap) => void
-  applySheetUpdate?: (update: DocumentMapTokenActionSheetUpdate) => void
+  applySheetUpdate?: (update: LivePlayCommandSheetUpdate) => void
+  requestReconciliation?: (reason: LivePlayCommandReconciliationRequest) => void | Promise<void>
 }
 
-export interface UseDocumentMapTokenActionsReturn {
-  status: Ref<DocumentMapTokenActionStatus>
+export interface LivePlayCommandReconciliationRequest {
+  request: string
+  response: LivePlayCommandResponse
+}
+
+export interface UseLivePlayCommandsReturn {
+  status: Ref<LivePlayCommandStatus>
   lastError: Ref<string | null>
   clearError: () => void
   spawnToken: (payload: {
     placement: SheetPlacement
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   deleteToken: (payload: {
     placementId: string
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   moveToken: (payload: {
     placementId: string
     position: GridAnchor
     pathLength?: number | null
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   turnToken: (payload: {
     placementId: string
     facing: TokenFacingDirection
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   modifyHp: (payload: {
     placementId: string
     currentHp: number
     injuries?: number
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   modifyCombatStages: (payload: {
     placementId: string
     stages: ModifyCombatStagesPayload['stages']
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   modifyConditions: (payload: {
     placementId: string
     action?: ModifyConditionsPayload['action']
     conditions: readonly string[]
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   useMove: (payload: {
     placementId: string
     moveName: string
-  }) => Promise<DocumentMapTokenActionDispatchResult>
-  setInitiative: (payload: SetInitiativePayload) => Promise<DocumentMapTokenActionDispatchResult>
-  nextInitiative: () => Promise<DocumentMapTokenActionDispatchResult>
-  previousInitiative: () => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
+  setInitiative: (payload: SetInitiativePayload) => Promise<LivePlayCommandDispatchResult>
+  nextInitiative: () => Promise<LivePlayCommandDispatchResult>
+  previousInitiative: () => Promise<LivePlayCommandDispatchResult>
   placeHazard: (payload: {
     hazard: MapHazardV2
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   removeHazard: (payload: {
     cell: RemoveHazardPayload['cell']
-  }) => Promise<DocumentMapTokenActionDispatchResult>
-  buildTerrainVoxel: (payload: BuildTerrainVoxelPayload) => Promise<DocumentMapTokenActionDispatchResult>
-  removeTerrainVoxel: (payload: RemoveTerrainVoxelPayload) => Promise<DocumentMapTokenActionDispatchResult>
-  setFieldEffect: (payload: SetFieldEffectPayload) => Promise<DocumentMapTokenActionDispatchResult>
-  removeFieldEffect: (payload: RemoveFieldEffectPayload) => Promise<DocumentMapTokenActionDispatchResult>
-  tickFieldEffectDurations: (payload?: TickFieldEffectDurationsPayload) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
+  buildTerrainVoxel: (payload: BuildTerrainVoxelPayload) => Promise<LivePlayCommandDispatchResult>
+  removeTerrainVoxel: (payload: RemoveTerrainVoxelPayload) => Promise<LivePlayCommandDispatchResult>
+  setFieldEffect: (payload: SetFieldEffectPayload) => Promise<LivePlayCommandDispatchResult>
+  removeFieldEffect: (payload: RemoveFieldEffectPayload) => Promise<LivePlayCommandDispatchResult>
+  tickFieldEffectDurations: (payload?: TickFieldEffectDurationsPayload) => Promise<LivePlayCommandDispatchResult>
   useManeuver: (payload: {
     placementId: string
     maneuverName: string
     targetPlacementId?: string
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   useAbility: (payload: {
     placementId: string
     abilityName: string
     targetPlacementId?: string
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
   useOrder: (payload: {
     placementId: string
     orderName: string
     targetPlacementId?: string
-  }) => Promise<DocumentMapTokenActionDispatchResult>
+  }) => Promise<LivePlayCommandDispatchResult>
 }
 
-type LivePlayDocumentCommandType =
+type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
@@ -164,6 +173,9 @@ type LivePlayDocumentCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_MOVE
+  | typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER
+  | typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY
+  | typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
   | typeof LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE
   | typeof LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE
@@ -183,6 +195,9 @@ type LivePlayTokenCommandPayload =
   | ModifyCombatStagesPayload
   | ModifyConditionsPayload
   | UseMovePayload
+  | UseManeuverPayload
+  | UseAbilityPayload
+  | UseOrderPayload
 
 type LivePlayMapEffectsCommandPayload =
   | PlaceHazardPayload
@@ -193,33 +208,43 @@ type LivePlayMapEffectsCommandPayload =
   | RemoveFieldEffectPayload
   | TickFieldEffectDurationsPayload
 
-type LivePlayDocumentCommandPayload =
+type LivePlayClientCommandPayload =
   | LivePlayTokenCommandPayload
   | SpawnTokenPayload
   | SetInitiativePayload
   | LivePlayMapEffectsCommandPayload
   | Record<string, never>
 
-const isDuplicateResult = (response: LivePlayMapTokenActionResponse): response is LivePlayCommandDuplicate & LivePlayMapTokenActionResponse => (
+const isDuplicateResult = (response: LivePlayCommandResponse): response is LivePlayCommandDuplicate & LivePlayCommandResponse => (
   response.ok === true && 'duplicate' in response && response.duplicate === true
 )
 
-const livePlayResponseMessage = (response: LivePlayMapTokenActionResponse): string | null => {
+const livePlayResponseMessage = (response: LivePlayCommandResponse): string | null => {
   if (!response.ok) return response.message
   if (isDuplicateResult(response) && !response.original.ok) return response.original.message
   return null
 }
 
-const acceptedLivePlayResponse = (response: LivePlayMapTokenActionResponse): boolean => {
+const acceptedLivePlayResponse = (response: LivePlayCommandResponse): boolean => {
   if (!response.ok) return false
   return !isDuplicateResult(response) || response.original.ok
 }
 
-export const useDocumentMapTokenActions = (
-  options: UseDocumentMapTokenActionsOptions,
-): UseDocumentMapTokenActionsReturn => {
+const acceptedResultPatches = (response: LivePlayCommandResponse) => {
+  if (!response.ok) return []
+  if (isDuplicateResult(response)) return response.original.ok ? response.original.patches : []
+  return response.patches
+}
+
+const acceptedResultRequiresReconciliation = (response: LivePlayCommandResponse): boolean => (
+  acceptedResultPatches(response).length > 0
+)
+
+export const useLivePlayCommands = (
+  options: UseLivePlayCommandsOptions,
+): UseLivePlayCommandsReturn => {
   const { postJson } = useApiClient()
-  const status = ref<DocumentMapTokenActionStatus>('idle')
+  const status = ref<LivePlayCommandStatus>('idle')
   const lastError = ref<string | null>(null)
 
   const clearError = () => {
@@ -227,17 +252,16 @@ export const useDocumentMapTokenActions = (
     lastError.value = null
   }
 
+  const blockedCommandMessage = (): string | null => {
+    if (!options.livePlayCommandBlocked?.value) return null
+    return options.livePlayCommandBlockedMessage?.value
+      ?? 'Live-play commands are paused until realtime reconciliation completes'
+  }
+
   const profileBody = (): { profileId?: PlayerProfileId } => {
     const profileId = options.playerProfileId?.value ?? null
     return profileId ? { profileId } : {}
   }
-
-  const actionBody = (body: Record<string, unknown>): Record<string, unknown> => ({
-    slug: options.slug,
-    clientId: getClientId(),
-    ...profileBody(),
-    ...body,
-  })
 
   const tokenScope = (payload: LivePlayTokenCommandPayload, field: LivePlayTokenScope['field']): LivePlayTokenScope => ({
     kind: 'token',
@@ -269,8 +293,8 @@ export const useDocumentMapTokenActions = (
   }
 
   const commandBody = (
-    type: LivePlayDocumentCommandType,
-    payload: LivePlayDocumentCommandPayload,
+    type: LivePlayClientCommandType,
+    payload: LivePlayClientCommandPayload,
     scopes: readonly LivePlayScope[],
   ): Record<string, unknown> => ({
     schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -303,14 +327,33 @@ export const useDocumentMapTokenActions = (
     ])
   }
 
+  const tableActionCommandBody = (
+    type: typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER | typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY | typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
+    payload: UseManeuverPayload | UseAbilityPayload | UseOrderPayload,
+  ): Record<string, unknown> => ({
+    ...commandBody(type, payload, [tokenScope(payload, 'action')]),
+    // Table action routes still read these compatibility fields while their
+    // server-side command executors are migrated; keep the canonical envelope
+    // fields beside them so the UI does not own endpoint-specific context.
+    slug: options.slug,
+    ...payload,
+  })
+
   const runAction = async (
     request: string,
     body: Record<string, unknown>,
-  ): Promise<DocumentMapTokenActionDispatchResult> => {
+  ): Promise<LivePlayCommandDispatchResult> => {
+    const blockedMessage = blockedCommandMessage()
+    if (blockedMessage) {
+      status.value = 'error'
+      lastError.value = blockedMessage
+      return { dispatched: false, message: blockedMessage }
+    }
+
     status.value = 'saving'
     lastError.value = null
     try {
-      const response = await postJson<DocumentMapTokenActionResponse>(request, actionBody(body))
+      const response = await postJson<MapTokenTableActionResponse>(request, body)
       options.applyPersistedMap?.(response.map)
       for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
       status.value = 'idle'
@@ -326,19 +369,18 @@ export const useDocumentMapTokenActions = (
   const runLivePlayCommand = async (
     request: string,
     body: Record<string, unknown>,
-  ): Promise<DocumentMapTokenActionDispatchResult> => {
-    if (options.livePlayCommandBlocked?.value) {
-      const message = options.livePlayCommandBlockedMessage?.value
-        ?? 'Live-play commands are paused until realtime reconciliation completes'
+  ): Promise<LivePlayCommandDispatchResult> => {
+    const blockedMessage = blockedCommandMessage()
+    if (blockedMessage) {
       status.value = 'error'
-      lastError.value = message
-      return { dispatched: false, message }
+      lastError.value = blockedMessage
+      return { dispatched: false, message: blockedMessage }
     }
 
     status.value = 'saving'
     lastError.value = null
     try {
-      const response = await postJson<LivePlayMapTokenActionResponse>(request, body)
+      const response = await postJson<LivePlayCommandResponse>(request, body)
       if (!acceptedLivePlayResponse(response)) {
         const message = livePlayResponseMessage(response) ?? 'Token action was rejected'
         status.value = 'error'
@@ -347,6 +389,9 @@ export const useDocumentMapTokenActions = (
       }
 
       if (response.map) options.applyPersistedMap?.(response.map)
+      else if (acceptedResultRequiresReconciliation(response)) {
+        await options.requestReconciliation?.({ request, response })
+      }
       for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
       status.value = 'idle'
       return { dispatched: true, response }
@@ -358,7 +403,7 @@ export const useDocumentMapTokenActions = (
     }
   }
 
-  const spawnToken: UseDocumentMapTokenActionsReturn['spawnToken'] = (payload) => runLivePlayCommand(
+  const spawnToken: UseLivePlayCommandsReturn['spawnToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.spawnToken,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
@@ -367,7 +412,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const deleteToken: UseDocumentMapTokenActionsReturn['deleteToken'] = (payload) => runLivePlayCommand(
+  const deleteToken: UseLivePlayCommandsReturn['deleteToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.deleteToken,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
@@ -376,7 +421,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const moveToken: UseDocumentMapTokenActionsReturn['moveToken'] = (payload) => runLivePlayCommand(
+  const moveToken: UseLivePlayCommandsReturn['moveToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.moveToken,
     tokenCommandBody(
       LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
@@ -389,7 +434,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const turnToken: UseDocumentMapTokenActionsReturn['turnToken'] = (payload) => runLivePlayCommand(
+  const turnToken: UseLivePlayCommandsReturn['turnToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.turnToken,
     tokenCommandBody(
       LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
@@ -401,7 +446,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const modifyHp: UseDocumentMapTokenActionsReturn['modifyHp'] = (payload) => runLivePlayCommand(
+  const modifyHp: UseLivePlayCommandsReturn['modifyHp'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.modifyHp,
     sheetCommandBody(
       LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
@@ -415,7 +460,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const modifyCombatStages: UseDocumentMapTokenActionsReturn['modifyCombatStages'] = (payload) => runLivePlayCommand(
+  const modifyCombatStages: UseLivePlayCommandsReturn['modifyCombatStages'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.modifyCombatStages,
     sheetCommandBody(
       LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES,
@@ -428,7 +473,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const modifyConditions: UseDocumentMapTokenActionsReturn['modifyConditions'] = (payload) => runLivePlayCommand(
+  const modifyConditions: UseLivePlayCommandsReturn['modifyConditions'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.modifyConditions,
     sheetCommandBody(
       LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
@@ -442,7 +487,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const useMove: UseDocumentMapTokenActionsReturn['useMove'] = (payload) => {
+  const useMove: UseLivePlayCommandsReturn['useMove'] = (payload) => {
     const commandPayload = {
       placementId: payload.placementId,
       moveName: payload.moveName,
@@ -461,7 +506,7 @@ export const useDocumentMapTokenActions = (
     )
   }
 
-  const setInitiative: UseDocumentMapTokenActionsReturn['setInitiative'] = (payload) => runLivePlayCommand(
+  const setInitiative: UseLivePlayCommandsReturn['setInitiative'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.setInitiative,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
@@ -470,7 +515,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const nextInitiative: UseDocumentMapTokenActionsReturn['nextInitiative'] = () => runLivePlayCommand(
+  const nextInitiative: UseLivePlayCommandsReturn['nextInitiative'] = () => runLivePlayCommand(
     MAP_API_PATHS.nextInitiative,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
@@ -479,7 +524,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const previousInitiative: UseDocumentMapTokenActionsReturn['previousInitiative'] = () => runLivePlayCommand(
+  const previousInitiative: UseLivePlayCommandsReturn['previousInitiative'] = () => runLivePlayCommand(
     MAP_API_PATHS.previousInitiative,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
@@ -488,7 +533,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const placeHazard: UseDocumentMapTokenActionsReturn['placeHazard'] = (payload) => runLivePlayCommand(
+  const placeHazard: UseLivePlayCommandsReturn['placeHazard'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.placeHazard,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
@@ -497,7 +542,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const removeHazard: UseDocumentMapTokenActionsReturn['removeHazard'] = (payload) => runLivePlayCommand(
+  const removeHazard: UseLivePlayCommandsReturn['removeHazard'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.removeHazard,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
@@ -506,7 +551,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const buildTerrainVoxel: UseDocumentMapTokenActionsReturn['buildTerrainVoxel'] = (payload) => runLivePlayCommand(
+  const buildTerrainVoxel: UseLivePlayCommandsReturn['buildTerrainVoxel'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.buildTerrainVoxel,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
@@ -515,7 +560,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const removeTerrainVoxel: UseDocumentMapTokenActionsReturn['removeTerrainVoxel'] = (payload) => runLivePlayCommand(
+  const removeTerrainVoxel: UseLivePlayCommandsReturn['removeTerrainVoxel'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.removeTerrainVoxel,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
@@ -524,7 +569,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const setFieldEffect: UseDocumentMapTokenActionsReturn['setFieldEffect'] = (payload) => runLivePlayCommand(
+  const setFieldEffect: UseLivePlayCommandsReturn['setFieldEffect'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.setFieldEffect,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
@@ -533,7 +578,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const removeFieldEffect: UseDocumentMapTokenActionsReturn['removeFieldEffect'] = (payload) => runLivePlayCommand(
+  const removeFieldEffect: UseLivePlayCommandsReturn['removeFieldEffect'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.removeFieldEffect,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
@@ -542,7 +587,7 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const tickFieldEffectDurations: UseDocumentMapTokenActionsReturn['tickFieldEffectDurations'] = (payload = {}) => runLivePlayCommand(
+  const tickFieldEffectDurations: UseLivePlayCommandsReturn['tickFieldEffectDurations'] = (payload = {}) => runLivePlayCommand(
     MAP_API_PATHS.tickFieldEffectDurations,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
@@ -551,31 +596,40 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
-  const useManeuver: UseDocumentMapTokenActionsReturn['useManeuver'] = (payload) => runAction(
+  const useManeuver: UseLivePlayCommandsReturn['useManeuver'] = (payload) => runAction(
     MAP_API_PATHS.useManeuver,
-    {
-      placementId: payload.placementId,
-      maneuverName: payload.maneuverName,
-      ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
-    },
+    tableActionCommandBody(
+      LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+      {
+        placementId: payload.placementId,
+        maneuverName: payload.maneuverName,
+        ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
+      },
+    ),
   )
 
-  const useAbility: UseDocumentMapTokenActionsReturn['useAbility'] = (payload) => runAction(
+  const useAbility: UseLivePlayCommandsReturn['useAbility'] = (payload) => runAction(
     MAP_API_PATHS.useAbility,
-    {
-      placementId: payload.placementId,
-      abilityName: payload.abilityName,
-      ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
-    },
+    tableActionCommandBody(
+      LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+      {
+        placementId: payload.placementId,
+        abilityName: payload.abilityName,
+        ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
+      },
+    ),
   )
 
-  const useOrder: UseDocumentMapTokenActionsReturn['useOrder'] = (payload) => runAction(
+  const useOrder: UseLivePlayCommandsReturn['useOrder'] = (payload) => runAction(
     MAP_API_PATHS.useOrder,
-    {
-      placementId: payload.placementId,
-      orderName: payload.orderName,
-      ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
-    },
+    tableActionCommandBody(
+      LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
+      {
+        placementId: payload.placementId,
+        orderName: payload.orderName,
+        ...(payload.targetPlacementId ? { targetPlacementId: payload.targetPlacementId } : {}),
+      },
+    ),
   )
 
   return {
