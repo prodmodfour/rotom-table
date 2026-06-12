@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  canSaveMap,
+  canAccessMapForRole,
   clampAnchorToDimensions,
 } from '../../server/policies/mapPolicy'
 import type { TabletopMap } from '~/types/map'
@@ -42,10 +42,10 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
 })
 
 describe('map policy helpers', () => {
-  it('allows GMs to act on any map and players only on visible maps', () => {
-    expect(canSaveMap('gm', baseMap({ playerVisible: false }))).toBe(true)
-    expect(canSaveMap('player', baseMap({ playerVisible: true }))).toBe(true)
-    expect(canSaveMap('player', baseMap({ playerVisible: false }))).toBe(false)
+  it('checks visibility access without granting player whole-map save permission', () => {
+    expect(canAccessMapForRole('gm', baseMap({ playerVisible: false }))).toBe(true)
+    expect(canAccessMapForRole('player', baseMap({ playerVisible: true }))).toBe(true)
+    expect(canAccessMapForRole('player', baseMap({ playerVisible: false }))).toBe(false)
   })
 
   it('clamps anchors to map dimensions', () => {

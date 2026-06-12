@@ -40,7 +40,7 @@ import {
   mapDocumentUpdatedRealtimeEvents,
 } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
-import { canSaveMap, clampAnchorToDimensions } from '../policies/mapPolicy'
+import { canAccessMapForRole, clampAnchorToDimensions } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import {
   createAuthoritativeLivePlayCommandExecutor,
@@ -174,7 +174,7 @@ const resolveMapWriteContext = (
   if (!mapPath) throw new MapTokenActionUseCaseError(404, `Map ${input.slug}.json not found`)
 
   const map = dependencies.readMap(mapPath)
-  if (!canSaveMap(input.role, map)) {
+  if (!canAccessMapForRole(input.role, map)) {
     throw new MapTokenActionUseCaseError(403, 'Map is not player visible')
   }
 
@@ -297,7 +297,7 @@ const resolveLivePlayMapWriteContext = async (
   const map = await dependencies.mapRepository.getBySlug(input.slug)
   if (!map) throw new MapTokenActionUseCaseError(404, `Map ${input.slug}.json not found`)
 
-  if (!canSaveMap(input.role, map)) {
+  if (!canAccessMapForRole(input.role, map)) {
     throw new MapTokenActionUseCaseError(403, 'Map is not player visible')
   }
 

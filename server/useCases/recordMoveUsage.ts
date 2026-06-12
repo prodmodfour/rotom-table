@@ -21,7 +21,7 @@ import { resolveSheetMoveForUsage, type ResolvedSheetMove } from '~/utils/moveUs
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { mapDocumentUpdatedRealtimeEvents } from '../utils/mapRealtimeEvents'
-import { canSaveMap } from '../policies/mapPolicy'
+import { canAccessMapForRole } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import {
   readSheetFile,
@@ -284,7 +284,7 @@ export const recordMoveUsageUseCase = (
   if (!mapPath) throw new RecordMoveUsageUseCaseError(404, `Map ${input.slug}.json not found`)
 
   const map = readMap(mapPath)
-  if (!canSaveMap(input.role, map)) {
+  if (!canAccessMapForRole(input.role, map)) {
     throw new RecordMoveUsageUseCaseError(403, 'Map is not player visible')
   }
 

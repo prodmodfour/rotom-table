@@ -116,7 +116,7 @@ describe('map save API route', () => {
   it('rejects player whole-map save requests', async () => {
     const map = mapFixture()
     mocks.saveMapUseCase.mockImplementation(() => {
-      throw new UseCaseHttpError(403, 'Whole-map saves are GM setup/edit-only')
+      throw new UseCaseHttpError(403, 'Player whole-map saves are not allowed; live play uses commands')
     })
 
     await expect(invokeRoute(saveRoute, {
@@ -130,7 +130,7 @@ describe('map save API route', () => {
       },
     })).rejects.toMatchObject({
       statusCode: 403,
-      statusMessage: 'Whole-map saves are GM setup/edit-only',
+      statusMessage: 'Player whole-map saves are not allowed; live play uses commands',
     })
 
     expect(mocks.saveMapUseCase).toHaveBeenCalledWith({

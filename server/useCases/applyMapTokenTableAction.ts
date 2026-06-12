@@ -11,7 +11,7 @@ import type { AbilityAutomationCategory } from '~/types/abilityAutomation'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
 import { mapDocumentUpdatedRealtimeEvents } from '../utils/mapRealtimeEvents'
-import { canSaveMap } from '../policies/mapPolicy'
+import { canAccessMapForRole } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import {
   readSheetFile,
@@ -201,7 +201,7 @@ const resolveActionContext = (
   if (!mapPath) throw new MapTokenTableActionUseCaseError(404, `Map ${input.slug}.json not found`)
 
   const map = dependencies.readMap(mapPath)
-  if (!canSaveMap(input.role, map)) {
+  if (!canAccessMapForRole(input.role, map)) {
     throw new MapTokenTableActionUseCaseError(403, 'Map is not player visible')
   }
 

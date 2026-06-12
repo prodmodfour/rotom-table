@@ -137,7 +137,7 @@ describe('save map use case', () => {
     expect(result.map.revision).toBe(9)
   })
 
-  it('rejects player whole-map saves instead of merging token edits', () => {
+  it('rejects player whole-map saves without reading or merging the existing map', () => {
     const existing = baseMap()
     const incoming = baseMap({
       name: 'Player tried to rename map',
@@ -166,9 +166,12 @@ describe('save map use case', () => {
     } catch (err) {
       expect(err).toMatchObject({
         statusCode: 403,
-        message: 'Whole-map saves are GM setup/edit-only',
+        message: 'Player whole-map saves are not allowed; live play uses commands',
       })
     }
+    expect(deps.findMapPath).not.toHaveBeenCalled()
+    expect(deps.readMap).not.toHaveBeenCalled()
+    expect(deps.writeMap).not.toHaveBeenCalled()
     expect(writes).toEqual([])
   })
 

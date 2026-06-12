@@ -1,7 +1,12 @@
 import type { AuthRole } from '#shared/auth'
 import type { GridAnchor, GridDimensions, TabletopMap } from '~/types/map'
 
-export const canSaveMap = (role: AuthRole, existing: TabletopMap): boolean =>
+/**
+ * Visibility gate for map-scoped commands and compatibility routes.
+ * This does not grant permission for player whole-map saves; `/api/maps/save`
+ * is restricted to explicit GM setup/edit writes.
+ */
+export const canAccessMapForRole = (role: AuthRole, existing: TabletopMap): boolean =>
   role === 'gm' || existing.playerVisible === true
 
 export const clampAnchorToDimensions = (

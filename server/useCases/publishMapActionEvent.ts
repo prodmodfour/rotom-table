@@ -3,7 +3,7 @@ import { mapChannel } from '#shared/realtime'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
-import { canSaveMap } from '../policies/mapPolicy'
+import { canAccessMapForRole } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import { findMapFile, readMapFile } from '../utils/mapStorage'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -97,7 +97,7 @@ export const publishMapActionEventUseCase = (
   if (!mapPath) throw new PublishMapActionEventUseCaseError(404, `Map ${input.slug}.json not found`)
 
   const map = readMap(mapPath)
-  if (!canSaveMap(input.role, map)) {
+  if (!canAccessMapForRole(input.role, map)) {
     throw new PublishMapActionEventUseCaseError(403, 'Map is not player visible')
   }
 

@@ -91,7 +91,7 @@ export const saveMapUseCase = (
     throw new SaveMapUseCaseError(403, 'Whole-map saves are setup/edit-only; live play uses commands')
   }
   if (input.role !== 'gm') {
-    throw new SaveMapUseCaseError(403, 'Whole-map saves are GM setup/edit-only')
+    throw new SaveMapUseCaseError(403, 'Player whole-map saves are not allowed; live play uses commands')
   }
 
   const findMapPath = dependencies.findMapPath ?? findMapFile

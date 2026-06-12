@@ -33,7 +33,7 @@ import { appendMoveLogEntry, buildMoveUseLogLines, type MoveLogEntry } from '~/u
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { resolveSheetMoveForUsage, type ResolvedSheetMove } from '~/utils/moveUsageResolution'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
-import { canSaveMap } from '../policies/mapPolicy'
+import { canAccessMapForRole } from '../policies/mapPolicy'
 import {
   createAuthoritativeLivePlayCommandExecutor,
   rejectLivePlayCommand,
@@ -308,7 +308,7 @@ const resolveContext = async (
   const map = await dependencies.mapRepository.getBySlug(command.mapSlug)
   if (!map) throw new LivePlayUseMoveCommandUseCaseError(404, `Map ${command.mapSlug}.json not found`)
 
-  if (!canSaveMap(actor.role, map)) {
+  if (!canAccessMapForRole(actor.role, map)) {
     throw new LivePlayUseMoveCommandUseCaseError(403, 'Map is not player visible')
   }
 
