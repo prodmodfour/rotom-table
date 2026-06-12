@@ -528,6 +528,47 @@ describe('useLivePlayCommands', () => {
     expect(actions.lastError.value).toBeNull()
   })
 
+  it('requests reconciliation and updates state hooks for stale live-play rejections', async () => {
+    const requestReconciliation = vi.fn()
+    const onCommandStarted = vi.fn()
+    const onCommandRejected = vi.fn()
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      requestReconciliation,
+      onCommandStarted,
+      onCommandRejected,
+    })
+    apiMocks.postJson.mockResolvedValue({
+      ok: false,
+      opId: 'op_stalemove01',
+      mapSlug: 'arena-map',
+      reason: 'stale-revision',
+      message: 'Map revision 4 is stale; current revision is 5.',
+      currentRevision: 5,
+    })
+
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 2, y: 0, z: 1 },
+    })
+
+    expect(result).toMatchObject({
+      dispatched: false,
+      message: 'Map revision 4 is stale; current revision is 5.',
+    })
+    expect(onCommandStarted).toHaveBeenCalledTimes(1)
+    expect(onCommandRejected).toHaveBeenCalledWith({
+      reason: 'stale-revision',
+      message: 'Map revision 4 is stale; current revision is 5.',
+      response: expect.objectContaining({ currentRevision: 5 }),
+    })
+    expect(requestReconciliation).toHaveBeenCalledWith({
+      request: MAP_API_PATHS.moveToken,
+      response: expect.objectContaining({ reason: 'stale-revision', currentRevision: 5 }),
+    })
+  })
+
   it('routes table action helpers through the shared dispatcher and applies returned sheet updates', async () => {
     const map = mapFixture()
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))

@@ -72,6 +72,8 @@ Realtime messages for live play are authoritative accepted results, patches, or 
 
 The map page exposes the current map revision for command `baseRevision` values. During SSE reconnect and reconciliation, live-play commands are paused and a visible status notice is shown; once the authoritative map reload completes, command dispatch resumes from the reconciled revision.
 
+The map page drives command availability through a live-play state machine with `loading`, `ready`, `saving-command`, `reconnecting`, `reconciling`, `stale`, and `error` states. Commands are sent only from `ready`; stale command rejections move through the stale state and trigger reconciliation before further commands can be sent, while fatal command failures enter `error` with a user-visible message.
+
 Realtime must not rely on every browser saving or receiving whole map documents as a last-writer-wins conflict strategy.
 
 ## Legacy `/sessions` boundary

@@ -42,6 +42,7 @@ import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { TokenPokeballOption } from '~/utils/pokeballCapture'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
+import type { LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 import type { PreviewState } from '~/utils/gridPreview'
 
@@ -98,6 +99,8 @@ const props = defineProps<{
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   tokenControlNotice?: string | null
+  livePlayState?: LivePlayConnectionState
+  livePlayStatusMessage?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -153,6 +156,24 @@ const combatLogMessages = computed(() =>
     actorAccents: props.spawnedPokemon,
   }),
 )
+const livePlayStateLabel = computed(() => {
+  switch (props.livePlayState) {
+    case 'saving-command':
+      return 'saving command'
+    case 'reconnecting':
+      return 'reconnecting'
+    case 'reconciling':
+      return 'reconciling'
+    case 'stale':
+      return 'stale revision'
+    case 'error':
+      return 'attention needed'
+    case 'loading':
+      return 'loading'
+    default:
+      return 'ready'
+  }
+})
 
 const focusPokemon = (id: string): boolean => rendererRef.value?.focusPokemon(id) ?? false
 
@@ -236,6 +257,17 @@ defineExpose({ focusPokemon })
       />
 
       <div
+        v-if="props.map && canViewMap && props.livePlayStatusMessage"
+        class="live-play-state-banner"
+        :class="`live-play-state-banner--${props.livePlayState ?? 'ready'}`"
+        role="status"
+        aria-live="polite"
+      >
+        <strong>Live play {{ livePlayStateLabel }}.</strong>
+        <span>{{ props.livePlayStatusMessage }}</span>
+      </div>
+
+      <div
         v-if="props.map && canViewMap && props.tokenControlNotice"
         class="token-control-notice"
         role="status"
@@ -306,6 +338,44 @@ defineExpose({ focusPokemon })
   min-width: 0;
   min-height: 100vh;
   background: var(--paper);
+}
+
+.live-play-state-banner {
+  position: absolute;
+  z-index: 7;
+  top: var(--map-overlay-gutter, 0.75rem);
+  left: 50%;
+  display: flex;
+  max-width: min(42rem, calc(100vw - var(--map-nav-rail-width, 0px) - 2rem));
+  transform: translateX(-50%);
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--rule-soft));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-soft) 91%, transparent);
+  color: color-mix(in srgb, var(--ink-bright) 90%, transparent);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--pokemon-black) 22%, transparent);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.28;
+  pointer-events: none;
+  text-align: center;
+}
+
+.live-play-state-banner--error,
+.live-play-state-banner--stale {
+  border-color: color-mix(in srgb, var(--bad) 60%, var(--rule-soft));
+  color: var(--bad);
+}
+
+.live-play-state-banner--reconnecting,
+.live-play-state-banner--reconciling,
+.live-play-state-banner--saving-command,
+.live-play-state-banner--loading {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--rule-soft));
 }
 
 .token-control-notice {

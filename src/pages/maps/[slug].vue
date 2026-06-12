@@ -11,6 +11,7 @@ import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
+import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlayStateMachine'
 import { parseRoundInputValue, useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
@@ -93,7 +94,7 @@ const {
   renamedTo,
   mapDataRevision,
   mapRevision,
-  livePlayCommandsBlocked,
+  realtimeReconciliationStatus,
   livePlayRealtimeNotice,
   reload: reloadAuthoritativeMap,
   applyPersistedMap,
@@ -111,16 +112,30 @@ const applyLivePlaySheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: s
   const previous = trainerBySlug.value.get(update.slug)
   trainerBySlug.value.set(update.slug, { ...(previous ?? {}), ...update.sheet } as TrainerSheet)
 }
+const livePlayStateMachine = useLivePlayStateMachine({
+  mapStatus: status,
+  mapError: error,
+  realtimeStatus: realtimeReconciliationStatus,
+  realtimeNotice: livePlayRealtimeNotice,
+})
+const livePlayConnectionState = livePlayStateMachine.state
+const livePlayStatusMessage = livePlayStateMachine.notice
 const livePlayCommands = useLivePlayCommands({
   slug,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
   map,
   mapRevision,
-  livePlayCommandBlocked: livePlayCommandsBlocked,
-  livePlayCommandBlockedMessage: livePlayRealtimeNotice,
+  livePlayCommandBlocked: computed(() => !livePlayStateMachine.commandsAllowed.value),
+  livePlayCommandBlockedMessage: livePlayStateMachine.commandBlockMessage,
   applyPersistedMap,
   applySheetUpdate: applyLivePlaySheetUpdate,
-  requestReconciliation: () => reloadAuthoritativeMap(),
+  requestReconciliation: () => livePlayStateMachine.reconcile(() => reloadAuthoritativeMap()),
+  onCommandStarted: livePlayStateMachine.commandStarted,
+  onCommandAccepted: livePlayStateMachine.commandAccepted,
+  onCommandRejected: livePlayStateMachine.commandRejected,
+  onCommandFailed: livePlayStateMachine.commandFailed,
+  onCommandBlocked: livePlayStateMachine.commandBlocked,
+  onCommandErrorCleared: livePlayStateMachine.clearCommandError,
 })
 
 watch(renamedTo, (newSlug) => {
@@ -150,10 +165,6 @@ const persistSpawnedPlacement = (placement: SheetPlacement) => {
   })
 }
 const tokenControlNotice = computed(() => {
-  if (livePlayRealtimeNotice.value) return livePlayRealtimeNotice.value
-  if (livePlayCommands.lastError.value) {
-    return `Token action failed: ${livePlayCommands.lastError.value}`
-  }
   if (isPlayer.value && playerProfileError.value) {
     return `Player profile unavailable: ${playerProfileError.value}`
   }
@@ -459,6 +470,11 @@ const setWeatherCoexistNext = (value: boolean) => {
 }
 
 const isSetupEditMode = () => mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT
+const livePlayActionablePlacementIds = computed(() => (
+  isSetupEditMode() || livePlayStateMachine.commandsAllowed.value
+    ? controllablePlacementIds.value
+    : []
+))
 
 const clearWeatherCoexistIfNoWeather = () => {
   if (!activeWeatherEffects.value.length) weatherCoexistNext.value = false
@@ -1336,7 +1352,7 @@ useMapDimensionReconciliation({
         :slug="slug"
         :spawned-pokemon="spawnedPokemon"
         :selected-id="selectedId"
-        :controllable-placement-ids="controllablePlacementIds"
+        :controllable-placement-ids="livePlayActionablePlacementIds"
         :active-initiative-id="activeInitiativeId"
         :initiative-rows="sortedInitiativeRows"
         :initiative-round="initiativeRound"
@@ -1357,6 +1373,8 @@ useMapDimensionReconciliation({
         :hazard-kind="hazardKind"
         :can-delete-tokens="isGm"
         :token-control-notice="tokenControlNotice"
+        :live-play-state="livePlayConnectionState"
+        :live-play-status-message="livePlayStatusMessage"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-feedback="actionAutomationFeedback"
         :move-animations="visibleMoveAnimations"

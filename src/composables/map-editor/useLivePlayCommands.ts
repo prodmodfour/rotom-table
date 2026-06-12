@@ -6,6 +6,7 @@ import {
   type BuildTerrainVoxelPayload,
   type DeleteTokenPayload,
   type LivePlayCommandDuplicate,
+  type LivePlayCommandRejectionReason,
   type LivePlayCommandResult,
   type LivePlayMapScope,
   type LivePlayScope,
@@ -89,6 +90,16 @@ export interface UseLivePlayCommandsOptions {
   applyPersistedMap?: (map: TabletopMap) => void
   applySheetUpdate?: (update: LivePlayCommandSheetUpdate) => void
   requestReconciliation?: (reason: LivePlayCommandReconciliationRequest) => void | Promise<void>
+  onCommandStarted?: () => void
+  onCommandAccepted?: (response: MapTokenTableActionResponse | LivePlayCommandResponse) => void
+  onCommandRejected?: (transition: {
+    reason?: LivePlayCommandRejectionReason | null
+    message: string
+    response: LivePlayCommandResponse
+  }) => void
+  onCommandFailed?: (message: string) => void
+  onCommandBlocked?: (message: string) => void
+  onCommandErrorCleared?: () => void
 }
 
 export interface LivePlayCommandReconciliationRequest {
@@ -225,6 +236,12 @@ const livePlayResponseMessage = (response: LivePlayCommandResponse): string | nu
   return null
 }
 
+const livePlayResponseRejectionReason = (response: LivePlayCommandResponse): LivePlayCommandRejectionReason | null => {
+  if (!response.ok) return response.reason
+  if (isDuplicateResult(response) && !response.original.ok) return response.original.reason
+  return null
+}
+
 const acceptedLivePlayResponse = (response: LivePlayCommandResponse): boolean => {
   if (!response.ok) return false
   return !isDuplicateResult(response) || response.original.ok
@@ -240,6 +257,10 @@ const acceptedResultRequiresReconciliation = (response: LivePlayCommandResponse)
   acceptedResultPatches(response).length > 0
 )
 
+const rejectionNeedsStateTransition = (reason: LivePlayCommandRejectionReason | null): boolean => (
+  reason === 'stale-revision' || reason === 'persistence-failed'
+)
+
 export const useLivePlayCommands = (
   options: UseLivePlayCommandsOptions,
 ): UseLivePlayCommandsReturn => {
@@ -250,6 +271,7 @@ export const useLivePlayCommands = (
   const clearError = () => {
     if (status.value === 'error') status.value = 'idle'
     lastError.value = null
+    options.onCommandErrorCleared?.()
   }
 
   const blockedCommandMessage = (): string | null => {
@@ -347,21 +369,25 @@ export const useLivePlayCommands = (
     if (blockedMessage) {
       status.value = 'error'
       lastError.value = blockedMessage
+      options.onCommandBlocked?.(blockedMessage)
       return { dispatched: false, message: blockedMessage }
     }
 
     status.value = 'saving'
     lastError.value = null
+    options.onCommandStarted?.()
     try {
       const response = await postJson<MapTokenTableActionResponse>(request, body)
       options.applyPersistedMap?.(response.map)
       for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
       status.value = 'idle'
+      options.onCommandAccepted?.(response)
       return { dispatched: true, response }
     } catch (error) {
       const message = getErrorMessage(error, { fallback: 'Token action failed' })
       status.value = 'error'
       lastError.value = message
+      options.onCommandFailed?.(message)
       return { dispatched: false, message }
     }
   }
@@ -374,17 +400,22 @@ export const useLivePlayCommands = (
     if (blockedMessage) {
       status.value = 'error'
       lastError.value = blockedMessage
+      options.onCommandBlocked?.(blockedMessage)
       return { dispatched: false, message: blockedMessage }
     }
 
     status.value = 'saving'
     lastError.value = null
+    options.onCommandStarted?.()
     try {
       const response = await postJson<LivePlayCommandResponse>(request, body)
       if (!acceptedLivePlayResponse(response)) {
         const message = livePlayResponseMessage(response) ?? 'Token action was rejected'
+        const reason = livePlayResponseRejectionReason(response)
         status.value = 'error'
         lastError.value = message
+        if (rejectionNeedsStateTransition(reason)) options.onCommandRejected?.({ reason, message, response })
+        if (reason === 'stale-revision') await options.requestReconciliation?.({ request, response })
         return { dispatched: false, message, response }
       }
 
@@ -394,11 +425,13 @@ export const useLivePlayCommands = (
       }
       for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
       status.value = 'idle'
+      options.onCommandAccepted?.(response)
       return { dispatched: true, response }
     } catch (error) {
       const message = getErrorMessage(error, { fallback: 'Token action failed' })
       status.value = 'error'
       lastError.value = message
+      options.onCommandFailed?.(message)
       return { dispatched: false, message }
     }
   }
