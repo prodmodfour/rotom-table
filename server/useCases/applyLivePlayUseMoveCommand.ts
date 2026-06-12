@@ -6,26 +6,31 @@ import {
   type LivePlayCommandResult,
   type LivePlayPatch,
   type LivePlayScope,
+  type LivePlaySheetScope,
   type LivePlayTokenScope,
   type UseMoveLivePlayCommand,
   type UseMovePayload,
 } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
-import type { RealtimeEvent } from '#shared/realtime'
+import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import {
   eotMoveUsageState,
   getMapMoveUsageEntry,
+  getSheetDailyMoveUsageEntry,
   limitedMoveUsageState,
   normalizeMoveUsageRound,
+  normalizeSheetMoveUsage,
   parseMoveFrequency,
   recordMapMoveUsage,
+  recordSheetDailyMoveUsage,
   type MoveFrequencyKind,
   type ParsedMoveFrequency,
 } from '~/utils/moveUsage'
 import { appendMoveLogEntry, buildMoveUseLogLines, type MoveLogEntry } from '~/utils/moveLog'
+import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { resolveSheetMoveForUsage, type ResolvedSheetMove } from '~/utils/moveUsageResolution'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import { canSaveMap } from '../policies/mapPolicy'
@@ -84,18 +89,25 @@ export interface ExecuteLivePlayUseMoveCommandInput {
   readonly expectedType?: typeof LIVE_PLAY_COMMAND_TYPES.USE_MOVE
 }
 
+export interface LivePlayUseMoveCommandSheetUpdate {
+  readonly kind: PersistedSheet['kind']
+  readonly slug: string
+  readonly sheet: Record<string, unknown>
+}
+
 export interface LivePlayUseMoveCommandResponse {
   readonly result: LivePlayCommandResult
   readonly path?: string
   readonly map?: TabletopMap
   readonly placement?: SheetPlacement
   readonly usage?: UseMoveUsageSummary
+  readonly sheetUpdates?: LivePlayUseMoveCommandSheetUpdate[]
 }
 
 export interface LivePlayUseMoveCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
-  readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef'>
+  readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withAsyncTransaction'>
   readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
@@ -117,6 +129,8 @@ interface AcceptedUseMoveContext extends ResolvedUseMoveContext {
   readonly previousUsage: UseMoveUsageSummary
   readonly usage: UseMoveUsageSummary
   readonly moveLogEntry?: MoveLogEntry
+  readonly nextSheet?: Record<string, unknown>
+  readonly sheetUpdate?: LivePlayUseMoveCommandSheetUpdate
 }
 
 interface AppliedUseMoveChange {
@@ -199,6 +213,41 @@ const useMoveTokenScopeMatches = (
   placementId: string,
 ): boolean => tokenScopeMatches(scopes, placementId, 'moveUsage') || tokenScopeMatches(scopes, placementId, 'action')
 
+const sheetMoveUsageScopeMatches = (
+  scopes: readonly LivePlayScope[],
+  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
+): boolean => scopes.some((scope) => (
+  scope.kind === 'sheet'
+  && scope.sheetKind === placement.sheetKind
+  && scope.sheetSlug === placement.sheetSlug
+  && scope.field === 'moveUsage'
+))
+
+const mismatchedSheetScope = (
+  scopes: readonly LivePlayScope[],
+  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
+): LivePlaySheetScope | null => (
+  scopes.find((scope): scope is LivePlaySheetScope => (
+    scope.kind === 'sheet'
+    && (scope.sheetKind !== placement.sheetKind || scope.sheetSlug !== placement.sheetSlug)
+  )) ?? null
+)
+
+const sheetScopesForPatch = (
+  command: UseMoveLivePlayCommand,
+  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
+): readonly LivePlaySheetScope[] => {
+  const scopes = command.scopes.filter((scope): scope is LivePlaySheetScope => (
+    scope.kind === 'sheet'
+    && scope.sheetKind === placement.sheetKind
+    && scope.sheetSlug === placement.sheetSlug
+    && scope.field === 'moveUsage'
+  ))
+  return scopes.length > 0
+    ? scopes
+    : [{ kind: 'sheet', sheetKind: placement.sheetKind, sheetSlug: placement.sheetSlug, field: 'moveUsage' }]
+}
+
 const scopesForPatch = (
   command: UseMoveLivePlayCommand,
   placementId: string,
@@ -228,6 +277,26 @@ const validateCommandPayloadAndScopes = (command: UseMoveLivePlayCommand): UseMo
     rejectLivePlayCommand('invalid', 'useMove scopes must include the token moveUsage or action scope for payload.placementId')
   }
   return payload
+}
+
+const validateUseMoveSheetScopeIdentity = (
+  command: UseMoveLivePlayCommand,
+  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
+): void => {
+  const badSheetScope = mismatchedSheetScope(command.scopes, placement)
+  if (!badSheetScope) return
+  rejectLivePlayCommand(
+    'invalid',
+    `useMove sheet scope ${badSheetScope.sheetKind}/${badSheetScope.sheetSlug} does not match placement ${placement.sheetKind}/${placement.sheetSlug}`,
+  )
+}
+
+const validateDailyUseMoveSheetScope = (
+  command: UseMoveLivePlayCommand,
+  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
+): void => {
+  if (sheetMoveUsageScopeMatches(command.scopes, placement)) return
+  rejectLivePlayCommand('invalid', 'Daily useMove scopes must include the backing sheet moveUsage scope')
 }
 
 const resolveContext = async (
@@ -323,6 +392,22 @@ const limitedUsageSummary = (
   available: state.available,
 })
 
+const sheetPayloadForPersistence = (
+  sheet: Record<string, unknown>,
+  slug: string,
+  updatedAt: number,
+): Record<string, unknown> => ({
+  ...toPersistableSheetPayload(sheet),
+  slug,
+  updatedAt,
+})
+
+const sheetUpdateFromPersisted = (sheet: PersistedSheet): LivePlayUseMoveCommandSheetUpdate => ({
+  kind: sheet.kind,
+  slug: sheet.slug,
+  sheet: sheet.sheet,
+})
+
 const usagePatchPayload = (
   context: AcceptedUseMoveContext,
 ): Record<string, unknown> => ({
@@ -336,6 +421,7 @@ const usagePatchPayload = (
   tracking: context.usage.tracking,
   previousUsage: context.previousUsage,
   usage: context.usage,
+  ...(context.sheetUpdate === undefined ? {} : { sheetRevision: normalizeRevision(context.sheetUpdate.sheet.revision) }),
   ...(context.moveLogEntry === undefined ? {} : { moveLogEntry: context.moveLogEntry }),
 })
 
@@ -343,18 +429,33 @@ const useMovePatch = (
   command: UseMoveLivePlayCommand,
   context: AcceptedUseMoveContext,
 ): LivePlayPatch => {
-  const field = context.usage.tracking === 'map' ? 'moveUsage' : 'action'
+  const field = context.usage.tracking === 'none' ? 'action' : 'moveUsage'
   return {
     schemaVersion: command.schemaVersion,
-    type: context.usage.tracking === 'map'
-      ? LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE
-      : LIVE_PLAY_PATCH_TYPES.TOKEN_ACTION,
+    type: context.usage.tracking === 'none'
+      ? LIVE_PLAY_PATCH_TYPES.TOKEN_ACTION
+      : LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE,
     mapSlug: command.mapSlug,
     revision: normalizeRevision(context.map.revision),
     scopes: scopesForPatch(command, context.placement.id, field),
     payload: usagePatchPayload(context),
   }
 }
+
+const sheetMoveUsagePatch = (
+  command: UseMoveLivePlayCommand,
+  context: AcceptedUseMoveContext,
+): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.SHEET_FIELD> => ({
+  schemaVersion: command.schemaVersion,
+  type: LIVE_PLAY_PATCH_TYPES.SHEET_FIELD,
+  mapSlug: command.mapSlug,
+  revision: normalizeRevision(context.map.revision),
+  scopes: sheetScopesForPatch(command, context.placement),
+  payload: {
+    field: 'moveUsage',
+    ...usagePatchPayload(context),
+  },
+})
 
 const moveLogEntryFromMetadata = (
   metadata: Record<string, unknown> | undefined,
@@ -374,6 +475,8 @@ const acceptedContext = (
     readonly previousUsage: UseMoveUsageSummary
     readonly usage: UseMoveUsageSummary
     readonly moveLogEntry?: MoveLogEntry
+    readonly nextSheet?: Record<string, unknown>
+    readonly sheetUpdate?: LivePlayUseMoveCommandSheetUpdate
   },
 ): AcceptedUseMoveContext => ({
   ...base,
@@ -383,6 +486,8 @@ const acceptedContext = (
   previousUsage: input.previousUsage,
   usage: input.usage,
   ...(input.moveLogEntry === undefined ? {} : { moveLogEntry: input.moveLogEntry }),
+  ...(input.nextSheet === undefined ? {} : { nextSheet: input.nextSheet }),
+  ...(input.sheetUpdate === undefined ? {} : { sheetUpdate: input.sheetUpdate }),
 })
 
 const applyEotUseMove = (
@@ -482,6 +587,62 @@ const applySceneUseMove = (
   }
 }
 
+const applyDailyUseMove = (
+  command: UseMoveLivePlayCommand,
+  context: ResolvedUseMoveContext,
+  move: ResolvedSheetMove,
+  frequency: ParsedMoveFrequency,
+  currentRevision: number,
+  updatedAt: number,
+): AppliedUseMoveChange | { readonly status: 'rejected'; readonly message: string; readonly currentState: UseMoveUsageSummary } => {
+  validateDailyUseMoveSheetScope(command, context.placement)
+
+  const maxUses = maxUsesFor(frequency)
+  const previousSheetUsage = normalizeSheetMoveUsage(context.sheet.sheet.moveUsage)
+  const before = limitedMoveUsageState(getSheetDailyMoveUsageEntry(previousSheetUsage, move.moveKey), maxUses)
+  const previousUsage = limitedUsageSummary(move, frequency, 'sheet', before)
+  if (!before.available) {
+    return {
+      status: 'rejected',
+      message: `${move.moveName} has no remaining Daily uses`,
+      currentState: previousUsage,
+    }
+  }
+
+  const moveUsage = recordSheetDailyMoveUsage({
+    usage: previousSheetUsage,
+    moveKey: move.moveKey,
+    moveName: move.moveName,
+    usedAt: updatedAt,
+  })
+  const revision = nextRevision(currentRevision)
+  const nextMap = { ...context.map, revision, updatedAt }
+  const nextSheet = sheetPayloadForPersistence(
+    { ...context.sheet.sheet, moveUsage },
+    context.sheet.slug,
+    updatedAt,
+  )
+  const sheetRevision = nextRevision(context.sheet.revision)
+  const after = limitedMoveUsageState(getSheetDailyMoveUsageEntry(moveUsage, move.moveKey), maxUses)
+  const nextContext = acceptedContext(context, {
+    map: nextMap,
+    move,
+    frequency,
+    previousUsage,
+    usage: limitedUsageSummary(move, frequency, 'sheet', after),
+    nextSheet,
+    sheetUpdate: {
+      kind: context.sheet.kind,
+      slug: context.sheet.slug,
+      sheet: { ...nextSheet, revision: sheetRevision },
+    },
+  })
+  return {
+    nextContext,
+    patches: [useMovePatch(command, nextContext), sheetMoveUsagePatch(command, nextContext)],
+  }
+}
+
 const applyUntrackedUseMove = (
   command: UseMoveLivePlayCommand,
   context: ResolvedUseMoveContext,
@@ -549,11 +710,9 @@ const applyUseMove = (
   }
 
   if (frequency.kind === 'daily') {
-    return {
-      status: 'rejected',
-      reason: 'invalid',
-      message: 'Daily useMove commands require sheet-scoped move usage integration',
-    }
+    const result = applyDailyUseMove(command, context, move, frequency, currentRevision, updatedAt)
+    if ('status' in result) return { reason: 'conflict', ...result }
+    return result
   }
 
   return applyUntrackedUseMove(command, context, move, frequency, currentRevision, updatedAt, dependencies)
@@ -564,6 +723,17 @@ const mapEvents = (
   clientId: string | undefined,
 ): Array<Omit<RealtimeEvent, 'timestamp'>> => mapDocumentUpdatedRealtimeEvents(map, clientId)
 
+const sheetEvents = (
+  updates: readonly LivePlayUseMoveCommandSheetUpdate[],
+  clientId: string | undefined,
+): Array<Omit<RealtimeEvent, 'timestamp'>> => updates.flatMap((update) => {
+  const data = { kind: update.kind, slug: update.slug, sheet: update.sheet }
+  return [
+    { channel: sheetChannel(update.kind, update.slug), type: 'updated' as const, clientId, data },
+    { channel: sheetsChannel, type: 'updated' as const, clientId, data },
+  ]
+})
+
 const isAcceptedResult = (result: LivePlayCommandResult): result is LivePlayCommandAccepted => (
   result.ok === true && !('duplicate' in result)
 )
@@ -572,18 +742,35 @@ const placementIdFromAcceptedResult = (result: LivePlayCommandAccepted): string 
   result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId ?? null
 )
 
+const acceptedResultTouchesSheet = (result: LivePlayCommandAccepted): boolean => result.patches.some((patch) => (
+  patch.type === LIVE_PLAY_PATCH_TYPES.SHEET_FIELD || patch.scopes.some((scope) => scope.kind === 'sheet')
+))
+
+const sheetUpdatesForResponse = (
+  result: LivePlayCommandResult,
+  context: AcceptedUseMoveContext | ResolvedUseMoveContext | null,
+): LivePlayUseMoveCommandSheetUpdate[] | undefined => {
+  if (!context || !isAcceptedResult(result) || !acceptedResultTouchesSheet(result)) return undefined
+  if ('sheetUpdate' in context && context.sheetUpdate) return [context.sheetUpdate]
+  return [sheetUpdateFromPersisted(context.sheet)]
+}
+
 const responseFromContext = (
   result: LivePlayCommandResult,
   context: AcceptedUseMoveContext | ResolvedUseMoveContext | null,
-): LivePlayUseMoveCommandResponse => ({
-  result,
-  ...(context ? {
-    path: context.relativePath,
-    map: context.map,
-    placement: context.placement,
-  } : {}),
-  ...((context && 'usage' in context) ? { usage: context.usage } : {}),
-})
+): LivePlayUseMoveCommandResponse => {
+  const sheetUpdates = sheetUpdatesForResponse(result, context)
+  return {
+    result,
+    ...(context ? {
+      path: context.relativePath,
+      map: context.map,
+      placement: context.placement,
+    } : {}),
+    ...((context && 'usage' in context) ? { usage: context.usage } : {}),
+    ...(sheetUpdates === undefined ? {} : { sheetUpdates }),
+  }
+}
 
 const currentContextForAcceptedResult = async (
   result: LivePlayCommandAccepted,
@@ -632,6 +819,7 @@ export const executeLivePlayUseMoveCommandUseCase = async (
       if (payload.placementId !== map.placement.id) {
         rejectLivePlayCommand('invalid', 'useMove payload.placementId must match the resolved placement')
       }
+      validateUseMoveSheetScopeIdentity(command, map.placement)
       if (!actorCanControlMapPlacement({
         role: actor.role,
         profile: actor.playerProfile,
@@ -681,22 +869,47 @@ export const executeLivePlayUseMoveCommandUseCase = async (
           throw new LivePlayUseMoveCommandUseCaseError(409, `Map ${result.mapSlug} changed before the live-play useMove command could be persisted`)
         }
 
+        if (acceptedNextMap.nextSheet) {
+          const sheetResult = await deps.sheetRepository.applyLivePlayUpdate({
+            kind: acceptedNextMap.sheet.kind,
+            slug: acceptedNextMap.sheet.slug,
+            expectedRevision: acceptedNextMap.sheet.revision,
+            nextSheet: acceptedNextMap.nextSheet,
+          })
+          if (sheetResult === 'stale') {
+            throw new LivePlayUseMoveCommandUseCaseError(409, `Sheet ${acceptedNextMap.sheet.kind}/${acceptedNextMap.sheet.slug} changed before the live-play useMove command could be persisted`)
+          }
+        }
+
         saveOpResult()
 
         const authoritativeMap = await deps.mapRepository.getBySlug(result.mapSlug)
         if (!authoritativeMap) throw new LivePlayUseMoveCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play useMove command`)
         const authoritativePlacement = authoritativeMap.placements.find((candidate) => candidate.id === acceptedNextMap.placement.id)
         if (!authoritativePlacement) throw new LivePlayUseMoveCommandUseCaseError(404, `Placement ${acceptedNextMap.placement.id} not found after live-play useMove command`)
+        const authoritativeSheet = acceptedNextMap.nextSheet
+          ? await deps.sheetRepository.getByRef(acceptedNextMap.sheet.kind, acceptedNextMap.sheet.slug)
+          : null
+        if (acceptedNextMap.nextSheet && !authoritativeSheet) {
+          throw new LivePlayUseMoveCommandUseCaseError(404, `Sheet ${acceptedNextMap.sheet.kind}/${acceptedNextMap.sheet.slug} not found after live-play useMove command`)
+        }
         persistedContext = {
           ...acceptedNextMap,
           map: authoritativeMap,
           placement: authoritativePlacement,
+          ...(authoritativeSheet ? {
+            sheet: authoritativeSheet,
+            sheetUpdate: sheetUpdateFromPersisted(authoritativeSheet),
+          } : {}),
         }
       })
     },
     publish: ({ actor, result }) => {
       if (!persistedContext) return
       for (const event of mapEvents(persistedContext.map, actor.clientId)) {
+        deps.publishRealtimeEvent(event)
+      }
+      for (const event of sheetEvents(persistedContext.sheetUpdate ? [persistedContext.sheetUpdate] : [], actor.clientId)) {
         deps.publishRealtimeEvent(event)
       }
       deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))

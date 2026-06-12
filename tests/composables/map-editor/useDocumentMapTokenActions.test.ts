@@ -204,6 +204,68 @@ describe('useDocumentMapTokenActions', () => {
     expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
   })
 
+  it('posts live-play useMove commands with sheet scope and applies authoritative map and sheet results', async () => {
+    const map = mapFixture()
+    const mapRevision = ref(4)
+    const applyPersistedMap = vi.fn()
+    const applySheetUpdate = vi.fn()
+    const sheetUpdate = {
+      kind: 'pokemon' as const,
+      slug: 'pikachu',
+      sheet: {
+        slug: 'pikachu',
+        revision: 3,
+        moveUsage: { daily: { thunderbolt: { moveName: 'Thunderbolt', uses: 1 } } },
+      },
+    }
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_usemoveclient',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+      placement: map.placements[0],
+      sheetUpdates: [sheetUpdate],
+    })
+
+    const actions = useDocumentMapTokenActions({
+      slug: 'arena-map',
+      map: ref(map),
+      mapRevision,
+      applyPersistedMap,
+      applySheetUpdate,
+    })
+    const result = await actions.useMove({
+      placementId: 'token-pikachu',
+      moveName: 'Thunderbolt',
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson).not.toHaveBeenCalledWith(SHEET_API_PATHS.save, expect.anything())
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.useMove, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.USE_MOVE,
+      scopes: [
+        { kind: 'token', placementId: 'token-pikachu', field: 'moveUsage' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' },
+      ],
+      payload: {
+        placementId: 'token-pikachu',
+        moveName: 'Thunderbolt',
+      },
+      clientId: 'ssr',
+    }))
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
+    expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
+  })
+
   it('blocks live-play token commands while realtime reconciliation is pending', async () => {
     const actions = useDocumentMapTokenActions({
       slug: 'arena-map',

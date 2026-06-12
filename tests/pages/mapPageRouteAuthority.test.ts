@@ -27,6 +27,10 @@ describe('map page route authority', () => {
     expect(mapPage).not.toContain('shouldUseDocumentTokenActions')
     expect(mapPage).not.toContain('turnPlacement,')
     expect(mapPage).not.toContain('movePlacement,')
+    expect(mapPage).toContain('documentTokenActions.useMove(request)')
+    expect(mapPage).not.toContain('postJson<RecordMoveUsageResponse>')
+    expect(mapPage).not.toContain('MAP_API_PATHS.useMove')
+    expect(mapPage).not.toContain('applyRecordedSheetUsage')
 
     const scenePanel = readSource('src/components/map/MapScenePanel.vue')
     expect(scenePanel).not.toContain('SessionCommandRejectionBanner')

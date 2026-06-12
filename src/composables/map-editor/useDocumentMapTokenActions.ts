@@ -13,6 +13,7 @@ import {
   type ModifyHpPayload,
   type MoveTokenPayload,
   type TurnTokenPayload,
+  type UseMovePayload,
 } from '#shared/livePlayCommands'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
@@ -107,6 +108,10 @@ export interface UseDocumentMapTokenActionsReturn {
     action?: ModifyConditionsPayload['action']
     conditions: readonly string[]
   }) => Promise<DocumentMapTokenActionDispatchResult>
+  useMove: (payload: {
+    placementId: string
+    moveName: string
+  }) => Promise<DocumentMapTokenActionDispatchResult>
   useManeuver: (payload: {
     placementId: string
     maneuverName: string
@@ -130,6 +135,7 @@ type LivePlayDocumentCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS
+  | typeof LIVE_PLAY_COMMAND_TYPES.USE_MOVE
 
 type LivePlayDocumentCommandPayload =
   | MoveTokenPayload
@@ -137,6 +143,7 @@ type LivePlayDocumentCommandPayload =
   | ModifyHpPayload
   | ModifyCombatStagesPayload
   | ModifyConditionsPayload
+  | UseMovePayload
 
 const isDuplicateResult = (response: LivePlayMapTokenActionResponse): response is LivePlayCommandDuplicate & LivePlayMapTokenActionResponse => (
   response.ok === true && 'duplicate' in response && response.duplicate === true
@@ -378,6 +385,25 @@ export const useDocumentMapTokenActions = (
     ),
   )
 
+  const useMove: UseDocumentMapTokenActionsReturn['useMove'] = (payload) => {
+    const commandPayload = {
+      placementId: payload.placementId,
+      moveName: payload.moveName,
+    }
+    const sheet = sheetScope(commandPayload, 'moveUsage')
+    return runLivePlayCommand(
+      MAP_API_PATHS.useMove,
+      commandBody(
+        LIVE_PLAY_COMMAND_TYPES.USE_MOVE,
+        commandPayload,
+        [
+          tokenScope(commandPayload, 'moveUsage'),
+          ...(sheet ? [sheet] : []),
+        ],
+      ),
+    )
+  }
+
   const useManeuver: UseDocumentMapTokenActionsReturn['useManeuver'] = (payload) => runAction(
     MAP_API_PATHS.useManeuver,
     {
@@ -415,6 +441,7 @@ export const useDocumentMapTokenActions = (
     modifyHp,
     modifyCombatStages,
     modifyConditions,
+    useMove,
     useManeuver,
     useAbility,
     useOrder,

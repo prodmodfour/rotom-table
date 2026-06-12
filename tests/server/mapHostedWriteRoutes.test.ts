@@ -239,12 +239,16 @@ describe('map hosted-write API routes', () => {
       {
         route: useMoveRoute,
         body: {
-          slug: 'arena',
-          placementId: 'token-1',
-          moveName: 'Thunderbolt',
+          schemaVersion: 1,
+          opId: 'op_hostedmove1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'useMove',
+          scopes: [{ kind: 'token', placementId: 'token-1', field: 'moveUsage' }],
+          payload: { placementId: 'token-1', moveName: 'Thunderbolt' },
           profileId: 'profile_ash00000',
         },
-        mock: mocks.recordMoveUsageUseCase,
+        mock: mocks.executeLivePlayUseMoveCommandUseCase,
       },
     ]
 

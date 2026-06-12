@@ -92,6 +92,7 @@ const createHarness = (
     [keyForSheet('pokemon', 'pikachu'), pokemonSheet(movelist)],
   ])
   const mapWrites: TabletopMap[] = []
+  const sheetWrites: PersistedSheet[] = []
   const published: unknown[] = []
   const executor = createAuthoritativeLivePlayCommandExecutor({
     opStore: createInMemoryLivePlayOpStore(),
@@ -108,6 +109,28 @@ const createHarness = (
   }
   const sheetRepository = {
     getByRef: vi.fn(async (kind: SheetKind, slug: string) => sheets.get(keyForSheet(kind, slug)) ?? null),
+    applyLivePlayUpdate: vi.fn(async (input: {
+      kind: SheetKind
+      slug: string
+      expectedRevision: number
+      nextSheet: Record<string, unknown>
+    }) => {
+      const key = keyForSheet(input.kind, input.slug)
+      const current = sheets.get(key)
+      if (!current || current.revision !== input.expectedRevision) return 'stale' as const
+      const revision = input.expectedRevision + 1
+      const updatedAt = typeof input.nextSheet.updatedAt === 'number' ? input.nextSheet.updatedAt : current.updatedAt
+      const sheet: PersistedSheet = {
+        kind: input.kind,
+        slug: input.slug,
+        revision,
+        updatedAt,
+        sheet: { ...input.nextSheet, slug: input.slug, revision },
+      }
+      sheets.set(key, sheet)
+      sheetWrites.push(sheet)
+      return 'applied' as const
+    }),
   }
   const deps = {
     commandExecutor: executor,
@@ -122,9 +145,13 @@ const createHarness = (
   return {
     deps,
     mapWrites,
+    sheetWrites,
     published,
     get storedMap() {
       return storedMap
+    },
+    get storedSheet() {
+      return sheets.get(keyForSheet('pokemon', 'pikachu'))
     },
   }
 }
@@ -258,6 +285,157 @@ describe('live-play useMove commands', () => {
         }),
       }),
     ])
+  })
+
+  it('records Daily move usage on the sheet and returns map and sheet patch metadata', async () => {
+    const harness = createHarness([{ name: 'Custom Daily Move', frequency: 'Daily x2' }])
+    const command = useMoveCommand({
+      opId: 'op_usemove_daily1',
+      scopes: [
+        { kind: 'token', placementId: 'linked-token', field: 'moveUsage' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' },
+      ],
+      payload: { placementId: 'linked-token', moveName: 'Custom Daily Move' },
+    })
+
+    const response = await execute(harness, command)
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.mapWrites).toHaveLength(1)
+    expect(harness.sheetWrites).toHaveLength(1)
+    expect(harness.storedSheet?.sheet.moveUsage).toEqual({
+      daily: {
+        'custom-daily-move': {
+          moveName: 'Custom Daily Move',
+          uses: 1,
+          updatedAt: 2_000,
+        },
+      },
+    })
+    expect(response.usage).toMatchObject({
+      tracking: 'sheet',
+      frequencyKind: 'daily',
+      uses: 1,
+      maxUses: 2,
+      remainingUses: 1,
+      available: true,
+    })
+    expect(response.sheetUpdates).toEqual([
+      {
+        kind: 'pokemon',
+        slug: 'pikachu',
+        sheet: expect.objectContaining({
+          slug: 'pikachu',
+          revision: 3,
+          moveUsage: {
+            daily: {
+              'custom-daily-move': {
+                moveName: 'Custom Daily Move',
+                uses: 1,
+                updatedAt: 2_000,
+              },
+            },
+          },
+        }),
+      },
+    ])
+    expect(response.result.ok && !('duplicate' in response.result) ? response.result.patches : []).toEqual([
+      expect.objectContaining({
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE,
+        revision: 5,
+        payload: expect.objectContaining({
+          placementId: 'linked-token',
+          tracking: 'sheet',
+          sheetRevision: 3,
+        }),
+      }),
+      expect.objectContaining({
+        type: LIVE_PLAY_PATCH_TYPES.SHEET_FIELD,
+        revision: 5,
+        scopes: [{ kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' }],
+        payload: expect.objectContaining({
+          field: 'moveUsage',
+          tracking: 'sheet',
+          sheetRevision: 3,
+        }),
+      }),
+    ])
+    expect(harness.published).toEqual(expect.arrayContaining([
+      expect.objectContaining({ channel: 'map:arena', type: 'updated', revision: 5, clientId: 'gm-client' }),
+      expect.objectContaining({ channel: 'sheet:pokemon:pikachu', type: 'updated', clientId: 'gm-client' }),
+      expect.objectContaining({ channel: 'sheets', type: 'updated', clientId: 'gm-client' }),
+      expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_usemove_daily1' }),
+    ]))
+  })
+
+  it('returns the stored result and authoritative sheet data for duplicate Daily opIds', async () => {
+    const harness = createHarness([{ name: 'Custom Daily Move', frequency: 'Daily x2' }])
+    const command = useMoveCommand({
+      opId: 'op_usemove_dailydup',
+      scopes: [
+        { kind: 'token', placementId: 'linked-token', field: 'moveUsage' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' },
+      ],
+      payload: { placementId: 'linked-token', moveName: 'Custom Daily Move' },
+    })
+
+    const first = await execute(harness, command)
+    const second = await execute(harness, command)
+
+    expect(second.result).toEqual(first.result)
+    expect(harness.mapWrites).toHaveLength(1)
+    expect(harness.sheetWrites).toHaveLength(1)
+    expect(second.sheetUpdates).toEqual([
+      expect.objectContaining({
+        kind: 'pokemon',
+        slug: 'pikachu',
+        sheet: expect.objectContaining({
+          revision: 3,
+          moveUsage: {
+            daily: {
+              'custom-daily-move': expect.objectContaining({ uses: 1 }),
+            },
+          },
+        }),
+      }),
+    ])
+  })
+
+  it('rejects stale same-token same-move Daily conflicts without overwriting sheet usage', async () => {
+    const harness = createHarness([{ name: 'Custom Daily Move', frequency: 'Daily x2' }])
+    const firstCommand = useMoveCommand({
+      opId: 'op_usemove_dailyfirst',
+      scopes: [
+        { kind: 'token', placementId: 'linked-token', field: 'moveUsage' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' },
+      ],
+      payload: { placementId: 'linked-token', moveName: 'Custom Daily Move' },
+    })
+    const staleCommand = useMoveCommand({
+      opId: 'op_usemove_dailystale',
+      scopes: [
+        { kind: 'token', placementId: 'linked-token', field: 'moveUsage' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' },
+      ],
+      payload: { placementId: 'linked-token', moveName: 'Custom Daily Move' },
+      baseRevision: 4,
+    })
+
+    await execute(harness, firstCommand)
+    const stale = await execute(harness, staleCommand)
+
+    expect(stale.result).toMatchObject({
+      ok: false,
+      reason: 'stale-revision',
+      currentRevision: 5,
+    })
+    expect(harness.mapWrites).toHaveLength(1)
+    expect(harness.sheetWrites).toHaveLength(1)
+    expect(harness.storedSheet?.sheet.moveUsage).toEqual({
+      daily: {
+        'custom-daily-move': expect.objectContaining({ uses: 1 }),
+      },
+    })
   })
 
   it('returns the stored result for duplicate opIds without applying map usage twice', async () => {

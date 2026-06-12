@@ -10,7 +10,6 @@ import PokeballCaptureResultModal from '~/components/map/PokeballCaptureResultMo
 import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
-import { useApiClient } from '~/composables/useApiClient'
 import { useDocumentMapTokenActions } from '~/composables/map-editor/useDocumentMapTokenActions'
 import { useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
@@ -56,8 +55,6 @@ import {
   isPlayerCharacterAttackOfOpportunityPair,
   playerCharacterSheetKeysForProfiles,
 } from '~/utils/playerCharacterTokens'
-import { MAP_API_PATHS } from '~/utils/apiRoutes'
-import { getClientId } from '~/utils/clientId'
 import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLog'
 import { applyPokeballCaptureOutcomeToTrainerSheet } from '~/utils/pokeballCapture'
 import { isSameAnchor } from '~/utils/gridGeometry'
@@ -66,7 +63,7 @@ import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
+import type { GridAnchor, SheetPlacement } from '~/types/map'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -103,7 +100,6 @@ const {
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
 })
 const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
-const { postJson } = useApiClient()
 const applyDocumentSheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: string; sheet: Record<string, unknown> }) => {
   if (update.kind === 'pokemon') {
     const previous = pokemonBySlug.value.get(update.slug)
@@ -683,53 +679,9 @@ const modifyConditionsFromScene: typeof modifyConditionsViaSetupSheetSave = asyn
   })
 }
 
-interface RecordMoveUsageResponse {
-  ok: true
-  map?: TabletopMap
-  sheet?: Record<string, unknown>
-  sheetKind?: 'pokemon' | 'trainer'
-  sheetSlug?: string
-}
-
-const applyRecordedMapUsage = (incoming: TabletopMap | undefined) => {
-  if (!incoming) return
-  if (isPlayer.value) {
-    applyPersistedMap(incoming)
-    return
-  }
-  if (!map.value) return
-  map.value.moveUsage = incoming.moveUsage
-  map.value.updatedAt = incoming.updatedAt
-}
-
-const mergeRecordedSheet = <TSheet extends { slug: string }>(
-  sheets: Map<string, TSheet>,
-  slug: string,
-  incoming: Record<string, unknown>,
-) => {
-  const previous = sheets.get(slug)
-  sheets.set(slug, { ...(previous ?? {}), ...incoming } as TSheet)
-}
-
-const applyRecordedSheetUsage = (response: RecordMoveUsageResponse) => {
-  if (!response.sheet || !response.sheetSlug || !response.sheetKind) return
-  if (response.sheetKind === 'pokemon') {
-    mergeRecordedSheet<CharacterSheet>(pokemonBySlug.value, response.sheetSlug, response.sheet)
-    return
-  }
-  mergeRecordedSheet<TrainerSheet>(trainerBySlug.value, response.sheetSlug, response.sheet)
-}
-
 const recordMoveUsage = async (request: { placementId: string; moveName: string }) => {
-  const response = await postJson<RecordMoveUsageResponse>(MAP_API_PATHS.useMove, {
-    slug,
-    placementId: request.placementId,
-    moveName: request.moveName,
-    clientId: getClientId(),
-    ...(isPlayer.value && selectedProfileId.value ? { profileId: selectedProfileId.value } : {}),
-  })
-  applyRecordedMapUsage(response.map)
-  applyRecordedSheetUsage(response)
+  const result = await documentTokenActions.useMove(request)
+  if (!result.dispatched) throw new Error(result.message ?? 'Move usage could not be recorded.')
 }
 
 const applyMoveFieldEffectFromScene: typeof applyMoveFieldEffect = (effect) => {
