@@ -18,6 +18,11 @@ import {
 } from './opResult'
 import { livePlayOpStore, type LivePlayOpRecord, type LivePlayOpStore, type SaveLivePlayOpResultInput } from './opStore'
 import { livePlayMapWriteQueue, type MapWriteQueue } from './mapWriteQueue'
+import {
+  evaluateLivePlayCommandConflicts,
+  type LivePlayAcceptedOperationHistoryStore,
+  type LivePlayConflictRejected,
+} from './conflicts'
 
 export type MaybePromise<T> = T | Promise<T>
 
@@ -310,19 +315,25 @@ const storedResultOrViolation = (
   return record.result
 }
 
-const createStaleRevisionResult = (
+const createRevisionConflictResult = (
   command: LivePlayCommandEnvelope,
-  currentRevision: number,
+  rejection: LivePlayConflictRejected,
 ): LivePlayCommandRejected => createLivePlayRejectedResult({
   opId: command.opId,
   mapSlug: command.mapSlug,
-  reason: 'stale-revision',
-  message: `Command baseRevision ${command.baseRevision} does not match current map revision ${currentRevision}`,
-  currentRevision,
+  reason: rejection.reason,
+  message: rejection.message,
+  currentRevision: rejection.currentRevision,
 })
 
 const canRecordCommand = (store: LivePlayOpStore): store is CommandRecordingOpStore => (
   typeof (store as { readonly saveCommandResult?: unknown }).saveCommandResult === 'function'
+)
+
+type OperationHistoryOpStore = LivePlayOpStore & LivePlayAcceptedOperationHistoryStore
+
+const canReadOperationHistory = (store: LivePlayOpStore): store is OperationHistoryOpStore => (
+  typeof (store as { readonly listAcceptedOpsSinceRevision?: unknown }).listAcceptedOpsSinceRevision === 'function'
 )
 
 export class AuthoritativeLivePlayCommandExecutor {
@@ -395,8 +406,9 @@ export class AuthoritativeLivePlayCommandExecutor {
       const map = await options.readMap({ command, actor })
       currentRevision = this.currentRevision(map, options)
 
-      if (command.baseRevision !== currentRevision) {
-        return this.saveResult(command, commandHash, createStaleRevisionResult(command, currentRevision))
+      const revisionConflict = this.revisionConflict(command, currentRevision)
+      if (revisionConflict) {
+        return this.saveResult(command, commandHash, createRevisionConflictResult(command, revisionConflict))
       }
 
       await options.authorize?.({ command, actor, map, currentRevision })
@@ -496,6 +508,47 @@ export class AuthoritativeLivePlayCommandExecutor {
   ): number {
     const revision = options.getMapRevision ? options.getMapRevision(map) : defaultMapRevision(map)
     return parseApplicationRevision(revision, 'current map revision')
+  }
+
+  private revisionConflict(
+    command: LivePlayCommandEnvelope,
+    currentRevision: number,
+  ): LivePlayConflictRejected | null {
+    if (command.baseRevision === currentRevision) return null
+
+    if (!canReadOperationHistory(this.opStore)) {
+      const decision = evaluateLivePlayCommandConflicts({
+        command,
+        baseRevision: command.baseRevision,
+        currentRevision,
+        recentAcceptedOps: null,
+      })
+      return decision.ok ? null : decision
+    }
+
+    try {
+      const recentAcceptedOps = command.baseRevision < currentRevision
+        ? this.opStore.listAcceptedOpsSinceRevision({
+            mapSlug: command.mapSlug,
+            baseRevision: command.baseRevision,
+            currentRevision,
+          })
+        : null
+      const decision = evaluateLivePlayCommandConflicts({
+        command,
+        baseRevision: command.baseRevision,
+        currentRevision,
+        recentAcceptedOps,
+      })
+      return decision.ok ? null : decision
+    } catch (error) {
+      return {
+        ok: false,
+        reason: 'stale-revision',
+        message: `Command baseRevision ${command.baseRevision} is stale and accepted operation history through revision ${currentRevision} is unavailable: ${errorMessage(error)}`,
+        currentRevision,
+      }
+    }
   }
 
   private acceptedResult<TCommand extends LivePlayCommandEnvelope, TMap, TActorInput, TActor>(

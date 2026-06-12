@@ -426,6 +426,25 @@ describe('SQLite storage foundation', () => {
       createdAt: 1_700_000_000_500,
       recordedAt: new Date(1_700_000_000_500).toISOString(),
     })
+    expect(ops.listAcceptedOpsSinceRevision({
+      mapSlug: command.mapSlug,
+      baseRevision: 2,
+      currentRevision: 3,
+    })).toEqual([
+      {
+        mapSlug: command.mapSlug,
+        opId: command.opId,
+        revision: 3,
+        scopes: [scope],
+        command,
+        result,
+      },
+    ])
+    expect(ops.listAcceptedOpsSinceRevision({
+      mapSlug: command.mapSlug,
+      baseRevision: 3,
+      currentRevision: 3,
+    })).toEqual([])
     expect(() => ops.saveCommandResult({
       mapSlug: command.mapSlug,
       opId: command.opId,

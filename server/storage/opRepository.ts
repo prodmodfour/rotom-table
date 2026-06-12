@@ -1,4 +1,10 @@
-import { parseLivePlayMapSlug, parseLivePlayOpId } from '#shared/livePlayCommands'
+import {
+  parseLivePlayMapSlug,
+  parseLivePlayOpId,
+  validateLivePlayCommandEnvelope,
+  type LivePlayCommandAccepted,
+  type LivePlayScope,
+} from '#shared/livePlayCommands'
 import {
   isStorableLivePlayCommandResult,
   livePlayIdempotencyViolationMessage,
@@ -11,6 +17,10 @@ import {
   type LivePlayOpStore,
   type SaveLivePlayOpResultInput,
 } from '../livePlay/opStore'
+import type {
+  LivePlayAcceptedOperationHistoryInput,
+  LivePlayAcceptedOperationMetadata,
+} from '../livePlay/conflicts'
 import { getRotomDatabase, type RotomDatabase } from './database'
 import {
   cloneStoredJson,
@@ -32,6 +42,7 @@ export interface SaveSqliteLivePlayOpResultInput extends SaveLivePlayOpResultInp
 
 export interface LivePlayOpRepository extends LivePlayOpStore {
   getStoredOpRecord(mapSlug: string, opId: string): SqliteLivePlayOpRecord | null
+  listAcceptedOpsSinceRevision(input: LivePlayAcceptedOperationHistoryInput): readonly LivePlayAcceptedOperationMetadata[]
   saveCommandResult(input: SaveSqliteLivePlayOpResultInput): SqliteLivePlayOpRecord
 }
 
@@ -102,6 +113,33 @@ const rowToOpRecord = (row: OpRow): SqliteLivePlayOpRecord => {
   }
 }
 
+const isAcceptedCommandResult = (
+  result: StorableLivePlayCommandResult,
+): result is LivePlayCommandAccepted => result.ok === true
+
+const scopesFromAcceptedResult = (result: LivePlayCommandAccepted): readonly LivePlayScope[] => (
+  result.patches.flatMap((patch) => patch.scopes).map(cloneStoredJson)
+)
+
+const acceptedOperationFromRecord = (
+  record: SqliteLivePlayOpRecord,
+): LivePlayAcceptedOperationMetadata | null => {
+  if (!isAcceptedCommandResult(record.result)) return null
+
+  const validation = validateLivePlayCommandEnvelope(record.command)
+  const command = validation.valid ? validation.command : undefined
+  const scopes = command?.scopes.map(cloneStoredJson) ?? scopesFromAcceptedResult(record.result)
+
+  return {
+    mapSlug: record.mapSlug,
+    opId: record.opId,
+    revision: record.result.revision,
+    scopes,
+    ...(command === undefined ? {} : { command: cloneStoredJson(command) }),
+    result: cloneStoredJson(record.result),
+  }
+}
+
 const resultRevision = (result: StorableLivePlayCommandResult): number | null => {
   const revision = result.ok ? result.revision : result.currentRevision
   return typeof revision === 'number' ? parseStoredRevision(revision, 'live-play op result revision') : null
@@ -157,6 +195,29 @@ export const createSqliteLivePlayOpRepository = (
     return record && record.mapSlug === parsedMapSlug ? record : null
   }
 
+  const listAcceptedOpsSinceRevision = (
+    input: LivePlayAcceptedOperationHistoryInput,
+  ): readonly LivePlayAcceptedOperationMetadata[] => {
+    const mapSlug = parseLivePlayMapSlug(input.mapSlug, 'live-play op history mapSlug')
+    const baseRevision = parseStoredRevision(input.baseRevision, 'live-play op history baseRevision')
+    const currentRevision = parseStoredRevision(input.currentRevision, 'live-play op history currentRevision')
+    if (baseRevision >= currentRevision) return []
+
+    const rows = database.connection.prepare(`
+      SELECT op_id, map_slug, command_hash, command_json, result_json, result_revision, created_at
+      FROM live_play_ops
+      WHERE map_slug = ?
+        AND result_revision > ?
+        AND result_revision <= ?
+      ORDER BY result_revision ASC, created_at ASC, op_id ASC
+    `).all(mapSlug, baseRevision, currentRevision) as unknown as OpRow[]
+
+    return rows
+      .map(rowToOpRecord)
+      .map(acceptedOperationFromRecord)
+      .filter((record): record is LivePlayAcceptedOperationMetadata => record !== null)
+  }
+
   const saveCommandResult = (input: SaveSqliteLivePlayOpResultInput): SqliteLivePlayOpRecord =>
     database.withTransaction(() => {
       validateSaveInput(input)
@@ -199,6 +260,7 @@ export const createSqliteLivePlayOpRepository = (
     getStoredOpRecord,
     getOpRecord: getStoredOpRecord,
     getOpResult: (mapSlug, opId) => getStoredOpRecord(mapSlug, opId)?.result ?? null,
+    listAcceptedOpsSinceRevision,
     saveCommandResult,
     saveOpResult: (input) => saveCommandResult({
       ...input,
@@ -214,6 +276,7 @@ export const sqliteLivePlayOpRepository: LivePlayOpRepository = {
   getStoredOpRecord: (mapSlug, opId) => defaultOpRepository().getStoredOpRecord(mapSlug, opId),
   getOpRecord: (mapSlug, opId) => defaultOpRepository().getOpRecord(mapSlug, opId),
   getOpResult: (mapSlug, opId) => defaultOpRepository().getOpResult(mapSlug, opId),
+  listAcceptedOpsSinceRevision: (input) => defaultOpRepository().listAcceptedOpsSinceRevision(input),
   saveCommandResult: (input) => defaultOpRepository().saveCommandResult(input),
   saveOpResult: (input) => defaultOpRepository().saveOpResult(input),
 }

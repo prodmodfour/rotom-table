@@ -21,6 +21,7 @@ import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
 import { openRotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
+import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
 import type { TabletopMap } from '~/types/map'
 
@@ -273,6 +274,65 @@ describe('live-play map token commands', () => {
     })
     expect(harness.writes).toEqual([])
     expect(harness.storedMap.placements[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
+  })
+
+  it('allows stale different-token moves with retained operation history and rejects same-token conflicts', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'rotom-live-conflicts-'))
+    const database = openRotomDatabase({ path: join(root, 'campaign.sqlite') })
+
+    try {
+      const harness = createHarness()
+      const executor = createAuthoritativeLivePlayCommandExecutor({
+        opStore: createSqliteLivePlayOpRepository({ database }),
+        queue: createInProcessMapWriteQueue(),
+      })
+      const deps = { ...harness.deps, commandExecutor: executor }
+
+      const first = await executeMapTokenLivePlayCommandUseCase({
+        role: 'gm',
+        command: moveCommand({ opId: 'op_conflictmove1' }),
+        playerProfile: null,
+        expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      }, deps)
+      const differentToken = await executeMapTokenLivePlayCommandUseCase({
+        role: 'gm',
+        command: moveCommand({
+          opId: 'op_conflictmove2',
+          baseRevision: 4,
+          scopes: [{ kind: 'token', placementId: 'unlinked-token', field: 'position' }],
+          payload: { placementId: 'unlinked-token', position: { x: 5, y: 0, z: 5 } },
+        }),
+        playerProfile: null,
+        expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      }, deps)
+      const sameToken = await executeMapTokenLivePlayCommandUseCase({
+        role: 'gm',
+        command: moveCommand({
+          opId: 'op_conflictmove3',
+          baseRevision: 4,
+          payload: { placementId: 'linked-token', position: { x: 5, y: 0, z: 1 } },
+        }),
+        playerProfile: null,
+        expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      }, deps)
+
+      expect(first.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+      expect(differentToken.result).toMatchObject({ ok: true, previousRevision: 5, revision: 6 })
+      expect(sameToken.result).toMatchObject({
+        ok: false,
+        reason: 'conflict',
+        currentRevision: 6,
+        message: expect.stringContaining('token linked-token position'),
+      })
+      expect(harness.writes).toHaveLength(2)
+      expect(harness.storedMap.placements.find((placement) => placement.id === 'linked-token')?.position)
+        .toEqual({ x: 4, y: 0, z: 1 })
+      expect(harness.storedMap.placements.find((placement) => placement.id === 'unlinked-token')?.position)
+        .toEqual({ x: 5, y: 0, z: 5 })
+    } finally {
+      database.close()
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   it('returns the stored result for duplicate move opIds without applying movement twice', async () => {
