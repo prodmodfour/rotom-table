@@ -312,7 +312,7 @@ describe('isometric token movement interaction', () => {
       movementLimit: 2,
       movementCapabilityLabel: 'Overland',
     })
-    expect(controller.canPlacePreview()).toBe(false)
+    expect(controller.canPlacePreview()).toBe(true)
   })
 
   it('protects cached movement paths from renderer mutation between preview anchors', () => {
@@ -418,7 +418,7 @@ describe('isometric token movement interaction', () => {
     expect(movePokemon).not.toHaveBeenCalled()
   })
 
-  it('commits a selected move only when the active preview is placeable and within capability', () => {
+  it('commits a selected move when the active preview is placeable', () => {
     const { controller, movePokemon } = makeController()
 
     expect(controller.performSelectedMove()).toBe(false)
@@ -429,7 +429,7 @@ describe('isometric token movement interaction', () => {
     expect(movePokemon).toHaveBeenCalledWith({ id: 'token-a', position: { x: 1, y: 0, z: 1 } })
   })
 
-  it('rejects movement previews that exceed the active movement capability', () => {
+  it('keeps over-capability movement informational while still allowing placeable commits', () => {
     const { controller, selected, movePokemon } = makeController()
     selected.movementCapabilities = { overland: 2 }
 
@@ -442,9 +442,9 @@ describe('isometric token movement interaction', () => {
       movementLimit: 2,
       movementCapabilityLabel: 'Overland',
     })
-    expect(controller.canPlacePreview()).toBe(false)
-    expect(controller.performSelectedMove()).toBe(false)
-    expect(movePokemon).not.toHaveBeenCalled()
+    expect(controller.canPlacePreview()).toBe(true)
+    expect(controller.performSelectedMove()).toBe(true)
+    expect(movePokemon).toHaveBeenCalledWith({ id: 'token-a', position: { x: 2, y: 0, z: 2 } })
   })
 
   it('steps preview elevation within map bounds for aerial movement', () => {

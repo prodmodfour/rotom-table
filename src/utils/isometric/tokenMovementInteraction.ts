@@ -177,7 +177,9 @@ export const createIsometricTokenMovementInteractionController = (
 
     activePreviewAnchor = anchor
     lastPreviewAnchorKey = nextAnchorKey
-    activePreviewCanPlace = canForcePlace && reachable
+    // Movement legality is tactical information only; placement integrity is the
+    // only gate for committing a manual token move.
+    activePreviewCanPlace = canForcePlace
     activePreview = {
       position: anchor,
       reachable,
