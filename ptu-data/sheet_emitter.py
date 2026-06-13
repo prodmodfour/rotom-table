@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from experience import pokemon_total_exp_for_level
+
 # Generator stat key → CharacterSheet stat key.
 _GEN_TO_SHEET_STAT = {
     "hp": "hp",
@@ -197,11 +199,14 @@ def to_character_sheet(
     ``slug`` must be globally unique across ``data/sheets/**/*.json`` —
     duplicates clobber each other in ``characterSheetsBySlug``.
     """
+    total_exp = pokemon_total_exp_for_level(poke["level"])
+
     sheet: dict[str, Any] = {
         "slug": slug,
         "nickname": nickname or poke["species"],
         "species": poke["species"],
         "level": poke["level"],
+        **({"totalExp": total_exp} if total_exp is not None else {}),
         "gender": poke.get("gender"),
         "shiny": bool(poke.get("shiny")),
         "nature": poke.get("nature_label"),
