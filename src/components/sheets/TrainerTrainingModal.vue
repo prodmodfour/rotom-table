@@ -9,7 +9,10 @@ import { deepCloneJson } from '~/utils/serialization'
 import { buildSheetSaveBody, sheetApiProfileContext } from '~/utils/sheetApiRequests'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
-import { POKEMON_EXPERIENCE_CHART, calculatePokemonLevelFromExperience } from '~/utils/sheets/pokemonExperience'
+import {
+  calculatePokemonLevelFromExperience,
+  pokemonExperienceNeededForLevel,
+} from '~/utils/sheets/pokemonExperience'
 import {
   POKEMON_TRAINING_FEATURE_OPTIONS,
   normalizePokemonTrainingFeatureName,
@@ -338,13 +341,6 @@ const toggleExperienceTarget = (slug: string) => {
   selectedExperienceSlugs.value = next
 }
 
-const expNeededForLevel = (level: number): number => {
-  const normalizedLevel = Math.min(100, Math.max(1, Math.floor(level)))
-  return [...POKEMON_EXPERIENCE_CHART]
-    .reverse()
-    .find((entry) => entry.level <= normalizedLevel)?.expNeeded ?? 0
-}
-
 const applyExperienceTrainingToPokemon = (
   pokemon: CharacterSheet,
   gain: number,
@@ -354,7 +350,7 @@ const applyExperienceTrainingToPokemon = (
 
   const currentTotal = typeof pokemon.totalExp === 'number'
     ? Math.max(0, pokemon.totalExp)
-    : expNeededForLevel(pokemon.level ?? 1)
+    : pokemonExperienceNeededForLevel(pokemon.level ?? 1) ?? 0
   pokemon.totalExp = currentTotal + gain
   const levelFromExperience = calculatePokemonLevelFromExperience(pokemon.totalExp)
   if (levelFromExperience != null) pokemon.level = levelFromExperience

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import PokemonVitalsBars from '~/components/sheets/PokemonVitalsBars.vue'
 import TrainerPokemonCard from '~/components/sheets/TrainerPokemonCard.vue'
 import { getSpriteUrl } from '~~/data/characterSheets'
 import { useApiClient } from '~/composables/useApiClient'
@@ -442,6 +443,7 @@ watch(selectedProfileId, () => {
                   :member="pokemon"
                   variant="team"
                   :show-unlink="false"
+                  show-vitals
                   @move-to-box="(slug) => movePokemonToBox(trainer.slug, slug)"
                   @drag-start="(event, slug, roster) => handlePokemonDragStart(event, trainer.slug, slug, roster)"
                   @drag-end="handlePokemonDragEnd"
@@ -478,6 +480,7 @@ watch(selectedProfileId, () => {
                   variant="box"
                   :can-move-to-team="trainerHasOpenTeamSlot(trainer.sheet)"
                   :show-unlink="false"
+                  show-vitals
                   @move-to-team="(slug) => movePokemonToTeam(trainer.slug, slug)"
                   @drag-start="(event, slug, roster) => handlePokemonDragStart(event, trainer.slug, slug, roster)"
                   @drag-end="handlePokemonDragEnd"
@@ -520,6 +523,11 @@ watch(selectedProfileId, () => {
                 <strong>{{ pokemon.displayName }}</strong>
                 <small v-if="pokemon.sheet">{{ pokemon.species }} · Lv {{ pokemon.level }}</small>
                 <small v-else>Sheet unavailable</small>
+                <PokemonVitalsBars
+                  v-if="pokemon.sheet"
+                  class="trainer-portal-pokemon__vitals"
+                  :sheet="pokemon.sheet"
+                />
               </span>
             </NuxtLink>
           </div>
@@ -817,6 +825,10 @@ watch(selectedProfileId, () => {
   min-width: 0;
   flex-direction: column;
   gap: 0.15rem;
+}
+
+.trainer-portal-pokemon__vitals {
+  margin-top: 0.08rem;
 }
 
 .trainer-portal-pokemon__text strong,

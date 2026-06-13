@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import PokemonVitalsBars from './PokemonVitalsBars.vue'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
 import type { ResolvedTrainerPokemonLink, TrainerPokemonRosterKind } from '~/utils/trainerPokemonLinks'
 
@@ -8,10 +9,12 @@ const props = withDefaults(defineProps<{
   variant?: TrainerPokemonRosterKind
   canMoveToTeam?: boolean
   showUnlink?: boolean
+  showVitals?: boolean
 }>(), {
   variant: 'box',
   canMoveToTeam: true,
   showUnlink: true,
+  showVitals: false,
 })
 
 const emit = defineEmits<{
@@ -36,6 +39,8 @@ const metaLabel = computed(() => (
   props.member.species ? `${props.member.species} · ${levelLabel.value}` : levelLabel.value
 ))
 
+const showVitalsBars = computed(() => props.showVitals && Boolean(props.member.sheet))
+
 const startDrag = (event: DragEvent) => {
   emit('dragStart', event, props.member.slug, props.variant)
 }
@@ -44,7 +49,10 @@ const startDrag = (event: DragEvent) => {
 <template>
   <article
     class="pokemon-link-card"
-    :class="`pokemon-link-card--${props.variant}`"
+    :class="[
+      `pokemon-link-card--${props.variant}`,
+      { 'pokemon-link-card--with-vitals': showVitalsBars },
+    ]"
     @dragover="emit('dragOver', $event, member.slug)"
     @drop="emit('drop', $event, member.slug)"
   >
@@ -83,6 +91,12 @@ const startDrag = (event: DragEvent) => {
       </span>
       <span class="pokemon-link-card__meta">{{ metaLabel }}</span>
     </span>
+
+    <PokemonVitalsBars
+      v-if="showVitalsBars"
+      class="pokemon-link-card__vitals"
+      :sheet="member.sheet"
+    />
 
     <span class="pokemon-link-card__actions" aria-label="Pokémon roster actions">
       <button
@@ -123,6 +137,13 @@ const startDrag = (event: DragEvent) => {
   border-radius: 12px;
   background: var(--paper);
   padding: 0.55rem;
+}
+
+.pokemon-link-card--with-vitals {
+  grid-template-areas:
+    "drag sprite body"
+    "drag sprite vitals"
+    "drag sprite actions";
 }
 
 .pokemon-link-card--team {
@@ -227,6 +248,10 @@ const startDrag = (event: DragEvent) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pokemon-link-card__vitals {
+  grid-area: vitals;
 }
 
 .pokemon-link-card__actions {
