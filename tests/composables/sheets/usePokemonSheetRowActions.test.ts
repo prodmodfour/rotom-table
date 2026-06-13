@@ -18,21 +18,24 @@ const makeSheet = (): CharacterSheet => ({
     pointsLeft: 2,
   },
   movelist: [],
+  eggMoves: [],
   abilities: [],
   edges: [],
   inheritedMoves: {},
 })
 
 describe('usePokemonSheetRowActions', () => {
-  it('adds and removes Pokémon move, ability, and edge rows', () => {
+  it('adds and removes Pokémon move, egg move, ability, and edge rows', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const actions = usePokemonSheetRowActions(sheet)
 
     actions.addMove()
+    actions.addEggMove()
     actions.addAbility()
     actions.addEdge()
 
     expect(sheet.value?.movelist?.[0]).toEqual({ name: '' })
+    expect(sheet.value?.eggMoves?.[0]).toEqual({ name: '' })
     expect(sheet.value?.abilities?.[0]).toEqual({ name: '' })
     expect(sheet.value?.edges?.[0]).toEqual({ name: 'New Edge' })
 
@@ -40,12 +43,23 @@ describe('usePokemonSheetRowActions', () => {
     expect(sheet.value?.movelist).toHaveLength(1)
 
     actions.removeMove(0)
+    actions.removeEggMove(0)
     actions.removeAbility(0)
     actions.removeEdge(0)
 
     expect(sheet.value?.movelist).toHaveLength(0)
+    expect(sheet.value?.eggMoves).toHaveLength(0)
     expect(sheet.value?.abilities).toHaveLength(0)
     expect(sheet.value?.edges).toHaveLength(0)
+  })
+
+  it('creates a default egg move list for older sheet payloads', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet())
+    delete sheet.value!.eggMoves
+
+    usePokemonSheetRowActions(sheet).addEggMove()
+
+    expect(sheet.value?.eggMoves).toEqual([{ name: '' }])
   })
 
   it('reorders Pokémon move rows by sheet index', () => {
@@ -120,11 +134,13 @@ describe('usePokemonSheetRowActions', () => {
     const actions = usePokemonSheetRowActions(sheet)
 
     actions.addMove()
+    actions.addEggMove()
     actions.reorderMove(0, 1)
     actions.setStat('atk', 'added', 5)
     actions.setEvasionBonus('vsAtkBonus', 1)
     actions.setAccuracyStage(1)
     actions.toggleAbilityActivation(0)
+    actions.removeEggMove(0)
     actions.setInheritedMove('20', 'Ignored')
     actions.setHeldItemName('Ignored')
 

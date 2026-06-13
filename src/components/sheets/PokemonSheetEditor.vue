@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDerived'
 import { usePokemonSheetCsvFields } from '~/composables/sheets/usePokemonSheetCsvFields'
 import { usePokemonSheetRowActions } from '~/composables/sheets/usePokemonSheetRowActions'
+import { usePokemonSheetTabs } from '~/composables/sheets/usePokemonSheetTabs'
 import { usePokemonNatureControls } from '~/composables/sheets/usePokemonNatureControls'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -18,6 +19,8 @@ const sheet = computed<CharacterSheet>(() => props.sheet)
 const canEditSheet = computed(() => props.capabilities.canEditSheet)
 const canManagePlayerAccess = computed(() => props.capabilities.canManagePlayerAccess)
 const pokemonAccentStyle = computed(() => props.accentColor ? trainerAccentCssVariables(props.accentColor) : undefined)
+
+const { tabs, activeTab, setActiveTab } = usePokemonSheetTabs()
 
 const {
   spriteUrl,
@@ -74,6 +77,8 @@ const {
   addMove,
   removeMove,
   reorderMove,
+  addEggMove,
+  removeEggMove,
   addAbility,
   removeAbility,
   toggleAbilityActivation,
@@ -116,7 +121,13 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
       @open-healing="openHealingModal"
     />
 
-    <div class="pokemon-sheet__tab-panel">
+    <SheetTabNav
+      :tabs="tabs"
+      :active-key="activeTab"
+      @update:active-key="setActiveTab"
+    />
+
+    <div v-if="activeTab === 'sheet'" class="pokemon-sheet__tab-panel">
       <!-- ============ Stats + Combat strip ============ -->
       <div class="row two-col">
         <PokemonStatsPanel
@@ -203,6 +214,13 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
         :skills="skills"
       />
     </div>
+
+    <PokemonEggMovesPanel
+      v-if="activeTab === 'eggMoves'"
+      :sheet="sheet"
+      @add-egg-move="addEggMove"
+      @remove-egg-move="removeEggMove"
+    />
   </article>
 
   <SheetHealingModal

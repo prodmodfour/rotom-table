@@ -50,6 +50,17 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     moveArrayItem(sheet.value?.movelist, fromIndex, toIndex)
   }
 
+  const addEggMove = () => {
+    if (!sheet.value) return
+    const eggMoves = sheet.value.eggMoves ?? []
+    eggMoves.push({ name: '' } as CharacterSheetMove)
+    sheet.value.eggMoves = eggMoves
+  }
+
+  const removeEggMove = (i: number) => {
+    sheet.value?.eggMoves?.splice(i, 1)
+  }
+
   const addAbility = () => {
     sheet.value?.abilities?.push({ name: '' } as CharacterSheetAbility)
   }
@@ -103,6 +114,8 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     addMove,
     removeMove,
     reorderMove,
+    addEggMove,
+    removeEggMove,
     addAbility,
     removeAbility,
     toggleAbilityActivation,

@@ -209,6 +209,8 @@ export interface CharacterSheet {
   inheritedRemaining?: number
 
   movelist?: CharacterSheetMove[]
+  /** Egg Moves this Pokémon has inherited or otherwise has available to learn. */
+  eggMoves?: CharacterSheetMove[]
   /** Persistent Daily move frequency usage. EOT and Scene usage are map-scoped. */
   moveUsage?: SheetMoveUsageState
 

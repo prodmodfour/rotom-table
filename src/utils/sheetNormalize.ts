@@ -67,6 +67,7 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
   ensureObj<NonNullable<CharacterSheet['inheritedMoves']>>(sheet, 'inheritedMoves')
 
   ensureArr(sheet, 'movelist')
+  ensureArr(sheet, 'eggMoves')
   ensureArr(sheet, 'abilities')
   ensureArr(sheet, 'edges')
 

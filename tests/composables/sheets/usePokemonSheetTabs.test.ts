@@ -9,11 +9,13 @@ describe('usePokemonSheetTabs', () => {
   it('defines the stable pokemon sheet tab order', () => {
     expect(POKEMON_SHEET_TABS.map((tab) => [tab.key, tab.label])).toEqual([
       ['sheet', 'Sheet'],
+      ['eggMoves', 'Egg Moves'],
     ])
   })
 
   it('validates tab keys', () => {
     expect(isPokemonSheetTabKey('sheet')).toBe(true)
+    expect(isPokemonSheetTabKey('eggMoves')).toBe(true)
     expect(isPokemonSheetTabKey('healing')).toBe(false)
     expect(isPokemonSheetTabKey('combat')).toBe(false)
     expect(isPokemonSheetTabKey(null)).toBe(false)
@@ -23,9 +25,11 @@ describe('usePokemonSheetTabs', () => {
     const tabs = usePokemonSheetTabs()
 
     expect(tabs.activeTab.value).toBe('sheet')
+    tabs.setActiveTab('eggMoves')
+    expect(tabs.activeTab.value).toBe('eggMoves')
     tabs.setActiveTab('healing')
-    expect(tabs.activeTab.value).toBe('sheet')
+    expect(tabs.activeTab.value).toBe('eggMoves')
     tabs.setActiveTab('unknown')
-    expect(tabs.activeTab.value).toBe('sheet')
+    expect(tabs.activeTab.value).toBe('eggMoves')
   })
 })
