@@ -5,16 +5,19 @@ Selection rules:
 - Gen 1-5: prefer animated Black/White GIF sprites from PokémonDB.
 - If an animated Gen 1-5 asset does not exist on PokémonDB, fall back to the
   Black/White static PNG for that specific form.
-- Gen 6+: prefer animated GIF sprites from Pokémon Showdown's /sprites/ani/.
-- If a Gen 6+ form does not have a public animated GIF in Showdown, fall back
-  to Showdown's /sprites/afd/ static PNG for that exact form.
+- Gen 6+: prefer animated Gen 5-style GIF sprites from Pokémon Showdown's
+  /sprites/gen5ani/ when they exist for that exact form.
+- If a Gen 6+ form does not have a public Gen 5-style animated GIF in
+  Showdown, fall back to Showdown's model assets: first animated GIFs under
+  /sprites/ani/, then static Pokémon HOME-centered PNGs under
+  /sprites/home-centered/.
 
 Files are stored locally under public/sprites/.
 
 Examples:
 - public/sprites/black-white/anim/normal/abra.gif
-- public/sprites/showdown/ani/palafin-hero.gif
-- public/sprites/showdown/afd/ogerpon-cornerstone.png
+- public/sprites/showdown/gen5ani/greninja.gif
+- public/sprites/showdown/home-centered/ogerpon-cornerstone.png
 
 A manifest is written to data/pokemonSpriteManifest.json.
 """
@@ -39,12 +42,18 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 PUBLIC_ROOT = REPO_ROOT / "public"
 SPRITE_ROOT = PUBLIC_ROOT / "sprites"
+SPRITESHEET_ROOT = PUBLIC_ROOT / "spritesheets"
 MANIFEST_PATH = REPO_ROOT / "data" / "pokemonSpriteManifest.json"
 POKEDEX_PATH = REPO_ROOT / "data" / "reference" / "pokedex.json"
 MAX_WORKERS = 16
 USER_AGENT = "rotom-table sprite downloader"
 GEN_1_TO_5 = {"gen1", "gen2", "gen3", "gen4", "gen5"}
-BW_EXACT_SPRITE_SLUGS: dict[str, str] = {}
+BW_EXACT_SPRITE_SLUGS: dict[str, str] = {
+    "kyurem-reshiram-fusion": "kyurem-white",
+    "kyurem-zekrom-fusion": "kyurem-black",
+    "meloetta-step": "meloetta-pirouette",
+    "rotom-normal": "rotom",
+}
 
 
 def has_placement_data(entry: dict) -> bool:
@@ -91,8 +100,9 @@ def build_species_map_from_markdown() -> dict[str, dict[str, str | None]]:
 def add_extra_species_from_pokemondb(species_map: dict[str, dict[str, str | None]]) -> None:
     return
 
+SHOWDOWN_GEN5ANI_INDEX_URL = "https://play.pokemonshowdown.com/sprites/gen5ani/?sort=name"
 SHOWDOWN_ANI_INDEX_URL = "https://play.pokemonshowdown.com/sprites/ani/?sort=name"
-SHOWDOWN_AFD_INDEX_URL = "https://play.pokemonshowdown.com/sprites/afd/?sort=name"
+SHOWDOWN_HOME_CENTERED_INDEX_URL = "https://play.pokemonshowdown.com/sprites/home-centered/?sort=name"
 
 BW_ANIM_EXACT_SPRITE_SLUGS = {
     "darmanitan-zen": "darmanitan-zen-mode",
@@ -215,8 +225,9 @@ SHOWDOWN_EXACT_SPRITE_IDS = {
     "rotom-normal": "rotom",
 }
 
+SHOWDOWN_GEN5ANI_FILES: set[str] = set()
 SHOWDOWN_ANI_FILES: set[str] = set()
-SHOWDOWN_AFD_FILES: set[str] = set()
+SHOWDOWN_HOME_CENTERED_FILES: set[str] = set()
 
 
 def dedupe(items: Iterable[str]) -> list[str]:
@@ -305,17 +316,24 @@ def resolve_pokemon_db_asset(slug: str) -> tuple[str, str, str]:
 def resolve_showdown_asset(slug: str) -> tuple[str, str, str]:
     for cand in showdown_sprite_id_candidates(slug):
         filename = f"{cand}.gif"
+        if filename in SHOWDOWN_GEN5ANI_FILES:
+            url = f"https://play.pokemonshowdown.com/sprites/gen5ani/{filename}"
+            local = f"showdown/gen5ani/{filename}"
+            return "showdown-gen5-animated-gif", url, local
+
+    for cand in showdown_sprite_id_candidates(slug):
+        filename = f"{cand}.gif"
         if filename in SHOWDOWN_ANI_FILES:
             url = f"https://play.pokemonshowdown.com/sprites/ani/{filename}"
             local = f"showdown/ani/{filename}"
-            return "showdown-animated-gif", url, local
+            return "showdown-model-animated-gif-fallback", url, local
 
     for cand in showdown_sprite_id_candidates(slug):
         filename = f"{cand}.png"
-        if filename in SHOWDOWN_AFD_FILES:
-            url = f"https://play.pokemonshowdown.com/sprites/afd/{filename}"
-            local = f"showdown/afd/{filename}"
-            return "showdown-static-png-fallback", url, local
+        if filename in SHOWDOWN_HOME_CENTERED_FILES:
+            url = f"https://play.pokemonshowdown.com/sprites/home-centered/{filename}"
+            local = f"showdown/home-centered/{filename}"
+            return "showdown-home-static-png-fallback", url, local
 
     raise RuntimeError(f"Could not resolve Showdown asset for {slug}")
 
@@ -394,7 +412,7 @@ def convert_existing_manifest() -> None:
 
 
 def main() -> None:
-    global SHOWDOWN_ANI_FILES, SHOWDOWN_AFD_FILES
+    global SHOWDOWN_GEN5ANI_FILES, SHOWDOWN_ANI_FILES, SHOWDOWN_HOME_CENTERED_FILES
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -421,11 +439,14 @@ def main() -> None:
             f"Missing in map: {missing_in_map[:20]} | Extra in map: {extra_in_map[:20]}"
         )
 
+    SHOWDOWN_GEN5ANI_FILES = fetch_showdown_file_set(SHOWDOWN_GEN5ANI_INDEX_URL, "gif")
     SHOWDOWN_ANI_FILES = fetch_showdown_file_set(SHOWDOWN_ANI_INDEX_URL, "gif")
-    SHOWDOWN_AFD_FILES = fetch_showdown_file_set(SHOWDOWN_AFD_INDEX_URL, "png")
+    SHOWDOWN_HOME_CENTERED_FILES = fetch_showdown_file_set(SHOWDOWN_HOME_CENTERED_INDEX_URL, "png")
 
     if SPRITE_ROOT.exists():
         shutil.rmtree(SPRITE_ROOT)
+    if SPRITESHEET_ROOT.exists():
+        shutil.rmtree(SPRITESHEET_ROOT)
     SPRITE_ROOT.mkdir(parents=True, exist_ok=True)
 
     jobs = []
