@@ -32,11 +32,18 @@ const SKILL_KEYS: TrainerSkillKey[] = TRAINER_SKILL_ORDER.map(([key]) => key)
 
 const { tabs, activeTab, setActiveTab } = useTrainerSheetTabs()
 const healingModalOpen = ref(false)
+const trainingModalOpen = ref(false)
 const openHealingModal = () => {
   healingModalOpen.value = true
 }
 const closeHealingModal = () => {
   healingModalOpen.value = false
+}
+const openTrainingModal = () => {
+  trainingModalOpen.value = true
+}
+const closeTrainingModal = () => {
+  trainingModalOpen.value = false
 }
 const healingModalTitle = computed(() => `Healing · ${sheet.value.name || 'Trainer'}`)
 const healingModalSubtitle = computed(() => 'Trainer recovery, AP, and daily resources')
@@ -120,6 +127,7 @@ const {
       :max-ap="maxAp"
       :can-manage-player-access="canManagePlayerAccess"
       @open-healing="openHealingModal"
+      @open-training="openTrainingModal"
       @open-portrait-picker="openPortraitPicker"
       @clear-portrait="clearPortrait"
       @set-current-hp="setCurrentHp"
@@ -254,6 +262,12 @@ const {
       :max-ap="maxAp"
     />
   </SheetHealingModal>
+
+  <TrainerTrainingModal
+    v-if="trainingModalOpen"
+    :sheet="sheet"
+    @close="closeTrainingModal"
+  />
 
   <TrainerPortraitPickerModal
     v-if="portraitPickerOpen"

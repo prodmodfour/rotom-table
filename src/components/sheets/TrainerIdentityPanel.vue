@@ -15,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'open-healing': []
+  'open-training': []
   'open-portrait-picker': []
   'clear-portrait': []
   'set-current-hp': [value: unknown]
@@ -86,6 +87,9 @@ const setAccentColorFromEvent = (event: Event) => {
         </label>
         <button type="button" class="healing-button" @click="emit('open-healing')">
           Healing
+        </button>
+        <button type="button" class="training-button" @click="emit('open-training')">
+          Training
         </button>
         <label v-if="canManagePlayerAccess" class="player-toggle" :class="{ active: sheet.player }" title="Player">
           <input v-model="sheet.player" type="checkbox" /> Player
@@ -272,7 +276,8 @@ const setAccentColorFromEvent = (event: Event) => {
 }
 
 .player-toggle,
-.healing-button {
+.healing-button,
+.training-button {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -288,14 +293,17 @@ const setAccentColorFromEvent = (event: Event) => {
   user-select: none;
 }
 
-.healing-button {
+.healing-button,
+.training-button {
   border-color: color-mix(in srgb, var(--accent) 60%, var(--rule-soft));
   background: rgba(var(--accent-rgb), 0.16);
   font-weight: 800;
 }
 
 .healing-button:hover,
-.healing-button:focus-visible {
+.healing-button:focus-visible,
+.training-button:hover,
+.training-button:focus-visible {
   border-color: var(--accent);
   background: rgba(var(--accent-rgb), 0.26);
   outline: none;
