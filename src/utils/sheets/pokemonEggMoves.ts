@@ -1,5 +1,5 @@
 import { findMove, moves } from '~~/data/ptuReference'
-import type { CharacterSheetMove } from '~/types/characterSheet'
+import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
 import type { PtuMove } from '~/types/ptuReference'
 
 export const POKEMON_EGG_MOVE_DATA_FIELDS = [
@@ -29,6 +29,20 @@ export const POKEMON_EGG_MOVE_NAME_COLUMN: PokemonEggMoveColumn<'name'> = {
 }
 
 export const POKEMON_EGG_MOVE_NAME_OPTIONS: readonly string[] = moves.map((move) => move.name)
+
+export const pokemonEggMoveOptionsForSheet = (
+  sheet: Pick<CharacterSheet, 'eggMoves'> | null | undefined,
+): string[] => {
+  const seen = new Set<string>()
+  const options: string[] = []
+  for (const move of sheet?.eggMoves ?? []) {
+    const name = move.name.trim()
+    if (!name || seen.has(name)) continue
+    seen.add(name)
+    options.push(name)
+  }
+  return options
+}
 
 export const POKEMON_EGG_MOVE_AUTOFILL_COLUMNS = [
   { key: 'type', label: 'Type', multiline: false },

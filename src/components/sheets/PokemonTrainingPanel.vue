@@ -5,6 +5,7 @@ import {
   POKEMON_TRAINING_FEATURE_OPTIONS,
   resolvePokemonTrainingFeatureEffects,
 } from '~/utils/sheets/pokemonTrainingFeatures'
+import { pokemonEggMoveOptionsForSheet } from '~/utils/sheets/pokemonEggMoves'
 
 const skillBgRaisedCsv = defineModel<string>('skillBgRaisedCsv', { required: true })
 const skillBgLoweredCsv = defineModel<string>('skillBgLoweredCsv', { required: true })
@@ -20,6 +21,7 @@ const props = defineProps<{
 const activeTrainingFeatureEffects = computed(() =>
   resolvePokemonTrainingFeatureEffects(props.sheet.activeTrainingFeature),
 )
+const inheritedMoveOptions = computed(() => pokemonEggMoveOptionsForSheet(props.sheet))
 
 const emit = defineEmits<{
   setInheritedMove: [level: string, value: string | undefined]
@@ -106,7 +108,9 @@ const emit = defineEmits<{
           <dd>
             <EditableCell
               :model-value="sheet.inheritedMoves?.[level]"
-              placeholder="—"
+              type="select"
+              :options="inheritedMoveOptions"
+              placeholder="Egg move"
               @update:model-value="(v) => emit('setInheritedMove', level, v as string | undefined)"
             />
           </dd>
