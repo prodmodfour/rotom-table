@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 2
+export const LATEST_STORAGE_SCHEMA_VERSION = 3
 
 export interface StorageMigration {
   readonly version: number
@@ -51,6 +51,16 @@ const createLivePlayOperationHistoryIndexes = (connection: DatabaseSync): void =
   `)
 }
 
+const createMapInteractionModeTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS map_interaction_modes (
+      slug TEXT PRIMARY KEY,
+      interaction_mode TEXT NOT NULL CHECK (interaction_mode IN ('setup-edit', 'live-play')),
+      updated_at INTEGER NOT NULL
+    );
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -61,6 +71,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 2,
     name: 'index live-play operation history by map and revision',
     up: createLivePlayOperationHistoryIndexes,
+  },
+  {
+    version: 3,
+    name: 'store shared map interaction mode',
+    up: createMapInteractionModeTable,
   },
 ]
 

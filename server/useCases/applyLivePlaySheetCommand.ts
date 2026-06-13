@@ -39,11 +39,10 @@ import { normalizeConditionNames } from '~/utils/statusConditions'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import {
-  createAuthoritativeLivePlayCommandExecutor,
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
-import { sqliteLivePlayOpRepository } from '../storage/opRepository'
+import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import {
@@ -121,9 +120,7 @@ interface HpValueState {
   readonly injuries: number
 }
 
-const livePlaySheetCommandExecutor = createAuthoritativeLivePlayCommandExecutor({
-  opStore: sqliteLivePlayOpRepository,
-})
+const livePlaySheetCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
 const sheetCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,

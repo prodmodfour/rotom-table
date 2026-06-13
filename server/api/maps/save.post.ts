@@ -3,7 +3,8 @@ import { requireAuthRole } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { badRequest, expectRecord, expectSlug, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { saveMapUseCase } from '../../useCases/saveMap'
-import { parseMapInteractionMode } from '#shared/mapInteractionMode'
+import { parseMapInteractionMode, MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
+import { requireSetupEditMapInteractionMode } from '../../utils/mapInteractionModePolicy'
 import { normalizeRealtimeClientId } from '#shared/realtime'
 import type { TabletopMap } from '~/types/map'
 
@@ -23,6 +24,7 @@ export default defineEventHandler(async (event) => {
   const map = expectRecord(body.map, 'map') as unknown as TabletopMap
   const interactionMode = parseMapInteractionMode(body.interactionMode)
     ?? badRequest('interactionMode must be "setup-edit" or "live-play"')
+  if (role === 'gm' && interactionMode === MAP_INTERACTION_MODES.SETUP_EDIT) requireSetupEditMapInteractionMode(slug)
 
   try {
     const result = saveMapUseCase({

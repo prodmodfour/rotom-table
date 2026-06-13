@@ -5,12 +5,17 @@ import {
   type LivePlayRealtimeEvent,
   type RealtimeEvent,
 } from '#shared/realtime'
+import {
+  MAP_INTERACTION_MODE_REALTIME_EVENT_TYPE,
+  type MapInteractionMode,
+  type MapInteractionModeRealtimePayload,
+} from '#shared/mapInteractionMode'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type { LivePlayCommandAccepted } from '#shared/livePlayCommands'
 import type { TabletopMap } from '~/types/map'
 import { summarizeMap } from './mapSummaries'
 
-export type MapRealtimeEvent = Omit<RealtimeEvent, 'timestamp'>
+export type MapRealtimeEvent<TData = unknown> = Omit<RealtimeEvent<TData>, 'timestamp'>
 export type LivePlayRealtimeEventDraft<TData = unknown> = Omit<LivePlayRealtimeEvent<TData>, 'timestamp'>
 
 export const mapRevisionForRealtime = (map: Pick<TabletopMap, 'revision'>): number =>
@@ -45,6 +50,18 @@ export const mapDocumentUpdatedRealtimeEvents = (
   mapUpdatedRealtimeEvent(map, clientId),
   mapSummaryUpdatedRealtimeEvent(map, clientId),
 ]
+
+export const mapInteractionModeUpdatedRealtimeEvent = (
+  slug: string,
+  interactionMode: MapInteractionMode,
+  updatedAt: number,
+  clientId: string | undefined,
+): MapRealtimeEvent<MapInteractionModeRealtimePayload> => ({
+  channel: mapChannel(slug),
+  type: MAP_INTERACTION_MODE_REALTIME_EVENT_TYPE,
+  clientId,
+  data: { slug, interactionMode, updatedAt },
+})
 
 export const livePlayCommandAcceptedRealtimeEvent = (
   result: LivePlayCommandAccepted,

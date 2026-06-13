@@ -35,11 +35,10 @@ import { resolveSheetMoveForUsage, type ResolvedSheetMove } from '~/utils/moveUs
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import {
-  createAuthoritativeLivePlayCommandExecutor,
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
-import { sqliteLivePlayOpRepository } from '../storage/opRepository'
+import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import {
@@ -139,9 +138,7 @@ type UnknownRecord = Record<string, unknown>
 
 type LivePlayUseMoveDependencySet = ReturnType<typeof actionDependencies>
 
-const livePlayUseMoveCommandExecutor = createAuthoritativeLivePlayCommandExecutor({
-  opStore: sqliteLivePlayOpRepository,
-})
+const livePlayUseMoveCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
 const useMoveCommandTypes = new Set<string>([LIVE_PLAY_COMMAND_TYPES.USE_MOVE])
 

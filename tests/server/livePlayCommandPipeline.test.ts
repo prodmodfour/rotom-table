@@ -198,6 +198,40 @@ describe('authoritative live-play command pipeline', () => {
     })
   })
 
+  it('rejects new commands before queueing when shared map mode is Prepare Map', async () => {
+    const opStore = createInMemoryLivePlayOpStore()
+    const queue = createInProcessMapWriteQueue()
+    const executor = createAuthoritativeLivePlayCommandExecutor({
+      opStore,
+      queue,
+      readMapInteractionMode: () => 'setup-edit',
+    })
+    const command = createCommand('arena', 'op_prepare001', 0, 'blocked')
+    const readMap = vi.fn()
+
+    const result = await executor.execute<typeof command, TestMap, undefined, undefined>({
+      command,
+      readMap,
+      apply: () => {
+        throw new Error('should not apply')
+      },
+      persist: () => {
+        throw new Error('should not persist')
+      },
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'conflict',
+      message: 'Map is in Prepare Map mode. Switch to Run Live Play before live-play commands.',
+    })
+    expect(readMap).not.toHaveBeenCalled()
+    expect(opStore.recordCount).toBe(0)
+    expect(queue.pendingMapCount).toBe(0)
+  })
+
   it('returns a structured rejection without saving or publishing success when persistence fails', async () => {
     const harness = createHarness([{ slug: 'arena', revision: 0, log: [] }])
     const command = createCommand('arena', 'op_persist001', 0, 'first')

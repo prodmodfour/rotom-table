@@ -14,13 +14,13 @@ A browser may use document autosave during GM setup/edit workflows, local mainte
 
 ### Setup/edit mode
 
-Setup/edit mode is map and sheet preparation or maintenance. It includes GM map administration, library organization, visibility setup, sheet edits, imports/exports, and local data repair. Whole-document JSON saves, debounced autosave, and explicitly setup/edit-named unload autosave fallbacks may remain in this mode because a GM/operator is preparing campaign data rather than resolving concurrent live table actions. The map save route requires an explicit `interactionMode: "setup-edit"` marker and GM role for whole-map saves.
+Setup/edit mode is map and sheet preparation or maintenance. It includes GM map administration, library organization, visibility setup, sheet edits, imports/exports, and local data repair. Whole-document JSON saves, debounced autosave, and explicitly setup/edit-named unload autosave fallbacks may remain in this mode because a GM/operator is preparing campaign data rather than resolving concurrent live table actions. The GM map admin panel owns a shared server-side mode switch: **Run Live Play** or **Prepare Map**. The map save route requires GM role, an explicit `interactionMode: "setup-edit"` marker, and the shared map mode to be **Prepare Map** for whole-map saves.
 
 ### Live play mode
 
 Live play mode is the multiplayer table state that players and the GM act on together. It uses persistent player profiles and regular `/maps/<slug>` URLs. Gameplay mutations are commands such as move token, turn token, modify HP, use move, advance initiative, place a hazard, edit terrain, spawn/delete token, or update sheet-backed combat state.
 
-Live play commands must be server-authoritative. A client can optimistically preview an action, but the accepted server result, rejection, patch, or reconciliation response determines durable state. Live play mode does not deep-watch the map document and does not call `/api/maps/save`; player requests and explicit `interactionMode: "live-play"` requests to that route are rejected.
+Live play commands must be server-authoritative. A client can optimistically preview an action, but the accepted server result, rejection, patch, or reconciliation response determines durable state. Live play mode does not deep-watch the map document and does not call `/api/maps/save`; player requests and explicit `interactionMode: "live-play"` requests to that route are rejected. Command executors reject new live-play commands while the shared map mode is **Prepare Map**; the GM must switch the map back to **Run Live Play** before command persistence resumes.
 
 ## Command flow
 

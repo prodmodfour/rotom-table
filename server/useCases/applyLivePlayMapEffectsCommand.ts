@@ -49,11 +49,10 @@ import {
   isMapWeatherKind,
 } from '~/utils/mapFieldEffectDefinitions'
 import {
-  createAuthoritativeLivePlayCommandExecutor,
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
-import { sqliteLivePlayOpRepository } from '../storage/opRepository'
+import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
@@ -157,9 +156,7 @@ type AppliedMapEffectsChange = AppliedHazardChange | AppliedFieldEffectsChange
 type UnknownRecord = Record<string, unknown>
 type LivePlayMapEffectsDependencySet = ReturnType<typeof actionDependencies>
 
-const livePlayMapEffectsCommandExecutor = createAuthoritativeLivePlayCommandExecutor({
-  opStore: sqliteLivePlayOpRepository,
-})
+const livePlayMapEffectsCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
 const mapEffectsCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,

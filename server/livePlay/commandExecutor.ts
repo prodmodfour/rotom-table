@@ -9,6 +9,11 @@ import {
   type LivePlayCommandResult,
   type LivePlayPatch,
 } from '#shared/livePlayCommands'
+import {
+  LIVE_PLAY_MODE_REQUIRED_FOR_COMMAND_MESSAGE,
+  MAP_INTERACTION_MODES,
+  type MapInteractionMode,
+} from '#shared/mapInteractionMode'
 import { isRevision, normalizeRevision } from '#shared/sessionRevisions'
 import {
   createLivePlayCommandHash,
@@ -171,6 +176,7 @@ export interface ExecuteAuthoritativeLivePlayCommandOptions<
 export interface AuthoritativeLivePlayCommandExecutorOptions {
   readonly opStore?: LivePlayOpStore
   readonly queue?: MapWriteQueue
+  readonly readMapInteractionMode?: (mapSlug: string) => MaybePromise<MapInteractionMode>
 }
 
 interface ValidCommandExecutionContext<
@@ -339,10 +345,12 @@ const canReadOperationHistory = (store: LivePlayOpStore): store is OperationHist
 export class AuthoritativeLivePlayCommandExecutor {
   private readonly opStore: LivePlayOpStore
   private readonly queue: MapWriteQueue
+  private readonly readMapInteractionMode?: (mapSlug: string) => MaybePromise<MapInteractionMode>
 
   constructor(options: AuthoritativeLivePlayCommandExecutorOptions = {}) {
     this.opStore = options.opStore ?? livePlayOpStore
     this.queue = options.queue ?? livePlayMapWriteQueue
+    this.readMapInteractionMode = options.readMapInteractionMode
   }
 
   async execute<
@@ -374,11 +382,28 @@ export class AuthoritativeLivePlayCommandExecutor {
     )
     if (preQueueResult) return preQueueResult
 
+    const modeRejection = await this.livePlayModeRejection(command)
+    if (modeRejection) return modeRejection
+
     return this.queue.withMapWriteQueue(command.mapSlug, () => this.executeQueued({
       command,
       commandHash,
       options,
     }))
+  }
+
+  private async livePlayModeRejection(
+    command: LivePlayCommandEnvelope,
+  ): Promise<LivePlayCommandRejected | null> {
+    if (!this.readMapInteractionMode) return null
+    const interactionMode = await this.readMapInteractionMode(command.mapSlug)
+    if (interactionMode === MAP_INTERACTION_MODES.LIVE_PLAY) return null
+    return createLivePlayRejectedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'conflict',
+      message: LIVE_PLAY_MODE_REQUIRED_FOR_COMMAND_MESSAGE,
+    })
   }
 
   private async executeQueued<
@@ -398,6 +423,9 @@ export class AuthoritativeLivePlayCommandExecutor {
     if (queuedResult) return queuedResult
 
     let currentRevision: number | undefined
+
+    const modeRejection = await this.livePlayModeRejection(command)
+    if (modeRejection) return modeRejection
 
     try {
       const actor = options.normalizeActor

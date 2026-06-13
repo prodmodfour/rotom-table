@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   moveMapUseCase: vi.fn(),
   renameMapUseCase: vi.fn(),
   saveMapUseCase: vi.fn(),
+  setMapInteractionModeUseCase: vi.fn(),
   executeMapTokenLivePlayCommandUseCase: vi.fn(),
   executeLivePlaySheetCommandUseCase: vi.fn(),
   executeLivePlayTableActionCommandUseCase: vi.fn(),
@@ -46,6 +47,11 @@ vi.mock('../../server/useCases/renameMap', () => ({
 vi.mock('../../server/useCases/saveMap', () => ({
   saveMapUseCase: mocks.saveMapUseCase,
 }))
+vi.mock('../../server/useCases/setMapInteractionMode', () => ({
+  setMapInteractionModeUseCase: mocks.setMapInteractionModeUseCase,
+  LIVE_PLAY_MODE_REQUIRED_FOR_COMMAND_MESSAGE: 'Map is in Prepare Map mode. Switch to Run Live Play before live-play commands.',
+  SETUP_MODE_REQUIRED_FOR_MAP_SAVE_MESSAGE: 'Map is in Run Live Play mode. Switch to Prepare Map before whole-map setup saves.',
+}))
 vi.mock('../../server/useCases/applyMapTokenAction', () => ({
   executeMapTokenLivePlayCommandUseCase: mocks.executeMapTokenLivePlayCommandUseCase,
 }))
@@ -79,6 +85,7 @@ const moveFolderRoute = (await import('../../server/api/maps/move-folder.post'))
 const moveRoute = (await import('../../server/api/maps/move.post')).default
 const renameRoute = (await import('../../server/api/maps/rename.post')).default
 const saveRoute = (await import('../../server/api/maps/save.post')).default
+const interactionModeRoute = (await import('../../server/api/maps/interaction-mode.post')).default
 const tokenSpawnRoute = (await import('../../server/api/maps/tokens/spawn.post')).default
 const tokenDeleteRoute = (await import('../../server/api/maps/tokens/delete.post')).default
 const tokenMoveRoute = (await import('../../server/api/maps/tokens/move.post')).default
@@ -180,6 +187,7 @@ describe('map hosted-write API routes', () => {
       { route: moveRoute, body: { slug: 'arena', folder: 'dungeon' }, mock: mocks.moveMapUseCase },
       { route: renameRoute, body: { slug: 'arena', name: 'Arena Revised' }, mock: mocks.renameMapUseCase },
       { route: saveRoute, body: { slug: 'arena', map: mapFixture() }, mock: mocks.saveMapUseCase },
+      { route: interactionModeRoute, body: { slug: 'arena', interactionMode: 'setup-edit' }, mock: mocks.setMapInteractionModeUseCase },
       {
         route: tokenSpawnRoute,
         body: {

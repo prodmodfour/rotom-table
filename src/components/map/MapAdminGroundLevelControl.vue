@@ -4,6 +4,7 @@ import { textValueFromEvent } from '~/utils/domEvents'
 defineProps<{
   groundLevelYMax: number
   mapGroundLevelY: number
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -21,6 +22,7 @@ const emit = defineEmits<{
         min="0"
         :max="groundLevelYMax"
         :value="mapGroundLevelY"
+        :disabled="disabled"
         @input="emit('set-ground-level-y', textValueFromEvent($event))"
       />
     </label>
@@ -66,5 +68,10 @@ input {
 input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(255, 31, 45, 0.18);
+}
+
+input:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 </style>

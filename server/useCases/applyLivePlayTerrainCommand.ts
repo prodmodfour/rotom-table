@@ -21,11 +21,10 @@ import {
   type LivePlayTerrainPatchPayload,
 } from '../livePlay/terrainDomain'
 import {
-  createAuthoritativeLivePlayCommandExecutor,
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
-import { sqliteLivePlayOpRepository } from '../storage/opRepository'
+import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
@@ -75,9 +74,7 @@ interface ResolvedTerrainContext {
 
 type LivePlayTerrainDependencySet = ReturnType<typeof actionDependencies>
 
-const livePlayTerrainCommandExecutor = createAuthoritativeLivePlayCommandExecutor({
-  opStore: sqliteLivePlayOpRepository,
-})
+const livePlayTerrainCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
 const terrainCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,

@@ -7,10 +7,14 @@ import type { TabletopMap } from '~/types/map'
 
 const mocks = vi.hoisted(() => ({
   saveMapUseCase: vi.fn(),
+  requireSetupEditMapInteractionMode: vi.fn(),
 }))
 
 vi.mock('../../server/useCases/saveMap', () => ({
   saveMapUseCase: mocks.saveMapUseCase,
+}))
+vi.mock('../../server/utils/mapInteractionModePolicy', () => ({
+  requireSetupEditMapInteractionMode: mocks.requireSetupEditMapInteractionMode,
 }))
 
 const saveRoute = (await import('../../server/api/maps/save.post')).default
@@ -71,6 +75,7 @@ describe('map save API route', () => {
       },
     })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map })
 
+    expect(mocks.requireSetupEditMapInteractionMode).toHaveBeenCalledWith('arena')
     expect(mocks.saveMapUseCase).toHaveBeenCalledWith({
       role: 'gm',
       slug: 'arena',

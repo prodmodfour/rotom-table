@@ -38,12 +38,11 @@ import { publishRealtime } from '../utils/realtime'
 import { canAccessMapForRole, clampAnchorToDimensions } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import {
-  createAuthoritativeLivePlayCommandExecutor,
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
+import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
-import { sqliteLivePlayOpRepository } from '../storage/opRepository'
 import { toPersistedMap } from './saveMap'
 
 export class MapTokenActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -163,9 +162,7 @@ const normalizedPathLength = (value: number | null | undefined): number | null =
 const readDefaultSheet = (kind: SheetKind, slug: string): SheetFileRecord | null =>
   readSheetFile<Record<string, unknown>>(kind, slug)
 
-const livePlayMapTokenCommandExecutor = createAuthoritativeLivePlayCommandExecutor({
-  opStore: sqliteLivePlayOpRepository,
-})
+const livePlayMapTokenCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
 const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
   readSheet: dependencies.readSheet ?? readDefaultSheet,

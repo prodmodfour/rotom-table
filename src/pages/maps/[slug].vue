@@ -12,6 +12,7 @@ import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
 import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlayStateMachine'
+import { useSharedMapInteractionMode } from '~/composables/map-editor/useSharedMapInteractionMode'
 import { parseRoundInputValue, useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
 import { useInitiativeTracker } from '~/composables/map-editor/useInitiativeTracker'
@@ -86,7 +87,19 @@ const {
   lastError: playerProfileError,
 } = usePlayerProfiles()
 
-const mapInteractionMode = ref<MapInteractionMode>(MAP_INTERACTION_MODES.LIVE_PLAY)
+const {
+  interactionMode: sharedMapInteractionMode,
+  status: sharedMapInteractionModeStatus,
+  error: sharedMapInteractionModeError,
+  setInteractionMode: setSharedMapInteractionMode,
+} = useSharedMapInteractionMode(slug)
+const mapInPrepareMode = computed(() => sharedMapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT)
+const mapInteractionMode = computed<MapInteractionMode>(() => (
+  isGm.value && mapInPrepareMode.value
+    ? MAP_INTERACTION_MODES.SETUP_EDIT
+    : MAP_INTERACTION_MODES.LIVE_PLAY
+))
+const isSetupEditMode = () => mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT
 const {
   map,
   status,
@@ -96,6 +109,7 @@ const {
   mapRevision,
   realtimeReconciliationStatus,
   livePlayRealtimeNotice,
+  saveNow: saveMapNow,
   reload: reloadAuthoritativeMap,
   applyPersistedMap,
 } = useEditableMap(slug, {
@@ -119,14 +133,23 @@ const livePlayStateMachine = useLivePlayStateMachine({
   realtimeNotice: livePlayRealtimeNotice,
 })
 const livePlayConnectionState = livePlayStateMachine.state
-const livePlayStatusMessage = livePlayStateMachine.notice
+const livePlayStatusMessage = computed(() => (
+  mapInPrepareMode.value
+    ? 'Prepare Map mode is active. Live-play commands are paused until the GM switches to Run Live Play.'
+    : livePlayStateMachine.notice.value
+))
+const livePlayCommandBlockedMessage = computed(() => (
+  mapInPrepareMode.value
+    ? 'Map is in Prepare Map mode. Switch to Run Live Play before live-play commands.'
+    : livePlayStateMachine.commandBlockMessage.value
+))
 const livePlayCommands = useLivePlayCommands({
   slug,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
   map,
   mapRevision,
-  livePlayCommandBlocked: computed(() => !livePlayStateMachine.commandsAllowed.value),
-  livePlayCommandBlockedMessage: livePlayStateMachine.commandBlockMessage,
+  livePlayCommandBlocked: computed(() => mapInPrepareMode.value || !livePlayStateMachine.commandsAllowed.value),
+  livePlayCommandBlockedMessage,
   applyPersistedMap,
   applySheetUpdate: applyLivePlaySheetUpdate,
   requestReconciliation: () => livePlayStateMachine.reconcile(() => reloadAuthoritativeMap()),
@@ -160,11 +183,15 @@ const shouldSuppressPlayerCharacterAttackOfOpportunity = ({
   })
 )
 const persistSpawnedPlacement = (placement: SheetPlacement) => {
+  if (isSetupEditMode()) return
   void livePlayCommands.spawnToken({
     placement: deepCloneJson(placement),
   })
 }
 const tokenControlNotice = computed(() => {
+  if (isPlayer.value && mapInPrepareMode.value) {
+    return 'The GM is preparing this map. Live play controls are paused.'
+  }
   if (isPlayer.value && playerProfileError.value) {
     return `Player profile unavailable: ${playerProfileError.value}`
   }
@@ -318,6 +345,9 @@ const {
   spawnSheet,
   sendOutPokemon,
   selectPlacement,
+  deletePlacement,
+  turnPlacementForSetupEdit,
+  movePlacementForSetupEdit,
 } = useTokenControls({
   map,
   pokemonBySlug,
@@ -363,6 +393,10 @@ const selectPokemon = (id: string | null) => {
 }
 const deletePokemon = (id: string) => {
   if (!canControlPlacement(id)) return
+  if (isSetupEditMode()) {
+    deletePlacement(id)
+    return
+  }
   void livePlayCommands.deleteToken({ placementId: id }).then((result) => {
     if (result.dispatched) clearSelection()
   })
@@ -372,6 +406,11 @@ const shouldUseTableActionRoutes = () => isPlayer.value
 const turnPokemon = (id: string) => {
   const placement = placementById(id)
   if (!placement || !canControlPlacement(id)) return
+  if (isSetupEditMode()) {
+    turnPlacementForSetupEdit(id)
+    clearSelection()
+    return
+  }
   const facing = nextTokenFacingForPlacement(placement)
   void livePlayCommands.turnToken({ placementId: id, facing }).then((result) => {
     if (result.dispatched) clearSelection()
@@ -385,6 +424,10 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
   const previousPosition = from ? { ...from } : null
 
   if (!canControlPlacement(payload.id)) return
+  if (isSetupEditMode()) {
+    movePlacementForSetupEdit(payload)
+    return
+  }
   void livePlayCommands.moveToken({
     placementId: payload.id,
     position: payload.position,
@@ -469,12 +512,11 @@ const setWeatherCoexistNext = (value: boolean) => {
   weatherCoexistNext.value = value
 }
 
-const isSetupEditMode = () => mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT
-const livePlayActionablePlacementIds = computed(() => (
-  isSetupEditMode() || livePlayStateMachine.commandsAllowed.value
-    ? controllablePlacementIds.value
-    : []
-))
+const livePlayActionablePlacementIds = computed(() => {
+  if (isSetupEditMode()) return controllablePlacementIds.value
+  if (mapInPrepareMode.value) return []
+  return livePlayStateMachine.commandsAllowed.value ? controllablePlacementIds.value : []
+})
 
 const clearWeatherCoexistIfNoWeather = () => {
   if (!activeWeatherEffects.value.length) weatherCoexistNext.value = false
@@ -665,11 +707,6 @@ const {
   hazardMode,
   clearSelection,
 })
-
-const setupEditModeActive = computed(() => isGm.value && adminPanelOpen.value)
-watch(setupEditModeActive, (active) => {
-  mapInteractionMode.value = active ? MAP_INTERACTION_MODES.SETUP_EDIT : MAP_INTERACTION_MODES.LIVE_PLAY
-}, { immediate: true })
 
 const {
   initiativeRows,
@@ -1310,6 +1347,34 @@ const applyCelebrateTriggerPromptFromScene = async (id: string) => {
   applyCelebrateTriggerPrompt(id)
 }
 
+const sharedMapInteractionModeBusy = computed(() => (
+  sharedMapInteractionModeStatus.value === 'loading' || sharedMapInteractionModeStatus.value === 'saving'
+))
+const setupEditActiveForGm = computed(() => isSetupEditMode())
+
+const setGroundLevelYFromAdmin = (value: string) => {
+  if (!isSetupEditMode()) return
+  setGroundLevelY(value)
+}
+
+const setMapPlayerVisibleFromAdmin = (value: boolean) => {
+  if (!isSetupEditMode()) return
+  setMapPlayerVisible(value)
+}
+
+const clearCombatLogFromAdmin = () => {
+  if (!isSetupEditMode()) return
+  clearCombatLog()
+}
+
+const setMapInteractionModeFromAdmin = async (mode: MapInteractionMode) => {
+  if (mode === MAP_INTERACTION_MODES.LIVE_PLAY && mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT) {
+    await saveMapNow()
+    if (status.value === 'error') return
+  }
+  await setSharedMapInteractionMode(mode)
+}
+
 useMapGmModeGuard({
   isGm,
   buildMode,
@@ -1527,10 +1592,15 @@ useMapDimensionReconciliation({
         :map-specific-y-max="mapSpecificYMax"
         :player-visible="map.playerVisible"
         :combat-log-entry-count="combatLogEntryCount"
+        :interaction-mode="sharedMapInteractionMode"
+        :interaction-mode-busy="sharedMapInteractionModeBusy"
+        :interaction-mode-error="sharedMapInteractionModeError"
+        :setup-edit-active="setupEditActiveForGm"
         @close="adminPanelOpen = false"
-        @set-ground-level-y="setGroundLevelY"
-        @update-player-visible="setMapPlayerVisible"
-        @clear-combat-log="clearCombatLog"
+        @set-ground-level-y="setGroundLevelYFromAdmin"
+        @update-player-visible="setMapPlayerVisibleFromAdmin"
+        @clear-combat-log="clearCombatLogFromAdmin"
+        @set-interaction-mode="setMapInteractionModeFromAdmin"
       />
     </template>
   </MapEditorLayout>

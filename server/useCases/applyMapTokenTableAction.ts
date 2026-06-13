@@ -40,14 +40,13 @@ import { appendActiveOrderEffect, createActiveOrderEffect } from '~/utils/active
 import { appendManeuverLogEntry, buildManeuverUseLogLines } from '~/utils/maneuverLog'
 import { appendOrderLogEntry, buildOrderUseLogLines } from '~/utils/orderLog'
 import {
-  createAuthoritativeLivePlayCommandExecutor,
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
+import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
-import { sqliteLivePlayOpRepository } from '../storage/opRepository'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { sqliteSheetRepository, type PersistedSheet, type SheetRepository } from '../storage/sheetRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
@@ -140,9 +139,7 @@ interface ActionToken extends Pick<SpawnedPokemon,
 type UnknownRecord = Record<string, unknown>
 type TableActionPayload = UseManeuverPayload | UseAbilityPayload | UseOrderPayload
 
-const livePlayTableActionCommandExecutor = createAuthoritativeLivePlayCommandExecutor({
-  opStore: sqliteLivePlayOpRepository,
-})
+const livePlayTableActionCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
 const tableActionCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,

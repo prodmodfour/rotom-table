@@ -17,6 +17,7 @@ import { getStorageSchemaVersion, LATEST_STORAGE_SCHEMA_VERSION } from '~~/serve
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
+import { createSqliteMapInteractionModeRepository } from '~~/server/storage/mapInteractionModeRepository'
 import { importMapsFromJson } from '~~/server/storage/importMapsFromJson'
 import { importSheetsFromJson } from '~~/server/storage/importSheetsFromJson'
 import type { TabletopMap } from '~/types/map'
@@ -92,18 +93,19 @@ describe('SQLite storage foundation', () => {
     expect(existsSync(database.path)).toBe(true)
     expect(database.journalMode?.toLowerCase()).toBe('wal')
     expect(getStorageSchemaVersion(database.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
-    expect(tableNames(database)).toEqual(['live_play_ops', 'maps', 'sheets'])
+    expect(tableNames(database)).toEqual(['live_play_ops', 'map_interaction_modes', 'maps', 'sheets'])
 
     const reopened = openRotomDatabase({ path: database.path })
     openDatabases.push(reopened)
     expect(getStorageSchemaVersion(reopened.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
-    expect(tableNames(reopened)).toEqual(['live_play_ops', 'maps', 'sheets'])
+    expect(tableNames(reopened)).toEqual(['live_play_ops', 'map_interaction_modes', 'maps', 'sheets'])
   })
 
-  it('reads and writes map and sheet documents through repository interfaces', () => {
+  it('reads and writes map, sheet, and shared interaction-mode state through repository interfaces', () => {
     const database = openTempDatabase()
     const maps = createSqliteMapRepository<{ name: string; revision: number }>(database)
     const sheets = createSqliteSheetRepository<{ nickname?: string; name?: string; revision: number }>(database)
+    const modes = createSqliteMapInteractionModeRepository(database)
 
     const map = maps.save({
       slug: 'training-yard',
@@ -143,6 +145,21 @@ describe('SQLite storage foundation', () => {
     expect(sheets.get('pokemon', 'pikachu')).toEqual(pokemon)
     expect(sheets.list('pokemon').map((sheet) => sheet.slug)).toEqual(['pikachu'])
     expect(sheets.list().map((sheet) => `${sheet.kind}:${sheet.slug}`)).toEqual(['pokemon:pikachu', 'trainer:brock'])
+    expect(modes.get('training-yard')).toEqual({
+      slug: 'training-yard',
+      interactionMode: 'live-play',
+      updatedAt: 0,
+    })
+    expect(modes.set({ slug: 'training-yard', interactionMode: 'setup-edit', updatedAt: 1_700_000_000_250 })).toEqual({
+      slug: 'training-yard',
+      interactionMode: 'setup-edit',
+      updatedAt: 1_700_000_000_250,
+    })
+    expect(modes.get('training-yard')).toEqual({
+      slug: 'training-yard',
+      interactionMode: 'setup-edit',
+      updatedAt: 1_700_000_000_250,
+    })
 
     maps.save({
       slug: 'training-yard',

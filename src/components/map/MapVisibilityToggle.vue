@@ -4,6 +4,7 @@ import { checkedValueFromEvent } from '~/utils/domEvents'
 withDefaults(defineProps<{
   playerVisible?: boolean
   label?: string
+  disabled?: boolean
 }>(), {
   label: 'Player visible',
 })
@@ -14,9 +15,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <label class="visibility-toggle" :class="{ active: playerVisible }">
+  <label class="visibility-toggle" :class="{ active: playerVisible, disabled }">
     <input
       :checked="playerVisible === true"
+      :disabled="disabled"
       type="checkbox"
       @change="emit('update-player-visible', checkedValueFromEvent($event))"
     />
@@ -47,6 +49,11 @@ const emit = defineEmits<{
   border-color: rgba(184, 187, 38, 0.55);
   background: rgba(184, 187, 38, 0.12);
   color: var(--good);
+}
+
+.visibility-toggle.disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .visibility-toggle input {

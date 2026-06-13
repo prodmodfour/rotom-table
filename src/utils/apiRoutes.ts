@@ -26,6 +26,7 @@ export const MAP_API_PATHS = {
   folders: '/api/maps/folders',
   load: '/api/maps/load',
   save: '/api/maps/save',
+  interactionMode: '/api/maps/interaction-mode',
   useMove: '/api/maps/use-move',
   actionEvent: '/api/maps/action-event',
   spawnToken: '/api/maps/tokens/spawn',

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   entryCount: number
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -25,7 +26,7 @@ const entryCountLabel = computed(() => {
     <button
       type="button"
       class="combat-log-control__button"
-      :disabled="entryCount <= 0"
+      :disabled="disabled || entryCount <= 0"
       @click="emit('clear-combat-log')"
     >
       Clear combat log
