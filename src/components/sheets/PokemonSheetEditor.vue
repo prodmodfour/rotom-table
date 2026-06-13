@@ -46,6 +46,7 @@ const {
   remainingBaseRelationViolationCount,
   pokemonAccuracy,
   pokemonEvasion,
+  tutorPointsEarned,
   tutorPointsLeft,
   moveRows,
   abilityRows,
@@ -161,6 +162,7 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
         v-model:skill-bg-raised-csv="skillBgRaisedCsv"
         v-model:skill-bg-lowered-csv="skillBgLoweredCsv"
         :sheet="sheet"
+        :tutor-points-earned="tutorPointsEarned"
         :tutor-points-left="tutorPointsLeft"
         @set-inherited-move="setInheritedMove"
       />

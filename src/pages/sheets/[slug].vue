@@ -5,6 +5,7 @@ import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { useSheetRenameUrlSync } from '~/composables/sheets/useSheetRenameUrlSync'
 import { syncNatureModForSheet } from '~/composables/sheets/usePokemonNatureControls'
+import { syncPokemonTutorPointsForSheet } from '~/utils/sheets/pokemonTutorPoints'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { trainerAccentColorForPokemonSheet } from '~/utils/trainerAccent'
 import { getErrorMessage } from '~/utils/errorMessages'
@@ -72,7 +73,10 @@ const {
   isPlayer,
   isGm,
   normalize: normalizeCharacterSheet,
-  prepareInitial: syncNatureModForSheet,
+  prepareInitial: (sheet) => {
+    syncNatureModForSheet(sheet)
+    syncPokemonTutorPointsForSheet(sheet)
+  },
   profileContext: currentSheetProfileContext,
 })
 

@@ -13,6 +13,7 @@ const INHERITED_LEVELS = ['20', '30', '40', '50', '60', '70', '80', '90'] as con
 
 const props = defineProps<{
   sheet: CharacterSheet
+  tutorPointsEarned: number | null
   tutorPointsLeft: number | null
 }>()
 
@@ -30,9 +31,9 @@ const emit = defineEmits<{
     <section class="panel-card">
       <h2 class="panel-title">Tutor Points</h2>
       <dl class="kv-list">
-        <div>
+        <div title="Automatically calculated from level: 1 Tutor Point at hatching, plus 1 at Level 5 and each later multiple of 5.">
           <dt>Earned</dt>
-          <dd><EditableCell v-model="sheet.tutorPoints!.earned" type="number" :min="0" /></dd>
+          <dd><span class="derived-value">{{ tutorPointsEarned ?? 0 }}</span></dd>
         </div>
         <div>
           <dt>Spent</dt>
@@ -40,7 +41,9 @@ const emit = defineEmits<{
         </div>
         <div>
           <dt>Left</dt>
-          <dd>{{ tutorPointsLeft ?? 0 }}</dd>
+          <dd :class="['derived-value', { 'derived-value--negative': (tutorPointsLeft ?? 0) < 0 }]">
+            {{ tutorPointsLeft ?? 0 }}
+          </dd>
         </div>
       </dl>
     </section>
@@ -160,6 +163,14 @@ const emit = defineEmits<{
 .kv-list dd {
   margin: 0;
   color: var(--ink-bright);
+}
+
+.derived-value {
+  font-weight: 700;
+}
+
+.derived-value--negative {
+  color: var(--bad);
 }
 
 .inherited-grid {

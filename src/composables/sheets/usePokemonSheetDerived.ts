@@ -33,6 +33,10 @@ import {
 } from '~/utils/sheets/pokemonExperience'
 import { resolvePokemonTrainingFeatureEffects } from '~/utils/sheets/pokemonTrainingFeatures'
 import {
+  computePokemonTutorPointsEarned,
+  syncPokemonTutorPointsForSheet,
+} from '~/utils/sheets/pokemonTutorPoints'
+import {
   resolvedStatBaseTotal,
   resolvedStatEffectiveStage,
   resolvedStatTotal,
@@ -241,11 +245,25 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     }
   })
 
-  const tutorPointsLeft = computed(() => {
-    const tp = sheet.value?.tutorPoints
-    if (!tp) return null
-    return (tp.earned ?? 0) - (tp.spent ?? 0)
+  const tutorPointsEarned = computed(() => (
+    sheet.value ? computePokemonTutorPointsEarned(sheet.value.level) : null
+  ))
+  const tutorPointsSpent = computed(() => {
+    const spent = sheet.value?.tutorPoints?.spent
+    return typeof spent === 'number' && Number.isFinite(spent) ? spent : 0
   })
+  const tutorPointsLeft = computed(() => (
+    tutorPointsEarned.value == null ? null : tutorPointsEarned.value - tutorPointsSpent.value
+  ))
+
+  watch(
+    () => [sheet.value, tutorPointsEarned.value, sheet.value?.tutorPoints?.earned] as const,
+    ([currentSheet]) => {
+      if (!currentSheet) return
+      syncPokemonTutorPointsForSheet(currentSheet)
+    },
+    { immediate: true, flush: 'sync' },
+  )
 
   const attackTotal = computed(() => totalForStat(stats.value, 'atk'))
   const specialAttackTotal = computed(() => totalForStat(stats.value, 'satk'))
@@ -338,6 +356,8 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     remainingBaseRelationViolationCount,
     pokemonAccuracy,
     pokemonEvasion,
+    tutorPointsEarned,
+    tutorPointsSpent,
     tutorPointsLeft,
     attackTotal,
     specialAttackTotal,

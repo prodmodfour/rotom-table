@@ -103,7 +103,9 @@ export interface CharacterSheetItems {
 }
 
 export interface CharacterSheetTutorPoints {
+  /** Legacy/cache field derived from Level; the sheet UI does not edit this manually. */
   earned?: number
+  /** Manually tracked Tutor Points already spent on TMs, Features, or Poké Edges. */
   spent?: number
 }
 

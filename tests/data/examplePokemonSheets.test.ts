@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { CharacterSheet, StatKey } from '~/types/characterSheet'
 import { computeFullMaxHp, resolveStats, validateBaseRelations } from '~/utils/sheets/pokemonDerived'
+import { computePokemonTutorPointsEarned } from '~/utils/sheets/pokemonTutorPoints'
 
 const examplesDir = join(process.cwd(), 'data/sheets/examples')
 const exampleFiles = readdirSync(examplesDir)
@@ -64,7 +65,7 @@ describe('example Pokémon sheets', () => {
         failures.push(`${file}: evasion ${JSON.stringify(sheet.combat?.evasion)}, expected ${JSON.stringify(expectedEvasion)}`)
       }
 
-      const expectedTutorPoints = Math.floor(sheet.level / 5) + 1
+      const expectedTutorPoints = computePokemonTutorPointsEarned(sheet.level)
       if (sheet.tutorPoints?.earned !== expectedTutorPoints) {
         failures.push(`${file}: tutor points ${sheet.tutorPoints?.earned}, expected ${expectedTutorPoints}`)
       }

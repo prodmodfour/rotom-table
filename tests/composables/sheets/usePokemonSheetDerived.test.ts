@@ -12,7 +12,7 @@ const makeSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => (
   combat: { currentHp: 999, evasion: { vsAnyBonus: 1 } },
   items: { held: 'Bright Powder' },
   movelist: [{ name: 'Thunder Shock' }],
-  tutorPoints: { earned: 5, spent: 2 },
+  tutorPoints: { earned: 3, spent: 2 },
   ...overrides,
 })
 
@@ -27,8 +27,34 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.stats.value.find((row) => row.key === 'hp')?.total).toBeGreaterThan(0)
     expect(derived.moveRows.value.some((row) => row.move.name === 'Thunder Shock' && !row.automatic)).toBe(true)
     expect(derived.abilityRows.value).toEqual([])
-    expect(derived.tutorPointsLeft.value).toBe(3)
+    expect(derived.tutorPointsEarned.value).toBe(3)
+    expect(derived.tutorPointsLeft.value).toBe(1)
     expect(derived.typeEffectivenessRows.value).toHaveLength(18)
+  })
+
+  it('auto-calculates earned tutor points from level and overrides stale manual values', async () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      level: 4,
+      tutorPoints: { earned: 99, spent: 1 },
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.tutorPointsEarned.value).toBe(1)
+    expect(sheet.value?.tutorPoints?.earned).toBe(1)
+    expect(derived.tutorPointsLeft.value).toBe(0)
+
+    sheet.value!.level = 15
+    await nextTick()
+
+    expect(derived.tutorPointsEarned.value).toBe(4)
+    expect(sheet.value?.tutorPoints?.earned).toBe(4)
+    expect(derived.tutorPointsLeft.value).toBe(3)
+
+    sheet.value!.tutorPoints!.earned = 99
+    await nextTick()
+
+    expect(sheet.value?.tutorPoints?.earned).toBe(4)
+    expect(derived.tutorPointsLeft.value).toBe(3)
   })
 
   it('lists auto-added Struggle moves before sheet moves', () => {
