@@ -6,6 +6,8 @@ export interface PlayerCharacterSheetAccessMarkers {
   readonly player?: boolean
   readonly playerProfileAccessible?: boolean
   readonly sessionPlayerAccessible?: boolean
+  readonly currentTeam?: readonly unknown[]
+  readonly boxedPokemon?: readonly unknown[]
 }
 
 export interface PlayerCharacterTokenLookup {
@@ -37,12 +39,48 @@ const accessMarkersForToken = (
     : lookup.trainerBySlug.get(token.sheetSlug)
 )
 
+const linkedTrainerSlugsFromSheetKeys = (
+  sheetKeys: ReadonlySet<string>,
+): string[] => [...sheetKeys]
+  .filter((key) => key.startsWith('trainer:'))
+  .map((key) => key.slice('trainer:'.length))
+
+const normalizedRosterSlugs = (
+  sheet: Pick<PlayerCharacterSheetAccessMarkers, 'currentTeam' | 'boxedPokemon'> | undefined,
+): ReadonlySet<string> => new Set(
+  [...(sheet?.currentTeam ?? []), ...(sheet?.boxedPokemon ?? [])]
+    .filter((slug): slug is string => typeof slug === 'string' && slug.trim().length > 0)
+    .map((slug) => slug.trim()),
+)
+
+const playerCharacterTrainerSlugs = (
+  lookup: PlayerCharacterTokenLookup,
+): ReadonlySet<string> => new Set([
+  ...linkedTrainerSlugsFromSheetKeys(lookup.playerCharacterSheetKeys),
+  ...[...lookup.trainerBySlug]
+    .filter(([, sheet]) => sheetHasPlayerSpecificAccess(sheet))
+    .map(([slug]) => slug),
+])
+
+const isPlayerTrainerRosterPokemonToken = (
+  token: Pick<SpawnedPokemon, 'sheetKind' | 'sheetSlug'>,
+  lookup: PlayerCharacterTokenLookup,
+): boolean => {
+  if (token.sheetKind !== 'pokemon') return false
+
+  for (const trainerSlug of playerCharacterTrainerSlugs(lookup)) {
+    if (normalizedRosterSlugs(lookup.trainerBySlug.get(trainerSlug)).has(token.sheetSlug)) return true
+  }
+  return false
+}
+
 export const isPlayerCharacterToken = (
   token: Pick<SpawnedPokemon, 'sheetKind' | 'sheetSlug'>,
   lookup: PlayerCharacterTokenLookup,
 ): boolean => (
   lookup.playerCharacterSheetKeys.has(playerCharacterSheetKeyForToken(token))
   || sheetHasPlayerSpecificAccess(accessMarkersForToken(token, lookup))
+  || isPlayerTrainerRosterPokemonToken(token, lookup)
 )
 
 export const isPlayerCharacterAttackOfOpportunityPair = (
