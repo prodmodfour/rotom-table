@@ -114,6 +114,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .combat-log {
+  --combat-log-title-outline: rgba(247, 247, 242, 0.94);
+  --combat-log-title-outline-glow: rgba(247, 247, 242, 0.42);
+
   position: absolute;
   z-index: 3;
   top: var(--map-combat-log-top, calc(var(--map-overlay-gutter, 0.75rem) + 4.25rem));
@@ -125,6 +128,11 @@ onBeforeUnmount(() => {
   pointer-events: none;
   mask-image: linear-gradient(to bottom, transparent 0, black 3.2rem, black 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 3.2rem, black 100%);
+}
+
+:global(:root[data-theme='light']) .combat-log {
+  --combat-log-title-outline: rgba(5, 6, 8, 0.88);
+  --combat-log-title-outline-glow: rgba(5, 6, 8, 0.24);
 }
 
 .combat-log__viewport {
@@ -193,6 +201,14 @@ onBeforeUnmount(() => {
   color: var(--accent);
   font-size: clamp(0.78rem, 0.94vw, 0.9rem);
   font-weight: 900;
+  -webkit-text-stroke: 0.35px var(--combat-log-title-outline);
+  paint-order: stroke fill;
+  text-shadow:
+    0 1px 0 var(--combat-log-title-outline),
+    1px 0 0 var(--combat-log-title-outline),
+    -1px 0 0 var(--combat-log-title-outline),
+    0 -1px 0 var(--combat-log-title-outline),
+    0 0 4px var(--combat-log-title-outline-glow);
   overflow-wrap: anywhere;
 }
 
