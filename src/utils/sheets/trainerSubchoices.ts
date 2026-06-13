@@ -1,4 +1,5 @@
 import { edges, features, findAbility, findEdge, findFeature, findMove, moves, toSlug } from '~~/data/ptuReference'
+import { POKEMON_TRAINING_FEATURE_OPTIONS } from '~/utils/sheets/pokemonTrainingFeatures'
 import { TRAINER_SKILL_ORDER } from '~/utils/sheets/trainerSkillConstants'
 import type { EditableCellOption, EditableCellValue } from '~/utils/editableCell'
 import type { TrainerEdgeEntry, TrainerFeatureEntry, TrainerSkillKey } from '~/types/trainerSheet'
@@ -303,11 +304,14 @@ const limitedMoveSelector = (
   referenceKinds: ['move'],
 })
 
+export const TRAINER_FREE_TRAINING_FEATURE_NAME = 'Free Training Feature'
+export const TRAINER_TRAINING_FEATURE_CHOICE_KEY = 'trainingFeature'
+
 const trainingFeatureSelector: TrainerSubchoiceDefinition = {
-  key: 'trainingFeature',
+  key: TRAINER_TRAINING_FEATURE_CHOICE_KEY,
   label: 'Training feature',
   placeholder: 'Choose feature',
-  options: options(['Agility Training', 'Brutal Training', 'Focused Training', 'Inspired Training']),
+  options: options(POKEMON_TRAINING_FEATURE_OPTIONS),
   referenceKinds: ['feature'],
 }
 
@@ -420,6 +424,7 @@ const weaponTypeSelector: TrainerSubchoiceDefinition = {
 }
 
 const featureChoiceMap = defineChoiceMap([
+  [[TRAINER_FREE_TRAINING_FEATURE_NAME], [trainingFeatureSelector]],
   [['I’m a Doctor'], [
     {
       key: 'doctorTechnique',

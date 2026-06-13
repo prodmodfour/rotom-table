@@ -17,6 +17,23 @@ describe('trainer feature and edge field values', () => {
     expect(effect).toContain('Focused Pokémon gain a +1 bonus to Accuracy Rolls')
   })
 
+  it('formats the free trainer Training Feature as a prerequisite-waived choice', () => {
+    const feature: TrainerFeatureEntry = {
+      name: 'Free Training Feature',
+      choices: { trainingFeature: 'Focused Training' },
+    }
+
+    expect(trainerFeatureFieldValue(feature, 'tags')).toBe('Orders, Training')
+    expect(trainerFeatureFieldValue(feature, 'prerequisites')).toBe('Free trainer choice; prerequisites waived.')
+    expect(trainerFeatureFieldValue(feature, 'effect')).toBe('The target becomes Focused until the end of the effect duration. Focused Pokémon gain a +1 bonus to Accuracy Rolls and +2 to Skill Checks.')
+  })
+
+  it('prompts for the free trainer Training Feature while no choice is selected', () => {
+    const feature: TrainerFeatureEntry = { name: 'Free Training Feature' }
+
+    expect(trainerFeatureFieldValue(feature, 'effect')).toContain('Choose one free Training Feature')
+  })
+
   it('appends mixed edge and feature subchoice descriptions when a feature grants both', () => {
     const feature: TrainerFeatureEntry = {
       name: 'Dilettante',

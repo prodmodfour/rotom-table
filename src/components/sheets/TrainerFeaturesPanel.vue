@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import type { EditableCellValue } from '~/utils/editableCell'
 import type { TrainerFeatureEntry, TrainerSheet } from '~/types/trainerSheet'
@@ -7,22 +8,35 @@ import {
   TRAINER_FEATURE_NAME_COLUMN,
   TRAINER_FEATURE_NAME_OPTIONS,
   trainerFeatureFieldValue,
+  trainerFreeTrainingFeatureEntry,
   type TrainerFeatureAutofillField,
 } from '~/utils/sheets/trainerFeatures'
 import {
+  TRAINER_FREE_TRAINING_FEATURE_NAME,
+  TRAINER_TRAINING_FEATURE_CHOICE_KEY,
   stripTrainerEntryChoiceSuffix,
   trainerFeatureSubchoices,
   updateTrainerChoiceEntryName,
 } from '~/utils/sheets/trainerSubchoices'
+import {
+  POKEMON_TRAINING_FEATURE_OPTIONS,
+  normalizePokemonTrainingFeatureName,
+} from '~/utils/sheets/pokemonTrainingFeatures'
 
-defineProps<{
+const props = defineProps<{
   sheet: TrainerSheet
 }>()
+
+const sheet = computed(() => props.sheet)
 
 const emit = defineEmits<{
   addFeature: []
   removeFeature: [index: number]
 }>()
+
+const featureCount = computed(() => (sheet.value.features?.length ?? 0) + 1)
+const freeTrainingFeature = computed(() => trainerFreeTrainingFeatureEntry(sheet.value.trainingFeature))
+const freeTrainingFeatureValue = computed(() => freeTrainingFeature.value.choices?.[TRAINER_TRAINING_FEATURE_CHOICE_KEY] ?? '')
 
 const autofillValue = (feature: TrainerFeatureEntry, field: TrainerFeatureAutofillField): string =>
   trainerFeatureFieldValue(feature, field)
@@ -30,13 +44,19 @@ const autofillValue = (feature: TrainerFeatureEntry, field: TrainerFeatureAutofi
 const setFeatureName = (feature: TrainerFeatureEntry, value: EditableCellValue) => {
   updateTrainerChoiceEntryName(feature, value, trainerFeatureSubchoices)
 }
+
+const setFreeTrainingFeature = (value: EditableCellValue) => {
+  const selectedFeature = normalizePokemonTrainingFeatureName(value)
+  if (selectedFeature) sheet.value.trainingFeature = selectedFeature
+  else delete sheet.value.trainingFeature
+}
 </script>
 
 <template>
   <section class="tab-panel">
     <div class="block">
       <h2 class="block-title">
-        Features ({{ sheet.features?.length ?? 0 }})
+        Features ({{ featureCount }})
         <button type="button" class="row-add" @click="emit('addFeature')">
           <PhPlus :size="14" weight="bold" /> Add row
         </button>
@@ -54,6 +74,34 @@ const setFeatureName = (feature: TrainerFeatureEntry, value: EditableCellValue) 
             </tr>
           </thead>
           <tbody>
+            <tr class="free-training-row">
+              <th class="feature-name-col">
+                <div class="feature-name-stack">
+                  <span class="locked-feature-name">{{ TRAINER_FREE_TRAINING_FEATURE_NAME }}</span>
+                  <label class="trainer-subchoice-control">
+                    <span class="trainer-subchoice-label">Training feature</span>
+                    <EditableCell
+                      :model-value="freeTrainingFeatureValue"
+                      type="select"
+                      :options="POKEMON_TRAINING_FEATURE_OPTIONS"
+                      placeholder="Choose feature"
+                      @update:model-value="setFreeTrainingFeature"
+                    />
+                  </label>
+                </div>
+              </th>
+              <td
+                v-for="column in TRAINER_FEATURE_AUTOFILL_COLUMNS"
+                :key="column.key"
+                class="auto-fill-col"
+                :class="{ 'auto-fill-col--multiline': column.multiline }"
+              >
+                {{ autofillValue(freeTrainingFeature, column.key) || '—' }}
+              </td>
+              <td class="row-actions row-actions--locked">
+                <span class="row-locked-note" title="Every trainer gets one free Training Feature.">Free</span>
+              </td>
+            </tr>
             <tr v-for="(feature, index) in sheet.features" :key="index">
               <th class="feature-name-col">
                 <div class="feature-name-stack">
@@ -84,7 +132,7 @@ const setFeatureName = (feature: TrainerFeatureEntry, value: EditableCellValue) 
               </td>
             </tr>
             <tr v-if="!sheet.features?.length">
-              <td :colspan="TRAINER_FEATURE_AUTOFILL_COLUMNS.length + 2" class="muted">No features taken.</td>
+              <td :colspan="TRAINER_FEATURE_AUTOFILL_COLUMNS.length + 2" class="muted">No additional features taken.</td>
             </tr>
           </tbody>
         </table>
@@ -195,6 +243,43 @@ const setFeatureName = (feature: TrainerFeatureEntry, value: EditableCellValue) 
   color: #d36464;
   border-color: rgba(220, 80, 80, 0.45);
   background: rgba(220, 80, 80, 0.08);
+}
+
+.free-training-row {
+  background: rgba(var(--accent-rgb), 0.055);
+}
+
+.locked-feature-name {
+  font-weight: 700;
+  color: var(--ink-bright);
+}
+
+.trainer-subchoice-control {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.trainer-subchoice-label {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.row-locked-note {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.35rem;
+  color: var(--ink-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
 }
 
 .feature-name-col {
