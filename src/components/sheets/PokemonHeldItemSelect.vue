@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { findItem, items } from '~~/data/ptuReference'
-import { ptuItemOptionDetail } from '~/utils/reference/itemOptions'
+import { ptuItemOptionDetail, sortPtuItemsForHeldItemSelect } from '~/utils/reference/itemOptions'
 import type { PtuItem } from '~/types/ptuReference'
 
 interface HeldItemOption {
@@ -52,8 +52,8 @@ const optionMatches = (item: PtuItem, query: string): boolean => {
 
 const filteredItems = computed(() => {
   const query = searchTerm.value.trim().toLowerCase()
-  if (!query) return items
-  return items.filter((item) => optionMatches(item, query))
+  const matchingItems = query ? items.filter((item) => optionMatches(item, query)) : items
+  return sortPtuItemsForHeldItemSelect(matchingItems)
 })
 
 const customOption = computed<HeldItemOption | null>(() => {
