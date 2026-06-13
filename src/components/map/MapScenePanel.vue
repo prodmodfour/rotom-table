@@ -174,6 +174,10 @@ const livePlayStateLabel = computed(() => {
       return 'ready'
   }
 })
+const showLivePlaySavingIcon = computed(() => props.livePlayState === 'saving-command')
+const livePlaySavingIconLabel = computed(() => (
+  props.livePlayStatusMessage ?? 'Sending live-play command to the server.'
+))
 
 const focusPokemon = (id: string): boolean => rendererRef.value?.focusPokemon(id) ?? false
 
@@ -257,7 +261,17 @@ defineExpose({ focusPokemon })
       />
 
       <div
-        v-if="props.map && canViewMap && props.livePlayStatusMessage"
+        v-if="props.map && canViewMap && showLivePlaySavingIcon"
+        class="live-play-saving-icon"
+        role="status"
+        aria-live="polite"
+      >
+        <img src="/map/live-play-saving-icon.png" alt="" aria-hidden="true" />
+        <span class="live-play-saving-icon__label">{{ livePlaySavingIconLabel }}</span>
+      </div>
+
+      <div
+        v-if="props.map && canViewMap && props.livePlayStatusMessage && !showLivePlaySavingIcon"
         class="live-play-state-banner"
         :class="`live-play-state-banner--${props.livePlayState ?? 'ready'}`"
         role="status"
@@ -338,6 +352,63 @@ defineExpose({ focusPokemon })
   min-width: 0;
   min-height: 100vh;
   background: var(--paper);
+}
+
+.live-play-saving-icon {
+  position: absolute;
+  z-index: 7;
+  top: var(--map-overlay-gutter, 0.75rem);
+  left: calc(var(--map-overlay-gutter, 0.75rem) + var(--map-nav-rail-width, 0px) + 0.75rem);
+  display: grid;
+  width: clamp(2.4rem, 4vw, 3.25rem);
+  height: clamp(2.4rem, 4vw, 3.25rem);
+  place-items: center;
+  overflow: visible;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  pointer-events: none;
+}
+
+.live-play-saving-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--pokemon-black) 28%, transparent));
+  object-fit: cover;
+}
+
+.live-play-saving-icon__label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .live-play-saving-icon {
+    animation: live-play-saving-icon-pulse 0.9s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes live-play-saving-icon-pulse {
+  from {
+    opacity: 0.72;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .live-play-state-banner {
