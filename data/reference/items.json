@@ -2086,21 +2086,63 @@
     "notes": [],
     "source": "09-gear-and-items.md"
   },
-  "Fishing Rod": {
-    "name": "Fishing Rod",
+  "Old Rod": {
+    "name": "Old Rod",
     "categories": [
       "Hand Equipment"
     ],
     "effects": [
-      "Fishing Rods are used to Fish. They are two-handed items. They come in three varieties; Old Rods, Good Rods, and Super Rods. Old Rods cost $1000, Good Rods cost $5,000, and Super Rods cost $15,000."
+      "Fishing Rods are used to Fish. They are two-handed items. Old Rods are capable only of fishing up small, unevolved Pokémon at level 10 or under."
     ],
     "costs": [
-      "Old Rods cost $1000, Good Rods cost $5,000, and Super Rods cost $15,000"
+      "$1000"
     ],
     "sections": [
       "Equipment"
     ],
-    "aliases": [],
+    "aliases": [
+      "Old Rods"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Good Rod": {
+    "name": "Good Rod",
+    "categories": [
+      "Hand Equipment"
+    ],
+    "effects": [
+      "Fishing Rods are used to Fish. They are two-handed items. Good Rods may catch unevolved Pokémon of a Level to your GM’s discretion."
+    ],
+    "costs": [
+      "$5,000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [
+      "Good Rods"
+    ],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Super Rod": {
+    "name": "Super Rod",
+    "categories": [
+      "Hand Equipment"
+    ],
+    "effects": [
+      "Fishing Rods are used to Fish. They are two-handed items. Super Rods may catch Pokémon of any size and evolutionary stage, to your GM’s discretion."
+    ],
+    "costs": [
+      "$15,000"
+    ],
+    "sections": [
+      "Equipment"
+    ],
+    "aliases": [
+      "Super Rods"
+    ],
     "notes": [],
     "source": "09-gear-and-items.md"
   },
