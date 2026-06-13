@@ -1170,6 +1170,12 @@
     "frequency": "Static",
     "effect": "Connection – Triple Kick. When the user uses the Moves “Rapid Spin” or “Triple Kick”, they have a range of “Burst 1”."
   },
+  "Wind Power": {
+    "name": "Wind Power",
+    "frequency": "Scene – Free Action",
+    "trigger": "The user is hit by a Flying-Type Move",
+    "effect": "Connection – Charge. The user is unaffected by the triggering Move. The user may then use Charge as a Free Action. The user is immune to Flying-Type damaging Weather."
+  },
   "Windveiled": {
     "name": "Windveiled",
     "frequency": "Static",
