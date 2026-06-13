@@ -115,9 +115,9 @@ _CATEGORY_MAP = {
 }
 
 
-def _movelist(poke: dict) -> list[dict[str, Any]]:
+def _move_rows(moves: list[dict[str, Any]]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
-    for m in poke.get("moves", []):
+    for m in moves:
         cat_raw = (m.get("damage_class") or "Status").strip()
         cat = _CATEGORY_MAP.get(cat_raw.lower(), cat_raw)
         entry: dict[str, Any] = {
@@ -139,6 +139,14 @@ def _movelist(poke: dict) -> list[dict[str, Any]]:
                 entry[dst] = v
         out.append(entry)
     return out
+
+
+def _movelist(poke: dict) -> list[dict[str, Any]]:
+    return _move_rows(poke.get("moves", []))
+
+
+def _egg_moves(poke: dict) -> list[dict[str, Any]]:
+    return _move_rows(poke.get("egg_moves", []))
 
 
 def _abilities(poke: dict) -> list[dict[str, Any]]:
@@ -228,8 +236,13 @@ def to_character_sheet(
             "spent": 0,
         },
         "movelist": _movelist(poke),
+        "eggMoves": _egg_moves(poke),
         "abilities": _abilities(poke),
     }
+
+    inherited_moves = poke.get("inherited_moves") or {}
+    if inherited_moves:
+        sheet["inheritedMoves"] = dict(inherited_moves)
 
     nature_mod = _nature_mod_field(poke["nature_tuple"])
     if nature_mod is not None:

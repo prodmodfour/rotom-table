@@ -5,7 +5,9 @@ Rotom Table PTU Pokémon Generator CLI
 Generate a single PTU ``CharacterSheet`` JSON file that the Nuxt ``/sheets`` UI
 can pick up. Random-pool rolling lives upstream (encounter tables, GM choice);
 this tool just stats what you tell it to using the app-owned data/reference
-JSON as its source of truth.
+JSON as its source of truth. Generated sheets record 0-3 random egg moves
+from their species' egg move list as inheritance options, and add eligible
+inherited moves to the known movelist at PTU inheritance levels.
 
 Usage:
   python ptu-data/cli.py --species NAME --level N [options]

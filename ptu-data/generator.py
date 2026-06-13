@@ -173,47 +173,170 @@ def pick_gender(entry: dict) -> str:
     return "Female"
 
 
-def pick_moves(entry: dict, level: int, moves_db: dict, max_moves: int = 6) -> list[dict]:
+def _move_key(name: str) -> str:
+    return str(name or "").strip().lower()
+
+
+def _move_from_reference(entry: dict, name: str, moves_db: dict, fallback: Optional[dict] = None) -> dict:
+    """Return a move dict with generator-specific STAB adjustments applied."""
+    move_data = moves_db.get(name)
+    if move_data:
+        md = dict(move_data)
+        md["_base_damage_base"] = md.get("damage_base")
+        # Apply STAB: +2 DB if type matches
+        if md.get("damage_base") and md.get("type") in entry["types"]:
+            md["stab"] = True
+            md["damage_base"] += 2
+            # Update damage roll string
+            db = md["damage_base"]
+            md["damage_roll"] = DAMAGE_TABLE.get(db, md.get("damage_roll", ""))
+        else:
+            md["stab"] = False
+        return md
+
+    fallback = fallback or {}
+    # Move not in DB — include with basic info from pokedex
+    return {
+        "name": name, "type": fallback.get("type", "Normal"),
+        "frequency": "At-Will", "ac": 2, "damage_base": None,
+        "_base_damage_base": None,
+        "damage_class": "Status", "range": "Melee, 1 Target",
+        "effect": "", "stab": False,
+    }
+
+
+def _unique_move_names(names: list[str], excluded_names: Optional[set[str]] = None) -> list[str]:
+    seen = {_move_key(name) for name in (excluded_names or set())}
+    unique = []
+    for name in names:
+        key = _move_key(name)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        unique.append(name)
+    return unique
+
+
+def pick_egg_moves(
+    entry: dict,
+    moves_db: dict,
+    max_egg_moves: int = 3,
+    excluded_names: Optional[set[str]] = None,
+) -> list[dict]:
+    """Pick 0..max_egg_moves random egg moves from the species egg move list."""
+    if max_egg_moves <= 0:
+        return []
+
+    available = _unique_move_names(list(entry.get("egg_moves") or []), excluded_names)
+    if not available:
+        return []
+
+    random.shuffle(available)
+    count = random.randint(0, min(max_egg_moves, len(available)))
+    return [_move_from_reference(entry, name, moves_db) for name in available[:count]]
+
+
+def inherited_move_slot_levels(level: int) -> list[int]:
+    """Inheritance move opportunities from PTU breeding rules."""
+    if level < 20:
+        return []
+    return list(range(20, level + 1, 10))
+
+
+def _move_frequency_rank(frequency: Optional[str]) -> int:
+    normalized = str(frequency or "").strip().lower()
+    if normalized == "at-will":
+        return 0
+    if normalized == "eot":
+        return 1
+    if normalized.startswith("scene"):
+        return 2
+    return 3
+
+
+def _move_base_damage_base(move: dict) -> Optional[int]:
+    value = move.get("_base_damage_base", move.get("damage_base"))
+    if value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def can_learn_tutored_or_inherited_move_at_level(move: dict, level: int) -> bool:
+    """Apply errata-2 tutor/inheritance move prerequisites."""
+    if level >= 30:
+        return True
+
+    max_frequency_rank = 1 if level < 20 else 2
+    max_damage_base = 7 if level < 20 else 9
+    if _move_frequency_rank(move.get("frequency")) > max_frequency_rank:
+        return False
+
+    damage_base = _move_base_damage_base(move)
+    return damage_base is None or damage_base <= max_damage_base
+
+
+def pick_learned_inherited_moves(
+    inheritance_moves: list[dict],
+    level: int,
+    max_moves: int,
+) -> tuple[list[dict], dict[str, str]]:
+    """Pick inherited moves that the Pokémon can have learned by this level."""
+    learned: list[dict] = []
+    learned_by_level: dict[str, str] = {}
+    remaining = list(inheritance_moves)
+
+    for slot_level in inherited_move_slot_levels(level):
+        if len(learned) >= max_moves:
+            break
+        match_index = next(
+            (
+                index
+                for index, move in enumerate(remaining)
+                if can_learn_tutored_or_inherited_move_at_level(move, slot_level)
+            ),
+            None,
+        )
+        if match_index is None:
+            continue
+        move = remaining.pop(match_index)
+        learned.append(move)
+        learned_by_level[str(slot_level)] = move["name"]
+
+    return learned, learned_by_level
+
+
+def pick_moves(
+    entry: dict,
+    level: int,
+    moves_db: dict,
+    max_moves: int = 6,
+    excluded_names: Optional[set[str]] = None,
+) -> list[dict]:
     """Pick random level-up moves the Pokémon can know at this level."""
+    if max_moves <= 0:
+        return []
+
     available = [m for m in entry["level_up_moves"] if m["level"] <= level]
     if not available:
         return []
 
     random.shuffle(available)
-    chosen_names = []
     chosen = []
+    seen = {_move_key(name) for name in (excluded_names or set())}
     for m in available:
-        if len(chosen_names) >= max_moves:
+        if len(chosen) >= max_moves:
             break
-        if m["name"] not in chosen_names:
-            chosen_names.append(m["name"])
-            chosen.append(m)
+        name = m["name"]
+        key = _move_key(name)
+        if key in seen:
+            continue
+        seen.add(key)
+        chosen.append(m)
 
-    result = []
-    for m in chosen:
-        move_data = moves_db.get(m["name"])
-        if move_data:
-            md = dict(move_data)
-            # Apply STAB: +2 DB if type matches
-            if md.get("damage_base") and md.get("type") in entry["types"]:
-                md["stab"] = True
-                md["damage_base"] += 2
-                # Update damage roll string
-                db = md["damage_base"]
-                md["damage_roll"] = DAMAGE_TABLE.get(db, md.get("damage_roll", ""))
-            else:
-                md["stab"] = False
-            result.append(md)
-        else:
-            # Move not in DB — include with basic info from pokedex
-            result.append({
-                "name": m["name"], "type": m.get("type", "Normal"),
-                "frequency": "At-Will", "ac": 2, "damage_base": None,
-                "damage_class": "Status", "range": "Melee, 1 Target",
-                "effect": "", "stab": False,
-            })
-
-    return result
+    return [_move_from_reference(entry, m["name"], moves_db, m) for m in chosen]
 
 
 def _lookup_ability(name: str, abilities_db: dict) -> dict:
@@ -371,7 +494,18 @@ def generate_pokemon(
     # Abilities — check for Cluster Mind (8 moves instead of 6)
     abilities = pick_abilities(entry, level, abilities_db)
     max_moves = 8 if any(a.get("name") == "Cluster Mind" for a in abilities) else 6
-    moves = pick_moves(entry, level, moves_db, max_moves)
+
+    # A generated Pokémon may have 0-3 random inherited egg move options.
+    # PTU's breeding rules place these on an Inheritance Move List, and the
+    # Pokémon can learn from that list at Level 20 and every 10 levels
+    # thereafter. Learned inherited moves are Natural Moves, so reserve known
+    # move slots for them when the current level and errata prerequisites allow.
+    egg_moves = pick_egg_moves(entry, moves_db, max_egg_moves=3)
+    learned_egg_moves, inherited_moves = pick_learned_inherited_moves(egg_moves, level, max_moves)
+    learned_egg_move_names = {move["name"] for move in learned_egg_moves}
+    level_up_move_limit = max(max_moves - len(learned_egg_moves), 0)
+    level_up_moves = pick_moves(entry, level, moves_db, level_up_move_limit, learned_egg_move_names)
+    moves = [*learned_egg_moves, *level_up_moves]
 
     # Tutor points
     tutor_points = round(math.floor(level / 5.0) + 1)
@@ -412,6 +546,8 @@ def generate_pokemon(
         "dr": 0,
         "evasion": evasion,
         "moves": moves,
+        "egg_moves": egg_moves,
+        "inherited_moves": inherited_moves,
         "abilities": abilities,
         "type_effectiveness": {"weak": weak, "resist": resist, "immune": immune},
         "capabilities": entry["capabilities"],
