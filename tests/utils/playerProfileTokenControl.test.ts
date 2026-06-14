@@ -29,6 +29,14 @@ describe('client player profile token control helpers', () => {
     expect(clientPlayerProfileControlledPlacementIds(selectedProfile, placements)).toEqual([
       'trainer-token',
     ])
+    expect(clientPlayerProfileControlledPlacementIds(
+      selectedProfile,
+      placements,
+      [{ slug: 'blue', currentTeam: ['blastoise'] }],
+    )).toEqual([
+      'trainer-token',
+      'pokemon-token',
+    ])
     expect(clientActorCanControlPlacement({
       role: 'player',
       profile: selectedProfile,
@@ -39,6 +47,12 @@ describe('client player profile token control helpers', () => {
       profile: selectedProfile,
       placement: placements[1],
     })).toBe(false)
+    expect(clientActorCanControlPlacement({
+      role: 'player',
+      profile: selectedProfile,
+      placement: placements[1],
+      linkedTrainerSheets: [{ slug: 'blue', currentTeam: ['blastoise'] }],
+    })).toBe(true)
   })
 
   it('keeps GM and missing-profile client control decisions explicit', () => {

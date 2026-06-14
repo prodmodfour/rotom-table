@@ -36,7 +36,11 @@ import {
 } from '~/utils/sheetMutations'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import { normalizeConditionNames } from '~/utils/statusConditions'
-import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
+import {
+  actorCanControlMapPlacement,
+  playerProfileLinkedTrainerSheetsForTokenControlAsync,
+  type ServerTokenControlLinkedTrainerSheet,
+} from '../policies/playerProfileTokenControlPolicy'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import {
   rejectLivePlayCommand,
@@ -109,6 +113,7 @@ interface ResolvedLivePlaySheetCommandContext {
   readonly map: TabletopMap
   readonly placement: SheetPlacement
   readonly sheet: PersistedSheet
+  readonly linkedTrainerSheets: readonly ServerTokenControlLinkedTrainerSheet[]
   readonly nextSheet?: Record<string, unknown>
   readonly sheetUpdate?: LivePlaySheetCommandSheetUpdate
 }
@@ -141,6 +146,23 @@ const actionDependencies = (dependencies: LivePlaySheetCommandDependencies) => (
 type LivePlaySheetCommandDependencySet = ReturnType<typeof actionDependencies>
 
 type UnknownRecord = Record<string, unknown>
+
+const tokenControlTrainerSheet = (sheet: PersistedSheet): ServerTokenControlLinkedTrainerSheet => ({
+  slug: sheet.slug,
+  ...(Array.isArray(sheet.sheet.currentTeam) ? { currentTeam: sheet.sheet.currentTeam } : {}),
+  ...(Array.isArray(sheet.sheet.boxedPokemon) ? { boxedPokemon: sheet.sheet.boxedPokemon } : {}),
+})
+
+const linkedTrainerSheetsForActor = async (
+  actor: LivePlaySheetCommandActor,
+  dependencies: LivePlaySheetCommandDependencySet,
+) => playerProfileLinkedTrainerSheetsForTokenControlAsync(
+  actor.playerProfile,
+  async (slug) => {
+    const sheet = await dependencies.sheetRepository.getByRef('trainer', slug)
+    return sheet ? tokenControlTrainerSheet(sheet) : null
+  },
+)
 
 const isRecord = (value: unknown): value is UnknownRecord => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -335,6 +357,7 @@ const resolveContext = async (
     map,
     placement,
     sheet,
+    linkedTrainerSheets: await linkedTrainerSheetsForActor(actor, dependencies),
   }
 }
 
@@ -671,6 +694,7 @@ export const executeLivePlaySheetCommandUseCase = async (
         role: actor.role,
         profile: actor.playerProfile,
         placement: map.placement,
+        linkedTrainerSheets: map.linkedTrainerSheets,
       })) {
         throw new LivePlaySheetCommandUseCaseError(403, controlDeniedMessage(actor.role, actor.playerProfile))
       }

@@ -277,7 +277,7 @@ describe('live-play map token table action commands', () => {
     const response = await executeLivePlayTableActionCommandUseCase({
       role: 'player',
       command: request,
-      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'lenora' }]),
+      playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'unlinked' }]),
       expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
     }, deps)
 

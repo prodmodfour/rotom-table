@@ -5,7 +5,9 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
+import type { PlayerProfileLinkedTrainerSheet } from '../policies/playerProfilePolicy'
 import { findMapFile, readMapFile } from '../utils/mapStorage'
+import { listSheetFilesWithFolders } from '../utils/sheetStorage'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export const MAP_ACTION_EVENT_MAX_PAYLOAD_BYTES = 64 * 1024
@@ -24,6 +26,7 @@ export interface PublishMapActionEventInput {
 export interface PublishMapActionEventDependencies {
   findMapPath?: (slug: string) => string | null
   readMap?: (path: string) => TabletopMap
+  listTrainerSheets?: () => Iterable<PlayerProfileLinkedTrainerSheet>
   maxPayloadBytes?: number
 }
 
@@ -92,6 +95,8 @@ export const publishMapActionEventUseCase = (
   )
   const findMapPath = dependencies.findMapPath ?? findMapFile
   const readMap = dependencies.readMap ?? readMapFile
+  const listTrainerSheets = dependencies.listTrainerSheets
+    ?? (() => listSheetFilesWithFolders<PlayerProfileLinkedTrainerSheet>('trainer'))
 
   const mapPath = findMapPath(input.slug)
   if (!mapPath) throw new PublishMapActionEventUseCaseError(404, `Map ${input.slug}.json not found`)
@@ -110,6 +115,7 @@ export const publishMapActionEventUseCase = (
     role: input.role,
     profile: input.playerProfile,
     placement: actorPlacement,
+    linkedTrainerSheets: Array.from(listTrainerSheets()),
   })) {
     throw new PublishMapActionEventUseCaseError(
       403,

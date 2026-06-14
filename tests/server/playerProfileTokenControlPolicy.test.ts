@@ -68,6 +68,32 @@ describe('server player profile token control policy', () => {
     })).toBe(false)
   })
 
+  it('allows players to control Pokémon from linked trainer sheets', () => {
+    const selectedProfile = profile([{ sheetKind: 'trainer', sheetSlug: 'leaf' }])
+    const linkedTrainerSheets = [{ slug: 'leaf', currentTeam: ['vaporeon'] }]
+
+    expect(playerProfileTokenControlSheetPredicate(selectedProfile, linkedTrainerSheets)('pokemon', 'vaporeon')).toBe(true)
+    expect(playerProfileControlledMapPlacementIds(selectedProfile, placements, linkedTrainerSheets)).toEqual([
+      'linked-trainer',
+      'unrelated',
+    ])
+    expect(actorControlledMapPlacementIds({
+      role: 'player',
+      profile: selectedProfile,
+      placements,
+      linkedTrainerSheets,
+    })).toEqual([
+      'linked-trainer',
+      'unrelated',
+    ])
+    expect(actorCanControlMapPlacement({
+      role: 'player',
+      profile: selectedProfile,
+      placement: placements[2],
+      linkedTrainerSheets,
+    })).toBe(true)
+  })
+
   it('exposes missing-profile status for player map actions that need a profile', () => {
     expect(buildServerPlayerProfileTokenControlModel({
       role: 'player',

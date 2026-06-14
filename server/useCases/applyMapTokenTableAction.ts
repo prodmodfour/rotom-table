@@ -45,7 +45,11 @@ import {
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { canAccessMapForRole } from '../policies/mapPolicy'
-import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
+import {
+  actorCanControlMapPlacement,
+  playerProfileLinkedTrainerSheetsForTokenControlAsync,
+  type ServerTokenControlLinkedTrainerSheet,
+} from '../policies/playerProfileTokenControlPolicy'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { sqliteSheetRepository, type PersistedSheet, type SheetRepository } from '../storage/sheetRepository'
@@ -119,6 +123,7 @@ interface ResolvedActionContext {
   readonly targetPlacement?: SheetPlacement
   readonly actorSheet: PersistedSheet
   readonly targetSheet?: PersistedSheet
+  readonly linkedTrainerSheets: readonly ServerTokenControlLinkedTrainerSheet[]
   readonly nextSheets?: readonly SheetWritePlan[]
   readonly sheetUpdates?: readonly LivePlayTableActionSheetUpdate[]
   readonly action?: LivePlayTableActionSummary
@@ -159,6 +164,23 @@ const actionDependencies = (dependencies: LivePlayTableActionCommandDependencies
 })
 
 type LivePlayTableActionDependencySet = ReturnType<typeof actionDependencies>
+
+const tokenControlTrainerSheet = (sheet: PersistedSheet): ServerTokenControlLinkedTrainerSheet => ({
+  slug: sheet.slug,
+  ...(Array.isArray(sheet.sheet.currentTeam) ? { currentTeam: sheet.sheet.currentTeam } : {}),
+  ...(Array.isArray(sheet.sheet.boxedPokemon) ? { boxedPokemon: sheet.sheet.boxedPokemon } : {}),
+})
+
+const linkedTrainerSheetsForActor = async (
+  actor: LivePlayTableActionActor,
+  dependencies: LivePlayTableActionDependencySet,
+) => playerProfileLinkedTrainerSheetsForTokenControlAsync(
+  actor.playerProfile,
+  async (slug) => {
+    const sheet = await dependencies.sheetRepository.getByRef('trainer', slug)
+    return sheet ? tokenControlTrainerSheet(sheet) : null
+  },
+)
 
 const isRecord = (value: unknown): value is UnknownRecord => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -408,6 +430,7 @@ const resolveContext = async (
     ...(targetPlacement ? { targetPlacement } : {}),
     actorSheet,
     ...(targetSheet ? { targetSheet } : {}),
+    linkedTrainerSheets: await linkedTrainerSheetsForActor(actor, dependencies),
   }
 }
 
@@ -863,7 +886,14 @@ const currentContextForAcceptedResult = async (
     const actorPlacement = map.placements.find((placement) => placement.id === placementId)
     if (!actorPlacement) return null
     if (!canAccessMapForRole(role, map)) return null
-    if (!actorCanControlMapPlacement({ role, profile: playerProfile, placement: actorPlacement })) return null
+    const linkedTrainerSheets = await playerProfileLinkedTrainerSheetsForTokenControlAsync(
+      playerProfile,
+      async (slug) => {
+        const sheet = await dependencies.sheetRepository.getByRef('trainer', slug)
+        return sheet ? tokenControlTrainerSheet(sheet) : null
+      },
+    )
+    if (!actorCanControlMapPlacement({ role, profile: playerProfile, placement: actorPlacement, linkedTrainerSheets })) return null
     const actorSheet = await readRequiredSheet(actorPlacement, dependencies, 'accepted table action replay')
     const sheetUpdates: LivePlayTableActionSheetUpdate[] = []
     for (const ref of sheetRefsFromAcceptedResult(result)) {
@@ -877,6 +907,7 @@ const currentContextForAcceptedResult = async (
       map,
       actorPlacement,
       actorSheet,
+      linkedTrainerSheets,
       action: actionFromAcceptedResult(result),
       sheetUpdates,
     }
@@ -908,6 +939,7 @@ export const executeLivePlayTableActionCommandUseCase = async (
         role: actor.role,
         profile: actor.playerProfile,
         placement: map.actorPlacement,
+        linkedTrainerSheets: map.linkedTrainerSheets,
       })) {
         throw new MapTokenTableActionUseCaseError(403, controlDeniedMessage(actor.role, actor.playerProfile))
       }

@@ -54,6 +54,23 @@ describe('player profile token control policy', () => {
     expect(tokenPlacementSheetKey(placements[0])).toBe('pokemon:pikachu')
   })
 
+  it('lets a profile control Pokémon on a linked trainer team', () => {
+    const selectedProfile = profile([{ sheetKind: 'trainer', sheetSlug: 'misty' }])
+    const linkedTrainerSheets = [{ slug: 'misty', currentTeam: ['psyduck'], boxedPokemon: ['starmie'] }]
+
+    expect(playerProfileCanControlTokenSheet(selectedProfile, 'pokemon', 'psyduck', { linkedTrainerSheets })).toBe(true)
+    expect(playerProfileCanControlTokenPlacement(selectedProfile, placements[2], { linkedTrainerSheets })).toBe(true)
+    expect(playerProfileControlledPlacementIds(selectedProfile, placements, { linkedTrainerSheets })).toEqual([
+      'misty-token',
+      'psyduck-token',
+    ])
+    expect([...playerProfileTokenControlKeys(selectedProfile, { linkedTrainerSheets })].sort()).toEqual([
+      'pokemon:psyduck',
+      'pokemon:starmie',
+      'trainer:misty',
+    ])
+  })
+
   it('lets GMs control all token placements without a selected player profile', () => {
     const duplicatedPlacementIds: readonly TokenControlPlacementRef[] = [
       ...placements,

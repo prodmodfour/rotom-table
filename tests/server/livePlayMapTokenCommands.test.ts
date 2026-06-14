@@ -256,6 +256,47 @@ describe('live-play map token commands', () => {
     ])
   })
 
+  it('allows a selected player profile to move Pokémon from their linked trainer team', async () => {
+    const harness = createHarness(baseMap({
+      placements: [
+        {
+          id: 'trainer-token',
+          sheetKind: 'trainer',
+          sheetSlug: 'giovanni',
+          position: { x: 1, y: 0, z: 1 },
+        },
+        {
+          id: 'team-pokemon-token',
+          sheetKind: 'pokemon',
+          sheetSlug: 'eevee',
+          position: { x: 2, y: 0, z: 1 },
+        },
+      ],
+    }))
+
+    const response = await executeMapTokenLivePlayCommandUseCase({
+      role: 'player',
+      command: moveCommand({
+        opId: 'op_trainerteammove',
+        scopes: [{ kind: 'token', placementId: 'team-pokemon-token', field: 'position' }],
+        payload: {
+          placementId: 'team-pokemon-token',
+          position: { x: 4, y: 0, z: 1 },
+        },
+      }),
+      clientId: 'player-client',
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'giovanni' }]),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, harness.deps)
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(response.placement).toMatchObject({
+      id: 'team-pokemon-token',
+      sheetSlug: 'eevee',
+      position: { x: 4, y: 0, z: 1 },
+    })
+  })
+
   it('rejects unauthorized player moves without advancing revision or writing', async () => {
     const harness = createHarness()
 

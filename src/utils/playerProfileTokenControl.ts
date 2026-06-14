@@ -18,13 +18,16 @@ import {
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetPlacement } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 
 export type ClientTokenControlPlacementRef = Pick<SheetPlacement, 'id' | 'sheetKind' | 'sheetSlug'>
+export type ClientTokenControlLinkedTrainerSheet = Pick<TrainerSheet, 'slug' | 'currentTeam' | 'boxedPokemon'>
 
 export interface BuildClientPlayerProfileTokenControlModelInput {
   readonly role: AuthRole | null | undefined
   readonly profile?: PlayerProfile | null
   readonly placements: readonly ClientTokenControlPlacementRef[]
+  readonly linkedTrainerSheets?: readonly ClientTokenControlLinkedTrainerSheet[]
 }
 
 const asTokenControlPlacements = (
@@ -37,12 +40,16 @@ export const buildClientPlayerProfileTokenControlModel = (
   role: input.role,
   profile: input.profile,
   placements: asTokenControlPlacements(input.placements),
+  linkedTrainerSheets: input.linkedTrainerSheets,
 })
 
 export const clientPlayerProfileControlledPlacementIds = (
   profile: PlayerProfile | null | undefined,
   placements: readonly ClientTokenControlPlacementRef[],
-): readonly string[] => playerProfileControlledPlacementIds(profile, asTokenControlPlacements(placements))
+  linkedTrainerSheets?: readonly ClientTokenControlLinkedTrainerSheet[],
+): readonly string[] => playerProfileControlledPlacementIds(profile, asTokenControlPlacements(placements), {
+  linkedTrainerSheets,
+})
 
 export const clientActorControlledPlacementIds = (
   input: BuildClientPlayerProfileTokenControlModelInput,
@@ -50,16 +57,19 @@ export const clientActorControlledPlacementIds = (
   role: input.role,
   profile: input.profile,
   placements: asTokenControlPlacements(input.placements),
+  linkedTrainerSheets: input.linkedTrainerSheets,
 })
 
 export const clientActorCanControlPlacement = (input: {
   readonly role: AuthRole | null | undefined
   readonly profile?: PlayerProfile | null
   readonly placement: ClientTokenControlPlacementRef
+  readonly linkedTrainerSheets?: readonly ClientTokenControlLinkedTrainerSheet[]
 }): boolean => actorCanControlTokenPlacement({
   role: input.role,
   profile: input.profile,
   placement: input.placement,
+  linkedTrainerSheets: input.linkedTrainerSheets,
 })
 
 export {

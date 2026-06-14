@@ -171,6 +171,7 @@ const playerProfileTokenControlModel = computed(() => buildClientPlayerProfileTo
   role: role.value,
   profile: selectedProfile.value,
   placements: map.value?.placements ?? [],
+  linkedTrainerSheets: Array.from(trainerBySlug.value.values()),
 }))
 const playerCharacterSheetKeys = computed(() => playerCharacterSheetKeysForProfiles(playerProfiles.value))
 const shouldSuppressPlayerCharacterAttackOfOpportunity = ({

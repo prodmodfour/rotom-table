@@ -1,6 +1,10 @@
 import type { PlayerProfile, PlayerProfileId } from '#shared/playerProfiles'
 import { parsePlayerProfileId } from '#shared/playerProfiles'
 import type { SheetKind } from '#shared/sheets'
+import {
+  playerProfileTokenControlLinkedTrainerPokemonSlugs,
+  playerProfileTokenControlLinkedTrainerSlugs,
+} from '#shared/playerProfileTokenControl'
 import { readPlayerProfile } from '../utils/playerProfileStorage'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
@@ -45,51 +49,14 @@ export interface ResolvePlayerProfileForPolicyDependencies {
 export const playerSheetAccessKey = (kind: SheetKind, slug: string): PlayerSheetAccessKey =>
   `${kind}:${slug}`
 
-const normalizeLinkedPokemonSlug = (slug: unknown): string => (
-  typeof slug === 'string' ? slug.trim() : ''
-)
-
-const addLinkedPokemonSlugs = (
-  out: Set<string>,
-  slugs: readonly unknown[] | undefined,
-): void => {
-  for (const value of slugs ?? []) {
-    const slug = normalizeLinkedPokemonSlug(value)
-    if (slug) out.add(slug)
-  }
-}
-
-const resolveLinkedTrainerSheets = (
-  source: PlayerProfileLinkedTrainerSheetSource | undefined,
-): Iterable<PlayerProfileLinkedTrainerSheet> => {
-  if (!source) return []
-  return typeof source === 'function' ? source() : source
-}
-
 export const playerProfileLinkedTrainerSlugs = (
   profile: PlayerProfile | null | undefined,
-): ReadonlySet<string> => new Set(
-  (profile?.linkedCharacters ?? [])
-    .filter((ref) => ref.sheetKind === 'trainer')
-    .map((ref) => ref.sheetSlug),
-)
+): ReadonlySet<string> => playerProfileTokenControlLinkedTrainerSlugs(profile)
 
 export const playerProfileLinkedTrainerPokemonSlugs = (
   profile: PlayerProfile | null | undefined,
   linkedTrainerSheets: PlayerProfileLinkedTrainerSheetSource | undefined,
-): ReadonlySet<string> => {
-  const trainerSlugs = playerProfileLinkedTrainerSlugs(profile)
-  const pokemonSlugs = new Set<string>()
-  if (trainerSlugs.size === 0) return pokemonSlugs
-
-  for (const trainerSheet of resolveLinkedTrainerSheets(linkedTrainerSheets)) {
-    if (!trainerSlugs.has(trainerSheet.slug)) continue
-    addLinkedPokemonSlugs(pokemonSlugs, trainerSheet.currentTeam)
-    addLinkedPokemonSlugs(pokemonSlugs, trainerSheet.boxedPokemon)
-  }
-
-  return pokemonSlugs
-}
+): ReadonlySet<string> => playerProfileTokenControlLinkedTrainerPokemonSlugs(profile, linkedTrainerSheets)
 
 export const playerProfileCanAccessSheet = (
   profile: PlayerProfile | null | undefined,

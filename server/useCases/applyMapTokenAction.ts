@@ -49,7 +49,11 @@ import { readSheetFile } from '../utils/sheetStorage'
 import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { canAccessMapForRole, clampAnchorToDimensions } from '../policies/mapPolicy'
-import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
+import {
+  actorCanControlMapPlacement,
+  playerProfileLinkedTrainerSheetsForTokenControl,
+  type ServerTokenControlLinkedTrainerSheet,
+} from '../policies/playerProfileTokenControlPolicy'
 import {
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
@@ -190,6 +194,26 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
 })
 
 type MapTokenActionDependencySet = ReturnType<typeof actionDependencies>
+
+const tokenControlTrainerSheet = (
+  slug: string,
+  sheet: Record<string, unknown>,
+): ServerTokenControlLinkedTrainerSheet => ({
+  slug,
+  ...(Array.isArray(sheet.currentTeam) ? { currentTeam: sheet.currentTeam } : {}),
+  ...(Array.isArray(sheet.boxedPokemon) ? { boxedPokemon: sheet.boxedPokemon } : {}),
+})
+
+const linkedTrainerSheetsForActor = (
+  actor: MapTokenLivePlayActor,
+  dependencies: MapTokenActionDependencySet,
+) => playerProfileLinkedTrainerSheetsForTokenControl(
+  actor.playerProfile,
+  (slug) => {
+    const record = dependencies.readSheet('trainer', slug)
+    return record ? tokenControlTrainerSheet(slug, record.sheet) : null
+  },
+)
 
 const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => (
   map.folder ? join(MAPS_ROOT, map.folder, `${map.slug}.json`) : join(MAPS_ROOT, `${map.slug}.json`)
@@ -988,6 +1012,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
           role: actor.role,
           profile: actor.playerProfile,
           placement: trainerPlacement,
+          linkedTrainerSheets: linkedTrainerSheetsForActor(actor, deps),
         })) {
           const message = actor.role === 'player' && !actor.playerProfile
             ? 'Select a player profile to control linked map tokens'
@@ -1033,6 +1058,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         role: actor.role,
         profile: actor.playerProfile,
         placement,
+        linkedTrainerSheets: linkedTrainerSheetsForActor(actor, deps),
       })) {
         const message = actor.role === 'player' && !actor.playerProfile
           ? 'Select a player profile to control linked map tokens'
