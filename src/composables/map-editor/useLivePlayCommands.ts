@@ -21,6 +21,7 @@ import {
   type RemoveFieldEffectPayload,
   type RemoveHazardPayload,
   type RemoveTerrainVoxelPayload,
+  type SendOutPokemonPayload,
   type SetFieldEffectPayload,
   type SetInitiativePayload,
   type SpawnTokenPayload,
@@ -102,6 +103,13 @@ export interface UseLivePlayCommandsReturn {
   spawnToken: (payload: {
     placement: SheetPlacement
   }) => Promise<LivePlayCommandDispatchResult>
+  sendOutPokemon: (payload: {
+    trainerId: string
+    pokemonSlug: string
+    tokenId: string
+    position: GridAnchor
+    facing?: TokenFacingDirection
+  }) => Promise<LivePlayCommandDispatchResult>
   deleteToken: (payload: {
     placementId: string
   }) => Promise<LivePlayCommandDispatchResult>
@@ -167,6 +175,7 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
   | typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
@@ -210,6 +219,7 @@ type LivePlayMapEffectsCommandPayload =
 type LivePlayClientCommandPayload =
   | LivePlayTokenCommandPayload
   | SpawnTokenPayload
+  | SendOutPokemonPayload
   | SetInitiativePayload
   | LivePlayMapEffectsCommandPayload
   | Record<string, never>
@@ -432,6 +442,24 @@ export const useLivePlayCommands = (
       LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
       { placement: payload.placement },
       [{ kind: 'token', placementId: payload.placement.id, field: 'spawn' }],
+    ),
+  )
+
+  const sendOutPokemon: UseLivePlayCommandsReturn['sendOutPokemon'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.sendOutPokemon,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+      {
+        trainerId: payload.trainerId,
+        pokemonSlug: payload.pokemonSlug,
+        tokenId: payload.tokenId,
+        position: payload.position,
+        ...(payload.facing === undefined ? {} : { facing: payload.facing }),
+      },
+      [
+        { kind: 'token', placementId: payload.trainerId, field: 'sendOut' },
+        { kind: 'token', placementId: payload.tokenId, field: 'spawn' },
+      ],
     ),
   )
 
@@ -660,6 +688,7 @@ export const useLivePlayCommands = (
     lastError,
     clearError,
     spawnToken,
+    sendOutPokemon,
     deleteToken,
     moveToken,
     turnToken,

@@ -11,6 +11,8 @@ import {
   type LivePlayTokenScope,
   type MoveTokenLivePlayCommand,
   type MoveTokenPayload,
+  type SendOutPokemonLivePlayCommand,
+  type SendOutPokemonPayload,
   type SpawnTokenLivePlayCommand,
   type SpawnTokenPayload,
   type TurnTokenLivePlayCommand,
@@ -21,15 +23,26 @@ import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { isSheetKind } from '#shared/sheets'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
+import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import type { TrainerSheet } from '~/types/trainerSheet'
+import { canPlacePokemon } from '~/utils/gridPlacement'
 import { appendMovementLogEntry, sameGridAnchor } from '~/utils/mapMovementLog'
 import {
+  isSendOutPositionWithinThrowRange,
+  POKEBALL_THROW_RANGE_SQUARES,
+} from '~/utils/mapTokenSendOut'
+import { placementToSpawned, type SheetLookup } from '~/utils/placement'
+import {
+  DEFAULT_TOKEN_FACING_DIRECTION,
   isTokenFacingDirection,
   tokenFacingForPlacement,
   tokenFacingStoresLegacyTurned,
   tokenFacingTowardPoint,
 } from '~/utils/tokenFacing'
+import { buildVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
 import { readSheetFile } from '../utils/sheetStorage'
@@ -70,12 +83,14 @@ export type MapTokenLivePlayCommand =
   | MoveTokenLivePlayCommand
   | TurnTokenLivePlayCommand
   | SpawnTokenLivePlayCommand
+  | SendOutPokemonLivePlayCommand
   | DeleteTokenLivePlayCommand
 
 export type MapTokenLivePlayCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
   | typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
 
 export interface MapTokenLivePlayActor {
@@ -347,6 +362,166 @@ const applySpawnTokenToMap = (
   }
 }
 
+interface ResolvedSendOutPokemonMapContext {
+  readonly trainerPlacement: SheetPlacement
+  readonly placement: SheetPlacement
+  readonly trainerToken: SpawnedPokemon
+  readonly pokemonToken: SpawnedPokemon
+}
+
+const typedSheetLookupForPlacement = (
+  placement: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
+  sheet: Record<string, unknown>,
+): SheetLookup => {
+  if (placement.sheetKind === 'pokemon') {
+    return {
+      pokemon: new Map([[placement.sheetSlug, { ...sheet, slug: placement.sheetSlug } as CharacterSheet]]),
+      trainer: new Map(),
+    }
+  }
+
+  return {
+    pokemon: new Map(),
+    trainer: new Map([[placement.sheetSlug, { ...sheet, slug: placement.sheetSlug } as TrainerSheet]]),
+  }
+}
+
+const sendOutSheetLookup = (
+  trainerPlacement: Pick<SheetPlacement, 'sheetSlug'>,
+  trainerSheet: Record<string, unknown>,
+  pokemonSlug: string,
+  pokemonSheet: Record<string, unknown>,
+): SheetLookup => ({
+  pokemon: new Map([[pokemonSlug, { ...pokemonSheet, slug: pokemonSlug } as CharacterSheet]]),
+  trainer: new Map([[trainerPlacement.sheetSlug, { ...trainerSheet, slug: trainerPlacement.sheetSlug } as TrainerSheet]]),
+})
+
+const spawnedForPlacement = (
+  placement: SheetPlacement,
+  readSheet: NonNullable<MapTokenActionDependencies['readSheet']>,
+): SpawnedPokemon | null => {
+  const record = readSheet(placement.sheetKind, placement.sheetSlug)
+  if (!record) return null
+  return placementToSpawned(placement, typedSheetLookupForPlacement(placement, record.sheet))
+}
+
+const footprintForExistingPlacement = (
+  placement: SheetPlacement,
+  readSheet: NonNullable<MapTokenActionDependencies['readSheet']>,
+): Pick<SpawnedPokemon, 'id' | 'base' | 'clearance' | 'position'> => {
+  const spawned = spawnedForPlacement(placement, readSheet)
+  if (spawned) return spawned
+  return {
+    id: placement.id,
+    base: 1,
+    clearance: 1,
+    position: placement.position,
+  }
+}
+
+const trainerOwnsCurrentTeamPokemon = (trainerSheet: Record<string, unknown>, pokemonSlug: string): boolean => (
+  Array.isArray(trainerSheet.currentTeam)
+  && trainerSheet.currentTeam.some((value) => typeof value === 'string' && value.trim() === pokemonSlug)
+)
+
+const normalizeLivePlaySendOutPlacement = (payload: SendOutPokemonPayload): SheetPlacement => {
+  const facing = payload.facing ?? DEFAULT_TOKEN_FACING_DIRECTION
+  return {
+    id: payload.tokenId,
+    sheetKind: 'pokemon',
+    sheetSlug: payload.pokemonSlug,
+    position: clonePosition(payload.position),
+    facing,
+    turned: tokenFacingStoresLegacyTurned(facing),
+  }
+}
+
+const resolveSendOutPokemonMapContext = (
+  payload: SendOutPokemonPayload,
+  context: ResolvedMapWriteContext,
+  dependencies: Pick<MapTokenActionDependencySet, 'readSheet'>,
+): ResolvedSendOutPokemonMapContext => {
+  const trainerPlacement = context.map.placements.find((candidate) => candidate.id === payload.trainerId)
+    ?? rejectLivePlayCommand('not-found', `Trainer token ${payload.trainerId} not found`)
+  if (trainerPlacement.sheetKind !== 'trainer') {
+    rejectLivePlayCommand('invalid', `Token ${payload.trainerId} is not a trainer token`)
+  }
+  const existingPlacement = context.map.placements.find((candidate) => candidate.id === payload.tokenId)
+  if (existingPlacement) {
+    rejectLivePlayCommand('conflict', `Placement ${payload.tokenId} already exists`, {
+      currentRevision: normalizeRevision(context.map.revision),
+      currentState: existingPlacement,
+    })
+  }
+
+  const trainerRecord = dependencies.readSheet('trainer', trainerPlacement.sheetSlug)
+    ?? rejectLivePlayCommand('not-found', `trainer sheet ${trainerPlacement.sheetSlug} not found`)
+  const pokemonRecord = dependencies.readSheet('pokemon', payload.pokemonSlug)
+    ?? rejectLivePlayCommand('not-found', `pokemon sheet ${payload.pokemonSlug} not found`)
+  if (!trainerOwnsCurrentTeamPokemon(trainerRecord.sheet, payload.pokemonSlug)) {
+    rejectLivePlayCommand('conflict', `Trainer ${trainerPlacement.sheetSlug} does not have Pokémon ${payload.pokemonSlug} on their current team`)
+  }
+
+  const placement = normalizeLivePlaySendOutPlacement(payload)
+  const lookup = sendOutSheetLookup(trainerPlacement, trainerRecord.sheet, payload.pokemonSlug, pokemonRecord.sheet)
+  const trainerToken = placementToSpawned(trainerPlacement, lookup)
+    ?? rejectLivePlayCommand('conflict', `Trainer ${trainerPlacement.sheetSlug} or Pokémon ${payload.pokemonSlug} could not resolve a map footprint`)
+  const pokemonToken = placementToSpawned(placement, lookup)
+    ?? rejectLivePlayCommand('conflict', `Trainer ${trainerPlacement.sheetSlug} or Pokémon ${payload.pokemonSlug} could not resolve a map footprint`)
+
+  const occupiedKeys = buildVoxelOccupancy(context.map.voxels)
+  const existingFootprints = context.map.placements.map((currentPlacement) => footprintForExistingPlacement(
+    currentPlacement,
+    dependencies.readSheet,
+  ))
+  if (!canPlacePokemon(
+    pokemonToken,
+    placement.position,
+    existingFootprints,
+    context.map.dimensions,
+    null,
+    occupiedKeys,
+  )) {
+    rejectLivePlayCommand(
+      'conflict',
+      `Pokémon ${payload.pokemonSlug} cannot be sent out at ${placement.position.x},${placement.position.y},${placement.position.z}; the destination is out of bounds, blocked, or occupied`,
+    )
+  }
+  if (!isSendOutPositionWithinThrowRange({
+    trainer: trainerToken,
+    pokemon: pokemonToken,
+    position: placement.position,
+    range: POKEBALL_THROW_RANGE_SQUARES,
+  })) {
+    rejectLivePlayCommand(
+      'conflict',
+      `Pokémon ${payload.pokemonSlug} cannot be sent out at ${placement.position.x},${placement.position.y},${placement.position.z}; the destination is outside the trainer's Poké Ball throw range`,
+    )
+  }
+
+  return {
+    trainerPlacement,
+    placement,
+    trainerToken,
+    pokemonToken,
+  }
+}
+
+const applySendOutPokemonToMap = (
+  payload: SendOutPokemonPayload,
+  context: ResolvedMapWriteContext,
+  dependencies: Pick<MapTokenActionDependencySet, 'readSheet'>,
+): AppliedMapTokenChange => {
+  const resolved = resolveSendOutPokemonMapContext(payload, context, dependencies)
+  return {
+    nextMap: {
+      ...context.map,
+      placements: [...context.map.placements, resolved.placement],
+    },
+    placement: resolved.placement,
+  }
+}
+
 const applyDeleteTokenToMap = (
   payload: DeleteTokenPayload,
   context: ResolvedMapWriteContext,
@@ -507,6 +682,61 @@ const expectSpawnTokenPayload = (payload: unknown): SpawnTokenPayload => {
   }
 }
 
+const expectSendOutPokemonPayload = (payload: unknown): SendOutPokemonPayload => {
+  if (!isRecord(payload)) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload must be an object')
+  }
+  const record = payload as Record<string, unknown>
+  const trainerId = record.trainerId
+  const pokemonSlug = record.pokemonSlug
+  const tokenId = record.tokenId
+  const position = record.position
+  const facing = record.facing
+
+  if (!nonEmptyCommandString(trainerId)) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.trainerId is required')
+  }
+  if ((trainerId as string).length > 120) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.trainerId must be at most 120 characters')
+  }
+  if (!nonEmptyCommandString(pokemonSlug)) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.pokemonSlug is required')
+  }
+  if ((pokemonSlug as string).length > 200) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.pokemonSlug must be at most 200 characters')
+  }
+  if (!nonEmptyCommandString(tokenId)) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.tokenId is required')
+  }
+  if ((tokenId as string).length > 120) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.tokenId must be at most 120 characters')
+  }
+  if ((tokenId as string).trim() === (trainerId as string).trim()) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.tokenId must be different from payload.trainerId')
+  }
+  if (!isRecord(position)) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.position must be an object')
+  }
+  const positionRecord = position as Record<string, unknown>
+  const x = positionRecord.x
+  const y = positionRecord.y
+  const z = positionRecord.z
+  if (!isFiniteCoordinate(x) || !isFiniteCoordinate(y) || !isFiniteCoordinate(z)) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.position coordinates must be finite numbers')
+  }
+  if (facing !== undefined && !isTokenFacingDirection(facing)) {
+    rejectLivePlayCommand('invalid', 'sendOutPokemon payload.facing must be a token facing direction')
+  }
+
+  return {
+    trainerId: (trainerId as string).trim(),
+    pokemonSlug: (pokemonSlug as string).trim(),
+    tokenId: (tokenId as string).trim(),
+    position: { x: x as number, y: y as number, z: z as number },
+    ...(isTokenFacingDirection(facing) ? { facing } : {}),
+  }
+}
+
 const expectDeleteTokenPayload = (payload: unknown): DeleteTokenPayload => {
   if (!isRecord(payload)) {
     rejectLivePlayCommand('invalid', 'deleteToken payload must be an object')
@@ -531,7 +761,7 @@ const tokenScopeMatches = (
 
 const expectCommandPayloadAndScope = (
   command: MapTokenLivePlayCommand,
-): MoveTokenPayload | TurnTokenPayload | SpawnTokenPayload | DeleteTokenPayload => {
+): MoveTokenPayload | TurnTokenPayload | SpawnTokenPayload | SendOutPokemonPayload | DeleteTokenPayload => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) {
     const payload = expectMoveTokenPayload(command.payload)
     if (!tokenScopeMatches(command.scopes, payload.placementId, 'position')) {
@@ -556,6 +786,17 @@ const expectCommandPayloadAndScope = (
     return payload
   }
 
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON) {
+    const payload = expectSendOutPokemonPayload(command.payload)
+    if (!tokenScopeMatches(command.scopes, payload.trainerId, 'sendOut')) {
+      rejectLivePlayCommand('invalid', 'sendOutPokemon scopes must include the trainer token sendOut scope for payload.trainerId')
+    }
+    if (!tokenScopeMatches(command.scopes, payload.tokenId, 'spawn')) {
+      rejectLivePlayCommand('invalid', 'sendOutPokemon scopes must include the spawned token scope for payload.tokenId')
+    }
+    return payload
+  }
+
   const payload = expectDeleteTokenPayload(command.payload)
   if (!tokenScopeMatches(command.scopes, payload.placementId, 'delete')) {
     rejectLivePlayCommand('invalid', 'deleteToken scopes must include the token delete scope for payload.placementId')
@@ -565,7 +806,9 @@ const expectCommandPayloadAndScope = (
 
 const commandPlacementId = (command: MapTokenLivePlayCommand): string => {
   const payload = expectCommandPayloadAndScope(command)
-  return 'placement' in payload ? payload.placement.id : payload.placementId
+  if ('placement' in payload) return payload.placement.id
+  if ('tokenId' in payload) return payload.tokenId
+  return payload.placementId
 }
 
 const latestMetadataEntry = (
@@ -616,6 +859,9 @@ const commandPatch = (
     }
   }
 
+  const isPlacementCreate = command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+    || command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
+
   return {
     schemaVersion: command.schemaVersion,
     type: LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS,
@@ -625,8 +871,9 @@ const commandPatch = (
     payload: {
       command: command.type,
       placementId: placement.id,
+      ...(command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON ? { trainerId: command.payload.trainerId } : {}),
       previous: command.type === LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN ? placement : null,
-      current: command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN ? placement : null,
+      current: isPlacementCreate ? placement : null,
     },
   }
 }
@@ -647,8 +894,17 @@ const isAcceptedResult = (result: LivePlayCommandResult): result is LivePlayComm
   result.ok === true && !('duplicate' in result)
 )
 
+const placementIdFromPlacementPatch = (result: LivePlayCommandAccepted): string | null => {
+  const patch = result.patches.find((candidate) => candidate.type === LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS)
+  if (!patch || !isRecord(patch.payload)) return null
+  const placementId = (patch.payload as Record<string, unknown>).placementId
+  return nonEmptyCommandString(placementId) ? placementId : null
+}
+
 const placementIdFromAcceptedResult = (result: LivePlayCommandAccepted): string | null => (
-  result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId ?? null
+  placementIdFromPlacementPatch(result)
+  ?? result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId
+  ?? null
 )
 
 const isSheetPlacementLike = (value: unknown): value is SheetPlacement => {
@@ -711,9 +967,35 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         command.type !== LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
         && command.type !== LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
         && command.type !== LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+        && command.type !== LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
         && command.type !== LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
       ) {
-        rejectLivePlayCommand('invalid', 'Map token live-play routes support moveToken, turnToken, spawnToken, and deleteToken commands only')
+        rejectLivePlayCommand('invalid', 'Map token live-play routes support moveToken, turnToken, spawnToken, sendOutPokemon, and deleteToken commands only')
+      }
+
+      if (command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON) {
+        const payload = expectSendOutPokemonPayload(command.payload)
+        if (!tokenScopeMatches(command.scopes, payload.trainerId, 'sendOut')) {
+          rejectLivePlayCommand('invalid', 'sendOutPokemon scopes must include the trainer token sendOut scope for payload.trainerId')
+        }
+        if (!tokenScopeMatches(command.scopes, payload.tokenId, 'spawn')) {
+          rejectLivePlayCommand('invalid', 'sendOutPokemon scopes must include the spawned token scope for payload.tokenId')
+        }
+        const trainerPlacement = map.map.placements.find((candidate) => candidate.id === payload.trainerId)
+        if (!trainerPlacement) throw new MapTokenActionUseCaseError(404, `Trainer token ${payload.trainerId} not found`)
+        if (trainerPlacement.sheetKind !== 'trainer') rejectLivePlayCommand('invalid', `Token ${payload.trainerId} is not a trainer token`)
+        if (!actorCanControlMapPlacement({
+          role: actor.role,
+          profile: actor.playerProfile,
+          placement: trainerPlacement,
+        })) {
+          const message = actor.role === 'player' && !actor.playerProfile
+            ? 'Select a player profile to control linked map tokens'
+            : 'Token is not linked to selected player profile'
+          throw new MapTokenActionUseCaseError(403, message)
+        }
+        resolveSendOutPokemonMapContext(payload, map, deps)
+        return
       }
 
       if (command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN) {
@@ -758,7 +1040,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         throw new MapTokenActionUseCaseError(403, message)
       }
     },
-    apply: ({ command, actor, map, currentRevision }) => {
+    apply: ({ command, map, currentRevision }) => {
       const placementId = commandPlacementId(command)
       const existingPlacement = map.map.placements.find((candidate) => candidate.id === placementId)
       const context = existingPlacement ? { ...map, placement: existingPlacement } : null
@@ -768,7 +1050,9 @@ export const executeMapTokenLivePlayCommandUseCase = async (
           ? (context ? applyTurnTokenToMap(command.payload, context) : null)
           : command.type === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
             ? applySpawnTokenToMap(expectSpawnTokenPayload(command.payload), map)
-            : applyDeleteTokenToMap(expectDeleteTokenPayload(command.payload), map)
+            : command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
+              ? applySendOutPokemonToMap(expectSendOutPokemonPayload(command.payload), map, deps)
+              : applyDeleteTokenToMap(expectDeleteTokenPayload(command.payload), map)
 
       if (!change) {
         if (!existingPlacement) throw new MapTokenActionUseCaseError(404, `Placement ${placementId} not found`)
@@ -812,7 +1096,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
       }
       const storedMap = await deps.mapRepository.getBySlug(result.mapSlug)
       const authoritativeMap = storedMap ?? persisted
-      const placementId = result.patches[0]?.scopes.find((scope): scope is LivePlayTokenScope => scope.kind === 'token')?.placementId
+      const placementId = placementIdFromAcceptedResult(result)
       const placement = placementId
         ? authoritativeMap.placements.find((candidate) => candidate.id === placementId) ?? placementFromPlacementPatch(result)
         : placementFromPlacementPatch(result)

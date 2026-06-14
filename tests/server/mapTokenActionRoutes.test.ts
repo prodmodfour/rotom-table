@@ -5,6 +5,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   type DeleteTokenLivePlayCommand,
   type MoveTokenLivePlayCommand,
+  type SendOutPokemonLivePlayCommand,
   type SpawnTokenLivePlayCommand,
   type TurnTokenLivePlayCommand,
 } from '#shared/livePlayCommands'
@@ -25,6 +26,7 @@ vi.mock('../../server/policies/playerProfilePolicy', () => ({
 }))
 
 const spawnRoute = (await import('../../server/api/maps/tokens/spawn.post')).default
+const sendOutRoute = (await import('../../server/api/maps/tokens/send-out.post')).default
 const deleteRoute = (await import('../../server/api/maps/tokens/delete.post')).default
 const moveRoute = (await import('../../server/api/maps/tokens/move.post')).default
 const turnRoute = (await import('../../server/api/maps/tokens/turn.post')).default
@@ -85,6 +87,25 @@ const spawnCommand = (): SpawnTokenLivePlayCommand => ({
       facing: 'south-east',
       turned: false,
     },
+  },
+})
+
+const sendOutCommand = (): SendOutPokemonLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_routesendout',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+  scopes: [
+    { kind: 'token', placementId: 'trainer-1', field: 'sendOut' },
+    { kind: 'token', placementId: 'token-eevee', field: 'spawn' },
+  ],
+  payload: {
+    trainerId: 'trainer-1',
+    pokemonSlug: 'eevee',
+    tokenId: 'token-eevee',
+    position: { x: 2, y: 0, z: 2 },
+    facing: 'south-east',
   },
 })
 
@@ -198,6 +219,54 @@ describe('map token action API routes', () => {
       clientId: 'client-1',
       playerProfile: profile,
       expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    })
+  })
+
+  it('resolves selected player profiles before live-play trainer send-out commands', async () => {
+    const map = mapFixture()
+    const placement = {
+      id: 'token-eevee',
+      sheetKind: 'pokemon' as const,
+      sheetSlug: 'eevee',
+      position: { x: 2, y: 0, z: 2 },
+    }
+    const profile = {
+      schemaVersion: 1,
+      id: 'profile_ash00000',
+      displayName: 'Ash',
+      linkedCharacters: [{ sheetKind: 'trainer', sheetSlug: 'ash' }],
+    }
+    const command = { ...sendOutCommand(), clientId: 'client-1', profileId: 'profile_ash00000' }
+    mocks.resolvePlayerProfileForPolicy.mockReturnValue(profile)
+    mocks.executeMapTokenLivePlayCommandUseCase.mockResolvedValue({
+      result: { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] },
+      path: 'data/maps/arena.json',
+      map,
+      placement,
+    })
+
+    await expect(invokeRoute(sendOutRoute, {
+      role: 'player',
+      body: command,
+    })).resolves.toEqual({
+      ok: true,
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena.json',
+      map,
+      placement,
+    })
+
+    expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenCalledWith('profile_ash00000')
+    expect(mocks.executeMapTokenLivePlayCommandUseCase).toHaveBeenCalledWith({
+      role: 'player',
+      command,
+      clientId: 'client-1',
+      playerProfile: profile,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
     })
   })
 

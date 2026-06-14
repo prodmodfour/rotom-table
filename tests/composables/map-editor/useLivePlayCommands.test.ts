@@ -118,6 +118,63 @@ describe('useLivePlayCommands', () => {
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
+  it('posts live-play send-out commands with trainer and spawned token scopes', async () => {
+    const map = mapFixture()
+    const mapRevision = ref(4)
+    const profileId = ref(parsePlayerProfileId('profile_ash00000'))
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_serversendout',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+      placement: {
+        id: 'token-eevee',
+        sheetKind: 'pokemon',
+        sheetSlug: 'eevee',
+        position: { x: 3, y: 0, z: 2 },
+      },
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      playerProfileId: profileId,
+      mapRevision,
+    })
+    const result = await actions.sendOutPokemon({
+      trainerId: 'trainer-ash',
+      pokemonSlug: 'eevee',
+      tokenId: 'token-eevee',
+      position: { x: 3, y: 0, z: 2 },
+      facing: 'south-east',
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.sendOutPokemon, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+      scopes: [
+        { kind: 'token', placementId: 'trainer-ash', field: 'sendOut' },
+        { kind: 'token', placementId: 'token-eevee', field: 'spawn' },
+      ],
+      payload: {
+        trainerId: 'trainer-ash',
+        pokemonSlug: 'eevee',
+        tokenId: 'token-eevee',
+        position: { x: 3, y: 0, z: 2 },
+        facing: 'south-east',
+      },
+      clientId: 'ssr',
+      profileId: 'profile_ash00000',
+    }))
+  })
+
   it('posts live-play move commands with opId, baseRevision, and the selected player profile id', async () => {
     const map = mapFixture()
     const applyPersistedMap = vi.fn()

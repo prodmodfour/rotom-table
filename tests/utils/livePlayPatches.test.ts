@@ -156,6 +156,39 @@ describe('live-play patch application', () => {
     ])
   })
 
+  it('applies sent-out Pokémon placement patches', () => {
+    const map = baseMap()
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [patchBase(LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS, {
+        command: 'sendOutPokemon',
+        trainerId: 'token-b',
+        placementId: 'sent-out-eevee',
+        previous: null,
+        current: {
+          id: 'sent-out-eevee',
+          sheetKind: 'pokemon',
+          sheetSlug: 'eevee',
+          position: { x: 3, y: 0, z: 2 },
+          facing: 'south-east',
+          turned: false,
+        },
+      })],
+    })
+
+    expect(result).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(map.placements.at(-1)).toMatchObject({
+      id: 'sent-out-eevee',
+      sheetKind: 'pokemon',
+      sheetSlug: 'eevee',
+      position: { x: 3, y: 0, z: 2 },
+    })
+  })
+
   it('requests reconciliation for unknown patch types and revision gaps', () => {
     const unknown = applyLivePlayPatchesToMap({
       map: baseMap(),

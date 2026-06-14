@@ -249,6 +249,12 @@ const commandDerivedTokenDescriptors = (
     return descriptors
   }
 
+  if (type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON && isRecord(payload)) {
+    if (typeof payload.trainerId === 'string') descriptors.push(tokenFieldDescriptor(payload.trainerId, 'sendOut'))
+    if (typeof payload.tokenId === 'string') descriptors.push(tokenFieldDescriptor(payload.tokenId, 'spawn'))
+    return descriptors
+  }
+
   if (type === LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN && isRecord(payload) && typeof payload.placementId === 'string') {
     descriptors.push(tokenFieldDescriptor(payload.placementId, 'delete'))
     return descriptors

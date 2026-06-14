@@ -173,8 +173,11 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
   if (!isRecord(payload) || !nonEmptyString(payload.placementId)) {
     return failed('invalid-patch', 'map.placements patches require placementId')
   }
-  if (payload.command === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN) {
-    if (!isSheetPlacement(payload.current)) return failed('invalid-patch', 'spawnToken placement patches require a current placement')
+  if (
+    payload.command === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+    || payload.command === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
+  ) {
+    if (!isSheetPlacement(payload.current)) return failed('invalid-patch', `${payload.command} placement patches require a current placement`)
     const index = placementIndex(map, payload.placementId)
     const next = clonePlacement(payload.current)
     if (index >= 0) map.placements.splice(index, 1, next)
@@ -191,7 +194,7 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
     return null
   }
 
-  return failed('unknown-patch', 'map.placements patch command must be spawnToken or deleteToken')
+  return failed('unknown-patch', 'map.placements patch command must be spawnToken, sendOutPokemon, or deleteToken')
 }
 
 const applyInitiativePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {

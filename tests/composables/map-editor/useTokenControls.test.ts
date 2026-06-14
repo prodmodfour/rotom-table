@@ -48,6 +48,7 @@ const makeControls = (
     pokemonSheets?: CharacterSheet[]
     trainerSheets?: TrainerSheet[]
     isGm?: boolean
+    canSendOutTokens?: boolean
     nextId?: string
     now?: () => number
     persistSpawnedPlacement?: (placement: TabletopMap['placements'][number]) => void
@@ -71,6 +72,7 @@ const makeControls = (
       canSpawnTokens: isGm,
       canControlAllTokens: isGm,
       canDeleteTokens: isGm,
+      canSendOutTokens: ref(options.canSendOutTokens ?? isGm.value),
       tokenControl: options.tokenControl,
       createPlacementId: () => options.nextId ?? 'token-1',
       persistSpawnedPlacement: options.persistSpawnedPlacement,
@@ -137,6 +139,62 @@ describe('useTokenControls', () => {
     expect(map.placements[1]).toMatchObject({ facing: 'north-east', turned: false })
     controls.turnPlacementForSetupEdit('linked-token')
     expect(map.placements[1]).toMatchObject({ facing: 'north-west', turned: true })
+  })
+
+  it('lets players send out team Pokémon from controlled linked trainer tokens only', () => {
+    const teamPokemon = pokemon({ slug: 'bolt', species: 'Bulbasaur' })
+    const linkedTrainer = trainer({ slug: 'ash', currentTeam: ['bolt'] })
+    const unlinkedTrainer = trainer({ slug: 'gary', currentTeam: ['bolt'] })
+    const map = mapFixture()
+    map.placements = [
+      { id: 'linked-trainer', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 1, y: 0, z: 1 } },
+      { id: 'unlinked-trainer', sheetKind: 'trainer', sheetSlug: 'gary', position: { x: 4, y: 0, z: 4 } },
+    ]
+    const persistSpawnedPlacement = vi.fn()
+    const { controls } = makeControls({
+      map,
+      pokemonSheets: [teamPokemon],
+      trainerSheets: [linkedTrainer, unlinkedTrainer],
+      isGm: false,
+      canSendOutTokens: true,
+      nextId: 'sent-out-bolt',
+      persistSpawnedPlacement,
+      tokenControl: {
+        enabled: ref(true),
+        controllablePlacementIds: ref(['linked-trainer']),
+      },
+    })
+
+    expect(Object.keys(controls.tokenSendOutOptionsById.value)).toEqual(['linked-trainer'])
+    expect(controls.tokenSendOutOptionsById.value['linked-trainer']?.[0]).toMatchObject({
+      pokemonSlug: 'bolt',
+      label: 'Bolt (Bulbasaur)',
+    })
+    expect(controls.canSendOutPokemon({
+      trainerId: 'unlinked-trainer',
+      pokemonSlug: 'bolt',
+      position: { x: 3, y: 0, z: 4 },
+    })).toBe(false)
+
+    const placement = controls.createSendOutPokemonPlacement({
+      trainerId: 'linked-trainer',
+      pokemonSlug: 'bolt',
+      position: { x: 3, y: 0, z: 1 },
+    })
+    expect(placement).toMatchObject({
+      id: 'sent-out-bolt',
+      sheetKind: 'pokemon',
+      sheetSlug: 'bolt',
+      position: { x: 3, y: 0, z: 1 },
+    })
+
+    expect(controls.sendOutPokemon({
+      trainerId: 'linked-trainer',
+      pokemonSlug: 'bolt',
+      position: { x: 3, y: 0, z: 1 },
+    })).toBe(true)
+    expect(map.placements.map((entry) => entry.id)).toEqual(['linked-trainer', 'unlinked-trainer', 'sent-out-bolt'])
+    expect(persistSpawnedPlacement).toHaveBeenCalledWith(expect.objectContaining({ id: 'sent-out-bolt' }))
   })
 
   it('does not use public player sheet flags as token control without a profile override', () => {

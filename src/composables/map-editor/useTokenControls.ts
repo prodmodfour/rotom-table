@@ -168,8 +168,13 @@ export const useTokenControls = ({
   const controllablePlacementIdSet = computed(() => new Set(controllablePlacementIds.value))
   const canControlPlacement = (id: string): boolean => controllablePlacementIdSet.value.has(id)
   const placementById = (id: string) => map.value?.placements.find((placement) => placement.id === id) ?? null
+  const sendOutEligiblePlacements = computed(() => (
+    canSendOutTokens.value
+      ? (map.value?.placements ?? []).filter((placement) => canControlPlacement(placement.id))
+      : []
+  ))
   const tokenSendOutOptionsById = computed(() => buildTokenSendOutOptionsByPlacementId(
-    map.value?.placements ?? [],
+    sendOutEligiblePlacements.value,
     sheetLookup.value,
     canSendOutTokens.value,
   ))
@@ -255,10 +260,12 @@ export const useTokenControls = ({
   const canSendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): boolean =>
     sendOutPokemonContext(payload) !== null
 
-  const sendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): boolean => {
-    if (!map.value || !sendOutPokemonContext(payload)) return false
+  const createSendOutPokemonPlacement = (
+    payload: { trainerId: string; pokemonSlug: string; position: GridAnchor },
+  ): SheetPlacement | null => {
+    if (!map.value || !sendOutPokemonContext(payload)) return null
 
-    const placement: SheetPlacement = {
+    return {
       id: createPlacementId(),
       sheetKind: 'pokemon',
       sheetSlug: payload.pokemonSlug,
@@ -266,6 +273,13 @@ export const useTokenControls = ({
       facing: DEFAULT_TOKEN_FACING_DIRECTION,
       turned: false,
     }
+  }
+
+  const sendOutPokemon = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }): boolean => {
+    if (!map.value) return false
+    const placement = createSendOutPokemonPlacement(payload)
+    if (!placement) return false
+
     map.value.placements.push(placement)
     persistSpawnedPlacement?.(placement)
     clearSelection()
@@ -340,6 +354,7 @@ export const useTokenControls = ({
     tokenSendOutOptionsById,
     canControlPlacement,
     canSendOutPokemon,
+    createSendOutPokemonPlacement,
     placementById,
     resetPreview,
     clearSelection,

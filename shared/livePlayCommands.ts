@@ -47,6 +47,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   BUILD_TERRAIN_VOXEL: 'buildTerrainVoxel',
   REMOVE_TERRAIN_VOXEL: 'removeTerrainVoxel',
   SPAWN_TOKEN: 'spawnToken',
+  SEND_OUT_POKEMON: 'sendOutPokemon',
   DELETE_TOKEN: 'deleteToken',
 } as const
 
@@ -73,6 +74,7 @@ export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
   LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
+  LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
   LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
 ] as const satisfies readonly LivePlayCommandType[]
 
@@ -133,6 +135,7 @@ export const LIVE_PLAY_TOKEN_SCOPE_FIELDS = [
   'moveUsage',
   'action',
   'spawn',
+  'sendOut',
   'delete',
 ] as const
 export type LivePlayTokenScopeField = (typeof LIVE_PLAY_TOKEN_SCOPE_FIELDS)[number]
@@ -188,6 +191,14 @@ export interface SpawnTokenPayload {
 
 export interface DeleteTokenPayload {
   readonly placementId: string
+}
+
+export interface SendOutPokemonPayload {
+  readonly trainerId: string
+  readonly pokemonSlug: string
+  readonly tokenId: string
+  readonly position: GridAnchor
+  readonly facing?: TokenFacingDirection
 }
 
 export interface ModifyHpPayload {
@@ -319,6 +330,12 @@ export type SpawnTokenLivePlayCommand = LivePlayCommandEnvelope<
 export type DeleteTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
   DeleteTokenPayload,
+  LivePlayTokenScope
+>
+
+export type SendOutPokemonLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+  SendOutPokemonPayload,
   LivePlayTokenScope
 >
 
@@ -577,8 +594,11 @@ export interface TerrainVoxelsUpdatedPatchPayload {
 }
 
 export interface TokenSpawnedPatchPayload {
-  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+  readonly command:
+    | typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
+    | typeof LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
   readonly placementId: string
+  readonly trainerId?: string
   readonly previous: null
   readonly current: SheetPlacement
 }

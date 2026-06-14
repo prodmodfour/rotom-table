@@ -48,6 +48,8 @@ import {
   type PlaceHazardPayload,
   type RemoveTerrainVoxelLivePlayCommand,
   type RemoveTerrainVoxelPayload,
+  type SendOutPokemonLivePlayCommand,
+  type SendOutPokemonPayload,
   type SetFieldEffectLivePlayCommand,
   type SpawnTokenLivePlayCommand,
   type SpawnTokenPayload,
@@ -134,6 +136,7 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('buildTerrainVoxel')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('removeTerrainVoxel')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('spawnToken')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('sendOutPokemon')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('deleteToken')
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayCommandType('teleportToken')).toBe(false)
@@ -164,6 +167,7 @@ describe('live-play command contract', () => {
       'moveUsage',
       'action',
       'spawn',
+      'sendOut',
       'delete',
     ])
     expect(isLivePlayMapScopeLane('initiative')).toBe(true)
@@ -309,6 +313,25 @@ describe('live-play command contract', () => {
       },
     } as const satisfies SpawnTokenLivePlayCommand
 
+    const sendOutPokemonCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+      scopes: [
+        { kind: 'token', placementId: 'trainer-001', field: 'sendOut' },
+        { kind: 'token', placementId: 'placement-003', field: 'spawn' },
+      ],
+      payload: {
+        trainerId: 'trainer-001',
+        pokemonSlug: 'eevee',
+        tokenId: 'placement-003',
+        position: { x: 3, y: 0, z: 2 },
+        facing: 'south-east',
+      },
+    } as const satisfies SendOutPokemonLivePlayCommand
+
     const deleteTokenCommand = {
       schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
       opId,
@@ -321,6 +344,8 @@ describe('live-play command contract', () => {
 
     expect(spawnTokenCommand.type).toBe('spawnToken')
     expect(spawnTokenCommand.payload.placement.id).toBe('placement-002')
+    expect(sendOutPokemonCommand.type).toBe('sendOutPokemon')
+    expect(sendOutPokemonCommand.payload).toMatchObject({ trainerId: 'trainer-001', pokemonSlug: 'eevee' })
     expect(deleteTokenCommand.type).toBe('deleteToken')
     expect(deleteTokenCommand.payload).toEqual({ placementId: 'placement-002' })
 
@@ -335,6 +360,7 @@ describe('live-play command contract', () => {
     expectTypeOf(buildTerrainCommand.payload).toMatchTypeOf<BuildTerrainVoxelPayload>()
     expectTypeOf(removeTerrainCommand.payload).toMatchTypeOf<RemoveTerrainVoxelPayload>()
     expectTypeOf(spawnTokenCommand.payload).toMatchTypeOf<SpawnTokenPayload>()
+    expectTypeOf(sendOutPokemonCommand.payload).toMatchTypeOf<SendOutPokemonPayload>()
     expectTypeOf(deleteTokenCommand.payload).toMatchTypeOf<DeleteTokenPayload>()
   })
 

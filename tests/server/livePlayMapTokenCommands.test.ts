@@ -7,6 +7,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   type DeleteTokenLivePlayCommand,
   type MoveTokenLivePlayCommand,
+  type SendOutPokemonLivePlayCommand,
   type SpawnTokenLivePlayCommand,
 } from '#shared/livePlayCommands'
 import {
@@ -108,6 +109,28 @@ const spawnCommand = (
   ...overrides,
 })
 
+const sendOutCommand = (
+  overrides: Partial<SendOutPokemonLivePlayCommand> = {},
+): SendOutPokemonLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_mapsendout1',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+  scopes: [
+    { kind: 'token', placementId: 'unlinked-token', field: 'sendOut' },
+    { kind: 'token', placementId: 'sent-out-eevee', field: 'spawn' },
+  ],
+  payload: {
+    trainerId: 'unlinked-token',
+    pokemonSlug: 'eevee',
+    tokenId: 'sent-out-eevee',
+    position: { x: 3, y: 0, z: 2 },
+    facing: 'south-east',
+  },
+  ...overrides,
+})
+
 const deleteCommand = (
   overrides: Partial<DeleteTokenLivePlayCommand> = {},
 ): DeleteTokenLivePlayCommand => ({
@@ -147,7 +170,7 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     readSheet: vi.fn((kind: string, slug: string) => ({
       sheet: kind === 'pokemon'
         ? { slug, nickname: 'Bolt', species: 'Pikachu' }
-        : { slug, name: 'Boss' },
+        : { slug, name: 'Boss', currentTeam: ['eevee'] },
     })),
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2000),
@@ -393,6 +416,48 @@ describe('live-play map token commands', () => {
     })
     expect(harness.published).toEqual(expect.arrayContaining([
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', revision: 5, opId: 'op_mapspawntest' }),
+    ]))
+  })
+
+  it('applies a selected player profile send-out from a controlled linked trainer', async () => {
+    const harness = createHarness()
+
+    const response = await executeMapTokenLivePlayCommandUseCase({
+      role: 'player',
+      command: sendOutCommand(),
+      clientId: 'player-client',
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'giovanni' }]),
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
+    }, harness.deps)
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(response.placement).toMatchObject({
+      id: 'sent-out-eevee',
+      sheetKind: 'pokemon',
+      sheetSlug: 'eevee',
+      position: { x: 3, y: 0, z: 2 },
+      facing: 'south-east',
+      turned: false,
+    })
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.storedMap.placements.map((placement) => placement.id)).toContain('sent-out-eevee')
+    if (!response.result.ok || 'duplicate' in response.result) throw new Error('expected accepted sendOutPokemon result')
+    expect(response.result.patches[0]).toMatchObject({
+      type: 'map.placements',
+      scopes: [
+        { kind: 'token', placementId: 'unlinked-token', field: 'sendOut' },
+        { kind: 'token', placementId: 'sent-out-eevee', field: 'spawn' },
+      ],
+      payload: {
+        command: 'sendOutPokemon',
+        trainerId: 'unlinked-token',
+        placementId: 'sent-out-eevee',
+        previous: null,
+        current: expect.objectContaining({ id: 'sent-out-eevee' }),
+      },
+    })
+    expect(harness.published).toEqual(expect.arrayContaining([
+      expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', revision: 5, opId: 'op_mapsendout1' }),
     ]))
   })
 

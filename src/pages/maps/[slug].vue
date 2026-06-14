@@ -341,7 +341,7 @@ const {
   controllablePlacementIds,
   tokenSendOutOptionsById,
   canControlPlacement,
-  canSendOutPokemon,
+  createSendOutPokemonPlacement,
   placementById,
   clearSelection,
   updatePreview,
@@ -359,6 +359,7 @@ const {
   mapGroundLevelY,
   canSpawnTokens,
   canControlAllTokens: isGm,
+  canSendOutTokens: computed(() => isGm.value || (isPlayer.value && !mapInPrepareMode.value)),
   persistSpawnedPlacement,
   tokenControl: {
     enabled: computed(() => true),
@@ -979,8 +980,21 @@ const removeVoxelFromScene: typeof removeVoxel = (cell) => {
 }
 
 const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {
-  if (!canSendOutPokemon(payload)) return false
-  return sendOutPokemon(payload)
+  if (isSetupEditMode()) return sendOutPokemon(payload)
+
+  const placement = createSendOutPokemonPlacement(payload)
+  if (!placement) return false
+
+  void livePlayCommands.sendOutPokemon({
+    trainerId: payload.trainerId,
+    pokemonSlug: payload.pokemonSlug,
+    tokenId: placement.id,
+    position: payload.position,
+    facing: placement.facing,
+  }).then((result) => {
+    if (result.dispatched) clearSelection()
+  })
+  return true
 }
 
 const {
