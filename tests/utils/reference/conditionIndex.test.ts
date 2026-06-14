@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   conditionMatchesSearch,
   filterConditionsForIndex,
-  groupFilteredConditions,
 } from '~/utils/reference/conditionIndex'
 import type { PtuConditionRecord } from '~/utils/statusConditions'
 
@@ -35,11 +34,6 @@ const vulnerable = condition({
 })
 
 const sampleConditions = [burned, flinch, vulnerable]
-const sampleGroups = [
-  { category: 'Persistent Affliction', label: 'Persistent Afflictions', conditions: [burned] },
-  { category: 'Volatile Affliction', label: 'Volatile Afflictions', conditions: [flinch] },
-  { category: 'Other Affliction', label: 'Other Afflictions', conditions: [vulnerable] },
-]
 
 describe('condition index helpers', () => {
   it('matches condition search haystacks', () => {
@@ -62,13 +56,6 @@ describe('condition index helpers', () => {
       'Burned',
       'Flinch',
       'Vulnerable',
-    ])
-  })
-
-  it('groups filtered conditions using configured group ordering', () => {
-    expect(groupFilteredConditions(sampleGroups, [vulnerable, burned])).toEqual([
-      { category: 'Persistent Affliction', label: 'Persistent Afflictions', conditions: [burned] },
-      { category: 'Other Affliction', label: 'Other Afflictions', conditions: [vulnerable] },
     ])
   })
 })

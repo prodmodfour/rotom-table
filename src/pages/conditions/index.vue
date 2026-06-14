@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { conditionGroups, conditions } from '~/utils/statusConditions'
-import { filterConditionsForIndex, groupFilteredConditions } from '~/utils/reference/conditionIndex'
+import { conditions } from '~/utils/statusConditions'
+import { filterConditionsForIndex } from '~/utils/reference/conditionIndex'
 import { referenceIndexTitle } from '~/utils/reference/pageTitles'
 
 useHead({ title: referenceIndexTitle('Conditions') })
@@ -9,8 +9,6 @@ useHead({ title: referenceIndexTitle('Conditions') })
 const searchTerm = ref('')
 
 const filtered = computed(() => filterConditionsForIndex(conditions, { searchTerm: searchTerm.value }))
-
-const filteredByCategory = computed(() => groupFilteredConditions(conditionGroups, filtered.value))
 </script>
 
 <template>
@@ -23,9 +21,6 @@ const filteredByCategory = computed(() => groupFilteredConditions(conditionGroup
       />
     </ReferenceIndexHeader>
 
-    <ConditionIndexGroupedList
-      :groups="filteredByCategory"
-      :result-count="filtered.length"
-    />
+    <ConditionIndexList :conditions="filtered" />
   </div>
 </template>
