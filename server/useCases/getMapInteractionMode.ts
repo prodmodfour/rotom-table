@@ -30,7 +30,10 @@ export const getMapInteractionModeUseCase = (
 ): GetMapInteractionModeResult => {
   const { modeRepository = sqliteMapInteractionModeRepository, ...loadDependencies } = dependencies
   try {
-    const { map } = loadMapUseCase({ role: input.role, slug: input.slug }, loadDependencies)
+    const { map } = loadMapUseCase({ role: input.role, slug: input.slug }, {
+      ...loadDependencies,
+      modeRepository,
+    })
     const state = modeRepository.get(map.slug)
     return {
       slug: map.slug,

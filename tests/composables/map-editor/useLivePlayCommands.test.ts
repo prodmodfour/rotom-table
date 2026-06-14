@@ -684,6 +684,44 @@ describe('useLivePlayCommands', () => {
     })
   })
 
+  it('requests reconciliation for stale-base conflicts and reports the rejection to state hooks', async () => {
+    const requestReconciliation = vi.fn()
+    const onCommandRejected = vi.fn()
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      requestReconciliation,
+      onCommandRejected,
+    })
+    apiMocks.postJson.mockResolvedValue({
+      ok: false,
+      opId: 'op_conflict01',
+      mapSlug: 'arena-map',
+      reason: 'conflict',
+      message: 'Command baseRevision 4 conflicts with accepted operation op_other at revision 5 on token token-pikachu position',
+      currentRevision: 5,
+    })
+
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 2, y: 0, z: 1 },
+    })
+
+    expect(result).toMatchObject({
+      dispatched: false,
+      message: 'Command baseRevision 4 conflicts with accepted operation op_other at revision 5 on token token-pikachu position',
+    })
+    expect(onCommandRejected).toHaveBeenCalledWith({
+      reason: 'conflict',
+      message: 'Command baseRevision 4 conflicts with accepted operation op_other at revision 5 on token token-pikachu position',
+      response: expect.objectContaining({ currentRevision: 5 }),
+    })
+    expect(requestReconciliation).toHaveBeenCalledWith({
+      request: MAP_API_PATHS.moveToken,
+      response: expect.objectContaining({ reason: 'conflict', currentRevision: 5 }),
+    })
+  })
+
   it('routes table action helpers through the shared dispatcher and applies returned sheet updates', async () => {
     const map = mapFixture()
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))

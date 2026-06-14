@@ -211,6 +211,13 @@ describe('profile-based play smoke flow', () => {
       },
       now: () => 1_700_000_000_000,
       relativePath: () => 'data/maps/arena.json',
+      modeRepository: {
+        get: (slug: string) => ({
+          slug,
+          interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+          updatedAt: 0,
+        }),
+      },
     }
 
     expect(loadMapUseCase({

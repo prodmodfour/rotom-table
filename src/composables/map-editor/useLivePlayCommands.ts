@@ -261,9 +261,28 @@ const acceptedPatchResult = (response: LivePlayCommandResponse): LivePlayCommand
   return response
 }
 
-const rejectionNeedsStateTransition = (reason: LivePlayCommandRejectionReason | null): boolean => (
-  reason === 'stale-revision' || reason === 'persistence-failed'
-)
+const livePlayResponseCurrentRevision = (response: LivePlayCommandResponse): number | null => {
+  if (!response.ok) {
+    return typeof response.currentRevision === 'number' ? normalizeRevision(response.currentRevision) : null
+  }
+  if (isDuplicateResult(response) && !response.original.ok) {
+    return typeof response.original.currentRevision === 'number'
+      ? normalizeRevision(response.original.currentRevision)
+      : null
+  }
+  return null
+}
+
+const rejectionNeedsReconciliation = (
+  reason: LivePlayCommandRejectionReason | null,
+  response: LivePlayCommandResponse,
+  localRevision: number,
+): boolean => {
+  if (reason === 'stale-revision') return true
+  if (reason !== 'conflict') return false
+  const currentRevision = livePlayResponseCurrentRevision(response)
+  return currentRevision !== null && currentRevision > localRevision
+}
 
 export const useLivePlayCommands = (
   options: UseLivePlayCommandsOptions,
@@ -404,8 +423,10 @@ export const useLivePlayCommands = (
         const reason = livePlayResponseRejectionReason(response)
         status.value = 'error'
         lastError.value = message
-        if (rejectionNeedsStateTransition(reason)) options.onCommandRejected?.({ reason, message, response })
-        if (reason === 'stale-revision') await options.requestReconciliation?.({ request, response })
+        options.onCommandRejected?.({ reason, message, response })
+        if (rejectionNeedsReconciliation(reason, response, normalizeRevision(options.mapRevision?.value))) {
+          await options.requestReconciliation?.({ request, response })
+        }
         return { dispatched: false, message, response }
       }
 
