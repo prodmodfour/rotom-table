@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import PokemonTypeBadgeRow from './PokemonTypeBadgeRow.vue'
 import PokemonVitalsBars from './PokemonVitalsBars.vue'
 import { sheetEditorPath } from '~/utils/sheetRoutes'
+import { resolvePokemonSheetTypes } from '~/utils/sheets/pokemonTypes'
 import type { ResolvedTrainerPokemonLink, TrainerPokemonRosterKind } from '~/utils/trainerPokemonLinks'
 
 const props = withDefaults(defineProps<{
@@ -39,6 +41,7 @@ const metaLabel = computed(() => (
   props.member.species ? `${props.member.species} · ${levelLabel.value}` : levelLabel.value
 ))
 
+const typeBadges = computed(() => resolvePokemonSheetTypes(props.member.sheet))
 const showVitalsBars = computed(() => props.showVitals && Boolean(props.member.sheet))
 
 const startDrag = (event: DragEvent) => {
@@ -90,6 +93,7 @@ const startDrag = (event: DragEvent) => {
         {{ member.displayName }}
       </span>
       <span class="pokemon-link-card__meta">{{ metaLabel }}</span>
+      <PokemonTypeBadgeRow :types="typeBadges" size="xs" />
     </span>
 
     <PokemonVitalsBars

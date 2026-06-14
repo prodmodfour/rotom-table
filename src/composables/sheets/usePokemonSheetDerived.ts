@@ -36,6 +36,7 @@ import {
   computePokemonTutorPointsEarned,
   syncPokemonTutorPointsForSheet,
 } from '~/utils/sheets/pokemonTutorPoints'
+import { resolvePokemonSheetTypes } from '~/utils/sheets/pokemonTypes'
 import {
   resolvedStatBaseTotal,
   resolvedStatEffectiveStage,
@@ -108,7 +109,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const activeTrainingFeatureEffects = computed(() =>
     resolvePokemonTrainingFeatureEffects(sheet.value?.activeTrainingFeature),
   )
-  const sheetTypes = computed(() => sheet.value?.types ?? species.value?.types ?? [])
+  const sheetTypes = computed(() => resolvePokemonSheetTypes(sheet.value))
   const eggGroups = computed(() => sheet.value?.eggGroups ?? species.value?.egg_groups ?? [])
 
   const levelFromExperience = computed(() => calculatePokemonLevelFromExperience(sheet.value?.totalExp))

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import PokemonTypeBadgeRow from './PokemonTypeBadgeRow.vue'
 import {
   filterTrainerPokemonBrowserEntries,
   TRAINER_TEAM_LIMIT,
   type TrainerPokemonBrowserEntry,
 } from '~/utils/trainerPokemonLinks'
+import { resolvePokemonSheetTypes } from '~/utils/sheets/pokemonTypes'
 
 const props = withDefaults(defineProps<{
   entries: readonly TrainerPokemonBrowserEntry[]
@@ -45,6 +47,8 @@ const boxButtonLabel = (entry: TrainerPokemonBrowserEntry): string => {
 const canAddToTeam = (entry: TrainerPokemonBrowserEntry): boolean => (
   entry.linkedAs !== 'team' && !teamIsFull.value
 )
+
+const entryTypes = (entry: TrainerPokemonBrowserEntry): string[] => resolvePokemonSheetTypes(entry.sheet)
 </script>
 
 <template>
@@ -88,6 +92,7 @@ const canAddToTeam = (entry: TrainerPokemonBrowserEntry): boolean => (
           <span class="pokemon-browser__copy">
             <span class="pokemon-browser__name">{{ entry.displayName }}</span>
             <span class="pokemon-browser__meta">{{ entry.species }} · Lv {{ entry.level }}</span>
+            <PokemonTypeBadgeRow :types="entryTypes(entry)" size="xs" />
             <span v-if="entry.folder" class="pokemon-browser__folder">{{ entry.folder }}</span>
           </span>
 

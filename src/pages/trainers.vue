@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import PokemonTypeBadgeRow from '~/components/sheets/PokemonTypeBadgeRow.vue'
 import PokemonVitalsBars from '~/components/sheets/PokemonVitalsBars.vue'
 import TrainerPokemonCard from '~/components/sheets/TrainerPokemonCard.vue'
 import { getSpriteUrl } from '~~/data/characterSheets'
@@ -10,6 +11,7 @@ import { getErrorMessage } from '~/utils/errorMessages'
 import { playerProfileSwitchRoute } from '~/utils/playerProfileNavigation'
 import { buildPlayerTrainerPortal } from '~/utils/playerTrainerPortal'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
+import { resolvePokemonSheetTypes } from '~/utils/sheets/pokemonTypes'
 import {
   buildSheetListFetchOptions,
   buildSheetSaveBody,
@@ -86,6 +88,7 @@ const hasPortalSheets = computed(() => (
 const trainerPortalAccentStyle = (accentColor: unknown): Record<string, string> => (
   trainerAccentCssVariables(accentColor)
 )
+const trainerPokemonTypes = (sheet: CharacterSheet | null): string[] => resolvePokemonSheetTypes(sheet)
 const trainerHasOpenTeamSlot = (sheet: TrainerSheet): boolean => trainerTeamHasOpenSlot(sheet)
 const emptyTeamSlotsForTrainer = (sheet: TrainerSheet): unknown[] => Array.from({
   length: Math.max(0, TRAINER_TEAM_LIMIT - trainerTeamSlotCount(sheet)),
@@ -523,6 +526,7 @@ watch(selectedProfileId, () => {
                 <strong>{{ pokemon.displayName }}</strong>
                 <small v-if="pokemon.sheet">{{ pokemon.species }} · Lv {{ pokemon.level }}</small>
                 <small v-else>Sheet unavailable</small>
+                <PokemonTypeBadgeRow :types="trainerPokemonTypes(pokemon.sheet)" size="xs" />
                 <PokemonVitalsBars
                   v-if="pokemon.sheet"
                   class="trainer-portal-pokemon__vitals"
