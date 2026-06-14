@@ -18,7 +18,6 @@ describe('app navigation helpers', () => {
   it('filters GM-only nav items while keeping normal player navigation available', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
       '/maps',
-      CAMPAIGN_PATH,
       '/pokedex',
       '/trainers',
     ])

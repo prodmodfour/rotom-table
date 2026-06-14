@@ -32,7 +32,7 @@ describe('app route helpers', () => {
     expect(campaignPath()).toBe('/campaign')
     expect(SETTINGS_PATH).toBe('/settings')
     expect(settingsPath()).toBe('/settings')
-    expect(GM_ONLY_PATH_PREFIXES).toEqual(['/settings'])
+    expect(GM_ONLY_PATH_PREFIXES).toEqual([CAMPAIGN_PATH, '/settings'])
     expect(SESSION_LOBBY_PATH).toBe('/sessions')
     expect(sessionLobbyPath()).toBe('/sessions')
   })

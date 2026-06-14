@@ -38,6 +38,7 @@ export const sessionLobbyJoinPath = (): string => sessionLobbySectionPath('playe
 export const sessionLobbyRememberedPath = (): string => sessionLobbySectionPath('remembered')
 
 export const GM_ONLY_PATH_PREFIXES = [
+  CAMPAIGN_PATH,
   SETTINGS_PATH,
 ] as const
 

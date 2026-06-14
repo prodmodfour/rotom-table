@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LOGIN_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
+import { CAMPAIGN_PATH, LOGIN_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
 import {
   ENCOUNTER_GENERATOR_PATH,
   ENCOUNTER_TABLES_PATH,
@@ -19,6 +19,7 @@ describe('loginRedirect', () => {
   it('exposes canonical login and player-blocked route constants', () => {
     expect(LOGIN_PATH).toBe('/login')
     expect(PLAYER_BLOCKED_REDIRECT_PREFIXES).toEqual([
+      CAMPAIGN_PATH,
       SETTINGS_PATH,
       ENCOUNTER_GENERATOR_PATH,
       ENCOUNTER_TABLES_PATH,
@@ -35,6 +36,8 @@ describe('loginRedirect', () => {
   })
 
   it('detects player-blocked paths and nested routes', () => {
+    expect(isPlayerBlockedRedirectPath(CAMPAIGN_PATH)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(`${CAMPAIGN_PATH}/history`)).toBe(true)
     expect(isPlayerBlockedRedirectPath(SETTINGS_PATH)).toBe(true)
     expect(isPlayerBlockedRedirectPath(`${SETTINGS_PATH}/campaign`)).toBe(true)
     expect(isPlayerBlockedRedirectPath(ENCOUNTER_GENERATOR_PATH)).toBe(true)
@@ -52,10 +55,12 @@ describe('loginRedirect', () => {
   })
 
   it('blocks player redirects to GM-only routes while allowing GM redirects', () => {
+    expect(resolveLoginRedirectTarget(CAMPAIGN_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(SETTINGS_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(`${ENCOUNTER_TABLES_PATH}/kanto`, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(PLAYER_PROFILE_MANAGEMENT_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
+    expect(resolveLoginRedirectTarget(CAMPAIGN_PATH, 'gm')).toBe(CAMPAIGN_PATH)
     expect(resolveLoginRedirectTarget(SETTINGS_PATH, 'gm')).toBe(SETTINGS_PATH)
     expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'gm')).toBe(ENCOUNTER_GENERATOR_PATH)
     expect(resolveLoginRedirectTarget('/maps/atrium', 'player')).toBe('/maps/atrium')
