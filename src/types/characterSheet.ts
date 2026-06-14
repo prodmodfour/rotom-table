@@ -172,6 +172,8 @@ export interface CharacterSheet {
   /** PTU Loyalty rank, normally tracked by the GM, from 0 to 6. */
   loyalty?: number
   shiny?: boolean
+  /** Poké Ball used to capture this Pokémon. Legacy sheets omit this and display as Basic Ball. */
+  caughtBall?: string
   /** Marks this sheet as broadly visible to players. */
   player?: boolean
   /** Runtime API marker: this private sheet is linked to the selected player profile. */

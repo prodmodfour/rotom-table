@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { CharacterSheet } from '~/types/characterSheet'
 import { pokedexEntryPathForSpecies } from '~/utils/pokedex/routes'
+import { pokemonCaughtBallName } from '~/utils/sheets/pokemonCaughtBall'
 import {
   POKEMON_LOYALTY_MAX,
   POKEMON_LOYALTY_MIN,
@@ -30,6 +31,8 @@ const emit = defineEmits<{
 }>()
 
 const pokedexPath = computed(() => pokedexEntryPathForSpecies(props.sheet.species))
+const caughtBallName = computed(() => pokemonCaughtBallName(props.sheet))
+const caughtBallTitle = computed(() => `Caught in ${caughtBallName.value}`)
 const loyaltyModel = computed({
   get: () => props.sheet.loyalty,
   set: (value: unknown) => {
@@ -46,6 +49,9 @@ const loyaltyModel = computed({
     <div class="identity__sprite">
       <img v-if="spriteUrl" :src="spriteUrl" :alt="sheet.species" />
       <span v-else class="sprite-missing">?</span>
+      <span class="identity__caught-ball" :title="caughtBallTitle" :aria-label="caughtBallTitle">
+        <ItemSprite :item="caughtBallName" alt="" size="sm" />
+      </span>
     </div>
 
     <div class="identity__copy">
@@ -196,6 +202,7 @@ const loyaltyModel = computed({
 }
 
 .identity__sprite {
+  position: relative;
   width: 110px;
   height: 110px;
   display: grid;
@@ -206,11 +213,25 @@ const loyaltyModel = computed({
   background: var(--paper-inset);
 }
 
-.identity__sprite img {
+.identity__sprite > img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
+}
+
+.identity__caught-ball {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.35rem;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid color-mix(in srgb, var(--rule-soft) 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-inset) 86%, transparent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .sprite-missing {

@@ -59,7 +59,10 @@ import {
 } from '~/utils/playerCharacterTokens'
 import { clearCombatLogMetadata, countCombatLogMessages } from '~/utils/combatLog'
 import { textValueFromEvent } from '~/utils/domEvents'
-import { applyPokeballCaptureOutcomeToTrainerSheet } from '~/utils/pokeballCapture'
+import {
+  applyPokeballCaptureOutcomeToPokemonSheet,
+  applyPokeballCaptureOutcomeToTrainerSheet,
+} from '~/utils/pokeballCapture'
 import { isSameAnchor } from '~/utils/gridGeometry'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { deepCloneJson } from '~/utils/serialization'
@@ -1149,9 +1152,23 @@ const applyPokeballCaptureOutcome = async (event: Parameters<typeof applyPokebal
     'throwPokeball',
   )
 
-  if (sheetUpdated && event.result.success && isGm.value) {
-    const result = await livePlayCommands.deleteToken({ placementId: event.targetId })
-    if (result.dispatched && selectedId.value === event.targetId) clearSelection()
+  if (sheetUpdated && event.result.success) {
+    await updatePlacedSheet(
+      event.targetId,
+      (kind, sheet) => {
+        if (kind !== 'pokemon') return sheet
+        const updated = deepCloneJson(sheet as CharacterSheet)
+        applyPokeballCaptureOutcomeToPokemonSheet(updated, event)
+        return updated
+      },
+      'capturePokeball',
+      { allowAnyTarget: true },
+    )
+
+    if (isGm.value) {
+      const result = await livePlayCommands.deleteToken({ placementId: event.targetId })
+      if (result.dispatched && selectedId.value === event.targetId) clearSelection()
+    }
   }
 }
 

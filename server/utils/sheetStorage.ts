@@ -7,6 +7,7 @@ import {
 import { dirname, join } from 'node:path'
 import { sanitizeFolderPath, slugify, validateSlug } from '#shared/paths'
 import { stripDerivedSheetFolder, toPersistableSheetPayload } from '~/utils/sheets/persistence'
+import { DEFAULT_POKEMON_CAUGHT_BALL } from '~/utils/sheets/pokemonCaughtBall'
 import { campaignPathLabel } from './campaignPaths'
 import {
   joinSafeUnderRoot,
@@ -155,6 +156,7 @@ export const buildDefaultSheet = (
       nickname: 'New Pokémon',
       species: '',
       level: 1,
+      caughtBall: DEFAULT_POKEMON_CAUGHT_BALL,
       player,
     }
   }

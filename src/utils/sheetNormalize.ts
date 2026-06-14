@@ -13,6 +13,7 @@ import type { TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
 import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
+import { setPokemonCaughtBall } from '~/utils/sheets/pokemonCaughtBall'
 
 const STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
 const TRAINER_STAT_KEYS: TrainerStatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
@@ -35,6 +36,7 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
   const loyalty = normalizePokemonLoyalty(sheet.loyalty)
   if (loyalty == null) delete sheet.loyalty
   else sheet.loyalty = loyalty
+  setPokemonCaughtBall(sheet, sheet.caughtBall)
 
   // Headline stats — give every key an entry so the stats table is editable.
   const stats = ensureObj<NonNullable<CharacterSheet['stats']>>(sheet, 'stats')

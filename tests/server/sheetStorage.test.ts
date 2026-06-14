@@ -83,6 +83,7 @@ describe('sheet storage helpers', () => {
       nickname: 'New Pokémon',
       species: '',
       level: 1,
+      caughtBall: 'Basic Ball',
       player: false,
     })
   })

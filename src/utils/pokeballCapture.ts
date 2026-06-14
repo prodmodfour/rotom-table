@@ -12,6 +12,7 @@ import {
   resolveMoveAutomationAccuracyRoll,
 } from '~/utils/moveAutomationResolution'
 import { resolveTrainerCapabilities } from '~/utils/sheets/trainerDerived'
+import { setPokemonCaughtBall } from '~/utils/sheets/pokemonCaughtBall'
 import {
   conditionBaseName,
   conditionByName,
@@ -723,6 +724,15 @@ const entryMatchesPokeballName = (entry: InventoryEntry, pokeballName: string): 
   if (ballKey(entry.name) === key) return true
   const item = resolvePokeballItem(entry.name)
   return Boolean(item && (ballKey(item.name) === key || item.aliases.some((alias) => ballKey(alias) === key)))
+}
+
+export const applyPokeballCaptureOutcomeToPokemonSheet = (
+  sheet: CharacterSheet,
+  event: Pick<PokeballCaptureOutcomeEvent, 'pokeballName' | 'result'>,
+): boolean => {
+  if (!event.result.success) return false
+  setPokemonCaughtBall(sheet, event.pokeballName)
+  return true
 }
 
 export const applyPokeballCaptureOutcomeToTrainerSheet = (
