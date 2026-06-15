@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import InitiativeProfileImage from '~/components/map/InitiativeProfileImage.vue'
+import { checkedValueFromEvent } from '~/utils/domEvents'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 import { splitInitiativeTimeline } from '~/utils/initiativeTimeline'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
@@ -10,12 +11,14 @@ const props = defineProps<{
   activeId: string | null | undefined
   round: number
   canManage: boolean
+  autoFocusEnabled?: boolean
 }>()
 
 const emit = defineEmits<{
   (event: 'focus', id: string): void
   (event: 'previous'): void
   (event: 'next'): void
+  (event: 'set-auto-focus-enabled', value: boolean): void
 }>()
 
 const timeline = computed(() => splitInitiativeTimeline(props.rows, props.activeId, props.round))
@@ -87,6 +90,18 @@ const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefin
           </button>
         </div>
         <span class="initiative-info-bar__round-label">Round {{ round }}</span>
+        <label
+          class="initiative-info-bar__auto-focus"
+          title="When initiative advances, move the map camera to the active token on this device."
+        >
+          <input
+            type="checkbox"
+            :checked="autoFocusEnabled !== false"
+            aria-label="Auto-focus active initiative"
+            @change="emit('set-auto-focus-enabled', checkedValueFromEvent($event))"
+          />
+          <span>Auto-focus active initiative</span>
+        </label>
       </div>
 
       <ol class="initiative-info-bar__side initiative-info-bar__side--upcoming" aria-label="Upcoming turns">
@@ -235,6 +250,33 @@ const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefin
   font-weight: 800;
   line-height: 1;
   filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--pokemon-black) 28%, transparent));
+  white-space: nowrap;
+}
+
+.initiative-info-bar__auto-focus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: min(44vw, 14rem);
+  color: var(--ink-bright);
+  cursor: pointer;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: auto;
+  text-transform: uppercase;
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--pokemon-black) 28%, transparent));
+}
+
+.initiative-info-bar__auto-focus input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.initiative-info-bar__auto-focus span {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

@@ -40,6 +40,8 @@ defineProps<{
   selectedId: string | null
   controllablePlacementIds: string[]
   activeInitiativeId: string | null | undefined
+  initiativeRound?: number
+  initiativeAutoFocusEnabled?: boolean
   mapVoxels: MapVoxelV2[]
   mapHazards: MapHazardV2[]
   mapFieldEffects?: MapFieldEffects
@@ -112,6 +114,8 @@ defineExpose({ focusPokemon })
     :selected-id="selectedId"
     :controllable-ids="controllablePlacementIds"
     :active-turn-id="activeInitiativeId"
+    :initiative-round="initiativeRound"
+    :initiative-auto-focus-enabled="initiativeAutoFocusEnabled !== false"
     :voxels="mapVoxels"
     :hazards="mapHazards"
     :field-effects="mapFieldEffects"

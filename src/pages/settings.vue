@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
+import { useInitiativeAutoFocusSettings } from '~/composables/useInitiativeAutoFocusSettings'
 import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
 import {
   ACTION_SPLASH_DISPLAY_DURATION_STEP_MS,
@@ -56,6 +57,13 @@ const {
   toggleMoveAnimationsEnabled,
 } = useMoveAnimationSettings()
 const {
+  initiativeAutoFocusEnabled,
+  initiativeAutoFocusStatusLabel,
+  initiativeAutoFocusStatusTitle,
+  initiativeAutoFocusToggleLabel,
+  toggleInitiativeAutoFocusEnabled,
+} = useInitiativeAutoFocusSettings()
+const {
   actionSplashDisplayDurationMs,
   actionSplashDisplayDurationLabel,
   actionSplashDisplayDurationTitle,
@@ -83,6 +91,9 @@ const appThemeToggleText = computed(() => (
 ))
 const moveAnimationsToggleText = computed(() => (
   moveAnimationsEnabled.value ? 'Animations on' : 'Animations off'
+))
+const initiativeAutoFocusToggleText = computed(() => (
+  initiativeAutoFocusEnabled.value ? 'Auto-focus on' : 'Auto-focus off'
 ))
 
 const openCampaignFolderBrowser = () => {
@@ -152,6 +163,35 @@ const handleCampaignFolderSelection = (event: Event) => {
           >
             <span class="settings-toggle__eyebrow">Theme</span>
             <span>{{ appThemeToggleText }}</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="settings-group" aria-labelledby="map-display-settings-title">
+        <div class="settings-group__copy">
+          <h2 id="map-display-settings-title">Map display</h2>
+          <p>{{ initiativeAutoFocusStatusTitle }}</p>
+        </div>
+
+        <div class="settings-group__control">
+          <span
+            class="settings-status"
+            :class="{ 'is-disabled': !initiativeAutoFocusEnabled }"
+          >
+            {{ initiativeAutoFocusStatusLabel }}
+          </span>
+          <button
+            type="button"
+            class="settings-toggle initiative-auto-focus-toggle"
+            :class="{ 'is-disabled': !initiativeAutoFocusEnabled }"
+            :aria-pressed="initiativeAutoFocusEnabled"
+            :aria-label="initiativeAutoFocusToggleLabel"
+            :title="initiativeAutoFocusStatusTitle"
+            @click="toggleInitiativeAutoFocusEnabled"
+          >
+            <span class="settings-toggle__eyebrow">Camera</span>
+            <span>Auto-focus active initiative</span>
+            <span class="settings-toggle__meta">{{ initiativeAutoFocusToggleText }}</span>
           </button>
         </div>
       </section>
@@ -421,5 +461,10 @@ const handleCampaignFolderSelection = (event: Event) => {
   font-size: 0.64rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.settings-toggle__meta {
+  color: color-mix(in srgb, currentColor 72%, transparent);
+  font-size: 0.66rem;
 }
 </style>

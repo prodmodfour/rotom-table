@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import type { GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import type { AppThemeMode } from '~/utils/appTheme'
+import { isTokenFacingDirection, tokenFacingVector } from '~/utils/tokenFacing'
 import {
   ISOMETRIC_WEBGL_RENDERER_PARAMETERS,
   resolveIsometricRendererPixelRatio,
@@ -16,6 +17,7 @@ const ISOMETRIC_YAW_STEP_RADIANS = Math.PI / 2
 const CAMERA_OFFSET_EPSILON = 1e-9
 
 export type IsometricYawStepDirection = 'left' | 'right'
+export type FocusCameraYawMode = 'preserve-current' | 'initiative'
 
 export const ISOMETRIC_YAW_SNAP_AZIMUTHS = [
   ISO_AZIMUTH_ANGLE,
@@ -491,12 +493,43 @@ const focusZoomForPokemon = (options: {
   return THREE.MathUtils.clamp(frustumHeight / desiredVisibleHeight, minZoom, maxZoom)
 }
 
+const facingYawAzimuth = (pokemon: SpawnedPokemon): number | null => {
+  if (!isTokenFacingDirection(pokemon.facing)) return null
+
+  const facingVector = tokenFacingVector(pokemon.facing)
+  return snapIsometricYawAzimuth(Math.atan2(facingVector.y, facingVector.x))
+}
+
+const currentCameraYawAzimuth = (options: {
+  camera: THREE.OrthographicCamera
+  controls: Pick<OrbitControls, 'target'>
+}): number => {
+  const offset = options.camera.position.clone().sub(options.controls.target)
+  if (offset.lengthSq() <= CAMERA_OFFSET_EPSILON) return ISO_AZIMUTH_ANGLE
+
+  return getIsometricOffsetYawAzimuth(offset)
+}
+
+export const resolveFocusCameraYawAzimuth = (options: {
+  camera: THREE.OrthographicCamera
+  controls: Pick<OrbitControls, 'target'>
+  pokemon: SpawnedPokemon
+  preferredMode?: FocusCameraYawMode
+}): number | null => {
+  if (options.preferredMode !== 'initiative') return null
+
+  return facingYawAzimuth(options.pokemon)
+    ?? snapIsometricYawAzimuth(currentCameraYawAzimuth(options))
+}
+
 export const focusCameraOnPokemon = (options: {
   camera: THREE.OrthographicCamera
   controls: OrbitControls
   dimensions: GridDimensions
   pokemon: SpawnedPokemon
   center: THREE.Vector3
+  preferredYawAzimuth?: number
+  focusYawMode?: FocusCameraYawMode
 }) => {
   const targetHeight = Math.max(options.pokemon.clearance, options.pokemon.height, 1)
   const nextTarget = new THREE.Vector3(
@@ -505,7 +538,20 @@ export const focusCameraOnPokemon = (options: {
     options.center.z,
   )
   const offset = options.camera.position.clone().sub(options.controls.target)
-  const nextOffset = offset.lengthSq() > 0.0001 ? offset : fallbackCameraOffset(options.dimensions)
+  const currentOffset = offset.lengthSq() > 0.0001 ? offset : fallbackCameraOffset(options.dimensions)
+  const radius = currentOffset.length()
+  const resolvedYawAzimuth = typeof options.preferredYawAzimuth === 'number'
+    && Number.isFinite(options.preferredYawAzimuth)
+    ? options.preferredYawAzimuth
+    : resolveFocusCameraYawAzimuth({
+        camera: options.camera,
+        controls: options.controls,
+        pokemon: options.pokemon,
+        preferredMode: options.focusYawMode,
+      })
+  const nextOffset = resolvedYawAzimuth === null
+    ? currentOffset
+    : createIsometricOffsetFromYaw(radius, resolvedYawAzimuth)
 
   options.controls.target.copy(nextTarget)
   options.camera.position.copy(nextTarget.clone().add(nextOffset))

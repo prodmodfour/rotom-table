@@ -58,6 +58,7 @@ import {
   maxUsefulCameraZoom,
   rotateIsometricYawStep,
   syncIsometricRendererSize,
+  type FocusCameraYawMode,
   type IsometricRendererSizeState,
   type IsometricYawStepDirection,
 } from '~/utils/isometric/cameraControls'
@@ -180,6 +181,8 @@ const props = defineProps<{
   selectedId: string | null
   controllableIds?: string[]
   activeTurnId?: string | null
+  initiativeRound?: number
+  initiativeAutoFocusEnabled?: boolean
   voxels: MapVoxelV2[]
   hazards?: MapHazardV2[]
   fieldEffects?: MapFieldEffects
@@ -702,7 +705,7 @@ const alignCameraToGrid = (initial = false) => {
   })
 }
 
-const focusPokemon = (id: string): boolean => {
+const focusPokemon = (id: string, options: { focusYawMode?: FocusCameraYawMode } = {}): boolean => {
   if (!camera || !controls) return false
 
   const pokemon = props.pokemons.find((entry) => entry.id === id)
@@ -722,8 +725,22 @@ const focusPokemon = (id: string): boolean => {
     dimensions: props.dimensions,
     pokemon,
     center,
+    ...(options.focusYawMode ? { focusYawMode: options.focusYawMode } : {}),
   })
   return true
+}
+
+const focusActiveTurnPokemon = (id: string): boolean => {
+  const focused = focusPokemon(id, { focusYawMode: 'initiative' })
+  if (focused) refreshSmartTerrainCutaway({ requestRender: false })
+  return focused
+}
+
+const initiativeAutoFocusEnabled = (): boolean => props.initiativeAutoFocusEnabled !== false
+
+const focusInitialActiveTurnPokemon = () => {
+  if (!initiativeAutoFocusEnabled() || !props.activeTurnId) return
+  if (focusActiveTurnPokemon(props.activeTurnId)) requestScheduledSceneFrame('camera')
 }
 
 const rotateCameraYaw = (direction: IsometricYawStepDirection): boolean => {
@@ -1807,6 +1824,7 @@ onMounted(() => {
   cleanupResizeObserver = observeIsometricResize(container.value, syncRendererSizeFromResizeObserver)
 
   startScheduledRenderLoop()
+  focusInitialActiveTurnPokemon()
   cleanupDocumentVisibilityChange = bindIsometricDocumentVisibilityChange(document, {
     pause: pauseScheduledRenderLoopForHiddenTab,
     resume: resumeScheduledRenderLoopFromHiddenTab,
@@ -1882,6 +1900,8 @@ useIsometricSceneWatchers({
     groundLevelY: () => props.groundLevelY,
     dimensionsKey: () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,
     activeTurnId: () => props.activeTurnId,
+    activeTurnRound: () => props.initiativeRound,
+    initiativeAutoFocusEnabled,
     isRendererReady: () => Boolean(renderer),
   },
   actions: {
@@ -1912,6 +1932,7 @@ useIsometricSceneWatchers({
     buildGrid,
     alignCameraToGrid,
     syncRendererSize,
+    focusActiveTurnPokemon,
     requestRender: requestScheduledSceneFrame,
   },
 })

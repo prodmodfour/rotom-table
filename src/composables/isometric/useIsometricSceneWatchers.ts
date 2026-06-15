@@ -91,6 +91,7 @@ export interface IsometricSceneWatcherActions {
   buildGrid: () => void
   alignCameraToGrid: (initial: boolean) => void
   syncRendererSize: () => void
+  focusActiveTurnPokemon?: (id: string) => boolean
   requestRender: (reasons: IsometricSceneWatcherRenderRequest) => void
 }
 
@@ -112,6 +113,8 @@ export interface IsometricSceneWatcherSources {
   groundLevelY: WatchSource<unknown>
   dimensionsKey: WatchSource<unknown>
   activeTurnId?: WatchSource<unknown>
+  activeTurnRound?: WatchSource<unknown>
+  initiativeAutoFocusEnabled?: () => boolean | undefined
   isRendererReady: () => boolean
 }
 
@@ -325,11 +328,23 @@ export const useIsometricSceneWatchers = ({ sources, actions }: IsometricSceneWa
   )
 
   if (sources.activeTurnId) {
+    const activeTurnSources: WatchSource<unknown>[] = [sources.activeTurnId]
+    if (sources.activeTurnRound) activeTurnSources.push(sources.activeTurnRound)
+
     watch(
-      sources.activeTurnId,
-      () => {
+      activeTurnSources,
+      ([activeTurnId]) => {
         if (!sources.isRendererReady()) return
+
         actions.requestRender('token-style')
+
+        const tokenId = typeof activeTurnId === 'string' && activeTurnId.length > 0
+          ? activeTurnId
+          : null
+        if (!tokenId || sources.initiativeAutoFocusEnabled?.() !== true) return
+        if (actions.focusActiveTurnPokemon?.(tokenId)) {
+          actions.requestRender('camera')
+        }
       },
     )
   }

@@ -35,6 +35,7 @@ import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavig
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
 import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
+import { useInitiativeAutoFocusSettings } from '~/composables/useInitiativeAutoFocusSettings'
 import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
 import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
 import {
@@ -216,6 +217,10 @@ const {
   moveAnimationsEnabled,
   moveAnimationsReducedMotion,
 } = useMoveAnimationSettings()
+const {
+  initiativeAutoFocusEnabled,
+  setInitiativeAutoFocusEnabled,
+} = useInitiativeAutoFocusSettings()
 const {
   actionSplashDisplayDurationMs,
   actionSplashSpeedLinesDurationMs,
@@ -1455,6 +1460,7 @@ useMapDimensionReconciliation({
         :initiative-rows="sortedInitiativeRows"
         :initiative-round="initiativeRound"
         :can-manage-initiative="canManageInitiative"
+        :initiative-auto-focus-enabled="initiativeAutoFocusEnabled"
         :map-voxels="mapVoxels"
         :map-hazards="mapHazards"
         :map-field-effects="mapFieldEffects"
@@ -1496,6 +1502,7 @@ useMapDimensionReconciliation({
         :token-pokeball-options-by-id="tokenPokeballOptionsById"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
+        @set-initiative-auto-focus-enabled="setInitiativeAutoFocusEnabled"
         @previous-initiative="previousInitiativeAndExpireAoo"
         @next-initiative="nextInitiativeAndExpireAoo"
         @move-pokemon="movePokemon"

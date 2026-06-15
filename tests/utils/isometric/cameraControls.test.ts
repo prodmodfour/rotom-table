@@ -213,7 +213,7 @@ describe('isometric camera controls', () => {
     expect(controls.update).toHaveBeenCalledOnce()
   })
 
-  it('keeps focus-on-Pokemon behavior on the active snapped yaw', () => {
+  it('preserves the current focus-on-Pokemon yaw by default', () => {
     const camera = createIsometricCamera()
     const target = new THREE.Vector3(0, 0, 0)
     camera.position.copy(target.clone().add(offsetFromYaw(20, 135)))
@@ -245,6 +245,111 @@ describe('isometric camera controls', () => {
     expect(camera.position.distanceTo(controls.target)).toBeCloseTo(20, 8)
     expect(controls.target.y).toBeCloseTo(1.05, 8)
     expect(controls.update).toHaveBeenCalledOnce()
+  })
+
+  it('uses the token facing direction for initiative focus snapped yaw', () => {
+    const camera = createIsometricCamera()
+    const target = new THREE.Vector3(0, 0, 0)
+    camera.position.copy(target.clone().add(offsetFromYaw(20, 45)))
+    const controls = {
+      target: target.clone(),
+      minZoom: 0.4,
+      maxZoom: 10,
+      update: vi.fn(),
+    } as unknown as OrbitControls
+    const pokemon = {
+      base: 2,
+      clearance: 2,
+      width: 1,
+      height: 1,
+      facing: 'north-west',
+    } as SpawnedPokemon
+
+    focusCameraOnPokemon({
+      camera,
+      controls,
+      dimensions: dimensions(),
+      pokemon,
+      center: new THREE.Vector3(5, 0, 5),
+      focusYawMode: 'initiative',
+    })
+
+    const offset = camera.position.clone().sub(controls.target)
+    expect(offsetYawDegrees(offset)).toBe(225)
+    expect(offsetPolarAngle(offset)).toBeCloseTo(ISO_POLAR_ANGLE, 8)
+  })
+
+  it('uses the nearest current snapped yaw for initiative focus without facing', () => {
+    const camera = createIsometricCamera()
+    const target = new THREE.Vector3(0, 0, 0)
+    camera.position.copy(target.clone().add(offsetFromYaw(20, 100)))
+    const controls = {
+      target: target.clone(),
+      minZoom: 0.4,
+      maxZoom: 10,
+      update: vi.fn(),
+    } as unknown as OrbitControls
+    const pokemon = {
+      base: 2,
+      clearance: 2,
+      width: 1,
+      height: 1,
+    } as SpawnedPokemon
+
+    focusCameraOnPokemon({
+      camera,
+      controls,
+      dimensions: dimensions(),
+      pokemon,
+      center: new THREE.Vector3(5, 0, 5),
+      focusYawMode: 'initiative',
+    })
+
+    const offset = camera.position.clone().sub(controls.target)
+    expect(offsetYawDegrees(offset)).toBe(135)
+    expect(offsetPolarAngle(offset)).toBeCloseTo(ISO_POLAR_ANGLE, 8)
+  })
+
+  it('keeps focus zoom clamped and useful for small and large tokens', () => {
+    const camera = createIsometricCamera()
+    camera.top = 10
+    camera.bottom = -10
+    const controls = {
+      target: new THREE.Vector3(0, 0, 0),
+      minZoom: 0.5,
+      maxZoom: 12,
+      update: vi.fn(),
+    } as unknown as OrbitControls
+
+    focusCameraOnPokemon({
+      camera,
+      controls,
+      dimensions: dimensions(),
+      pokemon: {
+        base: 1,
+        clearance: 1,
+        width: 1,
+        height: 1,
+      } as SpawnedPokemon,
+      center: new THREE.Vector3(1, 0, 1),
+    })
+    expect(camera.zoom).toBeCloseTo(20 / 7, 8)
+
+    focusCameraOnPokemon({
+      camera,
+      controls,
+      dimensions: dimensions(),
+      pokemon: {
+        base: 8,
+        clearance: 9,
+        width: 7,
+        height: 9,
+      } as SpawnedPokemon,
+      center: new THREE.Vector3(2, 0, 2),
+    })
+    expect(camera.zoom).toBeCloseTo(20 / 14, 8)
+    expect(camera.zoom).toBeGreaterThanOrEqual(controls.minZoom)
+    expect(camera.zoom).toBeLessThanOrEqual(controls.maxZoom)
   })
 
   it('requests scheduler renders for real OrbitControls camera changes only', () => {

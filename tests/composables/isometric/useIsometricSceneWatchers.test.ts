@@ -28,6 +28,7 @@ const makeActions = () => ({
   buildGrid: vi.fn(),
   alignCameraToGrid: vi.fn(),
   syncRendererSize: vi.fn(),
+  focusActiveTurnPokemon: vi.fn(),
   requestRender: vi.fn(),
 })
 
@@ -49,6 +50,8 @@ const makeWatcherHarness = () => {
   const groundLevelY = ref(0)
   const dimensionsKey = ref<unknown[]>([1, 1, 1])
   const activeTurnId = ref<string | null>(null)
+  const activeTurnRound = ref(1)
+  const initiativeAutoFocusEnabled = ref(false)
   const controllable = new Set<string>()
   const actions = makeActions()
   const scope = effectScope()
@@ -73,6 +76,8 @@ const makeWatcherHarness = () => {
         groundLevelY,
         dimensionsKey,
         activeTurnId,
+        activeTurnRound,
+        initiativeAutoFocusEnabled: () => initiativeAutoFocusEnabled.value,
         isRendererReady: () => ready.value,
       },
       actions,
@@ -93,6 +98,8 @@ const makeWatcherHarness = () => {
     groundLevelY,
     dimensionsKey,
     activeTurnId,
+    activeTurnRound,
+    initiativeAutoFocusEnabled,
     hazardRevision,
     fieldEffectsRevision,
     layerVisibility,
@@ -286,6 +293,96 @@ describe('useIsometricSceneWatchers', () => {
       'movement-preview',
       'build-preview',
     ])
+    harness.stop()
+  })
+
+  it('requests token-style renders for active-turn changes even when initiative auto-focus is disabled', async () => {
+    const harness = makeWatcherHarness()
+    harness.ready.value = true
+
+    harness.activeTurnId.value = 'token-1'
+    await nextTick()
+
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith('token-style')
+    expect(harness.actions.focusActiveTurnPokemon).not.toHaveBeenCalled()
+    harness.stop()
+  })
+
+  it('focuses active initiative changes when initiative auto-focus is enabled', async () => {
+    const harness = makeWatcherHarness()
+    harness.ready.value = true
+    harness.initiativeAutoFocusEnabled.value = true
+    harness.actions.focusActiveTurnPokemon.mockReturnValue(true)
+
+    harness.activeTurnId.value = 'token-1'
+    await nextTick()
+
+    expect(harness.actions.focusActiveTurnPokemon).toHaveBeenCalledWith('token-1')
+    expect(harness.actions.requestRender).toHaveBeenCalledWith('token-style')
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith('camera')
+    harness.stop()
+  })
+
+  it('does not focus active initiative changes when initiative auto-focus is disabled', async () => {
+    const harness = makeWatcherHarness()
+    harness.ready.value = true
+    harness.initiativeAutoFocusEnabled.value = false
+
+    harness.activeTurnId.value = 'token-1'
+    await nextTick()
+
+    expect(harness.actions.focusActiveTurnPokemon).not.toHaveBeenCalled()
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith('token-style')
+    harness.stop()
+  })
+
+  it('does not focus null active initiative ids', async () => {
+    const harness = makeWatcherHarness()
+    harness.ready.value = true
+    harness.initiativeAutoFocusEnabled.value = true
+    harness.actions.focusActiveTurnPokemon.mockReturnValue(true)
+
+    harness.activeTurnId.value = 'token-1'
+    await nextTick()
+    vi.clearAllMocks()
+
+    harness.activeTurnId.value = null
+    await nextTick()
+
+    expect(harness.actions.focusActiveTurnPokemon).not.toHaveBeenCalled()
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith('token-style')
+    harness.stop()
+  })
+
+  it('does not focus active initiative changes before renderer readiness', async () => {
+    const harness = makeWatcherHarness()
+    harness.initiativeAutoFocusEnabled.value = true
+    harness.actions.focusActiveTurnPokemon.mockReturnValue(true)
+
+    harness.activeTurnId.value = 'token-1'
+    await nextTick()
+
+    expect(harness.actions.focusActiveTurnPokemon).not.toHaveBeenCalled()
+    expect(harness.actions.requestRender).not.toHaveBeenCalled()
+    harness.stop()
+  })
+
+  it('focuses the same active initiative id again when the initiative round changes', async () => {
+    const harness = makeWatcherHarness()
+    harness.ready.value = true
+    harness.initiativeAutoFocusEnabled.value = true
+    harness.actions.focusActiveTurnPokemon.mockReturnValue(true)
+
+    harness.activeTurnId.value = 'token-1'
+    await nextTick()
+    vi.clearAllMocks()
+
+    harness.activeTurnRound.value = 2
+    await nextTick()
+
+    expect(harness.actions.focusActiveTurnPokemon).toHaveBeenCalledWith('token-1')
+    expect(harness.actions.requestRender).toHaveBeenCalledWith('token-style')
+    expect(harness.actions.requestRender).toHaveBeenLastCalledWith('camera')
     harness.stop()
   })
 
