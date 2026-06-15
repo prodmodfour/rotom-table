@@ -13,8 +13,10 @@ import {
   ISO_POLAR_ANGLE,
   readIsometricCameraControlState,
   isSameIsometricCameraControlState,
+  rotateIsometricYawByDelta,
   rotateIsometricYawCameraState,
   rotateIsometricYawStep,
+  rotateIsometricYawToAzimuth,
   syncIsometricRendererSize,
 } from '~/utils/isometric/cameraControls'
 
@@ -211,6 +213,68 @@ describe('isometric camera controls', () => {
     expect(camera.position.distanceTo(controls.target)).toBeCloseTo(20, 8)
     expect(offsetYawDegrees(camera.position.clone().sub(controls.target))).toBe(135)
     expect(controls.update).toHaveBeenCalledOnce()
+  })
+
+  it('rotates camera yaw by arbitrary radians while preserving distance, zoom, and isometric pitch', () => {
+    const camera = createIsometricCamera()
+    const target = new THREE.Vector3(4, 0.5, -3)
+    const radius = 20
+    camera.position.copy(target.clone().add(offsetFromYaw(radius, 45)))
+    camera.zoom = 2.75
+    const controls = {
+      target: target.clone(),
+      update: vi.fn(),
+    } as unknown as Pick<OrbitControls, 'target' | 'update'>
+    const deltaRadians = 0.37
+
+    expect(rotateIsometricYawByDelta({ camera, controls, deltaRadians })).toBe(true)
+
+    const offset = camera.position.clone().sub(controls.target)
+    expectCloseVector(controls.target, target)
+    expect(camera.zoom).toBe(2.75)
+    expect(offset.length()).toBeCloseTo(radius, 8)
+    expect(offsetPolarAngle(offset)).toBeCloseTo(ISO_POLAR_ANGLE, 8)
+    expect(getIsometricOffsetYawAzimuth(offset)).toBeCloseTo(THREE.MathUtils.degToRad(45) + deltaRadians, 8)
+    expect(controls.update).toHaveBeenCalledOnce()
+  })
+
+  it('rotates camera yaw to an arbitrary azimuth without changing zoom or target distance', () => {
+    const camera = createIsometricCamera()
+    const target = new THREE.Vector3(-3, 2, 8)
+    const radius = 14
+    camera.position.copy(target.clone().add(offsetFromYaw(radius, 315)))
+    camera.zoom = 1.4
+    const controls = {
+      target: target.clone(),
+      update: vi.fn(),
+    } as unknown as Pick<OrbitControls, 'target' | 'update'>
+    const yawAzimuth = THREE.MathUtils.degToRad(102)
+
+    expect(rotateIsometricYawToAzimuth({ camera, controls, yawAzimuth })).toBe(true)
+
+    const offset = camera.position.clone().sub(controls.target)
+    expect(camera.zoom).toBe(1.4)
+    expect(offset.length()).toBeCloseTo(radius, 8)
+    expect(offsetPolarAngle(offset)).toBeCloseTo(ISO_POLAR_ANGLE, 8)
+    expect(getIsometricOffsetYawAzimuth(offset)).toBeCloseTo(yawAzimuth, 8)
+    expect(controls.update).toHaveBeenCalledOnce()
+  })
+
+  it('rejects free yaw rotation when the camera-target offset has zero length', () => {
+    const camera = createIsometricCamera()
+    const target = new THREE.Vector3(1, 2, 3)
+    camera.position.copy(target)
+    camera.zoom = 2
+    const controls = {
+      target: target.clone(),
+      update: vi.fn(),
+    } as unknown as Pick<OrbitControls, 'target' | 'update'>
+
+    expect(rotateIsometricYawByDelta({ camera, controls, deltaRadians: 0.25 })).toBe(false)
+    expect(rotateIsometricYawToAzimuth({ camera, controls, yawAzimuth: 0.5 })).toBe(false)
+    expectCloseVector(camera.position, target)
+    expect(camera.zoom).toBe(2)
+    expect(controls.update).not.toHaveBeenCalled()
   })
 
   it('preserves the current focus-on-Pokemon yaw by default', () => {

@@ -64,6 +64,10 @@ import {
 } from '~/utils/isometric/cameraControls'
 import { createPointerTravelTracker } from '~/utils/isometric/pointerTracker'
 import { createIsometricPointerInteractionController } from '~/utils/isometric/pointerInteraction'
+import {
+  canStartIsometricFreeCameraRotation,
+  createIsometricFreeCameraRotationController,
+} from '~/utils/isometric/freeCameraRotationInteraction'
 import type { CoalescedPointerEventFrame } from '~/utils/isometric/pointerEventCoalescer'
 import type {
   BuildTarget,
@@ -1352,8 +1356,43 @@ const {
   handlePointerUp: handlePointerUpRaw,
   handlePointerLeave: handlePointerLeaveRaw,
   handleEscape: handleEscapeRaw,
+  cancelPointerMove: cancelPointerMoveRaw,
   dispose: disposePointerInteraction,
 } = pointerInteraction
+
+const CAMERA_CONTROL_BLOCKING_OVERLAY_SELECTOR = '[role="dialog"], [aria-modal="true"], .hp-dialog'
+
+const hasCameraControlBlockingOverlay = (): boolean => (
+  typeof document !== 'undefined'
+  && Boolean(document.querySelector(CAMERA_CONTROL_BLOCKING_OVERLAY_SELECTOR))
+)
+
+const canStartFreeCameraRotation = (event: PointerEvent): boolean => canStartIsometricFreeCameraRotation({
+  event,
+  rendererElement: renderer?.domElement ?? null,
+  buildMode: props.buildMode,
+  hazardMode: props.hazardMode,
+  selectedPokemonActive: Boolean(selectedPokemon.value),
+  moveAutomationTargetingActive: Boolean(props.moveAutomationTargeting),
+  sendOutPlacementActive: Boolean(activeSendOutRequest.value),
+  blockingOverlayActive: hasCameraControlBlockingOverlay(),
+  pickPokemonId,
+})
+
+const freeCameraRotation = createIsometricFreeCameraRotationController({
+  getCamera: () => camera,
+  getControls: () => controls,
+  canStart: canStartFreeCameraRotation,
+  getPointerCaptureElement: () => renderer?.domElement ?? null,
+  onRotationStart: () => {
+    cancelPointerMoveRaw()
+    setHoveredPokemonId(null)
+  },
+  onRotate: () => {
+    refreshSmartTerrainCutaway()
+    requestScheduledSceneFrame('camera')
+  },
+})
 
 const handleRightClick = (event: MouseEvent) => {
   rendererBoundsCache.invalidate()
@@ -1362,41 +1401,48 @@ const handleRightClick = (event: MouseEvent) => {
 }
 const handlePointerDown = (event: PointerEvent) => {
   rendererBoundsCache.invalidate()
+  freeCameraRotation.handlePointerDown(event)
   handlePointerDownRaw(event)
   requestRenderAfterPointerInteraction()
 }
 const handlePointerMove = (event: PointerEvent) => {
   recordPointerMoveEventForMetricsOverlay()
-  handlePointerMoveRaw(event)
-  requestRenderAfterPointerInteraction()
+  if (!freeCameraRotation.handlePointerMove(event)) {
+    handlePointerMoveRaw(event)
+    requestRenderAfterPointerInteraction()
+  }
 }
 const handleWheel = (event: WheelEvent) => {
   handleWheelRaw(event)
   requestRenderAfterPointerInteraction()
 }
 const handlePointerUp = (event: PointerEvent) => {
-  handlePointerUpRaw(event)
+  if (!freeCameraRotation.handlePointerUp(event)) {
+    handlePointerUpRaw(event)
+  }
   requestRenderAfterPointerInteraction()
 }
-const handlePointerLeave = () => {
-  handlePointerLeaveRaw()
+const handlePointerLeave = (event: PointerEvent) => {
+  if (!freeCameraRotation.handlePointerLeave(event)) {
+    handlePointerLeaveRaw()
+  }
+  requestRenderAfterPointerInteraction()
+}
+const handlePointerCancel = (event: PointerEvent) => {
+  if (!freeCameraRotation.handlePointerCancel(event)) {
+    handlePointerLeaveRaw()
+  }
   requestRenderAfterPointerInteraction()
 }
 const handleEscape = (event: KeyboardEvent) => {
+  freeCameraRotation.reset()
   handleEscapeRaw(event)
   if (event.key === 'Escape') requestRenderAfterPointerInteraction()
 }
 
-const CAMERA_YAW_SHORTCUT_BLOCKING_OVERLAY_SELECTOR = '[role="dialog"], [aria-modal="true"], .hp-dialog'
-
-const hasCameraYawShortcutBlockingOverlay = (): boolean => (
-  typeof document !== 'undefined'
-  && Boolean(document.querySelector(CAMERA_YAW_SHORTCUT_BLOCKING_OVERLAY_SELECTOR))
-)
-
 const handleCameraYawShortcut = (event: KeyboardEvent) => {
   if (
-    hasCameraYawShortcutBlockingOverlay()
+    hasCameraControlBlockingOverlay()
     || isKeyboardShortcutBlockedTarget(event.target)
     || isKeyboardShortcutBlockedTarget(document.activeElement)
   ) return
@@ -1818,6 +1864,7 @@ onMounted(() => {
     pointermove: handlePointerMove,
     pointerup: handlePointerUp,
     pointerleave: handlePointerLeave,
+    pointercancel: handlePointerCancel,
     contextmenu: handleRightClick,
     wheel: handleWheel,
   })
@@ -1834,6 +1881,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopScheduledRenderLoop()
   clearSmartTerrainCutawayCameraRefresh()
+  freeCameraRotation.reset()
   disposePointerInteraction()
 
   cleanupDocumentVisibilityChange?.()

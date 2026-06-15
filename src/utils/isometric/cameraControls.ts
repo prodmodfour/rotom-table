@@ -57,7 +57,7 @@ export const getIsometricOffsetYawAzimuth = (offset: THREE.Vector3): number => (
   normalizeIsometricYawAzimuth(Math.atan2(offset.z, offset.x))
 )
 
-const createIsometricOffsetFromYaw = (radius: number, azimuth: number): THREE.Vector3 => {
+export const createIsometricOffsetFromYaw = (radius: number, azimuth: number): THREE.Vector3 => {
   const horizontalRadius = radius * Math.sin(ISO_POLAR_ANGLE)
 
   return new THREE.Vector3(
@@ -67,12 +67,16 @@ const createIsometricOffsetFromYaw = (radius: number, azimuth: number): THREE.Ve
   )
 }
 
+const isValidCameraOffsetRadius = (radius: number): boolean => (
+  Number.isFinite(radius) && radius > CAMERA_OFFSET_EPSILON
+)
+
 export const rotateIsometricYawOffset = (
   offset: THREE.Vector3,
   direction: IsometricYawStepDirection,
 ): THREE.Vector3 | null => {
   const radius = offset.length()
-  if (radius <= CAMERA_OFFSET_EPSILON) return null
+  if (!isValidCameraOffsetRadius(radius)) return null
 
   const step = direction === 'left' ? ISOMETRIC_YAW_STEP_RADIANS : -ISOMETRIC_YAW_STEP_RADIANS
   const azimuth = snapIsometricYawAzimuth(getIsometricOffsetYawAzimuth(offset) + step)
@@ -98,6 +102,45 @@ export const rotateIsometricYawCameraState = (
     target,
     zoom: state.zoom,
   }
+}
+
+export const rotateIsometricYawToAzimuth = (options: {
+  camera: THREE.OrthographicCamera
+  controls: Pick<OrbitControls, 'target' | 'update'>
+  yawAzimuth: number
+}): boolean => {
+  if (!Number.isFinite(options.yawAzimuth)) return false
+
+  const target = options.controls.target
+  const offset = options.camera.position.clone().sub(target)
+  const radius = offset.length()
+  if (!isValidCameraOffsetRadius(radius)) return false
+
+  const zoom = options.camera.zoom
+  const nextOffset = createIsometricOffsetFromYaw(radius, normalizeIsometricYawAzimuth(options.yawAzimuth))
+
+  options.camera.position.copy(target.clone().add(nextOffset))
+  options.camera.zoom = zoom
+  options.controls.update()
+  return true
+}
+
+export const rotateIsometricYawByDelta = (options: {
+  camera: THREE.OrthographicCamera
+  controls: Pick<OrbitControls, 'target' | 'update'>
+  deltaRadians: number
+}): boolean => {
+  if (!Number.isFinite(options.deltaRadians)) return false
+
+  const offset = options.camera.position.clone().sub(options.controls.target)
+  const radius = offset.length()
+  if (!isValidCameraOffsetRadius(radius)) return false
+
+  return rotateIsometricYawToAzimuth({
+    camera: options.camera,
+    controls: options.controls,
+    yawAzimuth: getIsometricOffsetYawAzimuth(offset) + options.deltaRadians,
+  })
 }
 
 export const rotateIsometricYawStep = (options: {

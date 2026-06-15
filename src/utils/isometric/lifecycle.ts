@@ -10,6 +10,7 @@ export interface IsometricRendererDomHandlers {
   pointermove: (event: PointerEvent) => void
   pointerup: (event: PointerEvent) => void
   pointerleave: (event: PointerEvent) => void
+  pointercancel?: (event: PointerEvent) => void
   contextmenu: (event: MouseEvent) => void
   wheel: (event: WheelEvent) => void
 }
@@ -59,6 +60,7 @@ export const bindIsometricRendererDomEvents = (
   element.addEventListener('pointermove', handlers.pointermove)
   element.addEventListener('pointerup', handlers.pointerup)
   element.addEventListener('pointerleave', handlers.pointerleave)
+  if (handlers.pointercancel) element.addEventListener('pointercancel', handlers.pointercancel)
   element.addEventListener('contextmenu', handlers.contextmenu)
   element.addEventListener('wheel', handlers.wheel, { passive: false })
 
@@ -67,6 +69,7 @@ export const bindIsometricRendererDomEvents = (
     element.removeEventListener('pointermove', handlers.pointermove)
     element.removeEventListener('pointerup', handlers.pointerup)
     element.removeEventListener('pointerleave', handlers.pointerleave)
+    if (handlers.pointercancel) element.removeEventListener('pointercancel', handlers.pointercancel)
     element.removeEventListener('contextmenu', handlers.contextmenu)
     element.removeEventListener('wheel', handlers.wheel)
   }

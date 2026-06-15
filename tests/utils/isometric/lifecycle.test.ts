@@ -71,6 +71,7 @@ describe('isometric lifecycle helpers', () => {
       pointermove: vi.fn(),
       pointerup: vi.fn(),
       pointerleave: vi.fn(),
+      pointercancel: vi.fn(),
       contextmenu: vi.fn(),
       wheel: vi.fn(),
     }
@@ -81,6 +82,7 @@ describe('isometric lifecycle helpers', () => {
     expect(addEventListener).toHaveBeenCalledWith('pointermove', handlers.pointermove)
     expect(addEventListener).toHaveBeenCalledWith('pointerup', handlers.pointerup)
     expect(addEventListener).toHaveBeenCalledWith('pointerleave', handlers.pointerleave)
+    expect(addEventListener).toHaveBeenCalledWith('pointercancel', handlers.pointercancel)
     expect(addEventListener).toHaveBeenCalledWith('contextmenu', handlers.contextmenu)
     expect(addEventListener).toHaveBeenCalledWith('wheel', handlers.wheel, { passive: false })
 
@@ -90,6 +92,7 @@ describe('isometric lifecycle helpers', () => {
     expect(removeEventListener).toHaveBeenCalledWith('pointermove', handlers.pointermove)
     expect(removeEventListener).toHaveBeenCalledWith('pointerup', handlers.pointerup)
     expect(removeEventListener).toHaveBeenCalledWith('pointerleave', handlers.pointerleave)
+    expect(removeEventListener).toHaveBeenCalledWith('pointercancel', handlers.pointercancel)
     expect(removeEventListener).toHaveBeenCalledWith('contextmenu', handlers.contextmenu)
     expect(removeEventListener).toHaveBeenCalledWith('wheel', handlers.wheel)
   })

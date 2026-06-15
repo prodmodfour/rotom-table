@@ -367,6 +367,27 @@ describe('useIsometricSceneWatchers', () => {
     harness.stop()
   })
 
+  it('does not refocus the same active initiative key on unrelated scene updates', async () => {
+    const harness = makeWatcherHarness()
+    harness.ready.value = true
+    harness.initiativeAutoFocusEnabled.value = true
+    harness.actions.focusActiveTurnPokemon.mockReturnValue(true)
+
+    harness.activeTurnId.value = 'token-1'
+    await nextTick()
+    expect(harness.actions.focusActiveTurnPokemon).toHaveBeenCalledWith('token-1')
+    vi.clearAllMocks()
+
+    harness.pokemons.value = [{ id: 'token-1', currentHp: 12 }]
+    harness.terrainVoxelRevision.value = 'terrain:manual-camera-rotation-regression'
+    harness.layerVisibility.value = { tokens: true }
+    await nextTick()
+
+    expect(harness.actions.focusActiveTurnPokemon).not.toHaveBeenCalled()
+    expect(harness.actions.requestRender).not.toHaveBeenCalledWith('camera')
+    harness.stop()
+  })
+
   it('focuses the same active initiative id again when the initiative round changes', async () => {
     const harness = makeWatcherHarness()
     harness.ready.value = true
