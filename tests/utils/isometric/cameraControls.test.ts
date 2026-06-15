@@ -3,12 +3,18 @@ import * as THREE from 'three'
 import type { WebGLRenderer } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
-import type { GridDimensions } from '~/types/pokemon'
+import type { GridDimensions, SpawnedPokemon } from '~/types/pokemon'
 import {
   bindIsometricCameraControlChangeInvalidation,
   createIsometricCamera,
+  createIsometricOrbitControls,
+  focusCameraOnPokemon,
+  getIsometricOffsetYawAzimuth,
+  ISO_POLAR_ANGLE,
   readIsometricCameraControlState,
   isSameIsometricCameraControlState,
+  rotateIsometricYawCameraState,
+  rotateIsometricYawStep,
   syncIsometricRendererSize,
 } from '~/utils/isometric/cameraControls'
 
@@ -59,6 +65,43 @@ const createControlsChangeHarness = () => {
   }
 }
 
+const createFakeOrbitControlsElement = (): HTMLElement => {
+  const root = {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }
+
+  return {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    getRootNode: vi.fn(() => root),
+    style: {},
+  } as unknown as HTMLElement
+}
+
+const offsetFromYaw = (radius: number, yawDegrees: number): THREE.Vector3 => {
+  const yaw = THREE.MathUtils.degToRad(yawDegrees)
+  const horizontalRadius = radius * Math.sin(ISO_POLAR_ANGLE)
+
+  return new THREE.Vector3(
+    horizontalRadius * Math.cos(yaw),
+    radius * Math.cos(ISO_POLAR_ANGLE),
+    horizontalRadius * Math.sin(yaw),
+  )
+}
+
+const expectCloseVector = (actual: THREE.Vector3, expected: THREE.Vector3, precision = 8) => {
+  expect(actual.x).toBeCloseTo(expected.x, precision)
+  expect(actual.y).toBeCloseTo(expected.y, precision)
+  expect(actual.z).toBeCloseTo(expected.z, precision)
+}
+
+const offsetPolarAngle = (offset: THREE.Vector3): number => Math.acos(offset.y / offset.length())
+
+const offsetYawDegrees = (offset: THREE.Vector3): number => (
+  Math.round(THREE.MathUtils.radToDeg(getIsometricOffsetYawAzimuth(offset)))
+)
+
 describe('isometric camera controls', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -81,6 +124,127 @@ describe('isometric camera controls', () => {
     const retargeted = readIsometricCameraControlState(camera, controls)
 
     expect(isSameIsometricCameraControlState(zoomed, retargeted)).toBe(false)
+  })
+
+  it('configures OrbitControls for snapped yaw, panning, and locked isometric pitch', () => {
+    const camera = createIsometricCamera()
+    const controls = createIsometricOrbitControls(camera, createFakeOrbitControlsElement(), 8)
+
+    expect(controls.enablePan).toBe(true)
+    expect(controls.enableRotate).toBe(false)
+    expect(controls.enableZoom).toBe(true)
+    expect(controls.minPolarAngle).toBe(ISO_POLAR_ANGLE)
+    expect(controls.maxPolarAngle).toBe(ISO_POLAR_ANGLE)
+    expect(controls.maxZoom).toBe(8)
+
+    controls.dispose()
+  })
+
+  it('rotates camera yaw without changing target, zoom, or target distance', () => {
+    const target = new THREE.Vector3(3, 4, 5)
+    const radius = 18
+    const state = {
+      position: target.clone().add(offsetFromYaw(radius, 45)),
+      target,
+      zoom: 2.25,
+    }
+
+    const rotated = rotateIsometricYawCameraState(state, 'left')
+
+    expect(rotated).not.toBeNull()
+    expectCloseVector(rotated!.target, target)
+    expect(rotated!.zoom).toBe(state.zoom)
+    expect(rotated!.position.distanceTo(rotated!.target)).toBeCloseTo(radius, 8)
+    expect(offsetYawDegrees(rotated!.position.clone().sub(rotated!.target))).toBe(135)
+  })
+
+  it('cycles through the four snapped isometric azimuths in 90 degree steps', () => {
+    const target = new THREE.Vector3(-2, 1, 7)
+    const radius = 12
+    const initialPosition = target.clone().add(offsetFromYaw(radius, 45))
+    let state = {
+      position: initialPosition.clone(),
+      target,
+      zoom: 1.75,
+    }
+    const yawDegrees: number[] = []
+
+    for (let i = 0; i < 4; i += 1) {
+      yawDegrees.push(offsetYawDegrees(state.position.clone().sub(state.target)))
+      state = rotateIsometricYawCameraState(state, 'left')!
+    }
+
+    expect(yawDegrees).toEqual([45, 135, 225, 315])
+    expectCloseVector(state.position, initialPosition)
+  })
+
+  it('keeps snapped yaw rotations at the isometric polar angle', () => {
+    const target = new THREE.Vector3(0, 2, 0)
+    let state = {
+      position: target.clone().add(offsetFromYaw(16, 315)),
+      target,
+      zoom: 1,
+    }
+
+    for (let i = 0; i < 4; i += 1) {
+      state = rotateIsometricYawCameraState(state, 'right')!
+      const offset = state.position.clone().sub(state.target)
+
+      expect(offsetPolarAngle(offset)).toBeCloseTo(ISO_POLAR_ANGLE, 8)
+    }
+  })
+
+  it('applies snapped yaw to a camera and updates controls while preserving zoom', () => {
+    const camera = createIsometricCamera()
+    const target = new THREE.Vector3(4, 0.5, -3)
+    camera.position.copy(target.clone().add(offsetFromYaw(20, 225)))
+    camera.zoom = 3
+    const controls = {
+      target: target.clone(),
+      update: vi.fn(),
+    } as unknown as Pick<OrbitControls, 'target' | 'update'>
+
+    expect(rotateIsometricYawStep({ camera, controls, direction: 'right' })).toBe(true)
+
+    expectCloseVector(controls.target, target)
+    expect(camera.zoom).toBe(3)
+    expect(camera.position.distanceTo(controls.target)).toBeCloseTo(20, 8)
+    expect(offsetYawDegrees(camera.position.clone().sub(controls.target))).toBe(135)
+    expect(controls.update).toHaveBeenCalledOnce()
+  })
+
+  it('keeps focus-on-Pokemon behavior on the active snapped yaw', () => {
+    const camera = createIsometricCamera()
+    const target = new THREE.Vector3(0, 0, 0)
+    camera.position.copy(target.clone().add(offsetFromYaw(20, 135)))
+    const controls = {
+      target: target.clone(),
+      minZoom: 0.4,
+      maxZoom: 10,
+      update: vi.fn(),
+    } as unknown as OrbitControls
+    const pokemon = {
+      base: 2,
+      clearance: 3,
+      width: 1,
+      height: 1,
+    } as SpawnedPokemon
+    const center = new THREE.Vector3(6, 0, 8)
+
+    focusCameraOnPokemon({
+      camera,
+      controls,
+      dimensions: dimensions(),
+      pokemon,
+      center,
+    })
+
+    const offset = camera.position.clone().sub(controls.target)
+    expect(offsetYawDegrees(offset)).toBe(135)
+    expect(offsetPolarAngle(offset)).toBeCloseTo(ISO_POLAR_ANGLE, 8)
+    expect(camera.position.distanceTo(controls.target)).toBeCloseTo(20, 8)
+    expect(controls.target.y).toBeCloseTo(1.05, 8)
+    expect(controls.update).toHaveBeenCalledOnce()
   })
 
   it('requests scheduler renders for real OrbitControls camera changes only', () => {

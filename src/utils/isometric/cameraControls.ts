@@ -8,8 +8,21 @@ import {
   resolveIsometricRendererPixelRatio,
 } from './rendererQuality'
 
-const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
+export const ISO_POLAR_ANGLE = THREE.MathUtils.degToRad(54.735610317245346)
 const ISO_AZIMUTH_ANGLE = THREE.MathUtils.degToRad(45)
+const HALF_TURN_RADIANS = Math.PI
+const FULL_TURN_RADIANS = Math.PI * 2
+const ISOMETRIC_YAW_STEP_RADIANS = Math.PI / 2
+const CAMERA_OFFSET_EPSILON = 1e-9
+
+export type IsometricYawStepDirection = 'left' | 'right'
+
+export const ISOMETRIC_YAW_SNAP_AZIMUTHS = [
+  ISO_AZIMUTH_ANGLE,
+  ISO_AZIMUTH_ANGLE + ISOMETRIC_YAW_STEP_RADIANS,
+  ISO_AZIMUTH_ANGLE + HALF_TURN_RADIANS,
+  ISO_AZIMUTH_ANGLE + HALF_TURN_RADIANS + ISOMETRIC_YAW_STEP_RADIANS,
+] as const
 const FOCUS_CAMERA_TARGET_HEIGHT_FACTOR = 0.35
 const FOCUS_CAMERA_VISIBLE_UNITS_PER_SUBJECT = 4
 const FOCUS_CAMERA_MIN_VISIBLE_UNITS = 7
@@ -19,6 +32,91 @@ export const DEFAULT_FACING_DIRECTION = new THREE.Vector2(
   Math.cos(ISO_AZIMUTH_ANGLE),
   Math.sin(ISO_AZIMUTH_ANGLE),
 )
+
+export const normalizeIsometricYawAzimuth = (azimuth: number): number => (
+  THREE.MathUtils.euclideanModulo(azimuth, FULL_TURN_RADIANS)
+)
+
+const yawAzimuthDistance = (a: number, b: number): number => (
+  Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)))
+)
+
+export const snapIsometricYawAzimuth = (azimuth: number): number => {
+  const normalized = normalizeIsometricYawAzimuth(azimuth)
+
+  return ISOMETRIC_YAW_SNAP_AZIMUTHS.reduce((closest, candidate) => (
+    yawAzimuthDistance(normalized, candidate) < yawAzimuthDistance(normalized, closest)
+      ? candidate
+      : closest
+  ), ISOMETRIC_YAW_SNAP_AZIMUTHS[0])
+}
+
+export const getIsometricOffsetYawAzimuth = (offset: THREE.Vector3): number => (
+  normalizeIsometricYawAzimuth(Math.atan2(offset.z, offset.x))
+)
+
+const createIsometricOffsetFromYaw = (radius: number, azimuth: number): THREE.Vector3 => {
+  const horizontalRadius = radius * Math.sin(ISO_POLAR_ANGLE)
+
+  return new THREE.Vector3(
+    horizontalRadius * Math.cos(azimuth),
+    radius * Math.cos(ISO_POLAR_ANGLE),
+    horizontalRadius * Math.sin(azimuth),
+  )
+}
+
+export const rotateIsometricYawOffset = (
+  offset: THREE.Vector3,
+  direction: IsometricYawStepDirection,
+): THREE.Vector3 | null => {
+  const radius = offset.length()
+  if (radius <= CAMERA_OFFSET_EPSILON) return null
+
+  const step = direction === 'left' ? ISOMETRIC_YAW_STEP_RADIANS : -ISOMETRIC_YAW_STEP_RADIANS
+  const azimuth = snapIsometricYawAzimuth(getIsometricOffsetYawAzimuth(offset) + step)
+  return createIsometricOffsetFromYaw(radius, azimuth)
+}
+
+export interface IsometricYawCameraState {
+  position: THREE.Vector3
+  target: THREE.Vector3
+  zoom: number
+}
+
+export const rotateIsometricYawCameraState = (
+  state: IsometricYawCameraState,
+  direction: IsometricYawStepDirection,
+): IsometricYawCameraState | null => {
+  const nextOffset = rotateIsometricYawOffset(state.position.clone().sub(state.target), direction)
+  if (!nextOffset) return null
+
+  const target = state.target.clone()
+  return {
+    position: target.clone().add(nextOffset),
+    target,
+    zoom: state.zoom,
+  }
+}
+
+export const rotateIsometricYawStep = (options: {
+  camera: THREE.OrthographicCamera
+  controls: Pick<OrbitControls, 'target' | 'update'>
+  direction: IsometricYawStepDirection
+}): boolean => {
+  const nextState = rotateIsometricYawCameraState({
+    position: options.camera.position,
+    target: options.controls.target,
+    zoom: options.camera.zoom,
+  }, options.direction)
+
+  if (!nextState) return false
+
+  options.camera.position.copy(nextState.position)
+  options.controls.target.copy(nextState.target)
+  options.camera.zoom = nextState.zoom
+  options.controls.update()
+  return true
+}
 
 const getSceneTarget = (dimensions: GridDimensions) =>
   new THREE.Vector3(dimensions.x / 2, 0, dimensions.z / 2)
@@ -87,7 +185,8 @@ export const createIsometricOrbitControls = (
   maxZoom: number,
 ) => {
   const controls = new OrbitControls(camera, domElement)
-  controls.enablePan = false
+  controls.enablePan = true
+  controls.enableRotate = false
   controls.enableDamping = true
   controls.screenSpacePanning = false
   controls.zoomToCursor = true

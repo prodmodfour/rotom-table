@@ -56,8 +56,10 @@ import {
   createIsometricWebGLRenderer,
   focusCameraOnPokemon,
   maxUsefulCameraZoom,
+  rotateIsometricYawStep,
   syncIsometricRendererSize,
   type IsometricRendererSizeState,
+  type IsometricYawStepDirection,
 } from '~/utils/isometric/cameraControls'
 import { createPointerTravelTracker } from '~/utils/isometric/pointerTracker'
 import { createIsometricPointerInteractionController } from '~/utils/isometric/pointerInteraction'
@@ -161,6 +163,7 @@ import {
 } from '~/utils/isometric/renderLoop'
 import { createCss3DRenderDirtyTracker } from '~/utils/isometric/css3DRenderDirtyTracker'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
+import { isKeyboardShortcutBlockedTarget } from '~/utils/keyboardShortcuts'
 
 export type { BuildTool } from '#shared/mapEditor'
 
@@ -700,6 +703,17 @@ const focusPokemon = (id: string): boolean => {
   return true
 }
 
+const rotateCameraYaw = (direction: IsometricYawStepDirection): boolean => {
+  if (!camera || !controls) return false
+
+  const rotated = rotateIsometricYawStep({ camera, controls, direction })
+  if (rotated) requestScheduledSceneFrame('camera')
+  return rotated
+}
+
+const rotateCameraLeft = () => rotateCameraYaw('left')
+const rotateCameraRight = () => rotateCameraYaw('right')
+
 defineExpose({ focusPokemon })
 
 const updateGridVisibility = () => {
@@ -1230,7 +1244,35 @@ const handleEscape = (event: KeyboardEvent) => {
   if (event.key === 'Escape') requestRenderAfterPointerInteraction()
 }
 
+const CAMERA_YAW_SHORTCUT_BLOCKING_OVERLAY_SELECTOR = '[role="dialog"], [aria-modal="true"], .hp-dialog'
+
+const hasCameraYawShortcutBlockingOverlay = (): boolean => (
+  typeof document !== 'undefined'
+  && Boolean(document.querySelector(CAMERA_YAW_SHORTCUT_BLOCKING_OVERLAY_SELECTOR))
+)
+
+const handleCameraYawShortcut = (event: KeyboardEvent) => {
+  if (
+    hasCameraYawShortcutBlockingOverlay()
+    || isKeyboardShortcutBlockedTarget(event.target)
+    || isKeyboardShortcutBlockedTarget(document.activeElement)
+  ) return
+  if (!event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return
+
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault()
+    rotateCameraLeft()
+    return
+  }
+
+  if (event.key === 'ArrowRight') {
+    event.preventDefault()
+    rotateCameraRight()
+  }
+}
+
 useWindowKeydown(handleEscape)
+useWindowKeydown(handleCameraYawShortcut)
 
 watch(activeSendOutRequest, (request) => {
   if (controls) controls.enableZoom = !request && !selectedPokemon.value

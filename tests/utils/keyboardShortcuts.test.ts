@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { isCtrlLetter, isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
+import {
+  isCtrlLetter,
+  isCtrlShiftLetter,
+  isEditableKeyboardEventTarget,
+  isEscapeKey,
+  isKeyboardShortcutBlockedTarget,
+} from '~/utils/keyboardShortcuts'
 
 const keyEvent = (overrides: Partial<KeyboardEvent>): KeyboardEvent => ({
   key: '',
@@ -28,5 +34,27 @@ describe('keyboard shortcut helpers', () => {
     expect(isCtrlShiftLetter(keyEvent({ key: 'A', ctrlKey: true, shiftKey: true }), 'a')).toBe(true)
     expect(isCtrlShiftLetter(keyEvent({ key: 'a', ctrlKey: false, shiftKey: true }), 'a')).toBe(false)
     expect(isCtrlShiftLetter(keyEvent({ key: 'b', ctrlKey: true, shiftKey: true }), 'a')).toBe(false)
+  })
+
+  it('detects editable keyboard event targets', () => {
+    expect(isEditableKeyboardEventTarget({ nodeName: 'INPUT' } as unknown as EventTarget)).toBe(true)
+    expect(isEditableKeyboardEventTarget({ nodeName: 'textarea' } as unknown as EventTarget)).toBe(true)
+    expect(isEditableKeyboardEventTarget({ nodeName: 'select' } as unknown as EventTarget)).toBe(true)
+    expect(isEditableKeyboardEventTarget({ nodeName: 'div', isContentEditable: true } as unknown as EventTarget)).toBe(true)
+    expect(isEditableKeyboardEventTarget({ nodeName: 'button' } as unknown as EventTarget)).toBe(false)
+    expect(isEditableKeyboardEventTarget(null)).toBe(false)
+  })
+
+  it('blocks global shortcuts from interactive and modal targets', () => {
+    expect(isKeyboardShortcutBlockedTarget({ nodeName: 'button' } as unknown as EventTarget)).toBe(true)
+    expect(isKeyboardShortcutBlockedTarget({ nodeName: 'input' } as unknown as EventTarget)).toBe(true)
+    expect(isKeyboardShortcutBlockedTarget({
+      nodeName: 'section',
+      closest: () => ({ nodeName: 'section' }),
+    } as unknown as EventTarget)).toBe(true)
+    expect(isKeyboardShortcutBlockedTarget({
+      nodeName: 'canvas',
+      closest: () => null,
+    } as unknown as EventTarget)).toBe(false)
   })
 })
