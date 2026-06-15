@@ -3,6 +3,7 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   createLivePlayOpId,
+  type AdvanceInitiativePayload,
   type BuildTerrainVoxelPayload,
   type DeleteTokenPayload,
   type LivePlayCommandAccepted,
@@ -141,8 +142,8 @@ export interface UseLivePlayCommandsReturn {
     moveName: string
   }) => Promise<LivePlayCommandDispatchResult>
   setInitiative: (payload: SetInitiativePayload) => Promise<LivePlayCommandDispatchResult>
-  nextInitiative: () => Promise<LivePlayCommandDispatchResult>
-  previousInitiative: () => Promise<LivePlayCommandDispatchResult>
+  nextInitiative: (payload: AdvanceInitiativePayload) => Promise<LivePlayCommandDispatchResult>
+  previousInitiative: (payload: AdvanceInitiativePayload) => Promise<LivePlayCommandDispatchResult>
   placeHazard: (payload: {
     hazard: MapHazardV2
   }) => Promise<LivePlayCommandDispatchResult>
@@ -221,6 +222,7 @@ type LivePlayClientCommandPayload =
   | SpawnTokenPayload
   | SendOutPokemonPayload
   | SetInitiativePayload
+  | AdvanceInitiativePayload
   | LivePlayMapEffectsCommandPayload
   | Record<string, never>
 
@@ -281,7 +283,7 @@ const rejectionNeedsReconciliation = (
   if (reason === 'stale-revision') return true
   if (reason !== 'conflict') return false
   const currentRevision = livePlayResponseCurrentRevision(response)
-  return currentRevision !== null && currentRevision > localRevision
+  return currentRevision !== null && currentRevision >= localRevision
 }
 
 export const useLivePlayCommands = (
@@ -405,6 +407,12 @@ export const useLivePlayCommands = (
     request: string,
     body: Record<string, unknown>,
   ): Promise<LivePlayCommandDispatchResult> => {
+    if (status.value === 'saving') {
+      const message = 'A live-play command is already in flight.'
+      options.onCommandBlocked?.(message)
+      return { dispatched: false, message }
+    }
+
     const blockedMessage = blockedCommandMessage()
     if (blockedMessage) {
       status.value = 'error'
@@ -587,20 +595,20 @@ export const useLivePlayCommands = (
     ),
   )
 
-  const nextInitiative: UseLivePlayCommandsReturn['nextInitiative'] = () => runLivePlayCommand(
+  const nextInitiative: UseLivePlayCommandsReturn['nextInitiative'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.nextInitiative,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
-      {},
+      payload,
       [mapScope('initiative')],
     ),
   )
 
-  const previousInitiative: UseLivePlayCommandsReturn['previousInitiative'] = () => runLivePlayCommand(
+  const previousInitiative: UseLivePlayCommandsReturn['previousInitiative'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.previousInitiative,
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
-      {},
+      payload,
       [mapScope('initiative')],
     ),
   )

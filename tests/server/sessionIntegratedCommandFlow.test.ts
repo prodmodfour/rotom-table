@@ -442,7 +442,12 @@ const nextInitiativeCommandMessage = (): SessionCommandMessage<NextInitiativeCom
     opId: INITIATIVE_OP_ID,
     baseRevision: parseSessionRevision(4),
     scopes: [createInitiativeCommandScope('arena-map')],
-    payload: { mapSlug: 'arena-map' },
+    payload: {
+      mapSlug: 'arena-map',
+      orderIds: ['token-pikachu', 'token-bulbasaur'],
+      activeId: 'token-pikachu',
+      round: 1,
+    },
     metadata: {
       traceId: 'trace-audit-initiative',
     },

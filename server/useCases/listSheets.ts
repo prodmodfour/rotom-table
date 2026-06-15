@@ -4,7 +4,11 @@ import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { playerCanAccessSheet } from '../policies/playerProfilePolicy'
-import { listSheetFilesWithFolders } from '../utils/sheetStorage'
+import {
+  sqliteSheetRepository,
+  type SheetRepository,
+  type StoredSheetDocument,
+} from '../storage/sheetRepository'
 
 export type PlayerSheetAccessPredicate = (
   kind: SheetKind,
@@ -18,9 +22,12 @@ export interface ListSheetsInput {
   canAccessPlayerSheet?: PlayerSheetAccessPredicate
 }
 
+type ListSheetsRepository = Pick<SheetRepository<Record<string, unknown>>, 'list'>
+
 export interface ListSheetsDependencies {
   listPokemonSheets?: () => CharacterSheet[]
   listTrainerSheets?: () => TrainerSheet[]
+  sheetRepository?: ListSheetsRepository
 }
 
 export interface ListSheetsResult {
@@ -40,14 +47,30 @@ const canListPlayerSheet = <TSheet extends CharacterSheet | TrainerSheet>(
   canAccessPlayerSheet: input.canAccessPlayerSheet,
 })
 
+const storedSheetDocumentToSheet = <TSheet extends CharacterSheet | TrainerSheet>(
+  stored: StoredSheetDocument<Record<string, unknown>>,
+): TSheet => ({
+  ...stored.document,
+  slug: stored.slug,
+  revision: stored.revision,
+}) as TSheet
+
+const listRepositorySheets = <TSheet extends CharacterSheet | TrainerSheet>(
+  repository: ListSheetsRepository,
+  kind: SheetKind,
+): TSheet[] => repository.list(kind).map((stored) => storedSheetDocumentToSheet<TSheet>(
+  stored as StoredSheetDocument<Record<string, unknown>>,
+))
+
 export const listSheetsUseCase = (
   input: ListSheetsInput,
   dependencies: ListSheetsDependencies = {},
 ): ListSheetsResult => {
+  const sheetRepository = dependencies.sheetRepository ?? (sqliteSheetRepository as ListSheetsRepository)
   const listPokemonSheets = dependencies.listPokemonSheets
-    ?? (() => listSheetFilesWithFolders<CharacterSheet>('pokemon'))
+    ?? (() => listRepositorySheets<CharacterSheet>(sheetRepository, 'pokemon'))
   const listTrainerSheets = dependencies.listTrainerSheets
-    ?? (() => listSheetFilesWithFolders<TrainerSheet>('trainer'))
+    ?? (() => listRepositorySheets<TrainerSheet>(sheetRepository, 'trainer'))
 
   const pokemonSheets = listPokemonSheets()
   const trainerSheets = listTrainerSheets()

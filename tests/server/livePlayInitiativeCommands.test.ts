@@ -15,6 +15,20 @@ import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/appl
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
 import type { TabletopMap } from '~/types/map'
 
+const pokemonInitiativeSheet = (
+  slug: string,
+  speed: number,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> => ({
+  slug,
+  nickname: slug,
+  species: '',
+  level: 1,
+  stats: { spd: { base: speed } },
+  combat: { conditions: [] },
+  ...overrides,
+})
+
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
   revision: 4,
@@ -72,7 +86,7 @@ const nextInitiativeCommand = (
   baseRevision: 4,
   type: LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
   scopes: [{ kind: 'map', lane: 'initiative' }],
-  payload: {},
+  payload: { orderIds: ['fast-token', 'slow-token'], activeId: 'fast-token', round: 1 },
   ...overrides,
 })
 
@@ -85,7 +99,7 @@ const previousInitiativeCommand = (
   baseRevision: 4,
   type: LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
   scopes: [{ kind: 'map', lane: 'initiative' }],
-  payload: {},
+  payload: { orderIds: ['fast-token', 'slow-token'], activeId: 'fast-token', round: 1 },
   ...overrides,
 })
 
@@ -113,6 +127,7 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     commandExecutor: executor,
     mapRepository,
     publishRealtimeEvent: vi.fn((event) => published.push(event)),
+    readSheet: vi.fn((_kind: 'pokemon' | 'trainer', _slug: string): { path: string; sheet: Record<string, unknown> } | null => null),
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2_000),
   }
@@ -211,6 +226,206 @@ describe('live-play initiative commands', () => {
     })
   })
 
+  it('rejects NEXT_INITIATIVE when the submitted visible order is stale', async () => {
+    const harness = createHarness(baseMap({
+      placements: [
+        { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'a', position: { x: 1, y: 0, z: 1 } },
+        { id: 'token-b', sheetKind: 'pokemon', sheetSlug: 'b', position: { x: 2, y: 0, z: 1 } },
+        { id: 'token-c', sheetKind: 'pokemon', sheetSlug: 'c', position: { x: 3, y: 0, z: 1 } },
+      ],
+      initiative: { activeId: 'token-a', round: 1 },
+    }))
+    harness.deps.readSheet.mockImplementation((_kind, slug) => ({
+      path: `/tmp/${slug}.json`,
+      sheet: pokemonInitiativeSheet(slug, slug === 'a' ? 30 : slug === 'c' ? 20 : 10),
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_staleordn1',
+      payload: { orderIds: ['token-a', 'token-b', 'token-c'], activeId: 'token-a', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'stale-revision',
+      currentRevision: 4,
+    })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-a', round: 1 })
+    expect(harness.storedMap.metadata?.initiativeLog).toBeUndefined()
+    expect(harness.writes).toEqual([])
+    expect(harness.published).toEqual([])
+  })
+
+  it('rejects PREVIOUS_INITIATIVE when the submitted visible order is stale', async () => {
+    const harness = createHarness(baseMap({
+      placements: [
+        { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'a', position: { x: 1, y: 0, z: 1 } },
+        { id: 'token-b', sheetKind: 'pokemon', sheetSlug: 'b', position: { x: 2, y: 0, z: 1 } },
+        { id: 'token-c', sheetKind: 'pokemon', sheetSlug: 'c', position: { x: 3, y: 0, z: 1 } },
+      ],
+      initiative: { activeId: 'token-a', round: 1 },
+    }))
+    harness.deps.readSheet.mockImplementation((_kind, slug) => ({
+      path: `/tmp/${slug}.json`,
+      sheet: pokemonInitiativeSheet(slug, slug === 'a' ? 30 : slug === 'c' ? 20 : 10),
+    }))
+
+    const response = await execute(harness, previousInitiativeCommand({
+      opId: 'op_staleordp1',
+      payload: { orderIds: ['token-a', 'token-b', 'token-c'], activeId: 'token-a', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'stale-revision',
+      currentRevision: 4,
+    })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-a', round: 1 })
+    expect(harness.storedMap.metadata?.initiativeLog).toBeUndefined()
+    expect(harness.writes).toEqual([])
+    expect(harness.published).toEqual([])
+  })
+
+  it('rejects initiative advance when the visible order omits a server fallback participant', async () => {
+    const harness = createHarness(baseMap({
+      placements: [
+        { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'a', position: { x: 1, y: 0, z: 1 }, initiative: 30 },
+        { id: 'token-b', sheetKind: 'pokemon', sheetSlug: 'missing', position: { x: 2, y: 0, z: 1 }, initiative: 20 },
+        { id: 'token-c', sheetKind: 'pokemon', sheetSlug: 'c', position: { x: 3, y: 0, z: 1 }, initiative: 10 },
+      ],
+      initiative: { activeId: 'token-a', round: 1 },
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_hiddenfb1',
+      payload: { orderIds: ['token-a', 'token-c'], activeId: 'token-a', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'stale-revision', currentRevision: 4 })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-a', round: 1 })
+    expect(harness.writes).toEqual([])
+    expect(harness.published).toEqual([])
+  })
+
+  it('advances to a server fallback participant when that participant is included in the visible order', async () => {
+    const harness = createHarness(baseMap({
+      placements: [
+        { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'a', position: { x: 1, y: 0, z: 1 }, initiative: 30 },
+        { id: 'token-b', sheetKind: 'pokemon', sheetSlug: 'missing', position: { x: 2, y: 0, z: 1 }, initiative: 20 },
+        { id: 'token-c', sheetKind: 'pokemon', sheetSlug: 'c', position: { x: 3, y: 0, z: 1 }, initiative: 10 },
+      ],
+      initiative: { activeId: 'token-a', round: 1 },
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_visiblefb1',
+      payload: { orderIds: ['token-a', 'token-b', 'token-c'], activeId: 'token-a', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-b', round: 1 })
+  })
+
+  it('increments the round when NEXT_INITIATIVE advances from the final visible combatant', async () => {
+    const harness = createHarness(baseMap({ initiative: { activeId: 'slow-token', round: 1 } }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_nextround01',
+      payload: { orderIds: ['fast-token', 'slow-token'], activeId: 'slow-token', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'fast-token', round: 2 })
+  })
+
+  it('uses condition-adjusted Speed-derived effective order for live-play NEXT_INITIATIVE', async () => {
+    const harness = createHarness(baseMap({
+      placements: [
+        {
+          id: 'token-alpha',
+          sheetKind: 'pokemon',
+          sheetSlug: 'alpha',
+          position: { x: 1, y: 0, z: 1 },
+        },
+        {
+          id: 'token-bravo',
+          sheetKind: 'pokemon',
+          sheetSlug: 'bravo',
+          position: { x: 2, y: 0, z: 1 },
+        },
+        {
+          id: 'token-zulu',
+          sheetKind: 'pokemon',
+          sheetSlug: 'zulu',
+          position: { x: 3, y: 0, z: 1 },
+        },
+      ],
+      initiative: { activeId: 'token-alpha', round: 1 },
+    }))
+    harness.deps.readSheet.mockImplementation((_kind, slug) => ({
+      path: `/tmp/${slug}.json`,
+      sheet: slug === 'alpha'
+        ? pokemonInitiativeSheet(slug, 30, { combat: { conditions: ['Paralysis'] } })
+        : pokemonInitiativeSheet(slug, slug === 'bravo' ? 20 : 10),
+    }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      payload: { orderIds: ['token-bravo', 'token-alpha', 'token-zulu'], activeId: 'token-alpha', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-zulu', round: 1 })
+    expect(response.result.ok && !('duplicate' in response.result) ? response.result.patches[0]?.payload : {}).toMatchObject({
+      command: LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
+      previous: expect.objectContaining({ activeId: 'token-alpha', round: 1 }),
+      current: expect.objectContaining({ activeId: 'token-zulu', round: 1 }),
+    })
+  })
+
+  it('uses the same effective order for live-play PREVIOUS_INITIATIVE', async () => {
+    const harness = createHarness(baseMap({
+      placements: [
+        {
+          id: 'token-alpha',
+          sheetKind: 'pokemon',
+          sheetSlug: 'alpha',
+          position: { x: 1, y: 0, z: 1 },
+        },
+        {
+          id: 'token-bravo',
+          sheetKind: 'pokemon',
+          sheetSlug: 'bravo',
+          position: { x: 2, y: 0, z: 1 },
+        },
+        {
+          id: 'token-zulu',
+          sheetKind: 'pokemon',
+          sheetSlug: 'zulu',
+          position: { x: 3, y: 0, z: 1 },
+        },
+      ],
+      initiative: { activeId: 'token-alpha', round: 2 },
+    }))
+    harness.deps.readSheet.mockImplementation((_kind, slug) => ({
+      path: `/tmp/${slug}.json`,
+      sheet: slug === 'alpha'
+        ? pokemonInitiativeSheet(slug, 30, { combat: { conditions: ['Paralysis'] } })
+        : pokemonInitiativeSheet(slug, slug === 'bravo' ? 20 : 10),
+    }))
+
+    const response = await execute(harness, previousInitiativeCommand({
+      payload: { orderIds: ['token-bravo', 'token-alpha', 'token-zulu'], activeId: 'token-alpha', round: 2 },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.initiative).toEqual({ activeId: 'token-bravo', round: 2 })
+    expect(response.result.ok && !('duplicate' in response.result) ? response.result.patches[0]?.payload : {}).toMatchObject({
+      command: LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
+      previous: expect.objectContaining({ activeId: 'token-alpha', round: 2 }),
+      current: expect.objectContaining({ activeId: 'token-bravo', round: 2 }),
+    })
+  })
+
   it('moves initiative to the previous token and clamps the round at one', async () => {
     const harness = createHarness(baseMap({ initiative: { activeId: 'fast-token', round: 1 } }))
 
@@ -223,6 +438,23 @@ describe('live-play initiative commands', () => {
       previous: expect.objectContaining({ activeId: 'fast-token', round: 1 }),
       current: expect.objectContaining({ activeId: 'slow-token', round: 1 }),
     })
+  })
+
+  it('rejects malformed advance precondition payloads without writing', async () => {
+    const harness = createHarness(baseMap({ initiative: { activeId: 'fast-token', round: 1 } }))
+
+    const response = await execute(harness, nextInitiativeCommand({
+      opId: 'op_badadvpay',
+      payload: { orderIds: ['fast-token', 'fast-token'], activeId: 'fast-token', round: 1 },
+    }))
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+      currentRevision: 4,
+    })
+    expect(harness.writes).toEqual([])
+    expect(harness.published).toEqual([])
   })
 
   it('rejects invalid initiative token targets without writing', async () => {

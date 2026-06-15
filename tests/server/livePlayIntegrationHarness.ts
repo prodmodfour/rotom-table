@@ -6,9 +6,12 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   type LivePlayCommandAccepted,
   type LivePlayCommandResult,
+  type ModifyCombatStagesLivePlayCommand,
+  type ModifyConditionsLivePlayCommand,
   type ModifyHpLivePlayCommand,
   type MoveTokenLivePlayCommand,
   type NextInitiativeLivePlayCommand,
+  type PreviousInitiativeLivePlayCommand,
   type UseMoveLivePlayCommand,
 } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
@@ -281,6 +284,15 @@ export class LivePlayIntegrationHarness {
     }, this.commandDependencies())
   }
 
+  async previousInitiative({ actor, command }: LivePlayCommandDispatchOptions<PreviousInitiativeLivePlayCommand>) {
+    return await executeLivePlayInitiativeCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
+    }, this.commandDependencies())
+  }
+
   async modifyHp({ actor, command }: LivePlayCommandDispatchOptions<ModifyHpLivePlayCommand>) {
     return await executeLivePlaySheetCommandUseCase({
       role: actor.role,
@@ -288,6 +300,26 @@ export class LivePlayIntegrationHarness {
       playerProfile: actor.playerProfile,
       command,
       expectedType: LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+    }, this.commandDependencies())
+  }
+
+  async modifyCombatStages({ actor, command }: LivePlayCommandDispatchOptions<ModifyCombatStagesLivePlayCommand>) {
+    return await executeLivePlaySheetCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      playerProfile: actor.playerProfile,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES,
+    }, this.commandDependencies())
+  }
+
+  async modifyConditions({ actor, command }: LivePlayCommandDispatchOptions<ModifyConditionsLivePlayCommand>) {
+    return await executeLivePlaySheetCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      playerProfile: actor.playerProfile,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
     }, this.commandDependencies())
   }
 
@@ -321,7 +353,13 @@ export class LivePlayIntegrationHarness {
     }
   }
 
-  nextInitiativeCommand(input: { readonly opId: string; readonly baseRevision: number }): NextInitiativeLivePlayCommand {
+  nextInitiativeCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly orderIds?: readonly string[]
+    readonly activeId?: string | null
+    readonly round?: number
+  }): NextInitiativeLivePlayCommand {
     return {
       schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
       opId: input.opId,
@@ -329,7 +367,33 @@ export class LivePlayIntegrationHarness {
       baseRevision: input.baseRevision,
       type: LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
       scopes: [{ kind: 'map', lane: 'initiative' }],
-      payload: {},
+      payload: {
+        orderIds: [...(input.orderIds ?? ['token-a', 'token-b'])],
+        activeId: input.activeId === undefined ? 'token-a' : input.activeId,
+        round: input.round ?? 1,
+      },
+    }
+  }
+
+  previousInitiativeCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly orderIds?: readonly string[]
+    readonly activeId?: string | null
+    readonly round?: number
+  }): PreviousInitiativeLivePlayCommand {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId,
+      mapSlug: 'integration-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
+      scopes: [{ kind: 'map', lane: 'initiative' }],
+      payload: {
+        orderIds: [...(input.orderIds ?? ['token-a', 'token-b'])],
+        activeId: input.activeId === undefined ? 'token-a' : input.activeId,
+        round: input.round ?? 1,
+      },
     }
   }
 
@@ -356,6 +420,58 @@ export class LivePlayIntegrationHarness {
         placementId: input.placementId,
         currentHp: input.currentHp,
         ...(input.injuries === undefined ? {} : { injuries: input.injuries }),
+      },
+    }
+  }
+
+  modifyCombatStagesCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly placementId: string
+    readonly sheetKind: SheetKind
+    readonly sheetSlug: string
+    readonly stages: ModifyCombatStagesLivePlayCommand['payload']['stages']
+  }): ModifyCombatStagesLivePlayCommand {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId,
+      mapSlug: 'integration-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES,
+      scopes: [
+        { kind: 'token', placementId: input.placementId, field: 'combatStages' },
+        { kind: 'sheet', sheetKind: input.sheetKind, sheetSlug: input.sheetSlug, field: 'combatStages' },
+      ],
+      payload: {
+        placementId: input.placementId,
+        stages: input.stages,
+      },
+    }
+  }
+
+  modifyConditionsCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly placementId: string
+    readonly sheetKind: SheetKind
+    readonly sheetSlug: string
+    readonly action?: ModifyConditionsLivePlayCommand['payload']['action']
+    readonly conditions: readonly string[]
+  }): ModifyConditionsLivePlayCommand {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId,
+      mapSlug: 'integration-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+      scopes: [
+        { kind: 'token', placementId: input.placementId, field: 'conditions' },
+        { kind: 'sheet', sheetKind: input.sheetKind, sheetSlug: input.sheetSlug, field: 'conditions' },
+      ],
+      payload: {
+        placementId: input.placementId,
+        action: input.action ?? 'replace',
+        conditions: input.conditions,
       },
     }
   }
@@ -436,10 +552,6 @@ export class LivePlayIntegrationHarness {
       mapRepository: this.mapRepository,
       sheetRepository: this.sheetRepository,
       database: this.database,
-      readSheet: (kind: SheetKind, slug: string) => {
-        const sheet = this.sheetRepository.get(kind, slug)
-        return sheet ? { sheet: sheet.document as Record<string, unknown> } : null
-      },
       publishRealtimeEvent: (event: Omit<RealtimeEvent, 'timestamp'>) => {
         const withTimestamp = { ...event, timestamp: this.nextTimestamp() } as RealtimeEvent
         this.publishedEvents.push(cloneJson(withTimestamp))

@@ -417,12 +417,54 @@ describe('useLivePlayCommands', () => {
     }))
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
 
-    await actions.nextInitiative()
+    await actions.nextInitiative({ orderIds: ['token-pikachu', 'target-token'], activeId: null, round: 1 })
     expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.nextInitiative, expect.objectContaining({
       type: LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
       scopes: [{ kind: 'map', lane: 'initiative' }],
-      payload: {},
+      payload: { orderIds: ['token-pikachu', 'target-token'], activeId: null, round: 1 },
     }))
+  })
+
+  it('does not dispatch a rapid second initiative advance while the first is pending', async () => {
+    const map = mapFixture()
+    const mapRevision = ref(4)
+    const applyPersistedMap = vi.fn()
+    let resolveFirst!: (response: unknown) => void
+    apiMocks.postJson.mockReturnValueOnce(new Promise((resolve) => {
+      resolveFirst = resolve
+    }))
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision,
+      applyPersistedMap,
+    })
+
+    const advancePrecondition = { orderIds: ['token-pikachu', 'target-token'], activeId: null, round: 1 }
+    const first = actions.nextInitiative(advancePrecondition)
+    const second = await actions.nextInitiative(advancePrecondition)
+
+    expect(second).toEqual({
+      dispatched: false,
+      message: 'A live-play command is already in flight.',
+    })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(actions.status.value).toBe('saving')
+
+    resolveFirst({
+      ok: true,
+      opId: 'op_initclient2',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+    })
+    await expect(first).resolves.toMatchObject({ dispatched: true })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
+    expect(actions.status.value).toBe('idle')
   })
 
   it('posts live-play hazard, terrain, and field-effect commands through the command dispatcher', async () => {

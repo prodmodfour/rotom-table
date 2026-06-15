@@ -180,6 +180,7 @@ const showLivePlaySavingIcon = computed(() => props.livePlayState === 'saving-co
 const livePlaySavingIconLabel = computed(() => (
   props.livePlayStatusMessage ?? 'Sending live-play command to the server.'
 ))
+const initiativeControlsEnabled = computed(() => props.canManageInitiative === true)
 
 const focusPokemon = (id: string): boolean => rendererRef.value?.focusPokemon(id) ?? false
 
@@ -259,7 +260,7 @@ defineExpose({ focusPokemon })
         :rows="initiativeRows ?? []"
         :active-id="activeInitiativeId"
         :round="initiativeRound ?? 1"
-        :can-manage="canManageInitiative ?? false"
+        :can-manage="initiativeControlsEnabled"
         @focus="emit('focus-initiative-entry', $event)"
         @previous="emit('previous-initiative')"
         @next="emit('next-initiative')"

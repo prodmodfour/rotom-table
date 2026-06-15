@@ -130,6 +130,15 @@ const applyLivePlaySheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: s
   const previous = trainerBySlug.value.get(update.slug)
   trainerBySlug.value.set(update.slug, { ...(previous ?? {}), ...update.sheet } as TrainerSheet)
 }
+const runtimeSheetReloadContext = () => (
+  isPlayer.value ? { profileId: selectedProfileId.value } : {}
+)
+const reconcileLivePlayState = async () => {
+  await Promise.all([
+    reloadAuthoritativeMap(),
+    reloadRuntimeSheets(runtimeSheetReloadContext()),
+  ])
+}
 const livePlayStateMachine = useLivePlayStateMachine({
   mapStatus: status,
   mapError: error,
@@ -156,7 +165,7 @@ const livePlayCommands = useLivePlayCommands({
   livePlayCommandBlockedMessage,
   applyPersistedMap,
   applySheetUpdate: applyLivePlaySheetUpdate,
-  requestReconciliation: () => livePlayStateMachine.reconcile(() => reloadAuthoritativeMap()),
+  requestReconciliation: () => livePlayStateMachine.reconcile(reconcileLivePlayState),
   onCommandStarted: livePlayStateMachine.commandStarted,
   onCommandAccepted: livePlayStateMachine.commandAccepted,
   onCommandRejected: livePlayStateMachine.commandRejected,
@@ -742,12 +751,20 @@ const {
   canManageInitiative,
   interactionMode: computed(() => mapInteractionMode.value),
   dispatchSetInitiative: (payload) => livePlayCommands.setInitiative(payload),
-  dispatchNextInitiative: () => livePlayCommands.nextInitiative(),
-  dispatchPreviousInitiative: () => livePlayCommands.previousInitiative(),
+  dispatchNextInitiative: (payload) => livePlayCommands.nextInitiative(payload),
+  dispatchPreviousInitiative: (payload) => livePlayCommands.previousInitiative(payload),
   focusEntry: (id) => {
     gridRef.value?.focusPokemon(id)
   },
 })
+
+const initiativeControlsEnabled = computed(() => (
+  canManageInitiative.value
+  && (
+    mapInteractionMode.value !== MAP_INTERACTION_MODES.LIVE_PLAY
+    || livePlayConnectionState.value === 'ready'
+  )
+))
 
 let publishSyncedActionSplash: MapActionSplashPublishHandler | null = null
 let publishSyncedMoveAnimations: MapActionMoveAnimationsPublishHandler | null = null
@@ -1460,7 +1477,7 @@ useMapDimensionReconciliation({
         :active-initiative-id="activeInitiativeId"
         :initiative-rows="sortedInitiativeRows"
         :initiative-round="initiativeRound"
-        :can-manage-initiative="canManageInitiative"
+        :can-manage-initiative="initiativeControlsEnabled"
         :initiative-auto-focus-enabled="initiativeAutoFocusEnabled"
         :map-voxels="mapVoxels"
         :map-hazards="mapHazards"
@@ -1611,7 +1628,7 @@ useMapDimensionReconciliation({
         :active-id="activeInitiativeId"
         :round="initiativeRound"
         :selected-id="selectedId"
-        :can-manage="canManageInitiative"
+        :can-manage="initiativeControlsEnabled"
         :has-initiative-values="hasInitiativeValues"
         @close="closeInitiativeMenu"
         @set-round="setInitiativeRound"

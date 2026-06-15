@@ -27,6 +27,7 @@ import {
   SET_INITIATIVE_COMMAND_TYPE,
   validateInitiativeCommand,
   type InitiativeCommand,
+  type AdvanceInitiativeCommandPayload,
   type InitiativeCommandPayload,
   type InitiativeCommandType,
   type SetInitiativeCommandPayload,
@@ -54,6 +55,7 @@ import {
   type WriteSessionSnapshotResult,
 } from '../utils/sessionSnapshots'
 import { readSheetFile } from '../utils/sheetStorage'
+import { initiativeOrderIdsForPlacements } from '~/utils/initiativeOrderEntries'
 import {
   sessionStore,
   type InMemorySessionStore,
@@ -647,20 +649,23 @@ const firstPlacementById = (
   tokenId: string,
 ): SheetPlacement | undefined => placements.find((placement) => placement.id === tokenId)
 
-const initiativeOrder = (placements: readonly SheetPlacement[]): readonly string[] =>
-  [...placements]
-    .sort((left, right) => {
-      const leftInitiative = normalizePlacementInitiative(left.initiative)
-      const rightInitiative = normalizePlacementInitiative(right.initiative)
-      const leftHasInitiative = leftInitiative !== null
-      const rightHasInitiative = rightInitiative !== null
-      if (leftHasInitiative !== rightHasInitiative) return leftHasInitiative ? -1 : 1
-      if (leftInitiative !== rightInitiative) return (rightInitiative ?? 0) - (leftInitiative ?? 0)
-      const leftLabel = `${left.sheetKind}:${left.sheetSlug}:${left.id}`
-      const rightLabel = `${right.sheetKind}:${right.sheetSlug}:${right.id}`
-      return leftLabel.localeCompare(rightLabel)
-    })
-    .map((placement) => placement.id)
+const initiativeOrder = (
+  placements: readonly SheetPlacement[],
+  readSheet: InitiativeSheetReader,
+): readonly string[] => initiativeOrderIdsForPlacements(placements, readSheet)
+
+const duplicateString = (values: readonly string[]): string | null => {
+  const seen = new Set<string>()
+  for (const value of values) {
+    if (seen.has(value)) return value
+    seen.add(value)
+  }
+  return null
+}
+
+const sameStringArray = (left: readonly string[], right: readonly string[]): boolean => (
+  left.length === right.length && left.every((value, index) => value === right[index])
+)
 
 const mapWithUpdatedAt = (map: TabletopMapV2, processedAt: string): TabletopMapV2 => {
   const updatedAtMs = Date.parse(processedAt)
@@ -812,10 +817,67 @@ const applyAdvanceInitiativePayload = (
   record: InitiativeSessionRecord,
   target: ResolvedInitiativeMap,
   processedAt: string,
+  readSheet: InitiativeSheetReader,
 ):
   | { readonly ok: true; readonly document: TabletopMapV2 }
   | { readonly ok: false; readonly result: InitiativeRejectedResult } => {
-  const order = initiativeOrder(target.mapState.document.placements)
+  const order = initiativeOrder(target.mapState.document.placements, readSheet)
+  const duplicateOrderId = duplicateString(order)
+  if (duplicateOrderId) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        `Authoritative initiative order contains duplicate placement ID ${duplicateOrderId}.`,
+        processedAt,
+        {
+          retryable: true,
+          currentState: currentInitiativeState(target.mapSlug, target.mapState, record.revision),
+        },
+      ),
+    }
+  }
+
+  const previousState = currentInitiativeState(target.mapSlug, target.mapState, record.revision).initiative
+  const payload = command.payload as AdvanceInitiativeCommandPayload
+  if (!sameStringArray(payload.orderIds, order)) {
+    return {
+      ok: false,
+      result: createStaleRejection(
+        command,
+        record,
+        `${command.type} was based on a stale visible initiative order; refresh before advancing initiative.`,
+        processedAt,
+        currentInitiativeState(target.mapSlug, target.mapState, record.revision),
+      ),
+    }
+  }
+  if (payload.activeId !== previousState.activeId) {
+    return {
+      ok: false,
+      result: createStaleRejection(
+        command,
+        record,
+        `${command.type} was based on stale active initiative state; refresh before advancing initiative.`,
+        processedAt,
+        currentInitiativeState(target.mapSlug, target.mapState, record.revision),
+      ),
+    }
+  }
+  if (payload.round !== previousState.round) {
+    return {
+      ok: false,
+      result: createStaleRejection(
+        command,
+        record,
+        `${command.type} was based on stale initiative round state; refresh before advancing initiative.`,
+        processedAt,
+        currentInitiativeState(target.mapSlug, target.mapState, record.revision),
+      ),
+    }
+  }
+
   if (order.length === 0) {
     return {
       ok: false,
@@ -832,7 +894,6 @@ const applyAdvanceInitiativePayload = (
     }
   }
 
-  const previousState = currentInitiativeState(target.mapSlug, target.mapState, record.revision).initiative
   const ids = [...order]
   const currentIndex = previousState.activeId ? ids.indexOf(previousState.activeId) : -1
   let nextActiveId: string
@@ -865,6 +926,7 @@ const applyInitiativeChange = (
   record: InitiativeSessionRecord,
   target: ResolvedInitiativeMap,
   processedAt: string,
+  readSheet: InitiativeSheetReader,
 ):
   | { readonly ok: true; readonly document: TabletopMapV2 }
   | { readonly ok: false; readonly result: InitiativeRejectedResult } => {
@@ -878,7 +940,7 @@ const applyInitiativeChange = (
     )
   }
 
-  return applyAdvanceInitiativePayload(command, record, target, processedAt)
+  return applyAdvanceInitiativePayload(command, record, target, processedAt, readSheet)
 }
 
 const rememberRejectedResult = (
@@ -1013,6 +1075,7 @@ export const applyInitiativeCommandUseCase = (
     record,
     targetResult.target,
     processedAt,
+    readSheet,
   )
   if (!change.ok) {
     rememberRejectedResult(tracker, envelope, change.result, processedAt)

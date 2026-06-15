@@ -1,6 +1,16 @@
 import { computed, watch, type ComputedRef, type Ref } from 'vue'
 import { appendInitiativeLogEntry } from '~/utils/initiativeLog'
 import { trimmedTextValueFromEvent } from '~/utils/domEvents'
+import {
+  compareInitiativeOrderEntries,
+  normalizeInitiativeValue as normalizeInitiativeOrderValue,
+  type InitiativeOrderEntry,
+} from '#shared/initiativeOrder'
+import {
+  fallbackInitiativeOrderEntry,
+  initiativeOrderEntryForPlacement,
+  type InitiativeSheetReader,
+} from '~/utils/initiativeOrderEntries'
 import { resolveStats } from '~/utils/sheets/pokemonDerived'
 import { resolveTrainerStats } from '~/utils/sheets/trainerDerived'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
@@ -19,7 +29,7 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
-import type { SetInitiativePayload } from '#shared/livePlayCommands'
+import type { AdvanceInitiativePayload, SetInitiativePayload } from '#shared/livePlayCommands'
 import type { InitiativeTrackerState, TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -73,19 +83,14 @@ export interface UseInitiativeTrackerOptions {
   canManageInitiative: ComputedRef<boolean>
   interactionMode?: ComputedRef<MapInteractionMode>
   dispatchSetInitiative?: (payload: SetInitiativePayload) => Promise<unknown>
-  dispatchNextInitiative?: () => Promise<unknown>
-  dispatchPreviousInitiative?: () => Promise<unknown>
+  dispatchNextInitiative?: (payload: AdvanceInitiativePayload) => Promise<unknown>
+  dispatchPreviousInitiative?: (payload: AdvanceInitiativePayload) => Promise<unknown>
   focusEntry?: (id: string) => void
   now?: () => number
   maxInitiativeLogEntries?: number
 }
 
-export const normalizeInitiativeValue = (value: unknown): number | null => {
-  if (value === null || value === undefined || value === '') return null
-  const n = Number(value)
-  if (!Number.isFinite(n)) return null
-  return Math.trunc(n)
-}
+export { normalizeInitiativeValue } from '#shared/initiativeOrder'
 
 const normalizeInitiativeRound = (value: unknown): number => {
   const round = Math.floor(Number(value ?? 1))
@@ -188,9 +193,57 @@ export const useInitiativeTracker = ({
     return className ? `Trainer · Lv ${sheet.level} · ${className}` : `Trainer · Lv ${sheet.level}`
   }
 
+  const readInitiativeSheet: InitiativeSheetReader = (kind, slug) => {
+    const sheet = kind === 'pokemon'
+      ? pokemonBySlug.value?.get(slug)
+      : trainerBySlug.value?.get(slug)
+    return sheet ? { sheet: sheet as unknown as Record<string, unknown> } : null
+  }
+
+  const initiativeOrderEntryByPlacementId = computed(() => new Map(
+    (map.value?.placements ?? []).map((placement) => [
+      placement.id,
+      initiativeOrderEntryForPlacement(placement, readInitiativeSheet),
+    ] as const),
+  ))
+
+  const fallbackInitiativeRowForPlacement = (
+    placement: TabletopMap['placements'][number],
+    orderEntry: InitiativeOrderEntry = fallbackInitiativeOrderEntry(placement),
+  ): InitiativeRow => {
+    const initiative = normalizeInitiativeOrderValue(placement.initiative)
+    const initiativeScore = orderEntry.initiativeScore
+    return {
+      id: placement.id,
+      name: orderEntry.displayName,
+      meta: `${placement.sheetKind === 'pokemon' ? 'Pokémon' : 'Trainer'} · unresolved token`,
+      sprite: {
+        url: null,
+        isSpriteSheet: false,
+        frameWidth: 32,
+        frameHeight: 32,
+        scale: 1,
+      },
+      profileUrl: null,
+      currentHp: 1,
+      maxHp: 1,
+      conditions: [],
+      initiative,
+      baseSpeed: 0,
+      speed: 0,
+      speedCombatStage: 0,
+      baseInitiative: orderEntry.hasExplicitInitiative ? (initiative ?? initiativeScore) : initiativeScore,
+      initiativeItemBonus: 0,
+      initiativeTrainingBonus: 0,
+      initiativeScore,
+    }
+  }
+
   const initiativeRows = computed<InitiativeRow[]>(() => {
     const placements = new Map((map.value?.placements ?? []).map((placement) => [placement.id, placement]))
-    return spawnedPokemon.value.map((pokemon) => {
+    const renderedIds = new Set<string>()
+    const rows: InitiativeRow[] = spawnedPokemon.value.map((pokemon): InitiativeRow => {
+      renderedIds.add(pokemon.id)
       const placement = placements.get(pokemon.id)
       const baseSpeed = baseSpeedForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const speedCombatStage = conditionAdjustedCombatStage(
@@ -203,7 +256,7 @@ export const useInitiativeTracker = ({
       const initiativeItemBonus = initiativeItemBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const initiativeTrainingBonus = initiativeTrainingBonusForPlacement(pokemon.sheetKind, pokemon.sheetSlug)
       const baseInitiative = speed + initiativeItemBonus + initiativeTrainingBonus
-      const initiative = normalizeInitiativeValue(placement?.initiative)
+      const initiative = normalizeInitiativeOrderValue(placement?.initiative)
       return {
         id: pokemon.id,
         name: pokemon.species,
@@ -229,16 +282,30 @@ export const useInitiativeTracker = ({
         ),
       }
     })
+
+    for (const placement of map.value?.placements ?? []) {
+      if (renderedIds.has(placement.id)) continue
+      rows.push(fallbackInitiativeRowForPlacement(
+        placement,
+        initiativeOrderEntryByPlacementId.value.get(placement.id),
+      ))
+    }
+
+    return rows
+  })
+
+  const initiativeOrderEntryForRow = (row: InitiativeRow): InitiativeOrderEntry => ({
+    id: row.id,
+    displayName: row.name,
+    hasExplicitInitiative: row.initiative !== null,
+    initiativeScore: row.initiativeScore,
   })
 
   const sortedInitiativeRows = computed<InitiativeRow[]>(() =>
-    [...initiativeRows.value].sort((a, b) => {
-      const aHasInitiative = a.initiative !== null
-      const bHasInitiative = b.initiative !== null
-      if (aHasInitiative !== bHasInitiative) return aHasInitiative ? -1 : 1
-      if (a.initiativeScore !== b.initiativeScore) return b.initiativeScore - a.initiativeScore
-      return a.name.localeCompare(b.name)
-    }),
+    [...initiativeRows.value].sort((left, right) => compareInitiativeOrderEntries(
+      initiativeOrderEntryForRow(left),
+      initiativeOrderEntryForRow(right),
+    )),
   )
 
   const validInitiativeIds = computed(() => new Set(initiativeRows.value.map((row) => row.id)))
@@ -248,7 +315,7 @@ export const useInitiativeTracker = ({
   })
   const initiativeRound = computed(() => normalizeInitiativeRound(map.value?.initiative?.round))
   const hasInitiativeValues = computed(() =>
-    (map.value?.placements ?? []).some((placement) => normalizeInitiativeValue(placement.initiative) !== null),
+    (map.value?.placements ?? []).some((placement) => normalizeInitiativeOrderValue(placement.initiative) !== null),
   )
 
   const livePlayInitiativeCommandsEnabled = () => interactionMode?.value === MAP_INTERACTION_MODES.LIVE_PLAY
@@ -258,6 +325,12 @@ export const useInitiativeTracker = ({
     void dispatchSetInitiative(payload)
     return true
   }
+
+  const visibleAdvancePrecondition = (): AdvanceInitiativePayload => ({
+    orderIds: sortedInitiativeRows.value.map((row) => row.id),
+    activeId: activeInitiativeId.value ?? null,
+    round: initiativeRound.value,
+  })
 
   const ensureInitiativeState = (): InitiativeTrackerState | null => {
     if (!map.value) return null
@@ -395,7 +468,7 @@ export const useInitiativeTracker = ({
 
   const nextInitiative = () => {
     if (!canManageInitiative.value) return
-    if (livePlayInitiativeCommandsEnabled() && dispatchNextInitiative) return dispatchNextInitiative()
+    if (livePlayInitiativeCommandsEnabled() && dispatchNextInitiative) return dispatchNextInitiative(visibleAdvancePrecondition())
     const order = sortedInitiativeRows.value
     if (!order.length) return
     const state = ensureInitiativeState()
@@ -414,7 +487,7 @@ export const useInitiativeTracker = ({
 
   const previousInitiative = () => {
     if (!canManageInitiative.value) return
-    if (livePlayInitiativeCommandsEnabled() && dispatchPreviousInitiative) return dispatchPreviousInitiative()
+    if (livePlayInitiativeCommandsEnabled() && dispatchPreviousInitiative) return dispatchPreviousInitiative(visibleAdvancePrecondition())
     const order = sortedInitiativeRows.value
     if (!order.length) return
     const state = ensureInitiativeState()

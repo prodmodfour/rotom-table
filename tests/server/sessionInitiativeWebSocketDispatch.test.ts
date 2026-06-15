@@ -221,7 +221,12 @@ const nextInitiativeCommandMessage = (): SessionCommandMessage<NextInitiativeCom
     opId: OP_ID,
     baseRevision: INITIAL_SESSION_REVISION,
     scopes: [createInitiativeCommandScope('arena-map')],
-    payload: { mapSlug: 'arena-map' },
+    payload: {
+      mapSlug: 'arena-map',
+      orderIds: ['token-pikachu', 'token-bulbasaur'],
+      activeId: 'token-pikachu',
+      round: 1,
+    },
     metadata: {
       traceId: 'trace-websocket-initiative',
     },

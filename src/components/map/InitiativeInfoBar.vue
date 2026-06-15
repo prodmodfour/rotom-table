@@ -19,6 +19,15 @@ const emit = defineEmits<{
 }>()
 
 const timeline = computed(() => splitInitiativeTimeline(props.rows, props.activeId, props.round))
+const controlsEnabled = computed(() => props.canManage)
+
+const emitPrevious = () => {
+  if (controlsEnabled.value) emit('previous')
+}
+
+const emitNext = () => {
+  if (controlsEnabled.value) emit('next')
+}
 
 const tileTitle = (entry: InitiativeRow): string =>
   `${entry.name} · Initiative ${entry.initiativeScore}`
@@ -56,10 +65,10 @@ const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefin
           <button
             type="button"
             class="initiative-info-bar__arrow"
-            :disabled="!canManage"
+            :disabled="!controlsEnabled"
             aria-label="Previous turn"
             title="Previous turn"
-            @click="emit('previous')"
+            @click="emitPrevious"
           >
             &lt;
           </button>
@@ -78,10 +87,10 @@ const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefin
           <button
             type="button"
             class="initiative-info-bar__arrow"
-            :disabled="!canManage"
+            :disabled="!controlsEnabled"
             aria-label="Next turn"
             title="Next turn"
-            @click="emit('next')"
+            @click="emitNext"
           >
             &gt;
           </button>

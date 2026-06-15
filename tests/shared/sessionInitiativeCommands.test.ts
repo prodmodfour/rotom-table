@@ -78,7 +78,12 @@ const createNextCommand = (
   opId: parseOpId('op_nextinitiative01'),
   baseRevision: parseSessionRevision(0),
   scopes: [createInitiativeCommandScope('arena-map')],
-  payload: { mapSlug: 'arena-map' },
+  payload: {
+    mapSlug: 'arena-map',
+    orderIds: ['token-pikachu', 'token-bulbasaur'],
+    activeId: 'token-pikachu',
+    round: 1,
+  },
   ...overrides,
 })
 
@@ -126,6 +131,12 @@ describe('session initiative commands', () => {
     expect(next.valid).toBe(true)
     if (!next.valid) throw new Error('expected valid nextInitiative')
     expect(next.mapSlug).toBe('arena-map')
+    expect(next.payload).toEqual({
+      mapSlug: 'arena-map',
+      orderIds: ['token-pikachu', 'token-bulbasaur'],
+      activeId: 'token-pikachu',
+      round: 1,
+    })
 
     const previous = validatePreviousInitiativeCommand({
       ...createNextCommand(),

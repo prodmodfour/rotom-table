@@ -260,7 +260,16 @@ export interface SetInitiativePayload {
   readonly round?: number
 }
 
-export type AdvanceInitiativePayload = Record<string, never>
+export interface AdvanceInitiativePayload {
+  /** Exact visible initiative bar order at the time the user clicked. */
+  readonly orderIds: readonly string[]
+  /** Client-visible active initiative placement id at click time. */
+  readonly activeId: string | null
+  /** Client-visible initiative round at click time. */
+  readonly round: number
+  /** Optional client/server order checksum for diagnostics. */
+  readonly orderFingerprint?: string
+}
 
 export type NextInitiativePayload = AdvanceInitiativePayload
 export type PreviousInitiativePayload = AdvanceInitiativePayload

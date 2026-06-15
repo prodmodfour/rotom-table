@@ -67,7 +67,7 @@ const playerActor: PlayerSessionActor = {
   displayName,
 }
 
-const createMap = (): TabletopMapV2 => ({
+const createMap = (overrides: Partial<TabletopMapV2> = {}): TabletopMapV2 => ({
   schemaVersion: 2,
   slug: 'arena-map',
   name: 'Arena Map',
@@ -101,9 +101,13 @@ const createMap = (): TabletopMapV2 => ({
   metadata: {},
   createdAt: 1_000,
   updatedAt: 1_000,
+  ...overrides,
 })
 
-const createState = (revision = 0): AuthoritativeSessionState<TabletopMapV2> => createAuthoritativeSessionState<TabletopMapV2>({
+const createState = (
+  revision = 0,
+  document: TabletopMapV2 = createMap(),
+): AuthoritativeSessionState<TabletopMapV2> => createAuthoritativeSessionState<TabletopMapV2>({
   sessionId,
   createdAt,
   updatedAt: createdAt,
@@ -113,7 +117,7 @@ const createState = (revision = 0): AuthoritativeSessionState<TabletopMapV2> => 
     createAuthoritativeSessionMapState<TabletopMapV2>({
       mapSlug: 'arena-map',
       revision: parseMapRevision(revision),
-      document: createMap(),
+      document,
     }),
   ],
   players: [
@@ -191,7 +195,26 @@ const createNextCommand = (
   opId: parseOpId('op_nextinituc001'),
   baseRevision: parseSessionRevision(0),
   scopes: [createInitiativeCommandScope('arena-map')],
-  payload: { mapSlug: 'arena-map' },
+  payload: {
+    mapSlug: 'arena-map',
+    orderIds: ['token-pikachu', 'token-bulbasaur'],
+    activeId: 'token-pikachu',
+    round: 1,
+  },
+  ...overrides,
+})
+
+const pokemonInitiativeSheet = (
+  slug: string,
+  speed: number,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> => ({
+  slug,
+  nickname: slug,
+  species: '',
+  level: 1,
+  stats: { spd: { base: speed } },
+  combat: { conditions: [] },
   ...overrides,
 })
 
@@ -323,6 +346,12 @@ describe('applyInitiativeCommandUseCase', () => {
       type: PREVIOUS_INITIATIVE_COMMAND_TYPE,
       opId: parseOpId('op_previnituc001'),
       baseRevision: parseSessionRevision(1),
+      payload: {
+        mapSlug: 'arena-map',
+        orderIds: ['token-pikachu', 'token-bulbasaur'],
+        activeId: 'token-bulbasaur',
+        round: 1,
+      },
     } as InitiativeCommand
     const previous = applyInitiativeCommandUseCase({
       command: previousCommand,
@@ -337,6 +366,141 @@ describe('applyInitiativeCommandUseCase', () => {
     expect(previous.status).toBe('accepted')
     if (previous.status !== 'accepted') throw new Error('expected previous accepted')
     expect(previous.initiative.initiative).toMatchObject({ activeId: 'token-pikachu', round: 1 })
+    expect(snapshotCalls).toHaveLength(2)
+  })
+
+  it('rejects session-hosted advance commands when their visible order precondition is stale', () => {
+    const document = createMap({
+      placements: [
+        { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'a', position: { x: 1, y: 0, z: 1 }, facing: 'south-east' },
+        { id: 'token-b', sheetKind: 'pokemon', sheetSlug: 'b', position: { x: 2, y: 0, z: 1 }, facing: 'south-east' },
+        { id: 'token-c', sheetKind: 'pokemon', sheetSlug: 'c', position: { x: 3, y: 0, z: 1 }, facing: 'south-east' },
+      ],
+      initiative: { activeId: 'token-a', round: 1 },
+    })
+    const store = createStoreWithState(createState(0, document))
+    const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
+    const readSheet = (_kind: 'pokemon' | 'trainer', slug: string) => ({
+      path: `/tmp/${slug}.json`,
+      sheet: pokemonInitiativeSheet(slug, slug === 'a' ? 30 : slug === 'c' ? 20 : 10),
+    })
+
+    const stale = applyInitiativeCommandUseCase({
+      command: createNextCommand({
+        opId: parseOpId('op_staleorduc1'),
+        payload: {
+          mapSlug: 'arena-map',
+          orderIds: ['token-a', 'token-b', 'token-c'],
+          activeId: 'token-a',
+          round: 1,
+        },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+      readSheet,
+    })
+
+    expect(stale.status).toBe('rejected')
+    if (stale.status !== 'rejected') throw new Error('expected stale rejection')
+    expect(stale.result).toMatchObject({
+      reason: 'stale',
+      currentRevision: parseSessionRevision(0),
+      currentState: {
+        mapSlug: 'arena-map',
+        initiative: { activeId: 'token-a', round: 1 },
+      },
+    })
+    expect(getSessionMapState(store.get(sessionId)!.state!, 'arena-map')?.document.initiative)
+      .toEqual({ activeId: 'token-a', round: 1 })
+    expect(snapshotCalls).toEqual([])
+  })
+
+  it('uses condition-adjusted Speed-derived effective order for session-hosted next and previous initiative', () => {
+    const document = createMap({
+      placements: [
+        {
+          id: 'token-alpha',
+          sheetKind: 'pokemon',
+          sheetSlug: 'alpha',
+          position: { x: 1, y: 0, z: 1 },
+          facing: 'south-east',
+        },
+        {
+          id: 'token-bravo',
+          sheetKind: 'pokemon',
+          sheetSlug: 'bravo',
+          position: { x: 2, y: 0, z: 1 },
+          facing: 'south-east',
+        },
+        {
+          id: 'token-zulu',
+          sheetKind: 'pokemon',
+          sheetSlug: 'zulu',
+          position: { x: 3, y: 0, z: 1 },
+          facing: 'south-east',
+        },
+      ],
+      initiative: { activeId: 'token-alpha', round: 1 },
+    })
+    const store = createStoreWithState(createState(0, document))
+    const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
+    const readSheet = (_kind: 'pokemon' | 'trainer', slug: string) => ({
+      path: `/tmp/${slug}.json`,
+      sheet: slug === 'alpha'
+        ? pokemonInitiativeSheet(slug, 30, { combat: { conditions: ['Paralysis'] } })
+        : pokemonInitiativeSheet(slug, slug === 'bravo' ? 20 : 10),
+    })
+
+    const next = applyInitiativeCommandUseCase({
+      command: createNextCommand({
+        payload: {
+          mapSlug: 'arena-map',
+          orderIds: ['token-bravo', 'token-alpha', 'token-zulu'],
+          activeId: 'token-alpha',
+          round: 1,
+        },
+      }),
+    }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => processedAt,
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+      readSheet,
+    })
+
+    expect(next.status).toBe('accepted')
+    if (next.status !== 'accepted') throw new Error('expected next accepted')
+    expect(next.initiative.initiative).toMatchObject({ activeId: 'token-zulu', round: 1 })
+
+    const previousCommand = {
+      ...createNextCommand(),
+      type: PREVIOUS_INITIATIVE_COMMAND_TYPE,
+      opId: parseOpId('op_effprevinit'),
+      baseRevision: parseSessionRevision(1),
+      payload: {
+        mapSlug: 'arena-map',
+        orderIds: ['token-bravo', 'token-alpha', 'token-zulu'],
+        activeId: 'token-zulu',
+        round: 1,
+      },
+    } as InitiativeCommand
+    const previous = applyInitiativeCommandUseCase({ command: previousCommand }, {
+      env: enabledEnv,
+      store,
+      operationTracker: false,
+      clock: () => '2026-05-26T18:00:06.000Z',
+      writeSnapshot: createSnapshotWriter(snapshotCalls),
+      readSheet,
+    })
+
+    expect(previous.status).toBe('accepted')
+    if (previous.status !== 'accepted') throw new Error('expected previous accepted')
+    expect(previous.initiative.initiative).toMatchObject({ activeId: 'token-alpha', round: 1 })
     expect(snapshotCalls).toHaveLength(2)
   })
 

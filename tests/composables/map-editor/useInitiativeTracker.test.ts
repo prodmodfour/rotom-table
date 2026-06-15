@@ -85,6 +85,54 @@ describe('useInitiativeTracker', () => {
     expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['normal', 'paralyzed'])
   })
 
+  it('uses a deterministic token id tie-breaker when display names and scores match', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'b-token', sheetKind: 'pokemon', sheetSlug: 'b-token', position: { x: 0, y: 0, z: 0 }, initiative: 20 },
+      { id: 'a-token', sheetKind: 'pokemon', sheetSlug: 'a-token', position: { x: 1, y: 0, z: 0 }, initiative: 20 },
+    ]))
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'b-token', sheetSlug: 'b-token', species: 'Clone' }),
+        token({ id: 'a-token', sheetSlug: 'a-token', species: 'Clone' }),
+      ]),
+      pokemonBySlug: ref(new Map([['b-token', sheet('b-token')], ['a-token', sheet('a-token')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+    })
+
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['a-token', 'b-token'])
+  })
+
+  it('adds deterministic fallback rows for placements that cannot hydrate into spawned tokens', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'a', position: { x: 0, y: 0, z: 0 }, initiative: 30 },
+      { id: 'token-b', sheetKind: 'pokemon', sheetSlug: 'missing', position: { x: 1, y: 0, z: 0 }, initiative: 20 },
+      { id: 'token-c', sheetKind: 'pokemon', sheetSlug: 'c', position: { x: 2, y: 0, z: 0 }, initiative: 10 },
+    ]))
+    map.value!.initiative = { activeId: 'token-a', round: 1 }
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'token-a', sheetSlug: 'a', species: 'A' }),
+        token({ id: 'token-c', sheetSlug: 'c', species: 'C' }),
+      ]),
+      pokemonBySlug: ref(new Map([['a', sheet('a')], ['c', sheet('c')]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+    })
+
+    expect(tracker.sortedInitiativeRows.value.map((row) => [row.id, row.name])).toEqual([
+      ['token-a', 'A'],
+      ['token-b', 'pokemon:missing'],
+      ['token-c', 'C'],
+    ])
+
+    tracker.nextInitiative()
+
+    expect(map.value?.initiative).toEqual({ activeId: 'token-b', round: 1 })
+  })
+
   it('does not halve paralyzed Quick Feet users in initiative order', () => {
     const map = ref<TabletopMap | null>(mapWithPlacements([
       { id: 'quick-feet', sheetKind: 'pokemon', sheetSlug: 'quick-feet', position: { x: 0, y: 0, z: 0 }, initiative: 40 },
@@ -317,11 +365,75 @@ describe('useInitiativeTracker', () => {
     expect(dispatchSetInitiative).toHaveBeenCalledWith({ activeId: 'live-token' })
     expect(dispatchSetInitiative).toHaveBeenCalledWith({ round: 3 })
     expect(dispatchSetInitiative).toHaveBeenCalledWith({ activeId: null })
-    expect(dispatchNextInitiative).toHaveBeenCalledTimes(1)
-    expect(dispatchPreviousInitiative).toHaveBeenCalledTimes(1)
+    expect(dispatchNextInitiative).toHaveBeenCalledWith({
+      orderIds: ['live-token', 'other-token'],
+      activeId: null,
+      round: 1,
+    })
+    expect(dispatchPreviousInitiative).toHaveBeenCalledWith({
+      orderIds: ['live-token', 'other-token'],
+      activeId: null,
+      round: 1,
+    })
     expect(map.value?.placements[0].initiative).toBe(12)
     expect(map.value?.placements[1].initiative).toBe(8)
     expect(map.value?.initiative).toEqual({ activeId: null, round: 1 })
+  })
+
+  it('uses reloaded sheet state for the next live-play initiative precondition after reconciliation', () => {
+    const map = ref<TabletopMap | null>(mapWithPlacements([
+      { id: 'token-a', sheetKind: 'pokemon', sheetSlug: 'alpha', position: { x: 0, y: 0, z: 0 }, initiative: 30 },
+      { id: 'token-b', sheetKind: 'pokemon', sheetSlug: 'bravo', position: { x: 1, y: 0, z: 0 }, initiative: 20 },
+      { id: 'token-c', sheetKind: 'pokemon', sheetSlug: 'charlie', position: { x: 2, y: 0, z: 0 }, initiative: 12 },
+    ]))
+    map.value!.initiative = { activeId: 'token-a', round: 1 }
+    const pokemonBySlug = ref(new Map([
+      ['alpha', sheet('alpha', { combat: { currentHp: 30, conditions: [] } })],
+      ['bravo', sheet('bravo', { combat: { currentHp: 30, conditions: [] } })],
+      ['charlie', sheet('charlie', { combat: { currentHp: 30, conditions: [] } })],
+    ]))
+    const spawned = computed(() => ['alpha', 'bravo', 'charlie'].map((slug, index) => {
+      const currentSheet = pokemonBySlug.value.get(slug)
+      return token({
+        id: `token-${String.fromCharCode(97 + index)}`,
+        sheetSlug: slug,
+        species: slug,
+        conditions: currentSheet?.combat?.conditions ?? [],
+      })
+    }))
+    const dispatchNextInitiative = vi.fn(async () => undefined)
+    const tracker = useInitiativeTracker({
+      map,
+      spawnedPokemon: spawned,
+      pokemonBySlug,
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canManageInitiative: computed(() => true),
+      interactionMode: computed(() => MAP_INTERACTION_MODES.LIVE_PLAY),
+      dispatchNextInitiative,
+    })
+
+    tracker.nextInitiative()
+    expect(dispatchNextInitiative).toHaveBeenLastCalledWith({
+      orderIds: ['token-a', 'token-b', 'token-c'],
+      activeId: 'token-a',
+      round: 1,
+    })
+
+    pokemonBySlug.value = new Map([
+      ['alpha', sheet('alpha', { combat: { currentHp: 30, conditions: ['Paralysis'] } })],
+      ['bravo', sheet('bravo', { combat: { currentHp: 30, conditions: [] } })],
+      ['charlie', sheet('charlie', { combat: { currentHp: 30, conditions: [] } })],
+    ])
+    dispatchNextInitiative.mockClear()
+
+    expect(tracker.sortedInitiativeRows.value.map((row) => row.id)).toEqual(['token-b', 'token-a', 'token-c'])
+    tracker.nextInitiative()
+
+    expect(dispatchNextInitiative).toHaveBeenCalledWith({
+      orderIds: ['token-b', 'token-a', 'token-c'],
+      activeId: 'token-a',
+      round: 1,
+    })
   })
 
   it('does not mutate initiative state without manage permission', () => {

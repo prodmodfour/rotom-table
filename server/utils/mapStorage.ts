@@ -22,6 +22,7 @@ import {
   slugify as slugifyMapBase,
 } from './mapPaths'
 import { summarizeMap, sortMapSummaries } from './mapSummaries'
+import { sqliteMapRepository, type MapRepository, type StoredMapDocument } from '../storage/mapRepository'
 
 /** Walk `data/maps/` recursively, return the first `<slug>.json` match. */
 export const findMapFile = (slug: string): string | null =>
@@ -113,23 +114,45 @@ export const retargetMapSheetPlacements = (
   return updated
 }
 
-export const playerVisibleMapSheetAccessKeys = (): Set<`${SheetKind}:${string}`> => {
+const addPlayerVisibleMapSheetAccessKeys = (
+  keys: Set<`${SheetKind}:${string}`>,
+  map: TabletopMap,
+): void => {
+  if (map.playerVisible !== true) return
+  for (const placement of map.placements ?? []) {
+    keys.add(`${placement.sheetKind}:${placement.sheetSlug}`)
+  }
+}
+
+const storedMapDocumentToTabletopMap = (
+  stored: StoredMapDocument<unknown>,
+): TabletopMap => normalizeMapDocument(stored.document, { sourceLabel: `SQLite map ${stored.slug}` })
+
+const playerVisibleMapSheetAccessKeysFromFiles = (): Set<`${SheetKind}:${string}`> => {
   const keys = new Set<`${SheetKind}:${string}`>()
   for (const full of walkFiles(MAPS_ROOT, (entry) => entry.name.endsWith('.json'))) {
-    let map: TabletopMap
     try {
-      map = readMapFile(full)
+      addPlayerVisibleMapSheetAccessKeys(keys, readMapFile(full))
     } catch (err) {
       console.warn('[maps] failed to collect player-visible sheet access in', full, err)
-      continue
-    }
-
-    if (map.playerVisible !== true) continue
-    for (const placement of map.placements ?? []) {
-      keys.add(`${placement.sheetKind}:${placement.sheetSlug}`)
     }
   }
   return keys
+}
+
+export const playerVisibleMapSheetAccessKeys = (
+  mapRepository: Pick<MapRepository<unknown>, 'list'> = sqliteMapRepository,
+): Set<`${SheetKind}:${string}`> => {
+  const keys = new Set<`${SheetKind}:${string}`>()
+  try {
+    for (const stored of mapRepository.list()) {
+      addPlayerVisibleMapSheetAccessKeys(keys, storedMapDocumentToTabletopMap(stored as StoredMapDocument<unknown>))
+    }
+    return keys
+  } catch (err) {
+    console.warn('[maps] failed to collect SQLite player-visible sheet access; falling back to map files', err)
+    return playerVisibleMapSheetAccessKeysFromFiles()
+  }
 }
 
 export const allocateSlug = (base: string): string => {

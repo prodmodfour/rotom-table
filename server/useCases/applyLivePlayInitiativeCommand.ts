@@ -4,6 +4,7 @@ import {
   LIVE_PLAY_INITIATIVE_MAX_VALUE,
   LIVE_PLAY_INITIATIVE_MIN_VALUE,
   LIVE_PLAY_PATCH_TYPES,
+  type AdvanceInitiativePayload,
   type LivePlayCommandAccepted,
   type LivePlayCommandResult,
   type LivePlayInitiativeCommand,
@@ -16,7 +17,7 @@ import {
 } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
-import type { InitiativeTrackerState, SheetPlacement, TabletopMap } from '~/types/map'
+import type { InitiativeTrackerState, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import {
   appendInitiativeLogRecord,
   createInitiativeLogEntry,
@@ -28,11 +29,16 @@ import {
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import {
+  sqliteSheetRepository,
+  type SheetRepository,
+} from '../storage/sheetRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
 import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { initiativeOrderIdsForPlacements, type InitiativeSheetReader } from '~/utils/initiativeOrderEntries'
 import type { RealtimeEvent } from '#shared/realtime'
 import { toPersistedMap } from './saveMap'
 
@@ -84,7 +90,9 @@ export interface LivePlayInitiativeCommandResponse {
 export interface LivePlayInitiativeCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
+  readonly sheetRepository?: InitiativeSheetRepository
   readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
+  readonly readSheet?: InitiativeSheetReader
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
   readonly maxInitiativeLogEntries?: number
@@ -104,6 +112,7 @@ interface AppliedInitiativeChange {
 }
 
 type UnknownRecord = Record<string, unknown>
+type InitiativeSheetRepository = Pick<SheetRepository<Record<string, unknown>>, 'get'>
 type LivePlayInitiativeDependencySet = ReturnType<typeof actionDependencies>
 
 const livePlayInitiativeCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
@@ -114,14 +123,27 @@ const initiativeCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
 ])
 
-const actionDependencies = (dependencies: LivePlayInitiativeCommandDependencies) => ({
-  commandExecutor: dependencies.commandExecutor ?? livePlayInitiativeCommandExecutor,
-  mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
-  publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
-  now: dependencies.now ?? Date.now,
-  relativePath: dependencies.relativePath ?? campaignPathLabel,
-  maxInitiativeLogEntries: dependencies.maxInitiativeLogEntries,
-})
+const initiativeSheetReaderFromRepository = (
+  repository: InitiativeSheetRepository,
+): InitiativeSheetReader => (kind: SheetKind, slug: string) => {
+  const result = repository.get(kind, slug)
+  if (result === null) return null
+  return { sheet: result.document as Record<string, unknown> }
+}
+
+const actionDependencies = (dependencies: LivePlayInitiativeCommandDependencies) => {
+  const sheetRepository = dependencies.sheetRepository ?? (sqliteSheetRepository as InitiativeSheetRepository)
+  return {
+    commandExecutor: dependencies.commandExecutor ?? livePlayInitiativeCommandExecutor,
+    mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
+    sheetRepository,
+    publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
+    readSheet: dependencies.readSheet ?? initiativeSheetReaderFromRepository(sheetRepository),
+    now: dependencies.now ?? Date.now,
+    relativePath: dependencies.relativePath ?? campaignPathLabel,
+    maxInitiativeLogEntries: dependencies.maxInitiativeLogEntries,
+  }
+}
 
 const isRecord = (value: unknown): value is UnknownRecord => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -274,8 +296,60 @@ const expectSetInitiativePayload = (payload: unknown): SetInitiativePayload => {
   }
 }
 
-const expectAdvanceInitiativePayload = (payload: unknown): void => {
+const duplicateString = (values: readonly string[]): string | null => {
+  const seen = new Set<string>()
+  for (const value of values) {
+    if (seen.has(value)) return value
+    seen.add(value)
+  }
+  return null
+}
+
+const expectAdvanceInitiativePayload = (payload: unknown): AdvanceInitiativePayload => {
   if (!isRecord(payload)) rejectLivePlayCommand('invalid', 'initiative advance payload must be an object')
+  const record = payload as UnknownRecord
+
+  if (!Array.isArray(record.orderIds)) {
+    rejectLivePlayCommand('invalid', 'initiative advance payload.orderIds must be the visible initiative order')
+  }
+
+  const rawOrderIds = record.orderIds as unknown[]
+  const orderIds = rawOrderIds.map((value: unknown, index: number) => {
+    if (!nonEmptyString(value)) {
+      rejectLivePlayCommand('invalid', `initiative advance payload.orderIds[${index}] must be a non-empty token ID string`)
+    }
+    return value as string
+  })
+  const duplicateOrderId = duplicateString(orderIds)
+  if (duplicateOrderId) {
+    rejectLivePlayCommand('invalid', `initiative advance payload.orderIds must not contain duplicate token ID ${duplicateOrderId}`)
+  }
+
+  if (!hasOwn(record, 'activeId')) {
+    rejectLivePlayCommand('invalid', 'initiative advance payload.activeId is required')
+  }
+  if (record.activeId !== null && !nonEmptyString(record.activeId)) {
+    rejectLivePlayCommand('invalid', 'initiative advance payload.activeId must be a non-empty token ID string or null')
+  }
+
+  if (!safeInteger(record.round) || record.round < 1) {
+    rejectLivePlayCommand('invalid', 'initiative advance payload.round must be a safe integer greater than or equal to 1')
+  }
+
+  if (hasOwn(record, 'orderFingerprint') && typeof record.orderFingerprint !== 'string') {
+    rejectLivePlayCommand('invalid', 'initiative advance payload.orderFingerprint must be a string when provided')
+  }
+
+  const orderFingerprint = typeof record.orderFingerprint === 'string'
+    ? record.orderFingerprint
+    : undefined
+
+  return {
+    orderIds,
+    activeId: record.activeId === null ? null : (record.activeId as string),
+    round: record.round as number,
+    ...(orderFingerprint === undefined ? {} : { orderFingerprint }),
+  }
 }
 
 const assertInitiativeCommandType = (
@@ -290,11 +364,10 @@ const assertInitiativeCommandType = (
   }
 }
 
-const validateCommandPayloadAndScopes = (command: LivePlayInitiativeCommand): SetInitiativePayload | undefined => {
+const validateCommandPayloadAndScopes = (command: LivePlayInitiativeCommand): SetInitiativePayload | AdvanceInitiativePayload => {
   expectInitiativeScope(command)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE) return expectSetInitiativePayload(command.payload)
-  expectAdvanceInitiativePayload(command.payload)
-  return undefined
+  return expectAdvanceInitiativePayload(command.payload)
 }
 
 const uniquePlacement = (
@@ -309,18 +382,70 @@ const uniquePlacement = (
   return rejectLivePlayCommand('conflict', `Placement ${tokenId} has duplicate entries on this map`)
 }
 
-const initiativeOrder = (placements: readonly SheetPlacement[]): readonly string[] =>
-  [...placements]
-    .sort((left, right) => {
-      const leftInitiative = normalizePlacementInitiative(left.initiative)
-      const rightInitiative = normalizePlacementInitiative(right.initiative)
-      const leftHasInitiative = leftInitiative !== null
-      const rightHasInitiative = rightInitiative !== null
-      if (leftHasInitiative !== rightHasInitiative) return leftHasInitiative ? -1 : 1
-      if (leftInitiative !== rightInitiative) return (rightInitiative ?? 0) - (leftInitiative ?? 0)
-      return `${left.sheetKind}:${left.sheetSlug}:${left.id}`.localeCompare(`${right.sheetKind}:${right.sheetSlug}:${right.id}`)
+const initiativeOrder = (
+  placements: readonly SheetPlacement[],
+  readSheet: InitiativeSheetReader,
+): readonly string[] => initiativeOrderIdsForPlacements(placements, readSheet)
+
+const sameStringArray = (left: readonly string[], right: readonly string[]): boolean => (
+  left.length === right.length && left.every((value, index) => value === right[index])
+)
+
+const rejectStaleAdvancePrecondition = (
+  message: string,
+  context: ResolvedInitiativeContext,
+  orderIds: readonly string[],
+): never => rejectLivePlayCommand('stale-revision', message, {
+  currentState: {
+    initiative: initiativeLaneState(context.map),
+    orderIds: [...orderIds],
+  },
+})
+
+const assertAdvancePrecondition = (
+  command: NextInitiativeLivePlayCommand | PreviousInitiativeLivePlayCommand,
+  payload: AdvanceInitiativePayload,
+  context: ResolvedInitiativeContext,
+  readSheet: InitiativeSheetReader,
+): readonly string[] => {
+  const authoritativeOrder = initiativeOrder(context.map.placements, readSheet)
+  const duplicateAuthoritativeId = duplicateString(authoritativeOrder)
+  if (duplicateAuthoritativeId) {
+    rejectLivePlayCommand('conflict', `Authoritative initiative order contains duplicate placement ID ${duplicateAuthoritativeId}`, {
+      currentState: {
+        initiative: initiativeLaneState(context.map),
+        orderIds: [...authoritativeOrder],
+      },
     })
-    .map((placement) => placement.id)
+  }
+
+  const authoritativeState = initiativeLaneState(context.map)
+  if (!sameStringArray(payload.orderIds, authoritativeOrder)) {
+    rejectStaleAdvancePrecondition(
+      `${command.type} was based on a stale visible initiative order; refresh before advancing initiative.`,
+      context,
+      authoritativeOrder,
+    )
+  }
+
+  if (payload.activeId !== authoritativeState.activeId) {
+    rejectStaleAdvancePrecondition(
+      `${command.type} was based on stale active initiative state; refresh before advancing initiative.`,
+      context,
+      authoritativeOrder,
+    )
+  }
+
+  if (payload.round !== authoritativeState.round) {
+    rejectStaleAdvancePrecondition(
+      `${command.type} was based on stale initiative round state; refresh before advancing initiative.`,
+      context,
+      authoritativeOrder,
+    )
+  }
+
+  return authoritativeOrder
+}
 
 const applySetInitiativePayload = (
   command: SetInitiativeLivePlayCommand,
@@ -365,10 +490,12 @@ const applySetInitiativePayload = (
 
 const applyAdvanceInitiativePayload = (
   command: NextInitiativeLivePlayCommand | PreviousInitiativeLivePlayCommand,
+  payload: AdvanceInitiativePayload,
   context: ResolvedInitiativeContext,
   timestamp: number,
+  readSheet: InitiativeSheetReader,
 ): TabletopMap => {
-  const order = initiativeOrder(context.map.placements)
+  const order = assertAdvancePrecondition(command, payload, context, readSheet)
   if (order.length === 0) {
     rejectLivePlayCommand('conflict', `Map ${command.mapSlug} has no placements in initiative order`, {
       currentState: initiativeLaneState(context.map),
@@ -454,13 +581,19 @@ const mapWithInitiativeLogEntry = (
 const applyInitiativeChange = (
   command: LivePlayInitiativeCommand,
   context: ResolvedInitiativeContext,
-  dependencies: Pick<LivePlayInitiativeDependencySet, 'now' | 'maxInitiativeLogEntries'>,
+  dependencies: Pick<LivePlayInitiativeDependencySet, 'now' | 'maxInitiativeLogEntries' | 'readSheet'>,
 ): AppliedInitiativeChange => {
   const previous = initiativeLaneState(context.map)
   const timestamp = dependencies.now()
   const changedMap = command.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
     ? applySetInitiativePayload(command, expectSetInitiativePayload(command.payload), context, timestamp)
-    : applyAdvanceInitiativePayload(command, context, timestamp)
+    : applyAdvanceInitiativePayload(
+        command,
+        expectAdvanceInitiativePayload(command.payload),
+        context,
+        timestamp,
+        dependencies.readSheet,
+      )
   const current = initiativeLaneState(changedMap)
 
   if (initiativeLaneStatesEqual(previous, current)) {

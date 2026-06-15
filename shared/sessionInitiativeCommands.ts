@@ -46,6 +46,14 @@ export interface SetInitiativeCommandPayload {
 export interface AdvanceInitiativeCommandPayload {
   /** Optional map target. When omitted, the server uses the initiative scope map or selected session map. */
   readonly mapSlug?: string
+  /** Exact visible initiative bar order at the time the user clicked. */
+  readonly orderIds: readonly string[]
+  /** Client-visible active initiative placement id at click time. */
+  readonly activeId: string | null
+  /** Client-visible initiative round at click time. */
+  readonly round: number
+  /** Optional client/server order checksum for diagnostics. */
+  readonly orderFingerprint?: string
 }
 
 export type NextInitiativeCommandPayload = AdvanceInitiativeCommandPayload
@@ -96,6 +104,7 @@ export const INITIATIVE_COMMAND_VALIDATION_CODES = [
   'invalid-initiative',
   'invalid-active-id',
   'invalid-round',
+  'invalid-order',
   'invalid-initiative-scope',
   'permission-denied',
 ] as const
@@ -137,6 +146,7 @@ const EXPECTED_NON_EMPTY_STRING = 'non-empty string'
 const EXPECTED_SAFE_INTEGER = 'safe integer'
 const EXPECTED_ROUND = 'safe integer >= 1'
 const EXPECTED_INITIATIVE_VALUE = `${INITIATIVE_MIN_VALUE}..${INITIATIVE_MAX_VALUE} integer or null`
+const EXPECTED_ORDER_IDS = 'array of non-empty token ID strings'
 
 const hasOwn = (record: object, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
@@ -187,6 +197,10 @@ const cloneSetPayload = (payload: SetInitiativeCommandPayload): SetInitiativeCom
 
 const cloneAdvancePayload = (payload: AdvanceInitiativeCommandPayload): AdvanceInitiativeCommandPayload => ({
   ...(payload.mapSlug === undefined ? {} : { mapSlug: payload.mapSlug }),
+  orderIds: [...payload.orderIds],
+  activeId: payload.activeId,
+  round: payload.round,
+  ...(payload.orderFingerprint === undefined ? {} : { orderFingerprint: payload.orderFingerprint }),
 })
 
 export const isInitiativeCommandType = (value: unknown): value is InitiativeCommandType =>
@@ -341,8 +355,95 @@ const collectAdvancePayloadIssues = (
   }
 
   const mapSlug = collectPayloadMapSlugIssue(payload, issues)
+
+  if (!Array.isArray(payload.orderIds)) {
+    addIssue(
+      issues,
+      'payload.orderIds',
+      'invalid-order',
+      `${commandLabel} payload.orderIds must be the visible initiative order.`,
+      EXPECTED_ORDER_IDS,
+      payload.orderIds,
+    )
+  } else {
+    const seenOrderIds = new Set<string>()
+    payload.orderIds.forEach((id, index) => {
+      if (!isNonEmptyString(id)) {
+        addIssue(
+          issues,
+          `payload.orderIds[${index}]`,
+          'invalid-order',
+          `${commandLabel} payload.orderIds[${index}] must be a non-empty token ID string.`,
+          EXPECTED_NON_EMPTY_STRING,
+          id,
+        )
+        return
+      }
+      if (seenOrderIds.has(id)) {
+        addIssue(
+          issues,
+          `payload.orderIds[${index}]`,
+          'invalid-order',
+          `${commandLabel} payload.orderIds must not contain duplicate token IDs.`,
+          'unique token ID',
+          id,
+        )
+        return
+      }
+      seenOrderIds.add(id)
+    })
+  }
+
+  if (!hasOwn(payload, 'activeId')) {
+    addIssue(
+      issues,
+      'payload.activeId',
+      'invalid-active-id',
+      `${commandLabel} payload.activeId is required and must be a token ID string or null.`,
+      'non-empty string or null',
+      payload.activeId,
+    )
+  } else if (payload.activeId !== null && !isNonEmptyString(payload.activeId)) {
+    addIssue(
+      issues,
+      'payload.activeId',
+      'invalid-active-id',
+      `${commandLabel} payload.activeId must be a non-empty token ID string or null.`,
+      'non-empty string or null',
+      payload.activeId,
+    )
+  }
+
+  if (!(isSafeInteger(payload.round) && payload.round >= 1)) {
+    addIssue(
+      issues,
+      'payload.round',
+      'invalid-round',
+      `${commandLabel} payload.round must be a safe integer greater than or equal to 1.`,
+      EXPECTED_ROUND,
+      payload.round,
+    )
+  }
+
+  if (hasOwn(payload, 'orderFingerprint') && typeof payload.orderFingerprint !== 'string') {
+    addIssue(
+      issues,
+      'payload.orderFingerprint',
+      'invalid-order',
+      `${commandLabel} payload.orderFingerprint must be a string when provided.`,
+      'string',
+      payload.orderFingerprint,
+    )
+  }
+
   if (issues.some((issue) => issue.path.startsWith('payload'))) return undefined
-  return cloneAdvancePayload({ ...(mapSlug === undefined ? {} : { mapSlug }) })
+  return cloneAdvancePayload({
+    ...(mapSlug === undefined ? {} : { mapSlug }),
+    orderIds: payload.orderIds as string[],
+    activeId: payload.activeId as string | null,
+    round: payload.round as number,
+    ...(payload.orderFingerprint === undefined ? {} : { orderFingerprint: payload.orderFingerprint as string }),
+  })
 }
 
 const findInitiativeScopeMapSlug = (
