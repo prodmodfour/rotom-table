@@ -10,6 +10,7 @@ import {
   type MapActionEventPayloadByKind,
   type MapActionMoveAnimationsPayload,
   type MapActionMoveFeedbackPayload,
+  type MapActionPokeballResultPayload,
 } from '#shared/mapActionEvents'
 import { mapChannel, type RealtimeEvent } from '#shared/realtime'
 
@@ -61,6 +62,54 @@ const moveAnimationEvent = {
   durationMs: 600,
   startOffsetMs: 200,
 } satisfies MapActionMoveAnimationsPayload['events'][number]
+
+const captureResult = {
+  id: 'capture-actor-1-target-1-100',
+  trainerId: 'actor-1',
+  trainerName: 'Lenora',
+  targetId: 'target-1',
+  targetName: 'Pidgey',
+  targetSpecies: 'Pidgey',
+  targetSpriteUrl: '/pidgey.png',
+  pokeballName: 'Basic Ball',
+  success: false,
+  hit: true,
+  shakeCount: 2,
+  accuracyRoll: 17,
+  modifiedAccuracyRoll: 18,
+  accuracyCheck: 6,
+  userAccuracy: 1,
+  targetEvasion: 0,
+  targetEvasionLabel: 'Evasion 0',
+  captureRoll: 72,
+  adjustedCaptureRoll: 72,
+  captureRate: 55,
+  naturalTwentyCaptureBonus: 0,
+  naturalCaptureSuccess: false,
+  failureReason: 'The Pokémon broke free.',
+  breakdown: {
+    captureRate: 55,
+    captureRateLines: [{ label: 'Base', value: 100 }, { label: 'Target Level 20 × 2', value: -40 }],
+    rollModifier: 0,
+    rollModifierLines: [{ label: 'Basic Ball modifier', value: 0 }],
+    hitChance: {
+      targetId: 'target-1',
+      percent: 45,
+      label: '45%',
+      tone: 'low',
+      title: '45% to hit and capture.',
+    },
+    captureChance: 55,
+    captureChanceLabel: '55%',
+    naturalTwentyCaptureChance: 65,
+    naturalTwentyCaptureChanceLabel: '65%',
+    combinedChance: 45,
+    combinedChanceLabel: '45%',
+    capturable: true,
+    uncatchableReason: null,
+    notes: ['Conditional ball modifiers were not inferred.'],
+  },
+} satisfies NonNullable<MapActionPokeballResultPayload['result']>
 
 const mapActionEvent = <Kind extends MapActionEventKind>(
   kind: Kind,
@@ -300,6 +349,35 @@ describe('useMapActionEventSync', () => {
     expect(handlers.onPokeballResult).toHaveBeenCalledTimes(2)
     expect(handlers.onPokeballResult).toHaveBeenNthCalledWith(1, pokeballResult)
     expect(handlers.onPokeballResult).toHaveBeenNthCalledWith(2, pokeballResultUnique)
+  })
+
+  it('publishes pokeball-result events with the full capture result payload', async () => {
+    const sync = useMapActionEventSync({
+      slug: 'arena',
+      clientId: 'local-client',
+      wallClockNow: () => 1_700_000_555_000,
+    })
+
+    await sync.publishPokeballResult({
+      actorPlacementId: 'actor-1',
+      eventId: 'event-capture-result',
+      result: captureResult,
+      error: null,
+    })
+
+    expect(mocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.actionEvent, expect.objectContaining({
+      slug: 'arena',
+      event: {
+        schemaVersion: MAP_ACTION_EVENT_SCHEMA_VERSION,
+        id: 'event-capture-result',
+        kind: 'pokeball-result',
+        actorPlacementId: 'actor-1',
+        sourceClientId: 'local-client',
+        createdAt: 1_700_000_555_000,
+        payload: { result: captureResult, error: null },
+      },
+    }))
+    expect(mocks.postJson.mock.calls[0]?.[1].event.payload.result).toBe(captureResult)
   })
 
   it('uses reactive slug/profile values when publishing future local events', async () => {

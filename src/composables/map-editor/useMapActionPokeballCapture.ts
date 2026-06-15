@@ -123,9 +123,13 @@ export const useMapActionPokeballCapture = (options: UseMapActionPokeballCapture
     }
   }
 
-  const clearRemotePokeballCapture = () => {
+  const clearRemotePokeballCaptureFeedback = () => {
     clearRemoteFeedbackTimers()
     remotePokeballCaptureFeedback.value = null
+  }
+
+  const clearRemotePokeballCapture = () => {
+    clearRemotePokeballCaptureFeedback()
     remotePokeballCaptureResult.value = null
     remotePokeballCaptureError.value = null
   }
@@ -207,8 +211,7 @@ export const useMapActionPokeballCapture = (options: UseMapActionPokeballCapture
     readonly result: PokeballCaptureAttemptResult | null
     readonly error?: string | null
   }) => {
-    clearRemoteFeedbackTimers()
-    remotePokeballCaptureFeedback.value = null
+    clearRemotePokeballCaptureFeedback()
     remotePokeballCaptureResult.value = payload.result?.hit ? payload.result : null
     remotePokeballCaptureError.value = payload.error ?? (
       payload.result && !payload.result.hit
@@ -251,6 +254,7 @@ export const useMapActionPokeballCapture = (options: UseMapActionPokeballCapture
     broadcastPokeballResult,
     replayPokeballResult,
     clearRemotePokeballCapture,
+    clearRemotePokeballCaptureFeedback,
     dismissRemotePokeballCaptureResult,
   }
 }

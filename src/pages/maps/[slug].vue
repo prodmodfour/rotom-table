@@ -792,6 +792,7 @@ const {
   broadcastPokeballResult,
   replayPokeballResult,
   clearRemotePokeballCapture,
+  clearRemotePokeballCaptureFeedback,
   dismissRemotePokeballCaptureResult,
 } = useMapActionPokeballCapture({
   enqueueAndBroadcastMoveAnimations,
@@ -833,7 +834,8 @@ publishSyncedPokeballResult = (request) => mapActionEventSync.publishPokeballRes
 
 watch(mapDataRevision, () => {
   clearRemoteMoveFeedback()
-  clearRemotePokeballCapture()
+  if (remotePokeballCaptureResult.value) clearRemotePokeballCaptureFeedback()
+  else clearRemotePokeballCapture()
 })
 
 onBeforeUnmount(() => {
@@ -1548,6 +1550,7 @@ useMapDimensionReconciliation({
     <template #modals>
       <PokeballCaptureResultModal
         v-if="displayedPokeballCaptureResult"
+        :key="displayedPokeballCaptureResult.id"
         :result="displayedPokeballCaptureResult"
         :accent-color="pokeballCaptureTrainerAccentColor"
         @close="dismissDisplayedPokeballCaptureResult"
