@@ -26,6 +26,20 @@ STRUGGLE_EXPERT_NOTE = (
     "If the user has Combat Skill Rank Expert or higher, use AC 3 and Damage Base 5 instead."
 )
 
+# Move descriptions use more than one heading in the source books. Most moves
+# use plain ``Effect:``, while Set-Up moves often split their text into labels
+# such as ``Set-Up Effect:`` and ``Resolution Effect:``. Keep the parser open to
+# future move-local ``... Effect:`` headings without treating contest metadata as
+# move description text.
+MOVE_EFFECT_LABEL_RE = re.compile(
+    r"^(?P<label>Effect|(?:[A-Za-z][A-Za-z’'/-]*(?:\s+[A-Za-z][A-Za-z’'/-]*)*)\s+Effect):\s*(?P<text>.*)$"
+)
+EFFECT_LABEL_EXCLUSIONS = {"Contest Effect", "Area of Effect"}
+EFFECT_STOP_RE = re.compile(
+    r"^(?:Contest\b|Special:|Move:|Ability:|Feature:|Edge:|## Page|New\b)"
+)
+MERGEABLE_SHADOW_FIELDS = ("effect", "special")
+
 
 def _struggle_variant(
     name: str,
@@ -123,6 +137,75 @@ MANUAL_MOVE_PATCHES = {
 }
 
 
+def _effect_label(line: str) -> tuple[str, str] | None:
+    match = MOVE_EFFECT_LABEL_RE.match(line)
+    if not match:
+        return None
+
+    label = match.group("label").strip()
+    if label in EFFECT_LABEL_EXCLUSIONS:
+        return None
+
+    return label, match.group("text").strip()
+
+
+def _normalize_continuation_text(parts: list[str]) -> str:
+    text = "\n".join(parts).strip()
+    return re.sub(r"\s*\n\s*", " ", text)
+
+
+def _format_effect_parts(parts: list[tuple[str, str]]) -> str | None:
+    if not parts:
+        return None
+
+    if len(parts) == 1 and parts[0][0] == "Effect":
+        return parts[0][1]
+
+    return " ".join(
+        f"{label}: {text}" if text else f"{label}:"
+        for label, text in parts
+    )
+
+
+def _extract_effect(body: str) -> str | None:
+    lines = body.splitlines()
+    parts: list[tuple[str, str]] = []
+    index = 0
+
+    while index < len(lines):
+        if EFFECT_STOP_RE.match(lines[index]):
+            break
+
+        parsed_label = _effect_label(lines[index])
+        if not parsed_label:
+            index += 1
+            continue
+
+        label, first_line = parsed_label
+        text_parts = [first_line] if first_line else []
+        index += 1
+
+        while index < len(lines):
+            line = lines[index]
+            if EFFECT_STOP_RE.match(line) or _effect_label(line):
+                break
+            text_parts.append(line)
+            index += 1
+
+        parts.append((label, _normalize_continuation_text(text_parts)))
+
+    return _format_effect_parts(parts)
+
+
+def _merge_missing_shadow_fields(target: dict, lower_priority_move: dict) -> list[str]:
+    merged: list[str] = []
+    for field in MERGEABLE_SHADOW_FIELDS:
+        if target.get(field) is None and lower_priority_move.get(field) is not None:
+            target[field] = lower_priority_move[field]
+            merged.append(field)
+    return merged
+
+
 def _parse_blocks(text: str) -> dict[str, dict]:
     moves: dict[str, dict] = {}
     # Split on "Move: " at the start of a line.
@@ -177,15 +260,9 @@ def _parse_blocks(text: str) -> dict[str, dict]:
         if m:
             move["range"] = m.group(1).strip()
 
-        # Effect — may span multiple lines.
-        m = re.search(
-            r"^Effect:\s*([\s\S]+?)(?:^Contest|^Special:|^Move:|^Ability:|^## Page|^New |\Z)",
-            body,
-            re.MULTILINE,
-        )
-        if m:
-            effect = m.group(1).strip()
-            effect = re.sub(r"\s*\n\s*", " ", effect)
+        # Effect — may span multiple labelled parts.
+        effect = _extract_effect(body)
+        if effect is not None:
             move["effect"] = effect
 
         # Special — may appear before or after Contest lines and may span lines.
@@ -237,8 +314,10 @@ def parse_moves(verbose: bool = False) -> dict[str, dict]:
                 added += 1
             else:
                 shadowed += 1
+                merged_fields = _merge_missing_shadow_fields(moves[name], move)
                 if verbose:
-                    print(f"  [shadowed] {name}: kept {provenance[name]}, dropped {label}")
+                    merged_note = f"; filled missing {', '.join(merged_fields)}" if merged_fields else ""
+                    print(f"  [shadowed] {name}: kept {provenance[name]}, dropped {label}{merged_note}")
         print(f"  {label}: +{added} new, {shadowed} shadowed by higher-priority source")
 
     for name, move in MANUAL_MOVE_PATCHES.items():

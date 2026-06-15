@@ -895,7 +895,8 @@
     "damage_base": 12,
     "damage_roll": "3d12+10 / 30",
     "damage_class": "Special",
-    "range": "Cone 3, Set-Up"
+    "range": "Cone 3, Set-Up",
+    "effect": "Set-Up Effect: The user’s Special Attack is raised by +1 Combat Stage. Resolution Effect: The user attacks with Meteor Beam."
   },
   "Tar Shot": {
     "name": "Tar Shot",
@@ -1390,7 +1391,7 @@
     "damage_roll": "4d10+10 / 35",
     "damage_class": "Physical",
     "range": "Melee, 1 Target, Set Up",
-    "effect": "The user attacks with Solar Blade. If the weather is Rainy, Sandstorming, or Hailing, Solar Blade’s Damage Base is lowered to 6 (2d6+8 / 15)."
+    "effect": "Set-Up Effect: If the weather is not Sunny, the user gains +1 Combat Stage in Attack and Special Defense, and the user’s turn ends. If the weather is Sunny, immediately proceed to the Resolution Effect instead and this Move loses the Set-Up keyword. Effect: The user attacks with Solar Blade. If the weather is Rainy, Sandstorming, or Hailing, Solar Blade’s Damage Base is lowered to 6 (2d6+8 / 15)."
   },
   "Strength Sap": {
     "name": "Strength Sap",
@@ -1737,7 +1738,8 @@
     "damage_base": 2,
     "damage_roll": "1d6+3 / 7",
     "damage_class": "Special",
-    "range": "6, 1 Target, Five Strike, Priority"
+    "range": "6, 1 Target, Five Strike, Priority",
+    "effect": "None"
   },
   "Hold Hands": {
     "name": "Hold Hands",
@@ -1785,8 +1787,7 @@
     "type": "Next is the Elemental Type of the Move. There",
     "damage_base": null,
     "damage_class": "Class will denote whether the attack is Physical,",
-    "range": "Range specifies the distance in meters from",
-    "effect": "The Effect lists what the attack does in addition to the Move’s damage. Certain effects will only occur if, during Accuracy Roll, a certain number or higher is rolled. Effects do not activate unless the Move hits. Effect Ranges can be extended by other effects. For example, an effect that triggers on 18+ that has its Effect Range extended by +2 now triggers on 16+. Effects such as Features and Abilities that extend the Critical Hit or Effect Ranges of a Move cannot extend them by more than a total of +6 from their natural ranges."
+    "range": "Range specifies the distance in meters from"
   },
   "Bug Bite": {
     "name": "Bug Bite",
@@ -2842,7 +2843,8 @@
     "ac": null,
     "damage_base": null,
     "damage_class": "Status",
-    "range": "Self, Set-Up"
+    "range": "Self, Set-Up",
+    "effect": "Set-Up Effect: The user may not shift this round. The user may create as many squares of Rough Terrain as it wants within a Burst 3 as plants burst through the ground, regardless of the surface material. Resolution Effect: The user raises its Special Attack, Special Defense, and Speed by 2 Combat Stages each."
   },
   "Light of Ruin": {
     "name": "Light of Ruin",
@@ -3808,6 +3810,7 @@
     "damage_roll": "2d8+10 / 19",
     "damage_class": "Physical",
     "range": "Melee, Dash, Set-Up",
+    "effect": "Set-Up Effect: The user is moved up 25 meters into the air. Resolution Effect: The user may shift twice while in the air, using their overland or sky speed, and then comes down next to a legal target, and attacks with Fly.",
     "special": "Grants Sky +3"
   },
   "Gust": {
@@ -3894,7 +3897,8 @@
     "damage_base": 14,
     "damage_roll": "4d10+15 / 40",
     "damage_class": "Physical",
-    "range": "Melee, Pass, Set-Up, Full Action"
+    "range": "Melee, Pass, Set-Up, Full Action",
+    "effect": "Set-Up Effect: The user is moved up 25 meters into the air. Resolution Effect: The user may shift until they are next to a legal target in the encounter. They may then shift again, and pass through legal targets to attack with Sky Attack. Sky Attack Flinches a target on 17-20 during Accuracy Check."
   },
   "Sky Drop": {
     "name": "Sky Drop",
@@ -3904,7 +3908,8 @@
     "damage_base": 6,
     "damage_roll": "2d6+8 / 15",
     "damage_class": "Physical",
-    "range": "Melee, Target, Set-Up"
+    "range": "Melee, Target, Set-Up",
+    "effect": "Set-Up Effect: Make Sky Drop’s Accuracy Check. If the user hits, the user and target are moved 25 meters into the air.  The target forfeits their next turn, and cannot Shift or take actions until Sky Drop is resolved. Resolution Effect: Shift while in the air, and lower both the user and the target heights back to the ground. Then apply Sky Drop’s damage. If the target has a Sky or Levitate Speed, Sky Drop fails to deal damage. If the user is Fainted after the Set-Up but before the Resolution, the target falls to the ground and takes damage as if Sky Drop had a Damage Base of 3 (1d6+5/8) unless they have a Sky or Levitate Speed, in which case they take no damage."
   },
   "Tailwind": {
     "name": "Tailwind",
@@ -4039,7 +4044,8 @@
     "damage_base": 9,
     "damage_roll": "2d10+10 / 21",
     "damage_class": "Physical",
-    "range": "Melee, 1 Target, Set-Up"
+    "range": "Melee, 1 Target, Set-Up",
+    "effect": "Set-Up Effect: The user is removed from the field, and their turn ends. Resolution Effect: Phantom Force’s user appears adjacent to any legal target on the field, ignoring Movement Capabilities, and then uses Phantom Force’s attack. Phantom Force cannot be avoided by Moves with the Shield Keyword, the Dodge Ability, or similar effects, and Intercepts may not be attempted in response."
   },
   "Shadow Ball": {
     "name": "Shadow Ball",
@@ -4071,7 +4077,8 @@
     "damage_base": 12,
     "damage_roll": "3d12+10 / 30",
     "damage_class": "Physical",
-    "range": "Melee, 1 Target, Set-Up"
+    "range": "Melee, 1 Target, Set-Up",
+    "effect": "Set-Up Effect: The user is removed from the field, and their turn ends. Resolution Effect: Shadow Force’s user appears adjacent to any legal Target, ignoring Movement Capabilities, and then uses Shadow Force’s attack. Shadow Force cannot be avoided by Moves with the Shield Keyword, the Dodge Ability, or similar effects, and Intercepts may not be attempted in response."
   },
   "Shadow Punch": {
     "name": "Shadow Punch",
@@ -4433,7 +4440,8 @@
     "damage_base": 12,
     "damage_roll": "3d12+10 / 30",
     "damage_class": "Special",
-    "range": "Line 6, 1 Target, Set-Up"
+    "range": "Line 6, 1 Target, Set-Up",
+    "effect": "Set-Up Effect: If the weather is not Sunny, the user’s turn ends. If the weather is Sunny, immediately proceed to the Resolution Effect instead and this Move loses the Set-Up keyword. Resolution Effect: The user attacks with Solar Beam. If the weather is Rainy, Sandstorming, or Hailing, Solar Beam’s Damage Base is lowered to 6 (2d6+8 / 15)."
   },
   "Spiky Shield": {
     "name": "Spiky Shield",
@@ -4561,6 +4569,7 @@
     "damage_roll": "2d8+10 / 19",
     "damage_class": "Physical",
     "range": "Burst 1, Set-Up, Full Action, Groundsource",
+    "effect": "Set-Up Effect: The user shifts 25 meters underground and their turn ends. Resolution Effect: The user may shift horizontally using their burrow or overland speed, and then shifts 25 meters straight up. Upon reaching the surface, the user attacks with Dig, creating a Burst 1.",
     "special": "Grants Burrow +3"
   },
   "Drill Run": {
@@ -4778,7 +4787,8 @@
     "damage_base": 14,
     "damage_roll": "4d10+15 / 40",
     "damage_class": "Physical",
-    "range": "10, Single Target, Set-Up, Full Action"
+    "range": "10, Single Target, Set-Up, Full Action",
+    "effect": "Set-Up Effect: The user may shift, then ends their turn. Resolution Effect: The user uses Freeze Shock. Freeze Shock paralyzes on 15+."
   },
   "Frost Breath": {
     "name": "Frost Breath",
@@ -4853,7 +4863,8 @@
     "damage_base": 14,
     "damage_roll": "4d10+15 / 40",
     "damage_class": "Special",
-    "range": "10, Single Target, Set-Up, Full Action"
+    "range": "10, Single Target, Set-Up, Full Action",
+    "effect": "Set-Up Effect: The user may shift, then ends their turn. Resolution Effect: The user uses Ice Burn. Ice Burn Burns on 15+."
   },
   "Ice Fang": {
     "name": "Ice Fang",
@@ -5984,7 +5995,8 @@
     "damage_base": 8,
     "damage_roll": "2d8+10 / 19",
     "damage_class": "Special",
-    "range": "10, 3 Targets, Set-Up"
+    "range": "10, 3 Targets, Set-Up",
+    "effect": "Set-Up Effect: The user may not shift this round. The user whips up a whirlwind around themselves, granting +2 Evasion until the end of their next turn, and destroying any Smokescreen or Hazards on any squares they are standing on and in all squares adjacent to them. Resolution Effect: The user attacks with Razor Wind. Razor Wind is a Critical Hit on 18+."
   },
   "Recover": {
     "name": "Recover",
@@ -6210,7 +6222,8 @@
     "damage_base": 13,
     "damage_roll": "4d10+10 / 35",
     "damage_class": "Physical",
-    "range": "Melee, 1 Target, Dash, Push, Set-Up"
+    "range": "Melee, 1 Target, Dash, Push, Set-Up",
+    "effect": "Set-Up Effect: The use gains +1 Defense CS. Resolution Effect: The user may attack with Skull Bash. The target is pushed 3 meters."
   },
   "Slack Off": {
     "name": "Slack Off",
@@ -6659,7 +6672,8 @@
     "ac": null,
     "damage_base": null,
     "damage_class": "Status",
-    "range": "Self, Set-Up"
+    "range": "Self, Set-Up",
+    "effect": "Set-Up Effect: The user becomes Liquefied. While Liquefied, the user is Slowed and cannot take Standard Actions except to Resolve the effect of Acid Armor, and the user’s Movement is never obstructed by rough or slow terrain, and they can shift even through the smallest openings. Furthermore, while liquefied, the user is completely immune to all Physical damage, and becomes completely invisible if fully submerged in any liquid. Resolution Effect: The user gains +1 Defense Combat Stage, and then stops being liquified."
   },
   "Acid Spray": {
     "name": "Acid Spray",
@@ -7907,6 +7921,7 @@
     "damage_roll": "2d8+10 / 19",
     "damage_class": "Physical",
     "range": "Burst 1, Set-Up, Full Action",
+    "effect": "Set-Up Effect: The user moves underwater and their turn ends. The user must be in water at least 10 meters deep to use Dive. While underwater, the user may not be targeted by Moves. Resolution Effect: The user may shift horizontally using their underwater speed, and then may shift straight up until reaching a target.  The user then attacks with Dive, creating a Burst 1.",
     "special": "Swim +3"
   },
   "Hydro Cannon": {
