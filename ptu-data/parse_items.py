@@ -24,6 +24,28 @@ ALL_TYPES = [
 ]
 ALL_STATS = ["Attack", "Defense", "Special Attack", "Special Defense", "Speed", "Accuracy", "Evasion"]
 
+FISHING_ROD_COMMON_EFFECT = "Fishing Rods are used to Fish. They are two-handed items."
+FISHING_ROD_ITEMS = [
+    (
+        "Old Rod",
+        "$1000",
+        "Old Rods are capable only of fishing up small, unevolved Pokémon at level 10 or under.",
+        ["Old Rods"],
+    ),
+    (
+        "Good Rod",
+        "$5,000",
+        "Good Rods may catch unevolved Pokémon of a Level to your GM’s discretion.",
+        ["Good Rods"],
+    ),
+    (
+        "Super Rod",
+        "$15,000",
+        "Super Rods may catch Pokémon of any size and evolutionary stage, to your GM’s discretion.",
+        ["Super Rods"],
+    ),
+]
+
 
 def _append_unique(target: list[str], value: str | None):
     if value and value not in target:
@@ -172,6 +194,20 @@ def _add_item(
         _append_unique(entry["aliases"], alias)
     for note in notes or []:
         _append_unique(entry["notes"], note)
+
+
+def _add_fishing_rod_items(items: dict[str, dict], source: str):
+    for rod_name, cost, rod_effect, aliases in FISHING_ROD_ITEMS:
+        _add_item(
+            items,
+            rod_name,
+            category="Hand Equipment",
+            effect=f"{FISHING_ROD_COMMON_EFFECT} {rod_effect}",
+            cost=cost,
+            section="Equipment",
+            aliases=aliases,
+            source=source,
+        )
 
 
 def _parse_colon_block(text: str, start_name: str, end_name: str | None = None) -> str:
@@ -554,6 +590,10 @@ def _parse_equipment_tables(text: str, items: dict[str, dict], source: str):
     hand_names = ["Fishing Rod", "Glue Cannon", "Hand Net", "Weighted Nets", "Capture Styler", "Light Shield", "Heavy Shield", "Wonder Launcher"]
     hand_blocks = _extract_named_blocks(hand_section, hand_names, ignore={"Hand Equipment", "Equipment", "Effect", "Fishing Rods", "Capture"})
     for name, block in hand_blocks.items():
+        if name == "Fishing Rod":
+            _add_fishing_rod_items(items, source)
+            continue
+
         block_text = _clean_block_text("\n".join(block))
         costs = _extract_cost_phrases(block_text)
         _add_item(
