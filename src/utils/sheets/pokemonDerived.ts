@@ -178,7 +178,7 @@ export interface ResolvedSkill {
   speciesGiven: boolean
 }
 
-export const SHEET_SKILL_ORDER: Array<[keyof NonNullable<CharacterSheet['skills']>, string]> = [
+export const SHEET_SKILL_ORDER = [
   ['acrobatics',  'Acrobatics'],
   ['athletics',   'Athletics'],
   ['charm',       'Charm'],
@@ -196,7 +196,9 @@ export const SHEET_SKILL_ORDER: Array<[keyof NonNullable<CharacterSheet['skills'
   ['perception',  'Perception'],
   ['stealth',     'Stealth'],
   ['survival',    'Survival'],
-]
+] as const satisfies ReadonlyArray<readonly [keyof NonNullable<CharacterSheet['skills']>, string]>
+
+export type PokemonSheetSkillLabel = typeof SHEET_SKILL_ORDER[number][1]
 
 const EDU_KEYS = new Set(['generalEd', 'medicineEd', 'occultEd', 'pokeEd', 'techEd'])
 

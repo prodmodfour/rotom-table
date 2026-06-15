@@ -20,6 +20,7 @@ describe('generate encounter runtime dependencies', () => {
     const random = () => 0.25
     const pathExists = vi.fn(() => true)
     const readTextFile = vi.fn(() => '{}')
+    const writeTextFile = vi.fn()
     const listDirectory = vi.fn(() => [])
     const ensureDirectory = vi.fn()
     const makeTempDir = vi.fn(() => '/tmp/generated')
@@ -33,6 +34,7 @@ describe('generate encounter runtime dependencies', () => {
       random,
       pathExists,
       readTextFile,
+      writeTextFile,
       listDirectory,
       ensureDirectory,
       makeTempDir,
@@ -47,6 +49,7 @@ describe('generate encounter runtime dependencies', () => {
     expect(runtime.random).toBe(random)
     expect(runtime.pathExists).toBe(pathExists)
     expect(runtime.readTextFile).toBe(readTextFile)
+    expect(runtime.writeTextFile).toBe(writeTextFile)
     expect(runtime.listDirectory).toBe(listDirectory)
     expect(runtime.ensureDirectory).toBe(ensureDirectory)
     expect(runtime.makeTempDir).toBe(makeTempDir)
@@ -81,6 +84,8 @@ describe('generate encounter runtime dependencies', () => {
       expect(runtime.encounterRoot).toBe(resolvePath(root, 'encounter_tables'))
       expect(runtime.pathExists(textPath)).toBe(true)
       expect(runtime.readTextFile(textPath)).toBe('hello runtime')
+      runtime.writeTextFile(textPath, 'updated runtime')
+      expect(runtime.readTextFile(textPath)).toBe('updated runtime')
 
       runtime.ensureDirectory(nestedDir)
       expect(existsSync(nestedDir)).toBe(true)

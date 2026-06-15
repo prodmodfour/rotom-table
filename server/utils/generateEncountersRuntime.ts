@@ -5,6 +5,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join as joinPath, resolve as resolvePath } from 'node:path'
@@ -22,6 +23,7 @@ export interface GenerateEncountersRuntimeOverrides {
   random?: () => number
   pathExists?: (path: string) => boolean
   readTextFile?: (path: string) => string
+  writeTextFile?: (path: string, content: string) => void
   listDirectory?: (path: string) => string[]
   ensureDirectory?: (path: string) => void
   makeTempDir?: (prefix: string) => string
@@ -37,6 +39,7 @@ export interface GenerateEncountersRuntime {
   random: () => number
   pathExists: (path: string) => boolean
   readTextFile: (path: string) => string
+  writeTextFile: (path: string, content: string) => void
   listDirectory: (path: string) => string[]
   ensureDirectory: (path: string) => void
   makeTempDir: (prefix: string) => string
@@ -68,6 +71,7 @@ export const resolveGenerateEncountersRuntime = (
     random: overrides.random ?? Math.random,
     pathExists: overrides.pathExists ?? existsSync,
     readTextFile: overrides.readTextFile ?? ((path: string) => readFileSync(path, 'utf8')),
+    writeTextFile: overrides.writeTextFile ?? ((path: string, content: string) => writeFileSync(path, content, 'utf8')),
     listDirectory: overrides.listDirectory ?? readdirSync,
     ensureDirectory: overrides.ensureDirectory ?? ((path: string) => mkdirSync(path, { recursive: true })),
     makeTempDir: overrides.makeTempDir ?? ((prefix: string) => mkdtempSync(joinPath(tmpdir(), prefix))),

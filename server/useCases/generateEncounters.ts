@@ -100,6 +100,8 @@ export const generateEncountersUseCase = async (
       pathExists: runtime.pathExists,
       listDirectory: runtime.listDirectory,
       readTextFile: runtime.readTextFile,
+      writeTextFile: runtime.writeTextFile,
+      random: runtime.random,
       runPokegen: runtime.runPokegen,
     })
 

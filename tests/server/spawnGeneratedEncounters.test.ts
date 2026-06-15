@@ -1,3 +1,4 @@
+import { join as joinPath } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
   spawnGeneratedEncountersUseCase,
@@ -46,6 +47,7 @@ const sequenceRandom = (...values: number[]) => {
 
 const createDependencies = (overrides: Partial<SpawnGeneratedEncountersDependencies> = {}) => {
   const generatedFiles: string[] = []
+  const generatedContent = new Map<string, string>()
   const map = mapFixture()
   const saveMap = vi.fn((slug: string, nextMap: TabletopMap, clientId?: string) => ({
     path: `data/maps/${slug}.json`,
@@ -59,30 +61,35 @@ const createDependencies = (overrides: Partial<SpawnGeneratedEncountersDependenc
     now: () => 111,
     random: sequenceRandom(0, 0, 0),
     pathExists: (path) => path === '/repo/encounter_tables/vale/pond.json',
-    readTextFile: (path) => path.endsWith('/pond.json') ? JSON.stringify(table) : '{}',
+    readTextFile: (path) => path.endsWith('/pond.json')
+      ? JSON.stringify(table)
+      : generatedContent.get(path) ?? '{}',
+    writeTextFile: (path, content) => generatedContent.set(path, content),
     listDirectory: () => [...generatedFiles],
     ensureDirectory: vi.fn(),
     makeTempDir: (prefix) => `/tmp/${prefix}abc`,
     cleanupDirectory: vi.fn(),
     uniqueOutputDir: (parent, baseName) => `${parent}/${baseName}`,
-    runPokegen: vi.fn(async (_species, _level, _dir, slugPrefix) => {
-      generatedFiles.push(`${slugPrefix}-bulbasaur.json`)
+    runPokegen: vi.fn(async (_species, _level, dir, slugPrefix) => {
+      const filename = `${slugPrefix}-bulbasaur.json`
+      generatedFiles.push(filename)
+      generatedContent.set(joinPath(dir, filename), JSON.stringify(generatedSheet({ slug: `${slugPrefix}-bulbasaur` })))
       return { ok: true, stderr: '' }
     }),
     loadMap: () => map,
     saveMap,
     listPokemonSheets: () => [],
     listTrainerSheets: () => [],
-    readGeneratedPokemonSheet: () => generatedSheet(),
+    readGeneratedPokemonSheet: (dir, fileName) => JSON.parse(generatedContent.get(joinPath(dir, fileName)) ?? '{}') as CharacterSheet,
     createPlacementId: () => 'spawn-1',
     ...overrides,
   }
 
-  return { dependencies, saveMap, map }
+  return { dependencies, saveMap, map, generatedContent }
 }
 
 describe('spawnGeneratedEncountersUseCase', () => {
-  it('generates sheets and persists sensible map placements', async () => {
+  it('generates decorated sheets and persists sensible map placements', async () => {
     const { dependencies, saveMap } = createDependencies()
 
     const result = await spawnGeneratedEncountersUseCase({
@@ -121,6 +128,16 @@ describe('spawnGeneratedEncountersUseCase', () => {
       expect.objectContaining({ channel: 'sheets', type: 'updated', clientId: 'client-1' }),
       expect.objectContaining({ channel: 'map:pond-map', type: 'updated', clientId: 'client-1' }),
     ]))
+    const sheetEvent = result.events.find((event) => event.channel === 'sheets')
+    expect((sheetEvent?.data as { sheet?: CharacterSheet } | undefined)?.sheet).toMatchObject({
+      slug: 'wild-pond-1-bulbasaur',
+      folder: 'wild/pond_1',
+      skillBackground: {
+        description: 'Wary Canopy Trail-Bounder',
+        raised: ['Acrobatics', 'Athletics'],
+        lowered: ['Charm'],
+      },
+    })
   })
 
   it('reports spawn failures without saving an unchanged map', async () => {
