@@ -74,6 +74,7 @@ const props = defineProps<{
   buildColor: string | null
   buildGhostVoxel: boolean
   ghostVoxelsFaded: boolean
+  smartTerrainCutawayEnabled: boolean
   hazardMode: boolean
   hazardTool: BuildTool
   hazardKind: MapHazardKind
@@ -206,6 +207,7 @@ defineExpose({ focusPokemon })
         :build-color="buildColor"
         :build-ghost-voxel="buildGhostVoxel"
         :ghost-voxels-faded="ghostVoxelsFaded"
+        :smart-terrain-cutaway-enabled="smartTerrainCutawayEnabled"
         :hazard-mode="hazardMode"
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"

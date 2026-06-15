@@ -14,6 +14,7 @@ vi.mock('~/utils/isometric/materials', () => ({
 import {
   createVoxelRenderer,
   GHOST_VOXEL_FADED_OPACITY,
+  SMART_GHOST_VOXEL_DEFAULT_OPACITY,
   terrainTopEdgeOverlayCacheKey,
 } from '~/utils/isometric/voxelRenderer'
 
@@ -25,6 +26,11 @@ const materialOpacity = (mesh: THREE.InstancedMesh): number => {
 const materialTransparency = (mesh: THREE.InstancedMesh): boolean => {
   const materials = mesh.material as THREE.MeshBasicMaterial[]
   return materials[0].transparent
+}
+
+const materialDepthWrite = (mesh: THREE.InstancedMesh): boolean => {
+  const materials = mesh.material as THREE.MeshBasicMaterial[]
+  return materials[0].depthWrite
 }
 
 const meshWithOpacity = (
@@ -97,6 +103,18 @@ describe('isometric voxel renderer', () => {
         ghostVoxelsFaded: true,
         terrainRevision: 'terrain:1',
       }))
+    expect(terrainTopEdgeOverlayCacheKey([voxel(0)], { terrainRevision: 'terrain:1' }))
+      .not.toBe(terrainTopEdgeOverlayCacheKey([voxel(0)], {
+        terrainRevision: 'terrain:1',
+        smartGhostVoxelKeys: new Set(['0,0,0']),
+      }))
+    expect(terrainTopEdgeOverlayCacheKey([voxel(0)], {
+      terrainRevision: 'terrain:1',
+      smartGhostVoxelKeys: new Set(['1,0,0', '0,0,0']),
+    })).toBe(terrainTopEdgeOverlayCacheKey([voxel(0)], {
+      terrainRevision: 'terrain:1',
+      smartGhostVoxelKeys: new Set(['0,0,0', '1,0,0']),
+    }))
   })
 
   it('renders ghost voxels normally unless ghost fading is enabled', () => {
@@ -122,6 +140,72 @@ describe('isometric voxel renderer', () => {
 
     expect(renderer.meshes()).toHaveLength(2)
     expect(renderer.meshes().map(materialOpacity).sort((a, b) => a - b)).toEqual([GHOST_VOXEL_FADED_OPACITY, 1])
+
+    renderer.dispose()
+  })
+
+  it('renders smart ghost voxels as transient transparent no-depth terrain without mutating authored ghost flags', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+    const solidVoxel = voxel(0)
+
+    renderer.sync([solidVoxel], { smartGhostVoxelKeys: new Set(['0,0,0']) })
+
+    const [mesh] = renderer.meshes()
+    expect(materialOpacity(mesh)).toBe(SMART_GHOST_VOXEL_DEFAULT_OPACITY)
+    expect(materialTransparency(mesh)).toBe(true)
+    expect(materialDepthWrite(mesh)).toBe(false)
+    expect(mesh.renderOrder).toBe(8)
+    expect(solidVoxel.ghost).toBeUndefined()
+
+    renderer.sync([solidVoxel], { smartGhostVoxelKeys: new Set() })
+    const [normalMesh] = renderer.meshes()
+    expect(materialOpacity(normalMesh)).toBe(1)
+    expect(materialTransparency(normalMesh)).toBe(false)
+    expect(materialDepthWrite(normalMesh)).toBe(true)
+    expect(normalMesh.renderOrder).toBe(0)
+
+    renderer.dispose()
+  })
+
+  it('keeps smart ghost voxels in a separate opacity bucket from normal and authored ghost terrain', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0, true), voxel(1), voxel(2)], {
+      ghostVoxelsFaded: true,
+      smartGhostVoxelKeys: new Set(['1,0,0']),
+    })
+
+    expect(renderer.meshes()).toHaveLength(3)
+    expect(renderer.meshes().map(materialOpacity).sort((a, b) => a - b)).toEqual([
+      GHOST_VOXEL_FADED_OPACITY,
+      SMART_GHOST_VOXEL_DEFAULT_OPACITY,
+      1,
+    ])
+
+    renderer.dispose()
+  })
+
+  it('rebuilds smart ghost buckets when transient key membership changes', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0), voxel(1)], { smartGhostVoxelKeys: new Set(['0,0,0']) })
+
+    const initialSmartMesh = meshWithOpacity(renderer.meshes(), SMART_GHOST_VOXEL_DEFAULT_OPACITY)
+    const initialNormalMesh = meshWithOpacity(renderer.meshes(), 1)
+    expect(initialSmartMesh).toBeDefined()
+    expect(initialNormalMesh).toBeDefined()
+    const initialSmartDisposeSpy = vi.spyOn(initialSmartMesh!, 'dispose')
+    const initialNormalDisposeSpy = vi.spyOn(initialNormalMesh!, 'dispose')
+
+    renderer.sync([voxel(0), voxel(1)], { smartGhostVoxelKeys: new Set(['1,0,0']) })
+
+    expect(meshWithOpacity(renderer.meshes(), SMART_GHOST_VOXEL_DEFAULT_OPACITY)).not.toBe(initialSmartMesh)
+    expect(meshWithOpacity(renderer.meshes(), 1)).not.toBe(initialNormalMesh)
+    expect(initialSmartDisposeSpy).toHaveBeenCalledTimes(1)
+    expect(initialNormalDisposeSpy).toHaveBeenCalledTimes(1)
 
     renderer.dispose()
   })
@@ -420,6 +504,29 @@ describe('isometric voxel renderer', () => {
     expect(terrainTopEdgeOverlayOpacities(container)).toEqual([
       0.24 * GHOST_VOXEL_FADED_OPACITY,
       0.32 * GHOST_VOXEL_FADED_OPACITY,
+    ])
+
+    renderer.dispose()
+  })
+
+  it('rebuilds the terrain top-edge overlay when smart ghost keys change', () => {
+    const container = new THREE.Group()
+    const renderer = createVoxelRenderer(container)
+
+    renderer.sync([voxel(0)], { terrainRevision: 'terrain:1' })
+
+    const initialOverlay = terrainTopEdgeOverlay(container)
+    expect(terrainTopEdgeOverlayOpacities(container)).toEqual([0.24, 0.32])
+
+    renderer.sync([voxel(0)], {
+      terrainRevision: 'terrain:1',
+      smartGhostVoxelKeys: new Set(['0,0,0']),
+    })
+
+    expect(terrainTopEdgeOverlay(container)).not.toBe(initialOverlay)
+    expect(terrainTopEdgeOverlayOpacities(container)).toEqual([
+      0.24 * SMART_GHOST_VOXEL_DEFAULT_OPACITY,
+      0.32 * SMART_GHOST_VOXEL_DEFAULT_OPACITY,
     ])
 
     renderer.dispose()

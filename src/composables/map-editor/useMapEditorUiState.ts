@@ -36,6 +36,7 @@ export const useMapEditorUiState = ({
   const adminPanelOpen = ref(false)
   const activeMapMenu = ref<MapEditorMenu | null>(null)
   const layerVisibility = ref<LayerVisibility>(createDefaultMapLayerVisibility())
+  const smartTerrainCutawayEnabled = ref(true)
 
   const fieldEffectsMenuOpen = computed(() => activeMapMenu.value === 'fieldEffects')
   const sheetsMenuOpen = computed(() => activeMapMenu.value === 'sheets')
@@ -92,6 +93,10 @@ export const useMapEditorUiState = ({
 
   const setLayerVisibility = (layer: MapLayerVisibilityKey, value: boolean) => {
     layerVisibility.value[layer] = value
+  }
+
+  const setSmartTerrainCutawayEnabled = (value: boolean) => {
+    smartTerrainCutawayEnabled.value = value
   }
 
   watch(() => canEditMap.value, (nextCanEditMap) => {
@@ -169,6 +174,7 @@ export const useMapEditorUiState = ({
     sheetsMenuOpen,
     initiativeMenuOpen,
     layerVisibility,
+    smartTerrainCutawayEnabled,
     layerOptions: MAP_LAYER_OPTIONS,
     canOpenMapMenu,
     openMapMenu,
@@ -185,6 +191,7 @@ export const useMapEditorUiState = ({
     toggleInitiativeMenu,
     setMode,
     setLayerVisibility,
+    setSmartTerrainCutawayEnabled,
     handleBuildShortcut,
     handleFieldEffectsShortcut,
     handleSheetsShortcut,

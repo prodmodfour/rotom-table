@@ -701,6 +701,7 @@ const {
   sheetsMenuOpen,
   initiativeMenuOpen,
   layerVisibility,
+  smartTerrainCutawayEnabled,
   closeFieldEffectsMenu,
   closeSheetsMenu,
   closeInitiativeMenu,
@@ -1465,6 +1466,7 @@ useMapDimensionReconciliation({
         :build-color="buildColor"
         :build-ghost-voxel="buildGhostVoxel"
         :ghost-voxels-faded="ghostVoxelsFaded"
+        :smart-terrain-cutaway-enabled="smartTerrainCutawayEnabled"
         :hazard-mode="hazardMode && canEditMap"
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"

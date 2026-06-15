@@ -3,14 +3,21 @@ import type { MapVoxelV2 } from '~/types/map'
 import { voxelGroupKey } from '~/utils/voxelColors'
 import { voxelMaterialDefinition } from '~/utils/voxelMaterials'
 import { buildAllVoxelOccupancy, voxelKey } from '~/utils/voxelOccupancy'
+import {
+  SMART_TERRAIN_CUTAWAY_DEFAULT_OPACITY,
+  smartGhostVoxelKeySetSignature,
+} from '~/utils/isometric/smartTerrainCutaway'
 import { buildVoxelFaceMaterials } from './materials'
 import { disposeObject3D } from './resourceDisposal'
 import type { VoxelGroup } from './types'
 
 export const GHOST_VOXEL_FADED_OPACITY = 0.1
+export const SMART_GHOST_VOXEL_DEFAULT_OPACITY = SMART_TERRAIN_CUTAWAY_DEFAULT_OPACITY
 
 export interface VoxelRendererSyncOptions {
   ghostVoxelsFaded?: boolean
+  smartGhostVoxelKeys?: ReadonlySet<string>
+  smartGhostOpacity?: number
   /** Stable terrain revision from the caller; falls back to an overlay-specific voxel signature. */
   terrainRevision?: string
 }
@@ -43,12 +50,41 @@ const voxelBucketPositionSignature = (voxels: ReadonlyArray<MapVoxelV2>): string
 const voxelRenderTraitsSignature = (traits: VoxelRenderTraits): string =>
   `${traits.opacity}:${traits.depthWrite ? 'depth' : 'no-depth'}:${traits.renderOrder}`
 
-const terrainTopEdgeOverlayVoxelSignature = (voxels: ReadonlyArray<MapVoxelV2>): string =>
+const smartGhostOpacity = (options: VoxelRendererSyncOptions = {}): number => (
+  Number.isFinite(options.smartGhostOpacity) && options.smartGhostOpacity !== undefined
+    ? THREE.MathUtils.clamp(options.smartGhostOpacity, 0, 1)
+    : SMART_GHOST_VOXEL_DEFAULT_OPACITY
+)
+
+const voxelIsAuthoredFadedGhost = (
+  voxel: MapVoxelV2,
+  options: VoxelRendererSyncOptions = {},
+): boolean => options.ghostVoxelsFaded === true && voxel.ghost === true
+
+const voxelIsSmartGhost = (
+  voxel: MapVoxelV2,
+  options: VoxelRendererSyncOptions = {},
+): boolean => options.smartGhostVoxelKeys?.has(voxelKey(voxel.x, voxel.y, voxel.z)) === true
+
+const voxelFadeOpacity = (
+  voxel: MapVoxelV2,
+  options: VoxelRendererSyncOptions = {},
+): number | null => {
+  if (voxelIsAuthoredFadedGhost(voxel, options)) return GHOST_VOXEL_FADED_OPACITY
+  if (voxelIsSmartGhost(voxel, options)) return smartGhostOpacity(options)
+  return null
+}
+
+const terrainTopEdgeOverlayVoxelSignature = (
+  voxels: ReadonlyArray<MapVoxelV2>,
+  options: VoxelRendererSyncOptions = {},
+): string =>
   Array.from(voxels, (voxel) => [
     voxel.x,
     voxel.y,
     voxel.z,
     voxel.ghost === true ? 'ghost' : 'solid',
+    voxelIsSmartGhost(voxel, options) ? 'smart-ghost' : 'normal',
   ].join(','))
     .sort()
     .join('|')
@@ -58,11 +94,13 @@ export const terrainTopEdgeOverlayCacheKey = (
   options: VoxelRendererSyncOptions = {},
 ): string => {
   const terrainRevision = options.terrainRevision === undefined
-    ? `voxels:${terrainTopEdgeOverlayVoxelSignature(voxels)}`
+    ? `voxels:${terrainTopEdgeOverlayVoxelSignature(voxels, options)}`
     : `revision:${options.terrainRevision}`
   const ghostFadeRevision = options.ghostVoxelsFaded === true ? 'ghost-fade:on' : 'ghost-fade:off'
+  const smartGhostRevision = `smart-ghost:${smartGhostVoxelKeySetSignature(options.smartGhostVoxelKeys)}`
+  const smartOpacityRevision = `smart-opacity:${smartGhostOpacity(options)}`
 
-  return `${terrainRevision}|${ghostFadeRevision}`
+  return `${terrainRevision}|${ghostFadeRevision}|${smartGhostRevision}|${smartOpacityRevision}`
 }
 
 const disposeVoxelGroup = (container: THREE.Group, group: VoxelGroup) => {
@@ -76,9 +114,9 @@ const resolveVoxelRenderTraits = (
   options: VoxelRendererSyncOptions = {},
 ): VoxelRenderTraits => {
   const definition = voxelMaterialDefinition(voxel)
-  const ghostFaded = options.ghostVoxelsFaded === true && voxel.ghost === true
-  const opacity = ghostFaded
-    ? GHOST_VOXEL_FADED_OPACITY
+  const fadedOpacity = voxelFadeOpacity(voxel, options)
+  const opacity = fadedOpacity !== null
+    ? fadedOpacity
     : definition.transparent
       ? (definition.opacity ?? 0.5)
       : 1
@@ -96,10 +134,12 @@ const rendererVoxelGroupKey = (
   options: VoxelRendererSyncOptions = {},
 ): string => {
   const baseKey = voxelGroupKey(voxel)
-  const ghostBucket = options.ghostVoxelsFaded === true && voxel.ghost === true
-    ? 'ghost-faded'
-    : 'normal'
-  return `${baseKey}|${ghostBucket}`
+  const fadeBucket = voxelIsAuthoredFadedGhost(voxel, options)
+    ? 'authored-ghost-faded'
+    : voxelIsSmartGhost(voxel, options)
+      ? `smart-ghost:${smartGhostOpacity(options)}`
+      : 'normal'
+  return `${baseKey}|${fadeBucket}`
 }
 
 const buildVoxelBucketSnapshot = (
@@ -148,6 +188,8 @@ export const buildTerrainTopEdgeOverlay = (
   const normalDarkSegments: number[] = []
   const ghostLightSegments: number[] = []
   const ghostDarkSegments: number[] = []
+  const smartLightSegments: number[] = []
+  const smartDarkSegments: number[] = []
   const eps = 0.002
 
   const hasVoxel = (x: number, y: number, z: number) => occupied.has(voxelKey(x, y, z))
@@ -172,9 +214,14 @@ export const buildTerrainTopEdgeOverlay = (
     const x1 = voxel.x + 1
     const z0 = voxel.z
     const z1 = voxel.z + 1
-    const fadedGhost = options.ghostVoxelsFaded === true && voxel.ghost === true
-    const lightSegments = fadedGhost ? ghostLightSegments : normalLightSegments
-    const darkSegments = fadedGhost ? ghostDarkSegments : normalDarkSegments
+    const fadedOpacity = voxelFadeOpacity(voxel, options)
+    const authoredFadedGhost = voxelIsAuthoredFadedGhost(voxel, options)
+    const lightSegments = fadedOpacity === null
+      ? normalLightSegments
+      : authoredFadedGhost ? ghostLightSegments : smartLightSegments
+    const darkSegments = fadedOpacity === null
+      ? normalDarkSegments
+      : authoredFadedGhost ? ghostDarkSegments : smartDarkSegments
 
     // Match the existing isometric face ramp: back/left top edges catch
     // the restrained highlight, front/right edges pick up the darker seam.
@@ -219,6 +266,7 @@ export const buildTerrainTopEdgeOverlay = (
 
   appendEdgePair(normalLightSegments, normalDarkSegments)
   appendEdgePair(ghostLightSegments, ghostDarkSegments, GHOST_VOXEL_FADED_OPACITY)
+  appendEdgePair(smartLightSegments, smartDarkSegments, smartGhostOpacity(options))
 
   return group
 }

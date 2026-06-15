@@ -72,7 +72,7 @@ const emit = defineEmits<{
       <span>Fade ghost voxels</span>
     </label>
     <p class="ghost-note">
-      Ghost voxels save a ghost flag. Fade renders marked voxels at 10% opacity.
+      Ghost voxels save a ghost flag. Fade renders authored ghost voxels at 10% opacity.
     </p>
   </div>
 

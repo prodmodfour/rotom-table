@@ -29,13 +29,16 @@ describe('useMapEditorUiState', () => {
     expect(ui.sheetsMenuOpen.value).toBe(false)
     expect(ui.initiativeMenuOpen.value).toBe(false)
     expect(ui.layerVisibility.value.grid).toBe(true)
+    expect(ui.smartTerrainCutawayEnabled.value).toBe(true)
 
     ui.setLayerVisibility('grid', false)
+    ui.setSmartTerrainCutawayEnabled(false)
     ui.openFieldEffectsMenu()
 
     expect(ui.activeMapMenu.value).toBe('fieldEffects')
     expect(ui.fieldEffectsMenuOpen.value).toBe(true)
     expect(ui.layerVisibility.value.grid).toBe(false)
+    expect(ui.smartTerrainCutawayEnabled.value).toBe(false)
     expect(ui.layerOptions).toContain('fieldEffects')
   })
 

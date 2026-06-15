@@ -21,6 +21,7 @@ defineProps<{
   voxelCount: number
   layerVisibility: LayerVisibility
   layerOptions: readonly MapLayerVisibilityKey[]
+  smartTerrainCutawayEnabled: boolean
 }>()
 
 const emit = defineEmits<{
@@ -34,6 +35,7 @@ const emit = defineEmits<{
   (event: 'fill-ground'): void
   (event: 'clear-all-voxels'): void
   (event: 'set-layer-visibility', layer: MapLayerVisibilityKey, value: boolean): void
+  (event: 'set-smart-terrain-cutaway-enabled', value: boolean): void
 }>()
 
 </script>
@@ -70,7 +72,9 @@ const emit = defineEmits<{
       <LayerVisibilityControls
         :layer-visibility="layerVisibility"
         :layer-options="layerOptions"
+        :smart-terrain-cutaway-enabled="smartTerrainCutawayEnabled"
         @set-layer-visibility="(layer, value) => emit('set-layer-visibility', layer, value)"
+        @set-smart-terrain-cutaway-enabled="emit('set-smart-terrain-cutaway-enabled', $event)"
       />
     </template>
 

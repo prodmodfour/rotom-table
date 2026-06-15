@@ -6,10 +6,12 @@ import type { LayerVisibility } from '~/types/map'
 defineProps<{
   layerVisibility: LayerVisibility
   layerOptions: readonly MapLayerVisibilityKey[]
+  smartTerrainCutawayEnabled?: boolean
 }>()
 
 const emit = defineEmits<{
   (event: 'set-layer-visibility', layer: MapLayerVisibilityKey, value: boolean): void
+  (event: 'set-smart-terrain-cutaway-enabled', value: boolean): void
 }>()
 </script>
 
@@ -27,6 +29,14 @@ const emit = defineEmits<{
           @change="emit('set-layer-visibility', layer, checkedValueFromEvent($event))"
         />
         <span>{{ formatLayerVisibilityLabel(layer) }}</span>
+      </label>
+      <label v-if="smartTerrainCutawayEnabled !== undefined" class="layer-toggle layer-toggle--wide">
+        <input
+          :checked="smartTerrainCutawayEnabled"
+          type="checkbox"
+          @change="emit('set-smart-terrain-cutaway-enabled', checkedValueFromEvent($event))"
+        />
+        <span>Smart terrain cutaway</span>
       </label>
     </div>
   </div>
@@ -98,6 +108,10 @@ const emit = defineEmits<{
   color: var(--ink);
   font-size: 0.8rem;
   text-transform: capitalize;
+}
+
+.layer-toggle--wide {
+  grid-column: 1 / -1;
 }
 
 .layer-toggle input {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import * as THREE from 'three'
 import RenderMetricsOverlay from '~/components/isometric/RenderMetricsOverlay.vue'
 import TokenActionDialogs from '~/components/isometric/TokenActionDialogs.vue'
@@ -70,6 +70,13 @@ import type {
   PokemonRenderObject,
 } from '~/utils/isometric/types'
 import { createVoxelRenderer } from '~/utils/isometric/voxelRenderer'
+import {
+  SMART_TERRAIN_CUTAWAY_MAX_VOXELS,
+  resolveSmartCutawayFocusTokenIds,
+  resolveSmartTerrainCutawayVoxelKeys,
+  smartCutawayFocusPointsForToken,
+  smartGhostVoxelKeySetsEqual,
+} from '~/utils/isometric/smartTerrainCutaway'
 import { createHazardRenderer } from '~/utils/isometric/hazardRenderer'
 import { createFieldEffectRenderer } from '~/utils/isometric/fieldEffectRenderer'
 import { createGridRenderer } from '~/utils/isometric/gridRenderer'
@@ -184,6 +191,7 @@ const props = defineProps<{
   buildColor: string | null
   buildGhostVoxel: boolean
   ghostVoxelsFaded: boolean
+  smartTerrainCutawayEnabled?: boolean
   hazardMode?: boolean
   hazardTool?: BuildTool
   hazardKind?: MapHazardKind
@@ -426,6 +434,18 @@ const fieldEffectsRevision = computed(() => getFieldEffectsRevisionKey(renderedF
 const hazardRevision = computed(() => getHazardsRevisionKey(renderedHazards.value))
 const terrainVoxelRevision = computed(() => getTerrainVoxelsRevisionKey(renderedTerrainVoxels.value))
 const pokemonPlacementRevision = computed(() => movementPathPlacementRevision(props.pokemons))
+const smartCutawayTokenRevision = computed(() => props.pokemons
+  .map((pokemon) => [
+    pokemon.id,
+    pokemon.position.x,
+    pokemon.position.y,
+    pokemon.position.z,
+    pokemon.base,
+    pokemon.height,
+    pokemon.clearance,
+  ].join('\u001e'))
+  .sort()
+  .join('\u001d'))
 const mapMovementOccupancy = computed(() =>
   buildMapOccupancy({
     voxels: renderedTerrainVoxels.value,
@@ -500,6 +520,8 @@ const renderFrameTimingSampler = createRenderFrameTimingSampler()
 const pointerInteractionMetricsSampler = createPointerInteractionMetricsSampler()
 const css3DRenderDirtyTracker = createCss3DRenderDirtyTracker()
 const layerVisibilityApplicator = createIsometricLayerVisibilityApplicator()
+const smartGhostVoxelKeys = shallowRef<ReadonlySet<string>>(new Set())
+const smartCutawayIntersections: THREE.Intersection[] = []
 
 const readRenderMetricsNowMs = (): number => {
   const performanceNow = globalThis.performance?.now
@@ -663,6 +685,7 @@ const syncRendererSizeFromResizeObserver = () => {
     return
   }
 
+  refreshSmartTerrainCutaway()
   renderScheduler?.requestRender('resize')
 }
 
@@ -707,7 +730,10 @@ const rotateCameraYaw = (direction: IsometricYawStepDirection): boolean => {
   if (!camera || !controls) return false
 
   const rotated = rotateIsometricYawStep({ camera, controls, direction })
-  if (rotated) requestScheduledSceneFrame('camera')
+  if (rotated) {
+    refreshSmartTerrainCutaway()
+    requestScheduledSceneFrame('camera')
+  }
   return rotated
 }
 
@@ -780,7 +806,10 @@ const refreshPokemonStyles = () => {
 
 const setHoveredPokemonId = (nextId: string | null): boolean => {
   const changed = hoverController.set(nextId)
-  if (changed) refreshPokemonStyles()
+  if (changed) {
+    refreshPokemonStyles()
+    refreshSmartTerrainCutaway()
+  }
   return changed
 }
 
@@ -811,9 +840,106 @@ const syncPokemonObjects = () => {
   syncMoveVfxRendererState()
 }
 
+const smartTerrainCutawayEnabled = (): boolean => props.smartTerrainCutawayEnabled !== false
+
+const resolveSmartTerrainCutawayKeys = (): ReadonlySet<string> => {
+  const layers = visibleLayers()
+  if (
+    !smartTerrainCutawayEnabled()
+    || !layers.terrain
+    || !layers.tokens
+    || !camera
+    || !renderer
+    || renderedTerrainVoxels.value.length === 0
+  ) return new Set()
+
+  const voxelMeshes = voxelRenderer.meshes()
+  if (voxelMeshes.length === 0) return new Set()
+
+  const focusIds = resolveSmartCutawayFocusTokenIds({
+    selectedId: props.selectedId,
+    activeTurnId: props.activeTurnId,
+    moveAutomationTargeting: props.moveAutomationTargeting,
+    hoveredId: hoverController.id(),
+    attackOfOpportunityPrompts: props.attackOfOpportunityPrompts,
+  })
+  if (focusIds.length === 0) return new Set()
+
+  const focusPoints = focusIds.flatMap((id): THREE.Vector3[] => {
+    const renderObject = renderObjects.get(id)
+    return renderObject
+      ? smartCutawayFocusPointsForToken({
+          center: renderObject.targetCenter,
+          base: renderObject.base,
+          height: renderObject.height,
+          clearance: renderObject.clearance,
+        })
+      : []
+  })
+  if (focusPoints.length === 0) return new Set()
+
+  return resolveSmartTerrainCutawayVoxelKeys({
+    camera,
+    raycaster,
+    voxelMeshes,
+    focusPoints,
+    terrainVoxelKeys: allVoxelOccupancy.value,
+    maxVoxels: SMART_TERRAIN_CUTAWAY_MAX_VOXELS,
+    intersections: smartCutawayIntersections,
+  })
+}
+
+const refreshSmartTerrainCutaway = (options: {
+  syncVoxelMeshes?: boolean
+  requestRender?: boolean
+} = {}): boolean => {
+  const nextKeys = resolveSmartTerrainCutawayKeys()
+  if (smartGhostVoxelKeySetsEqual(smartGhostVoxelKeys.value, nextKeys)) return false
+
+  smartGhostVoxelKeys.value = nextKeys
+  if (options.syncVoxelMeshes !== false && renderer) syncVoxelMeshes()
+  if (options.requestRender !== false) requestScheduledSceneFrame({ reasons: 'terrain', dirtyLayers: 'webgl' })
+  return true
+}
+
+const SMART_TERRAIN_CUTAWAY_CAMERA_REFRESH_MIN_MS = 80
+let smartTerrainCutawayLastCameraRefreshMs = Number.NEGATIVE_INFINITY
+let smartTerrainCutawayCameraRefreshHandle: ReturnType<typeof setTimeout> | null = null
+
+const clearSmartTerrainCutawayCameraRefresh = () => {
+  if (smartTerrainCutawayCameraRefreshHandle === null) return
+
+  clearTimeout(smartTerrainCutawayCameraRefreshHandle)
+  smartTerrainCutawayCameraRefreshHandle = null
+}
+
+const runSmartTerrainCutawayCameraRefresh = () => {
+  clearSmartTerrainCutawayCameraRefresh()
+  smartTerrainCutawayLastCameraRefreshMs = readRenderMetricsNowMs()
+  refreshSmartTerrainCutaway()
+}
+
+const requestSmartTerrainCutawayCameraRefresh = () => {
+  const nowMs = readRenderMetricsNowMs()
+  const elapsedMs = nowMs - smartTerrainCutawayLastCameraRefreshMs
+
+  if (elapsedMs >= SMART_TERRAIN_CUTAWAY_CAMERA_REFRESH_MIN_MS) {
+    runSmartTerrainCutawayCameraRefresh()
+    return
+  }
+
+  if (smartTerrainCutawayCameraRefreshHandle !== null) return
+
+  smartTerrainCutawayCameraRefreshHandle = setTimeout(
+    runSmartTerrainCutawayCameraRefresh,
+    SMART_TERRAIN_CUTAWAY_CAMERA_REFRESH_MIN_MS - elapsedMs,
+  )
+}
+
 const syncVoxelMeshes = () => {
   voxelRenderer.sync(renderedTerrainVoxels.value, {
     ghostVoxelsFaded: props.ghostVoxelsFaded,
+    smartGhostVoxelKeys: smartGhostVoxelKeys.value,
     terrainRevision: terrainVoxelRevision.value,
   })
   buildHazardPickTargets.setVoxelMeshes(voxelRenderer.meshes())
@@ -1649,7 +1775,10 @@ onMounted(() => {
   cleanupCameraControlChangeInvalidation = bindIsometricCameraControlChangeInvalidation({
     camera,
     controls,
-    requestRender: (reason) => renderScheduler?.requestRender(reason),
+    requestRender: (reason) => {
+      requestSmartTerrainCutawayCameraRefresh()
+      renderScheduler?.requestRender(reason)
+    },
   })
 
   container.value.append(renderer.domElement, cssRenderer.domElement)
@@ -1665,6 +1794,7 @@ onMounted(() => {
   if (props.hazardMode) ensureHazardGhost()
   alignCameraToGrid(true)
   refreshPokemonStyles()
+  refreshSmartTerrainCutaway({ requestRender: false })
 
   cleanupRendererDomEvents = bindIsometricRendererDomEvents(renderer.domElement, {
     pointerdown: handlePointerDown,
@@ -1685,6 +1815,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopScheduledRenderLoop()
+  clearSmartTerrainCutawayCameraRefresh()
   disposePointerInteraction()
 
   cleanupDocumentVisibilityChange?.()
@@ -1784,6 +1915,26 @@ useIsometricSceneWatchers({
     requestRender: requestScheduledSceneFrame,
   },
 })
+
+watch(
+  [
+    () => props.smartTerrainCutawayEnabled,
+    () => props.selectedId,
+    () => props.activeTurnId,
+    smartCutawayTokenRevision,
+    terrainVoxelRevision,
+    () => [props.dimensions.x, props.dimensions.y, props.dimensions.z] as const,
+    () => props.moveAutomationTargeting,
+    () => props.attackOfOpportunityPrompts,
+    () => props.layerVisibility,
+    () => props.ghostVoxelsFaded,
+  ],
+  () => {
+    if (!renderer) return
+    refreshSmartTerrainCutaway()
+  },
+  { deep: true },
+)
 </script>
 
 <template>
