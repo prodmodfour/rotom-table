@@ -219,7 +219,6 @@ const {
 } = useMoveAnimationSettings()
 const {
   initiativeAutoFocusEnabled,
-  setInitiativeAutoFocusEnabled,
 } = useInitiativeAutoFocusSettings()
 const {
   actionSplashDisplayDurationMs,
@@ -1504,7 +1503,6 @@ useMapDimensionReconciliation({
         :token-pokeball-options-by-id="tokenPokeballOptionsById"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
-        @set-initiative-auto-focus-enabled="setInitiativeAutoFocusEnabled"
         @previous-initiative="previousInitiativeAndExpireAoo"
         @next-initiative="nextInitiativeAndExpireAoo"
         @move-pokemon="movePokemon"

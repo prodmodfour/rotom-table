@@ -110,7 +110,6 @@ const emit = defineEmits<{
   (event: 'focus-initiative-entry', id: string): void
   (event: 'previous-initiative'): void
   (event: 'next-initiative'): void
-  (event: 'set-initiative-auto-focus-enabled', value: boolean): void
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
@@ -261,11 +260,9 @@ defineExpose({ focusPokemon })
         :active-id="activeInitiativeId"
         :round="initiativeRound ?? 1"
         :can-manage="canManageInitiative ?? false"
-        :auto-focus-enabled="initiativeAutoFocusEnabled !== false"
         @focus="emit('focus-initiative-entry', $event)"
         @previous="emit('previous-initiative')"
         @next="emit('next-initiative')"
-        @set-auto-focus-enabled="emit('set-initiative-auto-focus-enabled', $event)"
       />
 
       <div
