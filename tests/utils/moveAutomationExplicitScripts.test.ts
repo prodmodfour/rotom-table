@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(241)
-    expect(moveAutomationCoverage.missing).toHaveLength(535)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(240)
+    expect(moveAutomationCoverage.missing).toHaveLength(536)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -21,7 +21,7 @@ describe('explicit move automation scripts', () => {
     }
   })
 
-  it('keeps unsupported Prompt 1 skips unautomated', () => {
+  it('keeps known unsupported complex moves unautomated', () => {
     for (const moveName of ['Frost Breath', 'Storm Throw', 'Spacial Rend', 'Aura Wheel', 'Hammer Arm', 'Ice Hammer']) {
       expect(explicitScriptForMove(moveName)).toBeNull()
     }
@@ -212,6 +212,7 @@ describe('explicit move automation scripts', () => {
     const snarl = explicitScriptForMove('Snarl')
     const heatWave = explicitScriptForMove('Heat Wave')
     const poisonGas = explicitScriptForMove('Poison Gas')
+    const sludgeWave = explicitScriptForMove('Sludge Wave')
     const sweetScent = explicitScriptForMove('Sweet Scent')
 
     expect(tailWhip).toMatchObject({
@@ -260,6 +261,16 @@ describe('explicit move automation scripts', () => {
     expect(poisonGas?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }, { kind: 'cone', size: 2 }])
     expect(isSeamlessAreaConfirmationScript(poisonGas)).toBe(true)
 
+    expect(sludgeWave).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Sludge Wave',
+      targetMode: 'multi-target',
+      damaging: true,
+      conditionSuggestions: [{ recipient: 'target', condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+', optional: true }],
+    })
+    expect(sludgeWave?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }, { kind: 'close-blast', size: 2 }])
+    expect(isSeamlessAreaConfirmationScript(sludgeWave)).toBe(true)
+
     expect(sweetScent).toMatchObject({
       kind: 'explicit',
       moveName: 'Sweet Scent',
@@ -273,9 +284,13 @@ describe('explicit move automation scripts', () => {
     expect(isSeamlessAreaConfirmationScript(sweetScent)).toBe(true)
   })
 
-  it('implements the next reviewed plain area damaging moves as AoE confirmations', () => {
+  it('keeps mixed single-target-or-area moves unautomated until mixed-mode targeting exists', () => {
+    expect(explicitScriptForMove('Dragon Hammer')).toBeNull()
+    expect(moveAutomationCoverage.missing).toContain('Dragon Hammer')
+  })
+
+  it('implements reviewed plain area damaging moves as AoE confirmations', () => {
     const expectedTemplates = new Map([
-      ['Dragon Hammer', [{ kind: 'line', size: 3 }]],
       ['Egg Bomb', [{ kind: 'ranged-blast', size: 2, range: 5 }]],
       ['Land’s Wrath', [{ kind: 'burst', size: 5 }]],
     ])
@@ -293,8 +308,13 @@ describe('explicit move automation scripts', () => {
       expect(script?.areaTemplates).toMatchObject(areaTemplates)
       expect(script?.conditionSuggestions).toEqual([])
       expect(script?.stageSuggestions).toEqual([])
+      expect(script?.hpSuggestions).toEqual([])
+      expect(script?.fieldSuggestions).toEqual([])
+      expect(script?.hazardSuggestions).toEqual([])
       expect(isSeamlessAreaConfirmationScript(script)).toBe(true)
     }
+
+    expect(explicitScriptForMove('Land’s Wrath')?.special).toBe('Grants Groundshaper')
   })
 
   it('implements Smog as a reviewed Line 2 damaging AoE with even-roll poison', () => {

@@ -122,7 +122,6 @@ export const REVIEWED_AREA_CONFIRMATION_SCRIPT_NAMES = [
   'Brutal Swing',
   'Dazzling Gleam',
   'Discharge',
-  'Dragon Hammer',
   'Egg Bomb',
   'Heat Wave',
   'Land’s Wrath',

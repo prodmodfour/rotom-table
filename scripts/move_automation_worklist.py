@@ -28,9 +28,9 @@ WORKLIST_BUCKETS = [
 
 NEXT_BATCH_SIZE = 30
 
-# Prompt 1 intentionally skipped these because their critical-hit/user-stage/type
-# mechanics need explicit support before they are safe worklist recommendations.
-UNSUPPORTED_PROMPT_1_SKIP_MOVES = {
+# These moves need explicit support for their critical-hit, user-stage, or type
+# mechanics before they are safe worklist recommendations.
+KNOWN_UNSUPPORTED_COMPLEX_MOVES = {
     "Frost Breath",
     "Storm Throw",
     "Spacial Rend",
@@ -78,6 +78,16 @@ def has_area_or_multi_target_range(move: dict) -> bool:
 
 def has_supported_area_template_range(move: dict) -> bool:
     return has(r"\b(Burst|Cone|Blast|Line|All Cardinally Adjacent)\b", range_text(move))
+
+
+def has_mixed_single_target_area_range(move: dict) -> bool:
+    """Return whether a range offers a single-target branch and an area branch."""
+
+    range_value = range_text(move)
+    return has(r"\b(1\s*Target|Single Target)\b", range_value) and has(
+        r"\b(Burst|Cone|Blast|Line|Pass)\b",
+        range_value,
+    )
 
 
 def is_single_target_like(move: dict) -> bool:
@@ -178,6 +188,9 @@ def classify_move_worklist_bucket(move: dict) -> str:
         text,
     ):
         return "persistent-marker-or-delayed-effect"
+
+    if has_mixed_single_target_area_range(move):
+        return "complex-review-needed"
 
     if has(
         r"loses? \d+ Hit Points|lose 15 Hit Points|fixed HP|direct HP|Dragon Rage|Endeavor|Final Gambit|"
@@ -283,7 +296,7 @@ def recommended_batch_score(move: dict) -> tuple[int, str] | None:
     """Return a score for the planning report's next safest batch."""
 
     name = str(move.get("name") or "")
-    if name in UNSUPPORTED_PROMPT_1_SKIP_MOVES:
+    if name in KNOWN_UNSUPPORTED_COMPLEX_MOVES or has_mixed_single_target_area_range(move):
         return None
 
     text = move_text(move)

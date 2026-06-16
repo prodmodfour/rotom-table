@@ -84,7 +84,7 @@ describe('move automation move helpers', () => {
     expect(entry.move.damage_roll).toBeNull()
   })
 
-  it('builds reviewed first-batch missing move entries from explicit scripts', () => {
+  it('builds reviewed straightforward move entries from explicit scripts', () => {
     const reviewedNames = [
       'Accelerock',
       'Branch Poke',
@@ -126,9 +126,10 @@ describe('move automation move helpers', () => {
     ])
   })
 
-  it('builds next reviewed plain area damage move entries from explicit scripts', () => {
-    const reviewedNames = ['Dragon Hammer', 'Egg Bomb', 'Land’s Wrath']
-    const entries = buildMoveAutomationMoveEntries(reviewedNames.map((name) => ({ name })))
+  it('builds reviewed plain area damage move entries from explicit scripts', () => {
+    const requestedNames = ['Dragon Hammer', 'Egg Bomb', 'Land’s Wrath']
+    const reviewedNames = ['Egg Bomb', 'Land’s Wrath']
+    const entries = buildMoveAutomationMoveEntries(requestedNames.map((name) => ({ name })))
     const entriesByName = new Map(entries.map((entry) => [entry.move.name, entry]))
 
     expect(entries.map((entry) => entry.move.name)).toEqual(reviewedNames)
@@ -141,6 +142,7 @@ describe('move automation move helpers', () => {
       })
       expect(entriesByName.get(name)?.script.areaTemplates?.length).toBeGreaterThan(0)
     }
+    expect(entriesByName.has('Dragon Hammer')).toBe(false)
   })
 
   it('uses Pokémon Loyalty for Return and Frustration automation scripts', () => {
