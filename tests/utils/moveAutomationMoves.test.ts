@@ -84,6 +84,48 @@ describe('move automation move helpers', () => {
     expect(entry.move.damage_roll).toBeNull()
   })
 
+  it('builds reviewed first-batch missing move entries from explicit scripts', () => {
+    const reviewedNames = [
+      'Accelerock',
+      'Branch Poke',
+      'Leafage',
+      'Aerial Ace',
+      'Aura Sphere',
+      'False Surrender',
+      'Feint Attack',
+      'Magnet Bomb',
+      'Sacred Sword',
+      'Shadow Punch',
+      'Shock Wave',
+      'Smart Strike',
+      'Mud Bomb',
+      'Octazooka',
+    ]
+    const entries = buildMoveAutomationMoveEntries(reviewedNames.map((name) => ({ name })))
+    const entriesByName = new Map(entries.map((entry) => [entry.move.name, entry]))
+
+    expect(entries.map((entry) => entry.move.name)).toEqual(reviewedNames)
+    for (const name of reviewedNames) {
+      expect(entriesByName.get(name)?.script).toMatchObject({
+        moveName: name,
+        targetMode: 'one-target',
+        targetCount: 1,
+        damaging: true,
+      })
+    }
+
+    for (const name of ['Aerial Ace', 'Aura Sphere', 'False Surrender', 'Feint Attack', 'Magnet Bomb', 'Sacred Sword', 'Shadow Punch', 'Shock Wave', 'Smart Strike']) {
+      expect(entriesByName.get(name)?.script.requiresAccuracy).toBe(false)
+    }
+
+    expect(entriesByName.get('Mud Bomb')?.script.stageSuggestions).toEqual([
+      { recipient: 'target', key: 'acc', delta: -1, label: 'Mud Bomb lowers Accuracy on 16+: -1 Accuracy CS', threshold: '16+', optional: true },
+    ])
+    expect(entriesByName.get('Octazooka')?.script.stageSuggestions).toEqual([
+      { recipient: 'target', key: 'acc', delta: -1, label: 'Octazooka lowers Accuracy on even roll: -1 Accuracy CS', threshold: 'even roll', optional: true },
+    ])
+  })
+
   it('uses Pokémon Loyalty for Return and Frustration automation scripts', () => {
     const entries = buildMoveAutomationMoveEntries([
       { name: 'Return' },

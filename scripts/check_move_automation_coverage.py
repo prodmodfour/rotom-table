@@ -350,6 +350,11 @@ def move_name_in(move: dict, names: set[str]) -> bool:
     return str(move.get("name") or "") in names
 
 
+def has_user_stage_effect(move: dict) -> bool:
+    effect = effect_text(move)
+    return has_stage_effect(move) and has(r"\buser(?:[’']s)?\b|\bThe user\b", effect)
+
+
 def classify_move_worklist_bucket(move: dict) -> str:
     """Classify a missing move into a conservative planning bucket."""
 
@@ -449,6 +454,8 @@ def classify_move_worklist_bucket(move: dict) -> str:
             if condition_effect:
                 return "single-target-secondary-condition"
             if stage_effect:
+                if has_user_stage_effect(move):
+                    return "complex-review-needed"
                 return "single-target-secondary-stage"
             if has_no_secondary_effect(move) or is_simple_cannot_miss_effect(move) or is_simple_critical_effect(move):
                 return "plain-single-target-damage"
@@ -473,7 +480,7 @@ def is_simple_cannot_miss_effect(move: dict) -> bool:
 def is_simple_critical_effect(move: dict) -> bool:
     effect = effect_text(move)
     return re.fullmatch(
-        r"(?:If [\w\-’' ]+ hits, it is a Critical Hit|[\w\-’' ]+ is a Critical Hit on (?:an? )?(?:\d+\+|Even-Numbered Rolls?))\.?",
+        r"[\w\-’' ]+ is a Critical Hit on (?:an? )?\d+\+\.?",
         effect,
         flags=re.IGNORECASE,
     ) is not None
@@ -497,6 +504,15 @@ def is_simple_stage_effect(move: dict) -> bool:
     if has(r"all Legal Targets|each of its stats|reset|swap|transfer|positive Combat Stage|Damage Base|Damage Roll", effect):
         return False
     return not has(r"if |If |may|choose|instead|before|after|until|for \d+ rounds?|depends", effect)
+
+
+def is_simple_target_stage_effect(move: dict) -> bool:
+    effect = effect_text(move)
+    if not is_simple_stage_effect(move):
+        return False
+    if has_user_stage_effect(move):
+        return False
+    return has(r"\btarget(?:[’']s)?\b|\bfoe(?:[’']s)?\b", effect)
 
 
 def recommended_batch_score(move: dict) -> tuple[int, str] | None:
@@ -523,7 +539,7 @@ def recommended_batch_score(move: dict) -> tuple[int, str] | None:
             return (1, move["name"])
         if is_simple_critical_effect(move):
             return (2, move["name"])
-    if bucket == "single-target-secondary-stage" and is_simple_stage_effect(move):
+    if bucket == "single-target-secondary-stage" and is_simple_target_stage_effect(move):
         return (3, move["name"])
     if bucket == "single-target-secondary-condition" and is_simple_condition_effect(move):
         return (4, move["name"])

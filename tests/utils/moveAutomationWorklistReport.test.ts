@@ -22,5 +22,10 @@ describe('move automation worklist report', () => {
     expect(result.stdout).toContain('plain-single-target-damage (')
     expect(result.stdout).toContain('complex-review-needed (')
     expect(result.stdout).toContain('Recommended next safest batch (')
+
+    const recommendedSection = result.stdout.split(/\nRecommended next safest batch \(\d+ moves\):\n/)[1] ?? ''
+    for (const moveName of ['Frost Breath', 'Storm Throw', 'Spacial Rend', 'Aura Wheel', 'Hammer Arm', 'Ice Hammer']) {
+      expect(recommendedSection).not.toContain(`  - ${moveName}`)
+    }
   })
 })
