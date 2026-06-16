@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(240)
-    expect(moveAutomationCoverage.missing).toHaveLength(536)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(241)
+    expect(moveAutomationCoverage.missing).toHaveLength(535)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -24,6 +24,13 @@ describe('explicit move automation scripts', () => {
   it('keeps known unsupported complex moves unautomated', () => {
     for (const moveName of ['Frost Breath', 'Storm Throw', 'Spacial Rend', 'Aura Wheel', 'Hammer Arm', 'Ice Hammer']) {
       expect(explicitScriptForMove(moveName)).toBeNull()
+    }
+  })
+
+  it('keeps human-deferred keyword-immunity moves unautomated', () => {
+    for (const moveName of ['Spore', 'Chatter', 'Earth Power']) {
+      expect(explicitScriptForMove(moveName)).toBeNull()
+      expect(moveAutomationCoverage.missing).toContain(moveName)
     }
   })
 
@@ -158,6 +165,28 @@ describe('explicit move automation scripts', () => {
         { recipient: 'target', key: 'spd', delta: -1, label: 'Bubble Beam lowers Speed on 18+: -1 Speed CS', threshold: '18+', optional: true },
       ],
     })
+    expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
+  })
+
+  it('implements Decorate as a reviewed target stage script', () => {
+    const script = explicitScriptForMove('Decorate')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Decorate',
+      targetMode: 'one-target',
+      targetCount: 1,
+      damaging: false,
+      requiresAccuracy: false,
+      damageBase: null,
+      damageClass: 'Status',
+      type: 'Fairy',
+      range: 'Melee, 1 Target',
+    })
+    expect(script?.stageSuggestions).toEqual([
+      { recipient: 'target', key: 'atk', delta: 2, label: 'Decorate raises Attack: +2 Attack CS' },
+      { recipient: 'target', key: 'satk', delta: 2, label: 'Decorate raises Special Attack: +2 Special Attack CS' },
+    ])
     expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
   })
 

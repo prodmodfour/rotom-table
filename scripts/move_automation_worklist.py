@@ -39,6 +39,13 @@ KNOWN_UNSUPPORTED_COMPLEX_MOVES = {
     "Ice Hammer",
 }
 
+# Human-deferred until keyword-immunity state is modeled.
+HUMAN_DEFERRED_KEYWORD_IMMUNITY_MOVES = {
+    "Spore",
+    "Chatter",
+    "Earth Power",
+}
+
 
 def move_text(move: dict, *, include_name: bool = True) -> str:
     fields = ["range", "effect", "special"]
@@ -296,7 +303,11 @@ def recommended_batch_score(move: dict) -> tuple[int, str] | None:
     """Return a score for the planning report's next safest batch."""
 
     name = str(move.get("name") or "")
-    if name in KNOWN_UNSUPPORTED_COMPLEX_MOVES or has_mixed_single_target_area_range(move):
+    if (
+        name in KNOWN_UNSUPPORTED_COMPLEX_MOVES
+        or name in HUMAN_DEFERRED_KEYWORD_IMMUNITY_MOVES
+        or has_mixed_single_target_area_range(move)
+    ):
         return None
 
     text = move_text(move)

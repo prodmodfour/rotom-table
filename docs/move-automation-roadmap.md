@@ -9,8 +9,8 @@ As of this audit:
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 240 |
-| Missing scripts | 536 |
+| Explicit scripts | 241 |
+| Missing scripts | 535 |
 
 `npm run check:move-automation` is expected to fail while any canonical move is missing an explicit reviewed script. Canonical move data, derived helpers, or report buckets must not count as automation coverage by themselves.
 
@@ -19,7 +19,7 @@ As of this audit:
 | Phase | Scope | Current status | Notes |
 | --- | --- | --- | --- |
 | 0 — foundation and guardrails | explicit registry; coverage check; report/worklist; module split / anti-god-file structure | Done | `src/utils/move-automation/registry.ts` is the explicit allow-list, `scripts/check_move_automation_coverage.py` enforces coverage, report/worklist tooling exists, and reviewed families live under `src/utils/move-automation/scripts/`. |
-| 1 — high-volume low-risk target effects | plain single-target damaging moves; single-target status-only moves; single-target target-stage moves; simple damaging moves with target secondary condition; simple damaging moves with target secondary stage change | In progress | Many reviewed single-target scripts exist, but the Phase 1 audit still has missing candidates and deferments. Human review must choose exact move lists. |
+| 1 — high-volume low-risk target effects | plain single-target damaging moves; single-target status-only moves; single-target target-stage moves; simple damaging moves with target secondary condition; simple damaging moves with target secondary stage change | In progress | Many reviewed single-target scripts exist. The current approved Phase 1 mini-batch has been applied, and remaining Phase 1-looking moves are deferred pending explicit engine support. Human review must choose exact move lists. |
 | 2 — area and multi-target moves | plain area damage; area status/stage effects; supported multi-template area alternatives only when all legal branches are represented; no mixed single-target-or-area moves until mixed-mode targeting exists | In progress / blocked by missing mixed-mode support | Reviewed area confirmation/stage/condition/pass scripts exist. Mixed single-target-or-area moves remain blocked until both branches can be represented. |
 | 3 — HP manipulation and damage variants | healing; drain; recoil; HP costs; fixed/direct HP loss; dynamic Damage Base; multi-strike variants | In progress / partially blocked by engine support | Some explicit scripts cover examples such as healing, direct HP loss, and multi-strike variants. Full HP-cost, recoil, dynamic-DB, and contextual damage support remains incomplete. |
 | 4 — field and map state | weather; terrain; rooms; hazards; barriers/smoke/field geometry | Not started / blocked by missing persistent field-map support | Do not automate weather, terrain, room, hazard, barrier, or smoke moves as note-only scripts. |
@@ -44,4 +44,4 @@ As of this audit:
 
 ## Phase 1 audit
 
-The current Phase 1 audit lives in [`docs/move-automation-phase-1-audit.md`](./move-automation-phase-1-audit.md). It classifies missing Phase 1-looking moves using the explicit rules in this roadmap and marks later-phase-looking moves as deferred instead of allowing the worklist to drive one-off implementation.
+The current Phase 1 audit lives in [`docs/move-automation-phase-1-audit.md`](./move-automation-phase-1-audit.md). The current approved Phase 1 mini-batch has been applied; the remaining Phase 1-looking moves are deferred pending explicit engine support. The audit classifies missing Phase 1-looking moves using the explicit rules in this roadmap and marks later-phase-looking moves as deferred instead of allowing the worklist to drive one-off implementation.

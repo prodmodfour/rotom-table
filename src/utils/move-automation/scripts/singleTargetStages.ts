@@ -10,6 +10,13 @@ export const REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS: ReadonlyMap<string, MoveAutom
   ['Confide', reviewedSingleTargetStageScript('Confide', [{ key: 'satk', delta: -1, label: 'Confide lowers Special Attack: -1 Special Attack CS' }])],
   ['Crunch', reviewedSingleTargetStageScript('Crunch', [{ key: 'def', delta: -1, label: 'Crunch lowers Defense on 17+: -1 Defense CS', threshold: '17+' }])],
   ['Crush Claw', reviewedSingleTargetStageScript('Crush Claw', [{ key: 'def', delta: -1, label: 'Crush Claw lowers Defense on even roll: -1 Defense CS', threshold: 'even roll' }])],
+  ['Decorate', {
+    ...reviewedSingleTargetStageScript('Decorate', [
+      { key: 'atk', delta: 2, label: 'Decorate raises Attack: +2 Attack CS' },
+      { key: 'satk', delta: 2, label: 'Decorate raises Special Attack: +2 Special Attack CS' },
+    ]),
+    damageBase: null,
+  }],
   ['Drum Beating', reviewedSingleTargetStageScript('Drum Beating', [{ key: 'spd', delta: -1, label: 'Drum Beating lowers Speed: -1 Speed CS' }])],
   ['Eerie Impulse', reviewedSingleTargetStageScript('Eerie Impulse', [{ key: 'satk', delta: -2, label: 'Eerie Impulse lowers Special Attack: -2 Special Attack CS' }])],
   ['Energy Ball', reviewedSingleTargetStageScript('Energy Ball', [{ key: 'sdef', delta: -1, label: 'Energy Ball lowers Special Defense on 17+: -1 Special Defense CS', threshold: '17+' }])],

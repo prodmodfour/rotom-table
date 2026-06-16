@@ -7,8 +7,8 @@ Current counts for this audit:
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 240 |
-| Missing scripts | 536 |
+| Explicit scripts | 241 |
+| Missing scripts | 535 |
 
 The worklist report remains advisory only. A human reviewer must choose the exact move list before any implementation batch, and every automated move must be explicitly reviewed by name in a reviewed family module merged into src/utils/move-automation/registry.ts.
 
@@ -17,39 +17,31 @@ The worklist report remains advisory only. A human reviewer must choose the exac
 | Group | Count |
 | --- | ---: |
 | plain-single-target-damage-candidates | 0 |
-| single-target-status-candidates | 1 |
-| single-target-target-stage-candidates | 1 |
-| single-target-secondary-condition-candidates | 1 |
-| single-target-secondary-stage-candidates | 1 |
-| phase-1-looking-but-defer | 94 |
+| single-target-status-candidates | 0 |
+| single-target-target-stage-candidates | 0 |
+| single-target-secondary-condition-candidates | 0 |
+| single-target-secondary-stage-candidates | 0 |
+| phase-1-looking-but-defer | 97 |
 
 ## A. `plain-single-target-damage-candidates`
 
-No missing move matched this strict Phase 1 group. The remaining plain-looking damaging moves in the audit have Exhaust, multi-strike, recoil, movement, dynamic damage, critical, item, or other non-Phase-1 semantics and are listed in group F when they are Phase 1-looking enough to call out.
+No missing move currently matches this strict Phase 1 group. The remaining plain-looking damaging moves in the audit have Exhaust, multi-strike, recoil, movement, dynamic damage, critical, item, or other non-Phase-1 semantics and are listed in group F when they are Phase 1-looking enough to call out.
 
 ## B. `single-target-status-candidates`
 
-| Name | Type | Frequency | AC | DB | Class | Range | Effect | Special | Reason |
-| --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |
-| Spore | Grass | Scene | — | — | Status | 4, 1 Target, Powder | The target falls Asleep. | — | single-target Status move that applies one ordinary target Sleep condition with no extra delayed processing beyond the condition itself. |
+No missing move currently matches this strict Phase 1 group.
 
 ## C. `single-target-target-stage-candidates`
 
-| Name | Type | Frequency | AC | DB | Class | Range | Effect | Special | Reason |
-| --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |
-| Decorate | Fairy | Scene | — | — | Status | Melee, 1 Target | The target gains +2 CS in both Attack and Special Attack. | — | single-target Status move that applies only target Attack and Special Attack Combat Stage increases; explicitly required to remain in this group while missing. |
+No missing move currently matches this strict Phase 1 group.
 
 ## D. `single-target-secondary-condition-candidates`
 
-| Name | Type | Frequency | AC | DB | Class | Range | Effect | Special | Reason |
-| --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |
-| Chatter | Flying | At-Will | 2 | 7 | Special | 4, 1 Target, Sonic | Chatter confuses all targets on 16+. | — | single-target damaging move with a straightforward target Confused threshold and no alternate type, movement, item, delayed, or user-side branch. |
+No missing move currently matches this strict Phase 1 group.
 
 ## E. `single-target-secondary-stage-candidates`
 
-| Name | Type | Frequency | AC | DB | Class | Range | Effect | Special | Reason |
-| --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |
-| Earth Power | Ground | EOT | 2 | 9 | Special | 6, 1 Target, Groundsource | Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+. | — | single-target damaging move with a straightforward target Special Defense Combat Stage threshold and no user-side or dynamic-damage branch. |
+No missing move currently matches this strict Phase 1 group.
 
 ## F. `phase-1-looking-but-defer`
 
@@ -68,6 +60,7 @@ No missing move matched this strict Phase 1 group. The remaining plain-looking d
 | Bide | Normal | Scene | — | — | Physical | Burst 1, Friendly | The user may use Bide as a Reaction Move upon being Hit by a Damaging Move. During their next available turn, the user may Shift and then use Bide, causing all Adjacent foes to lose X HP, where X is the amount of Damage taken since declaring use of Bide (Loss of life through effects such as Poison is not ‘Damage’). | — | defer: delayed stored-damage release and reaction timing belong to Phase 9. |
 | Body Press | Fighting | Scene x2 | 2 | 8 | Physical | Melee, 1 Target | The user’s Defense Stat is added to the damage roll instead of the Attack Stat. | — | defer: damage uses the user’s Defense instead of the normal offensive stat. |
 | Brick Break | Fighting | At-Will | 2 | 8 | Physical | Melee, 1 Target | Light Screen and Reflect may not be activated in response to Brick Break. | — | defer: response-window interaction with Light Screen and Reflect belongs to shields/barriers support. |
+| Chatter | Flying | At-Will | 2 | 7 | Special | 4, 1 Target, Sonic | Chatter confuses all targets on 16+. | — | defer: Sonic keyword immunity can be affected by Drown Out; keyword-immunity suppression/override state must be modeled first. |
 | Chip Away | Normal | EOT | 2 | 7 | Physical | Melee, 1 Target | Ignore any Armor, Damage Reduction, or changes in the target’s Defense or Special Defense (such as from Combat Stages) when calculating damage. | — | defer: ignores Armor, Damage Reduction, and defensive stat changes. |
 | Clear Smog | Poison | Scene x2 | — | 5 | Special | 6, 1 Target | The target’s Combat Stages are reset to their default, and all Coats on the target are destroyed. Clear Smog cannot miss. | — | defer: resets target Combat Stages and destroys Coats, so it is not target-stage-only Phase 1. |
 | Constrict | Normal | At-Will | 2 | 1 | Physical | Melee, 1 Target | Constrict lowers the target’s Speed 1 Combat Stage. Constrict may be used as a Swift Action against targets the user is Grappling, and automatically hits when performed this way. | — | defer: target Speed stage drop has a Grapple Swift Action automatic-hit branch. |
@@ -83,6 +76,7 @@ No missing move matched this strict Phase 1 group. The remaining plain-looking d
 | Double Iron Bash | Steel | Scene x2 | 2 | 6 | Physical | Melee, 1 Target, Double Strike | Double Iron Bash Flinches the targets on 15+. This move is affected by Iron Fist. | — | defer: Double Strike plus Flinch threshold is a multi-strike branch. |
 | Dragon Hammer | Dragon | EOT | 2 | 9 | Physical | Melee, 1 Target or Line 3 | — | — | defer: range is mixed single-target or Line 3, and mixed-mode targeting is not available. |
 | Dynamic Punch | Fighting | At-Will | 9 | 10 | Physical | Melee, 1 Target | Dynamic Punch Confuses the target. Dynamic Punch ignores the target’s Evasion if they are Flanked. | — | defer: Confusion is simple-looking, but the Flanked Evasion-ignore branch must be represented. |
+| Earth Power | Ground | EOT | 2 | 9 | Special | 6, 1 Target, Groundsource | Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+. | — | defer: Groundsource immunity can be affected by Roost and Smack Down; temporary Groundsource immunity suppression/override state must be modeled first. |
 | Electro Ball | Electric | Scene x2 | 2 | 6 | Special | 10, 1 Target | The user adds their Speed Stat, including Combat Stages, in addition to their Special Attack when determining the damage dealt by Electro Ball. The Defender in turn subtracts both their Special Defense and Speed Stats from the damage dealt before applying Type Effectiveness. | — | defer: damage uses Speed as an additional offensive and defensive stat. |
 | Façade | Normal | EOT | 2 | 7 | Physical | Melee, 1 Target | If the user is afflicted with a Persistent Status Affliction, Façade’s Damage Base is doubled to DB 14 (4d10+15 / 40). | — | defer: Damage Base depends on the user’s Persistent Status Affliction. |
 | Fell Stinger | Bug | At-Will | 2 | 5 | Physical | Melee, 1 Target | If the user successfully knocks out a target with Fell Stinger, raise their Attack by 2 Combat Stages. | — | defer: damaging move raises the user’s Attack Combat Stage on knockout. |
@@ -131,6 +125,7 @@ No missing move matched this strict Phase 1 group. The remaining plain-looking d
 | Soak | Water | Daily | 2 | — | Status | 5, 1 Target | The target gains the Water Type in addition to its other Types for 5 turns. | — | defer: target type mutation belongs to later type/form support. |
 | Spacial Rend | Dragon | Daily x2 | 3 | 10 | Special | 10, 1 Target | Spacial Rend is a Critical Hit on Even-Numbered Rolls. | — | defer: expanded critical range is outside Phase 1 plain damage. |
 | Spirit Shackle | Ghost | EOT | 2 | 8 | Physical | 8, 1 Target | The Target is Trapped for 2 rounds. | — | defer: Trapped duration is persistent marker processing. |
+| Spore | Grass | Scene | — | — | Status | 4, 1 Target, Powder | The target falls Asleep. | — | defer: Powder keyword effects need Grass-type Powder immunity handling before status automation. |
 | Stomp | Normal | EOT | 2 | 7 | Physical | Melee, 1 Target | Stomp Flinches the target on 15+. If the target is at least one size category smaller than the user, Stomp deals an additional 10 damage. | — | defer: Flinch threshold is simple-looking, but size-based bonus damage is dynamic damage semantics. |
 | Storm Throw | Fighting | EOT | 2 | 6 | Physical | Melee, 1 Target | If Storm Throw hits, it is a Critical Hit. | — | defer: guaranteed critical hit on hit is outside Phase 1 plain damage. |
 | Switcheroo | Dark | At-Will | 2 | — | Status | Melee, 1 Target | The user and the target exchange Held Items or Accessory Slot Items. | — | defer: held/accessory item exchange belongs to Phase 7. |
