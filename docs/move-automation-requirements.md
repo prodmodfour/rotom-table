@@ -163,6 +163,23 @@ npm run check:move-automation
 
 Until the explicit registry is complete, unregistered moves remain visible but disabled in the map move menu instead of falling back to manual resolution.
 
+### Worklist report
+
+Run the normal coverage check with:
+
+```bash
+npm run check:move-automation
+```
+
+For planning future reviewed batches without changing runtime behavior, run:
+
+```bash
+python3 scripts/check_move_automation_coverage.py --report
+# --worklist is an alias
+```
+
+The report prints the canonical valid move count, explicit script count, missing script count, heuristic missing-move buckets, and a suggested next safest batch. These buckets are planning aids only; they are not proof that a move is correct to automate, and they must not become a generated parser. Every canonical or homebrew move still needs an explicit reviewed script entry in `EXPLICIT_MOVE_AUTOMATION_SCRIPTS` before it appears as automated.
+
 ## Recommended next implementation area
 
 1. Add explicit script modules in small reviewed batches.
