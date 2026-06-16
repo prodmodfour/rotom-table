@@ -265,7 +265,7 @@ def is_simple_stage_effect(move: dict) -> bool:
     effect = effect_text(move)
     if not has_stage_effect(move):
         return False
-    if has(r"all Legal Targets|each of its stats|reset|swap|transfer|positive Combat Stage|Damage Base|Damage Roll", effect):
+    if has(r"all Legal Targets|each of its stats|reset|swap|transfer|invert|inverted|becomes?|positive Combat Stage|Damage Base|Damage Roll", effect):
         return False
     return not has(r"if |If |may|choose|instead|before|after|until|for \d+ rounds?|depends", effect)
 
@@ -311,6 +311,8 @@ def recommended_batch_score(move: dict) -> tuple[int, str] | None:
         return (3, move["name"])
     if bucket == "single-target-secondary-condition" and is_simple_condition_effect(move):
         return (4, move["name"])
+    if bucket == "single-target-stage" and is_simple_target_stage_effect(move):
+        return (5, move["name"])
 
     return None
 

@@ -126,6 +126,23 @@ describe('move automation move helpers', () => {
     ])
   })
 
+  it('builds next reviewed plain area damage move entries from explicit scripts', () => {
+    const reviewedNames = ['Dragon Hammer', 'Egg Bomb', 'Land’s Wrath']
+    const entries = buildMoveAutomationMoveEntries(reviewedNames.map((name) => ({ name })))
+    const entriesByName = new Map(entries.map((entry) => [entry.move.name, entry]))
+
+    expect(entries.map((entry) => entry.move.name)).toEqual(reviewedNames)
+    for (const name of reviewedNames) {
+      expect(entriesByName.get(name)?.script).toMatchObject({
+        moveName: name,
+        targetMode: 'multi-target',
+        targetCount: null,
+        damaging: true,
+      })
+      expect(entriesByName.get(name)?.script.areaTemplates?.length).toBeGreaterThan(0)
+    }
+  })
+
   it('uses Pokémon Loyalty for Return and Frustration automation scripts', () => {
     const entries = buildMoveAutomationMoveEntries([
       { name: 'Return' },

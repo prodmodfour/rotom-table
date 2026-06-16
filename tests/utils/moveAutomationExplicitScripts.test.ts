@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(238)
-    expect(moveAutomationCoverage.missing).toHaveLength(538)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(241)
+    expect(moveAutomationCoverage.missing).toHaveLength(535)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -271,6 +271,30 @@ describe('explicit move automation scripts', () => {
     })
     expect(sweetScent?.areaTemplates).toMatchObject([{ kind: 'burst', size: 2 }])
     expect(isSeamlessAreaConfirmationScript(sweetScent)).toBe(true)
+  })
+
+  it('implements the next reviewed plain area damaging moves as AoE confirmations', () => {
+    const expectedTemplates = new Map([
+      ['Dragon Hammer', [{ kind: 'line', size: 3 }]],
+      ['Egg Bomb', [{ kind: 'ranged-blast', size: 2, range: 5 }]],
+      ['Land’s Wrath', [{ kind: 'burst', size: 5 }]],
+    ])
+
+    for (const [moveName, areaTemplates] of expectedTemplates) {
+      const script = explicitScriptForMove(moveName)
+
+      expect(script).toMatchObject({
+        kind: 'explicit',
+        moveName,
+        targetMode: 'multi-target',
+        targetCount: null,
+        damaging: true,
+      })
+      expect(script?.areaTemplates).toMatchObject(areaTemplates)
+      expect(script?.conditionSuggestions).toEqual([])
+      expect(script?.stageSuggestions).toEqual([])
+      expect(isSeamlessAreaConfirmationScript(script)).toBe(true)
+    }
   })
 
   it('implements Smog as a reviewed Line 2 damaging AoE with even-roll poison', () => {
