@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(243)
-    expect(moveAutomationCoverage.missing).toHaveLength(533)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(248)
+    expect(moveAutomationCoverage.missing).toHaveLength(528)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -22,7 +22,7 @@ describe('explicit move automation scripts', () => {
   })
 
   it('keeps known unsupported complex moves unautomated', () => {
-    for (const moveName of ['Frost Breath', 'Storm Throw', 'Spacial Rend', 'Aura Wheel', 'Hammer Arm', 'Ice Hammer']) {
+    for (const moveName of ['Dragon Hammer', 'Frost Breath', 'Storm Throw', 'Spacial Rend', 'Aura Wheel', 'Hammer Arm', 'Ice Hammer', 'Topsy-Turvy']) {
       expect(explicitScriptForMove(moveName)).toBeNull()
     }
   })
@@ -424,6 +424,116 @@ describe('explicit move automation scripts', () => {
       },
     ])
     expect(isSeamlessAreaConfirmationScript(script)).toBe(true)
+  })
+
+  it('implements the reviewed Phase 2 area and multi-target scripts', () => {
+    const disarmingVoice = explicitScriptForMove('Disarming Voice')
+    expect(disarmingVoice).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Disarming Voice',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: false,
+      damageBase: 4,
+      damageClass: 'Special',
+      type: 'Fairy',
+      range: 'Burst 1',
+    })
+    expect(disarmingVoice?.areaTemplates).toHaveLength(1)
+    expect(disarmingVoice?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
+    expect(disarmingVoice?.conditionSuggestions).toEqual([])
+    expect(disarmingVoice?.stageSuggestions).toEqual([])
+    expect(disarmingVoice?.hpSuggestions).toEqual([])
+    expect(disarmingVoice?.fieldSuggestions).toEqual([])
+    expect(disarmingVoice?.hazardSuggestions).toEqual([])
+    expect(isSeamlessAreaConfirmationScript(disarmingVoice)).toBe(true)
+
+    const swift = explicitScriptForMove('Swift')
+    expect(swift).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Swift',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: false,
+      damageBase: 6,
+      damageClass: 'Special',
+      type: 'Normal',
+      range: '8, Ranged Blast 2, Friendly',
+    })
+    expect(swift?.keywords).toEqual(expect.arrayContaining(['Ranged Blast 2', 'Friendly']))
+    expect(swift?.areaTemplates).toHaveLength(1)
+    expect(swift?.areaTemplates).toMatchObject([{ kind: 'ranged-blast', range: 8, size: 2 }])
+    expect(swift?.conditionSuggestions).toEqual([])
+    expect(swift?.stageSuggestions).toEqual([])
+    expect(swift?.hpSuggestions).toEqual([])
+    expect(swift?.fieldSuggestions).toEqual([])
+    expect(swift?.hazardSuggestions).toEqual([])
+    expect(isSeamlessAreaConfirmationScript(swift)).toBe(true)
+
+    const electroweb = explicitScriptForMove('Electroweb')
+    expect(electroweb).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Electroweb',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: true,
+      ac: 3,
+      damageBase: 6,
+      damageClass: 'Special',
+      type: 'Electric',
+      range: '4, Ranged Blast 2',
+    })
+    expect(electroweb?.areaTemplates).toHaveLength(1)
+    expect(electroweb?.areaTemplates).toMatchObject([{ kind: 'ranged-blast', range: 4, size: 2 }])
+    expect(electroweb?.stageSuggestions).toEqual([
+      { recipient: 'target', key: 'spd', delta: -1, label: 'Electroweb lowers Speed: -1 Speed CS' },
+    ])
+    expect(isSeamlessAreaConfirmationScript(electroweb)).toBe(true)
+
+    const mirrorShot = explicitScriptForMove('Mirror Shot')
+    expect(mirrorShot).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Mirror Shot',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: true,
+      ac: 5,
+      damageBase: 7,
+      damageClass: 'Special',
+      type: 'Steel',
+      range: '6, Ranged Blast 2',
+    })
+    expect(mirrorShot?.areaTemplates).toHaveLength(1)
+    expect(mirrorShot?.areaTemplates).toMatchObject([{ kind: 'ranged-blast', range: 6, size: 2 }])
+    expect(mirrorShot?.stageSuggestions).toEqual([
+      { recipient: 'target', key: 'acc', delta: -2, label: 'Mirror Shot lowers Accuracy on 16+: -2 Accuracy CS', threshold: '16+', optional: true },
+    ])
+    expect(isSeamlessAreaConfirmationScript(mirrorShot)).toBe(true)
+
+    const seedFlare = explicitScriptForMove('Seed Flare')
+    expect(seedFlare).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Seed Flare',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: true,
+      ac: 5,
+      damageBase: 12,
+      damageClass: 'Special',
+      type: 'Grass',
+      range: '6, Ranged Blast 3',
+    })
+    expect(seedFlare?.areaTemplates).toHaveLength(1)
+    expect(seedFlare?.areaTemplates).toMatchObject([{ kind: 'ranged-blast', range: 6, size: 3 }])
+    expect(seedFlare?.stageSuggestions).toEqual([
+      { recipient: 'target', key: 'sdef', delta: -1, label: 'Seed Flare lowers Special Defense: -1 Special Defense CS' },
+    ])
+    expect(isSeamlessAreaConfirmationScript(seedFlare)).toBe(true)
   })
 
   it('implements the requested basic moves as seamless explicit scripts', () => {

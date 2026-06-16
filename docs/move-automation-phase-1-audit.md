@@ -7,8 +7,8 @@ Current counts for this audit:
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 243 |
-| Missing scripts | 533 |
+| Explicit scripts | 248 |
+| Missing scripts | 528 |
 
 The worklist report remains advisory only. A human reviewer must choose the exact move list before any implementation batch, and every automated move must be explicitly reviewed by name in a reviewed family module merged into src/utils/move-automation/registry.ts.
 

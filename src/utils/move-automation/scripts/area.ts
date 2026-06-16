@@ -96,17 +96,20 @@ export const REVIEWED_TARGET_STAGE_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomat
   ['Bubble', reviewedTargetStagesAreaScript('Bubble', [{ key: 'spd', delta: -1, label: 'Bubble lowers Speed on 16+: -1 Speed CS', threshold: '16+' }])],
   ['Bulldoze', reviewedTargetStagesAreaScript('Bulldoze', [{ key: 'spd', delta: -1, label: 'Bulldoze lowers Speed: -1 Speed CS' }])],
   ['Cotton Spore', reviewedTargetStagesAreaScript('Cotton Spore', [{ key: 'spd', delta: -2, label: 'Cotton Spore lowers Speed: -2 Speed CS' }])],
+  ['Electroweb', reviewedTargetStagesAreaScript('Electroweb', [{ key: 'spd', delta: -1, label: 'Electroweb lowers Speed: -1 Speed CS' }])],
   ['Feather Dance', reviewedTargetStagesAreaScript('Feather Dance', [{ key: 'atk', delta: -2, label: 'Feather Dance lowers Attack: -2 Attack CS' }])],
   ['Flash', reviewedTargetStagesAreaScript('Flash', [{ key: 'acc', delta: -1, label: 'Flash lowers Accuracy: -1 Accuracy CS' }])],
   ['Growl', reviewedTargetStageAreaScript('Growl', 'atk', 'Growl lowers Attack: -1 Attack CS')],
   ['Icy Wind', reviewedTargetStagesAreaScript('Icy Wind', [{ key: 'spd', delta: -1, label: 'Icy Wind lowers Speed: -1 Speed CS' }])],
   ['Leer', reviewedTargetStageAreaScript('Leer', 'def', 'Leer lowers Defense: -1 Defense CS')],
   ['Metal Sound', reviewedTargetStagesAreaScript('Metal Sound', [{ key: 'sdef', delta: -2, label: 'Metal Sound lowers Special Defense: -2 Special Defense CS' }])],
+  ['Mirror Shot', reviewedTargetStagesAreaScript('Mirror Shot', [{ key: 'acc', delta: -2, label: 'Mirror Shot lowers Accuracy on 16+: -2 Accuracy CS', threshold: '16+', optional: true }])],
   ['Noble Roar', reviewedTargetStagesAreaScript('Noble Roar', [
     { key: 'atk', delta: -1, label: 'Noble Roar lowers Attack: -1 Attack CS' },
     { key: 'satk', delta: -1, label: 'Noble Roar lowers Special Attack: -1 Special Attack CS' },
   ])],
   ['Screech', reviewedTargetStagesAreaScript('Screech', [{ key: 'def', delta: -2, label: 'Screech lowers Defense: -2 Defense CS' }])],
+  ['Seed Flare', reviewedTargetStagesAreaScript('Seed Flare', [{ key: 'sdef', delta: -1, label: 'Seed Flare lowers Special Defense: -1 Special Defense CS' }])],
   ['Snarl', reviewedTargetStagesAreaScript('Snarl', [{ key: 'satk', delta: -1, label: 'Snarl lowers Special Attack: -1 Special Attack CS' }])],
   ['Struggle Bug', reviewedTargetStagesAreaScript('Struggle Bug', [{ key: 'satk', delta: -1, label: 'Struggle Bug lowers Special Attack: -1 Special Attack CS' }])],
   ['Tail Whip', reviewedTargetStagesAreaScript('Tail Whip', [{ key: 'def', delta: -1, label: 'Tail Whip lowers Defense: -1 Defense CS' }])],
@@ -121,6 +124,7 @@ export const REVIEWED_AREA_CONFIRMATION_SCRIPT_NAMES = [
   'Boomburst',
   'Brutal Swing',
   'Dazzling Gleam',
+  'Disarming Voice',
   'Discharge',
   'Egg Bomb',
   'Heat Wave',
@@ -135,6 +139,7 @@ export const REVIEWED_AREA_CONFIRMATION_SCRIPT_NAMES = [
   'Searing Shot',
   'Steam Eruption',
   'Strange Steam',
+  'Swift',
 ]
 
 export const REVIEWED_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(

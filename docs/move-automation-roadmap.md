@@ -9,8 +9,8 @@ As of this audit:
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 243 |
-| Missing scripts | 533 |
+| Explicit scripts | 248 |
+| Missing scripts | 528 |
 
 `npm run check:move-automation` is expected to fail while any canonical move is missing an explicit reviewed script. Canonical move data, derived helpers, or report buckets must not count as automation coverage by themselves.
 

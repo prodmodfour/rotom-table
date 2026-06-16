@@ -452,4 +452,105 @@ describe('instant move automation', () => {
       'Gear: accuracy 10 (hit).',
     ]))
   })
+
+  it('resolves Disarming Voice as a no-accuracy area damaging move', () => {
+    const script = explicitScriptForMove('Disarming Voice')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Singer', satk: 10 }),
+      targets: [token({ id: 't', species: 'Target', sdef: 5 })],
+      damageFormula: '1d8+6',
+      random: sequenceRandom([0]),
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 't', currentHp: 28 }])
+    expect(transaction.hitTargetIds).toEqual(['t'])
+    expect(transaction.logLines).toContain('Target: hit.')
+  })
+
+  it('resolves Swift as a no-accuracy area damaging move', () => {
+    const script = explicitScriptForMove('Swift')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Star', satk: 10 }),
+      targets: [token({ id: 't', species: 'Target', sdef: 5, evasion: { physical: 9, special: 9, speed: 9 } })],
+      damageFormula: '2d6+8',
+      random: sequenceRandom([0, 0]),
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 't', currentHp: 25 }])
+    expect(transaction.hitTargetIds).toEqual(['t'])
+    expect(transaction.logLines).toContain('Target: hit.')
+  })
+
+  it('applies Electroweb Speed drops only to hit area targets', () => {
+    const script = explicitScriptForMove('Electroweb')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Joltik', satk: 10 }),
+      targets: [
+        token({ id: 'hit', species: 'Hitmon', sdef: 5 }),
+        token({ id: 'miss', species: 'Missmon', sdef: 5 }),
+      ],
+      damageFormula: '2d6+8',
+      random: sequenceRandom([0.5, 0, 0, 0]),
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 'hit', currentHp: 25 }])
+    expect(transaction.combatStageUpdates).toEqual([{ id: 'hit', stages: { ...stages, spd: -1 } }])
+    expect(transaction.logLines).toEqual(expect.arrayContaining([
+      'Electroweb lowers Speed: -1 Speed CS on Hitmon.',
+      'Hitmon: accuracy 11 (hit).',
+      'Missmon: accuracy 1 (miss).',
+    ]))
+  })
+
+  it('applies Mirror Shot Accuracy drops only to hit targets whose natural roll meets 16+', () => {
+    const script = explicitScriptForMove('Mirror Shot')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Klink', satk: 10 }),
+      targets: [
+        token({ id: 'eligible', species: 'Eligible', sdef: 5 }),
+        token({ id: 'low', species: 'LowRoll', sdef: 5 }),
+        token({ id: 'miss', species: 'Missmon', sdef: 5 }),
+      ],
+      damageFormula: '2d6+10',
+      random: sequenceRandom([0.75, 0, 0, 0.7, 0, 0, 0]),
+    })
+
+    expect(transaction.hpUpdates).toEqual([
+      { id: 'eligible', currentHp: 23 },
+      { id: 'low', currentHp: 23 },
+    ])
+    expect(transaction.combatStageUpdates).toEqual([{ id: 'eligible', stages: { ...stages, acc: -2 } }])
+    expect(transaction.logLines).toEqual(expect.arrayContaining([
+      'Mirror Shot lowers Accuracy on 16+: -2 Accuracy CS on Eligible.',
+      'Eligible: accuracy 16 (hit).',
+      'LowRoll: accuracy 15 (hit).',
+      'Missmon: accuracy 1 (miss).',
+    ]))
+  })
+
+  it('applies Seed Flare Special Defense drops only to hit area targets', () => {
+    const script = explicitScriptForMove('Seed Flare')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Shaymin', satk: 10 }),
+      targets: [
+        token({ id: 'hit', species: 'Hitmon', sdef: 5 }),
+        token({ id: 'miss', species: 'Missmon', sdef: 5 }),
+      ],
+      damageFormula: '1d6',
+      random: sequenceRandom([0.5, 0, 0]),
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 'hit', currentHp: 34 }])
+    expect(transaction.combatStageUpdates).toEqual([{ id: 'hit', stages: { ...stages, sdef: -1 } }])
+    expect(transaction.logLines).toEqual(expect.arrayContaining([
+      'Seed Flare lowers Special Defense: -1 Special Defense CS on Hitmon.',
+      'Hitmon: accuracy 11 (hit).',
+      'Missmon: accuracy 1 (miss).',
+    ]))
+  })
 })
