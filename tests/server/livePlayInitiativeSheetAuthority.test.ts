@@ -147,6 +147,28 @@ const acceptedInitiativeEvents = (
   && event.patches?.some((patch) => patch.type === LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE)
 ))
 
+const expectRejectedWithoutInitiativeMutation = async (input: {
+  readonly harness: LivePlayIntegrationHarness
+  readonly result: Awaited<ReturnType<LivePlayIntegrationHarness['nextInitiative']>>['result']
+  readonly opId: string
+  readonly eventsBefore: number
+  readonly currentRevision: number
+}) => {
+  expect(input.result).toMatchObject({
+    ok: false,
+    reason: 'stale-revision',
+    currentRevision: input.currentRevision,
+  })
+  expect('patches' in input.result).toBe(false)
+  const after = await input.harness.readMap()
+  expect(after?.initiative?.activeId).toBe('token-a')
+  expect(after?.initiative?.round).toBe(1)
+  expect(after?.metadata?.initiativeLog).toBeUndefined()
+  expect(after?.revision).toBe(input.currentRevision)
+  expect(input.harness.publishedEvents).toHaveLength(input.eventsBefore)
+  expect(acceptedInitiativeEvents(input.harness, input.opId)).toEqual([])
+}
+
 const paralyzeAlpha = async (harness: LivePlayIntegrationHarness) => {
   const response = await harness.modifyConditions({
     actor: gm,
@@ -210,6 +232,35 @@ describe('live-play initiative sheet authority', () => {
     expect(acceptedInitiativeEvents(harness, 'op_stale_next_sheet_order')).toEqual([])
   })
 
+  it('rejects NEXT_INITIATIVE with a stale baseRevision and stale sheet-derived order', async () => {
+    const harness = createHarness()
+    const client = await harness.loadClient('stale-next-client')
+    const clientBaseRevision = client.map?.revision ?? 0
+    const clientVisibleOrder = [...oldOrder]
+
+    await paralyzeAlpha(harness)
+    const eventsBefore = harness.publishedEvents.length
+
+    const response = await harness.nextInitiative({
+      actor: gm,
+      command: harness.nextInitiativeCommand({
+        opId: 'op_stale_base_next_sheet_order',
+        baseRevision: clientBaseRevision,
+        orderIds: clientVisibleOrder,
+        activeId: 'token-a',
+        round: 1,
+      }),
+    })
+
+    await expectRejectedWithoutInitiativeMutation({
+      harness,
+      result: response.result,
+      opId: 'op_stale_base_next_sheet_order',
+      eventsBefore,
+      currentRevision: 1,
+    })
+  })
+
   it('accepts NEXT_INITIATIVE when the client submits the updated authoritative sheet-derived order', async () => {
     const harness = createHarness()
     await paralyzeAlpha(harness)
@@ -263,6 +314,35 @@ describe('live-play initiative sheet authority', () => {
     expect(after?.revision).toBe(1)
     expect(harness.publishedEvents).toHaveLength(eventsBefore)
     expect(acceptedInitiativeEvents(harness, 'op_stale_previous_sheet_order')).toEqual([])
+  })
+
+  it('rejects PREVIOUS_INITIATIVE with a stale baseRevision and stale sheet-derived order', async () => {
+    const harness = createHarness()
+    const client = await harness.loadClient('stale-previous-client')
+    const clientBaseRevision = client.map?.revision ?? 0
+    const clientVisibleOrder = [...oldOrder]
+
+    await paralyzeBravo(harness)
+    const eventsBefore = harness.publishedEvents.length
+
+    const response = await harness.previousInitiative({
+      actor: gm,
+      command: harness.previousInitiativeCommand({
+        opId: 'op_stale_base_previous_sheet_order',
+        baseRevision: clientBaseRevision,
+        orderIds: clientVisibleOrder,
+        activeId: 'token-a',
+        round: 1,
+      }),
+    })
+
+    await expectRejectedWithoutInitiativeMutation({
+      harness,
+      result: response.result,
+      opId: 'op_stale_base_previous_sheet_order',
+      eventsBefore,
+      currentRevision: 1,
+    })
   })
 
   it('accepts PREVIOUS_INITIATIVE when the client submits the updated authoritative trainer-sheet order', async () => {

@@ -31,6 +31,11 @@ import { subscribeChannel } from './useRealtime'
 
 export interface ReloadRuntimeSheetsOptions {
   readonly profileId?: PlayerProfileId | null
+  /**
+   * Background hydration is best-effort, but explicit reconciliation must fail
+   * closed when the runtime sheet list cannot be refreshed.
+   */
+  readonly throwOnError?: boolean
 }
 
 interface LiveSheetsApi {
@@ -54,13 +59,19 @@ const hydrateRuntimeSheets = async (
   try {
     const requestOptions = options.profileId ? { params: { profileId: options.profileId } } : undefined
     const payload = await useApiClient().getJson<LiveSheetListPayload>(SHEET_API_PATHS.list, requestOptions)
-    if (loadSequence !== runtimeLoadSequence) return
+    if (loadSequence !== runtimeLoadSequence) {
+      if (options.throwOnError) {
+        throw new Error('Runtime sheet reload was superseded before fresh sheets could be applied')
+      }
+      return
+    }
     replaceLiveSheetMaps({
       pokemonBySlug: api.pokemonBySlug.value,
       trainerBySlug: api.trainerBySlug.value,
     }, payload)
   } catch (err) {
     console.warn('[live-sheets] failed to load runtime sheet list', err)
+    if (options.throwOnError) throw err
   }
 }
 

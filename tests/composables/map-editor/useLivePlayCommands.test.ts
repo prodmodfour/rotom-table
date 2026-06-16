@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
+import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlayStateMachine'
 import { MAP_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -685,16 +686,18 @@ describe('useLivePlayCommands', () => {
     expect(actions.lastError.value).toBeNull()
   })
 
-  it('requests reconciliation and updates state hooks for stale live-play rejections', async () => {
+  it('requests reconciliation and clears local error state after stale live-play rejections reconcile successfully', async () => {
     const requestReconciliation = vi.fn()
     const onCommandStarted = vi.fn()
     const onCommandRejected = vi.fn()
+    const onCommandErrorCleared = vi.fn()
     const actions = useLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
       requestReconciliation,
       onCommandStarted,
       onCommandRejected,
+      onCommandErrorCleared,
     })
     apiMocks.postJson.mockResolvedValue({
       ok: false,
@@ -724,6 +727,121 @@ describe('useLivePlayCommands', () => {
       request: MAP_API_PATHS.moveToken,
       response: expect.objectContaining({ reason: 'stale-revision', currentRevision: 5 }),
     })
+    expect(actions.status.value).toBe('idle')
+    expect(actions.lastError.value).toBeNull()
+    expect(onCommandErrorCleared).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the stale rejection visible when required reconciliation fails', async () => {
+    const requestReconciliation = vi.fn().mockRejectedValue(new Error('Runtime sheet reload failed'))
+    const onCommandErrorCleared = vi.fn()
+    const onCommandFailed = vi.fn()
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      requestReconciliation,
+      onCommandErrorCleared,
+      onCommandFailed,
+    })
+    apiMocks.postJson.mockResolvedValue({
+      ok: false,
+      opId: 'op_stalemove02',
+      mapSlug: 'arena-map',
+      reason: 'stale-revision',
+      message: 'Map revision 4 is stale; current revision is 5.',
+      currentRevision: 5,
+    })
+
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 2, y: 0, z: 1 },
+    })
+
+    expect(result).toMatchObject({
+      dispatched: false,
+      message: 'Map revision 4 is stale; current revision is 5.',
+    })
+    expect(requestReconciliation).toHaveBeenCalledWith({
+      request: MAP_API_PATHS.moveToken,
+      response: expect.objectContaining({ reason: 'stale-revision', currentRevision: 5 }),
+    })
+    expect(actions.status.value).toBe('error')
+    expect(actions.lastError.value).toBe('Map revision 4 is stale; current revision is 5.')
+    expect(onCommandErrorCleared).not.toHaveBeenCalled()
+    expect(onCommandFailed).toHaveBeenCalledWith('Runtime sheet reload failed')
+  })
+
+  it('keeps live-play controls blocked when stale reconciliation sheet reload fails', async () => {
+    const stateMachine = useLivePlayStateMachine({
+      mapStatus: ref('idle'),
+      realtimeStatus: ref('synced'),
+    })
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      requestReconciliation: () => stateMachine.reconcile(async () => {
+        await Promise.all([
+          Promise.resolve(),
+          Promise.reject(new Error('Runtime sheet reload failed')),
+        ])
+      }),
+      onCommandStarted: stateMachine.commandStarted,
+      onCommandRejected: stateMachine.commandRejected,
+      onCommandFailed: stateMachine.commandFailed,
+      onCommandErrorCleared: stateMachine.clearCommandError,
+    })
+    apiMocks.postJson.mockResolvedValue({
+      ok: false,
+      opId: 'op_staleinit01',
+      mapSlug: 'arena-map',
+      reason: 'stale-revision',
+      message: 'Initiative order is stale; reload turn order.',
+      currentRevision: 5,
+    })
+
+    await actions.nextInitiative({ orderIds: ['token-pikachu', 'target-token'], activeId: 'token-pikachu', round: 1 })
+
+    expect(actions.status.value).toBe('error')
+    expect(actions.lastError.value).toBe('Initiative order is stale; reload turn order.')
+    expect(stateMachine.state.value).toBe('error')
+    expect(stateMachine.notice.value).toBe('Runtime sheet reload failed')
+    expect(stateMachine.commandsAllowed.value).toBe(false)
+  })
+
+  it('lets live-play controls resume when stale reconciliation reloads map and sheets successfully', async () => {
+    const stateMachine = useLivePlayStateMachine({
+      mapStatus: ref('idle'),
+      realtimeStatus: ref('synced'),
+    })
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      requestReconciliation: () => stateMachine.reconcile(async () => {
+        await Promise.all([
+          Promise.resolve(),
+          Promise.resolve(),
+        ])
+      }),
+      onCommandStarted: stateMachine.commandStarted,
+      onCommandRejected: stateMachine.commandRejected,
+      onCommandFailed: stateMachine.commandFailed,
+      onCommandErrorCleared: stateMachine.clearCommandError,
+    })
+    apiMocks.postJson.mockResolvedValue({
+      ok: false,
+      opId: 'op_staleinit02',
+      mapSlug: 'arena-map',
+      reason: 'stale-revision',
+      message: 'Initiative order is stale; reload turn order.',
+      currentRevision: 5,
+    })
+
+    await actions.nextInitiative({ orderIds: ['token-pikachu', 'target-token'], activeId: 'token-pikachu', round: 1 })
+
+    expect(actions.status.value).toBe('idle')
+    expect(actions.lastError.value).toBeNull()
+    expect(stateMachine.state.value).toBe('ready')
+    expect(stateMachine.commandsAllowed.value).toBe(true)
   })
 
   it('requests reconciliation for stale-base conflicts and reports the rejection to state hooks', async () => {

@@ -432,8 +432,18 @@ export const useLivePlayCommands = (
         status.value = 'error'
         lastError.value = message
         options.onCommandRejected?.({ reason, message, response })
-        if (rejectionNeedsReconciliation(reason, response, normalizeRevision(options.mapRevision?.value))) {
-          await options.requestReconciliation?.({ request, response })
+        const needsReconciliation = rejectionNeedsReconciliation(
+          reason,
+          response,
+          normalizeRevision(options.mapRevision?.value),
+        )
+        if (needsReconciliation && options.requestReconciliation) {
+          try {
+            await options.requestReconciliation({ request, response })
+            clearError()
+          } catch (reconciliationError) {
+            options.onCommandFailed?.(getErrorMessage(reconciliationError, { fallback: 'Live-play reconciliation failed' }))
+          }
         }
         return { dispatched: false, message, response }
       }

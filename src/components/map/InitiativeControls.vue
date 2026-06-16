@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+
+const props = defineProps<{
   rowCount: number
   activeId: string | null
   round: number
@@ -15,6 +17,31 @@ const emit = defineEmits<{
   (event: 'clear-active'): void
   (event: 'clear-values'): void
 }>()
+
+const turnControlsEnabled = computed(() => props.rowCount > 0 && props.canManage)
+const fillFromSpeedEnabled = computed(() => props.rowCount > 0 && props.canManage)
+const clearActiveEnabled = computed(() => Boolean(props.activeId) && props.canManage)
+const clearValuesEnabled = computed(() => (props.hasInitiativeValues || Boolean(props.activeId)) && props.canManage)
+
+const emitPrevious = () => {
+  if (turnControlsEnabled.value) emit('previous')
+}
+
+const emitNext = () => {
+  if (turnControlsEnabled.value) emit('next')
+}
+
+const emitFillFromSpeed = () => {
+  if (fillFromSpeedEnabled.value) emit('fill-from-speed')
+}
+
+const emitClearActive = () => {
+  if (clearActiveEnabled.value) emit('clear-active')
+}
+
+const emitClearValues = () => {
+  if (clearValuesEnabled.value) emit('clear-values')
+}
 </script>
 
 <template>
@@ -42,16 +69,16 @@ const emit = defineEmits<{
     <button
       type="button"
       class="initiative-action"
-      :disabled="!rowCount || !canManage"
-      @click="emit('previous')"
+      :disabled="!turnControlsEnabled"
+      @click="emitPrevious"
     >
       Previous
     </button>
     <button
       type="button"
       class="initiative-action initiative-action--primary"
-      :disabled="!rowCount || !canManage"
-      @click="emit('next')"
+      :disabled="!turnControlsEnabled"
+      @click="emitNext"
     >
       {{ activeId ? 'Next turn' : 'Start' }}
     </button>
@@ -62,24 +89,24 @@ const emit = defineEmits<{
       type="button"
       class="initiative-tool"
       title="Use each character's default initiative: Speed after Combat Stages plus item/training bonuses"
-      :disabled="!rowCount || !canManage"
-      @click="emit('fill-from-speed')"
+      :disabled="!fillFromSpeedEnabled"
+      @click="emitFillFromSpeed"
     >
       Use All Init
     </button>
     <button
       type="button"
       class="initiative-tool"
-      :disabled="!activeId || !canManage"
-      @click="emit('clear-active')"
+      :disabled="!clearActiveEnabled"
+      @click="emitClearActive"
     >
       Clear turn
     </button>
     <button
       type="button"
       class="initiative-tool initiative-tool--danger"
-      :disabled="(!hasInitiativeValues && !activeId) || !canManage"
-      @click="emit('clear-values')"
+      :disabled="!clearValuesEnabled"
+      @click="emitClearValues"
     >
       Reset
     </button>

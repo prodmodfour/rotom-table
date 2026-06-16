@@ -133,10 +133,14 @@ const applyLivePlaySheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: s
 const runtimeSheetReloadContext = () => (
   isPlayer.value ? { profileId: selectedProfileId.value } : {}
 )
+const reconciliationSheetReloadContext = () => ({
+  ...runtimeSheetReloadContext(),
+  throwOnError: true,
+})
 const reconcileLivePlayState = async () => {
   await Promise.all([
     reloadAuthoritativeMap(),
-    reloadRuntimeSheets(runtimeSheetReloadContext()),
+    reloadRuntimeSheets(reconciliationSheetReloadContext()),
   ])
 }
 const livePlayStateMachine = useLivePlayStateMachine({
