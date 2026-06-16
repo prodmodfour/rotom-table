@@ -14,6 +14,8 @@ import {
 import { computeSheetAbilityAwareMultiplier } from '~/utils/sheetPassiveAbilityEffects'
 import { conditionBaseName, normalizeConditionNames } from '~/utils/statusConditions'
 import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
+import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
+import { moveAutomationPassiveImmunityKeywordsForTarget } from '~/utils/moveAutomationKeywordImmunity'
 import type { MapFieldEffects } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -109,12 +111,14 @@ export const moveAutomationTargetDamageMultiplier = (
   script: MoveAutomationScript | null | undefined,
   target: SpawnedPokemon,
 ): number => {
+  if (script && moveAutomationMoveImmunitySource(script, target)) return 0
+
   const multiplier = computeSheetAbilityAwareMultiplier(
     script?.type ?? 'Normal',
     target.defenderTypes,
     target.abilityNames,
     target.defenderCapabilities,
-    { moveKeywords: script?.keywords },
+    { moveKeywords: script ? moveAutomationPassiveImmunityKeywordsForTarget(script.keywords, target) : undefined },
   )
   if (script?.type === 'Electric' && multiplier > 0 && targetHasCondition(target, ELECTRIC_RESISTANT_COAT_CONDITION)) {
     return resistMultiplierOneStepFurther(multiplier)

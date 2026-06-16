@@ -95,6 +95,36 @@
     ],
     "source": "move automation"
   },
+  "Roost Grounded": {
+    "name": "Roost Grounded",
+    "category": "Other Affliction",
+    "effect": "Groundsource immunity from Sky or Levitate capability is suppressed while this marker is present. Remove manually when the grounding effect ends.",
+    "aliases": [
+      "Roost Grounded Marker",
+      "Grounded by Roost"
+    ],
+    "source": "move automation"
+  },
+  "Smack Down Grounded": {
+    "name": "Smack Down Grounded",
+    "category": "Other Affliction",
+    "effect": "Groundsource immunity from Sky or Levitate capability is suppressed while this marker is present. Remove manually when the grounding effect ends.",
+    "aliases": [
+      "Smack Down Grounded Marker",
+      "Grounded by Smack Down"
+    ],
+    "source": "move automation"
+  },
+  "Groundsource Immunity Suppressed": {
+    "name": "Groundsource Immunity Suppressed",
+    "category": "Other Affliction",
+    "effect": "Groundsource immunity from Sky or Levitate capability is suppressed while this marker is present. Remove manually when the grounding effect ends.",
+    "aliases": [
+      "Groundsource Suppressed",
+      "Groundsource Immunity Suppression"
+    ],
+    "source": "move automation"
+  },
   "Vulnerable": {
     "name": "Vulnerable",
     "category": "Other Affliction",

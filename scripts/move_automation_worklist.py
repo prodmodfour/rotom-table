@@ -39,11 +39,9 @@ KNOWN_UNSUPPORTED_COMPLEX_MOVES = {
     "Ice Hammer",
 }
 
-# Human-deferred until keyword-immunity state is modeled.
-HUMAN_DEFERRED_KEYWORD_IMMUNITY_MOVES = {
-    "Spore",
+# Human-deferred until Sonic Drown Out reaction/cancel timing is modeled.
+HUMAN_DEFERRED_REACTION_CANCEL_MOVES = {
     "Chatter",
-    "Earth Power",
 }
 
 
@@ -190,7 +188,7 @@ def classify_move_worklist_bucket(move: dict) -> str:
     if has(
         r"Aqua Ring|Barrier|Blessing|Block|Coat|Curse|Destiny Bond|Disable|Doom Desire|Encore|Future Sight|"
         r"Grudge|Imprison|Ingrain|Laser Focus|Leech Seed|Lock-On|Mean Look|Mind Reader|Nightmare|Perish|"
-        r"Powder|Smokescreen|Spider Web|Stockpile|Substitute|Vortex|Wish|Yawn|delayed|end of|next turn|"
+        r"Smokescreen|Spider Web|Stockpile|Substitute|Vortex|Wish|Yawn|delayed|end of|next turn|"
         r"for \d+ rounds?|until the end|one full round",
         text,
     ):
@@ -305,7 +303,7 @@ def recommended_batch_score(move: dict) -> tuple[int, str] | None:
     name = str(move.get("name") or "")
     if (
         name in KNOWN_UNSUPPORTED_COMPLEX_MOVES
-        or name in HUMAN_DEFERRED_KEYWORD_IMMUNITY_MOVES
+        or name in HUMAN_DEFERRED_REACTION_CANCEL_MOVES
         or has_mixed_single_target_area_range(move)
     ):
         return None

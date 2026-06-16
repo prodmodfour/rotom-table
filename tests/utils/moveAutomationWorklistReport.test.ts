@@ -29,9 +29,7 @@ describe('move automation worklist report', () => {
     const recommendedSection = recommendedMatch?.[2] ?? ''
     for (const moveName of [
       'Decorate',
-      'Spore',
       'Chatter',
-      'Earth Power',
       'Dragon Hammer',
       'Frost Breath',
       'Storm Throw',

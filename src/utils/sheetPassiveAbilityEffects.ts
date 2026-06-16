@@ -3,6 +3,7 @@ import {
   sheetHasCanonicalAbility,
   type SheetAbilityNameSource,
 } from '~/utils/sheetAbilities'
+import { moveAutomationKeywordsInclude } from '~/utils/moveAutomationKeywordImmunity'
 
 export const LEVITATE_ABILITY_NAME = 'Levitate'
 export const FLASH_FIRE_ABILITY_NAME = 'Flash Fire'
@@ -80,15 +81,13 @@ export const getPassiveGroundResistanceSource = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): string | null => hasLevitateAbility(abilities) ? LEVITATE_ABILITY_NAME : null
 
-const normalizedMoveKeyword = (keyword: string): string => keyword.trim().replace(/\s+/g, ' ').toLowerCase()
-
 export const moveHasGroundsourceKeyword = (
   moveKeywords: readonly string[] | null | undefined,
-): boolean => (moveKeywords ?? []).some((keyword) => normalizedMoveKeyword(keyword) === GROUNDSOURCE_KEYWORD.toLowerCase())
+): boolean => moveAutomationKeywordsInclude(moveKeywords, GROUNDSOURCE_KEYWORD)
 
 export const moveHasSonicKeyword = (
   moveKeywords: readonly string[] | null | undefined,
-): boolean => (moveKeywords ?? []).some((keyword) => normalizedMoveKeyword(keyword) === SONIC_KEYWORD.toLowerCase())
+): boolean => moveAutomationKeywordsInclude(moveKeywords, SONIC_KEYWORD)
 
 export const getGroundsourceMoveImmunitySource = (
   capabilities: AirborneMovementCapabilities | null | undefined,

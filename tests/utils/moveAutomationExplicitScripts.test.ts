@@ -27,7 +27,7 @@ describe('explicit move automation scripts', () => {
     }
   })
 
-  it('keeps human-deferred keyword-immunity moves unautomated', () => {
+  it('keeps Spore, Chatter, and Earth Power unautomated until explicitly reviewed', () => {
     for (const moveName of ['Spore', 'Chatter', 'Earth Power']) {
       expect(explicitScriptForMove(moveName)).toBeNull()
       expect(moveAutomationCoverage.missing).toContain(moveName)

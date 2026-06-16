@@ -5,6 +5,7 @@ import {
   defaultTargetResolutionState,
   moveAutomationSuggestionKey,
 } from '~/utils/moveAutomationTargetResolution'
+import { ROOST_GROUNDED_CONDITION } from '~/utils/moveAutomationSpecialConditions'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -226,6 +227,37 @@ describe('move automation transaction helpers', () => {
     expect(transaction.logLines).toContain('Oddish: +2 Injuries (Massive Damage, 1 HP Marker).')
   })
 
+  it('blocks Powder status suggestions against Grass targets through transaction suggestion immunity', () => {
+    const user = token({ id: 'u', species: 'Caster' })
+    const target = token({ id: 't', species: 'Grassmon', defenderTypes: ['Grass'] })
+    const s = script({
+      damaging: false,
+      damageBase: null,
+      damageClass: 'Status',
+      type: 'Grass',
+      keywords: ['Powder'],
+      conditionSuggestions: [{ recipient: 'target', condition: 'Sleep', label: 'Sleep' }],
+    })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s,
+      user,
+      selectedTargets: [target],
+      targetResolutions: { t: { ...defaultTargetResolutionState(s), hit: true } },
+      enabledSuggestions: { [moveAutomationSuggestionKey(s, 'condition', 0)]: true },
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.conditionUpdates).toEqual([])
+    expect(transaction.logLines).toContain('Sleep did not apply to Grassmon: immune (Grass type (Powder)).')
+  })
+
   it('blocks damage and target suggestions when an airborne capability is immune to Groundsource', () => {
     const user = token({ id: 'u', species: 'Caster', atk: 12 })
     const target = token({
@@ -271,6 +303,55 @@ describe('move automation transaction helpers', () => {
     expect(transaction.combatStageUpdates).toEqual([])
     expect(transaction.logLines).toContain('Trap target did not apply to Airborne: immune (Sky Capability).')
     expect(transaction.logLines).toContain('Lower Special Defense did not apply to Airborne: immune (Sky Capability).')
+  })
+
+  it('allows Groundsource damage and suggestions when grounded markers suppress airborne immunity', () => {
+    const user = token({ id: 'u', species: 'Caster', atk: 12 })
+    const target = token({
+      id: 't',
+      species: 'Grounded Airborne',
+      currentHp: 30,
+      maxHp: 30,
+      defenderCapabilities: { sky: 6 },
+      conditions: [ROOST_GROUNDED_CONDITION],
+    })
+    const s = script({
+      type: 'Ground',
+      keywords: ['Groundsource'],
+      stageSuggestions: [{ recipient: 'target', key: 'sdef', delta: -1, label: 'Lower Special Defense' }],
+      conditionSuggestions: [{ recipient: 'target', condition: 'Trapped', label: 'Trap target' }],
+    })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s,
+      user,
+      selectedTargets: [target],
+      targetResolutions: {
+        t: {
+          ...defaultTargetResolutionState(s),
+          hit: true,
+          damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+        },
+      },
+      enabledSuggestions: {
+        [moveAutomationSuggestionKey(s, 'stage', 0)]: true,
+        [moveAutomationSuggestionKey(s, 'condition', 0)]: true,
+      },
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.hpUpdates).toEqual([{ id: 't', currentHp: 3 }])
+    expect(transaction.conditionUpdates).toEqual([{ id: 't', conditions: [ROOST_GROUNDED_CONDITION, 'Trapped'] }])
+    expect(transaction.combatStageUpdates).toEqual([{ id: 't', stages: { ...stages, sdef: -1 } }])
+    expect(transaction.logLines).toContain('Grounded Airborne: 27 damage.')
+    expect(transaction.logLines).toContain('Trap target applied to Grounded Airborne.')
+    expect(transaction.logLines).toContain('Lower Special Defense on Grounded Airborne.')
   })
 
   it('blocks Snarl damage and Special Attack drops against Soundproof targets', () => {
