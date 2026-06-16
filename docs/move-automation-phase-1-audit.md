@@ -10,18 +10,18 @@ Current counts for this audit:
 | Explicit scripts | 240 |
 | Missing scripts | 536 |
 
-The worklist report remains advisory only. A human reviewer must choose the exact move list before any implementation batch, and every automated move must be explicitly reviewed by name in `src/utils/move-automation/registry.ts`.
+The worklist report remains advisory only. A human reviewer must choose the exact move list before any implementation batch, and every automated move must be explicitly reviewed by name in a reviewed family module merged into src/utils/move-automation/registry.ts.
 
 ## Classification groups
 
 | Group | Count |
 | --- | ---: |
 | plain-single-target-damage-candidates | 0 |
-| single-target-status-candidates | 3 |
-| single-target-target-stage-candidates | 2 |
+| single-target-status-candidates | 1 |
+| single-target-target-stage-candidates | 1 |
 | single-target-secondary-condition-candidates | 1 |
 | single-target-secondary-stage-candidates | 1 |
-| phase-1-looking-but-defer | 91 |
+| phase-1-looking-but-defer | 94 |
 
 ## A. `plain-single-target-damage-candidates`
 
@@ -32,15 +32,12 @@ No missing move matched this strict Phase 1 group. The remaining plain-looking d
 | Name | Type | Frequency | AC | DB | Class | Range | Effect | Special | Reason |
 | --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |
 | Spore | Grass | Scene | — | — | Status | 4, 1 Target, Powder | The target falls Asleep. | — | single-target Status move that applies one ordinary target Sleep condition with no extra delayed processing beyond the condition itself. |
-| Thunder Wave | Electric | Scene x2 | 4 | — | Status | 6, 1 Target | Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects. | — | single-target Status move that applies one ordinary target Paralysis condition; implementation must preserve Electric immunity handling. |
-| Toxic | Poison | Scene x2 | 4 | — | Status | 4, 1 Target | The target is Badly Poisoned. If the user is Poison Type, Toxic cannot miss. | — | single-target Status move that applies one ordinary Badly Poisoned target condition; implementation must represent the Poison-type cannot-miss branch explicitly. |
 
 ## C. `single-target-target-stage-candidates`
 
 | Name | Type | Frequency | AC | DB | Class | Range | Effect | Special | Reason |
 | --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |
 | Decorate | Fairy | Scene | — | — | Status | Melee, 1 Target | The target gains +2 CS in both Attack and Special Attack. | — | single-target Status move that applies only target Attack and Special Attack Combat Stage increases; explicitly required to remain in this group while missing. |
-| Topsy-Turvy | Dark | EOT | 4 | — | Status | 6, 1 Target | The target’s Combat Stages are inverted; +1 Stage becomes -1 Stage, -3 Stages becomes +3 Stages, etc. | — | single-target Status move that changes only the target Combat Stages by inversion, with no user-side effect or unrelated choice. |
 
 ## D. `single-target-secondary-condition-candidates`
 
@@ -140,7 +137,10 @@ No missing move matched this strict Phase 1 group. The remaining plain-looking d
 | Thief | Dark | At-Will | 2 | 6 | Physical | Melee, 1 Target | Thief takes the target’s Held Item or Accessory Slot Item and attaches it to Thief’s user, if the user is not holding anything. | — | defer: held/accessory item theft belongs to Phase 7. |
 | Thunder | Electric | Scene x2 | 7 | 11 | Special | 12, 1 Target, Smite | Thunder Paralyzes its target on 15+. If the target is in Sunny Weather, Thunder’s Accuracy Check is 11. If the target is in Rainy Weather, Thunder cannot miss. If the target is airborne as a result of Fly or Sky Drop, Thunder cannot miss. | — | defer: Paralysis threshold has weather and airborne accuracy/cannot-miss branches. |
 | Thunder Fang | Electric | At-Will | 3 | 7 | Physical | Melee, 1 Target | Thunder Fang Paralyzes or Flinches on 18- 19 during Accuracy Check; flip a coin to determine whether the foe gets Paralyzed or Flinches. On 20 during Accuracy Check, the foe is Paralyzed and Flinched. | — | defer: Paralysis/Flinch outcome uses a coin-flip/random branch. |
+| Thunder Wave | Electric | Scene x2 | 4 | — | Status | 6, 1 Target | Thunder Wave Paralyzes the target. Targets immune to Electric Attacks are immune to Thunder Wave’s effects. | — | defer: requires Electric-attack immunity handling for status effects, including type-chart immunity such as Ground immunity to Electric attacks. |
 | Thunderous Kick | Fighting | EOT | 2 | 9 | Physical | Melee, 1 Target | All legal targets hit lose 1 Defense Combat Stage. Once per Scene, Thunderous Kick may instead be used as an Electric-Type Move. | — | defer: target Defense stage drop has a once-per-scene alternate Electric-type branch. |
+| Topsy-Turvy | Dark | EOT | 4 | — | Status | 6, 1 Target | The target’s Combat Stages are inverted; +1 Stage becomes -1 Stage, -3 Stages becomes +3 Stages, etc. | — | defer: requires Combat Stage inversion support; current stage automation only supports static deltas. |
+| Toxic | Poison | Scene x2 | 4 | — | Status | 4, 1 Target | The target is Badly Poisoned. If the user is Poison Type, Toxic cannot miss. | — | defer: requires user-type-dependent cannot-miss handling for Poison-type users. |
 | Transform | Normal | At-Will | — | — | Status | 10, 1 Target | The user targets a Pokémon within 10 meters, and assumes the form of the target.  It gains all of the user’s Moves, gains its Abilities, copies its weight and height and Capabilities. Transform lasts until the user is switched out, KO’d or until the end of the encounter. The user may choose to end the Transformation on its turn as a free action, regaining its previous Move List. The user’s Stats do not change from using Transform. Transform cannot miss. | — | defer: form, move-list, capability, and stat mutation belong to Phase 8. |
 | Tri Attack | Normal | EOT | 2 | 8 | Special | 6, 1 target | Tri Attack gives the target a Status ailment on 17+ during Accuracy Check. If this effect is triggered, roll 1d3; on 1 the target is Paralyzed; on 2 the target is Burned; on 3 the target is Frozen. | — | defer: random status table belongs to Phase 8/random support. |
 | Trick | Psychic | Scene | 2 | — | Status | 5, 2 Targets | Both targets must be hit for Trick to succeed. The user may target itself or willing allies with Trick; you do not need to roll for Accuracy Check in these cases. Both targets lose their Held Item or Accessory Slot Item, and gain the other target’s Held Item or Accessory Slot Item. If a target has no Item, it still can gain the other target’s Item. | — | defer: two-target held/accessory item exchange belongs to Phase 7. |
