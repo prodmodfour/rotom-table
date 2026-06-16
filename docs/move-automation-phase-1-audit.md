@@ -7,8 +7,8 @@ Current counts for this audit:
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 241 |
-| Missing scripts | 535 |
+| Explicit scripts | 243 |
+| Missing scripts | 533 |
 
 The worklist report remains advisory only. A human reviewer must choose the exact move list before any implementation batch, and every automated move must be explicitly reviewed by name in a reviewed family module merged into src/utils/move-automation/registry.ts.
 
@@ -17,21 +17,19 @@ The worklist report remains advisory only. A human reviewer must choose the exac
 | Group | Count |
 | --- | ---: |
 | plain-single-target-damage-candidates | 0 |
-| single-target-status-candidates | 1 |
+| single-target-status-candidates | 0 |
 | single-target-target-stage-candidates | 0 |
 | single-target-secondary-condition-candidates | 0 |
-| single-target-secondary-stage-candidates | 1 |
+| single-target-secondary-stage-candidates | 0 |
 | phase-1-looking-but-defer | 95 |
 
 ## A. `plain-single-target-damage-candidates`
 
-No missing move currently matches this strict Phase 1 group. The remaining plain-looking damaging moves in the audit have Exhaust, multi-strike, recoil, movement, dynamic damage, critical, item, or other non-Phase-1 semantics and are listed in group F when they are Phase 1-looking enough to call out.
+No missing move currently matches this strict Phase 1 group.
 
 ## B. `single-target-status-candidates`
 
-| Name | Type | Frequency | AC | DB | Class | Range | Effect | Special | Reason |
-| --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |
-| Spore | Grass | Scene | — | — | Status | 4, 1 Target, Powder | The target falls Asleep. | — | single-target Status move that applies Sleep; Powder-keyword Grass immunity is now represented by move automation keyword immunity support. |
+No missing move currently matches this strict Phase 1 group.
 
 ## C. `single-target-target-stage-candidates`
 
@@ -43,9 +41,7 @@ No missing move currently matches this strict Phase 1 group.
 
 ## E. `single-target-secondary-stage-candidates`
 
-| Name | Type | Frequency | AC | DB | Class | Range | Effect | Special | Reason |
-| --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |
-| Earth Power | Ground | EOT | 2 | 9 | Special | 6, 1 Target, Groundsource | Earth Power lowers the Special Defense of all Legal Targets 1 Combat Stage on 16+. | — | single-target damaging move with target Special Defense -1 CS on 16+; Groundsource Sky/Levitate immunity and grounded suppression markers are now represented by move automation keyword immunity support. |
+No missing move currently matches this strict Phase 1 group.
 
 ## F. `phase-1-looking-but-defer`
 

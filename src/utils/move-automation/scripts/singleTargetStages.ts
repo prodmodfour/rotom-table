@@ -18,6 +18,7 @@ export const REVIEWED_SINGLE_TARGET_STAGE_SCRIPTS: ReadonlyMap<string, MoveAutom
     damageBase: null,
   }],
   ['Drum Beating', reviewedSingleTargetStageScript('Drum Beating', [{ key: 'spd', delta: -1, label: 'Drum Beating lowers Speed: -1 Speed CS' }])],
+  ['Earth Power', reviewedSingleTargetStageScript('Earth Power', [{ key: 'sdef', delta: -1, label: 'Earth Power lowers Special Defense on 16+: -1 Special Defense CS', threshold: '16+', optional: true }])],
   ['Eerie Impulse', reviewedSingleTargetStageScript('Eerie Impulse', [{ key: 'satk', delta: -2, label: 'Eerie Impulse lowers Special Attack: -2 Special Attack CS' }])],
   ['Energy Ball', reviewedSingleTargetStageScript('Energy Ball', [{ key: 'sdef', delta: -1, label: 'Energy Ball lowers Special Defense on 17+: -1 Special Defense CS', threshold: '17+' }])],
   ['Fake Tears', reviewedSingleTargetStageScript('Fake Tears', [{ key: 'sdef', delta: -2, label: 'Fake Tears lowers Special Defense: -2 Special Defense CS' }])],

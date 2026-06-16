@@ -9,8 +9,8 @@ As of this audit:
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 241 |
-| Missing scripts | 535 |
+| Explicit scripts | 243 |
+| Missing scripts | 533 |
 
 `npm run check:move-automation` is expected to fail while any canonical move is missing an explicit reviewed script. Canonical move data, derived helpers, or report buckets must not count as automation coverage by themselves.
 
@@ -44,4 +44,4 @@ As of this audit:
 
 ## Phase 1 audit
 
-The current Phase 1 audit lives in [`docs/move-automation-phase-1-audit.md`](./move-automation-phase-1-audit.md). The current approved Phase 1 mini-batch has been applied; Spore and Earth Power are candidates again after keyword-immunity foundation work, while Chatter remains deferred until Drown Out reaction/cancel support exists. The audit classifies missing Phase 1-looking moves using the explicit rules in this roadmap and marks later-phase-looking moves as deferred instead of allowing the worklist to drive one-off implementation.
+The current Phase 1 audit lives in [`docs/move-automation-phase-1-audit.md`](./move-automation-phase-1-audit.md). The current approved Phase 1 mini-batch has been applied; Spore and Earth Power are now automated after keyword-immunity foundation work, while Chatter remains deferred until Drown Out reaction/cancel support exists. The audit classifies missing Phase 1-looking moves using the explicit rules in this roadmap and marks later-phase-looking moves as deferred instead of allowing the worklist to drive one-off implementation.

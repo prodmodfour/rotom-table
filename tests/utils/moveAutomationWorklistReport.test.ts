@@ -17,8 +17,8 @@ describe('move automation worklist report', () => {
     expect(result.stderr).toBe('')
     expect(result.stdout).toContain('Move automation worklist report')
     expect(result.stdout).toContain('Canonical valid move count: 776')
-    expect(result.stdout).toContain('Explicit script count: 241')
-    expect(result.stdout).toContain('Missing script count: 535')
+    expect(result.stdout).toContain('Explicit script count: 243')
+    expect(result.stdout).toContain('Missing script count: 533')
     expect(result.stdout).toContain('plain-single-target-damage (')
     expect(result.stdout).toContain('complex-review-needed (')
     expect(result.stdout).toContain('Recommended next safest batch (')
@@ -28,7 +28,8 @@ describe('move automation worklist report', () => {
     expect(Number(recommendedMatch?.[1] ?? '0')).toBeGreaterThanOrEqual(0)
     const recommendedSection = recommendedMatch?.[2] ?? ''
     for (const moveName of [
-      'Decorate',
+      'Spore',
+      'Earth Power',
       'Chatter',
       'Dragon Hammer',
       'Frost Breath',

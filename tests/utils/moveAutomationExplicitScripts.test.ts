@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(241)
-    expect(moveAutomationCoverage.missing).toHaveLength(535)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(243)
+    expect(moveAutomationCoverage.missing).toHaveLength(533)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -27,11 +27,62 @@ describe('explicit move automation scripts', () => {
     }
   })
 
-  it('keeps Spore, Chatter, and Earth Power unautomated until explicitly reviewed', () => {
-    for (const moveName of ['Spore', 'Chatter', 'Earth Power']) {
-      expect(explicitScriptForMove(moveName)).toBeNull()
-      expect(moveAutomationCoverage.missing).toContain(moveName)
-    }
+  it('implements Spore as a reviewed Powder status script', () => {
+    const script = explicitScriptForMove('Spore')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Spore',
+      targetMode: 'one-target',
+      targetCount: 1,
+      damaging: false,
+      requiresAccuracy: true,
+      damageBase: null,
+      damageClass: 'Status',
+      type: 'Grass',
+      range: '4, 1 Target, Powder',
+    })
+    expect(script?.keywords).toEqual(expect.arrayContaining(['Powder']))
+    expect(script?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Sleep', action: 'add', label: 'Sleep' },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
+  })
+
+  it('implements Earth Power as a reviewed Groundsource secondary-stage script', () => {
+    const script = explicitScriptForMove('Earth Power')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Earth Power',
+      targetMode: 'one-target',
+      targetCount: 1,
+      damaging: true,
+      requiresAccuracy: true,
+      damageBase: 9,
+      damageClass: 'Special',
+      type: 'Ground',
+      range: '6, 1 Target, Groundsource',
+    })
+    expect(script?.keywords).toEqual(expect.arrayContaining(['Groundsource']))
+    expect(script?.stageSuggestions).toEqual([
+      {
+        recipient: 'target',
+        key: 'sdef',
+        delta: -1,
+        label: 'Earth Power lowers Special Defense on 16+: -1 Special Defense CS',
+        threshold: '16+',
+        optional: true,
+      },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(script)).toBe(true)
+  })
+
+  it('keeps Chatter unautomated until Drown Out reaction support exists', () => {
+    expect(explicitScriptForMove('Chatter')).toBeNull()
+    expect(moveAutomationCoverage.missing).toContain('Chatter')
+    expect(moveAutomationCoverage.missing).not.toContain('Spore')
+    expect(moveAutomationCoverage.missing).not.toContain('Earth Power')
   })
 
   it('keeps every explicit script on a seamless map-targeting flow', () => {
