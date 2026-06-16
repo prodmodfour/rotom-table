@@ -2,12 +2,31 @@ import { describe, expect, it } from 'vitest'
 import {
   EXPLICIT_MOVE_AUTOMATION_SCRIPTS,
   explicitScriptForMove,
+  moveAutomationCoverage,
   isSeamlessAreaConfirmationScript,
   isSeamlessSelfMoveScript,
   isSeamlessSingleTargetMoveScript,
 } from '~/utils/moveAutomation'
 
 describe('explicit move automation scripts', () => {
+  it('preserves the reviewed explicit coverage counts', () => {
+    expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(238)
+    expect(moveAutomationCoverage.missing).toHaveLength(538)
+  })
+
+  it('keeps representative pre-refactor scripts resolvable', () => {
+    for (const moveName of ['Scratch', 'Ember', 'Growl', 'Reflect', 'Dragon Rage', 'Mud Bomb', 'Octazooka']) {
+      expect(explicitScriptForMove(moveName)?.moveName).toBe(moveName)
+    }
+  })
+
+  it('keeps unsupported Prompt 1 skips unautomated', () => {
+    for (const moveName of ['Frost Breath', 'Storm Throw', 'Spacial Rend', 'Aura Wheel', 'Hammer Arm', 'Ice Hammer']) {
+      expect(explicitScriptForMove(moveName)).toBeNull()
+    }
+  })
+
   it('keeps every explicit script on a seamless map-targeting flow', () => {
     const nonSeamlessScripts = [...EXPLICIT_MOVE_AUTOMATION_SCRIPTS.values()].filter((script) =>
       !isSeamlessSingleTargetMoveScript(script) && !isSeamlessAreaConfirmationScript(script) && !isSeamlessSelfMoveScript(script),

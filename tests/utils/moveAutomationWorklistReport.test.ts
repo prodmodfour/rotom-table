@@ -16,14 +16,18 @@ describe('move automation worklist report', () => {
     expect(result.status).toBe(0)
     expect(result.stderr).toBe('')
     expect(result.stdout).toContain('Move automation worklist report')
-    expect(result.stdout).toMatch(/Canonical valid move count: \d+/)
-    expect(result.stdout).toMatch(/Explicit script count: \d+/)
-    expect(result.stdout).toMatch(/Missing script count: \d+/)
+    expect(result.stdout).toContain('Canonical valid move count: 776')
+    expect(result.stdout).toContain('Explicit script count: 238')
+    expect(result.stdout).toContain('Missing script count: 538')
     expect(result.stdout).toContain('plain-single-target-damage (')
     expect(result.stdout).toContain('complex-review-needed (')
     expect(result.stdout).toContain('Recommended next safest batch (')
 
-    const recommendedSection = result.stdout.split(/\nRecommended next safest batch \(\d+ moves\):\n/)[1] ?? ''
+    const recommendedMatch = result.stdout.match(/\nRecommended next safest batch \((\d+) moves\):\n([\s\S]*)$/)
+    expect(recommendedMatch).not.toBeNull()
+    expect(Number(recommendedMatch?.[1] ?? '0')).toBeGreaterThan(0)
+    const recommendedSection = recommendedMatch?.[2] ?? ''
+    expect(recommendedSection).toContain('  - ')
     for (const moveName of ['Frost Breath', 'Storm Throw', 'Spacial Rend', 'Aura Wheel', 'Hammer Arm', 'Ice Hammer']) {
       expect(recommendedSection).not.toContain(`  - ${moveName}`)
     }

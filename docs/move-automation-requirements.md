@@ -155,7 +155,7 @@ Every completed move should create a structured encounter log entry:
 
 The map now has **Use Move** without a manual resolver modal. The token move menu shows all sheet moves, but unautomated/homebrew moves are greyed out and disabled until scripted.
 
-Canonical automation must come only from `EXPLICIT_MOVE_AUTOMATION_SCRIPTS` in `src/utils/moveAutomation.ts` (or future per-move modules imported into that registry). The coverage tool fails while any canonical move lacks an explicit script:
+Canonical automation must come only from `EXPLICIT_MOVE_AUTOMATION_SCRIPTS` in `src/utils/move-automation/registry.ts` (re-exported by `src/utils/moveAutomation.ts`). The coverage tool fails while any canonical move lacks an explicit script:
 
 ```bash
 npm run check:move-automation

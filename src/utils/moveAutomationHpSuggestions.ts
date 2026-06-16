@@ -1,5 +1,5 @@
 import type { MoveAutomationHpSuggestion } from '~/types/moveAutomation'
-import type { MoveAutomationMoveLike } from '~/utils/moveAutomation'
+import type { MoveAutomationMoveLike } from '~/utils/move-automation/moveData'
 
 export const parseMoveAutomationHpSuggestions = (move: MoveAutomationMoveLike): MoveAutomationHpSuggestion[] => {
   const effect = move.effect ?? ''

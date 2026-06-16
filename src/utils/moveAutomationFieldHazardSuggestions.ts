@@ -8,7 +8,7 @@ import type {
   MoveAutomationFieldSuggestion,
   MoveAutomationHazardSuggestion,
 } from '~/types/moveAutomation'
-import type { MoveAutomationMoveLike } from '~/utils/moveAutomation'
+import type { MoveAutomationMoveLike } from '~/utils/move-automation/moveData'
 
 const fieldSuggestion = (
   kind: 'weather' | 'terrain' | 'room',
