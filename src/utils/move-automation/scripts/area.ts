@@ -115,6 +115,17 @@ const reviewedCoachingScript = (version = 1): MoveAutomationScript => reviewedAr
   ],
 })
 
+const reviewedRagingFuryScript = (version = 1): MoveAutomationScript => reviewedAreaConfirmationScript('Raging Fury', version, {
+  conditionSuggestions: [
+    { recipient: 'user', condition: 'Rage', action: 'add', label: 'Enraged' },
+    { recipient: 'target', condition: 'Rage', action: 'add', label: 'Enraged on 16+', threshold: '16+', optional: true },
+  ],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+})
+
 export const REVIEWED_TARGET_STAGE_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Acid', reviewedTargetStagesAreaScript('Acid', [{ key: 'sdef', delta: -1, label: 'Acid lowers Special Defense on 18+: -1 Special Defense CS', threshold: '18+' }])],
   ['Apple Acid', reviewedTargetStagesAreaScript('Apple Acid', [{ key: 'sdef', delta: -1, label: 'Apple Acid lowers Special Defense: -1 Special Defense CS' }])],
@@ -178,11 +189,13 @@ export const REVIEWED_AREA_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomation
     { condition: 'Frozen', label: 'Frozen on 19+', threshold: '19+' },
   ])],
   ['Poison Gas', reviewedAreaConditionScript('Poison Gas', [{ condition: 'Poisoned', label: 'Poisoned' }])],
+  ['Raging Fury', reviewedRagingFuryScript()],
   ['Rock Slide', reviewedAreaConditionScript('Rock Slide', [{ condition: 'Flinch', label: 'Flinch on 17+', threshold: '17+' }])],
   ['Sandstorm Sear', reviewedAreaConditionScript('Sandstorm Sear', [{ condition: 'Burned', label: 'Burned on 15+', threshold: '15+' }])],
   ['Sludge Wave', reviewedAreaConditionScript('Sludge Wave', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
   ['Sweet Scent', reviewedAreaConditionScript('Sweet Scent', [{ condition: SWEET_SCENT_EVASION_PENALTY_CONDITION, label: 'Sweet Scent Evasion Penalty' }])],
   ['Teeter Dance', reviewedAreaConditionScript('Teeter Dance', [{ condition: 'Confused', label: 'Confused' }])],
+  ['Wildbolt Storm', reviewedAreaConditionScript('Wildbolt Storm', [{ condition: 'Paralysis', label: 'Paralysis on 15+', threshold: '15+' }])],
 ])
 
 export const REVIEWED_SMOG_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([

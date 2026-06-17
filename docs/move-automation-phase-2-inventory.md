@@ -7,8 +7,8 @@ This document is a factual inventory for human review. It does not add scripts, 
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 252 |
-| Missing scripts | 524 |
+| Explicit scripts | 254 |
+| Missing scripts | 522 |
 
 ## 2. Phase 2 scope reminder
 
@@ -26,7 +26,7 @@ The current reviewed area-related families in `src/utils/move-automation/scripts
 | --- | --- | --- |
 | reviewed target-stage area scripts | `REVIEWED_TARGET_STAGE_AREA_SCRIPTS` | Acid; Apple Acid; Breaking Swipe; Bubble; Bulldoze; Cotton Spore; Electroweb; Feather Dance; Flash; Growl; Icy Wind; Leer; Metal Sound; Mirror Shot; Noble Roar; Screech; Seed Flare; Snarl; Struggle Bug; Tail Whip; Tearful Look |
 | reviewed area confirmation scripts | `REVIEWED_AREA_CONFIRMATION_SCRIPTS` | Air Cutter; Boomburst; Brutal Swing; Dazzling Gleam; Disarming Voice; Discharge; Egg Bomb; Heat Wave; Land’s Wrath; Lava Plume; Origin Pulse; Overdrive; Petal Blizzard; Powder Snow; Precipice Blades; Razor Leaf; Searing Shot; Steam Eruption; Strange Steam; Swift |
-| reviewed area condition scripts | `REVIEWED_AREA_CONDITION_SCRIPTS` | Bleakwind Storm; Poison Gas; Rock Slide; Sandstorm Sear; Sludge Wave; Sweet Scent; Teeter Dance |
+| reviewed area condition scripts | `REVIEWED_AREA_CONDITION_SCRIPTS` | Bleakwind Storm; Poison Gas; Raging Fury; Rock Slide; Sandstorm Sear; Sludge Wave; Sweet Scent; Teeter Dance; Wildbolt Storm |
 | reviewed Smog script | `REVIEWED_SMOG_SCRIPTS` | Smog |
 | reviewed area coat scripts | `REVIEWED_AREA_COAT_SCRIPTS` | Mud Sport |
 | reviewed ally area stage scripts | `REVIEWED_ALLY_AREA_STAGE_SCRIPTS` | Aromatic Mist; Coaching; Howl |
@@ -133,7 +133,6 @@ Range Keywords are derived by the same range-splitting convention used for canon
 | Psychic Terrain | Psychic | Daily x2 | — | — | Status | Field | The Field becomes Weird for five rounds. While the Field is Weird, non-Flying and nonLevitating Pokémon cannot declare Priority or Interrupt Moves outside their own Initiatives. Damaging Psychic-Type attacks deal an additional 10 damage | — | Field | — | status; weather-terrain-room-text; field-state-text; reaction-interrupt-shield-text; requires-human-review |
 | Psycho Boost | Psychic | Scene | 4 | 14 | Special | 8, Ranged Blast 3, Smite | Lower the user’s Special Attack 2 Combat Stages after damage is resolved. | — | Ranged Blast 3; Smite | Ranged 8 Blast 3 | damaging; stage-text; requires-human-review |
 | Rage Powder | Bug | Scene x2 | — | — | Status | Burst 1 or Line 6, Powder | All targets hit by Rage Powder are Enraged. While enraged, they must shift to target the user when using a Move or Attack if the user is within reach.  If the user is Fainted or Switched out, all targets hit by Rage Powder are cured of rage. | — | Burst 1 or Line 6; Powder | Burst 1; Line 6 | status; condition-text; powder; movement-positioning-text; requires-human-review |
-| Raging Fury | Fire | Scene x2 | 2 | 9 | Special | Burst 1, Spirit Surge | The user becomes Enraged. Legal targets become Enraged on a 16+. | — | Burst 1; Spirit Surge | Burst 1 | damaging; condition-text; requires-human-review |
 | Rain Dance | Water | Daily x2 | — | — | Status | Field, Weather | The weather becomes Rainy for 5 rounds. While Rainy, Water-Type Attacks gain a +5 bonus to Damage Rolls, and Fire-Type Attacks suffer a -5 Damage penalty. | — | Field; Weather | — | status; weather-terrain-room-text; field-state-text; delayed-trigger-text; dynamic-damage-text; requires-human-review |
 | Razor Wind | Normal | EOT | 2 | 8 | Special | 10, 3 Targets, Set-Up | Set-Up Effect: The user may not shift this round. The user whips up a whirlwind around themselves, granting +2 Evasion until the end of their next turn, and destroying any Smokescreen or Hazards on any squares they are standing on and in all squares adjacent to them. Resolution Effect: The user attacks with Razor Wind. Razor Wind is a Critical Hit on 18+. | — | 3 Targets; Set-Up | — | damaging; stage-text; field-state-text; movement-positioning-text; delayed-trigger-text; requires-human-review |
 | Relic Song | Normal | Scene | 2 | 8 | Special | Burst 3, Friendly, Sonic | All Legal Targets fall Asleep on 16+. As long as Meloetta knows Relic Song, it may change between Aria Form and Step Form as a Swift Action when using Relic Song, or as a Standard Action otherwise. Both Aria and Step Form must be statted with the same HP Stat. | — | Burst 3; Friendly; Sonic | Burst 3 | damaging; condition-text; friendly-range; sonic; requires-human-review |
@@ -182,7 +181,6 @@ Range Keywords are derived by the same range-splitting convention used for canon
 | Water Spout | Water | Daily | 4 | 15 | Special | Burst 1* | For each 10% of HP the user is missing, Water Spout’s Damage Base is reduced by 1. Water Spout creates a 1 meter burst, but also affects an area 10 meters tall straight up. | — | Burst 1* | Burst 1 | damaging; dynamic-damage-text; requires-human-review |
 | Whirlwind | Normal | Scene x2 | 2 | — | Status | Line 6 | All targets are pushed X meters, where X is 8 minus their weight class. If the Line targets into a Smokescreen, the smoke is dispersed. All hazards in the Whirlwind are destroyed. | — | Line 6 | Line 6 | status; field-state-text; dynamic-damage-text; requires-human-review |
 | Wide Guard | Rock | Scene | — | — | Status | Burst 1, Interrupt, Shield, Trigger | If an Ally adjacent to Wide Guard’s user is hit by a Move, you may use Wide Guard as an Interrupt. All targets adjacent to Wide Guard’s user, including the user, are instead not hit by the triggering Move and do not suffer any of its effects. | — | Burst 1; Interrupt; Shield; Trigger | Burst 1 | status; delayed-trigger-text; reaction-interrupt-shield-text; requires-human-review |
-| Wildbolt Storm | Electric | Scene | 5 | 10 | Special | 6, Ranged Blast 3, Smite | The target is Paralyzed on a 15+. | — | Ranged Blast 3; Smite | Ranged 6 Blast 3 | damaging; condition-text; requires-human-review |
 | Wonder Room | Psychic | Daily x2 | — | — | Status | Field | For 5 rounds, the area is considered Wondered. While Wondered, each individual Pokémon’s Defense and Special Defense Stats are switched. | — | Field | — | status; stage-text; weather-terrain-room-text; field-state-text; delayed-trigger-text; requires-human-review |
 
 ## 5. Mixed single-target-or-area raw list

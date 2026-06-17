@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(252)
-    expect(moveAutomationCoverage.missing).toHaveLength(524)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(254)
+    expect(moveAutomationCoverage.missing).toHaveLength(522)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -647,6 +647,58 @@ describe('explicit move automation scripts', () => {
     expect(sandstormSear?.fieldSuggestions).toEqual([])
     expect(sandstormSear?.hazardSuggestions).toEqual([])
     expect(isSeamlessAreaConfirmationScript(sandstormSear)).toBe(true)
+
+    const wildboltStorm = explicitScriptForMove('Wildbolt Storm')
+    expect(wildboltStorm).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Wildbolt Storm',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: true,
+      ac: 5,
+      damageBase: 10,
+      damageClass: 'Special',
+      type: 'Electric',
+      range: '6, Ranged Blast 3, Smite',
+    })
+    expect(wildboltStorm?.areaTemplates).toHaveLength(1)
+    expect(wildboltStorm?.areaTemplates).toMatchObject([{ kind: 'ranged-blast', range: 6, size: 3 }])
+    expect(wildboltStorm?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Paralysis', action: 'add', label: 'Paralysis on 15+', threshold: '15+', optional: true },
+    ])
+    expect(wildboltStorm?.stageSuggestions).toEqual([])
+    expect(wildboltStorm?.hpSuggestions).toEqual([])
+    expect(wildboltStorm?.fieldSuggestions).toEqual([])
+    expect(wildboltStorm?.hazardSuggestions).toEqual([])
+    expect(isSeamlessAreaConfirmationScript(wildboltStorm)).toBe(true)
+
+    const ragingFury = explicitScriptForMove('Raging Fury')
+    expect(ragingFury).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Raging Fury',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: true,
+      ac: 2,
+      damageBase: 9,
+      damageClass: 'Special',
+      type: 'Fire',
+      range: 'Burst 1, Spirit Surge',
+    })
+    expect(ragingFury?.keywords).toEqual(expect.arrayContaining(['Burst 1', 'Spirit Surge']))
+    expect(ragingFury?.areaTemplates).toHaveLength(1)
+    expect(ragingFury?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
+    expect(ragingFury?.conditionSuggestions).toEqual([
+      { recipient: 'user', condition: 'Rage', action: 'add', label: 'Enraged' },
+      { recipient: 'target', condition: 'Rage', action: 'add', label: 'Enraged on 16+', threshold: '16+', optional: true },
+    ])
+    expect(ragingFury?.stageSuggestions).toEqual([])
+    expect(ragingFury?.hpSuggestions).toEqual([])
+    expect(ragingFury?.fieldSuggestions).toEqual([])
+    expect(ragingFury?.hazardSuggestions).toEqual([])
+    expect(isSeamlessAreaConfirmationScript(ragingFury)).toBe(true)
   })
 
   it('implements the requested basic moves as seamless explicit scripts', () => {

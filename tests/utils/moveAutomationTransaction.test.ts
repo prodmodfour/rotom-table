@@ -610,6 +610,120 @@ describe('move automation transaction helpers', () => {
     expect(transaction.logLines).toContain('Burned on 15+ did not apply to Charmander: immune (Fire type).')
   })
 
+  it('applies Wildbolt Storm Paralysis only to hit targets whose natural accuracy roll meets 15+', () => {
+    const s = explicitScriptForMove('Wildbolt Storm')!
+    expect(s).not.toBeNull()
+    const hitHigh = token({ id: 'hit-high', species: 'Hit High' })
+    const missedHigh = token({ id: 'miss-high', species: 'Miss High' })
+    const hitLow = token({ id: 'hit-low', species: 'Hit Low' })
+
+    const transaction = automationTransaction(s, {
+      targets: [hitHigh, missedHigh, hitLow],
+      targetResolutions: {
+        'hit-high': { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: true },
+        'miss-high': { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: false },
+        'hit-low': { ...defaultTargetResolutionState(s), accuracyRoll: '14', hit: true },
+      },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([{ id: 'hit-high', conditions: ['Paralysis'] }])
+  })
+
+  it('does not apply Wildbolt Storm Paralysis when the natural accuracy roll is below 15', () => {
+    const s = explicitScriptForMove('Wildbolt Storm')!
+    expect(s).not.toBeNull()
+    const target = token({ id: 't', species: 'Target' })
+
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      targetResolutions: { t: { ...defaultTargetResolutionState(s), accuracyRoll: '14', hit: true } },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([])
+  })
+
+  it('respects existing Wildbolt Storm Paralysis immunity handling for Electric-type targets', () => {
+    const s = explicitScriptForMove('Wildbolt Storm')!
+    expect(s).not.toBeNull()
+    const target = token({ id: 't', species: 'Pikachu', defenderTypes: ['Electric'] })
+
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      targetResolutions: { t: { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: true } },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([])
+    expect(transaction.logLines).toContain('Paralysis on 15+ did not apply to Pikachu: immune (Electric type).')
+  })
+
+  it('applies Raging Fury Rage to the user', () => {
+    const s = explicitScriptForMove('Raging Fury')!
+    expect(s).not.toBeNull()
+    const user = token({ id: 'u', species: 'Fury User' })
+
+    const transaction = automationTransaction(s, {
+      user,
+      targets: [],
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([{ id: 'u', conditions: ['Rage'] }])
+  })
+
+  it('applies Raging Fury target Rage to hit and Spirit Surge-eligible selected targets whose natural accuracy roll meets 16+', () => {
+    const s = explicitScriptForMove('Raging Fury')!
+    expect(s).not.toBeNull()
+    const hitHigh = token({ id: 'hit-high', species: 'Hit High' })
+    const missedHigh = token({ id: 'miss-high', species: 'Miss High' })
+    const hitLow = token({ id: 'hit-low', species: 'Hit Low' })
+
+    const transaction = automationTransaction(s, {
+      targets: [hitHigh, missedHigh, hitLow],
+      targetResolutions: {
+        'hit-high': { ...defaultTargetResolutionState(s), accuracyRoll: '16', hit: true },
+        'miss-high': { ...defaultTargetResolutionState(s), accuracyRoll: '16', hit: false },
+        'hit-low': { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: true },
+      },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [1]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([
+      { id: 'hit-high', conditions: ['Rage'] },
+      { id: 'miss-high', conditions: ['Rage'] },
+    ])
+  })
+
+  it('does not apply Raging Fury target Rage when the natural accuracy roll is below 16', () => {
+    const s = explicitScriptForMove('Raging Fury')!
+    expect(s).not.toBeNull()
+    const target = token({ id: 't', species: 'Target' })
+
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      targetResolutions: { t: { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: true } },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [1]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([])
+  })
+
+  it('keeps existing Raging Fury Spirit Surge target-effect behavior on a miss', () => {
+    const s = explicitScriptForMove('Raging Fury')!
+    expect(s).not.toBeNull()
+    const target = token({ id: 't', species: 'Missed Target' })
+
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      targetResolutions: { t: { ...defaultTargetResolutionState(s), accuracyRoll: '16', hit: false } },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [1]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([{ id: 't', conditions: ['Rage'] }])
+  })
+
   it('applies Psywave direct HP loss from the user level table without stats or resistance', () => {
     const s = explicitScriptForMove('Psywave')
     expect(s).not.toBeNull()
