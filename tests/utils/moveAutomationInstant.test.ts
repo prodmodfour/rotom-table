@@ -5,10 +5,12 @@ import { resolveMoveAutomationTargetEvasion } from '~/utils/moveAutomationAccura
 import {
   resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
+  resolveInstantMultiTargetMoveAutomation,
   resolveInstantSelfMoveAutomation,
   resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
 import type { CombatStageMap } from '~/types/combatStages'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
 const stages: CombatStageMap = { atk: 0, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 }
@@ -50,6 +52,31 @@ const sequenceRandom = (values: number[]) => {
   let index = 0
   return () => values[index++] ?? 0
 }
+
+const fakeExplicitMultiTargetScript = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Fake Twin Target Move',
+  version: 1,
+  targetMode: 'multi-target',
+  targetCount: 2,
+  damaging: true,
+  requiresAccuracy: true,
+  damageBase: 4,
+  damageClass: 'Special',
+  type: 'Normal',
+  ac: 10,
+  range: '6, 2 Targets',
+  effect: '',
+  keywords: [],
+  criticalRange: null,
+  conditionSuggestions: [{ recipient: 'target', condition: 'Burned', label: 'Burned' }],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+  ...overrides,
+})
 
 describe('instant move automation', () => {
   it('resolves Ember hit, threshold burn, and damage transaction without review state', () => {
@@ -250,6 +277,30 @@ describe('instant move automation', () => {
       "Howl raises user's Attack: +1 Attack CS on Howler.",
       "Howl raises allies' Attack: +1 Attack CS on Ally.",
     ]))
+  })
+
+  it('resolves explicit multi-target-count moves against selected targets with independent accuracy rolls', () => {
+    const transaction = resolveInstantMultiTargetMoveAutomation({
+      script: fakeExplicitMultiTargetScript(),
+      user: token({ id: 'u', species: 'Caster', satk: 10 }),
+      targets: [
+        token({ id: 'hit', species: 'Hitmon', sdef: 5 }),
+        token({ id: 'miss', species: 'Missmon', sdef: 5 }),
+      ],
+      damageFormula: '1d6',
+      random: sequenceRandom([0.5, 0, 0]),
+    })
+
+    expect(transaction.attackedTargetIds).toEqual(['hit', 'miss'])
+    expect(transaction.hitTargetIds).toEqual(['hit'])
+    expect(transaction.hpUpdates).toEqual([{ id: 'hit', currentHp: 34 }])
+    expect(transaction.conditionUpdates).toEqual([{ id: 'hit', conditions: ['Burned'] }])
+    expect(transaction.logLines).toEqual(expect.arrayContaining([
+      'Burned applied to Hitmon.',
+      'Hitmon: accuracy 11 (hit).',
+      'Missmon: accuracy 1 (miss).',
+    ]))
+    expect(transaction.logLines.some((line) => line.includes('confirmed area'))).toBe(false)
   })
 
   it('resolves Sweet Scent as a Burst evasion-penalty marker on hit targets', () => {

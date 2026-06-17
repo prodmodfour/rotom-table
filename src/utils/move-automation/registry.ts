@@ -89,6 +89,18 @@ export const isSeamlessAreaConfirmationScript = (
     && script.areaTemplates?.length,
 )
 
+export const isSeamlessTargetCountMoveScript = (
+  script: MoveAutomationScript | null | undefined,
+): script is MoveAutomationScript => Boolean(
+  script
+    && script.kind === 'explicit'
+    && script.targetMode === 'multi-target'
+    && typeof script.targetCount === 'number'
+    && Number.isInteger(script.targetCount)
+    && script.targetCount > 0
+    && !script.areaTemplates?.length,
+)
+
 /**
  * Human-reviewed move automation scripts. A move only counts as automated when
  * an explicit entry is added here (or moved into per-move modules later). Small

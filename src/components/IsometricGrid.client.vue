@@ -1095,6 +1095,11 @@ const selectMoveAreaTemplateOption = (templateId: string) => {
   emit('select-move-area-template', templateId)
 }
 
+const confirmMoveTargetCountSelection = () => {
+  if (props.moveAutomationTargeting?.mode !== 'target-count') return
+  emit('select-move-target', props.moveAutomationTargeting.userId)
+}
+
 const worldPointToScreen = (point: THREE.Vector3): { x: number; y: number } | null => {
   if (!camera || !renderer) return null
   const bounds = renderer.domElement.getBoundingClientRect()
@@ -1166,6 +1171,12 @@ const performMoveTargeting = (event: MouseEvent | PointerEvent): boolean => {
     }
     updateMoveAreaDirectionFromPointer(event)
     emit('select-move-target', props.moveAutomationTargeting.userId)
+    return true
+  }
+
+  if (props.moveAutomationTargeting?.mode === 'target-count') {
+    const hitId = pickMoveTargetId(event)
+    emit('select-move-target', hitId ?? props.moveAutomationTargeting.userId)
     return true
   }
 
@@ -1658,11 +1669,12 @@ const sameMoveTargetHitChance = (
     && a.title === b.title
 }
 
-const areaSelectedTargetIdSet = (
+const selectedMoveTargetIdSet = (
   targeting: MoveAutomationTargetingOverlayState | null | undefined,
 ): Set<string> | null => {
-  if (targeting?.mode !== 'area-confirmation') return null
-  return new Set(targeting.affectedIds ?? targeting.candidateIds)
+  if (targeting?.mode === 'area-confirmation') return new Set(targeting.affectedIds ?? targeting.candidateIds)
+  if (targeting?.mode === 'target-count') return new Set(targeting.selectedTargetIds ?? [])
+  return null
 }
 
 const syncTargetReticleButtons = (options: {
@@ -1774,28 +1786,37 @@ const attackOfOpportunityReasonLabel = (button: AttackOfOpportunityButton): stri
 
 const targetReticleButtonTitle = (button: TargetReticleButton): string => {
   if (!button.showsReticle) return button.selected ? 'Exclude this target from the move' : 'Include this target in the move'
+  if (props.moveAutomationTargeting?.mode === 'target-count') {
+    const action = button.selected ? 'Deselect' : 'Select'
+    return button.hitChance?.title ? `${action} target. ${button.hitChance.title}` : `${action} move target`
+  }
   return button.hitChance?.title ?? 'Select move target'
 }
 
 const targetReticleButtonLabel = (button: TargetReticleButton): string => {
   if (!button.showsReticle) return button.selected ? 'Exclude move target' : 'Include move target'
+  if (props.moveAutomationTargeting?.mode === 'target-count') {
+    const action = button.selected ? 'Deselect target' : 'Select target'
+    return button.hitChance ? `${action} (${button.hitChance.label})` : action
+  }
   return button.hitChance ? `Select target (${button.hitChance.label})` : 'Select move target'
 }
 
 const updateMoveAutomationOverlays = (): boolean => {
   const layers = visibleLayers()
   const targeting = props.moveAutomationTargeting
-  const showClickableTargetReticles = Boolean(targeting?.mode === 'target' && layers.tokens)
+  const showSingleTargetReticles = Boolean(targeting?.mode === 'target' && layers.tokens)
+  const showTargetCountReticles = Boolean(targeting?.mode === 'target-count' && layers.tokens)
   const canToggleAreaTargets = Boolean(targeting?.mode === 'area-confirmation' && targeting.canToggleTargets)
   const showAreaToggleButtons = Boolean(canToggleAreaTargets && layers.tokens)
   const showAreaTemplate = Boolean(targeting?.mode === 'area-confirmation')
   const areaReticleIds = targeting?.mode === 'area-confirmation' ? targeting.candidateIds : []
-  const areaSelectedIds = areaSelectedTargetIdSet(targeting)
+  const selectedIds = selectedMoveTargetIdSet(targeting)
   const showAreaTargetReticles = Boolean(showAreaTemplate && layers.tokens && areaReticleIds.length)
   let cssUiChanged = syncTargetReticleButtons({
-    show: showClickableTargetReticles || showAreaToggleButtons,
-    showsReticle: showClickableTargetReticles,
-    selectedIds: showAreaToggleButtons ? areaSelectedIds : null,
+    show: showSingleTargetReticles || showTargetCountReticles || showAreaToggleButtons,
+    showsReticle: showSingleTargetReticles || showTargetCountReticles,
+    selectedIds: showTargetCountReticles || showAreaToggleButtons ? selectedIds : null,
   })
   moveAreaTemplateRenderer.update({
     cells: targeting?.areaCells ?? [],
@@ -1803,7 +1824,7 @@ const updateMoveAutomationOverlays = (): boolean => {
   })
   cssUiChanged = moveTargetingReticleRenderer.update({
     candidateIds: areaReticleIds,
-    selectedIds: areaSelectedIds ? Array.from(areaSelectedIds) : undefined,
+    selectedIds: selectedIds ? Array.from(selectedIds) : undefined,
     hitChances: targeting?.hitChances,
     renderObjects,
     show: showAreaTargetReticles,
@@ -2195,6 +2216,15 @@ watch(
             </template>
           </span>
         </template>
+        <template v-else-if="props.moveAutomationTargeting.mode === 'target-count'">
+          <span v-if="props.moveAutomationTargeting.candidateIds.length">
+            {{ props.moveAutomationTargeting.targetPrompt ?? `Choose targets within ${props.moveAutomationTargeting.rangeLabel}.` }}
+            {{ props.moveAutomationTargeting.targetCount ?? props.moveAutomationTargeting.selectedTargetIds?.length ?? 0 }} of {{ props.moveAutomationTargeting.maxTargetCount ?? props.moveAutomationTargeting.candidateIds.length }} selected.
+          </span>
+          <span v-else>
+            No targets in range {{ props.moveAutomationTargeting.rangeLabel }}.
+          </span>
+        </template>
         <template v-else>
           <span v-if="props.moveAutomationTargeting.candidateIds.length">
             {{ props.moveAutomationTargeting.targetPrompt ?? `Choose a target within ${props.moveAutomationTargeting.rangeLabel}.` }}
@@ -2244,6 +2274,16 @@ watch(
           {{ areaDirectionButtonLabel(option.direction) }}
         </button>
       </div>
+      <button
+        v-if="props.moveAutomationTargeting.mode === 'target-count'"
+        class="move-targeting-hud__confirm"
+        type="button"
+        :disabled="(props.moveAutomationTargeting.targetCount ?? props.moveAutomationTargeting.selectedTargetIds?.length ?? 0) <= 0"
+        @pointerdown.stop
+        @click.stop="confirmMoveTargetCountSelection"
+      >
+        Use Move
+      </button>
       <button
         class="move-targeting-hud__cancel"
         type="button"
@@ -2739,6 +2779,7 @@ watch(
 
 .move-targeting-hud__template,
 .move-targeting-hud__direction,
+.move-targeting-hud__confirm,
 .move-targeting-hud__cancel {
   flex: 0 0 auto;
   border: 1px solid var(--rule-strong);
@@ -2781,8 +2822,18 @@ watch(
   min-width: 2.3rem;
 }
 
+.move-targeting-hud__confirm,
 .move-targeting-hud__cancel {
   padding: 0.35rem 0.65rem;
+}
+
+.move-targeting-hud__confirm {
+  background: color-mix(in srgb, var(--accent) 16%, var(--paper-accent));
+}
+
+.move-targeting-hud__confirm:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .move-targeting-hud__template:hover,
@@ -2791,6 +2842,8 @@ watch(
 .move-targeting-hud__direction:hover,
 .move-targeting-hud__direction:focus-visible,
 .move-targeting-hud__direction.is-active,
+.move-targeting-hud__confirm:not(:disabled):hover,
+.move-targeting-hud__confirm:not(:disabled):focus-visible,
 .move-targeting-hud__cancel:hover,
 .move-targeting-hud__cancel:focus-visible {
   border-color: var(--accent);

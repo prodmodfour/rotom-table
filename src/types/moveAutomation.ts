@@ -78,13 +78,19 @@ export interface MoveAutomationTargetHitChance {
 export interface MoveAutomationTargetingOverlayState {
   userId: string
   moveName: string
-  mode?: 'target' | 'area-confirmation'
+  mode?: 'target' | 'target-count' | 'area-confirmation'
   rangeLabel: string
   rangeMeters: number
   /** Optional HUD copy override for non-move target selection flows that reuse the targeting overlay. */
   targetPrompt?: string
   candidateIds: string[]
   hitChances?: Record<string, MoveAutomationTargetHitChance | undefined>
+  /** Explicit multi-target-count overlays expose the currently selected target ids before confirmation. */
+  selectedTargetIds?: string[]
+  /** Number of targets currently selected by an explicit target-count overlay. */
+  targetCount?: number
+  /** Maximum targets allowed by an explicit target-count overlay. */
+  maxTargetCount?: number
   areaCells?: GridAnchor[]
   affectedIds?: string[]
   /** Area-confirmation overlays may let the user exclude/re-include candidate targets before confirming. */

@@ -121,6 +121,29 @@ const branchSelectionScript = (): MoveAutomationScript => ({
   automationNotes: [],
 })
 
+const targetCountBranchSelectionScript = (): MoveAutomationScript => ({
+  ...branchSelectionScript(),
+  moveName: 'Target Count Branch Test',
+  range: 'Melee, 1 Target or 6, 2 Targets',
+  keywords: ['Melee', '1 Target', '6', '2 Targets'],
+  targetBranches: [
+    {
+      id: 'single',
+      label: 'Melee — 1 Target',
+      targetMode: 'one-target',
+      targetCount: 1,
+      range: 'Melee, 1 Target',
+    },
+    {
+      id: 'two-targets',
+      label: '6m — 2 Targets',
+      targetMode: 'multi-target',
+      targetCount: 2,
+      range: '6, 2 Targets',
+    },
+  ],
+})
+
 const withRegisteredMoveAutomationScript = async <T>(
   script: MoveAutomationScript,
   run: () => T | Promise<T>,
@@ -136,7 +159,41 @@ const withRegisteredMoveAutomationScript = async <T>(
   }
 }
 
+const targetCountScript = (): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Fake 6, 2 Targets',
+  version: 1,
+  targetMode: 'multi-target',
+  targetCount: 2,
+  damaging: true,
+  requiresAccuracy: false,
+  damageBase: null,
+  damageClass: 'Static',
+  type: 'Normal',
+  ac: null,
+  range: '6, 2 Targets',
+  effect: 'Fake explicit target-count test script.',
+  keywords: ['6', '2 Targets'],
+  criticalRange: null,
+  directHpLoss: {
+    kind: 'fixed',
+    amount: 3,
+    applyTypeImmunity: false,
+    ignoreWeaknessResistance: true,
+    ignoreStats: true,
+    label: 'fixed 3 HP loss',
+  },
+  areaTemplates: [],
+  conditionSuggestions: [],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+})
+
 const branchSelectionPanel = (options: {
+  moveName?: string
   recordMoveUsage?: (request: { placementId: string; moveName: string }) => void | Promise<void>
   onMoveUse?: (event: { userId: string; moveName: string }) => void | Promise<void>
   onBeforeNonImmediateAction?: (event: { userId: string; moveName: string }) => void
@@ -149,12 +206,13 @@ const branchSelectionPanel = (options: {
       { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 2 } },
     ],
   })
+  const moveName = options.moveName ?? 'Branch Selection Test'
   const pokemonSheet = {
     slug: 'brancher',
     nickname: 'Brancher',
     species: 'Bulbasaur',
     level: 5,
-    movelist: [{ name: 'Branch Selection Test', frequency: 'Scene' }],
+    movelist: [{ name: moveName, frequency: 'Scene' }],
   } as CharacterSheet
   const panel = useMoveAutomationPanel({
     map,
@@ -174,6 +232,60 @@ const branchSelectionPanel = (options: {
     recordMoveUsage: options.recordMoveUsage,
     onMoveUse: options.onMoveUse,
     onBeforeNonImmediateAction: options.onBeforeNonImmediateAction,
+  })
+  return { map, panel }
+}
+
+const targetCountPanel = (options: {
+  recordMoveUsage?: (request: { placementId: string; moveName: string }) => void | Promise<void>
+  onMoveUse?: (event: { userId: string; moveName: string }) => void | Promise<void>
+  onBeforeNonImmediateAction?: (event: { userId: string; moveName: string }) => void
+  onRangedAttackOfOpportunity?: (event: { provokerId: string; targetIds: string[]; moveName: string }) => void
+  enqueueMoveAnimations?: (events: readonly MoveAnimationEvent[]) => void | Promise<void>
+  modifyHp?: (update: MoveAutomationTransaction['hpUpdates'][number]) => void | Promise<void>
+} = {}) => {
+  const map = ref({
+    ...mapFixture(),
+    dimensions: { x: 10, y: 2, z: 5 },
+    placements: [
+      { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'multi', position: { x: 0, y: 0, z: 0 } },
+      { id: 'target-a', sheetKind: 'pokemon' as const, sheetSlug: 'target-a', position: { x: 1, y: 0, z: 0 } },
+      { id: 'target-b', sheetKind: 'pokemon' as const, sheetSlug: 'target-b', position: { x: 2, y: 0, z: 0 } },
+      { id: 'target-c', sheetKind: 'pokemon' as const, sheetSlug: 'target-c', position: { x: 3, y: 0, z: 0 } },
+      { id: 'far-target', sheetKind: 'pokemon' as const, sheetSlug: 'far-target', position: { x: 8, y: 0, z: 0 } },
+    ],
+  })
+  const pokemonSheet = {
+    slug: 'multi',
+    nickname: 'Multi',
+    species: 'Bulbasaur',
+    level: 5,
+    movelist: [{ name: 'Fake 6, 2 Targets', frequency: 'Scene' }],
+  } as CharacterSheet
+  const panel = useMoveAutomationPanel({
+    map,
+    spawnedPokemon: computed(() => [
+      spawned({ id: 'user-token', species: 'Multi', sheetSlug: 'multi', position: { x: 0, y: 0, z: 0 } }),
+      spawned({ id: 'target-a', species: 'Target A', sheetSlug: 'target-a', currentHp: 20, maxHp: 20, position: { x: 1, y: 0, z: 0 } }),
+      spawned({ id: 'target-b', species: 'Target B', sheetSlug: 'target-b', currentHp: 20, maxHp: 20, position: { x: 2, y: 0, z: 0 } }),
+      spawned({ id: 'target-c', species: 'Target C', sheetSlug: 'target-c', currentHp: 20, maxHp: 20, position: { x: 3, y: 0, z: 0 } }),
+      spawned({ id: 'far-target', species: 'Far Target', sheetSlug: 'far-target', currentHp: 20, maxHp: 20, position: { x: 8, y: 0, z: 0 } }),
+    ]),
+    pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+    trainerBySlug: ref(new Map<string, TrainerSheet>()),
+    canEditMap: computed(() => false),
+    canControlPlacement: (id) => id === 'user-token',
+    modifyHp: options.modifyHp ?? (() => undefined),
+    modifyCombatStages: () => undefined,
+    modifyConditions: () => undefined,
+    applyMoveFieldEffect: () => undefined,
+    placeHazard: () => undefined,
+    recordMoveUsage: options.recordMoveUsage,
+    onMoveUse: options.onMoveUse,
+    onBeforeNonImmediateAction: options.onBeforeNonImmediateAction,
+    onRangedAttackOfOpportunity: options.onRangedAttackOfOpportunity,
+    enqueueMoveAnimations: options.enqueueMoveAnimations,
+    now: () => 12000,
   })
   return { map, panel }
 }
@@ -335,6 +447,44 @@ describe('useMoveAutomationPanel', () => {
     })
   })
 
+  it('selecting a target-count branch transitions into the explicit multi-select flow', async () => {
+    await withRegisteredMoveAutomationScript(targetCountBranchSelectionScript(), () => {
+      const recordMoveUsage = vi.fn()
+      const { panel } = branchSelectionPanel({
+        moveName: 'Target Count Branch Test',
+        recordMoveUsage,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Target Count Branch Test' })
+
+      expect(panel.moveAutomationTargetBranchSelection.value).toMatchObject({
+        moveName: 'Target Count Branch Test',
+        options: [
+          { branchId: 'single', mode: 'target', disabled: false },
+          { branchId: 'two-targets', mode: 'target-count', targetCount: 2, disabled: false },
+        ],
+      })
+
+      panel.selectMoveAutomationTargetBranch('two-targets')
+
+      expect(panel.moveAutomationTargetBranchSelection.value).toBeNull()
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        userId: 'user-token',
+        moveName: 'Target Count Branch Test',
+        mode: 'target-count',
+        rangeLabel: '6m',
+        candidateIds: ['target-token'],
+        selectedTargetIds: [],
+        targetCount: 0,
+        maxTargetCount: 2,
+      })
+      expect(panel.moveAutomationTargeting.value?.areaCells).toBeUndefined()
+      expect(panel.moveAutomationTargeting.value?.areaTemplateOptions).toBeUndefined()
+      expect(panel.moveAutomationTargeting.value?.areaDirectionOptions).toBeUndefined()
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+    })
+  })
+
   it('records tracked usage exactly once after final single-target branch confirmation', async () => {
     await withRegisteredMoveAutomationScript(branchSelectionScript(), async () => {
       const recordMoveUsage = vi.fn()
@@ -398,6 +548,159 @@ describe('useMoveAutomationPanel', () => {
       expect(onBeforeNonImmediateAction).toHaveBeenCalledWith({ userId: 'user-token', moveName: 'Branch Selection Test' })
       expect(panel.moveAutomationTargeting.value).toBeNull()
       expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Branch Selection Test', scriptKind: 'explicit' }])
+    })
+  })
+
+  it('opens a fake 6, 2 Targets script into target-count targeting without area confirmation', async () => {
+    await withRegisteredMoveAutomationScript(targetCountScript(), () => {
+      const { panel } = targetCountPanel()
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Fake 6, 2 Targets' })
+
+      const targeting = panel.moveAutomationTargeting.value
+      expect(targeting).toMatchObject({
+        userId: 'user-token',
+        moveName: 'Fake 6, 2 Targets',
+        mode: 'target-count',
+        rangeLabel: '6m',
+        rangeMeters: 6,
+        candidateIds: ['target-a', 'target-b', 'target-c'],
+        selectedTargetIds: [],
+        affectedIds: [],
+        targetCount: 0,
+        maxTargetCount: 2,
+      })
+      expect(panel.moveAutomationTargetBranchSelection.value).toBeNull()
+      expect(targeting?.areaCells).toBeUndefined()
+      expect(targeting?.areaTemplateOptions).toBeUndefined()
+      expect(targeting?.areaDirectionOptions).toBeUndefined()
+    })
+  })
+
+  it('toggles and caps explicit target-count selections', async () => {
+    await withRegisteredMoveAutomationScript(targetCountScript(), async () => {
+      const { panel } = targetCountPanel()
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Fake 6, 2 Targets' })
+      await panel.selectMoveAutomationTarget('target-a')
+      await panel.selectMoveAutomationTarget('target-b')
+      await panel.selectMoveAutomationTarget('target-c')
+
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        mode: 'target-count',
+        selectedTargetIds: ['target-a', 'target-b'],
+        affectedIds: ['target-a', 'target-b'],
+        targetCount: 2,
+        maxTargetCount: 2,
+      })
+
+      await panel.selectMoveAutomationTarget('target-a')
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        selectedTargetIds: ['target-b'],
+        affectedIds: ['target-b'],
+        targetCount: 1,
+      })
+
+      await panel.selectMoveAutomationTarget('target-c')
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        selectedTargetIds: ['target-b', 'target-c'],
+        affectedIds: ['target-b', 'target-c'],
+        targetCount: 2,
+      })
+    })
+  })
+
+  it('blocks target-count confirmation with zero selected targets', async () => {
+    await withRegisteredMoveAutomationScript(targetCountScript(), async () => {
+      const recordMoveUsage = vi.fn()
+      const onMoveUse = vi.fn()
+      const onBeforeNonImmediateAction = vi.fn()
+      const onRangedAttackOfOpportunity = vi.fn()
+      const enqueueMoveAnimations = vi.fn()
+      const modifyHp = vi.fn()
+      const { panel } = targetCountPanel({
+        recordMoveUsage,
+        onMoveUse,
+        onBeforeNonImmediateAction,
+        onRangedAttackOfOpportunity,
+        enqueueMoveAnimations,
+        modifyHp,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Fake 6, 2 Targets' })
+      await panel.selectMoveAutomationTarget('user-token')
+
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        mode: 'target-count',
+        selectedTargetIds: [],
+        targetCount: 0,
+      })
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(onMoveUse).not.toHaveBeenCalled()
+      expect(onBeforeNonImmediateAction).not.toHaveBeenCalled()
+      expect(onRangedAttackOfOpportunity).not.toHaveBeenCalled()
+      expect(enqueueMoveAnimations).not.toHaveBeenCalled()
+      expect(modifyHp).not.toHaveBeenCalled()
+    })
+  })
+
+  it('confirms target-count selections once through multi-target resolution', async () => {
+    await withRegisteredMoveAutomationScript(targetCountScript(), async () => {
+      const hpUpdates: MoveAutomationTransaction['hpUpdates'] = []
+      const recordMoveUsage = vi.fn()
+      const onMoveUse = vi.fn()
+      const onBeforeNonImmediateAction = vi.fn()
+      const onRangedAttackOfOpportunity = vi.fn()
+      const enqueueMoveAnimations = vi.fn((_events: readonly MoveAnimationEvent[]) => undefined)
+      const { map, panel } = targetCountPanel({
+        recordMoveUsage,
+        onMoveUse,
+        onBeforeNonImmediateAction,
+        onRangedAttackOfOpportunity,
+        enqueueMoveAnimations,
+        modifyHp: (update) => { hpUpdates.push(update) },
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Fake 6, 2 Targets' })
+      await panel.selectMoveAutomationTarget('target-a')
+      await panel.selectMoveAutomationTarget('target-b')
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+
+      await panel.selectMoveAutomationTarget('user-token')
+
+      expect(recordMoveUsage).toHaveBeenCalledTimes(1)
+      expect(recordMoveUsage).toHaveBeenCalledWith({ placementId: 'user-token', moveName: 'Fake 6, 2 Targets' })
+      expect(onMoveUse).toHaveBeenCalledTimes(1)
+      expect(onMoveUse).toHaveBeenCalledWith({ userId: 'user-token', moveName: 'Fake 6, 2 Targets' })
+      expect(onBeforeNonImmediateAction).toHaveBeenCalledTimes(1)
+      expect(onBeforeNonImmediateAction).toHaveBeenCalledWith({ userId: 'user-token', moveName: 'Fake 6, 2 Targets' })
+      expect(onRangedAttackOfOpportunity).toHaveBeenCalledTimes(1)
+      expect(onRangedAttackOfOpportunity).toHaveBeenCalledWith({
+        provokerId: 'user-token',
+        targetIds: ['target-a', 'target-b'],
+        moveName: 'Fake 6, 2 Targets',
+      })
+      expect(hpUpdates).toEqual([
+        { id: 'target-a', currentHp: 17 },
+        { id: 'target-b', currentHp: 17 },
+      ])
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Fake 6, 2 Targets', scriptKind: 'explicit' }])
+
+      expect(enqueueMoveAnimations).toHaveBeenCalledTimes(1)
+      const events = enqueueMoveAnimations.mock.calls[0]?.[0] ?? []
+      expect(events.length).toBeGreaterThan(0)
+      expect(events.some((event) => event.id.includes('use-move-multi-target'))).toBe(true)
+      const eventTargetIds = events.flatMap((event) => ('targetId' in event && event.targetId ? [event.targetId] : []))
+      expect(eventTargetIds).toEqual(expect.arrayContaining(['target-a', 'target-b']))
+      const areaKinds = new Set<MoveAnimationEvent['kind']>([
+        MOVE_VFX_KIND.areaPulse,
+        MOVE_VFX_KIND.radialBurst,
+        MOVE_VFX_KIND.lineSweep,
+        MOVE_VFX_KIND.coneSweep,
+      ])
+      expect(events.some((event) => areaKinds.has(event.kind))).toBe(false)
+      expect(events.some((event) => Boolean((event as { areaCells?: unknown }).areaCells))).toBe(false)
     })
   })
 

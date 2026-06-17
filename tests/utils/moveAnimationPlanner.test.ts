@@ -125,6 +125,16 @@ const selfInput = (overrides: Partial<MoveAnimationPlanInput> = {}): MoveAnimati
   ...overrides,
 })
 
+const multiTargetInput = (overrides: Partial<MoveAnimationPlanInput> = {}): MoveAnimationPlanInput => baseInput({
+  resolution: MOVE_ANIMATION_PLAN_RESOLUTION.multiTarget,
+  targets: [
+    token({ id: 'target-a', species: 'Target A', position: { x: 1, y: 0, z: 0 } }),
+    token({ id: 'target-b', species: 'Target B', position: { x: 3, y: 0, z: 0 } }),
+  ],
+  selectedTargetIds: ['target-a', 'target-b'],
+  ...overrides,
+})
+
 const areaInput = (
   areaCells: readonly GridAnchor[],
   overrides: Partial<MoveAnimationPlanInput> = {},
@@ -616,6 +626,77 @@ describe('generic move animation planner', () => {
     expect(arcEvents[0]).toMatchObject({
       kind: MOVE_VFX_KIND.arc,
       palette: MOVE_VFX_TYPE_COLORS.Rock,
+    })
+  })
+
+  it('plans explicit multi-target-count VFX as staggered target events without area primitives', () => {
+    const events = planGenericMoveAnimations(multiTargetInput({
+      user: token({ id: 'user-token', species: 'Caster', currentHp: 20, maxHp: 40 }),
+      script: script({
+        moveName: 'Generic Two Target Beam',
+        targetMode: 'multi-target',
+        targetCount: 2,
+        damaging: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Electric',
+        range: 'Range 6, 2 Targets',
+      }),
+      targetOutcomes: [
+        { targetId: 'target-a', hit: true },
+        { targetId: 'target-b', hit: false },
+      ],
+      transaction: transaction({
+        hpUpdates: [{ id: 'user-token', currentHp: 28 }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.miss,
+      MOVE_VFX_KIND.healing,
+    ])
+    const forbiddenAreaKinds = new Set<MoveAnimationEvent['kind']>([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.radialBurst,
+      MOVE_VFX_KIND.lineSweep,
+      MOVE_VFX_KIND.coneSweep,
+    ])
+    expect(events.some((event) => forbiddenAreaKinds.has(event.kind))).toBe(false)
+    expect(events.some((event) => 'areaCells' in event && event.areaCells)).toBe(false)
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.beam,
+        targetId: 'target-a',
+        targetCell: { x: 1, y: 0, z: 0 },
+        palette: MOVE_VFX_TYPE_COLORS.Electric,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.targetFlash,
+        targetId: 'target-a',
+        shake: true,
+        palette: MOVE_VFX_TYPE_COLORS.Electric,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.beam,
+        targetId: 'target-b',
+        targetCell: { x: 3, y: 0, z: 0 },
+        startOffsetMs: 60,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.miss,
+        targetId: 'target-b',
+        startOffsetMs: 60,
+        palette: MOVE_VFX_TONE_COLORS.miss,
+      }),
+    ]))
+    expect(events.filter((event) => event.kind === MOVE_VFX_KIND.healing)).toHaveLength(1)
+    expect(events.find((event) => event.kind === MOVE_VFX_KIND.healing)).toMatchObject({
+      targetId: 'user-token',
+      startOffsetMs: 100,
+      palette: MOVE_VFX_TONE_COLORS.healing,
     })
   })
 

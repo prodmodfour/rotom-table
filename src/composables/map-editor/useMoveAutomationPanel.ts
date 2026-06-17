@@ -12,6 +12,7 @@ import {
   isSeamlessAreaConfirmationScript,
   isSeamlessSelfMoveScript,
   isSeamlessSingleTargetMoveScript,
+  isSeamlessTargetCountMoveScript,
   moveAutomationHasMultipleTargetBranches,
   moveAutomationScriptForTargetBranch,
   moveAutomationTargetBranches,
@@ -29,6 +30,7 @@ import { buildMoveAutomationMoveEntries } from '~/utils/moveAutomationMoves'
 import {
   resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
+  resolveInstantMultiTargetMoveAutomation,
   resolveInstantSelfMoveAutomation,
   resolveInstantTargetMoveAutomation,
 } from '~/utils/moveAutomationInstant'
@@ -68,6 +70,7 @@ import {
 import {
   MELEE_MOVE_RANGE_METERS,
   moveAutomationTargetsInRange,
+  parseExplicitMultiTargetMoveRangeMeters,
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
 import { moveAutomationTargetHitChance } from '~/utils/moveAutomationAccuracy'
@@ -251,6 +254,18 @@ interface ActiveSingleTargetingRequest {
   rangeMeters: number
 }
 
+interface ActiveTargetCountRequest {
+  kind: 'target-count'
+  userId: string
+  moveName: string
+  script: MoveAutomationScript
+  damageFormula: string | null
+  frequency: string | null
+  rangeMeters: number
+  maxTargetCount: number
+  selectedTargetIds: string[]
+}
+
 interface ActiveAreaConfirmationRequest {
   kind: 'area-confirmation'
   userId: string
@@ -272,7 +287,7 @@ interface ActiveAreaConfirmationRequest {
   passDestination?: GridAnchor
 }
 
-type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveAreaConfirmationRequest
+type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveTargetCountRequest | ActiveAreaConfirmationRequest
 
 interface ActiveTargetBranchSelectionRequest {
   userId: string
@@ -493,6 +508,20 @@ export const useMoveAutomationPanel = ({
     return request.targetIds.filter((id) => !excluded.has(id))
   }
 
+  const targetCountCandidateIds = (request: ActiveTargetCountRequest, user: SpawnedPokemon): string[] => moveAutomationTargetsInRange({
+    user,
+    tokens: spawnedPokemon.value,
+    rangeMeters: request.rangeMeters,
+  }).map((candidate) => candidate.id)
+
+  const selectedTargetCountIds = (
+    request: ActiveTargetCountRequest,
+    candidateIds: readonly string[],
+  ): string[] => {
+    const candidates = new Set(candidateIds)
+    return request.selectedTargetIds.filter((id) => candidates.has(id)).slice(0, request.maxTargetCount)
+  }
+
   const cloneMoveAutomationAreaTemplates = (
     templates: readonly MoveAutomationAreaTemplate[] | null | undefined,
   ): MoveAutomationAreaTemplate[] => templates?.map((template) => ({ ...template })) ?? []
@@ -533,7 +562,10 @@ export const useMoveAutomationPanel = ({
     script: MoveAutomationScript,
   ): MoveAutomationTargetBranchSelectionOption['mode'] | null => {
     if (script.targetMode === 'one-target') return 'target'
-    if (script.targetMode === 'multi-target' && script.areaTemplates?.length) return 'area-confirmation'
+    if (script.targetMode === 'multi-target') {
+      if (script.areaTemplates?.length) return 'area-confirmation'
+      if (isSeamlessTargetCountMoveScript(script)) return 'target-count'
+    }
     return null
   }
 
@@ -555,7 +587,13 @@ export const useMoveAutomationPanel = ({
     }
 
     if (script.targetMode === 'multi-target') {
-      return script.areaTemplates?.length ? null : 'Unsupported area template.'
+      if (script.areaTemplates?.length) return null
+      if (isSeamlessTargetCountMoveScript(script)) {
+        return parseExplicitMultiTargetMoveRangeMeters(script.range) == null
+          ? 'Unsupported target range.'
+          : null
+      }
+      return 'Unsupported area template.'
     }
 
     return 'Unsupported target mode.'
@@ -578,7 +616,7 @@ export const useMoveAutomationPanel = ({
       range: branch.range,
       targetMode: branch.targetMode,
       targetCount: branch.targetCount,
-      mode: mode ?? (branch.targetMode === 'one-target' ? 'target' : 'area-confirmation'),
+      mode: mode ?? (branch.targetMode === 'one-target' ? 'target' : branch.targetCount != null && branch.targetCount > 0 ? 'target-count' : 'area-confirmation'),
       areaTemplates: cloneMoveAutomationAreaTemplates(script?.areaTemplates ?? branch.areaTemplates),
       disabled: Boolean(disabledReason || !mode),
       disabledReason: disabledReason ?? (!mode ? 'Unsupported target branch.' : null),
@@ -618,6 +656,26 @@ export const useMoveAutomationPanel = ({
         areaDirectionOptions: request.directionOptions,
         areaTemplateId: request.areaTemplateId,
         areaTemplateOptions: areaTemplateOptionIsVisible(request.areaTemplateOptions) ? request.areaTemplateOptions : undefined,
+      }
+    }
+
+    if (request.kind === 'target-count') {
+      const candidateIds = targetCountCandidateIds(request, user)
+      const selectedTargetIds = selectedTargetCountIds(request, candidateIds)
+      const plural = request.maxTargetCount === 1 ? 'target' : 'targets'
+      return {
+        userId: request.userId,
+        moveName: request.moveName,
+        mode: 'target-count',
+        rangeLabel: `${request.rangeMeters}m`,
+        rangeMeters: request.rangeMeters,
+        targetPrompt: `Choose up to ${request.maxTargetCount} ${plural} within ${request.rangeMeters}m, then confirm.`,
+        candidateIds,
+        hitChances: moveTargetHitChances(request.script, user, candidateIds),
+        selectedTargetIds,
+        affectedIds: selectedTargetIds,
+        targetCount: selectedTargetIds.length,
+        maxTargetCount: request.maxTargetCount,
       }
     }
 
@@ -825,7 +883,7 @@ export const useMoveAutomationPanel = ({
     request: ActiveMoveTargetingRequest,
     targetIds: readonly string[],
   ) => {
-    if (request.kind !== 'single-target') return
+    if (request.kind === 'area-confirmation') return
     if (request.rangeMeters <= MELEE_MOVE_RANGE_METERS) return
     onRangedAttackOfOpportunity?.({
       provokerId: request.userId,
@@ -1000,6 +1058,32 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const planAndEnqueueMultiTargetMoveAnimations = (options: {
+    script: MoveAutomationScript
+    user: SpawnedPokemon
+    targets: readonly SpawnedPokemon[]
+    selectedTargetIds: readonly string[]
+    transaction: MoveAutomationTransaction
+  }) => {
+    try {
+      enqueuePlannedMoveAnimations(options.user.id, planMoveAnimations({
+        resolution: MOVE_ANIMATION_PLAN_RESOLUTION.multiTarget,
+        user: options.user,
+        targets: options.targets,
+        selectedTargetIds: options.selectedTargetIds,
+        script: options.script,
+        transaction: options.transaction,
+        targetOutcomes: options.targets.map((target) => confirmedTargetOutcomeForTransaction(target, options.transaction)),
+        timing: {
+          nowMs: moveAnimationNowMs(),
+          animationIdBase: nextMoveAnimationPlanIdBase('multi-target', options.script, options.user),
+        },
+      }))
+    } catch (error) {
+      warnMoveAnimationEmissionFailure('planning', error)
+    }
+  }
+
   const planAndEnqueueAreaMoveAnimations = (options: {
     script: MoveAutomationScript
     user: SpawnedPokemon
@@ -1115,6 +1199,52 @@ export const useMoveAutomationPanel = ({
     return true
   }
 
+  const targetCountRequestForScript = (
+    user: SpawnedPokemon,
+    script: MoveAutomationScript,
+    damageFormula: string | null,
+    frequency: string | null,
+  ): ActiveTargetCountRequest | null => {
+    const maxTargetCount = typeof script.targetCount === 'number' && Number.isFinite(script.targetCount)
+      ? Math.floor(script.targetCount)
+      : 0
+    const rangeMeters = parseExplicitMultiTargetMoveRangeMeters(script.range)
+    if (
+      maxTargetCount <= 0
+      || rangeMeters == null
+      || (script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(script))
+    ) {
+      return null
+    }
+
+    return {
+      kind: 'target-count',
+      userId: user.id,
+      moveName: script.moveName,
+      script,
+      damageFormula,
+      frequency,
+      rangeMeters,
+      maxTargetCount,
+      selectedTargetIds: [],
+    }
+  }
+
+  const beginTargetCountTargetingForScript = (
+    user: SpawnedPokemon,
+    script: MoveAutomationScript,
+    damageFormula: string | null,
+    frequency: string | null,
+  ): boolean => {
+    const request = targetCountRequestForScript(user, script, damageFormula, frequency)
+    if (!request) return false
+
+    clearMoveAutomationFeedback()
+    activeMoveTargetBranchSelection.value = null
+    activeMoveTargeting.value = request
+    return true
+  }
+
   const beginSeamlessMoveTargeting = (id: string, moveName: string | null | undefined): boolean => {
     const trimmedMoveName = moveName?.trim()
     if (!trimmedMoveName) return false
@@ -1171,6 +1301,10 @@ export const useMoveAutomationPanel = ({
 
     if (isSeamlessSingleTargetMoveScript(script)) {
       return beginSingleTargetingForScript(user, script, rollFormulaForEntry(entry), frequencyForEntry(entry))
+    }
+
+    if (isSeamlessTargetCountMoveScript(script)) {
+      return beginTargetCountTargetingForScript(user, script, rollFormulaForEntry(entry), frequencyForEntry(entry))
     }
 
     return beginSeamlessAreaConfirmation(id, entry)
@@ -1629,6 +1763,11 @@ export const useMoveAutomationPanel = ({
       return
     }
 
+    if (mode === 'target-count') {
+      beginTargetCountTargetingForScript(user, script, request.damageFormula, request.frequency)
+      return
+    }
+
     if (mode === 'area-confirmation') {
       beginAreaConfirmationForScript(user, script, request.damageFormula, request.frequency)
     }
@@ -1740,6 +1879,26 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const toggleMoveAutomationTargetCountTarget = (
+    request: ActiveTargetCountRequest,
+    targetId: string,
+    candidateIds: readonly string[],
+  ) => {
+    if (!candidateIds.includes(targetId)) return
+    const selected = selectedTargetCountIds(request, candidateIds)
+    const next = new Set(selected)
+    if (next.has(targetId)) next.delete(targetId)
+    else if (next.size < request.maxTargetCount) next.add(targetId)
+    activeMoveTargeting.value = {
+      ...request,
+      selectedTargetIds: Array.from(next),
+    }
+  }
+
+  const targetCountTargetsForIds = (targetIds: readonly string[]): SpawnedPokemon[] => targetIds
+    .map((id) => findSpawnedPokemon(id))
+    .filter((token): token is SpawnedPokemon => Boolean(token))
+
   const selectedAreaTemplateForRequest = (
     request: ActiveAreaConfirmationRequest,
   ): MoveAutomationAreaTemplate | null => {
@@ -1785,6 +1944,48 @@ export const useMoveAutomationPanel = ({
       keywords,
       areaTemplates: [{ ...template }],
     }
+  }
+
+  const confirmMoveAutomationTargetCount = async (request: ActiveTargetCountRequest) => {
+    if (!canContinueMoveAutomationForUser(request.userId)) return
+    const user = findSpawnedPokemon(request.userId)
+    if (!user) return
+    const selectedTargetIds = selectedTargetCountIds(request, targetCountCandidateIds(request, user))
+    if (!selectedTargetIds.length) return
+
+    const recorded = await recordMoveUseIfTracked(
+      { placementId: request.userId, moveName: request.moveName },
+      request.frequency,
+    )
+    if (!recorded || !canContinueMoveAutomationForUser(request.userId)) return
+    if (!moveTargetingRequestIsStillActive(request)) return
+    activeMoveTargeting.value = null
+    const notification = notifyMoveUse(request)
+    if (isPromiseLike(notification)) await notification
+    if (!canContinueMoveAutomationForUser(request.userId)) return
+    notifyMoveActionTaken(request)
+    notifyRangedAttackOfOpportunity(request, selectedTargetIds)
+
+    const targets = targetCountTargetsForIds(selectedTargetIds)
+    if (!targets.length) return
+    faceTokenTowardNearestTarget(user, targets)
+
+    const transaction = resolveInstantMultiTargetMoveAutomation({
+      script: request.script,
+      user,
+      selectedTargets: targets,
+      damageFormula: request.damageFormula,
+      fieldEffects: map.value?.fieldEffects,
+      conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
+    })
+    planAndEnqueueMultiTargetMoveAnimations({
+      script: request.script,
+      user,
+      targets,
+      selectedTargetIds,
+      transaction,
+    })
+    await applyMoveAutomation(transaction, { script: request.script })
   }
 
   const confirmMoveAutomationArea = async (request: ActiveAreaConfirmationRequest) => {
@@ -1846,6 +2047,16 @@ export const useMoveAutomationPanel = ({
         return
       }
       await confirmMoveAutomationArea(request)
+      return
+    }
+
+    if (request.kind === 'target-count') {
+      if (!overlay) return
+      if (overlay.candidateIds.includes(targetId)) {
+        toggleMoveAutomationTargetCountTarget(request, targetId, overlay.candidateIds)
+        return
+      }
+      if (targetId === request.userId) await confirmMoveAutomationTargetCount(request)
       return
     }
 

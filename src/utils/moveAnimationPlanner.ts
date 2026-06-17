@@ -32,6 +32,7 @@ import {
 export const MOVE_ANIMATION_PLAN_RESOLUTION = {
   self: 'self',
   singleTarget: 'single-target',
+  multiTarget: 'multi-target',
   area: 'area',
 } as const
 
@@ -126,6 +127,10 @@ export interface MoveAnimationSingleTargetPlanInput
   readonly feedback?: MoveAnimationPlanFeedback | null
 }
 
+/** Planner input for explicit multi-target-count resolutions that selected target tokens directly. */
+export interface MoveAnimationMultiTargetPlanInput
+  extends MoveAnimationPlanInputBase<typeof MOVE_ANIMATION_PLAN_RESOLUTION.multiTarget> {}
+
 /** Planner input for confirmed area-template resolutions. */
 export interface MoveAnimationAreaPlanInput
   extends MoveAnimationPlanInputBase<typeof MOVE_ANIMATION_PLAN_RESOLUTION.area> {
@@ -142,6 +147,7 @@ export interface MoveAnimationAreaPlanInput
 export type MoveAnimationPlanInput =
   | MoveAnimationSelfPlanInput
   | MoveAnimationSingleTargetPlanInput
+  | MoveAnimationMultiTargetPlanInput
   | MoveAnimationAreaPlanInput
 
 /** Output contract for a pure move-animation planner. */
@@ -768,17 +774,31 @@ const explicitTargetOutcomeForId = (
   arrayOrEmpty(input.targetOutcomes).find((outcome) => outcome.targetId === targetId) ?? null
 )
 
+type MoveAnimationTargetedPlanInput = MoveAnimationSingleTargetPlanInput | MoveAnimationMultiTargetPlanInput
+
 const targetOutcomeForId = (
-  input: MoveAnimationSingleTargetPlanInput,
+  input: MoveAnimationTargetedPlanInput,
   targetId: string | undefined,
 ): MoveAnimationPlanTargetOutcome | null => {
   const explicitOutcome = explicitTargetOutcomeForId(input, targetId)
   if (explicitOutcome) return explicitOutcome
 
-  const feedbackOutcome = feedbackToTargetOutcome(input.feedback)
+  const feedbackOutcome = input.resolution === MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget
+    ? feedbackToTargetOutcome(input.feedback)
+    : null
   if (feedbackOutcome && (!targetId || feedbackOutcome.targetId === targetId)) return feedbackOutcome
 
   return null
+}
+
+const selectedMultiTargetIdsForInput = (input: MoveAnimationMultiTargetPlanInput): string[] => {
+  const selectedTargetIds = uniquePlannerTargetIds(stringArrayOrEmpty(input.selectedTargetIds))
+  if (selectedTargetIds.length > 0) return selectedTargetIds
+
+  return uniquePlannerTargetIds([
+    ...arrayOrEmpty(input.targetOutcomes).map((outcome) => outcome.targetId),
+    ...arrayOrEmpty(input.targets).map((target) => target.id),
+  ])
 }
 
 const selectedAreaTargetIdsForInput = (input: MoveAnimationAreaPlanInput): string[] => {
@@ -1354,7 +1374,7 @@ const planSelfMoveAnimations = (
 }
 
 const planTargetSemanticAnimations = (
-  input: MoveAnimationSingleTargetPlanInput,
+  input: MoveAnimationTargetedPlanInput,
   nextId: PlannerEventIdFactory,
   targetId: string,
 ): MoveAnimationEvent[] => {
@@ -1398,6 +1418,64 @@ const planTargetSemanticAnimations = (
     targetCell,
     ...semanticStartOffset,
   }, palette)]
+}
+
+const planDamagingTargetAnimationEvents = (options: {
+  readonly input: MoveAnimationTargetedPlanInput
+  readonly nextId: PlannerEventIdFactory
+  readonly userCell?: GridAnchor
+  readonly targetId: string
+  readonly targetCell?: GridAnchor
+  readonly hit: boolean
+  readonly crit: boolean
+  readonly palette: MoveVfxPaletteEntry
+  readonly launchStartOffset?: { readonly startOffsetMs?: number }
+  readonly impactStartOffset?: { readonly startOffsetMs?: number }
+}): MoveAnimationEvent[] => {
+  const events: MoveAnimationEvent[] = []
+
+  if (isMeleeDamagingMove(options.input.script)) {
+    events.push(createPlannerEvent(options.input, options.nextId, MOVE_VFX_KIND.meleeLunge, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
+      originCell: options.userCell,
+      targetId: options.targetId,
+      targetCell: options.targetCell,
+      ...(options.launchStartOffset ?? {}),
+    }, options.palette))
+  } else {
+    const launchKind = rangedLaunchKindForScript(options.input.script)
+    events.push(createPlannerEvent(options.input, options.nextId, launchKind, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
+      originCell: options.userCell,
+      targetId: options.targetId,
+      targetCell: options.targetCell,
+      ...(options.launchStartOffset ?? {}),
+    }, options.palette))
+  }
+
+  if (!options.hit) {
+    events.push(createPlannerEvent(options.input, options.nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+      targetId: options.targetId,
+      targetCell: options.targetCell,
+      ...(options.impactStartOffset ?? {}),
+    }, moveVfxColorForTone(MOVE_VFX_TONE.miss)))
+    return events
+  }
+
+  events.push(createPlannerEvent(options.input, options.nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+    targetId: options.targetId,
+    targetCell: options.targetCell,
+    shake: true,
+    ...(options.impactStartOffset ?? {}),
+  }, options.palette))
+
+  if (options.crit) {
+    events.push(createPlannerEvent(options.input, options.nextId, MOVE_VFX_KIND.crit, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+      targetId: options.targetId,
+      targetCell: options.targetCell,
+      ...(options.impactStartOffset ?? {}),
+    }, options.palette))
+  }
+
+  return events
 }
 
 const planSingleTargetMoveAnimations = (
@@ -1464,52 +1542,121 @@ const planSingleTargetMoveAnimations = (
   const transactionMapConfirmationEvents = planTransactionMapConfirmationAnimations(input, nextId, {
     startOffsetMs: transactionFollowUpStartOffsetMs,
   })
-  const events: MoveAnimationEvent[] = []
-
-  if (isMeleeDamagingMove(input.script)) {
-    events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.meleeLunge, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
-      originCell: userCell,
-      targetId,
-      targetCell,
-      ...launchStartOffset,
-    }, palette))
-  } else {
-    const launchKind = rangedLaunchKindForScript(input.script)
-    events.push(createPlannerEvent(input, nextId, launchKind, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
-      originCell: userCell,
-      targetId,
-      targetCell,
-      ...launchStartOffset,
-    }, palette))
-  }
-
-  if (!hit) {
-    events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
-      targetId,
-      targetCell,
-      ...impactStartOffset,
-    }, moveVfxColorForTone(MOVE_VFX_TONE.miss)))
-    events.push(...transactionSemanticEvents, ...transactionMapConfirmationEvents)
-    return events
-  }
-
-  events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+  const events = planDamagingTargetAnimationEvents({
+    input,
+    nextId,
+    userCell,
     targetId,
     targetCell,
-    shake: true,
-    ...impactStartOffset,
-  }, palette))
+    hit,
+    crit,
+    palette,
+    launchStartOffset,
+    impactStartOffset,
+  })
 
-  if (crit) {
-    events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.crit, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
-      targetId,
-      targetCell,
-      ...impactStartOffset,
-    }, palette))
+  return [...events, ...transactionSemanticEvents, ...transactionMapConfirmationEvents]
+}
+
+const planMultiTargetMoveAnimations = (
+  input: MoveAnimationMultiTargetPlanInput,
+  nextId: PlannerEventIdFactory,
+): MoveAnimationEvent[] => {
+  const user = userTokenForInput(input)
+  if (!user) return []
+
+  const userCell = positionForToken(user)
+  const targetIds = selectedMultiTargetIdsForInput(input)
+  if (targetIds.length === 0) {
+    return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.selfPulse, MOVE_VFX_DEFAULT_DURATIONS_MS.normal, {
+      originCell: userCell,
+    }, moveVfxColorForTone(MOVE_VFX_TONE.neutral))]
   }
 
-  events.push(...transactionSemanticEvents, ...transactionMapConfirmationEvents)
-  return events
+  const timing = timingForInput(input)
+  const targetOffsets = createMoveAnimationTargetStartOffsets(
+    targetIds.map((targetId) => ({
+      targetId,
+      position: positionForToken(targetForId(input, targetId)),
+    })),
+    {
+      order: MOVE_ANIMATION_TARGET_SEQUENCE_ORDER.distanceFromOrigin,
+      origin: userCell,
+    },
+  )
+  const targetOffsetById = new Map(targetOffsets.map((offset) => [offset.targetId, offset.startOffsetMs]))
+  const targetStartOffsetMs = (targetId: string): number => targetOffsetById.get(targetId) ?? 0
+  const impactOffsetForTarget = (targetId: string): { readonly startOffsetMs?: number } => startOffsetMetadata(
+    (timing.impactDelayMs ?? 0) + targetStartOffsetMs(targetId),
+  )
+  const semanticTargetIds = uniquePlannerTargetIds([user.id, ...targetIds])
+
+  if (!scriptHasDamageVisual(input.script)) {
+    const semanticStartOffsetMs = timing.semanticDelayMs ?? (timing.impactDelayMs ?? 0)
+    const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
+      targetIds: semanticTargetIds,
+      startOffsetMs: semanticStartOffsetMs,
+      staggerOrigin: userCell,
+    })
+    const transactionSemanticTargetIds = targetIdsWithEvents(transactionSemanticEvents)
+    const targetEvents = targetIds.flatMap((targetId): MoveAnimationEvent[] => {
+      const target = targetForId(input, targetId)
+      const targetCell = positionForToken(target)
+      const outcome = targetOutcomeForId(input, targetId)
+      const hit = outcome?.hit ?? true
+
+      if (!hit) {
+        return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+          targetId,
+          targetCell,
+          ...startOffsetMetadata(timing.impactDelayMs),
+        }, moveVfxColorForTone(MOVE_VFX_TONE.miss))]
+      }
+
+      if (
+        transactionSemanticEvents.length > 0
+        || transactionSemanticTargetIds.has(targetId)
+        || hasTransactionSemanticUpdateForTarget(input, targetId)
+      ) return []
+      return planTargetSemanticAnimations(input, nextId, targetId)
+    })
+
+    return [
+      ...applyMoveAnimationTargetStartOffsets(targetEvents, targetOffsets, { mode: 'add' }),
+      ...transactionSemanticEvents,
+    ]
+  }
+
+  const palette = damagingPaletteForScript(input.script)
+  const transactionFollowUpStartOffsetMs = timing.semanticDelayMs
+    ?? ((timing.impactDelayMs ?? 0) + TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS)
+  const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
+    targetIds: semanticTargetIds,
+    startOffsetMs: transactionFollowUpStartOffsetMs,
+    staggerOrigin: userCell,
+  })
+
+  const targetEvents = targetIds.flatMap((targetId): MoveAnimationEvent[] => {
+    const target = targetForId(input, targetId)
+    const targetCell = positionForToken(target)
+    const outcome = targetOutcomeForId(input, targetId)
+    const hit = outcome?.hit ?? true
+    const crit = outcome?.crit ?? false
+    return planDamagingTargetAnimationEvents({
+      input,
+      nextId,
+      userCell,
+      targetId,
+      targetCell,
+      hit,
+      crit,
+      palette,
+      launchStartOffset: startOffsetMetadata((timing.baseDelayMs ?? 0) + targetStartOffsetMs(targetId)),
+      impactStartOffset: impactOffsetForTarget(targetId),
+    })
+  })
+
+  return [...targetEvents, ...transactionSemanticEvents]
 }
 
 const planAreaTargetFollowUpAnimations = (
@@ -1710,6 +1857,15 @@ const describeMoveAnimationPlanningFallbackReasons = (
       }
       break
     }
+    case MOVE_ANIMATION_PLAN_RESOLUTION.multiTarget: {
+      const targetIds = selectedMultiTargetIdsForInput(input)
+      if (targetIds.length === 0) {
+        reasons.push('multi-target flow had no target ids; used neutral self-pulse fallback when possible')
+      } else if (targetIds.some((targetId) => !targetForId(input, targetId))) {
+        reasons.push('one or more target token snapshots missing; renderer will resolve or skip target-id-only VFX')
+      }
+      break
+    }
     case MOVE_ANIMATION_PLAN_RESOLUTION.area: {
       const areaCells = gridAnchorsOrEmpty(input.areaCells)
       if (areaCells.length === 0 && !passDestinationForInput(input)) {
@@ -1774,6 +1930,8 @@ export const planGenericMoveAnimations: MoveAnimationPlanner = (input) => {
         return planSelfMoveAnimations(input, nextId)
       case MOVE_ANIMATION_PLAN_RESOLUTION.singleTarget:
         return planSingleTargetMoveAnimations(input, nextId)
+      case MOVE_ANIMATION_PLAN_RESOLUTION.multiTarget:
+        return planMultiTargetMoveAnimations(input, nextId)
       case MOVE_ANIMATION_PLAN_RESOLUTION.area:
         return planAreaMoveAnimations(input, nextId)
       default:

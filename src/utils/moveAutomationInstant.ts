@@ -3,6 +3,7 @@ import {
   defaultTargetResolutionState,
   moveAutomationSuggestionKey,
   moveAutomationTargetDamageMultiplier,
+  type MoveAutomationTargetResolutionState,
 } from '~/utils/moveAutomationTargetResolution'
 import {
   randomD20,
@@ -49,6 +50,18 @@ export interface ResolveInstantAreaMoveAutomationInput {
   script: MoveAutomationScript
   user: SpawnedPokemon
   targets: readonly SpawnedPokemon[]
+  damageFormula?: string | null
+  fieldEffects?: MapFieldEffects
+  conditionImmunityContext?: MoveAutomationConditionImmunityContext
+  random?: () => number
+}
+
+export interface ResolveInstantMultiTargetMoveAutomationInput {
+  script: MoveAutomationScript
+  user: SpawnedPokemon
+  /** Selected target tokens. `selectedTargets` is accepted as a call-site readability alias. */
+  targets?: readonly SpawnedPokemon[]
+  selectedTargets?: readonly SpawnedPokemon[]
   damageFormula?: string | null
   fieldEffects?: MapFieldEffects
   conditionImmunityContext?: MoveAutomationConditionImmunityContext
@@ -181,10 +194,10 @@ const addSuggestionTargetId = (
   targetIdsBySuggestion.set(index, ids)
 }
 
-const resolveAreaConditionApplications = (
+const resolveTargetGroupConditionApplications = (
   script: MoveAutomationScript,
   targets: readonly SpawnedPokemon[],
-  targetResolutions: Readonly<Record<string, ReturnType<typeof defaultTargetResolutionState> | undefined>>,
+  targetResolutions: Readonly<Record<string, MoveAutomationTargetResolutionState | undefined>>,
   conditionImmunityContext?: MoveAutomationConditionImmunityContext,
 ): {
   filteredSuggestionIndexes: Set<number>
@@ -248,10 +261,10 @@ const enableSingleTargetStageThresholds = (options: {
   })
 }
 
-const resolveAreaStageApplications = (
+const resolveTargetGroupStageApplications = (
   script: MoveAutomationScript,
   targets: readonly SpawnedPokemon[],
-  targetResolutions: Readonly<Record<string, ReturnType<typeof defaultTargetResolutionState> | undefined>>,
+  targetResolutions: Readonly<Record<string, MoveAutomationTargetResolutionState | undefined>>,
 ): {
   filteredSuggestionIndexes: Set<number>
   targetIdsBySuggestion: Map<number, Set<string>>
@@ -551,7 +564,7 @@ const buildNoRollTargetTransaction = ({
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
   const randomStageNote = resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions, random })
-  const conditionApplications = resolveAreaConditionApplications(script, [target], targetResolutions, conditionImmunityContext)
+  const conditionApplications = resolveTargetGroupConditionApplications(script, [target], targetResolutions, conditionImmunityContext)
   conditionApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
     if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
   })
@@ -609,11 +622,12 @@ export const resolveInstantSelfMoveAutomation = ({
   })
 }
 
-const formatAreaAccuracyLogLines = (
+const formatTargetGroupAccuracyLogLines = (
   targets: readonly SpawnedPokemon[],
   targetResolutions: Record<string, { accuracyRoll: string; hit: boolean }>,
+  emptyTargetsMessage?: string,
 ): string[] => {
-  if (!targets.length) return ['No legal targets in the confirmed area.']
+  if (!targets.length) return emptyTargetsMessage ? [emptyTargetsMessage] : []
   return targets.map((target) => {
     const resolution = targetResolutions[target.id]
     if (!resolution?.accuracyRoll) return `${target.species}: ${resolution?.hit ? 'hit' : 'miss'}.`
@@ -621,7 +635,32 @@ const formatAreaAccuracyLogLines = (
   })
 }
 
-export const resolveInstantAreaMoveAutomation = ({
+const formatAreaAccuracyLogLines = (
+  targets: readonly SpawnedPokemon[],
+  targetResolutions: Record<string, { accuracyRoll: string; hit: boolean }>,
+): string[] => formatTargetGroupAccuracyLogLines(targets, targetResolutions, 'No legal targets in the confirmed area.')
+
+const formatMultiTargetAccuracyLogLines = (
+  targets: readonly SpawnedPokemon[],
+  targetResolutions: Record<string, { accuracyRoll: string; hit: boolean }>,
+): string[] => formatTargetGroupAccuracyLogLines(targets, targetResolutions, 'No selected targets.')
+
+interface ResolveInstantTargetGroupMoveAutomationInput {
+  script: MoveAutomationScript
+  user: SpawnedPokemon
+  targets: readonly SpawnedPokemon[]
+  damageFormula?: string | null
+  fieldEffects?: MapFieldEffects
+  conditionImmunityContext?: MoveAutomationConditionImmunityContext
+  random?: () => number
+}
+
+interface InstantTargetGroupMoveAutomationResolution {
+  transaction: MoveAutomationTransaction
+  targetResolutions: Record<string, MoveAutomationTargetResolutionState>
+}
+
+const resolveInstantTargetGroupMoveAutomation = ({
   script,
   user,
   targets,
@@ -629,8 +668,8 @@ export const resolveInstantAreaMoveAutomation = ({
   fieldEffects,
   conditionImmunityContext,
   random,
-}: ResolveInstantAreaMoveAutomationInput): MoveAutomationTransaction => {
-  const targetResolutions: Record<string, ReturnType<typeof defaultTargetResolutionState>> = {}
+}: ResolveInstantTargetGroupMoveAutomationInput): InstantTargetGroupMoveAutomationResolution => {
+  const targetResolutions: Record<string, MoveAutomationTargetResolutionState> = {}
   const userAccuracy = moveAutomationUserAccuracy(user)
   for (const target of targets) {
     const state = defaultTargetResolutionState(script)
@@ -650,11 +689,11 @@ export const resolveInstantAreaMoveAutomation = ({
 
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
-  const conditionApplications = resolveAreaConditionApplications(script, targets, targetResolutions, conditionImmunityContext)
+  const conditionApplications = resolveTargetGroupConditionApplications(script, targets, targetResolutions, conditionImmunityContext)
   conditionApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
     if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'condition', index)] = true
   })
-  const stageApplications = resolveAreaStageApplications(script, targets, targetResolutions)
+  const stageApplications = resolveTargetGroupStageApplications(script, targets, targetResolutions)
   stageApplications.targetIdsBySuggestion.forEach((targetIds, index) => {
     if (targetIds.size) enabledSuggestions[moveAutomationSuggestionKey(script, 'stage', index)] = true
   })
@@ -683,6 +722,53 @@ export const resolveInstantAreaMoveAutomation = ({
       }
       return true
     },
+  })
+
+  return { transaction, targetResolutions }
+}
+
+export const resolveInstantMultiTargetMoveAutomation = ({
+  script,
+  user,
+  targets,
+  selectedTargets,
+  damageFormula,
+  fieldEffects,
+  conditionImmunityContext,
+  random,
+}: ResolveInstantMultiTargetMoveAutomationInput): MoveAutomationTransaction => {
+  const resolvedTargets = selectedTargets ?? targets ?? []
+  const { transaction, targetResolutions } = resolveInstantTargetGroupMoveAutomation({
+    script,
+    user,
+    targets: resolvedTargets,
+    damageFormula,
+    fieldEffects,
+    conditionImmunityContext,
+    random,
+  })
+
+  transaction.logLines.push(...formatMultiTargetAccuracyLogLines(resolvedTargets, targetResolutions))
+  return transaction
+}
+
+export const resolveInstantAreaMoveAutomation = ({
+  script,
+  user,
+  targets,
+  damageFormula,
+  fieldEffects,
+  conditionImmunityContext,
+  random,
+}: ResolveInstantAreaMoveAutomationInput): MoveAutomationTransaction => {
+  const { transaction, targetResolutions } = resolveInstantTargetGroupMoveAutomation({
+    script,
+    user,
+    targets,
+    damageFormula,
+    fieldEffects,
+    conditionImmunityContext,
+    random,
   })
 
   transaction.logLines.push(...formatAreaAccuracyLogLines(targets, targetResolutions))
