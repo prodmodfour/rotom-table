@@ -322,6 +322,15 @@ export interface MoveAutomationAreaTemplate {
   label: string
 }
 
+export interface MoveAutomationTargetBranch {
+  id: string
+  label: string
+  targetMode: 'one-target' | 'multi-target'
+  targetCount: number | null
+  range: string
+  areaTemplates?: MoveAutomationAreaTemplate[]
+}
+
 export interface MoveAutomationScript {
   /** Human-authored or generated move automation that resolves through the on-map flow. */
   kind: 'explicit'
@@ -346,6 +355,7 @@ export interface MoveAutomationScript {
   stabDamageBaseBonus?: number
   randomStageSuggestion?: MoveAutomationRandomStageSuggestionRule
   areaTemplates?: MoveAutomationAreaTemplate[]
+  targetBranches?: MoveAutomationTargetBranch[]
   conditionSuggestions: MoveAutomationConditionSuggestion[]
   stageSuggestions: MoveAutomationStageSuggestion[]
   hpSuggestions: MoveAutomationHpSuggestion[]
