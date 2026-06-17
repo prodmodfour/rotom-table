@@ -90,25 +90,26 @@ const branchSelectionScript = (): MoveAutomationScript => ({
   damageClass: 'Status',
   type: 'Normal',
   ac: null,
-  range: '4, 1 Target',
+  range: 'Melee, 1 Target or Line 3',
   effect: 'Test branch selection.',
-  keywords: ['1 Target'],
+  keywords: ['Melee', '1 Target', 'Line 3'],
   criticalRange: null,
   areaTemplates: [],
   targetBranches: [
     {
       id: 'single',
-      label: 'Single target',
+      label: 'Melee — 1 Target',
       targetMode: 'one-target',
       targetCount: 1,
-      range: '4, 1 Target',
+      range: 'Melee, 1 Target',
     },
     {
-      id: 'burst',
-      label: 'Burst',
+      id: 'line-3',
+      label: 'Line 3',
       targetMode: 'multi-target',
       targetCount: null,
-      range: 'Burst 1',
+      range: 'Line 3',
+      areaTemplates: [{ kind: 'line', size: 3, label: 'Line 3' }],
     },
   ],
   conditionSuggestions: [],
@@ -136,13 +137,15 @@ const withRegisteredMoveAutomationScript = async <T>(
 
 const branchSelectionPanel = (options: {
   recordMoveUsage?: (request: { placementId: string; moveName: string }) => void | Promise<void>
+  onMoveUse?: (event: { userId: string; moveName: string }) => void | Promise<void>
+  onBeforeNonImmediateAction?: (event: { userId: string; moveName: string }) => void
 } = {}) => {
   const map = ref({
     ...mapFixture(),
     dimensions: { x: 6, y: 2, z: 6 },
     placements: [
       { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'brancher', position: { x: 1, y: 0, z: 1 } },
-      { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 1, y: 0, z: 2 } },
+      { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 2, y: 0, z: 2 } },
     ],
   })
   const pokemonSheet = {
@@ -156,7 +159,7 @@ const branchSelectionPanel = (options: {
     map,
     spawnedPokemon: computed(() => [
       spawned({ id: 'user-token', species: 'Brancher', sheetSlug: 'brancher', position: { x: 1, y: 0, z: 1 } }),
-      spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 20, maxHp: 20, position: { x: 1, y: 0, z: 2 } }),
+      spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 20, maxHp: 20, position: { x: 2, y: 0, z: 2 } }),
     ]),
     pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
     trainerBySlug: ref(new Map<string, TrainerSheet>()),
@@ -168,6 +171,8 @@ const branchSelectionPanel = (options: {
     applyMoveFieldEffect: () => undefined,
     placeHazard: () => undefined,
     recordMoveUsage: options.recordMoveUsage,
+    onMoveUse: options.onMoveUse,
+    onBeforeNonImmediateAction: options.onBeforeNonImmediateAction,
   })
   return { map, panel }
 }
@@ -218,17 +223,21 @@ describe('useMoveAutomationPanel', () => {
         options: [
           {
             branchId: 'single',
-            label: 'Single target',
-            range: '4, 1 Target',
+            label: 'Melee — 1 Target',
+            targetMode: 'one-target',
+            targetCount: 1,
+            range: 'Melee, 1 Target',
             mode: 'target',
             disabled: false,
           },
           {
-            branchId: 'burst',
-            label: 'Burst',
-            range: 'Burst 1',
+            branchId: 'line-3',
+            label: 'Line 3',
+            targetMode: 'multi-target',
+            targetCount: null,
+            range: 'Line 3',
             mode: 'area-confirmation',
-            areaTemplates: [{ kind: 'burst', size: 1, label: 'Burst 1' }],
+            areaTemplates: [{ kind: 'line', size: 3, label: 'Line 3' }],
             disabled: false,
           },
         ],
@@ -236,21 +245,36 @@ describe('useMoveAutomationPanel', () => {
     })
   })
 
-  it('does not record move usage when branch selection opens', async () => {
+  it('does not notify or record usage when branch selection opens', async () => {
     await withRegisteredMoveAutomationScript(branchSelectionScript(), () => {
       const recordMoveUsage = vi.fn()
-      const { panel } = branchSelectionPanel({ recordMoveUsage })
+      const onMoveUse = vi.fn()
+      const onBeforeNonImmediateAction = vi.fn()
+      const { panel } = branchSelectionPanel({
+        recordMoveUsage,
+        onMoveUse,
+        onBeforeNonImmediateAction,
+      })
 
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
 
       expect(panel.moveAutomationTargetBranchSelection.value?.moveName).toBe('Branch Selection Test')
       expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(onMoveUse).not.toHaveBeenCalled()
+      expect(onBeforeNonImmediateAction).not.toHaveBeenCalled()
     })
   })
 
-  it('cancels active branch selection alongside targeting state', async () => {
+  it('cancels active branch selection without notifying or recording usage', async () => {
     await withRegisteredMoveAutomationScript(branchSelectionScript(), () => {
-      const { panel } = branchSelectionPanel()
+      const recordMoveUsage = vi.fn()
+      const onMoveUse = vi.fn()
+      const onBeforeNonImmediateAction = vi.fn()
+      const { panel } = branchSelectionPanel({
+        recordMoveUsage,
+        onMoveUse,
+        onBeforeNonImmediateAction,
+      })
 
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
       expect(panel.moveAutomationTargetBranchSelection.value).not.toBeNull()
@@ -259,13 +283,22 @@ describe('useMoveAutomationPanel', () => {
 
       expect(panel.moveAutomationTargetBranchSelection.value).toBeNull()
       expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(onMoveUse).not.toHaveBeenCalled()
+      expect(onBeforeNonImmediateAction).not.toHaveBeenCalled()
     })
   })
 
-  it('selecting a target branch transitions into the existing target or area flow without recording usage', async () => {
+  it('selecting a target branch transitions into the existing target or area flow without notifying or recording usage', async () => {
     await withRegisteredMoveAutomationScript(branchSelectionScript(), () => {
       const recordMoveUsage = vi.fn()
-      const { panel } = branchSelectionPanel({ recordMoveUsage })
+      const onMoveUse = vi.fn()
+      const onBeforeNonImmediateAction = vi.fn()
+      const { panel } = branchSelectionPanel({
+        recordMoveUsage,
+        onMoveUse,
+        onBeforeNonImmediateAction,
+      })
 
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
       panel.selectMoveAutomationTargetBranch('single')
@@ -275,24 +308,95 @@ describe('useMoveAutomationPanel', () => {
         userId: 'user-token',
         moveName: 'Branch Selection Test',
         mode: 'target',
-        rangeLabel: '4m',
+        rangeLabel: '1m',
         candidateIds: ['target-token'],
       })
       expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(onMoveUse).not.toHaveBeenCalled()
+      expect(onBeforeNonImmediateAction).not.toHaveBeenCalled()
 
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
-      panel.selectMoveAutomationTargetBranch('burst')
+      panel.selectMoveAutomationTargetBranch('line-3')
 
       expect(panel.moveAutomationTargetBranchSelection.value).toBeNull()
       expect(panel.moveAutomationTargeting.value).toMatchObject({
         userId: 'user-token',
         moveName: 'Branch Selection Test',
         mode: 'area-confirmation',
-        rangeLabel: 'Burst 1',
+        rangeLabel: 'Line 3 south-east',
+        candidateIds: ['target-token'],
         affectedIds: ['target-token'],
       })
       expect(panel.moveAutomationTargeting.value?.areaCells?.length).toBeGreaterThan(0)
       expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(onMoveUse).not.toHaveBeenCalled()
+      expect(onBeforeNonImmediateAction).not.toHaveBeenCalled()
+    })
+  })
+
+  it('records tracked usage exactly once after final single-target branch confirmation', async () => {
+    await withRegisteredMoveAutomationScript(branchSelectionScript(), async () => {
+      const recordMoveUsage = vi.fn()
+      const onMoveUse = vi.fn()
+      const onBeforeNonImmediateAction = vi.fn()
+      const { map, panel } = branchSelectionPanel({
+        recordMoveUsage,
+        onMoveUse,
+        onBeforeNonImmediateAction,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
+      panel.selectMoveAutomationTargetBranch('single')
+
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(onMoveUse).not.toHaveBeenCalled()
+      expect(onBeforeNonImmediateAction).not.toHaveBeenCalled()
+
+      await panel.selectMoveAutomationTarget('target-token')
+
+      expect(recordMoveUsage).toHaveBeenCalledTimes(1)
+      expect(recordMoveUsage).toHaveBeenCalledWith({ placementId: 'user-token', moveName: 'Branch Selection Test' })
+      expect(onMoveUse).toHaveBeenCalledTimes(1)
+      expect(onMoveUse).toHaveBeenCalledWith({ userId: 'user-token', moveName: 'Branch Selection Test' })
+      expect(onBeforeNonImmediateAction).toHaveBeenCalledTimes(1)
+      expect(onBeforeNonImmediateAction).toHaveBeenCalledWith({ userId: 'user-token', moveName: 'Branch Selection Test' })
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Branch Selection Test', scriptKind: 'explicit' }])
+    })
+  })
+
+  it('records tracked usage exactly once after final area branch confirmation', async () => {
+    await withRegisteredMoveAutomationScript(branchSelectionScript(), async () => {
+      const recordMoveUsage = vi.fn()
+      const onMoveUse = vi.fn()
+      const onBeforeNonImmediateAction = vi.fn()
+      const { map, panel } = branchSelectionPanel({
+        recordMoveUsage,
+        onMoveUse,
+        onBeforeNonImmediateAction,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
+      panel.selectMoveAutomationTargetBranch('line-3')
+
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        mode: 'area-confirmation',
+        affectedIds: ['target-token'],
+      })
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(onMoveUse).not.toHaveBeenCalled()
+      expect(onBeforeNonImmediateAction).not.toHaveBeenCalled()
+
+      await panel.selectMoveAutomationTarget('user-token')
+
+      expect(recordMoveUsage).toHaveBeenCalledTimes(1)
+      expect(recordMoveUsage).toHaveBeenCalledWith({ placementId: 'user-token', moveName: 'Branch Selection Test' })
+      expect(onMoveUse).toHaveBeenCalledTimes(1)
+      expect(onMoveUse).toHaveBeenCalledWith({ userId: 'user-token', moveName: 'Branch Selection Test' })
+      expect(onBeforeNonImmediateAction).toHaveBeenCalledTimes(1)
+      expect(onBeforeNonImmediateAction).toHaveBeenCalledWith({ userId: 'user-token', moveName: 'Branch Selection Test' })
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: 'Branch Selection Test', scriptKind: 'explicit' }])
     })
   })
 
