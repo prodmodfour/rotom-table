@@ -2582,14 +2582,18 @@ describe('useMoveAutomationPanel', () => {
       random.mockRestore()
     }
 
-    expect(calls).toEqual(['vfx:dash,area-pulse,target-flash,target-flash', 'hp:first-token', 'hp:second-token'])
+    expect(calls).toEqual(['vfx:dash,area-pulse,target-flash,badge,badge,target-flash,badge,badge', 'hp:first-token', 'hp:second-token'])
     expect(enqueueMoveAnimations).toHaveBeenCalledTimes(1)
     const events = enqueueMoveAnimations.mock.calls[0]?.[0] ?? []
     expect(events.map((event) => event.kind)).toEqual([
       MOVE_VFX_KIND.dash,
       MOVE_VFX_KIND.areaPulse,
       MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.badge,
+      MOVE_VFX_KIND.badge,
       MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.badge,
+      MOVE_VFX_KIND.badge,
     ])
     expect(events[0]).toMatchObject({
       kind: MOVE_VFX_KIND.dash,
@@ -2615,9 +2619,33 @@ describe('useMoveAutomationPanel', () => {
         startOffsetMs: 220,
       }),
       expect.objectContaining({
+        kind: MOVE_VFX_KIND.badge,
+        targetId: 'first-token',
+        label: 'Hit',
+        startOffsetMs: 220,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.badge,
+        targetId: 'first-token',
+        label: expect.stringMatching(/^\d+ Damage$/),
+        startOffsetMs: 460,
+      }),
+      expect.objectContaining({
         kind: MOVE_VFX_KIND.targetFlash,
         targetId: 'second-token',
         startOffsetMs: 280,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.badge,
+        targetId: 'second-token',
+        label: 'Hit',
+        startOffsetMs: 280,
+      }),
+      expect.objectContaining({
+        kind: MOVE_VFX_KIND.badge,
+        targetId: 'second-token',
+        label: expect.stringMatching(/^\d+ Damage$/),
+        startOffsetMs: 520,
       }),
     ]))
     expect(map.value.placements.find((placement) => placement.id === 'user-token')?.position).toEqual({ x: 4, y: 0, z: 1 })

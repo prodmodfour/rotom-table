@@ -294,6 +294,7 @@ const UNKNOWN_MOVE_ANIMATION_USER_ID = 'unknown-user'
 const AREA_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 140
 const AREA_PASS_DASH_IMPACT_OFFSET_MS = 100
 const AREA_PASS_DASH_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 220
+const PASS_TARGET_DAMAGE_CALLOUT_OFFSET_MS = MOVE_VFX_DEFAULT_DURATIONS_MS.quick + 20
 const TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS = 100
 const TRANSACTION_SEMANTIC_SAME_TOKEN_STEP_MS = 70
 const TRANSACTION_MAP_CONFIRMATION_SAME_STEP_MS = 70
@@ -1659,6 +1660,44 @@ const planMultiTargetMoveAnimations = (
   return [...targetEvents, ...transactionSemanticEvents]
 }
 
+const planPassTargetOutcomeCalloutAnimations = (
+  input: MoveAnimationAreaPlanInput,
+  nextId: PlannerEventIdFactory,
+  options: {
+    readonly targetId: string
+    readonly targetCell?: GridAnchor
+    readonly hit: boolean
+    readonly outcome: MoveAnimationPlanTargetOutcome | null
+    readonly palette: MoveVfxPaletteEntry
+  },
+): MoveAnimationEvent[] => {
+  if (!options.hit) {
+    return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.badge, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+      targetId: options.targetId,
+      targetCell: options.targetCell,
+      label: 'Miss',
+      tone: MOVE_VFX_TONE.miss,
+    }, moveVfxColorForTone(MOVE_VFX_TONE.miss))]
+  }
+
+  const events: MoveAnimationEvent[] = [createPlannerEvent(input, nextId, MOVE_VFX_KIND.badge, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+    targetId: options.targetId,
+    targetCell: options.targetCell,
+    label: 'Hit',
+  }, options.palette)]
+
+  if (options.outcome?.damageResolved) {
+    events.push(createPlannerEvent(input, nextId, MOVE_VFX_KIND.badge, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+      targetId: options.targetId,
+      targetCell: options.targetCell,
+      label: `${Math.max(0, Math.round(options.outcome.damageLoss ?? 0))} Damage`,
+      startOffsetMs: PASS_TARGET_DAMAGE_CALLOUT_OFFSET_MS,
+    }, options.palette))
+  }
+
+  return events
+}
+
 const planAreaTargetFollowUpAnimations = (
   input: MoveAnimationAreaPlanInput,
   nextId: PlannerEventIdFactory,
@@ -1667,6 +1706,7 @@ const planAreaTargetFollowUpAnimations = (
     readonly palette: MoveVfxPaletteEntry
     readonly damaging: boolean
     readonly baseOffsetMs: number
+    readonly showOutcomeCallouts?: boolean
   },
 ): MoveAnimationEvent[] => {
   const targetIds = selectedAreaTargetIdsForInput(input)
@@ -1696,25 +1736,40 @@ const planAreaTargetFollowUpAnimations = (
     const targetCell = positionForToken(target)
     const outcome = explicitTargetOutcomeForId(input, targetId)
     const hit = outcome?.hit ?? true
-
-    if (!hit) {
-      return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+    const calloutEvents = options.showOutcomeCallouts
+      ? planPassTargetOutcomeCalloutAnimations(input, nextId, {
         targetId,
         targetCell,
-      }, moveVfxColorForTone(MOVE_VFX_TONE.miss))]
+        hit,
+        outcome,
+        palette: options.palette,
+      })
+      : []
+
+    if (!hit) {
+      return [
+        createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+          targetId,
+          targetCell,
+        }, moveVfxColorForTone(MOVE_VFX_TONE.miss)),
+        ...calloutEvents,
+      ]
     }
 
-    if (!options.damaging && (semanticTargetIds.has(targetId) || hasTransactionSemanticUpdateForTarget(input, targetId))) return []
+    if (!options.damaging && (semanticTargetIds.has(targetId) || hasTransactionSemanticUpdateForTarget(input, targetId))) return calloutEvents
 
-    return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
-      targetId,
-      targetCell,
-      ...(options.damaging ? { shake: true } : {}),
-    }, options.palette)]
+    return [
+      createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+        targetId,
+        targetCell,
+        ...(options.damaging ? { shake: true } : {}),
+      }, options.palette),
+      ...calloutEvents,
+    ]
   })
 
   return [
-    ...applyMoveAnimationTargetStartOffsets(targetEvents, offsets, { mode: 'replace' }),
+    ...applyMoveAnimationTargetStartOffsets(targetEvents, offsets, { mode: 'add' }),
     ...transactionSemanticEvents,
   ]
 }
@@ -1787,6 +1842,7 @@ const planAreaMoveAnimations = (
       palette,
       damaging,
       baseOffsetMs: areaTargetFollowUpBaseOffsetMs(input, hasPassDestination),
+      showOutcomeCallouts: hasPassDestination,
     }))
   }
 

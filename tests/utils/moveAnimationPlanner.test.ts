@@ -1233,7 +1233,7 @@ describe('generic move animation planner', () => {
       passDestination: destination,
       targets: [token({ id: 'target-a', species: 'Target A', position: { x: 2, y: 0, z: 0 } })],
       selectedTargetIds: ['target-a'],
-      targetOutcomes: [{ targetId: 'target-a', hit: true }],
+      targetOutcomes: [{ targetId: 'target-a', hit: true, damageResolved: true, damageLoss: 17 }],
       script: script({
         moveName: 'Generic Pass Area',
         targetMode: 'multi-target',
@@ -1250,6 +1250,8 @@ describe('generic move animation planner', () => {
       MOVE_VFX_KIND.dash,
       MOVE_VFX_KIND.areaPulse,
       MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.badge,
+      MOVE_VFX_KIND.badge,
     ])
     expect(events[0]).toMatchObject({
       kind: MOVE_VFX_KIND.dash,
@@ -1269,6 +1271,18 @@ describe('generic move animation planner', () => {
       targetId: 'target-a',
       startOffsetMs: 220,
       shake: true,
+    })
+    expect(events[3]).toMatchObject({
+      kind: MOVE_VFX_KIND.badge,
+      targetId: 'target-a',
+      label: 'Hit',
+      startOffsetMs: 220,
+    })
+    expect(events[4]).toMatchObject({
+      kind: MOVE_VFX_KIND.badge,
+      targetId: 'target-a',
+      label: '17 Damage',
+      startOffsetMs: 460,
     })
   })
 
