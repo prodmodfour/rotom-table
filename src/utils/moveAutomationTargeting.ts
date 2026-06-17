@@ -1,5 +1,7 @@
 import { coerceMoveDamageBase } from '~/utils/moveAutomationCoercion'
 import {
+  hasMoveAutomationExplicitMultiTargetCount,
+  parseMoveAutomationExplicitTargetCount,
   splitMoveRangeKeywords,
   textIncludes as has,
 } from '~/utils/moveAutomationText'
@@ -21,7 +23,7 @@ export const determineMoveAutomationTargetMode = (move: MoveAutomationTargetingM
   if (has(range, /\bHazard\b/i) || /Spikes|Sticky Web|Stealth Rock/.test(move.name)) return 'hazard'
   if (has(range, /\bField\b/i) || has(range, /\bWeather\b/i)) return 'field'
   if (has(range, /\bSelf\b/i) && !has(range, /\bTarget\b/i) && !has(range, /Burst|Cone|Line|Blast/i)) return 'self'
-  if (has(range, /Burst|Cone|Line|Blast|\bPass\b|all adjacent|all legal targets|all targets|\b[235]\s+Targets\b/i)) return 'multi-target'
+  if (has(range, /Burst|Cone|Line|Blast|\bPass\b|all adjacent|all legal targets|all targets/i) || hasMoveAutomationExplicitMultiTargetCount(range)) return 'multi-target'
   if (has(range, /\b1\s*Target\b|\bSingle Target\b|\bTarget\b|\bMelee\b|^\s*\d+\b/i)) return 'one-target'
   if (damaging) return 'one-target'
   if (has(combined, /target/i)) return 'one-target'
@@ -35,14 +37,18 @@ export const determineMoveAutomationTargetCount = (
   if (mode === 'self' || mode === 'none' || mode === 'field' || mode === 'hazard') return mode === 'self' ? 1 : null
 
   const range = move.range ?? ''
-  const countMatch = range.match(/\b([235])\s+Targets\b/i)
-  if (countMatch) return Number(countMatch[1])
+  const explicitTargetCount = parseMoveAutomationExplicitTargetCount(range)
+  if (explicitTargetCount != null) return explicitTargetCount
   if (/Double Strike/i.test(range)) return 1
   return mode === 'one-target' ? 1 : null
 }
 
 export const buildMoveAutomationRangeKeywords = (range: string): string[] =>
-  splitMoveRangeKeywords(range).filter((keyword) => !/^\d+$/.test(keyword) && !/1 Target|Single Target/i.test(keyword))
+  splitMoveRangeKeywords(range).filter((keyword) =>
+    !/^\d+$/.test(keyword)
+    && parseMoveAutomationExplicitTargetCount(keyword) == null
+    && !/Single Target/i.test(keyword),
+  )
 
 export const parseMoveAutomationCriticalRange = (effect: string): number | null => {
   const match = effect.match(/Critical Hit on (?:(?:a|an) )?(\d{1,2})\+/i)

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { parseSingleTargetMoveRangeMeters, tokenGridDistance } from '~/utils/moveAutomationRange'
+import {
+  parseExplicitMultiTargetMoveRangeMeters,
+  parseSingleTargetMoveRangeMeters,
+  tokenGridDistance,
+} from '~/utils/moveAutomationRange'
 
 describe('move automation range helpers', () => {
   it('parses numeric, melee, and Focus Rank single-target ranges', () => {
@@ -7,6 +11,15 @@ describe('move automation range helpers', () => {
     expect(parseSingleTargetMoveRangeMeters('Melee, 1 Target')).toBe(1)
     expect(parseSingleTargetMoveRangeMeters('Focus Rank, 1 Target', { focusSkillRankValue: 4 })).toBe(4)
     expect(parseSingleTargetMoveRangeMeters('Focus Rank, 1 Target')).toBeNull()
+  })
+
+  it('parses explicit multi-target numeric and melee ranges', () => {
+    expect(parseExplicitMultiTargetMoveRangeMeters('6, 2 Targets')).toBe(6)
+    expect(parseExplicitMultiTargetMoveRangeMeters('Melee, 3 Targets')).toBe(1)
+    expect(parseExplicitMultiTargetMoveRangeMeters('3, 5 Targets')).toBe(3)
+    expect(parseExplicitMultiTargetMoveRangeMeters('9, 10 Targets')).toBe(9)
+    expect(parseExplicitMultiTargetMoveRangeMeters('Melee, 1 Target')).toBeNull()
+    expect(parseExplicitMultiTargetMoveRangeMeters('Burst 1')).toBeNull()
   })
 
   it('measures token range with PTU alternating diagonal costs', () => {

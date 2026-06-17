@@ -72,6 +72,12 @@ describe('move automation area templates', () => {
     ])
   })
 
+  it('does not parse explicit target-count ranges as AoE templates', () => {
+    expect(parseMoveAutomationAreaTemplates('6, 2 Targets')).toEqual([])
+    expect(parseMoveAutomationAreaTemplates('Melee, 3 Targets')).toEqual([])
+    expect(parseMoveAutomationAreaTemplates('3, 5 Targets')).toEqual([])
+  })
+
   it('builds Burst, Cone, Line, Blast, and cardinal-adjacent template cells', () => {
     const bounds = { x: 12, y: 4, z: 12 }
     const user = token('user', 'Eevee', { x: 5, y: 1, z: 5 })

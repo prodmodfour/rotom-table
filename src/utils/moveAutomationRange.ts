@@ -1,4 +1,7 @@
-import { splitMoveRangeKeywords } from '~/utils/moveAutomationText'
+import {
+  hasMoveAutomationExplicitMultiTargetCount,
+  splitMoveRangeKeywords,
+} from '~/utils/moveAutomationText'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import type { SpawnedPokemon } from '~/types/pokemon'
 
@@ -16,15 +19,38 @@ export interface SingleTargetMoveRangeOptions {
 const finitePositiveRankValue = (value: number | null | undefined): number | null =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : null
 
+const numericRangeKeyword = (keywords: readonly string[]): number | null => {
+  const numericKeyword = keywords.find((keyword) => /^\d+$/.test(keyword))
+  return numericKeyword ? Number(numericKeyword) : null
+}
+
+const positiveNumericRangeKeyword = (keywords: readonly string[]): number | null => {
+  const value = numericRangeKeyword(keywords)
+  return value != null && Number.isInteger(value) && value > 0 ? value : null
+}
+
+const keywordsIncludeMeleeRange = (keywords: readonly string[]): boolean =>
+  keywords.some((keyword) => /^Melee$/i.test(keyword))
+
 export const parseSingleTargetMoveRangeMeters = (
   range: string | null | undefined,
   options: SingleTargetMoveRangeOptions = {},
 ): number | null => {
   const keywords = splitMoveRangeKeywords(range ?? '')
-  const numericKeyword = keywords.find((keyword) => /^\d+$/.test(keyword))
-  if (numericKeyword) return Number(numericKeyword)
+  const numericRange = numericRangeKeyword(keywords)
+  if (numericRange != null) return numericRange
   if (keywords.some((keyword) => /^Focus Rank$/i.test(keyword))) return finitePositiveRankValue(options.focusSkillRankValue)
-  return keywords.some((keyword) => /^Melee$/i.test(keyword)) ? MELEE_MOVE_RANGE_METERS : null
+  return keywordsIncludeMeleeRange(keywords) ? MELEE_MOVE_RANGE_METERS : null
+}
+
+export const parseExplicitMultiTargetMoveRangeMeters = (range: string | null | undefined): number | null => {
+  const value = range ?? ''
+  if (!hasMoveAutomationExplicitMultiTargetCount(value)) return null
+
+  const keywords = splitMoveRangeKeywords(value)
+  const numericRange = positiveNumericRangeKeyword(keywords)
+  if (numericRange != null) return numericRange
+  return keywordsIncludeMeleeRange(keywords) ? MELEE_MOVE_RANGE_METERS : null
 }
 
 export const moveAutomationTargetsInRange = (options: {

@@ -9,6 +9,16 @@ export const splitMoveRangeKeywords = (range: string): string[] =>
     .map((part) => normalizeMoveAutomationWhitespace(part))
     .filter(Boolean)
 
+export const parseMoveAutomationExplicitTargetCount = (text: string): number | null => {
+  const match = text.match(/\b([1-9]\d*)\s+Targets?\b/i)
+  return match ? Number(match[1]) : null
+}
+
+export const hasMoveAutomationExplicitMultiTargetCount = (text: string): boolean => {
+  const count = parseMoveAutomationExplicitTargetCount(text)
+  return count != null && count > 1
+}
+
 export const effectThresholdNear = (text: string, index: number): string | undefined => {
   const nearby = text.slice(Math.max(0, index - 40), Math.min(text.length, index + 80))
   const numbered = nearby.match(/(?:on|On|roll of|rolled|Accuracy Check)\s+(?:a\s+)?(\d{1,2}\+|\d{1,2}-\d{1,2})/)
