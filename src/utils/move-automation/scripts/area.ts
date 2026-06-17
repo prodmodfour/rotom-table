@@ -89,6 +89,32 @@ const reviewedHowlScript = (version = 1): MoveAutomationScript => reviewedAreaCo
   ],
 })
 
+const reviewedAromaticMistScript = (version = 1): MoveAutomationScript => reviewedAreaConfirmationScript('Aromatic Mist', version, {
+  requiresAccuracy: false,
+  damageBase: null,
+  stageSuggestions: [
+    { recipient: 'target', key: 'sdef', delta: 1, label: "Aromatic Mist raises allies' Special Defense: +1 Special Defense CS" },
+  ],
+  automationNotes: [
+    'Aromatic Mist affects allies only. Team allegiance is not tracked, so verify affected tokens are allies or correct Combat Stages manually afterward.',
+  ],
+})
+
+const reviewedCoachingScript = (version = 1): MoveAutomationScript => reviewedAreaConfirmationScript('Coaching', version, {
+  requiresAccuracy: false,
+  damageBase: null,
+  stageSuggestions: [
+    { recipient: 'user', key: 'atk', delta: 1, label: "Coaching raises user's Attack: +1 Attack CS" },
+    { recipient: 'user', key: 'def', delta: 1, label: "Coaching raises user's Defense: +1 Defense CS" },
+    { recipient: 'target', key: 'atk', delta: 1, label: "Coaching raises allies' Attack: +1 Attack CS" },
+    { recipient: 'target', key: 'def', delta: 1, label: "Coaching raises allies' Defense: +1 Defense CS" },
+  ],
+  automationNotes: [
+    'Burst 1 is shown as an area overlay; the user also receives the Attack and Defense boosts even though the user token is not a selectable target.',
+    'Coaching affects allies only. Team allegiance is not tracked, so verify affected tokens are allies or correct Combat Stages manually afterward.',
+  ],
+})
+
 export const REVIEWED_TARGET_STAGE_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Acid', reviewedTargetStagesAreaScript('Acid', [{ key: 'sdef', delta: -1, label: 'Acid lowers Special Defense on 18+: -1 Special Defense CS', threshold: '18+' }])],
   ['Apple Acid', reviewedTargetStagesAreaScript('Apple Acid', [{ key: 'sdef', delta: -1, label: 'Apple Acid lowers Special Defense: -1 Special Defense CS' }])],
@@ -147,8 +173,13 @@ export const REVIEWED_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomat
 )
 
 export const REVIEWED_AREA_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Bleakwind Storm', reviewedAreaConditionScript('Bleakwind Storm', [
+    { condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' },
+    { condition: 'Frozen', label: 'Frozen on 19+', threshold: '19+' },
+  ])],
   ['Poison Gas', reviewedAreaConditionScript('Poison Gas', [{ condition: 'Poisoned', label: 'Poisoned' }])],
   ['Rock Slide', reviewedAreaConditionScript('Rock Slide', [{ condition: 'Flinch', label: 'Flinch on 17+', threshold: '17+' }])],
+  ['Sandstorm Sear', reviewedAreaConditionScript('Sandstorm Sear', [{ condition: 'Burned', label: 'Burned on 15+', threshold: '15+' }])],
   ['Sludge Wave', reviewedAreaConditionScript('Sludge Wave', [{ condition: 'Poisoned', label: 'Poisoned on 19+', threshold: '19+' }])],
   ['Sweet Scent', reviewedAreaConditionScript('Sweet Scent', [{ condition: SWEET_SCENT_EVASION_PENALTY_CONDITION, label: 'Sweet Scent Evasion Penalty' }])],
   ['Teeter Dance', reviewedAreaConditionScript('Teeter Dance', [{ condition: 'Confused', label: 'Confused' }])],
@@ -163,6 +194,8 @@ export const REVIEWED_AREA_COAT_SCRIPTS: ReadonlyMap<string, MoveAutomationScrip
 ])
 
 export const REVIEWED_ALLY_AREA_STAGE_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Aromatic Mist', reviewedAromaticMistScript()],
+  ['Coaching', reviewedCoachingScript()],
   ['Howl', reviewedHowlScript()],
 ])
 

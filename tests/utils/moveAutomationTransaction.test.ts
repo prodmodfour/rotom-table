@@ -72,6 +72,37 @@ const script = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationSc
   ...overrides,
 })
 
+const enabledSuggestionFlags = (
+  s: MoveAutomationScript,
+  kind: 'condition' | 'stage' | 'hp' | 'field' | 'hazard',
+  indexes: readonly number[],
+): Record<string, boolean> => Object.fromEntries(
+  indexes.map((index) => [moveAutomationSuggestionKey(s, kind, index), true]),
+)
+
+const automationTransaction = (
+  s: MoveAutomationScript,
+  options: {
+    user?: SpawnedPokemon
+    targets: SpawnedPokemon[]
+    targetResolutions?: Record<string, ReturnType<typeof defaultTargetResolutionState>>
+    enabledSuggestions?: Record<string, boolean>
+  },
+) => buildMoveAutomationTransaction({
+  script: s,
+  user: options.user ?? token({ id: 'u', species: 'User' }),
+  selectedTargets: options.targets,
+  targetResolutions: options.targetResolutions ?? {},
+  enabledSuggestions: options.enabledSuggestions ?? {},
+  hpSuggestionAmounts: {},
+  manualUserConditions: [],
+  manualTargetConditions: [],
+  manualUserStageDeltas: stages,
+  manualTargetStageDeltas: stages,
+  hazardCells: [],
+  manualNote: '',
+})
+
 describe('move automation transaction helpers', () => {
   it('builds transactions for damage, suggestions, hazards, fields, and stages', () => {
     const user = token({ id: 'u', species: 'Caster', currentHp: 30, maxHp: 40 })
@@ -437,6 +468,146 @@ describe('move automation transaction helpers', () => {
 
     expect(transaction.combatStageUpdates).toEqual([{ id: 'hit', stages: { ...stages, atk: -1 } }])
     expect(transaction.logLines).toContain('Lower Attack on Hitmon.')
+  })
+
+  it('applies Aromatic Mist Special Defense boosts to selected targets', () => {
+    const s = explicitScriptForMove('Aromatic Mist')!
+    expect(s).not.toBeNull()
+    const firstAlly = token({ id: 'a1', species: 'Ally One' })
+    const secondAlly = token({ id: 'a2', species: 'Ally Two', combatStages: { ...stages, sdef: 2 } })
+
+    const transaction = automationTransaction(s, {
+      targets: [firstAlly, secondAlly],
+      enabledSuggestions: enabledSuggestionFlags(s, 'stage', [0]),
+    })
+
+    expect(transaction.combatStageUpdates).toEqual([
+      { id: 'a1', stages: { ...stages, sdef: 1 } },
+      { id: 'a2', stages: { ...stages, sdef: 3 } },
+    ])
+  })
+
+  it('applies Coaching Attack and Defense boosts to the user and selected targets', () => {
+    const s = explicitScriptForMove('Coaching')!
+    expect(s).not.toBeNull()
+    const user = token({ id: 'u', species: 'Coach' })
+    const firstAlly = token({ id: 'a1', species: 'Ally One' })
+    const secondAlly = token({ id: 'a2', species: 'Ally Two', combatStages: { ...stages, atk: 1, def: 2 } })
+
+    const transaction = automationTransaction(s, {
+      user,
+      targets: [firstAlly, secondAlly],
+      enabledSuggestions: enabledSuggestionFlags(s, 'stage', [0, 1, 2, 3]),
+    })
+
+    expect(transaction.combatStageUpdates).toEqual([
+      { id: 'u', stages: { ...stages, atk: 1, def: 1 } },
+      { id: 'a1', stages: { ...stages, atk: 1, def: 1 } },
+      { id: 'a2', stages: { ...stages, atk: 2, def: 3 } },
+    ])
+  })
+
+  it('applies Bleakwind Storm Flinch only to hit targets whose natural accuracy roll meets 15+', () => {
+    const s = explicitScriptForMove('Bleakwind Storm')!
+    expect(s).not.toBeNull()
+    const hitHigh = token({ id: 'hit-high', species: 'Hit High' })
+    const missedHigh = token({ id: 'miss-high', species: 'Miss High' })
+    const hitLow = token({ id: 'hit-low', species: 'Hit Low' })
+
+    const transaction = automationTransaction(s, {
+      targets: [hitHigh, missedHigh, hitLow],
+      targetResolutions: {
+        'hit-high': { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: true },
+        'miss-high': { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: false },
+        'hit-low': { ...defaultTargetResolutionState(s), accuracyRoll: '14', hit: true },
+      },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([{ id: 'hit-high', conditions: ['Flinch', 'Vulnerable'] }])
+  })
+
+  it('applies Bleakwind Storm Frozen only to hit targets whose natural accuracy roll meets 19+', () => {
+    const s = explicitScriptForMove('Bleakwind Storm')!
+    expect(s).not.toBeNull()
+    const hitHigh = token({ id: 'hit-high', species: 'Hit High' })
+    const missedHigh = token({ id: 'miss-high', species: 'Miss High' })
+    const hitLow = token({ id: 'hit-low', species: 'Hit Low' })
+
+    const transaction = automationTransaction(s, {
+      targets: [hitHigh, missedHigh, hitLow],
+      targetResolutions: {
+        'hit-high': { ...defaultTargetResolutionState(s), accuracyRoll: '19', hit: true },
+        'miss-high': { ...defaultTargetResolutionState(s), accuracyRoll: '19', hit: false },
+        'hit-low': { ...defaultTargetResolutionState(s), accuracyRoll: '18', hit: true },
+      },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [1]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([{ id: 'hit-high', conditions: ['Frozen'] }])
+  })
+
+  it('does not apply Bleakwind Storm conditions when the natural accuracy roll is below 15', () => {
+    const s = explicitScriptForMove('Bleakwind Storm')!
+    expect(s).not.toBeNull()
+    const target = token({ id: 't', species: 'Target' })
+
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      targetResolutions: { t: { ...defaultTargetResolutionState(s), accuracyRoll: '14', hit: true } },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0, 1]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([])
+  })
+
+  it('applies Sandstorm Sear Burned only to hit targets whose natural accuracy roll meets 15+', () => {
+    const s = explicitScriptForMove('Sandstorm Sear')!
+    expect(s).not.toBeNull()
+    const hitHigh = token({ id: 'hit-high', species: 'Hit High' })
+    const missedHigh = token({ id: 'miss-high', species: 'Miss High' })
+    const hitLow = token({ id: 'hit-low', species: 'Hit Low' })
+
+    const transaction = automationTransaction(s, {
+      targets: [hitHigh, missedHigh, hitLow],
+      targetResolutions: {
+        'hit-high': { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: true },
+        'miss-high': { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: false },
+        'hit-low': { ...defaultTargetResolutionState(s), accuracyRoll: '14', hit: true },
+      },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([{ id: 'hit-high', conditions: ['Burned'] }])
+  })
+
+  it('does not apply Sandstorm Sear Burned when the natural accuracy roll is below 15', () => {
+    const s = explicitScriptForMove('Sandstorm Sear')!
+    expect(s).not.toBeNull()
+    const target = token({ id: 't', species: 'Target' })
+
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      targetResolutions: { t: { ...defaultTargetResolutionState(s), accuracyRoll: '14', hit: true } },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([])
+  })
+
+  it('respects existing Sandstorm Sear Burn immunity handling for Fire-type targets', () => {
+    const s = explicitScriptForMove('Sandstorm Sear')!
+    expect(s).not.toBeNull()
+    const target = token({ id: 't', species: 'Charmander', defenderTypes: ['Fire'] })
+
+    const transaction = automationTransaction(s, {
+      targets: [target],
+      targetResolutions: { t: { ...defaultTargetResolutionState(s), accuracyRoll: '15', hit: true } },
+      enabledSuggestions: enabledSuggestionFlags(s, 'condition', [0]),
+    })
+
+    expect(transaction.conditionUpdates).toEqual([])
+    expect(transaction.logLines).toContain('Burned on 15+ did not apply to Charmander: immune (Fire type).')
   })
 
   it('applies Psywave direct HP loss from the user level table without stats or resistance', () => {

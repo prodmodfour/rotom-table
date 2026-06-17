@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(248)
-    expect(moveAutomationCoverage.missing).toHaveLength(528)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(252)
+    expect(moveAutomationCoverage.missing).toHaveLength(524)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -534,6 +534,119 @@ describe('explicit move automation scripts', () => {
       { recipient: 'target', key: 'sdef', delta: -1, label: 'Seed Flare lowers Special Defense: -1 Special Defense CS' },
     ])
     expect(isSeamlessAreaConfirmationScript(seedFlare)).toBe(true)
+  })
+
+  it('implements the reviewed Phase 2 area stage and storm scripts', () => {
+    const aromaticMist = explicitScriptForMove('Aromatic Mist')
+    expect(aromaticMist).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Aromatic Mist',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: false,
+      requiresAccuracy: false,
+      ac: null,
+      damageBase: null,
+      damageClass: 'Status',
+      type: 'Fairy',
+      range: 'Burst 1',
+    })
+    expect(aromaticMist?.areaTemplates).toHaveLength(1)
+    expect(aromaticMist?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
+    expect(aromaticMist?.stageSuggestions).toEqual([
+      { recipient: 'target', key: 'sdef', delta: 1, label: "Aromatic Mist raises allies' Special Defense: +1 Special Defense CS" },
+    ])
+    expect(aromaticMist?.conditionSuggestions).toEqual([])
+    expect(aromaticMist?.hpSuggestions).toEqual([])
+    expect(aromaticMist?.fieldSuggestions).toEqual([])
+    expect(aromaticMist?.hazardSuggestions).toEqual([])
+    expect(aromaticMist?.automationNotes).toEqual([
+      'Aromatic Mist affects allies only. Team allegiance is not tracked, so verify affected tokens are allies or correct Combat Stages manually afterward.',
+    ])
+    expect(isSeamlessAreaConfirmationScript(aromaticMist)).toBe(true)
+
+    const coaching = explicitScriptForMove('Coaching')
+    expect(coaching).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Coaching',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: false,
+      requiresAccuracy: false,
+      ac: null,
+      damageBase: null,
+      damageClass: 'Status',
+      type: 'Fighting',
+      range: 'Burst 1',
+    })
+    expect(coaching?.areaTemplates).toHaveLength(1)
+    expect(coaching?.areaTemplates).toMatchObject([{ kind: 'burst', size: 1 }])
+    expect(coaching?.stageSuggestions).toEqual([
+      { recipient: 'user', key: 'atk', delta: 1, label: "Coaching raises user's Attack: +1 Attack CS" },
+      { recipient: 'user', key: 'def', delta: 1, label: "Coaching raises user's Defense: +1 Defense CS" },
+      { recipient: 'target', key: 'atk', delta: 1, label: "Coaching raises allies' Attack: +1 Attack CS" },
+      { recipient: 'target', key: 'def', delta: 1, label: "Coaching raises allies' Defense: +1 Defense CS" },
+    ])
+    expect(coaching?.conditionSuggestions).toEqual([])
+    expect(coaching?.hpSuggestions).toEqual([])
+    expect(coaching?.fieldSuggestions).toEqual([])
+    expect(coaching?.hazardSuggestions).toEqual([])
+    expect(coaching?.automationNotes).toEqual([
+      'Burst 1 is shown as an area overlay; the user also receives the Attack and Defense boosts even though the user token is not a selectable target.',
+      'Coaching affects allies only. Team allegiance is not tracked, so verify affected tokens are allies or correct Combat Stages manually afterward.',
+    ])
+    expect(isSeamlessAreaConfirmationScript(coaching)).toBe(true)
+
+    const bleakwindStorm = explicitScriptForMove('Bleakwind Storm')
+    expect(bleakwindStorm).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Bleakwind Storm',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: true,
+      ac: 5,
+      damageBase: 10,
+      damageClass: 'Special',
+      type: 'Flying',
+      range: '6, Ranged Blast 3, Smite',
+    })
+    expect(bleakwindStorm?.areaTemplates).toHaveLength(1)
+    expect(bleakwindStorm?.areaTemplates).toMatchObject([{ kind: 'ranged-blast', range: 6, size: 3 }])
+    expect(bleakwindStorm?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Flinch', action: 'add', label: 'Flinch on 15+', threshold: '15+', optional: true },
+      { recipient: 'target', condition: 'Frozen', action: 'add', label: 'Frozen on 19+', threshold: '19+', optional: true },
+    ])
+    expect(bleakwindStorm?.stageSuggestions).toEqual([])
+    expect(bleakwindStorm?.hpSuggestions).toEqual([])
+    expect(bleakwindStorm?.fieldSuggestions).toEqual([])
+    expect(bleakwindStorm?.hazardSuggestions).toEqual([])
+    expect(isSeamlessAreaConfirmationScript(bleakwindStorm)).toBe(true)
+
+    const sandstormSear = explicitScriptForMove('Sandstorm Sear')
+    expect(sandstormSear).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Sandstorm Sear',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: true,
+      ac: 5,
+      damageBase: 10,
+      damageClass: 'Special',
+      type: 'Ground',
+      range: '6, Ranged Blast 3, Smite',
+    })
+    expect(sandstormSear?.areaTemplates).toHaveLength(1)
+    expect(sandstormSear?.areaTemplates).toMatchObject([{ kind: 'ranged-blast', range: 6, size: 3 }])
+    expect(sandstormSear?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Burned', action: 'add', label: 'Burned on 15+', threshold: '15+', optional: true },
+    ])
+    expect(sandstormSear?.stageSuggestions).toEqual([])
+    expect(sandstormSear?.hpSuggestions).toEqual([])
+    expect(sandstormSear?.fieldSuggestions).toEqual([])
+    expect(sandstormSear?.hazardSuggestions).toEqual([])
+    expect(isSeamlessAreaConfirmationScript(sandstormSear)).toBe(true)
   })
 
   it('implements the requested basic moves as seamless explicit scripts', () => {
