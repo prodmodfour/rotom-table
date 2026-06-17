@@ -12,6 +12,9 @@ import {
   isSeamlessAreaConfirmationScript,
   isSeamlessSelfMoveScript,
   isSeamlessSingleTargetMoveScript,
+  moveAutomationHasMultipleTargetBranches,
+  moveAutomationScriptForTargetBranch,
+  moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { directHpLossRollFormulaForScript } from '~/utils/moveAutomationDirectHpLoss'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
@@ -78,6 +81,7 @@ import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/ty
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationAreaDirectionOption,
+  MoveAutomationAreaTemplate,
   MoveAutomationCombatStageUpdate,
   MoveAutomationConditionUpdate,
   MoveAutomationFieldEffectApply,
@@ -90,6 +94,7 @@ import type {
   MoveAutomationPoisonPointPrompt,
   MoveAutomationScript,
   MoveAutomationSpitePrompt,
+  MoveAutomationTargetBranch,
   MoveAutomationTargetingOverlayState,
   MoveAutomationTransaction,
 } from '~/types/moveAutomation'
@@ -264,6 +269,33 @@ interface ActiveAreaConfirmationRequest {
 
 type ActiveMoveTargetingRequest = ActiveSingleTargetingRequest | ActiveAreaConfirmationRequest
 
+interface ActiveTargetBranchSelectionRequest {
+  userId: string
+  moveName: string
+  baseScript: MoveAutomationScript
+  branches: MoveAutomationTargetBranch[]
+  damageFormula: string | null
+  frequency: string | null
+}
+
+export interface MoveAutomationTargetBranchSelectionOption {
+  branchId: string
+  label: string
+  range: string
+  targetMode: MoveAutomationTargetBranch['targetMode']
+  targetCount: number | null
+  mode: NonNullable<MoveAutomationTargetingOverlayState['mode']>
+  areaTemplates: MoveAutomationAreaTemplate[]
+  disabled: boolean
+  disabledReason: string | null
+}
+
+export interface MoveAutomationTargetBranchSelectionState {
+  userId: string
+  moveName: string
+  options: MoveAutomationTargetBranchSelectionOption[]
+}
+
 export const appendMoveAutomationLogEntry = (
   metadata: Record<string, unknown> | undefined,
   transaction: MoveAutomationTransaction,
@@ -306,6 +338,7 @@ export const useMoveAutomationPanel = ({
   maxLogEntries = DEFAULT_MAX_LOG_ENTRIES,
 }: UseMoveAutomationPanelOptions) => {
   const activeMoveTargeting = ref<ActiveMoveTargetingRequest | null>(null)
+  const activeMoveTargetBranchSelection = ref<ActiveTargetBranchSelectionRequest | null>(null)
   const moveAutomationFeedback = ref<MoveAutomationFeedbackState | null>(null)
   const moveUsageError = ref<string | null>(null)
   const spiteReactionPrompts = ref<MoveAutomationSpitePrompt[]>([])
@@ -454,6 +487,78 @@ export const useMoveAutomationPanel = ({
     const excluded = new Set(request.excludedTargetIds)
     return request.targetIds.filter((id) => !excluded.has(id))
   }
+
+  const cloneMoveAutomationAreaTemplates = (
+    templates: readonly MoveAutomationAreaTemplate[] | null | undefined,
+  ): MoveAutomationAreaTemplate[] => templates?.map((template) => ({ ...template })) ?? []
+
+  const targetBranchSelectionModeForScript = (
+    script: MoveAutomationScript,
+  ): MoveAutomationTargetBranchSelectionOption['mode'] | null => {
+    if (script.targetMode === 'one-target') return 'target'
+    if (script.targetMode === 'multi-target' && script.areaTemplates?.length) return 'area-confirmation'
+    return null
+  }
+
+  const unsupportedTargetBranchReason = (
+    script: MoveAutomationScript,
+    user: SpawnedPokemon,
+    damageFormula: string | null,
+  ): string | null => {
+    if (script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(script)) {
+      return 'Damage cannot be resolved automatically.'
+    }
+
+    if (script.targetMode === 'one-target') {
+      return parseSingleTargetMoveRangeMeters(script.range, {
+        focusSkillRankValue: user.focusSkillRankValue,
+      }) == null
+        ? 'Unsupported target range.'
+        : null
+    }
+
+    if (script.targetMode === 'multi-target') {
+      return script.areaTemplates?.length ? null : 'Unsupported area template.'
+    }
+
+    return 'Unsupported target mode.'
+  }
+
+  const targetBranchSelectionOption = (
+    request: ActiveTargetBranchSelectionRequest,
+    branch: MoveAutomationTargetBranch,
+    user: SpawnedPokemon,
+  ): MoveAutomationTargetBranchSelectionOption => {
+    const script = moveAutomationScriptForTargetBranch(request.baseScript, branch)
+    const mode = script ? targetBranchSelectionModeForScript(script) : null
+    const disabledReason = script
+      ? unsupportedTargetBranchReason(script, user, request.damageFormula)
+      : 'Unsupported target branch.'
+
+    return {
+      branchId: branch.id,
+      label: branch.label,
+      range: branch.range,
+      targetMode: branch.targetMode,
+      targetCount: branch.targetCount,
+      mode: mode ?? (branch.targetMode === 'one-target' ? 'target' : 'area-confirmation'),
+      areaTemplates: cloneMoveAutomationAreaTemplates(script?.areaTemplates ?? branch.areaTemplates),
+      disabled: Boolean(disabledReason || !mode),
+      disabledReason: disabledReason ?? (!mode ? 'Unsupported target branch.' : null),
+    }
+  }
+
+  const moveAutomationTargetBranchSelection = computed<MoveAutomationTargetBranchSelectionState | null>(() => {
+    const request = activeMoveTargetBranchSelection.value
+    const user = findSpawnedPokemon(request?.userId)
+    if (!request || !user || !canControlPlacement(request.userId)) return null
+
+    return {
+      userId: request.userId,
+      moveName: request.moveName,
+      options: request.branches.map((branch) => targetBranchSelectionOption(request, branch, user)),
+    }
+  })
 
   const moveAutomationTargeting = computed<MoveAutomationTargetingOverlayState | null>(() => {
     const request = activeMoveTargeting.value
@@ -703,6 +808,7 @@ export const useMoveAutomationPanel = ({
   }
 
   const clearMoveAutomationTargetingForUser = (userId: string) => {
+    if (activeMoveTargetBranchSelection.value?.userId === userId) activeMoveTargetBranchSelection.value = null
     if (activeMoveTargeting.value?.userId === userId) activeMoveTargeting.value = null
   }
 
@@ -869,26 +975,83 @@ export const useMoveAutomationPanel = ({
     }
   }
 
-  const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
-    const user = findSpawnedPokemon(id)
-    if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
-    const damageFormula = entry.script.damaging ? rollFormulaForEntry(entry) : null
-    const frequency = frequencyForEntry(entry)
-    if (entry.script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(entry.script)) return false
+  const areaConfirmationRequestForScript = (
+    user: SpawnedPokemon,
+    script: MoveAutomationScript,
+    damageFormula: string | null,
+    frequency: string | null,
+  ): ActiveAreaConfirmationRequest | null => {
+    if (script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(script)) return null
     const placements = buildMoveAutomationAreaTemplatePlacements({
-      script: entry.script,
+      script,
       user,
       tokens: spawnedPokemon.value,
       includeEmpty: true,
       ...areaTemplateCellConstraints(),
     })
     const placement = areaPlacementForTokenFacing(placements, user)
-    const request = placement
-      ? requestFromAreaPlacement(user, entry.script, damageFormula, frequency, placement, placements)
-      : makeFallbackAreaPlacement(entry.script, damageFormula, frequency, user)
+    return placement
+      ? requestFromAreaPlacement(user, script, damageFormula, frequency, placement, placements)
+      : makeFallbackAreaPlacement(script, damageFormula, frequency, user)
+  }
+
+  const beginAreaConfirmationForScript = (
+    user: SpawnedPokemon,
+    script: MoveAutomationScript,
+    damageFormula: string | null,
+    frequency: string | null,
+  ): boolean => {
+    const request = areaConfirmationRequestForScript(user, script, damageFormula, frequency)
     if (!request) return false
 
     clearMoveAutomationFeedback()
+    activeMoveTargetBranchSelection.value = null
+    activeMoveTargeting.value = request
+    return true
+  }
+
+  const beginSeamlessAreaConfirmation = (id: string, entry: ReturnType<typeof moveAutomationEntryForUse>): boolean => {
+    const user = findSpawnedPokemon(id)
+    if (!user || !entry || !isSeamlessAreaConfirmationScript(entry.script)) return false
+    const damageFormula = entry.script.damaging ? rollFormulaForEntry(entry) : null
+    return beginAreaConfirmationForScript(user, entry.script, damageFormula, frequencyForEntry(entry))
+  }
+
+  const singleTargetRequestForScript = (
+    user: SpawnedPokemon,
+    script: MoveAutomationScript,
+    damageFormula: string | null,
+    frequency: string | null,
+  ): ActiveSingleTargetingRequest | null => {
+    const rangeMeters = parseSingleTargetMoveRangeMeters(script.range, {
+      focusSkillRankValue: user.focusSkillRankValue,
+    })
+    if (rangeMeters == null || (script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(script))) {
+      return null
+    }
+
+    return {
+      kind: 'single-target',
+      userId: user.id,
+      moveName: script.moveName,
+      script,
+      damageFormula,
+      frequency,
+      rangeMeters,
+    }
+  }
+
+  const beginSingleTargetingForScript = (
+    user: SpawnedPokemon,
+    script: MoveAutomationScript,
+    damageFormula: string | null,
+    frequency: string | null,
+  ): boolean => {
+    const request = singleTargetRequestForScript(user, script, damageFormula, frequency)
+    if (!request) return false
+
+    clearMoveAutomationFeedback()
+    activeMoveTargetBranchSelection.value = null
     activeMoveTargeting.value = request
     return true
   }
@@ -901,8 +1064,23 @@ export const useMoveAutomationPanel = ({
     if (!user || !entry) return false
     const script: MoveAutomationScript = entry.script
 
+    if (moveAutomationHasMultipleTargetBranches(script)) {
+      clearMoveAutomationFeedback()
+      activeMoveTargeting.value = null
+      activeMoveTargetBranchSelection.value = {
+        userId: id,
+        moveName: script.moveName,
+        baseScript: script,
+        branches: moveAutomationTargetBranches(script),
+        damageFormula: script.damaging ? rollFormulaForEntry(entry) : null,
+        frequency: frequencyForEntry(entry),
+      }
+      return true
+    }
+
     if (isSeamlessSelfMoveScript(script)) {
       clearMoveAutomationFeedback()
+      activeMoveTargetBranchSelection.value = null
       activeMoveTargeting.value = null
       const frequency = frequencyForEntry(entry)
       void (async () => {
@@ -933,23 +1111,7 @@ export const useMoveAutomationPanel = ({
     }
 
     if (isSeamlessSingleTargetMoveScript(script)) {
-      const rangeMeters = parseSingleTargetMoveRangeMeters(script.range, {
-        focusSkillRankValue: user.focusSkillRankValue,
-      })
-      const damageFormula = rollFormulaForEntry(entry)
-      if (rangeMeters == null || (script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(script))) return false
-
-      clearMoveAutomationFeedback()
-      activeMoveTargeting.value = {
-        kind: 'single-target',
-        userId: id,
-        moveName: script.moveName,
-        script,
-        damageFormula,
-        frequency: frequencyForEntry(entry),
-        rangeMeters,
-      }
-      return true
+      return beginSingleTargetingForScript(user, script, rollFormulaForEntry(entry), frequencyForEntry(entry))
     }
 
     return beginSeamlessAreaConfirmation(id, entry)
@@ -963,10 +1125,12 @@ export const useMoveAutomationPanel = ({
     if (beginSeamlessMoveTargeting(id, moveName)) return
 
     clearMoveAutomationFeedback()
+    activeMoveTargetBranchSelection.value = null
     activeMoveTargeting.value = null
   }
 
   const cancelMoveAutomationTargeting = () => {
+    activeMoveTargetBranchSelection.value = null
     activeMoveTargeting.value = null
   }
 
@@ -1367,23 +1531,12 @@ export const useMoveAutomationPanel = ({
     const entry = moveAutomationEntryForUse(id, moveName)
     if (!user || !entry || !isSeamlessSingleTargetMoveScript(entry.script)) return null
 
-    const rangeMeters = parseSingleTargetMoveRangeMeters(entry.script.range, {
-      focusSkillRankValue: user.focusSkillRankValue,
-    })
-    const damageFormula = rollFormulaForEntry(entry)
-    if (rangeMeters == null || (entry.script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(entry.script))) {
-      return null
-    }
-
-    return {
-      kind: 'single-target',
-      userId: id,
-      moveName: entry.script.moveName,
-      script: entry.script,
-      damageFormula,
-      frequency: frequencyForEntry(entry),
-      rangeMeters,
-    }
+    return singleTargetRequestForScript(
+      user,
+      entry.script,
+      rollFormulaForEntry(entry),
+      frequencyForEntry(entry),
+    )
   }
 
   const useMoveAgainstTarget = async (input: {
@@ -1400,6 +1553,26 @@ export const useMoveAutomationPanel = ({
       skipActionNotifications: input.skipActionNotifications,
       logLine: input.logLine,
     })
+  }
+
+  const selectMoveAutomationTargetBranch = (branchId: string) => {
+    const request = activeMoveTargetBranchSelection.value
+    if (!request || !canContinueMoveAutomationForUser(request.userId)) return
+    const user = findSpawnedPokemon(request.userId)
+    const branch = request.branches.find((item) => item.id === branchId)
+    const script = branch ? moveAutomationScriptForTargetBranch(request.baseScript, branch) : null
+    if (!user || !branch || !script) return
+    if (unsupportedTargetBranchReason(script, user, request.damageFormula)) return
+
+    const mode = targetBranchSelectionModeForScript(script)
+    if (mode === 'target') {
+      beginSingleTargetingForScript(user, script, request.damageFormula, request.frequency)
+      return
+    }
+
+    if (mode === 'area-confirmation') {
+      beginAreaConfirmationForScript(user, script, request.damageFormula, request.frequency)
+    }
   }
 
   const selectMoveAutomationAreaDirection = (direction: MoveAutomationAreaDirection) => {
@@ -1499,6 +1672,7 @@ export const useMoveAutomationPanel = ({
 
   return {
     moveAutomationTargeting,
+    moveAutomationTargetBranchSelection,
     moveAutomationFeedback,
     moveUsageError,
     spiteReactionPrompts,
@@ -1511,6 +1685,7 @@ export const useMoveAutomationPanel = ({
     useMoveAgainstTarget,
     cancelMoveAutomationTargeting,
     selectMoveAutomationTarget,
+    selectMoveAutomationTargetBranch,
     selectMoveAutomationAreaDirection,
     dismissSpiteReactionPrompt,
     applySpiteReactionPrompt,

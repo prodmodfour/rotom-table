@@ -4,10 +4,11 @@ import {
   appendMoveAutomationLogEntry,
   useMoveAutomationPanel,
 } from '~/composables/map-editor/useMoveAutomationPanel'
+import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
-import type { MoveAutomationTransaction } from '~/types/moveAutomation'
+import type { MoveAutomationScript, MoveAutomationTransaction } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -77,6 +78,100 @@ const transaction = (): MoveAutomationTransaction => ({
   logLines: ['Rolled Tackle.'],
 })
 
+const branchSelectionScript = (): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Branch Selection Test',
+  version: 1,
+  targetMode: 'one-target',
+  targetCount: 1,
+  damaging: false,
+  requiresAccuracy: false,
+  damageBase: null,
+  damageClass: 'Status',
+  type: 'Normal',
+  ac: null,
+  range: '4, 1 Target',
+  effect: 'Test branch selection.',
+  keywords: ['1 Target'],
+  criticalRange: null,
+  areaTemplates: [],
+  targetBranches: [
+    {
+      id: 'single',
+      label: 'Single target',
+      targetMode: 'one-target',
+      targetCount: 1,
+      range: '4, 1 Target',
+    },
+    {
+      id: 'burst',
+      label: 'Burst',
+      targetMode: 'multi-target',
+      targetCount: null,
+      range: 'Burst 1',
+    },
+  ],
+  conditionSuggestions: [],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+})
+
+const withRegisteredMoveAutomationScript = async <T>(
+  script: MoveAutomationScript,
+  run: () => T | Promise<T>,
+): Promise<T> => {
+  const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
+  const previous = scripts.get(script.moveName)
+  scripts.set(script.moveName, script)
+  try {
+    return await run()
+  } finally {
+    if (previous) scripts.set(script.moveName, previous)
+    else scripts.delete(script.moveName)
+  }
+}
+
+const branchSelectionPanel = (options: {
+  recordMoveUsage?: (request: { placementId: string; moveName: string }) => void | Promise<void>
+} = {}) => {
+  const map = ref({
+    ...mapFixture(),
+    dimensions: { x: 6, y: 2, z: 6 },
+    placements: [
+      { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'brancher', position: { x: 1, y: 0, z: 1 } },
+      { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 1, y: 0, z: 2 } },
+    ],
+  })
+  const pokemonSheet = {
+    slug: 'brancher',
+    nickname: 'Brancher',
+    species: 'Bulbasaur',
+    level: 5,
+    movelist: [{ name: 'Branch Selection Test', frequency: 'Scene' }],
+  } as CharacterSheet
+  const panel = useMoveAutomationPanel({
+    map,
+    spawnedPokemon: computed(() => [
+      spawned({ id: 'user-token', species: 'Brancher', sheetSlug: 'brancher', position: { x: 1, y: 0, z: 1 } }),
+      spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', currentHp: 20, maxHp: 20, position: { x: 1, y: 0, z: 2 } }),
+    ]),
+    pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+    trainerBySlug: ref(new Map<string, TrainerSheet>()),
+    canEditMap: computed(() => false),
+    canControlPlacement: (id) => id === 'user-token',
+    modifyHp: () => undefined,
+    modifyCombatStages: () => undefined,
+    modifyConditions: () => undefined,
+    applyMoveFieldEffect: () => undefined,
+    placeHazard: () => undefined,
+    recordMoveUsage: options.recordMoveUsage,
+  })
+  return { map, panel }
+}
+
 describe('useMoveAutomationPanel', () => {
   it('does not open the removed wizard for unautomated moves', () => {
     const map = ref(mapFixture())
@@ -108,6 +203,97 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.moveAutomationTargeting.value).toBeNull()
     expect(panel.tokenMoveOptionsById.value['user-token'].map((move) => move.name)).toEqual(['Struggle', 'Teleport'])
     expect(panel.tokenMoveOptionsById.value['user-token'].find((move) => move.name === 'Teleport')?.hasAutomationScript).toBe(false)
+  })
+
+  it('opens scripts with multiple target branches into branch-selection state', async () => {
+    await withRegisteredMoveAutomationScript(branchSelectionScript(), () => {
+      const { panel } = branchSelectionPanel()
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
+
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(panel.moveAutomationTargetBranchSelection.value).toMatchObject({
+        userId: 'user-token',
+        moveName: 'Branch Selection Test',
+        options: [
+          {
+            branchId: 'single',
+            label: 'Single target',
+            range: '4, 1 Target',
+            mode: 'target',
+            disabled: false,
+          },
+          {
+            branchId: 'burst',
+            label: 'Burst',
+            range: 'Burst 1',
+            mode: 'area-confirmation',
+            areaTemplates: [{ kind: 'burst', size: 1, label: 'Burst 1' }],
+            disabled: false,
+          },
+        ],
+      })
+    })
+  })
+
+  it('does not record move usage when branch selection opens', async () => {
+    await withRegisteredMoveAutomationScript(branchSelectionScript(), () => {
+      const recordMoveUsage = vi.fn()
+      const { panel } = branchSelectionPanel({ recordMoveUsage })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
+
+      expect(panel.moveAutomationTargetBranchSelection.value?.moveName).toBe('Branch Selection Test')
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+    })
+  })
+
+  it('cancels active branch selection alongside targeting state', async () => {
+    await withRegisteredMoveAutomationScript(branchSelectionScript(), () => {
+      const { panel } = branchSelectionPanel()
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
+      expect(panel.moveAutomationTargetBranchSelection.value).not.toBeNull()
+
+      panel.cancelMoveAutomationTargeting()
+
+      expect(panel.moveAutomationTargetBranchSelection.value).toBeNull()
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+    })
+  })
+
+  it('selecting a target branch transitions into the existing target or area flow without recording usage', async () => {
+    await withRegisteredMoveAutomationScript(branchSelectionScript(), () => {
+      const recordMoveUsage = vi.fn()
+      const { panel } = branchSelectionPanel({ recordMoveUsage })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
+      panel.selectMoveAutomationTargetBranch('single')
+
+      expect(panel.moveAutomationTargetBranchSelection.value).toBeNull()
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        userId: 'user-token',
+        moveName: 'Branch Selection Test',
+        mode: 'target',
+        rangeLabel: '4m',
+        candidateIds: ['target-token'],
+      })
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Branch Selection Test' })
+      panel.selectMoveAutomationTargetBranch('burst')
+
+      expect(panel.moveAutomationTargetBranchSelection.value).toBeNull()
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        userId: 'user-token',
+        moveName: 'Branch Selection Test',
+        mode: 'area-confirmation',
+        rangeLabel: 'Burst 1',
+        affectedIds: ['target-token'],
+      })
+      expect(panel.moveAutomationTargeting.value?.areaCells?.length).toBeGreaterThan(0)
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+    })
   })
 
   it('accepts a renderer-agnostic move animation enqueue callback without changing existing no-op flows', () => {
