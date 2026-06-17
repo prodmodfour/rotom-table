@@ -941,6 +941,18 @@ const recordMoveUsage = async (request: { placementId: string; moveName: string 
   if (!result.dispatched) throw new Error(result.message ?? 'Move usage could not be recorded.')
 }
 
+const moveTokenFromMoveAutomation = async (payload: { id: string; position: GridAnchor }) => {
+  if (isSetupEditMode()) {
+    const placement = placementById(payload.id)
+    if (placement && canControlPlacement(payload.id)) placement.position = { ...payload.position }
+    return
+  }
+  await livePlayCommands.moveToken({
+    placementId: payload.id,
+    position: payload.position,
+  })
+}
+
 const applyMoveFieldEffectFromScene = async (effect: Parameters<typeof applyMoveFieldEffectLocally>[0]) => {
   if (isSetupEditMode()) {
     applyMoveFieldEffectLocally(effect)
@@ -1067,6 +1079,7 @@ const {
   modifyConditions: modifyConditionsFromScene,
   applyMoveFieldEffect: applyMoveFieldEffectFromScene,
   placeHazard: placeHazardFromScene,
+  moveToken: moveTokenFromMoveAutomation,
   recordMoveUsage,
   enqueueMoveAnimations: enqueueAndBroadcastMoveAnimations,
   onMoveUse: (event) => showActionSplash({ userId: event.userId, actionName: event.moveName }),

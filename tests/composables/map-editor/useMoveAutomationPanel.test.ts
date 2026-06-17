@@ -2629,6 +2629,56 @@ describe('useMoveAutomationPanel', () => {
     ]))
   })
 
+  it('routes Pass movement through the token move handler so live play can persist the destination', async () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 7, y: 2, z: 3 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'scratcher', position: { x: 1, y: 0, z: 1 } },
+        { id: 'first-token', sheetKind: 'pokemon' as const, sheetSlug: 'first', position: { x: 2, y: 0, z: 1 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'scratcher',
+      nickname: 'Scratcher',
+      species: 'Meowth',
+      level: 5,
+      movelist: [{ name: 'Scratch' }],
+    } as CharacterSheet
+    const moveToken = vi.fn(async (_request: { id: string; position: { x: number; y: number; z: number } }) => undefined)
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Scratcher', sheetSlug: 'scratcher', position: { x: 1, y: 0, z: 1 } }),
+        spawned({ id: 'first-token', species: 'First', sheetSlug: 'first', currentHp: 40, maxHp: 40, position: { x: 2, y: 0, z: 1 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      moveToken,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Scratch' })
+    panel.selectMoveAutomationAreaDirection('east')
+
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.9)
+    try {
+      await panel.selectMoveAutomationTarget('user-token')
+    } finally {
+      random.mockRestore()
+    }
+
+    expect(moveToken).toHaveBeenCalledTimes(1)
+    expect(moveToken).toHaveBeenCalledWith({ id: 'user-token', position: { x: 5, y: 0, z: 1 } })
+    expect(map.value.placements.find((placement) => placement.id === 'user-token')?.position).toEqual({ x: 1, y: 0, z: 1 })
+  })
+
   it('lets Friendly area move targets be unselected before confirmation', async () => {
     const map = ref({
       ...mapFixture(),

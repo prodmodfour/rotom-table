@@ -124,6 +124,8 @@ type SheetUpdateOptions = { allowAnyTarget?: boolean }
 
 type MoveUsageRecordRequest = { placementId: string; moveName: string }
 type MoveUsageRecordHandler = (request: MoveUsageRecordRequest) => MaybePromise<void>
+type MoveAutomationTokenMoveRequest = { id: string; position: GridAnchor }
+type MoveAutomationTokenMoveHandler = (request: MoveAutomationTokenMoveRequest) => MaybePromise<void>
 
 const noopEnqueueMoveAnimations: MoveAnimationEnqueueHandler = () => undefined
 
@@ -163,6 +165,7 @@ export interface UseMoveAutomationPanelOptions {
   modifyConditions: SheetUpdateHandler<MoveAutomationConditionUpdate>
   applyMoveFieldEffect: (effect: MoveAutomationFieldEffectApply) => MaybePromise<void>
   placeHazard: (hazard: MapHazardV2) => MaybePromise<void>
+  moveToken?: MoveAutomationTokenMoveHandler
   recordMoveUsage?: MoveUsageRecordHandler
   /**
    * Renderer-agnostic sink for transient move VFX requests owned by the map page.
@@ -348,6 +351,7 @@ export const useMoveAutomationPanel = ({
   modifyConditions,
   applyMoveFieldEffect,
   placeHazard,
+  moveToken,
   recordMoveUsage,
   enqueueMoveAnimations = noopEnqueueMoveAnimations,
   onBeforeNonImmediateAction,
@@ -433,11 +437,16 @@ export const useMoveAutomationPanel = ({
     if (facing) setTokenFacingOnPlacement(placement, facing)
   }
 
-  const moveTokenToPassDestination = (id: string, destination: GridAnchor | undefined) => {
+  const moveTokenToPassDestination = async (id: string, destination: GridAnchor | undefined) => {
     if (!destination) return
+    const position = { ...destination }
+    if (moveToken) {
+      await moveToken({ id, position })
+      return
+    }
     const placement = placementById(id)
     if (!placement) return
-    placement.position = { ...destination }
+    placement.position = position
   }
 
   const passDestinationLogLine = (user: SpawnedPokemon, destination: GridAnchor | undefined): string | null =>
@@ -2032,7 +2041,7 @@ export const useMoveAutomationPanel = ({
       transaction,
     })
     await applyMoveAutomation(transaction, { updateFacing: !request.direction, script: confirmedScript })
-    moveTokenToPassDestination(request.userId, request.passDestination)
+    await moveTokenToPassDestination(request.userId, request.passDestination)
   }
 
   const confirmMoveAutomationTargetCount = async () => {
