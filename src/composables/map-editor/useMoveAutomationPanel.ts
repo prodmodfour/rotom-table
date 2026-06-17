@@ -669,7 +669,7 @@ export const useMoveAutomationPanel = ({
         mode: 'target-count',
         rangeLabel: `${request.rangeMeters}m`,
         rangeMeters: request.rangeMeters,
-        targetPrompt: `Choose up to ${request.maxTargetCount} ${plural} within ${request.rangeMeters}m, then confirm.`,
+        targetPrompt: `Choose up to ${request.maxTargetCount} ${plural} within ${request.rangeMeters}m.`,
         candidateIds,
         hitChances: moveTargetHitChances(request.script, user, candidateIds),
         selectedTargetIds,
@@ -1946,7 +1946,7 @@ export const useMoveAutomationPanel = ({
     }
   }
 
-  const confirmMoveAutomationTargetCount = async (request: ActiveTargetCountRequest) => {
+  const confirmMoveAutomationTargetCountRequest = async (request: ActiveTargetCountRequest) => {
     if (!canContinueMoveAutomationForUser(request.userId)) return
     const user = findSpawnedPokemon(request.userId)
     if (!user) return
@@ -2035,6 +2035,12 @@ export const useMoveAutomationPanel = ({
     moveTokenToPassDestination(request.userId, request.passDestination)
   }
 
+  const confirmMoveAutomationTargetCount = async () => {
+    const request = activeMoveTargeting.value
+    if (request?.kind !== 'target-count') return
+    await confirmMoveAutomationTargetCountRequest(request)
+  }
+
   const selectMoveAutomationTarget = async (targetId: string) => {
     const request = activeMoveTargeting.value
     const overlay = moveAutomationTargeting.value
@@ -2054,9 +2060,7 @@ export const useMoveAutomationPanel = ({
       if (!overlay) return
       if (overlay.candidateIds.includes(targetId)) {
         toggleMoveAutomationTargetCountTarget(request, targetId, overlay.candidateIds)
-        return
       }
-      if (targetId === request.userId) await confirmMoveAutomationTargetCount(request)
       return
     }
 
@@ -2084,6 +2088,7 @@ export const useMoveAutomationPanel = ({
     useMoveAgainstTarget,
     cancelMoveAutomationTargeting,
     selectMoveAutomationTarget,
+    confirmMoveAutomationTargetCount,
     selectMoveAutomationTargetBranch,
     selectMoveAutomationAreaTemplate,
     selectMoveAutomationAreaDirection,

@@ -1041,6 +1041,7 @@ const {
   useMoveAgainstTarget,
   cancelMoveAutomationTargeting,
   selectMoveAutomationTarget,
+  confirmMoveAutomationTargetCount,
   selectMoveAutomationTargetBranch,
   selectMoveAutomationAreaTemplate,
   selectMoveAutomationAreaDirection,
@@ -1550,6 +1551,7 @@ useMapDimensionReconciliation({
         @place-hazard="placeHazardFromScene"
         @remove-hazard="removeHazardFromScene"
         @select-move-target="selectActionAutomationTarget"
+        @confirm-move-target-count="confirmMoveAutomationTargetCount"
         @select-move-area-template="selectMoveAutomationAreaTemplate"
         @select-move-area-direction="selectMoveAutomationAreaDirection"
         @select-move-target-branch="selectMoveAutomationTargetBranch"

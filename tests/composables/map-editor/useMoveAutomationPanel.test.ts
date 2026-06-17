@@ -628,7 +628,7 @@ describe('useMoveAutomationPanel', () => {
       })
 
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Fake 6, 2 Targets' })
-      await panel.selectMoveAutomationTarget('user-token')
+      await panel.confirmMoveAutomationTargetCount()
 
       expect(panel.moveAutomationTargeting.value).toMatchObject({
         mode: 'target-count',
@@ -664,9 +664,14 @@ describe('useMoveAutomationPanel', () => {
       panel.openMoveAutomation({ id: 'user-token', moveName: 'Fake 6, 2 Targets' })
       await panel.selectMoveAutomationTarget('target-a')
       await panel.selectMoveAutomationTarget('target-b')
-      expect(recordMoveUsage).not.toHaveBeenCalled()
-
       await panel.selectMoveAutomationTarget('user-token')
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        mode: 'target-count',
+        selectedTargetIds: ['target-a', 'target-b'],
+      })
+
+      await panel.confirmMoveAutomationTargetCount()
 
       expect(recordMoveUsage).toHaveBeenCalledTimes(1)
       expect(recordMoveUsage).toHaveBeenCalledWith({ placementId: 'user-token', moveName: 'Fake 6, 2 Targets' })

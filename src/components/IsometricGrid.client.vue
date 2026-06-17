@@ -243,6 +243,7 @@ const emit = defineEmits<{
   (event: 'place-hazard', hazard: MapHazardV2): void
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
   (event: 'select-move-target', targetId: string): void
+  (event: 'confirm-move-target-count'): void
   (event: 'select-move-area-template', templateId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'select-move-target-branch', branchId: string): void
@@ -1095,9 +1096,31 @@ const selectMoveAreaTemplateOption = (templateId: string) => {
   emit('select-move-area-template', templateId)
 }
 
+const targetCountSelectionCount = (): number => {
+  const targeting = props.moveAutomationTargeting
+  if (targeting?.mode !== 'target-count') return 0
+  return targeting.targetCount ?? targeting.selectedTargetIds?.length ?? 0
+}
+
+const targetCountSelectionLimit = (): number => {
+  const targeting = props.moveAutomationTargeting
+  if (targeting?.mode !== 'target-count') return 0
+  return targeting.maxTargetCount ?? targeting.candidateIds.length
+}
+
+const targetCountHudCopy = (): string => {
+  const targeting = props.moveAutomationTargeting
+  if (targeting?.mode !== 'target-count') return ''
+
+  const limit = targetCountSelectionLimit()
+  const targetNoun = limit === 1 ? 'target' : 'targets'
+  return `Choose up to ${limit} ${targetNoun} within ${targeting.rangeLabel}. ${targetCountSelectionCount()} of ${limit} selected.`
+}
+
 const confirmMoveTargetCountSelection = () => {
   if (props.moveAutomationTargeting?.mode !== 'target-count') return
-  emit('select-move-target', props.moveAutomationTargeting.userId)
+  if (targetCountSelectionCount() <= 0) return
+  emit('confirm-move-target-count')
 }
 
 const worldPointToScreen = (point: THREE.Vector3): { x: number; y: number } | null => {
@@ -1176,7 +1199,7 @@ const performMoveTargeting = (event: MouseEvent | PointerEvent): boolean => {
 
   if (props.moveAutomationTargeting?.mode === 'target-count') {
     const hitId = pickMoveTargetId(event)
-    emit('select-move-target', hitId ?? props.moveAutomationTargeting.userId)
+    if (hitId) emit('select-move-target', hitId)
     return true
   }
 
@@ -2218,8 +2241,7 @@ watch(
         </template>
         <template v-else-if="props.moveAutomationTargeting.mode === 'target-count'">
           <span v-if="props.moveAutomationTargeting.candidateIds.length">
-            {{ props.moveAutomationTargeting.targetPrompt ?? `Choose targets within ${props.moveAutomationTargeting.rangeLabel}.` }}
-            {{ props.moveAutomationTargeting.targetCount ?? props.moveAutomationTargeting.selectedTargetIds?.length ?? 0 }} of {{ props.moveAutomationTargeting.maxTargetCount ?? props.moveAutomationTargeting.candidateIds.length }} selected.
+            {{ targetCountHudCopy() }}
           </span>
           <span v-else>
             No targets in range {{ props.moveAutomationTargeting.rangeLabel }}.
@@ -2278,11 +2300,11 @@ watch(
         v-if="props.moveAutomationTargeting.mode === 'target-count'"
         class="move-targeting-hud__confirm"
         type="button"
-        :disabled="(props.moveAutomationTargeting.targetCount ?? props.moveAutomationTargeting.selectedTargetIds?.length ?? 0) <= 0"
+        :disabled="targetCountSelectionCount() <= 0"
         @pointerdown.stop
         @click.stop="confirmMoveTargetCountSelection"
       >
-        Use Move
+        Confirm
       </button>
       <button
         class="move-targeting-hud__cancel"
@@ -2305,10 +2327,11 @@ watch(
         v-for="button in targetReticleButtons"
         :key="button.id"
         class="move-target-reticle-button"
-        :class="{ 'is-area-toggle': !button.showsReticle, 'is-unselected': !button.selected }"
+        :class="{ 'is-area-toggle': !button.showsReticle, 'is-selected': button.selected, 'is-unselected': !button.selected }"
         type="button"
         :style="{ left: `${button.left}px`, top: `${button.top}px` }"
         :aria-label="targetReticleButtonLabel(button)"
+        :aria-pressed="button.selected"
         :title="targetReticleButtonTitle(button)"
         @pointerdown.stop
         @click.stop="emit('select-move-target', button.id)"
