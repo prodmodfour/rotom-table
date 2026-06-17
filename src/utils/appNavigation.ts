@@ -21,7 +21,7 @@ export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: POKEDEX_PATH, label: 'Pokédex' },
   { path: PLAYER_TRAINER_PORTAL_PATH, label: 'Trainers', playerOnly: true },
   { path: SHEET_LIBRARY_PATH, label: 'Sheets', gmOnly: true },
-  { path: SETTINGS_PATH, label: 'Settings', gmOnly: true },
+  { path: SETTINGS_PATH, label: 'Settings' },
   { path: PLAYER_PROFILE_MANAGEMENT_PATH, label: 'Players', gmOnly: true },
   { path: ENCOUNTER_GENERATOR_PATH, label: 'Generate', gmOnly: true },
 ]

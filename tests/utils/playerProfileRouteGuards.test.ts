@@ -34,6 +34,7 @@ describe('player profile-aware route guards', () => {
     expect(isPlayerProfileOptionalPath(SHEET_LIBRARY_PATH)).toBe(false)
     expect(isPlayerProfileOptionalPath(`${SHEET_LIBRARY_PATH}?folder=party`)).toBe(false)
     expect(isPlayerProfileOptionalPath(SESSION_LOBBY_PATH)).toBe(true)
+    expect(isPlayerProfileOptionalPath(SETTINGS_PATH)).toBe(true)
   })
 
   it('requires a selected profile before player map-control and sheet-editor routes', () => {
@@ -101,6 +102,7 @@ describe('player profile-aware route guards', () => {
       '/moves/tackle',
       '/rules/combat-stages',
       SESSION_LOBBY_PATH,
+      SETTINGS_PATH,
     ]) {
       expect(resolveProfileAwareRouteGuard({
         path,
@@ -135,14 +137,6 @@ describe('player profile-aware route guards', () => {
       expect(resolveProfileAwareRouteGuard({
         path: CAMPAIGN_PATH,
         fullPath: CAMPAIGN_PATH,
-        hasRole: true,
-        isPlayer: true,
-        hasSelectedPlayerProfile,
-      })).toEqual({ type: 'redirect', location: DEFAULT_LOGIN_REDIRECT })
-
-      expect(resolveProfileAwareRouteGuard({
-        path: SETTINGS_PATH,
-        fullPath: SETTINGS_PATH,
         hasRole: true,
         isPlayer: true,
         hasSelectedPlayerProfile,

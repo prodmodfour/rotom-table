@@ -20,6 +20,7 @@ describe('app navigation helpers', () => {
       '/maps',
       '/pokedex',
       '/trainers',
+      SETTINGS_PATH,
     ])
     expect(PRIMARY_APP_NAV_ITEMS.some((item) => item.path === '/sessions')).toBe(false)
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).map((item) => item.path)).toEqual([

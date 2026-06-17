@@ -39,7 +39,6 @@ export const sessionLobbyRememberedPath = (): string => sessionLobbySectionPath(
 
 export const GM_ONLY_PATH_PREFIXES = [
   CAMPAIGN_PATH,
-  SETTINGS_PATH,
 ] as const
 
 export const isHomePath = (path: string): boolean => path === HOME_PATH

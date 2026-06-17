@@ -1,5 +1,5 @@
 import type { LocationQueryRaw } from 'vue-router'
-import { HOME_PATH, LOGIN_PATH, SESSION_LOBBY_PATH } from '~/utils/appRoutes'
+import { HOME_PATH, LOGIN_PATH, SESSION_LOBBY_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
 import {
   DEFAULT_LOGIN_REDIRECT,
   isPlayerBlockedRedirectPath,
@@ -23,6 +23,7 @@ export const PLAYER_PROFILE_OPTIONAL_EXACT_PATHS = [
   MAP_LIBRARY_PATH,
   PLAYER_TRAINER_PORTAL_PATH,
   SESSION_LOBBY_PATH,
+  SETTINGS_PATH,
 ] as const
 
 export const PLAYER_PROFILE_OPTIONAL_PATH_PREFIXES = [

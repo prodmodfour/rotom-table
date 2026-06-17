@@ -20,7 +20,6 @@ describe('loginRedirect', () => {
     expect(LOGIN_PATH).toBe('/login')
     expect(PLAYER_BLOCKED_REDIRECT_PREFIXES).toEqual([
       CAMPAIGN_PATH,
-      SETTINGS_PATH,
       ENCOUNTER_GENERATOR_PATH,
       ENCOUNTER_TABLES_PATH,
       PLAYER_PROFILE_MANAGEMENT_PATH,
@@ -38,8 +37,8 @@ describe('loginRedirect', () => {
   it('detects player-blocked paths and nested routes', () => {
     expect(isPlayerBlockedRedirectPath(CAMPAIGN_PATH)).toBe(true)
     expect(isPlayerBlockedRedirectPath(`${CAMPAIGN_PATH}/history`)).toBe(true)
-    expect(isPlayerBlockedRedirectPath(SETTINGS_PATH)).toBe(true)
-    expect(isPlayerBlockedRedirectPath(`${SETTINGS_PATH}/campaign`)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(SETTINGS_PATH)).toBe(false)
+    expect(isPlayerBlockedRedirectPath(`${SETTINGS_PATH}/campaign`)).toBe(false)
     expect(isPlayerBlockedRedirectPath(ENCOUNTER_GENERATOR_PATH)).toBe(true)
     expect(isPlayerBlockedRedirectPath(`${ENCOUNTER_GENERATOR_PATH}/history`)).toBe(true)
     expect(isPlayerBlockedRedirectPath(ENCOUNTER_TABLES_PATH)).toBe(true)
@@ -54,9 +53,9 @@ describe('loginRedirect', () => {
     expect(resolveLoginRedirectTarget(undefined, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
   })
 
-  it('blocks player redirects to GM-only routes while allowing GM redirects', () => {
+  it('blocks player redirects to GM-only routes while allowing shared settings and GM redirects', () => {
     expect(resolveLoginRedirectTarget(CAMPAIGN_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
-    expect(resolveLoginRedirectTarget(SETTINGS_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
+    expect(resolveLoginRedirectTarget(SETTINGS_PATH, 'player')).toBe(SETTINGS_PATH)
     expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(`${ENCOUNTER_TABLES_PATH}/kanto`, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(PLAYER_PROFILE_MANAGEMENT_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
