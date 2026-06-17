@@ -243,6 +243,7 @@ const emit = defineEmits<{
   (event: 'place-hazard', hazard: MapHazardV2): void
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
   (event: 'select-move-target', targetId: string): void
+  (event: 'select-move-area-template', templateId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
@@ -1087,6 +1088,13 @@ const selectMoveTargetBranchOption = (option: MoveAutomationTargetBranchSelectio
   emit('select-move-target-branch', option.branchId)
 }
 
+const moveAreaTemplateShortcutLabel = (index: number): string | null => index >= 0 && index < 9 ? `${index + 1}` : null
+
+const selectMoveAreaTemplateOption = (templateId: string) => {
+  if (props.moveAutomationTargeting?.mode !== 'area-confirmation') return
+  emit('select-move-area-template', templateId)
+}
+
 const worldPointToScreen = (point: THREE.Vector3): { x: number; y: number } | null => {
   if (!camera || !renderer) return null
   const bounds = renderer.domElement.getBoundingClientRect()
@@ -1521,9 +1529,28 @@ const handleMoveBranchSelectionShortcut = (event: KeyboardEvent) => {
   selectMoveTargetBranchOption(option)
 }
 
+const handleMoveAreaTemplateShortcut = (event: KeyboardEvent) => {
+  const targeting = props.moveAutomationTargeting
+  const options = targeting?.mode === 'area-confirmation' ? targeting.areaTemplateOptions ?? [] : []
+  if (options.length <= 1 || event.repeat) return
+  if (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return
+  if (
+    isKeyboardShortcutBlockedTarget(event.target)
+    || isKeyboardShortcutBlockedTarget(document.activeElement)
+  ) return
+
+  if (!/^[1-9]$/.test(event.key)) return
+  const option = options[Number(event.key) - 1]
+  if (!option) return
+
+  event.preventDefault()
+  selectMoveAreaTemplateOption(option.id)
+}
+
 useWindowKeydown(handleEscape)
 useWindowKeydown(handleCameraYawShortcut)
 useWindowKeydown(handleMoveBranchSelectionShortcut)
+useWindowKeydown(handleMoveAreaTemplateShortcut)
 
 watch(activeSendOutRequest, (request) => {
   if (controls) controls.enableZoom = !request && !selectedPokemon.value
@@ -2151,6 +2178,9 @@ watch(
         <template v-if="props.moveAutomationTargeting.mode === 'area-confirmation'">
           <span>
             Confirm {{ props.moveAutomationTargeting.rangeLabel }}:
+            <template v-if="props.moveAutomationTargeting.areaTemplateOptions?.length">
+              choose a template below.
+            </template>
             <template v-if="props.moveAutomationTargeting.canToggleTargets">
               {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} of {{ props.moveAutomationTargeting.candidateIds.length }} selected. Click reticles to include/exclude targets; click the battlefield to use the move.
             </template>
@@ -2173,6 +2203,28 @@ watch(
             No targets in range {{ props.moveAutomationTargeting.rangeLabel }}.
           </span>
         </template>
+      </div>
+      <div
+        v-if="props.moveAutomationTargeting.mode === 'area-confirmation' && props.moveAutomationTargeting.areaTemplateOptions?.length"
+        class="move-targeting-hud__templates"
+        aria-label="Area template"
+      >
+        <button
+          v-for="(option, index) in props.moveAutomationTargeting.areaTemplateOptions"
+          :key="option.id"
+          class="move-targeting-hud__template"
+          :class="{ 'is-active': option.id === props.moveAutomationTargeting.areaTemplateId }"
+          type="button"
+          :title="`Use ${option.label}`"
+          :aria-pressed="option.id === props.moveAutomationTargeting.areaTemplateId"
+          @pointerdown.stop
+          @click.stop="selectMoveAreaTemplateOption(option.id)"
+        >
+          <kbd v-if="moveAreaTemplateShortcutLabel(index)" class="move-targeting-hud__shortcut">
+            {{ moveAreaTemplateShortcutLabel(index) }}
+          </kbd>
+          <span>{{ option.label }}</span>
+        </button>
       </div>
       <div
         v-if="props.moveAutomationTargeting.mode === 'area-confirmation' && props.moveAutomationTargeting.areaDirectionOptions?.length"
@@ -2638,12 +2690,14 @@ watch(
   top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
   left: 50%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.85rem;
-  max-width: min(96vw, 760px);
+  max-width: min(96vw, 860px);
   padding: 0.72rem 0.86rem;
   border: 1px solid color-mix(in srgb, var(--accent) 62%, var(--rule-strong));
-  border-radius: 999px;
+  border-radius: 1.35rem;
   background: color-mix(in srgb, var(--paper) 91%, transparent);
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.35);
   color: var(--ink);
@@ -2665,16 +2719,25 @@ watch(
   font-size: 0.92rem;
 }
 
+.move-targeting-hud__templates,
 .move-targeting-hud__directions {
   display: flex;
   flex: 0 1 auto;
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.25rem;
-  max-width: 18rem;
   pointer-events: auto;
 }
 
+.move-targeting-hud__templates {
+  max-width: 24rem;
+}
+
+.move-targeting-hud__directions {
+  max-width: 18rem;
+}
+
+.move-targeting-hud__template,
 .move-targeting-hud__direction,
 .move-targeting-hud__cancel {
   flex: 0 0 auto;
@@ -2688,16 +2751,43 @@ watch(
   pointer-events: auto;
 }
 
+.move-targeting-hud__template,
 .move-targeting-hud__direction {
-  min-width: 2.3rem;
   padding: 0.28rem 0.42rem;
   font-size: 0.74rem;
+}
+
+.move-targeting-hud__template {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 4.6rem;
+}
+
+.move-targeting-hud__shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.12rem;
+  padding: 0.02rem 0.22rem;
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+  font-size: 0.62rem;
+  line-height: 1;
+  opacity: 0.78;
+}
+
+.move-targeting-hud__direction {
+  min-width: 2.3rem;
 }
 
 .move-targeting-hud__cancel {
   padding: 0.35rem 0.65rem;
 }
 
+.move-targeting-hud__template:hover,
+.move-targeting-hud__template:focus-visible,
+.move-targeting-hud__template.is-active,
 .move-targeting-hud__direction:hover,
 .move-targeting-hud__direction:focus-visible,
 .move-targeting-hud__direction.is-active,
@@ -2707,6 +2797,7 @@ watch(
   color: var(--accent);
 }
 
+.move-targeting-hud__template.is-active,
 .move-targeting-hud__direction.is-active {
   background: color-mix(in srgb, var(--accent) 14%, var(--paper-accent));
 }

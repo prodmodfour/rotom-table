@@ -1042,6 +1042,7 @@ const {
   cancelMoveAutomationTargeting,
   selectMoveAutomationTarget,
   selectMoveAutomationTargetBranch,
+  selectMoveAutomationAreaTemplate,
   selectMoveAutomationAreaDirection,
   dismissSpiteReactionPrompt,
   applySpiteReactionPrompt,
@@ -1549,6 +1550,7 @@ useMapDimensionReconciliation({
         @place-hazard="placeHazardFromScene"
         @remove-hazard="removeHazardFromScene"
         @select-move-target="selectActionAutomationTarget"
+        @select-move-area-template="selectMoveAutomationAreaTemplate"
         @select-move-area-direction="selectMoveAutomationAreaDirection"
         @select-move-target-branch="selectMoveAutomationTargetBranch"
         @cancel-move-targeting="cancelActionAutomationTargeting"

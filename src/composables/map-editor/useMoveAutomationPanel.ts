@@ -21,6 +21,7 @@ import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationD
 import {
   buildMoveAutomationAreaTemplateCells,
   buildMoveAutomationAreaTemplatePlacements,
+  moveAutomationAreaTemplateId,
   tokensInMoveAutomationArea,
   type MoveAutomationAreaTemplatePlacement,
 } from '~/utils/moveAutomationAreaTemplates'
@@ -82,6 +83,7 @@ import type {
   MoveAutomationAreaDirection,
   MoveAutomationAreaDirectionOption,
   MoveAutomationAreaTemplate,
+  MoveAutomationAreaTemplateOption,
   MoveAutomationCombatStageUpdate,
   MoveAutomationConditionUpdate,
   MoveAutomationFieldEffectApply,
@@ -264,6 +266,9 @@ interface ActiveAreaConfirmationRequest {
   excludedTargetIds: string[]
   direction?: MoveAutomationAreaDirection
   directionOptions: MoveAutomationAreaDirectionOption[]
+  areaTemplateId: string
+  areaTemplateOptions: MoveAutomationAreaTemplateOption[]
+  placements: MoveAutomationAreaTemplatePlacement[]
   passDestination?: GridAnchor
 }
 
@@ -492,6 +497,38 @@ export const useMoveAutomationPanel = ({
     templates: readonly MoveAutomationAreaTemplate[] | null | undefined,
   ): MoveAutomationAreaTemplate[] => templates?.map((template) => ({ ...template })) ?? []
 
+  const areaTemplateOptionsForTemplates = (
+    templates: readonly MoveAutomationAreaTemplate[] | null | undefined,
+  ): MoveAutomationAreaTemplateOption[] => {
+    const options: MoveAutomationAreaTemplateOption[] = []
+    const seen = new Set<string>()
+    for (const template of templates ?? []) {
+      const id = moveAutomationAreaTemplateId(template)
+      if (seen.has(id)) continue
+      seen.add(id)
+      options.push({ id, label: template.label })
+    }
+    return options
+  }
+
+  const areaTemplateOptionsForPlacements = (
+    placements: readonly MoveAutomationAreaTemplatePlacement[],
+    fallbackTemplates: readonly MoveAutomationAreaTemplate[] | null | undefined,
+  ): MoveAutomationAreaTemplateOption[] => areaTemplateOptionsForTemplates(
+    placements.length ? placements.map((placement) => placement.template) : fallbackTemplates,
+  )
+
+  const areaTemplateOptionIsVisible = (options: readonly MoveAutomationAreaTemplateOption[]): boolean =>
+    options.length > 1
+
+  const placementTemplateId = (placement: MoveAutomationAreaTemplatePlacement): string =>
+    moveAutomationAreaTemplateId(placement.template)
+
+  const placementsForAreaTemplate = (
+    placements: readonly MoveAutomationAreaTemplatePlacement[],
+    templateId: string,
+  ): MoveAutomationAreaTemplatePlacement[] => placements.filter((placement) => placementTemplateId(placement) === templateId)
+
   const targetBranchSelectionModeForScript = (
     script: MoveAutomationScript,
   ): MoveAutomationTargetBranchSelectionOption['mode'] | null => {
@@ -579,6 +616,8 @@ export const useMoveAutomationPanel = ({
         canToggleTargets: canToggleAreaTargets(request.script),
         areaDirection: request.direction,
         areaDirectionOptions: request.directionOptions,
+        areaTemplateId: request.areaTemplateId,
+        areaTemplateOptions: areaTemplateOptionIsVisible(request.areaTemplateOptions) ? request.areaTemplateOptions : undefined,
       }
     }
 
@@ -659,6 +698,16 @@ export const useMoveAutomationPanel = ({
     placement.direction === tokenAreaDirection(user),
   ) ?? placements[0] ?? null
 
+  const initialAreaPlacement = (
+    placements: readonly MoveAutomationAreaTemplatePlacement[],
+    user: SpawnedPokemon,
+  ): MoveAutomationAreaTemplatePlacement | null => {
+    const firstTemplateId = placements[0] ? placementTemplateId(placements[0]) : null
+    return firstTemplateId
+      ? areaPlacementForTokenFacing(placementsForAreaTemplate(placements, firstTemplateId), user)
+      : null
+  }
+
   const requestFromAreaPlacement = (
     user: SpawnedPokemon,
     script: MoveAutomationScript,
@@ -666,21 +715,28 @@ export const useMoveAutomationPanel = ({
     frequency: string | null,
     placement: MoveAutomationAreaTemplatePlacement,
     placements: readonly MoveAutomationAreaTemplatePlacement[],
-  ): ActiveAreaConfirmationRequest => ({
-    kind: 'area-confirmation',
-    userId: user.id,
-    moveName: script.moveName,
-    script,
-    damageFormula,
-    frequency,
-    label: placement.label,
-    cells: placement.cells,
-    targetIds: placement.targetIds,
-    excludedTargetIds: [],
-    direction: placement.direction,
-    directionOptions: directionOptionsForPlacements(placements),
-    ...(placement.destination ? { passDestination: placement.destination } : {}),
-  })
+  ): ActiveAreaConfirmationRequest => {
+    const areaTemplateId = placementTemplateId(placement)
+    const selectedTemplatePlacements = placementsForAreaTemplate(placements, areaTemplateId)
+    return {
+      kind: 'area-confirmation',
+      userId: user.id,
+      moveName: script.moveName,
+      script,
+      damageFormula,
+      frequency,
+      label: placement.label,
+      cells: placement.cells,
+      targetIds: placement.targetIds,
+      excludedTargetIds: [],
+      direction: placement.direction,
+      directionOptions: directionOptionsForPlacements(selectedTemplatePlacements),
+      areaTemplateId,
+      areaTemplateOptions: areaTemplateOptionsForPlacements(placements, script.areaTemplates),
+      placements: [...placements],
+      ...(placement.destination ? { passDestination: placement.destination } : {}),
+    }
+  }
 
   const makeFallbackAreaPlacement = (
     script: MoveAutomationScript,
@@ -717,6 +773,9 @@ export const useMoveAutomationPanel = ({
       excludedTargetIds: [],
       direction,
       directionOptions: [],
+      areaTemplateId: moveAutomationAreaTemplateId(template),
+      areaTemplateOptions: areaTemplateOptionsForTemplates(script.areaTemplates),
+      placements: [],
     }
   }
 
@@ -989,7 +1048,7 @@ export const useMoveAutomationPanel = ({
       includeEmpty: true,
       ...areaTemplateCellConstraints(),
     })
-    const placement = areaPlacementForTokenFacing(placements, user)
+    const placement = initialAreaPlacement(placements, user)
     return placement
       ? requestFromAreaPlacement(user, script, damageFormula, frequency, placement, placements)
       : makeFallbackAreaPlacement(script, damageFormula, frequency, user)
@@ -1575,6 +1634,87 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const activeAreaRequestWithPlacement = (
+    request: ActiveAreaConfirmationRequest,
+    placement: MoveAutomationAreaTemplatePlacement,
+  ): ActiveAreaConfirmationRequest => {
+    const areaTemplateId = placementTemplateId(placement)
+    return {
+      ...request,
+      label: placement.label,
+      cells: placement.cells,
+      targetIds: placement.targetIds,
+      excludedTargetIds: [],
+      direction: placement.direction,
+      directionOptions: directionOptionsForPlacements(placementsForAreaTemplate(request.placements, areaTemplateId)),
+      areaTemplateId,
+      passDestination: placement.destination,
+    }
+  }
+
+  const fallbackAreaRequestForTemplate = (
+    request: ActiveAreaConfirmationRequest,
+    user: SpawnedPokemon,
+    templateId: string,
+  ): ActiveAreaConfirmationRequest | null => {
+    const template = request.script.areaTemplates?.find((item) => moveAutomationAreaTemplateId(item) === templateId)
+    if (!template || template.kind === 'pass') return null
+    const direction = template.kind === 'cone' || template.kind === 'line' || template.kind === 'close-blast'
+      ? request.direction ?? tokenAreaDirection(user)
+      : undefined
+    const cells = buildMoveAutomationAreaTemplateCells({
+      template,
+      user,
+      direction,
+      ...areaTemplateCellConstraints(),
+    })
+    const targetIds = tokensInMoveAutomationArea({
+      cells,
+      tokens: spawnedPokemon.value,
+      excludeIds: [user.id],
+    }).map((token) => token.id)
+
+    return {
+      ...request,
+      label: template.label,
+      cells,
+      targetIds,
+      excludedTargetIds: [],
+      direction,
+      directionOptions: [],
+      areaTemplateId: templateId,
+      passDestination: undefined,
+    }
+  }
+
+  const areaPlacementForTemplateChoice = (
+    request: ActiveAreaConfirmationRequest,
+    user: SpawnedPokemon,
+    templateId: string,
+  ): MoveAutomationAreaTemplatePlacement | null => {
+    const templatePlacements = placementsForAreaTemplate(request.placements, templateId)
+    if (!templatePlacements.length) return null
+    if (request.direction) {
+      const sameDirection = templatePlacements.find((placement) => placement.direction === request.direction)
+      if (sameDirection) return sameDirection
+    }
+    return areaPlacementForTokenFacing(templatePlacements, user)
+  }
+
+  const selectMoveAutomationAreaTemplate = (templateId: string) => {
+    const request = activeMoveTargeting.value
+    if (request?.kind !== 'area-confirmation' || request.areaTemplateId === templateId) return
+    if (!request.areaTemplateOptions.some((option) => option.id === templateId)) return
+    const user = findSpawnedPokemon(request.userId)
+    if (!user) return
+
+    const placement = areaPlacementForTemplateChoice(request, user, templateId)
+    const nextRequest = placement
+      ? activeAreaRequestWithPlacement(request, placement)
+      : fallbackAreaRequestForTemplate(request, user, templateId)
+    if (nextRequest) activeMoveTargeting.value = nextRequest
+  }
+
   const selectMoveAutomationAreaDirection = (direction: MoveAutomationAreaDirection) => {
     const request = activeMoveTargeting.value
     if (request?.kind !== 'area-confirmation') return
@@ -1600,6 +1740,53 @@ export const useMoveAutomationPanel = ({
     }
   }
 
+  const selectedAreaTemplateForRequest = (
+    request: ActiveAreaConfirmationRequest,
+  ): MoveAutomationAreaTemplate | null => {
+    const placementTemplate = request.placements.find((placement) => placementTemplateId(placement) === request.areaTemplateId)?.template
+    return placementTemplate
+      ?? request.script.areaTemplates?.find((template) => moveAutomationAreaTemplateId(template) === request.areaTemplateId)
+      ?? null
+  }
+
+  const confirmedAreaTemplateKeywordIsAlternative = (
+    keyword: string,
+    request: ActiveAreaConfirmationRequest,
+  ): boolean => {
+    const normalizedKeyword = keyword.toLocaleLowerCase()
+    return request.areaTemplateOptions.some((option) => normalizedKeyword.includes(option.label.toLocaleLowerCase()))
+  }
+
+  const confirmedAreaScriptKeywords = (
+    request: ActiveAreaConfirmationRequest,
+    template: MoveAutomationAreaTemplate,
+  ): string[] => {
+    const selectedLabel = template.label.toLocaleLowerCase()
+    return [
+      template.label,
+      ...request.script.keywords.filter((keyword) => (
+        keyword.toLocaleLowerCase() !== selectedLabel
+        && !confirmedAreaTemplateKeywordIsAlternative(keyword, request)
+      )),
+    ]
+  }
+
+  const scriptForConfirmedAreaRequest = (request: ActiveAreaConfirmationRequest): MoveAutomationScript => {
+    const template = selectedAreaTemplateForRequest(request)
+    if (!template) return request.script
+    if (!areaTemplateOptionIsVisible(request.areaTemplateOptions)) {
+      return { ...request.script, areaTemplates: [{ ...template }] }
+    }
+
+    const keywords = confirmedAreaScriptKeywords(request, template)
+    return {
+      ...request.script,
+      range: keywords.join(', '),
+      keywords,
+      areaTemplates: [{ ...template }],
+    }
+  }
+
   const confirmMoveAutomationArea = async (request: ActiveAreaConfirmationRequest) => {
     if (!canContinueMoveAutomationForUser(request.userId)) return
     const user = findSpawnedPokemon(request.userId)
@@ -1621,8 +1808,9 @@ export const useMoveAutomationPanel = ({
     if (request.direction) faceTokenTowardAreaDirection(user, request.direction)
     else faceTokenTowardNearestTarget(user, targets)
 
+    const confirmedScript = scriptForConfirmedAreaRequest(request)
     const transaction = resolveInstantAreaMoveAutomation({
-      script: request.script,
+      script: confirmedScript,
       user,
       targets,
       damageFormula: request.damageFormula,
@@ -1632,7 +1820,7 @@ export const useMoveAutomationPanel = ({
     const destinationLogLine = passDestinationLogLine(user, request.passDestination)
     if (destinationLogLine) transaction.logLines.push(destinationLogLine)
     planAndEnqueueAreaMoveAnimations({
-      script: request.script,
+      script: confirmedScript,
       user,
       targets,
       selectedTargetIds,
@@ -1642,7 +1830,7 @@ export const useMoveAutomationPanel = ({
       ...(request.passDestination ? { passDestination: request.passDestination } : {}),
       transaction,
     })
-    await applyMoveAutomation(transaction, { updateFacing: !request.direction, script: request.script })
+    await applyMoveAutomation(transaction, { updateFacing: !request.direction, script: confirmedScript })
     moveTokenToPassDestination(request.userId, request.passDestination)
   }
 
@@ -1686,6 +1874,7 @@ export const useMoveAutomationPanel = ({
     cancelMoveAutomationTargeting,
     selectMoveAutomationTarget,
     selectMoveAutomationTargetBranch,
+    selectMoveAutomationAreaTemplate,
     selectMoveAutomationAreaDirection,
     dismissSpiteReactionPrompt,
     applySpiteReactionPrompt,

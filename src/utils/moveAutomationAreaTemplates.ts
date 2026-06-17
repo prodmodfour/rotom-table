@@ -93,6 +93,9 @@ const positiveInt = (raw: string | undefined): number | null => {
   return Number.isInteger(value) && value > 0 ? value : null
 }
 
+export const moveAutomationAreaTemplateId = (template: Pick<MoveAutomationAreaTemplate, 'kind' | 'size' | 'range'>): string =>
+  `${template.kind}:${template.range ?? 'any'}:${template.size}`
+
 const areaTemplateLabel = (kind: MoveAutomationAreaTemplateKind, size: number, range?: number | null): string => {
   switch (kind) {
     case 'burst': return `Burst ${size}`

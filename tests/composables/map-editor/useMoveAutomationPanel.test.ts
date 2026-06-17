@@ -5,6 +5,7 @@ import {
   useMoveAutomationPanel,
 } from '~/composables/map-editor/useMoveAutomationPanel'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
+import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
 import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
@@ -2006,6 +2007,145 @@ describe('useMoveAutomationPanel', () => {
     expect(map.value.metadata?.moveLog).toMatchObject([
       { moveName: 'Growl', scriptKind: 'explicit' },
     ])
+  })
+
+  it('exposes legal area-template alternatives and filters direction buttons to the selected template', () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 8, y: 4, z: 8 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'sludger', position: { x: 3, y: 1, z: 3 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 4, y: 1, z: 3 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'sludger',
+      nickname: 'Sludger',
+      species: 'Grimer',
+      level: 5,
+      movelist: [{ name: 'Sludge Wave' }],
+    } as CharacterSheet
+    const burstId = moveAutomationAreaTemplateId({ kind: 'burst', size: 1 })
+    const closeBlastId = moveAutomationAreaTemplateId({ kind: 'close-blast', size: 2 })
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Sludger', sheetSlug: 'sludger', position: { x: 3, y: 1, z: 3 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 4, y: 1, z: 3 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Sludge Wave' })
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'area-confirmation',
+      moveName: 'Sludge Wave',
+      rangeLabel: 'Burst 1',
+      areaTemplateId: burstId,
+      areaTemplateOptions: [
+        { id: burstId, label: 'Burst 1' },
+        { id: closeBlastId, label: 'Close Blast 2' },
+      ],
+      areaDirectionOptions: [],
+    })
+
+    panel.selectMoveAutomationAreaTemplate(closeBlastId)
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      rangeLabel: 'Close Blast 2 south-east',
+      areaTemplateId: closeBlastId,
+      areaDirection: 'south-east',
+    })
+    expect(panel.moveAutomationTargeting.value?.areaDirectionOptions?.map((option) => option.label)).toEqual([
+      'Close Blast 2 north',
+      'Close Blast 2 north-east',
+      'Close Blast 2 east',
+      'Close Blast 2 south-east',
+      'Close Blast 2 south',
+      'Close Blast 2 south-west',
+      'Close Blast 2 west',
+      'Close Blast 2 north-west',
+      'Close Blast 2 up',
+      'Close Blast 2 down',
+    ])
+
+    panel.selectMoveAutomationAreaDirection('north')
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      rangeLabel: 'Close Blast 2 north',
+      areaTemplateId: closeBlastId,
+      areaDirection: 'north',
+    })
+
+    panel.selectMoveAutomationAreaTemplate(burstId)
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      rangeLabel: 'Burst 1',
+      areaTemplateId: burstId,
+      areaDirectionOptions: [],
+    })
+    expect(panel.moveAutomationTargeting.value?.areaDirection).toBeUndefined()
+  })
+
+  it('plans area VFX from the confirmed area-template choice only', async () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 8, y: 4, z: 8 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'gasser', position: { x: 3, y: 1, z: 3 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 4, y: 1, z: 4 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'gasser',
+      nickname: 'Gasser',
+      species: 'Koffing',
+      level: 5,
+      movelist: [{ name: 'Poison Gas' }],
+    } as CharacterSheet
+    const coneId = moveAutomationAreaTemplateId({ kind: 'cone', size: 2 })
+    const enqueuedEvents: MoveAnimationEvent[][] = []
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', species: 'Gasser', sheetSlug: 'gasser', position: { x: 3, y: 1, z: 3 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 4, y: 1, z: 4 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+      enqueueMoveAnimations: (events) => { enqueuedEvents.push([...events]) },
+      now: () => 15500,
+    })
+
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    try {
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Poison Gas' })
+      await panel.selectMoveAutomationTarget('user-token')
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: 'Poison Gas' })
+      panel.selectMoveAutomationAreaTemplate(coneId)
+      await panel.selectMoveAutomationTarget('user-token')
+    } finally {
+      random.mockRestore()
+    }
+
+    expect(enqueuedEvents).toHaveLength(2)
+    expect(enqueuedEvents[0]?.map((event) => event.kind)).not.toContain(MOVE_VFX_KIND.coneSweep)
+    expect(enqueuedEvents[1]?.map((event) => event.kind)).toContain(MOVE_VFX_KIND.coneSweep)
   })
 
   it('clears area targeting overlays before enqueueing confirmed area VFX', async () => {

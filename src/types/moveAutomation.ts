@@ -60,6 +60,11 @@ export interface MoveAutomationAreaDirectionOption {
   destination?: GridAnchor
 }
 
+export interface MoveAutomationAreaTemplateOption {
+  id: string
+  label: string
+}
+
 export type MoveAutomationHitChanceTone = 'low' | 'medium' | 'high'
 
 export interface MoveAutomationTargetHitChance {
@@ -86,6 +91,10 @@ export interface MoveAutomationTargetingOverlayState {
   canToggleTargets?: boolean
   areaDirection?: MoveAutomationAreaDirection
   areaDirectionOptions?: MoveAutomationAreaDirectionOption[]
+  /** Active area-template choice when a range has legal alternatives, such as Burst 1 or Line 6. */
+  areaTemplateId?: string
+  /** Legal area-template alternatives exposed before direction/target confirmation. */
+  areaTemplateOptions?: MoveAutomationAreaTemplateOption[]
 }
 
 export interface MoveAutomationFeedbackCondition {

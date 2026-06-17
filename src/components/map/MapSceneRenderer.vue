@@ -95,6 +95,7 @@ const emit = defineEmits<{
   (event: 'place-hazard', hazard: MapHazardV2): void
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
   (event: 'select-move-target', targetId: string): void
+  (event: 'select-move-area-template', templateId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
@@ -168,6 +169,7 @@ defineExpose({ focusPokemon })
     @place-hazard="emit('place-hazard', $event)"
     @remove-hazard="emit('remove-hazard', $event)"
     @select-move-target="emit('select-move-target', $event)"
+    @select-move-area-template="emit('select-move-area-template', $event)"
     @select-move-area-direction="emit('select-move-area-direction', $event)"
     @select-move-target-branch="emit('select-move-target-branch', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
