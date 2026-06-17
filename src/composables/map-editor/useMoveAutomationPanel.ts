@@ -616,7 +616,7 @@ export const useMoveAutomationPanel = ({
       range: branch.range,
       targetMode: branch.targetMode,
       targetCount: branch.targetCount,
-      mode: mode ?? (branch.targetMode === 'one-target' ? 'target' : branch.targetCount != null && branch.targetCount > 0 ? 'target-count' : 'area-confirmation'),
+      mode: mode ?? (branch.targetMode === 'one-target' ? 'target' : branch.targetCount != null && branch.targetCount > 1 ? 'target-count' : 'area-confirmation'),
       areaTemplates: cloneMoveAutomationAreaTemplates(script?.areaTemplates ?? branch.areaTemplates),
       disabled: Boolean(disabledReason || !mode),
       disabledReason: disabledReason ?? (!mode ? 'Unsupported target branch.' : null),
@@ -1210,7 +1210,7 @@ export const useMoveAutomationPanel = ({
       : 0
     const rangeMeters = parseExplicitMultiTargetMoveRangeMeters(script.range)
     if (
-      maxTargetCount <= 0
+      maxTargetCount <= 1
       || rangeMeters == null
       || (script.damaging && !damageFormula && !moveAutomationCanResolveDamageAtRuntime(script))
     ) {

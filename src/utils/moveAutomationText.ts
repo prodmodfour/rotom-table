@@ -6,12 +6,14 @@ export const textIncludes = (haystack: string, needle: string | RegExp): boolean
 export const splitMoveRangeKeywords = (range: string): string[] =>
   range
     .split(/[,;]/g)
-    .map((part) => normalizeMoveAutomationWhitespace(part))
+    .map((part) => normalizeMoveAutomationWhitespace(part).replace(/^or\s+/i, ''))
     .filter(Boolean)
 
 export const parseMoveAutomationExplicitTargetCount = (text: string): number | null => {
-  const match = text.match(/\b([1-9]\d*)\s+Targets?\b/i)
-  return match ? Number(match[1]) : null
+  const counts = Array.from(text.matchAll(/\b([1-9]\d*)[\s-]+Targets?\b/gi))
+    .map((match) => Number(match[1]))
+    .filter((count) => Number.isInteger(count) && count > 0)
+  return counts.length ? Math.max(...counts) : null
 }
 
 export const hasMoveAutomationExplicitMultiTargetCount = (text: string): boolean => {

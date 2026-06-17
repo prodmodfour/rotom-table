@@ -8,6 +8,7 @@ import {
 describe('move automation range helpers', () => {
   it('parses numeric, melee, and Focus Rank single-target ranges', () => {
     expect(parseSingleTargetMoveRangeMeters('6, 1 Target')).toBe(6)
+    expect(parseSingleTargetMoveRangeMeters('Range 6, 1-Target')).toBe(6)
     expect(parseSingleTargetMoveRangeMeters('Melee, 1 Target')).toBe(1)
     expect(parseSingleTargetMoveRangeMeters('Focus Rank, 1 Target', { focusSkillRankValue: 4 })).toBe(4)
     expect(parseSingleTargetMoveRangeMeters('Focus Rank, 1 Target')).toBeNull()
@@ -15,9 +16,12 @@ describe('move automation range helpers', () => {
 
   it('parses explicit multi-target numeric and melee ranges', () => {
     expect(parseExplicitMultiTargetMoveRangeMeters('6, 2 Targets')).toBe(6)
+    expect(parseExplicitMultiTargetMoveRangeMeters('Range 6, 2-Targets')).toBe(6)
     expect(parseExplicitMultiTargetMoveRangeMeters('Melee, 3 Targets')).toBe(1)
     expect(parseExplicitMultiTargetMoveRangeMeters('3, 5 Targets')).toBe(3)
     expect(parseExplicitMultiTargetMoveRangeMeters('9, 10 Targets')).toBe(9)
+    expect(parseExplicitMultiTargetMoveRangeMeters('6, 1 Target, Double Strike; or 6, 2 Targets')).toBe(6)
+    expect(parseExplicitMultiTargetMoveRangeMeters('6, 1 Target; or 10, 2 Targets')).toBe(10)
     expect(parseExplicitMultiTargetMoveRangeMeters('Melee, 1 Target')).toBeNull()
     expect(parseExplicitMultiTargetMoveRangeMeters('Burst 1')).toBeNull()
   })

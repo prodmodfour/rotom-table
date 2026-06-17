@@ -74,6 +74,7 @@ describe('move automation area templates', () => {
 
   it('does not parse explicit target-count ranges as AoE templates', () => {
     expect(parseMoveAutomationAreaTemplates('6, 2 Targets')).toEqual([])
+    expect(parseMoveAutomationAreaTemplates('Range 6, 2-Targets')).toEqual([])
     expect(parseMoveAutomationAreaTemplates('Melee, 3 Targets')).toEqual([])
     expect(parseMoveAutomationAreaTemplates('3, 5 Targets')).toEqual([])
   })

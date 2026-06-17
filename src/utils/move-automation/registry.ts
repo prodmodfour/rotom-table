@@ -97,7 +97,7 @@ export const isSeamlessTargetCountMoveScript = (
     && script.targetMode === 'multi-target'
     && typeof script.targetCount === 'number'
     && Number.isInteger(script.targetCount)
-    && script.targetCount > 0
+    && script.targetCount > 1
     && !script.areaTemplates?.length,
 )
 

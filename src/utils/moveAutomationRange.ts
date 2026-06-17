@@ -20,8 +20,9 @@ const finitePositiveRankValue = (value: number | null | undefined): number | nul
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : null
 
 const numericRangeKeyword = (keywords: readonly string[]): number | null => {
-  const numericKeyword = keywords.find((keyword) => /^\d+$/.test(keyword))
-  return numericKeyword ? Number(numericKeyword) : null
+  const numericKeyword = keywords.find((keyword) => /^(?:Range\s+)?\d+$/i.test(keyword))
+  const match = numericKeyword?.match(/\d+/)
+  return match ? Number(match[0]) : null
 }
 
 const positiveNumericRangeKeyword = (keywords: readonly string[]): number | null => {
@@ -43,14 +44,24 @@ export const parseSingleTargetMoveRangeMeters = (
   return keywordsIncludeMeleeRange(keywords) ? MELEE_MOVE_RANGE_METERS : null
 }
 
+const rangeMetersForKeywords = (keywords: readonly string[]): number | null => {
+  const numericRange = positiveNumericRangeKeyword(keywords)
+  if (numericRange != null) return numericRange
+  return keywordsIncludeMeleeRange(keywords) ? MELEE_MOVE_RANGE_METERS : null
+}
+
+const explicitMultiTargetRangeClauses = (range: string): string[] => range
+  .split(/\s*;\s*(?:or\s+)?|\s+\bor\b\s+/i)
+  .map((clause) => clause.trim())
+  .filter(Boolean)
+
 export const parseExplicitMultiTargetMoveRangeMeters = (range: string | null | undefined): number | null => {
   const value = range ?? ''
   if (!hasMoveAutomationExplicitMultiTargetCount(value)) return null
 
-  const keywords = splitMoveRangeKeywords(value)
-  const numericRange = positiveNumericRangeKeyword(keywords)
-  if (numericRange != null) return numericRange
-  return keywordsIncludeMeleeRange(keywords) ? MELEE_MOVE_RANGE_METERS : null
+  const matchingClause = explicitMultiTargetRangeClauses(value).find(hasMoveAutomationExplicitMultiTargetCount)
+  return rangeMetersForKeywords(splitMoveRangeKeywords(matchingClause ?? ''))
+    ?? rangeMetersForKeywords(splitMoveRangeKeywords(value))
 }
 
 export const moveAutomationTargetsInRange = (options: {

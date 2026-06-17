@@ -24,7 +24,7 @@ export const determineMoveAutomationTargetMode = (move: MoveAutomationTargetingM
   if (has(range, /\bField\b/i) || has(range, /\bWeather\b/i)) return 'field'
   if (has(range, /\bSelf\b/i) && !has(range, /\bTarget\b/i) && !has(range, /Burst|Cone|Line|Blast/i)) return 'self'
   if (has(range, /Burst|Cone|Line|Blast|\bPass\b|all adjacent|all legal targets|all targets/i) || hasMoveAutomationExplicitMultiTargetCount(range)) return 'multi-target'
-  if (has(range, /\b1\s*Target\b|\bSingle Target\b|\bTarget\b|\bMelee\b|^\s*\d+\b/i)) return 'one-target'
+  if (has(range, /\b1[\s-]*Target\b|\bSingle Target\b|\bTarget\b|\bMelee\b|^\s*\d+\b/i)) return 'one-target'
   if (damaging) return 'one-target'
   if (has(combined, /target/i)) return 'one-target'
   return 'none'
@@ -45,7 +45,7 @@ export const determineMoveAutomationTargetCount = (
 
 export const buildMoveAutomationRangeKeywords = (range: string): string[] =>
   splitMoveRangeKeywords(range).filter((keyword) =>
-    !/^\d+$/.test(keyword)
+    !/^(?:Range\s+)?\d+$/i.test(keyword)
     && parseMoveAutomationExplicitTargetCount(keyword) == null
     && !/Single Target/i.test(keyword),
   )
