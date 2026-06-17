@@ -7,14 +7,14 @@ This document is a factual inventory for human review. It does not add scripts, 
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 254 |
-| Missing scripts | 522 |
+| Explicit scripts | 255 |
+| Missing scripts | 521 |
 
 ## 2. Phase 2 scope reminder
 
 - Phase 2 covers area and multi-target moves.
 - The scope includes plain area damage, area status or stage effects, and supported multi-template area alternatives only when all legal branches are represented.
-- Mixed single-target-or-area moves are not automation candidates until mixed-mode targeting exists.
+- Mixed single-target-or-area moves are automation candidates only when all legal branches are represented by target-branch selection.
 - The worklist is advisory only.
 - A human reviewer chooses exact implementation batches.
 
@@ -27,6 +27,7 @@ The current reviewed area-related families in `src/utils/move-automation/scripts
 | reviewed target-stage area scripts | `REVIEWED_TARGET_STAGE_AREA_SCRIPTS` | Acid; Apple Acid; Breaking Swipe; Bubble; Bulldoze; Cotton Spore; Electroweb; Feather Dance; Flash; Growl; Icy Wind; Leer; Metal Sound; Mirror Shot; Noble Roar; Screech; Seed Flare; Snarl; Struggle Bug; Tail Whip; Tearful Look |
 | reviewed area confirmation scripts | `REVIEWED_AREA_CONFIRMATION_SCRIPTS` | Air Cutter; Boomburst; Brutal Swing; Dazzling Gleam; Disarming Voice; Discharge; Egg Bomb; Heat Wave; Land’s Wrath; Lava Plume; Origin Pulse; Overdrive; Petal Blizzard; Powder Snow; Precipice Blades; Razor Leaf; Searing Shot; Steam Eruption; Strange Steam; Swift |
 | reviewed area condition scripts | `REVIEWED_AREA_CONDITION_SCRIPTS` | Bleakwind Storm; Poison Gas; Raging Fury; Rock Slide; Sandstorm Sear; Sludge Wave; Sweet Scent; Teeter Dance; Wildbolt Storm |
+| reviewed mixed target area scripts | `REVIEWED_MIXED_TARGET_AREA_SCRIPTS` | Dragon Hammer |
 | reviewed Smog script | `REVIEWED_SMOG_SCRIPTS` | Smog |
 | reviewed area coat scripts | `REVIEWED_AREA_COAT_SCRIPTS` | Mud Sport |
 | reviewed ally area stage scripts | `REVIEWED_ALLY_AREA_STAGE_SCRIPTS` | Aromatic Mist; Coaching; Howl |
@@ -68,7 +69,6 @@ Range Keywords are derived by the same range-splitting convention used for canon
 | Draco Meteor | Dragon | Scene | 4 | 13 | Special | 8, Ranged Blast 3, Smite | Lower the user’s Special Attack 2 Combat Stages after damage. | — | Ranged Blast 3; Smite | Ranged 8 Blast 3 | damaging; stage-text; requires-human-review |
 | Dragon Darts | Dragon | EOT | 2 | 5 | Physical | 6, 1 Target, Double Strike; or 6, 2 Targets | — | — | Double Strike; or 6; 2 Targets | — | damaging; plain-effect-none; multi-strike-text; requires-human-review |
 | Dragon Energy | Dragon | Daily x2 | 2 | 15 | Special | Cone 3 or Line 8 | For each 10% of HP the user is missing, Dragon Energy’s Damage Base is reduced by 1. | — | Cone 3 or Line 8 | Cone 3; Line 8 | damaging; dynamic-damage-text; requires-human-review |
-| Dragon Hammer | Dragon | EOT | 2 | 9 | Physical | Melee, 1 Target or Line 3 | — | — | Melee | Line 3 | damaging; plain-effect-none; mixed-single-target-area-range; requires-human-review |
 | Earthquake | Ground | Scene | 2 | 10 | Physical | Burst 3, Groundsource | Earthquake can hit targets that are underground, including those using the Move Dig. | Grants Groundshaper | Burst 3; Groundsource | Burst 3 | damaging; groundsource; movement-positioning-text; requires-human-review |
 | Electric Terrain | Electric | Daily x2 | — | — | Status | Field | The field becomes Electrified for 5 rounds. While Electrified, Pokémon and Trainers touching the ground are immune to Sleep, and Electric-Type attacks used by Pokémon and Trainers touching the ground gain a +10 Bonus to Damage Rolls. | — | Field | — | status; condition-text; weather-terrain-room-text; field-state-text; delayed-trigger-text; dynamic-damage-text; requires-human-review |
 | Eruption | Fire | Daily | 4 | 15 | Special | Burst 1* | For each 10% of Hit Points the user is missing, Eruption’s Damage Base is reduced by 1. Eruption creates a 1 meter burst, but also affects an area 10 meters tall straight up. | — | Burst 1* | Burst 1 | damaging; dynamic-damage-text; requires-human-review |
@@ -190,7 +190,6 @@ Rows in this section are missing moves from the raw inventory whose canonical Ra
 | Name | Type | Frequency | AC | DB | Class | Range | Effect | Special | Keywords | Derived area templates | Factual flags |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Clanging Scales | Dragon | Scene x2 | 2 | 11 | Special | 6, 1 Target or Burst 1 | The user adds half their Defense Stat to Clanging Scale's Damage Roll. After the Move is resolved, the user's Defense is lowered by 1 CS. | — | — | Burst 1 | damaging; stage-text; mixed-single-target-area-range; dynamic-damage-text; requires-human-review |
-| Dragon Hammer | Dragon | EOT | 2 | 9 | Physical | Melee, 1 Target or Line 3 | — | — | Melee | Line 3 | damaging; plain-effect-none; mixed-single-target-area-range; requires-human-review |
 | Rollout | Rock | At-Will | 4 | 3 | Physical | Melee, 1 Target, Pass | The user continues to use Rollout on each of its turns until they miss any target with Rollout, or are not able to hit any target with Rollout during their turn.  Each successive use of Rollout increases Rollout’s Damage Base by +4 to a maximum of DB 15. | — | Melee; Pass | Pass 4 | damaging; mixed-single-target-area-range; movement-positioning-text; delayed-trigger-text; dynamic-damage-text; requires-human-review |
 | Solar Beam | Grass | Scene x2 | 2 | 12 | Special | Line 6, 1 Target, Set-Up | Set-Up Effect: If the weather is not Sunny, the user’s turn ends. If the weather is Sunny, immediately proceed to the Resolution Effect instead and this Move loses the Set-Up keyword. Resolution Effect: The user attacks with Solar Beam. If the weather is Rainy, Sandstorming, or Hailing, Solar Beam’s Damage Base is lowered to 6 (2d6+8 / 15). | — | Line 6; Set-Up | Line 6 | damaging; mixed-single-target-area-range; weather-terrain-room-text; movement-positioning-text; delayed-trigger-text; dynamic-damage-text; requires-human-review |
 | Steel Wing | Steel | At-Will | 3 | 7 | Physical | Melee, 1 Target, Pass, Spirit Surge | Raise the user’s Defense 1 Combat Stage on 15+. | — | Melee; Pass; Spirit Surge | Pass 4 | damaging; stage-text; mixed-single-target-area-range; movement-positioning-text; requires-human-review |

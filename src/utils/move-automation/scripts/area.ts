@@ -4,6 +4,7 @@ import {
   defineExplicitMoveScript,
   reviewedAreaConditionScript,
   reviewedAreaConfirmationScript,
+  reviewedMoveScriptFromCanonical,
   reviewedPassAttackScript,
   reviewedPassConditionScript,
   reviewedTargetStageAreaScript,
@@ -126,6 +127,32 @@ const reviewedRagingFuryScript = (version = 1): MoveAutomationScript => reviewed
   hazardSuggestions: [],
 })
 
+const reviewedDragonHammerScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Dragon Hammer', version, {
+  targetMode: 'multi-target',
+  targetCount: null,
+  areaTemplates: [{ kind: 'line', size: 3, label: 'Line 3' }],
+  targetBranches: [
+    {
+      id: 'melee-1-target',
+      label: 'Melee — 1 Target',
+      targetMode: 'one-target',
+      targetCount: 1,
+      range: 'Melee, 1 Target',
+    },
+    {
+      id: 'line-3',
+      label: 'Line 3',
+      targetMode: 'multi-target',
+      targetCount: null,
+      range: 'Line 3',
+      areaTemplates: [{ kind: 'line', size: 3, label: 'Line 3' }],
+    },
+  ],
+  automationNotes: [
+    'Choose either the melee single-target branch or the Line 3 branch before resolving Dragon Hammer.',
+  ],
+})
+
 export const REVIEWED_TARGET_STAGE_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Acid', reviewedTargetStagesAreaScript('Acid', [{ key: 'sdef', delta: -1, label: 'Acid lowers Special Defense on 18+: -1 Special Defense CS', threshold: '18+' }])],
   ['Apple Acid', reviewedTargetStagesAreaScript('Apple Acid', [{ key: 'sdef', delta: -1, label: 'Apple Acid lowers Special Defense: -1 Special Defense CS' }])],
@@ -182,6 +209,10 @@ export const REVIEWED_AREA_CONFIRMATION_SCRIPT_NAMES = [
 export const REVIEWED_AREA_CONFIRMATION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map(
   REVIEWED_AREA_CONFIRMATION_SCRIPT_NAMES.map((name) => [name, reviewedAreaConfirmationScript(name)]),
 )
+
+export const REVIEWED_MIXED_TARGET_AREA_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
+  ['Dragon Hammer', reviewedDragonHammerScript()],
+])
 
 export const REVIEWED_AREA_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Bleakwind Storm', reviewedAreaConditionScript('Bleakwind Storm', [

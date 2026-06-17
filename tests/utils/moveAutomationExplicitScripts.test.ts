@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(254)
-    expect(moveAutomationCoverage.missing).toHaveLength(522)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(255)
+    expect(moveAutomationCoverage.missing).toHaveLength(521)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -22,7 +22,7 @@ describe('explicit move automation scripts', () => {
   })
 
   it('keeps known unsupported complex moves unautomated', () => {
-    for (const moveName of ['Dragon Hammer', 'Frost Breath', 'Storm Throw', 'Spacial Rend', 'Aura Wheel', 'Hammer Arm', 'Ice Hammer', 'Topsy-Turvy']) {
+    for (const moveName of ['Frost Breath', 'Storm Throw', 'Spacial Rend', 'Aura Wheel', 'Hammer Arm', 'Ice Hammer', 'Topsy-Turvy']) {
       expect(explicitScriptForMove(moveName)).toBeNull()
     }
   })
@@ -364,9 +364,42 @@ describe('explicit move automation scripts', () => {
     expect(isSeamlessAreaConfirmationScript(sweetScent)).toBe(true)
   })
 
-  it('keeps mixed single-target-or-area moves unautomated until mixed-mode targeting exists', () => {
-    expect(explicitScriptForMove('Dragon Hammer')).toBeNull()
-    expect(moveAutomationCoverage.missing).toContain('Dragon Hammer')
+  it('implements Dragon Hammer as a reviewed mixed single-target-or-area attack', () => {
+    const script = explicitScriptForMove('Dragon Hammer')
+
+    expect(script).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Dragon Hammer',
+      targetMode: 'multi-target',
+      targetCount: null,
+      damaging: true,
+      requiresAccuracy: true,
+      damageBase: 9,
+      damageClass: 'Physical',
+      type: 'Dragon',
+      ac: 2,
+      range: 'Melee, 1 Target or Line 3',
+    })
+    expect(script?.areaTemplates).toEqual([{ kind: 'line', size: 3, label: 'Line 3' }])
+    expect(script?.targetBranches).toEqual([
+      {
+        id: 'melee-1-target',
+        label: 'Melee — 1 Target',
+        targetMode: 'one-target',
+        targetCount: 1,
+        range: 'Melee, 1 Target',
+      },
+      {
+        id: 'line-3',
+        label: 'Line 3',
+        targetMode: 'multi-target',
+        targetCount: null,
+        range: 'Line 3',
+        areaTemplates: [{ kind: 'line', size: 3, label: 'Line 3' }],
+      },
+    ])
+    expect(isSeamlessAreaConfirmationScript(script)).toBe(true)
+    expect(moveAutomationCoverage.missing).not.toContain('Dragon Hammer')
   })
 
   it('implements reviewed plain area damaging moves as AoE confirmations', () => {

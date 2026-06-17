@@ -128,7 +128,7 @@ describe('move automation move helpers', () => {
 
   it('builds reviewed plain area damage move entries from explicit scripts', () => {
     const requestedNames = ['Dragon Hammer', 'Egg Bomb', 'Land’s Wrath']
-    const reviewedNames = ['Egg Bomb', 'Land’s Wrath']
+    const reviewedNames = ['Dragon Hammer', 'Egg Bomb', 'Land’s Wrath']
     const entries = buildMoveAutomationMoveEntries(requestedNames.map((name) => ({ name })))
     const entriesByName = new Map(entries.map((entry) => [entry.move.name, entry]))
 
@@ -142,7 +142,10 @@ describe('move automation move helpers', () => {
       })
       expect(entriesByName.get(name)?.script.areaTemplates?.length).toBeGreaterThan(0)
     }
-    expect(entriesByName.has('Dragon Hammer')).toBe(false)
+    expect(entriesByName.get('Dragon Hammer')?.script.targetBranches).toMatchObject([
+      { id: 'melee-1-target', targetMode: 'one-target', targetCount: 1, range: 'Melee, 1 Target' },
+      { id: 'line-3', targetMode: 'multi-target', targetCount: null, range: 'Line 3' },
+    ])
   })
 
   it('uses Pokémon Loyalty for Return and Frustration automation scripts', () => {

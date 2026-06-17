@@ -9,8 +9,8 @@ As of this audit:
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 254 |
-| Missing scripts | 522 |
+| Explicit scripts | 255 |
+| Missing scripts | 521 |
 
 `npm run check:move-automation` is expected to fail while any canonical move is missing an explicit reviewed script. Canonical move data, derived helpers, or report buckets must not count as automation coverage by themselves.
 
@@ -20,7 +20,7 @@ As of this audit:
 | --- | --- | --- | --- |
 | 0 — foundation and guardrails | explicit registry; coverage check; report/worklist; module split / anti-god-file structure | Done | `src/utils/move-automation/registry.ts` is the explicit allow-list, `scripts/check_move_automation_coverage.py` enforces coverage, report/worklist tooling exists, and reviewed families live under `src/utils/move-automation/scripts/`. |
 | 1 — high-volume low-risk target effects | plain single-target damaging moves; single-target status-only moves; single-target target-stage moves; simple damaging moves with target secondary condition; simple damaging moves with target secondary stage change | In progress | Many reviewed single-target scripts exist. Powder-keyword Grass immunity and Groundsource grounded suppression markers are now supported. Drown Out reaction/cancel support is still not modeled. Human review must choose exact move lists. |
-| 2 — area and multi-target moves | plain area damage; area status/stage effects; supported multi-template area alternatives only when all legal branches are represented; no mixed single-target-or-area moves until mixed-mode targeting exists | In progress / blocked by missing mixed-mode support | Reviewed area confirmation/stage/condition/pass scripts exist. Mixed single-target-or-area moves remain blocked until both branches can be represented. |
+| 2 — area and multi-target moves | plain area damage; area status/stage effects; supported multi-template or mixed single-target-or-area alternatives only when all legal branches are represented | In progress | Reviewed area confirmation/stage/condition/pass scripts exist. Target-branch selection now represents reviewed mixed single-target-or-area moves such as Dragon Hammer. |
 | 3 — HP manipulation and damage variants | healing; drain; recoil; HP costs; fixed/direct HP loss; dynamic Damage Base; multi-strike variants | In progress / partially blocked by engine support | Some explicit scripts cover examples such as healing, direct HP loss, and multi-strike variants. Full HP-cost, recoil, dynamic-DB, and contextual damage support remains incomplete. |
 | 4 — field and map state | weather; terrain; rooms; hazards; barriers/smoke/field geometry | Not started / blocked by missing persistent field-map support | Do not automate weather, terrain, room, hazard, barrier, or smoke moves as note-only scripts. |
 | 5 — persistent token-side markers and delayed effects | coats; blessings; vortexes; seeded states; delayed triggers; beginning/end-of-turn processing | In progress / blocked by missing turn-processing support | Some token markers exist, but delayed triggers and beginning/end-of-turn processing are not complete enough for note-only coverage. |

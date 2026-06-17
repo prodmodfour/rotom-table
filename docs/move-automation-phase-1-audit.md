@@ -7,8 +7,8 @@ Current counts for this audit:
 | Count | Value |
 | --- | ---: |
 | Canonical valid moves | 776 |
-| Explicit scripts | 254 |
-| Missing scripts | 522 |
+| Explicit scripts | 255 |
+| Missing scripts | 521 |
 
 The worklist report remains advisory only. A human reviewer must choose the exact move list before any implementation batch, and every automated move must be explicitly reviewed by name in a reviewed family module merged into src/utils/move-automation/registry.ts.
 
@@ -21,7 +21,7 @@ The worklist report remains advisory only. A human reviewer must choose the exac
 | single-target-target-stage-candidates | 0 |
 | single-target-secondary-condition-candidates | 0 |
 | single-target-secondary-stage-candidates | 0 |
-| phase-1-looking-but-defer | 95 |
+| phase-1-looking-but-defer | 94 |
 
 ## A. `plain-single-target-damage-candidates`
 
@@ -74,7 +74,6 @@ No missing move currently matches this strict Phase 1 group.
 | Doom Desire | Steel | Scene x2 | — | 14 | Special | 10, 1 Target | Doom Desire does nothing on the turn it is used. At the end of the user’s next turn, Doom Desire hits, even if the user is no longer on the field. Doom Desire cannot miss. | — | defer: delayed next-turn hit belongs to Phase 5. |
 | Double Hit | Normal | EOT | 3 | 4 | Physical | Melee, 1 Target, Double Strike | None | — | defer: Double Strike is a multi-strike damage variant for Phase 3. |
 | Double Iron Bash | Steel | Scene x2 | 2 | 6 | Physical | Melee, 1 Target, Double Strike | Double Iron Bash Flinches the targets on 15+. This move is affected by Iron Fist. | — | defer: Double Strike plus Flinch threshold is a multi-strike branch. |
-| Dragon Hammer | Dragon | EOT | 2 | 9 | Physical | Melee, 1 Target or Line 3 | — | — | defer: range is mixed single-target or Line 3, and mixed-mode targeting is not available. |
 | Dynamic Punch | Fighting | At-Will | 9 | 10 | Physical | Melee, 1 Target | Dynamic Punch Confuses the target. Dynamic Punch ignores the target’s Evasion if they are Flanked. | — | defer: Confusion is simple-looking, but the Flanked Evasion-ignore branch must be represented. |
 | Electro Ball | Electric | Scene x2 | 2 | 6 | Special | 10, 1 Target | The user adds their Speed Stat, including Combat Stages, in addition to their Special Attack when determining the damage dealt by Electro Ball. The Defender in turn subtracts both their Special Defense and Speed Stats from the damage dealt before applying Type Effectiveness. | — | defer: damage uses Speed as an additional offensive and defensive stat. |
 | Façade | Normal | EOT | 2 | 7 | Physical | Melee, 1 Target | If the user is afflicted with a Persistent Status Affliction, Façade’s Damage Base is doubled to DB 14 (4d10+15 / 40). | — | defer: Damage Base depends on the user’s Persistent Status Affliction. |
