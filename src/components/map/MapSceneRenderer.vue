@@ -29,6 +29,7 @@ import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
 import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { TokenPokeballOption } from '~/utils/pokeballCapture'
+import type { MoveAutomationTargetBranchSelectionState } from '~/composables/map-editor/useMoveAutomationPanel'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
@@ -65,6 +66,7 @@ defineProps<{
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
+  moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
@@ -94,6 +96,7 @@ const emit = defineEmits<{
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
   (event: 'select-move-target', targetId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
+  (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
@@ -139,6 +142,7 @@ defineExpose({ focusPokemon })
     :token-send-out-options-by-id="tokenSendOutOptionsById"
     :token-pokeball-options-by-id="tokenPokeballOptionsById"
     :move-automation-targeting="moveAutomationTargeting"
+    :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
     :move-automation-feedback="moveAutomationFeedback"
     :move-animations="moveAnimations ?? []"
     :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
@@ -165,6 +169,7 @@ defineExpose({ focusPokemon })
     @remove-hazard="emit('remove-hazard', $event)"
     @select-move-target="emit('select-move-target', $event)"
     @select-move-area-direction="emit('select-move-area-direction', $event)"
+    @select-move-target-branch="emit('select-move-target-branch', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
     @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
     @move-vfx-settled="emit('move-vfx-settled', $event)"

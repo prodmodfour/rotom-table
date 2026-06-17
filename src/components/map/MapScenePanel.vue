@@ -41,6 +41,7 @@ import type { TokenOrderMenuOption } from '~/utils/mapTokenOrders'
 import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { TokenPokeballOption } from '~/utils/pokeballCapture'
 import type { MapSaveStatus } from '~/composables/useEditableMap'
+import type { MoveAutomationTargetBranchSelectionState } from '~/composables/map-editor/useMoveAutomationPanel'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 import type { LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import { buildCombatLogMessages } from '~/utils/combatLog'
@@ -81,6 +82,7 @@ const props = defineProps<{
   hazardKind: MapHazardKind
   canDeleteTokens: boolean
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
+  moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
@@ -131,6 +133,7 @@ const emit = defineEmits<{
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
   (event: 'select-move-target', targetId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
+  (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
   (event: 'preview-move-vfx', kind: MoveVfxKind): void
   (event: 'preview-all-move-vfx'): void
@@ -223,6 +226,7 @@ defineExpose({ focusPokemon })
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         :token-pokeball-options-by-id="tokenPokeballOptionsById"
         :move-automation-targeting="moveAutomationTargeting"
+        :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
         :move-automation-feedback="moveAutomationFeedback"
         :move-animations="moveAnimations ?? []"
         :move-animations-reduced-motion="moveAnimationsReducedMotion === true"
@@ -249,6 +253,7 @@ defineExpose({ focusPokemon })
         @remove-hazard="emit('remove-hazard', $event)"
         @select-move-target="emit('select-move-target', $event)"
         @select-move-area-direction="emit('select-move-area-direction', $event)"
+        @select-move-target-branch="emit('select-move-target-branch', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
         @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
         @move-vfx-settled="emit('move-vfx-settled', $event)"

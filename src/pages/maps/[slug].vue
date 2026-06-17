@@ -1028,6 +1028,7 @@ const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {
 
 const {
   moveAutomationTargeting,
+  moveAutomationTargetBranchSelection,
   moveAutomationFeedback,
   moveUsageError,
   spiteReactionPrompts,
@@ -1040,6 +1041,7 @@ const {
   useMoveAgainstTarget,
   cancelMoveAutomationTargeting,
   selectMoveAutomationTarget,
+  selectMoveAutomationTargetBranch,
   selectMoveAutomationAreaDirection,
   dismissSpiteReactionPrompt,
   applySpiteReactionPrompt,
@@ -1358,7 +1360,7 @@ const sceneActionError = computed(() => (
 ))
 
 const cancelActionAutomationTargeting = () => {
-  if (moveAutomationTargeting.value) {
+  if (moveAutomationTargeting.value || moveAutomationTargetBranchSelection.value) {
     cancelMoveAutomationTargeting()
     return
   }
@@ -1503,6 +1505,7 @@ useMapDimensionReconciliation({
         :live-play-state="livePlayConnectionState"
         :live-play-status-message="livePlayStatusMessage"
         :move-automation-targeting="actionAutomationTargeting"
+        :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
         :move-automation-feedback="actionAutomationFeedback"
         :move-animations="visibleMoveAnimations"
         :move-animations-reduced-motion="moveAnimationsReducedMotion"
@@ -1547,6 +1550,7 @@ useMapDimensionReconciliation({
         @remove-hazard="removeHazardFromScene"
         @select-move-target="selectActionAutomationTarget"
         @select-move-area-direction="selectMoveAutomationAreaDirection"
+        @select-move-target-branch="selectMoveAutomationTargetBranch"
         @cancel-move-targeting="cancelActionAutomationTargeting"
         @preview-move-vfx="previewMoveVfxDebugKind"
         @preview-all-move-vfx="previewAllMoveVfxDebug"

@@ -36,6 +36,10 @@ import type {
 import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { BuildTool } from '#shared/mapEditor'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
+import type {
+  MoveAutomationTargetBranchSelectionOption,
+  MoveAutomationTargetBranchSelectionState,
+} from '~/composables/map-editor/useMoveAutomationPanel'
 import type { TokenAbilityMenuOption } from '~/utils/mapTokenAbilities'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 import type { TokenManeuverMenuOption } from '~/utils/mapTokenManeuvers'
@@ -210,6 +214,7 @@ const props = defineProps<{
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
+  moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
   moveAnimations?: readonly MoveAnimationEvent[]
   moveAnimationsReducedMotion?: boolean
@@ -239,6 +244,7 @@ const emit = defineEmits<{
   (event: 'remove-hazard', cell: { x: number; y: number; z: number; kind?: MapHazardKind }): void
   (event: 'select-move-target', targetId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
+  (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
@@ -274,7 +280,7 @@ const attackOfOpportunityButtons = ref<AttackOfOpportunityButton[]>([])
 const openAttackOfOpportunityMenuId = ref<string | null>(null)
 
 const emitPokemonSelection = (id: string | null) => {
-  if (props.moveAutomationTargeting) return
+  if (props.moveAutomationTargeting || props.moveAutomationTargetBranchSelection) return
   emit('select-pokemon', id)
 }
 
@@ -396,11 +402,16 @@ const {
 const selectedPokemon = computed(
   () => props.pokemons.find((pokemon) => pokemon.id === props.selectedId) ?? null,
 )
-const moveTargetingAccentStyle = computed(() => {
-  const userId = props.moveAutomationTargeting?.userId
+const moveAutomationAccentStyleForUser = (userId: string | null | undefined): Record<string, string> | undefined => {
   const accentColor = userId ? props.pokemons.find((pokemon) => pokemon.id === userId)?.accentColor : null
   return accentColor ? trainerAccentCssVariables(accentColor) : undefined
-})
+}
+const moveTargetingAccentStyle = computed(() =>
+  moveAutomationAccentStyleForUser(props.moveAutomationTargeting?.userId),
+)
+const moveTargetBranchSelectionAccentStyle = computed(() =>
+  moveAutomationAccentStyleForUser(props.moveAutomationTargetBranchSelection?.userId),
+)
 const attackOfOpportunityAnchorStyle = (button: AttackOfOpportunityButton): Record<string, string> => ({
   left: `${button.left}px`,
   top: `${button.top}px`,
@@ -415,7 +426,12 @@ const emitMovementPreviewChange = (preview: PreviewState) => {
 }
 const movementPreviewHud = computed(() => {
   const preview = movementPreviewState.value
-  if (!selectedPokemon.value || activeSendOutRequest.value || props.moveAutomationTargeting) return null
+  if (
+    !selectedPokemon.value
+    || activeSendOutRequest.value
+    || props.moveAutomationTargeting
+    || props.moveAutomationTargetBranchSelection
+  ) return null
   if (!preview.position || preview.pathLength <= 0) return null
 
   return {
@@ -1043,6 +1059,34 @@ const areaDirectionButtonLabel = (direction: MoveAutomationAreaDirection): strin
   }
 }
 
+const normalizeMoveBranchDisplayPart = (value: string): string => value.trim().replace(/\s+/g, ' ')
+
+const moveBranchOptionLabel = (option: MoveAutomationTargetBranchSelectionOption): string => {
+  const label = normalizeMoveBranchDisplayPart(option.label || option.range || 'Targeting')
+  const range = normalizeMoveBranchDisplayPart(option.range)
+  if (!range) return label
+
+  const labelLower = label.toLocaleLowerCase()
+  const rangeLower = range.toLocaleLowerCase()
+  if (rangeLower === labelLower) return label
+  if (rangeLower.startsWith(`${labelLower} `)) return range
+
+  const rangeParts = range.split(/[,;]/).map((part) => normalizeMoveBranchDisplayPart(part)).filter(Boolean)
+  if (rangeParts[0]?.toLocaleLowerCase() === labelLower) {
+    const suffix = rangeParts.slice(1).join(', ')
+    return suffix ? `${label} — ${suffix}` : label
+  }
+
+  return `${label} — ${range}`
+}
+
+const moveBranchShortcutLabel = (index: number): string | null => index >= 0 && index < 9 ? `${index + 1}` : null
+
+const selectMoveTargetBranchOption = (option: MoveAutomationTargetBranchSelectionOption) => {
+  if (option.disabled) return
+  emit('select-move-target-branch', option.branchId)
+}
+
 const worldPointToScreen = (point: THREE.Vector3): { x: number; y: number } | null => {
   if (!camera || !renderer) return null
   const bounds = renderer.domElement.getBoundingClientRect()
@@ -1124,7 +1168,7 @@ const performMoveTargeting = (event: MouseEvent | PointerEvent): boolean => {
 }
 
 const cancelMoveTargeting = (): boolean => {
-  if (!props.moveAutomationTargeting) return false
+  if (!props.moveAutomationTargeting && !props.moveAutomationTargetBranchSelection) return false
   emit('cancel-move-targeting')
   return true
 }
@@ -1334,7 +1378,7 @@ const pointerInteraction = createIsometricPointerInteractionController({
   performPlacement: sendOutInteraction.performSendOut,
   stepPlacementElevation: sendOutInteraction.stepPreviewElevation,
   cancelPlacement: sendOutInteraction.cancel,
-  getTargetingModeActive: () => Boolean(props.moveAutomationTargeting),
+  getTargetingModeActive: () => Boolean(props.moveAutomationTargeting || props.moveAutomationTargetBranchSelection),
   updateTargetingFromPointer: updateMoveAreaDirectionFromPointer,
   performTargeting: performMoveTargeting,
   cancelTargeting: cancelMoveTargeting,
@@ -1373,7 +1417,7 @@ const canStartFreeCameraRotation = (event: PointerEvent): boolean => canStartIso
   buildMode: props.buildMode,
   hazardMode: props.hazardMode,
   selectedPokemonActive: Boolean(selectedPokemon.value),
-  moveAutomationTargetingActive: Boolean(props.moveAutomationTargeting),
+  moveAutomationTargetingActive: Boolean(props.moveAutomationTargeting || props.moveAutomationTargetBranchSelection),
   sendOutPlacementActive: Boolean(activeSendOutRequest.value),
   blockingOverlayActive: hasCameraControlBlockingOverlay(),
   pickPokemonId,
@@ -1460,8 +1504,26 @@ const handleCameraYawShortcut = (event: KeyboardEvent) => {
   }
 }
 
+const handleMoveBranchSelectionShortcut = (event: KeyboardEvent) => {
+  const selection = props.moveAutomationTargetBranchSelection
+  if (!selection || event.repeat) return
+  if (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return
+  if (
+    isKeyboardShortcutBlockedTarget(event.target)
+    || isKeyboardShortcutBlockedTarget(document.activeElement)
+  ) return
+
+  if (!/^[1-9]$/.test(event.key)) return
+  const option = selection.options[Number(event.key) - 1]
+  if (!option || option.disabled) return
+
+  event.preventDefault()
+  selectMoveTargetBranchOption(option)
+}
+
 useWindowKeydown(handleEscape)
 useWindowKeydown(handleCameraYawShortcut)
+useWindowKeydown(handleMoveBranchSelectionShortcut)
 
 watch(activeSendOutRequest, (request) => {
   if (controls) controls.enableZoom = !request && !selectedPokemon.value
@@ -1505,6 +1567,15 @@ const requestMoveVfxRenderFrame = () => {
 watch(() => props.moveAutomationTargeting, (targeting) => {
   moveAreaDirectionUpdateThrottle.syncCurrentDirection(targeting?.areaDirection)
   if (!targeting) return
+
+  closeContextMenu()
+  sendOutInteraction.cancel()
+  clearPreviewVisuals()
+  requestScheduledSceneFrame('movement-preview')
+})
+
+watch(() => props.moveAutomationTargetBranchSelection, (selection) => {
+  if (!selection) return
 
   closeContextMenu()
   sendOutInteraction.cancel()
@@ -2030,6 +2101,46 @@ watch(
     </div>
 
     <div
+      v-if="props.moveAutomationTargetBranchSelection"
+      class="move-branch-selection-hud"
+      :style="moveTargetBranchSelectionAccentStyle"
+      @contextmenu.prevent
+      @pointerdown.stop
+      @click.stop
+    >
+      <div class="move-branch-selection-hud__heading">
+        <strong>{{ props.moveAutomationTargetBranchSelection.moveName }}</strong>
+        <span>Choose targeting</span>
+      </div>
+      <div class="move-branch-selection-hud__options" aria-label="Move targeting choices">
+        <button
+          v-for="(option, index) in props.moveAutomationTargetBranchSelection.options"
+          :key="option.branchId"
+          class="move-branch-selection-hud__option"
+          type="button"
+          :disabled="option.disabled"
+          :title="option.disabledReason ?? `${option.label}: ${option.range}`"
+          @click.stop="selectMoveTargetBranchOption(option)"
+        >
+          <kbd v-if="moveBranchShortcutLabel(index)" class="move-branch-selection-hud__shortcut">
+            {{ moveBranchShortcutLabel(index) }}
+          </kbd>
+          <span class="move-branch-selection-hud__option-copy">
+            <span>{{ moveBranchOptionLabel(option) }}</span>
+            <small v-if="option.disabledReason">{{ option.disabledReason }}</small>
+          </span>
+        </button>
+      </div>
+      <button
+        class="move-branch-selection-hud__cancel"
+        type="button"
+        @click.stop="emit('cancel-move-targeting')"
+      >
+        Cancel
+      </button>
+    </div>
+
+    <div
       v-if="props.moveAutomationTargeting"
       class="move-targeting-hud"
       :style="moveTargetingAccentStyle"
@@ -2398,6 +2509,127 @@ watch(
 .movement-preview-hud.is-unreachable strong,
 .movement-preview-hud.is-unreachable small {
   color: var(--bad);
+}
+
+.move-branch-selection-hud {
+  position: absolute;
+  z-index: 10;
+  top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
+  left: 50%;
+  display: grid;
+  gap: 0.7rem;
+  width: min(94vw, 42rem);
+  padding: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 62%, var(--rule-strong));
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--paper) 93%, transparent);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.move-branch-selection-hud__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.8rem;
+}
+
+.move-branch-selection-hud__heading strong {
+  color: var(--accent);
+  font-size: 0.98rem;
+}
+
+.move-branch-selection-hud__heading span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.move-branch-selection-hud__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.5rem;
+}
+
+.move-branch-selection-hud__option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 3.1rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--paper-accent) 94%, var(--accent) 6%);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.move-branch-selection-hud__option:hover:not(:disabled),
+.move-branch-selection-hud__option:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
+  color: var(--accent);
+}
+
+.move-branch-selection-hud__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.move-branch-selection-hud__shortcut {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent) 48%, var(--rule-strong));
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--paper) 84%, var(--accent) 16%);
+  color: var(--accent);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.move-branch-selection-hud__option-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.12rem;
+  font-size: 0.9rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.move-branch-selection-hud__option-copy small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.move-branch-selection-hud__cancel {
+  justify-self: end;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: var(--paper-accent);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.move-branch-selection-hud__cancel:hover,
+.move-branch-selection-hud__cancel:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .move-targeting-hud {
