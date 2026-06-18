@@ -3,10 +3,14 @@ import type { InventoryEntry } from '~/types/trainerSheet'
 import {
   autofillTrainerInventoryItem,
   buildTrainerInventoryAutofillPatch,
+  normalizeTrainerInventoryLegacyFishingRodAutofill,
   resolveTrainerInventoryItemReference,
   setTrainerInventoryItemName,
   trainerInventoryItemOptions,
 } from '~/utils/sheets/trainerInventoryItems'
+
+const legacyAllFishingRodsDescription = 'Fishing Rods are used to Fish. They are two-handed items. They come in three varieties; Old Rods, Good Rods, and Super Rods. Old Rods cost $1000, Good Rods cost $5,000, and Super Rods cost $15,000.'
+const legacyAllFishingRodsCost = 'Old Rods cost $1000, Good Rods cost $5,000, and Super Rods cost $15,000'
 
 describe('trainerInventoryItems', () => {
   it('prioritizes section-relevant item options without hiding the rest of the catalog', () => {
@@ -110,6 +114,39 @@ describe('trainerInventoryItems', () => {
       qty: 2,
       cost: '$200',
       description: 'Cures Poison',
+    })
+  })
+
+  it('repairs legacy all-rod autofill for a specific fishing rod', () => {
+    const entry: InventoryEntry = {
+      name: 'Good Rod',
+      cost: legacyAllFishingRodsCost,
+      description: legacyAllFishingRodsDescription,
+    }
+
+    expect(normalizeTrainerInventoryLegacyFishingRodAutofill(entry)).toBe(true)
+
+    expect(entry).toMatchObject({
+      name: 'Good Rod',
+      cost: '$5,000',
+      description: 'Fishing Rods are used to Fish. They are two-handed items. Good Rods may catch unevolved Pokémon of a Level to your GM’s discretion.',
+    })
+  })
+
+  it('updates repaired legacy rod autofill when changing rod names', () => {
+    const entry: InventoryEntry = {
+      name: 'Old Rod',
+      cost: legacyAllFishingRodsCost,
+      description: legacyAllFishingRodsDescription,
+    }
+
+    setTrainerInventoryItemName(entry, 'Super Rod', 'equipment')
+
+    expect(entry).toMatchObject({
+      name: 'Super Rod',
+      cost: '$15,000',
+      description: 'Fishing Rods are used to Fish. They are two-handed items. Super Rods may catch Pokémon of any size and evolutionary stage, to your GM’s discretion.',
+      slot: 'Hand',
     })
   })
 })

@@ -14,6 +14,16 @@ export interface TrainerInventoryItemOption {
 
 const AUTOFILL_FIELDS = ['qty', 'cost', 'description', 'mod', 'slot'] as const satisfies readonly (keyof InventoryEntry)[]
 
+const FISHING_ROD_ITEM_NAMES = new Set(['Old Rod', 'Good Rod', 'Super Rod'])
+const LEGACY_ALL_FISHING_RODS_COST = 'Old Rods cost $1000, Good Rods cost $5,000, and Super Rods cost $15,000'
+const LEGACY_ALL_FISHING_RODS_DESCRIPTION_MARKERS = [
+  'fishing rods are used to fish',
+  'they come in three varieties',
+  'old rods cost',
+  'good rods cost',
+  'super rods cost',
+] as const
+
 type TrainerInventoryAutofillField = (typeof AUTOFILL_FIELDS)[number]
 type TrainerInventoryAutofillPatch = Partial<Pick<InventoryEntry, TrainerInventoryAutofillField>>
 
@@ -76,6 +86,21 @@ const normalizeSearchText = (value: string): string =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
 
+const normalizeComparableText = (value: string): string =>
+  normalizeSearchText(value).replace(/\s+/g, ' ').trim()
+
+const isFishingRodItem = (item: PtuItem): boolean => FISHING_ROD_ITEM_NAMES.has(item.name)
+
+const isLegacyAllFishingRodsDescription = (value: string | undefined): boolean => {
+  if (!value) return false
+  const normalized = normalizeComparableText(value)
+  return LEGACY_ALL_FISHING_RODS_DESCRIPTION_MARKERS.every((marker) => normalized.includes(marker))
+}
+
+const isLegacyAllFishingRodsCost = (value: InventoryEntry['cost']): boolean => (
+  normalizeComparableText(String(value ?? '')) === normalizeComparableText(LEGACY_ALL_FISHING_RODS_COST)
+)
+
 const inventoryItemSearchText = (item: PtuItem): string =>
   normalizeSearchText([
     item.name,
@@ -124,6 +149,32 @@ export const formatTrainerInventoryItemDescription = (item: PtuItem): string => 
   ...item.effects,
   ...item.notes.map((note) => `Note: ${note}`),
 ].join('\n')
+
+/**
+ * Older item reference data exposed one generic “Fishing Rod” entry, so some
+ * saved trainer inventories still carry all three rod costs/descriptions on a
+ * now-specific rod row. Treat that exact legacy autofill as stale data, not as
+ * a custom user description.
+ */
+export const normalizeTrainerInventoryLegacyFishingRodAutofill = (entry: InventoryEntry): boolean => {
+  const reference = resolveTrainerInventoryItemReference(entry)
+  if (!reference || !isFishingRodItem(reference)) return false
+
+  let changed = false
+  const cost = formatTrainerInventoryItemCost(reference)
+  if (cost && isLegacyAllFishingRodsCost(entry.cost)) {
+    entry.cost = cost
+    changed = true
+  }
+
+  const description = formatTrainerInventoryItemDescription(reference)
+  if (description && isLegacyAllFishingRodsDescription(entry.description)) {
+    entry.description = description
+    changed = true
+  }
+
+  return changed
+}
 
 const captureModifierForItem = (item: PtuItem): string | undefined => {
   const match = item.effects.join(' ').match(/Capture Modifier\s*([+-]\d+)/i)
@@ -246,6 +297,7 @@ export const autofillTrainerInventoryItem = (
   entry: InventoryEntry,
   variant: TrainerInventoryTableVariant,
 ): boolean => {
+  normalizeTrainerInventoryLegacyFishingRodAutofill(entry)
   const reference = resolveTrainerInventoryItemReference(entry)
   if (!reference) return false
   applyTrainerInventoryAutofillPatch(entry, buildTrainerInventoryAutofillPatch(reference, variant))
@@ -257,6 +309,7 @@ export const setTrainerInventoryItemName = (
   rawName: string,
   variant: TrainerInventoryTableVariant,
 ): void => {
+  normalizeTrainerInventoryLegacyFishingRodAutofill(entry)
   const previousReference = resolveTrainerInventoryItemReference(entry)
   const previousPatch = previousReference
     ? buildTrainerInventoryAutofillPatch(previousReference, variant)

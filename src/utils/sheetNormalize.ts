@@ -9,11 +9,12 @@
  */
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type { CharacterSheet, StatKey } from '~/types/characterSheet'
-import type { TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
+import type { InventoryEntry, TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
 import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 import { setPokemonCaughtBall } from '~/utils/sheets/pokemonCaughtBall'
+import { normalizeTrainerInventoryLegacyFishingRodAutofill } from '~/utils/sheets/trainerInventoryItems'
 
 const STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
 const TRAINER_STAT_KEYS: TrainerStatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
@@ -119,7 +120,9 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
 
   const inv = ensureObj<NonNullable<TrainerSheet['inventory']>>(sheet, 'inventory')
   for (const key of ['keyItems', 'pokemonItems', 'medicalKit', 'pokeBalls', 'foodStuff', 'equipment']) {
-    ensureArr(inv, key)
+    for (const entry of ensureArr<InventoryEntry>(inv, key)) {
+      normalizeTrainerInventoryLegacyFishingRodAutofill(entry)
+    }
   }
 
   ensureArr(sheet, 'movelist')
