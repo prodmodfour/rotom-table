@@ -111,7 +111,8 @@ const onKeydown = (event: KeyboardEvent) => {
 
 <style scoped>
 .inventory-name-cell {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   max-width: 100%;
   min-width: 0;
 }
@@ -122,10 +123,11 @@ const onKeydown = (event: KeyboardEvent) => {
 }
 
 .inventory-name-cell__display {
-  display: inline-grid;
+  display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 0.4rem;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   border: 0;
@@ -166,9 +168,8 @@ const onKeydown = (event: KeyboardEvent) => {
 
 .inventory-name-cell__label {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .inventory-name-cell__input {
