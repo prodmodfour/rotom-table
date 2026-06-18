@@ -4,7 +4,7 @@ import {
   renameSync,
   unlinkSync,
 } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { sanitizeFolderPath, slugify, validateSlug } from '#shared/paths'
 import { stripDerivedSheetFolder, toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { DEFAULT_POKEMON_CAUGHT_BALL } from '~/utils/sheets/pokemonCaughtBall'
@@ -17,6 +17,7 @@ import {
   findFileByName,
   findJsonFileByField,
   readJsonFile,
+  tryReadJsonFile,
   walkFiles,
   writeJsonFile,
 } from './jsonFiles'
@@ -99,6 +100,29 @@ export const readSheetFileWithFolder = <T extends object>(
 
 export const listSheetFiles = (kind: SheetKind): string[] =>
   walkFiles(sheetRootFor(kind), (entry) => entry.name.endsWith('.json'))
+
+const setSheetFolderForSlug = (
+  foldersBySlug: Map<string, string>,
+  slugInput: unknown,
+  folder: string,
+): void => {
+  if (typeof slugInput !== 'string' || !slugInput.trim()) return
+  try {
+    foldersBySlug.set(validateSheetSlug(slugInput), folder)
+  } catch {
+    // Ignore malformed legacy slugs while building the best-effort folder map.
+  }
+}
+
+export const listSheetFileFoldersBySlug = (kind: SheetKind): Map<string, string> => {
+  const foldersBySlug = new Map<string, string>()
+  for (const path of listSheetFiles(kind)) {
+    const folder = folderFromSheetPath(kind, path)
+    setSheetFolderForSlug(foldersBySlug, basename(path, '.json'), folder)
+    setSheetFolderForSlug(foldersBySlug, tryReadJsonFile<Record<string, unknown>>(path)?.slug, folder)
+  }
+  return foldersBySlug
+}
 
 export const listSheetFilesWithFolders = <T extends object>(
   kind: SheetKind,

@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { listSheetsUseCase } from '../../server/useCases/listSheets'
+import type { StoredSheetDocument } from '../../server/storage/sheetRepository'
 import {
   PLAYER_PROFILE_SCHEMA_VERSION,
   type PlayerProfile,
   type PlayerProfileDisplayName,
   type PlayerProfileId,
 } from '../../shared/playerProfiles'
+import type { SheetKind } from '../../shared/sheets'
 import type { CharacterSheet } from '../../src/types/characterSheet'
 import type { TrainerSheet } from '../../src/types/trainerSheet'
 
@@ -43,6 +45,36 @@ describe('list sheets use case', () => {
     expect(listSheetsUseCase({ role: 'gm' }, { listPokemonSheets, listTrainerSheets })).toEqual({
       pokemonSheets: [pokemon(), pokemon({ slug: 'hidden-mon', player: false })],
       trainerSheets: [trainer({ player: false })],
+    })
+  })
+
+  it('adds file-derived folders to SQLite-backed sheet listings', () => {
+    const storedTrainer: StoredSheetDocument<Record<string, unknown>> = {
+      kind: 'trainer',
+      slug: 'new-trainer-1',
+      document: { name: 'New Trainer', level: 1, player: true },
+      revision: 2,
+      updatedAt: 20,
+    }
+    const storedPokemon: StoredSheetDocument<Record<string, unknown>> = {
+      kind: 'pokemon',
+      slug: 'pika',
+      document: { nickname: 'Pika', species: 'Pikachu', level: 5, player: true },
+      revision: 3,
+      updatedAt: 30,
+    }
+    const sheetRepository = {
+      list: vi.fn((kind?: SheetKind) => (kind === 'trainer' ? [storedTrainer] : [storedPokemon])),
+    }
+    const sheetFoldersBySlug = vi.fn((kind: SheetKind) => new Map(
+      kind === 'trainer'
+        ? [['new-trainer-1', 'npcs/gym-leaders']]
+        : [['pika', 'players/Hassan']],
+    ))
+
+    expect(listSheetsUseCase({ role: 'gm' }, { sheetRepository, sheetFoldersBySlug })).toEqual({
+      pokemonSheets: [pokemon({ revision: 3 })],
+      trainerSheets: [trainer({ folder: 'npcs/gym-leaders', revision: 2 })],
     })
   })
 
