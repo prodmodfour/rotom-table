@@ -18,7 +18,7 @@
   "Chilling Neigh": {
     "name": "Chilling Neigh",
     "frequency": "At-Will – Free Action",
-    "trigger": "The user causes a foe to Faint with a",
+    "trigger": "The user causes a foe to Faint with a damaging attack",
     "effect": "The user’s Attack is raised by 1 Combat Stage. In addition, all foes within 3m of the user take a -2 penalty to evasion for one full round."
   },
   "Cotton Down": {
@@ -40,7 +40,7 @@
   "Dragon’s Maw": {
     "name": "Dragon’s Maw",
     "frequency": "Scene x2 – Free Action",
-    "trigger": "The user hits with a damaging Dragon-Type",
+    "trigger": "The user hits with a damaging Dragon-Type Move",
     "effect": "One target hit by the attack becomes one stage more vulnerable to the attack (applied after all other modifiers). Immune targets are treated as initially double-resistant for the purposes of this Ability, and may be damaged normally."
   },
   "Flavorful Aroma": {
@@ -63,7 +63,7 @@
   "Grim Neigh": {
     "name": "Grim Neigh",
     "frequency": "At-Will – Free Action",
-    "trigger": "The user causes a foe to Faint with a",
+    "trigger": "The user causes a foe to Faint with a damaging attack",
     "effect": "The user’s Special Attack is raised by 1 Combat Stage. In addition, all foes within 3m of the user take a -2 penalty to Accuracy for one full round."
   },
   "Gulp Missile": {
@@ -137,7 +137,7 @@
   "Quick Draw": {
     "name": "Quick Draw",
     "frequency": "Scene – Free Action, Interrupt",
-    "trigger": "A foe uses a Move, and the user has not",
+    "trigger": "A foe uses a Move, and the user has not acted this round",
     "effect": "The user immediately uses a Move on the triggering foe as a Standard Action Interrupt (this Move must still obey Frequency and Range). If this Move hits, the foe also gains a -2 penalty to their attack roll for the triggering attack, unless the foe cannot Flinch."
   },
   "Ripen": {
@@ -155,7 +155,7 @@
   "Sand Spit": {
     "name": "Sand Spit",
     "frequency": "Scene – Free Action, Reaction",
-    "trigger": "The user is damaged by an attack from a foe",
+    "trigger": "The user is damaged by an attack from a foe within 2m",
     "effect": "Connection – Sand Attack. The user attacks the triggering foe with Sand Attack as a Free Action."
   },
   "Screen Cleaner": {
@@ -226,13 +226,13 @@
   "Beast Boost": {
     "name": "Beast Boost",
     "frequency": "At-Will – Free Action",
-    "trigger": "The user’s Damaging Attack causes an",
+    "trigger": "The user’s Damaging Attack causes an opponent to Faint",
     "effect": "The user receives +1 Combat Stage in their highest non-HP stat."
   },
   "Berserk": {
     "name": "Berserk",
     "frequency": "At-Will – Free Action",
-    "trigger": "The user’s drops to half HP or below for the",
+    "trigger": "The user’s drops to half HP or below for the first time in an encounter, or becomes Enraged",
     "effect": "The user receives +1 Special Attack Combat Stage."
   },
   "Chemical Romance": {
@@ -284,7 +284,7 @@
   "Galvanize": {
     "name": "Galvanize",
     "frequency": "At-Will – Free Action",
-    "trigger": "The user uses a Normal-Type damaging",
+    "trigger": "The user uses a Normal-Type damaging Move",
     "effect": "The Move is changed to be Electric-Type."
   },
   "Glisten": {
@@ -334,7 +334,7 @@
   "Liquid Voice": {
     "name": "Liquid Voice",
     "frequency": "At-Will – Free Action",
-    "trigger": "The user uses a Move with the Sonic",
+    "trigger": "The user uses a Move with the Sonic keyword",
     "effect": "The triggering move loses the Sonic keyword, but gains the Friendly keyword and becomes Water Typed. If the Move was a Status Class Move, you may treat it as a Special Move with DB1."
   },
   "Long Reach": {
@@ -381,7 +381,7 @@
   "Queenly Majesty": {
     "name": "Queenly Majesty",
     "frequency": "Scene x2 – Free Action",
-    "trigger": "An adjacent foe uses a Priority Move or an",
+    "trigger": "An adjacent foe uses a Priority Move or an Interrupt action",
     "effect": "Connection – Stomp. The user may attack the triggering foe with Stomp as a Free Action Interrupt."
   },
   "Radiant Beam": {
@@ -411,7 +411,7 @@
   "Revelation": {
     "name": "Revelation",
     "frequency": "Scene x2 – Free Action",
-    "trigger": "Someone within 10 meters uses a Damaging",
+    "trigger": "Someone within 10 meters uses a Damaging Dance Move",
     "effect": "The user may immediately use the triggering Move as a Standard Action interrupt."
   },
   "Slush Rush": {
@@ -450,7 +450,7 @@
   "Steelworker": {
     "name": "Steelworker",
     "frequency": "Scene – Free Action",
-    "trigger": "The user takes damage while adjacent to its",
+    "trigger": "The user takes damage while adjacent to its Anchor",
     "effect": "The user calculates damage as if it was only Steel-Typed."
   },
   "Surge Surfer": {
@@ -559,7 +559,7 @@
   "Bone Lord": {
     "name": "Bone Lord",
     "frequency": "At-Will - Free Action",
-    "trigger": "You hit with Bone Club, Bonemerang, or Bone",
+    "trigger": "You hit with Bone Club, Bonemerang, or Bone Rush",
     "effect": "Connection – Bonemerang. Once per Scene per Move, the following Moves may be used as if they had the following bonuses: - Bone Club: Bone Club’s target loses 1 Defense and Special Attack CS. - Bonemerang: Has a Range of Line 6 but loses the Double Strike keyword - Bone Rush: Bone Rush automatically ‘hits’ four times (as per the Five Strike keyword)."
   },
   "Bone Wielder": {
@@ -759,7 +759,7 @@
   "Justified": {
     "name": "Justified",
     "frequency": "At-Will - Free Action",
-    "trigger": "The user is hit by a damaging Dark Type Move or",
+    "trigger": "The user is hit by a damaging Dark Type Move or Attack of Opportunity",
     "effect": "The user may raise its Attack by +1 Combat Stage."
   },
   "Kampfgeist": {
@@ -791,7 +791,7 @@
   "Lightning Rod": {
     "name": "Lightning Rod",
     "frequency": "Scene – Free Action",
-    "trigger": "A ranged Electric Type Move is used within 10",
+    "trigger": "A ranged Electric Type Move is used within 10 Meters of the user.",
     "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  The user’s Special Attack is then raised by +1 Combat Stage."
   },
   "Liquid Ooze": {
@@ -828,7 +828,7 @@
   "Migraine": {
     "name": "Migraine",
     "frequency": "Scene x2 - Free Action",
-    "trigger": "The user hits with Confusion while at 50% Hit",
+    "trigger": "The user hits with Confusion while at 50% Hit Points or less",
     "effect": "Connection - Confusion. Confusion automatically gives its target the Confusion Affliction and is a Critical Hit."
   },
   "Moody": {
@@ -1052,7 +1052,7 @@
   "Spray Down": {
     "name": "Spray Down",
     "frequency": "Scene x2 – Free Action",
-    "trigger": "The user hits an airborne target with a ranged",
+    "trigger": "The user hits an airborne target with a ranged 1-target attack",
     "effect": "The triggering attack’s target is knocked down to ground level, and loses all Sky or Levitate Speeds for 3 turns. During this time, they may be hit by Ground-Type Moves even if normally immune."
   },
   "Sprint": {
@@ -1085,7 +1085,7 @@
   "Storm Drain": {
     "name": "Storm Drain",
     "frequency": "Scene – Free Action",
-    "trigger": "A ranged Water Type Move is used within 10",
+    "trigger": "A ranged Water Type Move is used within 10 Meters of the user.",
     "effect": "The Move is turned into a 1-Target Move and is re-directed at the user without fail, and cannot miss. This negates Lock-On or Mind Reader.  the user’s Special Attack is then raised by +1 Combat Stage."
   },
   "Sturdy": {
@@ -1193,7 +1193,7 @@
   "Combo Striker": {
     "name": "Combo Striker",
     "frequency": "At-Will - Free Action",
-    "trigger": "The user rolls a natural 1, 10, or 11 on an attack roll",
+    "trigger": "The user rolls a natural 1, 10, or 11 on an attack roll with a damaging move",
     "effect": "After the triggering attack is resolved, the user may use a Struggle Attack as a Free Action. Note: Yes, Struggle Attacks made due to Combo Striker may trigger Combo Striker."
   },
   "Dream Smoke": {
@@ -1220,7 +1220,7 @@
   "Full Guard": {
     "name": "Full Guard",
     "frequency": "Scene - Swift Action",
-    "trigger": "You take Damage while having Temporary Hit",
+    "trigger": "You take Damage while having Temporary Hit Points",
     "effect": "You resist the triggering Damage one step further."
   },
   "Giver": {
@@ -1313,7 +1313,7 @@
   "Tingle": {
     "name": "Tingle",
     "frequency": "At-Will - Free Action",
-    "trigger": "The user hits an adjacent target foe with a 1-Target",
+    "trigger": "The user hits an adjacent target foe with a 1-Target attack",
     "effect": "The target loses a Tick of Hit Points and takes a -5 penalty to Damage Rolls for 1 full round."
   },
   "Tonguelash": {
@@ -1372,7 +1372,7 @@
   "Aqua Boost": {
     "name": "Aqua Boost",
     "frequency": "At-Will – Free Action",
-    "trigger": "An adjacent Ally uses a damaging Water-Type",
+    "trigger": "An adjacent Ally uses a damaging Water-Type Move",
     "effect": "The allied target gains a +5 Bonus to its damage roll with the triggering Move. A target may not benefit from more than one instance of Aqua Boost at a time."
   },
   "Battle Armor": {
@@ -1424,7 +1424,7 @@
   "Bully": {
     "name": "Bully",
     "frequency": "Scene – Free Action",
-    "trigger": "The user hits a target for Super-Effective",
+    "trigger": "The user hits a target for Super-Effective Damage with a Melee Move",
     "effect": "The target of the attack is pushed 2 Meters, becomes Tripped, and gains an Injury."
   },
   "Cave Crasher": {
@@ -1486,7 +1486,7 @@
   "Conqueror": {
     "name": "Conqueror",
     "frequency": "Scene – Free Action",
-    "trigger": "The user causes a foe to Faint by using a",
+    "trigger": "The user causes a foe to Faint by using a damaging Physical or Special Attack",
     "effect": "The user’s Attack, Special Attack, and Speed gain +1 Combat Stage."
   },
   "Copy Master": {
@@ -1530,7 +1530,7 @@
   "Cute Charm": {
     "name": "Cute Charm",
     "frequency": "Scene – Free Action",
-    "trigger": "A foe of the opposite gender attacks the user",
+    "trigger": "A foe of the opposite gender attacks the user with a Melee Attack",
     "effect": "The foe becomes Infatuated."
   },
   "Cute Tears": {
@@ -1775,7 +1775,7 @@
   "Hay Fever": {
     "name": "Hay Fever",
     "frequency": "At-Will – Swift Action",
-    "trigger": "The user uses a Status Move; or the user ends",
+    "trigger": "The user uses a Status Move; or the user ends their turn while Asleep.",
     "effect": "The user creates a Burst 2 or Close Blast 3 of allergenic pollen. All Trainers and Pokémon in the burst that are not Bug, Grass, or Poison Typed lose a Tick of Hit Points. This Ability cannot be activated in Rainy Weather, Sandstorms, or if it is Hailing."
   },
   "Healer": {
@@ -1822,7 +1822,7 @@
   "Ignition Boost": {
     "name": "Ignition Boost",
     "frequency": "At-Will – Free Action",
-    "trigger": "An adjacent Ally uses a damaging Fire-Type",
+    "trigger": "An adjacent Ally uses a damaging Fire-Type Move",
     "effect": "The allied target gains a +5 Bonus to its damage roll with the triggering Move. A target may not benefit from more than one instance of Ignition Boost at a time."
   },
   "Illuminate": {
@@ -1924,7 +1924,7 @@
   "Magician": {
     "name": "Magician",
     "frequency": "Scene – Free Action",
-    "trigger": "The user hits a foe with a damaging Single-",
+    "trigger": "The user hits a foe with a damaging Single-Target attack",
     "effect": "The user takes the target’s Held Item. This Ability may not be triggered if the user is already holding a Held Item."
   },
   "Marvel Scale": {
@@ -2024,7 +2024,7 @@
   "Pack Hunt": {
     "name": "Pack Hunt",
     "frequency": "At-Will – Free Action",
-    "trigger": "An adjacent foe is damaged by an ally’s Melee",
+    "trigger": "An adjacent foe is damaged by an ally’s Melee Attack",
     "effect": "The user may make a Physical Attack with an AC of 5 against the triggering foe. If the attack hits, the foe loses a Tick of Hit Points."
   },
   "Parental Bond": {
@@ -2046,7 +2046,7 @@
   "Pickpocket": {
     "name": "Pickpocket",
     "frequency": "Scene – Free Action",
-    "trigger": "The user is hit by an opponent with a Melee",
+    "trigger": "The user is hit by an opponent with a Melee Move",
     "effect": "If the opponent has a Held Item and the user does not, the user takes the Held Item the opponent is holding."
   },
   "Pickup": {
@@ -2137,7 +2137,7 @@
   "Regenerator": {
     "name": "Regenerator",
     "frequency": "Daily x2 – Free Action",
-    "trigger": "The user is recalled into a Poké Ball, or Takes",
+    "trigger": "The user is recalled into a Poké Ball, or Takes a Breather",
     "effect": "The user gains Hit Points equal to 1/3rd of its maximum Hit Points. Regenerator may be activated only once per Scene."
   },
   "Rivalry": {
@@ -2199,7 +2199,7 @@
   "Skill Link": {
     "name": "Skill Link",
     "frequency": "Scene – Free Action",
-    "trigger": "The user hits with a Move with the Five Strike",
+    "trigger": "The user hits with a Move with the Five Strike keyword.",
     "effect": "The Triggering Move automatically hits 5 Times."
   },
   "Slow Start": {
@@ -2293,7 +2293,7 @@
   "Synchronize": {
     "name": "Synchronize",
     "frequency": "Scene – Free Action",
-    "trigger": "The user is Paralyzed, Frozen, Burned,",
+    "trigger": "The user is Paralyzed, Frozen, Burned, Poisoned, or put to Sleep.",
     "effect": "The foe which caused the Status Condition is given the same Status they inflicted."
   },
   "Targeting System": {
@@ -2329,7 +2329,7 @@
   "Thunder Boost": {
     "name": "Thunder Boost",
     "frequency": "At-Will – Free Action",
-    "trigger": "An adjacent Ally uses a damaging Electric-",
+    "trigger": "An adjacent Ally uses a damaging Electric-Type Move",
     "effect": "The allied target gains a +5 Bonus to its damage roll with the triggering Move. A target may not benefit from more than one instance of Thunder Boost at a time."
   },
   "Tingly Tongue": {

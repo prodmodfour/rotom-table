@@ -27,6 +27,24 @@ NAME_FIXUPS = {
     "Weird power": "Weird Power",
 }
 
+FREQUENCY_RE = re.compile(r"^(Static|Scene|At-Will|Daily|EOT|EoT|1/Round)")
+FIELD_BOUNDARY_RE = r"Ability:|Move:|Trigger:|Effect:|Bonus:|Target:|Choose One Effect:"
+
+
+def _normalize_field(value: str) -> str:
+    value = re.sub(r"\s*\n\s*", " ", value).strip()
+    return re.sub(r"(?<=[A-Za-z0-9])-\s+(?=[A-Za-z0-9])", "-", value)
+
+
+def _extract_labeled_field(label: str, body: str, *, keep_label: bool = False) -> str | None:
+    pattern = rf"^{re.escape(label)}:\s*(.+(?:\n(?!{FIELD_BOUNDARY_RE}).+)*)"
+    match = re.search(pattern, body, re.MULTILINE)
+    if not match:
+        return None
+
+    value = _normalize_field(match.group(1))
+    return f"{label}: {value}" if keep_label else value
+
 
 def _parse_blocks(text: str) -> dict[str, dict]:
     abilities: dict[str, dict] = {}
@@ -44,22 +62,28 @@ def _parse_blocks(text: str) -> dict[str, dict]:
         # Second line is typically the frequency
         if len(lines) > 1:
             freq_line = lines[1].strip()
-            if re.match(r"^(Static|Scene|At-Will|Daily|EOT|EoT|1/Round)", freq_line):
+            if FREQUENCY_RE.match(freq_line):
                 ability["frequency"] = freq_line
 
         body = "\n".join(lines[1:])
 
-        # Trigger
-        m = re.search(r"^Trigger[:\s]+(.+)", body, re.MULTILINE)
-        if m:
-            ability["trigger"] = m.group(1).strip()
+        trigger = _extract_labeled_field("Trigger", body)
+        if trigger:
+            ability["trigger"] = trigger
 
-        # Effect — grab everything after "Effect:" until end of this block
-        m = re.search(r"^Effect:\s*(.+(?:\n(?!Ability:|Move:|Bonus:|Trigger:).+)*)", body, re.MULTILINE)
-        if m:
-            effect = m.group(1).strip()
-            effect = re.sub(r"\s*\n\s*", " ", effect)
+        # Effect — grab everything after "Effect:" until another metadata
+        # label. Keep unlabelled "Special:" paragraphs as part of the effect;
+        # the source treats them as effect text in ability blocks.
+        effect = _extract_labeled_field("Effect", body)
+        choose_one_effect = _extract_labeled_field("Choose One Effect", body, keep_label=True)
+        if effect:
             ability["effect"] = effect
+        elif choose_one_effect:
+            ability["effect"] = choose_one_effect
+
+        bonus = _extract_labeled_field("Bonus", body)
+        if bonus:
+            ability["bonus"] = bonus
 
         abilities[name] = ability
 
