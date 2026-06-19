@@ -623,6 +623,26 @@ def _parse_equipment_tables(text: str, items: dict[str, dict], source: str):
         )
 
 
+def _type_booster_effect(type_name: str) -> str:
+    return (
+        f"Grants a +5 Damage Bonus to all direct damage {type_name} Type Moves "
+        "when performed by the user. Accessory Item for Trainers."
+    )
+
+
+def _add_type_booster_items(items: dict[str, dict], *, cost: str | None, source: str):
+    for type_name in ALL_TYPES:
+        _add_item(
+            items,
+            f"{type_name} Type Booster",
+            category="Held Item",
+            effect=_type_booster_effect(type_name),
+            cost=cost,
+            section="Held Items",
+            source=source,
+        )
+
+
 def _parse_held_items(text: str, items: dict[str, dict], source: str):
     section = _extract_between(text, "Held Item", "## Page 298")
     names = [
@@ -638,8 +658,12 @@ def _parse_held_items(text: str, items: dict[str, dict], source: str):
     for name, block in blocks.items():
         cost = block[-1] if block and _looks_like_cost(block[-1]) else None
         effect = _clean_block_text("\n".join(block[:-1] if cost else block))
+        if name == "Type Boosters":
+            _add_type_booster_items(items, cost=cost, source=source)
+            continue
+
         aliases = []
-        if name in {"Type Gem", "Type Plate", "Type Boosters", "Type Brace"}:
+        if name in {"Type Gem", "Type Plate", "Type Brace"}:
             aliases.extend([f"{t} {name[:-1] if name.endswith('s') else name}" for t in ALL_TYPES])
         if name in {"Choice Item", "Lagging Item", "Stat Boosters"}:
             aliases.extend([f"{stat} {name[:-1] if name.endswith('s') else name}" for stat in ALL_STATS])

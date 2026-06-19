@@ -2826,13 +2826,13 @@
     "notes": [],
     "source": "09-gear-and-items.md"
   },
-  "Type Boosters": {
-    "name": "Type Boosters",
+  "Normal Type Booster": {
+    "name": "Normal Type Booster",
     "categories": [
       "Held Item"
     ],
     "effects": [
-      "These items come in a variety of each of the Elemental Types, and grants a +5 Damage Bonus to all direct damage Moves of its Specific Type when performed by the user. Accessory Item for Trainers."
+      "Grants a +5 Damage Bonus to all direct damage Normal Type Moves when performed by the user. Accessory Item for Trainers."
     ],
     "costs": [
       "$1800"
@@ -2840,26 +2840,313 @@
     "sections": [
       "Held Items"
     ],
-    "aliases": [
-      "Normal Type Booster",
-      "Fire Type Booster",
-      "Water Type Booster",
-      "Electric Type Booster",
-      "Grass Type Booster",
-      "Ice Type Booster",
-      "Fighting Type Booster",
-      "Poison Type Booster",
-      "Ground Type Booster",
-      "Flying Type Booster",
-      "Psychic Type Booster",
-      "Bug Type Booster",
-      "Rock Type Booster",
-      "Ghost Type Booster",
-      "Dragon Type Booster",
-      "Dark Type Booster",
-      "Steel Type Booster",
-      "Fairy Type Booster"
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fire Type Booster": {
+    "name": "Fire Type Booster",
+    "categories": [
+      "Held Item"
     ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Fire Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Water Type Booster": {
+    "name": "Water Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Water Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Electric Type Booster": {
+    "name": "Electric Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Electric Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Grass Type Booster": {
+    "name": "Grass Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Grass Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Ice Type Booster": {
+    "name": "Ice Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Ice Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fighting Type Booster": {
+    "name": "Fighting Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Fighting Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Poison Type Booster": {
+    "name": "Poison Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Poison Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Ground Type Booster": {
+    "name": "Ground Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Ground Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Flying Type Booster": {
+    "name": "Flying Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Flying Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Psychic Type Booster": {
+    "name": "Psychic Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Psychic Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Bug Type Booster": {
+    "name": "Bug Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Bug Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Rock Type Booster": {
+    "name": "Rock Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Rock Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Ghost Type Booster": {
+    "name": "Ghost Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Ghost Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dragon Type Booster": {
+    "name": "Dragon Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Dragon Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dark Type Booster": {
+    "name": "Dark Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Dark Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Steel Type Booster": {
+    "name": "Steel Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Steel Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fairy Type Booster": {
+    "name": "Fairy Type Booster",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants a +5 Damage Bonus to all direct damage Fairy Type Moves when performed by the user. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$1800"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
     "notes": [],
     "source": "09-gear-and-items.md"
   },

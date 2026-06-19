@@ -77,6 +77,25 @@ const TYPE_BOOSTER_BY_TYPE = {
   Fairy: 'plate/pixie',
 }
 
+const TYPE_ITEM_VARIANT_RE = new RegExp(`^(${Object.keys(TYPE_SLUGS).join('|')})\\s+Type\\s+(Gem|Plate|Booster|Brace)$`, 'i')
+
+const toCanonicalTypeName = (value) => value[0].toUpperCase() + value.slice(1).toLowerCase()
+
+const typeVariantPath = (label) => {
+  const match = String(label ?? '').match(TYPE_ITEM_VARIANT_RE)
+  if (!match) return null
+
+  const type = toCanonicalTypeName(match[1])
+  const kind = match[2].toLowerCase()
+  if (kind === 'gem') return `gem/${TYPE_SLUGS[type]}`
+  if (kind === 'plate') {
+    const plate = PLATE_BY_TYPE[type]
+    return plate ? `plate/${plate}` : null
+  }
+  if (kind === 'booster') return TYPE_BOOSTER_BY_TYPE[type] ?? null
+  return null
+}
+
 const STAT_ITEM_BY_ALIAS = {
   'attack choice item': 'hold-item/choice-band',
   'special attack choice item': 'hold-item/choice-specs',
@@ -137,7 +156,6 @@ const MANUAL_PATHS = {
   'Choice Item': 'hold-item/choice-band',
   'Lagging Item': 'hold-item/lagging-tail',
   'Stat Boosters': 'ev-item/power-bracer',
-  'Type Boosters': 'hold-item/silk-scarf',
   'Type Gem': 'gem/normal',
   'Type Plate': 'plate/flame',
   'Mega Stone': 'mega-stone/gengarite',
@@ -194,7 +212,14 @@ const tmHmPath = (item) => {
 }
 
 const inferReferencePath = (item) => {
-  for (const value of [item.name, ...(item.aliases ?? [])]) {
+  const labels = [item.name, ...(item.aliases ?? [])]
+
+  for (const label of labels) {
+    const typePath = typeVariantPath(label)
+    if (typePath && pathSet.has(typePath)) return typePath
+  }
+
+  for (const value of labels) {
     const manual = MANUAL_PATHS[value]
     if (manual && pathSet.has(manual)) return manual
   }
@@ -205,31 +230,13 @@ const inferReferencePath = (item) => {
   const direct = pathFromName(item.name)
   if (direct) return direct
 
-  for (const alias of item.aliases ?? []) {
-    const aliasSlug = slugify(alias)
-    const statAlias = STAT_ITEM_BY_ALIAS[aliasSlug.replace(/-/g, ' ')]
+  for (const label of labels) {
+    const labelSlug = slugify(label)
+    const statAlias = STAT_ITEM_BY_ALIAS[labelSlug.replace(/-/g, ' ')]
     if (statAlias && pathSet.has(statAlias)) return statAlias
 
-    const typeMatch = alias.match(/^(Normal|Fire|Water|Electric|Grass|Ice|Fighting|Poison|Ground|Flying|Psychic|Bug|Rock|Ghost|Dragon|Dark|Steel|Fairy)\s+Type\s+(Gem|Plate|Booster|Brace)$/i)
-    if (typeMatch) {
-      const type = typeMatch[1][0].toUpperCase() + typeMatch[1].slice(1).toLowerCase()
-      const kind = typeMatch[2].toLowerCase()
-      if (kind === 'gem') {
-        const path = `gem/${TYPE_SLUGS[type]}`
-        if (pathSet.has(path)) return path
-      }
-      if (kind === 'plate') {
-        const plate = PLATE_BY_TYPE[type]
-        if (plate && pathSet.has(`plate/${plate}`)) return `plate/${plate}`
-      }
-      if (kind === 'booster') {
-        const path = TYPE_BOOSTER_BY_TYPE[type]
-        if (path && pathSet.has(path)) return path
-      }
-    }
-
-    const aliasDirect = pathFromName(alias)
-    if (aliasDirect) return aliasDirect
+    const labelDirect = pathFromName(label)
+    if (labelDirect) return labelDirect
   }
 
   return null
@@ -277,8 +284,8 @@ for (const item of referenceItems) {
   const path = inferReferencePath(item)
   if (!path) continue
   matchedReferenceItems++
-  addIfPathExists(manifest, item.name, path)
-  for (const alias of item.aliases ?? []) addIfPathExists(manifest, alias, path)
+  addIfPathExists(manifest, item.name, typeVariantPath(item.name) ?? path)
+  for (const alias of item.aliases ?? []) addIfPathExists(manifest, alias, typeVariantPath(alias) ?? path)
 }
 
 const orderedManifest = Object.fromEntries(Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)))
