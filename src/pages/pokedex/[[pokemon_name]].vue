@@ -6,7 +6,12 @@ import { useApiClient } from '~/composables/useApiClient'
 import { useAuth } from '~/composables/useAuth'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
 import { POKEDEX_API_PATHS } from '~/utils/apiRoutes'
-import { isCtrlLetter, isCtrlShiftLetter, isEscapeKey } from '~/utils/keyboardShortcuts'
+import {
+  isCtrlLetter,
+  isCtrlShiftLetter,
+  isEditableKeyboardEventTarget,
+  isEscapeKey,
+} from '~/utils/keyboardShortcuts'
 import type { PokedexEntryMutationResponse } from '~/utils/pokedex/admin'
 import { pokedexEntryPath, type PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 import { isPokedexPath } from '~/utils/pokedex/routes'
@@ -29,6 +34,8 @@ const {
   filterOperators,
   filteredEntries,
   genderSummary,
+  goToAdjacentEvolution,
+  goToAdjacentPokedexNumber,
   goToRandomPokemon,
   habitatSummary,
   heightLabel,
@@ -54,14 +61,6 @@ const {
 const apiClient = useApiClient()
 const router = useRouter()
 const { isGm } = useAuth()
-
-const isTextEntryTarget = (target: EventTarget | null): boolean => {
-  if (!(target instanceof HTMLElement)) return false
-  return target instanceof HTMLInputElement
-    || target instanceof HTMLTextAreaElement
-    || target instanceof HTMLSelectElement
-    || target.isContentEditable
-}
 
 useHead(() => ({ title: pageTitle.value }))
 
@@ -118,7 +117,38 @@ const {
   selectedEntry,
 })
 
+const navigateByPokedexArrowKey = (event: KeyboardEvent): boolean => {
+  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false
+  if (isEditMode.value || isAdminPanelOpen.value || isEditableKeyboardEventTarget(event.target)) return false
+
+  let didNavigate = false
+
+  switch (event.key) {
+    case 'ArrowUp':
+      didNavigate = goToAdjacentPokedexNumber('previous')
+      break
+    case 'ArrowDown':
+      didNavigate = goToAdjacentPokedexNumber('next')
+      break
+    case 'ArrowLeft':
+      didNavigate = goToAdjacentEvolution('previous')
+      break
+    case 'ArrowRight':
+      didNavigate = goToAdjacentEvolution('next')
+      break
+    default:
+      return false
+  }
+
+  if (!didNavigate) return false
+
+  event.preventDefault()
+  return true
+}
+
 useWindowKeydown((event) => {
+  if (navigateByPokedexArrowKey(event)) return
+
   if (isCtrlLetter(event, 'r')) {
     event.preventDefault()
     if (!event.repeat) goToRandomPokemon()
@@ -134,7 +164,7 @@ useWindowKeydown((event) => {
   }
 
   if (isCtrlShiftLetter(event, 'a')) {
-    if (!isGm.value || isTextEntryTarget(event.target)) return
+    if (!isGm.value || isEditableKeyboardEventTarget(event.target)) return
 
     event.preventDefault()
     if (!event.repeat) openAdminPanel()

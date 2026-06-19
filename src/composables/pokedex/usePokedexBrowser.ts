@@ -59,7 +59,7 @@ export const buildDisplayedPokedexEvolutions = (
   entryBySlug: ReadonlyMap<string, Pick<IndexedPokedexEntry, 'id' | 'slug'>>,
 ): DisplayedPokedexEvolution[] => (
   (selectedEntry?.evolutions ?? []).map((evolution) => {
-    const entry = entryBySlug.get(toPokedexSlug(evolution.species)) ?? null
+    const entry = resolvePokedexEvolutionEntry(evolution.species, entryBySlug)
     return {
       ...evolution,
       href: entry && entry.id !== selectedId ? pokedexEntryPath(entry) : null,
@@ -94,6 +94,73 @@ export const selectRandomPokedexEntry = <TEntry extends PokedexEntrySummary>(
     : 0
 
   return candidates[boundedIndex] ?? null
+}
+
+export type PokedexNavigationDirection = 'previous' | 'next'
+
+const POKEDEX_NAVIGATION_OFFSETS: Record<PokedexNavigationDirection, number> = {
+  previous: -1,
+  next: 1,
+}
+
+export const selectAdjacentPokedexNumberEntry = <TEntry extends PokedexEntrySummary>(
+  entries: readonly TEntry[],
+  selectedId: string | null,
+  direction: PokedexNavigationDirection,
+): TEntry | null => {
+  if (!selectedId) return null
+
+  const selectedIndex = entries.findIndex((entry) => entry.id === selectedId)
+  if (selectedIndex < 0) return null
+
+  return entries[selectedIndex + POKEDEX_NAVIGATION_OFFSETS[direction]] ?? null
+}
+
+const resolvePokedexEvolutionSlug = <TEntry extends Pick<IndexedPokedexEntry, 'slug'>>(
+  evolutionSlug: string,
+  entryBySlug: ReadonlyMap<string, TEntry>,
+): TEntry | null => {
+  const exactEntry = entryBySlug.get(evolutionSlug)
+  if (exactEntry) return exactEntry
+
+  let longestPrefixEntry: TEntry | null = null
+  let longestPrefixLength = 0
+
+  for (const [entrySlug, entry] of entryBySlug) {
+    if (!entrySlug || entrySlug.length <= longestPrefixLength) continue
+    if (!evolutionSlug.startsWith(`${entrySlug}-`)) continue
+
+    longestPrefixEntry = entry
+    longestPrefixLength = entrySlug.length
+  }
+
+  return longestPrefixEntry
+}
+
+export const resolvePokedexEvolutionEntry = <TEntry extends Pick<IndexedPokedexEntry, 'slug'>>(
+  evolutionSpecies: string,
+  entryBySlug: ReadonlyMap<string, TEntry>,
+): TEntry | null => {
+  const evolutionSlug = toPokedexSlug(evolutionSpecies)
+  return evolutionSlug ? resolvePokedexEvolutionSlug(evolutionSlug, entryBySlug) : null
+}
+
+export const selectAdjacentPokedexEvolutionEntry = <TEntry extends Pick<IndexedPokedexEntry, 'id' | 'slug'>>(
+  selectedEntry: Pick<IndexedPokedexEntry, 'evolutions'> | null,
+  selectedId: string | null,
+  entryBySlug: ReadonlyMap<string, TEntry>,
+  direction: PokedexNavigationDirection,
+): TEntry | null => {
+  if (!selectedEntry || !selectedId) return null
+
+  const evolutionEntries = (selectedEntry.evolutions ?? []).map((evolution) => (
+    resolvePokedexEvolutionEntry(evolution.species, entryBySlug)
+  ))
+  const selectedEvolutionIndex = evolutionEntries.findIndex((entry) => entry?.id === selectedId)
+  if (selectedEvolutionIndex < 0) return null
+
+  const targetEntry = evolutionEntries[selectedEvolutionIndex + POKEDEX_NAVIGATION_OFFSETS[direction]] ?? null
+  return targetEntry?.id === selectedId ? null : targetEntry
 }
 
 export const randomPokedexEntryPath = <TEntry extends PokedexEntrySummary>(
@@ -207,6 +274,27 @@ export const usePokedexBrowser = () => {
     return true
   }
 
+  const goToAdjacentPokedexNumber = (direction: PokedexNavigationDirection): boolean => {
+    const entry = selectAdjacentPokedexNumberEntry(allEntries.value, selectedId.value, direction)
+    if (!entry) return false
+
+    void router.push(pokedexEntryPath(entry))
+    return true
+  }
+
+  const goToAdjacentEvolution = (direction: PokedexNavigationDirection): boolean => {
+    const entry = selectAdjacentPokedexEvolutionEntry(
+      selectedEntry.value,
+      selectedId.value,
+      entryBySlug.value,
+      direction,
+    )
+    if (!entry) return false
+
+    void router.push(pokedexEntryPath(entry))
+    return true
+  }
+
   return {
     capabilityTokens,
     dietSummary,
@@ -217,6 +305,8 @@ export const usePokedexBrowser = () => {
     filterOperators,
     filteredEntries,
     genderSummary,
+    goToAdjacentEvolution,
+    goToAdjacentPokedexNumber,
     habitatSummary,
     heightLabel,
     isPlacementOnly,

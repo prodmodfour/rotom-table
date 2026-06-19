@@ -4,6 +4,8 @@ import {
   pokedexPageTitle,
   randomPokedexEntryPath,
   requestedPokemonNameForRoute,
+  selectAdjacentPokedexEvolutionEntry,
+  selectAdjacentPokedexNumberEntry,
   selectPokedexEntry,
   selectRandomPokedexEntry,
 } from '~/composables/pokedex/usePokedexBrowser'
@@ -84,6 +86,55 @@ describe('usePokedexBrowser helpers', () => {
     expect(selectRandomPokedexEntry([bulbasaur, ivysaur, charmander], bulbasaur.id, () => 0.99)).toBe(charmander)
     expect(selectRandomPokedexEntry([bulbasaur], bulbasaur.id, () => 0)).toBe(bulbasaur)
     expect(selectRandomPokedexEntry([], null, () => 0)).toBeNull()
+  })
+
+  it('selects adjacent entries by Pokédex order', () => {
+    const charmander = makeEntry({ id: '4-charmander', species: 'Charmander', slug: 'charmander' })
+    const entries = [bulbasaur, ivysaur, charmander]
+
+    expect(selectAdjacentPokedexNumberEntry(entries, ivysaur.id, 'previous')).toBe(bulbasaur)
+    expect(selectAdjacentPokedexNumberEntry(entries, ivysaur.id, 'next')).toBe(charmander)
+    expect(selectAdjacentPokedexNumberEntry(entries, bulbasaur.id, 'previous')).toBeNull()
+    expect(selectAdjacentPokedexNumberEntry(entries, 'missingno', 'next')).toBeNull()
+  })
+
+  it('selects adjacent evolution entries, including parser notes after species names', () => {
+    const charmander = makeEntry({
+      id: '4-charmander',
+      species: 'Charmander',
+      slug: 'charmander',
+      evolutions: [
+        { stage: 1, species: 'Charmander' },
+        { stage: 2, species: 'Charmeleon' },
+      ],
+    })
+    const charmeleon = makeEntry({ id: '5-charmeleon', species: 'Charmeleon', slug: 'charmeleon' })
+    const eevee = makeEntry({
+      id: '133-eevee',
+      species: 'Eevee',
+      slug: 'eevee',
+      evolutions: [
+        { stage: 1, species: 'Eevee' },
+        { stage: 2, species: 'Jolteon Thunderstone' },
+      ],
+    })
+    const jolteon = makeEntry({
+      id: '135-jolteon',
+      species: 'Jolteon',
+      slug: 'jolteon',
+      evolutions: eevee.evolutions,
+    })
+    const evolutionEntryBySlug = new Map([
+      [charmander.slug, charmander],
+      [charmeleon.slug, charmeleon],
+      [eevee.slug, eevee],
+      [jolteon.slug, jolteon],
+    ])
+
+    expect(selectAdjacentPokedexEvolutionEntry(charmander, charmander.id, evolutionEntryBySlug, 'next')).toBe(charmeleon)
+    expect(selectAdjacentPokedexEvolutionEntry(eevee, eevee.id, evolutionEntryBySlug, 'next')).toBe(jolteon)
+    expect(selectAdjacentPokedexEvolutionEntry(jolteon, jolteon.id, evolutionEntryBySlug, 'previous')).toBe(eevee)
+    expect(selectAdjacentPokedexEvolutionEntry(jolteon, jolteon.id, evolutionEntryBySlug, 'next')).toBeNull()
   })
 
   it('builds random entry paths', () => {
