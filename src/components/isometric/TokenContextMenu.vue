@@ -36,6 +36,7 @@ const emit = defineEmits<{
   (event: 'modify-hp'): void
   (event: 'modify-combat-stages'): void
   (event: 'apply-remove-conditions'): void
+  (event: 'grant-experience'): void
   (event: 'use-move', moveName?: string | null): void
   (event: 'use-maneuver', maneuverName?: string | null): void
   (event: 'use-ability', abilityName?: string | null): void
@@ -381,6 +382,14 @@ watch(orders, (nextOrders) => {
           @click.stop="emit('view-pokedex')"
         >
           View in Pokédex
+        </button>
+        <button
+          v-if="props.menu.canGrantExperience"
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('grant-experience')"
+        >
+          Grant XP
         </button>
         <button
           v-if="props.menu.canTurn"

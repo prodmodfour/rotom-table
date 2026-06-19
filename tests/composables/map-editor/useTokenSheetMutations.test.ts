@@ -116,6 +116,16 @@ describe('useTokenSheetMutations', () => {
     expect(saved[0].sheet).toMatchObject({ slug: 'examples-abra' })
   })
 
+  it('grants Pokémon experience from a placed token and persists level changes', async () => {
+    const { mutations, pokemonSheets, saved } = makeMutations()
+
+    await mutations.grantExperience({ id: 'token-1', amount: 100 })
+
+    expect(pokemonSheets.get('bolt')).toMatchObject({ totalExp: 140, level: 12 })
+    expect(saved).toHaveLength(1)
+    expect(saved[0].sheet).toMatchObject({ totalExp: 140, level: 12 })
+  })
+
   it('activates sheet ability automation and persists it', async () => {
     const { mutations, pokemonSheets, saved } = makeMutations()
 

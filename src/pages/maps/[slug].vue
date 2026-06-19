@@ -891,6 +891,7 @@ const {
   modifyHp: modifyHpViaSetupSheetSave,
   modifyCombatStages: modifyCombatStagesViaSetupSheetSave,
   modifyConditions: modifyConditionsViaSetupSheetSave,
+  grantExperience: grantExperienceViaSetupSheetSave,
   modifyAbilityActivation,
   updatePlacedSheet,
 } = useTokenSheetMutations({
@@ -933,6 +934,17 @@ const modifyConditionsFromScene: typeof modifyConditionsViaSetupSheetSave = asyn
     placementId: payload.id,
     action: 'replace',
     conditions: payload.conditions,
+  })
+}
+
+const grantExperienceFromScene: typeof grantExperienceViaSetupSheetSave = async (payload, options) => {
+  if (mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT) {
+    await grantExperienceViaSetupSheetSave(payload, options)
+    return
+  }
+  await livePlayCommands.grantExperience({
+    placementId: payload.id,
+    amount: payload.amount,
   })
 }
 
@@ -1550,6 +1562,7 @@ useMapDimensionReconciliation({
         @modify-hp="modifyHpFromScene"
         @modify-combat-stages="modifyCombatStagesFromScene"
         @modify-conditions="modifyConditionsFromScene"
+        @grant-experience="grantExperienceFromScene"
         @use-move="openMoveAutomationFromContext"
         @use-maneuver="useManeuverFromContext"
         @use-ability="openAbilityAutomationFromContext"

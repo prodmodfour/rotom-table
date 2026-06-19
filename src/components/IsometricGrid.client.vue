@@ -229,6 +229,7 @@ const emit = defineEmits<{
   (event: 'modify-hp', payload: MoveAutomationHpUpdate): void
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
+  (event: 'grant-experience', payload: { id: string; amount: number }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
   (event: 'use-maneuver', payload: { id: string; maneuverName?: string | null }): void
   (event: 'use-ability', payload: { id: string; abilityName?: string | null }): void
@@ -338,6 +339,10 @@ const {
   combatStagesDialogChanged,
   conditionsDialog,
   conditionsDialogChanged,
+  experienceDialog,
+  experienceDialogAmount,
+  experienceDialogPreviewTotalExp,
+  experienceDialogPreviewLevel,
   damageDialog,
   damageDialogDbDef,
   damageDialogRawAmount,
@@ -363,6 +368,9 @@ const {
   handleContextApplyRemoveConditions,
   closeConditionsDialog,
   handleConditionsDialogSubmit,
+  handleContextGrantExperience,
+  closeExperienceDialog,
+  handleExperienceDialogSubmit,
   handleContextUseMove,
   handleContextUseManeuver,
   handleContextUseAbility,
@@ -390,6 +398,7 @@ const {
     modifyHp: (payload) => emit('modify-hp', payload),
     modifyCombatStages: (payload) => emit('modify-combat-stages', payload),
     modifyConditions: (payload) => emit('modify-conditions', payload),
+    grantExperience: (payload) => emit('grant-experience', payload),
     useMove: (payload) => emit('use-move', payload),
     useManeuver: (payload) => emit('use-maneuver', payload),
     useAbility: (payload) => emit('use-ability', payload),
@@ -2416,6 +2425,7 @@ watch(
       @modify-hp="handleContextModifyHp"
       @modify-combat-stages="handleContextModifyCombatStages"
       @apply-remove-conditions="handleContextApplyRemoveConditions"
+      @grant-experience="handleContextGrantExperience"
       @use-move="handleContextUseMove"
       @use-maneuver="handleContextUseManeuver"
       @use-ability="handleContextUseAbility"
@@ -2439,6 +2449,10 @@ watch(
       :conditions-dialog-changed="conditionsDialogChanged"
       :condition-move-options="conditionMoveOptions"
       :condition-crush-options="conditionCrushOptions"
+      :experience-dialog="experienceDialog"
+      :experience-dialog-amount="experienceDialogAmount"
+      :experience-dialog-preview-total-exp="experienceDialogPreviewTotalExp"
+      :experience-dialog-preview-level="experienceDialogPreviewLevel"
       :damage-dialog="damageDialog"
       :damage-dialog-db-def="damageDialogDbDef"
       :damage-dialog-raw-amount="damageDialogRawAmount"
@@ -2458,6 +2472,8 @@ watch(
       @submit-combat-stages="handleCombatStagesDialogSubmit"
       @close-conditions="closeConditionsDialog"
       @submit-conditions="handleConditionsDialogSubmit"
+      @close-experience="closeExperienceDialog"
+      @submit-experience="handleExperienceDialogSubmit"
       @close-damage="closeDamageDialog"
       @submit-damage="handleDamageDialogSubmit"
     />

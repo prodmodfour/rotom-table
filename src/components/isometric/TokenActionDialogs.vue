@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import TokenCombatStagesDialog from '~/components/isometric/TokenCombatStagesDialog.vue'
 import TokenConditionsDialog from '~/components/isometric/TokenConditionsDialog.vue'
 import TokenDamageDialog from '~/components/isometric/TokenDamageDialog.vue'
+import TokenExperienceDialog from '~/components/isometric/TokenExperienceDialog.vue'
 import TokenHpDialog from '~/components/isometric/TokenHpDialog.vue'
 import type { DamageBaseDef } from '~/utils/ptuDamage'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -16,6 +17,7 @@ import type {
   DamageDialogMultiplierTone,
   DamageDialogState,
 } from '~/utils/isometric/tokenDamageDialog'
+import type { ExperienceDialogState } from '~/utils/isometric/tokenExperienceDialog'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 
 type DamageDialogAttackerOption = Pick<SpawnedPokemon, 'id' | 'species' | 'atk' | 'satk'>
@@ -32,6 +34,10 @@ const props = defineProps<{
   conditionsDialogChanged: boolean
   conditionMoveOptions?: string[]
   conditionCrushOptions?: string[]
+  experienceDialog: ExperienceDialogState | null
+  experienceDialogAmount: number
+  experienceDialogPreviewTotalExp: number
+  experienceDialogPreviewLevel: number
   damageDialog: DamageDialogState | null
   damageDialogDbDef: DamageBaseDef | null
   damageDialogRawAmount: number
@@ -54,11 +60,14 @@ const emit = defineEmits<{
   (event: 'submit-combat-stages'): void
   (event: 'close-conditions'): void
   (event: 'submit-conditions'): void
+  (event: 'close-experience'): void
+  (event: 'submit-experience'): void
   (event: 'close-damage'): void
   (event: 'submit-damage'): void
 }>()
 
 const hpDialogComponent = ref<{ focusAmount: () => void } | null>(null)
+const experienceDialogComponent = ref<{ focusAmount: () => void } | null>(null)
 const damageDialogComponent = ref<{ focusAmount: () => void } | null>(null)
 
 const focusHpAmount = () => {
@@ -69,16 +78,21 @@ const focusDamageAmount = () => {
   damageDialogComponent.value?.focusAmount()
 }
 
+const focusExperienceAmount = () => {
+  experienceDialogComponent.value?.focusAmount()
+}
+
 const activeAccentColor = computed(() => (
   props.hpDialog?.accentColor ??
   props.combatStagesDialog?.accentColor ??
   props.conditionsDialog?.accentColor ??
+  props.experienceDialog?.accentColor ??
   props.damageDialog?.accentColor ??
   null
 ))
 const actionDialogStyle = computed(() => activeAccentColor.value ? trainerAccentCssVariables(activeAccentColor.value) : undefined)
 
-defineExpose({ focusHpAmount, focusDamageAmount })
+defineExpose({ focusHpAmount, focusDamageAmount, focusExperienceAmount })
 </script>
 
 <template>
@@ -111,6 +125,17 @@ defineExpose({ focusHpAmount, focusDamageAmount })
       :available-crushes="props.conditionCrushOptions ?? []"
       @close="emit('close-conditions')"
       @submit="emit('submit-conditions')"
+    />
+
+    <TokenExperienceDialog
+      v-if="props.experienceDialog"
+      ref="experienceDialogComponent"
+      :dialog="props.experienceDialog"
+      :amount="props.experienceDialogAmount"
+      :preview-total-exp="props.experienceDialogPreviewTotalExp"
+      :preview-level="props.experienceDialogPreviewLevel"
+      @close="emit('close-experience')"
+      @submit="emit('submit-experience')"
     />
 
     <TokenDamageDialog

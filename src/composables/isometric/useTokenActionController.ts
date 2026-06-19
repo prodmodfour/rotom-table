@@ -30,6 +30,15 @@ import {
   type ConditionsDialogState,
 } from '~/utils/isometric/tokenStatusDialogs'
 import {
+  createExperienceDialogState,
+  getExperienceDialogAmount,
+  getExperienceDialogGrantUpdate,
+  getExperienceDialogPreviewLevel,
+  getExperienceDialogPreviewTotalExp,
+  updateExperienceDialogFromPokemon,
+  type ExperienceDialogState,
+} from '~/utils/isometric/tokenExperienceDialog'
+import {
   createDamageDialogState,
   getDamageDialogAttackBonus,
   getDamageDialogAttacker,
@@ -52,6 +61,7 @@ import {
 export interface TokenActionDialogsExpose {
   focusHpAmount: () => void
   focusDamageAmount: () => void
+  focusExperienceAmount: () => void
 }
 
 type BoundsProvider = Pick<HTMLElement, 'getBoundingClientRect'>
@@ -62,6 +72,7 @@ export interface TokenActionControllerEmitters {
   modifyHp: (payload: MoveAutomationHpUpdate) => void
   modifyCombatStages: (payload: { id: string; stages: CombatStageMap }) => void
   modifyConditions: (payload: { id: string; conditions: string[] }) => void
+  grantExperience: (payload: { id: string; amount: number }) => void
   useMove: (payload: { id: string; moveName?: string | null }) => void
   useManeuver?: (payload: { id: string; maneuverName?: string | null }) => void
   useAbility: (payload: { id: string; abilityName?: string | null }) => void
@@ -88,6 +99,7 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
   const combatStagesDialog = ref<CombatStagesDialogState | null>(null)
   const conditionsDialog = ref<ConditionsDialogState | null>(null)
   const hpDialog = ref<HpDialogState | null>(null)
+  const experienceDialog = ref<ExperienceDialogState | null>(null)
   const damageDialog = ref<DamageDialogState | null>(null)
   const actionDialogs = ref<TokenActionDialogsExpose | null>(null)
 
@@ -97,6 +109,9 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
   const hpDialogPreview = computed(() => getHpDialogPreview(hpDialog.value))
   const hpDialogInjuryResult = computed(() => getHpDialogInjuryResult(hpDialog.value))
   const hpDialogPreviewMaxHp = computed(() => getHpDialogPreviewMaxHp(hpDialog.value))
+  const experienceDialogAmount = computed(() => getExperienceDialogAmount(experienceDialog.value))
+  const experienceDialogPreviewTotalExp = computed(() => getExperienceDialogPreviewTotalExp(experienceDialog.value))
+  const experienceDialogPreviewLevel = computed(() => getExperienceDialogPreviewLevel(experienceDialog.value))
   const damageDialogDbDef = computed(() => getDamageDialogDbDefinition(damageDialog.value))
   const damageDialogRawAmount = computed(() => getDamageDialogRawAmount(damageDialog.value))
   const damageDialogDefense = computed(() => getDamageDialogDefense(damageDialog.value))
@@ -266,6 +281,34 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     closeConditionsDialog()
   }
 
+  const closeExperienceDialog = () => {
+    experienceDialog.value = null
+  }
+
+  const handleContextGrantExperience = () => {
+    const id = controllableContextId()
+    const target = findPokemonById(id)
+    if (!id || !target || target.sheetKind !== 'pokemon') {
+      closeContextMenu()
+      return
+    }
+
+    experienceDialog.value = createExperienceDialogState(target)
+    closeContextMenu()
+    void nextTick(() => {
+      actionDialogs.value?.focusExperienceAmount()
+    })
+  }
+
+  const handleExperienceDialogSubmit = () => {
+    if (!experienceDialog.value || !options.canControlPokemon(experienceDialog.value.id)) return
+    const update = getExperienceDialogGrantUpdate(experienceDialog.value)
+    if (!update) return
+
+    options.emit.grantExperience(update)
+    closeExperienceDialog()
+  }
+
   const closeDamageDialog = () => {
     damageDialog.value = null
   }
@@ -402,6 +445,15 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
         conditionsDialog.value = updateConditionsDialogFromPokemon(conditionsDialog.value, live)
       }
     }
+
+    if (experienceDialog.value) {
+      const live = findPokemonById(experienceDialog.value.id)
+      if (!live || live.sheetKind !== 'pokemon') {
+        closeExperienceDialog()
+      } else {
+        experienceDialog.value = updateExperienceDialogFromPokemon(experienceDialog.value, live)
+      }
+    }
   }
 
   const closeUnauthorizedActions = () => {
@@ -409,12 +461,18 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     if (hpDialog.value && !options.canControlPokemon(hpDialog.value.id)) closeHpDialog()
     if (combatStagesDialog.value && !options.canControlPokemon(combatStagesDialog.value.id)) closeCombatStagesDialog()
     if (conditionsDialog.value && !options.canControlPokemon(conditionsDialog.value.id)) closeConditionsDialog()
+    if (experienceDialog.value && !options.canControlPokemon(experienceDialog.value.id)) closeExperienceDialog()
     if (damageDialog.value && !options.canControlPokemon(damageDialog.value.id)) closeDamageDialog()
   }
 
   const closeTopmostOverlay = (): boolean => {
     if (damageDialog.value) {
       closeDamageDialog()
+      return true
+    }
+
+    if (experienceDialog.value) {
+      closeExperienceDialog()
       return true
     }
 
@@ -453,6 +511,10 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     combatStagesDialogChanged,
     conditionsDialog,
     conditionsDialogChanged,
+    experienceDialog,
+    experienceDialogAmount,
+    experienceDialogPreviewTotalExp,
+    experienceDialogPreviewLevel,
     damageDialog,
     damageDialogDbDef,
     damageDialogRawAmount,
@@ -478,6 +540,9 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     handleContextApplyRemoveConditions,
     closeConditionsDialog,
     handleConditionsDialogSubmit,
+    handleContextGrantExperience,
+    closeExperienceDialog,
+    handleExperienceDialogSubmit,
     handleContextUseMove,
     handleContextUseManeuver,
     handleContextUseAbility,

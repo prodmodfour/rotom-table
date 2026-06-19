@@ -133,6 +133,7 @@ export const placementToSpawned = (
       sheetKind: 'pokemon',
       sheetSlug: sheet.slug,
       level: sheet.level,
+      ...(typeof sheet.totalExp === 'number' ? { totalExp: sheet.totalExp } : {}),
       ...(accentColor ? { accentColor } : {}),
       ...(sheet.gender ? { gender: sheet.gender } : {}),
       ...(hp.loyalty != null ? { loyalty: hp.loyalty } : {}),

@@ -321,6 +321,58 @@ describe('useLivePlayCommands', () => {
     expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
   })
 
+  it('posts live-play Grant XP sheet commands to map token command routes', async () => {
+    const map = mapFixture()
+    const mapRevision = ref(4)
+    const applySheetUpdate = vi.fn()
+    const sheetUpdate = {
+      kind: 'pokemon' as const,
+      slug: 'pikachu',
+      sheet: { slug: 'pikachu', totalExp: 140, level: 12, revision: 3 },
+    }
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_serverxp001',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      map,
+      placement: map.placements[0],
+      sheetUpdates: [sheetUpdate],
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      map: ref(map),
+      mapRevision,
+      applySheetUpdate,
+    })
+    const result = await actions.grantExperience({
+      placementId: 'token-pikachu',
+      amount: 100,
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.grantExperience, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
+      scopes: [
+        { kind: 'token', placementId: 'token-pikachu', field: 'experience' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'experience' },
+      ],
+      payload: {
+        placementId: 'token-pikachu',
+        amount: 100,
+      },
+      clientId: 'ssr',
+    }))
+    expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
+  })
+
   it('posts live-play useMove commands with sheet scope and applies authoritative map and sheet results', async () => {
     const map = mapFixture()
     const mapRevision = ref(4)

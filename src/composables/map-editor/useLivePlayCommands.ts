@@ -6,6 +6,7 @@ import {
   type AdvanceInitiativePayload,
   type BuildTerrainVoxelPayload,
   type DeleteTokenPayload,
+  type GrantExperiencePayload,
   type LivePlayCommandAccepted,
   type LivePlayCommandDuplicate,
   type LivePlayCommandRejectionReason,
@@ -137,6 +138,10 @@ export interface UseLivePlayCommandsReturn {
     action?: ModifyConditionsPayload['action']
     conditions: readonly string[]
   }) => Promise<LivePlayCommandDispatchResult>
+  grantExperience: (payload: {
+    placementId: string
+    amount: number
+  }) => Promise<LivePlayCommandDispatchResult>
   useMove: (payload: {
     placementId: string
     moveName: string
@@ -181,6 +186,7 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS
+  | typeof LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_MOVE
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY
@@ -203,6 +209,7 @@ type LivePlayTokenCommandPayload =
   | ModifyHpPayload
   | ModifyCombatStagesPayload
   | ModifyConditionsPayload
+  | GrantExperiencePayload
   | UseMovePayload
   | UseManeuverPayload
   | UseAbilityPayload
@@ -374,8 +381,8 @@ export const useLivePlayCommands = (
   ): Record<string, unknown> => commandBody(type, payload, [tokenScope(payload, field)])
 
   const sheetCommandBody = (
-    type: typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
-    payload: ModifyHpPayload | ModifyCombatStagesPayload | ModifyConditionsPayload,
+    type: typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS | typeof LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
+    payload: ModifyHpPayload | ModifyCombatStagesPayload | ModifyConditionsPayload | GrantExperiencePayload,
     field: LivePlayTokenScope['field'],
     sheetField: string,
   ): Record<string, unknown> => {
@@ -577,6 +584,19 @@ export const useLivePlayCommands = (
     ),
   )
 
+  const grantExperience: UseLivePlayCommandsReturn['grantExperience'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.grantExperience,
+    sheetCommandBody(
+      LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
+      {
+        placementId: payload.placementId,
+        amount: payload.amount,
+      },
+      'experience',
+      'experience',
+    ),
+  )
+
   const useMove: UseLivePlayCommandsReturn['useMove'] = (payload) => {
     const commandPayload = {
       placementId: payload.placementId,
@@ -734,6 +754,7 @@ export const useLivePlayCommands = (
     modifyHp,
     modifyCombatStages,
     modifyConditions,
+    grantExperience,
     useMove,
     setInitiative,
     nextInitiative,

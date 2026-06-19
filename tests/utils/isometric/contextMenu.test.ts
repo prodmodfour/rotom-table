@@ -40,6 +40,7 @@ describe('isometric token context menu helpers', () => {
     expect(getTokenContextMenuCapabilities(pokemon({ backSpriteUrl: '/back.png' }))).toEqual({
       canTurn: true,
       canViewPokedex: true,
+      canGrantExperience: true,
       canUseOrders: false,
       canThrowPokeball: false,
     })
@@ -50,6 +51,7 @@ describe('isometric token context menu helpers', () => {
     }))).toEqual({
       canTurn: false,
       canViewPokedex: false,
+      canGrantExperience: false,
       canUseOrders: true,
       canThrowPokeball: true,
     })
@@ -59,13 +61,15 @@ describe('isometric token context menu helpers', () => {
     expect(getTokenContextMenuButtonCount({
       canTurn: true,
       canViewPokedex: true,
+      canGrantExperience: true,
       canUseOrders: false,
       canThrowPokeball: false,
       canDeleteTokens: true,
-    })).toBe(11)
+    })).toBe(12)
     expect(getTokenContextMenuButtonCount({
       canTurn: false,
       canViewPokedex: false,
+      canGrantExperience: false,
       canUseOrders: true,
       canThrowPokeball: true,
       canSendOut: true,
@@ -77,6 +81,7 @@ describe('isometric token context menu helpers', () => {
       bounds: { left: 100, top: 50, width: 500, height: 500 } as DOMRect,
       canTurn: true,
       canViewPokedex: true,
+      canGrantExperience: true,
       canUseOrders: false,
       canThrowPokeball: false,
       canDeleteTokens: true,
@@ -94,10 +99,11 @@ describe('isometric token context menu helpers', () => {
       id: 'token-1',
       canTurn: true,
       canViewPokedex: true,
+      canGrantExperience: true,
       canUseOrders: false,
       canThrowPokeball: false,
       x: 120,
-      y: 75,
+      y: 62,
     })
   })
 })

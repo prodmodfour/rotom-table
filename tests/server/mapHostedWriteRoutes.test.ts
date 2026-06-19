@@ -93,6 +93,7 @@ const tokenTurnRoute = (await import('../../server/api/maps/tokens/turn.post')).
 const modifyHpRoute = (await import('../../server/api/maps/tokens/modify-hp.post')).default
 const modifyCombatStagesRoute = (await import('../../server/api/maps/tokens/modify-combat-stages.post')).default
 const modifyConditionsRoute = (await import('../../server/api/maps/tokens/modify-conditions.post')).default
+const grantExperienceRoute = (await import('../../server/api/maps/tokens/grant-experience.post')).default
 const abilityRoute = (await import('../../server/api/maps/tokens/use-ability.post')).default
 const maneuverRoute = (await import('../../server/api/maps/tokens/use-maneuver.post')).default
 const orderRoute = (await import('../../server/api/maps/tokens/use-order.post')).default
@@ -401,6 +402,20 @@ describe('map hosted-write API routes', () => {
           type: 'modifyConditions',
           scopes: [{ kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'conditions' }],
           payload: { placementId: 'token-1', add: ['burned'] },
+          profileId: 'profile_ash00000',
+        },
+        mock: mocks.executeLivePlaySheetCommandUseCase,
+      },
+      {
+        route: grantExperienceRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedxp1',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'grantExperience',
+          scopes: [{ kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'experience' }],
+          payload: { placementId: 'token-1', amount: 25 },
           profileId: 'profile_ash00000',
         },
         mock: mocks.executeLivePlaySheetCommandUseCase,

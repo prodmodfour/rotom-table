@@ -32,6 +32,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   MODIFY_HP: 'modifyHp',
   MODIFY_COMBAT_STAGES: 'modifyCombatStages',
   MODIFY_CONDITIONS: 'modifyConditions',
+  GRANT_EXPERIENCE: 'grantExperience',
   USE_MOVE: 'useMove',
   USE_MANEUVER: 'useManeuver',
   USE_ABILITY: 'useAbility',
@@ -59,6 +60,7 @@ export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
   LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES,
   LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+  LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
   LIVE_PLAY_COMMAND_TYPES.USE_MOVE,
   LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
   LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
@@ -84,6 +86,7 @@ export const LIVE_PLAY_PATCH_TYPES = {
   TOKEN_HP: 'token.hp',
   TOKEN_CONDITIONS: 'token.conditions',
   TOKEN_COMBAT_STAGES: 'token.combatStages',
+  TOKEN_EXPERIENCE: 'token.experience',
   TOKEN_MOVE_USAGE: 'token.moveUsage',
   TOKEN_ACTION: 'token.action',
   MAP_INITIATIVE: 'map.initiative',
@@ -104,6 +107,7 @@ export const LIVE_PLAY_PATCH_TYPE_VALUES = [
   LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
   LIVE_PLAY_PATCH_TYPES.TOKEN_CONDITIONS,
   LIVE_PLAY_PATCH_TYPES.TOKEN_COMBAT_STAGES,
+  LIVE_PLAY_PATCH_TYPES.TOKEN_EXPERIENCE,
   LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE,
   LIVE_PLAY_PATCH_TYPES.TOKEN_ACTION,
   LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE,
@@ -132,6 +136,7 @@ export const LIVE_PLAY_TOKEN_SCOPE_FIELDS = [
   'hp',
   'conditions',
   'combatStages',
+  'experience',
   'moveUsage',
   'action',
   'spawn',
@@ -225,6 +230,11 @@ export interface ModifyConditionsPayload {
   readonly placementId: string
   readonly action: ModifyConditionsAction
   readonly conditions: readonly string[]
+}
+
+export interface GrantExperiencePayload {
+  readonly placementId: string
+  readonly amount: number
 }
 
 export interface UseMovePayload {
@@ -366,6 +376,12 @@ export type ModifyConditionsLivePlayCommand = LivePlayCommandEnvelope<
   LivePlayScope
 >
 
+export type GrantExperienceLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
+  GrantExperiencePayload,
+  LivePlayScope
+>
+
 export type UseMoveLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.USE_MOVE,
   UseMovePayload,
@@ -470,6 +486,7 @@ export type LivePlaySheetCommand =
   | ModifyHpLivePlayCommand
   | ModifyCombatStagesLivePlayCommand
   | ModifyConditionsLivePlayCommand
+  | GrantExperienceLivePlayCommand
 
 export type LivePlayTableActionCommand =
   | UseManeuverLivePlayCommand
@@ -527,6 +544,16 @@ export interface ConditionsModifiedPatchPayload {
   readonly sheetSlug: string
   readonly previous: readonly string[]
   readonly current: readonly string[]
+  readonly sheetRevision: number
+}
+
+export interface ExperienceGrantedPatchPayload {
+  readonly placementId: string
+  readonly sheetKind: SheetKind
+  readonly sheetSlug: string
+  readonly previous: Record<string, unknown>
+  readonly current: Record<string, unknown>
+  readonly amount: number
   readonly sheetRevision: number
 }
 
@@ -624,6 +651,7 @@ export type TokenTurnedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_
 export type SheetHpModifiedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_HP, SheetHpModifiedPatchPayload, LivePlayScope>
 export type ConditionsModifiedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_CONDITIONS, ConditionsModifiedPatchPayload, LivePlayScope>
 export type CombatStagesModifiedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_COMBAT_STAGES, CombatStagesModifiedPatchPayload, LivePlayScope>
+export type ExperienceGrantedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_EXPERIENCE, ExperienceGrantedPatchPayload, LivePlayScope>
 export type MoveUsedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE | typeof LIVE_PLAY_PATCH_TYPES.TOKEN_ACTION, MoveUsedPatchPayload, LivePlayScope>
 export type InitiativeUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE, InitiativeUpdatedPatchPayload, LivePlayMapScope>
 export type HazardsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS, HazardsUpdatedPatchPayload, LivePlayMapScope>
@@ -638,6 +666,7 @@ export type KnownLivePlayPatch =
   | SheetHpModifiedPatch
   | ConditionsModifiedPatch
   | CombatStagesModifiedPatch
+  | ExperienceGrantedPatch
   | MoveUsedPatch
   | InitiativeUpdatedPatch
   | HazardsUpdatedPatch

@@ -9,6 +9,7 @@ import {
   applyCombatStagesToSheet,
   applyConditionsToSheet,
   applyHpToSheet,
+  applyExperienceToSheet,
   commitSheetUpdate,
   createSheetUpdateForPlacement,
   rollbackSheetUpdate,
@@ -27,6 +28,11 @@ import type { AbilitySheetActivationUpdate } from '~/types/abilityAutomation'
 
 export interface SheetUpdateOptions {
   allowAnyTarget?: boolean
+}
+
+export interface TokenExperienceGrantUpdate {
+  id: string
+  amount: number
 }
 
 export interface SavePlacedSheetRequest {
@@ -162,6 +168,18 @@ export const useTokenSheetMutations = ({
     )
   }
 
+  const grantExperience = async (
+    payload: TokenExperienceGrantUpdate,
+    options: SheetUpdateOptions = {},
+  ): Promise<void> => {
+    await updatePlacedSheet(
+      payload.id,
+      (kind, sheet) => applyExperienceToSheet(kind, sheet, payload.amount),
+      'grantExperience',
+      options,
+    )
+  }
+
   const modifyAbilityActivation = async (
     payload: AbilitySheetActivationUpdate,
     options: SheetUpdateOptions = {},
@@ -182,6 +200,7 @@ export const useTokenSheetMutations = ({
     modifyHp,
     modifyCombatStages,
     modifyConditions,
+    grantExperience,
     modifyAbilityActivation,
   }
 }

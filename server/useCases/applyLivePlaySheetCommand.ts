@@ -9,6 +9,8 @@ import {
   type LivePlaySheetCommand,
   type LivePlaySheetScope,
   type LivePlayTokenScope,
+  type GrantExperienceLivePlayCommand,
+  type GrantExperiencePayload,
   type ModifyCombatStagesLivePlayCommand,
   type ModifyCombatStagesPayload,
   type ModifyConditionsLivePlayCommand,
@@ -30,12 +32,14 @@ import { sameJsonValue } from '~/utils/serialization'
 import {
   applyCombatStagesToSheet,
   applyConditionsToSheet,
+  applyExperienceToSheet,
   applyHpToSheet,
   toPersistableSheetPayload,
   type AnyLiveSheet,
 } from '~/utils/sheetMutations'
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import { normalizeConditionNames } from '~/utils/statusConditions'
+import { pokemonExperienceNeededForLevel } from '~/utils/sheets/pokemonExperience'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControlAsync,
@@ -67,6 +71,7 @@ export type LivePlaySheetCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS
+  | typeof LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE
 
 export interface LivePlaySheetCommandActor {
   readonly role: AuthRole
@@ -125,12 +130,18 @@ interface HpValueState {
   readonly injuries: number
 }
 
+interface ExperienceValueState {
+  readonly level: number
+  readonly totalExp: number
+}
+
 const livePlaySheetCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
 const sheetCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
   LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES,
   LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+  LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
 ])
 
 const actionDependencies = (dependencies: LivePlaySheetCommandDependencies) => ({
@@ -256,10 +267,24 @@ const expectModifyConditionsPayload = (payload: unknown): ModifyConditionsPayloa
   }
 }
 
-const commandPayload = (command: LivePlaySheetCommand): ModifyHpPayload | ModifyCombatStagesPayload | ModifyConditionsPayload => {
+const expectGrantExperiencePayload = (payload: unknown): GrantExperiencePayload => {
+  if (!isRecord(payload)) rejectLivePlayCommand('invalid', 'grantExperience payload must be an object')
+  const record = payload as UnknownRecord
+  const placementId = expectPlacementId(record, 'grantExperience')
+  if (!Number.isSafeInteger(record.amount) || (record.amount as number) <= 0) {
+    rejectLivePlayCommand('invalid', 'grantExperience payload.amount must be a safe positive integer')
+  }
+  return {
+    placementId,
+    amount: record.amount as number,
+  }
+}
+
+const commandPayload = (command: LivePlaySheetCommand): ModifyHpPayload | ModifyCombatStagesPayload | ModifyConditionsPayload | GrantExperiencePayload => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP) return expectModifyHpPayload(command.payload)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES) return expectModifyCombatStagesPayload(command.payload)
-  return expectModifyConditionsPayload(command.payload)
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS) return expectModifyConditionsPayload(command.payload)
+  return expectGrantExperiencePayload(command.payload)
 }
 
 const commandPlacementId = (command: LivePlaySheetCommand): string => {
@@ -270,13 +295,15 @@ const commandPlacementId = (command: LivePlaySheetCommand): string => {
 const tokenScopeFieldFor = (command: Pick<LivePlaySheetCommand, 'type'>): LivePlayTokenScope['field'] => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP) return 'hp'
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES) return 'combatStages'
-  return 'conditions'
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS) return 'conditions'
+  return 'experience'
 }
 
 const sheetScopeFieldFor = (command: Pick<LivePlaySheetCommand, 'type'>): string => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP) return 'hp'
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES) return 'combatStages'
-  return 'conditions'
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS) return 'conditions'
+  return 'experience'
 }
 
 const tokenScopeMatches = (
@@ -300,7 +327,7 @@ const mismatchedSheetScope = (
 const validateCommandPayloadAndScopes = (
   command: LivePlaySheetCommand,
   placement?: Pick<SheetPlacement, 'sheetKind' | 'sheetSlug'>,
-): ModifyHpPayload | ModifyCombatStagesPayload | ModifyConditionsPayload => {
+): ModifyHpPayload | ModifyCombatStagesPayload | ModifyConditionsPayload | GrantExperiencePayload => {
   const payload = commandPayload(command)
   const tokenField = tokenScopeFieldFor(command)
   if (!tokenScopeMatches(command.scopes, payload.placementId, tokenField)) {
@@ -308,6 +335,10 @@ const validateCommandPayloadAndScopes = (
   }
 
   if (placement) {
+    if (command.type === LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE && placement.sheetKind !== 'pokemon') {
+      rejectLivePlayCommand('invalid', 'grantExperience can only target Pokémon sheet placements')
+    }
+
     const badSheetScope = mismatchedSheetScope(command.scopes, placement)
     if (badSheetScope) {
       rejectLivePlayCommand(
@@ -325,7 +356,7 @@ const assertSheetCommandType = (command: LivePlaySheetCommand, expectedType?: Li
     rejectLivePlayCommand('invalid', `This route only accepts ${expectedType} commands`)
   }
   if (!sheetCommandTypes.has(command.type)) {
-    rejectLivePlayCommand('invalid', 'Sheet live-play routes support modifyHp, modifyCombatStages, and modifyConditions commands only')
+    rejectLivePlayCommand('invalid', 'Sheet live-play routes support modifyHp, modifyCombatStages, modifyConditions, and grantExperience commands only')
   }
 }
 
@@ -386,6 +417,13 @@ const conditionsSnapshotForSheet = (kind: SheetKind, sheet: AnyLiveSheet): strin
     : trainerHpSnapshot(sheet as TrainerSheet)
   return [...snapshot.conditions]
 }
+
+const experienceSnapshotForSheet = (sheet: CharacterSheet): ExperienceValueState => ({
+  level: sheet.level,
+  totalExp: typeof sheet.totalExp === 'number' && Number.isFinite(sheet.totalExp)
+    ? Math.max(0, Math.floor(sheet.totalExp))
+    : pokemonExperienceNeededForLevel(sheet.level) ?? 0,
+})
 
 const sameStringArray = (left: readonly string[], right: readonly string[]): boolean => (
   left.length === right.length && left.every((value, index) => value === right[index])
@@ -467,7 +505,9 @@ const tokenPatch = (
     ? LIVE_PLAY_PATCH_TYPES.TOKEN_HP
     : command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
       ? LIVE_PLAY_PATCH_TYPES.TOKEN_COMBAT_STAGES
-      : LIVE_PLAY_PATCH_TYPES.TOKEN_CONDITIONS,
+      : command.type === LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE
+        ? LIVE_PLAY_PATCH_TYPES.TOKEN_EXPERIENCE
+        : LIVE_PLAY_PATCH_TYPES.TOKEN_CONDITIONS,
   mapSlug: command.mapSlug,
   revision,
   scopes: command.scopes,
@@ -564,6 +604,37 @@ const applyModifyConditions = (
   }
 }
 
+const applyGrantExperience = (
+  command: GrantExperienceLivePlayCommand,
+  context: ResolvedLivePlaySheetCommandContext,
+  currentRevision: number,
+  updatedAt: number,
+): ResolvedLivePlaySheetCommandContext | null => {
+  const payload = expectGrantExperiencePayload(command.payload)
+  if (context.placement.sheetKind !== 'pokemon') {
+    rejectLivePlayCommand('invalid', 'grantExperience can only target Pokémon sheet placements')
+  }
+
+  const original = context.sheet.sheet as unknown as CharacterSheet
+  const previous = experienceSnapshotForSheet(original)
+  const updated = applyExperienceToSheet(context.placement.sheetKind, original, payload.amount) as CharacterSheet
+  const current = experienceSnapshotForSheet(updated)
+  if (sameJsonValue(previous, current)) return null
+
+  const nextSheetRevision = nextRevision(context.sheet.revision)
+  const revision = nextRevision(currentRevision)
+  return {
+    ...context,
+    map: { ...context.map, revision, updatedAt },
+    nextSheet: sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt),
+    sheetUpdate: {
+      kind: context.sheet.kind,
+      slug: context.sheet.slug,
+      sheet: { ...sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt), revision: nextSheetRevision },
+    },
+  }
+}
+
 const valuePatchPayload = (
   command: LivePlaySheetCommand,
   before: AnyLiveSheet,
@@ -582,6 +653,15 @@ const valuePatchPayload = (
     return {
       previous: combatStagesSnapshotForSheet(placement.sheetKind, before),
       current: combatStagesSnapshotForSheet(placement.sheetKind, after),
+      sheetRevision,
+    }
+  }
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE) {
+    const payload = expectGrantExperiencePayload(command.payload)
+    return {
+      previous: experienceSnapshotForSheet(before as CharacterSheet),
+      current: experienceSnapshotForSheet(after as CharacterSheet),
+      amount: payload.amount,
       sheetRevision,
     }
   }
@@ -622,7 +702,10 @@ const applySheetCommand = (
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES) {
     return applyModifyCombatStages(command, context, currentRevision, updatedAt)
   }
-  return applyModifyConditions(command, context, currentRevision, updatedAt)
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS) {
+    return applyModifyConditions(command, context, currentRevision, updatedAt)
+  }
+  return applyGrantExperience(command, context, currentRevision, updatedAt)
 }
 
 const isAcceptedResult = (result: LivePlayCommandResult): result is LivePlayCommandAccepted => (

@@ -6,6 +6,10 @@ import { normalizeConditionNames } from './statusConditions'
 import { activateSheetAbility } from './sheetAbilityActivation'
 import { resolveCanonicalSheetAbilityName } from './sheetAbilities'
 import { setPokemonInjuries, setTrainerInjuries } from './sheets/healing'
+import {
+  calculatePokemonLevelFromExperience,
+  pokemonExperienceNeededForLevel,
+} from './sheets/pokemonExperience'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { CombatStageMap } from '~/types/combatStages'
 import type { SheetKind, SheetPlacement } from '~/types/map'
@@ -135,6 +139,34 @@ export const applyConditionsToSheet = (
 
   const updated = deepCloneJson(sheet as TrainerSheet)
   updated.conditions = normalized
+  return updated
+}
+
+const normalizeExperienceGrantAmount = (amount: number): number => {
+  if (!Number.isFinite(amount) || amount <= 0) return 0
+  return Math.floor(amount)
+}
+
+const pokemonSheetCurrentTotalExperience = (sheet: CharacterSheet): number => (
+  typeof sheet.totalExp === 'number' && Number.isFinite(sheet.totalExp)
+    ? Math.max(0, Math.floor(sheet.totalExp))
+    : pokemonExperienceNeededForLevel(sheet.level ?? 1) ?? 0
+)
+
+export const applyExperienceToSheet = (
+  kind: SheetKind,
+  sheet: AnyLiveSheet,
+  amount: number,
+): AnyLiveSheet => {
+  if (kind !== 'pokemon') return sheet
+
+  const grantAmount = normalizeExperienceGrantAmount(amount)
+  if (grantAmount <= 0) return sheet
+
+  const updated = deepCloneJson(sheet as CharacterSheet)
+  updated.totalExp = pokemonSheetCurrentTotalExperience(updated) + grantAmount
+  const levelFromExperience = calculatePokemonLevelFromExperience(updated.totalExp)
+  if (levelFromExperience != null) updated.level = levelFromExperience
   return updated
 }
 

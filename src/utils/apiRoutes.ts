@@ -37,6 +37,7 @@ export const MAP_API_PATHS = {
   modifyHp: '/api/maps/tokens/modify-hp',
   modifyCombatStages: '/api/maps/tokens/modify-combat-stages',
   modifyConditions: '/api/maps/tokens/modify-conditions',
+  grantExperience: '/api/maps/tokens/grant-experience',
   setInitiative: '/api/maps/initiative/set',
   nextInitiative: '/api/maps/initiative/next',
   previousInitiative: '/api/maps/initiative/previous',

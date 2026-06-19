@@ -81,6 +81,7 @@ const emit = defineEmits<{
   (event: 'modify-hp', payload: MoveAutomationHpUpdate): void
   (event: 'modify-combat-stages', payload: { id: string; stages: CombatStageMap }): void
   (event: 'modify-conditions', payload: { id: string; conditions: string[] }): void
+  (event: 'grant-experience', payload: { id: string; amount: number }): void
   (event: 'use-move', payload: { id: string; moveName?: string | null }): void
   (event: 'use-maneuver', payload: { id: string; maneuverName?: string | null }): void
   (event: 'use-ability', payload: { id: string; abilityName?: string | null }): void
@@ -156,6 +157,7 @@ defineExpose({ focusPokemon })
     @modify-hp="emit('modify-hp', $event)"
     @modify-combat-stages="emit('modify-combat-stages', $event)"
     @modify-conditions="emit('modify-conditions', $event)"
+    @grant-experience="emit('grant-experience', $event)"
     @use-move="emit('use-move', $event)"
     @use-maneuver="emit('use-maneuver', $event)"
     @use-ability="emit('use-ability', $event)"

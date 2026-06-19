@@ -52,6 +52,7 @@ const makeController = () => {
       modifyHp: (payload) => events.push(['hp', payload]),
       modifyCombatStages: (payload) => events.push(['stages', payload]),
       modifyConditions: (payload) => events.push(['conditions', payload]),
+      grantExperience: (payload) => events.push(['xp', payload]),
       useMove: (payload) => events.push(['move', payload]),
       useManeuver: (payload) => events.push(['maneuver', payload]),
       useAbility: (payload) => events.push(['ability', payload]),
@@ -117,6 +118,12 @@ describe('useTokenActionController', () => {
     controller.conditionsDialog.value!.conditions = [' poisoned ', 'Burned']
     controller.handleConditionsDialogSubmit()
     expect(events.at(-1)).toEqual(['conditions', { id: 'token-1', conditions: ['Burned', 'Poisoned'] }])
+
+    controller.openContextMenu({ clientX: 120, clientY: 90 } as MouseEvent, 'token-1')
+    controller.handleContextGrantExperience()
+    controller.experienceDialog.value!.amount = '25'
+    controller.handleExperienceDialogSubmit()
+    expect(events.at(-1)).toEqual(['xp', { id: 'token-1', amount: 25 }])
   })
 
   it('syncs live dialog metadata and closes unauthorized token actions', () => {
@@ -124,10 +131,13 @@ describe('useTokenActionController', () => {
 
     controller.openContextMenu({ clientX: 120, clientY: 90 } as MouseEvent, 'token-1')
     controller.handleContextModifyHp()
-    setPokemons([pokemon({ currentHp: 12, maxHp: 60, species: 'Raichu' })])
+    controller.openContextMenu({ clientX: 120, clientY: 90 } as MouseEvent, 'token-1')
+    controller.handleContextGrantExperience()
+    setPokemons([pokemon({ currentHp: 12, maxHp: 60, species: 'Raichu', level: 5, totalExp: 50 })])
 
     controller.syncDialogsFromPokemons()
     expect(controller.hpDialog.value).toMatchObject({ currentHp: 12, maxHp: 60, species: 'Raichu' })
+    expect(controller.experienceDialog.value).toMatchObject({ species: 'Raichu', level: 5, totalExp: 50 })
 
     controllableIds.clear()
     controller.closeUnauthorizedActions()

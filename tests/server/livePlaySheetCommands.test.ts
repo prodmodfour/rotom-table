@@ -3,6 +3,7 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  type GrantExperienceLivePlayCommand,
   type LivePlaySheetCommand,
   type ModifyCombatStagesLivePlayCommand,
   type ModifyConditionsLivePlayCommand,
@@ -75,6 +76,7 @@ const pokemonSheet = (): PersistedSheet => ({
     slug: 'pikachu',
     species: 'Pikachu',
     level: 20,
+    totalExp: 500,
     combat: { currentHp: 30, injuries: 0, conditions: [] },
     stats: {
       atk: { stage: 0 },
@@ -157,6 +159,20 @@ const conditionsCommand = (overrides: Partial<ModifyConditionsLivePlayCommand> =
     { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'conditions' },
   ],
   payload: { placementId: 'linked-token', action: 'add', conditions: ['Burned'] },
+  ...overrides,
+})
+
+const grantExperienceCommand = (overrides: Partial<GrantExperienceLivePlayCommand> = {}): GrantExperienceLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_sheet_xp_001',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
+  scopes: [
+    { kind: 'token', placementId: 'linked-token', field: 'experience' },
+    { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'experience' },
+  ],
+  payload: { placementId: 'linked-token', amount: 120 },
   ...overrides,
 })
 
@@ -289,6 +305,29 @@ describe('live-play sheet commands', () => {
       sheet: { combat: { conditions: ['Burned'] }, revision: 3 },
     })
     expect(response.sheetUpdates?.[0]?.sheet).toMatchObject({ combat: { conditions: ['Burned'] }, revision: 3 })
+  })
+
+  it('allows a selected player profile to grant experience to a linked Pokémon token', async () => {
+    const harness = createHarness()
+
+    const response = await execute(harness, grantExperienceCommand(), 'player')
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.sheets.get('pokemon:pikachu')).toMatchObject({
+      revision: 3,
+      sheet: { totalExp: 620, level: 23, revision: 3 },
+    })
+    expect(response.sheetUpdates?.[0]?.sheet).toMatchObject({ totalExp: 620, level: 23, revision: 3 })
+    expect(harness.published).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        channel: 'map:arena',
+        type: 'live-play-command-accepted',
+        patches: expect.arrayContaining([
+          expect.objectContaining({ type: LIVE_PLAY_PATCH_TYPES.TOKEN_EXPERIENCE, revision: 5 }),
+          expect.objectContaining({ type: LIVE_PLAY_PATCH_TYPES.SHEET_FIELD, revision: 5 }),
+        ]),
+      }),
+    ]))
   })
 
   it('rejects player sheet commands for tokens outside the selected profile', async () => {

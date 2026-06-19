@@ -33,6 +33,8 @@ import {
   type BuildTerrainVoxelPayload,
   type DeleteTokenLivePlayCommand,
   type DeleteTokenPayload,
+  type GrantExperienceLivePlayCommand,
+  type GrantExperiencePayload,
   type LivePlayBaseRevision,
   type LivePlayCommandEnvelope,
   type LivePlayCommandResult,
@@ -129,6 +131,7 @@ describe('live-play command contract', () => {
   it('defines supported command, patch, and reusable resource scope constants', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('moveToken')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('modifyHp')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('grantExperience')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('useAbility')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setInitiative')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('placeHazard')
@@ -164,6 +167,7 @@ describe('live-play command contract', () => {
       'hp',
       'conditions',
       'combatStages',
+      'experience',
       'moveUsage',
       'action',
       'spawn',
@@ -229,6 +233,19 @@ describe('live-play command contract', () => {
       abilityName: 'Healer',
       targetPlacementId: 'placement-002',
     })
+
+    const grantExperienceCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
+      scopes: [{ kind: 'token', placementId: 'placement-001', field: 'experience' }],
+      payload: { placementId: 'placement-001', amount: 25 },
+    } as const satisfies GrantExperienceLivePlayCommand
+
+    expect(grantExperienceCommand.type).toBe('grantExperience')
+    expect(grantExperienceCommand.payload).toEqual({ placementId: 'placement-001', amount: 25 })
 
     const initiativeCommand = {
       schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -354,6 +371,7 @@ describe('live-play command contract', () => {
     >()
     expectTypeOf(useMoveCommand.payload).toMatchTypeOf<UseMovePayload>()
     expectTypeOf(useAbilityCommand.payload).toMatchTypeOf<UseAbilityPayload>()
+    expectTypeOf(grantExperienceCommand.payload).toMatchTypeOf<GrantExperiencePayload>()
     expectTypeOf(initiativeCommand.payload).toMatchTypeOf<SetInitiativePayload>()
     expectTypeOf(hazardCommand.payload).toMatchTypeOf<PlaceHazardPayload>()
     expectTypeOf(fieldEffectCommand.payload).toMatchTypeOf<SetFieldEffectPayload>()
