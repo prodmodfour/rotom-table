@@ -225,6 +225,43 @@ describe('useLivePlayCommands', () => {
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
+  it('posts live-play Attack of Opportunity state updates through the command dispatcher', async () => {
+    const map = mapFixture()
+    const mapRevision = ref(4)
+    const profileId = ref(parsePlayerProfileId('profile_ash00000'))
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_serveraoo001',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      playerProfileId: profileId,
+      mapRevision,
+    })
+    const payload = { action: 'clear-prompt' as const, promptId: 'aoo-1' }
+    const result = await actions.updateAttackOfOpportunity(payload)
+
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.updateAttackOfOpportunity, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+      scopes: [{ kind: 'map', lane: 'metadata' }],
+      payload,
+      clientId: 'ssr',
+      profileId: 'profile_ash00000',
+    }))
+  })
+
   it('posts live-play delete commands through the command dispatcher', async () => {
     const map = { ...mapFixture(), placements: [] }
     const mapRevision = ref(4)

@@ -454,17 +454,17 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
     placementId: payload.id,
     position: payload.position,
     pathLength: previewState.value.pathLength,
-  }).then((result) => {
+  }).then(async (result) => {
     if (!result.dispatched) return
     clearSelection()
     const currentPosition = placementById(payload.id)?.position
     if (!previousPosition || !currentPosition || isSameAnchor(previousPosition, currentPosition)) return
-    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
-    attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({
+    await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(payload.id))
+    await Promise.resolve(attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({
       provokerId: payload.id,
       from: previousPosition,
       to: { ...currentPosition },
-    })
+    }))
   })
 }
 
@@ -875,13 +875,13 @@ const orderTimelinePoint = () => ({
 })
 
 const previousInitiativeAndExpireAoo = async () => {
-  attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction())
   await Promise.resolve(previousInitiative())
 }
 
 const nextInitiativeAndExpireAoo = async () => {
   const before = orderTimelinePoint()
-  attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction())
   await Promise.resolve(nextInitiative())
   expireActiveOrdersAfterInitiativeAdvance({ before, after: orderTimelinePoint() })
 }
@@ -1100,12 +1100,12 @@ const {
     clearRemotePokeballCapture()
     broadcastMoveFeedback(event.feedback)
   },
-  onBeforeNonImmediateAction: () => {
-    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
-  },
-  onRangedAttackOfOpportunity: (event) => {
+  onBeforeNonImmediateAction: (event) => (
+    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId)
+  ),
+  onRangedAttackOfOpportunity: (event) => (
     attackOfOpportunityPanel?.provokeRangedAttackOfOpportunity(event)
-  },
+  ),
 })
 
 attackOfOpportunityPanel = useAttackOfOpportunityPanel({
@@ -1114,6 +1114,10 @@ attackOfOpportunityPanel = useAttackOfOpportunityPanel({
   tokenMoveOptionsById,
   canControlPlacement,
   shouldSuppressAttackOfOpportunity: shouldSuppressPlayerCharacterAttackOfOpportunity,
+  dispatchStateUpdate: (payload) => {
+    if (isSetupEditMode()) return undefined
+    return livePlayCommands.updateAttackOfOpportunity(payload).then((result) => result.dispatched)
+  },
   performStruggleAttack: ({ attackerId, targetId, moveName, prompt }) => useMoveAgainstTarget({
     id: attackerId,
     targetId,
@@ -1153,8 +1157,8 @@ const {
     })
     return true
   },
-  onBeforeNonImmediateAction: (event) => {
-    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  onBeforeNonImmediateAction: async (event) => {
+    await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId))
     return showActionSplash({ userId: event.userId, actionName: event.abilityName })
   },
 })
@@ -1179,8 +1183,8 @@ const {
     })
     return true
   },
-  onBeforeManeuverAction: (event) => {
-    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  onBeforeManeuverAction: async (event) => {
+    await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId))
     return showActionSplash({ userId: event.userId, actionName: event.maneuverName })
   },
 })
@@ -1199,8 +1203,8 @@ const orderActionPanel = useOrderActionPanel({
     })
     return true
   },
-  onBeforeOrderAction: (event) => {
-    attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction()
+  onBeforeOrderAction: async (event) => {
+    await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId))
     return showActionSplash({ userId: event.userId, actionName: event.orderName })
   },
 })

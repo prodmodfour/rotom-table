@@ -1,4 +1,13 @@
-import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { computed, type ComputedRef, type Ref } from 'vue'
+import {
+  applyAttackOfOpportunityStateUpdate,
+  attackOfOpportunityStatesEqual,
+  readAttackOfOpportunityState,
+  writeAttackOfOpportunityState,
+  type AttackOfOpportunityPromptRecord,
+  type AttackOfOpportunityReason,
+  type AttackOfOpportunityStateUpdatePayload,
+} from '#shared/attackOfOpportunityState'
 import { isSameAnchor } from '~/utils/gridGeometry'
 import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { conditionBaseName } from '~/utils/statusConditions'
@@ -7,7 +16,9 @@ import type { GridAnchor, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TokenMoveMenuOption } from '~/utils/mapTokenMoves'
 
-export type AttackOfOpportunityReason = 'movement' | 'ranged-attack'
+export type { AttackOfOpportunityPromptRecord, AttackOfOpportunityReason } from '#shared/attackOfOpportunityState'
+
+type MaybePromise<T> = T | Promise<T>
 
 export interface AttackOfOpportunityStruggleOption {
   name: string
@@ -15,16 +26,6 @@ export interface AttackOfOpportunityStruggleOption {
   damageClass: string | null
   ac: number | string | null
   damageBase: number | null
-}
-
-interface AttackOfOpportunityPromptRecord {
-  id: string
-  attackerId: string
-  attackerName: string
-  provokerId: string
-  provokerName: string
-  reason: AttackOfOpportunityReason
-  round: number | null
 }
 
 export interface AttackOfOpportunityPrompt extends AttackOfOpportunityPromptRecord {
@@ -52,6 +53,7 @@ export interface UseAttackOfOpportunityPanelOptions {
   canControlPlacement: (id: string) => boolean
   shouldSuppressAttackOfOpportunity?: (context: AttackOfOpportunitySuppressionContext) => boolean
   performStruggleAttack: (request: AttackOfOpportunityMoveRequest) => boolean | Promise<boolean>
+  dispatchStateUpdate?: (payload: AttackOfOpportunityStateUpdatePayload) => MaybePromise<boolean | undefined>
 }
 
 export interface MovementAttackOfOpportunityInput {
@@ -150,45 +152,57 @@ export const useAttackOfOpportunityPanel = ({
   canControlPlacement,
   shouldSuppressAttackOfOpportunity,
   performStruggleAttack,
+  dispatchStateUpdate,
 }: UseAttackOfOpportunityPanelOptions) => {
-  const pendingRecords = ref<AttackOfOpportunityPromptRecord[]>([])
-  const usedRoundByAttackerId = ref<Record<string, number | null>>({})
   let nextPromptSequence = 1
 
   const currentRound = () => currentRoundForMap(map.value)
+  const currentState = () => readAttackOfOpportunityState(map.value?.metadata)
+
+  const applyStateUpdateLocally = (payload: AttackOfOpportunityStateUpdatePayload): boolean => {
+    if (!map.value) return false
+    const previous = currentState()
+    const next = applyAttackOfOpportunityStateUpdate(previous, payload)
+    if (attackOfOpportunityStatesEqual(previous, next)) return false
+    map.value.metadata = writeAttackOfOpportunityState(map.value.metadata, next)
+    return true
+  }
+
+  const updateState = (payload: AttackOfOpportunityStateUpdatePayload): MaybePromise<boolean | undefined> => {
+    const externalResult = dispatchStateUpdate?.(payload)
+    if (externalResult !== undefined) return externalResult
+    return applyStateUpdateLocally(payload)
+  }
 
   const tokenById = (id: string): SpawnedPokemon | null =>
     spawnedPokemon.value.find((token) => token.id === id) ?? null
 
   const attackerHasUsedThisRound = (attackerId: string): boolean =>
-    usedRoundByAttackerId.value[attackerId] === currentRound()
-
-  const markAttackerUsed = (attackerId: string) => {
-    usedRoundByAttackerId.value = {
-      ...usedRoundByAttackerId.value,
-      [attackerId]: currentRound(),
-    }
-  }
+    currentState().usedRoundByAttackerId[attackerId] === currentRound()
 
   const struggleOptionsForAttacker = (attackerId: string): AttackOfOpportunityStruggleOption[] =>
     attackOfOpportunityStruggleOptions(tokenMoveOptionsById.value[attackerId])
 
-  const promptIsStillUsable = (record: AttackOfOpportunityPromptRecord): boolean => {
+  const storedPromptIsStillUsable = (record: AttackOfOpportunityPromptRecord): boolean => {
     const attacker = tokenById(record.attackerId)
     const provoker = tokenById(record.provokerId)
     return Boolean(
       attacker
       && provoker
+      && record.round === currentRound()
       && !shouldSuppressAttackOfOpportunity?.({ attacker, provoker, reason: record.reason })
-      && canControlPlacement(record.attackerId)
       && canMakeAttackOfOpportunity(attacker)
       && !attackerHasUsedThisRound(record.attackerId)
       && struggleOptionsForAttacker(record.attackerId).length > 0,
     )
   }
 
-  const attackOfOpportunityPrompts = computed<AttackOfOpportunityPrompt[]>(() => pendingRecords.value
-    .filter(promptIsStillUsable)
+  const visiblePromptIsStillUsable = (record: AttackOfOpportunityPromptRecord): boolean => (
+    storedPromptIsStillUsable(record) && canControlPlacement(record.attackerId)
+  )
+
+  const attackOfOpportunityPrompts = computed<AttackOfOpportunityPrompt[]>(() => currentState().prompts
+    .filter(visiblePromptIsStillUsable)
     .map((record) => {
       const attacker = tokenById(record.attackerId)
       return {
@@ -198,27 +212,30 @@ export const useAttackOfOpportunityPanel = ({
       }
     }))
 
-  const clearAttackOfOpportunityPrompts = () => {
-    if (pendingRecords.value.length) pendingRecords.value = []
+  const clearAttackOfOpportunityPrompts = (actorId?: string): MaybePromise<boolean | undefined> => {
+    if (!currentState().prompts.length) return false
+    return updateState({
+      action: 'clear-all',
+      ...(actorId ? { actorId } : {}),
+    })
   }
 
-  const clearAttackOfOpportunityPromptsForNonImmediateAction = () => {
-    clearAttackOfOpportunityPrompts()
-  }
+  const clearAttackOfOpportunityPromptsForNonImmediateAction = (actorId?: string): MaybePromise<boolean | undefined> => (
+    clearAttackOfOpportunityPrompts(actorId)
+  )
 
   const queuePrompts = (input: {
     provokerId: string
     attackerIds: readonly string[]
     reason: AttackOfOpportunityReason
-  }) => {
+  }): MaybePromise<boolean | undefined> => {
     const provoker = tokenById(input.provokerId)
-    if (!provoker) return
+    if (!provoker) return false
 
     const records = input.attackerIds.flatMap((attackerId): AttackOfOpportunityPromptRecord[] => {
       const attacker = tokenById(attackerId)
       if (!attacker) return []
       if (shouldSuppressAttackOfOpportunity?.({ attacker, provoker, reason: input.reason })) return []
-      if (!canControlPlacement(attacker.id)) return []
       if (!canMakeAttackOfOpportunity(attacker)) return []
       if (attackerHasUsedThisRound(attacker.id)) return []
       if (!struggleOptionsForAttacker(attacker.id).length) return []
@@ -235,10 +252,11 @@ export const useAttackOfOpportunityPanel = ({
       }]
     })
 
-    if (records.length) pendingRecords.value = [...pendingRecords.value, ...records]
+    if (!records.length) return false
+    return updateState({ action: 'queue', records })
   }
 
-  const provokeMovementAttackOfOpportunity = (input: MovementAttackOfOpportunityInput) => {
+  const provokeMovementAttackOfOpportunity = (input: MovementAttackOfOpportunityInput): MaybePromise<boolean | undefined> => (
     queuePrompts({
       provokerId: input.provokerId,
       reason: 'movement',
@@ -247,9 +265,9 @@ export const useAttackOfOpportunityPanel = ({
         tokens: spawnedPokemon.value,
       }),
     })
-  }
+  )
 
-  const provokeRangedAttackOfOpportunity = (input: RangedAttackOfOpportunityInput) => {
+  const provokeRangedAttackOfOpportunity = (input: RangedAttackOfOpportunityInput): MaybePromise<boolean | undefined> => (
     queuePrompts({
       provokerId: input.provokerId,
       reason: 'ranged-attack',
@@ -258,21 +276,16 @@ export const useAttackOfOpportunityPanel = ({
         tokens: spawnedPokemon.value,
       }),
     })
-  }
+  )
 
-  const removePrompt = (promptId: string) => {
-    pendingRecords.value = pendingRecords.value.filter((record) => record.id !== promptId)
-  }
-
-  const clearAttackOfOpportunityPrompt = (promptId: string): boolean => {
+  const clearAttackOfOpportunityPrompt = (promptId: string): MaybePromise<boolean | undefined> => {
     if (!attackOfOpportunityPrompts.value.some((prompt) => prompt.id === promptId)) return false
-    removePrompt(promptId)
-    return true
+    return updateState({ action: 'clear-prompt', promptId })
   }
 
-  const removePromptsForAttacker = (attackerId: string) => {
-    pendingRecords.value = pendingRecords.value.filter((record) => record.attackerId !== attackerId)
-  }
+  const markAttackerUsed = (attackerId: string): MaybePromise<boolean | undefined> => (
+    updateState({ action: 'mark-attacker-used', attackerId, round: currentRound() })
+  )
 
   const useAttackOfOpportunity = async (input: { promptId: string; moveName: string }) => {
     const prompt = attackOfOpportunityPrompts.value.find((record) => record.id === input.promptId)
@@ -287,18 +300,9 @@ export const useAttackOfOpportunityPanel = ({
     })
     if (!applied) return false
 
-    markAttackerUsed(prompt.attackerId)
-    removePromptsForAttacker(prompt.attackerId)
+    await markAttackerUsed(prompt.attackerId)
     return true
   }
-
-  watch(() => currentRound(), clearAttackOfOpportunityPrompts)
-  watch(attackOfOpportunityPrompts, (usablePrompts) => {
-    const usableIds = new Set(usablePrompts.map((prompt) => prompt.id))
-    if (pendingRecords.value.some((record) => !usableIds.has(record.id))) {
-      pendingRecords.value = pendingRecords.value.filter((record) => usableIds.has(record.id))
-    }
-  })
 
   return {
     attackOfOpportunityPrompts,

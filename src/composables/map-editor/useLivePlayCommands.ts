@@ -41,6 +41,7 @@ import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import { bindPendingLivePlayCommandUnloadWarning } from '~/utils/livePlayCommandUnloadWarning'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { useApiClient } from '~/composables/useApiClient'
+import type { AttackOfOpportunityStateUpdatePayload } from '#shared/attackOfOpportunityState'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import type { GridAnchor, MapHazardV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
@@ -175,6 +176,7 @@ export interface UseLivePlayCommandsReturn {
     orderName: string
     targetPlacementId?: string
   }) => Promise<LivePlayCommandDispatchResult>
+  updateAttackOfOpportunity: (payload: AttackOfOpportunityStateUpdatePayload) => Promise<LivePlayCommandDispatchResult>
 }
 
 type LivePlayClientCommandType =
@@ -201,6 +203,7 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
+  | typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY
 
 type LivePlayTokenCommandPayload =
   | MoveTokenPayload
@@ -231,6 +234,7 @@ type LivePlayClientCommandPayload =
   | SetInitiativePayload
   | AdvanceInitiativePayload
   | LivePlayMapEffectsCommandPayload
+  | AttackOfOpportunityStateUpdatePayload
   | Record<string, never>
 
 const isDuplicateResult = (response: LivePlayCommandResponse): response is LivePlayCommandDuplicate & LivePlayCommandResponse => (
@@ -742,6 +746,15 @@ export const useLivePlayCommands = (
     ),
   )
 
+  const updateAttackOfOpportunity: UseLivePlayCommandsReturn['updateAttackOfOpportunity'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.updateAttackOfOpportunity,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+      payload,
+      [mapScope('metadata')],
+    ),
+  )
+
   return {
     status,
     lastError,
@@ -769,5 +782,6 @@ export const useLivePlayCommands = (
     useManeuver,
     useAbility,
     useOrder,
+    updateAttackOfOpportunity,
   }
 }

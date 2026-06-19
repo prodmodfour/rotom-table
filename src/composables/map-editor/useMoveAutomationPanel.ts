@@ -173,10 +173,10 @@ export interface UseMoveAutomationPanelOptions {
    * Three.js renderer utilities or persist queued animation events.
    */
   enqueueMoveAnimations?: MoveAnimationEnqueueHandler
-  onBeforeNonImmediateAction?: (event: MoveAutomationNonImmediateActionEvent) => void
+  onBeforeNonImmediateAction?: (event: MoveAutomationNonImmediateActionEvent) => MaybePromise<unknown>
   onMoveUse?: (event: MoveAutomationActionUseEvent) => MaybePromise<unknown>
   onMoveFeedback?: (event: MoveAutomationFeedbackEvent) => MaybePromise<unknown>
-  onRangedAttackOfOpportunity?: (event: MoveAutomationRangedAttackOfOpportunityEvent) => void
+  onRangedAttackOfOpportunity?: (event: MoveAutomationRangedAttackOfOpportunityEvent) => MaybePromise<unknown>
   now?: () => number
   maxLogEntries?: number
 }
@@ -860,9 +860,9 @@ export const useMoveAutomationPanel = ({
   const moveScriptIsImmediateOrInterrupt = (script: MoveAutomationScript): boolean =>
     script.keywords.some((keyword) => /^(Immediate|Interrupt|Reaction)$/i.test(keyword.trim()))
 
-  const notifyMoveActionTaken = (request: ActiveMoveTargetingRequest) => {
-    if (moveScriptIsImmediateOrInterrupt(request.script)) return
-    onBeforeNonImmediateAction?.({ userId: request.userId, moveName: request.moveName })
+  const notifyMoveActionTaken = (request: ActiveMoveTargetingRequest): MaybePromise<unknown> => {
+    if (moveScriptIsImmediateOrInterrupt(request.script)) return undefined
+    return onBeforeNonImmediateAction?.({ userId: request.userId, moveName: request.moveName })
   }
 
   const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => (
@@ -891,10 +891,10 @@ export const useMoveAutomationPanel = ({
   const notifyRangedAttackOfOpportunity = (
     request: ActiveMoveTargetingRequest,
     targetIds: readonly string[],
-  ) => {
-    if (request.kind === 'area-confirmation') return
-    if (request.rangeMeters <= MELEE_MOVE_RANGE_METERS) return
-    onRangedAttackOfOpportunity?.({
+  ): MaybePromise<unknown> => {
+    if (request.kind === 'area-confirmation') return undefined
+    if (request.rangeMeters <= MELEE_MOVE_RANGE_METERS) return undefined
+    return onRangedAttackOfOpportunity?.({
       provokerId: request.userId,
       targetIds: [...targetIds],
       moveName: request.moveName,
@@ -1288,7 +1288,7 @@ export const useMoveAutomationPanel = ({
         const notification = notifyMoveUse({ userId: id, moveName: script.moveName })
         if (isPromiseLike(notification)) await notification
         if (!canContinueMoveAutomationForUser(id)) return
-        notifyMoveActionTaken({
+        const actionNotification = notifyMoveActionTaken({
           kind: 'single-target',
           userId: id,
           moveName: script.moveName,
@@ -1297,6 +1297,8 @@ export const useMoveAutomationPanel = ({
           frequency,
           rangeMeters: 0,
         })
+        if (isPromiseLike(actionNotification)) await actionNotification
+        if (!canContinueMoveAutomationForUser(id)) return
         const transaction = resolveInstantSelfMoveAutomation({
           script,
           user,
@@ -1679,8 +1681,12 @@ export const useMoveAutomationPanel = ({
     if (!canContinueMoveAutomationForUser(request.userId)) return false
 
     if (!options.skipActionNotifications) {
-      notifyMoveActionTaken(request)
-      notifyRangedAttackOfOpportunity(request, [targetId])
+      const actionNotification = notifyMoveActionTaken(request)
+      if (isPromiseLike(actionNotification)) await actionNotification
+      if (!canContinueMoveAutomationForUser(request.userId)) return false
+      const rangedAoONotification = notifyRangedAttackOfOpportunity(request, [targetId])
+      if (isPromiseLike(rangedAoONotification)) await rangedAoONotification
+      if (!canContinueMoveAutomationForUser(request.userId)) return false
     }
 
     faceTokenTowardToken(user, target)
@@ -1972,8 +1978,12 @@ export const useMoveAutomationPanel = ({
     const notification = notifyMoveUse(request)
     if (isPromiseLike(notification)) await notification
     if (!canContinueMoveAutomationForUser(request.userId)) return
-    notifyMoveActionTaken(request)
-    notifyRangedAttackOfOpportunity(request, selectedTargetIds)
+    const actionNotification = notifyMoveActionTaken(request)
+    if (isPromiseLike(actionNotification)) await actionNotification
+    if (!canContinueMoveAutomationForUser(request.userId)) return
+    const rangedAoONotification = notifyRangedAttackOfOpportunity(request, selectedTargetIds)
+    if (isPromiseLike(rangedAoONotification)) await rangedAoONotification
+    if (!canContinueMoveAutomationForUser(request.userId)) return
 
     const targets = targetCountTargetsForIds(selectedTargetIds)
     if (!targets.length) return
@@ -2011,7 +2021,9 @@ export const useMoveAutomationPanel = ({
     const notification = notifyMoveUse(request)
     if (isPromiseLike(notification)) await notification
     if (!canContinueMoveAutomationForUser(request.userId)) return
-    notifyMoveActionTaken(request)
+    const actionNotification = notifyMoveActionTaken(request)
+    if (isPromiseLike(actionNotification)) await actionNotification
+    if (!canContinueMoveAutomationForUser(request.userId)) return
     const selectedTargetIds = selectedAreaTargetIds(request)
     const targetSet = new Set(selectedTargetIds)
     const targets = spawnedPokemon.value.filter((token) => targetSet.has(token.id))

@@ -12,6 +12,7 @@ import type {
   SheetPlacement,
 } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import type { AttackOfOpportunityStateUpdatePayload } from './attackOfOpportunityState'
 
 type Brand<TValue, TName extends string> = TValue & { readonly __brand: TName }
 
@@ -50,6 +51,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   SPAWN_TOKEN: 'spawnToken',
   SEND_OUT_POKEMON: 'sendOutPokemon',
   DELETE_TOKEN: 'deleteToken',
+  UPDATE_ATTACK_OF_OPPORTUNITY: 'updateAttackOfOpportunity',
 } as const
 
 export type LivePlayCommandType = (typeof LIVE_PLAY_COMMAND_TYPES)[keyof typeof LIVE_PLAY_COMMAND_TYPES]
@@ -78,6 +80,7 @@ export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
   LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
   LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+  LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
 ] as const satisfies readonly LivePlayCommandType[]
 
 export const LIVE_PLAY_PATCH_TYPES = {
@@ -463,6 +466,12 @@ export type BuildTerrainVoxelLivePlayCommand = LivePlayCommandEnvelope<
 export type RemoveTerrainVoxelLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
   RemoveTerrainVoxelPayload,
+  LivePlayMapScope
+>
+
+export type UpdateAttackOfOpportunityLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+  AttackOfOpportunityStateUpdatePayload,
   LivePlayMapScope
 >
 

@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   executeLivePlayInitiativeCommandUseCase: vi.fn(),
   executeLivePlayMapEffectsCommandUseCase: vi.fn(),
   executeLivePlayTerrainCommandUseCase: vi.fn(),
+  executeAttackOfOpportunityLivePlayCommandUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
@@ -73,6 +74,9 @@ vi.mock('../../server/useCases/applyLivePlayMapEffectsCommand', () => ({
 vi.mock('../../server/useCases/applyLivePlayTerrainCommand', () => ({
   executeLivePlayTerrainCommandUseCase: mocks.executeLivePlayTerrainCommandUseCase,
 }))
+vi.mock('../../server/useCases/applyAttackOfOpportunityCommand', () => ({
+  executeAttackOfOpportunityLivePlayCommandUseCase: mocks.executeAttackOfOpportunityLivePlayCommandUseCase,
+}))
 vi.mock('../../server/policies/playerProfilePolicy', () => ({
   resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
 }))
@@ -108,6 +112,7 @@ const removeTerrainRoute = (await import('../../server/api/maps/terrain/remove.p
 const setFieldEffectRoute = (await import('../../server/api/maps/field-effects/set.post')).default
 const removeFieldEffectRoute = (await import('../../server/api/maps/field-effects/remove.post')).default
 const tickFieldEffectDurationsRoute = (await import('../../server/api/maps/field-effects/tick.post')).default
+const attackOfOpportunityRoute = (await import('../../server/api/maps/attack-of-opportunity/update.post')).default
 
 type MapRouteHandler = EventHandler<EventHandlerRequest, unknown>
 
@@ -321,6 +326,19 @@ describe('map hosted-write API routes', () => {
         },
         mock: mocks.executeLivePlayMapEffectsCommandUseCase,
       },
+      {
+        route: attackOfOpportunityRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedaoogm',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'updateAttackOfOpportunity',
+          scopes: [{ kind: 'map', lane: 'metadata' }],
+          payload: { action: 'clear-all' },
+        },
+        mock: mocks.executeAttackOfOpportunityLivePlayCommandUseCase,
+      },
     ]
 
     for (const routeCase of routeCases) {
@@ -463,6 +481,20 @@ describe('map hosted-write API routes', () => {
           profileId: 'profile_ash00000',
         },
         mock: mocks.executeLivePlayUseMoveCommandUseCase,
+      },
+      {
+        route: attackOfOpportunityRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedaooplayer',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'updateAttackOfOpportunity',
+          scopes: [{ kind: 'map', lane: 'metadata' }],
+          payload: { action: 'clear-prompt', promptId: 'aoo-1' },
+          profileId: 'profile_ash00000',
+        },
+        mock: mocks.executeAttackOfOpportunityLivePlayCommandUseCase,
       },
       {
         route: nextInitiativeRoute,

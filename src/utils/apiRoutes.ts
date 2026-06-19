@@ -48,6 +48,7 @@ export const MAP_API_PATHS = {
   setFieldEffect: '/api/maps/field-effects/set',
   removeFieldEffect: '/api/maps/field-effects/remove',
   tickFieldEffectDurations: '/api/maps/field-effects/tick',
+  updateAttackOfOpportunity: '/api/maps/attack-of-opportunity/update',
   useManeuver: '/api/maps/tokens/use-maneuver',
   useAbility: '/api/maps/tokens/use-ability',
   useOrder: '/api/maps/tokens/use-order',
