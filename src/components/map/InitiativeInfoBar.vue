@@ -32,6 +32,9 @@ const emitNext = () => {
 const tileTitle = (entry: InitiativeRow): string =>
   `${entry.name} · Initiative ${entry.initiativeScore}`
 
+const tileAriaLabel = (entry: InitiativeRow): string =>
+  `Center map on ${entry.name}; initiative ${entry.initiativeScore}`
+
 const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefined =>
   entry.accentColor ? trainerAccentCssVariables(entry.accentColor) : undefined
 </script>
@@ -52,10 +55,10 @@ const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefin
             :class="{ 'is-fainted': entry.currentHp <= 0 }"
             :style="tileAccentStyle(entry)"
             :title="tileTitle(entry)"
-            :aria-label="`Center map on ${entry.name}`"
+            :aria-label="tileAriaLabel(entry)"
             @click="emit('focus', entry.id)"
           >
-            <InitiativeProfileImage :entry="entry" />
+            <InitiativeProfileImage :entry="entry" show-initiative-score />
           </button>
         </li>
       </ol>
@@ -78,11 +81,11 @@ const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefin
             :class="{ 'is-fainted': timeline.current.currentHp <= 0 }"
             :style="tileAccentStyle(timeline.current)"
             :title="tileTitle(timeline.current)"
-            :aria-label="`Center map on ${timeline.current.name}`"
+            :aria-label="tileAriaLabel(timeline.current)"
             aria-current="step"
             @click="emit('focus', timeline.current.id)"
           >
-            <InitiativeProfileImage :entry="timeline.current" />
+            <InitiativeProfileImage :entry="timeline.current" show-initiative-score />
           </button>
           <button
             type="button"
@@ -106,10 +109,10 @@ const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefin
             :class="{ 'is-fainted': entry.currentHp <= 0 }"
             :style="tileAccentStyle(entry)"
             :title="tileTitle(entry)"
-            :aria-label="`Center map on ${entry.name}`"
+            :aria-label="tileAriaLabel(entry)"
             @click="emit('focus', entry.id)"
           >
-            <InitiativeProfileImage :entry="entry" />
+            <InitiativeProfileImage :entry="entry" show-initiative-score />
           </button>
         </li>
       </ol>
@@ -123,10 +126,10 @@ const tileAccentStyle = (entry: InitiativeRow): Record<string, string> | undefin
           :class="{ 'is-fainted': entry.currentHp <= 0 }"
           :style="tileAccentStyle(entry)"
           :title="tileTitle(entry)"
-          :aria-label="`Center map on ${entry.name}`"
+          :aria-label="tileAriaLabel(entry)"
           @click="emit('focus', entry.id)"
         >
-          <InitiativeProfileImage :entry="entry" />
+          <InitiativeProfileImage :entry="entry" show-initiative-score />
         </button>
       </li>
     </ol>
