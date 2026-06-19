@@ -6,7 +6,10 @@ import { voxelKey } from '~/utils/voxelOccupancy'
 
 export const SMART_TERRAIN_CUTAWAY_DEFAULT_OPACITY = 0.16
 export const SMART_TERRAIN_CUTAWAY_MAX_VOXELS = 64
-export const SMART_TERRAIN_CUTAWAY_MAX_HITS_PER_RAY = 3
+// A single sightline can pass through a deep wall or stacked terrain column.
+// Keep the per-ray default aligned with the global cap so every voxel between
+// the camera and focus token can be ghosted, instead of only the front layer.
+export const SMART_TERRAIN_CUTAWAY_MAX_HITS_PER_RAY = SMART_TERRAIN_CUTAWAY_MAX_VOXELS
 
 const FOCUS_POINT_NDC_MARGIN = 0.18
 const FOCUS_DISTANCE_EPSILON = 0.025

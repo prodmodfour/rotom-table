@@ -180,6 +180,47 @@ describe('smart terrain cutaway utilities', () => {
     expect(Array.from(keys)).toEqual(['1,0,1'])
   })
 
+  it('defaults to ghosting every occluding voxel on a ray until the global cap is reached', () => {
+    const mesh = new THREE.Object3D()
+    mesh.userData.voxels = [
+      voxel(1, 0, 1),
+      voxel(2, 0, 1),
+      voxel(3, 0, 1),
+      voxel(4, 0, 1),
+      voxel(5, 0, 1),
+    ]
+    const raycaster = {
+      ray: { origin: new THREE.Vector3(0, 0, 0) },
+      setFromCamera: vi.fn(),
+      intersectObjects: vi.fn((_targets: THREE.Object3D[], _recursive: boolean, optionalTarget?: THREE.Intersection[]) => {
+        optionalTarget?.push(
+          makeHit(mesh, 0, 1),
+          makeHit(mesh, 1, 2),
+          makeHit(mesh, 2, 3),
+          makeHit(mesh, 3, 4),
+          makeHit(mesh, 4, 4.9),
+        )
+        return optionalTarget ?? []
+      }),
+    } as unknown as THREE.Raycaster
+
+    const keys = resolveSmartTerrainCutawayVoxelKeys({
+      camera: makeCamera(),
+      raycaster,
+      voxelMeshes: [mesh],
+      focusPoints: [new THREE.Vector3(0, 0, -5)],
+      dilateXZ: false,
+    })
+
+    expect(Array.from(keys)).toEqual([
+      '1,0,1',
+      '2,0,1',
+      '3,0,1',
+      '4,0,1',
+      '5,0,1',
+    ])
+  })
+
   it('skips ray work when the requested voxel or per-ray hit cap is zero', () => {
     const mesh = new THREE.Object3D()
     const raycaster = {
