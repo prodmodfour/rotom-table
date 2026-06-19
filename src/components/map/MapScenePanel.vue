@@ -153,6 +153,7 @@ const emit = defineEmits<{
   (event: 'dismiss-celebrate-trigger', id: string): void
   (event: 'apply-celebrate-trigger', id: string): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
+  (event: 'clear-attack-of-opportunity', promptId: string): void
 }>()
 
 const COMBAT_LOG_MESSAGE_LIMIT = 24
@@ -262,6 +263,7 @@ defineExpose({ focusPokemon })
         @select-move-target-branch="emit('select-move-target-branch', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
         @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
+        @clear-attack-of-opportunity="emit('clear-attack-of-opportunity', $event)"
         @move-vfx-settled="emit('move-vfx-settled', $event)"
       />
       <MapSceneStatus v-else :status="status" :error="error" :slug="slug" />

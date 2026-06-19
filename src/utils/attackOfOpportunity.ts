@@ -264,6 +264,12 @@ export const useAttackOfOpportunityPanel = ({
     pendingRecords.value = pendingRecords.value.filter((record) => record.id !== promptId)
   }
 
+  const clearAttackOfOpportunityPrompt = (promptId: string): boolean => {
+    if (!attackOfOpportunityPrompts.value.some((prompt) => prompt.id === promptId)) return false
+    removePrompt(promptId)
+    return true
+  }
+
   const removePromptsForAttacker = (attackerId: string) => {
     pendingRecords.value = pendingRecords.value.filter((record) => record.attackerId !== attackerId)
   }
@@ -300,7 +306,7 @@ export const useAttackOfOpportunityPanel = ({
     clearAttackOfOpportunityPromptsForNonImmediateAction,
     provokeMovementAttackOfOpportunity,
     provokeRangedAttackOfOpportunity,
-    removeAttackOfOpportunityPrompt: removePrompt,
+    removeAttackOfOpportunityPrompt: clearAttackOfOpportunityPrompt,
     useAttackOfOpportunity,
   }
 }

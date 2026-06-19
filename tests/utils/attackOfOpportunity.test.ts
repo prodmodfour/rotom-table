@@ -186,6 +186,37 @@ describe('useAttackOfOpportunityPanel', () => {
     expect(panel.attackOfOpportunityPrompts.value).toHaveLength(1)
   })
 
+  it('clears a controlled prompt without spending the attack of opportunity', () => {
+    const map = ref(mapFixture())
+    const tokens = ref([
+      token('provoker', 1, 1),
+      token('attacker', 0, 1),
+    ])
+    const panel = useAttackOfOpportunityPanel({
+      map,
+      spawnedPokemon: computed(() => tokens.value),
+      tokenMoveOptionsById: computed(() => ({
+        attacker: [moveOption('Struggle')],
+      })),
+      canControlPlacement: (id) => id === 'attacker',
+      performStruggleAttack: vi.fn(async () => true),
+    })
+
+    panel.provokeMovementAttackOfOpportunity({
+      provokerId: 'provoker',
+      from: { x: 1, y: 0, z: 1 },
+      to: { x: 2, y: 0, z: 1 },
+    })
+
+    const promptId = panel.attackOfOpportunityPrompts.value[0]?.id ?? ''
+    expect(panel.removeAttackOfOpportunityPrompt(promptId)).toBe(true)
+    expect(panel.attackOfOpportunityPrompts.value).toEqual([])
+
+    panel.provokeRangedAttackOfOpportunity({ provokerId: 'provoker', targetIds: [] })
+    expect(panel.attackOfOpportunityPrompts.value).toHaveLength(1)
+    expect(panel.removeAttackOfOpportunityPrompt('missing')).toBe(false)
+  })
+
   it('queues pressable prompts with Struggle variants and enforces once per round', async () => {
     const map = ref(mapFixture())
     const tokens = ref([

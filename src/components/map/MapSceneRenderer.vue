@@ -102,6 +102,7 @@ const emit = defineEmits<{
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
+  (event: 'clear-attack-of-opportunity', promptId: string): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
 }>()
 
@@ -178,6 +179,7 @@ defineExpose({ focusPokemon })
     @select-move-target-branch="emit('select-move-target-branch', $event)"
     @cancel-move-targeting="emit('cancel-move-targeting')"
     @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"
+    @clear-attack-of-opportunity="emit('clear-attack-of-opportunity', $event)"
     @move-vfx-settled="emit('move-vfx-settled', $event)"
   />
 </template>

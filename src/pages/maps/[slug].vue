@@ -1125,6 +1125,7 @@ attackOfOpportunityPanel = useAttackOfOpportunityPanel({
 
 const {
   attackOfOpportunityPrompts,
+  removeAttackOfOpportunityPrompt,
   useAttackOfOpportunity,
 } = attackOfOpportunityPanel
 
@@ -1597,6 +1598,7 @@ useMapDimensionReconciliation({
         @dismiss-celebrate-trigger="dismissCelebrateTriggerPrompt"
         @apply-celebrate-trigger="applyCelebrateTriggerPromptFromScene"
         @use-attack-of-opportunity="useAttackOfOpportunity"
+        @clear-attack-of-opportunity="removeAttackOfOpportunityPrompt"
       />
     </template>
 

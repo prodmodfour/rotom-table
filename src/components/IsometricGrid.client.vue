@@ -250,6 +250,7 @@ const emit = defineEmits<{
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
+  (event: 'clear-attack-of-opportunity', promptId: string): void
   (event: 'move-vfx-settled', payload: { nowMs: number }): void
 }>()
 
@@ -1801,6 +1802,11 @@ const useAttackOfOpportunityMove = (promptId: string, moveName: string) => {
   emit('use-attack-of-opportunity', { promptId, moveName })
 }
 
+const clearAttackOfOpportunityButton = (button: AttackOfOpportunityButton) => {
+  openAttackOfOpportunityMenuId.value = null
+  emit('clear-attack-of-opportunity', button.id)
+}
+
 const toggleAttackOfOpportunityButton = (button: AttackOfOpportunityButton) => {
   if (button.struggleOptions.length <= 1) {
     const moveName = button.struggleOptions[0]?.name
@@ -1811,7 +1817,7 @@ const toggleAttackOfOpportunityButton = (button: AttackOfOpportunityButton) => {
 }
 
 const attackOfOpportunityTitle = (button: AttackOfOpportunityButton): string =>
-  `${button.attackerName} may make an Attack of Opportunity against ${button.provokerName}.`
+  `${button.attackerName} may make an Attack of Opportunity against ${button.provokerName}. Right-click to clear this indicator.`
 
 const attackOfOpportunityReasonLabel = (button: AttackOfOpportunityButton): string =>
   button.reason === 'movement' ? 'Provoked by movement' : 'Provoked by a ranged attack'
@@ -2375,6 +2381,7 @@ watch(
           :title="attackOfOpportunityTitle(button)"
           @pointerdown.stop
           @click.stop="toggleAttackOfOpportunityButton(button)"
+          @contextmenu.prevent.stop="clearAttackOfOpportunityButton(button)"
         >
           AoO!
         </button>
