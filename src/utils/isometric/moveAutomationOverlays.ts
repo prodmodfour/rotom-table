@@ -17,6 +17,7 @@ const RETICLE_CSS_SIZE_PX = 72
 const FEEDBACK_CSS_WIDTH_PX = 180
 const FEEDBACK_WORLD_WIDTH = 2.06
 const ROLLING_D20_GRAPHIC_KEY = 'd20-wireframe'
+const HIT_ROLL_CALLOUT_GRAPHIC_KEY = 'hit-roll-callout'
 const ROLLING_D20_SVG_MARKUP = `
   <svg class="move-automation-roll__d20" viewBox="0 0 100 100" role="img" aria-label="Rolling d20" xmlns="http://www.w3.org/2000/svg">
     <path class="move-automation-roll__d20-fill" d="M50 6 10 31 10 73 50 94 90 73 90 31Z" />
@@ -289,6 +290,11 @@ const hitRollFormulaText = (feedback: MoveAutomationFeedbackState): string => {
 const hitRollText = (feedback: MoveAutomationFeedbackState): string =>
   `${hitRollFormulaText(feedback)} Hit Roll`
 
+const hitRollCalloutDetailText = (feedback: MoveAutomationFeedbackState): string => {
+  const modifier = feedback.modifiedRoll - feedback.naturalRoll
+  return modifier === 0 ? 'Hit Roll' : `${formatRollModifier(modifier)} = ${feedback.modifiedRoll}`
+}
+
 const outcomeText = (feedback: MoveAutomationFeedbackState): string => {
   if (!feedback.hit) return 'Miss'
   return feedback.crit ? 'Critical Hit' : 'Hit'
@@ -328,12 +334,36 @@ const feedbackUsesOutcomeTone = (feedback: MoveAutomationFeedbackState): boolean
   feedback.phase === 'outcome' || feedback.phase === 'effectiveness' || feedback.phase === 'damage'
 
 const renderRollingD20Graphic = (body: HTMLElement): boolean => {
-  if (body.dataset.rollGraphic === ROLLING_D20_GRAPHIC_KEY) return false
+  if (body.dataset.rollGraphic === ROLLING_D20_GRAPHIC_KEY && !body.dataset.hitRollCallout) return false
 
   body.dataset.rollGraphic = ROLLING_D20_GRAPHIC_KEY
+  delete body.dataset.hitRollCallout
   body.setAttribute('aria-label', 'Rolling d20')
   body.setAttribute('role', 'img')
   body.innerHTML = ROLLING_D20_SVG_MARKUP
+  return true
+}
+
+const renderHitRollCallout = (body: HTMLElement, feedback: MoveAutomationFeedbackState): boolean => {
+  const detail = hitRollCalloutDetailText(feedback)
+  const ariaLabel = `${feedback.naturalRoll} on the d20; ${hitRollText(feedback)}`
+  const markup = [
+    '<span class="move-automation-roll-callout" aria-hidden="true">',
+    '<span class="move-automation-roll-callout__label">d20</span>',
+    `<span class="move-automation-roll-callout__number">${feedback.naturalRoll}</span>`,
+    `<span class="move-automation-roll-callout__detail">${detail}</span>`,
+    '</span>',
+  ].join('')
+  const calloutKey = `${feedback.naturalRoll}|${feedback.modifiedRoll}`
+  const changed = body.dataset.rollGraphic !== HIT_ROLL_CALLOUT_GRAPHIC_KEY
+    || body.dataset.hitRollCallout !== calloutKey
+  if (!changed) return false
+
+  body.dataset.rollGraphic = HIT_ROLL_CALLOUT_GRAPHIC_KEY
+  body.dataset.hitRollCallout = calloutKey
+  body.setAttribute('aria-label', ariaLabel)
+  body.setAttribute('role', 'status')
+  body.innerHTML = markup
   return true
 }
 
@@ -341,6 +371,7 @@ const renderFeedbackText = (body: HTMLElement, text: string): boolean => {
   let changed = false
   if (body.dataset.rollGraphic) {
     delete body.dataset.rollGraphic
+    delete body.dataset.hitRollCallout
     body.removeAttribute('aria-label')
     body.removeAttribute('role')
     changed = true
@@ -377,7 +408,9 @@ const updateFeedbackElement = (element: HTMLElement, feedback: MoveAutomationFee
   }
   changed = (feedback.phase === 'rolling'
     ? renderRollingD20Graphic(body)
-    : renderFeedbackText(body, text)) || changed
+    : feedback.phase === 'hit-roll'
+      ? renderHitRollCallout(body, feedback)
+      : renderFeedbackText(body, text)) || changed
   if (element.title !== title) {
     element.title = title
     changed = true

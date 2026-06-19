@@ -140,6 +140,9 @@ describe('move automation CSS overlay renderers', () => {
       ...updateOptions,
       feedback: feedbackState({ phase: 'hit-roll' }),
     })).toBe(true)
+    expect(rollBody?.className).toContain('is-hit-roll')
+    expect(rollBody?.innerHTML).toContain('move-automation-roll-callout')
+    expect(rollBody?.innerHTML).toContain('move-automation-roll-callout__number">12</span>')
     expect(feedbackSprite?.position.x).toBe(user.currentCenter.x)
     expect(feedbackSprite?.position.y).toBeCloseTo(user.currentCenter.y + Math.max(user.height, user.clearance) + 0.95)
     expect(feedbackSprite?.position.z).toBe(user.currentCenter.z)
