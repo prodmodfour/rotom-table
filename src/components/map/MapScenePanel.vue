@@ -142,6 +142,7 @@ const emit = defineEmits<{
   (event: 'confirm-move-target-count'): void
   (event: 'select-move-area-template', templateId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
+  (event: 'aim-move-area', center: GridAnchor): void
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
   (event: 'preview-move-vfx', kind: MoveVfxKind): void
@@ -279,6 +280,7 @@ defineExpose({ focusPokemon })
         @confirm-move-target-count="emit('confirm-move-target-count')"
         @select-move-area-template="emit('select-move-area-template', $event)"
         @select-move-area-direction="emit('select-move-area-direction', $event)"
+        @aim-move-area="emit('aim-move-area', $event)"
         @select-move-target-branch="emit('select-move-target-branch', $event)"
         @cancel-move-targeting="emit('cancel-move-targeting')"
         @use-attack-of-opportunity="emit('use-attack-of-opportunity', $event)"

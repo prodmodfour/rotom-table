@@ -1093,6 +1093,7 @@ const {
   selectMoveAutomationTargetBranch,
   selectMoveAutomationAreaTemplate,
   selectMoveAutomationAreaDirection,
+  aimMoveAutomationArea,
   dismissSpiteReactionPrompt,
   applySpiteReactionPrompt,
   dismissCuteCharmReactionPrompt,
@@ -1614,6 +1615,7 @@ useMapDimensionReconciliation({
         @confirm-move-target-count="confirmMoveAutomationTargetCount"
         @select-move-area-template="selectMoveAutomationAreaTemplate"
         @select-move-area-direction="selectMoveAutomationAreaDirection"
+        @aim-move-area="aimMoveAutomationArea"
         @select-move-target-branch="selectMoveAutomationTargetBranch"
         @cancel-move-targeting="cancelActionAutomationTargeting"
         @preview-move-vfx="previewMoveVfxDebugKind"

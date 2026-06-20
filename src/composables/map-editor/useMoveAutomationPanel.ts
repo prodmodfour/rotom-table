@@ -21,6 +21,7 @@ import { directHpLossRollFormulaForScript } from '~/utils/moveAutomationDirectHp
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
 import {
   buildMoveAutomationAreaTemplateCells,
+  buildMoveAutomationAreaTemplatePlacementAtCenter,
   buildMoveAutomationAreaTemplatePlacements,
   moveAutomationAreaTemplateId,
   tokensInMoveAutomationArea,
@@ -75,6 +76,7 @@ import {
 } from '~/utils/moveAutomationRange'
 import { moveAutomationTargetHitChance } from '~/utils/moveAutomationAccuracy'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
+import { getClearanceValue } from '~/utils/gridGeometry'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
 import { moveFrequencyTracksOnMap, moveFrequencyTracksOnSheet, parseMoveFrequency } from '~/utils/moveUsage'
@@ -287,6 +289,10 @@ interface ActiveAreaConfirmationRequest {
   areaTemplateId: string
   areaTemplateOptions: MoveAutomationAreaTemplateOption[]
   placements: MoveAutomationAreaTemplatePlacement[]
+  /** Current free-aim center for Ranged Blast area templates. */
+  aimCenter?: GridAnchor
+  /** Maximum distance, in meters, from the user for the current free-aim center. */
+  aimRangeMeters?: number
   passDestination?: GridAnchor
 }
 
@@ -562,6 +568,17 @@ export const useMoveAutomationPanel = ({
   const placementTemplateId = (placement: MoveAutomationAreaTemplatePlacement): string =>
     moveAutomationAreaTemplateId(placement.template)
 
+  const areaAimFieldsForPlacement = (
+    placement: MoveAutomationAreaTemplatePlacement,
+  ): Pick<ActiveAreaConfirmationRequest, 'aimCenter' | 'aimRangeMeters'> => placement.center
+    ? {
+        aimCenter: placement.center,
+        ...(typeof placement.template.range === 'number'
+          ? { aimRangeMeters: placement.template.range }
+          : { aimRangeMeters: undefined }),
+      }
+    : { aimCenter: undefined, aimRangeMeters: undefined }
+
   const placementsForAreaTemplate = (
     placements: readonly MoveAutomationAreaTemplatePlacement[],
     templateId: string,
@@ -655,7 +672,7 @@ export const useMoveAutomationPanel = ({
         moveName: request.moveName,
         mode: 'area-confirmation',
         rangeLabel: request.label,
-        rangeMeters: 0,
+        rangeMeters: request.aimRangeMeters ?? 0,
         candidateIds: request.targetIds,
         hitChances: moveTargetHitChances(request.script, user, request.targetIds),
         areaCells: request.cells,
@@ -663,6 +680,13 @@ export const useMoveAutomationPanel = ({
         canToggleTargets: canToggleAreaTargets(request.script),
         areaDirection: request.direction,
         areaDirectionOptions: request.directionOptions,
+        ...(request.aimCenter
+          ? {
+              areaAimMode: 'free' as const,
+              areaAimCenter: request.aimCenter,
+              ...(typeof request.aimRangeMeters === 'number' ? { areaAimRangeMeters: request.aimRangeMeters } : {}),
+            }
+          : {}),
         areaTemplateId: request.areaTemplateId,
         areaTemplateOptions: areaTemplateOptionIsVisible(request.areaTemplateOptions) ? request.areaTemplateOptions : undefined,
       }
@@ -741,6 +765,12 @@ export const useMoveAutomationPanel = ({
   const tokenAreaDirection = (user: SpawnedPokemon): MoveAutomationAreaDirection =>
     tokenFacingAreaDirection(tokenFacingForPlacement(user))
 
+  const tokenCenterCell = (token: SpawnedPokemon): GridAnchor => ({
+    x: token.position.x + Math.floor((token.base - 1) / 2),
+    y: token.position.y + Math.floor((getClearanceValue(token) - 1) / 2),
+    z: token.position.z + Math.floor((token.base - 1) / 2),
+  })
+
   const areaTemplateCellConstraints = () => ({
     bounds: map.value?.dimensions,
     blockedCells: buildAllVoxelOccupancy(map.value?.voxels ?? []),
@@ -801,6 +831,7 @@ export const useMoveAutomationPanel = ({
       areaTemplateId,
       areaTemplateOptions: areaTemplateOptionsForPlacements(placements, script.areaTemplates),
       placements: [...placements],
+      ...areaAimFieldsForPlacement(placement),
       ...(placement.destination ? { passDestination: placement.destination } : {}),
     }
   }
@@ -813,6 +844,19 @@ export const useMoveAutomationPanel = ({
   ): ActiveAreaConfirmationRequest | null => {
     const template = script.areaTemplates?.[0]
     if (!template || template.kind === 'pass') return null
+
+    if (template.kind === 'ranged-blast') {
+      const placement = buildMoveAutomationAreaTemplatePlacementAtCenter({
+        template,
+        user,
+        tokens: spawnedPokemon.value,
+        center: tokenCenterCell(user),
+        includeEmpty: true,
+        ...areaTemplateCellConstraints(),
+      })
+      return placement ? requestFromAreaPlacement(user, script, damageFormula, frequency, placement, []) : null
+    }
+
     const direction = template.kind === 'cone' || template.kind === 'line' || template.kind === 'close-blast'
       ? tokenAreaDirection(user)
       : undefined
@@ -1802,7 +1846,38 @@ export const useMoveAutomationPanel = ({
       direction: placement.direction,
       directionOptions: directionOptionsForPlacements(placementsForAreaTemplate(request.placements, areaTemplateId)),
       areaTemplateId,
+      ...areaAimFieldsForPlacement(placement),
       passDestination: placement.destination,
+    }
+  }
+
+  const activeAreaRequestWithRangedBlastCenter = (
+    request: ActiveAreaConfirmationRequest,
+    user: SpawnedPokemon,
+    template: MoveAutomationAreaTemplate,
+    center: GridAnchor,
+  ): ActiveAreaConfirmationRequest | null => {
+    const placement = buildMoveAutomationAreaTemplatePlacementAtCenter({
+      template,
+      user,
+      tokens: spawnedPokemon.value,
+      center,
+      includeEmpty: true,
+      ...areaTemplateCellConstraints(),
+    })
+    if (!placement) return null
+
+    return {
+      ...request,
+      label: placement.label,
+      cells: placement.cells,
+      targetIds: placement.targetIds,
+      excludedTargetIds: [],
+      direction: undefined,
+      directionOptions: [],
+      areaTemplateId: moveAutomationAreaTemplateId(template),
+      ...areaAimFieldsForPlacement(placement),
+      passDestination: undefined,
     }
   }
 
@@ -1813,6 +1888,10 @@ export const useMoveAutomationPanel = ({
   ): ActiveAreaConfirmationRequest | null => {
     const template = request.script.areaTemplates?.find((item) => moveAutomationAreaTemplateId(item) === templateId)
     if (!template || template.kind === 'pass') return null
+    if (template.kind === 'ranged-blast') {
+      return activeAreaRequestWithRangedBlastCenter(request, user, template, request.aimCenter ?? tokenCenterCell(user))
+    }
+
     const direction = template.kind === 'cone' || template.kind === 'line' || template.kind === 'close-blast'
       ? request.direction ?? tokenAreaDirection(user)
       : undefined
@@ -1837,6 +1916,8 @@ export const useMoveAutomationPanel = ({
       direction,
       directionOptions: [],
       areaTemplateId: templateId,
+      aimCenter: undefined,
+      aimRangeMeters: undefined,
       passDestination: undefined,
     }
   }
@@ -1880,6 +1961,8 @@ export const useMoveAutomationPanel = ({
       cells: option.areaCells,
       targetIds: option.affectedIds,
       direction: option.direction,
+      aimCenter: undefined,
+      aimRangeMeters: undefined,
       passDestination: option.destination,
     }
   }
@@ -1921,6 +2004,17 @@ export const useMoveAutomationPanel = ({
     return placementTemplate
       ?? request.script.areaTemplates?.find((template) => moveAutomationAreaTemplateId(template) === request.areaTemplateId)
       ?? null
+  }
+
+  const aimMoveAutomationArea = (center: GridAnchor) => {
+    const request = activeMoveTargeting.value
+    if (request?.kind !== 'area-confirmation') return
+    const user = findSpawnedPokemon(request.userId)
+    const template = selectedAreaTemplateForRequest(request)
+    if (!user || template?.kind !== 'ranged-blast') return
+
+    const nextRequest = activeAreaRequestWithRangedBlastCenter(request, user, template, center)
+    if (nextRequest) activeMoveTargeting.value = nextRequest
   }
 
   const confirmedAreaTemplateKeywordIsAlternative = (
@@ -2113,6 +2207,7 @@ export const useMoveAutomationPanel = ({
     selectMoveAutomationTargetBranch,
     selectMoveAutomationAreaTemplate,
     selectMoveAutomationAreaDirection,
+    aimMoveAutomationArea,
     dismissSpiteReactionPrompt,
     applySpiteReactionPrompt,
     dismissCuteCharmReactionPrompt,

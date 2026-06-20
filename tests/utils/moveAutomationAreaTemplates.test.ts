@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildMoveAutomationAreaTemplateCells,
+  buildMoveAutomationAreaTemplatePlacementAtCenter,
   buildMoveAutomationAreaTemplatePlacements,
   parseMoveAutomationAreaTemplates,
   tokensInMoveAutomationArea,
@@ -217,6 +218,38 @@ describe('move automation area templates', () => {
 
     expect(placements).toHaveLength(1)
     expect(placements[0]).toMatchObject({ label: 'Burst 1', targetIds: ['north'] })
+  })
+
+  it('builds free-aim Ranged Blast placements on empty legal center cells', () => {
+    const user = token('user', 'Eevee', { x: 1, y: 0, z: 1 })
+    const target = token('target', 'Pidgey', { x: 4, y: 0, z: 4 })
+    const blast = template('ranged-blast', 2, 8)
+
+    const placement = buildMoveAutomationAreaTemplatePlacementAtCenter({
+      template: blast,
+      user,
+      tokens: [user, target],
+      center: { x: 5, y: 0, z: 4 },
+      includeEmpty: true,
+      bounds: { x: 12, y: 2, z: 12 },
+    })
+
+    expect(placement).toMatchObject({
+      label: 'ranged-blast 2 centered at (5, 0, 4)',
+      center: { x: 5, y: 0, z: 4 },
+      targetIds: ['target'],
+    })
+
+    const outOfRange = buildMoveAutomationAreaTemplatePlacementAtCenter({
+      template: blast,
+      user,
+      tokens: [user, target],
+      center: { x: 11, y: 0, z: 11 },
+      includeEmpty: true,
+      bounds: { x: 12, y: 2, z: 12 },
+    })
+
+    expect(outOfRange).toBeNull()
   })
 
   it('builds Pass placements that stop at the farthest legal empty end square', () => {

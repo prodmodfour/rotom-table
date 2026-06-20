@@ -20,6 +20,7 @@ import type { PreviewState } from '~/utils/gridPreview'
 import { getPokemonCenter } from '~/utils/gridGeometry'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { buildMapOccupancy } from '~/utils/mapOccupancy'
+import { ptuGridDistanceBetweenFootprints } from '~/utils/ptuGridDistance'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import {
   createMoveAutomationAreaDirectionUpdateThrottle,
@@ -247,6 +248,7 @@ const emit = defineEmits<{
   (event: 'confirm-move-target-count'): void
   (event: 'select-move-area-template', templateId: string): void
   (event: 'select-move-area-direction', direction: MoveAutomationAreaDirection): void
+  (event: 'aim-move-area', center: GridAnchor): void
   (event: 'select-move-target-branch', branchId: string): void
   (event: 'cancel-move-targeting'): void
   (event: 'use-attack-of-opportunity', payload: { promptId: string; moveName: string }): void
@@ -1202,7 +1204,9 @@ const performMoveTargeting = (event: MouseEvent | PointerEvent): boolean => {
         return true
       }
     }
-    updateMoveAreaDirectionFromPointer(event)
+    const requiresAreaAim = props.moveAutomationTargeting.areaAimMode === 'free'
+    const updatedAreaAim = updateMoveAreaAimingFromPointer(event)
+    if (requiresAreaAim && !updatedAreaAim) return true
     emit('select-move-target', props.moveAutomationTargeting.userId)
     return true
   }
@@ -1249,6 +1253,49 @@ const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: numbe
     recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
+const moveAreaAimCenterFromPointer = (event: MouseEvent | PointerEvent): GridAnchor | null => {
+  const targeting = props.moveAutomationTargeting
+  if (targeting?.mode !== 'area-confirmation' || targeting.areaAimMode !== 'free') return null
+
+  const user = props.pokemons.find((pokemon) => pokemon.id === targeting.userId)
+  if (!user) return null
+
+  const yLevel = targeting.areaAimCenter?.y ?? user.position.y
+  const point = getMoveGridIntersection(event, yLevel)
+  if (!point) return null
+
+  const center: GridAnchor = {
+    x: Math.floor(point.x),
+    y: Math.floor(yLevel),
+    z: Math.floor(point.z),
+  }
+
+  const inBounds = center.x >= 0
+    && center.y >= 0
+    && center.z >= 0
+    && center.x < props.dimensions.x
+    && center.y < props.dimensions.y
+    && center.z < props.dimensions.z
+  if (!inBounds) return null
+
+  const rangeMeters = targeting.areaAimRangeMeters
+  const inRange = typeof rangeMeters !== 'number'
+    || ptuGridDistanceBetweenFootprints(user, { position: center, base: 1, clearance: 1 }) <= rangeMeters
+
+  return inRange ? center : null
+}
+
+const updateMoveAreaAimFromPointer = (event: MouseEvent | PointerEvent): boolean => {
+  const center = moveAreaAimCenterFromPointer(event)
+  if (!center) return false
+
+  const current = props.moveAutomationTargeting?.areaAimCenter
+  if (current && current.x === center.x && current.y === center.y && current.z === center.z) return true
+
+  emit('aim-move-area', center)
+  return true
+}
+
 const moveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent): MoveAutomationAreaDirection | null => {
   const targeting = props.moveAutomationTargeting
   if (targeting?.mode !== 'area-confirmation' || !targeting.areaDirectionOptions?.length) return null
@@ -1283,10 +1330,16 @@ const selectMoveAreaDirection = (direction: MoveAutomationAreaDirection) => {
   emit('select-move-area-direction', direction)
 }
 
-const updateMoveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent) => {
+const updateMoveAreaDirectionFromPointer = (event: MouseEvent | PointerEvent): boolean => {
   const direction = moveAreaDirectionFromPointer(event)
-  if (!direction) return
+  if (!direction) return false
   selectMoveAreaDirection(direction)
+  return true
+}
+
+const updateMoveAreaAimingFromPointer = (event: MouseEvent | PointerEvent): boolean => {
+  if (updateMoveAreaAimFromPointer(event)) return true
+  return updateMoveAreaDirectionFromPointer(event)
 }
 
 const movementInteraction = createIsometricTokenMovementInteractionController({
@@ -1431,7 +1484,7 @@ const pointerInteraction = createIsometricPointerInteractionController({
   stepPlacementElevation: sendOutInteraction.stepPreviewElevation,
   cancelPlacement: sendOutInteraction.cancel,
   getTargetingModeActive: () => Boolean(props.moveAutomationTargeting || props.moveAutomationTargetBranchSelection),
-  updateTargetingFromPointer: updateMoveAreaDirectionFromPointer,
+  updateTargetingFromPointer: updateMoveAreaAimingFromPointer,
   performTargeting: performMoveTargeting,
   cancelTargeting: cancelMoveTargeting,
   performBuildAction,
@@ -2241,11 +2294,20 @@ watch(
               choose a template below.
             </template>
             <template v-if="props.moveAutomationTargeting.canToggleTargets">
-              {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} of {{ props.moveAutomationTargeting.candidateIds.length }} selected. Click reticles to include/exclude targets; click the battlefield to use the move.
+              {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} of {{ props.moveAutomationTargeting.candidateIds.length }} selected.
+              <template v-if="props.moveAutomationTargeting.areaAimMode === 'free'">
+                Move the cursor to aim; click reticles to include/exclude targets; click the battlefield to use the move.
+              </template>
+              <template v-else>
+                Click reticles to include/exclude targets; click the battlefield to use the move.
+              </template>
             </template>
             <template v-else>
               {{ props.moveAutomationTargeting.affectedIds?.length ?? 0 }} affected.
-              <template v-if="props.moveAutomationTargeting.areaDirectionOptions?.length">
+              <template v-if="props.moveAutomationTargeting.areaAimMode === 'free'">
+                Move the cursor to aim the area; click to use the move.
+              </template>
+              <template v-else-if="props.moveAutomationTargeting.areaDirectionOptions?.length">
                 Move the cursor around the user to rotate, or use a direction button; click to use the move.
               </template>
               <template v-else>

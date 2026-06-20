@@ -2321,6 +2321,68 @@ describe('useMoveAutomationPanel', () => {
     ])
   })
 
+  it('lets Ranged Blast moves free-aim their area center instead of snapping to a token', () => {
+    const map = ref({
+      ...mapFixture(),
+      dimensions: { x: 12, y: 2, z: 12 },
+      placements: [
+        { id: 'user-token', sheetKind: 'pokemon' as const, sheetSlug: 'bolt', position: { x: 1, y: 0, z: 1 } },
+        { id: 'target-token', sheetKind: 'pokemon' as const, sheetSlug: 'target', position: { x: 4, y: 0, z: 4 } },
+      ],
+    })
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Bulbasaur',
+      level: 5,
+      movelist: [{ name: 'Swift' }],
+    } as CharacterSheet
+    const panel = useMoveAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned({ id: 'user-token', sheetSlug: 'bolt', position: { x: 1, y: 0, z: 1 } }),
+        spawned({ id: 'target-token', species: 'Target', sheetSlug: 'target', position: { x: 4, y: 0, z: 4 } }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canEditMap: computed(() => false),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyHp: () => undefined,
+      modifyCombatStages: () => undefined,
+      modifyConditions: () => undefined,
+      applyMoveFieldEffect: () => undefined,
+      placeHazard: () => undefined,
+    })
+
+    panel.openMoveAutomation({ id: 'user-token', moveName: 'Swift' })
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      mode: 'area-confirmation',
+      moveName: 'Swift',
+      rangeLabel: 'Ranged 8 Blast 2 centered on Target',
+      rangeMeters: 8,
+      areaAimMode: 'free',
+      areaAimCenter: { x: 4, y: 0, z: 4 },
+      areaAimRangeMeters: 8,
+      candidateIds: ['target-token'],
+    })
+
+    panel.aimMoveAutomationArea({ x: 5, y: 0, z: 4 })
+
+    expect(panel.moveAutomationTargeting.value).toMatchObject({
+      rangeLabel: 'Ranged 8 Blast 2 centered at (5, 0, 4)',
+      areaAimMode: 'free',
+      areaAimCenter: { x: 5, y: 0, z: 4 },
+      candidateIds: ['target-token'],
+      affectedIds: ['target-token'],
+    })
+    expect(panel.moveAutomationTargeting.value?.areaCells).toContainEqual({ x: 5, y: 0, z: 4 })
+
+    panel.aimMoveAutomationArea({ x: 11, y: 0, z: 11 })
+
+    expect(panel.moveAutomationTargeting.value?.areaAimCenter).toEqual({ x: 5, y: 0, z: 4 })
+  })
+
   it('exposes legal area-template alternatives and filters direction buttons to the selected template', () => {
     const map = ref({
       ...mapFixture(),

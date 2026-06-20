@@ -32,6 +32,8 @@ export interface MoveAutomationAreaTemplatePlacement {
   cells: GridAnchor[]
   targetIds: string[]
   direction?: MoveAutomationAreaDirection
+  /** Center square/cube for free-aim Ranged Blast templates. */
+  center?: GridAnchor
   /** End square for Pass templates; undefined for stationary area templates. */
   destination?: GridAnchor
 }
@@ -68,6 +70,16 @@ export interface BuildMoveAutomationAreaTemplatePlacementsInput extends AreaTemp
   user: SpawnedPokemon
   tokens: readonly SpawnedPokemon[]
   includeEmpty?: boolean
+}
+
+export interface BuildMoveAutomationAreaTemplatePlacementAtCenterInput extends AreaTemplateCellConstraints {
+  template: MoveAutomationAreaTemplate
+  user: SpawnedPokemon
+  tokens: readonly SpawnedPokemon[]
+  center: GridAnchor
+  includeEmpty?: boolean
+  id?: string
+  label?: string
 }
 
 const AREA_DIRECTIONS: readonly DirectionDefinition[] = [
@@ -761,6 +773,9 @@ const tokenCenterCell = (token: SpawnedPokemon): GridAnchor => ({
   z: token.position.z + Math.floor((token.base - 1) / 2),
 })
 
+const rangedBlastCenterLabel = (template: MoveAutomationAreaTemplate, center: GridAnchor): string =>
+  `${template.label} centered at (${center.x}, ${center.y}, ${center.z})`
+
 const addPlacement = (
   placements: MoveAutomationAreaTemplatePlacement[],
   seen: Set<string>,
@@ -780,8 +795,46 @@ const templateCanBeCenteredOnToken = (
   token: SpawnedPokemon,
 ): boolean => template.range == null || tokenGridDistance(user, token) <= template.range
 
+const templateCanBeCenteredAtCell = (
+  template: MoveAutomationAreaTemplate,
+  user: SpawnedPokemon,
+  center: GridAnchor,
+): boolean => template.range == null || ptuGridDistanceBetweenFootprints(user, cellFootprint(center)) <= template.range
+
 const templatesForScript = (script: Pick<MoveAutomationScript, 'areaTemplates' | 'range'> | null | undefined): MoveAutomationAreaTemplate[] =>
   script?.areaTemplates?.length ? [...script.areaTemplates] : parseMoveAutomationAreaTemplates(script?.range)
+
+export const buildMoveAutomationAreaTemplatePlacementAtCenter = ({
+  template,
+  user,
+  tokens,
+  center,
+  includeEmpty = false,
+  id,
+  label,
+  bounds,
+  blockedCells,
+}: BuildMoveAutomationAreaTemplatePlacementAtCenterInput): MoveAutomationAreaTemplatePlacement | null => {
+  if (template.kind !== 'ranged-blast') return null
+  if (!cellInBounds(center, bounds)) return null
+  if (blockedCells?.has(cellKey(center))) return null
+  if (!templateCanBeCenteredAtCell(template, user, center)) return null
+
+  const cells = buildMoveAutomationAreaTemplateCells({ template, user, center, bounds, blockedCells })
+  if (!cells.length) return null
+
+  const targetIds = tokensInMoveAutomationArea({ cells, tokens, excludeIds: [user.id] }).map((item) => item.id)
+  if (!includeEmpty && !targetIds.length) return null
+
+  return {
+    id: id ?? `${template.kind}:${template.range ?? 'any'}:${template.size}:${center.x},${center.y},${center.z}`,
+    label: label ?? rangedBlastCenterLabel(template, center),
+    template,
+    cells,
+    targetIds,
+    center: { ...center },
+  }
+}
 
 export const buildMoveAutomationAreaTemplatePlacements = ({
   script,
@@ -832,15 +885,17 @@ export const buildMoveAutomationAreaTemplatePlacements = ({
       for (const token of tokens) {
         if (token.id === user.id || !templateCanBeCenteredOnToken(template, user, token)) continue
         const center = tokenCenterCell(token)
-        const cells = buildMoveAutomationAreaTemplateCells({ template, user, center, ...constraints })
-        const targetIds = tokensInMoveAutomationArea({ cells, tokens, excludeIds: [user.id] }).map((item) => item.id)
-        addPlacement(placements, seen, {
+        const placement = buildMoveAutomationAreaTemplatePlacementAtCenter({
+          template,
+          user,
+          tokens,
+          center,
+          includeEmpty,
           id: `${template.kind}:${template.range ?? 'any'}:${template.size}:${token.id}`,
           label: `${template.label} centered on ${token.species}`,
-          template,
-          cells,
-          targetIds,
-        }, includeEmpty)
+          ...constraints,
+        })
+        if (placement) addPlacement(placements, seen, placement, includeEmpty)
       }
       continue
     }

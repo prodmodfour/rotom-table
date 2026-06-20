@@ -95,6 +95,12 @@ export interface MoveAutomationTargetingOverlayState {
   affectedIds?: string[]
   /** Area-confirmation overlays may let the user exclude/re-include candidate targets before confirming. */
   canToggleTargets?: boolean
+  /** Free-aim area overlays follow the battlefield pointer instead of snapping to token-centered placements. */
+  areaAimMode?: 'free'
+  /** Current center cell for a free-aim area overlay. */
+  areaAimCenter?: GridAnchor
+  /** Optional maximum distance, in meters, from the user for free-aim area centers. */
+  areaAimRangeMeters?: number
   areaDirection?: MoveAutomationAreaDirection
   areaDirectionOptions?: MoveAutomationAreaDirectionOption[]
   /** Active area-template choice when a range has legal alternatives, such as Burst 1 or Line 6. */
