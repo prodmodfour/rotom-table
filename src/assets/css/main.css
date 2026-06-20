@@ -511,81 +511,6 @@ samp {
   text-shadow: none;
 }
 
-.move-automation-roll.is-result.is-hit-roll {
-  position: relative;
-  min-width: 92px;
-  padding: 6px 12px 7px;
-  border: 1px solid rgba(var(--accent-rgb), 0.86);
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 50% 0, rgba(var(--accent-rgb), 0.22), transparent 70%),
-    rgba(6, 8, 10, 0.92);
-  color: #fff;
-  -webkit-text-stroke: 0;
-  paint-order: normal;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.88);
-  box-shadow:
-    0 8px 18px rgba(0, 0, 0, 0.5),
-    0 0 0 2px rgba(0, 0, 0, 0.28),
-    0 0 14px rgba(var(--accent-rgb), 0.42);
-  animation: move-automation-roll-callout-pop 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.move-automation-roll.is-result.is-hit-roll::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -7px;
-  width: 12px;
-  height: 12px;
-  border-right: 1px solid rgba(var(--accent-rgb), 0.72);
-  border-bottom: 1px solid rgba(var(--accent-rgb), 0.72);
-  background: rgba(6, 8, 10, 0.92);
-  transform: translateX(-50%) rotate(45deg);
-  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.28);
-}
-
-.move-automation-roll-callout {
-  position: relative;
-  z-index: 1;
-  display: inline-grid;
-  grid-template-columns: auto auto;
-  grid-template-areas:
-    'label number'
-    'detail number';
-  column-gap: 8px;
-  align-items: center;
-  text-align: left;
-}
-
-.move-automation-roll-callout__label {
-  grid-area: label;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.move-automation-roll-callout__number {
-  grid-area: number;
-  color: #fff;
-  font-size: 28px;
-  font-weight: 1000;
-  letter-spacing: -0.04em;
-  line-height: 0.9;
-}
-
-.move-automation-roll-callout__detail {
-  grid-area: detail;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  line-height: 1.05;
-}
-
 .move-automation-roll__d20 {
   width: 48px;
   height: 48px;
@@ -627,23 +552,6 @@ samp {
 
   to {
     transform: rotate(360deg) scale(0.92);
-  }
-}
-
-@keyframes move-automation-roll-callout-pop {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.84);
-  }
-
-  68% {
-    opacity: 1;
-    transform: translateY(-2px) scale(1.06);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
