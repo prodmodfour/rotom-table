@@ -34,6 +34,8 @@ export interface MoveAutomationAreaTemplatePlacement {
   direction?: MoveAutomationAreaDirection
   /** Center square/cube for free-aim Ranged Blast templates. */
   center?: GridAnchor
+  /** Pointer-selected legal cell for constrained free-aim area templates. */
+  aimCell?: GridAnchor
   /** End square for Pass templates; undefined for stationary area templates. */
   destination?: GridAnchor
 }
@@ -77,6 +79,16 @@ export interface BuildMoveAutomationAreaTemplatePlacementAtCenterInput extends A
   user: SpawnedPokemon
   tokens: readonly SpawnedPokemon[]
   center: GridAnchor
+  includeEmpty?: boolean
+  id?: string
+  label?: string
+}
+
+export interface BuildMoveAutomationCloseBlastPlacementAtAimCellInput extends AreaTemplateCellConstraints {
+  template: MoveAutomationAreaTemplate
+  user: SpawnedPokemon
+  tokens: readonly SpawnedPokemon[]
+  aimCell: GridAnchor
   includeEmpty?: boolean
   id?: string
   label?: string
@@ -776,6 +788,96 @@ const tokenCenterCell = (token: SpawnedPokemon): GridAnchor => ({
 const rangedBlastCenterLabel = (template: MoveAutomationAreaTemplate, center: GridAnchor): string =>
   `${template.label} centered at (${center.x}, ${center.y}, ${center.z})`
 
+const closeBlastAimLabel = (template: MoveAutomationAreaTemplate, aimCell: GridAnchor): string =>
+  `${template.label} aimed at (${aimCell.x}, ${aimCell.y}, ${aimCell.z})`
+
+const cellMatches = (left: GridAnchor, right: GridAnchor): boolean =>
+  left.x === right.x && left.y === right.y && left.z === right.z
+
+const closeBlastFootprint = (position: GridAnchor, size: number): AreaTemplateFootprint => ({
+  position,
+  base: size,
+  clearance: size,
+})
+
+const closeBlastStartOverlapsUser = (
+  user: AreaTemplateFootprint,
+  start: GridAnchor,
+  size: number,
+): boolean => footprintsOverlap(
+  start,
+  size,
+  size,
+  user.position,
+  user.base,
+  footprintClearance(user),
+)
+
+const closeBlastStartIsAdjacentToUser = (
+  user: AreaTemplateFootprint,
+  start: GridAnchor,
+  size: number,
+): boolean => ptuGridDistanceBetweenFootprints(user, closeBlastFootprint(start, size)) === 1
+
+const closeBlastStartCandidates = (user: AreaTemplateFootprint, size: number): GridAnchor[] => {
+  const starts: GridAnchor[] = []
+  for (let x = user.position.x - size; x <= user.position.x + user.base; x += 1) {
+    for (let y = user.position.y - size; y <= footprintTopY(user) + 1; y += 1) {
+      for (let z = user.position.z - size; z <= user.position.z + user.base; z += 1) {
+        const start = { x, y, z }
+        if (closeBlastStartOverlapsUser(user, start, size)) continue
+        if (!closeBlastStartIsAdjacentToUser(user, start, size)) continue
+        starts.push(start)
+      }
+    }
+  }
+  return starts
+}
+
+const buildCloseBlastCellsAtStart = (
+  user: AreaTemplateFootprint,
+  size: number,
+  start: GridAnchor,
+  constraints: AreaTemplateCellConstraints,
+): GridAnchor[] => {
+  const origins = footprintCells(user)
+  return applyCellConstraints(
+    filterCellsWithinOriginDistance(buildCubeCells(start, size), origins, size),
+    origins,
+    constraints,
+  )
+}
+
+const closeBlastAimCellForDirection = (
+  user: AreaTemplateFootprint,
+  direction: DirectionDefinition,
+  cells: readonly GridAnchor[],
+): GridAnchor | undefined => {
+  const origin = originCellForDirection(user, direction)
+  const adjacent = {
+    x: origin.x + direction.dx,
+    y: origin.y + direction.dy,
+    z: origin.z + direction.dz,
+  }
+  if (cells.some((cell) => cellMatches(cell, adjacent))) return adjacent
+  return cells.find((cell) => cell.y === user.position.y) ?? cells[0]
+}
+
+const closeBlastPlacementScore = (
+  start: GridAnchor,
+  size: number,
+  aimCell: GridAnchor,
+): number => {
+  const center = {
+    x: start.x + (size - 1) / 2,
+    y: start.y + (size - 1) / 2,
+    z: start.z + (size - 1) / 2,
+  }
+  return Math.abs(center.x - aimCell.x)
+    + Math.abs(center.y - aimCell.y)
+    + Math.abs(center.z - aimCell.z)
+}
+
 const addPlacement = (
   placements: MoveAutomationAreaTemplatePlacement[],
   seen: Set<string>,
@@ -833,7 +935,52 @@ export const buildMoveAutomationAreaTemplatePlacementAtCenter = ({
     cells,
     targetIds,
     center: { ...center },
+    aimCell: { ...center },
   }
+}
+
+export const buildMoveAutomationCloseBlastPlacementAtAimCell = ({
+  template,
+  user,
+  tokens,
+  aimCell,
+  includeEmpty = false,
+  id,
+  label,
+  bounds,
+  blockedCells,
+}: BuildMoveAutomationCloseBlastPlacementAtAimCellInput): MoveAutomationAreaTemplatePlacement | null => {
+  if (template.kind !== 'close-blast') return null
+  if (!cellInBounds(aimCell, bounds)) return null
+  if (blockedCells?.has(cellKey(aimCell))) return null
+  if (ptuGridDistanceBetweenFootprints(user, cellFootprint(aimCell)) > template.size) return null
+
+  const constraints = { bounds, blockedCells }
+  let best: { placement: MoveAutomationAreaTemplatePlacement; score: number } | null = null
+  for (const start of closeBlastStartCandidates(user, template.size)) {
+    const cells = buildCloseBlastCellsAtStart(user, template.size, start, constraints)
+    if (!cells.some((cell) => cellMatches(cell, aimCell))) continue
+
+    const targetIds = tokensInMoveAutomationArea({ cells, tokens, excludeIds: [user.id] }).map((item) => item.id)
+    if (!includeEmpty && !targetIds.length) continue
+
+    const score = closeBlastPlacementScore(start, template.size, aimCell)
+    if (best && score >= best.score) continue
+
+    best = {
+      score,
+      placement: {
+        id: id ?? `${template.kind}:${template.size}:${aimCell.x},${aimCell.y},${aimCell.z}`,
+        label: label ?? closeBlastAimLabel(template, aimCell),
+        template,
+        cells,
+        targetIds,
+        aimCell: { ...aimCell },
+      },
+    }
+  }
+
+  return best?.placement ?? null
 }
 
 export const buildMoveAutomationAreaTemplatePlacements = ({
@@ -903,6 +1050,9 @@ export const buildMoveAutomationAreaTemplatePlacements = ({
     for (const direction of AREA_DIRECTIONS) {
       const cells = buildMoveAutomationAreaTemplateCells({ template, user, direction: direction.id, ...constraints })
       const targetIds = tokensInMoveAutomationArea({ cells, tokens, excludeIds: [user.id] }).map((token) => token.id)
+      const aimCell = template.kind === 'close-blast'
+        ? closeBlastAimCellForDirection(user, direction, cells)
+        : undefined
       addPlacement(placements, seen, {
         id: `${template.kind}:${template.size}:${direction.id}`,
         label: `${template.label} ${direction.label}`,
@@ -910,6 +1060,7 @@ export const buildMoveAutomationAreaTemplatePlacements = ({
         cells,
         targetIds,
         direction: direction.id,
+        ...(aimCell ? { aimCell } : {}),
       }, includeEmpty)
     }
   }

@@ -23,6 +23,7 @@ import {
   buildMoveAutomationAreaTemplateCells,
   buildMoveAutomationAreaTemplatePlacementAtCenter,
   buildMoveAutomationAreaTemplatePlacements,
+  buildMoveAutomationCloseBlastPlacementAtAimCell,
   moveAutomationAreaTemplateId,
   tokensInMoveAutomationArea,
   type MoveAutomationAreaTemplatePlacement,
@@ -570,14 +571,21 @@ export const useMoveAutomationPanel = ({
 
   const areaAimFieldsForPlacement = (
     placement: MoveAutomationAreaTemplatePlacement,
-  ): Pick<ActiveAreaConfirmationRequest, 'aimCenter' | 'aimRangeMeters'> => placement.center
-    ? {
-        aimCenter: placement.center,
-        ...(typeof placement.template.range === 'number'
-          ? { aimRangeMeters: placement.template.range }
-          : { aimRangeMeters: undefined }),
-      }
-    : { aimCenter: undefined, aimRangeMeters: undefined }
+  ): Pick<ActiveAreaConfirmationRequest, 'aimCenter' | 'aimRangeMeters'> => {
+    const aimCell = placement.aimCell ?? placement.center
+    if (!aimCell) return { aimCenter: undefined, aimRangeMeters: undefined }
+
+    const aimRangeMeters = typeof placement.template.range === 'number'
+      ? placement.template.range
+      : placement.template.kind === 'close-blast'
+        ? placement.template.size
+        : undefined
+
+    return {
+      aimCenter: aimCell,
+      ...(typeof aimRangeMeters === 'number' ? { aimRangeMeters } : { aimRangeMeters: undefined }),
+    }
+  }
 
   const placementsForAreaTemplate = (
     placements: readonly MoveAutomationAreaTemplatePlacement[],
@@ -815,6 +823,8 @@ export const useMoveAutomationPanel = ({
   ): ActiveAreaConfirmationRequest => {
     const areaTemplateId = placementTemplateId(placement)
     const selectedTemplatePlacements = placementsForAreaTemplate(placements, areaTemplateId)
+    const aimFields = areaAimFieldsForPlacement(placement)
+    const freeAim = Boolean(aimFields.aimCenter)
     return {
       kind: 'area-confirmation',
       userId: user.id,
@@ -826,14 +836,28 @@ export const useMoveAutomationPanel = ({
       cells: placement.cells,
       targetIds: placement.targetIds,
       excludedTargetIds: [],
-      direction: placement.direction,
-      directionOptions: directionOptionsForPlacements(selectedTemplatePlacements),
+      direction: freeAim ? undefined : placement.direction,
+      directionOptions: freeAim ? [] : directionOptionsForPlacements(selectedTemplatePlacements),
       areaTemplateId,
       areaTemplateOptions: areaTemplateOptionsForPlacements(placements, script.areaTemplates),
       placements: [...placements],
-      ...areaAimFieldsForPlacement(placement),
+      ...aimFields,
       ...(placement.destination ? { passDestination: placement.destination } : {}),
     }
+  }
+
+  const initialCloseBlastPlacementForTemplate = (
+    user: SpawnedPokemon,
+    template: MoveAutomationAreaTemplate,
+  ): MoveAutomationAreaTemplatePlacement | null => {
+    const placements = buildMoveAutomationAreaTemplatePlacements({
+      script: { range: template.label, areaTemplates: [template] },
+      user,
+      tokens: spawnedPokemon.value,
+      includeEmpty: true,
+      ...areaTemplateCellConstraints(),
+    })
+    return areaPlacementForTokenFacing(placements, user)
   }
 
   const makeFallbackAreaPlacement = (
@@ -857,7 +881,12 @@ export const useMoveAutomationPanel = ({
       return placement ? requestFromAreaPlacement(user, script, damageFormula, frequency, placement, []) : null
     }
 
-    const direction = template.kind === 'cone' || template.kind === 'line' || template.kind === 'close-blast'
+    if (template.kind === 'close-blast') {
+      const placement = initialCloseBlastPlacementForTemplate(user, template)
+      return placement ? requestFromAreaPlacement(user, script, damageFormula, frequency, placement, []) : null
+    }
+
+    const direction = template.kind === 'cone' || template.kind === 'line'
       ? tokenAreaDirection(user)
       : undefined
     const cells = buildMoveAutomationAreaTemplateCells({
@@ -1837,16 +1866,18 @@ export const useMoveAutomationPanel = ({
     placement: MoveAutomationAreaTemplatePlacement,
   ): ActiveAreaConfirmationRequest => {
     const areaTemplateId = placementTemplateId(placement)
+    const aimFields = areaAimFieldsForPlacement(placement)
+    const freeAim = Boolean(aimFields.aimCenter)
     return {
       ...request,
       label: placement.label,
       cells: placement.cells,
       targetIds: placement.targetIds,
       excludedTargetIds: [],
-      direction: placement.direction,
-      directionOptions: directionOptionsForPlacements(placementsForAreaTemplate(request.placements, areaTemplateId)),
+      direction: freeAim ? undefined : placement.direction,
+      directionOptions: freeAim ? [] : directionOptionsForPlacements(placementsForAreaTemplate(request.placements, areaTemplateId)),
       areaTemplateId,
-      ...areaAimFieldsForPlacement(placement),
+      ...aimFields,
       passDestination: placement.destination,
     }
   }
@@ -1867,18 +1898,26 @@ export const useMoveAutomationPanel = ({
     })
     if (!placement) return null
 
-    return {
-      ...request,
-      label: placement.label,
-      cells: placement.cells,
-      targetIds: placement.targetIds,
-      excludedTargetIds: [],
-      direction: undefined,
-      directionOptions: [],
-      areaTemplateId: moveAutomationAreaTemplateId(template),
-      ...areaAimFieldsForPlacement(placement),
-      passDestination: undefined,
-    }
+    return activeAreaRequestWithPlacement(request, placement)
+  }
+
+  const activeAreaRequestWithCloseBlastAimCell = (
+    request: ActiveAreaConfirmationRequest,
+    user: SpawnedPokemon,
+    template: MoveAutomationAreaTemplate,
+    aimCell: GridAnchor,
+  ): ActiveAreaConfirmationRequest | null => {
+    const placement = buildMoveAutomationCloseBlastPlacementAtAimCell({
+      template,
+      user,
+      tokens: spawnedPokemon.value,
+      aimCell,
+      includeEmpty: true,
+      ...areaTemplateCellConstraints(),
+    })
+    if (!placement) return null
+
+    return activeAreaRequestWithPlacement(request, placement)
   }
 
   const fallbackAreaRequestForTemplate = (
@@ -1892,7 +1931,12 @@ export const useMoveAutomationPanel = ({
       return activeAreaRequestWithRangedBlastCenter(request, user, template, request.aimCenter ?? tokenCenterCell(user))
     }
 
-    const direction = template.kind === 'cone' || template.kind === 'line' || template.kind === 'close-blast'
+    if (template.kind === 'close-blast') {
+      const placement = initialCloseBlastPlacementForTemplate(user, template)
+      return placement ? activeAreaRequestWithPlacement(request, placement) : null
+    }
+
+    const direction = template.kind === 'cone' || template.kind === 'line'
       ? request.direction ?? tokenAreaDirection(user)
       : undefined
     const cells = buildMoveAutomationAreaTemplateCells({
@@ -2006,14 +2050,18 @@ export const useMoveAutomationPanel = ({
       ?? null
   }
 
-  const aimMoveAutomationArea = (center: GridAnchor) => {
+  const aimMoveAutomationArea = (aimCell: GridAnchor) => {
     const request = activeMoveTargeting.value
     if (request?.kind !== 'area-confirmation') return
     const user = findSpawnedPokemon(request.userId)
     const template = selectedAreaTemplateForRequest(request)
-    if (!user || template?.kind !== 'ranged-blast') return
+    if (!user || !template) return
 
-    const nextRequest = activeAreaRequestWithRangedBlastCenter(request, user, template, center)
+    const nextRequest = template.kind === 'ranged-blast'
+      ? activeAreaRequestWithRangedBlastCenter(request, user, template, aimCell)
+      : template.kind === 'close-blast'
+        ? activeAreaRequestWithCloseBlastAimCell(request, user, template, aimCell)
+        : null
     if (nextRequest) activeMoveTargeting.value = nextRequest
   }
 

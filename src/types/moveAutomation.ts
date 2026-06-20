@@ -97,9 +97,9 @@ export interface MoveAutomationTargetingOverlayState {
   canToggleTargets?: boolean
   /** Free-aim area overlays follow the battlefield pointer instead of snapping to token-centered placements. */
   areaAimMode?: 'free'
-  /** Current center cell for a free-aim area overlay. */
+  /** Current aim cell for a free-aim area overlay. */
   areaAimCenter?: GridAnchor
-  /** Optional maximum distance, in meters, from the user for free-aim area centers. */
+  /** Optional maximum distance, in meters, from the user for free-aim area cells. */
   areaAimRangeMeters?: number
   areaDirection?: MoveAutomationAreaDirection
   areaDirectionOptions?: MoveAutomationAreaDirectionOption[]

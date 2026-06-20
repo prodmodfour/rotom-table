@@ -2383,7 +2383,7 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.moveAutomationTargeting.value?.areaAimCenter).toEqual({ x: 5, y: 0, z: 4 })
   })
 
-  it('exposes legal area-template alternatives and filters direction buttons to the selected template', () => {
+  it('exposes legal area-template alternatives and free-aims Close Blast choices', () => {
     const map = ref({
       ...mapFixture(),
       dimensions: { x: 8, y: 4, z: 8 },
@@ -2437,27 +2437,24 @@ describe('useMoveAutomationPanel', () => {
     expect(panel.moveAutomationTargeting.value).toMatchObject({
       rangeLabel: 'Close Blast 2 south-east',
       areaTemplateId: closeBlastId,
-      areaDirection: 'south-east',
+      areaAimMode: 'free',
+      areaAimRangeMeters: 2,
+      areaDirectionOptions: [],
     })
-    expect(panel.moveAutomationTargeting.value?.areaDirectionOptions?.map((option) => option.label)).toEqual([
-      'Close Blast 2 north',
-      'Close Blast 2 north-east',
-      'Close Blast 2 east',
-      'Close Blast 2 south-east',
-      'Close Blast 2 south',
-      'Close Blast 2 south-west',
-      'Close Blast 2 west',
-      'Close Blast 2 north-west',
-      'Close Blast 2 up',
-      'Close Blast 2 down',
-    ])
+    expect(panel.moveAutomationTargeting.value?.areaDirection).toBeUndefined()
 
-    panel.selectMoveAutomationAreaDirection('north')
+    panel.aimMoveAutomationArea({ x: 4, y: 1, z: 3 })
     expect(panel.moveAutomationTargeting.value).toMatchObject({
-      rangeLabel: 'Close Blast 2 north',
+      rangeLabel: 'Close Blast 2 aimed at (4, 1, 3)',
       areaTemplateId: closeBlastId,
-      areaDirection: 'north',
+      areaAimMode: 'free',
+      areaAimCenter: { x: 4, y: 1, z: 3 },
+      candidateIds: ['target-token'],
+      affectedIds: ['target-token'],
     })
+
+    panel.aimMoveAutomationArea({ x: 7, y: 1, z: 7 })
+    expect(panel.moveAutomationTargeting.value?.areaAimCenter).toEqual({ x: 4, y: 1, z: 3 })
 
     panel.selectMoveAutomationAreaTemplate(burstId)
     expect(panel.moveAutomationTargeting.value).toMatchObject({

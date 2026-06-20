@@ -3,6 +3,7 @@ import {
   buildMoveAutomationAreaTemplateCells,
   buildMoveAutomationAreaTemplatePlacementAtCenter,
   buildMoveAutomationAreaTemplatePlacements,
+  buildMoveAutomationCloseBlastPlacementAtAimCell,
   parseMoveAutomationAreaTemplates,
   tokensInMoveAutomationArea,
 } from '~/utils/moveAutomationAreaTemplates'
@@ -237,6 +238,7 @@ describe('move automation area templates', () => {
     expect(placement).toMatchObject({
       label: 'ranged-blast 2 centered at (5, 0, 4)',
       center: { x: 5, y: 0, z: 4 },
+      aimCell: { x: 5, y: 0, z: 4 },
       targetIds: ['target'],
     })
 
@@ -247,6 +249,40 @@ describe('move automation area templates', () => {
       center: { x: 11, y: 0, z: 11 },
       includeEmpty: true,
       bounds: { x: 12, y: 2, z: 12 },
+    })
+
+    expect(outOfRange).toBeNull()
+  })
+
+  it('builds constrained free-aim Close Blast placements on legal adjacent cells', () => {
+    const user = token('user', 'Eevee', { x: 3, y: 1, z: 3 })
+    const target = token('target', 'Pidgey', { x: 4, y: 1, z: 3 })
+    const blast = template('close-blast', 2)
+
+    const placement = buildMoveAutomationCloseBlastPlacementAtAimCell({
+      template: blast,
+      user,
+      tokens: [user, target],
+      aimCell: { x: 4, y: 1, z: 3 },
+      includeEmpty: true,
+      bounds: { x: 8, y: 4, z: 8 },
+    })
+
+    expect(placement).toMatchObject({
+      label: 'close-blast 2 aimed at (4, 1, 3)',
+      aimCell: { x: 4, y: 1, z: 3 },
+      targetIds: ['target'],
+    })
+    expect(placement?.cells).toContainEqual({ x: 4, y: 1, z: 3 })
+    expect(placement?.cells).not.toContainEqual(user.position)
+
+    const outOfRange = buildMoveAutomationCloseBlastPlacementAtAimCell({
+      template: blast,
+      user,
+      tokens: [user, target],
+      aimCell: { x: 7, y: 1, z: 7 },
+      includeEmpty: true,
+      bounds: { x: 8, y: 4, z: 8 },
     })
 
     expect(outOfRange).toBeNull()
