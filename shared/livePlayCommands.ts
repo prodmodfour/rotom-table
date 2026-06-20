@@ -6,6 +6,7 @@ import type {
   MapHazardKind,
   MapHazardV2,
   MapRoomKind,
+  MapSceneState,
   MapTerrainKind,
   MapVoxelV2,
   MapWeatherKind,
@@ -51,6 +52,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   SPAWN_TOKEN: 'spawnToken',
   SEND_OUT_POKEMON: 'sendOutPokemon',
   DELETE_TOKEN: 'deleteToken',
+  SET_SCENE: 'setScene',
   UPDATE_ATTACK_OF_OPPORTUNITY: 'updateAttackOfOpportunity',
 } as const
 
@@ -80,6 +82,7 @@ export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
   LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
   LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+  LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
   LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
 ] as const satisfies readonly LivePlayCommandType[]
 
@@ -97,6 +100,7 @@ export const LIVE_PLAY_PATCH_TYPES = {
   MAP_FIELD_EFFECTS: 'map.fieldEffects',
   MAP_TERRAIN: 'map.terrain',
   MAP_PLACEMENTS: 'map.placements',
+  MAP_SCENE: 'map.scene',
   MAP_METADATA: 'map.metadata',
   SHEET_FIELD: 'sheet.field',
   RECONCILIATION_REQUIRED: 'reconciliation.required',
@@ -118,6 +122,7 @@ export const LIVE_PLAY_PATCH_TYPE_VALUES = [
   LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS,
   LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN,
   LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS,
+  LIVE_PLAY_PATCH_TYPES.MAP_SCENE,
   LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
   LIVE_PLAY_PATCH_TYPES.SHEET_FIELD,
   LIVE_PLAY_PATCH_TYPES.RECONCILIATION_REQUIRED,
@@ -129,6 +134,7 @@ export const LIVE_PLAY_MAP_SCOPE_LANES = [
   'fieldEffects',
   'terrain',
   'placements',
+  'scene',
   'metadata',
 ] as const
 export type LivePlayMapScopeLane = (typeof LIVE_PLAY_MAP_SCOPE_LANES)[number]
@@ -331,6 +337,11 @@ export interface RemoveTerrainVoxelPayload {
   readonly cell: GridAnchor
 }
 
+export interface SetScenePayload {
+  /** Non-empty name starts/replaces the active scene; null ends it. */
+  readonly name: string | null
+}
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -359,6 +370,12 @@ export type SendOutPokemonLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
   SendOutPokemonPayload,
   LivePlayTokenScope
+>
+
+export type SetSceneLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+  SetScenePayload,
+  LivePlayMapScope
 >
 
 export type ModifyHpLivePlayCommand = LivePlayCommandEnvelope<
@@ -648,6 +665,12 @@ export interface TokenSpawnedPatchPayload {
   readonly current: SheetPlacement
 }
 
+export interface SceneUpdatedPatchPayload {
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.SET_SCENE
+  readonly previous: MapSceneState | null
+  readonly current: MapSceneState | null
+}
+
 export interface TokenDeletedPatchPayload {
   readonly command: typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
   readonly placementId: string
@@ -668,6 +691,7 @@ export type FieldEffectsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPE
 export type TerrainVoxelsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN, TerrainVoxelsUpdatedPatchPayload, LivePlayMapScope>
 export type TokenSpawnedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS, TokenSpawnedPatchPayload, LivePlayTokenScope>
 export type TokenDeletedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS, TokenDeletedPatchPayload, LivePlayTokenScope>
+export type SceneUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_SCENE, SceneUpdatedPatchPayload, LivePlayMapScope>
 
 export type KnownLivePlayPatch =
   | TokenMovedPatch
@@ -683,6 +707,7 @@ export type KnownLivePlayPatch =
   | TerrainVoxelsUpdatedPatch
   | TokenSpawnedPatch
   | TokenDeletedPatch
+  | SceneUpdatedPatch
 
 export const LIVE_PLAY_COMMAND_REJECTION_REASONS = [
   'invalid',

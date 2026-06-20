@@ -141,6 +141,7 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('spawnToken')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('sendOutPokemon')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('deleteToken')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setScene')
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayCommandType('teleportToken')).toBe(false)
     expect(parseLivePlayCommandType('useMove')).toBe('useMove')
@@ -150,6 +151,7 @@ describe('live-play command contract', () => {
 
     expect(LIVE_PLAY_PATCH_TYPE_VALUES).toContain('token.position')
     expect(LIVE_PLAY_PATCH_TYPE_VALUES).toContain('sheet.field')
+    expect(LIVE_PLAY_PATCH_TYPE_VALUES).toContain('map.scene')
     expect(isLivePlayPatchType(LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS)).toBe(true)
     expect(isLivePlayPatchType('map.updated-document')).toBe(false)
 
@@ -159,6 +161,7 @@ describe('live-play command contract', () => {
       'fieldEffects',
       'terrain',
       'placements',
+      'scene',
       'metadata',
     ])
     expect(LIVE_PLAY_TOKEN_SCOPE_FIELDS).toEqual([

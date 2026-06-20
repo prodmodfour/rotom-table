@@ -65,6 +65,7 @@ import {
   applyPokeballCaptureOutcomeToTrainerSheet,
 } from '~/utils/pokeballCapture'
 import { isSameAnchor } from '~/utils/gridGeometry'
+import { normalizeMapSceneName, MAP_SCENE_NAME_MAX_LENGTH } from '~/utils/mapSceneState'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
@@ -769,6 +770,29 @@ const initiativeControlsEnabled = computed(() => (
     || livePlayConnectionState.value === 'ready'
   )
 ))
+
+const canManageScene = computed(() => (
+  isGm.value
+  && canViewMap.value
+  && mapInteractionMode.value === MAP_INTERACTION_MODES.LIVE_PLAY
+))
+const sceneControlsDisabled = computed(() => (
+  livePlayConnectionState.value !== 'ready'
+  || livePlayCommands.status.value === 'saving'
+))
+const activeScene = computed(() => map.value?.activeScene ?? null)
+
+const startSceneFromPanel = () => {
+  if (!import.meta.client) return
+  const enteredName = window.prompt(`Scene name (max ${MAP_SCENE_NAME_MAX_LENGTH} characters)`)
+  const name = normalizeMapSceneName(enteredName)
+  if (!name) return
+  void livePlayCommands.setScene({ name })
+}
+
+const endSceneFromPanel = () => {
+  void livePlayCommands.setScene({ name: null })
+}
 
 let publishSyncedActionSplash: MapActionSplashPublishHandler | null = null
 let publishSyncedMoveAnimations: MapActionMoveAnimationsPublishHandler | null = null
@@ -1517,6 +1541,9 @@ useMapDimensionReconciliation({
         :initiative-round="initiativeRound"
         :can-manage-initiative="initiativeControlsEnabled"
         :initiative-auto-focus-enabled="initiativeAutoFocusEnabled"
+        :active-scene="activeScene"
+        :can-manage-scene="canManageScene"
+        :scene-controls-disabled="sceneControlsDisabled"
         :map-voxels="mapVoxels"
         :map-hazards="mapHazards"
         :map-field-effects="mapFieldEffects"
@@ -1561,6 +1588,8 @@ useMapDimensionReconciliation({
         @focus-initiative-entry="focusInitiativeEntry"
         @previous-initiative="previousInitiativeAndExpireAoo"
         @next-initiative="nextInitiativeAndExpireAoo"
+        @start-scene="startSceneFromPanel"
+        @end-scene="endSceneFromPanel"
         @move-pokemon="movePokemon"
         @turn-pokemon="turnPokemon"
         @delete-pokemon="deletePokemon"

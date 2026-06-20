@@ -19,6 +19,7 @@
     "placements": { "type": "array", "items": { "$ref": "#/$defs/placement" } },
     "lights": { "type": "array", "items": { "$ref": "#/$defs/light" } },
     "initiative": { "$ref": "#/$defs/initiative" },
+    "activeScene": { "anyOf": [{ "$ref": "#/$defs/activeScene" }, { "type": "null" }] },
     "metadata": { "type": "object", "additionalProperties": true },
     "createdAt": { "type": "number" },
     "updatedAt": { "type": "number" }
@@ -146,6 +147,15 @@
       "properties": {
         "activeId": { "type": ["string", "null"] },
         "round": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "activeScene": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "startedAt": { "type": "number", "minimum": 0 }
       }
     }
   }

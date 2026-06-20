@@ -26,6 +26,7 @@ import {
   type SendOutPokemonPayload,
   type SetFieldEffectPayload,
   type SetInitiativePayload,
+  type SetScenePayload,
   type SpawnTokenPayload,
   type TickFieldEffectDurationsPayload,
   type TurnTokenPayload,
@@ -176,6 +177,7 @@ export interface UseLivePlayCommandsReturn {
     orderName: string
     targetPlacementId?: string
   }) => Promise<LivePlayCommandDispatchResult>
+  setScene: (payload: SetScenePayload) => Promise<LivePlayCommandDispatchResult>
   updateAttackOfOpportunity: (payload: AttackOfOpportunityStateUpdatePayload) => Promise<LivePlayCommandDispatchResult>
 }
 
@@ -203,6 +205,7 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
+  | typeof LIVE_PLAY_COMMAND_TYPES.SET_SCENE
   | typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY
 
 type LivePlayTokenCommandPayload =
@@ -234,6 +237,7 @@ type LivePlayClientCommandPayload =
   | SetInitiativePayload
   | AdvanceInitiativePayload
   | LivePlayMapEffectsCommandPayload
+  | SetScenePayload
   | AttackOfOpportunityStateUpdatePayload
   | Record<string, never>
 
@@ -746,6 +750,15 @@ export const useLivePlayCommands = (
     ),
   )
 
+  const setScene: UseLivePlayCommandsReturn['setScene'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.setScene,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+      payload,
+      [mapScope('scene')],
+    ),
+  )
+
   const updateAttackOfOpportunity: UseLivePlayCommandsReturn['updateAttackOfOpportunity'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.updateAttackOfOpportunity,
     commandBody(
@@ -782,6 +795,7 @@ export const useLivePlayCommands = (
     useManeuver,
     useAbility,
     useOrder,
+    setScene,
     updateAttackOfOpportunity,
   }
 }

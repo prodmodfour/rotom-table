@@ -633,6 +633,44 @@ describe('useLivePlayCommands', () => {
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
+  it('posts live-play scene commands through the command dispatcher', async () => {
+    const map = mapFixture()
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_setscene1',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+    })
+
+    await actions.setScene({ name: 'Moonlit Rooftop' })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.setScene, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+      scopes: [{ kind: 'map', lane: 'scene' }],
+      payload: { name: 'Moonlit Rooftop' },
+      clientId: 'ssr',
+    }))
+
+    await actions.setScene({ name: null })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.setScene, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
+      scopes: [{ kind: 'map', lane: 'scene' }],
+      payload: { name: null },
+    }))
+  })
+
   it('blocks live-play token commands while realtime reconciliation is pending', async () => {
     const actions = useLivePlayCommands({
       slug: 'arena-map',

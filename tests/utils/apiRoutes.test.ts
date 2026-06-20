@@ -70,6 +70,7 @@ describe('API route constants', () => {
       setFieldEffect: '/api/maps/field-effects/set',
       removeFieldEffect: '/api/maps/field-effects/remove',
       tickFieldEffectDurations: '/api/maps/field-effects/tick',
+      setScene: '/api/maps/scene/set',
       updateAttackOfOpportunity: '/api/maps/attack-of-opportunity/update',
       useManeuver: '/api/maps/tokens/use-maneuver',
       useAbility: '/api/maps/tokens/use-ability',

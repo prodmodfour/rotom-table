@@ -11,6 +11,7 @@ import type {
   GridAnchor,
   MapFieldEffects,
   MapHazardV2,
+  MapSceneState,
   MapVoxelV2,
   SheetPlacement,
   TabletopMap,
@@ -112,6 +113,7 @@ const clonePlacement = (placement: SheetPlacement): SheetPlacement => deepCloneJ
 const cloneHazards = (hazards: readonly MapHazardV2[]): MapHazardV2[] => deepCloneJson([...hazards])
 const cloneFieldEffects = (fieldEffects: MapFieldEffects): MapFieldEffects => deepCloneJson(fieldEffects)
 const cloneVoxel = (voxel: MapVoxelV2): MapVoxelV2 => deepCloneJson(voxel)
+const cloneScene = (scene: MapSceneState): MapSceneState => deepCloneJson(scene)
 
 const placementIndex = (map: TabletopMap, placementId: string): number => (
   map.placements.findIndex((placement) => placement.id === placementId)
@@ -296,6 +298,18 @@ const applyMoveUsagePatch = (map: TabletopMap, payload: unknown): LivePlayPatche
   return null
 }
 
+const isMapSceneState = (value: unknown): value is MapSceneState => (
+  isRecord(value) && nonEmptyString(value.name)
+)
+
+const applyScenePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
+  if (!isRecord(payload) || (!isMapSceneState(payload.current) && payload.current !== null)) {
+    return failed('invalid-patch', 'map.scene patches require current to be a scene state or null')
+  }
+  map.activeScene = payload.current === null ? null : cloneScene(payload.current)
+  return null
+}
+
 const applyMetadataPatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
   if (!isRecord(payload)) return failed('invalid-patch', 'map.metadata patches require an object payload')
   if (isRecord(payload.current)) map.metadata = deepCloneJson(payload.current)
@@ -318,6 +332,8 @@ const applyKnownPatch = (map: TabletopMap, patch: LivePlayPatch): LivePlayPatche
       return applyFieldEffectsPatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN:
       return applyTerrainPatch(map, patch.payload)
+    case LIVE_PLAY_PATCH_TYPES.MAP_SCENE:
+      return applyScenePatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE:
     case LIVE_PLAY_PATCH_TYPES.TOKEN_ACTION:
       return applyMoveUsagePatch(map, patch.payload)

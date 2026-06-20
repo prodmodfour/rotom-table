@@ -189,6 +189,28 @@ describe('live-play patch application', () => {
     })
   })
 
+  it('applies active scene patches', () => {
+    const map = baseMap()
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        ...patchBase(LIVE_PLAY_PATCH_TYPES.MAP_SCENE, {
+          command: 'setScene',
+          previous: null,
+          current: { name: 'Moonlit Rooftop', startedAt: 200 },
+        }),
+        scopes: [{ kind: 'map', lane: 'scene' }],
+      }],
+    })
+
+    expect(result).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(map.activeScene).toEqual({ name: 'Moonlit Rooftop', startedAt: 200 })
+  })
+
   it('requests reconciliation for unknown patch types and revision gaps', () => {
     const unknown = applyLivePlayPatchesToMap({
       map: baseMap(),

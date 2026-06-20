@@ -15,6 +15,7 @@ import type {
   MapFieldEffects,
   MapHazardKind,
   MapHazardV2,
+  MapSceneState,
   MapVoxelV2,
   TabletopMap,
   VoxelMaterial,
@@ -65,6 +66,9 @@ const props = defineProps<{
   initiativeRound?: number
   canManageInitiative?: boolean
   initiativeAutoFocusEnabled?: boolean
+  activeScene?: MapSceneState | null
+  canManageScene?: boolean
+  sceneControlsDisabled?: boolean
   mapVoxels: MapVoxelV2[]
   mapHazards: MapHazardV2[]
   mapFieldEffects?: MapFieldEffects
@@ -112,6 +116,8 @@ const emit = defineEmits<{
   (event: 'focus-initiative-entry', id: string): void
   (event: 'previous-initiative'): void
   (event: 'next-initiative'): void
+  (event: 'start-scene'): void
+  (event: 'end-scene'): void
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
@@ -188,6 +194,19 @@ const livePlaySavingIconLabel = computed(() => (
   props.livePlayStatusMessage ?? 'Sending live-play command to the server.'
 ))
 const initiativeControlsEnabled = computed(() => props.canManageInitiative === true)
+const activeSceneName = computed(() => props.activeScene?.name?.trim() ?? '')
+const hasActiveScene = computed(() => activeSceneName.value.length > 0)
+const sceneControlDisabled = computed(() => props.sceneControlsDisabled === true)
+const sceneControlLabel = computed(() => (hasActiveScene.value ? 'End Scene' : 'Start Scene'))
+const sceneControlAriaLabel = computed(() => (
+  hasActiveScene.value ? `End scene ${activeSceneName.value}` : 'Start a new scene'
+))
+
+const emitSceneControl = () => {
+  if (sceneControlDisabled.value) return
+  if (hasActiveScene.value) emit('end-scene')
+  else emit('start-scene')
+}
 
 const focusPokemon = (id: string): boolean => rendererRef.value?.focusPokemon(id) ?? false
 
@@ -278,6 +297,28 @@ defineExpose({ focusPokemon })
         @previous="emit('previous-initiative')"
         @next="emit('next-initiative')"
       />
+
+      <button
+        v-if="props.map && canViewMap && props.canManageScene"
+        type="button"
+        class="scene-control-button"
+        :class="{ 'scene-control-button--ending': hasActiveScene }"
+        :disabled="sceneControlDisabled"
+        :aria-label="sceneControlAriaLabel"
+        @click="emitSceneControl"
+      >
+        {{ sceneControlLabel }}
+      </button>
+
+      <div
+        v-if="props.map && canViewMap && hasActiveScene"
+        class="active-scene-banner"
+        role="status"
+        aria-live="polite"
+      >
+        <span class="active-scene-banner__eyebrow">Scene</span>
+        <span class="active-scene-banner__name">{{ activeSceneName }}</span>
+      </div>
 
       <div
         v-if="props.map && canViewMap && showLivePlaySavingIcon"
@@ -371,6 +412,98 @@ defineExpose({ focusPokemon })
   min-width: 0;
   min-height: 100vh;
   background: var(--paper);
+}
+
+.scene-control-button {
+  position: absolute;
+  z-index: 8;
+  top: var(--map-overlay-gutter, 0.75rem);
+  left: calc(var(--map-overlay-gutter, 0.75rem) + var(--map-nav-rail-width, 0px) + 0.75rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 62%, var(--rule-soft));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-soft) 92%, transparent);
+  color: var(--ink-bright);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--pokemon-black) 24%, transparent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  pointer-events: auto;
+  text-transform: uppercase;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.scene-control-button:hover:not(:disabled),
+.scene-control-button:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--paper-soft));
+  color: #ff5c67;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.scene-control-button:focus-visible {
+  outline: 2px solid rgba(var(--accent-rgb), 0.35);
+  outline-offset: 3px;
+}
+
+.scene-control-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.scene-control-button--ending {
+  border-color: color-mix(in srgb, var(--bad) 56%, var(--rule-soft));
+}
+
+.active-scene-banner {
+  position: absolute;
+  z-index: 5;
+  top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
+  left: 50%;
+  display: inline-flex;
+  max-width: min(34rem, calc(100vw - var(--map-nav-rail-width, 0px) - 2rem));
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.48rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 52%, var(--rule-soft));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-soft) 88%, transparent);
+  color: var(--ink-bright);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--pokemon-black) 20%, transparent);
+  font-size: 0.84rem;
+  line-height: 1.15;
+  pointer-events: none;
+  text-align: center;
+}
+
+.active-scene-banner__eyebrow {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.active-scene-banner__name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .live-play-saving-icon {
@@ -506,6 +639,14 @@ defineExpose({ focusPokemon })
 }
 
 @media (max-width: 840px) {
+  .scene-control-button {
+    left: var(--map-overlay-gutter, 0.75rem);
+  }
+
+  .active-scene-banner {
+    max-width: calc(100vw - 1.5rem);
+  }
+
   .token-control-notice {
     left: var(--map-overlay-gutter, 0.75rem);
     width: min(30rem, calc(100vw - 1.5rem));

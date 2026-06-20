@@ -1,4 +1,5 @@
 import type { GridDimensions, MapHazardV2, MapVoxelV2, TabletopMapV2 } from '~/types/map'
+import { normalizeMapSceneState } from '~/utils/mapSceneState'
 import { SLUG_RE } from '#shared/paths'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
@@ -102,6 +103,8 @@ export const normalizeMapDocument = (
     ? (record.hazards as unknown[]).map((hazard: unknown, index: number) => normalizeHazardForEditor(hazard, index, sourceLabel))
     : []
 
+  const activeScene = normalizeMapSceneState(record.activeScene)
+
   return {
     schemaVersion: 2,
     revision: normalizeRevision(record.revision),
@@ -119,6 +122,7 @@ export const normalizeMapDocument = (
     placements: Array.isArray(record.placements) ? record.placements as TabletopMapV2['placements'] : [],
     lights: Array.isArray(record.lights) ? record.lights as TabletopMapV2['lights'] : [],
     initiative,
+    ...(activeScene ? { activeScene } : {}),
     moveUsage: normalizeMapMoveUsage(record.moveUsage),
     metadata: record.metadata as TabletopMapV2['metadata'],
     createdAt: record.createdAt as TabletopMapV2['createdAt'],
