@@ -20,6 +20,8 @@ export interface MoveToken {
 }
 
 export interface DisplayedPokedexEvolution extends PokedexEvolution {
+  displaySpecies: string
+  displayCondition: string | null
   href: string | null
 }
 

@@ -53,15 +53,66 @@ export const requestedPokemonNameForRoute = (
   return typeof value === 'string' ? value : routeSlug
 }
 
+const normalizeEvolutionCondition = (value: string | null | undefined): string | null => {
+  const normalized = value
+    ?.replace(/^[\s,.;:–—-]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return normalized || null
+}
+
+const conditionFromResolvedEvolutionSpecies = (
+  evolutionSpecies: string,
+  resolvedSpecies: string,
+): string | null => {
+  const rawSpecies = evolutionSpecies.trim()
+  const displaySpecies = resolvedSpecies.trim()
+  if (!rawSpecies || !displaySpecies) return null
+
+  if (!rawSpecies.toLowerCase().startsWith(displaySpecies.toLowerCase())) return null
+
+  return normalizeEvolutionCondition(rawSpecies.slice(displaySpecies.length))
+}
+
+const mergeEvolutionConditions = (
+  ...conditions: Array<string | null | undefined>
+): string | null => {
+  const merged: string[] = []
+
+  for (const condition of conditions) {
+    const normalized = normalizeEvolutionCondition(condition)
+    if (normalized && !merged.includes(normalized)) merged.push(normalized)
+  }
+
+  return merged.length ? merged.join(' ') : null
+}
+
+export const buildPokedexEvolutionDisplay = (
+  evolution: Pick<DisplayedPokedexEvolution, 'species' | 'condition'>,
+  resolvedEntry: Pick<IndexedPokedexEntry, 'species'> | null,
+): Pick<DisplayedPokedexEvolution, 'displaySpecies' | 'displayCondition'> => {
+  const displaySpecies = resolvedEntry?.species ?? evolution.species
+  const inlineCondition = resolvedEntry
+    ? conditionFromResolvedEvolutionSpecies(evolution.species, resolvedEntry.species)
+    : null
+
+  return {
+    displaySpecies,
+    displayCondition: mergeEvolutionConditions(inlineCondition, evolution.condition),
+  }
+}
+
 export const buildDisplayedPokedexEvolutions = (
   selectedEntry: Pick<IndexedPokedexEntry, 'evolutions'> | null,
   selectedId: string | null,
-  entryBySlug: ReadonlyMap<string, Pick<IndexedPokedexEntry, 'id' | 'slug'>>,
+  entryBySlug: ReadonlyMap<string, Pick<IndexedPokedexEntry, 'id' | 'slug' | 'species'>>,
 ): DisplayedPokedexEvolution[] => (
   (selectedEntry?.evolutions ?? []).map((evolution) => {
     const entry = resolvePokedexEvolutionEntry(evolution.species, entryBySlug)
     return {
       ...evolution,
+      ...buildPokedexEvolutionDisplay(evolution, entry),
       href: entry && entry.id !== selectedId ? pokedexEntryPath(entry) : null,
     }
   })
@@ -116,12 +167,41 @@ export const selectAdjacentPokedexNumberEntry = <TEntry extends PokedexEntrySumm
   return entries[selectedIndex + POKEDEX_NAVIGATION_OFFSETS[direction]] ?? null
 }
 
+// A small set of upstream book/parser evolution labels use abbreviations or
+// typos that do not exactly match the target Pokédex entry slug.
+const POKEDEX_EVOLUTION_SLUG_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  sligoo: ['sliggoo'],
+  'lycanrock-dusk': ['lycanroc-dusk'],
+  'lycanrock-midday': ['lycanroc-midday'],
+  'lycanrock-midnight': ['lycanroc-midnight'],
+  'palafin-loyalty-3': ['palafin-zero'],
+  'urshifu-r': ['urshifu-rapid-strike-form'],
+  'urshifu-s': ['urshifu-single-strike-form'],
+  zacian: ['zacian-hero-of-many-battles-forme'],
+  zamazenta: ['zamazenta-hero-of-many-battles-forme'],
+}
+
+const resolvePokedexEvolutionAliasSlug = <TEntry extends Pick<IndexedPokedexEntry, 'slug'>>(
+  evolutionSlug: string,
+  entryBySlug: ReadonlyMap<string, TEntry>,
+): TEntry | null => {
+  for (const aliasSlug of POKEDEX_EVOLUTION_SLUG_ALIASES[evolutionSlug] ?? []) {
+    const entry = entryBySlug.get(aliasSlug)
+    if (entry) return entry
+  }
+
+  return null
+}
+
 const resolvePokedexEvolutionSlug = <TEntry extends Pick<IndexedPokedexEntry, 'slug'>>(
   evolutionSlug: string,
   entryBySlug: ReadonlyMap<string, TEntry>,
 ): TEntry | null => {
   const exactEntry = entryBySlug.get(evolutionSlug)
   if (exactEntry) return exactEntry
+
+  const aliasEntry = resolvePokedexEvolutionAliasSlug(evolutionSlug, entryBySlug)
+  if (aliasEntry) return aliasEntry
 
   let longestPrefixEntry: TEntry | null = null
   let longestPrefixLength = 0

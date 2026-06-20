@@ -67,9 +67,45 @@ describe('usePokedexBrowser helpers', () => {
 
   it('builds display evolutions with self links suppressed', () => {
     expect(buildDisplayedPokedexEvolutions(bulbasaur, bulbasaur.id, entryBySlug)).toEqual([
-      { stage: 2, species: 'Ivysaur', min_level: 16, condition: 'Holding Miracle Seed', href: '/pokedex/ivysaur' },
-      { stage: 1, species: 'Bulbasaur', href: null },
-      { stage: 3, species: 'Missingno', href: null },
+      {
+        stage: 2,
+        species: 'Ivysaur',
+        displaySpecies: 'Ivysaur',
+        displayCondition: 'Holding Miracle Seed',
+        min_level: 16,
+        condition: 'Holding Miracle Seed',
+        href: '/pokedex/ivysaur',
+      },
+      { stage: 1, species: 'Bulbasaur', displaySpecies: 'Bulbasaur', displayCondition: null, href: null },
+      { stage: 3, species: 'Missingno', displaySpecies: 'Missingno', displayCondition: null, href: null },
+    ])
+  })
+
+  it('links parser-note evolution labels using the resolved species name', () => {
+    const tangela = makeEntry({
+      id: '114-tangela',
+      species: 'Tangela',
+      slug: 'tangela',
+      evolutions: [
+        { stage: 1, species: 'Tangela' },
+        { stage: 2, species: 'Tangrowth Learn Ancient Power' },
+      ],
+    })
+    const tangrowth = makeEntry({ id: '465-tangrowth', species: 'Tangrowth', slug: 'tangrowth' })
+    const tangelaEntryBySlug = new Map([
+      [tangela.slug, tangela],
+      [tangrowth.slug, tangrowth],
+    ])
+
+    expect(buildDisplayedPokedexEvolutions(tangela, tangela.id, tangelaEntryBySlug)).toEqual([
+      { stage: 1, species: 'Tangela', displaySpecies: 'Tangela', displayCondition: null, href: null },
+      {
+        stage: 2,
+        species: 'Tangrowth Learn Ancient Power',
+        displaySpecies: 'Tangrowth',
+        displayCondition: 'Learn Ancient Power',
+        href: '/pokedex/tangrowth',
+      },
     ])
   })
 
@@ -124,15 +160,28 @@ describe('usePokedexBrowser helpers', () => {
       slug: 'jolteon',
       evolutions: eevee.evolutions,
     })
+    const goomy = makeEntry({
+      id: '704-goomy',
+      species: 'Goomy',
+      slug: 'goomy',
+      evolutions: [
+        { stage: 1, species: 'Goomy' },
+        { stage: 2, species: 'Sligoo' },
+      ],
+    })
+    const sliggoo = makeEntry({ id: '705-sliggoo', species: 'Sliggoo', slug: 'sliggoo' })
     const evolutionEntryBySlug = new Map([
       [charmander.slug, charmander],
       [charmeleon.slug, charmeleon],
       [eevee.slug, eevee],
       [jolteon.slug, jolteon],
+      [goomy.slug, goomy],
+      [sliggoo.slug, sliggoo],
     ])
 
     expect(selectAdjacentPokedexEvolutionEntry(charmander, charmander.id, evolutionEntryBySlug, 'next')).toBe(charmeleon)
     expect(selectAdjacentPokedexEvolutionEntry(eevee, eevee.id, evolutionEntryBySlug, 'next')).toBe(jolteon)
+    expect(selectAdjacentPokedexEvolutionEntry(goomy, goomy.id, evolutionEntryBySlug, 'next')).toBe(sliggoo)
     expect(selectAdjacentPokedexEvolutionEntry(jolteon, jolteon.id, evolutionEntryBySlug, 'previous')).toBe(eevee)
     expect(selectAdjacentPokedexEvolutionEntry(jolteon, jolteon.id, evolutionEntryBySlug, 'next')).toBeNull()
   })
