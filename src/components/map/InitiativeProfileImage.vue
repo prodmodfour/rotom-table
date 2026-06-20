@@ -56,25 +56,14 @@ const initiativeScoreLabel = computed(() => {
 
 .initiative-profile-image__score {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: 0.18rem;
+  bottom: 0.12rem;
   z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.35rem;
-  height: 1.1rem;
-  box-sizing: border-box;
-  border-top: 1px solid color-mix(in srgb, var(--ink-bright) 38%, transparent);
-  border-left: 1px solid color-mix(in srgb, var(--ink-bright) 30%, transparent);
-  border-radius: 0.45rem 0 0 0;
-  background: color-mix(in srgb, var(--pokemon-black) 78%, transparent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--pokemon-black) 38%, transparent);
+  display: block;
   color: var(--ink-bright);
   font-size: clamp(0.58rem, 0.75vw, 0.72rem);
   font-weight: 900;
   line-height: 1;
-  padding: 0 0.28rem;
   text-shadow: 0 1px 2px color-mix(in srgb, var(--pokemon-black) 72%, transparent);
 }
 </style>
