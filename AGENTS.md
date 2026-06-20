@@ -14,4 +14,7 @@ When writing software, we explicitly always adhere to the following principles:
   - DRY principle
   - Law of Demeter
 
-  Viiolations of these principles should be seen as codebase corruption. If you spot violations while doing work, ensure that you clean up corruption in order to keep a pure codebase.
+  Violations of these principles should be seen as codebase corruption. If you spot violations while doing work, ensure that you clean up corruption in order to keep a pure codebase.
+
+## Liveplay
+This is a lvieplay only app. Local hosting is deprecated. All features implemented should work for liveplay.
