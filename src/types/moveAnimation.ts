@@ -214,6 +214,13 @@ export interface MoveBuffDebuffAnimationEvent
   direction?: MoveAnimationBuffDebuffDirection
 }
 
+export interface MoveRollAnimationEvent
+  extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.roll>,
+    MoveAnimationTargetMetadata {
+  /** Semantic colour hint for d20 roll cues; omitted values use the event/type palette. */
+  tone?: MoveVfxTone
+}
+
 export interface MoveBadgeAnimationEvent
   extends MoveAnimationEventBase<typeof MOVE_VFX_KIND.badge>,
     MoveAnimationOriginMetadata,
@@ -246,6 +253,7 @@ export interface MoveAnimationEventByKind {
   [MOVE_VFX_KIND.status]: MoveStatusAnimationEvent
   [MOVE_VFX_KIND.healing]: MoveHealingAnimationEvent
   [MOVE_VFX_KIND.buffDebuff]: MoveBuffDebuffAnimationEvent
+  [MOVE_VFX_KIND.roll]: MoveRollAnimationEvent
   [MOVE_VFX_KIND.badge]: MoveBadgeAnimationEvent
 }
 

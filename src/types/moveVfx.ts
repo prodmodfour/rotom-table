@@ -24,6 +24,7 @@ export const MOVE_VFX_KIND = {
   status: 'status',
   healing: 'healing',
   buffDebuff: 'buff-debuff',
+  roll: 'roll',
   badge: 'badge',
 } as const
 

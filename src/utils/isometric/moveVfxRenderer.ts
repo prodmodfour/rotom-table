@@ -19,6 +19,7 @@ import {
   type MoveMissAnimationEvent,
   type MoveProjectileAnimationEvent,
   type MoveRadialBurstAnimationEvent,
+  type MoveRollAnimationEvent,
   type MoveSelfPulseAnimationEvent,
   type MoveStatusAnimationEvent,
   type MoveTargetFlashAnimationEvent,
@@ -40,6 +41,8 @@ import {
   createMoveVfxTranslucentMaterial,
 } from './moveVfxMaterials'
 import { clamp01, easeInOutCubic, easeOutCubic, pulse01 } from './moveVfxTiming'
+import { setTrainerAccentCssVariables } from '~/utils/trainerAccent'
+import { renderRollingD20Graphic } from './moveAutomationRollGraphic'
 import { disposeObject3D } from './resourceDisposal'
 
 export interface MoveVfxRendererSyncContext {
@@ -96,7 +99,7 @@ export interface MoveVfxRenderer {
   sync(events: readonly MoveAnimationEvent[], context?: MoveVfxRendererSyncContext): void
   animate(frameContext: MoveVfxRendererFrameContext): void
   needsAnimationFrame(): boolean
-  /** True only while optional CSS3D badge instances may change CSS output. */
+  /** True only while optional CSS3D roll/badge instances may change CSS output. */
   needsCss3DFrame(): boolean
   activeCount(): number
   /**
@@ -332,6 +335,14 @@ const MOVE_VFX_STATUS_CLOUD_ORBIT_END_SCALE = 0.62
 const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_MAX_OPACITY = 0.3
 const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_START_SCALE = 0.9
 const MOVE_VFX_STATUS_CLOUD_REDUCED_RING_END_SCALE = 1.1
+const MOVE_VFX_ROLL_NAME = 'move-vfx-roll'
+const MOVE_VFX_ROLL_CSS_WIDTH_PX = 180
+const MOVE_VFX_ROLL_WORLD_WIDTH = 2.06
+const MOVE_VFX_ROLL_FADE_IN_PROGRESS = 0.18
+const MOVE_VFX_ROLL_FADE_OUT_START = 0.72
+const MOVE_VFX_ROLL_START_SCALE = 0.92
+const MOVE_VFX_ROLL_END_SCALE = 1.04
+const MOVE_VFX_ROLL_CELL_Y_OFFSET = 1.15
 const MOVE_VFX_BADGE_NAME = 'move-vfx-badge'
 const MOVE_VFX_BADGE_RENDER_STATE_KEY = 'moveVfxBadgeRenderState'
 const MOVE_VFX_BADGE_LABEL_USER_DATA_KEY = 'moveVfxBadgeLabel'
@@ -897,6 +908,78 @@ const firstHealingTargetId = (event: MoveHealingAnimationEvent): string | undefi
 const firstBuffDebuffTargetId = (event: MoveBuffDebuffAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
 )
+
+const moveVfxRollPaletteForEvent = (event: MoveRollAnimationEvent): MoveVfxPaletteEntry => (
+  event.palette ?? moveVfxColorForTone(event.tone ?? MOVE_VFX_TONE.neutral)
+)
+
+const resolveRollAnchor = (
+  event: MoveRollAnimationEvent,
+  renderObjects: ReadonlyMap<string, PokemonRenderObject>,
+): THREE.Vector3 | null => {
+  const tokenAnchor = event.targetId
+    ? resolveMoveVfxTokenAnchor({
+      renderObjects,
+      tokenId: event.targetId,
+      anchor: MOVE_VFX_TOKEN_ANCHOR.aboveHead,
+    })
+    : null
+  if (tokenAnchor) return tokenAnchor
+
+  if (!event.targetCell) return null
+
+  return moveVfxGridCellCenterAnchor(event.targetCell).add(new THREE.Vector3(0, MOVE_VFX_ROLL_CELL_Y_OFFSET, 0))
+}
+
+const createMoveVfxRollElement = (palette: MoveVfxPaletteEntry): HTMLElement | null => {
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function') return null
+
+  const element = document.createElement('div')
+  element.className = 'move-automation-roll-anchor'
+  element.style.pointerEvents = 'none'
+  element.style.zIndex = '30'
+  element.style.opacity = '0'
+  element.style.willChange = 'opacity, transform'
+  setTrainerAccentCssVariables(element.style, palette.accent)
+
+  const body = document.createElement('div')
+  body.className = 'move-automation-roll is-rolling'
+  renderRollingD20Graphic(body)
+  element.appendChild(body)
+
+  return element
+}
+
+const createMoveVfxRollSprite = (palette: MoveVfxPaletteEntry): CSS3DSprite | null => {
+  const element = createMoveVfxRollElement(palette)
+  if (!element) return null
+
+  const sprite = new CSS3DSprite(element)
+  sprite.name = MOVE_VFX_ROLL_NAME
+  sprite.element.style.pointerEvents = 'none'
+  sprite.element.style.zIndex = '30'
+  sprite.scale.setScalar(MOVE_VFX_ROLL_WORLD_WIDTH / MOVE_VFX_ROLL_CSS_WIDTH_PX)
+  sprite.visible = false
+  return sprite
+}
+
+const applyMoveVfxRollVisualState = (options: {
+  sprite: CSS3DSprite
+  progress: number
+}) => {
+  const progress = clamp01(options.progress)
+  const fadeIn = clamp01(progress / MOVE_VFX_ROLL_FADE_IN_PROGRESS)
+  const fadeOut = progress <= MOVE_VFX_ROLL_FADE_OUT_START
+    ? 1
+    : clamp01((1 - progress) / (1 - MOVE_VFX_ROLL_FADE_OUT_START))
+  const opacity = Math.min(fadeIn, fadeOut)
+  const scale = MOVE_VFX_ROLL_START_SCALE
+    + ((MOVE_VFX_ROLL_END_SCALE - MOVE_VFX_ROLL_START_SCALE) * easeOutCubic(progress))
+
+  options.sprite.scale.setScalar((MOVE_VFX_ROLL_WORLD_WIDTH / MOVE_VFX_ROLL_CSS_WIDTH_PX) * scale)
+  options.sprite.element.style.opacity = opacity.toFixed(3)
+  options.sprite.visible = opacity > 0.005
+}
 
 const firstBadgeTargetId = (event: MoveBadgeAnimationEvent): string | undefined => (
   event.targetId ?? event.targetIds?.[0]
@@ -4967,6 +5050,49 @@ const createBuffDebuffMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   }
 }
 
+const createRollMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
+  const event = context.event as MoveRollAnimationEvent
+  const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
+  const anchor = resolveRollAnchor(event, renderObjects)
+  const palette = moveVfxRollPaletteForEvent(event)
+  const roll = createMoveVfxRollSprite(palette)
+
+  if (!anchor || !roll) return createNoopMoveVfxInstance(context)
+
+  let disposed = false
+  let complete = false
+
+  context.group.position.copy(anchor)
+  context.group.add(roll)
+  applyMoveVfxRollVisualState({ sprite: roll, progress: 0 })
+
+  return {
+    id: event.id,
+    group: context.group,
+    css3D: true,
+    get complete() {
+      return complete || disposed
+    },
+    animate(frameContext) {
+      if (disposed || complete) return
+
+      const progress = moveAnimationEventProgress(event, frameContext.frameNowMs)
+      if (progress.complete) {
+        complete = true
+        return
+      }
+
+      applyMoveVfxRollVisualState({ sprite: roll, progress: progress.progress })
+    },
+    dispose() {
+      if (disposed) return
+
+      disposed = true
+      disposeObject3D(context.group)
+    },
+  }
+}
+
 const createBadgeMoveVfxInstance: MoveVfxInstanceBuilder = (context) => {
   const event = context.event as MoveBadgeAnimationEvent
   const renderObjects = context.syncContext.renderObjects ?? EMPTY_RENDER_OBJECTS
@@ -5051,6 +5177,8 @@ const selectMoveVfxInstanceBuilder = (kind: string): MoveVfxInstanceBuilder => {
       return createHealingMoveVfxInstance
     case MOVE_VFX_KIND.buffDebuff:
       return createBuffDebuffMoveVfxInstance
+    case MOVE_VFX_KIND.roll:
+      return createRollMoveVfxInstance
     case MOVE_VFX_KIND.badge:
       return createBadgeMoveVfxInstance
     default:

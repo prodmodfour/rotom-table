@@ -294,7 +294,8 @@ const UNKNOWN_MOVE_ANIMATION_USER_ID = 'unknown-user'
 const AREA_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 140
 const AREA_PASS_DASH_IMPACT_OFFSET_MS = 100
 const AREA_PASS_DASH_TARGET_FOLLOW_UP_BASE_OFFSET_MS = 220
-const PASS_TARGET_DAMAGE_CALLOUT_OFFSET_MS = MOVE_VFX_DEFAULT_DURATIONS_MS.quick + 20
+const TARGET_ROLL_VFX_DURATION_MS = 650
+const TARGET_DAMAGE_CALLOUT_OFFSET_MS = MOVE_VFX_DEFAULT_DURATIONS_MS.quick + 20
 const TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS = 100
 const TRANSACTION_SEMANTIC_SAME_TOKEN_STEP_MS = 70
 const TRANSACTION_MAP_CONFIRMATION_SAME_STEP_MS = 70
@@ -471,6 +472,24 @@ const startOffsetMetadata = (startOffsetMs: number | undefined): { readonly star
   typeof startOffsetMs === 'number' && Number.isFinite(startOffsetMs) && startOffsetMs > 0
     ? { startOffsetMs }
     : {}
+)
+
+const addStartOffsetToEvents = <T extends MoveAnimationEvent>(
+  events: readonly T[],
+  offsetMs: number,
+): T[] => {
+  if (!Number.isFinite(offsetMs) || offsetMs <= 0) return [...events]
+
+  return events.map((event) => ({
+    ...event,
+    startOffsetMs: (finiteNumberOrZero(event.startOffsetMs) + offsetMs),
+  }) as T)
+}
+
+const scriptRequiresTargetAccuracyRollVfx = (script: MoveAnimationPlanScript): boolean => script.requiresAccuracy === true
+
+const targetAccuracyRollOutcomeOffsetMs = (script: MoveAnimationPlanScript): number => (
+  scriptRequiresTargetAccuracyRollVfx(script) ? TARGET_ROLL_VFX_DURATION_MS : 0
 )
 
 /**
@@ -1421,6 +1440,25 @@ const planTargetSemanticAnimations = (
   }, palette)]
 }
 
+const planTargetAccuracyRollAnimation = (
+  input: MoveAnimationPlanInput,
+  nextId: PlannerEventIdFactory,
+  options: {
+    readonly targetId: string
+    readonly targetCell?: GridAnchor
+    readonly palette: MoveVfxPaletteEntry
+    readonly startOffsetMs?: number
+  },
+): MoveAnimationEvent[] => {
+  if (!scriptRequiresTargetAccuracyRollVfx(input.script)) return []
+
+  return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.roll, TARGET_ROLL_VFX_DURATION_MS, {
+    targetId: options.targetId,
+    targetCell: options.targetCell,
+    ...startOffsetMetadata(options.startOffsetMs),
+  }, options.palette)]
+}
+
 const planDamagingTargetAnimationEvents = (options: {
   readonly input: MoveAnimationTargetedPlanInput
   readonly nextId: PlannerEventIdFactory
@@ -1587,13 +1625,14 @@ const planMultiTargetMoveAnimations = (
   )
   const targetOffsetById = new Map(targetOffsets.map((offset) => [offset.targetId, offset.startOffsetMs]))
   const targetStartOffsetMs = (targetId: string): number => targetOffsetById.get(targetId) ?? 0
+  const rollOutcomeOffsetMs = targetAccuracyRollOutcomeOffsetMs(input.script)
   const impactOffsetForTarget = (targetId: string): { readonly startOffsetMs?: number } => startOffsetMetadata(
-    (timing.impactDelayMs ?? 0) + targetStartOffsetMs(targetId),
+    (timing.impactDelayMs ?? 0) + targetStartOffsetMs(targetId) + rollOutcomeOffsetMs,
   )
   const semanticTargetIds = uniquePlannerTargetIds([user.id, ...targetIds])
 
   if (!scriptHasDamageVisual(input.script)) {
-    const semanticStartOffsetMs = timing.semanticDelayMs ?? (timing.impactDelayMs ?? 0)
+    const semanticStartOffsetMs = (timing.semanticDelayMs ?? (timing.impactDelayMs ?? 0)) + rollOutcomeOffsetMs
     const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
       targetIds: semanticTargetIds,
       startOffsetMs: semanticStartOffsetMs,
@@ -1605,21 +1644,45 @@ const planMultiTargetMoveAnimations = (
       const targetCell = positionForToken(target)
       const outcome = targetOutcomeForId(input, targetId)
       const hit = outcome?.hit ?? true
-
-      if (!hit) {
-        return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+      const targetPalette = paletteForSemanticIntent(semanticIntentForScript(input.script))
+      const rollEvents = planTargetAccuracyRollAnimation(input, nextId, {
+        targetId,
+        targetCell,
+        palette: targetPalette,
+      })
+      const calloutEvents = scriptRequiresTargetAccuracyRollVfx(input.script)
+        ? planTargetOutcomeCalloutAnimations(input, nextId, {
           targetId,
           targetCell,
-          ...startOffsetMetadata(timing.impactDelayMs),
-        }, moveVfxColorForTone(MOVE_VFX_TONE.miss))]
+          hit,
+          outcome,
+          palette: targetPalette,
+          outcomeStartOffsetMs: rollOutcomeOffsetMs,
+        })
+        : []
+
+      if (!hit) {
+        return [
+          ...rollEvents,
+          createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
+            targetId,
+            targetCell,
+            ...startOffsetMetadata((timing.impactDelayMs ?? 0) + rollOutcomeOffsetMs),
+          }, moveVfxColorForTone(MOVE_VFX_TONE.miss)),
+          ...calloutEvents,
+        ]
       }
 
       if (
         transactionSemanticEvents.length > 0
         || transactionSemanticTargetIds.has(targetId)
         || hasTransactionSemanticUpdateForTarget(input, targetId)
-      ) return []
-      return planTargetSemanticAnimations(input, nextId, targetId)
+      ) return [...rollEvents, ...calloutEvents]
+      return [
+        ...rollEvents,
+        ...addStartOffsetToEvents(planTargetSemanticAnimations(input, nextId, targetId), rollOutcomeOffsetMs),
+        ...calloutEvents,
+      ]
     })
 
     return [
@@ -1630,7 +1693,7 @@ const planMultiTargetMoveAnimations = (
 
   const palette = damagingPaletteForScript(input.script)
   const transactionFollowUpStartOffsetMs = timing.semanticDelayMs
-    ?? ((timing.impactDelayMs ?? 0) + TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS)
+    ?? ((timing.impactDelayMs ?? 0) + rollOutcomeOffsetMs + TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS)
   const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
     targetIds: semanticTargetIds,
     startOffsetMs: transactionFollowUpStartOffsetMs,
@@ -1643,25 +1706,47 @@ const planMultiTargetMoveAnimations = (
     const outcome = targetOutcomeForId(input, targetId)
     const hit = outcome?.hit ?? true
     const crit = outcome?.crit ?? false
-    return planDamagingTargetAnimationEvents({
-      input,
-      nextId,
-      userCell,
+    const rollEvents = planTargetAccuracyRollAnimation(input, nextId, {
       targetId,
       targetCell,
-      hit,
-      crit,
       palette,
-      launchStartOffset: startOffsetMetadata((timing.baseDelayMs ?? 0) + targetStartOffsetMs(targetId)),
-      impactStartOffset: impactOffsetForTarget(targetId),
+      startOffsetMs: (timing.baseDelayMs ?? 0) + targetStartOffsetMs(targetId),
     })
+    const outcomeStartOffsetMs = (timing.impactDelayMs ?? 0) + targetStartOffsetMs(targetId) + rollOutcomeOffsetMs
+    const calloutEvents = scriptRequiresTargetAccuracyRollVfx(input.script)
+      ? planTargetOutcomeCalloutAnimations(input, nextId, {
+        targetId,
+        targetCell,
+        hit,
+        outcome,
+        palette,
+        outcomeStartOffsetMs,
+      })
+      : []
+
+    return [
+      ...rollEvents,
+      ...planDamagingTargetAnimationEvents({
+        input,
+        nextId,
+        userCell,
+        targetId,
+        targetCell,
+        hit,
+        crit,
+        palette,
+        launchStartOffset: startOffsetMetadata((timing.baseDelayMs ?? 0) + targetStartOffsetMs(targetId) + rollOutcomeOffsetMs),
+        impactStartOffset: impactOffsetForTarget(targetId),
+      }),
+      ...calloutEvents,
+    ]
   })
 
   return [...targetEvents, ...transactionSemanticEvents]
 }
 
-const planPassTargetOutcomeCalloutAnimations = (
-  input: MoveAnimationAreaPlanInput,
+const planTargetOutcomeCalloutAnimations = (
+  input: MoveAnimationPlanInput,
   nextId: PlannerEventIdFactory,
   options: {
     readonly targetId: string
@@ -1669,14 +1754,18 @@ const planPassTargetOutcomeCalloutAnimations = (
     readonly hit: boolean
     readonly outcome: MoveAnimationPlanTargetOutcome | null
     readonly palette: MoveVfxPaletteEntry
+    readonly outcomeStartOffsetMs?: number
   },
 ): MoveAnimationEvent[] => {
+  const outcomeStartOffsetMs = finiteNumberOrZero(options.outcomeStartOffsetMs)
+
   if (!options.hit) {
     return [createPlannerEvent(input, nextId, MOVE_VFX_KIND.badge, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
       targetId: options.targetId,
       targetCell: options.targetCell,
       label: 'Miss',
       tone: MOVE_VFX_TONE.miss,
+      ...startOffsetMetadata(outcomeStartOffsetMs),
     }, moveVfxColorForTone(MOVE_VFX_TONE.miss))]
   }
 
@@ -1684,6 +1773,7 @@ const planPassTargetOutcomeCalloutAnimations = (
     targetId: options.targetId,
     targetCell: options.targetCell,
     label: 'Hit',
+    ...startOffsetMetadata(outcomeStartOffsetMs),
   }, options.palette)]
 
   if (options.outcome?.damageResolved) {
@@ -1691,7 +1781,7 @@ const planPassTargetOutcomeCalloutAnimations = (
       targetId: options.targetId,
       targetCell: options.targetCell,
       label: `${Math.max(0, Math.round(options.outcome.damageLoss ?? 0))} Damage`,
-      startOffsetMs: PASS_TARGET_DAMAGE_CALLOUT_OFFSET_MS,
+      startOffsetMs: outcomeStartOffsetMs + TARGET_DAMAGE_CALLOUT_OFFSET_MS,
     }, options.palette))
   }
 
@@ -1710,9 +1800,10 @@ const planAreaTargetFollowUpAnimations = (
   },
 ): MoveAnimationEvent[] => {
   const targetIds = selectedAreaTargetIdsForInput(input)
+  const rollOutcomeOffsetMs = targetAccuracyRollOutcomeOffsetMs(input.script)
   const transactionSemanticEvents = planTransactionSemanticAnimations(input, nextId, {
     targetIds: uniquePlannerTargetIds([userIdForInput(input), ...targetIds]),
-    startOffsetMs: options.baseOffsetMs + (options.damaging ? TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS : 0),
+    startOffsetMs: options.baseOffsetMs + rollOutcomeOffsetMs + (options.damaging ? TRANSACTION_SEMANTIC_AFTER_IMPACT_OFFSET_MS : 0),
     staggerOrigin: options.userCell,
   })
   const semanticTargetIds = targetIdsWithEvents(transactionSemanticEvents)
@@ -1736,33 +1827,46 @@ const planAreaTargetFollowUpAnimations = (
     const targetCell = positionForToken(target)
     const outcome = explicitTargetOutcomeForId(input, targetId)
     const hit = outcome?.hit ?? true
+    const rollEvents = planTargetAccuracyRollAnimation(input, nextId, {
+      targetId,
+      targetCell,
+      palette: options.palette,
+    })
+    const outcomeStartOffset = startOffsetMetadata(rollOutcomeOffsetMs)
     const calloutEvents = options.showOutcomeCallouts
-      ? planPassTargetOutcomeCalloutAnimations(input, nextId, {
+      ? planTargetOutcomeCalloutAnimations(input, nextId, {
         targetId,
         targetCell,
         hit,
         outcome,
         palette: options.palette,
+        outcomeStartOffsetMs: rollOutcomeOffsetMs,
       })
       : []
 
     if (!hit) {
       return [
+        ...rollEvents,
         createPlannerEvent(input, nextId, MOVE_VFX_KIND.miss, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
           targetId,
           targetCell,
+          ...outcomeStartOffset,
         }, moveVfxColorForTone(MOVE_VFX_TONE.miss)),
         ...calloutEvents,
       ]
     }
 
-    if (!options.damaging && (semanticTargetIds.has(targetId) || hasTransactionSemanticUpdateForTarget(input, targetId))) return calloutEvents
+    if (!options.damaging && (semanticTargetIds.has(targetId) || hasTransactionSemanticUpdateForTarget(input, targetId))) {
+      return [...rollEvents, ...calloutEvents]
+    }
 
     return [
+      ...rollEvents,
       createPlannerEvent(input, nextId, MOVE_VFX_KIND.targetFlash, MOVE_VFX_DEFAULT_DURATIONS_MS.quick, {
         targetId,
         targetCell,
         ...(options.damaging ? { shake: true } : {}),
+        ...outcomeStartOffset,
       }, options.palette),
       ...calloutEvents,
     ]
@@ -1842,7 +1946,15 @@ const planAreaMoveAnimations = (
       palette,
       damaging,
       baseOffsetMs: areaTargetFollowUpBaseOffsetMs(input, hasPassDestination),
-      showOutcomeCallouts: hasPassDestination,
+      showOutcomeCallouts: hasPassDestination || scriptRequiresTargetAccuracyRollVfx(input.script),
+    }))
+  } else if (hasPassDestination) {
+    events.push(...planAreaTargetFollowUpAnimations(input, nextId, {
+      userCell,
+      palette,
+      damaging,
+      baseOffsetMs: areaTargetFollowUpBaseOffsetMs(input, hasPassDestination),
+      showOutcomeCallouts: true,
     }))
   }
 

@@ -114,6 +114,11 @@ export const MOVE_VFX_DEBUG_PREVIEW_OPTIONS = [
     description: 'Semantic buff particles at the target anchor.',
   },
   {
+    kind: MOVE_VFX_KIND.roll,
+    label: 'd20 roll',
+    description: 'CSS3D rolling d20 above the target anchor.',
+  },
+  {
     kind: MOVE_VFX_KIND.badge,
     label: 'Badge',
     description: 'Opt-in CSS3D label above the target anchor.',
@@ -492,6 +497,8 @@ const durationForKind = (kind: MoveVfxKind): number => {
     case MOVE_VFX_KIND.crit:
     case MOVE_VFX_KIND.badge:
       return MOVE_VFX_DEFAULT_DURATIONS_MS.quick
+    case MOVE_VFX_KIND.roll:
+      return MOVE_VFX_DEFAULT_DURATIONS_MS.normal
     case MOVE_VFX_KIND.radialBurst:
     case MOVE_VFX_KIND.lineSweep:
     case MOVE_VFX_KIND.coneSweep:
@@ -517,6 +524,8 @@ const paletteForKind = (
       return moveVfxColorForTone(MOVE_VFX_TONE.miss)
     case MOVE_VFX_KIND.crit:
       return moveVfxColorForTone(MOVE_VFX_TONE.crit)
+    case MOVE_VFX_KIND.roll:
+      return moveVfxColorForTone(MOVE_VFX_TONE.neutral)
     default:
       return moveVfxColorForType(user.defenderTypes[0] ?? 'Electric')
   }
@@ -670,6 +679,13 @@ const createMoveVfxDebugPreviewEvent = (
         ...targetMetadata,
         tone: 'buff',
         direction: 'buff',
+      }
+    case MOVE_VFX_KIND.roll:
+      return {
+        ...base,
+        kind,
+        ...targetMetadata,
+        tone: MOVE_VFX_TONE.neutral,
       }
     case MOVE_VFX_KIND.badge:
       return {

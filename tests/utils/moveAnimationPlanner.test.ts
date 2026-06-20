@@ -700,6 +700,50 @@ describe('generic move animation planner', () => {
     })
   })
 
+  it('adds per-target d20 rolls and outcome badges for accuracy-based multi-target-count moves', () => {
+    const events = planGenericMoveAnimations(multiTargetInput({
+      script: script({
+        moveName: 'Generic Accuracy Fanout',
+        targetMode: 'multi-target',
+        targetCount: 2,
+        damaging: true,
+        requiresAccuracy: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Electric',
+        ac: 6,
+        range: 'Range 6, 2 Targets',
+      }),
+      targetOutcomes: [
+        { targetId: 'target-a', hit: true, damageResolved: true, damageLoss: 12 },
+        { targetId: 'target-b', hit: false },
+      ],
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.roll,
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.badge,
+      MOVE_VFX_KIND.badge,
+      MOVE_VFX_KIND.roll,
+      MOVE_VFX_KIND.beam,
+      MOVE_VFX_KIND.miss,
+      MOVE_VFX_KIND.badge,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: MOVE_VFX_KIND.roll, targetId: 'target-a', targetCell: { x: 1, y: 0, z: 0 } }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.beam, targetId: 'target-a', startOffsetMs: 650 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.targetFlash, targetId: 'target-a', startOffsetMs: 650 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.badge, targetId: 'target-a', label: 'Hit', startOffsetMs: 650 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.badge, targetId: 'target-a', label: '12 Damage', startOffsetMs: 890 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.roll, targetId: 'target-b', startOffsetMs: 60 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.beam, targetId: 'target-b', startOffsetMs: 710 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.miss, targetId: 'target-b', startOffsetMs: 710 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.badge, targetId: 'target-b', label: 'Miss', startOffsetMs: 710 }),
+    ]))
+  })
+
   it('uses the Poison palette for Poison Sting launch and impact VFX', () => {
     const events = planGenericMoveAnimations(baseInput({
       script: reviewedScript('Poison Sting'),
@@ -1284,6 +1328,92 @@ describe('generic move animation planner', () => {
       label: '17 Damage',
       startOffsetMs: 460,
     })
+  })
+
+  it('delays pass target outcomes until each target d20 roll resolves when the pass requires accuracy', () => {
+    const cells = [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }, { x: 3, y: 0, z: 0 }]
+    const destination = { x: 3, y: 0, z: 0 }
+    const events = planGenericMoveAnimations(areaInput(cells, {
+      areaDirection: 'east',
+      passDestination: destination,
+      targets: [token({ id: 'target-a', species: 'Target A', position: { x: 2, y: 0, z: 0 } })],
+      selectedTargetIds: ['target-a'],
+      targetOutcomes: [{ targetId: 'target-a', hit: true, damageResolved: true, damageLoss: 17 }],
+      script: script({
+        moveName: 'Generic Accurate Pass Area',
+        targetMode: 'multi-target',
+        damaging: true,
+        requiresAccuracy: true,
+        damageBase: 5,
+        damageClass: 'Physical',
+        type: 'Normal',
+        ac: 6,
+        range: 'Pass 4',
+        areaTemplates: [{ kind: 'pass', size: 4, label: 'Pass 4' }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.dash,
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.roll,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.badge,
+      MOVE_VFX_KIND.badge,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: MOVE_VFX_KIND.roll, targetId: 'target-a', startOffsetMs: 220 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.targetFlash, targetId: 'target-a', startOffsetMs: 870 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.badge, targetId: 'target-a', label: 'Hit', startOffsetMs: 870 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.badge, targetId: 'target-a', label: '17 Damage', startOffsetMs: 1110 }),
+    ]))
+  })
+
+  it('adds per-target d20 rolls and outcome badges for accuracy-based area targets', () => {
+    const cells = [{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }]
+    const events = planGenericMoveAnimations(areaInput(cells, {
+      targets: [
+        token({ id: 'target-a', species: 'Target A', position: { x: 1, y: 0, z: 0 } }),
+        token({ id: 'target-b', species: 'Target B', position: { x: 2, y: 0, z: 0 } }),
+      ],
+      selectedTargetIds: ['target-a', 'target-b'],
+      targetOutcomes: [
+        { targetId: 'target-a', hit: true, damageResolved: true, damageLoss: 9 },
+        { targetId: 'target-b', hit: false },
+      ],
+      script: script({
+        moveName: 'Generic Accuracy Burst',
+        targetMode: 'multi-target',
+        damaging: true,
+        requiresAccuracy: true,
+        damageBase: 6,
+        damageClass: 'Special',
+        type: 'Electric',
+        ac: 6,
+        areaTemplates: [{ kind: 'burst', size: 2, label: 'Burst 2' }],
+      }),
+    }))
+
+    expect(events.map((event) => event.kind)).toEqual([
+      MOVE_VFX_KIND.areaPulse,
+      MOVE_VFX_KIND.radialBurst,
+      MOVE_VFX_KIND.roll,
+      MOVE_VFX_KIND.targetFlash,
+      MOVE_VFX_KIND.badge,
+      MOVE_VFX_KIND.badge,
+      MOVE_VFX_KIND.roll,
+      MOVE_VFX_KIND.miss,
+      MOVE_VFX_KIND.badge,
+    ])
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: MOVE_VFX_KIND.roll, targetId: 'target-a', startOffsetMs: 140 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.targetFlash, targetId: 'target-a', startOffsetMs: 790 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.badge, targetId: 'target-a', label: 'Hit', startOffsetMs: 790 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.badge, targetId: 'target-a', label: '9 Damage', startOffsetMs: 1030 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.roll, targetId: 'target-b', startOffsetMs: 200 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.miss, targetId: 'target-b', startOffsetMs: 850 }),
+      expect.objectContaining({ kind: MOVE_VFX_KIND.badge, targetId: 'target-b', label: 'Miss', startOffsetMs: 850 }),
+    ]))
   })
 
   it('adds staggered target follow-ups for selected area targets without flashing excluded targets', () => {

@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
-import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBadgeAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveConeSweepAnimationEvent, type MoveCritAnimationEvent, type MoveDashAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveLineSweepAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveRadialBurstAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
+import { MOVE_VFX_KIND, type MoveAnimationEvent, type MoveAreaPulseAnimationEvent, type MoveArcAnimationEvent, type MoveBadgeAnimationEvent, type MoveBeamAnimationEvent, type MoveBuffDebuffAnimationEvent, type MoveConeSweepAnimationEvent, type MoveCritAnimationEvent, type MoveDashAnimationEvent, type MoveHealingAnimationEvent, type MoveImpactRingAnimationEvent, type MoveLineSweepAnimationEvent, type MoveMeleeLungeAnimationEvent, type MoveMissAnimationEvent, type MoveProjectileAnimationEvent, type MoveRadialBurstAnimationEvent, type MoveRollAnimationEvent, type MoveSelfPulseAnimationEvent, type MoveStatusAnimationEvent, type MoveTargetFlashAnimationEvent, type MoveVfxKind } from '~/types/moveAnimation'
 import { MOVE_VFX_TONE_COLORS, MOVE_VFX_TYPE_COLORS, type MoveVfxPaletteEntry } from '~/utils/moveAnimationPalette'
 import { createMoveVfxRenderer } from '~/utils/isometric/moveVfxRenderer'
 import type { PokemonRenderObject } from '~/utils/isometric/types'
@@ -13,6 +13,7 @@ class FakeBadgeElement {
   readonly children: FakeBadgeElement[] = []
   className = ''
   textContent = ''
+  innerHTML = ''
   parentNode: FakeBadgeElement | null = null
   ownerDocument: FakeBadgeDocument
   removed = false
@@ -313,6 +314,18 @@ const statusEvent = (overrides: Partial<MoveStatusAnimationEvent> = {}): MoveAni
   durationMs: 560,
   kind: MOVE_VFX_KIND.status,
   targetId: 'target-1',
+  ...overrides,
+}) as MoveAnimationEvent
+
+const rollEvent = (overrides: Partial<MoveRollAnimationEvent> = {}): MoveAnimationEvent => ({
+  id: 'move-vfx-roll',
+  moveName: 'Thunder Wave',
+  userId: 'user-1',
+  createdAtMs: 100,
+  durationMs: 650,
+  kind: MOVE_VFX_KIND.roll,
+  targetId: 'target-1',
+  tone: 'neutral',
   ...overrides,
 }) as MoveAnimationEvent
 
@@ -1476,6 +1489,52 @@ describe('move VFX renderer shell', () => {
 
     expect(renderer.activeCount()).toBe(0)
     expect(renderer.group.children).toHaveLength(0)
+  })
+
+  it('renders roll events as CSS3D d20s above affected anchors', () => {
+    const cleanup = installFakeBadgeDocument()
+
+    try {
+      const scene = new THREE.Scene()
+      const renderer = createMoveVfxRenderer(scene)
+      const target = makeRenderObject({
+        id: 'target-1',
+        currentCenter: new THREE.Vector3(3, 1, 2),
+        base: 1.5,
+        width: 1.5,
+        height: 2,
+        clearance: 2,
+      })
+      const renderObjects = new Map([[target.id, target]])
+
+      renderer.sync([rollEvent({ palette: MOVE_VFX_TYPE_COLORS.Electric })], { renderObjects })
+
+      const instanceGroup = renderer.group.children[0]
+      const roll = instanceGroup.children.find((child) => child.name === 'move-vfx-roll') as (THREE.Object3D & { element: FakeBadgeElement }) | undefined
+      const body = roll?.element.children[0]
+      expect(roll).toBeDefined()
+      expect(body?.className).toBe('move-automation-roll is-rolling')
+      expect(body?.dataset.rollGraphic).toBe('d20-wireframe')
+      expect(body?.getAttribute('aria-label')).toBe('Rolling d20')
+      expect(body?.innerHTML).toContain('move-automation-roll__d20')
+      expect(roll?.element.style['--accent']).toBe(MOVE_VFX_TYPE_COLORS.Electric.accent)
+      expect(renderer.needsCss3DFrame()).toBe(true)
+      expectVectorClose(instanceGroup.position, [3, 3.35, 2])
+
+      renderer.animate({ frameNowMs: 380, delta: 0.016, renderObjects })
+
+      expect(roll?.visible).toBe(true)
+      expect(Number(roll?.element.style.opacity)).toBeGreaterThan(0)
+
+      renderer.animate({ frameNowMs: 800, delta: 0.016, renderObjects })
+
+      expect(renderer.activeCount()).toBe(0)
+      expect(renderer.needsCss3DFrame()).toBe(false)
+      expect(renderer.group.children).toHaveLength(0)
+      expect(roll?.element.removed).toBe(true)
+    } finally {
+      cleanup()
+    }
   })
 
   it('renders explicit badge events as short non-interactive CSS3D labels above affected anchors', () => {
