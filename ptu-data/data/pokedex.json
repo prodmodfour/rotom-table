@@ -373097,7 +373097,368 @@
   },
   {
     "species": "Tauros Aqua Breed",
+    "types": [
+      "Fighting",
+      "Water"
+    ],
+    "base_stats": {
+      "hp": 8,
+      "atk": 11,
+      "def": 11,
+      "spatk": 3,
+      "spdef": 7,
+      "spd": 10
+    },
+    "abilities": {
+      "basic": [
+        "Intimidate",
+        "Anger Point"
+      ],
+      "advanced": [
+        "Aqua Bullet",
+        "Cud Chew"
+      ],
+      "high": [
+        "Gore"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Tauros Aqua Breed",
+        "min_level": 0
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 0,
     "size": "Medium",
+    "weight": 5,
+    "genderless": false,
+    "male_pct": 100,
+    "female_pct": 0,
+    "egg_groups": [
+      "Field"
+    ],
+    "hatch_rate": "10 Days",
+    "diet": [
+      "Herbivore"
+    ],
+    "habitat": [
+      "Grassland"
+    ],
+    "capabilities": {
+      "overland": 8,
+      "sky": 0,
+      "swim": 6,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "1/3",
+      "power": 9,
+      "other": [
+        "Mountable 1",
+        "Fountain",
+        "Pack Mon"
+      ]
+    },
+    "skills": {
+      "Athletics": "5d6+2",
+      "Acrobatics": "2d6+2",
+      "Combat": "4d6+1",
+      "Stealth": "1d6+2",
+      "Perception": "1d6+2",
+      "Focus": "3d6+2"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Tackle",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Tail Whip",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Rock Smash",
+        "type": "Fighting"
+      },
+      {
+        "level": 5,
+        "name": "Aqua Jet",
+        "type": "Water"
+      },
+      {
+        "level": 7,
+        "name": "Work Up",
+        "type": "Normal"
+      },
+      {
+        "level": 10,
+        "name": "Double Kick",
+        "type": "Fighting"
+      },
+      {
+        "level": 13,
+        "name": "Horn Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 15,
+        "name": "Bulldoze",
+        "type": "Ground"
+      },
+      {
+        "level": 17,
+        "name": "Headbutt",
+        "type": "Normal"
+      },
+      {
+        "level": 20,
+        "name": "Flip Turn",
+        "type": "Water"
+      },
+      {
+        "level": 22,
+        "name": "Scary Face",
+        "type": "Normal"
+      },
+      {
+        "level": 25,
+        "name": "Reversal",
+        "type": "Fighting"
+      },
+      {
+        "level": 28,
+        "name": "Zen Headbutt",
+        "type": "Psychic"
+      },
+      {
+        "level": 30,
+        "name": "Bounce",
+        "type": "Flying"
+      },
+      {
+        "level": 33,
+        "name": "Raging Bull",
+        "type": "Fighting"
+      },
+      {
+        "level": 37,
+        "name": "Thrash",
+        "type": "Normal"
+      },
+      {
+        "level": 40,
+        "name": "Wave Crash",
+        "type": "Water"
+      },
+      {
+        "level": 44,
+        "name": "Rest",
+        "type": "Psychic"
+      },
+      {
+        "level": 48,
+        "name": "Swagger",
+        "type": "Normal"
+      },
+      {
+        "level": 50,
+        "name": "Earthquake",
+        "type": "Ground"
+      },
+      {
+        "level": 53,
+        "name": "Close Combat",
+        "type": "Fighting"
+      }
+    ],
+    "tm_hm_moves": [],
+    "egg_moves": [
+      "Curse",
+      "Endeavor"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Attract",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Press",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Bulk Up",
+        "heart_scale": false
+      },
+      {
+        "name": "Chilling Water",
+        "heart_scale": false
+      },
+      {
+        "name": "Confide",
+        "heart_scale": false
+      },
+      {
+        "name": "Dig",
+        "heart_scale": false
+      },
+      {
+        "name": "Dive",
+        "heart_scale": false
+      },
+      {
+        "name": "Double Team",
+        "heart_scale": false
+      },
+      {
+        "name": "Double-Edge",
+        "heart_scale": true
+      },
+      {
+        "name": "Drill Run",
+        "heart_scale": false
+      },
+      {
+        "name": "Endure",
+        "heart_scale": false
+      },
+      {
+        "name": "Facade",
+        "heart_scale": false
+      },
+      {
+        "name": "Frustration",
+        "heart_scale": false
+      },
+      {
+        "name": "Giga Impact",
+        "heart_scale": false
+      },
+      {
+        "name": "Hidden Power",
+        "heart_scale": false
+      },
+      {
+        "name": "High Horsepower",
+        "heart_scale": true
+      },
+      {
+        "name": "Hydro Pump",
+        "heart_scale": false
+      },
+      {
+        "name": "Hyper Beam",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Head",
+        "heart_scale": true
+      },
+      {
+        "name": "Lash Out",
+        "heart_scale": false
+      },
+      {
+        "name": "Liquidation",
+        "heart_scale": false
+      },
+      {
+        "name": "Outrage",
+        "heart_scale": false
+      },
+      {
+        "name": "Protect",
+        "heart_scale": false
+      },
+      {
+        "name": "Rain Dance",
+        "heart_scale": false
+      },
+      {
+        "name": "Return",
+        "heart_scale": false
+      },
+      {
+        "name": "Rock Slide",
+        "heart_scale": false
+      },
+      {
+        "name": "Rock Tomb",
+        "heart_scale": false
+      },
+      {
+        "name": "Round",
+        "heart_scale": false
+      },
+      {
+        "name": "Sandstorm",
+        "heart_scale": false
+      },
+      {
+        "name": "Sleep Talk",
+        "heart_scale": false
+      },
+      {
+        "name": "Smart Strike",
+        "heart_scale": false
+      },
+      {
+        "name": "Stomping Tantrum",
+        "heart_scale": false
+      },
+      {
+        "name": "Stone Edge",
+        "heart_scale": false
+      },
+      {
+        "name": "Substitute",
+        "heart_scale": false
+      },
+      {
+        "name": "Surf",
+        "heart_scale": false
+      },
+      {
+        "name": "Take Down",
+        "heart_scale": false
+      },
+      {
+        "name": "Tera Blast",
+        "heart_scale": false
+      },
+      {
+        "name": "Thief",
+        "heart_scale": false
+      },
+      {
+        "name": "Toxic",
+        "heart_scale": false
+      },
+      {
+        "name": "Trailblaze",
+        "heart_scale": false
+      },
+      {
+        "name": "Water Pulse",
+        "heart_scale": false
+      },
+      {
+        "name": "Whirlpool",
+        "heart_scale": false
+      },
+      {
+        "name": "Wild Charge",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen9",
     "width": 1.53,
     "height": 1.4,
     "base": 1,
@@ -373105,7 +373466,369 @@
   },
   {
     "species": "Tauros Blaze Breed",
+    "types": [
+      "Fighting",
+      "Fire"
+    ],
+    "base_stats": {
+      "hp": 8,
+      "atk": 11,
+      "def": 11,
+      "spatk": 3,
+      "spdef": 7,
+      "spd": 10
+    },
+    "abilities": {
+      "basic": [
+        "Intimidate",
+        "Anger Point"
+      ],
+      "advanced": [
+        "Fiery Crash",
+        "Cud Chew"
+      ],
+      "high": [
+        "Gore"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Tauros Blaze Breed",
+        "min_level": 0
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 0,
     "size": "Medium",
+    "weight": 5,
+    "genderless": false,
+    "male_pct": 100,
+    "female_pct": 0,
+    "egg_groups": [
+      "Field"
+    ],
+    "hatch_rate": "10 Days",
+    "diet": [
+      "Herbivore"
+    ],
+    "habitat": [
+      "Grassland"
+    ],
+    "capabilities": {
+      "overland": 8,
+      "sky": 0,
+      "swim": 4,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "1/2",
+      "power": 9,
+      "other": [
+        "Mountable 1",
+        "Firestarter",
+        "Heater",
+        "Pack Mon"
+      ]
+    },
+    "skills": {
+      "Athletics": "5d6+2",
+      "Acrobatics": "2d6+2",
+      "Combat": "4d6+1",
+      "Stealth": "1d6+2",
+      "Perception": "1d6+2",
+      "Focus": "3d6+2"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Tackle",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Tail Whip",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Rock Smash",
+        "type": "Fighting"
+      },
+      {
+        "level": 5,
+        "name": "Flame Charge",
+        "type": "Fire"
+      },
+      {
+        "level": 7,
+        "name": "Work Up",
+        "type": "Normal"
+      },
+      {
+        "level": 10,
+        "name": "Double Kick",
+        "type": "Fighting"
+      },
+      {
+        "level": 13,
+        "name": "Horn Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 15,
+        "name": "Bulldoze",
+        "type": "Ground"
+      },
+      {
+        "level": 17,
+        "name": "Headbutt",
+        "type": "Normal"
+      },
+      {
+        "level": 20,
+        "name": "Flame Wheel",
+        "type": "Fire"
+      },
+      {
+        "level": 22,
+        "name": "Scary Face",
+        "type": "Normal"
+      },
+      {
+        "level": 25,
+        "name": "Reversal",
+        "type": "Fighting"
+      },
+      {
+        "level": 28,
+        "name": "Zen Headbutt",
+        "type": "Psychic"
+      },
+      {
+        "level": 30,
+        "name": "Iron Head",
+        "type": "Steel"
+      },
+      {
+        "level": 33,
+        "name": "Raging Bull",
+        "type": "Fighting"
+      },
+      {
+        "level": 37,
+        "name": "Thrash",
+        "type": "Normal"
+      },
+      {
+        "level": 40,
+        "name": "Flare Blitz",
+        "type": "Fire"
+      },
+      {
+        "level": 44,
+        "name": "Rest",
+        "type": "Psychic"
+      },
+      {
+        "level": 48,
+        "name": "Swagger",
+        "type": "Normal"
+      },
+      {
+        "level": 50,
+        "name": "Earthquake",
+        "type": "Ground"
+      },
+      {
+        "level": 53,
+        "name": "Close Combat",
+        "type": "Fighting"
+      }
+    ],
+    "tm_hm_moves": [],
+    "egg_moves": [
+      "Curse",
+      "Endeavor"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Attract",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Press",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Bulk Up",
+        "heart_scale": false
+      },
+      {
+        "name": "Confide",
+        "heart_scale": false
+      },
+      {
+        "name": "Dig",
+        "heart_scale": false
+      },
+      {
+        "name": "Double Team",
+        "heart_scale": false
+      },
+      {
+        "name": "Double-Edge",
+        "heart_scale": true
+      },
+      {
+        "name": "Drill Run",
+        "heart_scale": false
+      },
+      {
+        "name": "Endure",
+        "heart_scale": false
+      },
+      {
+        "name": "Facade",
+        "heart_scale": false
+      },
+      {
+        "name": "Fire Blast",
+        "heart_scale": false
+      },
+      {
+        "name": "Fire Spin",
+        "heart_scale": false
+      },
+      {
+        "name": "Flamethrower",
+        "heart_scale": false
+      },
+      {
+        "name": "Frustration",
+        "heart_scale": false
+      },
+      {
+        "name": "Giga Impact",
+        "heart_scale": false
+      },
+      {
+        "name": "Heat Crash",
+        "heart_scale": false
+      },
+      {
+        "name": "Hidden Power",
+        "heart_scale": false
+      },
+      {
+        "name": "High Horsepower",
+        "heart_scale": true
+      },
+      {
+        "name": "Hyper Beam",
+        "heart_scale": false
+      },
+      {
+        "name": "Lash Out",
+        "heart_scale": false
+      },
+      {
+        "name": "Outrage",
+        "heart_scale": false
+      },
+      {
+        "name": "Overheat",
+        "heart_scale": false
+      },
+      {
+        "name": "Protect",
+        "heart_scale": false
+      },
+      {
+        "name": "Rain Dance",
+        "heart_scale": false
+      },
+      {
+        "name": "Return",
+        "heart_scale": false
+      },
+      {
+        "name": "Rock Slide",
+        "heart_scale": false
+      },
+      {
+        "name": "Rock Tomb",
+        "heart_scale": false
+      },
+      {
+        "name": "Round",
+        "heart_scale": false
+      },
+      {
+        "name": "Sandstorm",
+        "heart_scale": false
+      },
+      {
+        "name": "Sleep Talk",
+        "heart_scale": false
+      },
+      {
+        "name": "Smart Strike",
+        "heart_scale": false
+      },
+      {
+        "name": "Stomping Tantrum",
+        "heart_scale": false
+      },
+      {
+        "name": "Stone Edge",
+        "heart_scale": false
+      },
+      {
+        "name": "Substitute",
+        "heart_scale": false
+      },
+      {
+        "name": "Sunny Day",
+        "heart_scale": false
+      },
+      {
+        "name": "Take Down",
+        "heart_scale": false
+      },
+      {
+        "name": "Temper Flare",
+        "heart_scale": false
+      },
+      {
+        "name": "Tera Blast",
+        "heart_scale": false
+      },
+      {
+        "name": "Thief",
+        "heart_scale": false
+      },
+      {
+        "name": "Toxic",
+        "heart_scale": false
+      },
+      {
+        "name": "Trailblaze",
+        "heart_scale": false
+      },
+      {
+        "name": "Wild Charge",
+        "heart_scale": false
+      },
+      {
+        "name": "Will-O-Wisp",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen9",
     "width": 1.66,
     "height": 1.4,
     "base": 1,
@@ -373113,7 +373836,350 @@
   },
   {
     "species": "Tauros Combat Breed",
+    "types": [
+      "Fighting"
+    ],
+    "base_stats": {
+      "hp": 8,
+      "atk": 11,
+      "def": 11,
+      "spatk": 3,
+      "spdef": 7,
+      "spd": 10
+    },
+    "abilities": {
+      "basic": [
+        "Intimidate",
+        "Anger Point"
+      ],
+      "advanced": [
+        "Bully",
+        "Cud Chew"
+      ],
+      "high": [
+        "Gore"
+      ]
+    },
+    "evolutions": [
+      {
+        "stage": 1,
+        "species": "Tauros Combat Breed",
+        "min_level": 0
+      }
+    ],
+    "evolution_stage": 1,
+    "evolutions_remaining": 0,
     "size": "Medium",
+    "weight": 5,
+    "genderless": false,
+    "male_pct": 100,
+    "female_pct": 0,
+    "egg_groups": [
+      "Field"
+    ],
+    "hatch_rate": "10 Days",
+    "diet": [
+      "Herbivore"
+    ],
+    "habitat": [
+      "Grassland"
+    ],
+    "capabilities": {
+      "overland": 8,
+      "sky": 0,
+      "swim": 4,
+      "levitate": 0,
+      "burrow": 0,
+      "jump": "1/2",
+      "power": 9,
+      "other": [
+        "Mountable 1",
+        "Pack Mon"
+      ]
+    },
+    "skills": {
+      "Athletics": "5d6+2",
+      "Acrobatics": "2d6+2",
+      "Combat": "4d6+1",
+      "Stealth": "1d6+2",
+      "Perception": "1d6+2",
+      "Focus": "3d6+2"
+    },
+    "level_up_moves": [
+      {
+        "level": 1,
+        "name": "Tackle",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Tail Whip",
+        "type": "Normal"
+      },
+      {
+        "level": 1,
+        "name": "Rock Smash",
+        "type": "Fighting"
+      },
+      {
+        "level": 5,
+        "name": "Pursuit",
+        "type": "Dark"
+      },
+      {
+        "level": 7,
+        "name": "Work Up",
+        "type": "Normal"
+      },
+      {
+        "level": 10,
+        "name": "Double Kick",
+        "type": "Fighting"
+      },
+      {
+        "level": 13,
+        "name": "Horn Attack",
+        "type": "Normal"
+      },
+      {
+        "level": 15,
+        "name": "Bulldoze",
+        "type": "Ground"
+      },
+      {
+        "level": 17,
+        "name": "Headbutt",
+        "type": "Normal"
+      },
+      {
+        "level": 20,
+        "name": "Brutal Swing",
+        "type": "Dark"
+      },
+      {
+        "level": 22,
+        "name": "Scary Face",
+        "type": "Normal"
+      },
+      {
+        "level": 25,
+        "name": "Reversal",
+        "type": "Fighting"
+      },
+      {
+        "level": 28,
+        "name": "Zen Headbutt",
+        "type": "Psychic"
+      },
+      {
+        "level": 30,
+        "name": "Counter",
+        "type": "Fighting"
+      },
+      {
+        "level": 33,
+        "name": "Raging Bull",
+        "type": "Fighting"
+      },
+      {
+        "level": 37,
+        "name": "Thrash",
+        "type": "Normal"
+      },
+      {
+        "level": 40,
+        "name": "Assurance",
+        "type": "Dark"
+      },
+      {
+        "level": 44,
+        "name": "Rest",
+        "type": "Psychic"
+      },
+      {
+        "level": 48,
+        "name": "Swagger",
+        "type": "Normal"
+      },
+      {
+        "level": 50,
+        "name": "Earthquake",
+        "type": "Ground"
+      },
+      {
+        "level": 53,
+        "name": "Close Combat",
+        "type": "Fighting"
+      }
+    ],
+    "tm_hm_moves": [],
+    "egg_moves": [
+      "Curse",
+      "Endeavor"
+    ],
+    "tutor_moves": [
+      {
+        "name": "Attract",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Press",
+        "heart_scale": false
+      },
+      {
+        "name": "Body Slam",
+        "heart_scale": false
+      },
+      {
+        "name": "Bulk Up",
+        "heart_scale": false
+      },
+      {
+        "name": "Confide",
+        "heart_scale": false
+      },
+      {
+        "name": "Dig",
+        "heart_scale": false
+      },
+      {
+        "name": "Double Team",
+        "heart_scale": false
+      },
+      {
+        "name": "Double-Edge",
+        "heart_scale": true
+      },
+      {
+        "name": "Drill Run",
+        "heart_scale": false
+      },
+      {
+        "name": "Endure",
+        "heart_scale": false
+      },
+      {
+        "name": "Facade",
+        "heart_scale": false
+      },
+      {
+        "name": "Frustration",
+        "heart_scale": false
+      },
+      {
+        "name": "Giga Impact",
+        "heart_scale": false
+      },
+      {
+        "name": "Hidden Power",
+        "heart_scale": false
+      },
+      {
+        "name": "High Horsepower",
+        "heart_scale": true
+      },
+      {
+        "name": "Hyper Beam",
+        "heart_scale": false
+      },
+      {
+        "name": "Iron Head",
+        "heart_scale": true
+      },
+      {
+        "name": "Lash Out",
+        "heart_scale": false
+      },
+      {
+        "name": "Outrage",
+        "heart_scale": false
+      },
+      {
+        "name": "Protect",
+        "heart_scale": false
+      },
+      {
+        "name": "Rain Dance",
+        "heart_scale": false
+      },
+      {
+        "name": "Return",
+        "heart_scale": false
+      },
+      {
+        "name": "Rock Slide",
+        "heart_scale": false
+      },
+      {
+        "name": "Rock Tomb",
+        "heart_scale": false
+      },
+      {
+        "name": "Round",
+        "heart_scale": false
+      },
+      {
+        "name": "Sandstorm",
+        "heart_scale": false
+      },
+      {
+        "name": "Sleep Talk",
+        "heart_scale": false
+      },
+      {
+        "name": "Smart Strike",
+        "heart_scale": false
+      },
+      {
+        "name": "Stomping Tantrum",
+        "heart_scale": false
+      },
+      {
+        "name": "Stone Edge",
+        "heart_scale": false
+      },
+      {
+        "name": "Substitute",
+        "heart_scale": false
+      },
+      {
+        "name": "Sunny Day",
+        "heart_scale": false
+      },
+      {
+        "name": "Surf",
+        "heart_scale": false
+      },
+      {
+        "name": "Take Down",
+        "heart_scale": false
+      },
+      {
+        "name": "Tera Blast",
+        "heart_scale": false
+      },
+      {
+        "name": "Thief",
+        "heart_scale": false
+      },
+      {
+        "name": "Throat Chop",
+        "heart_scale": false
+      },
+      {
+        "name": "Toxic",
+        "heart_scale": false
+      },
+      {
+        "name": "Trailblaze",
+        "heart_scale": false
+      },
+      {
+        "name": "Wild Charge",
+        "heart_scale": false
+      }
+    ],
+    "source_gen": "gen9",
     "width": 1.77,
     "height": 1.4,
     "base": 1,

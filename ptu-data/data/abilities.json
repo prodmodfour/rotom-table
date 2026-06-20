@@ -1521,6 +1521,11 @@
     "trigger": "The user successfully Grapples a target",
     "effect": "Connection – Wrap. When you activate this ability, the user may immediately deal damage to the target as if the user had hit with a Struggle Attack. There is no Accuracy Roll and thus this damage cannot miss, be a Critical Hit, or trigger any Effect Ranges."
   },
+  "Cud Chew": {
+    "name": "Cud Chew",
+    "frequency": "Scene – Swift Action",
+    "effect": "The effect of a consumable item used by the user earlier in the encounter is used again as if it had not been destroyed. The item is still gone."
+  },
   "Cursed Body": {
     "name": "Cursed Body",
     "frequency": "Scene – Free Action",
