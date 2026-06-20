@@ -186,6 +186,15 @@ describe('live-play useMove commands', () => {
         },
       },
     })
+    expect(harness.storedMap.metadata?.moveLog).toEqual([
+      {
+        at: 2_000,
+        userId: 'linked-token',
+        userName: 'Pika',
+        moveName: 'Custom EOT Move',
+        lines: ['Pika used Custom EOT Move.', 'Frequency: EOT'],
+      },
+    ])
     expect(response.usage).toMatchObject({ tracking: 'map', frequencyKind: 'eot', uses: 1, available: false })
     expect(response.result.ok && !('duplicate' in response.result) ? response.result.patches : []).toEqual([
       expect.objectContaining({
@@ -195,6 +204,7 @@ describe('live-play useMove commands', () => {
           placementId: 'linked-token',
           moveName: 'Custom EOT Move',
           tracking: 'map',
+          moveLogEntry: expect.objectContaining({ moveName: 'Custom EOT Move', at: 2_000 }),
         }),
       }),
     ])
@@ -311,6 +321,15 @@ describe('live-play useMove commands', () => {
         },
       },
     })
+    expect(harness.storedMap.metadata?.moveLog).toEqual([
+      expect.objectContaining({
+        at: 2_000,
+        userId: 'linked-token',
+        userName: 'Pika',
+        moveName: 'Custom Daily Move',
+        lines: ['Pika used Custom Daily Move.', 'Frequency: Daily x2'],
+      }),
+    ])
     expect(response.usage).toMatchObject({
       tracking: 'sheet',
       frequencyKind: 'daily',
@@ -346,6 +365,7 @@ describe('live-play useMove commands', () => {
           placementId: 'linked-token',
           tracking: 'sheet',
           sheetRevision: 3,
+          moveLogEntry: expect.objectContaining({ moveName: 'Custom Daily Move', at: 2_000 }),
         }),
       }),
       expect.objectContaining({

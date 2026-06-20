@@ -131,6 +131,79 @@ describe('live-play patch application', () => {
     expect(map.metadata?.initiativeLog).toEqual([expect.objectContaining({ userId: 'token-a' })])
   })
 
+  it('applies tracked move usage patches and appends move log metadata', () => {
+    const map = baseMap()
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        ...patchBase(LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE, {
+          placementId: 'token-a',
+          moveName: 'Thunderbolt',
+          moveKey: 'thunderbolt',
+          frequency: 'scene',
+          tracking: 'map',
+          usage: { uses: 1 },
+          moveLogEntry: {
+            at: 400,
+            userId: 'token-a',
+            userName: 'Pika',
+            moveName: 'Thunderbolt',
+            lines: ['Pika used Thunderbolt.', 'Frequency: Scene'],
+          },
+        }),
+        scopes: [{ kind: 'token', placementId: 'token-a', field: 'moveUsage' }],
+      }],
+    })
+
+    expect(result.ok).toBe(true)
+    expect(map.moveUsage?.byPlacementId['token-a']?.thunderbolt).toMatchObject({
+      moveName: 'Thunderbolt',
+      frequency: 'scene',
+      uses: 1,
+    })
+    expect(map.metadata?.moveLog).toEqual([
+      expect.objectContaining({ userId: 'token-a', moveName: 'Thunderbolt' }),
+    ])
+  })
+
+  it('appends move log metadata for sheet-tracked move usage patches', () => {
+    const map = baseMap()
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        ...patchBase(LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE, {
+          placementId: 'token-a',
+          moveName: 'Rest',
+          moveKey: 'rest',
+          frequency: 'daily',
+          tracking: 'sheet',
+          moveLogEntry: {
+            at: 450,
+            userId: 'token-a',
+            userName: 'Pika',
+            moveName: 'Rest',
+            lines: ['Pika used Rest.', 'Frequency: Daily'],
+          },
+        }),
+        scopes: [{ kind: 'token', placementId: 'token-a', field: 'moveUsage' }],
+      }],
+    })
+
+    expect(result.ok).toBe(true)
+    expect(map.moveUsage).toBeUndefined()
+    expect(map.metadata?.moveLog).toEqual([
+      expect.objectContaining({ userId: 'token-a', moveName: 'Rest' }),
+    ])
+  })
+
   it('applies terrain patches to one voxel cell', () => {
     const map = baseMap()
     const originalVoxels = map.voxels

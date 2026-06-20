@@ -483,6 +483,35 @@ const moveLogEntryFromMetadata = (
   return isRecord(entry) ? entry as unknown as MoveLogEntry : undefined
 }
 
+const appendMoveUseLog = (
+  context: ResolvedUseMoveContext,
+  move: ResolvedSheetMove,
+  frequency: ParsedMoveFrequency,
+  usedAt: number,
+  dependencies: Pick<LivePlayUseMoveDependencySet, 'maxMoveLogEntries'>,
+): { readonly metadata: Record<string, unknown>; readonly moveLogEntry?: MoveLogEntry } => {
+  const userName = sheetDisplayName(context.placement, context.sheet.sheet)
+  const metadata = appendMoveLogEntry(
+    context.map.metadata,
+    {
+      userId: context.placement.id,
+      userName,
+      moveName: move.moveName,
+      lines: buildMoveUseLogLines(userName, move.moveName, frequency.raw),
+    },
+    {
+      now: () => usedAt,
+      maxLogEntries: dependencies.maxMoveLogEntries,
+    },
+  )
+  const moveLogEntry = moveLogEntryFromMetadata(metadata)
+
+  return {
+    metadata,
+    ...(moveLogEntry === undefined ? {} : { moveLogEntry }),
+  }
+}
+
 const acceptedContext = (
   base: ResolvedUseMoveContext,
   input: {
@@ -514,6 +543,7 @@ const applyEotUseMove = (
   frequency: ParsedMoveFrequency,
   currentRevision: number,
   updatedAt: number,
+  dependencies: Pick<LivePlayUseMoveDependencySet, 'maxMoveLogEntries'>,
 ): AppliedUseMoveChange | { readonly status: 'rejected'; readonly message: string; readonly currentState: UseMoveUsageSummary } => {
   const currentRound = normalizeMoveUsageRound(context.map.initiative?.round)
   const previousEntry = getMapMoveUsageEntry(context.map.moveUsage, context.placement.id, move.moveKey)
@@ -538,7 +568,8 @@ const applyEotUseMove = (
     usedAt: updatedAt,
   })
   const revision = nextRevision(currentRevision)
-  const nextMap = { ...context.map, moveUsage, revision, updatedAt }
+  const log = appendMoveUseLog(context, move, frequency, updatedAt, dependencies)
+  const nextMap = { ...context.map, moveUsage, metadata: log.metadata, revision, updatedAt }
   const after = eotMoveUsageState(
     getMapMoveUsageEntry(nextMap.moveUsage, context.placement.id, move.moveKey),
     currentRound,
@@ -549,6 +580,7 @@ const applyEotUseMove = (
     frequency,
     previousUsage,
     usage: eotUsageSummary(move, frequency, after),
+    ...(log.moveLogEntry === undefined ? {} : { moveLogEntry: log.moveLogEntry }),
   })
   return {
     nextContext,
@@ -563,6 +595,7 @@ const applySceneUseMove = (
   frequency: ParsedMoveFrequency,
   currentRevision: number,
   updatedAt: number,
+  dependencies: Pick<LivePlayUseMoveDependencySet, 'maxMoveLogEntries'>,
 ): AppliedUseMoveChange | { readonly status: 'rejected'; readonly message: string; readonly currentState: UseMoveUsageSummary } => {
   const maxUses = maxUsesFor(frequency)
   const previousEntry = getMapMoveUsageEntry(context.map.moveUsage, context.placement.id, move.moveKey)
@@ -586,7 +619,8 @@ const applySceneUseMove = (
     usedAt: updatedAt,
   })
   const revision = nextRevision(currentRevision)
-  const nextMap = { ...context.map, moveUsage, revision, updatedAt }
+  const log = appendMoveUseLog(context, move, frequency, updatedAt, dependencies)
+  const nextMap = { ...context.map, moveUsage, metadata: log.metadata, revision, updatedAt }
   const after = limitedMoveUsageState(
     getMapMoveUsageEntry(nextMap.moveUsage, context.placement.id, move.moveKey),
     maxUses,
@@ -597,6 +631,7 @@ const applySceneUseMove = (
     frequency,
     previousUsage,
     usage: limitedUsageSummary(move, frequency, 'map', after),
+    ...(log.moveLogEntry === undefined ? {} : { moveLogEntry: log.moveLogEntry }),
   })
   return {
     nextContext,
@@ -611,6 +646,7 @@ const applyDailyUseMove = (
   frequency: ParsedMoveFrequency,
   currentRevision: number,
   updatedAt: number,
+  dependencies: Pick<LivePlayUseMoveDependencySet, 'maxMoveLogEntries'>,
 ): AppliedUseMoveChange | { readonly status: 'rejected'; readonly message: string; readonly currentState: UseMoveUsageSummary } => {
   validateDailyUseMoveSheetScope(command, context.placement)
 
@@ -633,7 +669,8 @@ const applyDailyUseMove = (
     usedAt: updatedAt,
   })
   const revision = nextRevision(currentRevision)
-  const nextMap = { ...context.map, revision, updatedAt }
+  const log = appendMoveUseLog(context, move, frequency, updatedAt, dependencies)
+  const nextMap = { ...context.map, metadata: log.metadata, revision, updatedAt }
   const nextSheet = sheetPayloadForPersistence(
     { ...context.sheet.sheet, moveUsage },
     context.sheet.slug,
@@ -647,6 +684,7 @@ const applyDailyUseMove = (
     frequency,
     previousUsage,
     usage: limitedUsageSummary(move, frequency, 'sheet', after),
+    ...(log.moveLogEntry === undefined ? {} : { moveLogEntry: log.moveLogEntry }),
     nextSheet,
     sheetUpdate: {
       kind: context.sheet.kind,
@@ -669,22 +707,9 @@ const applyUntrackedUseMove = (
   updatedAt: number,
   dependencies: LivePlayUseMoveDependencySet,
 ): AppliedUseMoveChange => {
-  const userName = sheetDisplayName(context.placement, context.sheet.sheet)
-  const metadata = appendMoveLogEntry(
-    context.map.metadata,
-    {
-      userId: context.placement.id,
-      userName,
-      moveName: move.moveName,
-      lines: buildMoveUseLogLines(userName, move.moveName, frequency.raw),
-    },
-    {
-      now: () => updatedAt,
-      maxLogEntries: dependencies.maxMoveLogEntries,
-    },
-  )
+  const log = appendMoveUseLog(context, move, frequency, updatedAt, dependencies)
   const revision = nextRevision(currentRevision)
-  const nextMap = { ...context.map, metadata, revision, updatedAt }
+  const nextMap = { ...context.map, metadata: log.metadata, revision, updatedAt }
   const usage = untrackedUsageSummary(move, frequency)
   const nextContext = acceptedContext(context, {
     map: nextMap,
@@ -692,7 +717,7 @@ const applyUntrackedUseMove = (
     frequency,
     previousUsage: usage,
     usage,
-    moveLogEntry: moveLogEntryFromMetadata(metadata),
+    ...(log.moveLogEntry === undefined ? {} : { moveLogEntry: log.moveLogEntry }),
   })
   return {
     nextContext,
@@ -715,19 +740,19 @@ const applyUseMove = (
   const frequency = parseMoveFrequency(move.frequency)
   const updatedAt = dependencies.now()
   if (frequency.kind === 'eot') {
-    const result = applyEotUseMove(command, context, move, frequency, currentRevision, updatedAt)
+    const result = applyEotUseMove(command, context, move, frequency, currentRevision, updatedAt, dependencies)
     if ('status' in result) return { reason: 'conflict', ...result }
     return result
   }
 
   if (frequency.kind === 'scene') {
-    const result = applySceneUseMove(command, context, move, frequency, currentRevision, updatedAt)
+    const result = applySceneUseMove(command, context, move, frequency, currentRevision, updatedAt, dependencies)
     if ('status' in result) return { reason: 'conflict', ...result }
     return result
   }
 
   if (frequency.kind === 'daily') {
-    const result = applyDailyUseMove(command, context, move, frequency, currentRevision, updatedAt)
+    const result = applyDailyUseMove(command, context, move, frequency, currentRevision, updatedAt, dependencies)
     if ('status' in result) return { reason: 'conflict', ...result }
     return result
   }

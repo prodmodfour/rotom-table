@@ -273,7 +273,7 @@ const applyMoveUsagePatch = (map: TabletopMap, payload: unknown): LivePlayPatche
     return failed('invalid-patch', 'token.moveUsage patches require placementId, moveKey, and moveName')
   }
 
-  if (payload.tracking === 'none') {
+  if (payload.tracking === 'none' || payload.tracking === 'sheet') {
     appendMetadataEntry(map, 'moveLog', payload.moveLogEntry)
     return null
   }
@@ -284,6 +284,7 @@ const applyMoveUsagePatch = (map: TabletopMap, payload: unknown): LivePlayPatche
   const uses = typeof usage?.uses === 'number' && Number.isFinite(usage.uses) ? Math.max(0, Math.trunc(usage.uses)) : null
   if (!frequency || uses === null) return failed('invalid-patch', 'map-tracked token.moveUsage patches require frequency and usage.uses')
 
+  appendMetadataEntry(map, 'moveLog', payload.moveLogEntry)
   const moveUsage = deepCloneJson(map.moveUsage ?? { byPlacementId: {} })
   moveUsage.byPlacementId[payload.placementId] = {
     ...(moveUsage.byPlacementId[payload.placementId] ?? {}),
