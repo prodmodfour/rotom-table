@@ -29,6 +29,16 @@ describe('Pokédex reference data', () => {
     expect(nidoranM[0]).toMatchObject({ types: ['Poison'], base_stats: { hp: 5, atk: 6 } })
   })
 
+  it('contains machine moves parsed from shorthand TM sections and all-machine notes', () => {
+    const pokedex = loadPokedex()
+    const bySpecies = new Map(pokedex.map((entry) => [entry.species, entry]))
+
+    expect(bySpecies.get('Mew')?.tm_hm_moves).toContainEqual({ kind: 'HM', number: '01', name: 'Cut' })
+    expect(bySpecies.get('Mew')?.tm_hm_moves).toContainEqual({ kind: 'TM', number: '100', name: 'Confide' })
+    expect(bySpecies.get('Grookey')?.tm_hm_moves).toContainEqual({ kind: 'TM', number: '01', name: 'Work Up' })
+    expect(bySpecies.get('Grookey')?.tm_hm_moves).toContainEqual({ kind: 'TM', number: '100', name: 'Confide' })
+  })
+
   it('contains complete Tauros breed records', () => {
     const pokedex = loadPokedex()
     const bySpecies = new Map(pokedex.map((entry) => [entry.species, entry]))

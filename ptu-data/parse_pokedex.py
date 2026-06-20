@@ -9,6 +9,7 @@ import unicodedata
 
 POKEDEX_DIR = os.path.join(os.path.dirname(__file__), "..", "books", "markdown", "pokedexes")
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "data")
+ITEMS_CACHE_PATH = os.path.join(CACHE_DIR, "items.json")
 PLACEMENT_FIELDS = ("species", "size", "width", "height", "base", "clearance")
 PLACEMENT_GEOMETRY_FIELDS = ("width", "height", "base", "clearance")
 
@@ -197,7 +198,7 @@ def _flatten_section(value: str) -> str:
 
 
 def _extract_section(text: str, start_label: str, terminators: tuple[str, ...]) -> str:
-    """Return the body text between ``start_label`` and the next terminator."""
+    """Return the body text between ``start_label`` regex and the next terminator."""
     start_pattern = rf"^[ \t]*{start_label}[ \t]*\n"
     start_match = re.search(start_pattern, text, re.MULTILINE)
     if not start_match:
@@ -536,12 +537,54 @@ def parse_habitat(text: str) -> list[str]:
 
 # Splits TM/HM "06 Toxic", "A1 Cut", "100 Confide", "98 Power-Up Punch", etc.
 TM_HM_ITEM_RE = re.compile(r"^\s*(?P<prefix>[A-Za-z])?(?P<num>\d{1,3})\s+(?P<name>.+?)\s*$")
+TM_HM_SECTION_LABEL_RE = r"TM(?:/HM)? Move List"
+ANY_TM_HM_MOVE_LIST_RE = re.compile(r"\bcan\s+learn\s+any\s+TM\s*/\s*HM\b", re.IGNORECASE)
+MACHINE_ITEM_NAME_RE = re.compile(r"^(?P<kind>TM|HM)\s+(?P<number>A?\d{1,3})\s+-\s+(?P<name>.+)$")
+_ALL_TM_HM_MOVES: list[dict[str, str]] | None = None
+
+
+def all_tm_hm_moves() -> list[dict[str, str]]:
+    """Return every TM/HM from the item reference cache.
+
+    Mew's printed Pokédex entry says it can learn any TM/HM instead of listing
+    every machine. Expanding that sentence from the global item cache keeps the
+    app's move links/search behavior consistent with normal machine lists.
+    """
+    global _ALL_TM_HM_MOVES
+    if _ALL_TM_HM_MOVES is not None:
+        return [dict(move) for move in _ALL_TM_HM_MOVES]
+
+    moves: list[dict[str, str]] = []
+    if os.path.exists(ITEMS_CACHE_PATH):
+        with open(ITEMS_CACHE_PATH, "r", encoding="utf-8") as f:
+            items = json.load(f)
+        item_values = items.values() if isinstance(items, dict) else []
+        for item in item_values:
+            if not isinstance(item, dict):
+                continue
+            match = MACHINE_ITEM_NAME_RE.match(str(item.get("name", "")).strip())
+            if not match:
+                continue
+            name = normalize_move_name(match.group("name"))
+            if name is None:
+                continue
+            moves.append({
+                "kind": match.group("kind"),
+                "number": re.sub(r"^\D+", "", match.group("number")).zfill(2),
+                "name": name,
+            })
+
+    moves.sort(key=lambda move: (0 if move["kind"] == "HM" else 1, int(move["number"]), move["name"]))
+    _ALL_TM_HM_MOVES = moves
+    return [dict(move) for move in _ALL_TM_HM_MOVES]
 
 
 def parse_tm_hm_moves(text: str) -> list[dict]:
-    body = _extract_section(text, "TM/HM Move List", MOVE_SECTION_TERMINATORS)
+    body = _extract_section(text, TM_HM_SECTION_LABEL_RE, MOVE_SECTION_TERMINATORS)
     if not body:
         return []
+    if ANY_TM_HM_MOVE_LIST_RE.search(_flatten_section(body)):
+        return all_tm_hm_moves()
     moves: list[dict] = []
     for raw in _flatten_section(body).split(","):
         item = raw.strip()
@@ -652,7 +695,7 @@ def parse_skills(text: str) -> dict:
 
 def parse_level_up_moves(text: str) -> list[dict]:
     moves = []
-    m = re.search(r"Level Up Move List\s*\n([\s\S]+?)(?:TM/HM Move List|Egg Move List|Tutor Move List|$)", text)
+    m = re.search(rf"Level Up Move List\s*\n([\s\S]+?)(?:{TM_HM_SECTION_LABEL_RE}|Egg Move List|Tutor Move List|$)", text)
     if not m:
         return moves
     for line in m.group(1).splitlines():
