@@ -410,6 +410,7 @@ export const useMoveAutomationPanel = ({
   const tokenMoveUsageContext = (id: string) => ({
     mapMoveUsage: map.value?.moveUsage,
     sheetMoveUsage: sheetMoveUsageForPlacement(id),
+    activeScene: map.value?.activeScene ?? null,
     currentRound: map.value?.initiative?.round ?? null,
   })
 

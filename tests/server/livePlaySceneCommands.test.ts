@@ -94,12 +94,21 @@ const acceptedPatches = (response: Awaited<ReturnType<typeof execute>>) => (
 
 describe('live-play scene commands', () => {
   it('starts and ends active scenes through the authoritative executor', async () => {
-    const harness = createHarness()
+    const harness = createHarness(baseMap({
+      moveUsage: {
+        byPlacementId: {
+          'token-a': {
+            tackle: { moveName: 'Tackle', frequency: 'scene', uses: 1 },
+          },
+        },
+      },
+    }))
 
     const start = await execute(harness, setSceneCommand())
 
     expect(start.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
     expect(harness.storedMap.activeScene).toEqual({ name: 'Moonlit Rooftop', startedAt: 2_000 })
+    expect(harness.storedMap.moveUsage).toBeUndefined()
     expect(start.activeScene).toEqual({ name: 'Moonlit Rooftop', startedAt: 2_000 })
     expect(acceptedPatches(start)[0]).toMatchObject({
       type: LIVE_PLAY_PATCH_TYPES.MAP_SCENE,

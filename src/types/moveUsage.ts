@@ -1,11 +1,18 @@
-export type MapTrackedMoveFrequency = 'eot' | 'scene'
+export type MapTrackedMoveFrequency = 'eot' | 'scene' | 'daily'
+
+export interface MapMoveUsageSceneAnchor {
+  /** GM-provided scene label that this usage bucket belongs to. */
+  name: string
+  /** Server timestamp for when the scene was started. */
+  startedAt?: number
+}
 
 export interface MapMoveUsageEntry {
   /** Display/canonical move name when the usage entry was recorded. */
   moveName: string
-  /** Map-scoped frequencies reset by encounter/scene tooling, not by sheet rest. */
+  /** Map-scoped frequencies reset by map Scene tooling, not by sheet rest. */
   frequency: MapTrackedMoveFrequency
-  /** Number of times this placement has used the move in the current map scene. */
+  /** Number of times this placement has used the move in the current map Scene. */
   uses: number
   /** Initiative round of the latest use, when initiative is active. */
   lastUsedRound?: number | null
@@ -14,6 +21,8 @@ export interface MapMoveUsageEntry {
 }
 
 export interface MapMoveUsageState {
+  /** The map Scene this usage bucket is tied to. Omitted for pre-Scene/no-active-Scene usage. */
+  scene?: MapMoveUsageSceneAnchor
   /** Placement id -> move key -> usage entry. */
   byPlacementId: Record<string, Record<string, MapMoveUsageEntry>>
 }

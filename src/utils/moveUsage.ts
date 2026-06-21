@@ -1,5 +1,6 @@
 import type {
   MapMoveUsageEntry,
+  MapMoveUsageSceneAnchor,
   MapMoveUsageState,
   MapTrackedMoveFrequency,
   SheetDailyMoveUsageEntry,
@@ -91,16 +92,37 @@ export const parseMoveFrequency = (value: unknown): ParsedMoveFrequency => {
 }
 
 export const moveFrequencyTracksOnMap = (frequency: ParsedMoveFrequency): frequency is ParsedMoveFrequency & { kind: MapTrackedMoveFrequency } =>
-  frequency.kind === 'eot' || frequency.kind === 'scene'
+  frequency.kind === 'eot' || frequency.kind === 'scene' || frequency.kind === 'daily'
 
 export const moveFrequencyTracksOnSheet = (frequency: ParsedMoveFrequency): boolean =>
   frequency.kind === 'daily'
 
 export const normalizeMoveUsageRound = positiveRound
 
+const normalizeMapMoveUsageScene = (value: unknown): MapMoveUsageSceneAnchor | null => {
+  if (!isRecord(value)) return null
+  const name = typeof value.name === 'string' ? value.name.trim() : ''
+  if (!name) return null
+  const startedAt = optionalTimestamp(value.startedAt)
+  return {
+    name,
+    ...(startedAt === undefined ? {} : { startedAt }),
+  }
+}
+
+export const mapMoveUsageSceneMatches = (
+  usage: Pick<MapMoveUsageState, 'scene'> | null | undefined,
+  scene: unknown,
+): boolean => {
+  const left = normalizeMapMoveUsageScene(usage?.scene)
+  const right = normalizeMapMoveUsageScene(scene)
+  if (!left || !right) return left === null && right === null
+  return left.name === right.name && left.startedAt === right.startedAt
+}
+
 const normalizeMapMoveUsageEntry = (value: unknown): MapMoveUsageEntry | null => {
   if (!isRecord(value)) return null
-  const frequency = value.frequency === 'eot' || value.frequency === 'scene'
+  const frequency = value.frequency === 'eot' || value.frequency === 'scene' || value.frequency === 'daily'
     ? value.frequency
     : null
   const moveName = typeof value.moveName === 'string' ? value.moveName.trim() : ''
@@ -136,16 +158,28 @@ export const normalizeMapMoveUsage = (value: unknown): MapMoveUsageState | undef
     if (Object.keys(moves).length) byPlacementId[placementId] = moves
   }
 
-  return Object.keys(byPlacementId).length ? { byPlacementId } : undefined
+  const scene = normalizeMapMoveUsageScene(value.scene)
+  return Object.keys(byPlacementId).length
+    ? {
+        ...(scene === null ? {} : { scene }),
+        byPlacementId,
+      }
+    : undefined
 }
 
 export const getMapMoveUsageEntry = (
   usage: MapMoveUsageState | undefined,
   placementId: string,
   moveKey: string,
-): MapMoveUsageEntry | null => usage?.byPlacementId?.[placementId]?.[moveKey] ?? null
+  scene?: unknown,
+): MapMoveUsageEntry | null => {
+  const normalized = normalizeMapMoveUsage(usage)
+  if (!normalized || !mapMoveUsageSceneMatches(normalized, scene)) return null
+  return normalized.byPlacementId[placementId]?.[moveKey] ?? null
+}
 
 const cloneMapMoveUsage = (usage: MapMoveUsageState | undefined): MapMoveUsageState => ({
+  ...(usage?.scene === undefined ? {} : { scene: { ...usage.scene } }),
   byPlacementId: Object.fromEntries(
     Object.entries(usage?.byPlacementId ?? {}).map(([placementId, moves]) => [placementId, { ...moves }]),
   ),
@@ -159,6 +193,7 @@ export interface RecordMapMoveUsageInput {
   frequency: MapTrackedMoveFrequency
   currentRound?: number | null
   usedAt?: number
+  scene?: unknown
 }
 
 export const recordMapMoveUsage = ({
@@ -169,9 +204,13 @@ export const recordMapMoveUsage = ({
   frequency,
   currentRound,
   usedAt,
+  scene,
 }: RecordMapMoveUsageInput): MapMoveUsageState => {
-  const normalized = normalizeMapMoveUsage(usage) ?? { byPlacementId: {} }
-  const next = cloneMapMoveUsage(normalized)
+  const sceneAnchor = normalizeMapMoveUsageScene(scene)
+  const normalized = normalizeMapMoveUsage(usage)
+  const base = normalized && mapMoveUsageSceneMatches(normalized, sceneAnchor) ? normalized : { byPlacementId: {} }
+  const next = cloneMapMoveUsage(base)
+  if (sceneAnchor) next.scene = sceneAnchor
   const moves = next.byPlacementId[placementId] ? { ...next.byPlacementId[placementId] } : {}
   const previous = moves[moveKey]
   const previousUses = previous?.frequency === frequency ? previous.uses : 0

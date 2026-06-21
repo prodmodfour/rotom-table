@@ -44,6 +44,9 @@ export interface TokenMoveUsageMenuState {
   uses: number
   maxUses?: number
   remainingUses?: number
+  sceneUses?: number
+  sceneMaxUses?: number
+  sceneRemainingUses?: number
   lastUsedRound?: number | null
   nextAvailableRound?: number | null
 }
@@ -51,6 +54,7 @@ export interface TokenMoveUsageMenuState {
 export interface TokenMoveUsageContext {
   mapMoveUsage?: MapMoveUsageState
   sheetMoveUsage?: SheetMoveUsageState
+  activeScene?: unknown
   currentRound?: number | null
 }
 
@@ -165,7 +169,7 @@ export const buildTokenMoveUsageState = (
 
   if (parsed.kind === 'eot') {
     const state = eotMoveUsageState(
-      getMapMoveUsageEntry(context.mapMoveUsage, tokenId, moveKey),
+      getMapMoveUsageEntry(context.mapMoveUsage, tokenId, moveKey, context.activeScene),
       context.currentRound,
     )
     return {
@@ -186,7 +190,7 @@ export const buildTokenMoveUsageState = (
   if (parsed.kind === 'scene') {
     const maxUses = Math.max(1, parsed.usesPerPeriod ?? 1)
     const state = limitedMoveUsageState(
-      getMapMoveUsageEntry(context.mapMoveUsage, tokenId, moveKey),
+      getMapMoveUsageEntry(context.mapMoveUsage, tokenId, moveKey, context.activeScene),
       maxUses,
     )
     return {
@@ -204,20 +208,37 @@ export const buildTokenMoveUsageState = (
 
   if (parsed.kind === 'daily') {
     const maxUses = Math.max(1, parsed.usesPerPeriod ?? 1)
-    const state = limitedMoveUsageState(
+    const dailyState = limitedMoveUsageState(
       getSheetDailyMoveUsageEntry(context.sheetMoveUsage, moveKey),
       maxUses,
     )
+    const sceneEntry = getMapMoveUsageEntry(context.mapMoveUsage, tokenId, moveKey, context.activeScene)
+    const sceneState = limitedMoveUsageState(
+      sceneEntry?.frequency === 'daily' ? sceneEntry : null,
+      1,
+    )
+    const available = dailyState.available && sceneState.available
+    const label = sceneState.available
+      ? `Daily ${dailyState.remainingUses}/${dailyState.maxUses}`
+      : 'Daily scene used'
+    const title = !dailyState.available
+      ? usageLimitTitle(moveName, 'Daily', dailyState.uses, dailyState.maxUses, dailyState.remainingUses)
+      : sceneState.available
+        ? `${usageLimitTitle(moveName, 'Daily', dailyState.uses, dailyState.maxUses, dailyState.remainingUses)} Once per Scene.`
+        : `${moveName}: Daily use already spent this Scene. ${dailyState.remainingUses} of ${dailyState.maxUses} Daily uses remaining.`
     return {
       tracking: 'sheet',
       frequencyKind: 'daily',
-      label: `Daily ${state.remainingUses}/${state.maxUses}`,
-      title: usageLimitTitle(moveName, 'Daily', state.uses, state.maxUses, state.remainingUses),
-      available: state.available,
-      tone: state.available ? 'limited' : 'blocked',
-      uses: state.uses,
-      maxUses: state.maxUses,
-      remainingUses: state.remainingUses,
+      label,
+      title,
+      available,
+      tone: available ? 'limited' : 'blocked',
+      uses: dailyState.uses,
+      maxUses: dailyState.maxUses,
+      remainingUses: dailyState.remainingUses,
+      sceneUses: sceneState.uses,
+      sceneMaxUses: sceneState.maxUses,
+      sceneRemainingUses: sceneState.remainingUses,
     }
   }
 

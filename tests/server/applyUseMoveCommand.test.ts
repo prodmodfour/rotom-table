@@ -289,7 +289,7 @@ describe('applyUseMoveCommandUseCase', () => {
     expect(tracker.recordCount).toBe(1)
   })
 
-  it('records Daily move usage on the sheet without incrementing the map revision', () => {
+  it('records Daily move usage on the sheet and current map Scene', () => {
     const initialState = createState()
     const store = createStoreWithState(initialState)
     const snapshotCalls: AuthoritativeSessionState<TabletopMapV2>[] = []
@@ -317,7 +317,15 @@ describe('applyUseMoveCommandUseCase', () => {
       moveKey: 'hyper-beam',
       frequencyKind: 'daily',
       tracking: 'sheet',
-      usage: { uses: 1, maxUses: 2, remainingUses: 1, available: true },
+      usage: {
+        uses: 1,
+        maxUses: 2,
+        remainingUses: 1,
+        sceneUses: 1,
+        sceneMaxUses: 1,
+        sceneRemainingUses: 0,
+        available: false,
+      },
     })
     expect(sheetIo.writes).toHaveLength(1)
     expect(sheetIo.currentSheet.moveUsage).toEqual({
@@ -330,7 +338,13 @@ describe('applyUseMoveCommandUseCase', () => {
       },
     })
     const storedMap = getSessionMapState(result.state, 'arena-map')
-    expect(storedMap?.revision).toBe(parseMapRevision(0))
+    expect(storedMap?.revision).toBe(parseMapRevision(1))
+    expect(storedMap?.document.moveUsage?.byPlacementId['token-pikachu']?.['hyper-beam']).toMatchObject({
+      moveName: 'Hyper Beam',
+      frequency: 'daily',
+      uses: 1,
+      lastUsedRound: 1,
+    })
     expect(snapshotCalls).toHaveLength(1)
   })
 

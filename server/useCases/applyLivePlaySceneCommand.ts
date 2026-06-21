@@ -161,6 +161,7 @@ const applySceneChange = (
     nextMap: {
       ...context.map,
       activeScene: current,
+      moveUsage: undefined,
       updatedAt: timestamp,
     },
   }

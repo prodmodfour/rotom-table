@@ -204,6 +204,46 @@ describe('live-play patch application', () => {
     ])
   })
 
+  it('applies daily move usage patches to the current map Scene bucket', () => {
+    const map = baseMap({ activeScene: { name: 'Moonlit Rooftop', startedAt: 200 } })
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        ...patchBase(LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE, {
+          placementId: 'token-a',
+          moveName: 'Rest',
+          moveKey: 'rest',
+          frequency: 'Daily x2',
+          frequencyKind: 'daily',
+          tracking: 'sheet',
+          usage: { uses: 1, sceneUses: 1 },
+          moveLogEntry: {
+            at: 450,
+            userId: 'token-a',
+            userName: 'Pika',
+            moveName: 'Rest',
+            lines: ['Pika used Rest.', 'Frequency: Daily x2'],
+          },
+        }),
+        scopes: [{ kind: 'token', placementId: 'token-a', field: 'moveUsage' }],
+      }],
+    })
+
+    expect(result.ok).toBe(true)
+    expect(map.moveUsage).toEqual({
+      scene: { name: 'Moonlit Rooftop', startedAt: 200 },
+      byPlacementId: {
+        'token-a': {
+          rest: { moveName: 'Rest', frequency: 'daily', uses: 1 },
+        },
+      },
+    })
+  })
+
   it('applies terrain patches to one voxel cell', () => {
     const map = baseMap()
     const originalVoxels = map.voxels

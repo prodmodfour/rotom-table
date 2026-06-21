@@ -321,6 +321,19 @@ describe('live-play useMove commands', () => {
         },
       },
     })
+    expect(harness.storedMap.moveUsage).toEqual({
+      byPlacementId: {
+        'linked-token': {
+          'custom-daily-move': {
+            moveName: 'Custom Daily Move',
+            frequency: 'daily',
+            uses: 1,
+            lastUsedRound: 2,
+            updatedAt: 2_000,
+          },
+        },
+      },
+    })
     expect(harness.storedMap.metadata?.moveLog).toEqual([
       expect.objectContaining({
         at: 2_000,
@@ -336,7 +349,10 @@ describe('live-play useMove commands', () => {
       uses: 1,
       maxUses: 2,
       remainingUses: 1,
-      available: true,
+      sceneUses: 1,
+      sceneMaxUses: 1,
+      sceneRemainingUses: 0,
+      available: false,
     })
     expect(response.sheetUpdates).toEqual([
       {
@@ -384,6 +400,45 @@ describe('live-play useMove commands', () => {
       expect.objectContaining({ channel: 'sheets', type: 'updated', clientId: 'gm-client' }),
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_usemove_daily1' }),
     ]))
+  })
+
+  it('rejects a second Daily use in the same map Scene', async () => {
+    const harness = createHarness([{ name: 'Custom Daily Move', frequency: 'Daily x2' }], baseMap({
+      activeScene: { name: 'Moonlit Rooftop', startedAt: 1_500 },
+    }))
+    const firstCommand = useMoveCommand({
+      opId: 'op_usemove_daily_scene_first',
+      scopes: [
+        { kind: 'token', placementId: 'linked-token', field: 'moveUsage' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' },
+      ],
+      payload: { placementId: 'linked-token', moveName: 'Custom Daily Move' },
+    })
+    const secondCommand = useMoveCommand({
+      opId: 'op_usemove_daily_scene_second',
+      baseRevision: 5,
+      scopes: [
+        { kind: 'token', placementId: 'linked-token', field: 'moveUsage' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' },
+      ],
+      payload: { placementId: 'linked-token', moveName: 'Custom Daily Move' },
+    })
+
+    await execute(harness, firstCommand)
+    const second = await execute(harness, secondCommand)
+
+    expect(second.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      message: 'Custom Daily Move has already been used this Scene',
+    })
+    expect(harness.mapWrites).toHaveLength(1)
+    expect(harness.sheetWrites).toHaveLength(1)
+    expect(harness.storedSheet?.sheet.moveUsage).toEqual({
+      daily: {
+        'custom-daily-move': expect.objectContaining({ uses: 1 }),
+      },
+    })
   })
 
   it('returns the stored result and authoritative sheet data for duplicate Daily opIds', async () => {

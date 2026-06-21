@@ -26,6 +26,7 @@ describe('move usage helpers', () => {
   })
 
   it('records and normalizes map-scoped move usage', () => {
+    const scene = { name: 'Opening Skirmish', startedAt: 50 }
     const usage = recordMapMoveUsage({
       usage: undefined,
       placementId: 'token-1',
@@ -34,15 +35,18 @@ describe('move usage helpers', () => {
       frequency: 'scene',
       currentRound: 2,
       usedAt: 100,
+      scene,
     })
 
-    expect(getMapMoveUsageEntry(usage, 'token-1', 'thunderbolt')).toEqual({
+    expect(usage.scene).toEqual(scene)
+    expect(getMapMoveUsageEntry(usage, 'token-1', 'thunderbolt', scene)).toEqual({
       moveName: 'Thunderbolt',
       frequency: 'scene',
       uses: 1,
       lastUsedRound: 2,
       updatedAt: 100,
     })
+    expect(getMapMoveUsageEntry(usage, 'token-1', 'thunderbolt', { name: 'Next Scene', startedAt: 200 })).toBeNull()
 
     const normalized = normalizeMapMoveUsage({
       byPlacementId: {

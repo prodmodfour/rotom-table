@@ -155,7 +155,7 @@ export interface TabletopMapV2 {
   initiative?: InitiativeTrackerState
   /** Current GM-started scene shown to players in live play. */
   activeScene?: MapSceneState | null
-  /** Per-placement EOT/Scene move frequency usage for the current map scene. */
+  /** Per-placement EOT/Scene/Daily move frequency usage for the current map Scene. */
   moveUsage?: MapMoveUsageState
   metadata?: Record<string, unknown>
   createdAt?: number

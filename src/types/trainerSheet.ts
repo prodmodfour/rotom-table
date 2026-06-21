@@ -313,7 +313,7 @@ export interface TrainerSheet {
 
   /** Trainer's natural / weapon-attack moves. */
   movelist?: TrainerMove[]
-  /** Persistent Daily move frequency usage. EOT and Scene usage are map-scoped. */
+  /** Persistent Daily move frequency usage. EOT/Scene and per-Scene Daily locks are map-scoped. */
   moveUsage?: SheetMoveUsageState
   abilities?: TrainerAbilityEntry[]
   maneuvers?: TrainerManeuver[]

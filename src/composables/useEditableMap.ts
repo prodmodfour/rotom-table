@@ -244,6 +244,7 @@ export const useEditableMap = (
     assignIfChanged(target, 'placements', next.placements)
     assignIfChanged(target, 'lights', next.lights)
     assignIfChanged(target, 'initiative', next.initiative)
+    assignIfChanged(target, 'activeScene', next.activeScene)
     assignIfChanged(target, 'moveUsage', next.moveUsage)
     assignIfChanged(target, 'metadata', next.metadata)
     assignIfChanged(target, 'createdAt', next.createdAt)

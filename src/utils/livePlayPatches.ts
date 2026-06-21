@@ -16,8 +16,9 @@ import type {
   SheetPlacement,
   TabletopMap,
 } from '~/types/map'
-import type { MapTrackedMoveFrequency } from '~/types/moveUsage'
+import type { MapMoveUsageEntry, MapTrackedMoveFrequency } from '~/types/moveUsage'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import { mapMoveUsageSceneMatches } from './moveUsage'
 import { deepCloneJson, sameJsonValue } from './serialization'
 
 export type LivePlayPatchApplyFailureReason =
@@ -264,36 +265,58 @@ const applyTerrainPatch = (map: TabletopMap, payload: unknown): LivePlayPatchesR
   return failed('invalid-patch', 'map.terrain patches require current to be a voxel or null')
 }
 
-const mapTrackedFrequency = (value: unknown): MapTrackedMoveFrequency | null => (
-  value === 'eot' || value === 'scene' ? value : null
-)
+const mapTrackedFrequency = (value: unknown): MapTrackedMoveFrequency | null => {
+  if (value === 'eot' || value === 'scene' || value === 'daily') return value
+  const text = typeof value === 'string' ? value.trim().toLowerCase() : ''
+  if (/^eot\b/.test(text)) return 'eot'
+  if (/^scene\b/.test(text)) return 'scene'
+  if (/^daily\b/.test(text)) return 'daily'
+  return null
+}
 
 const applyMoveUsagePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
   if (!isRecord(payload) || !nonEmptyString(payload.placementId) || !nonEmptyString(payload.moveKey) || !nonEmptyString(payload.moveName)) {
     return failed('invalid-patch', 'token.moveUsage patches require placementId, moveKey, and moveName')
   }
 
-  if (payload.tracking === 'none' || payload.tracking === 'sheet') {
+  if (payload.tracking === 'none') {
     appendMetadataEntry(map, 'moveLog', payload.moveLogEntry)
     return null
   }
 
-  if (payload.tracking !== 'map') return null
+  const frequency = mapTrackedFrequency(payload.frequencyKind) ?? mapTrackedFrequency(payload.frequency)
+  const shouldTrackMapUsage = payload.tracking === 'map' || (payload.tracking === 'sheet' && frequency === 'daily')
+  if (!shouldTrackMapUsage) {
+    appendMetadataEntry(map, 'moveLog', payload.moveLogEntry)
+    return null
+  }
+  if (payload.tracking !== 'map' && payload.tracking !== 'sheet') return null
   const usage = isRecord(payload.usage) ? payload.usage : null
-  const frequency = mapTrackedFrequency(payload.frequency)
-  const uses = typeof usage?.uses === 'number' && Number.isFinite(usage.uses) ? Math.max(0, Math.trunc(usage.uses)) : null
+  if (!usage && payload.tracking === 'sheet') {
+    appendMetadataEntry(map, 'moveLog', payload.moveLogEntry)
+    return null
+  }
+  const rawUses = frequency === 'daily' && typeof usage?.sceneUses === 'number' ? usage.sceneUses : usage?.uses
+  const uses = typeof rawUses === 'number' && Number.isFinite(rawUses) ? Math.max(0, Math.trunc(rawUses)) : null
   if (!frequency || uses === null) return failed('invalid-patch', 'map-tracked token.moveUsage patches require frequency and usage.uses')
 
   appendMetadataEntry(map, 'moveLog', payload.moveLogEntry)
-  const moveUsage = deepCloneJson(map.moveUsage ?? { byPlacementId: {} })
+  const scene = isMapSceneState(map.activeScene) ? cloneScene(map.activeScene) : undefined
+  const entry: MapMoveUsageEntry = {
+    moveName: payload.moveName,
+    frequency,
+    uses,
+    ...(typeof usage?.lastUsedRound === 'number' ? { lastUsedRound: usage.lastUsedRound } : {}),
+  }
+  const sourceMoveUsage = mapMoveUsageSceneMatches(map.moveUsage, scene)
+    ? map.moveUsage
+    : undefined
+  const moveUsage = deepCloneJson(sourceMoveUsage ?? { byPlacementId: {} })
+  if (scene) moveUsage.scene = scene
+  else delete moveUsage.scene
   moveUsage.byPlacementId[payload.placementId] = {
     ...(moveUsage.byPlacementId[payload.placementId] ?? {}),
-    [payload.moveKey]: {
-      moveName: payload.moveName,
-      frequency,
-      uses,
-      ...(typeof usage?.lastUsedRound === 'number' ? { lastUsedRound: usage.lastUsedRound } : {}),
-    },
+    [payload.moveKey]: entry,
   }
   map.moveUsage = moveUsage
   return null
@@ -308,6 +331,7 @@ const applyScenePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRej
     return failed('invalid-patch', 'map.scene patches require current to be a scene state or null')
   }
   map.activeScene = payload.current === null ? null : cloneScene(payload.current)
+  delete map.moveUsage
   return null
 }
 
