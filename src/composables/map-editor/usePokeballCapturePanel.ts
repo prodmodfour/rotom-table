@@ -12,6 +12,7 @@ import {
   type TokenPokeballOption,
 } from '~/utils/pokeballCapture'
 import { getErrorMessage } from '~/utils/errorMessages'
+import { playDiceRollSound } from '~/utils/soundEffects'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { MoveAutomationFeedbackState, MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -239,6 +240,7 @@ export const usePokeballCapturePanel = ({
 
     pendingCaptureOutcomeApplier = applyOutcomeOnce
     pokeballCaptureFeedback.value = feedback
+    void playDiceRollSound({ dedupeKey: feedback.id })
     notifyPokeballCaptureCallback('feedback', onPokeballFeedback, { feedback })
     scheduleFeedbackStep(D20_ROLL_ANIMATION_MS, () => {
       setFeedbackPhase('hit-roll')

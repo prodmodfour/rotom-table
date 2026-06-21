@@ -4,6 +4,7 @@ import type { MoveAutomationFeedbackPhase, MoveAutomationFeedbackState } from '~
 import { MOVE_AUTOMATION_FEEDBACK_TIMING_MS } from '~/composables/map-editor/useMoveAutomationPanel'
 import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
 import { MOVE_VFX_TONE, moveVfxColorForTone } from '~/utils/moveAnimationPalette'
+import { playDiceRollSound } from '~/utils/soundEffects'
 import type { PokeballCaptureAttemptResult } from '~/utils/pokeballCapture'
 
 type MaybePromise<T> = T | Promise<T>
@@ -160,6 +161,7 @@ export const useMapActionPokeballCapture = (options: UseMapActionPokeballCapture
     const feedbackStillCurrent = () => remotePokeballCaptureFeedback.value?.id === replayFeedback.id
 
     remotePokeballCaptureFeedback.value = replayFeedback
+    void playDiceRollSound({ dedupeKey: replayFeedback.id })
     scheduleRemoteFeedbackStep(MOVE_AUTOMATION_FEEDBACK_TIMING_MS.d20RollAnimation, () => {
       setRemoteFeedbackPhase(replayFeedback, 'hit-roll')
     })

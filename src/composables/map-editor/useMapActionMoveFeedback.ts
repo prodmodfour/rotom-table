@@ -5,6 +5,7 @@ import {
   moveAutomationFeedbackHasEffectivenessPhase,
   moveAutomationFeedbackHasFinalResolutionPhase,
 } from '~/composables/map-editor/useMoveAutomationPanel'
+import { playDiceRollSound } from '~/utils/soundEffects'
 import type { MoveAutomationFeedbackPhase, MoveAutomationFeedbackState } from '~/types/moveAutomation'
 
 type MaybePromise<T> = T | Promise<T>
@@ -78,6 +79,7 @@ export const useMapActionMoveFeedback = (options: UseMapActionMoveFeedbackOption
     const feedbackStillCurrent = () => remoteMoveAutomationFeedback.value?.id === replayFeedback.id
 
     remoteMoveAutomationFeedback.value = replayFeedback
+    void playDiceRollSound({ dedupeKey: replayFeedback.id })
     scheduleRemoteFeedbackStep(MOVE_AUTOMATION_FEEDBACK_TIMING_MS.d20RollAnimation, () => {
       setRemoteFeedbackPhase(replayFeedback, 'hit-roll')
     })

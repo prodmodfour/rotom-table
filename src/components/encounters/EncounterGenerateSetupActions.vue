@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { playDiceRollSound } from '~/utils/soundEffects'
+
 const preview = defineModel<boolean>('preview', { required: true })
 
 defineProps<{
@@ -14,6 +16,11 @@ const emit = defineEmits<{
   (event: 'generate'): void
   (event: 'spawn'): void
 }>()
+
+const rollPreview = () => {
+  void playDiceRollSound()
+  emit('roll-preview')
+}
 </script>
 
 <template>
@@ -28,7 +35,7 @@ const emit = defineEmits<{
         type="button"
         class="ghost-button"
         :disabled="!hasSelectedTable || busy"
-        @click="emit('roll-preview')"
+        @click="rollPreview"
       >
         Re-roll preview
       </button>

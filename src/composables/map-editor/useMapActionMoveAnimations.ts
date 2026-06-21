@@ -1,4 +1,6 @@
-import type { MoveAnimationEvent } from '~/types/moveAnimation'
+import { getCurrentScope, onScopeDispose } from 'vue'
+import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
+import { playDiceRollSound } from '~/utils/soundEffects'
 
 type MaybePromise<T> = T | Promise<T>
 
@@ -48,6 +50,35 @@ export const actorPlacementIdForMoveAnimationBatch = (
  * persist gameplay state.
  */
 export const useMapActionMoveAnimations = (options: UseMapActionMoveAnimationsOptions) => {
+  const soundTimers: Array<ReturnType<typeof setTimeout>> = []
+
+  const clearSoundTimers = () => {
+    while (soundTimers.length) {
+      const timer = soundTimers.pop()
+      if (timer) clearTimeout(timer)
+    }
+  }
+
+  const scope = getCurrentScope()
+  const canDeferSound = Boolean(scope)
+  if (scope) onScopeDispose(clearSoundTimers)
+
+  const scheduleDiceRollSounds = (events: readonly MoveAnimationEvent[]) => {
+    for (const event of events) {
+      if (event.kind !== MOVE_VFX_KIND.roll) continue
+
+      const play = () => {
+        void playDiceRollSound({ dedupeKey: event.id })
+      }
+      const delayMs = Math.max(0, Math.round(event.startOffsetMs ?? 0))
+      if (delayMs === 0 || !canDeferSound) {
+        play()
+        continue
+      }
+      soundTimers.push(setTimeout(play, delayMs))
+    }
+  }
+
   const publishMoveAnimations = (events: readonly MoveAnimationEvent[]) => {
     if (!options.publishMoveAnimations) return
 
@@ -65,6 +96,7 @@ export const useMapActionMoveAnimations = (options: UseMapActionMoveAnimationsOp
   }
 
   const enqueueAndBroadcastMoveAnimations = (events: readonly MoveAnimationEvent[]): MaybePromise<unknown> => {
+    scheduleDiceRollSounds(events)
     const localResult = options.enqueueLocalMoveAnimations(events)
 
     if (isPromiseLike(localResult)) {
@@ -80,7 +112,10 @@ export const useMapActionMoveAnimations = (options: UseMapActionMoveAnimationsOp
 
   const replayMoveAnimations = (
     events: readonly MoveAnimationEvent[],
-  ): MaybePromise<unknown> => options.enqueueLocalMoveAnimations(events)
+  ): MaybePromise<unknown> => {
+    scheduleDiceRollSounds(events)
+    return options.enqueueLocalMoveAnimations(events)
+  }
 
   return {
     enqueueAndBroadcastMoveAnimations,

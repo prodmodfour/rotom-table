@@ -82,6 +82,7 @@ import { getErrorMessage } from '~/utils/errorMessages'
 import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
 import { moveFrequencyTracksOnMap, moveFrequencyTracksOnSheet, parseMoveFrequency } from '~/utils/moveUsage'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
+import { playDiceRollSound } from '~/utils/soundEffects'
 import type { AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapFieldEffects, MapHazardV2, TabletopMap } from '~/types/map'
@@ -1688,6 +1689,7 @@ export const useMoveAutomationPanel = ({
 
     pendingFeedbackTransactionApplier = applyTransactionOnce
     moveAutomationFeedback.value = feedback
+    void playDiceRollSound({ dedupeKey: feedback.id })
     scheduleFeedbackStep(D20_ROLL_ANIMATION_MS, () => {
       setFeedbackPhase('hit-roll')
     })

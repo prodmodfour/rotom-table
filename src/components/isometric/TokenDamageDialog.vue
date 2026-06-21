@@ -9,6 +9,7 @@ import {
   type DamageBaseDef,
 } from '~/utils/ptuDamage'
 import { POKEMON_TYPES } from '~/utils/typeChart'
+import { playDiceRollSound } from '~/utils/soundEffects'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type {
   DamageDialogMultiplierTone,
@@ -55,6 +56,7 @@ const handleDbChange = () => {
 const handleRoll = () => {
   if (!props.dbDef) return
   props.dialog.roll = rollDamageBase(props.dbDef)
+  void playDiceRollSound()
 }
 
 defineExpose({ focusAmount })

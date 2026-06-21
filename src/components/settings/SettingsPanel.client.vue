@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
 import { useInitiativeAutoFocusSettings } from '~/composables/useInitiativeAutoFocusSettings'
 import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
+import { useSoundEffectSettings } from '~/composables/useSoundEffectSettings'
 import {
   ACTION_SPLASH_DISPLAY_DURATION_STEP_MS,
   ACTION_SPLASH_SPEED_LINES_DURATION_STEP_MS,
@@ -55,6 +56,13 @@ const {
   toggleInitiativeAutoFocusEnabled,
 } = useInitiativeAutoFocusSettings()
 const {
+  soundEffectsEnabled,
+  soundEffectsStatusLabel,
+  soundEffectsStatusTitle,
+  soundEffectsToggleLabel,
+  toggleSoundEffectsEnabled,
+} = useSoundEffectSettings()
+const {
   actionSplashDisplayDurationMs,
   actionSplashDisplayDurationLabel,
   actionSplashDisplayDurationTitle,
@@ -85,6 +93,9 @@ const moveAnimationsToggleText = computed(() => (
 ))
 const initiativeAutoFocusToggleText = computed(() => (
   initiativeAutoFocusEnabled.value ? 'Auto-focus on' : 'Auto-focus off'
+))
+const soundEffectsToggleText = computed(() => (
+  soundEffectsEnabled.value ? 'SFX on' : 'SFX off'
 ))
 
 const openCampaignFolderBrowser = () => {
@@ -239,6 +250,34 @@ const handleCampaignFolderSelection = (event: Event) => {
             Reset to {{ DEFAULT_ACTION_SPLASH_SPEED_LINES_DURATION_MS }} ms
           </button>
         </div>
+      </div>
+    </section>
+
+    <section class="settings-group" aria-labelledby="sound-effects-settings-title">
+      <div class="settings-group__copy">
+        <h2 id="sound-effects-settings-title">Sound effects</h2>
+        <p>{{ soundEffectsStatusTitle }}</p>
+      </div>
+
+      <div class="settings-group__control">
+        <span
+          class="settings-status"
+          :class="{ 'is-disabled': !soundEffectsEnabled }"
+        >
+          {{ soundEffectsStatusLabel }}
+        </span>
+        <button
+          type="button"
+          class="settings-toggle sound-effect-toggle"
+          :class="{ 'is-disabled': !soundEffectsEnabled }"
+          :aria-pressed="soundEffectsEnabled"
+          :aria-label="soundEffectsToggleLabel"
+          :title="soundEffectsStatusTitle"
+          @click="toggleSoundEffectsEnabled"
+        >
+          <span class="settings-toggle__eyebrow">Audio</span>
+          <span>{{ soundEffectsToggleText }}</span>
+        </button>
       </div>
     </section>
 
