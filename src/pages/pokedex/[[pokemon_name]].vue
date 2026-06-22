@@ -17,6 +17,7 @@ import { pokedexEntryPath, type PokedexEntryDetail } from '~/utils/pokedex/entry
 import { isPokedexPath } from '~/utils/pokedex/routes'
 
 definePageMeta({
+  hasPageSpecificGmAdminPanel: true,
   // Keep the browser mounted between /pokedex and /pokedex/:pokemon_name so
   // selecting a Pokémon updates the detail pane in-place instead of feeling
   // like a whole new page load.

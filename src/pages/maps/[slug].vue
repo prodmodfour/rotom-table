@@ -76,6 +76,7 @@ import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
 definePageMeta({
+  hasPageSpecificGmAdminPanel: true,
   key: (route) => `map-${routeSlugParam(route.params)}`,
 })
 

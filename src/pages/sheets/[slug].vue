@@ -31,6 +31,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 // to another's forces a fresh component instance — otherwise Vue would
 // reuse this one and our editable copy would still point at the old slug.
 definePageMeta({
+  hasPageSpecificGmAdminPanel: true,
   key: (route) => `sheet-${routeSlugParam(route.params)}`,
 })
 
