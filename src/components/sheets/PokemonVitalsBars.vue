@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { CharacterSheet } from '~/types/characterSheet'
+import {
+  getHpBarDisplayMetrics,
+  hpBarPercentFromRatio,
+  hpTierForRatio,
+} from '~/utils/hpBarDisplay'
 import { resolvePokemonVitalsProgress } from '~/utils/sheets/pokemonVitals'
 
 const props = defineProps<{
@@ -16,18 +21,32 @@ const barStyle = (percent: number): Record<string, string> => ({ inlineSize: `${
 const meterMax = (value: number): number => Math.max(1, Math.floor(value))
 const meterNow = (value: number, max: number): number => Math.min(meterMax(max), Math.max(0, Math.floor(value)))
 
-const hpFillClass = computed(() => {
-  const percent = hp.value?.percent ?? 0
-  if (percent <= 25) return 'pokemon-vitals-bars__fill--hp-critical'
-  if (percent <= 50) return 'pokemon-vitals-bars__fill--hp-wounded'
-  return 'pokemon-vitals-bars__fill--hp-healthy'
-})
+const hpMetrics = computed(() => (
+  hp.value ? getHpBarDisplayMetrics(hp.value) : null
+))
+
+const hpTier = computed(() => (
+  hpTierForRatio(hpMetrics.value?.currentRatio ?? 0)
+))
+
+const hpFillClass = computed(() => `pokemon-vitals-bars__fill--hp-${hpTier.value}`)
+const hpFillStyle = computed(() => ({
+  inlineSize: hpBarPercentFromRatio(hpMetrics.value?.currentRatio ?? 0),
+}))
+const hpBlockedStyle = computed(() => ({
+  inlineSize: hpBarPercentFromRatio(hpMetrics.value?.blockedRatio ?? 0),
+}))
+const hasHpBlocked = computed(() => (hpMetrics.value?.blockedRatio ?? 0) > 0)
+const hpMeterMax = computed(() => meterMax(hpMetrics.value?.trackMaxHp ?? hp.value?.maxHp ?? 0))
+const hpMeterNow = computed(() => meterNow(hp.value?.currentHp ?? 0, hpMeterMax.value))
 
 const hpAriaText = computed(() => {
   const model = hp.value
   if (!model) return ''
   const fullMax = model.fullMaxHp !== model.maxHp ? `; full maximum ${formatInteger(model.fullMaxHp)}` : ''
-  return `HP ${formatInteger(model.currentHp)} of ${formatInteger(model.maxHp)}${fullMax}`
+  const blockedHp = Math.max(0, Math.floor(model.fullMaxHp) - Math.floor(model.maxHp))
+  const injuries = blockedHp > 0 ? `; injuries block ${formatInteger(blockedHp)} HP` : ''
+  return `HP ${formatInteger(model.currentHp)} of ${formatInteger(model.maxHp)}${fullMax}${injuries}`
 })
 
 const experienceAriaText = computed(() => {
@@ -42,7 +61,8 @@ const experienceAriaText = computed(() => {
   <span v-if="vitals" class="pokemon-vitals-bars">
     <span
       v-if="hp"
-      class="pokemon-vitals-bars__row"
+      class="pokemon-vitals-bars__row pokemon-vitals-bars__row--hp"
+      :data-hp-tier="hpTier"
       :title="hpAriaText"
     >
       <span class="pokemon-vitals-bars__label">HP</span>
@@ -51,14 +71,20 @@ const experienceAriaText = computed(() => {
         role="meter"
         aria-label="Current HP"
         aria-valuemin="0"
-        :aria-valuemax="meterMax(hp.maxHp)"
-        :aria-valuenow="meterNow(hp.currentHp, hp.maxHp)"
+        :aria-valuemax="hpMeterMax"
+        :aria-valuenow="hpMeterNow"
         :aria-valuetext="hpAriaText"
+        :data-hp-tier="hpTier"
       >
         <span
           class="pokemon-vitals-bars__fill pokemon-vitals-bars__fill--hp"
           :class="hpFillClass"
-          :style="barStyle(hp.percent)"
+          :style="hpFillStyle"
+        />
+        <span
+          v-if="hasHpBlocked"
+          class="pokemon-vitals-bars__blocked hp-bar__blocked"
+          :style="hpBlockedStyle"
         />
       </span>
       <span class="pokemon-vitals-bars__value">{{ formatInteger(hp.currentHp) }}/{{ formatInteger(hp.maxHp) }}</span>
@@ -146,16 +172,26 @@ const experienceAriaText = computed(() => {
   transition: inline-size 0.18s ease;
 }
 
+.pokemon-vitals-bars__blocked {
+  position: absolute;
+  inset-block: 0;
+  inset-inline: auto 0;
+  inline-size: 0;
+  block-size: 100%;
+  border-radius: 0 999px 999px 0;
+  transition: inline-size 0.18s ease;
+}
+
 .pokemon-vitals-bars__fill--hp-healthy {
-  background: linear-gradient(90deg, #37b86f, #7ee08d);
+  background: var(--map-hp-healthy);
 }
 
 .pokemon-vitals-bars__fill--hp-wounded {
-  background: linear-gradient(90deg, #d99b2f, #f3d15a);
+  background: var(--map-hp-wounded);
 }
 
 .pokemon-vitals-bars__fill--hp-critical {
-  background: linear-gradient(90deg, #ba3b3b, #f06464);
+  background: var(--map-hp-critical);
 }
 
 .pokemon-vitals-bars__fill--xp {
