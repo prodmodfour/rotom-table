@@ -60,7 +60,7 @@ const initiativeScoreLabel = computed(() => {
   bottom: 0.12rem;
   z-index: 2;
   display: block;
-  color: var(--ink-bright);
+  color: var(--accent);
   font-size: clamp(0.58rem, 0.75vw, 0.72rem);
   font-weight: 900;
   line-height: 1;
