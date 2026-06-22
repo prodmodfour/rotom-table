@@ -31,6 +31,7 @@ const {
   levelFromExperience,
   levelIsExperienceDerived,
   experienceToNextLevel,
+  setLevel,
   fullMaxHp,
   maxHp,
   currentHp,
@@ -118,6 +119,7 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
       :nature-minus-display="natureMinusDisplay"
       :can-edit-sheet="canEditSheet"
       :can-manage-player-access="canManagePlayerAccess"
+      @set-level="setLevel"
       @open-healing="openHealingModal"
     />
 

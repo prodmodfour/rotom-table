@@ -2,6 +2,7 @@ import { computed, nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { formatLookupList, usePokemonSheetDerived } from '~/composables/sheets/usePokemonSheetDerived'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
+import { pokemonExperienceNeededForLevel } from '~/utils/sheets/pokemonExperience'
 import type { CharacterSheet } from '~/types/characterSheet'
 
 const makeSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
@@ -454,6 +455,25 @@ describe('usePokemonSheetDerived', () => {
 
     expect(sheet.value?.level).toBe(20)
     expect(derived.levelIsExperienceDerived.value).toBe(false)
+  })
+
+  it('syncs total experience to the level threshold when level is edited manually', async () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({ level: 10, totalExp: 90 }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    derived.setLevel(20)
+    await nextTick()
+
+    expect(sheet.value?.level).toBe(20)
+    expect(sheet.value?.totalExp).toBe(pokemonExperienceNeededForLevel(20))
+    expect(derived.levelFromExperience.value).toBe(20)
+    expect(derived.levelIsExperienceDerived.value).toBe(true)
+
+    sheet.value!.totalExp = 215
+    await nextTick()
+
+    expect(sheet.value?.level).toBe(14)
+    expect(derived.experienceToNextLevel.value).toBe(5)
   })
 
   it('formats lookup lists for nullable arrays', () => {

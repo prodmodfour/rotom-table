@@ -30,6 +30,7 @@ import { resolveSheetPassiveTypeEffectiveness } from '~/utils/sheetPassiveAbilit
 import {
   calculatePokemonExperienceToNextLevel,
   calculatePokemonLevelFromExperience,
+  resolvePokemonExperienceForLevel,
 } from '~/utils/sheets/pokemonExperience'
 import { resolvePokemonTrainingFeatureEffects } from '~/utils/sheets/pokemonTrainingFeatures'
 import {
@@ -115,6 +116,14 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const levelFromExperience = computed(() => calculatePokemonLevelFromExperience(sheet.value?.totalExp))
   const levelIsExperienceDerived = computed(() => levelFromExperience.value != null)
   const experienceToNextLevel = computed(() => calculatePokemonExperienceToNextLevel(sheet.value?.totalExp))
+
+  const setLevel = (value: unknown) => {
+    if (!sheet.value) return
+    const syncedExperience = resolvePokemonExperienceForLevel(value)
+    if (!syncedExperience) return
+    sheet.value.level = syncedExperience.level
+    sheet.value.totalExp = syncedExperience.totalExp
+  }
 
   watch(
     () => [sheet.value, levelFromExperience.value] as const,
@@ -336,6 +345,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     levelFromExperience,
     levelIsExperienceDerived,
     experienceToNextLevel,
+    setLevel,
     fullMaxHp,
     maxHp,
     currentHp,

@@ -4,6 +4,7 @@ import {
   calculatePokemonLevelFromExperience,
   POKEMON_EXPERIENCE_CHART,
   pokemonExperienceNeededForLevel,
+  resolvePokemonExperienceForLevel,
   resolvePokemonExperienceProgress,
 } from '~/utils/sheets/pokemonExperience'
 
@@ -49,6 +50,13 @@ describe('pokemon experience helpers', () => {
     expect(pokemonExperienceNeededForLevel(7)).toBe(60)
     expect(pokemonExperienceNeededForLevel(100)).toBe(20555)
     expect(pokemonExperienceNeededForLevel(999)).toBe(20555)
+  })
+
+  it('resolves the normalized level and matching total experience threshold', () => {
+    expect(resolvePokemonExperienceForLevel(undefined)).toBeUndefined()
+    expect(resolvePokemonExperienceForLevel(7)).toEqual({ level: 7, totalExp: 60 })
+    expect(resolvePokemonExperienceForLevel(7.9)).toEqual({ level: 7, totalExp: 60 })
+    expect(resolvePokemonExperienceForLevel(999)).toEqual({ level: 100, totalExp: 20555 })
   })
 
   it('resolves current-level XP progress toward the next level', () => {

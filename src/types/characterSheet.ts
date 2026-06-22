@@ -164,7 +164,9 @@ export interface CharacterSheet {
   nickname: string
   /** Matches a `species` value in `data/reference/pokedex.json`; blank means no species selected yet. */
   species: string
+  /** Current level. When edited in the sheet UI, totalExp is synced to this level's PTU threshold. */
   level: number
+  /** Editable total experience. When edited in the sheet UI, level is synced from the PTU experience chart. */
   totalExp?: number
   /** Legacy/manual cache. The sheet UI derives this from totalExp and the PTU experience chart. */
   toNextLevel?: number

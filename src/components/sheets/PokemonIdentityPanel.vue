@@ -27,6 +27,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  'set-level': [value: unknown]
   'open-healing': []
 }>()
 
@@ -93,14 +94,15 @@ const loyaltyModel = computed({
           </button>
           <span
             class="badge"
-            :title="levelIsExperienceDerived ? `Level ${levelFromExperience} from Total EXP` : 'Manual level'"
+            :title="levelIsExperienceDerived ? `Level ${levelFromExperience} from Total EXP; editing level updates Total EXP` : 'Manual level; editing level sets matching Total EXP'"
           >
             Lv
             <EditableCell
-              v-model="sheet.level"
+              :model-value="sheet.level"
               type="number"
               :min="1"
-              :readonly="levelIsExperienceDerived"
+              :max="100"
+              @update:model-value="emit('set-level', $event)"
             />
           </span>
           <label v-if="canManagePlayerAccess" class="badge player-toggle" :class="{ player: sheet.player }" title="Player">
@@ -116,7 +118,7 @@ const loyaltyModel = computed({
       <dl class="identity__stats">
         <div>
           <dt>Total EXP</dt>
-          <dd><EditableCell v-model="sheet.totalExp" type="number" /></dd>
+          <dd><EditableCell v-model="sheet.totalExp" type="number" :min="0" /></dd>
         </div>
         <div>
           <dt>To Next Lvl</dt>
