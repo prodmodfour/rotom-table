@@ -41,6 +41,7 @@ const emit = defineEmits<{
             <td class="kv-name">
               <EditableCell
                 :model-value="row.ability.name"
+                type="select"
                 placeholder="Ability"
                 :options="SHEET_ABILITY_NAME_OPTIONS"
                 @update:model-value="(v) => setLookupAbilityName(row.ability, v)"

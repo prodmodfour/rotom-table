@@ -103,6 +103,7 @@ const {
             <td class="move-name">
               <EditableCell
                 :model-value="row.move.name"
+                type="select"
                 placeholder="Move"
                 :options="SHEET_MOVE_NAME_OPTIONS"
                 :readonly="row.automatic"
