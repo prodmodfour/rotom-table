@@ -40,11 +40,12 @@ describe('usePokemonNatureControls', () => {
     expect(sheet.natureMod).toEqual({ plus: undefined, minus: undefined })
   })
 
-  it('exposes gender/nature options and updates displays reactively', async () => {
+  it('exposes species-valid gender options and updates displays reactively', async () => {
     const sheet = ref<CharacterSheet | null>(makeSheet('Adamant'))
     const controls = usePokemonNatureControls(sheet)
 
-    expect(controls.genderOptions).toBe(POKEMON_GENDER_OPTIONS)
+    expect(controls.genderOptions.value).toEqual(['Male', 'Female'])
+    expect(sheet.value?.gender).toBe('Male')
     expect(controls.natureOptions).toContain('Adamant')
     expect(controls.naturePlusDisplay.value).toBe('ATK +2')
     expect(controls.natureMinusDisplay.value).toBe('SATK -2')
@@ -55,5 +56,23 @@ describe('usePokemonNatureControls', () => {
     expect(controls.naturePlusDisplay.value).toBe('HP +1')
     expect(controls.natureMinusDisplay.value).toBe('SPD -2')
     expect(sheet.value?.natureMod).toEqual({ plus: 'hp', minus: 'spd' })
+
+    sheet.value!.species = 'chansey'
+    await nextTick()
+
+    expect(controls.genderOptions.value).toEqual(['Female'])
+    expect(sheet.value?.gender).toBe('Female')
+
+    sheet.value!.species = 'Ditto'
+    await nextTick()
+
+    expect(controls.genderOptions.value).toEqual(['Genderless'])
+    expect(sheet.value?.gender).toBe('Genderless')
+
+    sheet.value!.species = 'Not A Real Species'
+    await nextTick()
+
+    expect(controls.genderOptions.value).toBe(POKEMON_GENDER_OPTIONS)
+    expect(sheet.value?.gender).toBe('Genderless')
   })
 })

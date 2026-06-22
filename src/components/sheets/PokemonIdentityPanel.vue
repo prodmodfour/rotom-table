@@ -137,6 +137,7 @@ const loyaltyModel = computed({
               v-model="sheet.gender"
               type="select"
               :options="genderOptions"
+              :allow-empty-option="false"
               placeholder="—"
             />
           </dd>

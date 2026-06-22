@@ -2,6 +2,7 @@ import pokedexData from '~~/data/reference/pokedex.json'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { PokedexRecord } from '~/types/pokemon'
 import { pokemonCatalogBySpecies } from '~~/data/pokemonCatalog'
+import { toPokedexSlug } from '~/utils/pokedex/searchFieldValues'
 import { folderFromGlobKey } from '~/utils/sheetFolders'
 
 // ---------------------------------------------------------------------------
@@ -42,12 +43,25 @@ export const characterSheetsBySlug = new Map(characterSheets.map((sheet) => [she
 // data over the app-owned PTU species reference data.
 // ---------------------------------------------------------------------------
 
+const pokedexRecords = pokedexData as PokedexRecord[]
+
 const pokedexBySpecies = new Map<string, PokedexRecord>(
-  (pokedexData as PokedexRecord[]).map((entry) => [entry.species, entry]),
+  pokedexRecords.map((entry) => [entry.species, entry]),
 )
 
-export const getPokedexEntry = (species: string): PokedexRecord | null =>
-  pokedexBySpecies.get(species) ?? null
+const pokedexBySpeciesSlug = new Map<string, PokedexRecord>()
+for (const entry of pokedexRecords) {
+  const slug = toPokedexSlug(entry.species)
+  if (slug && !pokedexBySpeciesSlug.has(slug)) pokedexBySpeciesSlug.set(slug, entry)
+}
+
+export const getPokedexEntry = (species: string): PokedexRecord | null => {
+  const exactEntry = pokedexBySpecies.get(species)
+  if (exactEntry) return exactEntry
+
+  const slug = toPokedexSlug(species)
+  return slug ? pokedexBySpeciesSlug.get(slug) ?? null : null
+}
 
 export const getSpriteUrl = (species: string): string | null =>
   pokemonCatalogBySpecies.get(species)?.spriteUrl ?? null

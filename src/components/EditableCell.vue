@@ -37,6 +37,8 @@ interface Props {
    * Empty string is treated as "no value" for selects.
    */
   options?: readonly (string | EditableCellOption)[]
+  /** For selects, include an empty placeholder option. */
+  allowEmptyOption?: boolean
   /** Disable editing — render value as plain text. */
   readonly?: boolean
   /** Optional formatter applied to the displayed value (not the editor). */
@@ -56,6 +58,7 @@ const props = withDefaults(defineProps<Props>(), {
   type: 'text',
   placeholder: '',
   options: () => [],
+  allowEmptyOption: true,
   readonly: false,
   format: undefined,
   emptyText: '—',
@@ -129,6 +132,7 @@ const {
         :type="type"
         :placeholder="placeholder"
         :options="options"
+        :allow-empty-option="allowEmptyOption"
         :min="min"
         :max="max"
         @input="onEditorInput"

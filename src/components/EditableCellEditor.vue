@@ -13,11 +13,13 @@ const props = withDefaults(defineProps<{
   type: EditableCellType
   placeholder?: string
   options?: readonly (string | EditableCellOption)[]
+  allowEmptyOption?: boolean
   min?: number
   max?: number
 }>(), {
   placeholder: '',
   options: () => [],
+  allowEmptyOption: true,
   min: undefined,
   max: undefined,
 })
@@ -51,7 +53,7 @@ const updateDraftFromEvent = (event: Event) => {
   draft.value = textValueFromEvent(event)
 }
 
-const onSelectChange = (event: Event) => {
+const commitSelectFromEvent = (event: Event) => {
   updateDraftFromEvent(event)
   emit('commit')
 }
@@ -91,11 +93,11 @@ defineExpose({ focusInput })
     ref="inputEl"
     :value="draft"
     class="editable-cell__input editable-cell__input--select"
-    @change="onSelectChange"
-    @blur="emit('commit')"
+    @change="commitSelectFromEvent"
+    @blur="commitSelectFromEvent"
     @keydown="onKeydown"
   >
-    <option value="">{{ placeholder || '—' }}</option>
+    <option v-if="allowEmptyOption" value="">{{ placeholder || '—' }}</option>
     <option
       v-for="opt in optionsResolved"
       :key="opt.value"
