@@ -60,11 +60,11 @@ const emit = defineEmits<{
             />
           </td>
           <td>
-            <EditableCell
+            <StatAllocationSlider
               :model-value="s.levelUp"
-              type="number"
-              :min="0"
-              @update:model-value="(v) => emit('setStatField', s.key, 'levelUp', v as number | undefined)"
+              :points-left="statPointsLeft"
+              :label="`${s.label} Lvl-Up Stat Points`"
+              @update:model-value="(v) => emit('setStatField', s.key, 'levelUp', v)"
             />
           </td>
           <td><strong>{{ s.total }}</strong></td>
