@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import InitiativeProfileImage from '~/components/map/InitiativeProfileImage.vue'
 import type { CombatLogMessage } from '~/utils/combatLog'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 
@@ -26,7 +27,7 @@ const messageDate = (message: CombatLogMessage): Date => new Date(message.at)
 const formatMessageTime = (message: CombatLogMessage): string =>
   timeFormatter.format(messageDate(message))
 
-const messageTitleStyle = (message: CombatLogMessage): Record<string, string> | undefined =>
+const messageAccentStyle = (message: CombatLogMessage): Record<string, string> | undefined =>
   message.accentColor ? trainerAccentCssVariables(message.accentColor) : undefined
 
 const scrollToBottom = () => {
@@ -87,25 +88,36 @@ onBeforeUnmount(() => {
           v-for="message in visibleMessages"
           :key="message.id"
           class="combat-log__message"
-          :class="`combat-log__message--${message.source}`"
+          :class="[
+            `combat-log__message--${message.source}`,
+            { 'combat-log__message--with-profile': message.profileEntry },
+          ]"
+          :style="messageAccentStyle(message)"
           :title="`${message.userName} · ${message.actionName}`"
         >
-          <span class="combat-log__meta">
-            <strong class="combat-log__title" :style="messageTitleStyle(message)">{{ message.title }}</strong>
-            <time class="combat-log__time" :datetime="messageDate(message).toISOString()">
-              {{ formatMessageTime(message) }}
-            </time>
-          </span>
+          <InitiativeProfileImage
+            v-if="message.profileEntry"
+            class="combat-log__profile"
+            :entry="message.profileEntry"
+          />
+          <div class="combat-log__body">
+            <span class="combat-log__meta">
+              <strong class="combat-log__title">{{ message.title }}</strong>
+              <time class="combat-log__time" :datetime="messageDate(message).toISOString()">
+                {{ formatMessageTime(message) }}
+              </time>
+            </span>
 
-          <ol v-if="message.details.length" class="combat-log__details">
-            <li
-              v-for="(line, index) in message.details"
-              :key="`${message.id}-${index}`"
-              class="combat-log__detail"
-            >
-              {{ line }}
-            </li>
-          </ol>
+            <ol v-if="message.details.length" class="combat-log__details">
+              <li
+                v-for="(line, index) in message.details"
+                :key="`${message.id}-${index}`"
+                class="combat-log__detail"
+              >
+                {{ line }}
+              </li>
+            </ol>
+          </div>
         </li>
       </ol>
     </div>
@@ -183,8 +195,37 @@ onBeforeUnmount(() => {
   pointer-events: auto;
 }
 
+.combat-log__message--with-profile {
+  --combat-log-profile-height: clamp(1.9rem, 2.7vw, 2.35rem);
+  --combat-log-profile-width: calc(var(--combat-log-profile-height) * 2.6666667);
+
+  grid-template-columns: var(--combat-log-profile-width) minmax(0, 1fr);
+  align-items: start;
+  column-gap: 0.56rem;
+}
+
 .combat-log--scroll-active .combat-log__message {
   cursor: default;
+}
+
+.combat-log__profile {
+  box-sizing: border-box;
+  width: var(--combat-log-profile-width, 5.1rem);
+  height: var(--combat-log-profile-height, 1.9rem);
+  align-self: start;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--rule-soft));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent 62%),
+    color-mix(in srgb, var(--paper) 54%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 18%, transparent),
+    0 4px 12px color-mix(in srgb, var(--pokemon-black) 20%, transparent);
+}
+
+.combat-log__body {
+  display: grid;
+  gap: 0.26rem;
+  min-width: 0;
 }
 
 .combat-log__meta {

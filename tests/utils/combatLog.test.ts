@@ -150,6 +150,32 @@ describe('combatLog utilities', () => {
     expect(messages.map((message) => message.accentColor)).toEqual(['#12ab34', '#abcdef', undefined])
   })
 
+  it('adds actor profile entries from the shared profile-image source when available', () => {
+    const profileEntry = {
+      name: 'Foil',
+      profileUrl: '/profile-sprites/pokemon/foil.png',
+      sprite: {
+        url: '/sprites/foil.png',
+        isSpriteSheet: false,
+        frameWidth: 32,
+        frameHeight: 32,
+        scale: 1,
+      },
+    }
+    const messages = buildCombatLogMessages({
+      moveLog: [
+        { at: 100, userId: 'token-1', userName: 'Foil', moveName: 'Ember', lines: ['Foil used Ember.'] },
+        { at: 200, userId: 'token-2', userName: 'Doug', moveName: 'Leer', lines: ['Doug used Leer.'] },
+      ],
+    }, {
+      actorProfiles: [
+        { id: 'token-1', ...profileEntry },
+      ],
+    })
+
+    expect(messages.map((message) => message.profileEntry)).toEqual([profileEntry, undefined])
+  })
+
   it('ignores malformed entries, blank lines, and internal implementation lines', () => {
     const messages = buildCombatLogMessages({
       moveLog: [

@@ -170,6 +170,7 @@ const combatLogMessages = computed(() =>
   buildCombatLogMessages(props.map?.metadata, {
     maxMessages: COMBAT_LOG_MESSAGE_LIMIT,
     actorAccents: props.spawnedPokemon,
+    actorProfiles: props.initiativeRows ?? [],
   }),
 )
 const livePlayStateLabel = computed(() => {

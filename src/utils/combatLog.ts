@@ -1,6 +1,9 @@
+import type { MapActionSplashProfileEntry } from '~/types/mapActionSplash'
 import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 
 export type CombatLogSource = 'move' | 'ability' | 'order' | 'maneuver' | 'movement' | 'initiative' | 'capture'
+
+export type CombatLogProfileEntry = MapActionSplashProfileEntry
 
 export interface CombatLogMessage {
   id: string
@@ -11,6 +14,7 @@ export interface CombatLogMessage {
   title: string
   details: string[]
   accentColor?: string
+  profileEntry?: CombatLogProfileEntry
 }
 
 export interface CombatLogActorAccent {
@@ -18,9 +22,14 @@ export interface CombatLogActorAccent {
   accentColor?: string | null
 }
 
+export interface CombatLogActorProfile extends CombatLogProfileEntry {
+  id: string
+}
+
 export interface CombatLogBuildOptions {
   maxMessages?: number
   actorAccents?: Iterable<CombatLogActorAccent>
+  actorProfiles?: Iterable<CombatLogActorProfile>
 }
 
 export type CombatLogMetadata = Record<string, unknown>
@@ -40,6 +49,7 @@ interface CombatLogEntry {
   userName: string
   actionName: string
   accentColor?: string
+  profileEntry?: CombatLogProfileEntry
   lines: string[]
 }
 
@@ -102,6 +112,7 @@ const readEntriesForSource = (
   config: CombatLogSourceConfig,
   sourceOrder: number,
   actorAccentById: ReadonlyMap<string, string>,
+  actorProfileById: ReadonlyMap<string, CombatLogProfileEntry>,
 ): CombatLogEntry[] => {
   const rawEntries = metadata[config.metadataKey]
   if (!Array.isArray(rawEntries)) return []
@@ -114,6 +125,7 @@ const readEntriesForSource = (
 
     const userId = stringOrFallback(rawEntry.userId, '')
     const accentColor = normalizeTrainerAccentColor(rawEntry.accentColor) ?? actorAccentById.get(userId)
+    const profileEntry = actorProfileById.get(userId)
 
     return [{
       at: numberOrFallback(rawEntry.at, 0),
@@ -123,6 +135,7 @@ const readEntriesForSource = (
       userName: stringOrFallback(rawEntry.userName, 'Unknown'),
       actionName: stringOrFallback(rawEntry[config.actionKey], config.fallbackActionName),
       ...(accentColor ? { accentColor } : {}),
+      ...(profileEntry ? { profileEntry } : {}),
       lines,
     }]
   })
@@ -170,6 +183,7 @@ const toMessage = (entry: CombatLogEntry): SortableCombatLogMessage => {
     title,
     details,
     ...(entry.accentColor ? { accentColor: entry.accentColor } : {}),
+    ...(entry.profileEntry ? { profileEntry: entry.profileEntry } : {}),
   }
 }
 
@@ -209,14 +223,40 @@ const buildActorAccentMap = (
   return accentById
 }
 
+const buildActorProfileMap = (
+  actors: Iterable<CombatLogActorProfile> | undefined,
+): ReadonlyMap<string, CombatLogProfileEntry> => {
+  const profileById = new Map<string, CombatLogProfileEntry>()
+  if (!actors) return profileById
+
+  for (const actor of actors) {
+    const id = actor.id.trim()
+    if (!id) continue
+    profileById.set(id, {
+      name: actor.name,
+      profileUrl: actor.profileUrl,
+      sprite: actor.sprite,
+    })
+  }
+
+  return profileById
+}
+
 export const countCombatLogMessages = (
   metadata: CombatLogMetadata | null | undefined,
 ): number => {
   if (!metadata) return 0
 
   const noActorAccents = new Map<string, string>()
+  const noActorProfiles = new Map<string, CombatLogProfileEntry>()
   return COMBAT_LOG_SOURCES.reduce(
-    (count, source, sourceOrder) => count + readEntriesForSource(metadata, source, sourceOrder, noActorAccents).length,
+    (count, source, sourceOrder) => count + readEntriesForSource(
+      metadata,
+      source,
+      sourceOrder,
+      noActorAccents,
+      noActorProfiles,
+    ).length,
     0,
   )
 }
@@ -238,8 +278,15 @@ export const buildCombatLogMessages = (
   if (!metadata) return []
 
   const actorAccentById = buildActorAccentMap(options.actorAccents)
+  const actorProfileById = buildActorProfileMap(options.actorProfiles)
   const sortedMessages = COMBAT_LOG_SOURCES
-    .flatMap((source, sourceOrder) => readEntriesForSource(metadata, source, sourceOrder, actorAccentById))
+    .flatMap((source, sourceOrder) => readEntriesForSource(
+      metadata,
+      source,
+      sourceOrder,
+      actorAccentById,
+      actorProfileById,
+    ))
     .map(toMessage)
     .sort(sortMessages)
 
