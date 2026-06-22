@@ -18,6 +18,7 @@ import type {
 } from '~/types/map'
 import type { MapMoveUsageEntry, MapTrackedMoveFrequency } from '~/types/moveUsage'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import { clearCombatLogMetadata } from './combatLog'
 import { mapMoveUsageSceneMatches } from './moveUsage'
 import { deepCloneJson, sameJsonValue } from './serialization'
 
@@ -332,6 +333,9 @@ const applyScenePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRej
   }
   map.activeScene = payload.current === null ? null : cloneScene(payload.current)
   delete map.moveUsage
+  const nextMetadata = clearCombatLogMetadata(map.metadata)
+  if (nextMetadata) map.metadata = nextMetadata
+  else delete map.metadata
   return null
 }
 

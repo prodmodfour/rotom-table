@@ -13,6 +13,7 @@ import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { RealtimeEvent } from '#shared/realtime'
 import type { MapSceneState, TabletopMap } from '~/types/map'
+import { clearCombatLogMetadata } from '~/utils/combatLog'
 import {
   createMapSceneState,
   mapSceneStatesEqual,
@@ -162,6 +163,7 @@ const applySceneChange = (
       ...context.map,
       activeScene: current,
       moveUsage: undefined,
+      metadata: clearCombatLogMetadata(context.map.metadata),
       updatedAt: timestamp,
     },
   }

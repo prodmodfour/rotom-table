@@ -1,4 +1,6 @@
 import type { MapActionSplashProfileEntry } from '~/types/mapActionSplash'
+import type { MapSceneState } from '~/types/map'
+import { mapSceneStatesEqual, normalizeMapSceneState } from '~/utils/mapSceneState'
 import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 
 export type CombatLogSource = 'move' | 'ability' | 'order' | 'maneuver' | 'movement' | 'initiative' | 'capture'
@@ -30,7 +32,15 @@ export interface CombatLogBuildOptions {
   maxMessages?: number
   actorAccents?: Iterable<CombatLogActorAccent>
   actorProfiles?: Iterable<CombatLogActorProfile>
+  /**
+   * When present, the combat log is scoped to this active scene. Passing
+   * `null` represents no active scene and hides scene-tied combat entries.
+   * Leaving the option undefined preserves legacy all-entry behavior.
+   */
+  scene?: MapSceneState | null
 }
+
+export type CombatLogCountOptions = Pick<CombatLogBuildOptions, 'scene'>
 
 export type CombatLogMetadata = Record<string, unknown>
 
@@ -107,18 +117,39 @@ const readLogLines = (value: unknown): string[] => {
     .filter(shouldShowLogLine)
 }
 
+const entryBelongsToScene = (
+  rawEntry: Record<string, unknown>,
+  sceneFilter: MapSceneState | null | undefined,
+): boolean => {
+  if (sceneFilter === undefined) return true
+
+  const activeScene = normalizeMapSceneState(sceneFilter)
+  if (!activeScene) return false
+
+  const entryScene = normalizeMapSceneState(rawEntry.scene)
+  if (entryScene) return mapSceneStatesEqual(entryScene, activeScene)
+
+  // Legacy log entries were written before logs had scene context. For those,
+  // the server-owned scene start time is the best available scene boundary.
+  if (activeScene.startedAt === undefined) return false
+  return numberOrFallback(rawEntry.at, 0) >= activeScene.startedAt
+}
+
 const readEntriesForSource = (
   metadata: Record<string, unknown>,
   config: CombatLogSourceConfig,
   sourceOrder: number,
   actorAccentById: ReadonlyMap<string, string>,
   actorProfileById: ReadonlyMap<string, CombatLogProfileEntry>,
+  sceneFilter: MapSceneState | null | undefined,
 ): CombatLogEntry[] => {
   const rawEntries = metadata[config.metadataKey]
   if (!Array.isArray(rawEntries)) return []
 
   return rawEntries.flatMap((rawEntry, entryIndex): CombatLogEntry[] => {
     if (!isRecord(rawEntry)) return []
+
+    if (!entryBelongsToScene(rawEntry, sceneFilter)) return []
 
     const lines = readLogLines(rawEntry.lines)
     if (!lines.length) return []
@@ -244,6 +275,7 @@ const buildActorProfileMap = (
 
 export const countCombatLogMessages = (
   metadata: CombatLogMetadata | null | undefined,
+  options: CombatLogCountOptions = {},
 ): number => {
   if (!metadata) return 0
 
@@ -256,6 +288,7 @@ export const countCombatLogMessages = (
       sourceOrder,
       noActorAccents,
       noActorProfiles,
+      options.scene,
     ).length,
     0,
   )
@@ -286,6 +319,7 @@ export const buildCombatLogMessages = (
       sourceOrder,
       actorAccentById,
       actorProfileById,
+      options.scene,
     ))
     .map(toMessage)
     .sort(sortMessages)

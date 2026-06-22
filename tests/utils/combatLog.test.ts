@@ -150,6 +150,36 @@ describe('combatLog utilities', () => {
     expect(messages.map((message) => message.accentColor)).toEqual(['#12ab34', '#abcdef', undefined])
   })
 
+  it('scopes display and counts to the active scene when requested', () => {
+    const scene = { name: 'Moonlit Rooftop', startedAt: 200 }
+    const metadata = {
+      moveLog: [
+        { at: 100, userName: 'Old', moveName: 'Scratch', lines: ['Old used Scratch.'] },
+        { at: 210, userName: 'Pika', moveName: 'Thunderbolt', lines: ['Pika used Thunderbolt.'] },
+        { at: 120, userName: 'Foil', moveName: 'Ember', scene, lines: ['Foil used Ember.'] },
+        {
+          at: 220,
+          userName: 'Lux',
+          moveName: 'Leer',
+          scene: { name: 'Different Scene', startedAt: 205 },
+          lines: ['Lux used Leer.'],
+        },
+      ],
+      initiativeLog: [
+        { at: 230, userName: 'Pika', actionName: 'Initiative', lines: ['Pika has gained initiative!'] },
+      ],
+    }
+
+    expect(buildCombatLogMessages(metadata, { scene }).map((message) => message.title)).toEqual([
+      'Foil used Ember.',
+      'Pika used Thunderbolt.',
+      'Pika has gained initiative!',
+    ])
+    expect(countCombatLogMessages(metadata, { scene })).toBe(3)
+    expect(buildCombatLogMessages(metadata, { scene: null })).toEqual([])
+    expect(countCombatLogMessages(metadata, { scene: null })).toBe(0)
+  })
+
   it('adds actor profile entries from the shared profile-image source when available', () => {
     const profileEntry = {
       name: 'Foil',

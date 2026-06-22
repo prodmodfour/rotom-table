@@ -302,8 +302,14 @@ describe('live-play patch application', () => {
     })
   })
 
-  it('applies active scene patches', () => {
-    const map = baseMap()
+  it('applies active scene patches and clears combat log metadata', () => {
+    const map = baseMap({
+      metadata: {
+        encounterName: 'Rooftop Ambush',
+        moveLog: [{ at: 100, userName: 'Pika', moveName: 'Thunderbolt', lines: ['Pika used Thunderbolt.'] }],
+        movementLog: [{ at: 110, userName: 'Pika', actionName: 'Movement', lines: ['Pika moved.'] }],
+      },
+    })
 
     const result = applyLivePlayPatchesToMap({
       map,
@@ -322,6 +328,7 @@ describe('live-play patch application', () => {
 
     expect(result).toMatchObject({ ok: true, applied: true, revision: 5 })
     expect(map.activeScene).toEqual({ name: 'Moonlit Rooftop', startedAt: 200 })
+    expect(map.metadata).toEqual({ encounterName: 'Rooftop Ambush' })
   })
 
   it('requests reconciliation for unknown patch types and revision gaps', () => {

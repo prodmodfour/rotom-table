@@ -102,6 +102,11 @@ describe('live-play scene commands', () => {
           },
         },
       },
+      metadata: {
+        encounterName: 'Rooftop Ambush',
+        moveLog: [{ at: 1_000, userName: 'Foil', moveName: 'Ember', lines: ['Foil used Ember.'] }],
+        initiativeLog: [{ at: 1_100, userName: 'Foil', actionName: 'Initiative', lines: ['Foil has gained initiative!'] }],
+      },
     }))
 
     const start = await execute(harness, setSceneCommand())
@@ -109,6 +114,7 @@ describe('live-play scene commands', () => {
     expect(start.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
     expect(harness.storedMap.activeScene).toEqual({ name: 'Moonlit Rooftop', startedAt: 2_000 })
     expect(harness.storedMap.moveUsage).toBeUndefined()
+    expect(harness.storedMap.metadata).toEqual({ encounterName: 'Rooftop Ambush' })
     expect(start.activeScene).toEqual({ name: 'Moonlit Rooftop', startedAt: 2_000 })
     expect(acceptedPatches(start)[0]).toMatchObject({
       type: LIVE_PLAY_PATCH_TYPES.MAP_SCENE,
@@ -131,6 +137,7 @@ describe('live-play scene commands', () => {
 
     expect(end.result).toMatchObject({ ok: true, previousRevision: 5, revision: 6 })
     expect(harness.storedMap.activeScene).toBeUndefined()
+    expect(harness.storedMap.metadata).toEqual({ encounterName: 'Rooftop Ambush' })
     expect(acceptedPatches(end)[0]).toMatchObject({
       type: LIVE_PLAY_PATCH_TYPES.MAP_SCENE,
       payload: {

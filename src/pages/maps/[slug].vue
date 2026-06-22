@@ -516,7 +516,11 @@ const {
   applyMoveFieldEffect: applyMoveFieldEffectLocally,
 } = useFieldEffectsEditor({ map, canEditMap })
 
-const combatLogEntryCount = computed(() => countCombatLogMessages(map.value?.metadata))
+const activeScene = computed(() => map.value?.activeScene ?? null)
+const combatLogEntryCount = computed(() => countCombatLogMessages(
+  map.value?.metadata,
+  { scene: activeScene.value ?? null },
+))
 
 const clearCombatLog = () => {
   if (!map.value || !canEditMap.value || combatLogEntryCount.value <= 0) return
@@ -781,8 +785,6 @@ const sceneControlsDisabled = computed(() => (
   livePlayConnectionState.value !== 'ready'
   || livePlayCommands.status.value === 'saving'
 ))
-const activeScene = computed(() => map.value?.activeScene ?? null)
-
 const startSceneFromPanel = () => {
   if (!import.meta.client) return
   const enteredName = window.prompt(`Scene name (max ${MAP_SCENE_NAME_MAX_LENGTH} characters)`)
