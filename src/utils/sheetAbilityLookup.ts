@@ -1,4 +1,4 @@
-import { findAbility } from '~~/data/ptuReference'
+import { abilities as referenceAbilities, findAbility } from '~~/data/ptuReference'
 import {
   clearSheetAbilityActivation,
   isSheetActivatableAbility,
@@ -8,6 +8,8 @@ import type { PtuAbility } from '~/types/ptuReference'
 import type { TrainerAbilityEntry } from '~/types/trainerSheet'
 
 export type SheetAbilityLike = CharacterSheetAbility | TrainerAbilityEntry
+
+export const SHEET_ABILITY_NAME_OPTIONS: readonly string[] = referenceAbilities.map((ability) => ability.name)
 
 export interface AbilityLookupRow<T extends SheetAbilityLike> {
   ability: T

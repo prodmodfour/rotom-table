@@ -32,7 +32,10 @@ interface Props {
   type?: EditableCellType
   /** Hint shown when the value is empty. */
   placeholder?: string
-  /** For ``type="select"``. Empty string is treated as "no value". */
+  /**
+   * For ``type="select"`` choices, or ``type="text"`` autocomplete suggestions.
+   * Empty string is treated as "no value" for selects.
+   */
   options?: readonly (string | EditableCellOption)[]
   /** Disable editing — render value as plain text. */
   readonly?: boolean

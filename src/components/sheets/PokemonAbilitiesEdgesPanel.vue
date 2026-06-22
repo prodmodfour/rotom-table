@@ -4,7 +4,7 @@ import {
   isSheetAbilityActivated,
   isSheetActivatableAbility,
 } from '~/utils/sheetAbilityActivation'
-import { setLookupAbilityName, type AbilityLookupRow } from '~/utils/sheetAbilityLookup'
+import { SHEET_ABILITY_NAME_OPTIONS, setLookupAbilityName, type AbilityLookupRow } from '~/utils/sheetAbilityLookup'
 import { formatLookupValue } from '~/utils/sheetMoveLookup'
 import type { CharacterSheet, CharacterSheetAbility } from '~/types/characterSheet'
 
@@ -42,6 +42,7 @@ const emit = defineEmits<{
               <EditableCell
                 :model-value="row.ability.name"
                 placeholder="Ability"
+                :options="SHEET_ABILITY_NAME_OPTIONS"
                 @update:model-value="(v) => setLookupAbilityName(row.ability, v)"
               />
             </td>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PhPlus, PhX } from '@phosphor-icons/vue'
-import { setLookupAbilityName } from '~/utils/sheetAbilityLookup'
+import { SHEET_ABILITY_NAME_OPTIONS, setLookupAbilityName } from '~/utils/sheetAbilityLookup'
 import type { TrainerSheetAbilityLookupRow } from '~/composables/sheets/useTrainerSheetDerived'
 import { formatLookupValue } from '~/utils/sheetMoveLookup'
 
@@ -33,6 +33,7 @@ const emit = defineEmits<{
             <EditableCell
               :model-value="row.ability.name"
               placeholder="Ability"
+              :options="SHEET_ABILITY_NAME_OPTIONS"
               :readonly="row.automatic"
               @update:model-value="(v) => setLookupAbilityName(row.ability, v)"
             />

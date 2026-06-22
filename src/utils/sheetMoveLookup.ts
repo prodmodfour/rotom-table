@@ -1,4 +1,4 @@
-import { findMove } from '~~/data/ptuReference'
+import { findMove, moves as referenceMoves } from '~~/data/ptuReference'
 import { findMoveDamageBase } from '~/utils/moveDamageBase'
 import { averageMoveDamageForDb } from '~/utils/moveDamageDisplay'
 import {
@@ -16,6 +16,8 @@ import type { PtuMove } from '~/types/ptuReference'
 import type { TrainerMove } from '~/types/trainerSheet'
 
 export type SheetMoveLike = CharacterSheetMove | TrainerMove
+
+export const SHEET_MOVE_NAME_OPTIONS: readonly string[] = referenceMoves.map((move) => move.name)
 
 export interface MoveLookupOptions extends SheetMoveAttackStatOptions {
   /** Types that grant Pokémon STAB. Trainers normally leave this empty. */

@@ -3,7 +3,7 @@ import { PhDotsSixVertical, PhPlus, PhX } from '@phosphor-icons/vue'
 import { useDamageDisplayMode } from '~/composables/useDamageDisplayMode'
 import { useSheetMoveRowDragReorder } from '~/composables/sheets/useSheetMoveRowDragReorder'
 import { formatMoveDamageDisplay, type MoveDamageDisplayValues } from '~/utils/moveDamageDisplay'
-import { formatLookupValue, setLookupMoveName } from '~/utils/sheetMoveLookup'
+import { SHEET_MOVE_NAME_OPTIONS, formatLookupValue, setLookupMoveName } from '~/utils/sheetMoveLookup'
 import type { PokemonSheetMoveLookupRow } from '~/composables/sheets/usePokemonSheetDerived'
 
 defineProps<{
@@ -104,6 +104,7 @@ const {
               <EditableCell
                 :model-value="row.move.name"
                 placeholder="Move"
+                :options="SHEET_MOVE_NAME_OPTIONS"
                 :readonly="row.automatic"
                 @update:model-value="(v) => setLookupMoveName(row.move, v)"
               />

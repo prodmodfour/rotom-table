@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, useId } from 'vue'
 import { textValueFromEvent } from '~/utils/domEvents'
 import {
   resolveEditableCellOptions,
@@ -29,8 +29,12 @@ const emit = defineEmits<{
 }>()
 
 const inputEl = ref<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null)
+const suggestionsListId = useId()
 
 const optionsResolved = computed(() => resolveEditableCellOptions(props.options))
+const textSuggestionListId = computed(() => (
+  props.type === 'text' && optionsResolved.value.length > 0 ? suggestionsListId : undefined
+))
 
 const focusInput = async () => {
   await nextTick()
@@ -119,11 +123,21 @@ defineExpose({ focusInput })
     :min="type === 'number' ? min : undefined"
     :max="type === 'number' ? max : undefined"
     :placeholder="placeholder"
+    :list="textSuggestionListId"
+    autocomplete="off"
     class="editable-cell__input"
     @input="onInput"
     @blur="emit('commit')"
     @keydown="onKeydown"
   />
+  <datalist v-if="textSuggestionListId" :id="textSuggestionListId">
+    <option
+      v-for="opt in optionsResolved"
+      :key="opt.value"
+      :value="opt.value"
+      :label="opt.label"
+    />
+  </datalist>
 </template>
 
 <style scoped>
