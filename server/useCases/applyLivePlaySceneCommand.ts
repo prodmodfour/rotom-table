@@ -1,4 +1,3 @@
-import { join } from 'node:path'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
@@ -27,8 +26,7 @@ import {
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
-import { campaignPathLabel } from '../utils/campaignPaths'
-import { MAPS_ROOT } from '../utils/mapPaths'
+import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -90,7 +88,7 @@ const actionDependencies = (dependencies: LivePlaySceneCommandDependencies) => (
   database: dependencies.database ?? getRotomDatabase(),
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
-  relativePath: dependencies.relativePath ?? campaignPathLabel,
+  relativePath: dependencies.relativePath ?? ((path: string) => path),
 })
 
 const isRecord = (value: unknown): value is UnknownRecord => (
@@ -100,9 +98,7 @@ const isRecord = (value: unknown): value is UnknownRecord => (
 const hasOwn = (record: UnknownRecord, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
 
-const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => (
-  map.folder ? join(MAPS_ROOT, map.folder, `${map.slug}.json`) : join(MAPS_ROOT, `${map.slug}.json`)
-)
+const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => logicalMapResourcePath(map)
 
 const sceneScope = (): LivePlayMapScope => ({ kind: 'map', lane: 'scene' })
 
@@ -289,7 +285,7 @@ export const executeLivePlaySceneCommandUseCase = async (
       throw new Error('live-play scene commands must persist through the accepted-result commit hook')
     },
     commit: ({ actor, currentRevision, nextMap, result, saveOpResult }) => {
-      const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, deps.now(), { revision: result.revision })
+      const persisted = toPersistedMap(nextMap.map, nextMap.map.folder ?? '', deps.now(), { revision: result.revision })
       const authoritativeMap = commitLivePlayMapUpdate({
         database: deps.database,
         mapRepository: deps.mapRepository,

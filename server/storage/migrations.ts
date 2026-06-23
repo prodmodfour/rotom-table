@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 3
+export const LATEST_STORAGE_SCHEMA_VERSION = 4
 
 export interface StorageMigration {
   readonly version: number
@@ -61,6 +61,22 @@ const createMapInteractionModeTable = (connection: DatabaseSync): void => {
   `)
 }
 
+const createRuntimeFolderTables = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS map_folders (
+      path TEXT PRIMARY KEY,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS sheet_folders (
+      kind TEXT NOT NULL,
+      path TEXT NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (kind, path)
+    );
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -76,6 +92,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 3,
     name: 'store shared map interaction mode',
     up: createMapInteractionModeTable,
+  },
+  {
+    version: 4,
+    name: 'store runtime map and sheet library folders',
+    up: createRuntimeFolderTables,
   },
 ]
 

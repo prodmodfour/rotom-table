@@ -1,55 +1,55 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
+import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
 import { advanceCampaignDayUseCase } from '../../server/useCases/advanceCampaignDay'
-import type { CharacterSheet } from '~/types/characterSheet'
-import type { TrainerSheet } from '~/types/trainerSheet'
+
+let databases: RotomDatabase[] = []
+const db = () => {
+  const database = openRotomDatabase({ path: ':memory:' })
+  databases.push(database)
+  return database
+}
+
+afterEach(() => {
+  for (const database of databases.splice(0)) database.close()
+})
 
 describe('advanceCampaignDayUseCase', () => {
-  it('advances pokemon and trainer sheets and emits sheet update events', () => {
-    const pokemon: CharacterSheet = {
-      slug: 'testmon',
-      nickname: 'Testmon',
+  it('advances pokemon and trainer sheets in SQLite and emits sheet update events', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    sheets.saveSetupSheet('pokemon', 'pika', {
+      slug: 'pika',
+      nickname: 'Pika',
       species: '',
-      level: 10,
-      stats: { hp: { added: 10 } },
-      combat: { currentHp: 10, injuries: 1, conditions: ['Poisoned'] },
-      moveUsage: { daily: { rest: { moveName: 'Rest', uses: 1 } } },
-    }
-    const trainer: TrainerSheet = {
-      slug: 'trainer',
-      name: 'Trainer',
       level: 5,
-      currentHp: 10,
+      combat: { currentHp: 1, injuries: 2, injuriesHealedToday: 2, conditions: ['Burned'] },
+      moveUsage: { daily: { thunderbolt: { moveName: 'Thunderbolt', uses: 1 } } },
+      revision: 1,
+    })
+    sheets.saveSetupSheet('trainer', 'brock', {
+      slug: 'brock',
+      name: 'Brock',
+      level: 3,
+      currentHp: 1,
       currentInjuries: 1,
-      ap: { left: 2, spent: 1, drained: 1 },
-    }
-    const writes = new Map<string, Record<string, unknown>>()
-
-    const result = advanceCampaignDayUseCase({ clientId: 'client-1' }, {
-      listPokemonSheetPaths: () => ['/campaign/data/sheets/testmon.json'],
-      listTrainerSheetPaths: () => ['/campaign/data/trainers/trainer.json'],
-      readPokemonSheet: () => structuredClone(pokemon),
-      readTrainerSheet: () => structuredClone(trainer),
-      writeSheet: (path, sheet) => writes.set(path, sheet),
-      relativePath: (path) => path.replace('/campaign/', ''),
+      injuriesHealedToday: 1,
+      conditions: ['Poisoned'],
+      ap: { spent: 2 },
+      revision: 3,
     })
 
-    expect(result).toMatchObject({
-      ok: true,
-      totalSheets: 2,
-      updatedSheets: 2,
-      pokemonUpdated: 1,
-      trainerUpdated: 1,
-      injuriesHealed: 2,
-      dailyMoveUsesCleared: 1,
-      conditionsCleared: 1,
-    })
-    expect(writes.size).toBe(2)
+    const result = advanceCampaignDayUseCase({ clientId: 'client-1' }, { sheetRepository: sheets, now: () => 500 })
+
+    expect(result).toMatchObject({ ok: true, totalSheets: 2, updatedSheets: 2, pokemonUpdated: 1, trainerUpdated: 1 })
+    expect(sheets.getByRef('pokemon', 'pika')?.revision).toBe(2)
+    expect(sheets.getByRef('trainer', 'brock')?.revision).toBe(4)
     expect(result.events.map((event) => event.channel)).toEqual([
-      'sheet:pokemon:testmon',
+      'sheet:pokemon:pika',
       'sheets',
-      'sheet:trainer:trainer',
+      'sheet:trainer:brock',
       'sheets',
     ])
-    expect(result.events.every((event) => event.clientId === 'client-1')).toBe(true)
+    expect(result.paths).toEqual(['data/sheets/pika.json', 'data/trainers/brock.json'])
   })
 })

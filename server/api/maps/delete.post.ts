@@ -1,7 +1,7 @@
 /**
  * POST /api/maps/delete
  *
- * Removes a map file. Empty parent directories are pruned.
+ * Removes a SQLite map document.
  *
  * Request body: `{ slug: string, clientId?: string }`
  * Response:     `{ ok: true, path: string }`

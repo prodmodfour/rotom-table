@@ -1,6 +1,7 @@
 import { ref, type ComputedRef, type Ref } from 'vue'
 import { useApiClient } from '~/composables/useApiClient'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId as defaultGetClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
@@ -18,7 +19,9 @@ import {
   type SheetLookupMaps,
 } from '~/utils/sheetMutations'
 import type { PlayerProfileId } from '#shared/playerProfiles'
+import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetKind, TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import type {
   MoveAutomationCombatStageUpdate,
   MoveAutomationConditionUpdate,
@@ -39,13 +42,20 @@ export interface SavePlacedSheetRequest {
   kind: SheetKind
   slug: string
   sheet: Record<string, unknown>
+  expectedRevision: number
   clientId: string
   profileId?: PlayerProfileId
   allowSlugSync?: boolean
   interactionMode?: MapInteractionMode
 }
 
-export type SavePlacedSheet = (request: SavePlacedSheetRequest) => Promise<void>
+export interface SavePlacedSheetResponse {
+  ok?: true
+  slug?: string
+  sheet?: Record<string, unknown>
+}
+
+export type SavePlacedSheet = (request: SavePlacedSheetRequest) => Promise<SavePlacedSheetResponse | void>
 
 interface ReadonlyValueRef<TValue> {
   readonly value: TValue
@@ -62,9 +72,9 @@ export interface UseTokenSheetMutationsOptions {
   logError?: (label: string, error: unknown) => void
 }
 
-export const savePlacedSheetWithFetch: SavePlacedSheet = async (request) => {
-  await useApiClient().postJson(SHEET_API_PATHS.save, request)
-}
+export const savePlacedSheetWithFetch: SavePlacedSheet = async (request) => (
+  useApiClient().postJson<SavePlacedSheetResponse>(SHEET_API_PATHS.save, request)
+)
 
 export const useTokenSheetMutations = ({
   map,
@@ -114,15 +124,20 @@ export const useTokenSheetMutations = ({
     try {
       const sheetPayload = toPersistableSheetPayload(context.updated)
       sheetPayload.slug = context.slug
-      await saveSheet({
+      const result = await saveSheet({
         kind: context.kind,
         slug: context.slug,
         sheet: sheetPayload,
+        expectedRevision: normalizeRevision(context.original.revision),
         clientId: getClientId(),
         allowSlugSync: false,
         interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
         ...profileRequestFields(),
       })
+      if (result?.sheet) {
+        if (context.kind === 'pokemon') context.sheets.set(context.slug, result.sheet as unknown as CharacterSheet)
+        else context.sheets.set(context.slug, result.sheet as unknown as TrainerSheet)
+      }
       return true
     } catch (error) {
       rollbackSheetUpdate(context)

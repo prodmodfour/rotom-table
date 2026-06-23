@@ -4,7 +4,7 @@ import { expectSheetKind, expectSlug } from '../../utils/http'
 import { playerProfileCanAccessSheet, resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { getPlayerSessionAccessGrant, playerSessionCanAccessSheet } from '../../utils/sessionPlayerAccess'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { listSheetFilesWithFolders } from '../../utils/sheetStorage'
+import { sqliteSheetRepository } from '../../storage/sheetRepository'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { loadSheetUseCase } from '../../useCases/loadSheet'
 
@@ -33,7 +33,11 @@ export default defineEventHandler((event) => {
       : null
     const sessionAccessible = playerSessionCanAccessSheet(sessionAccess, kind, slug)
     const linkedTrainerSheets = kind === 'pokemon'
-      ? () => listSheetFilesWithFolders<TrainerSheet>('trainer')
+      ? () => sqliteSheetRepository.list('trainer').map((stored) => ({
+          ...(stored.document as Record<string, unknown>),
+          slug: stored.slug,
+          revision: stored.revision,
+        } as TrainerSheet))
       : undefined
     const profileAccessible = playerProfileCanAccessSheet(playerProfile, kind, slug, { linkedTrainerSheets })
 

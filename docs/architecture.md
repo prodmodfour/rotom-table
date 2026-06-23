@@ -22,25 +22,24 @@ The `server/` directory holds Nitro API routes and server-side application logic
 
 This structure keeps route handlers thin and makes persistence-heavy behaviours easier to test.
 
-## Filesystem-backed JSON data
+## Campaign data roots and maintenance JSON
 
-Rotom Table uses server-side filesystem-backed JSON persistence. Campaign state is stored as JSON on the filesystem rather than in a hosted database. By default those files live in the app checkout during local development; `ROTOM_CAMPAIGN_ROOT` can point campaign-owned paths, including campaign reference override diffs, at a separate private campaign repository or private host directory.
+Runtime maps and Pokémon/trainer sheets are stored in SQLite. `ROTOM_CAMPAIGN_ROOT` still points campaign-owned paths, remaining JSON systems, and the default SQLite database at a private campaign repository or private host directory.
 
-- Maps live under `data/maps/`.
+- Runtime maps, map folders, Pokémon sheets, trainer sheets, and sheet folders live in `rotom-table.sqlite` (or `ROTOM_DB_PATH`).
 - Persistent player profiles live under `data/player-profiles/`.
-- Pokémon sheets live under `data/sheets/`.
-- Trainer sheets live under `data/trainers/`.
 - Encounter tables live under `encounter_tables/`.
 - Campaign reference override diffs, currently Pokédex maintenance entries, live under `data/reference-overrides/`.
 - App-owned PTU reference content lives under `data/reference/` with indexes in `data/ptuReference.ts` and `src/utils/reference/`. `ptu-data/` is documentary upstream/source material and parser output, not the runtime source of truth.
+- `data/maps/`, `data/sheets/`, and `data/trainers/` are legacy/maintenance import and export hierarchies for maps and sheets, not runtime fallback authority.
 
-This makes data easy to inspect, back up, diff, and repair while developing or running a home campaign.
+This keeps private data operator-owned while avoiding a dual JSON/SQLite runtime authority model.
 
 ## SQLite persistence foundation
 
-Authoritative live play uses a SQLite document store behind server-only repository interfaces. The implementation uses Node 24's built-in `node:sqlite` module, so there is no additional native SQLite package. `server/storage/database.ts` resolves `ROTOM_DB_PATH` or defaults to `ROTOM_CAMPAIGN_ROOT/rotom-table.sqlite`, opens the database on first repository access, enables WAL for file-backed databases, and applies deterministic migrations from `server/storage/migrations.ts`.
+All runtime map and Pokémon/trainer sheet paths use a SQLite document store behind server-only repository interfaces. The implementation uses Node's built-in `node:sqlite` module, so there is no additional native SQLite package. `server/storage/database.ts` resolves `ROTOM_DB_PATH` or defaults to `ROTOM_CAMPAIGN_ROOT/rotom-table.sqlite`, opens the database on first repository access, enables WAL for file-backed databases, and applies deterministic migrations from `server/storage/migrations.ts`.
 
-The repositories keep SQL out of use cases and UI code. Map, sheet, and live-play operation records are stored with explicit revision and timestamp columns while preserving JSON document payloads for setup/edit, imports, exports, and backups. The map repository provides normalized map reads, setup-map saves, an idempotent JSON importer, and revision-checked live-play updates. The sheet repository provides sheet reads by kind/slug, setup-sheet saves, an idempotent JSON importer for Pokémon/trainer sheets, and revision-checked live-play sheet updates. Live-play commands that change map state, sheet state, or both use SQLite repository updates and operation-result storage; multi-document commands use one SQLite transaction for the map update, sheet update, and accepted operation result.
+The repositories keep SQL out of use cases and UI code. Map, sheet, folder, interaction-mode, and live-play operation records are stored with explicit revision and timestamp columns while preserving JSON document payloads for setup/edit, imports, exports, and backups. The map repository provides normalized map reads, revision-checked setup saves, create/move/rename/delete, logical folders, sheet-reference retargeting, operation-history barriers, and revision-checked live-play updates. The sheet repository provides sheet reads by kind/slug, revision-checked setup saves, create/move/rename/delete, logical folders, atomic map retargeting on sheet rename/delete, and revision-checked live-play sheet updates. Live-play commands that change map state, sheet state, or both use SQLite repository updates and operation-result storage; multi-document commands use one SQLite transaction for the map update, sheet update, and accepted operation result.
 
 ## Shared helpers
 
@@ -62,7 +61,7 @@ The selected role is stored in a cookie and checked by client navigation and ser
 
 Normal multiplayer play stays on persistent profiles and regular `/maps/<slug>` routes. Live play uses server-authoritative commands with `opId` idempotency, `baseRevision` checks, map/sheet revisions, profile/token-control validation, authoritative SQLite persistence, and patch/result realtime broadcasts.
 
-Setup/edit mode may continue using whole-document JSON saves and debounced autosave for GM preparation and maintenance. Live gameplay must not use browser-owned whole-map autosave or last-writer-wins document replacement as its concurrency strategy. Normal map-token, sheet-combat, move-usage, initiative, hazard, field-effect, terrain, token placement, maneuver, ability, and order mutations dispatch live-play commands instead of document replacement saves.
+Setup/edit mode uses revision-checked whole-document SQLite saves and debounced autosave for GM preparation and maintenance. Live gameplay must not use browser-owned whole-map autosave or last-writer-wins document replacement as its concurrency strategy. Normal map-token, sheet-combat, move-usage, initiative, hazard, field-effect, terrain, token placement, maneuver, ability, and order mutations dispatch live-play commands instead of document replacement saves.
 
 Legacy `/sessions` routes and archived documents are maintenance-only for the old guarded session-local socket/lobby surface. They are not the normal profile-play architecture. See [Live play authority](live-play-authority.md), [Archived legacy live-session documents](archive/live-session/README.md), and [ADR 009: Server-authoritative profile play](adrs/009-server-authoritative-profile-play.md).
 
@@ -76,14 +75,14 @@ The map table combines Vue controls with a Three.js-rendered isometric scene.
 
 The scene uses dirty render scheduling: Vue watchers, pointer interactions, async texture loads, resize/camera events, and document visibility lifecycle events request focused invalidation reasons, while active animation sources keep frames alive only while visual work is still changing. See [Isometric render scheduler architecture](render-scheduler-architecture.md) for the current dirty-rendering flow and extension checklist.
 
-Maps persist sparse terrain voxels, token placements, hazards, field effects, lights, initiative state, and metadata as JSON. Player token control is derived at runtime by matching a placement's `sheetKind`/`sheetSlug` to the selected player profile's linked character refs.
+Maps persist sparse terrain voxels, token placements, hazards, field effects, lights, initiative state, and metadata in SQLite document payloads. Player token control is derived at runtime by matching a placement's `sheetKind`/`sheetSlug` to the selected player profile's linked character refs.
 
 ## Encounter tooling
 
 Encounter tooling is built around filesystem-backed JSON tables in `encounter_tables/`.
 
 - `/encounter-tables` lets a GM browse and edit tables.
-- `/generate` rolls tables and can generate wild Pokémon sheets into `data/sheets/wild/...`.
+- `/generate` rolls tables and can generate wild Pokémon sheet documents; spawn flows persist created campaign sheets into SQLite.
 - The optional `just encounter ...` commands use the same table data from the terminal.
 
 This keeps browser and CLI workflows aligned around the same inspectable data files.

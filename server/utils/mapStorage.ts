@@ -1,9 +1,8 @@
 /**
- * Filesystem helpers for map documents.
+ * Maintenance-only JSON helpers for legacy map import/export tooling.
  *
- * Maps live as JSON files under ``data/maps/`` (recursively). The
- * directory layout mirrors the sheet system so the same folder /
- * drag-drop UX can be reused.
+ * Runtime map APIs use SQLite repositories. Do not import this module from
+ * server/api or server/useCases runtime code.
  */
 import { readFileSync } from 'node:fs'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
@@ -128,31 +127,14 @@ const storedMapDocumentToTabletopMap = (
   stored: StoredMapDocument<unknown>,
 ): TabletopMap => normalizeMapDocument(stored.document, { sourceLabel: `SQLite map ${stored.slug}` })
 
-const playerVisibleMapSheetAccessKeysFromFiles = (): Set<`${SheetKind}:${string}`> => {
-  const keys = new Set<`${SheetKind}:${string}`>()
-  for (const full of walkFiles(MAPS_ROOT, (entry) => entry.name.endsWith('.json'))) {
-    try {
-      addPlayerVisibleMapSheetAccessKeys(keys, readMapFile(full))
-    } catch (err) {
-      console.warn('[maps] failed to collect player-visible sheet access in', full, err)
-    }
-  }
-  return keys
-}
-
 export const playerVisibleMapSheetAccessKeys = (
   mapRepository: Pick<MapRepository<unknown>, 'list'> = sqliteMapRepository,
 ): Set<`${SheetKind}:${string}`> => {
   const keys = new Set<`${SheetKind}:${string}`>()
-  try {
-    for (const stored of mapRepository.list()) {
-      addPlayerVisibleMapSheetAccessKeys(keys, storedMapDocumentToTabletopMap(stored as StoredMapDocument<unknown>))
-    }
-    return keys
-  } catch (err) {
-    console.warn('[maps] failed to collect SQLite player-visible sheet access; falling back to map files', err)
-    return playerVisibleMapSheetAccessKeysFromFiles()
+  for (const stored of mapRepository.list()) {
+    addPlayerVisibleMapSheetAccessKeys(keys, storedMapDocumentToTabletopMap(stored as StoredMapDocument<unknown>))
   }
+  return keys
 }
 
 export const allocateSlug = (base: string): string => {

@@ -1,11 +1,9 @@
-import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
   MAP_ACTION_EVENT_MAX_PAYLOAD_BYTES,
   PublishMapActionEventUseCaseError,
   publishMapActionEventUseCase,
 } from '../../server/useCases/publishMapActionEvent'
-import { MAPS_ROOT } from '../../server/utils/mapPaths'
 import {
   MAP_ACTION_EVENT_SCHEMA_VERSION,
   MAP_ACTION_REALTIME_EVENT_TYPE,
@@ -61,15 +59,12 @@ const actionSplashEvent = (overrides: Partial<SplashEvent> = {}): SplashEvent =>
 })
 
 const createDeps = (existing: TabletopMap | null = baseMap()) => {
-  const path = join(MAPS_ROOT, 'arena.json')
   const deps = {
-    findMapPath: vi.fn((slug: string) => (slug === 'arena' && existing ? path : null)),
-    readMap: vi.fn(() => {
-      if (!existing) throw new Error('unexpected read')
-      return existing
-    }),
+    mapRepository: {
+      getBySlug: vi.fn((slug: string) => (slug === 'arena' ? existing : null)),
+    },
   }
-  return { deps, path }
+  return { deps }
 }
 
 describe('transient map action event publishing', () => {
@@ -93,8 +88,7 @@ describe('transient map action event publishing', () => {
         data: event,
       },
     })
-    expect(deps.findMapPath).toHaveBeenCalledWith('arena')
-    expect(deps.readMap).toHaveBeenCalledTimes(1)
+    expect(deps.mapRepository.getBySlug).toHaveBeenCalledWith('arena')
   })
 
   it('allows a player to publish for a selected-profile linked token', () => {

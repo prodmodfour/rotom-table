@@ -1,7 +1,8 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { SheetKind } from '#shared/sheets'
-import { deleteSheetFile, type SheetFileResult } from '../utils/sheetStorage'
+import { sqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
+import { mapRetargetRealtimeEvents } from '../utils/mapRetargetRealtime'
 
 export class DeleteSheetUseCaseError extends UseCaseHttpError<404> {}
 
@@ -12,7 +13,7 @@ export interface DeleteSheetInput {
 }
 
 export interface DeleteSheetDependencies {
-  deleteSheet?: (kind: SheetKind, slug: string) => SheetFileResult | null
+  sheetRepository?: Pick<SheetRepository, 'deleteDocument'>
 }
 
 export interface DeleteSheetResult {
@@ -25,9 +26,9 @@ export const deleteSheetUseCase = (
   input: DeleteSheetInput,
   dependencies: DeleteSheetDependencies = {},
 ): DeleteSheetResult => {
-  const deleteSheet = dependencies.deleteSheet ?? deleteSheetFile
+  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
 
-  const deleted = deleteSheet(input.kind, input.slug)
+  const deleted = sheetRepository.deleteDocument(input.kind, input.slug)
   if (!deleted) throw new DeleteSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
 
   const data = { kind: input.kind, slug: input.slug }
@@ -35,10 +36,11 @@ export const deleteSheetUseCase = (
 
   return {
     ok: true,
-    path: deleted.relativePath,
+    path: deleted.path,
     events: [
       { channel: sheetChannel(input.kind, input.slug), type: 'deleted', clientId, data },
       { channel: sheetsChannel, type: 'deleted', clientId, data },
+      ...mapRetargetRealtimeEvents((deleted.mapUpdates ?? []) as Parameters<typeof mapRetargetRealtimeEvents>[0], clientId),
     ],
   }
 }

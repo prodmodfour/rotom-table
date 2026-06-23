@@ -1,10 +1,8 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { unlinkSync } from 'node:fs'
-import { sep } from 'node:path'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
-import { campaignPathLabel } from '../utils/campaignPaths'
-import { findMapFile } from '../utils/mapStorage'
-import { MAPS_ROOT, SLUG_RE, pruneEmptyMapParents } from '../utils/mapPaths'
+import { validateSlug } from '#shared/paths'
+import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
+import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 
 export class DeleteMapUseCaseError extends UseCaseHttpError<400 | 404> {}
 
@@ -14,11 +12,7 @@ export interface DeleteMapInput {
 }
 
 export interface DeleteMapDependencies {
-  mapsRoot?: string
-  findMapPath?: (slug: string) => string | null
-  removeMapFile?: (filePath: string) => void
-  pruneEmptyParents?: (filePath: string) => void
-  relativePath?: (filePath: string) => string
+  mapRepository?: Pick<MapRepository, 'deleteDocument'>
 }
 
 export interface DeleteMapResult {
@@ -27,37 +21,27 @@ export interface DeleteMapResult {
   events: Array<Omit<RealtimeEvent, 'timestamp'>>
 }
 
-const SLUG_ERROR = 'slug must match /^[a-z0-9-]+$/'
-
 export const normalizeDeleteMapSlug = (value: unknown): string => {
-  const slug = String(value ?? '')
-  if (!SLUG_RE.test(slug)) throw new DeleteMapUseCaseError(400, SLUG_ERROR)
-  return slug
+  try {
+    return validateSlug(value, 'slug')
+  } catch {
+    throw new DeleteMapUseCaseError(400, 'slug must match /^[a-z0-9-]+$/')
+  }
 }
 
 export const deleteMapUseCase = (
   input: DeleteMapInput,
   dependencies: DeleteMapDependencies = {},
 ): DeleteMapResult => {
-  const mapsRoot = dependencies.mapsRoot ?? MAPS_ROOT
-  const findMapPath = dependencies.findMapPath ?? findMapFile
-  const removeMapFile = dependencies.removeMapFile ?? unlinkSync
-  const pruneEmptyParents = dependencies.pruneEmptyParents ?? pruneEmptyMapParents
-  const relativePath = dependencies.relativePath ?? campaignPathLabel
-
+  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
   const slug = normalizeDeleteMapSlug(input.slug)
-  const mapPath = findMapPath(slug)
-  if (!mapPath) throw new DeleteMapUseCaseError(404, `Map ${slug}.json not found`)
-  if (mapPath === mapsRoot || !mapPath.startsWith(mapsRoot + sep)) {
-    throw new DeleteMapUseCaseError(400, 'Invalid map path')
-  }
+  const deleted = mapRepository.deleteDocument(slug)
+  if (!deleted) throw new DeleteMapUseCaseError(404, `Map ${slug}.json not found`)
 
-  removeMapFile(mapPath)
-  pruneEmptyParents(mapPath)
-
+  const path = logicalMapResourcePath(deleted.map)
   return {
     ok: true,
-    path: relativePath(mapPath),
+    path,
     events: [
       {
         channel: mapChannel(slug),

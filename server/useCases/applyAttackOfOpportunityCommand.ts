@@ -1,4 +1,3 @@
-import { join } from 'node:path'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
@@ -35,11 +34,10 @@ import {
 } from '../policies/playerProfileTokenControlPolicy'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
-import { campaignPathLabel } from '../utils/campaignPaths'
-import { MAPS_ROOT } from '../utils/mapPaths'
+import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
-import { readSheetFile } from '../utils/sheetStorage'
+import { readRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
@@ -94,7 +92,7 @@ type AttackOfOpportunityDependencySet = ReturnType<typeof actionDependencies>
 const livePlayAttackOfOpportunityCommandExecutor = createSqliteAuthoritativeLivePlayCommandExecutor()
 
 const readDefaultSheet = (kind: SheetKind, slug: string): SheetFileRecord | null =>
-  readSheetFile<Record<string, unknown>>(kind, slug)
+  readRuntimeSheet<Record<string, unknown>>(kind, slug)
 
 const actionDependencies = (dependencies: AttackOfOpportunityCommandDependencies) => ({
   commandExecutor: dependencies.commandExecutor ?? livePlayAttackOfOpportunityCommandExecutor,
@@ -103,12 +101,10 @@ const actionDependencies = (dependencies: AttackOfOpportunityCommandDependencies
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   readSheet: dependencies.readSheet ?? readDefaultSheet,
   now: dependencies.now ?? Date.now,
-  relativePath: dependencies.relativePath ?? campaignPathLabel,
+  relativePath: dependencies.relativePath ?? ((path: string) => path),
 })
 
-const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => (
-  map.folder ? join(MAPS_ROOT, map.folder, `${map.slug}.json`) : join(MAPS_ROOT, `${map.slug}.json`)
-)
+const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => logicalMapResourcePath(map)
 
 const currentRoundForMap = (map: TabletopMap): number | null => map.initiative?.round ?? null
 
@@ -436,7 +432,7 @@ export const executeAttackOfOpportunityLivePlayCommandUseCase = async (
       throw new Error('live-play attack-of-opportunity commands must persist through the accepted-result commit hook')
     },
     commit: ({ actor, command, currentRevision, nextMap, result, saveOpResult }) => {
-      const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, nextMap.map.updatedAt ?? deps.now(), { revision: result.revision })
+      const persisted = toPersistedMap(nextMap.map, nextMap.map.folder ?? '', nextMap.map.updatedAt ?? deps.now(), { revision: result.revision })
       const authoritativeMap = commitLivePlayMapUpdate({
         database: deps.database,
         mapRepository: deps.mapRepository,

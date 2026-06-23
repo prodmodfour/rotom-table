@@ -1,7 +1,8 @@
 import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
-import { deleteMapFolder, type DeleteMapFolderResult as StoredDeleteMapFolderResult } from '../utils/mapFolderStorage'
 import { sanitizeMapFolderPath } from '../utils/mapPaths'
+import { logicalMapFolderPath } from '../utils/runtimeResourcePaths'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 
 export class DeleteMapFolderUseCaseError extends UseCaseHttpError<400 | 404> {}
 
@@ -11,7 +12,8 @@ export interface DeleteMapFolderInput {
 }
 
 export interface DeleteMapFolderDependencies {
-  deleteFolder?: (folder: string) => StoredDeleteMapFolderResult | null
+  mapRepository?: Pick<MapRepository, 'deleteFolder'>
+  deleteFolder?: (folder: string) => { folder?: string; removed?: string } | null
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
 }
 
@@ -32,34 +34,29 @@ export const normalizeDeleteMapFolderPath = (
   }
 }
 
-const normalizeDeleteFolderStorageError = (err: unknown): DeleteMapFolderUseCaseError => {
-  const message = (err as Error).message
-  if (message === 'Invalid path: outside root') {
-    return new DeleteMapFolderUseCaseError(400, 'Invalid folder path')
-  }
-  return new DeleteMapFolderUseCaseError(400, message)
-}
-
 export const deleteMapFolderUseCase = (
   input: DeleteMapFolderInput,
   dependencies: DeleteMapFolderDependencies = {},
 ): DeleteMapFolderResult => {
   const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeMapFolderPath
-  const deleteFolder = dependencies.deleteFolder ?? deleteMapFolder
+  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
+  const deleteFolder = dependencies.deleteFolder ?? ((folder: string) => mapRepository.deleteFolder(folder))
 
   const folder = normalizeDeleteMapFolderPath(input.folder, sanitizeFolder)
-  let result: StoredDeleteMapFolderResult | null
+  let result
   try {
     result = deleteFolder(folder)
   } catch (err) {
-    throw normalizeDeleteFolderStorageError(err)
+    throw new DeleteMapFolderUseCaseError(400, (err as Error).message)
   }
 
   if (!result) throw new DeleteMapFolderUseCaseError(404, `Folder "${folder}" not found`)
 
   return {
     ok: true,
-    removed: result.removed,
+    removed: ('removed' in result && typeof result.removed === 'string')
+      ? result.removed
+      : logicalMapFolderPath(result.folder ?? folder),
     events: [
       {
         channel: mapsChannel,

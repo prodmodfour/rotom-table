@@ -1,6 +1,5 @@
 import { computed, onMounted, reactive, ref } from 'vue'
-import { characterSheets, getPokedexEntry, getSpriteUrl } from '~~/data/characterSheets'
-import { trainerSheets } from '~~/data/trainerSheets'
+import { getPokedexEntry, getSpriteUrl } from '~~/data/characterSheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { useApiClient } from '~/composables/useApiClient'
@@ -73,8 +72,8 @@ export const useSheetLibraryData = (options: UseSheetLibraryDataOptions) => {
   const canUseDefaultSheetFetch = options.pokemonSheets === undefined && options.trainerSheets === undefined
 
   const baseItems = computed(() => buildSheetLibraryItems({
-    pokemonSheets: runtimePokemonSheets.value ?? options.pokemonSheets ?? characterSheets,
-    trainerSheets: runtimeTrainerSheets.value ?? options.trainerSheets ?? trainerSheets,
+    pokemonSheets: runtimePokemonSheets.value ?? options.pokemonSheets ?? [],
+    trainerSheets: runtimeTrainerSheets.value ?? options.trainerSheets ?? [],
     speciesTypesFor,
     spriteUrlFor,
   }))

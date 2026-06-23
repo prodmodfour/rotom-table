@@ -18,11 +18,11 @@
  *   • Edits in *other* tabs/devices arrive as SSE events; we patch
  *     the local reactive map in place and update our "last server snapshot"
  *     so the watcher doesn't trigger a redundant save.
- *   • If another tab renames the map (so the slug changes on disk),
+ *   • If another tab renames the map (so the logical resource slug changes),
  *     we set `renamedTo` so the page can navigate to the new URL.
  *
- * This whole-document flow has last-writer-wins characteristics and must not
- * be reused as live multiplayer conflict resolution.
+ * This whole-document flow is revision-checked setup/edit persistence and must
+ * not be reused as live multiplayer conflict resolution.
  */
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
@@ -61,6 +61,7 @@ interface BooleanRef {
 interface MapSaveBody {
   slug: string
   map: TabletopMap
+  expectedRevision: number
   clientId: string
   interactionMode: MapInteractionMode
   profileId?: PlayerProfileId
@@ -173,6 +174,7 @@ export const useEditableMap = (
     return {
       slug,
       map: snapshot,
+      expectedRevision: normalizeRevision(snapshot.revision),
       clientId,
       interactionMode: currentInteractionMode(),
       ...(playerProfileId ? { profileId: playerProfileId } : {}),
@@ -312,14 +314,8 @@ export const useEditableMap = (
       save: () => postJson<{ map: TabletopMap }>(MAP_API_PATHS.save, buildMapSaveBody(snapshot)),
       onSuccess: (result, { latest }) => {
         if (!latest || isStalePersistedMap(result.map)) return
-        // Adopt the persisted version (server stamps `updatedAt` and revision).
         autosave.snapshot.markClean(result.map)
-        // Splice in server-owned metadata without disturbing other fields the
-        // user may have edited mid-flight.
-        if (map.value) {
-          map.value.revision = normalizeRevision(result.map.revision)
-          map.value.updatedAt = result.map.updatedAt
-        }
+        applyServerMap(result.map)
       },
       error: { logPrefix: '[useEditableMap] save failed' },
     })
@@ -493,8 +489,8 @@ export const useEditableMap = (
     } else if (event.type === 'renamed' && event.data) {
       const payload = event.data as { newSlug?: string; map?: TabletopMap }
       if (!payload.newSlug) return
-      // The file moved on disk — drop any pending save (its slug is
-      // gone) and let the page navigate to the new URL.
+      // The logical resource slug changed — drop any pending save for the
+      // old slug and let the page navigate to the new URL.
       autosave.cancelPendingSave()
       if (payload.map) {
         applyPersistedMap(payload.map)
@@ -523,7 +519,7 @@ export const useEditableMap = (
 
     if (!autosave.task.hasPending()) return
     // Skip flushing the pending save when the slug was renamed away
-    // from us — the old filename no longer exists on disk. Also cancel
+    // from us — the old logical resource no longer exists. Also cancel
     // pending document-backed writes while autosave is intentionally paused
     // or the page is in live-play mode so external command/action paths remain
     // the write authority.

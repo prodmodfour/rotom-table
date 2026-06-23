@@ -8,7 +8,7 @@ import {
   updatePlayerProfile as updateStoredPlayerProfile,
   type UpdatePlayerProfileInput as UpdateStoredPlayerProfileInput,
 } from '../utils/playerProfileStorage'
-import { findPersistedSheetFile } from '../utils/sheetStorage'
+import { sqliteSheetRepository } from '../storage/sheetRepository'
 import {
   PlayerProfileUseCaseError,
   assertGmProfileRequest,
@@ -40,7 +40,7 @@ export interface UpdatePlayerProfileResult {
 }
 
 const defaultSheetExists = (ref: LinkedCharacterRef): boolean =>
-  findPersistedSheetFile(ref.sheetKind, ref.sheetSlug) !== null
+  sqliteSheetRepository.getByRef(ref.sheetKind, ref.sheetSlug) !== null
 
 const assertLinkedCharacterSheetsExist = (
   refs: readonly LinkedCharacterRef[],

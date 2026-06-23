@@ -1,6 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sanitizeFolderPath } from '#shared/paths'
-import { deleteSheetFolder, type DeleteFolderResult } from '../utils/sheetFolderStorage'
+import { sqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
 
 export class DeleteSheetFolderUseCaseError extends UseCaseHttpError<400 | 404> {}
 
@@ -9,7 +9,8 @@ export interface DeleteSheetFolderInput {
 }
 
 export interface DeleteSheetFolderDependencies {
-  deleteFolder?: (folder: string) => DeleteFolderResult | null
+  sheetRepository?: Pick<SheetRepository, 'deleteFolder'>
+  deleteFolder?: (folder: string) => { count: number; removed: readonly string[]; deletedSheets?: readonly unknown[] } | null
 }
 
 export interface DeleteSheetFolderResult {
@@ -30,10 +31,11 @@ export const deleteSheetFolderUseCase = (
   input: DeleteSheetFolderInput,
   dependencies: DeleteSheetFolderDependencies = {},
 ): DeleteSheetFolderResult => {
-  const deleteFolder = dependencies.deleteFolder ?? deleteSheetFolder
+  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
+  const deleteFolder = dependencies.deleteFolder ?? ((folder: string) => sheetRepository.deleteFolder(folder))
   const folder = normalizeDeleteSheetFolderPath(input.folder)
   const result = deleteFolder(folder)
   if (!result) throw new DeleteSheetFolderUseCaseError(404, `Folder "${folder}" not found`)
 
-  return { ok: true, count: result.count, removed: result.removed }
+  return { ok: true, count: result.count, removed: [...result.removed] }
 }

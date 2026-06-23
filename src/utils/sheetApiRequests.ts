@@ -24,6 +24,7 @@ export interface BuildSheetSaveBodyOptions {
   readonly kind: SheetKind
   readonly slug: string
   readonly sheet: unknown
+  readonly expectedRevision?: number
   readonly clientId?: string
   readonly profileContext?: SheetApiProfileContext
   readonly requireSelectedPlayerProfile?: boolean
@@ -91,6 +92,7 @@ export const buildSheetSaveBody = (
     kind: options.kind,
     slug: options.slug,
     sheet: options.sheet,
+    expectedRevision: options.expectedRevision,
     interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
     ...(options.clientId ? { clientId: options.clientId } : {}),
     ...(profileId ? { profileId } : {}),

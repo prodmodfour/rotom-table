@@ -93,23 +93,31 @@ describe('SQLite storage foundation', () => {
     expect(existsSync(database.path)).toBe(true)
     expect(database.journalMode?.toLowerCase()).toBe('wal')
     expect(getStorageSchemaVersion(database.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
-    expect(tableNames(database)).toEqual(['live_play_ops', 'map_interaction_modes', 'maps', 'sheets'])
+    expect(tableNames(database)).toEqual(['live_play_ops', 'map_folders', 'map_interaction_modes', 'maps', 'sheet_folders', 'sheets'])
 
     const reopened = openRotomDatabase({ path: database.path })
     openDatabases.push(reopened)
     expect(getStorageSchemaVersion(reopened.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
-    expect(tableNames(reopened)).toEqual(['live_play_ops', 'map_interaction_modes', 'maps', 'sheets'])
+    expect(tableNames(reopened)).toEqual(['live_play_ops', 'map_folders', 'map_interaction_modes', 'maps', 'sheet_folders', 'sheets'])
   })
 
   it('reads and writes map, sheet, and shared interaction-mode state through repository interfaces', () => {
     const database = openTempDatabase()
-    const maps = createSqliteMapRepository<{ name: string; revision: number }>(database)
+    const maps = createSqliteMapRepository<TabletopMap>(database)
     const sheets = createSqliteSheetRepository<{ nickname?: string; name?: string; revision: number }>(database)
     const modes = createSqliteMapInteractionModeRepository(database)
 
     const map = maps.save({
       slug: 'training-yard',
-      document: { name: 'Training Yard', revision: 2 },
+      document: {
+        schemaVersion: 2,
+        slug: 'training-yard',
+        name: 'Training Yard',
+        revision: 2,
+        dimensions: { x: 10, y: 1, z: 10 },
+        voxels: [],
+        placements: [],
+      },
       revision: 2,
       updatedAt: 1_700_000_000_000,
     })
@@ -130,7 +138,7 @@ describe('SQLite storage foundation', () => {
 
     expect(map).toEqual({
       slug: 'training-yard',
-      document: { name: 'Training Yard', revision: 2 },
+      document: expect.objectContaining({ name: 'Training Yard', slug: 'training-yard', revision: 2, updatedAt: 1_700_000_000_000 }),
       revision: 2,
       updatedAt: 1_700_000_000_000,
     })
@@ -138,7 +146,7 @@ describe('SQLite storage foundation', () => {
     expect(pokemon).toEqual({
       kind: 'pokemon',
       slug: 'pikachu',
-      document: { nickname: 'Sparky', revision: 5 },
+      document: { nickname: 'Sparky', slug: 'pikachu', revision: 5, updatedAt: 1_700_000_000_100 },
       revision: 5,
       updatedAt: 1_700_000_000_100,
     })
@@ -163,12 +171,20 @@ describe('SQLite storage foundation', () => {
 
     maps.save({
       slug: 'training-yard',
-      document: { name: 'Training Yard Revised', revision: 3 },
+      document: {
+        schemaVersion: 2,
+        slug: 'training-yard',
+        name: 'Training Yard Revised',
+        revision: 3,
+        dimensions: { x: 10, y: 1, z: 10 },
+        voxels: [],
+        placements: [],
+      },
       revision: 3,
       updatedAt: 1_700_000_000_300,
     })
     expect(maps.get('training-yard')).toMatchObject({
-      document: { name: 'Training Yard Revised', revision: 3 },
+      document: expect.objectContaining({ name: 'Training Yard Revised', revision: 3 }),
       revision: 3,
       updatedAt: 1_700_000_000_300,
     })

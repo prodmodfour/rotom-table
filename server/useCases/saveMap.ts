@@ -1,34 +1,31 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import type { RealtimeEvent } from '#shared/realtime'
-import { normalizeRevision, nextRevision } from '#shared/sessionRevisions'
+import { isRevision, normalizeRevision, nextRevision } from '#shared/sessionRevisions'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapMoveUsage } from '~/utils/moveUsage'
 import { normalizeMapSceneState } from '~/utils/mapSceneState'
 import { normalizeMapTemporaryHitPointsState } from '~/utils/mapTemporaryHitPoints'
 import type { AuthRole } from '#shared/auth'
 import type { TabletopMap } from '~/types/map'
-import { campaignPathLabel } from '../utils/campaignPaths'
-import { findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
-import { folderFromPath } from '../utils/mapPaths'
 import { mapDocumentUpdatedRealtimeEvents } from '../utils/mapRealtimeEvents'
 import { normalizeMapGroundLevelY } from '../utils/mapNormalization'
+import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
+import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 
-export class SaveMapUseCaseError extends UseCaseHttpError<400 | 403 | 404> {}
+export class SaveMapUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
 export interface SaveMapInput {
   role: AuthRole
   slug: string
   map: TabletopMap
+  expectedRevision?: number
   clientId?: string
   interactionMode: MapInteractionMode
 }
 
 export interface SaveMapDependencies {
-  findMapPath?: (slug: string) => string | null
-  readMap?: (filePath: string) => TabletopMap
-  writeMap?: (filePath: string, map: TabletopMap) => void
-  relativePath?: (filePath: string) => string
+  mapRepository?: Pick<MapRepository, 'replaceSetupMap'>
   now?: () => number
 }
 
@@ -42,11 +39,12 @@ export interface SaveMapResult {
 export interface ToPersistedMapOptions {
   revision?: number
   advanceRevision?: boolean
+  folder?: string
 }
 
 export const toPersistedMap = (
   source: TabletopMap,
-  filePath: string,
+  folderOrPath: string,
   updatedAt: number,
   options: ToPersistedMapOptions = {},
 ): TabletopMap => {
@@ -55,6 +53,7 @@ export const toPersistedMap = (
     : { activeId: null, round: 1 }
   const activeScene = normalizeMapSceneState(source.activeScene)
   const temporaryHitPoints = normalizeMapTemporaryHitPointsState(source.temporaryHitPoints, activeScene)
+  const folder = options.folder ?? folderOrPath
 
   return {
     schemaVersion: 2,
@@ -63,7 +62,7 @@ export const toPersistedMap = (
       : normalizeRevision(source.revision)),
     slug: source.slug,
     name: source.name,
-    folder: folderFromPath(filePath),
+    folder,
     dimensions: source.dimensions,
     groundLevelY: normalizeMapGroundLevelY(source.groundLevelY, source.dimensions?.y ?? 1),
     playerVisible: source.playerVisible === true,
@@ -100,30 +99,36 @@ export const saveMapUseCase = (
     throw new SaveMapUseCaseError(403, 'Player whole-map saves are not allowed; live play uses commands')
   }
 
-  const findMapPath = dependencies.findMapPath ?? findMapFile
-  const readMap = dependencies.readMap ?? readMapFile
-  const writeMap = dependencies.writeMap ?? writeMapFile
-  const relativePath = dependencies.relativePath ?? campaignPathLabel
+  if (!isRevision(input.expectedRevision)) {
+    throw new SaveMapUseCaseError(400, 'expectedRevision must be a safe non-negative integer')
+  }
 
-  const filePath = findMapPath(input.slug)
-  if (!filePath) throw new SaveMapUseCaseError(404, `Map ${input.slug}.json not found`)
+  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
+  const expectedRevision = input.expectedRevision
+  const now = dependencies.now ?? Date.now
 
-  const existing = readMap(filePath)
-  const sourceWithMoveUsage = Object.prototype.hasOwnProperty.call(input.map, 'moveUsage') || !existing.moveUsage
-    ? input.map
-    : { ...input.map, moveUsage: existing.moveUsage }
+  let result
+  try {
+    result = mapRepository.replaceSetupMap({
+      slug: input.slug,
+      expectedRevision,
+      map: input.map,
+      now: now(),
+    })
+  } catch (err) {
+    const message = (err as Error).message
+    if (message.includes('stale') || message.includes('expected revision')) {
+      throw new SaveMapUseCaseError(409, message)
+    }
+    throw new SaveMapUseCaseError(400, message)
+  }
 
-  const persisted = toPersistedMap(sourceWithMoveUsage, filePath, dependencies.now?.() ?? Date.now(), {
-    revision: Object.prototype.hasOwnProperty.call(sourceWithMoveUsage, 'revision')
-      ? normalizeRevision(sourceWithMoveUsage.revision)
-      : normalizeRevision(existing.revision),
-  })
-  writeMap(filePath, persisted)
+  if (!result) throw new SaveMapUseCaseError(404, `Map ${input.slug}.json not found`)
 
   return {
     ok: true,
-    path: relativePath(filePath),
-    map: persisted,
-    events: mapDocumentUpdatedRealtimeEvents(persisted, input.clientId),
+    path: logicalMapResourcePath(result.map),
+    map: result.map,
+    events: result.changed ? mapDocumentUpdatedRealtimeEvents(result.map, input.clientId) : [],
   }
 }

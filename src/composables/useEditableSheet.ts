@@ -1,10 +1,9 @@
 /**
  * useEditableSheet — reactive wrapper around a Pokémon or trainer sheet.
  *
- * Takes a static sheet (loaded via `import.meta.glob`) and produces a
- * deep, reactive copy. Any mutation to the returned `ref` deep-watches
- * and POSTs the full updated sheet to setup/edit `/api/sheets/save`, which
- * persists it to disk.
+ * Takes a runtime SQLite-backed sheet and produces a deep, reactive copy. Any
+ * mutation to the returned `ref` deep-watches and POSTs the full updated sheet
+ * to setup/edit `/api/sheets/save` with the expected document revision.
  *
  * Saves are debounced (default 200 ms after the last edit) so a flurry
  * of keystrokes coalesces into a single write. The composable exposes
@@ -20,6 +19,7 @@ import { getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { getClientId } from '~/utils/clientId'
 import { isRealtimeEcho, sheetChannel } from '#shared/realtime'
 import { slugify } from '#shared/paths'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
 import { bindAutosaveUnloadFlushers, sendSetupEditJsonWithUnloadFallback } from '~/utils/autosaveUnload'
@@ -68,7 +68,7 @@ interface SaveSheetResponse<T> {
   sheet?: T
 }
 
-export function useEditableSheet<T extends { slug: string }>(
+export function useEditableSheet<T extends { slug: string; revision?: number }>(
   initial: T,
   kind: SheetKind,
   options: UseEditableSheetOptions = {},
@@ -107,6 +107,7 @@ export function useEditableSheet<T extends { slug: string }>(
     kind,
     slug: sheet.value.slug,
     sheet: payload,
+    expectedRevision: normalizeRevision(sheet.value.revision),
     clientId,
     profileContext: currentProfileContext(),
     requireSelectedPlayerProfile: requiresSelectedPlayerProfile(),
@@ -194,6 +195,7 @@ export function useEditableSheet<T extends { slug: string }>(
         }
 
         if (persistedSheet) {
+          if (latest) sheet.value = persistedSheet
           autosave.snapshot.markClean(persistedSheet)
           slugSyncBaselineDisplayName = displayNameFor(persistedSheet)
         } else if (persistedSlug && persistedSlug !== payload.slug) {

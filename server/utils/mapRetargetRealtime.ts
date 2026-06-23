@@ -1,5 +1,5 @@
 import type { RealtimeEvent } from '#shared/realtime'
-import type { RetargetMapSheetPlacementsResult } from './mapStorage'
+import type { RetargetMapSheetPlacementsResult } from '../storage/mapRepository'
 import { mapDocumentUpdatedRealtimeEvents } from './mapRealtimeEvents'
 
 export const mapRetargetRealtimeEvents = (

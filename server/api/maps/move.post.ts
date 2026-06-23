@@ -1,7 +1,7 @@
 /**
  * POST /api/maps/move
  *
- * Moves a map file into a different folder under ``data/maps/``.
+ * Moves a SQLite map document into a different logical folder.
  * Empty `folder` moves the map back to the root.
  *
  * Request body: `{ slug: string, folder: string, clientId?: string }`

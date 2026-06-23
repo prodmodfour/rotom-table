@@ -50,7 +50,7 @@ describe('delete map folder use case', () => {
       throw new Error('Invalid path: outside root')
     })
     expect(() => deleteMapFolderUseCase({ folder: '../escape' }, escaped))
-      .toThrow('Invalid folder path')
+      .toThrow('Invalid path: outside root')
 
     const root = createDeps()
     root.sanitizeFolder.mockReturnValue('')

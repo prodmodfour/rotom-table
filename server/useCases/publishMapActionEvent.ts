@@ -6,8 +6,8 @@ import type { SheetPlacement, TabletopMap } from '~/types/map'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import { actorCanControlMapPlacement } from '../policies/playerProfileTokenControlPolicy'
 import type { PlayerProfileLinkedTrainerSheet } from '../policies/playerProfilePolicy'
-import { findMapFile, readMapFile } from '../utils/mapStorage'
-import { listSheetFilesWithFolders } from '../utils/sheetStorage'
+import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { sqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export const MAP_ACTION_EVENT_MAX_PAYLOAD_BYTES = 64 * 1024
@@ -24,8 +24,8 @@ export interface PublishMapActionEventInput {
 }
 
 export interface PublishMapActionEventDependencies {
-  findMapPath?: (slug: string) => string | null
-  readMap?: (path: string) => TabletopMap
+  mapRepository?: Pick<MapRepository, 'getBySlug'>
+  sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'list'>
   listTrainerSheets?: () => Iterable<PlayerProfileLinkedTrainerSheet>
   maxPayloadBytes?: number
 }
@@ -93,15 +93,18 @@ export const publishMapActionEventUseCase = (
     input.event,
     dependencies.maxPayloadBytes ?? MAP_ACTION_EVENT_MAX_PAYLOAD_BYTES,
   )
-  const findMapPath = dependencies.findMapPath ?? findMapFile
-  const readMap = dependencies.readMap ?? readMapFile
+  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
+  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
   const listTrainerSheets = dependencies.listTrainerSheets
-    ?? (() => listSheetFilesWithFolders<PlayerProfileLinkedTrainerSheet>('trainer'))
+    ?? (() => sheetRepository.list('trainer').map((stored) => ({
+      ...(stored.document as Record<string, unknown>),
+      slug: stored.slug,
+      revision: stored.revision,
+    } as PlayerProfileLinkedTrainerSheet)))
 
-  const mapPath = findMapPath(input.slug)
-  if (!mapPath) throw new PublishMapActionEventUseCaseError(404, `Map ${input.slug}.json not found`)
+  const map = mapRepository.getBySlug(input.slug)
+  if (!map) throw new PublishMapActionEventUseCaseError(404, `Map ${input.slug}.json not found`)
 
-  const map = readMap(mapPath)
   if (!canAccessMapForRole(input.role, map)) {
     throw new PublishMapActionEventUseCaseError(403, 'Map is not player visible')
   }

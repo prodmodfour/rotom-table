@@ -1,3 +1,4 @@
+/** Maintenance-only filesystem folder helpers for legacy JSON sheet import/export tests. */
 import {
   existsSync,
   mkdirSync,

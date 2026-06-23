@@ -69,6 +69,7 @@ describe('map save API route', () => {
       body: {
         slug: 'arena',
         map,
+        expectedRevision: 0,
         clientId: 'gm-client',
         profileId: 'profile_ash00000',
         interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
@@ -80,6 +81,7 @@ describe('map save API route', () => {
       role: 'gm',
       slug: 'arena',
       map,
+      expectedRevision: 0,
       clientId: 'gm-client',
       interactionMode: 'setup-edit',
     })
@@ -103,6 +105,7 @@ describe('map save API route', () => {
         body: {
           slug: 'arena',
           map,
+          expectedRevision: 0,
           clientId: 'client-1',
           interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
         },
@@ -129,6 +132,7 @@ describe('map save API route', () => {
       body: {
         slug: 'arena',
         map,
+        expectedRevision: 0,
         clientId: 'player-client',
         profileId: 'profile_ash00000',
         interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
@@ -142,6 +146,7 @@ describe('map save API route', () => {
       role: 'player',
       slug: 'arena',
       map,
+      expectedRevision: 0,
       clientId: 'player-client',
       interactionMode: 'setup-edit',
     })
@@ -158,6 +163,7 @@ describe('map save API route', () => {
       body: {
         slug: 'arena',
         map,
+        expectedRevision: 0,
         interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
       },
     })).rejects.toMatchObject({

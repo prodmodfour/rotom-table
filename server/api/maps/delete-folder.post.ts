@@ -1,8 +1,8 @@
 /**
  * POST /api/maps/delete-folder
  *
- * Recursively removes a folder under ``data/maps/`` and every map
- * inside it. Empty parents are pruned.
+ * Recursively removes a logical SQLite map folder and every map
+ * inside it.
  *
  * Request body: `{ folder: string, clientId?: string }`
  */

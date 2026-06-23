@@ -117,6 +117,7 @@ describe('document-backed editing no-regression boundaries', () => {
     expect(localMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.save, {
       slug: 'local-arena',
       map: expect.objectContaining({ name: 'Local Arena Revised' }),
+      expectedRevision: 0,
       clientId: 'local-client',
       interactionMode: 'setup-edit',
     })
@@ -155,6 +156,7 @@ describe('document-backed editing no-regression boundaries', () => {
       slug: 'local-pikachu',
       interactionMode: 'setup-edit',
       sheet: { revision: 0, slug: 'local-pikachu', nickname: 'local pikachu', level: 6 },
+      expectedRevision: 0,
       clientId: 'local-client',
       allowSlugSync: false,
     })

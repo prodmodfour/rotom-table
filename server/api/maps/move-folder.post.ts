@@ -1,7 +1,7 @@
 /**
  * POST /api/maps/move-folder
  *
- * Renames or relocates a folder under ``data/maps/``.
+ * Renames or relocates a logical SQLite map folder.
  *
  * Request body: `{ from: string, to: string, clientId?: string }`
  */

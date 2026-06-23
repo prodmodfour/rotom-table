@@ -1,7 +1,7 @@
 import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
-import { moveMapFolder, type MoveMapFolderResult as StoredMoveMapFolderResult } from '../utils/mapFolderStorage'
 import { sanitizeMapFolderPath } from '../utils/mapPaths'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 
 export class MoveMapFolderUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
@@ -12,8 +12,10 @@ export interface MoveMapFolderInput {
 }
 
 export interface MoveMapFolderDependencies {
-  moveFolder?: (from: string, to: string) => StoredMoveMapFolderResult | null
+  mapRepository?: Pick<MapRepository, 'moveFolder'>
+  moveFolder?: (from: string, to: string) => { moved: boolean } | null
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
+  now?: () => number
 }
 
 export interface MoveMapFolderResult {
@@ -33,23 +35,13 @@ export const normalizeMoveMapFolderPath = (
   }
 }
 
-const normalizeMoveFolderStorageError = (err: unknown): MoveMapFolderUseCaseError => {
-  const message = (err as Error).message
-  if (message === 'Destination folder already exists') {
-    return new MoveMapFolderUseCaseError(409, message)
-  }
-  if (message === 'Invalid path: outside root') {
-    return new MoveMapFolderUseCaseError(400, 'Invalid path')
-  }
-  return new MoveMapFolderUseCaseError(400, message)
-}
-
 export const moveMapFolderUseCase = (
   input: MoveMapFolderInput,
   dependencies: MoveMapFolderDependencies = {},
 ): MoveMapFolderResult => {
   const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeMapFolderPath
-  const moveFolder = dependencies.moveFolder ?? moveMapFolder
+  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
+  const moveFolder = dependencies.moveFolder ?? ((from: string, to: string) => mapRepository.moveFolder(from, to, dependencies.now?.()))
 
   const from = normalizeMoveMapFolderPath(input.from, sanitizeFolder)
   const to = normalizeMoveMapFolderPath(input.to, sanitizeFolder)
@@ -65,11 +57,13 @@ export const moveMapFolderUseCase = (
     throw new MoveMapFolderUseCaseError(400, 'Cannot move a folder into itself or one of its descendants')
   }
 
-  let result: StoredMoveMapFolderResult | null
+  let result
   try {
     result = moveFolder(from, to)
   } catch (err) {
-    throw normalizeMoveFolderStorageError(err)
+    const message = (err as Error).message
+    if (message === 'Destination folder already exists') throw new MoveMapFolderUseCaseError(409, message)
+    throw new MoveMapFolderUseCaseError(400, message)
   }
 
   if (!result) throw new MoveMapFolderUseCaseError(404, `Folder "${from}" not found`)

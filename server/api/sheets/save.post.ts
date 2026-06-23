@@ -5,6 +5,7 @@ import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils
 import {
   badRequest,
   expectRecord,
+  expectRevision,
   expectSheetKind,
   expectSlug,
   readObjectBody,
@@ -22,6 +23,7 @@ interface SaveBody {
   profileId?: unknown
   allowSlugSync?: unknown
   interactionMode?: unknown
+  expectedRevision?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -34,6 +36,7 @@ export default defineEventHandler(async (event) => {
   const sheet = expectRecord(body.sheet, 'sheet')
   const interactionMode = parseMapInteractionMode(body.interactionMode)
     ?? badRequest('interactionMode must be "setup-edit" or "live-play"')
+  const expectedRevision = expectRevision(body.expectedRevision, 'expectedRevision')
 
   try {
     const playerProfile = role === 'player'
@@ -44,6 +47,7 @@ export default defineEventHandler(async (event) => {
       kind,
       slug,
       sheet,
+      expectedRevision,
       clientId: normalizeRealtimeClientId(body.clientId),
       playerProfile,
       interactionMode,

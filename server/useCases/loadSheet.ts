@@ -5,7 +5,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { playerCanAccessSheet, type PlayerProfileLinkedTrainerSheet } from '../policies/playerProfilePolicy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { listSheetFilesWithFolders, readSheetFileWithFolder } from '../utils/sheetStorage'
+import { sqliteSheetRepository, type SheetRepository, type PersistedSheet } from '../storage/sheetRepository'
 
 export class LoadSheetUseCaseError extends UseCaseHttpError<403 | 404> {}
 
@@ -26,7 +26,7 @@ export interface LoadSheetInput {
 }
 
 export interface LoadSheetDependencies {
-  readSheet?: (kind: SheetKind, slug: string) => { sheet: LoadedSheet } | null
+  sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list'>
   listTrainerSheets?: () => Iterable<PlayerProfileLinkedTrainerSheet>
 }
 
@@ -36,15 +36,21 @@ export interface LoadSheetResult {
   sheet: LoadedSheet
 }
 
+const persistedToLoadedSheet = (persisted: PersistedSheet): LoadedSheet => persisted.sheet as unknown as LoadedSheet
+
 export const loadSheetUseCase = (
   input: LoadSheetInput,
   dependencies: LoadSheetDependencies = {},
 ): LoadSheetResult => {
-  const readSheet = dependencies.readSheet
-    ?? ((kind: SheetKind, slug: string) => readSheetFileWithFolder<LoadedSheet>(kind, slug))
+  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
   const listTrainerSheets = dependencies.listTrainerSheets
-    ?? (() => listSheetFilesWithFolders<TrainerSheet>('trainer'))
-  const result = readSheet(input.kind, input.slug)
+    ?? (() => sheetRepository.list('trainer').map((stored) => ({
+      ...(stored.document as Record<string, unknown>),
+      slug: stored.slug,
+      revision: stored.revision,
+    } as PlayerProfileLinkedTrainerSheet)))
+  const persisted = sheetRepository.getByRef(input.kind, input.slug)
+  const result = persisted ? { sheet: persistedToLoadedSheet(persisted) } : null
 
   if (!result) throw new LoadSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
   if (

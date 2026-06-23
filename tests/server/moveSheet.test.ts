@@ -1,30 +1,30 @@
 import { describe, expect, it, vi } from 'vitest'
 import { MoveSheetUseCaseError, moveSheetUseCase } from '../../server/useCases/moveSheet'
-import type { SheetKind } from '../../shared/sheets'
 
+const sheet = { kind: 'pokemon' as const, slug: 'pika', sheet: { slug: 'pika', revision: 2 }, revision: 2, updatedAt: 20 }
 const movedSheet = {
-  filePath: '/repo/data/sheets/party/pika.json',
-  relativePath: 'data/sheets/party/pika.json',
+  sheet,
+  path: 'data/sheets/party/pika.json',
   moved: true,
   folder: 'party',
 }
 
 describe('move sheet use case', () => {
   it('moves a sheet and emits a compatible sheet-library moved event', () => {
-    const moveSheet = vi.fn((_kind: SheetKind, _slug: string, folder: string) => ({
+    const sheetRepository = { moveToFolder: vi.fn((input: { folder: string }) => ({
       ...movedSheet,
-      folder,
-      relativePath: `data/sheets/${folder}/pika.json`,
-    }))
+      folder: input.folder,
+      path: `data/sheets/${input.folder}/pika.json`,
+    })) }
 
     const result = moveSheetUseCase({
       kind: 'pokemon',
       slug: 'pika',
       folder: 'party/boxed',
       clientId: 'client-1',
-    }, { moveSheet })
+    }, { sheetRepository })
 
-    expect(moveSheet).toHaveBeenCalledWith('pokemon', 'pika', 'party/boxed')
+    expect(sheetRepository.moveToFolder).toHaveBeenCalledWith({ kind: 'pokemon', slug: 'pika', folder: 'party/boxed', now: undefined })
     expect(result).toMatchObject({
       ok: true,
       moved: true,
@@ -41,34 +41,30 @@ describe('move sheet use case', () => {
   })
 
   it('preserves same-folder no-op move responses', () => {
-    const moveSheet = vi.fn(() => ({
-      filePath: '/repo/data/trainers/brock.json',
-      relativePath: 'data/trainers/brock.json',
+    const sheetRepository = { moveToFolder: vi.fn(() => ({
+      sheet: { kind: 'trainer' as const, slug: 'brock', sheet: { slug: 'brock', revision: 1 }, revision: 1, updatedAt: 10 },
+      path: 'data/trainers/brock.json',
       moved: false,
       folder: '',
-    }))
+    })) }
 
-    const result = moveSheetUseCase({ kind: 'trainer', slug: 'brock', folder: '' }, { moveSheet })
+    const result = moveSheetUseCase({ kind: 'trainer', slug: 'brock', folder: '' }, { sheetRepository })
 
     expect(result).toMatchObject({ ok: true, moved: false, path: 'data/trainers/brock.json' })
-    expect(result.events[0]).toMatchObject({
-      channel: 'sheets',
-      type: 'moved',
-      data: { kind: 'trainer', slug: 'brock', folder: '' },
-    })
+    expect(result.events).toEqual([])
   })
 
   it('maps missing sheets to not-found use-case errors', () => {
-    const moveSheet = vi.fn(() => null)
+    const sheetRepository = { moveToFolder: vi.fn(() => null) }
 
     expect(() => moveSheetUseCase({
       kind: 'pokemon',
       slug: 'missing',
       folder: 'party',
-    }, { moveSheet })).toThrow('Sheet missing.json not found')
+    }, { sheetRepository })).toThrow('Sheet missing.json not found')
 
     try {
-      moveSheetUseCase({ kind: 'pokemon', slug: 'missing', folder: 'party' }, { moveSheet })
+      moveSheetUseCase({ kind: 'pokemon', slug: 'missing', folder: 'party' }, { sheetRepository })
     } catch (err) {
       expect(err).toBeInstanceOf(MoveSheetUseCaseError)
       expect(err).toMatchObject({ statusCode: 404 })
@@ -87,9 +83,9 @@ describe('move sheet use case', () => {
       kind: 'pokemon',
       slug: 'pika',
       folder: 'party',
-    }, { moveSheet: conflictMove })).toThrow('already exists')
+    }, { sheetRepository: { moveToFolder: conflictMove } })).toThrow('already exists')
     try {
-      moveSheetUseCase({ kind: 'pokemon', slug: 'pika', folder: 'party' }, { moveSheet: conflictMove })
+      moveSheetUseCase({ kind: 'pokemon', slug: 'pika', folder: 'party' }, { sheetRepository: { moveToFolder: conflictMove } })
     } catch (err) {
       expect(err).toMatchObject({ statusCode: 409 })
     }
@@ -98,9 +94,9 @@ describe('move sheet use case', () => {
       kind: 'pokemon',
       slug: 'pika',
       folder: 'bad',
-    }, { moveSheet: invalidMove })).toThrow('Invalid folder path')
+    }, { sheetRepository: { moveToFolder: invalidMove } })).toThrow('Invalid folder path')
     try {
-      moveSheetUseCase({ kind: 'pokemon', slug: 'pika', folder: 'bad' }, { moveSheet: invalidMove })
+      moveSheetUseCase({ kind: 'pokemon', slug: 'pika', folder: 'bad' }, { sheetRepository: { moveToFolder: invalidMove } })
     } catch (err) {
       expect(err).toMatchObject({ statusCode: 400 })
     }

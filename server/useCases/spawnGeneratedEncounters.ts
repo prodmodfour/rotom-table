@@ -10,7 +10,7 @@ import { findEncounterSpawnPosition } from '~/utils/encounterSpawnPlacement'
 import type { PositionedGridFootprint } from '~/utils/gridGeometry'
 import { normalizeMapGroundLevelY } from '../utils/mapNormalization'
 import { readJsonFile } from '../utils/jsonFiles'
-import { listSheetFilesWithFolders } from '../utils/sheetStorage'
+import { sqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
 import {
   DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT,
   EncounterGenerationInputError,
@@ -72,6 +72,7 @@ export interface SpawnGeneratedEncountersDependencies extends GenerateEncounters
   listTrainerSheets?: () => Iterable<TrainerSheet>
   readGeneratedPokemonSheet?: (dir: string, fileName: string) => CharacterSheet
   createPlacementId?: () => string
+  sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'list' | 'saveSetupSheet'>
 }
 
 const GENERATED_SHEET_ROOT = 'data/sheets'
@@ -110,10 +111,27 @@ const sheetMap = <TSheet extends { slug: string }>(sheets: Iterable<TSheet>): Ma
   return map
 }
 
-const buildSheetLookup = (dependencies: SpawnGeneratedEncountersDependencies): SheetLookup => ({
-  pokemon: sheetMap(dependencies.listPokemonSheets?.() ?? listSheetFilesWithFolders<CharacterSheet>('pokemon')),
-  trainer: sheetMap(dependencies.listTrainerSheets?.() ?? listSheetFilesWithFolders<TrainerSheet>('trainer')),
-})
+const buildSheetLookup = (dependencies: SpawnGeneratedEncountersDependencies): SheetLookup => {
+  const repository = dependencies.sheetRepository ?? sqliteSheetRepository
+  return {
+    pokemon: sheetMap(dependencies.listPokemonSheets?.() ?? repository.list('pokemon').map((stored) => ({
+      ...(stored.document as Record<string, unknown>),
+      slug: stored.slug,
+      revision: stored.revision,
+      folder: typeof (stored.document as Record<string, unknown>).folder === 'string'
+        ? (stored.document as Record<string, unknown>).folder as string
+        : '',
+    } as CharacterSheet))),
+    trainer: sheetMap(dependencies.listTrainerSheets?.() ?? repository.list('trainer').map((stored) => ({
+      ...(stored.document as Record<string, unknown>),
+      slug: stored.slug,
+      revision: stored.revision,
+      folder: typeof (stored.document as Record<string, unknown>).folder === 'string'
+        ? (stored.document as Record<string, unknown>).folder as string
+        : '',
+    } as TrainerSheet))),
+  }
+}
 
 const sheetCreatedEvents = ({
   sheets,
@@ -248,6 +266,7 @@ const defaultSaveMap = (slug: string, map: TabletopMap, clientId?: string): Save
   role: 'gm',
   slug,
   map,
+  expectedRevision: map.revision ?? 0,
   clientId,
   interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
 })
@@ -295,7 +314,14 @@ export const spawnGeneratedEncountersUseCase = async (
       .filter((sheet): sheet is CharacterSheet => Boolean(sheet))
 
     const lookup = buildSheetLookup(dependencies)
-    for (const sheet of readableSheets) lookup.pokemon.set(sheet.slug, sheet)
+    const folder = outputFolderFromRelDir(generated.relDir)
+    const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
+    const persistedGeneratedSheets = readableSheets.map((sheet) => sheetRepository.saveSetupSheet('pokemon', sheet.slug, {
+      ...sheet,
+      folder,
+      updatedAt: dependencies.now?.() ?? Date.now(),
+    }).sheet as unknown as CharacterSheet)
+    for (const sheet of persistedGeneratedSheets) lookup.pokemon.set(sheet.slug, sheet)
 
     const placements = appendPlacementsForGeneratedSheets({
       map,
@@ -309,7 +335,6 @@ export const spawnGeneratedEncountersUseCase = async (
     const persisted = spawned.length > 0
       ? saveMap(mapSlug, map, clientId)
       : { map, events: [] }
-    const folder = outputFolderFromRelDir(generated.relDir)
 
     return {
       ...generated,
@@ -322,7 +347,7 @@ export const spawnGeneratedEncountersUseCase = async (
       },
       ...(persisted.path ? { mapPath: persisted.path } : {}),
       events: [
-        ...sheetCreatedEvents({ sheets: readableSheets, folder, clientId }),
+        ...sheetCreatedEvents({ sheets: persistedGeneratedSheets, folder, clientId }),
         ...persisted.events,
       ],
     }

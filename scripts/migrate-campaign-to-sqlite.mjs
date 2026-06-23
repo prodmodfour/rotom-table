@@ -29,7 +29,7 @@ export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
 export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
 export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
-export const STORAGE_SCHEMA_VERSION = 3
+export const STORAGE_SCHEMA_VERSION = 4
 
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
@@ -274,6 +274,21 @@ const walkJsonFiles = (root) => {
   return files.sort((left, right) => left.localeCompare(right))
 }
 
+const walkFolders = (root) => {
+  if (!existsSync(root)) return []
+  const folders = []
+  const walk = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+      const path = join(directory, entry.name)
+      folders.push(folderFromRoot(root, path))
+      walk(path)
+    }
+  }
+  walk(root)
+  return folders.filter(Boolean).sort((left, right) => left.localeCompare(right))
+}
+
 const parseJsonFile = (path, label) => {
   try {
     return JSON.parse(readFileSync(path, 'utf8'))
@@ -373,6 +388,7 @@ const normalizeSheetFile = (kind, root, sourcePath) => {
     document: {
       ...sheet,
       slug,
+      folder: folderFromRoot(root, sourcePath),
       revision,
       updatedAt,
     },
@@ -431,6 +447,11 @@ export const createMigrationPlan = (campaignRoot) => {
     sheetPlan.errors.push(...plan.errors)
   }
   const profilePlan = collectWithErrors(walkJsonFiles(profilesRoot), (path) => validatePlayerProfileFile(profilesRoot, path))
+  const mapFolders = walkFolders(mapsRoot)
+  const sheetFolders = [
+    ...walkFolders(pokemonSheetsRoot).map((path) => ({ kind: 'pokemon', path })),
+    ...walkFolders(trainerSheetsRoot).map((path) => ({ kind: 'trainer', path })),
+  ]
 
   return {
     roots: {
@@ -441,6 +462,8 @@ export const createMigrationPlan = (campaignRoot) => {
     },
     maps: mapPlan.records,
     sheets: sheetPlan.records,
+    mapFolders,
+    sheetFolders,
     playerProfiles: profilePlan.records,
     errors: [...mapPlan.errors, ...sheetPlan.errors, ...profilePlan.errors],
   }
@@ -512,6 +535,22 @@ const applyStorageMigrations = (connection) => {
       `)
       setUserVersion(connection, 3)
     }
+    if (fromVersion < 4) {
+      connection.exec(`
+        CREATE TABLE IF NOT EXISTS map_folders (
+          path TEXT PRIMARY KEY,
+          updated_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS sheet_folders (
+          kind TEXT NOT NULL,
+          path TEXT NOT NULL,
+          updated_at INTEGER NOT NULL,
+          PRIMARY KEY (kind, path)
+        );
+      `)
+      setUserVersion(connection, 4)
+    }
     connection.exec('COMMIT')
   } catch (error) {
     connection.exec('ROLLBACK')
@@ -582,20 +621,48 @@ const upsertSheetRecord = (connection, record) => {
   return true
 }
 
+const upsertMapFolder = (connection, path, updatedAt) => {
+  connection.prepare(`
+    INSERT INTO map_folders (path, updated_at)
+    VALUES (?, ?)
+    ON CONFLICT(path) DO UPDATE SET updated_at = excluded.updated_at
+  `).run(path, updatedAt)
+}
+
+const upsertSheetFolder = (connection, kind, path, updatedAt) => {
+  connection.prepare(`
+    INSERT INTO sheet_folders (kind, path, updated_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(kind, path) DO UPDATE SET updated_at = excluded.updated_at
+  `).run(kind, path, updatedAt)
+}
+
 const applyImportPlan = (connection, plan) => {
   const counts = {
     mapsImported: 0,
     sheetsImported: 0,
+    foldersImported: 0,
     skippedUnchanged: 0,
   }
 
   connection.exec('BEGIN IMMEDIATE')
   try {
+    const folderTimestamp = Date.now()
+    for (const folder of plan.mapFolders) {
+      upsertMapFolder(connection, folder, folderTimestamp)
+      counts.foldersImported += 1
+    }
+    for (const folder of plan.sheetFolders) {
+      upsertSheetFolder(connection, folder.kind, folder.path, folderTimestamp)
+      counts.foldersImported += 1
+    }
     for (const map of plan.maps) {
+      if (map.folder) upsertMapFolder(connection, map.folder, map.updatedAt)
       if (upsertMapRecord(connection, map)) counts.mapsImported += 1
       else counts.skippedUnchanged += 1
     }
     for (const sheet of plan.sheets) {
+      if (sheet.folder) upsertSheetFolder(connection, sheet.kind, sheet.folder, sheet.updatedAt)
       if (upsertSheetRecord(connection, sheet)) counts.sheetsImported += 1
       else counts.skippedUnchanged += 1
     }
@@ -681,6 +748,7 @@ export const runCampaignSqliteMigration = ({ argv = [], env = process.env, now =
   let counts = {
     mapsImported: 0,
     sheetsImported: 0,
+    foldersImported: 0,
     skippedUnchanged: 0,
   }
   let validation = {
@@ -725,6 +793,7 @@ export const formatMigrationResult = (result) => {
     `Backup entries copied: ${result.backup.copiedCount}`,
     `Maps imported: ${result.counts.mapsImported}`,
     `Sheets imported: ${result.counts.sheetsImported}`,
+    `Folders imported: ${result.counts.foldersImported ?? 0}`,
     `Skipped unchanged: ${result.counts.skippedUnchanged}`,
     `Player profiles validated: ${result.plan.playerProfiles.length} (current profile storage remains JSON-backed)`,
     `Validation: loaded ${result.validation.mapsLoaded} maps and ${result.validation.sheetsLoaded} sheets from SQLite`,

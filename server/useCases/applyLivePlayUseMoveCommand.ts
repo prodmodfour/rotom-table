@@ -1,4 +1,3 @@
-import { join } from 'node:path'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
@@ -50,8 +49,7 @@ import {
   type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
-import { campaignPathLabel } from '../utils/campaignPaths'
-import { MAPS_ROOT } from '../utils/mapPaths'
+import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -158,7 +156,7 @@ const actionDependencies = (dependencies: LivePlayUseMoveCommandDependencies) =>
   database: dependencies.database ?? getRotomDatabase(),
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
-  relativePath: dependencies.relativePath ?? campaignPathLabel,
+  relativePath: dependencies.relativePath ?? ((path: string) => path),
   maxMoveLogEntries: dependencies.maxMoveLogEntries,
 })
 
@@ -192,9 +190,7 @@ const optionalText = (value: unknown): string | null => {
   return text || null
 }
 
-const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => (
-  map.folder ? join(MAPS_ROOT, map.folder, `${map.slug}.json`) : join(MAPS_ROOT, `${map.slug}.json`)
-)
+const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => logicalMapResourcePath(map)
 
 const controlDeniedMessage = (role: AuthRole, profile: PlayerProfile | null | undefined): string => (
   role === 'player' && !profile
@@ -944,7 +940,7 @@ export const executeLivePlayUseMoveCommandUseCase = async (
       deps.database.withTransaction(() => {
         const persisted = toPersistedMap(
           acceptedNextMap.map,
-          acceptedNextMap.mapPath,
+          acceptedNextMap.map.folder ?? '',
           acceptedNextMap.map.updatedAt ?? deps.now(),
           { revision: result.revision },
         )

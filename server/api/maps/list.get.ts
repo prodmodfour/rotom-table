@@ -1,9 +1,9 @@
 /**
  * GET /api/maps/list
  *
- * Returns lightweight summaries (no placements) for every map file
- * under ``data/maps/``. The map browser uses this to render the
- * file-explorer view; individual maps are loaded via ``/api/maps/load``.
+ * Returns lightweight summaries (no placements) for every SQLite map.
+ * The map browser uses this to render the library view; individual maps
+ * are loaded via ``/api/maps/load``.
  */
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'

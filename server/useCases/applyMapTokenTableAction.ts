@@ -1,4 +1,3 @@
-import { join } from 'node:path'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
@@ -53,8 +52,7 @@ import {
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { sqliteSheetRepository, type PersistedSheet, type SheetRepository } from '../storage/sheetRepository'
-import { campaignPathLabel } from '../utils/campaignPaths'
-import { MAPS_ROOT } from '../utils/mapPaths'
+import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -160,7 +158,7 @@ const actionDependencies = (dependencies: LivePlayTableActionCommandDependencies
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
   idFactory: dependencies.idFactory,
-  relativePath: dependencies.relativePath ?? campaignPathLabel,
+  relativePath: dependencies.relativePath ?? ((path: string) => path),
 })
 
 type LivePlayTableActionDependencySet = ReturnType<typeof actionDependencies>
@@ -188,9 +186,7 @@ const isRecord = (value: unknown): value is UnknownRecord => (
 
 const nonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0
 
-const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => (
-  map.folder ? join(MAPS_ROOT, map.folder, `${map.slug}.json`) : join(MAPS_ROOT, `${map.slug}.json`)
-)
+const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => logicalMapResourcePath(map)
 
 const optionalText = (value: unknown): string | null => {
   const text = typeof value === 'string' ? value.trim() : ''
@@ -978,7 +974,7 @@ export const executeLivePlayTableActionCommandUseCase = async (
       deps.database.withTransaction(() => {
         const persistedMap = toPersistedMap(
           nextMap.map,
-          nextMap.mapPath,
+          nextMap.map.folder ?? '',
           nextMap.map.updatedAt ?? deps.now(),
           { revision: result.revision },
         )

@@ -1,12 +1,12 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { join } from 'node:path'
 import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { GridDimensions, TabletopMap } from '~/types/map'
-import { allocateSlug, writeMapFile } from '../utils/mapStorage'
-import { MAPS_ROOT, ensureMapsRoot, sanitizeMapFolderPath } from '../utils/mapPaths'
+import { sanitizeMapFolderPath } from '../utils/mapPaths'
 import { summarizeMap } from '../utils/mapSummaries'
+import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
+import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 
-export class CreateMapUseCaseError extends UseCaseHttpError<400> {}
+export class CreateMapUseCaseError extends UseCaseHttpError<400 | 409> {}
 
 export interface CreateMapInput {
   name?: unknown
@@ -16,16 +16,14 @@ export interface CreateMapInput {
 }
 
 export interface CreateMapDependencies {
-  mapsRoot?: string
   now?: () => number
-  ensureRoot?: () => void
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
-  allocateMapSlug?: (name: string) => string
-  writeMap?: (filePath: string, map: TabletopMap) => void
+  mapRepository?: Pick<MapRepository, 'allocateSlug' | 'create'>
 }
 
 export interface CreateMapResult {
   map: TabletopMap
+  path: string
   events: Array<Omit<RealtimeEvent, 'timestamp'>>
 }
 
@@ -72,19 +70,14 @@ export const createMapUseCase = (
   input: CreateMapInput,
   dependencies: CreateMapDependencies = {},
 ): CreateMapResult => {
-  const ensureRoot = dependencies.ensureRoot ?? ensureMapsRoot
   const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeMapFolderPath
-  const allocateMapSlug = dependencies.allocateMapSlug ?? allocateSlug
-  const writeMap = dependencies.writeMap ?? writeMapFile
-  const mapsRoot = dependencies.mapsRoot ?? MAPS_ROOT
+  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
   const now = dependencies.now ?? Date.now
 
   const name = normalizeCreateMapName(input.name)
   const folder = normalizeCreateMapFolder(input.folder, sanitizeFolder)
   const dimensions = normalizeCreateMapDimensions(input.dimensions)
-
-  ensureRoot()
-  const slug = allocateMapSlug(name)
+  const slug = mapRepository.allocateSlug(name)
   const timestamp = now()
   const map: TabletopMap = {
     schemaVersion: 2,
@@ -105,19 +98,23 @@ export const createMapUseCase = (
     updatedAt: timestamp,
   }
 
-  const filePath = folder
-    ? join(mapsRoot, folder, `${slug}.json`)
-    : join(mapsRoot, `${slug}.json`)
-  writeMap(filePath, map)
+  let created: TabletopMap
+  try {
+    created = mapRepository.create({ slug, map, now: timestamp })
+  } catch (err) {
+    throw new CreateMapUseCaseError(409, (err as Error).message)
+  }
 
   return {
-    map,
+    map: created,
+    path: logicalMapResourcePath(created),
     events: [
       {
         channel: mapsChannel,
         type: 'created',
+        revision: created.revision,
         clientId: input.clientId,
-        data: summarizeMap(map),
+        data: summarizeMap(created),
       },
     ],
   }

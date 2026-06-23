@@ -87,6 +87,7 @@ describe('useTokenSheetMutations', () => {
       slug: 'bolt',
       clientId: 'client-1',
       profileId: 'profile_ash00000',
+      expectedRevision: 0,
       allowSlugSync: false,
       interactionMode: 'setup-edit',
     })
@@ -110,6 +111,7 @@ describe('useTokenSheetMutations', () => {
     expect(saved[0]).toMatchObject({
       kind: 'pokemon',
       slug: 'examples-abra',
+      expectedRevision: 0,
       allowSlugSync: false,
       interactionMode: 'setup-edit',
     })

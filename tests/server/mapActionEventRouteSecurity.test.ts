@@ -22,20 +22,15 @@ const mocks = vi.hoisted(() => {
   return {
     mapsBySlug,
     profilesById,
-    findMapFile: vi.fn((slug: string) => (mapsBySlug.has(slug) ? `/maps/${slug}.json` : null)),
-    readMapFile: vi.fn((path: string) => {
-      const slug = path.split('/').pop()?.replace(/\.json$/, '') ?? ''
-      const map = mapsBySlug.get(slug)
-      if (!map) throw new Error(`unexpected map read for ${path}`)
-      return map
-    }),
+    getBySlug: vi.fn((slug: string) => mapsBySlug.get(slug) ?? null),
     readPlayerProfile: vi.fn((profileId: string) => profilesById.get(profileId) ?? null),
   }
 })
 
-vi.mock('../../server/utils/mapStorage', () => ({
-  findMapFile: mocks.findMapFile,
-  readMapFile: mocks.readMapFile,
+vi.mock('../../server/storage/mapRepository', () => ({
+  sqliteMapRepository: {
+    getBySlug: mocks.getBySlug,
+  },
 }))
 
 vi.mock('../../server/utils/playerProfileStorage', () => ({
@@ -256,7 +251,7 @@ describe('map action event route security boundaries', () => {
       unsubscribe()
     }
 
-    expect(mocks.findMapFile).not.toHaveBeenCalled()
+    expect(mocks.getBySlug).not.toHaveBeenCalled()
     expect(received).toEqual([])
   })
 

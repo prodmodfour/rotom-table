@@ -86,3 +86,10 @@ export const expectRecord = (value: unknown, label: string): Record<string, unkn
   if (!value || typeof value !== 'object' || Array.isArray(value)) badRequest(`${label} must be an object`)
   return value as Record<string, unknown>
 }
+
+export const expectRevision = (value: unknown, label = 'revision'): number => {
+  if (!Number.isSafeInteger(value) || (value as number) < 0) {
+    badRequest(`${label} must be a safe non-negative integer`)
+  }
+  return value as number
+}

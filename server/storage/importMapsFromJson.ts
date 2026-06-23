@@ -3,7 +3,7 @@ import { dirname, relative, sep } from 'node:path'
 import type { TabletopMap } from '~/types/map'
 import { normalizeMapDocument } from '../utils/mapNormalization'
 import { MAPS_ROOT, mapPathLabel } from '../utils/mapPaths'
-import { walkFiles, type FilePredicate } from '../utils/jsonFiles'
+import { walkDirectories, walkFiles, type FilePredicate } from '../utils/jsonFiles'
 import { sqliteMapRepository, type MapRepository } from './mapRepository'
 
 export interface ImportedMapFromJson {
@@ -22,7 +22,7 @@ export interface ImportMapsFromJsonResult {
 
 export interface ImportMapsFromJsonOptions {
   readonly mapsRoot?: string
-  readonly repository?: Pick<MapRepository, 'saveSetupMap'>
+  readonly repository?: Pick<MapRepository, 'saveSetupMap' | 'createFolder'>
   readonly listFiles?: (root: string, predicate?: FilePredicate) => string[]
   readonly readFile?: (path: string) => string
 }
@@ -65,6 +65,10 @@ export const importMapsFromJson = async (
   const listFiles = options.listFiles ?? walkFiles
   const readFile = options.readFile ?? ((path: string) => readFileSync(path, 'utf8'))
   const imported: ImportedMapFromJson[] = []
+
+  for (const folder of walkDirectories(mapsRoot)) {
+    repository.createFolder(folder)
+  }
 
   for (const path of listJsonMapImportFiles(mapsRoot, listFiles)) {
     const map = normalizeImportedMap(path, mapsRoot, readFile)

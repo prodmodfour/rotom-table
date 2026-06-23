@@ -1,6 +1,6 @@
 import { sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { SheetKind } from '#shared/sheets'
-import { createSheetFile, type CreateSheetFileResult } from '../utils/sheetStorage'
+import { sqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
 
 export interface CreateSheetInput {
   kind: SheetKind
@@ -9,7 +9,8 @@ export interface CreateSheetInput {
 }
 
 export interface CreateSheetDependencies {
-  createSheet?: (kind: SheetKind, folder: string) => CreateSheetFileResult
+  sheetRepository?: Pick<SheetRepository, 'create'>
+  now?: () => number
 }
 
 export interface CreateSheetResult {
@@ -24,18 +25,23 @@ export const createSheetUseCase = (
   input: CreateSheetInput,
   dependencies: CreateSheetDependencies = {},
 ): CreateSheetResult => {
-  const createSheet = dependencies.createSheet ?? createSheetFile
-  const created = createSheet(input.kind, input.folder)
+  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
+  const created = sheetRepository.create({
+    kind: input.kind,
+    folder: input.folder,
+    now: dependencies.now?.(),
+  })
 
   return {
     ok: true,
     kind: input.kind,
     slug: created.slug,
-    path: created.relativePath,
+    path: created.path,
     events: [
       {
         channel: sheetsChannel,
         type: 'updated',
+        revision: created.sheet.revision as number | undefined,
         clientId: input.clientId,
         data: {
           kind: input.kind,

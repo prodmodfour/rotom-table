@@ -1,7 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
 import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
-import { badRequest, expectRecord, expectSlug, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
+import { badRequest, expectRecord, expectRevision, expectSlug, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { saveMapUseCase } from '../../useCases/saveMap'
 import { parseMapInteractionMode, MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { requireSetupEditMapInteractionMode } from '../../utils/mapInteractionModePolicy'
@@ -13,6 +13,7 @@ interface SaveBody {
   map?: unknown
   clientId?: unknown
   interactionMode?: unknown
+  expectedRevision?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -24,6 +25,7 @@ export default defineEventHandler(async (event) => {
   const map = expectRecord(body.map, 'map') as unknown as TabletopMap
   const interactionMode = parseMapInteractionMode(body.interactionMode)
     ?? badRequest('interactionMode must be "setup-edit" or "live-play"')
+  const expectedRevision = expectRevision(body.expectedRevision, 'expectedRevision')
   if (role === 'gm' && interactionMode === MAP_INTERACTION_MODES.SETUP_EDIT) requireSetupEditMapInteractionMode(slug)
 
   try {
@@ -31,6 +33,7 @@ export default defineEventHandler(async (event) => {
       role,
       slug,
       map,
+      expectedRevision,
       clientId: normalizeRealtimeClientId(body.clientId),
       interactionMode,
     })

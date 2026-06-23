@@ -1,10 +1,10 @@
 # Data model
 
-Rotom Table is built around filesystem-backed, inspectable campaign data. By default the app edits JSON in the application checkout during local development so campaign data and campaign-owned reference override diffs can be backed up, reviewed in Git, and repaired manually when needed. Set `ROTOM_CAMPAIGN_ROOT` to point those campaign-owned paths at a separate private campaign repository or private host directory; see [Campaign repositories](campaign-repositories.md).
+Rotom Table stores runtime campaign maps and Pokémon/trainer sheets in SQLite while keeping remaining campaign JSON systems inspectable. Set `ROTOM_CAMPAIGN_ROOT` to point campaign-owned paths and the default `rotom-table.sqlite` database at a separate private campaign repository or private host directory; see [Campaign repositories](campaign-repositories.md).
 
 ## Maps
 
-Maps live under `data/maps/` as JSON documents.
+Maps live as SQLite documents in the `maps` table. `data/maps/` is now an explicit import/export hierarchy, not runtime authority.
 
 A map stores the state the tabletop needs to render and run a scene:
 
@@ -18,11 +18,11 @@ A map stores the state the tabletop needs to render and run a scene:
 - light placements
 - initiative round/current-turn state
 
-The map renderer and map editor treat the JSON document as the source of truth for table play. During player play, token control is derived from the selected player profile: a player can act with placements whose `sheetKind` and `sheetSlug` match a linked character sheet on that profile.
+The map renderer and map editor treat the SQLite document as the source of truth for table play in both Prepare Map and Run Live Play. During player play, token control is derived from the selected player profile: a player can act with placements whose `sheetKind` and `sheetSlug` match a linked character sheet on that profile.
 
 ## Sheets
 
-Pokémon sheets live under `data/sheets/` as JSON documents.
+Pokémon sheets live as SQLite documents keyed by `kind='pokemon'` and slug. `data/sheets/` is now an explicit import/export hierarchy, not runtime authority.
 
 A Pokémon sheet models the PTU creature sheet while allowing most fields to remain optional. The app can derive defaults from species/reference data and layer campaign-specific edits on top. Common areas include:
 
@@ -32,11 +32,11 @@ A Pokémon sheet models the PTU creature sheet while allowing most fields to rem
 - held items, tutor points, skill background, capabilities, skills, abilities, edges, and movelist entries
 - free-form campaign notes and scene/experience fields
 
-Generated or curated examples can live in subfolders, and generated wild sheets normally use `data/sheets/wild/...`.
+Folders are logical SQLite folder rows plus document `folder` fields, so empty and nested folders survive restarts without filesystem directories.
 
 ## Trainers
 
-Trainer sheets live under `data/trainers/` as JSON documents.
+Trainer sheets live as SQLite documents keyed by `kind='trainer'` and slug. `data/trainers/` is now an explicit import/export hierarchy, not runtime authority.
 
 Trainer sheets model a PTU trainer workbook: core trainer identity, stats, skills, AP, features, edges, classes, combat capabilities, movelist, orders, inventory, equipment, Pokémon links, portrait/sprite data, and campaign notes. Like Pokémon sheets, most fields are optional so the UI can render a new sheet from a small starting document.
 
@@ -87,7 +87,7 @@ The app uses this content for Pokédex browsing, reference pages, sheet defaults
 
 ## Generated wild sheets
 
-Encounter generation writes Pokémon sheets into `data/sheets/wild/<table>_<count>/` by default. Those files then appear in the `/sheets` page like other Pokémon sheets.
+Encounter spawn flows persist generated Pokémon sheets into SQLite so they appear in the `/sheets` page like other Pokémon sheets. Standalone JSON generation/export remains maintenance/interchange tooling.
 
 Use preview mode when you want to test an encounter roll without keeping generated files:
 
@@ -99,11 +99,11 @@ The browser `/generate` page can also preview or write generated results dependi
 
 ## Local campaign data and `.gitignore`
 
-The repository is configured for private campaign data ownership. If `ROTOM_CAMPAIGN_ROOT` is unset, campaign paths are under the app checkout. If it is set, maps, profiles, sheets, trainers, campaign reference override diffs, and encounter tables are resolved under that campaign root instead. Base PTU reference data stays app-owned under `data/reference/`; Pokédex maintenance writes campaign overrides under `data/reference-overrides/pokedex.json`.
+The repository is configured for private campaign data ownership. If `ROTOM_CAMPAIGN_ROOT` is unset, campaign paths are under the app checkout. If it is set, the default SQLite database plus player profiles, campaign reference override diffs, and encounter tables are resolved under that campaign root instead. Base PTU reference data stays app-owned under `data/reference/`; Pokédex maintenance writes campaign overrides under `data/reference-overrides/pokedex.json`.
 
 The default app repository hygiene is:
 
-- personal maps, player profiles, sheets, trainer files, encounter tables, legacy live session snapshots, and optional event logs should not be committed by default
+- SQLite databases/WAL sidecars, personal map/sheet JSON exports, player profiles, encounter tables, legacy live session snapshots, and optional event logs should not be committed by default
 - curated example sheets and public sample encounter tables can remain trackable for review/demo purposes
 - generated wild sheets should be reviewed before committing, if they are ever meant to be examples
 - JSON should stay readable and inspectable rather than hidden behind opaque binary formats

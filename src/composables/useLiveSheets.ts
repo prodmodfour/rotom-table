@@ -1,20 +1,9 @@
 /**
- * Reactive store of every Pokémon + trainer character sheet, kept in
- * sync with the server via SSE.
- *
- * Bootstrapped from the static `import.meta.glob` data so the first
- * paint has full info, then hydrated from the runtime sheet list so
- * external campaign sheets or files missed by the glob are present. Thereafter, save /
- * rename / move / delete events mutate the store so any component reading
- * from it (map editor, sheet links, etc.) stays current with cross-tab edits.
- *
- * Returned refs are reactive — placements can simply read
- * `pokemonBySlug.value.get(slug)` inside a `computed` and Vue will
- * track the dependency.
+ * Reactive store of every Pokémon + trainer campaign sheet, kept in sync with
+ * the server via SQLite-backed runtime APIs and SSE events. The store starts
+ * empty/loading; it never seeds from build-time campaign JSON.
  */
 import { reactive, ref, type Ref } from 'vue'
-import { characterSheets } from '~~/data/characterSheets'
-import { trainerSheets } from '~~/data/trainerSheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { PlayerProfileId } from '#shared/playerProfiles'
@@ -31,16 +20,15 @@ import { subscribeChannel } from './useRealtime'
 
 export interface ReloadRuntimeSheetsOptions {
   readonly profileId?: PlayerProfileId | null
-  /**
-   * Background hydration is best-effort, but explicit reconciliation must fail
-   * closed when the runtime sheet list cannot be refreshed.
-   */
+  /** Explicit reconciliation must fail closed when the runtime sheet list cannot be refreshed. */
   readonly throwOnError?: boolean
 }
 
 interface LiveSheetsApi {
   pokemonBySlug: Ref<Map<string, CharacterSheet>>
   trainerBySlug: Ref<Map<string, TrainerSheet>>
+  loading: Ref<boolean>
+  loadError: Ref<string | null>
   reloadRuntimeSheets: (options?: ReloadRuntimeSheetsOptions) => Promise<void>
 }
 
@@ -49,13 +37,15 @@ let unsubscribe: (() => void) | null = null
 let runtimeLoadStarted = false
 let runtimeLoadSequence = 0
 
-const buildInitial = () => buildLiveSheetMaps(characterSheets, trainerSheets)
+const buildInitial = () => buildLiveSheetMaps([], [])
 
 const hydrateRuntimeSheets = async (
   api: LiveSheetsApi,
   options: ReloadRuntimeSheetsOptions = {},
 ): Promise<void> => {
   const loadSequence = ++runtimeLoadSequence
+  api.loading.value = true
+  api.loadError.value = null
   try {
     const requestOptions = options.profileId ? { params: { profileId: options.profileId } } : undefined
     const payload = await useApiClient().getJson<LiveSheetListPayload>(SHEET_API_PATHS.list, requestOptions)
@@ -70,8 +60,12 @@ const hydrateRuntimeSheets = async (
       trainerBySlug: api.trainerBySlug.value,
     }, payload)
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    api.loadError.value = message
     console.warn('[live-sheets] failed to load runtime sheet list', err)
     if (options.throwOnError) throw err
+  } finally {
+    if (loadSequence === runtimeLoadSequence) api.loading.value = false
   }
 }
 
@@ -79,17 +73,17 @@ export const useLiveSheets = (): LiveSheetsApi => {
   if (cached) return cached
 
   const initial = buildInitial()
-  // Use reactive() so per-key mutations propagate to consumers without
-  // having to clone the whole Map on every event.
   const pokemonBySlug = ref<Map<string, CharacterSheet>>(reactive(initial.pokemonBySlug) as Map<string, CharacterSheet>)
   const trainerBySlug = ref<Map<string, TrainerSheet>>(reactive(initial.trainerBySlug) as Map<string, TrainerSheet>)
+  const loading = ref(false)
+  const loadError = ref<string | null>(null)
 
   const reloadRuntimeSheets = async (options: ReloadRuntimeSheetsOptions = {}): Promise<void> => {
     if (!cached) return
     await hydrateRuntimeSheets(cached, options)
   }
 
-  cached = { pokemonBySlug, trainerBySlug, reloadRuntimeSheets }
+  cached = { pokemonBySlug, trainerBySlug, loading, loadError, reloadRuntimeSheets }
 
   if (typeof window !== 'undefined') {
     const liveMaps = {
@@ -101,11 +95,6 @@ export const useLiveSheets = (): LiveSheetsApi => {
     }
     unsubscribe = subscribeChannel(sheetsChannel, handler)
 
-    // The static import glob is baked when Vite builds the client module, and
-    // production private hosts can keep campaign sheets outside the app checkout
-    // via ROTOM_CAMPAIGN_ROOT. Hydrate from the runtime list endpoint whenever
-    // the client store first starts so Link Pokémon and map spawners see the
-    // active campaign sheets in both dev and production.
     if (!runtimeLoadStarted) {
       runtimeLoadStarted = true
       void hydrateRuntimeSheets(cached)

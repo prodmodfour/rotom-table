@@ -144,7 +144,7 @@ export interface TabletopMapV2 {
   /** URL slug, also the on-disk filename stem (`<slug>.json`). */
   slug: string
   name: string
-  /** Optional folder label, derived from `data/maps/` when omitted. */
+  /** Optional logical library folder label stored with the SQLite map document. */
   folder?: string
   dimensions: GridDimensions
   /** Absolute Y coordinate that is displayed as map-specific/ground Y=0. */

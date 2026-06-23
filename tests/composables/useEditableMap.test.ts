@@ -172,6 +172,7 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.save, {
       slug: 'arena-map',
       map: expect.objectContaining({ name: 'Renamed Arena' }),
+      expectedRevision: 1,
       clientId: 'map-client',
       interactionMode: 'setup-edit',
     })
@@ -202,6 +203,7 @@ describe('useEditableMap autosave boundary', () => {
           expect.objectContaining({ id: 'token-eevee', sheetSlug: 'eevee' }),
         ]),
       }),
+      expectedRevision: 1,
       clientId: 'map-client',
       interactionMode: 'setup-edit',
     })
@@ -264,6 +266,7 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.save, {
       slug: 'arena-map',
       map: expect.objectContaining({ name: 'Setup edit name' }),
+      expectedRevision: 1,
       clientId: 'map-client',
       interactionMode: 'setup-edit',
     })
@@ -722,6 +725,7 @@ describe('useEditableMap autosave boundary', () => {
       map: expect.objectContaining({
         placements: [expect.objectContaining({ position: { x: 2, y: 0, z: 1 } })],
       }),
+      expectedRevision: 1,
       clientId: 'map-client',
       interactionMode: 'setup-edit',
     })

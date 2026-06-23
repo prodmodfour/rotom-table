@@ -18,10 +18,10 @@ export interface UseSheetLibraryCreationOptions {
 /**
  * Sheet-library specific creation state.
  *
- * The sheet library hard-navigates after creating a JSON file so Vite/Nuxt can
- * re-evaluate the static sheet globs before the editor page loads. This
- * composable keeps that busy/error/menu state out of the route shell while the
- * page still injects the concrete API request and navigation behavior.
+ * The sheet library navigates after creating the SQLite-backed sheet so the
+ * editor loads the authoritative runtime document. This composable keeps that
+ * busy/error/menu state out of the route shell while the page still injects
+ * the concrete API request and navigation behavior.
  */
 export const useSheetLibraryCreation = (options: UseSheetLibraryCreationOptions) => {
   const sheetMenuOpen = ref(false)

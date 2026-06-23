@@ -1,7 +1,7 @@
 /**
  * POST /api/maps/create-folder
  *
- * Creates an empty folder under ``data/maps/`` so it's visible in the
+ * Creates an empty logical SQLite map folder so it's visible in the
  * browser before any map lives in it.
  *
  * Request body: `{ folder: string, clientId?: string }`

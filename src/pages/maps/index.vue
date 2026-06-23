@@ -114,7 +114,7 @@ const {
       :error="ctx.error"
       :move-destinations="ctxMoveDestinations"
       delete-folder-suffix="and every map inside? This cannot be undone."
-      delete-item-suffix="? The JSON file will be removed from disk."
+      delete-item-suffix="? The SQLite map document will be removed."
       @close="closeContext"
       @enter-move="enterMove"
       @enter-rename="enterRename"

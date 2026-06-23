@@ -83,6 +83,7 @@ describe('useEditableSheet profile-aware requests', () => {
       slug: 'pikachu',
       interactionMode: 'setup-edit',
       sheet: { revision: 0, slug: 'pikachu', nickname: 'Pikachu', level: 6 },
+      expectedRevision: 0,
       clientId: 'sheet-client',
       profileId,
       allowSlugSync: false,
@@ -111,6 +112,7 @@ describe('useEditableSheet profile-aware requests', () => {
       slug: 'examples-abra',
       interactionMode: 'setup-edit',
       sheet: { revision: 0, slug: 'examples-abra', nickname: 'Abra', level: 6 },
+      expectedRevision: 0,
       clientId: 'sheet-client',
       allowSlugSync: false,
     })
@@ -133,6 +135,7 @@ describe('useEditableSheet profile-aware requests', () => {
       slug: 'examples-abra',
       interactionMode: 'setup-edit',
       sheet: { revision: 0, slug: 'examples-abra', nickname: 'Abra Prime', level: 5 },
+      expectedRevision: 0,
       clientId: 'sheet-client',
     })
   })

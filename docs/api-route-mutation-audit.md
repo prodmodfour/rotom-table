@@ -1,12 +1,12 @@
 # API route mutation audit
 
-This audit lists the non-GET Nitro API surfaces that can mutate server memory, filesystem-backed JSON, or SQLite-backed live-play state. It is scoped to private trusted-table hosting and local development. It is not a public-hosting hardening review.
+This audit lists the non-GET Nitro API surfaces that can mutate server memory, maintenance JSON, or SQLite-backed runtime state. It is scoped to private trusted-table hosting and local development. It is not a public-hosting hardening review.
 
 GET routes are omitted unless they are relevant to the notes below; current GET endpoints are treated as read-only project/campaign queries, health checks, legacy SSE, or static data lookups. The legacy session WebSocket is included because commands through it mutate session state and write session snapshots.
 
 ## Hosted-write policy summary
 
-`ROTOM_ENABLE_HOSTED_WRITES=1` is the exact production opt-in for persistent hosted campaign writes on routes that are covered by the hosted-write policy, including filesystem-backed JSON writes and SQLite-backed live-play command writes. In non-production local development, these writes remain available without the flag. When the flag is absent or any value other than exactly `1` in production, covered routes fail closed with the shared 403-style message before invoking persistence use cases or player-profile resolution.
+`ROTOM_ENABLE_HOSTED_WRITES=1` is the exact production opt-in for persistent hosted campaign writes on routes that are covered by the hosted-write policy, including SQLite map/sheet writes and remaining maintenance JSON writes for non-map/sheet systems. This guard still covers filesystem-backed JSON writes and SQLite-backed live-play command writes. In non-production local development, these writes remain available without the flag. When the flag is absent or any value other than exactly `1` in production, covered routes fail closed with the shared 403-style message before invoking persistence use cases or player-profile resolution.
 
 Map write routes are covered by the same hosted-write policy. GM map library/admin routes still require GM role. `/api/maps/save` is restricted to explicit GM setup/edit whole-map saves; player-facing map/token command routes keep the existing player-visible map and selected-profile token-control checks used by local profile play after the hosted-write gate passes. Database-backed command routes write only to a database path in private operator-controlled campaign storage, with the default at `ROTOM_CAMPAIGN_ROOT/rotom-table.sqlite`; `ROTOM_DB_PATH` overrides must stay outside the app checkout and be included in backups.
 
@@ -16,7 +16,7 @@ Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_
 
 | Route | Classification | Hosted-write policy | Notes |
 | --- | --- | --- | --- |
-| `/api/campaign/next-day` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Advances the campaign day by rewriting affected Pokémon/trainer sheet JSON and publishing sheet events. |
+| `/api/campaign/next-day` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Advances the campaign day by updating affected Pokémon/trainer sheets in SQLite and publishing sheet events. |
 | `/api/encounters/create-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates an encounter-table folder under the campaign encounter-table root. |
 | `/api/encounters/create` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates an encounter-table JSON file. |
 | `/api/encounters/delete-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Removes an encounter-table folder. |
@@ -26,15 +26,15 @@ Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_
 | `/api/encounters/move` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves an encounter-table JSON file between folders. |
 | `/api/encounters/rename` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Renames an encounter-table JSON file. |
 | `/api/encounters/save` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Rewrites an encounter-table JSON file. |
-| `/api/maps/create-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a map folder under the campaign map root. |
-| `/api/maps/create` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a saved map JSON document and publishes map library events. |
-| `/api/maps/delete-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Recursively removes a map folder and publishes map library events. |
-| `/api/maps/delete` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Removes a saved map JSON document and prunes empty parent folders. |
-| `/api/maps/move-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a map folder. |
-| `/api/maps/move` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a saved map JSON document between folders. |
-| `/api/maps/rename` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Renames a saved map and may move the JSON file when the slug changes. |
-| `/api/maps/save` | GM setup/edit whole-map write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Requires GM role, explicit `interactionMode: "setup-edit"`, and the shared map mode to be **Prepare Map**; player requests and `interactionMode: "live-play"` are rejected. There is no player-owned whole-map merge path on this route; live gameplay uses command routes. |
-| `/api/maps/interaction-mode` | GM-only shared map-mode write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Persists the shared server-side map mode used by GM clients, broadcasts `map-interaction-mode-updated`, and syncs the prepared JSON map into SQLite when switching from **Prepare Map** back to **Run Live Play**. |
+| `/api/maps/create-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a logical map folder in SQLite. |
+| `/api/maps/create` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a SQLite map document and publishes map library events. |
+| `/api/maps/delete-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Recursively removes a logical SQLite map folder, contained maps, mode rows, and operation history, then publishes map library events. |
+| `/api/maps/delete` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Removes a SQLite map document plus related interaction-mode and operation-history rows. |
+| `/api/maps/move-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a logical SQLite map folder, retargeting descendant folders/maps and advancing affected map revisions once. |
+| `/api/maps/move` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a SQLite map document to another logical folder and advances its revision once. |
+| `/api/maps/rename` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Renames a SQLite map document, migrates/cleans related mode and operation-history rows, and publishes old/new map events. |
+| `/api/maps/save` | GM setup/edit whole-map write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Requires GM role, explicit `interactionMode: "setup-edit"`, shared map mode **Prepare Map**, and `expectedRevision`; stale saves reject with 409 semantics. There is no player-owned whole-map merge path on this route; live gameplay uses command routes. |
+| `/api/maps/interaction-mode` | GM-only shared map-mode write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Persists only the shared server-side map mode and broadcasts `map-interaction-mode-updated`; it does not copy JSON, replace map documents, or change map revisions. |
 | `/api/maps/action-event` | Player-authorized transient realtime broadcast | Not a hosted filesystem write. | Publishes bounded visual-only `map-action` events to `map:<slug>` after checking the map, actor placement, player-visible boundary, and selected-profile token control. It does not write map JSON, sheet JSON, logs, metadata, campaign state, or session snapshots. |
 | `/api/maps/tokens/spawn` | GM-only map command write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Spawns a token through a canonical `spawnToken` command, validates sheet references, map bounds, placement ID uniqueness, stale revisions, and duplicate `opId` retries, persists the authoritative map revision through SQLite, and returns a `map.placements` patch. Player requests are rejected. |
 | `/api/maps/tokens/delete` | GM-only map command write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Deletes a token through a canonical `deleteToken` command, clears active initiative when needed, persists the authoritative map revision through SQLite, stores the `opId` result, and returns a `map.placements` patch. Player requests are rejected. |
@@ -68,14 +68,14 @@ Legacy live-session maintenance routes use their separate `ROTOM_ENABLE_SESSION_
 | `/api/sessions/player-state` | Legacy session maintenance | Separate guard: `ROTOM_ENABLE_SESSION_HOST=1` plus player session credentials; no campaign write. | Reads one legacy player's session state through POST to keep credentials out of query strings. |
 | `/api/sessions/socket` | Legacy session maintenance | Separate guard: `ROTOM_ENABLE_SESSION_HOST=1` plus session socket authentication; not covered by hosted-write policy. | WebSocket commands mutate authoritative legacy session state and can write session snapshots/event logs. |
 | `/api/sessions/start` | Legacy session maintenance | Separate guard: `ROTOM_ENABLE_SESSION_HOST=1` plus GM role; not covered by hosted-write policy. | Starts a legacy GM-hosted session, creates in-memory authority, and writes an initial snapshot. |
-| `/api/sheets/create-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a Pokémon/trainer sheet folder. |
-| `/api/sheets/create` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a Pokémon or trainer sheet JSON file and publishes sheet events. |
-| `/api/sheets/delete-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Deletes a Pokémon/trainer sheet folder. |
-| `/api/sheets/delete` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Deletes a Pokémon or trainer sheet JSON file and publishes sheet events. |
-| `/api/sheets/move-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a Pokémon/trainer sheet folder. |
-| `/api/sheets/move` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a Pokémon or trainer sheet JSON file and publishes sheet events. |
-| `/api/sheets/rename` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Renames a Pokémon or trainer sheet and may move the JSON file when the slug changes. |
-| `/api/sheets/save` | Setup/edit sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Requires explicit `interactionMode: "setup-edit"`. Saves a Pokémon/trainer sheet for sheet editor/setup workflows. GM saves are unrestricted by profile; player saves outside live play still require selected-profile sheet access or public sheet access. Live map combat mutations must use command routes instead of direct whole-sheet saves. |
+| `/api/sheets/create-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a logical Pokémon/trainer sheet folder in SQLite. |
+| `/api/sheets/create` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Creates a SQLite Pokémon or trainer sheet document and publishes sheet events. |
+| `/api/sheets/delete-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Deletes a logical SQLite sheet folder and contained sheets; map placement cleanup for deleted sheets is transactional. |
+| `/api/sheets/delete` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Deletes a SQLite Pokémon or trainer sheet document, transactionally removes/retargets map references according to product semantics, and publishes sheet/map events after commit. |
+| `/api/sheets/move-folder` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a logical SQLite Pokémon/trainer sheet folder and advances affected sheet revisions once. |
+| `/api/sheets/move` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Moves a SQLite Pokémon or trainer sheet document to another logical folder and publishes sheet events. |
+| `/api/sheets/rename` | GM-only admin write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Renames a SQLite Pokémon or trainer sheet and transactionally retargets map placements/revisions before publishing sheet and map events. |
+| `/api/sheets/save` | Setup/edit sheet write | Covered: production requires `ROTOM_ENABLE_HOSTED_WRITES=1`. | Requires explicit `interactionMode: "setup-edit"` and `expectedRevision`. Saves the SQLite Pokémon/trainer sheet for editor/setup workflows; stale saves reject with 409 semantics. GM saves are unrestricted by profile; player saves outside live play still require selected-profile sheet access or public sheet access. Live map combat mutations must use command routes instead of direct whole-sheet saves. |
 
 ## Remaining limitations
 

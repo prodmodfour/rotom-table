@@ -7,6 +7,7 @@ import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson } from '~/utils/serialization'
 import { buildSheetSaveBody, sheetApiProfileContext } from '~/utils/sheetApiRequests'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import {
@@ -363,6 +364,7 @@ const savePokemonSheet = async (pokemon: CharacterSheet): Promise<CharacterSheet
     kind: 'pokemon',
     slug: pokemon.slug,
     sheet: payload,
+    expectedRevision: normalizeRevision(pokemon.revision),
     clientId,
     profileContext,
     allowSlugSync: false,
@@ -377,6 +379,7 @@ const saveTrainerSheet = async (trainer: TrainerSheet): Promise<TrainerSheet> =>
     kind: 'trainer',
     slug: trainer.slug,
     sheet: payload,
+    expectedRevision: normalizeRevision(trainer.revision),
     clientId,
     profileContext,
     allowSlugSync: false,

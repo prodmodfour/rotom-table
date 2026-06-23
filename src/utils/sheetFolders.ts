@@ -1,14 +1,12 @@
 /**
  * Folder helpers for the sheets index.
  *
- * Pokémon sheets live under ``data/sheets/**\/*.json`` and trainer sheets
- * under ``data/trainers/**\/*.json``. Authors organise them by dropping
- * files into subdirectories — that path becomes the *folder* shown on the
- * index page. No JSON edit is required, but a sheet may set ``folder``
- * explicitly to override the auto-derived label.
+ * Runtime campaign sheets use SQLite folder fields. These helpers remain for
+ * legacy/static JSON catalogs and display formatting, where a glob path can be
+ * converted into the folder label shown on library-style pages.
  *
- * Keep this module side-effect-free so it can be imported from both the
- * data-glob loaders and the index page.
+ * Keep this module side-effect-free so it can be imported from both static
+ * data-glob loaders and runtime pages.
  */
 
 /**

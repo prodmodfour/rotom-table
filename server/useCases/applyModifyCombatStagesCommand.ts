@@ -65,7 +65,7 @@ import {
   type SessionStoreRecord,
   type SessionStoreStatus,
 } from '../utils/sessionStore'
-import { readSheetFile, writeSheetFile } from '../utils/sheetStorage'
+import { readRuntimeSheet, writeRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class ApplyModifyCombatStagesCommandUseCaseError<
@@ -286,7 +286,7 @@ const persistableSheet = (sheet: AnyLiveSheet, options: { advanceRevision?: bool
 }
 
 const defaultReadSheet: ModifyCombatStagesSheetReader = (kind, slug) => {
-  const result = readSheetFile<AnyLiveSheet>(kind, slug)
+  const result = readRuntimeSheet<AnyLiveSheet>(kind, slug)
   if (result === null) return null
   return {
     path: result.path,
@@ -830,7 +830,7 @@ export const applyModifyCombatStagesCommandUseCase = (
   const clock = dependencies.clock ?? defaultClock
   const snapshotWriter = dependencies.writeSnapshot ?? writeSessionSnapshot
   const readSheet = dependencies.readSheet ?? defaultReadSheet
-  const writeSheet = dependencies.writeSheet ?? writeSheetFile
+  const writeSheet = dependencies.writeSheet ?? writeRuntimeSheet
 
   const envelope = validateEnvelopeForModifyCombatStages(input.command)
   const record = getActiveModifyCombatStagesRecord(activeStore, envelope)

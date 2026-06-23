@@ -5,7 +5,7 @@ import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createPlayerProfileUseCase } from '~~/server/useCases/createPlayerProfile'
 import { loadMapUseCase } from '~~/server/useCases/loadMap'
-import { loadSheetUseCase, type LoadedSheet } from '~~/server/useCases/loadSheet'
+import { loadSheetUseCase } from '~~/server/useCases/loadSheet'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
@@ -146,6 +146,8 @@ describe('profile-based play smoke flow', () => {
         species: 'Pikachu',
         level: 5,
         player: false,
+        revision: 0,
+        updatedAt: 100,
       }],
       [sheetKey('pokemon', 'eevee'), {
         slug: 'eevee',
@@ -153,11 +155,9 @@ describe('profile-based play smoke flow', () => {
         species: 'Eevee',
         level: 5,
         player: false,
+        revision: 0,
+        updatedAt: 100,
       }],
-    ])
-    const sheetPaths = new Map<`${SheetKind}:${string}`, string>([
-      [sheetKey('pokemon', 'pikachu'), '/memory/sheets/pokemon/pikachu.json'],
-      [sheetKey('pokemon', 'eevee'), '/memory/sheets/pokemon/eevee.json'],
     ])
 
     const createdProfile = createPlayerProfileUseCase({
@@ -196,34 +196,18 @@ describe('profile-based play smoke flow', () => {
 
     const selectedProfile = playerProfiles.selectedProfile.value as PlayerProfile
     let storedMap = createArenaMap()
-    const mapPath = '/memory/maps/arena.json'
     const mapWrites: TabletopMap[] = []
-    const mapDeps = {
-      findMapPath: (slug: string) => (slug === storedMap.slug ? mapPath : null),
-      readMap: () => storedMap,
-      writeMap: (_path: string, map: TabletopMap) => {
-        storedMap = map
-        mapWrites.push(map)
-      },
-      readSheet: (kind: SheetKind, slug: string) => {
-        const sheet = sheets.get(sheetKey(kind, slug))
-        return sheet ? { sheet } : null
-      },
-      now: () => 1_700_000_000_000,
-      relativePath: () => 'data/maps/arena.json',
-      modeRepository: {
-        get: (slug: string) => ({
-          slug,
-          interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
-          updatedAt: 0,
-        }),
-      },
+    const readSheet = (kind: SheetKind, slug: string) => {
+      const sheet = sheets.get(sheetKey(kind, slug))
+      return sheet ? { sheet } : null
     }
+    const now = () => 1_700_000_000_000
+    const relativePath = () => 'data/maps/arena.json'
 
     expect(loadMapUseCase({
       role: 'player',
       slug: 'arena',
-    }, mapDeps).map).toEqual(storedMap)
+    }, { mapRepository: { getBySlug: (slug: string) => (slug === storedMap.slug ? storedMap : null) } }).map).toEqual(storedMap)
 
     const liveCommandExecutor = createAuthoritativeLivePlayCommandExecutor({
       opStore: createInMemoryLivePlayOpStore(),
@@ -259,9 +243,9 @@ describe('profile-based play smoke flow', () => {
       commandExecutor: liveCommandExecutor,
       mapRepository: liveMapRepository,
       database: { withTransaction: <T>(work: () => T) => work() },
-      readSheet: mapDeps.readSheet,
-      now: mapDeps.now,
-      relativePath: mapDeps.relativePath,
+      readSheet,
+      now,
+      relativePath,
     })
 
     expect(moveResult.result).toMatchObject({ ok: true, revision: 1 })
@@ -280,21 +264,50 @@ describe('profile-based play smoke flow', () => {
       expect.objectContaining({ type: 'token.position', mapSlug: 'arena', revision: 1 }),
     ]))
 
+    const sheetRepository = {
+      getByRef: (kind: SheetKind, slug: string) => {
+        const sheet = sheets.get(sheetKey(kind, slug))
+        return sheet ? { kind, slug, sheet, revision: Number(sheet.revision ?? 0), updatedAt: Number(sheet.updatedAt ?? 0) } : null
+      },
+      list: (kind?: SheetKind) => [...sheets.entries()]
+        .filter(([key]) => kind === undefined || key.startsWith(`${kind}:`))
+        .map(([key, sheet]) => ({
+          kind: key.split(':')[0] as SheetKind,
+          slug: String(sheet.slug),
+          document: sheet,
+          revision: Number(sheet.revision ?? 0),
+          updatedAt: Number(sheet.updatedAt ?? 0),
+        })),
+      replaceSetupSheet: (input: { kind: SheetKind; slug: string; expectedRevision: number; sheet: Record<string, unknown>; now: number; preservePlayerFlag?: boolean }) => {
+        const key = sheetKey(input.kind, input.slug)
+        const current = sheets.get(key)
+        if (!current) return null
+        if (Number(current.revision ?? 0) !== input.expectedRevision) throw new Error('stale sheet')
+        const next = {
+          ...input.sheet,
+          slug: input.slug,
+          player: input.preservePlayerFlag ? current.player : input.sheet.player,
+          revision: input.expectedRevision + 1,
+          updatedAt: input.now,
+        }
+        sheets.set(key, next)
+        return {
+          changed: true,
+          sheet: { kind: input.kind, slug: input.slug, sheet: next, revision: input.expectedRevision + 1, updatedAt: input.now },
+          path: `data/${input.kind === 'pokemon' ? 'sheets' : 'trainers'}/${input.slug}.json`,
+        }
+      },
+    }
+
     const linkedSheetLoad = loadSheetUseCase({
       role: 'player',
       kind: 'pokemon',
       slug: 'pikachu',
       playerProfile: selectedProfile,
-    }, {
-      readSheet: (kind, slug) => {
-        const sheet = sheets.get(sheetKey(kind, slug))
-        return sheet ? { sheet: sheet as unknown as LoadedSheet } : null
-      },
-    })
+    }, { sheetRepository })
 
     expect(linkedSheetLoad.sheet).toMatchObject({ nickname: 'Pika', player: false })
 
-    const sheetWrites: Array<{ path: string; sheet: Record<string, unknown> }> = []
     const savedSheet = saveSheetUseCase({
       role: 'player',
       interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
@@ -305,33 +318,19 @@ describe('profile-based play smoke flow', () => {
         nickname: 'Sparky',
         playerProfileAccessible: true,
       },
+      expectedRevision: 0,
       playerProfile: selectedProfile,
       clientId: 'player-client',
     }, {
-      findSheetPath: (kind, slug) => sheetPaths.get(sheetKey(kind, slug)) ?? null,
+      sheetRepository,
       isPlayerAccessible: (kind, slug) => sheets.get(sheetKey(kind, slug))?.player === true,
-      stripDerivedFields: (sheet) => {
-        const stripped = { ...sheet }
-        delete stripped.folder
-        return stripped
-      },
-      readExistingSheet: (path) => {
-        const entry = [...sheetPaths.entries()].find(([, entryPath]) => entryPath === path)
-        return entry ? { ...sheets.get(entry[0]) } : {}
-      },
-      writeSheet: (path, sheet) => {
-        sheetWrites.push({ path, sheet })
-        const entry = [...sheetPaths.entries()].find(([, entryPath]) => entryPath === path)
-        if (entry) sheets.set(entry[0], sheet)
-      },
-      relativePath: (path) => path.replace('/memory/', 'data/'),
     })
 
     expect(savedSheet).toMatchObject({
       ok: true,
       slug: 'pikachu',
       sheet: {
-        revision: 0,
+        revision: 1,
         slug: 'pikachu',
         nickname: 'Sparky',
         species: 'Pikachu',
@@ -339,19 +338,14 @@ describe('profile-based play smoke flow', () => {
         player: false,
       },
     })
-    expect(sheetWrites).toEqual([
-      {
-        path: '/memory/sheets/pokemon/pikachu.json',
-        sheet: {
-          revision: 0,
-          slug: 'pikachu',
-          nickname: 'Sparky',
-          species: 'Pikachu',
-          level: 5,
-          player: false,
-        },
-      },
-    ])
+    expect(sheets.get(sheetKey('pokemon', 'pikachu'))).toMatchObject({
+      revision: 1,
+      slug: 'pikachu',
+      nickname: 'Sparky',
+      species: 'Pikachu',
+      level: 5,
+      player: false,
+    })
 
     const deniedMove = await executeMapTokenLivePlayCommandUseCase({
       role: 'player',
@@ -370,9 +364,9 @@ describe('profile-based play smoke flow', () => {
       commandExecutor: liveCommandExecutor,
       mapRepository: liveMapRepository,
       database: { withTransaction: <T>(work: () => T) => work() },
-      readSheet: mapDeps.readSheet,
-      now: mapDeps.now,
-      relativePath: mapDeps.relativePath,
+      readSheet,
+      now,
+      relativePath,
     })
     expect(deniedMove.result).toMatchObject({ ok: false, reason: 'unauthorized', message: 'Token is not linked to selected player profile' })
     expect(mapWrites).toHaveLength(1)

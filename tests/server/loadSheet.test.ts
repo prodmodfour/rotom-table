@@ -6,7 +6,6 @@ import {
   type PlayerProfileDisplayName,
   type PlayerProfileId,
 } from '../../shared/playerProfiles'
-import type { SheetKind } from '../../shared/sheets'
 
 const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
   schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
@@ -15,17 +14,30 @@ const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): Pla
   linkedCharacters,
 })
 
+const sheetRepositoryFor = (sheet: Record<string, unknown> | null, trainerSheets: readonly Record<string, unknown>[] = []) => ({
+  getByRef: vi.fn((kind: 'pokemon' | 'trainer', slug: string) => sheet
+    ? { kind, slug, sheet, revision: Number(sheet.revision ?? 0), updatedAt: 0 }
+    : null),
+  list: vi.fn(() => trainerSheets.map((trainer) => ({
+    kind: 'trainer' as const,
+    slug: String(trainer.slug),
+    document: trainer,
+    revision: Number(trainer.revision ?? 0),
+    updatedAt: 0,
+  }))),
+})
+
 describe('load sheet use case', () => {
   it('loads a persisted sheet for GMs', () => {
     const sheet = { slug: 'new-trainer-1', name: 'New Trainer', level: 1, folder: 'players/Hassan', player: false }
-    const readSheet = vi.fn((_kind: SheetKind, _slug: string) => ({ sheet }))
+    const sheetRepository = sheetRepositoryFor(sheet)
 
-    expect(loadSheetUseCase({ role: 'gm', kind: 'trainer', slug: 'new-trainer-1' }, { readSheet })).toEqual({
+    expect(loadSheetUseCase({ role: 'gm', kind: 'trainer', slug: 'new-trainer-1' }, { sheetRepository })).toEqual({
       kind: 'trainer',
       slug: 'new-trainer-1',
       sheet,
     })
-    expect(readSheet).toHaveBeenCalledWith('trainer', 'new-trainer-1')
+    expect(sheetRepository.getByRef).toHaveBeenCalledWith('trainer', 'new-trainer-1')
   })
 
   it('allows players to load only player-accessible sheets', () => {
@@ -35,7 +47,7 @@ describe('load sheet use case', () => {
       role: 'player',
       kind: 'pokemon',
       slug: 'pika',
-    }, { readSheet: () => ({ sheet }) })).toEqual({ kind: 'pokemon', slug: 'pika', sheet })
+    }, { sheetRepository: sheetRepositoryFor(sheet) })).toEqual({ kind: 'pokemon', slug: 'pika', sheet })
   })
 
   it('rejects inaccessible player sheet loads', () => {
@@ -43,7 +55,7 @@ describe('load sheet use case', () => {
       role: 'player',
       kind: 'trainer',
       slug: 'locked',
-    }, { readSheet: () => ({ sheet: { slug: 'locked', name: 'Locked', level: 1, player: false } }) }))
+    }, { sheetRepository: sheetRepositoryFor({ slug: 'locked', name: 'Locked', level: 1, player: false }) }))
       .toThrow(new LoadSheetUseCaseError(
         403,
         'Sheet is not marked as player accessible or linked to the selected player profile',
@@ -58,7 +70,7 @@ describe('load sheet use case', () => {
       kind: 'trainer',
       slug: 'locked',
       playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'locked' }]),
-    }, { readSheet: () => ({ sheet }) })).toEqual({
+    }, { sheetRepository: sheetRepositoryFor(sheet) })).toEqual({
       kind: 'trainer',
       slug: 'locked',
       sheet,
@@ -75,7 +87,7 @@ describe('load sheet use case', () => {
       slug: 'locked',
       playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'ash' }]),
     }, {
-      readSheet: () => ({ sheet }),
+      sheetRepository: sheetRepositoryFor(sheet),
       listTrainerSheets,
     })).toEqual({ kind: 'pokemon', slug: 'locked', sheet })
     expect(listTrainerSheets).toHaveBeenCalledOnce()
@@ -87,7 +99,7 @@ describe('load sheet use case', () => {
       kind: 'pokemon',
       slug: 'locked',
       playerProfile: playerProfile([{ sheetKind: 'pokemon', sheetSlug: 'other' }]),
-    }, { readSheet: () => ({ sheet: { slug: 'locked', nickname: 'Locked', species: 'Pikachu', level: 5, player: false } }) }))
+    }, { sheetRepository: sheetRepositoryFor({ slug: 'locked', nickname: 'Locked', species: 'Pikachu', level: 5, player: false }) }))
       .toThrow(new LoadSheetUseCaseError(
         403,
         'Sheet is not marked as player accessible or linked to the selected player profile',
@@ -102,7 +114,7 @@ describe('load sheet use case', () => {
       kind: 'trainer',
       slug: 'locked',
       canAccessPlayerSheet: (kind, slug) => kind === 'trainer' && slug === 'locked',
-    }, { readSheet: () => ({ sheet }) })).toEqual({
+    }, { sheetRepository: sheetRepositoryFor(sheet) })).toEqual({
       kind: 'trainer',
       slug: 'locked',
       sheet,
@@ -114,7 +126,7 @@ describe('load sheet use case', () => {
       role: 'gm',
       kind: 'trainer',
       slug: 'missing',
-    }, { readSheet: () => null }))
+    }, { sheetRepository: sheetRepositoryFor(null) }))
       .toThrow(new LoadSheetUseCaseError(404, 'Sheet missing.json not found'))
   })
 })

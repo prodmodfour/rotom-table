@@ -5,7 +5,7 @@ import { SHEET_KINDS, type SheetKind } from '#shared/sheets'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { sheetRootFor } from '../utils/sheetPaths'
-import { walkFiles, type FilePredicate } from '../utils/jsonFiles'
+import { walkDirectories, walkFiles, type FilePredicate } from '../utils/jsonFiles'
 import { sqliteSheetRepository, type SheetRepository } from './sheetRepository'
 
 export interface ImportedSheetFromJson {
@@ -25,7 +25,7 @@ export interface ImportSheetsFromJsonResult {
 
 export interface ImportSheetsFromJsonOptions {
   readonly roots?: Partial<Record<SheetKind, string>>
-  readonly repository?: Pick<SheetRepository, 'saveSetupSheet'>
+  readonly repository?: Pick<SheetRepository, 'saveSetupSheet' | 'createFolder'>
   readonly listFiles?: (root: string, predicate?: FilePredicate) => string[]
   readonly readFile?: (path: string) => string
   readonly updatedAtForFile?: (path: string) => number
@@ -51,6 +51,7 @@ const slugFromFilePath = (path: string): string => validateSlug(basename(path, e
 
 const normalizeImportedSheet = (
   kind: SheetKind,
+  root: string,
   path: string,
   readFile: (path: string) => string,
   updatedAtForFile: (path: string) => number,
@@ -70,6 +71,7 @@ const normalizeImportedSheet = (
     sheet: {
       ...payload,
       slug,
+      folder: folderFromRoot(root, path),
       revision: normalizeRevision(payload.revision),
       updatedAt: updatedAtForFile(path),
     },
@@ -98,8 +100,11 @@ export const importSheetsFromJson = async (
 
   for (const kind of SHEET_KINDS) {
     const root = roots[kind]
+    for (const folder of walkDirectories(root)) {
+      repository.createFolder(kind, folder)
+    }
     for (const path of listJsonSheetImportFiles(root, listFiles)) {
-      const normalized = normalizeImportedSheet(kind, path, readFile, updatedAtForFile)
+      const normalized = normalizeImportedSheet(kind, root, path, readFile, updatedAtForFile)
       const saved = repository.saveSetupSheet(kind, normalized.slug, normalized.sheet)
       imported.push({
         kind,

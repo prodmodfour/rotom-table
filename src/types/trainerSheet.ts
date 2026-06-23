@@ -262,12 +262,7 @@ export interface TrainerSheet {
   revision?: number
   /** URL slug for the sheet's subpage (``/sheets/trainers/<slug>``). */
   slug: string
-  /**
-   * Optional folder label for grouping on the sheets index. When omitted,
-   * the folder is derived from the file's directory under ``data/trainers/``
-   * (e.g. ``data/trainers/party-1/foo.json`` → ``"party-1"``). Set this
-   * explicitly to override the auto-derived label.
-   */
+  /** Logical SQLite library folder label for grouping on the sheets index. */
   folder?: string
   name: string
   /** Marks this sheet as broadly visible to players. */

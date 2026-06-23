@@ -1,6 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sanitizeFolderPath } from '#shared/paths'
-import { moveSheetFolder, type MoveFolderResult } from '../utils/sheetFolderStorage'
+import { sqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
 
 export class MoveSheetFolderUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
@@ -10,7 +10,9 @@ export interface MoveSheetFolderInput {
 }
 
 export interface MoveSheetFolderDependencies {
-  moveFolder?: (from: string, to: string) => MoveFolderResult | null
+  sheetRepository?: Pick<SheetRepository, 'moveFolder'>
+  moveFolder?: (from: string, to: string) => { moved: boolean; count: number; affectedSheets?: readonly unknown[] } | null
+  now?: () => number
 }
 
 export interface MoveSheetFolderResult {
@@ -31,16 +33,17 @@ export const moveSheetFolderUseCase = (
   input: MoveSheetFolderInput,
   dependencies: MoveSheetFolderDependencies = {},
 ): MoveSheetFolderResult => {
-  const moveFolder = dependencies.moveFolder ?? moveSheetFolder
+  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
+  const moveFolder = dependencies.moveFolder ?? ((from: string, to: string) => sheetRepository.moveFolder(from, to, undefined, dependencies.now?.()))
   const from = normalizeMoveSheetFolderPath(input.from, 'from')
   const to = normalizeMoveSheetFolderPath(input.to, 'to')
 
-  let result: MoveFolderResult | null
+  let result
   try {
     result = moveFolder(from, to)
   } catch (err) {
     const message = (err as Error).message
-    if (message.includes('Destination already exists')) throw new MoveSheetFolderUseCaseError(409, message)
+    if (message.includes('Destination')) throw new MoveSheetFolderUseCaseError(409, message)
     throw new MoveSheetFolderUseCaseError(400, message)
   }
 

@@ -1,23 +1,23 @@
 import { describe, expect, it, vi } from 'vitest'
 import { DeleteSheetUseCaseError, deleteSheetUseCase } from '../../server/useCases/deleteSheet'
-import type { SheetKind } from '../../shared/sheets'
 
 const deletedSheet = {
-  filePath: '/repo/data/sheets/party/pika.json',
-  relativePath: 'data/sheets/party/pika.json',
+  sheet: { kind: 'pokemon' as const, slug: 'pika', sheet: { slug: 'pika', revision: 2 }, revision: 2, updatedAt: 20 },
+  path: 'data/sheets/party/pika.json',
+  mapUpdates: [],
 }
 
 describe('delete sheet use case', () => {
   it('deletes a sheet and emits compatible sheet deletion events', () => {
-    const deleteSheet = vi.fn((_kind: SheetKind, _slug: string) => deletedSheet)
+    const sheetRepository = { deleteDocument: vi.fn(() => deletedSheet) }
 
     const result = deleteSheetUseCase({
       kind: 'pokemon',
       slug: 'pika',
       clientId: 'client-1',
-    }, { deleteSheet })
+    }, { sheetRepository })
 
-    expect(deleteSheet).toHaveBeenCalledWith('pokemon', 'pika')
+    expect(sheetRepository.deleteDocument).toHaveBeenCalledWith('pokemon', 'pika')
     expect(result).toMatchObject({ ok: true, path: 'data/sheets/party/pika.json' })
     expect(result.events).toEqual([
       {
@@ -36,12 +36,13 @@ describe('delete sheet use case', () => {
   })
 
   it('uses trainer sheet channels for trainer deletes', () => {
-    const deleteSheet = vi.fn(() => ({
-      filePath: '/repo/data/trainers/brock.json',
-      relativePath: 'data/trainers/brock.json',
-    }))
+    const sheetRepository = { deleteDocument: vi.fn(() => ({
+      sheet: { kind: 'trainer' as const, slug: 'brock', sheet: { slug: 'brock', revision: 1 }, revision: 1, updatedAt: 10 },
+      path: 'data/trainers/brock.json',
+      mapUpdates: [],
+    })) }
 
-    const result = deleteSheetUseCase({ kind: 'trainer', slug: 'brock' }, { deleteSheet })
+    const result = deleteSheetUseCase({ kind: 'trainer', slug: 'brock' }, { sheetRepository })
 
     expect(result.path).toBe('data/trainers/brock.json')
     expect(result.events).toEqual([
@@ -61,13 +62,13 @@ describe('delete sheet use case', () => {
   })
 
   it('maps missing sheets to not-found use-case errors', () => {
-    const deleteSheet = vi.fn(() => null)
+    const sheetRepository = { deleteDocument: vi.fn(() => null) }
 
-    expect(() => deleteSheetUseCase({ kind: 'pokemon', slug: 'missing' }, { deleteSheet }))
+    expect(() => deleteSheetUseCase({ kind: 'pokemon', slug: 'missing' }, { sheetRepository }))
       .toThrow('Sheet missing.json not found')
 
     try {
-      deleteSheetUseCase({ kind: 'pokemon', slug: 'missing' }, { deleteSheet })
+      deleteSheetUseCase({ kind: 'pokemon', slug: 'missing' }, { sheetRepository })
     } catch (err) {
       expect(err).toBeInstanceOf(DeleteSheetUseCaseError)
       expect(err).toMatchObject({ statusCode: 404 })
@@ -75,11 +76,11 @@ describe('delete sheet use case', () => {
   })
 
   it('lets unexpected storage failures bubble so route boundaries keep server-error semantics', () => {
-    const deleteSheet = vi.fn(() => {
+    const sheetRepository = { deleteDocument: vi.fn(() => {
       throw new Error('unlink failed')
-    })
+    }) }
 
-    expect(() => deleteSheetUseCase({ kind: 'pokemon', slug: 'pika' }, { deleteSheet }))
+    expect(() => deleteSheetUseCase({ kind: 'pokemon', slug: 'pika' }, { sheetRepository }))
       .toThrow('unlink failed')
   })
 })

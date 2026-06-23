@@ -1,6 +1,6 @@
 # Private VPS deployment smoke checklist
 
-Run this checklist after every private VPS deploy before sharing the private URL with players or resuming a campaign session. It assumes the private trusted-table scope described in [Private VPS hosting scope](private-vps-hosting.md): Node.js 24 LTS, the built Nitro server started with `npm run start`, campaign JSON and reference override diffs outside the app checkout through `ROTOM_CAMPAIGN_ROOT`, and an outer access gate in front of the app. For multi-browser command/revision checks after this deployment smoke passes, use the [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md).
+Run this checklist after every private VPS deploy before sharing the private URL with players or resuming a campaign session. It assumes the private trusted-table scope described in [Private VPS hosting scope](private-vps-hosting.md): Node.js 24 LTS, the built Nitro server started with `npm run start`, campaign SQLite state plus remaining maintenance JSON/reference override diffs outside the app checkout through `ROTOM_CAMPAIGN_ROOT`, and an outer access gate in front of the app. For multi-browser command/revision checks after this deployment smoke passes, use the [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md).
 
 Use synthetic or clearly disposable campaign edits for smoke checks. Do not put real environment files, hostnames, credentials, player details, logs, screenshots, backup archives, private campaign JSON, or campaign-specific reference overrides into the app repository while running this checklist.
 
@@ -10,7 +10,8 @@ Use synthetic or clearly disposable campaign edits for smoke checks. Do not put 
 - [ ] `ROTOM_CAMPAIGN_ROOT` points outside the app checkout, for example `/srv/rotom-table/campaign`; branch names are not data-isolation boundaries, and staging plus production must never share the same writable campaign root. If `ROTOM_DB_PATH` is set, it points to private operator-controlled campaign storage rather than the app checkout, and the database plus WAL sidecars are included in backups.
 - [ ] The Node service binds to loopback, for example `NITRO_HOST=127.0.0.1` and `NITRO_PORT=3000`, unless the private host uses an equivalent non-public bind.
 - [ ] The private host is protected by an outer access gate before Rotom Table's `/login` page, `/api/events`, `/api/health`, all `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths are reachable.
-- [ ] A current private backup exists or the operator is comfortable discarding the disposable smoke edits. See the [Private VPS backup runbook](private-vps-backups.md).
+- [ ] A current private backup exists or the operator is comfortable discarding the disposable smoke edits. Backups include `rotom-table.sqlite` plus `rotom-table.sqlite-wal` and `rotom-table.sqlite-shm` when present. See the [Private VPS backup runbook](private-vps-backups.md).
+- [ ] Existing installations have run the explicit SQLite migration before deploying this version: `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign npm run migrate:sqlite`. JSON map/sheet files are no longer runtime fallback state.
 - [ ] If this deployment is intended to save campaign changes in production, the real service environment intentionally sets exactly `ROTOM_ENABLE_HOSTED_WRITES=1`. If the flag is absent or set to any other value, covered production writes should fail closed instead of persisting.
 
 ## Build and process checks
@@ -75,7 +76,7 @@ Run this section with disposable data. If hosted writes are intentionally disabl
 
 - [ ] Create or edit a clearly disposable map item, such as moving a smoke-test token on a player-visible map or creating a temporary map/folder named `Deploy Smoke <date>`.
 - [ ] Create or edit a clearly disposable sheet field on a synthetic Pokémon or trainer sheet, or on a sheet the table explicitly agrees to modify for the smoke check.
-- [ ] Confirm the corresponding JSON changes are under `ROTOM_CAMPAIGN_ROOT` rather than inside `/srv/rotom-table/app`. If you deliberately smoke-test Pokédex maintenance, confirm it writes `data/reference-overrides/pokedex.json` under the campaign root and leaves app-owned `data/reference/pokedex.json` unchanged.
+- [ ] Confirm the corresponding map/sheet changes are present in the SQLite database under `ROTOM_CAMPAIGN_ROOT` (or `ROTOM_DB_PATH`) rather than as runtime JSON writes inside `/srv/rotom-table/app`. If you deliberately smoke-test Pokédex maintenance, confirm it writes `data/reference-overrides/pokedex.json` under the campaign root and leaves app-owned `data/reference/pokedex.json` unchanged.
 - [ ] Restart the built process:
 
   ```bash

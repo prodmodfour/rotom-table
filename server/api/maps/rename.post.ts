@@ -2,8 +2,8 @@
  * POST /api/maps/rename
  *
  * Updates a map's display name. If the new name slugifies to a
- * different filename, the JSON file is also moved on disk and the
- * map's `slug` field updated; otherwise only the name changes.
+ * different slug, the SQLite row and map document slug are renamed;
+ * otherwise only the name changes.
  *
  * When the slug changes, a `renamed` event is broadcast on both the
  * old `map:<slug>` channel and the `maps` channel so other tabs /

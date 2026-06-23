@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { characterSheetsBySlug } from '~~/data/characterSheets'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { useSheetRenameUrlSync } from '~/composables/sheets/useSheetRenameUrlSync'
@@ -22,9 +21,8 @@ import {
 import type { CharacterSheet } from '~/types/characterSheet'
 
 // ---------------------------------------------------------------------------
-// Resolve the static sheet for this URL, then deep-clone + normalize it into
-// an editable reactive copy. Every mutation auto-persists to disk via
-// `/api/sheets/save` (see useEditableSheet).
+// Load the authoritative SQLite-backed sheet for this URL, then deep-clone +
+// normalize it into an editable reactive copy.
 // ---------------------------------------------------------------------------
 
 // Route the page key off the slug so navigating from one Pokémon's sheet
@@ -41,7 +39,6 @@ const { selectedProfileId, loadRememberedProfile } = usePlayerProfiles()
 if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
 const slug = routeSlugParam(route.params)
-const staticBaseSheet = characterSheetsBySlug.get(slug) ?? null
 const currentSheetProfileContext = () => sheetApiProfileContext(isPlayer.value, selectedProfileId.value)
 const sheetLoadQuery = computed(() => buildSheetLoadQuery({
   kind: 'pokemon',
@@ -60,12 +57,7 @@ const {
   server: !isPlayer.value,
 })
 const runtimeSheetLoading = computed(() => runtimeSheetStatus.value === 'idle' || runtimeSheetStatus.value === 'pending')
-const staticFallbackSheet = import.meta.dev ? null : staticBaseSheet
-const baseSheet = computed(() => {
-  if (runtimeSheetResult.value?.sheet) return runtimeSheetResult.value.sheet
-  if (isPlayer.value && runtimeSheetLoading.value && !runtimeSheetError.value) return null
-  return staticFallbackSheet
-})
+const baseSheet = computed(() => runtimeSheetResult.value?.sheet ?? null)
 const {
   sheet,
   editorCapabilities,

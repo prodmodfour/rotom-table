@@ -1,7 +1,8 @@
 import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
-import { createMapFolder, type CreateMapFolderResult as StoredCreateMapFolderResult } from '../utils/mapFolderStorage'
 import { sanitizeMapFolderPath } from '../utils/mapPaths'
+import { logicalMapFolderPath } from '../utils/runtimeResourcePaths'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 
 export class CreateMapFolderUseCaseError extends UseCaseHttpError<400> {}
 
@@ -11,8 +12,10 @@ export interface CreateMapFolderInput {
 }
 
 export interface CreateMapFolderDependencies {
-  createFolder?: (folder: string) => StoredCreateMapFolderResult
+  mapRepository?: Pick<MapRepository, 'createFolder'>
+  createFolder?: (folder: string) => { created: boolean; folder: string }
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
+  now?: () => number
 }
 
 export interface CreateMapFolderResult {
@@ -33,33 +36,26 @@ export const normalizeCreateMapFolder = (
   }
 }
 
-const normalizeCreateFolderStorageError = (err: unknown): CreateMapFolderUseCaseError => {
-  const message = (err as Error).message
-  if (message === 'Invalid path: outside root') {
-    return new CreateMapFolderUseCaseError(400, 'Invalid destination')
-  }
-  return new CreateMapFolderUseCaseError(400, message)
-}
-
 export const createMapFolderUseCase = (
   input: CreateMapFolderInput,
   dependencies: CreateMapFolderDependencies = {},
 ): CreateMapFolderResult => {
   const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeMapFolderPath
-  const createFolder = dependencies.createFolder ?? createMapFolder
+  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
+  const createFolder = dependencies.createFolder ?? ((folder: string) => mapRepository.createFolder(folder, dependencies.now?.()))
 
   const folder = normalizeCreateMapFolder(input.folder, sanitizeFolder)
-  let result: StoredCreateMapFolderResult
+  let result
   try {
     result = createFolder(folder)
   } catch (err) {
-    throw normalizeCreateFolderStorageError(err)
+    throw new CreateMapFolderUseCaseError(400, (err as Error).message)
   }
 
   return {
     ok: true,
     created: result.created,
-    path: result.path,
+    path: logicalMapFolderPath(result.folder),
     events: [
       {
         channel: mapsChannel,

@@ -6,9 +6,9 @@ Use this runbook to create private backups of a trusted-table VPS campaign befor
 
 Back up the entire configured campaign root, not only the file you edited most recently:
 
-- `data/maps/`
-- `data/sheets/`
-- `data/trainers/`
+- `data/maps/` if retained as maintenance/export copies (not runtime authority)
+- `data/sheets/` if retained as maintenance/export copies (not runtime authority)
+- `data/trainers/` if retained as maintenance/export copies (not runtime authority)
 - `data/player-profiles/`
 - `data/reference-overrides/` for campaign-owned reference override diffs such as Pokédex edits
 - `encounter_tables/`
@@ -17,7 +17,7 @@ Back up the entire configured campaign root, not only the file you edited most r
 
 For the documented VPS layout, the app runs from `/srv/rotom-table/app`, campaign data lives in `/srv/rotom-table/campaign`, the default SQLite database path is `/srv/rotom-table/campaign/rotom-table.sqlite`, and private archives live outside the app checkout in `/srv/rotom-table/backups`. If `ROTOM_DB_PATH` points outside the default campaign root, it must still be private operator-controlled campaign storage; include that database path and sidecars in a separate private backup step.
 
-During the migration phase, keep backing up residual JSON campaign files even after map and sheet live-play state has been imported into SQLite. Player profiles, encounter tables, campaign reference overrides, setup/edit compatibility files, and any not-yet-migrated campaign material may still live as JSON. Do not delete or stop backing up JSON just because the normal live-play command path is database-backed.
+After the SQLite authority migration, maps and Pokémon/trainer sheets load from SQLite at runtime. Keep backing up residual JSON campaign files only as explicit maintenance/export/interchange artifacts. Player profiles, encounter tables, campaign reference overrides, and other non-map/sheet campaign material may still live as JSON. Do not treat residual map/sheet JSON as runtime fallback state.
 
 ## Backup timing and SQLite safety
 
@@ -184,7 +184,7 @@ In a browser on the host or through the same private access path, verify the res
 Then verify a temporary restore smoke write persists after restart:
 
 1. In the temporary restore app, create or edit a clearly disposable item such as `Restore Smoke <current-date>` in a map folder or sheet folder.
-2. Confirm the matching JSON file exists under the temporary root, for example with `find "$RESTORED_CAMPAIGN_ROOT" -iname '*restore-smoke*' -print`.
+2. Confirm the matching map/sheet state loads from SQLite after a refresh; if `sqlite3` is available, inspect the restored `maps`, `sheets`, `map_folders`, or `sheet_folders` tables rather than looking for runtime JSON writes.
 3. If the backup includes live-play state, open a disposable restored map and run a small command-backed action such as moving a smoke token or changing a smoke token's HP. Confirm the map/sheet values update in the UI and, if `sqlite3` is available, that the restored database still reports `PRAGMA integrity_check;` after the command.
 4. Stop the temporary app process with `Ctrl+C` and start it again with the same environment values.
 5. Reload the edited map, sheet, player profile list, encounter table, and any command-backed smoke map to confirm the disposable write and live-play state are still present.

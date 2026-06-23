@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSheetUseCase } from '../../server/useCases/createSheet'
-import type { SheetKind } from '../../shared/sheets'
 
 const createdPokemon = {
   kind: 'pokemon' as const,
@@ -13,21 +12,22 @@ const createdPokemon = {
     level: 1,
     player: false,
   },
-  filePath: '/repo/data/sheets/party/bench/new-pokemon.json',
-  relativePath: 'data/sheets/party/bench/new-pokemon.json',
+  path: 'data/sheets/party/bench/new-pokemon.json',
+  revision: 0,
+  updatedAt: 0,
 }
 
 describe('create sheet use case', () => {
   it('creates a Pokémon sheet and emits a compatible sheet-library update event', () => {
-    const createSheet = vi.fn((_kind: SheetKind, _folder: string) => createdPokemon)
+    const sheetRepository = { create: vi.fn(() => createdPokemon) }
 
     const result = createSheetUseCase({
       kind: 'pokemon',
       folder: 'party/bench',
       clientId: 'client-1',
-    }, { createSheet })
+    }, { sheetRepository })
 
-    expect(createSheet).toHaveBeenCalledWith('pokemon', 'party/bench')
+    expect(sheetRepository.create).toHaveBeenCalledWith({ kind: 'pokemon', folder: 'party/bench', now: undefined })
     expect(result).toMatchObject({
       ok: true,
       kind: 'pokemon',
@@ -54,14 +54,15 @@ describe('create sheet use case', () => {
       slug: 'new-trainer',
       folder: '',
       sheet: { slug: 'new-trainer', name: 'New Trainer', level: 1, player: false },
-      filePath: '/repo/data/trainers/new-trainer.json',
-      relativePath: 'data/trainers/new-trainer.json',
+      path: 'data/trainers/new-trainer.json',
+      revision: 0,
+      updatedAt: 0,
     }
-    const createSheet = vi.fn(() => trainerSheet)
+    const sheetRepository = { create: vi.fn(() => trainerSheet) }
 
-    const result = createSheetUseCase({ kind: 'trainer', folder: '' }, { createSheet })
+    const result = createSheetUseCase({ kind: 'trainer', folder: '' }, { sheetRepository })
 
-    expect(createSheet).toHaveBeenCalledWith('trainer', '')
+    expect(sheetRepository.create).toHaveBeenCalledWith({ kind: 'trainer', folder: '', now: undefined })
     expect(result).toMatchObject({
       ok: true,
       kind: 'trainer',
@@ -81,9 +82,9 @@ describe('create sheet use case', () => {
   })
 
   it('uses the persisted folder from storage in realtime payloads', () => {
-    const createSheet = vi.fn(() => ({ ...createdPokemon, folder: 'sanitized/folder' }))
+    const sheetRepository = { create: vi.fn(() => ({ ...createdPokemon, folder: 'sanitized/folder' })) }
 
-    const result = createSheetUseCase({ kind: 'pokemon', folder: '/sanitized/folder/' }, { createSheet })
+    const result = createSheetUseCase({ kind: 'pokemon', folder: '/sanitized/folder/' }, { sheetRepository })
 
     expect(result.events[0]?.data).toMatchObject({
       sheet: { folder: 'sanitized/folder' },
@@ -91,11 +92,11 @@ describe('create sheet use case', () => {
   })
 
   it('lets unexpected storage failures bubble so route boundaries keep server-error semantics', () => {
-    const createSheet = vi.fn(() => {
+    const sheetRepository = { create: vi.fn(() => {
       throw new Error('Could not allocate a free slug')
-    })
+    }) }
 
-    expect(() => createSheetUseCase({ kind: 'pokemon', folder: '' }, { createSheet }))
+    expect(() => createSheetUseCase({ kind: 'pokemon', folder: '' }, { sheetRepository }))
       .toThrow('Could not allocate a free slug')
   })
 })

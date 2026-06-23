@@ -25,13 +25,13 @@ The live-play model is:
 - **Revisions:** accepted commands increment authoritative map and/or sheet revisions. Rejected commands do not advance revisions.
 - **Idempotency:** commands are idempotent by client-generated `opId`. Retrying the same `opId` returns the previous accepted/rejected result without applying effects twice.
 - **Realtime:** accepted commands broadcast patches or authoritative accepted results. Realtime delivery never asks another client to infer live gameplay state from a browser-owned whole-map save.
-- **Persistence:** database-backed persistence is the authority for live play. JSON files remain setup/edit storage, migration input/output, backup/export material, and local inspection/maintenance data rather than live gameplay authority.
+- **Persistence:** SQLite is the runtime authority for both setup/edit and live play maps/sheets. JSON files remain explicit migration input/output, backup/export material, and local inspection/maintenance data rather than runtime authority.
 
 ## Mode split
 
 ### Setup/edit mode
 
-Setup/edit mode is the GM-oriented map and sheet preparation workflow. It may continue to use document-oriented JSON saves, debounced autosave, import/export, file repair, and local realtime updates because those workflows are not the live multiplayer concurrency boundary.
+Setup/edit mode is the GM-oriented map and sheet preparation workflow. It uses revision-checked document saves to SQLite, debounced autosave, explicit import/export, repair tooling, and local realtime updates because those workflows are not the live multiplayer concurrency boundary.
 
 Examples include creating maps, editing terrain, setting visibility, creating sheets, organizing libraries, and other GM maintenance tasks before or after play.
 
@@ -39,7 +39,7 @@ Examples include creating maps, editing terrain, setting visibility, creating sh
 
 Live play mode is the multiplayer table workflow where a GM and players may act concurrently. Gameplay mutations such as token movement, facing, HP, combat stages, conditions, move usage, initiative, hazards, field effects, terrain changes, token spawn/delete, and sheet-backed action effects flow through server-authoritative commands.
 
-Whole-map browser autosave is forbidden as the live gameplay authority. A full map snapshot may still be written by the server for setup/edit compatibility, migration, backup, or recovery, but live clients must not compete by writing whole map documents over one another.
+Whole-map browser autosave is forbidden as the live gameplay authority. A full map snapshot may still be written by the server for setup/edit, migration, backup, or recovery, but live clients must not compete by writing whole map documents over one another.
 
 ## Command result rules
 
@@ -63,7 +63,7 @@ Normal play uses persistent player profiles, regular saved-map URLs, server-auth
 - API routes should delegate to command services/executors instead of reimplementing envelope, revision, idempotency, or rejection behavior.
 - UI code should dispatch commands and reconcile against accepted results, rejections, patches, or revision reconciliation data rather than saving whole documents for live gameplay.
 - Setup/edit autosave may remain available, but product docs and source comments must keep it separate from live play authority.
-- Database repositories and migration tools must eventually replace JSON files as the authoritative live-play persistence layer.
+- Database repositories are the authoritative runtime persistence layer; JSON import/export tools are explicit maintenance boundaries only.
 - Legacy session docs remain in the archive and should be treated as historical, archival, or maintenance-only.
 
 ## Rejected alternatives

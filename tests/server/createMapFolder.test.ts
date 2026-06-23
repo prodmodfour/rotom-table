@@ -70,7 +70,7 @@ describe('create map folder use case', () => {
       expect(err).toBeInstanceOf(CreateMapFolderUseCaseError)
       expect(err).toMatchObject({
         statusCode: 400,
-        message: 'Invalid destination',
+        message: 'Invalid path: outside root',
       })
     }
   })

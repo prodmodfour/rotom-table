@@ -154,12 +154,7 @@ export interface CharacterSheet {
   revision?: number
   /** URL slug for the sheet's subpage (``/sheets/<slug>``). */
   slug: string
-  /**
-   * Optional folder label for grouping on the sheets index. When omitted,
-   * the folder is derived from the file's directory under ``data/sheets/``
-   * (e.g. ``data/sheets/team-alpha/foo.json`` → ``"team-alpha"``). Set this
-   * explicitly to override the auto-derived label.
-   */
+  /** Logical SQLite library folder label for grouping on the sheets index. */
   folder?: string
   nickname: string
   /** Matches a `species` value in `data/reference/pokedex.json`; blank means no species selected yet. */

@@ -9,7 +9,6 @@ import {
   type SheetRepository,
   type StoredSheetDocument,
 } from '../storage/sheetRepository'
-import { listSheetFileFoldersBySlug } from '../utils/sheetStorage'
 
 export type PlayerSheetAccessPredicate = (
   kind: SheetKind,
@@ -24,13 +23,13 @@ export interface ListSheetsInput {
 }
 
 type ListSheetsRepository = Pick<SheetRepository<Record<string, unknown>>, 'list'>
-type SheetFoldersBySlug = (kind: SheetKind) => ReadonlyMap<string, string>
 
 export interface ListSheetsDependencies {
   listPokemonSheets?: () => CharacterSheet[]
   listTrainerSheets?: () => TrainerSheet[]
   sheetRepository?: ListSheetsRepository
-  sheetFoldersBySlug?: SheetFoldersBySlug
+  /** @deprecated SQLite sheet documents now carry authoritative folders. */
+  sheetFoldersBySlug?: unknown
 }
 
 export interface ListSheetsResult {
@@ -52,27 +51,18 @@ const canListPlayerSheet = <TSheet extends CharacterSheet | TrainerSheet>(
 
 const storedSheetDocumentToSheet = <TSheet extends CharacterSheet | TrainerSheet>(
   stored: StoredSheetDocument<Record<string, unknown>>,
-  foldersBySlug: ReadonlyMap<string, string>,
-): TSheet => {
-  const folder = typeof stored.document.folder === 'string'
-    ? stored.document.folder
-    : foldersBySlug.get(stored.slug) ?? ''
-
-  return {
-    ...stored.document,
-    slug: stored.slug,
-    revision: stored.revision,
-    folder,
-  } as TSheet
-}
+): TSheet => ({
+  ...stored.document,
+  slug: stored.slug,
+  revision: stored.revision,
+  folder: typeof stored.document.folder === 'string' ? stored.document.folder : '',
+} as TSheet)
 
 const listRepositorySheets = <TSheet extends CharacterSheet | TrainerSheet>(
   repository: ListSheetsRepository,
   kind: SheetKind,
-  foldersBySlug: ReadonlyMap<string, string>,
 ): TSheet[] => repository.list(kind).map((stored) => storedSheetDocumentToSheet<TSheet>(
   stored as StoredSheetDocument<Record<string, unknown>>,
-  foldersBySlug,
 ))
 
 export const listSheetsUseCase = (
@@ -80,11 +70,10 @@ export const listSheetsUseCase = (
   dependencies: ListSheetsDependencies = {},
 ): ListSheetsResult => {
   const sheetRepository = dependencies.sheetRepository ?? (sqliteSheetRepository as ListSheetsRepository)
-  const sheetFoldersBySlug = dependencies.sheetFoldersBySlug ?? listSheetFileFoldersBySlug
   const listPokemonSheets = dependencies.listPokemonSheets
-    ?? (() => listRepositorySheets<CharacterSheet>(sheetRepository, 'pokemon', sheetFoldersBySlug('pokemon')))
+    ?? (() => listRepositorySheets<CharacterSheet>(sheetRepository, 'pokemon'))
   const listTrainerSheets = dependencies.listTrainerSheets
-    ?? (() => listRepositorySheets<TrainerSheet>(sheetRepository, 'trainer', sheetFoldersBySlug('trainer')))
+    ?? (() => listRepositorySheets<TrainerSheet>(sheetRepository, 'trainer'))
 
   const pokemonSheets = listPokemonSheets()
   const trainerSheets = listTrainerSheets()

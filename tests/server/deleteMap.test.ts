@@ -4,46 +4,38 @@ import {
   deleteMapUseCase,
   normalizeDeleteMapSlug,
 } from '../../server/useCases/deleteMap'
+import type { TabletopMap } from '~/types/map'
 
-const MAPS_ROOT = '/repo/data/maps'
-
-const createDeps = (options: {
-  paths?: Record<string, string>
-} = {}) => {
-  const paths = new Map(Object.entries(options.paths ?? {
-    'old-map': `${MAPS_ROOT}/old-folder/old-map.json`,
-  }))
-  const removed: string[] = []
-  const pruned: string[] = []
-  const deps = {
-    mapsRoot: MAPS_ROOT,
-    findMapPath: vi.fn((slug: string) => paths.get(slug) ?? null),
-    removeMapFile: vi.fn((path: string) => {
-      removed.push(path)
-      for (const [slug, filePath] of paths.entries()) {
-        if (filePath === path) paths.delete(slug)
-      }
-    }),
-    pruneEmptyParents: vi.fn((path: string) => {
-      pruned.push(path)
-    }),
-    relativePath: vi.fn((path: string) => path.replace('/repo/', '')),
-  }
-  return { deps, removed, pruned }
-}
+const mapDoc = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'old-map',
+  name: 'Old Map',
+  folder: 'old-folder',
+  revision: 2,
+  dimensions: { x: 4, y: 2, z: 4 },
+  groundLevelY: 0,
+  playerVisible: false,
+  voxels: [],
+  hazards: [],
+  fieldEffects: { weather: [], terrains: [], rooms: [] },
+  placements: [],
+  lights: [],
+  initiative: { activeId: null, round: 1 },
+  updatedAt: 20,
+  ...overrides,
+})
 
 describe('delete map use case', () => {
-  it('removes the map file, prunes empty parents, and emits compatible realtime events', () => {
-    const { deps, removed, pruned } = createDeps()
+  it('deletes the SQLite map document and emits compatible realtime events', () => {
+    const deleted = { map: mapDoc() }
+    const mapRepository = { deleteDocument: vi.fn(() => deleted) }
 
     const result = deleteMapUseCase({
       slug: 'old-map',
       clientId: 'client-1',
-    }, deps)
+    }, { mapRepository })
 
-    expect(deps.findMapPath).toHaveBeenCalledWith('old-map')
-    expect(removed).toEqual([`${MAPS_ROOT}/old-folder/old-map.json`])
-    expect(pruned).toEqual([`${MAPS_ROOT}/old-folder/old-map.json`])
+    expect(mapRepository.deleteDocument).toHaveBeenCalledWith('old-map')
     expect(result).toEqual({
       ok: true,
       path: 'data/maps/old-folder/old-map.json',
@@ -68,9 +60,9 @@ describe('delete map use case', () => {
     expect(() => normalizeDeleteMapSlug('Bad Slug')).toThrow(DeleteMapUseCaseError)
     expect(() => normalizeDeleteMapSlug('Bad Slug')).toThrow('slug must match /^[a-z0-9-]+$/')
 
-    const missing = createDeps({ paths: {} })
+    const mapRepository = { deleteDocument: vi.fn(() => null) }
     try {
-      deleteMapUseCase({ slug: 'old-map' }, missing.deps)
+      deleteMapUseCase({ slug: 'old-map' }, { mapRepository })
       throw new Error('expected missing map to throw')
     } catch (err) {
       expect(err).toBeInstanceOf(DeleteMapUseCaseError)
@@ -79,19 +71,5 @@ describe('delete map use case', () => {
         message: 'Map old-map.json not found',
       })
     }
-  })
-
-  it('rejects escaped or root map paths before filesystem mutation', () => {
-    const escaped = createDeps({
-      paths: { 'old-map': `${MAPS_ROOT}-escape/old-map.json` },
-    })
-    expect(() => deleteMapUseCase({ slug: 'old-map' }, escaped.deps)).toThrow('Invalid map path')
-    expect(escaped.removed).toEqual([])
-
-    const root = createDeps({
-      paths: { 'old-map': MAPS_ROOT },
-    })
-    expect(() => deleteMapUseCase({ slug: 'old-map' }, root.deps)).toThrow('Invalid map path')
-    expect(root.removed).toEqual([])
   })
 })

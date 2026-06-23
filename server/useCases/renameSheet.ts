@@ -1,11 +1,12 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { SheetKind } from '#shared/sheets'
-import { renameSheetFile, type RenameSheetFileResult } from '../utils/sheetStorage'
 import {
-  retargetMapSheetPlacements,
-  type RetargetMapSheetPlacementsResult,
-} from '../utils/mapStorage'
+  sqliteSheetRepository,
+  type RenameSheetDocumentInput,
+  type RenameSheetDocumentResult,
+  type SheetRepository,
+} from '../storage/sheetRepository'
 import { mapRetargetRealtimeEvents } from '../utils/mapRetargetRealtime'
 
 export class RenameSheetUseCaseError extends UseCaseHttpError<404 | 409 | 500> {}
@@ -18,12 +19,9 @@ export interface RenameSheetInput {
 }
 
 export interface RenameSheetDependencies {
-  renameSheet?: (kind: SheetKind, slug: string, name: string) => RenameSheetFileResult | null
-  retargetMapSheetPlacements?: (
-    kind: SheetKind,
-    oldSlug: string,
-    newSlug: string,
-  ) => RetargetMapSheetPlacementsResult[]
+  sheetRepository?: Pick<SheetRepository, 'rename'>
+  now?: () => number
+  failAfterSheetUpdate?: () => void
 }
 
 export interface RenameSheetResult {
@@ -39,47 +37,56 @@ export const renameSheetUseCase = (
   input: RenameSheetInput,
   dependencies: RenameSheetDependencies = {},
 ): RenameSheetResult => {
-  const renameSheet = dependencies.renameSheet ?? renameSheetFile
-  const retargetMapPlacements = dependencies.retargetMapSheetPlacements ?? retargetMapSheetPlacements
+  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
 
-  let renamed: RenameSheetFileResult | null
+  let renamed: RenameSheetDocumentResult | null
   try {
-    renamed = renameSheet(input.kind, input.slug, input.name)
+    renamed = sheetRepository.rename({
+      kind: input.kind,
+      slug: input.slug,
+      name: input.name,
+      now: dependencies.now?.(),
+      failAfterSheetUpdate: dependencies.failAfterSheetUpdate,
+    } as RenameSheetDocumentInput)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    if (message.includes('already exists')) throw new RenameSheetUseCaseError(409, message)
-    throw new RenameSheetUseCaseError(500, `Failed to parse or write sheet: ${err}`)
+    if (message.includes('already exists') || message.includes('UNIQUE')) throw new RenameSheetUseCaseError(409, message)
+    throw new RenameSheetUseCaseError(500, `Failed to rename sheet: ${message}`)
   }
 
   if (!renamed) throw new RenameSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
 
-  const newSlug = renamed.slug || String(renamed.sheet.slug ?? input.slug)
-  const mapUpdates = newSlug !== input.slug
-    ? retargetMapPlacements(input.kind, input.slug, newSlug)
-    : []
-  const data = { kind: input.kind, slug: newSlug, sheet: renamed.sheet }
-  const renameData = { kind: input.kind, slug: newSlug, oldSlug: input.slug, newSlug, sheet: renamed.sheet }
+  const data = { kind: input.kind, slug: renamed.newSlug, sheet: renamed.sheet.sheet }
+  const renameData = {
+    kind: input.kind,
+    slug: renamed.newSlug,
+    oldSlug: input.slug,
+    newSlug: renamed.newSlug,
+    sheet: renamed.sheet.sheet,
+  }
   const clientId = input.clientId
   const events: Array<Omit<RealtimeEvent, 'timestamp'>> = [
-    ...(newSlug !== input.slug
-      ? [
-          { channel: sheetChannel(input.kind, input.slug), type: 'renamed', clientId, data: renameData },
-          { channel: sheetChannel(input.kind, newSlug), type: 'updated', clientId, data },
-          { channel: sheetsChannel, type: 'renamed', clientId, data: renameData },
-        ]
-      : [
-          { channel: sheetChannel(input.kind, input.slug), type: 'updated', clientId, data },
-          { channel: sheetsChannel, type: 'updated', clientId, data },
-        ]),
-    ...mapRetargetRealtimeEvents(mapUpdates, clientId),
+    ...(!renamed.changed
+      ? []
+      : renamed.renamed
+        ? [
+            { channel: sheetChannel(input.kind, input.slug), type: 'renamed' as const, clientId, data: renameData },
+            { channel: sheetChannel(input.kind, renamed.newSlug), type: 'updated' as const, clientId, data },
+            { channel: sheetsChannel, type: 'renamed' as const, clientId, data: renameData },
+          ]
+        : [
+            { channel: sheetChannel(input.kind, input.slug), type: 'updated' as const, clientId, data },
+            { channel: sheetsChannel, type: 'updated' as const, clientId, data },
+          ]),
+    ...mapRetargetRealtimeEvents(renamed.mapUpdates, clientId),
   ]
 
   return {
     ok: true,
-    slug: newSlug,
+    slug: renamed.newSlug,
     name: input.name,
-    path: renamed.relativePath,
-    sheet: renamed.sheet,
+    path: renamed.path,
+    sheet: renamed.sheet.sheet,
     events,
   }
 }

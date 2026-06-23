@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
-import { trainerSheetsBySlug } from '~~/data/trainerSheets'
 import { normalizeTrainerSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
 import { useSheetRenameUrlSync } from '~/composables/sheets/useSheetRenameUrlSync'
@@ -31,7 +30,6 @@ const { reloadRuntimeSheets } = useLiveSheets()
 if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
 const slug = routeSlugParam(route.params)
-const staticBaseSheet = trainerSheetsBySlug.get(slug) ?? null
 const currentSheetProfileContext = () => sheetApiProfileContext(isPlayer.value, selectedProfileId.value)
 const sheetLoadQuery = computed(() => buildSheetLoadQuery({
   kind: 'trainer',
@@ -50,12 +48,7 @@ const {
   server: !isPlayer.value,
 })
 const runtimeSheetLoading = computed(() => runtimeSheetStatus.value === 'idle' || runtimeSheetStatus.value === 'pending')
-const staticFallbackSheet = import.meta.dev ? null : staticBaseSheet
-const baseSheet = computed(() => {
-  if (runtimeSheetResult.value?.sheet) return runtimeSheetResult.value.sheet
-  if (isPlayer.value && runtimeSheetLoading.value && !runtimeSheetError.value) return null
-  return staticFallbackSheet
-})
+const baseSheet = computed(() => runtimeSheetResult.value?.sheet ?? null)
 const {
   sheet,
   editorCapabilities,

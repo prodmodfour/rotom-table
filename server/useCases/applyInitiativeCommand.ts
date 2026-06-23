@@ -54,7 +54,7 @@ import {
   type WriteSessionSnapshotOptions,
   type WriteSessionSnapshotResult,
 } from '../utils/sessionSnapshots'
-import { readSheetFile } from '../utils/sheetStorage'
+import { readRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { initiativeOrderIdsForPlacements } from '~/utils/initiativeOrderEntries'
 import {
   sessionStore,
@@ -209,7 +209,7 @@ type ResolvedInitiativeMap = {
 const defaultClock: ApplyInitiativeCommandClock = () => new Date().toISOString()
 
 const defaultReadSheet: InitiativeSheetReader = (kind, slug) => {
-  const result = readSheetFile<Record<string, unknown>>(kind, slug)
+  const result = readRuntimeSheet<Record<string, unknown>>(kind, slug)
   if (result === null) return null
   return {
     path: result.path,

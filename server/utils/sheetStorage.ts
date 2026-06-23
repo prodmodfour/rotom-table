@@ -1,3 +1,8 @@
+/**
+ * Maintenance-only JSON helpers for legacy sheet import/export tooling.
+ * Runtime Pokémon/trainer sheet APIs use SQLite repositories. Do not import
+ * this module from server/api or server/useCases runtime code.
+ */
 import {
   existsSync,
   mkdirSync,

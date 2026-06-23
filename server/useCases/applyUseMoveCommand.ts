@@ -69,12 +69,11 @@ import {
   type SessionStoreRecord,
   type SessionStoreStatus,
 } from '../utils/sessionStore'
-import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import {
-  readSheetFile,
-  stripDerivedSheetFields,
-  writeSheetFile,
-} from '../utils/sheetStorage'
+  stripDerivedSheetRuntimeFields as stripDerivedSheetFields,
+  toNextRevisionSheetPayload,
+} from '~/utils/sheets/persistence'
+import { readRuntimeSheet, writeRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class ApplyUseMoveCommandUseCaseError<
@@ -439,7 +438,7 @@ const useMoveStateFromUsage = (
 })
 
 const defaultReadSheet: UseMoveSheetReader = (kind, slug) => {
-  const result = readSheetFile<Record<string, unknown>>(kind, slug)
+  const result = readRuntimeSheet<Record<string, unknown>>(kind, slug)
   if (result === null) return null
   return {
     path: result.path,
@@ -1161,7 +1160,7 @@ export const applyUseMoveCommandUseCase = (
   const clock = dependencies.clock ?? defaultClock
   const snapshotWriter = dependencies.writeSnapshot ?? writeSessionSnapshot
   const readSheet = dependencies.readSheet ?? defaultReadSheet
-  const writeSheet = dependencies.writeSheet ?? writeSheetFile
+  const writeSheet = dependencies.writeSheet ?? writeRuntimeSheet
 
   const envelope = validateEnvelopeForUseMove(input.command)
   const record = getActiveUseMoveRecord(activeStore, envelope)

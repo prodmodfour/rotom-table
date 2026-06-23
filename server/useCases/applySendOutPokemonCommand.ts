@@ -59,7 +59,7 @@ import {
   type SessionStoreRecord,
   type SessionStoreStatus,
 } from '../utils/sessionStore'
-import { readSheetFile } from '../utils/sheetStorage'
+import { readRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class ApplySendOutPokemonCommandUseCaseError<
@@ -245,8 +245,8 @@ const issueSummary = (issues: readonly SessionCommandValidationIssue[]): string 
 
 const defaultResolveSheets: SendOutPokemonSheetResolver = ({ trainerSheetSlug, pokemonSlug }) => {
   try {
-    const trainer = readSheetFile<TrainerSheet>('trainer', trainerSheetSlug)
-    const pokemon = readSheetFile<CharacterSheet>('pokemon', pokemonSlug)
+    const trainer = readRuntimeSheet<TrainerSheet>('trainer', trainerSheetSlug)
+    const pokemon = readRuntimeSheet<CharacterSheet>('pokemon', pokemonSlug)
     if (trainer === null || pokemon === null) return null
     return {
       trainerSheet: trainer.sheet,

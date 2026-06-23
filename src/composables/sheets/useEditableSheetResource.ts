@@ -20,7 +20,7 @@ import {
 import type { SheetApiProfileContext } from '~/utils/sheetApiRequests'
 import type { SheetKind } from '#shared/sheets'
 
-export interface EditableSheetResourceOptions<TSheet extends { slug: string; player?: boolean } & SheetEditorCapabilitySheet> {
+export interface EditableSheetResourceOptions<TSheet extends { slug: string; revision?: number; player?: boolean } & SheetEditorCapabilitySheet> {
   baseSheet: MaybeRefOrGetter<TSheet | null | undefined>
   kind: SheetKind
   isPlayer: ComputedRef<boolean>
@@ -30,7 +30,7 @@ export interface EditableSheetResourceOptions<TSheet extends { slug: string; pla
   profileContext?: () => SheetApiProfileContext
 }
 
-export interface EditableSheetResource<TSheet extends { slug: string }> {
+export interface EditableSheetResource<TSheet extends { slug: string; revision?: number }> {
   readonly editor: UseEditableSheetReturn<TSheet> | null
   sheet: ComputedRef<TSheet | null>
   editorCapabilities: ComputedRef<SheetEditorCapabilities>
@@ -45,7 +45,7 @@ const isPlayerAccessibleSheet = (sheet: SheetEditorCapabilitySheet): boolean => 
   sheet.playerProfileAccessible === true
 )
 
-export function useEditableSheetResource<TSheet extends { slug: string; player?: boolean } & SheetEditorCapabilitySheet>(
+export function useEditableSheetResource<TSheet extends { slug: string; revision?: number; player?: boolean } & SheetEditorCapabilitySheet>(
   options: EditableSheetResourceOptions<TSheet>,
 ): EditableSheetResource<TSheet> {
   const baseSheet = computed<TSheet | null>(() => toValue(options.baseSheet) ?? null)

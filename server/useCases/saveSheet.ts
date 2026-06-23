@@ -1,35 +1,21 @@
-import { existsSync, renameSync } from 'node:fs'
-import { dirname, join } from 'node:path'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
-import { normalizeRevision } from '#shared/sessionRevisions'
+import { isRevision } from '#shared/sessionRevisions'
 import type { SheetKind } from '#shared/sheets'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   playerProfileCanAccessSheet,
   type PlayerProfileLinkedTrainerSheet,
 } from '../policies/playerProfilePolicy'
-import { campaignPathLabel } from '../utils/campaignPaths'
 import {
-  allocateSheetSlug,
-  findPersistedSheetFile,
-  listSheetFilesWithFolders,
-  sheetIsPlayerAccessible,
-  sheetNameFieldForKind,
-  sheetNameSlug,
-  stripDerivedSheetFields,
-  writeSheetFile,
-  type AllocateSheetSlugOptions,
-} from '../utils/sheetStorage'
-import {
-  retargetMapSheetPlacements,
-  type RetargetMapSheetPlacementsResult,
-} from '../utils/mapStorage'
-import { mapRetargetRealtimeEvents } from '../utils/mapRetargetRealtime'
-import { tryReadJsonFile } from '../utils/jsonFiles'
+  sqliteSheetRepository,
+  type PersistedSheet,
+  type SheetRepository,
+} from '../storage/sheetRepository'
+import { logicalSheetResourcePath } from '../utils/runtimeResourcePaths'
 
 export class SaveSheetUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -38,34 +24,18 @@ export interface SaveSheetInput {
   kind: SheetKind
   slug: string
   sheet: Record<string, unknown>
+  expectedRevision?: number
   clientId?: string
   playerProfile?: PlayerProfile | null
   interactionMode: MapInteractionMode
-  /**
-   * When false, persist the supplied sheet under the current resource slug even
-   * if its display name would normally derive a different slug. Map token
-   * combat updates use this so HP/condition saves cannot orphan placements.
-   */
   allowSlugSync?: boolean
 }
 
 export interface SaveSheetDependencies {
-  findSheetPath?: (kind: SheetKind, slug: string) => string | null
-  findSlugPath?: (kind: SheetKind, slug: string) => string | null
+  sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list' | 'replaceSetupSheet'>
   isPlayerAccessible?: (kind: SheetKind, slug: string) => boolean
-  stripDerivedFields?: (sheet: Record<string, unknown>) => Record<string, unknown>
-  readExistingSheet?: (path: string) => Record<string, unknown>
   listTrainerSheets?: () => Iterable<PlayerProfileLinkedTrainerSheet>
-  writeSheet?: (path: string, sheet: Record<string, unknown>) => void
-  retargetMapSheetPlacements?: (
-    kind: SheetKind,
-    oldSlug: string,
-    newSlug: string,
-  ) => RetargetMapSheetPlacementsResult[]
-  pathExists?: (path: string) => boolean
-  renameSheetPath?: (from: string, to: string) => void
-  allocateSlug?: (kind: SheetKind, base: string, options?: AllocateSheetSlugOptions) => string
-  relativePath?: (path: string) => string
+  now?: () => number
 }
 
 export interface SaveSheetResult {
@@ -76,48 +46,7 @@ export interface SaveSheetResult {
   events: Array<Omit<RealtimeEvent, 'timestamp'>>
 }
 
-interface SheetSaveTarget {
-  slug: string
-  path: string
-}
-
-const CLIENT_ONLY_SHEET_ACCESS_FIELDS = ['sessionPlayerAccessible', 'playerProfileAccessible'] as const
-
-const trimmedString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '')
-
-const stripClientOnlySheetAccessFields = (sheet: Record<string, unknown>): Record<string, unknown> => {
-  const payload = { ...sheet }
-  for (const field of CLIENT_ONLY_SHEET_ACCESS_FIELDS) delete payload[field]
-  return payload
-}
-
-const resolveSheetSaveTarget = (
-  input: Pick<SaveSheetInput, 'kind' | 'slug' | 'sheet'>,
-  currentPath: string,
-  dependencies: Required<Pick<SaveSheetDependencies,
-    'findSlugPath' | 'pathExists' | 'renameSheetPath' | 'allocateSlug'
-  >>,
-): SheetSaveTarget => {
-  const nameField = sheetNameFieldForKind(input.kind)
-  const nextName = trimmedString(input.sheet[nameField])
-  if (!nextName) return { slug: input.slug, path: currentPath }
-
-  const desiredSlug = sheetNameSlug(nextName)
-  if (!desiredSlug || desiredSlug === input.slug) return { slug: input.slug, path: currentPath }
-
-  const existing = dependencies.findSlugPath(input.kind, desiredSlug)
-  const newSlug = existing && existing !== currentPath
-    ? dependencies.allocateSlug(input.kind, nextName, { excludePath: currentPath })
-    : desiredSlug
-  const newPath = join(dirname(currentPath), `${newSlug}.json`)
-  if (newPath === currentPath) return { slug: newSlug, path: currentPath }
-
-  if (dependencies.pathExists(newPath)) {
-    throw new SaveSheetUseCaseError(409, `Sheet ${newSlug}.json already exists`)
-  }
-  dependencies.renameSheetPath(currentPath, newPath)
-  return { slug: newSlug, path: newPath }
-}
+const persistedToTrainerSheet = (sheet: PersistedSheet): TrainerSheet => sheet.sheet as unknown as TrainerSheet
 
 export const saveSheetUseCase = (
   input: SaveSheetInput,
@@ -127,19 +56,12 @@ export const saveSheetUseCase = (
     throw new SaveSheetUseCaseError(403, 'Whole-sheet saves are setup/edit-only; live play must use sheet command routes')
   }
 
-  const findSheetPath = dependencies.findSheetPath ?? findPersistedSheetFile
-  const findSlugPath = dependencies.findSlugPath ?? findPersistedSheetFile
-  const isPlayerAccessible = dependencies.isPlayerAccessible ?? sheetIsPlayerAccessible
-  const stripDerivedFields = dependencies.stripDerivedFields ?? stripDerivedSheetFields
-  const readExistingSheet = dependencies.readExistingSheet ?? ((path: string) => tryReadJsonFile<Record<string, unknown>>(path) ?? {})
-  const listTrainerSheets = dependencies.listTrainerSheets
-    ?? (() => listSheetFilesWithFolders<TrainerSheet>('trainer'))
-  const writeSheet = dependencies.writeSheet ?? writeSheetFile
-  const retargetMapPlacements = dependencies.retargetMapSheetPlacements ?? retargetMapSheetPlacements
-  const pathExists = dependencies.pathExists ?? existsSync
-  const renameSheetPath = dependencies.renameSheetPath ?? renameSync
-  const allocateSlug = dependencies.allocateSlug ?? allocateSheetSlug
-  const relativePath = dependencies.relativePath ?? campaignPathLabel
+  if (!isRevision(input.expectedRevision)) {
+    throw new SaveSheetUseCaseError(400, 'expectedRevision must be a safe non-negative integer')
+  }
+
+  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
+  const now = dependencies.now ?? Date.now
 
   const payloadSlug = String(input.sheet.slug ?? '')
   if (payloadSlug !== input.slug) {
@@ -149,8 +71,23 @@ export const saveSheetUseCase = (
     )
   }
 
-  const path = findSheetPath(input.kind, input.slug)
-  if (!path) throw new SaveSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
+  const current = sheetRepository.getByRef(input.kind, input.slug)
+  if (!current) throw new SaveSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
+
+  const isPlayerAccessible = dependencies.isPlayerAccessible
+    ?? ((kind: SheetKind, slug: string) => sheetRepository.getByRef(kind, slug)?.sheet.player === true)
+  const listTrainerSheets = dependencies.listTrainerSheets
+    ?? (() => sheetRepository.list('trainer').map((stored) => persistedToTrainerSheet({
+      kind: 'trainer',
+      slug: stored.slug,
+      sheet: {
+        ...(stored.document as Record<string, unknown>),
+        slug: stored.slug,
+        revision: stored.revision,
+      },
+      revision: stored.revision,
+      updatedAt: stored.updatedAt,
+    })))
 
   const playerPublicAccess = input.role === 'player'
     ? isPlayerAccessible(input.kind, input.slug)
@@ -168,52 +105,39 @@ export const saveSheetUseCase = (
     )
   }
 
-  const existingSheet = readExistingSheet(path)
-  const canRenameSheetResource = (input.role === 'gm' || playerPublicAccess) && input.allowSlugSync !== false
-  const target = canRenameSheetResource
-    ? resolveSheetSaveTarget(input, path, {
-        findSlugPath,
-        pathExists,
-        renameSheetPath,
-        allocateSlug,
-      })
-    : { slug: input.slug, path }
-
-  const sheet = stripClientOnlySheetAccessFields(stripDerivedFields(input.sheet))
-  sheet.revision = Object.prototype.hasOwnProperty.call(input.sheet, 'revision')
-    ? normalizeRevision(input.sheet.revision)
-    : normalizeRevision(existingSheet.revision)
-  if (!Object.prototype.hasOwnProperty.call(input.sheet, 'moveUsage') && existingSheet.moveUsage !== undefined) {
-    sheet.moveUsage = existingSheet.moveUsage
+  let saved
+  try {
+    saved = sheetRepository.replaceSetupSheet({
+      kind: input.kind,
+      slug: input.slug,
+      expectedRevision: input.expectedRevision,
+      sheet: input.sheet,
+      now: now(),
+      preservePlayerFlag: input.role === 'player',
+    })
+  } catch (err) {
+    const message = (err as Error).message
+    if (message.includes('stale') || message.includes('expected revision')) {
+      throw new SaveSheetUseCaseError(409, message)
+    }
+    throw new SaveSheetUseCaseError(400, message)
   }
-  sheet.slug = target.slug
-  if (input.role === 'player') sheet.player = playerPublicAccess || existingSheet.player === true
-  writeSheet(target.path, sheet)
-  const mapUpdates = target.slug !== input.slug
-    ? retargetMapPlacements(input.kind, input.slug, target.slug)
-    : []
 
-  const data = { kind: input.kind, slug: target.slug, sheet }
-  const renameData = { kind: input.kind, slug: target.slug, oldSlug: input.slug, newSlug: target.slug, sheet }
-  const clientId = input.clientId
-  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = [
-    ...(target.slug !== input.slug
-      ? [
-          { channel: sheetChannel(input.kind, input.slug), type: 'renamed', clientId, data: renameData },
-          { channel: sheetChannel(input.kind, target.slug), type: 'updated', clientId, data },
-          { channel: sheetsChannel, type: 'renamed', clientId, data: renameData },
-        ]
-      : [
-          { channel: sheetChannel(input.kind, input.slug), type: 'updated', clientId, data },
-          { channel: sheetsChannel, type: 'updated', clientId, data },
-        ]),
-    ...mapRetargetRealtimeEvents(mapUpdates, clientId),
-  ]
+  if (!saved) throw new SaveSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
+
+  const sheet = saved.sheet.sheet
+  const data = { kind: input.kind, slug: saved.sheet.slug, sheet }
+  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = saved.changed
+    ? [
+        { channel: sheetChannel(input.kind, saved.sheet.slug), type: 'updated', clientId: input.clientId, data },
+        { channel: sheetsChannel, type: 'updated', clientId: input.clientId, data },
+      ]
+    : []
 
   return {
     ok: true,
-    slug: target.slug,
-    path: relativePath(target.path),
+    slug: saved.sheet.slug,
+    path: saved.path || logicalSheetResourcePath(input.kind, sheet),
     sheet,
     events,
   }

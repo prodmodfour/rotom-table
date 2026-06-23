@@ -17,6 +17,7 @@ import {
   buildSheetSaveBody,
   sheetApiProfileContext,
 } from '~/utils/sheetApiRequests'
+import { normalizeRevision } from '#shared/sessionRevisions'
 import {
   addPokemonToTrainerTeam,
   boxPokemonForTrainer,
@@ -32,6 +33,11 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 interface SheetListPayload {
   pokemonSheets: CharacterSheet[]
   trainerSheets: TrainerSheet[]
+}
+
+interface SaveTrainerSheetResponse {
+  ok: true
+  sheet: TrainerSheet
 }
 
 useHead({
@@ -154,14 +160,16 @@ const persistTrainerRoster = async (sheet: TrainerSheet): Promise<void> => {
   setTrainerRosterSaving(sheet.slug, true)
   delete rosterSaveErrors[sheet.slug]
   try {
-    await postJson(SHEET_API_PATHS.save, buildSheetSaveBody({
+    const result = await postJson<SaveTrainerSheetResponse>(SHEET_API_PATHS.save, buildSheetSaveBody({
       kind: 'trainer',
       slug: sheet.slug,
       sheet,
+      expectedRevision: normalizeRevision(sheet.revision),
       profileContext: sheetApiProfileContext(true, selectedProfileId.value),
       requireSelectedPlayerProfile: true,
       allowSlugSync: false,
     }))
+    replaceTrainerSheet(result.sheet)
   } catch (error) {
     rosterSaveErrors[sheet.slug] = getErrorMessage(error)
     throw error

@@ -1,18 +1,15 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { dirname, join } from 'node:path'
-import { existsSync, renameSync } from 'node:fs'
 import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
-import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { TabletopMap } from '~/types/map'
-import { campaignPathLabel } from '../utils/campaignPaths'
-import { allocateSlug, findMapFile, readMapFile, writeMapFile } from '../utils/mapStorage'
-import { SLUG_RE, slugify } from '../utils/mapPaths'
+import { validateSlug } from '#shared/paths'
 import { summarizeMap } from '../utils/mapSummaries'
 import {
   mapRevisionForRealtime,
   mapSummaryUpdatedRealtimeEvent,
   mapUpdatedRealtimeEvent,
 } from '../utils/mapRealtimeEvents'
+import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
+import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 
 export class RenameMapUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
@@ -24,14 +21,7 @@ export interface RenameMapInput {
 
 export interface RenameMapDependencies {
   now?: () => number
-  findMapPath?: (slug: string) => string | null
-  readMap?: (filePath: string) => TabletopMap
-  writeMap?: (filePath: string, map: TabletopMap) => void
-  pathExists?: (filePath: string) => boolean
-  renameMapPath?: (oldPath: string, newPath: string) => void
-  slugifyName?: (name: string) => string
-  allocateMapSlug?: (name: string) => string
-  relativePath?: (filePath: string) => string
+  mapRepository?: Pick<MapRepository, 'rename'>
 }
 
 export interface RenameMapResult {
@@ -44,12 +34,13 @@ export interface RenameMapResult {
 }
 
 const MAX_MAP_NAME_LENGTH = 80
-const SLUG_ERROR = 'slug must match /^[a-z0-9-]+$/'
 
 export const normalizeRenameMapSlug = (value: unknown): string => {
-  const slug = String(value ?? '')
-  if (!SLUG_RE.test(slug)) throw new RenameMapUseCaseError(400, SLUG_ERROR)
-  return slug
+  try {
+    return validateSlug(value, 'slug')
+  } catch {
+    throw new RenameMapUseCaseError(400, 'slug must match /^[a-z0-9-]+$/')
+  }
 }
 
 export const normalizeRenameMapName = (value: unknown): string => {
@@ -65,75 +56,55 @@ export const renameMapUseCase = (
   input: RenameMapInput,
   dependencies: RenameMapDependencies = {},
 ): RenameMapResult => {
-  const findMapPath = dependencies.findMapPath ?? findMapFile
-  const readMap = dependencies.readMap ?? readMapFile
-  const writeMap = dependencies.writeMap ?? writeMapFile
-  const pathExists = dependencies.pathExists ?? existsSync
-  const renameMapPath = dependencies.renameMapPath ?? renameSync
-  const slugifyName = dependencies.slugifyName ?? slugify
-  const allocateMapSlug = dependencies.allocateMapSlug ?? allocateSlug
-  const relativePath = dependencies.relativePath ?? campaignPathLabel
+  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
   const now = dependencies.now ?? Date.now
 
   const slug = normalizeRenameMapSlug(input.slug)
   const name = normalizeRenameMapName(input.name)
 
-  const currentPath = findMapPath(slug)
-  if (!currentPath) throw new RenameMapUseCaseError(404, `Map ${slug}.json not found`)
-
-  const map = readMap(currentPath)
-  const desiredSlug = slugifyName(name)
-  let newSlug = slug
-  let newPath = currentPath
-
-  if (desiredSlug && desiredSlug !== slug) {
-    newSlug = findMapPath(desiredSlug) ? allocateMapSlug(name) : desiredSlug
-    newPath = join(dirname(currentPath), `${newSlug}.json`)
-    if (pathExists(newPath)) {
-      throw new RenameMapUseCaseError(409, `Map ${newSlug}.json already exists`)
-    }
-    renameMapPath(currentPath, newPath)
-    map.slug = newSlug
+  let renamed
+  try {
+    renamed = mapRepository.rename({ slug, name, now: now() })
+  } catch (err) {
+    const message = (err as Error).message
+    if (message.includes('already exists') || message.includes('UNIQUE')) throw new RenameMapUseCaseError(409, message)
+    throw new RenameMapUseCaseError(400, message)
   }
+  if (!renamed) throw new RenameMapUseCaseError(404, `Map ${slug}.json not found`)
 
-  const documentChanged = newSlug !== slug || map.name !== name
-  map.name = name
-  map.revision = documentChanged
-    ? nextRevision(normalizeRevision(map.revision))
-    : normalizeRevision(map.revision)
-  map.updatedAt = now()
-  writeMap(newPath, map)
-
+  const map = renamed.map
   const summary = summarizeMap(map)
   const revision = mapRevisionForRealtime(map)
-  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = newSlug !== slug
-    ? [
-        {
-          channel: mapChannel(slug),
-          type: 'renamed',
-          revision,
-          clientId: input.clientId,
-          data: { oldSlug: slug, newSlug, map },
-        },
-        mapUpdatedRealtimeEvent(map, input.clientId),
-        {
-          channel: mapsChannel,
-          type: 'renamed',
-          revision,
-          clientId: input.clientId,
-          data: { oldSlug: slug, summary },
-        },
-      ]
-    : [
-        mapUpdatedRealtimeEvent(map, input.clientId),
-        mapSummaryUpdatedRealtimeEvent(map, input.clientId),
-      ]
+  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = !renamed.changed
+    ? []
+    : renamed.renamed
+      ? [
+          {
+            channel: mapChannel(slug),
+            type: 'renamed',
+            revision,
+            clientId: input.clientId,
+            data: { oldSlug: slug, newSlug: renamed.newSlug, map },
+          },
+          mapUpdatedRealtimeEvent(map, input.clientId),
+          {
+            channel: mapsChannel,
+            type: 'renamed',
+            revision,
+            clientId: input.clientId,
+            data: { oldSlug: slug, summary },
+          },
+        ]
+      : [
+          mapUpdatedRealtimeEvent(map, input.clientId),
+          mapSummaryUpdatedRealtimeEvent(map, input.clientId),
+        ]
 
   return {
     ok: true,
-    slug: newSlug,
+    slug: renamed.newSlug,
     name,
-    path: relativePath(newPath),
+    path: logicalMapResourcePath(map),
     map,
     events,
   }

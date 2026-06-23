@@ -9,25 +9,28 @@ import {
 import type { TabletopMap } from '~/types/map'
 
 const createDeps = () => {
-  const writes: Array<{ path: string; map: TabletopMap }> = []
+  let createdMap: TabletopMap | null = null
+  const mapRepository = {
+    allocateSlug: vi.fn((name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')),
+    create: vi.fn((input: { map: TabletopMap }) => {
+      createdMap = input.map
+      return input.map
+    }),
+  }
   return {
-    writes,
+    get createdMap() { return createdMap },
     deps: {
-      mapsRoot: '/tmp/rotom-maps',
       now: () => 12345,
-      ensureRoot: vi.fn(),
       sanitizeFolder: vi.fn((folder: string) => folder.replace(/^\/+|\/+$/g, '')),
-      allocateMapSlug: vi.fn((name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')),
-      writeMap: vi.fn((path: string, map: TabletopMap) => {
-        writes.push({ path, map })
-      }),
+      mapRepository,
     },
   }
 }
 
 describe('create map use case', () => {
-  it('normalizes input, writes the new map, and emits a maps-channel summary', () => {
-    const { deps, writes } = createDeps()
+  it('normalizes input, creates the new SQLite map, and emits a maps-channel summary', () => {
+    const harness = createDeps()
+    const { deps } = harness
 
     const result = createMapUseCase({
       name: ' Sky Atrium ',
@@ -36,12 +39,10 @@ describe('create map use case', () => {
       clientId: 'client-1',
     }, deps)
 
-    expect(deps.ensureRoot).toHaveBeenCalledOnce()
     expect(deps.sanitizeFolder).toHaveBeenCalledWith('/helix/maps/', true)
-    expect(deps.allocateMapSlug).toHaveBeenCalledWith('Sky Atrium')
-    expect(writes).toHaveLength(1)
-    expect(writes[0]?.path).toBe('/tmp/rotom-maps/helix/maps/sky-atrium.json')
-    expect(writes[0]?.map).toEqual(result.map)
+    expect(deps.mapRepository.allocateSlug).toHaveBeenCalledWith('Sky Atrium')
+    expect(deps.mapRepository.create).toHaveBeenCalledWith({ slug: 'sky-atrium', map: result.map, now: 12345 })
+    expect(harness.createdMap).toEqual(result.map)
     expect(result.map).toMatchObject({
       schemaVersion: 2,
       revision: 0,
@@ -64,6 +65,7 @@ describe('create map use case', () => {
       {
         channel: 'maps',
         type: 'created',
+        revision: 0,
         clientId: 'client-1',
         data: {
           slug: 'sky-atrium',
@@ -81,14 +83,14 @@ describe('create map use case', () => {
   })
 
   it('uses default name, dimensions, and root folder when optional fields are absent', () => {
-    const { deps, writes } = createDeps()
+    const { deps } = createDeps()
 
     const result = createMapUseCase({ name: '   ', dimensions: null }, deps)
 
     expect(result.map.name).toBe('Untitled Map')
     expect(result.map.folder).toBe('')
     expect(result.map.dimensions).toEqual(DEFAULT_MAP_DIMENSIONS)
-    expect(writes[0]?.path).toBe('/tmp/rotom-maps/untitled-map.json')
+    expect(deps.mapRepository.create).toHaveBeenCalledWith({ slug: 'untitled-map', map: result.map, now: 12345 })
   })
 
   it('rejects names longer than the persisted map-name limit', () => {

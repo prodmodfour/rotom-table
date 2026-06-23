@@ -1,4 +1,3 @@
-import { join } from 'node:path'
 import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
@@ -64,8 +63,7 @@ import {
   type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
-import { campaignPathLabel } from '../utils/campaignPaths'
-import { MAPS_ROOT } from '../utils/mapPaths'
+import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
@@ -157,7 +155,7 @@ const actionDependencies = (dependencies: LivePlaySheetCommandDependencies) => (
   database: dependencies.database ?? getRotomDatabase(),
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
-  relativePath: dependencies.relativePath ?? campaignPathLabel,
+  relativePath: dependencies.relativePath ?? ((path: string) => path),
 })
 
 type LivePlaySheetCommandDependencySet = ReturnType<typeof actionDependencies>
@@ -185,9 +183,7 @@ const isRecord = (value: unknown): value is UnknownRecord => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
 )
 
-const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => (
-  map.folder ? join(MAPS_ROOT, map.folder, `${map.slug}.json`) : join(MAPS_ROOT, `${map.slug}.json`)
-)
+const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => logicalMapResourcePath(map)
 
 const controlDeniedMessage = (role: AuthRole, profile: PlayerProfile | null | undefined): string => (
   role === 'player' && !profile
@@ -847,7 +843,7 @@ export const executeLivePlaySheetCommandUseCase = async (
       deps.database.withTransaction(() => {
         const persisted = toPersistedMap(
           nextMap.map,
-          nextMap.mapPath,
+          nextMap.map.folder ?? '',
           nextMap.map.updatedAt ?? deps.now(),
           { revision: result.revision },
         )

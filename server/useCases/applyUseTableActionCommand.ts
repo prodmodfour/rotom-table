@@ -108,12 +108,11 @@ import {
   type SessionStoreRecord,
   type SessionStoreStatus,
 } from '../utils/sessionStore'
-import { toNextRevisionSheetPayload } from '~/utils/sheets/persistence'
 import {
-  readSheetFile,
-  stripDerivedSheetFields,
-  writeSheetFile,
-} from '../utils/sheetStorage'
+  stripDerivedSheetRuntimeFields as stripDerivedSheetFields,
+  toNextRevisionSheetPayload,
+} from '~/utils/sheets/persistence'
+import { readRuntimeSheet, writeRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class ApplyUseTableActionCommandUseCaseError<
@@ -419,7 +418,7 @@ const useTableActionStateFromTarget = (
 })
 
 const defaultReadSheet: UseTableActionSheetReader = (kind, slug) => {
-  const result = readSheetFile<AnyLiveSheet>(kind, slug)
+  const result = readRuntimeSheet<AnyLiveSheet>(kind, slug)
   if (result === null) return null
   return {
     path: result.path,
@@ -1593,7 +1592,7 @@ export const applyUseTableActionCommandUseCase = (
   const clock = dependencies.clock ?? defaultClock
   const snapshotWriter = dependencies.writeSnapshot ?? writeSessionSnapshot
   const readSheet = dependencies.readSheet ?? defaultReadSheet
-  const writeSheet = dependencies.writeSheet ?? (writeSheetFile as unknown as UseTableActionSheetWriter)
+  const writeSheet = dependencies.writeSheet ?? (writeRuntimeSheet as unknown as UseTableActionSheetWriter)
 
   const envelope = validateEnvelopeForUseTableAction(input.command)
   const record = getActiveUseTableActionRecord(activeStore, envelope)
