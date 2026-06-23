@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, onMounted, shallowRef, watch } from 'vue'
 import { usePokedexFilters } from '~/composables/pokedex/usePokedexFilters'
 import { POKEDEX_API_PATHS } from '~/utils/apiRoutes'
 import {
@@ -27,6 +27,10 @@ import {
   type PokedexEntryDetail,
   type PokedexEntrySummary,
 } from '~/utils/pokedex/entryIndex'
+import {
+  prioritizePokedexEntries,
+  type PokedexProfilePriorityResponse,
+} from '~/utils/pokedex/profilePriority'
 import { toPokedexSlug } from '~/utils/pokedex/searchText'
 import { buildTypeMatchupGroups } from '~/utils/pokedex/typeMatchups'
 
@@ -255,7 +259,53 @@ export const randomPokedexEntryPath = <TEntry extends PokedexEntrySummary>(
 export const usePokedexBrowser = () => {
   const route = useRoute()
   const router = useRouter()
+  const { isPlayer } = useAuth()
+  const { selectedProfileId, loadRememberedProfile } = usePlayerProfiles()
   const pokemonRouteSlug = computed(() => routeParamToPokedexSlug(route.params.pokemon_name))
+  const profilePrioritySlugs = shallowRef<ReadonlySet<string>>(new Set())
+  let profilePriorityRequestId = 0
+
+  const resetProfilePrioritySlugs = (): void => {
+    profilePrioritySlugs.value = new Set()
+  }
+
+  const refreshProfilePrioritySlugs = async (): Promise<void> => {
+    const requestId = ++profilePriorityRequestId
+
+    if (!import.meta.client || !isPlayer.value) {
+      resetProfilePrioritySlugs()
+      return
+    }
+
+    loadRememberedProfile()
+    const profileId = selectedProfileId.value
+    if (!profileId) {
+      resetProfilePrioritySlugs()
+      return
+    }
+
+    try {
+      const response = await $fetch<PokedexProfilePriorityResponse>(POKEDEX_API_PATHS.profilePriority, {
+        query: { profileId },
+      })
+      if (requestId !== profilePriorityRequestId) return
+      profilePrioritySlugs.value = new Set(response.slugs)
+    } catch (error) {
+      if (requestId !== profilePriorityRequestId) return
+      console.warn('[pokedex] failed to load player profile priority', error)
+      resetProfilePrioritySlugs()
+    }
+  }
+
+  if (import.meta.client && isPlayer.value) loadRememberedProfile()
+
+  onMounted(() => {
+    void refreshProfilePrioritySlugs()
+  })
+
+  watch(isPlayer, () => {
+    void refreshProfilePrioritySlugs()
+  })
 
   const summariesRequest = useFetch<PokedexEntrySummary[]>(POKEDEX_API_PATHS.index, {
     key: 'pokedex-entry-summaries',
@@ -272,7 +322,7 @@ export const usePokedexBrowser = () => {
   const {
     activeSearchFilters,
     clearSearchEntries,
-    filteredEntries,
+    filteredEntries: baseFilteredEntries,
     filterMode,
     filterOperators,
     isSearchIndexLoading,
@@ -280,6 +330,11 @@ export const usePokedexBrowser = () => {
     searchFilters,
     searchIndexError,
   } = usePokedexFilters(allEntries, { loadSearchEntries })
+
+  const filteredEntries = computed(() => prioritizePokedexEntries(
+    baseFilteredEntries.value,
+    profilePrioritySlugs.value,
+  ))
 
   const selectedSummary = computed(() => selectPokedexEntry(
     pokemonRouteSlug.value,
