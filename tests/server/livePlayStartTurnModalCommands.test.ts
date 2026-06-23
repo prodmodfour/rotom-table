@@ -77,6 +77,7 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     publishRealtimeEvent: vi.fn((event) => published.push(event)),
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2_000),
+    rollD20: vi.fn(() => 14),
   }
 
   return {
@@ -125,12 +126,13 @@ describe('live-play start-of-turn modal commands', () => {
         current: {
           encounterName: 'Rooftop Ambush',
           startTurnModal: {
-            schemaVersion: 1,
+            schemaVersion: 2,
             dismissedTurn: {
               activeId: 'token-pikachu',
               round: 2,
               dismissedAt: 2_000,
             },
+            conditionResolutions: [],
           },
         },
       },
@@ -138,6 +140,50 @@ describe('live-play start-of-turn modal commands', () => {
     expect(harness.published).toEqual([
       expect.objectContaining({ channel: 'map:arena', type: 'live-play-command-accepted', opId: 'op_turnmodal1', revision: 5 }),
     ])
+  })
+
+  it('records condition roll results through the authoritative executor', async () => {
+    const harness = createHarness()
+
+    const response = await execute(harness, dismissCommand({
+      opId: 'op_turnmodal_condition',
+      payload: {
+        action: 'resolveCondition',
+        activeId: 'token-pikachu',
+        round: 2,
+        condition: 'Paralysis',
+        occurrence: 0,
+        resolution: 'roll',
+      },
+    }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(readStartTurnModalState(harness.storedMap.metadata).conditionResolutions).toEqual([{
+      activeId: 'token-pikachu',
+      round: 2,
+      condition: 'Paralysis',
+      occurrence: 0,
+      resolution: 'roll',
+      roll: 14,
+      dc: 11,
+      success: true,
+      resolvedAt: 2_000,
+    }])
+    expect(acceptedPatches(response)[0]).toMatchObject({
+      type: LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
+      payload: {
+        action: 'resolveCondition',
+        current: {
+          startTurnModal: {
+            conditionResolutions: [expect.objectContaining({
+              condition: 'Paralysis',
+              resolution: 'roll',
+              roll: 14,
+            })],
+          },
+        },
+      },
+    })
   })
 
   it('rejects player dismissals', async () => {

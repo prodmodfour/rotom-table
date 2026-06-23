@@ -62,6 +62,7 @@ export interface StartTurnModalCommandDependencies {
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
+  readonly rollD20?: () => number
   readonly relativePath?: (path: string) => string
 }
 
@@ -81,6 +82,7 @@ const actionDependencies = (dependencies: StartTurnModalCommandDependencies) => 
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
+  rollD20: dependencies.rollD20 ?? (() => Math.floor(Math.random() * 20) + 1),
   relativePath: dependencies.relativePath ?? campaignPathLabel,
 })
 
@@ -154,25 +156,37 @@ const resolveContext = async (
   }
 }
 
+const normalizeD20Roll = (value: unknown): number | undefined => (
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 20 ? value : undefined
+)
+
 const applyStartTurnModalCommand = (
   context: ResolvedStartTurnModalContext,
   timestamp: number,
+  rollD20: () => number,
 ): ResolvedStartTurnModalContext => {
   const activeTurn = currentTurnRef(context.map)
   if (!turnRefsEqual(activeTurn, context.payload)) {
-    rejectLivePlayCommand('conflict', 'Cannot dismiss a start-of-turn modal that is not the current active turn', {
+    rejectLivePlayCommand('conflict', 'Cannot update a start-of-turn modal that is not the current active turn', {
       currentState: activeTurn,
     })
   }
 
   const previous = readStartTurnModalState(context.map.metadata)
-  if (startTurnModalDismissalMatches(previous.dismissedTurn, context.payload)) {
+  if (context.payload.action === 'dismiss' && startTurnModalDismissalMatches(previous.dismissedTurn, context.payload)) {
     rejectLivePlayCommand('no-op', 'The current start-of-turn modal is already dismissed', {
       currentState: previous,
     })
   }
 
-  const next = applyStartTurnModalStateUpdate(previous, context.payload, { dismissedAt: timestamp })
+  const conditionRoll = context.payload.action === 'resolveCondition' && context.payload.resolution === 'roll'
+    ? normalizeD20Roll(rollD20())
+    : undefined
+  const next = applyStartTurnModalStateUpdate(previous, context.payload, {
+    dismissedAt: timestamp,
+    resolvedAt: timestamp,
+    ...(conditionRoll === undefined ? {} : { conditionRoll }),
+  })
   return {
     ...context,
     map: {
@@ -264,7 +278,7 @@ export const executeStartTurnModalLivePlayCommandUseCase = async (
     },
     apply: ({ command, map, currentRevision }) => {
       const updatedAt = deps.now()
-      const nextContext = applyStartTurnModalCommand(map, updatedAt)
+      const nextContext = applyStartTurnModalCommand(map, updatedAt, deps.rollD20)
       const revision = nextRevision(currentRevision)
       const nextMapContext = {
         ...nextContext,

@@ -782,6 +782,7 @@ const {
   activeStartTurnModal,
   startTurnModalBusy,
   closeStartTurnModal,
+  resolveStartTurnModalCondition,
 } = useStartTurnModal({
   map,
   canViewMap,
@@ -793,9 +794,11 @@ const {
   isGm,
   livePlayReady: computed(() => livePlayConnectionState.value === 'ready'),
   commandSaving: computed(() => livePlayCommands.status.value === 'saving'),
-  dismissTurn: (payload) => {
-    void livePlayCommands.updateStartTurnModal(payload)
-  },
+  updateTurn: (payload) => livePlayCommands.updateStartTurnModal(payload),
+  replaceConditions: (payload) => modifyConditionsFromScene({
+    id: payload.id,
+    conditions: [...payload.conditions],
+  }, { allowAnyTarget: true }),
 })
 
 const canManageScene = computed(() => (
@@ -1672,7 +1675,11 @@ useMapDimensionReconciliation({
         :round="activeStartTurnModal.round"
         :can-manage="isGm"
         :busy="startTurnModalBusy"
+        :conditions="activeStartTurnModal.conditions"
         @close="closeStartTurnModal"
+        @roll-condition="resolveStartTurnModalCondition($event, 'roll')"
+        @skip-condition="resolveStartTurnModalCondition($event, 'skip')"
+        @remove-condition="resolveStartTurnModalCondition($event, 'remove')"
       />
 
       <PokeballCaptureResultModal
