@@ -5,3 +5,11 @@ export interface PokedexEntryMutationResponse {
   path: string
   entry: PokedexEntryDetail
 }
+
+export interface PokedexProfileImageUpdateResponse {
+  ok: true
+  path: string
+  species: string
+  profileImageSlug: string
+  profileSpriteUrl: string
+}

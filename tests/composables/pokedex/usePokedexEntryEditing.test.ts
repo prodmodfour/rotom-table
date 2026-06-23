@@ -9,6 +9,7 @@ const makeEntry = (overrides: Partial<PokedexEntryDetail> = {}): PokedexEntryDet
   slug: 'pikachu',
   nationalDexNumber: 25,
   spriteUrl: '/sprites/pikachu.gif',
+  profileSpriteUrl: '/api/profile-sprites/pokemon/pikachu',
   types: ['Electric'],
   ...overrides,
 })

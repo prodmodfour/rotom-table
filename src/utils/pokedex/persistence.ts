@@ -5,6 +5,7 @@ export const POKEDEX_RUNTIME_ENTRY_KEYS = [
   'slug',
   'nationalDexNumber',
   'spriteUrl',
+  'profileSpriteUrl',
   'searchText',
   'searchTexts',
 ] as const

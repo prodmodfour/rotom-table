@@ -46,7 +46,7 @@ const emit = defineEmits<{
 
       <p class="pokedex-entry-editor__help">
         Edit the persisted <code>data/reference/pokedex.json</code> record as JSON.
-        Runtime-only fields such as <code>id</code>, <code>slug</code>, and <code>spriteUrl</code> are omitted.
+        Runtime-only fields such as <code>id</code>, <code>slug</code>, <code>spriteUrl</code>, and <code>profileSpriteUrl</code> are omitted.
       </p>
 
       <textarea

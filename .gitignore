@@ -44,6 +44,7 @@ data/sheets/*
 !data/sheets/examples/
 !data/sheets/examples/**
 data/trainers/
+assets/
 encounter_tables/*
 !encounter_tables/spire-city/
 encounter_tables/spire-city/*

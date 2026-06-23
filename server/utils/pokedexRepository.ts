@@ -13,6 +13,7 @@ import {
 import { toPokedexSlug } from '~/utils/pokedex/searchText'
 import { toEditablePokedexRecord } from '~/utils/pokedex/persistence'
 import type { PokedexRecord, SpriteManifestRecord } from '~/types/pokemon'
+import { pokemonProfileSpriteUrl } from '~/utils/profileSprites'
 import { PROJECT_ROOT } from './fsPaths'
 import { CAMPAIGN_POKEDEX_OVERRIDES_PATH, campaignPathLabel } from './campaignPaths'
 import { tryReadJsonFile, writeJsonFile } from './jsonFiles'
@@ -41,6 +42,13 @@ const spriteUrlBySpecies = new Map(
   (spriteManifest as SpriteManifestRecord[]).map((entry) => [
     entry.species,
     `/sprites/${entry.local_path.replace(/^sprites\//, '')}`,
+  ]),
+)
+
+const profileSpriteUrlBySpecies = new Map(
+  (spriteManifest as SpriteManifestRecord[]).map((entry) => [
+    entry.species,
+    pokemonProfileSpriteUrl(entry.slug),
   ]),
 )
 
@@ -150,6 +158,7 @@ const toSerializableIndexedEntry = (entry: DisplayPokedexEntry): IndexedPokedexE
 const toDetailResponse = (entry: DisplayPokedexEntry): PokedexEntryDetail => ({
   ...entry,
   spriteUrl: spriteUrlBySpecies.get(entry.species) ?? null,
+  profileSpriteUrl: profileSpriteUrlBySpecies.get(entry.species) ?? null,
 })
 
 export const listPokedexEntrySummaries = (): PokedexEntrySummary[] => {

@@ -2,6 +2,7 @@
 import { usePokedexAdminPanel } from '~/composables/pokedex/usePokedexAdminPanel'
 import { usePokedexBrowser } from '~/composables/pokedex/usePokedexBrowser'
 import { usePokedexEntryEditing } from '~/composables/pokedex/usePokedexEntryEditing'
+import { usePokedexProfileImageCropper } from '~/composables/pokedex/usePokedexProfileImageCropper'
 import { useApiClient } from '~/composables/useApiClient'
 import { useAuth } from '~/composables/useAuth'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
@@ -12,7 +13,7 @@ import {
   isEditableKeyboardEventTarget,
   isEscapeKey,
 } from '~/utils/keyboardShortcuts'
-import type { PokedexEntryMutationResponse } from '~/utils/pokedex/admin'
+import type { PokedexEntryMutationResponse, PokedexProfileImageUpdateResponse } from '~/utils/pokedex/admin'
 import { pokedexEntryPath, type PokedexEntryDetail } from '~/utils/pokedex/entryIndex'
 import { isPokedexPath } from '~/utils/pokedex/routes'
 
@@ -51,6 +52,7 @@ const {
   searchIndexErrorMessage,
   selectedEntry,
   selectedId,
+  selectedProfileSpriteUrl,
   selectedSpriteUrl,
   skillPhrase,
   tmHmTokens,
@@ -82,6 +84,10 @@ const saveEntry = (slug: string, entry: Record<string, unknown>): Promise<Pokede
 
 const restoreFromBooks = (slug: string): Promise<PokedexEntryMutationResponse> => (
   apiClient.postJson<PokedexEntryMutationResponse>(POKEDEX_API_PATHS.restoreFromBooks, { slug })
+)
+
+const updateProfileImage = (slug: string, imageDataUrl: string): Promise<PokedexProfileImageUpdateResponse> => (
+  apiClient.postJson<PokedexProfileImageUpdateResponse>(POKEDEX_API_PATHS.updateProfileImage, { slug, imageDataUrl })
 )
 
 const {
@@ -118,9 +124,26 @@ const {
   selectedEntry,
 })
 
+const {
+  canOpen: canOpenProfileImageCropper,
+  close: closeProfileImageCropper,
+  currentProfileImageUrl,
+  errorMessage: profileImageCropperErrorMessage,
+  isOpen: isProfileImageCropperOpen,
+  isSaving: isSavingProfileImage,
+  open: openProfileImageCropper,
+  saveProfileImage,
+  sourceImageUrl: profileImageSourceUrl,
+  statusMessage: profileImageCropperStatusMessage,
+} = usePokedexProfileImageCropper({
+  isGm,
+  selectedEntry,
+  updateProfileImage,
+})
+
 const navigateByPokedexArrowKey = (event: KeyboardEvent): boolean => {
   if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false
-  if (isEditMode.value || isAdminPanelOpen.value || isEditableKeyboardEventTarget(event.target)) return false
+  if (isEditMode.value || isAdminPanelOpen.value || isProfileImageCropperOpen.value || isEditableKeyboardEventTarget(event.target)) return false
 
   let didNavigate = false
 
@@ -148,6 +171,11 @@ const navigateByPokedexArrowKey = (event: KeyboardEvent): boolean => {
 }
 
 useWindowKeydown((event) => {
+  if (isProfileImageCropperOpen.value) {
+    if (isEscapeKey(event)) closeProfileImageCropper()
+    return
+  }
+
   if (navigateByPokedexArrowKey(event)) return
 
   if (isCtrlLetter(event, 'r')) {
@@ -227,12 +255,26 @@ await ready
 
     <PokedexAdminPanel
       v-if="isAdminPanelOpen"
+      :can-crop-profile-image="canOpenProfileImageCropper"
       :error-message="adminErrorMessage"
       :is-restoring="isRestoringEntry"
       :species="selectedSpeciesName"
       :status-message="adminStatusMessage"
       @close="closeAdminPanel"
+      @open-profile-image-cropper="openProfileImageCropper"
       @restore-from-books="restoreSelectedEntryFromBooks"
+    />
+
+    <PokedexProfileImageCropper
+      v-if="isProfileImageCropperOpen && selectedEntry && profileImageSourceUrl"
+      :current-image-url="currentProfileImageUrl ?? selectedProfileSpriteUrl"
+      :error-message="profileImageCropperErrorMessage"
+      :is-saving="isSavingProfileImage"
+      :source-image-url="profileImageSourceUrl"
+      :species="selectedEntry.species"
+      :status-message="profileImageCropperStatusMessage"
+      @close="closeProfileImageCropper"
+      @save="saveProfileImage"
     />
   </div>
 </template>

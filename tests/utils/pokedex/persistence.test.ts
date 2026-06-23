@@ -9,6 +9,7 @@ describe('pokedex persistence helpers', () => {
       slug: 'pikachu',
       nationalDexNumber: 25,
       spriteUrl: '/sprites/pikachu.gif',
+      profileSpriteUrl: '/api/profile-sprites/pokemon/pikachu',
       searchText: 'pikachu electric',
       searchTexts: { any: 'pikachu' },
     })).toEqual({ species: 'Pikachu' })

@@ -9,6 +9,7 @@ import type {
   SpriteManifestRecord,
   SpriteAnimationRecord,
 } from '~/types/pokemon'
+import { pokemonProfileSpriteUrl } from '~/utils/profileSprites'
 
 const manifestBySpecies = new Map(
   (spriteManifest as SpriteManifestRecord[]).map((entry) => [entry.species, entry]),
@@ -72,7 +73,7 @@ export const pokemonCatalog: PokemonCatalogEntry[] = (pokedexData as PokedexReco
       clearance: entry.clearance,
       slug: sprite.slug,
       spriteUrl: `/sprites/${sprite.local_path.replace(/^sprites\//, '')}`,
-      profileSpriteUrl: `/profile-sprites/pokemon/${sprite.slug}.png`,
+      profileSpriteUrl: pokemonProfileSpriteUrl(sprite.slug),
       backSpriteUrl: backSprite
         ? `/sprites/${backSprite.local_path.replace(/^sprites\//, '')}`
         : undefined,

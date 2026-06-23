@@ -369,6 +369,7 @@ export const usePokedexBrowser = () => {
   ))
   const pageTitle = computed(() => pokedexPageTitle(pokemonRouteSlug.value, selectedTitleEntry.value))
   const selectedSpriteUrl = computed(() => selectedEntry.value?.spriteUrl ?? null)
+  const selectedProfileSpriteUrl = computed(() => selectedEntry.value?.profileSpriteUrl ?? null)
   const searchIndexErrorMessage = computed(() => (
     searchIndexError.value ? 'Unable to load the Pokédex search index.' : null
   ))
@@ -456,6 +457,7 @@ export const usePokedexBrowser = () => {
     searchIndexErrorMessage,
     selectedEntry,
     selectedId,
+    selectedProfileSpriteUrl,
     selectedSpriteUrl,
     skillPhrase,
     tmHmTokens,

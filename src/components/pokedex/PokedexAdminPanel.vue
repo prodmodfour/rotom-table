@@ -2,6 +2,7 @@
 import { PhX } from '@phosphor-icons/vue'
 
 defineProps<{
+  canCropProfileImage: boolean
   errorMessage: string | null
   isRestoring: boolean
   species: string | null
@@ -10,6 +11,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (event: 'close'): void
+  (event: 'open-profile-image-cropper'): void
   (event: 'restore-from-books'): void
 }>()
 </script>
@@ -42,14 +44,25 @@ const emit = defineEmits<{
         </button>
       </header>
 
-      <button
-        type="button"
-        class="pokedex-admin-panel__restore"
-        :disabled="!species || isRestoring"
-        @click="emit('restore-from-books')"
-      >
-        {{ isRestoring ? 'Restoring…' : `Restore ${species ?? 'Pokémon'} from PTU markdown books` }}
-      </button>
+      <div class="pokedex-admin-panel__actions">
+        <button
+          type="button"
+          class="pokedex-admin-panel__action"
+          :disabled="!species || isRestoring"
+          @click="emit('restore-from-books')"
+        >
+          {{ isRestoring ? 'Restoring…' : `Restore ${species ?? 'Pokémon'} from PTU markdown books` }}
+        </button>
+
+        <button
+          type="button"
+          class="pokedex-admin-panel__action pokedex-admin-panel__action--secondary"
+          :disabled="isRestoring || !canCropProfileImage"
+          @click="emit('open-profile-image-cropper')"
+        >
+          Profile image cropper
+        </button>
+      </div>
 
       <p v-if="errorMessage" class="pokedex-admin-panel__message pokedex-admin-panel__message--error">
         {{ errorMessage }}
@@ -141,7 +154,12 @@ const emit = defineEmits<{
   outline: none;
 }
 
-.pokedex-admin-panel__restore {
+.pokedex-admin-panel__actions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.pokedex-admin-panel__action {
   width: 100%;
   border: 1px solid var(--accent);
   border-radius: 14px;
@@ -153,15 +171,26 @@ const emit = defineEmits<{
   padding: 0.8rem 1rem;
 }
 
-.pokedex-admin-panel__restore:hover:not(:disabled),
-.pokedex-admin-panel__restore:focus-visible:not(:disabled) {
+.pokedex-admin-panel__action:hover:not(:disabled),
+.pokedex-admin-panel__action:focus-visible:not(:disabled) {
   filter: brightness(1.08);
   outline: none;
 }
 
-.pokedex-admin-panel__restore:disabled {
+.pokedex-admin-panel__action:disabled {
   cursor: wait;
   opacity: 0.64;
+}
+
+.pokedex-admin-panel__action--secondary {
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  color: var(--ink-bright);
+}
+
+.pokedex-admin-panel__action--secondary:hover:not(:disabled),
+.pokedex-admin-panel__action--secondary:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .pokedex-admin-panel__message {

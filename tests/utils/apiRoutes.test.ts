@@ -123,8 +123,10 @@ describe('API route constants', () => {
       index: '/api/pokedex',
       detail: '/api/pokedex/detail',
       searchIndex: '/api/pokedex/search-index',
+      profilePriority: '/api/pokedex/profile-priority',
       update: '/api/pokedex/update',
       restoreFromBooks: '/api/pokedex/restore-from-books',
+      updateProfileImage: '/api/pokedex/profile-image',
     })
   })
 })

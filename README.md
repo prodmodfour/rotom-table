@@ -72,7 +72,7 @@ npm run build
 - **Reference library** — browse moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges.
 - **Encounter tools** — manage JSON encounter tables, roll previews, and generate wild Pokémon sheets into the sheet library.
 - **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes; Player Login asks for a persistent player profile before continuing, and linked characters grant sheet editing plus map-token control.
-- **Campaign JSON storage** — maps, sheets, trainers, player profiles, encounter tables, and campaign reference override diffs are stored as inspectable JSON under `ROTOM_CAMPAIGN_ROOT` for private hosted campaigns, or in the app checkout during local development, for easy inspection, backup, and diffing.
+- **Campaign storage** — maps, sheets, trainers, player profiles, encounter tables, campaign reference override diffs, and GM-cropped profile image overrides are stored under `ROTOM_CAMPAIGN_ROOT` for private hosted campaigns, or in the app checkout during local development, for easy inspection, backup, and diffing.
 
 
 
@@ -118,7 +118,7 @@ See [docs/architecture.md](docs/architecture.md) for more detail. For the normal
 
 ## Data layout
 
-Campaign-owned paths (`data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, and `encounter_tables/`) are resolved under `ROTOM_CAMPAIGN_ROOT` when set; otherwise they use the app checkout. Base PTU reference files stay app-owned under `data/reference/`; Pokédex maintenance writes campaign overrides under `data/reference-overrides/pokedex.json`.
+Campaign-owned paths (`data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, `assets/`, and `encounter_tables/`) are resolved under `ROTOM_CAMPAIGN_ROOT` when set; otherwise they use the app checkout. Base PTU reference files stay app-owned under `data/reference/`; Pokédex maintenance writes campaign overrides under `data/reference-overrides/pokedex.json`, and profile image recrops write image overrides under `assets/profile-sprites/pokemon/`.
 
 | Path | What it contains |
 | --- | --- |
@@ -128,6 +128,7 @@ Campaign-owned paths (`data/maps/`, `data/sheets/`, `data/trainers/`, `data/play
 | `data/trainers/` | Trainer sheet JSON. |
 | `encounter_tables/` | Encounter-table JSON, grouped by folder/region. Resolved under `ROTOM_CAMPAIGN_ROOT` when set. |
 | `data/reference-overrides/` | Campaign-owned reference override diffs, currently Pokédex maintenance entries. Resolved under `ROTOM_CAMPAIGN_ROOT` when set. |
+| `assets/profile-sprites/pokemon/` | Campaign-owned Pokémon profile image overrides saved by the GM Pokédex cropper. Resolved under `ROTOM_CAMPAIGN_ROOT` when set. |
 | `data/reference/` | App-owned PTU reference JSON used by runtime pages, sheets, lookup helpers, and automation. |
 | `books/markdown/` | Markdown source/reference content. |
 | `ptu-data/` | Documentary upstream PTU parsing/source helpers; not the runtime source of truth. |

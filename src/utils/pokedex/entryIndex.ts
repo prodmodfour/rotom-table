@@ -18,6 +18,7 @@ export type PokedexEntrySummary = Pick<IndexedPokedexEntry, 'id' | 'species' | '
 
 export type PokedexEntryDetail = IndexedPokedexEntry & {
   spriteUrl: string | null
+  profileSpriteUrl: string | null
 }
 
 export const attachLazyPokedexSearchTexts = <TEntry extends IndexedPokedexEntry>(
