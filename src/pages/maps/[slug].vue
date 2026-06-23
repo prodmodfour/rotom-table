@@ -70,6 +70,7 @@ import { isSameAnchor } from '~/utils/gridGeometry'
 import { normalizeMapSceneName, MAP_SCENE_NAME_MAX_LENGTH } from '~/utils/mapSceneState'
 import { setTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
+import { buildLiveSheetAccessScopeKey } from '~/utils/liveSheetCache'
 import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
@@ -125,19 +126,35 @@ const {
   interactionMode: mapInteractionMode,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
 })
-const { pokemonBySlug, trainerBySlug, reloadRuntimeSheets } = useLiveSheets()
+const {
+  pokemonBySlug,
+  trainerBySlug,
+  reloadRuntimeSheets,
+  adoptSheetUpdate,
+  reportReconciliationRequired: reportLiveSheetReconciliationRequired,
+} = useLiveSheets()
+const liveSheetAccessScopeKey = computed(() => buildLiveSheetAccessScopeKey({
+  role: role.value,
+  profileId: isPlayer.value ? selectedProfileId.value : null,
+}))
 const applyLivePlaySheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: string; sheet: Record<string, unknown> }) => {
-  if (update.kind === 'pokemon') {
-    const previous = pokemonBySlug.value.get(update.slug)
-    pokemonBySlug.value.set(update.slug, { ...(previous ?? {}), ...update.sheet } as CharacterSheet)
-    return
+  const result = adoptSheetUpdate({
+    kind: update.kind,
+    slug: update.slug,
+    sheet: update.sheet,
+    preserveClientAccessAnnotations: true,
+  })
+  if (result.status === 'conflict' || result.status === 'invalid') {
+    const message = `Live-play sheet update for ${update.kind}:${update.slug} could not be adopted: ${result.message}`
+    reportLiveSheetReconciliationRequired(message, { reload: false })
+    void livePlayStateMachine.reconcile(reconcileLivePlayState).catch(() => undefined)
+    throw new Error(message)
   }
-  const previous = trainerBySlug.value.get(update.slug)
-  trainerBySlug.value.set(update.slug, { ...(previous ?? {}), ...update.sheet } as TrainerSheet)
 }
-const runtimeSheetReloadContext = () => (
-  isPlayer.value ? { profileId: selectedProfileId.value } : {}
-)
+const runtimeSheetReloadContext = () => ({
+  accessScopeKey: liveSheetAccessScopeKey.value,
+  ...(isPlayer.value ? { profileId: selectedProfileId.value } : {}),
+})
 const reconciliationSheetReloadContext = () => ({
   ...runtimeSheetReloadContext(),
   throwOnError: true,
@@ -307,7 +324,7 @@ const syncPlayerProfilesForMapControl = async () => {
   } catch {
     // Keep the map view available; token-control notices surface the profile loading problem.
   }
-  if (isPlayer.value) await reloadRuntimeSheets({ profileId: selectedProfileId.value })
+  await reloadRuntimeSheets(runtimeSheetReloadContext())
 }
 
 onMounted(() => {
