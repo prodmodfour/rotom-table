@@ -6,6 +6,7 @@ import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapHazard } from '~/utils/mapHazards'
 import { normalizeMaterialId } from '~/utils/mapMaterials'
 import { normalizeMapMoveUsage } from '~/utils/moveUsage'
+import { normalizeMapTemporaryHitPointsState } from '~/utils/mapTemporaryHitPoints'
 
 export interface NormalizeMapDocumentOptions {
   /** Human-readable source label used in validation errors. */
@@ -104,6 +105,7 @@ export const normalizeMapDocument = (
     : []
 
   const activeScene = normalizeMapSceneState(record.activeScene)
+  const temporaryHitPoints = normalizeMapTemporaryHitPointsState(record.temporaryHitPoints, activeScene)
 
   return {
     schemaVersion: 2,
@@ -123,6 +125,7 @@ export const normalizeMapDocument = (
     lights: Array.isArray(record.lights) ? record.lights as TabletopMapV2['lights'] : [],
     initiative,
     ...(activeScene ? { activeScene } : {}),
+    ...(temporaryHitPoints ? { temporaryHitPoints } : {}),
     moveUsage: normalizeMapMoveUsage(record.moveUsage),
     metadata: record.metadata as TabletopMapV2['metadata'],
     createdAt: record.createdAt as TabletopMapV2['createdAt'],

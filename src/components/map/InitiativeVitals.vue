@@ -15,7 +15,10 @@ defineProps<{
 
 <template>
   <span class="initiative-row__hp" :data-hp-tier="hpTier(entry)">
-    <span>{{ entry.currentHp }}/{{ entry.maxHp }} HP</span>
+    <span>
+      {{ entry.currentHp }}/{{ entry.maxHp }} HP
+      <span v-if="entry.temporaryHp" class="initiative-row__temp-hp">+{{ entry.temporaryHp }} temp</span>
+    </span>
     <span class="initiative-row__hp-track" :data-hp-tier="hpTier(entry)" aria-hidden="true">
       <span class="initiative-row__hp-fill" :style="{ width: hpPercent(entry) }" />
       <span
@@ -50,6 +53,12 @@ defineProps<{
 
 .initiative-row__hp[data-hp-tier='critical'] {
   color: var(--map-hp-critical);
+}
+
+.initiative-row__temp-hp {
+  color: #9feeff;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .initiative-row__hp-track {

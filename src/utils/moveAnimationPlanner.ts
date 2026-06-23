@@ -1042,8 +1042,8 @@ const hpDeltaForTransactionUpdate = (
   const token = tokenForId(input, targetId)
   if (!token) return null
 
-  const beforeHp = token.currentHp
-  const afterHp = update.currentHp
+  const beforeHp = token.currentHp + finiteNumberOrZero(token.temporaryHp)
+  const afterHp = update.currentHp + finiteNumberOrZero(update.temporaryHp ?? token.temporaryHp)
   if (!Number.isFinite(beforeHp) || !Number.isFinite(afterHp)) return null
 
   return afterHp - beforeHp

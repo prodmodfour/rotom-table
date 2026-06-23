@@ -221,6 +221,8 @@ export interface SendOutPokemonPayload {
 export interface ModifyHpPayload {
   readonly placementId: string
   readonly currentHp: number
+  /** Absolute scene-local temporary HP. Undefined leaves it unchanged. */
+  readonly temporaryHp?: number
   readonly injuries?: number
 }
 

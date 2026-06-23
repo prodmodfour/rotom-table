@@ -30,6 +30,7 @@ export interface PokemonRenderSpawnState {
   displayName: string
   level: number
   currentHp: number
+  temporaryHp?: number
   maxHp: number
   fullMaxHp?: number
   injuries?: number
@@ -84,6 +85,7 @@ export const pokemonRenderSpawnState = (pokemon: SpawnedPokemon): PokemonRenderS
     displayName: pokemon.species,
     level: pokemon.level,
     currentHp: pokemon.currentHp,
+    temporaryHp: pokemon.temporaryHp,
     maxHp: pokemon.maxHp,
     fullMaxHp: pokemon.fullMaxHp,
     injuries: pokemon.injuries,

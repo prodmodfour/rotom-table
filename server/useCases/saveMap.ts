@@ -5,6 +5,7 @@ import { normalizeRevision, nextRevision } from '#shared/sessionRevisions'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapMoveUsage } from '~/utils/moveUsage'
 import { normalizeMapSceneState } from '~/utils/mapSceneState'
+import { normalizeMapTemporaryHitPointsState } from '~/utils/mapTemporaryHitPoints'
 import type { AuthRole } from '#shared/auth'
 import type { TabletopMap } from '~/types/map'
 import { campaignPathLabel } from '../utils/campaignPaths'
@@ -53,6 +54,7 @@ export const toPersistedMap = (
     ? source.initiative
     : { activeId: null, round: 1 }
   const activeScene = normalizeMapSceneState(source.activeScene)
+  const temporaryHitPoints = normalizeMapTemporaryHitPointsState(source.temporaryHitPoints, activeScene)
 
   return {
     schemaVersion: 2,
@@ -72,6 +74,7 @@ export const toPersistedMap = (
     lights: Array.isArray(source.lights) ? source.lights : [],
     initiative,
     ...(activeScene ? { activeScene } : {}),
+    ...(temporaryHitPoints ? { temporaryHitPoints } : {}),
     moveUsage: normalizeMapMoveUsage(source.moveUsage),
     metadata: source.metadata,
     createdAt: source.createdAt,

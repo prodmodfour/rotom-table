@@ -130,6 +130,7 @@ export interface UseLivePlayCommandsReturn {
   modifyHp: (payload: {
     placementId: string
     currentHp: number
+    temporaryHp?: number
     injuries?: number
   }) => Promise<LivePlayCommandDispatchResult>
   modifyCombatStages: (payload: {
@@ -562,6 +563,7 @@ export const useLivePlayCommands = (
       {
         placementId: payload.placementId,
         currentHp: payload.currentHp,
+        ...(payload.temporaryHp === undefined ? {} : { temporaryHp: payload.temporaryHp }),
         ...(payload.injuries === undefined ? {} : { injuries: payload.injuries }),
       },
       'hp',

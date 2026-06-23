@@ -65,7 +65,7 @@ describe('isometric token context menu helpers', () => {
       canUseOrders: false,
       canThrowPokeball: false,
       canDeleteTokens: true,
-    })).toBe(12)
+    })).toBe(13)
     expect(getTokenContextMenuButtonCount({
       canTurn: false,
       canViewPokedex: false,
@@ -73,7 +73,7 @@ describe('isometric token context menu helpers', () => {
       canUseOrders: true,
       canThrowPokeball: true,
       canSendOut: true,
-    })).toBe(11)
+    })).toBe(12)
 
     expect(getTokenContextMenuPosition({
       clientX: 999,

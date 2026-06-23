@@ -40,6 +40,12 @@ import {
 import { pokemonHpSnapshot, trainerHpSnapshot } from '~/utils/sheetSpawn'
 import { normalizeConditionNames } from '~/utils/statusConditions'
 import { pokemonExperienceNeededForLevel } from '~/utils/sheets/pokemonExperience'
+import { normalizeMapSceneState } from '~/utils/mapSceneState'
+import {
+  mapWithTemporaryHpForPlacement,
+  normalizeTemporaryHpAmount,
+  temporaryHpForPlacement,
+} from '~/utils/mapTemporaryHitPoints'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControlAsync,
@@ -207,12 +213,16 @@ const expectModifyHpPayload = (payload: unknown): ModifyHpPayload => {
   if (!finiteNumber(record.currentHp)) {
     rejectLivePlayCommand('invalid', 'modifyHp payload.currentHp must be a finite number')
   }
+  if (record.temporaryHp !== undefined && !finiteNumber(record.temporaryHp)) {
+    rejectLivePlayCommand('invalid', 'modifyHp payload.temporaryHp must be a finite number when provided')
+  }
   if (record.injuries !== undefined && !finiteNumber(record.injuries)) {
     rejectLivePlayCommand('invalid', 'modifyHp payload.injuries must be a finite number when provided')
   }
   return {
     placementId,
     currentHp: record.currentHp as number,
+    ...(record.temporaryHp === undefined ? {} : { temporaryHp: normalizeTemporaryHpAmount(record.temporaryHp) }),
     ...(record.injuries === undefined ? {} : { injuries: record.injuries as number }),
   }
 }
@@ -530,19 +540,33 @@ const applyModifyHp = (
   const previous = hpSnapshotForSheet(context.placement.sheetKind, original)
   const updated = applyHpToSheet(context.placement.sheetKind, original, payload.currentHp, payload.injuries)
   const current = hpSnapshotForSheet(context.placement.sheetKind, updated)
-  if (previous.currentHp === current.currentHp && previous.injuries === current.injuries) return null
+  const sheetChanged = previous.currentHp !== current.currentHp || previous.injuries !== current.injuries
+
+  const previousTemporaryHp = temporaryHpForPlacement(context.map, context.placement.id)
+  const requestedTemporaryHp = payload.temporaryHp
+  if (requestedTemporaryHp !== undefined && requestedTemporaryHp > 0 && !normalizeMapSceneState(context.map.activeScene)) {
+    rejectLivePlayCommand('invalid', 'Temporary HP requires an active scene')
+  }
+  const temporaryHpChanged = requestedTemporaryHp !== undefined && requestedTemporaryHp !== previousTemporaryHp
+  if (!sheetChanged && !temporaryHpChanged) return null
 
   const nextSheetRevision = nextRevision(context.sheet.revision)
   const revision = nextRevision(currentRevision)
+  const mapWithTemporaryHp = requestedTemporaryHp === undefined
+    ? context.map
+    : mapWithTemporaryHpForPlacement(context.map, context.placement.id, requestedTemporaryHp)
+  const nextSheet = sheetChanged ? sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt) : undefined
   return {
     ...context,
-    map: { ...context.map, revision, updatedAt },
-    nextSheet: sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt),
-    sheetUpdate: {
-      kind: context.sheet.kind,
-      slug: context.sheet.slug,
-      sheet: { ...sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt), revision: nextSheetRevision },
-    },
+    map: { ...mapWithTemporaryHp, revision, updatedAt },
+    ...(nextSheet ? { nextSheet } : {}),
+    ...(sheetChanged ? {
+      sheetUpdate: {
+        kind: context.sheet.kind,
+        slug: context.sheet.slug,
+        sheet: { ...sheetPayloadForPersistence(updated, context.sheet.slug, updatedAt), revision: nextSheetRevision },
+      },
+    } : {}),
     // These computed patches are recreated by `patchesForAcceptedSheetCommand`.
     // Keeping the next state focused on documents prevents client patch shape from
     // becoming the persistence API.
@@ -641,11 +665,15 @@ const valuePatchPayload = (
   after: AnyLiveSheet,
   placement: SheetPlacement,
   sheetRevision: number,
+  previousMap?: TabletopMap,
+  nextMap?: TabletopMap,
 ): Record<string, unknown> => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP) {
     return {
       previous: hpSnapshotForSheet(placement.sheetKind, before),
       current: hpSnapshotForSheet(placement.sheetKind, after),
+      previousTemporaryHp: previousMap ? temporaryHpForPlacement(previousMap, placement.id) : 0,
+      currentTemporaryHp: nextMap ? temporaryHpForPlacement(nextMap, placement.id) : 0,
       sheetRevision,
     }
   }
@@ -678,14 +706,22 @@ const patchesForAcceptedSheetCommand = (
   previousContext: ResolvedLivePlaySheetCommandContext,
   nextContext: ResolvedLivePlaySheetCommandContext,
 ): LivePlayPatch[] => {
-  if (!nextContext.nextSheet) return []
+  if (!nextContext.nextSheet && command.type !== LIVE_PLAY_COMMAND_TYPES.MODIFY_HP) return []
   const before = previousContext.sheet.sheet as unknown as AnyLiveSheet
-  const after = nextContext.nextSheet as unknown as AnyLiveSheet
-  const sheetRevision = nextRevision(previousContext.sheet.revision)
-  const payload = valuePatchPayload(command, before, after, previousContext.placement, sheetRevision)
+  const after = (nextContext.nextSheet ?? previousContext.sheet.sheet) as unknown as AnyLiveSheet
+  const sheetRevision = nextContext.nextSheet ? nextRevision(previousContext.sheet.revision) : previousContext.sheet.revision
+  const payload = valuePatchPayload(
+    command,
+    before,
+    after,
+    previousContext.placement,
+    sheetRevision,
+    previousContext.map,
+    nextContext.map,
+  )
   return [
     tokenPatch(command, revision, previousContext.placement, payload),
-    sheetFieldPatch(command, revision, previousContext.placement, payload),
+    ...(nextContext.nextSheet ? [sheetFieldPatch(command, revision, previousContext.placement, payload)] : []),
   ]
 }
 
@@ -725,7 +761,7 @@ const responseFromContext = (
     path: context.relativePath,
     map: context.map,
     placement: context.placement,
-    sheetUpdates: context.sheetUpdate ? [context.sheetUpdate] : [sheetUpdateFromPersisted(context.sheet)],
+    ...(context.sheetUpdate ? { sheetUpdates: [context.sheetUpdate] } : {}),
   } : {}),
 })
 
@@ -784,7 +820,7 @@ export const executeLivePlaySheetCommandUseCase = async (
     },
     apply: ({ command, map, currentRevision }) => {
       const nextContext = applySheetCommand(command, map, currentRevision, deps)
-      if (!nextContext?.nextSheet) {
+      if (!nextContext) {
         return {
           status: 'rejected',
           reason: 'no-op',
@@ -808,7 +844,6 @@ export const executeLivePlaySheetCommandUseCase = async (
     },
     commit: async ({ currentRevision, nextMap, result, saveOpResult }) => {
       const nextSheet = nextMap.nextSheet
-      if (!nextSheet) throw new Error('next sheet missing for live-play sheet command')
       await deps.database.withAsyncTransaction(async () => {
         const persisted = toPersistedMap(
           nextMap.map,
@@ -825,14 +860,16 @@ export const executeLivePlaySheetCommandUseCase = async (
           throw new LivePlaySheetCommandUseCaseError(409, `Map ${result.mapSlug} changed before the live-play command could be persisted`)
         }
 
-        const sheetResult = await deps.sheetRepository.applyLivePlayUpdate({
-          kind: nextMap.sheet.kind,
-          slug: nextMap.sheet.slug,
-          expectedRevision: nextMap.sheet.revision,
-          nextSheet,
-        })
-        if (sheetResult === 'stale') {
-          throw new LivePlaySheetCommandUseCaseError(409, `Sheet ${nextMap.sheet.kind}/${nextMap.sheet.slug} changed before the live-play command could be persisted`)
+        if (nextSheet) {
+          const sheetResult = await deps.sheetRepository.applyLivePlayUpdate({
+            kind: nextMap.sheet.kind,
+            slug: nextMap.sheet.slug,
+            expectedRevision: nextMap.sheet.revision,
+            nextSheet,
+          })
+          if (sheetResult === 'stale') {
+            throw new LivePlaySheetCommandUseCaseError(409, `Sheet ${nextMap.sheet.kind}/${nextMap.sheet.slug} changed before the live-play command could be persisted`)
+          }
         }
 
         saveOpResult()
@@ -850,7 +887,7 @@ export const executeLivePlaySheetCommandUseCase = async (
           map: authoritativeMap,
           placement: authoritativePlacement,
           sheet: authoritativeSheet,
-          sheetUpdate: sheetUpdateFromPersisted(authoritativeSheet),
+          ...(nextSheet ? { sheetUpdate: sheetUpdateFromPersisted(authoritativeSheet) } : {}),
         }
       })
     },

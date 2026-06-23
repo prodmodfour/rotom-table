@@ -33,6 +33,13 @@ export interface InitiativeTrackerState {
   round?: number
 }
 
+export interface MapTemporaryHitPointsState {
+  /** Scene that owns these temporary Hit Points; cleared when the active scene changes. */
+  scene: MapSceneState
+  /** Absolute temporary HP by map-local placement id. Missing/zero means no temporary HP. */
+  byPlacementId: Record<string, number>
+}
+
 export interface MapSceneState {
   /** GM-provided scene label shown to everyone in live play. */
   name: string
@@ -155,6 +162,8 @@ export interface TabletopMapV2 {
   initiative?: InitiativeTrackerState
   /** Current GM-started scene shown to players in live play. */
   activeScene?: MapSceneState | null
+  /** Per-placement temporary HP for the current map Scene. */
+  temporaryHitPoints?: MapTemporaryHitPointsState
   /** Per-placement EOT/Scene/Daily move frequency usage for the current map Scene. */
   moveUsage?: MapMoveUsageState
   metadata?: Record<string, unknown>

@@ -153,15 +153,13 @@ export const buildMoveAutomationTransaction = ({
     )
     const loss = damageBreakdown.hpLoss
     if (loss > 0) {
-      const beforeHp = hpAccumulator.get(target)
-      const injuryResult = hpAccumulator.setWithInjuryAutomation(
+      const lossResult = hpAccumulator.applyLossWithInjuryAutomation(
         target,
-        beforeHp - loss,
+        loss,
         damageBreakdown.kind === 'direct' ? 'hp-loss' : 'damage',
       )
-      const appliedLoss = Math.max(0, beforeHp - hpAccumulator.get(target))
-      damageLossByTargetId.set(target.id, appliedLoss)
-      totalAppliedDamageLoss += appliedLoss
+      damageLossByTargetId.set(target.id, lossResult.effectiveHpLost)
+      totalAppliedDamageLoss += lossResult.effectiveHpLost
       if (damageBreakdown.kind === 'direct') {
         logLines.push(formatMoveAutomationDirectHpLossLogLine(target.species, loss, damageBreakdown.label))
       } else {
@@ -169,7 +167,7 @@ export const buildMoveAutomationTransaction = ({
         const breakdownLine = formatMoveAutomationDamageBreakdownLogLine(target.species, damageBreakdown)
         if (breakdownLine) logLines.push(breakdownLine)
       }
-      const injuryLine = formatMoveAutomationInjuryLogLine(target.species, injuryResult)
+      const injuryLine = formatMoveAutomationInjuryLogLine(target.species, lossResult.injuryResult)
       if (injuryLine) logLines.push(injuryLine)
     }
   }

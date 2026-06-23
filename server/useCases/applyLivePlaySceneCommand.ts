@@ -162,6 +162,7 @@ const applySceneChange = (
     nextMap: {
       ...context.map,
       activeScene: current,
+      temporaryHitPoints: undefined,
       moveUsage: undefined,
       metadata: clearCombatLogMetadata(context.map.metadata),
       updatedAt: timestamp,

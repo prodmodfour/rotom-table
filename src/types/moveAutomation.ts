@@ -10,6 +10,8 @@ import type {
 export interface MoveAutomationHpUpdate {
   id: string
   currentHp: number
+  /** Scene-local temporary HP after applying HP loss. Undefined leaves it unchanged. */
+  temporaryHp?: number
   /** Absolute Injury count after automating HP-marker / Massive Damage Injuries. */
   injuries?: number
 }

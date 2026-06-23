@@ -167,6 +167,13 @@
   color: var(--ink-muted);
 }
 
+.hp-dialog__temp-hp {
+  color: #9feeff;
+  font-size: 0.78em;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .hp-dialog__preview.is-damage {
   color: var(--bad);
 }

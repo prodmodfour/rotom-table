@@ -5,6 +5,7 @@ import TokenConditionsDialog from '~/components/isometric/TokenConditionsDialog.
 import TokenDamageDialog from '~/components/isometric/TokenDamageDialog.vue'
 import TokenExperienceDialog from '~/components/isometric/TokenExperienceDialog.vue'
 import TokenHpDialog from '~/components/isometric/TokenHpDialog.vue'
+import TokenTempHpDialog from '~/components/isometric/TokenTempHpDialog.vue'
 import type { DamageBaseDef } from '~/utils/ptuDamage'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type {
@@ -12,6 +13,7 @@ import type {
   ConditionsDialogState,
 } from '~/utils/isometric/tokenStatusDialogs'
 import type { HpDialogState } from '~/utils/isometric/tokenHpDialog'
+import type { TempHpDialogState } from '~/utils/isometric/tokenTempHpDialog'
 import type { PtuInjuryAutomationResult } from '~/utils/ptuInjuries'
 import type {
   DamageDialogMultiplierTone,
@@ -26,8 +28,12 @@ const props = defineProps<{
   hpDialog: HpDialogState | null
   hpDialogDelta: number
   hpDialogPreview: number
+  hpDialogTemporaryHpPreview: number
   hpDialogPreviewMaxHp: number
   hpDialogInjuryResult: PtuInjuryAutomationResult | null
+  tempHpDialog: TempHpDialogState | null
+  tempHpDialogAmount: number
+  tempHpDialogPreview: number
   combatStagesDialog: CombatStagesDialogState | null
   combatStagesDialogChanged: boolean
   conditionsDialog: ConditionsDialogState | null
@@ -47,6 +53,7 @@ const props = defineProps<{
   damageDialogMultiplier: number
   damageDialogHpLoss: number
   damageDialogPreview: number
+  damageDialogTemporaryHpPreview: number
   damageDialogPreviewMaxHp: number
   damageDialogInjuryResult: PtuInjuryAutomationResult | null
   damageDialogMultiplierTone: DamageDialogMultiplierTone
@@ -56,6 +63,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'close-hp'): void
   (event: 'submit-hp'): void
+  (event: 'close-temp-hp'): void
+  (event: 'submit-temp-hp'): void
   (event: 'close-combat-stages'): void
   (event: 'submit-combat-stages'): void
   (event: 'close-conditions'): void
@@ -67,6 +76,7 @@ const emit = defineEmits<{
 }>()
 
 const hpDialogComponent = ref<{ focusAmount: () => void } | null>(null)
+const tempHpDialogComponent = ref<{ focusAmount: () => void } | null>(null)
 const experienceDialogComponent = ref<{ focusAmount: () => void } | null>(null)
 const damageDialogComponent = ref<{ focusAmount: () => void } | null>(null)
 
@@ -78,12 +88,17 @@ const focusDamageAmount = () => {
   damageDialogComponent.value?.focusAmount()
 }
 
+const focusTempHpAmount = () => {
+  tempHpDialogComponent.value?.focusAmount()
+}
+
 const focusExperienceAmount = () => {
   experienceDialogComponent.value?.focusAmount()
 }
 
 const activeAccentColor = computed(() => (
   props.hpDialog?.accentColor ??
+  props.tempHpDialog?.accentColor ??
   props.combatStagesDialog?.accentColor ??
   props.conditionsDialog?.accentColor ??
   props.experienceDialog?.accentColor ??
@@ -92,7 +107,7 @@ const activeAccentColor = computed(() => (
 ))
 const actionDialogStyle = computed(() => activeAccentColor.value ? trainerAccentCssVariables(activeAccentColor.value) : undefined)
 
-defineExpose({ focusHpAmount, focusDamageAmount, focusExperienceAmount })
+defineExpose({ focusHpAmount, focusDamageAmount, focusExperienceAmount, focusTempHpAmount })
 </script>
 
 <template>
@@ -103,10 +118,21 @@ defineExpose({ focusHpAmount, focusDamageAmount, focusExperienceAmount })
       :dialog="props.hpDialog"
       :delta="props.hpDialogDelta"
       :preview="props.hpDialogPreview"
+      :temporary-hp-preview="props.hpDialogTemporaryHpPreview"
       :preview-max-hp="props.hpDialogPreviewMaxHp"
       :injury-result="props.hpDialogInjuryResult"
       @close="emit('close-hp')"
       @submit="emit('submit-hp')"
+    />
+
+    <TokenTempHpDialog
+      v-if="props.tempHpDialog"
+      ref="tempHpDialogComponent"
+      :dialog="props.tempHpDialog"
+      :amount="props.tempHpDialogAmount"
+      :preview="props.tempHpDialogPreview"
+      @close="emit('close-temp-hp')"
+      @submit="emit('submit-temp-hp')"
     />
 
     <TokenCombatStagesDialog
@@ -150,6 +176,7 @@ defineExpose({ focusHpAmount, focusDamageAmount, focusExperienceAmount })
       :multiplier="props.damageDialogMultiplier"
       :hp-loss="props.damageDialogHpLoss"
       :preview="props.damageDialogPreview"
+      :temporary-hp-preview="props.damageDialogTemporaryHpPreview"
       :preview-max-hp="props.damageDialogPreviewMaxHp"
       :injury-result="props.damageDialogInjuryResult"
       :multiplier-tone="props.damageDialogMultiplierTone"

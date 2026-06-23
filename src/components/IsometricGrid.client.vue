@@ -336,8 +336,12 @@ const {
   hpDialog,
   hpDialogDelta,
   hpDialogPreview,
+  hpDialogTemporaryHpPreview,
   hpDialogInjuryResult,
   hpDialogPreviewMaxHp,
+  tempHpDialog,
+  tempHpDialogAmount,
+  tempHpDialogPreview,
   combatStagesDialog,
   combatStagesDialogChanged,
   conditionsDialog,
@@ -355,6 +359,7 @@ const {
   damageDialogMultiplier,
   damageDialogHpLoss,
   damageDialogPreview,
+  damageDialogTemporaryHpPreview,
   damageDialogInjuryResult,
   damageDialogPreviewMaxHp,
   damageDialogMultiplierTone,
@@ -365,6 +370,9 @@ const {
   handleContextModifyHp,
   closeHpDialog,
   handleHpDialogSubmit,
+  handleContextAddTemporaryHp,
+  closeTempHpDialog,
+  handleTempHpDialogSubmit,
   handleContextModifyCombatStages,
   closeCombatStagesDialog,
   handleCombatStagesDialogSubmit,
@@ -2492,6 +2500,7 @@ watch(
       @view-pokedex="handleContextViewPokedex"
       @turn="handleContextTurn"
       @modify-hp="handleContextModifyHp"
+      @add-temp-hp="handleContextAddTemporaryHp"
       @modify-combat-stages="handleContextModifyCombatStages"
       @apply-remove-conditions="handleContextApplyRemoveConditions"
       @grant-experience="handleContextGrantExperience"
@@ -2510,8 +2519,12 @@ watch(
       :hp-dialog="hpDialog"
       :hp-dialog-delta="hpDialogDelta"
       :hp-dialog-preview="hpDialogPreview"
+      :hp-dialog-temporary-hp-preview="hpDialogTemporaryHpPreview"
       :hp-dialog-preview-max-hp="hpDialogPreviewMaxHp"
       :hp-dialog-injury-result="hpDialogInjuryResult"
+      :temp-hp-dialog="tempHpDialog"
+      :temp-hp-dialog-amount="tempHpDialogAmount"
+      :temp-hp-dialog-preview="tempHpDialogPreview"
       :combat-stages-dialog="combatStagesDialog"
       :combat-stages-dialog-changed="combatStagesDialogChanged"
       :conditions-dialog="conditionsDialog"
@@ -2531,12 +2544,15 @@ watch(
       :damage-dialog-multiplier="damageDialogMultiplier"
       :damage-dialog-hp-loss="damageDialogHpLoss"
       :damage-dialog-preview="damageDialogPreview"
+      :damage-dialog-temporary-hp-preview="damageDialogTemporaryHpPreview"
       :damage-dialog-preview-max-hp="damageDialogPreviewMaxHp"
       :damage-dialog-injury-result="damageDialogInjuryResult"
       :damage-dialog-multiplier-tone="damageDialogMultiplierTone"
       :damage-dialog-multiplier-label="damageDialogMultiplierLabel"
       @close-hp="closeHpDialog"
       @submit-hp="handleHpDialogSubmit"
+      @close-temp-hp="closeTempHpDialog"
+      @submit-temp-hp="handleTempHpDialogSubmit"
       @close-combat-stages="closeCombatStagesDialog"
       @submit-combat-stages="handleCombatStagesDialogSubmit"
       @close-conditions="closeConditionsDialog"

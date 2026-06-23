@@ -68,6 +68,7 @@ import {
 } from '~/utils/pokeballCapture'
 import { isSameAnchor } from '~/utils/gridGeometry'
 import { normalizeMapSceneName, MAP_SCENE_NAME_MAX_LENGTH } from '~/utils/mapSceneState'
+import { setTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
@@ -956,12 +957,16 @@ const {
 
 const modifyHpFromScene: typeof modifyHpViaSetupSheetSave = async (payload, options) => {
   if (mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT) {
+    if (payload.temporaryHp !== undefined && map.value) {
+      setTemporaryHpForPlacement(map.value, payload.id, payload.temporaryHp)
+    }
     await modifyHpViaSetupSheetSave(payload, options)
     return
   }
   await livePlayCommands.modifyHp({
     placementId: payload.id,
     currentHp: payload.currentHp,
+    ...(payload.temporaryHp === undefined ? {} : { temporaryHp: payload.temporaryHp }),
     ...(payload.injuries === undefined ? {} : { injuries: payload.injuries }),
   })
 }

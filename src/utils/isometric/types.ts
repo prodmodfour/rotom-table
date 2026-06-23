@@ -65,6 +65,7 @@ export interface PokemonRenderObject {
   displayName: string
   level: number
   currentHp: number
+  temporaryHp?: number
   maxHp: number
   fullMaxHp?: number
   injuries?: number

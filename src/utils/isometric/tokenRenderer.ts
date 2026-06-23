@@ -372,6 +372,7 @@ export const createPokemonRenderObject = (
     displayName: spawnState.displayName,
     level: spawnState.level,
     currentHp: spawnState.currentHp,
+    temporaryHp: spawnState.temporaryHp,
     maxHp: spawnState.maxHp,
     fullMaxHp: spawnState.fullMaxHp,
     injuries: spawnState.injuries,
@@ -405,6 +406,7 @@ export const updatePokemonRenderObjectFromSpawn = (
   renderObject.displayName = spawnState.displayName
   renderObject.level = spawnState.level
   renderObject.currentHp = spawnState.currentHp
+  renderObject.temporaryHp = spawnState.temporaryHp
   renderObject.maxHp = spawnState.maxHp
   renderObject.fullMaxHp = spawnState.fullMaxHp
   renderObject.injuries = spawnState.injuries
@@ -485,6 +487,7 @@ export const applyPokemonRenderObjectPosition = (
     displayName: renderObject.displayName,
     level: renderObject.level,
     currentHp: renderObject.currentHp,
+    temporaryHp: renderObject.temporaryHp,
     maxHp: renderObject.maxHp,
     fullMaxHp: renderObject.fullMaxHp,
     injuries: renderObject.injuries,

@@ -303,6 +303,7 @@ interface TokenStatusRenderState {
   fillWidth: string
   blockedWidth: string
   blockedHidden: boolean
+  temporaryHp: number
   hpTier: ReturnType<typeof hpTierForRatio>
   injuryBlocked: boolean
   title: string
@@ -328,6 +329,7 @@ const tokenStatusRenderState = (bar: CSS3DSprite): TokenStatusRenderState | null
     && typeof maybeState.fillWidth === 'string'
     && typeof maybeState.blockedWidth === 'string'
     && typeof maybeState.blockedHidden === 'boolean'
+    && typeof maybeState.temporaryHp === 'number'
     && typeof maybeState.hpTier === 'string'
     && typeof maybeState.injuryBlocked === 'boolean'
     && typeof maybeState.title === 'string'
@@ -359,6 +361,7 @@ const sameTokenStatusRenderState = (
   && previous.fillWidth === next.fillWidth
   && previous.blockedWidth === next.blockedWidth
   && previous.blockedHidden === next.blockedHidden
+  && previous.temporaryHp === next.temporaryHp
   && previous.hpTier === next.hpTier
   && previous.injuryBlocked === next.injuryBlocked
   && previous.title === next.title
@@ -383,6 +386,7 @@ const setTokenStatusHidden = (bar: CSS3DSprite): boolean => {
     fillWidth: previous?.fillWidth ?? '',
     blockedWidth: previous?.blockedWidth ?? '',
     blockedHidden: previous?.blockedHidden ?? true,
+    temporaryHp: previous?.temporaryHp ?? 0,
     hpTier: previous?.hpTier ?? 'healthy',
     injuryBlocked: previous?.injuryBlocked ?? false,
     title: previous?.title ?? '',
@@ -444,11 +448,15 @@ export const buildHpBar = (pokemon: SpawnedPokemon) => {
 
   track.append(fill, blocked)
 
+  const temporaryHp = document.createElement('div')
+  temporaryHp.className = 'token-status__temp-hp'
+  temporaryHp.hidden = true
+
   const itemStack = document.createElement('div')
   itemStack.className = 'token-status__item-stack'
   itemStack.hidden = true
 
-  hpRow.append(track, itemStack)
+  hpRow.append(track, temporaryHp, itemStack)
   wrapper.append(turnChevron, conditions, label, hpRow)
   updateTokenStatusLabel(wrapper, pokemon.species, pokemon.level)
   updateTokenConditions(wrapper, pokemon.conditions)
@@ -470,6 +478,7 @@ export const updateHpBar = ({
   displayName,
   level,
   currentHp,
+  temporaryHp,
   maxHp,
   fullMaxHp,
   injuries,
@@ -485,6 +494,7 @@ export const updateHpBar = ({
   displayName: string
   level: number
   currentHp: number
+  temporaryHp?: number
   maxHp: number
   fullMaxHp?: number
   injuries?: number
@@ -494,6 +504,7 @@ export const updateHpBar = ({
   accentColor?: string
   show?: boolean
 }): boolean => {
+  const normalizedTemporaryHp = Math.max(0, Math.floor(temporaryHp ?? 0))
   const hpMetrics = getHpBarDisplayMetrics({ currentHp, maxHp, fullMaxHp })
 
   // Hide the whole token HUD when the token layer is disabled or HP data is
@@ -522,6 +533,7 @@ export const updateHpBar = ({
     fillWidth,
     blockedWidth,
     blockedHidden,
+    temporaryHp: normalizedTemporaryHp,
     hpTier,
     injuryBlocked,
     title,
@@ -560,6 +572,15 @@ export const updateHpBar = ({
   if (blocked) {
     if (blocked.style.width !== blockedWidth) blocked.style.width = blockedWidth
     if (blocked.hidden !== blockedHidden) blocked.hidden = blockedHidden
+  }
+
+  const tempBadge = bar.element.querySelector<HTMLElement>('.token-status__temp-hp')
+  if (tempBadge) {
+    const hidden = normalizedTemporaryHp <= 0
+    if (tempBadge.hidden !== hidden) tempBadge.hidden = hidden
+    const text = `+${normalizedTemporaryHp}`
+    if (!hidden && tempBadge.textContent !== text) tempBadge.textContent = text
+    if (!hidden && tempBadge.title !== 'Temporary HP') tempBadge.title = 'Temporary HP'
   }
 
   const track = bar.element.querySelector<HTMLElement>('.hp-bar')

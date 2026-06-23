@@ -52,6 +52,7 @@ export interface InitiativeRow {
   sprite: InitiativeSpritePreview
   profileUrl: string | null
   currentHp: number
+  temporaryHp?: number
   maxHp: number
   fullMaxHp?: number
   conditions: string[]
@@ -264,6 +265,7 @@ export const useInitiativeTracker = ({
         sprite: initiativeSpriteFor(pokemon),
         profileUrl: pokemon.profileSpriteUrl ?? null,
         currentHp: Math.floor(pokemon.currentHp),
+        temporaryHp: pokemon.temporaryHp == null ? undefined : Math.max(0, Math.floor(pokemon.temporaryHp)),
         maxHp: Math.max(0, Math.floor(pokemon.maxHp)),
         fullMaxHp: pokemon.fullMaxHp == null ? undefined : Math.max(0, Math.floor(pokemon.fullMaxHp)),
         conditions: pokemon.conditions,

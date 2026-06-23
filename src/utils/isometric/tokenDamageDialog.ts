@@ -15,6 +15,7 @@ import {
   computePtuInjuryAutomation,
   type PtuInjuryAutomationResult,
 } from '~/utils/ptuInjuries'
+import { applyDamageToTemporaryHp, normalizeTemporaryHpAmount } from '~/utils/mapTemporaryHitPoints'
 
 export type DamageDialogMode = 'physical' | 'special'
 export type DamageDialogSource = 'flat' | 'db'
@@ -24,6 +25,7 @@ export interface DamageDialogState {
   id: string
   species: string
   currentHp: number
+  temporaryHp?: number
   maxHp: number
   fullMaxHp?: number
   injuries?: number
@@ -44,7 +46,7 @@ export interface DamageDialogState {
 
 type DamageDialogPokemon = Pick<
   SpawnedPokemon,
-  'id' | 'species' | 'currentHp' | 'maxHp' | 'fullMaxHp' | 'injuries' | 'accentColor' | 'def' | 'sdef' | 'defenderTypes' | 'defenderCapabilities' | 'abilityNames'
+  'id' | 'species' | 'currentHp' | 'temporaryHp' | 'maxHp' | 'fullMaxHp' | 'injuries' | 'accentColor' | 'def' | 'sdef' | 'defenderTypes' | 'defenderCapabilities' | 'abilityNames'
 >
 
 type DamageDialogAttacker = Pick<SpawnedPokemon, 'id' | 'species' | 'atk' | 'satk'>
@@ -57,6 +59,7 @@ const parsePositiveInteger = (value: string): number => {
 
 const damageDialogFullMaxHp = (dialog: DamageDialogState): number => dialog.fullMaxHp ?? dialog.maxHp
 const damageDialogInjuries = (dialog: DamageDialogState): number => dialog.injuries ?? 0
+const damageDialogTemporaryHp = (dialog: DamageDialogState): number => normalizeTemporaryHpAmount(dialog.temporaryHp)
 
 const maybeHpMetadata = (pokemon: DamageDialogPokemon): Pick<DamageDialogState, 'fullMaxHp' | 'injuries'> => ({
   ...(pokemon.fullMaxHp != null ? { fullMaxHp: pokemon.fullMaxHp } : {}),
@@ -65,10 +68,12 @@ const maybeHpMetadata = (pokemon: DamageDialogPokemon): Pick<DamageDialogState, 
 
 export const createDamageDialogState = (pokemon: DamageDialogPokemon): DamageDialogState => {
   const abilityNames = [...(pokemon.abilityNames ?? [])]
+  const temporaryHp = normalizeTemporaryHpAmount(pokemon.temporaryHp)
   return {
     id: pokemon.id,
     species: pokemon.species,
     currentHp: pokemon.currentHp,
+    ...(temporaryHp > 0 ? { temporaryHp } : {}),
     maxHp: pokemon.maxHp,
     ...maybeHpMetadata(pokemon),
     ...(pokemon.accentColor ? { accentColor: pokemon.accentColor } : {}),
@@ -150,8 +155,31 @@ export const getDamageDialogPreview = (
   attacker: DamageDialogAttacker | null,
 ): number => {
   if (!dialog) return 0
-  return dialog.currentHp - getDamageDialogHpLoss(dialog, attacker)
+  return applyDamageToTemporaryHp({
+    currentHp: dialog.currentHp,
+    temporaryHp: damageDialogTemporaryHp(dialog),
+    hpLoss: getDamageDialogHpLoss(dialog, attacker),
+  }).currentHp
 }
+
+export const getDamageDialogTemporaryHpPreview = (
+  dialog: DamageDialogState | null,
+  attacker: DamageDialogAttacker | null,
+): number => {
+  if (!dialog) return 0
+  return applyDamageToTemporaryHp({
+    currentHp: dialog.currentHp,
+    temporaryHp: damageDialogTemporaryHp(dialog),
+    hpLoss: getDamageDialogHpLoss(dialog, attacker),
+  }).temporaryHp
+}
+
+export const isDamageDialogChanged = (
+  dialog: DamageDialogState | null,
+  attacker: DamageDialogAttacker | null,
+): boolean => Boolean(dialog
+  && (getDamageDialogPreview(dialog, attacker) !== dialog.currentHp
+    || getDamageDialogTemporaryHpPreview(dialog, attacker) !== damageDialogTemporaryHp(dialog)))
 
 export const getDamageDialogInjuryResult = (
   dialog: DamageDialogState | null,
@@ -180,9 +208,11 @@ export const getDamageDialogHpUpdate = (
 ): MoveAutomationHpUpdate | null => {
   if (!dialog) return null
   const injuryResult = getDamageDialogInjuryResult(dialog, attacker)
+  const temporaryHpPreview = getDamageDialogTemporaryHpPreview(dialog, attacker)
   return {
     id: dialog.id,
     currentHp: getDamageDialogPreview(dialog, attacker),
+    ...(temporaryHpPreview !== damageDialogTemporaryHp(dialog) ? { temporaryHp: temporaryHpPreview } : {}),
     ...(injuryResult && injuryResult.injuryDelta > 0 ? { injuries: injuryResult.injuries } : {}),
   }
 }
@@ -203,13 +233,13 @@ export const updateDamageDialogFromPokemon = (
   availableAttackers: readonly DamageDialogAttacker[],
 ): DamageDialogState => {
   const abilityNames = [...(pokemon.abilityNames ?? [])]
+  const temporaryHp = normalizeTemporaryHpAmount(pokemon.temporaryHp)
   const next: DamageDialogState = {
     ...dialog,
     species: pokemon.species,
     currentHp: pokemon.currentHp,
     maxHp: pokemon.maxHp,
     ...maybeHpMetadata(pokemon),
-    accentColor: pokemon.accentColor,
     def: pokemon.def,
     sdef: pokemon.sdef,
     defenderTypes: [...pokemon.defenderTypes],
@@ -217,6 +247,10 @@ export const updateDamageDialogFromPokemon = (
       ? dialog.attackerId
       : null,
   }
+  if (temporaryHp > 0) next.temporaryHp = temporaryHp
+  else delete next.temporaryHp
+  if (pokemon.accentColor) next.accentColor = pokemon.accentColor
+  else delete next.accentColor
   if (pokemon.defenderCapabilities) next.defenderCapabilities = { ...pokemon.defenderCapabilities }
   else delete next.defenderCapabilities
   if (abilityNames.length) next.abilityNames = abilityNames

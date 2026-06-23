@@ -1072,7 +1072,11 @@ export const useMoveAutomationPanel = ({
     transaction: MoveAutomationTransaction,
   ): MoveAnimationPlanTargetOutcome => {
     const hpUpdate = transaction.hpUpdates.find((update) => update.id === target.id)
-    const damageLoss = hpUpdate ? Math.max(0, target.currentHp - hpUpdate.currentHp) : undefined
+    const beforeEffectiveHp = target.currentHp + Math.max(0, Math.floor(target.temporaryHp ?? 0))
+    const afterEffectiveHp = hpUpdate
+      ? hpUpdate.currentHp + Math.max(0, Math.floor(hpUpdate.temporaryHp ?? target.temporaryHp ?? 0))
+      : beforeEffectiveHp
+    const damageLoss = hpUpdate ? Math.max(0, beforeEffectiveHp - afterEffectiveHp) : undefined
     const conditionUpdate = transaction.conditionUpdates.find((update) => update.id === target.id)
     const hitTargetIds = transaction.hitTargetIds
 

@@ -15,10 +15,20 @@ import {
   getHpDialogHpUpdate,
   getHpDialogInjuryResult,
   getHpDialogPreview,
+  getHpDialogTemporaryHpPreview,
   getHpDialogPreviewMaxHp,
+  isHpDialogChanged,
   updateHpDialogFromPokemon,
   type HpDialogState,
 } from '~/utils/isometric/tokenHpDialog'
+import {
+  createTempHpDialogState,
+  getTempHpDialogAmount,
+  getTempHpDialogHpUpdate,
+  getTempHpDialogPreview,
+  updateTempHpDialogFromPokemon,
+  type TempHpDialogState,
+} from '~/utils/isometric/tokenTempHpDialog'
 import {
   createCombatStagesDialogState,
   createConditionsDialogState,
@@ -52,14 +62,17 @@ import {
   getDamageDialogMultiplierLabel,
   getDamageDialogMultiplierTone,
   getDamageDialogPreview,
+  getDamageDialogTemporaryHpPreview,
   getDamageDialogPreviewMaxHp,
   getDamageDialogRawAmount,
+  isDamageDialogChanged,
   updateDamageDialogFromPokemon,
   type DamageDialogState,
 } from '~/utils/isometric/tokenDamageDialog'
 
 export interface TokenActionDialogsExpose {
   focusHpAmount: () => void
+  focusTempHpAmount: () => void
   focusDamageAmount: () => void
   focusExperienceAmount: () => void
 }
@@ -99,6 +112,7 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
   const combatStagesDialog = ref<CombatStagesDialogState | null>(null)
   const conditionsDialog = ref<ConditionsDialogState | null>(null)
   const hpDialog = ref<HpDialogState | null>(null)
+  const tempHpDialog = ref<TempHpDialogState | null>(null)
   const experienceDialog = ref<ExperienceDialogState | null>(null)
   const damageDialog = ref<DamageDialogState | null>(null)
   const actionDialogs = ref<TokenActionDialogsExpose | null>(null)
@@ -107,8 +121,11 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
   const conditionsDialogChanged = computed(() => isConditionsDialogChanged(conditionsDialog.value))
   const hpDialogDelta = computed(() => getHpDialogDelta(hpDialog.value))
   const hpDialogPreview = computed(() => getHpDialogPreview(hpDialog.value))
+  const hpDialogTemporaryHpPreview = computed(() => getHpDialogTemporaryHpPreview(hpDialog.value))
   const hpDialogInjuryResult = computed(() => getHpDialogInjuryResult(hpDialog.value))
   const hpDialogPreviewMaxHp = computed(() => getHpDialogPreviewMaxHp(hpDialog.value))
+  const tempHpDialogAmount = computed(() => getTempHpDialogAmount(tempHpDialog.value))
+  const tempHpDialogPreview = computed(() => getTempHpDialogPreview(tempHpDialog.value))
   const experienceDialogAmount = computed(() => getExperienceDialogAmount(experienceDialog.value))
   const experienceDialogPreviewTotalExp = computed(() => getExperienceDialogPreviewTotalExp(experienceDialog.value))
   const experienceDialogPreviewLevel = computed(() => getExperienceDialogPreviewLevel(experienceDialog.value))
@@ -129,6 +146,10 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     damageDialogAttacker.value,
   ))
   const damageDialogPreview = computed(() => getDamageDialogPreview(
+    damageDialog.value,
+    damageDialogAttacker.value,
+  ))
+  const damageDialogTemporaryHpPreview = computed(() => getDamageDialogTemporaryHpPreview(
     damageDialog.value,
     damageDialogAttacker.value,
   ))
@@ -195,6 +216,10 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     hpDialog.value = null
   }
 
+  const closeTempHpDialog = () => {
+    tempHpDialog.value = null
+  }
+
   const handleContextModifyHp = () => {
     const id = controllableContextId()
     const target = findPokemonById(id)
@@ -212,8 +237,8 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
 
   const handleHpDialogSubmit = () => {
     if (!hpDialog.value || !options.canControlPokemon(hpDialog.value.id)) return
-    if (hpDialogDelta.value === 0) return
-    if (hpDialogPreview.value === hpDialog.value.currentHp) {
+    if (!isHpDialogChanged(hpDialog.value)) return
+    if (hpDialogPreview.value === hpDialog.value.currentHp && hpDialogTemporaryHpPreview.value === (hpDialog.value.temporaryHp ?? 0)) {
       closeHpDialog()
       return
     }
@@ -221,6 +246,30 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     const update = getHpDialogHpUpdate(hpDialog.value)
     if (update) options.emit.modifyHp(update)
     closeHpDialog()
+  }
+
+  const handleContextAddTemporaryHp = () => {
+    const id = controllableContextId()
+    const target = findPokemonById(id)
+    if (!id || !target) {
+      closeContextMenu()
+      return
+    }
+
+    tempHpDialog.value = createTempHpDialogState(target)
+    closeContextMenu()
+    void nextTick(() => {
+      actionDialogs.value?.focusTempHpAmount()
+    })
+  }
+
+  const handleTempHpDialogSubmit = () => {
+    if (!tempHpDialog.value || !options.canControlPokemon(tempHpDialog.value.id)) return
+    const update = getTempHpDialogHpUpdate(tempHpDialog.value)
+    if (!update) return
+
+    options.emit.modifyHp(update)
+    closeTempHpDialog()
   }
 
   const closeCombatStagesDialog = () => {
@@ -331,7 +380,7 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
   const handleDamageDialogSubmit = () => {
     if (!damageDialog.value || !options.canControlPokemon(damageDialog.value.id)) return
     if (damageDialogRawAmount.value === 0) return
-    if (damageDialogPreview.value === damageDialog.value.currentHp) {
+    if (!isDamageDialogChanged(damageDialog.value, damageDialogAttacker.value)) {
       closeDamageDialog()
       return
     }
@@ -424,6 +473,15 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
       }
     }
 
+    if (tempHpDialog.value) {
+      const live = findPokemonById(tempHpDialog.value.id)
+      if (!live) {
+        closeTempHpDialog()
+      } else {
+        tempHpDialog.value = updateTempHpDialogFromPokemon(tempHpDialog.value, live)
+      }
+    }
+
     if (damageDialog.value) {
       const live = findPokemonById(damageDialog.value.id)
       if (!live) {
@@ -459,6 +517,7 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
   const closeUnauthorizedActions = () => {
     if (contextMenu.value && !options.canControlPokemon(contextMenu.value.id)) closeContextMenu()
     if (hpDialog.value && !options.canControlPokemon(hpDialog.value.id)) closeHpDialog()
+    if (tempHpDialog.value && !options.canControlPokemon(tempHpDialog.value.id)) closeTempHpDialog()
     if (combatStagesDialog.value && !options.canControlPokemon(combatStagesDialog.value.id)) closeCombatStagesDialog()
     if (conditionsDialog.value && !options.canControlPokemon(conditionsDialog.value.id)) closeConditionsDialog()
     if (experienceDialog.value && !options.canControlPokemon(experienceDialog.value.id)) closeExperienceDialog()
@@ -478,6 +537,11 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
 
     if (hpDialog.value) {
       closeHpDialog()
+      return true
+    }
+
+    if (tempHpDialog.value) {
+      closeTempHpDialog()
       return true
     }
 
@@ -505,8 +569,12 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     hpDialog,
     hpDialogDelta,
     hpDialogPreview,
+    hpDialogTemporaryHpPreview,
     hpDialogInjuryResult,
     hpDialogPreviewMaxHp,
+    tempHpDialog,
+    tempHpDialogAmount,
+    tempHpDialogPreview,
     combatStagesDialog,
     combatStagesDialogChanged,
     conditionsDialog,
@@ -524,6 +592,7 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     damageDialogMultiplier,
     damageDialogHpLoss,
     damageDialogPreview,
+    damageDialogTemporaryHpPreview,
     damageDialogInjuryResult,
     damageDialogPreviewMaxHp,
     damageDialogMultiplierTone,
@@ -534,6 +603,9 @@ export const useTokenActionController = <TContainer extends BoundsProvider>(
     handleContextModifyHp,
     closeHpDialog,
     handleHpDialogSubmit,
+    handleContextAddTemporaryHp,
+    closeTempHpDialog,
+    handleTempHpDialogSubmit,
     handleContextModifyCombatStages,
     closeCombatStagesDialog,
     handleCombatStagesDialogSubmit,

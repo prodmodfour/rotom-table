@@ -7,6 +7,7 @@ const props = defineProps<{
   dialog: HpDialogState
   delta: number
   preview: number
+  temporaryHpPreview: number
   previewMaxHp: number
   injuryResult: PtuInjuryAutomationResult | null
 }>()
@@ -43,7 +44,10 @@ defineExpose({ focusAmount })
       </header>
 
       <div class="hp-dialog__readout">
-        <span class="hp-dialog__current">{{ props.dialog.currentHp }} / {{ props.dialog.maxHp }}</span>
+        <span class="hp-dialog__current">
+          {{ props.dialog.currentHp }} / {{ props.dialog.maxHp }}
+          <span v-if="props.dialog.temporaryHp" class="hp-dialog__temp-hp">+{{ props.dialog.temporaryHp }} temp</span>
+        </span>
         <span class="hp-dialog__arrow" aria-hidden="true">→</span>
         <span
           class="hp-dialog__preview"
@@ -51,7 +55,10 @@ defineExpose({ focusAmount })
             'is-damage': props.delta < 0,
             'is-heal': props.delta > 0,
           }"
-        >{{ props.preview }} / {{ props.previewMaxHp }}</span>
+        >
+          {{ props.preview }} / {{ props.previewMaxHp }}
+          <span v-if="props.temporaryHpPreview" class="hp-dialog__temp-hp">+{{ props.temporaryHpPreview }} temp</span>
+        </span>
         <span
           v-if="props.injuryResult?.injuryDelta"
           class="hp-dialog__multiplier is-injury"
@@ -113,7 +120,7 @@ defineExpose({ focusAmount })
         <button
           type="submit"
           class="hp-dialog__button hp-dialog__button--primary"
-          :disabled="props.delta === 0 || props.preview === props.dialog.currentHp"
+          :disabled="props.delta === 0 || (props.preview === props.dialog.currentHp && props.temporaryHpPreview === (props.dialog.temporaryHp ?? 0))"
         >
           Apply
         </button>

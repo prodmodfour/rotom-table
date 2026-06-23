@@ -34,6 +34,7 @@ const emit = defineEmits<{
   (event: 'view-pokedex'): void
   (event: 'turn'): void
   (event: 'modify-hp'): void
+  (event: 'add-temp-hp'): void
   (event: 'modify-combat-stages'): void
   (event: 'apply-remove-conditions'): void
   (event: 'grant-experience'): void
@@ -405,6 +406,13 @@ watch(orders, (nextOrders) => {
           @click.stop="emit('modify-hp')"
         >
           Modify HP
+        </button>
+        <button
+          type="button"
+          class="context-menu__button"
+          @click.stop="emit('add-temp-hp')"
+        >
+          Add Temp HP
         </button>
         <button
           type="button"

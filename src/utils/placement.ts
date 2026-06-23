@@ -22,6 +22,7 @@ import {
   tokenFacingForPlacement,
   tokenFacingStoresLegacyTurned,
 } from '~/utils/tokenFacing'
+import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -111,7 +112,9 @@ export const unresolvedPlacementReferences = (
 export const placementToSpawned = (
   placement: SheetPlacement,
   sheets: SheetLookup,
+  map?: Pick<TabletopMap, 'activeScene' | 'temporaryHitPoints'> | null,
 ): SpawnedPokemon | null => {
+  const temporaryHp = temporaryHpForPlacement(map, placement.id)
   const facing = tokenFacingForPlacement(placement)
   const turned = tokenFacingStoresLegacyTurned(facing)
 
@@ -138,6 +141,7 @@ export const placementToSpawned = (
       ...(sheet.gender ? { gender: sheet.gender } : {}),
       ...(hp.loyalty != null ? { loyalty: hp.loyalty } : {}),
       currentHp: hp.currentHp,
+      ...(temporaryHp > 0 ? { temporaryHp } : {}),
       maxHp: hp.maxHp,
       fullMaxHp: hp.fullMaxHp,
       injuries: hp.injuries,
@@ -180,6 +184,7 @@ export const placementToSpawned = (
     ...(accentColor ? { accentColor } : {}),
     ...(sheet.sex ? { gender: sheet.sex } : {}),
     currentHp: hp.currentHp,
+    ...(temporaryHp > 0 ? { temporaryHp } : {}),
     maxHp: hp.maxHp,
     fullMaxHp: hp.fullMaxHp,
     injuries: hp.injuries,
@@ -208,7 +213,7 @@ export const placementsToSpawned = (
   if (!map) return []
   const out: SpawnedPokemon[] = []
   for (const placement of map.placements) {
-    const spawned = placementToSpawned(placement, sheets)
+    const spawned = placementToSpawned(placement, sheets, map)
     if (spawned) out.push(spawned)
   }
   return out

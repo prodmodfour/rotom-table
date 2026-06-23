@@ -229,6 +229,8 @@ export interface SpawnedPokemon extends PokemonCatalogEntry {
   loyalty?: number
   /** Snapshot of the sheet's current HP at spawn time. */
   currentHp: number
+  /** Scene-local temporary HP tracked on the map instead of the backing sheet. */
+  temporaryHp?: number
   /** Snapshot of the sheet's computed injury-adjusted max HP / healing cap. */
   maxHp: number
   /** Real/formula Max HP before Injuries; fractional Injury checks use this value. */

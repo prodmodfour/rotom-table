@@ -20,6 +20,7 @@ import type { MapMoveUsageEntry, MapTrackedMoveFrequency } from '~/types/moveUsa
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import { clearCombatLogMetadata } from './combatLog'
 import { mapMoveUsageSceneMatches } from './moveUsage'
+import { normalizeTemporaryHpAmount, setTemporaryHpForPlacement } from './mapTemporaryHitPoints'
 import { deepCloneJson, sameJsonValue } from './serialization'
 
 export type LivePlayPatchApplyFailureReason =
@@ -332,10 +333,26 @@ const applyScenePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRej
     return failed('invalid-patch', 'map.scene patches require current to be a scene state or null')
   }
   map.activeScene = payload.current === null ? null : cloneScene(payload.current)
+  delete map.temporaryHitPoints
   delete map.moveUsage
   const nextMetadata = clearCombatLogMetadata(map.metadata)
   if (nextMetadata) map.metadata = nextMetadata
   else delete map.metadata
+  return null
+}
+
+const applyTokenHpPatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
+  if (!isRecord(payload) || !nonEmptyString(payload.placementId)) {
+    return failed('invalid-patch', 'token.hp patches require placementId')
+  }
+  const index = placementIndex(map, payload.placementId)
+  if (index < 0) return failed('invalid-patch', `token.hp patch references missing placement ${payload.placementId}`)
+
+  const rawTemporaryHp = payload.currentTemporaryHp ?? (isRecord(payload.current) ? payload.current.temporaryHp : undefined)
+  if (rawTemporaryHp !== undefined) {
+    if (!finiteNumber(rawTemporaryHp)) return failed('invalid-patch', 'token.hp temporary HP must be a finite number')
+    setTemporaryHpForPlacement(map, payload.placementId, normalizeTemporaryHpAmount(rawTemporaryHp))
+  }
   return null
 }
 
@@ -367,6 +384,7 @@ const applyKnownPatch = (map: TabletopMap, patch: LivePlayPatch): LivePlayPatche
     case LIVE_PLAY_PATCH_TYPES.TOKEN_ACTION:
       return applyMoveUsagePatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.TOKEN_HP:
+      return applyTokenHpPatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.TOKEN_CONDITIONS:
     case LIVE_PLAY_PATCH_TYPES.TOKEN_COMBAT_STAGES:
     case LIVE_PLAY_PATCH_TYPES.TOKEN_EXPERIENCE:
