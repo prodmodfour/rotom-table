@@ -109,9 +109,12 @@ code {
 /* ---- Sprite frame with checker + corner brackets ----------------- */
 
 .sprite-frame {
+  --sprite-frame-size: 13rem;
+
   position: relative;
-  width: 100%;
+  width: min(100%, var(--sprite-frame-size));
   aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
   padding: 0.4rem;
 }
 
