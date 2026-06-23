@@ -47,6 +47,7 @@ describe('API route constants', () => {
       list: '/api/maps/list',
       folders: '/api/maps/folders',
       load: '/api/maps/load',
+      liveState: '/api/maps/live-state',
       save: '/api/maps/save',
       interactionMode: '/api/maps/interaction-mode',
       useMove: '/api/maps/use-move',

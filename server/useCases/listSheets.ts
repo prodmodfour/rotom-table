@@ -3,26 +3,25 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import { playerCanAccessSheet } from '../policies/playerProfilePolicy'
+import {
+  authorizeSheetList,
+  type PlayerAccessMarkerOptions,
+  type PlayerSheetAccessPredicate,
+} from './authorizeSheetList'
 import {
   sqliteSheetRepository,
   type SheetRepository,
   type StoredSheetDocument,
 } from '../storage/sheetRepository'
 
-export type PlayerSheetAccessPredicate = (
-  kind: SheetKind,
-  slug: string,
-  sheet: CharacterSheet | TrainerSheet,
-) => boolean
-
 export interface ListSheetsInput {
   role: AuthRole
   playerProfile?: PlayerProfile | null
   canAccessPlayerSheet?: PlayerSheetAccessPredicate
+  markPlayerAccess?: PlayerAccessMarkerOptions
 }
 
-type ListSheetsRepository = Pick<SheetRepository<Record<string, unknown>>, 'list'>
+export type ListSheetsRepository = Pick<SheetRepository<Record<string, unknown>>, 'list'>
 
 export interface ListSheetsDependencies {
   listPokemonSheets?: () => CharacterSheet[]
@@ -37,28 +36,22 @@ export interface ListSheetsResult {
   trainerSheets: TrainerSheet[]
 }
 
-const canListPlayerSheet = <TSheet extends CharacterSheet | TrainerSheet>(
-  kind: SheetKind,
-  sheet: TSheet,
-  input: ListSheetsInput,
-): boolean => playerCanAccessSheet({
-  kind,
-  slug: sheet.slug,
-  sheet,
-  playerProfile: input.playerProfile,
-  canAccessPlayerSheet: input.canAccessPlayerSheet,
-})
-
-const storedSheetDocumentToSheet = <TSheet extends CharacterSheet | TrainerSheet>(
+export const storedSheetDocumentToSheet = <TSheet extends CharacterSheet | TrainerSheet>(
   stored: StoredSheetDocument<Record<string, unknown>>,
-): TSheet => ({
-  ...stored.document,
-  slug: stored.slug,
-  revision: stored.revision,
-  folder: typeof stored.document.folder === 'string' ? stored.document.folder : '',
-} as TSheet)
+): TSheet => {
+  if (!stored.document || typeof stored.document !== 'object' || Array.isArray(stored.document)) {
+    throw new Error(`SQLite ${stored.kind} sheet ${stored.slug} document must be an object`)
+  }
 
-const listRepositorySheets = <TSheet extends CharacterSheet | TrainerSheet>(
+  return {
+    ...stored.document,
+    slug: stored.slug,
+    revision: stored.revision,
+    folder: typeof stored.document.folder === 'string' ? stored.document.folder : '',
+  } as TSheet
+}
+
+export const listRepositorySheets = <TSheet extends CharacterSheet | TrainerSheet>(
   repository: ListSheetsRepository,
   kind: SheetKind,
 ): TSheet[] => repository.list(kind).map((stored) => storedSheetDocumentToSheet<TSheet>(
@@ -78,19 +71,12 @@ export const listSheetsUseCase = (
   const pokemonSheets = listPokemonSheets()
   const trainerSheets = listTrainerSheets()
 
-  if (input.role === 'player') {
-    return {
-      pokemonSheets: pokemonSheets.filter((sheet) => playerCanAccessSheet({
-        kind: 'pokemon',
-        slug: sheet.slug,
-        sheet,
-        playerProfile: input.playerProfile,
-        canAccessPlayerSheet: input.canAccessPlayerSheet,
-        linkedTrainerSheets: trainerSheets,
-      })),
-      trainerSheets: trainerSheets.filter((sheet) => canListPlayerSheet('trainer', sheet, input)),
-    }
-  }
-
-  return { pokemonSheets, trainerSheets }
+  return authorizeSheetList({
+    role: input.role,
+    playerProfile: input.playerProfile,
+    canAccessPlayerSheet: input.canAccessPlayerSheet,
+    markPlayerAccess: input.markPlayerAccess,
+    pokemonSheets,
+    trainerSheets,
+  })
 }

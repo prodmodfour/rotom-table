@@ -1,23 +1,11 @@
 import { defineEventHandler, getQuery } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
-import { playerProfileCanAccessSheet, resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
-import { getPlayerSessionAccessGrant, playerSessionCanAccessSheet } from '../../utils/sessionPlayerAccess'
+import { resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
+import { getPlayerSessionAccessGrant } from '../../utils/sessionPlayerAccess'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { sqlitePlayerVisibleMapSheetAccessKeys } from '../../utils/mapSheetAccess'
+import { playerSheetAccessContextFromKeys } from '../../useCases/authorizeSheetList'
 import { listSheetsUseCase } from '../../useCases/listSheets'
-
-const markPlayerAccessibleSheet = <TSheet extends { slug: string; player?: unknown }>(
-  sheet: TSheet,
-  options: { readonly sessionAccessible: boolean; readonly profileAccessible: boolean },
-): TSheet => {
-  if (!options.sessionAccessible && !options.profileAccessible) return sheet
-
-  return {
-    ...sheet,
-    ...(options.sessionAccessible ? { sessionPlayerAccessible: true } : {}),
-    ...(options.profileAccessible ? { playerProfileAccessible: true } : {}),
-  } as TSheet
-}
 
 export default defineEventHandler((event) => {
   const role = requireAuthRole(event)
@@ -28,35 +16,18 @@ export default defineEventHandler((event) => {
     const playerProfile = role === 'player'
       ? resolvePlayerProfileForPolicy(query.profileId)
       : null
-    const result = listSheetsUseCase({
+    const playerAccessContext = role === 'player'
+      ? playerSheetAccessContextFromKeys({
+          sessionAccessKeys: sessionAccess?.sheetKeys ?? null,
+          mapSheetAccessKeys: mapSheetAccess,
+        })
+      : {}
+
+    return listSheetsUseCase({
       role,
       playerProfile,
-      canAccessPlayerSheet: (kind, slug) => (
-        playerSessionCanAccessSheet(sessionAccess, kind, slug)
-        || mapSheetAccess?.has(`${kind}:${slug}`) === true
-      ),
+      ...playerAccessContext,
     })
-
-    if (role !== 'player') return result
-
-    const linkedTrainerSheets = result.trainerSheets
-
-    return {
-      pokemonSheets: result.pokemonSheets.map((sheet) => markPlayerAccessibleSheet(
-        sheet,
-        {
-          sessionAccessible: playerSessionCanAccessSheet(sessionAccess, 'pokemon', sheet.slug),
-          profileAccessible: playerProfileCanAccessSheet(playerProfile, 'pokemon', sheet.slug, { linkedTrainerSheets }),
-        },
-      )),
-      trainerSheets: result.trainerSheets.map((sheet) => markPlayerAccessibleSheet(
-        sheet,
-        {
-          sessionAccessible: playerSessionCanAccessSheet(sessionAccess, 'trainer', sheet.slug),
-          profileAccessible: playerProfileCanAccessSheet(playerProfile, 'trainer', sheet.slug, { linkedTrainerSheets }),
-        },
-      )),
-    }
   } catch (error) {
     throwUseCaseHttpError(error)
   }
