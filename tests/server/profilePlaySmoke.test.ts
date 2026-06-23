@@ -230,8 +230,8 @@ describe('profile-based play smoke flow', () => {
       queue: createInProcessMapWriteQueue(),
     })
     const liveMapRepository = {
-      getBySlug: async (slug: string) => (slug === storedMap.slug ? storedMap : null),
-      applyLivePlayUpdate: async (input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
+      getBySlug: (slug: string) => (slug === storedMap.slug ? storedMap : null),
+      applyLivePlayUpdate: (input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
         if (input.slug !== storedMap.slug || (storedMap.revision ?? 0) !== input.expectedRevision) return 'stale' as const
         storedMap = { ...input.nextMap, revision: input.expectedRevision + 1 }
         mapWrites.push(storedMap)
@@ -258,6 +258,7 @@ describe('profile-based play smoke flow', () => {
     }, {
       commandExecutor: liveCommandExecutor,
       mapRepository: liveMapRepository,
+      database: { withTransaction: <T>(work: () => T) => work() },
       readSheet: mapDeps.readSheet,
       now: mapDeps.now,
       relativePath: mapDeps.relativePath,
@@ -368,6 +369,7 @@ describe('profile-based play smoke flow', () => {
     }, {
       commandExecutor: liveCommandExecutor,
       mapRepository: liveMapRepository,
+      database: { withTransaction: <T>(work: () => T) => work() },
       readSheet: mapDeps.readSheet,
       now: mapDeps.now,
       relativePath: mapDeps.relativePath,

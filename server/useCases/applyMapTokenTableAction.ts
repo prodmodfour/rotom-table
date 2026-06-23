@@ -108,7 +108,7 @@ export interface LivePlayTableActionCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
-  readonly database?: Pick<RotomDatabase, 'withAsyncTransaction'>
+  readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
   readonly idFactory?: () => string
@@ -377,12 +377,12 @@ const validateCommandPayloadAndScopes = (
   return payload
 }
 
-const readRequiredSheet = async (
+const readRequiredSheetSync = (
   placement: SheetPlacement,
   dependencies: Pick<LivePlayTableActionDependencySet, 'sheetRepository'>,
   actionLabel: string,
-): Promise<PersistedSheet> => {
-  const sheet = await dependencies.sheetRepository.getByRef(placement.sheetKind, placement.sheetSlug)
+): PersistedSheet => {
+  const sheet = dependencies.sheetRepository.getByRef(placement.sheetKind, placement.sheetSlug)
   if (!sheet) {
     throw new MapTokenTableActionUseCaseError(
       404,
@@ -391,6 +391,12 @@ const readRequiredSheet = async (
   }
   return sheet
 }
+
+const readRequiredSheet = async (
+  placement: SheetPlacement,
+  dependencies: Pick<LivePlayTableActionDependencySet, 'sheetRepository'>,
+  actionLabel: string,
+): Promise<PersistedSheet> => readRequiredSheetSync(placement, dependencies, actionLabel)
 
 const resolveContext = async (
   command: LivePlayTableActionCommand,
@@ -965,18 +971,18 @@ export const executeLivePlayTableActionCommandUseCase = async (
         patches: patchesForAcceptedTableActionCommand(command, revision, map, nextContext),
       }
     },
-    persist: async () => {
+    persist: () => {
       throw new Error('live-play table action commands must persist through the accepted-result commit hook')
     },
-    commit: async ({ currentRevision, nextMap, result, saveOpResult }) => {
-      await deps.database.withAsyncTransaction(async () => {
+    commit: ({ currentRevision, nextMap, result, saveOpResult }) => {
+      deps.database.withTransaction(() => {
         const persistedMap = toPersistedMap(
           nextMap.map,
           nextMap.mapPath,
           nextMap.map.updatedAt ?? deps.now(),
           { revision: result.revision },
         )
-        const mapResult = await deps.mapRepository.applyLivePlayUpdate({
+        const mapResult = deps.mapRepository.applyLivePlayUpdate({
           slug: result.mapSlug,
           expectedRevision: currentRevision,
           nextMap: persistedMap,
@@ -986,7 +992,7 @@ export const executeLivePlayTableActionCommandUseCase = async (
         }
 
         for (const plan of nextMap.nextSheets ?? []) {
-          const sheetResult = await deps.sheetRepository.applyLivePlayUpdate({
+          const sheetResult = deps.sheetRepository.applyLivePlayUpdate({
             kind: plan.kind,
             slug: plan.slug,
             expectedRevision: plan.original.revision,
@@ -999,20 +1005,20 @@ export const executeLivePlayTableActionCommandUseCase = async (
 
         saveOpResult()
 
-        const authoritativeMap = await deps.mapRepository.getBySlug(result.mapSlug)
+        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
         if (!authoritativeMap) throw new MapTokenTableActionUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play command`)
         const actorPlacement = authoritativeMap.placements.find((placement) => placement.id === nextMap.actorPlacement.id)
         if (!actorPlacement) throw new MapTokenTableActionUseCaseError(404, `Placement ${nextMap.actorPlacement.id} not found after live-play command`)
-        const actorSheet = await readRequiredSheet(actorPlacement, deps, 'table action response')
+        const actorSheet = readRequiredSheetSync(actorPlacement, deps, 'table action response')
         const targetPlacement = nextMap.targetPlacement
           ? authoritativeMap.placements.find((placement) => placement.id === nextMap.targetPlacement?.id)
           : undefined
         const targetSheet = targetPlacement
-          ? await readRequiredSheet(targetPlacement, deps, 'table action target response')
+          ? readRequiredSheetSync(targetPlacement, deps, 'table action target response')
           : undefined
         const sheetUpdates: LivePlayTableActionSheetUpdate[] = []
         for (const plan of nextMap.nextSheets ?? []) {
-          const sheet = await deps.sheetRepository.getByRef(plan.kind, plan.slug)
+          const sheet = deps.sheetRepository.getByRef(plan.kind, plan.slug)
           if (sheet) sheetUpdates.push(sheetUpdateFromPersisted(sheet))
         }
         persistedContext = {

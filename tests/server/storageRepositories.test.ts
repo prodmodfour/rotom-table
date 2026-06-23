@@ -176,6 +176,67 @@ describe('SQLite storage foundation', () => {
     expect(sheets.get('trainer', 'brock')).toBeNull()
   })
 
+  it('commits synchronous withTransaction callbacks normally', () => {
+    const database = openTempDatabase()
+    const maps = createSqliteMapRepository(database)
+
+    const result = database.withTransaction(() => {
+      maps.save({
+        slug: 'commit-map',
+        document: { slug: 'commit-map', revision: 1 },
+        revision: 1,
+        updatedAt: 10,
+      })
+      return 'committed'
+    })
+
+    expect(result).toBe('committed')
+    expect(maps.get('commit-map')).toMatchObject({ slug: 'commit-map', revision: 1 })
+  })
+
+  it('rejects promise-returning withTransaction callbacks and rolls back their writes', () => {
+    const database = openTempDatabase()
+    const maps = createSqliteMapRepository(database)
+
+    // @ts-expect-error Promise-returning callbacks are intentionally rejected by the transaction API.
+    expect(() => database.withTransaction(() => {
+      maps.save({
+        slug: 'async-map',
+        document: { slug: 'async-map', revision: 1 },
+        revision: 1,
+        updatedAt: 10,
+      })
+      return Promise.resolve('not allowed')
+    })).toThrow('withTransaction callbacks must be synchronous')
+
+    expect(maps.get('async-map')).toBeNull()
+
+    expect(() => database.withTransaction(() => {
+      try {
+        // @ts-expect-error Promise-returning nested callbacks are intentionally rejected too.
+        database.withTransaction(() => {
+          maps.save({
+            slug: 'nested-async-map',
+            document: { slug: 'nested-async-map', revision: 1 },
+            revision: 1,
+            updatedAt: 11,
+          })
+          return Promise.resolve('not allowed')
+        })
+      } catch {
+        maps.save({
+          slug: 'after-nested-async-map',
+          document: { slug: 'after-nested-async-map', revision: 1 },
+          revision: 1,
+          updatedAt: 12,
+        })
+      }
+    })).toThrow('withTransaction callbacks must be synchronous')
+    expect(maps.get('nested-async-map')).toBeNull()
+    expect(maps.get('after-nested-async-map')).toBeNull()
+    expect(database.withTransaction(() => 'depth-restored')).toBe('depth-restored')
+  })
+
   it('imports JSON map documents into SQLite idempotently with folders and revisions', async () => {
     const database = openTempDatabase()
     const mapsRoot = join(makeTempRoot(), 'data', 'maps')
@@ -199,13 +260,13 @@ describe('SQLite storage foundation', () => {
 
     expect(first.count).toBe(2)
     expect(second.count).toBe(2)
-    await expect(repository.getBySlug('legacy-map')).resolves.toMatchObject({
+    expect(repository.getBySlug('legacy-map')).toMatchObject({
       slug: 'legacy-map',
       folder: '',
       revision: 0,
       metadata: { note: 'old' },
     })
-    await expect(repository.getBySlug('nested-map')).resolves.toMatchObject({
+    expect(repository.getBySlug('nested-map')).toMatchObject({
       slug: 'nested-map',
       folder: 'region-one',
       revision: 7,
@@ -265,14 +326,14 @@ describe('SQLite storage foundation', () => {
         sourcePath: join(trainerRoot, 'brock.json'),
       },
     ])
-    await expect(repository.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+    expect(repository.getByRef('pokemon', 'pikachu')).toMatchObject({
       kind: 'pokemon',
       slug: 'pikachu',
       revision: 6,
       sheet: { slug: 'pikachu', nickname: 'Pika', revision: 6, updatedAt: 1_700_000_000_600 },
       updatedAt: 1_700_000_000_600,
     })
-    await expect(repository.getByRef('trainer', 'brock')).resolves.toMatchObject({
+    expect(repository.getByRef('trainer', 'brock')).toMatchObject({
       kind: 'trainer',
       slug: 'brock',
       revision: 0,
@@ -299,7 +360,7 @@ describe('SQLite storage foundation', () => {
       nextSheet: { slug: 'pikachu', nickname: 'Stale', combat: { currentHp: 1 }, updatedAt: 1_700_000_000_400 },
     })
     expect(stale).toBe('stale')
-    await expect(sheets.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+    expect(sheets.getByRef('pokemon', 'pikachu')).toMatchObject({
       revision: 3,
       sheet: { nickname: 'Pika', combat: { currentHp: 20 }, revision: 3 },
     })
@@ -312,7 +373,7 @@ describe('SQLite storage foundation', () => {
     })
 
     expect(applied).toBe('applied')
-    await expect(sheets.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+    expect(sheets.getByRef('pokemon', 'pikachu')).toMatchObject({
       revision: 4,
       updatedAt: 1_700_000_000_500,
       sheet: { slug: 'pikachu', nickname: 'Pika', combat: { currentHp: 12 }, revision: 4 },
@@ -330,7 +391,7 @@ describe('SQLite storage foundation', () => {
       nextMap: mapDocument({ name: 'Stale Overwrite', revision: 4, updatedAt: 1_700_000_000_300 }),
     })
     expect(stale).toBe('stale')
-    await expect(maps.getBySlug('training-yard')).resolves.toMatchObject({
+    expect(maps.getBySlug('training-yard')).toMatchObject({
       name: 'Training Yard',
       revision: 4,
       updatedAt: 1_700_000_000_100,
@@ -348,7 +409,7 @@ describe('SQLite storage foundation', () => {
     })
 
     expect(applied).toBe('applied')
-    await expect(maps.getBySlug('training-yard')).resolves.toMatchObject({
+    expect(maps.getBySlug('training-yard')).toMatchObject({
       name: 'Accepted Update',
       revision: 5,
       updatedAt: 1_700_000_000_500,

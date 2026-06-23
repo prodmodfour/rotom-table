@@ -33,6 +33,7 @@ import {
   playerProfileLinkedTrainerSheetsForTokenControl,
   type ServerTokenControlLinkedTrainerSheet,
 } from '../policies/playerProfileTokenControlPolicy'
+import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
@@ -40,6 +41,7 @@ import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents
 import { publishRealtime } from '../utils/realtime'
 import { readSheetFile } from '../utils/sheetStorage'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
 
 export class AttackOfOpportunityCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -73,6 +75,7 @@ interface SheetFileRecord {
 export interface AttackOfOpportunityCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
+  readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly readSheet?: (kind: SheetKind, slug: string) => SheetFileRecord | null
   readonly now?: () => number
@@ -96,6 +99,7 @@ const readDefaultSheet = (kind: SheetKind, slug: string): SheetFileRecord | null
 const actionDependencies = (dependencies: AttackOfOpportunityCommandDependencies) => ({
   commandExecutor: dependencies.commandExecutor ?? livePlayAttackOfOpportunityCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
+  database: dependencies.database ?? getRotomDatabase(),
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   readSheet: dependencies.readSheet ?? readDefaultSheet,
   now: dependencies.now ?? Date.now,
@@ -428,18 +432,21 @@ export const executeAttackOfOpportunityLivePlayCommandUseCase = async (
         patches: [metadataPatch(command, revision, map, nextMapContext)],
       }
     },
-    persist: async ({ actor, command, currentRevision, nextMap, result }) => {
+    persist: () => {
+      throw new Error('live-play attack-of-opportunity commands must persist through the accepted-result commit hook')
+    },
+    commit: ({ actor, command, currentRevision, nextMap, result, saveOpResult }) => {
       const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, nextMap.map.updatedAt ?? deps.now(), { revision: result.revision })
-      const updateResult = await deps.mapRepository.applyLivePlayUpdate({
-        slug: result.mapSlug,
+      const authoritativeMap = commitLivePlayMapUpdate({
+        database: deps.database,
+        mapRepository: deps.mapRepository,
+        mapSlug: result.mapSlug,
         expectedRevision: currentRevision,
         nextMap: persisted,
+        staleError: () => new AttackOfOpportunityCommandUseCaseError(409, `Map ${result.mapSlug} changed before the live-play command could be persisted`),
+        missingMapError: () => new AttackOfOpportunityCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play command`),
+        saveOpResult,
       })
-      if (updateResult === 'stale') {
-        throw new AttackOfOpportunityCommandUseCaseError(409, `Map ${result.mapSlug} changed before the live-play command could be persisted`)
-      }
-      const authoritativeMap = await deps.mapRepository.getBySlug(result.mapSlug)
-      if (!authoritativeMap) throw new AttackOfOpportunityCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play command`)
       persistedContext = {
         ...nextMap,
         map: authoritativeMap,

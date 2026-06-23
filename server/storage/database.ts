@@ -18,12 +18,15 @@ export interface OpenRotomDatabaseOptions extends ResolveRotomDatabasePathOption
   readonly enableWal?: boolean
 }
 
+type PromiseLikeValue = PromiseLike<unknown>
+export type SynchronousTransactionResult<T> = T extends PromiseLikeValue ? never : T
+export type SynchronousTransactionWork<T> = () => SynchronousTransactionResult<T>
+
 export interface RotomDatabase {
   readonly path: string
   readonly connection: DatabaseSync
   readonly journalMode: string | null
-  withTransaction<T>(work: () => T): T
-  withAsyncTransaction<T>(work: () => Promise<T>): Promise<T>
+  withTransaction<T>(work: SynchronousTransactionWork<T>): SynchronousTransactionResult<T>
   close(): void
 }
 
@@ -76,6 +79,7 @@ export const openRotomDatabase = (options: OpenRotomDatabaseOptions = {}): Rotom
   applyStorageMigrations(connection)
 
   let transactionDepth = 0
+  let transactionRollbackOnlyError: Error | null = null
   let closed = false
 
   const assertOpen = (): void => {
@@ -86,41 +90,60 @@ export const openRotomDatabase = (options: OpenRotomDatabaseOptions = {}): Rotom
     assertOpen()
     if (transactionDepth > 0) return false
 
-    transactionDepth += 1
     connection.exec('BEGIN IMMEDIATE')
+    transactionDepth = 1
+    transactionRollbackOnlyError = null
     return true
   }
 
   const finishTransaction = (started: boolean): void => {
     if (!started) return
-    transactionDepth -= 1
+    transactionDepth = 0
+    transactionRollbackOnlyError = null
   }
+
+  const isPromiseLike = (value: unknown): value is PromiseLikeValue => (
+    (typeof value === 'object' || typeof value === 'function')
+    && value !== null
+    && typeof (value as { readonly then?: unknown }).then === 'function'
+  )
+
+  const transactionCallbackReturnedPromiseError = (): Error => new Error(
+    'Rotom database withTransaction callbacks must be synchronous; move asynchronous work before or after the transaction',
+  )
 
   return {
     path,
     connection,
     journalMode,
-    withTransaction: <T>(work: () => T): T => {
+    withTransaction: <T>(work: SynchronousTransactionWork<T>): SynchronousTransactionResult<T> => {
       const started = beginTransaction()
+      let transactionClosed = false
       try {
         const result = work()
-        if (started) connection.exec('COMMIT')
+        if (isPromiseLike(result)) {
+          const error = transactionCallbackReturnedPromiseError()
+          if (started) {
+            connection.exec('ROLLBACK')
+            transactionClosed = true
+          } else {
+            transactionRollbackOnlyError ??= error
+          }
+          throw error
+        }
+        if (started) {
+          if (transactionRollbackOnlyError) {
+            const error = transactionRollbackOnlyError
+            connection.exec('ROLLBACK')
+            transactionClosed = true
+            throw error
+          }
+          connection.exec('COMMIT')
+          transactionClosed = true
+        }
         return result
       } catch (error) {
-        if (started) connection.exec('ROLLBACK')
-        throw error
-      } finally {
-        finishTransaction(started)
-      }
-    },
-    withAsyncTransaction: async <T>(work: () => Promise<T>): Promise<T> => {
-      const started = beginTransaction()
-      try {
-        const result = await work()
-        if (started) connection.exec('COMMIT')
-        return result
-      } catch (error) {
-        if (started) connection.exec('ROLLBACK')
+        if (started && !transactionClosed) connection.exec('ROLLBACK')
         throw error
       } finally {
         finishTransaction(started)

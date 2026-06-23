@@ -78,7 +78,7 @@ describe('map interaction mode use cases', () => {
 
   it('syncs the prepared JSON map into SQLite when switching back to live play', async () => {
     const map = mapFixture({ name: 'Prepared Arena' })
-    const saveSetupMap = vi.fn(async () => map)
+    const saveSetupMap = vi.fn(() => map)
 
     await setMapInteractionModeUseCase({
       slug: 'arena',

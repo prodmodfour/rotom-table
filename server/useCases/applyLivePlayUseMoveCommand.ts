@@ -112,7 +112,7 @@ export interface LivePlayUseMoveCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
-  readonly database?: Pick<RotomDatabase, 'withAsyncTransaction'>
+  readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
@@ -936,19 +936,19 @@ export const executeLivePlayUseMoveCommandUseCase = async (
         patches: change.patches,
       }
     },
-    persist: async () => {
+    persist: () => {
       throw new Error('live-play useMove commands must persist through the accepted-result commit hook')
     },
-    commit: async ({ currentRevision, nextMap, result, saveOpResult }) => {
+    commit: ({ currentRevision, nextMap, result, saveOpResult }) => {
       const acceptedNextMap = nextMap as AcceptedUseMoveContext
-      await deps.database.withAsyncTransaction(async () => {
+      deps.database.withTransaction(() => {
         const persisted = toPersistedMap(
           acceptedNextMap.map,
           acceptedNextMap.mapPath,
           acceptedNextMap.map.updatedAt ?? deps.now(),
           { revision: result.revision },
         )
-        const updateResult = await deps.mapRepository.applyLivePlayUpdate({
+        const updateResult = deps.mapRepository.applyLivePlayUpdate({
           slug: result.mapSlug,
           expectedRevision: currentRevision,
           nextMap: persisted,
@@ -958,7 +958,7 @@ export const executeLivePlayUseMoveCommandUseCase = async (
         }
 
         if (acceptedNextMap.nextSheet) {
-          const sheetResult = await deps.sheetRepository.applyLivePlayUpdate({
+          const sheetResult = deps.sheetRepository.applyLivePlayUpdate({
             kind: acceptedNextMap.sheet.kind,
             slug: acceptedNextMap.sheet.slug,
             expectedRevision: acceptedNextMap.sheet.revision,
@@ -971,12 +971,12 @@ export const executeLivePlayUseMoveCommandUseCase = async (
 
         saveOpResult()
 
-        const authoritativeMap = await deps.mapRepository.getBySlug(result.mapSlug)
+        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
         if (!authoritativeMap) throw new LivePlayUseMoveCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play useMove command`)
         const authoritativePlacement = authoritativeMap.placements.find((candidate) => candidate.id === acceptedNextMap.placement.id)
         if (!authoritativePlacement) throw new LivePlayUseMoveCommandUseCaseError(404, `Placement ${acceptedNextMap.placement.id} not found after live-play useMove command`)
         const authoritativeSheet = acceptedNextMap.nextSheet
-          ? await deps.sheetRepository.getByRef(acceptedNextMap.sheet.kind, acceptedNextMap.sheet.slug)
+          ? deps.sheetRepository.getByRef(acceptedNextMap.sheet.kind, acceptedNextMap.sheet.slug)
           : null
         if (acceptedNextMap.nextSheet && !authoritativeSheet) {
           throw new LivePlayUseMoveCommandUseCaseError(404, `Sheet ${acceptedNextMap.sheet.kind}/${acceptedNextMap.sheet.slug} not found after live-play useMove command`)

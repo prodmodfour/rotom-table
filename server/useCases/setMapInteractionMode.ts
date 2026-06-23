@@ -67,7 +67,7 @@ export const setMapInteractionModeUseCase = async (
         error instanceof Error ? error.message : `Map ${input.slug}.json is invalid`,
       )
     }
-    await mapRepository.saveSetupMap(map)
+    mapRepository.saveSetupMap(map)
     syncedMapForLivePlay = true
   }
 

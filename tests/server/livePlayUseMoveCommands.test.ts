@@ -99,8 +99,8 @@ const createHarness = (
     queue: createInProcessMapWriteQueue(),
   })
   const mapRepository = {
-    getBySlug: vi.fn(async (slug: string) => (slug === 'arena' ? storedMap : null)),
-    applyLivePlayUpdate: vi.fn(async (input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
+    getBySlug: vi.fn((slug: string) => (slug === 'arena' ? storedMap : null)),
+    applyLivePlayUpdate: vi.fn((input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
       if (input.slug !== 'arena' || input.expectedRevision !== storedMap.revision) return 'stale' as const
       storedMap = { ...input.nextMap, revision: input.expectedRevision + 1 }
       mapWrites.push(storedMap)
@@ -108,8 +108,8 @@ const createHarness = (
     }),
   }
   const sheetRepository = {
-    getByRef: vi.fn(async (kind: SheetKind, slug: string) => sheets.get(keyForSheet(kind, slug)) ?? null),
-    applyLivePlayUpdate: vi.fn(async (input: {
+    getByRef: vi.fn((kind: SheetKind, slug: string) => sheets.get(keyForSheet(kind, slug)) ?? null),
+    applyLivePlayUpdate: vi.fn((input: {
       kind: SheetKind
       slug: string
       expectedRevision: number
@@ -136,7 +136,7 @@ const createHarness = (
     commandExecutor: executor,
     mapRepository,
     sheetRepository,
-    database: { withAsyncTransaction: async <T>(work: () => Promise<T>) => work() },
+    database: { withTransaction: <T>(work: () => T) => work() },
     publishRealtimeEvent: vi.fn((event) => published.push(event)),
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2_000),

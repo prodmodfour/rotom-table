@@ -38,9 +38,9 @@ export interface MapRepository<TDocument = unknown> {
   list(): readonly StoredMapDocument<TDocument>[]
   save(input: SaveMapDocumentInput<TDocument>): StoredMapDocument<TDocument>
   delete(slug: string): boolean
-  getBySlug(slug: string): Promise<TabletopMap | null>
-  saveSetupMap(map: TabletopMap): Promise<TabletopMap>
-  applyLivePlayUpdate(input: ApplyLivePlayMapUpdateInput): Promise<LivePlayMapUpdateResult>
+  getBySlug(slug: string): TabletopMap | null
+  saveSetupMap(map: TabletopMap): TabletopMap
+  applyLivePlayUpdate(input: ApplyLivePlayMapUpdateInput): LivePlayMapUpdateResult
 }
 
 interface MapRow {
@@ -145,12 +145,12 @@ export const createSqliteMapRepository = <TDocument = unknown>(
     return Number(result.changes) > 0
   })
 
-  const getBySlug = async (slug: string): Promise<TabletopMap | null> => {
+  const getBySlug = (slug: string): TabletopMap | null => {
     const stored = get(slug)
     return stored ? storedDocumentToTabletopMap(stored as StoredMapDocument) : null
   }
 
-  const saveSetupMap = async (map: TabletopMap): Promise<TabletopMap> => {
+  const saveSetupMap = (map: TabletopMap): TabletopMap => {
     const normalized = normalizeTabletopMapForStorage(map, `setup map ${map.slug}`)
     const stored = save({
       slug: normalized.slug,
@@ -161,7 +161,7 @@ export const createSqliteMapRepository = <TDocument = unknown>(
     return storedDocumentToTabletopMap(stored as StoredMapDocument)
   }
 
-  const applyLivePlayUpdate = async (input: ApplyLivePlayMapUpdateInput): Promise<LivePlayMapUpdateResult> =>
+  const applyLivePlayUpdate = (input: ApplyLivePlayMapUpdateInput): LivePlayMapUpdateResult =>
     database.withTransaction(() => {
       const slug = validateSlug(input.slug, 'map slug')
       const expectedRevision = parseStoredRevision(input.expectedRevision, 'expected map revision')

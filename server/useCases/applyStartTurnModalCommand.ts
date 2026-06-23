@@ -27,12 +27,14 @@ import {
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { canAccessMapForRole } from '../policies/mapPolicy'
+import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
 import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
 
 export class StartTurnModalCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -60,6 +62,7 @@ export interface StartTurnModalLivePlayCommandResponse {
 export interface StartTurnModalCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
+  readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
   readonly rollD20?: () => number
@@ -80,6 +83,7 @@ const livePlayStartTurnModalCommandExecutor = createSqliteAuthoritativeLivePlayC
 const actionDependencies = (dependencies: StartTurnModalCommandDependencies) => ({
   commandExecutor: dependencies.commandExecutor ?? livePlayStartTurnModalCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
+  database: dependencies.database ?? getRotomDatabase(),
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
   rollD20: dependencies.rollD20 ?? (() => Math.floor(Math.random() * 20) + 1),
@@ -296,18 +300,21 @@ export const executeStartTurnModalLivePlayCommandUseCase = async (
         patches: [metadataPatch(command, revision, map, nextMapContext)],
       }
     },
-    persist: async ({ actor, command, currentRevision, nextMap, result }) => {
+    persist: () => {
+      throw new Error('live-play start-of-turn modal commands must persist through the accepted-result commit hook')
+    },
+    commit: ({ actor, command, currentRevision, nextMap, result, saveOpResult }) => {
       const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, nextMap.map.updatedAt ?? deps.now(), { revision: result.revision })
-      const updateResult = await deps.mapRepository.applyLivePlayUpdate({
-        slug: result.mapSlug,
+      const authoritativeMap = commitLivePlayMapUpdate({
+        database: deps.database,
+        mapRepository: deps.mapRepository,
+        mapSlug: result.mapSlug,
         expectedRevision: currentRevision,
         nextMap: persisted,
+        staleError: () => new StartTurnModalCommandUseCaseError(409, `Map ${result.mapSlug} changed before the live-play start-of-turn modal command could be persisted`),
+        missingMapError: () => new StartTurnModalCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play start-of-turn modal command`),
+        saveOpResult,
       })
-      if (updateResult === 'stale') {
-        throw new StartTurnModalCommandUseCaseError(409, `Map ${result.mapSlug} changed before the live-play start-of-turn modal command could be persisted`)
-      }
-      const authoritativeMap = await deps.mapRepository.getBySlug(result.mapSlug)
-      if (!authoritativeMap) throw new StartTurnModalCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play start-of-turn modal command`)
       persistedContext = {
         ...nextMap,
         map: authoritativeMap,

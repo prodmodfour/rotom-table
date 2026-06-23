@@ -133,19 +133,19 @@ describe('SQLite campaign migration script', () => {
     const maps = createSqliteMapRepository<TabletopMap>(database)
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
 
-    await expect(maps.getBySlug('training-yard')).resolves.toMatchObject({
+    expect(maps.getBySlug('training-yard')).toMatchObject({
       slug: 'training-yard',
       folder: 'region-one',
       revision: 0,
       updatedAt: 1_700_000_000_500,
     })
-    await expect(sheets.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+    expect(sheets.getByRef('pokemon', 'pikachu')).toMatchObject({
       kind: 'pokemon',
       slug: 'pikachu',
       revision: 6,
       sheet: { slug: 'pikachu', nickname: 'Pika', revision: 6, updatedAt: 1_700_000_000_600 },
     })
-    await expect(sheets.getByRef('trainer', 'brock')).resolves.toMatchObject({
+    expect(sheets.getByRef('trainer', 'brock')).toMatchObject({
       kind: 'trainer',
       slug: 'brock',
       revision: 0,

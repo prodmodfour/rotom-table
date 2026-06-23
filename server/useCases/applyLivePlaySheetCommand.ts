@@ -112,7 +112,7 @@ export interface LivePlaySheetCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
-  readonly database?: Pick<RotomDatabase, 'withAsyncTransaction'>
+  readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
@@ -839,19 +839,19 @@ export const executeLivePlaySheetCommandUseCase = async (
         patches: patchesForAcceptedSheetCommand(command, revision, map, nextContext),
       }
     },
-    persist: async () => {
+    persist: () => {
       throw new Error('live-play sheet commands must persist through the accepted-result commit hook')
     },
-    commit: async ({ currentRevision, nextMap, result, saveOpResult }) => {
+    commit: ({ currentRevision, nextMap, result, saveOpResult }) => {
       const nextSheet = nextMap.nextSheet
-      await deps.database.withAsyncTransaction(async () => {
+      deps.database.withTransaction(() => {
         const persisted = toPersistedMap(
           nextMap.map,
           nextMap.mapPath,
           nextMap.map.updatedAt ?? deps.now(),
           { revision: result.revision },
         )
-        const mapResult = await deps.mapRepository.applyLivePlayUpdate({
+        const mapResult = deps.mapRepository.applyLivePlayUpdate({
           slug: result.mapSlug,
           expectedRevision: currentRevision,
           nextMap: persisted,
@@ -861,7 +861,7 @@ export const executeLivePlaySheetCommandUseCase = async (
         }
 
         if (nextSheet) {
-          const sheetResult = await deps.sheetRepository.applyLivePlayUpdate({
+          const sheetResult = deps.sheetRepository.applyLivePlayUpdate({
             kind: nextMap.sheet.kind,
             slug: nextMap.sheet.slug,
             expectedRevision: nextMap.sheet.revision,
@@ -874,11 +874,11 @@ export const executeLivePlaySheetCommandUseCase = async (
 
         saveOpResult()
 
-        const authoritativeMap = await deps.mapRepository.getBySlug(result.mapSlug)
+        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
         if (!authoritativeMap) throw new LivePlaySheetCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play command`)
         const authoritativePlacement = authoritativeMap.placements.find((candidate) => candidate.id === nextMap.placement.id)
         if (!authoritativePlacement) throw new LivePlaySheetCommandUseCaseError(404, `Placement ${nextMap.placement.id} not found after live-play command`)
-        const authoritativeSheet = await deps.sheetRepository.getByRef(nextMap.sheet.kind, nextMap.sheet.slug)
+        const authoritativeSheet = deps.sheetRepository.getByRef(nextMap.sheet.kind, nextMap.sheet.slug)
         if (!authoritativeSheet) {
           throw new LivePlaySheetCommandUseCaseError(404, `Sheet ${nextMap.sheet.kind}/${nextMap.sheet.slug} not found after live-play command`)
         }

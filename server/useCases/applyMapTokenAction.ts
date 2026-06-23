@@ -59,7 +59,9 @@ import {
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
+import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
 
 export class MapTokenActionUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -129,6 +131,7 @@ export interface MapTokenActionDependencies {
   maxMovementLogEntries?: number
   commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
+  database?: Pick<RotomDatabase, 'withTransaction'>
   publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
 }
 
@@ -190,6 +193,7 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
   maxMovementLogEntries: dependencies.maxMovementLogEntries,
   commandExecutor: dependencies.commandExecutor ?? livePlayMapTokenCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
+  database: dependencies.database ?? getRotomDatabase(),
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
 })
 
@@ -1110,25 +1114,31 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         patches: [commandPatch(command, revision, change)],
       }
     },
-    persist: async ({ actor, command, currentRevision, nextMap, result }) => {
+    persist: () => {
+      throw new Error('live-play map token commands must persist through the accepted-result commit hook')
+    },
+    commit: ({ actor, command, currentRevision, nextMap, result, saveOpResult }) => {
       const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, deps.now(), { revision: result.revision })
-      const updateResult = await deps.mapRepository.applyLivePlayUpdate({
-        slug: result.mapSlug,
+      const placementId = placementIdFromAcceptedResult(result)
+      let placement: SheetPlacement | undefined
+      const authoritativeMap = commitLivePlayMapUpdate({
+        database: deps.database,
+        mapRepository: deps.mapRepository,
+        mapSlug: result.mapSlug,
         expectedRevision: currentRevision,
         nextMap: persisted,
+        staleError: () => new MapTokenActionUseCaseError(409, `Map ${result.mapSlug} changed before the live-play command could be persisted`),
+        missingMapError: () => new MapTokenActionUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play command`),
+        saveOpResult,
+        verify: (authoritativeMap) => {
+          placement = placementId
+            ? authoritativeMap.placements.find((candidate) => candidate.id === placementId) ?? placementFromPlacementPatch(result)
+            : placementFromPlacementPatch(result)
+          if (!placement && command.type !== LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN) {
+            throw new MapTokenActionUseCaseError(404, 'Token command applied but persisted placement was not found')
+          }
+        },
       })
-      if (updateResult === 'stale') {
-        throw new MapTokenActionUseCaseError(409, `Map ${result.mapSlug} changed before the live-play command could be persisted`)
-      }
-      const storedMap = await deps.mapRepository.getBySlug(result.mapSlug)
-      const authoritativeMap = storedMap ?? persisted
-      const placementId = placementIdFromAcceptedResult(result)
-      const placement = placementId
-        ? authoritativeMap.placements.find((candidate) => candidate.id === placementId) ?? placementFromPlacementPatch(result)
-        : placementFromPlacementPatch(result)
-      if (!placement && command.type !== LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN) {
-        throw new MapTokenActionUseCaseError(404, 'Token command applied but persisted placement was not found')
-      }
       persistedContext = {
         mapPath: nextMap.mapPath,
         relativePath: nextMap.relativePath,

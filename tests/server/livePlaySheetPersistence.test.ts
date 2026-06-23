@@ -139,6 +139,8 @@ const executeHpCommand = async (
     readonly sheets: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
     readonly ops: ReturnType<typeof createSqliteLivePlayOpRepository>
     readonly failAfterWrites?: boolean
+    readonly failAfterOpResult?: boolean
+    readonly publish?: (result: unknown) => void
   },
 ) => {
   const executor = createExecutor(input.database, input.ops)
@@ -187,16 +189,16 @@ const executeHpCommand = async (
     persist: () => {
       throw new Error('commit hook should handle persistence')
     },
-    commit: async ({ currentRevision, nextMap, result, saveOpResult }) => {
-      await input.database.withAsyncTransaction(async () => {
-        const mapResult = await input.maps.applyLivePlayUpdate({
+    commit: ({ currentRevision, nextMap, result, saveOpResult }) => {
+      input.database.withTransaction(() => {
+        const mapResult = input.maps.applyLivePlayUpdate({
           slug: result.mapSlug,
           expectedRevision: currentRevision,
           nextMap: nextMap.map,
         })
         if (mapResult === 'stale') throw new Error('map stale')
         if (!nextMap.nextSheet) throw new Error('next sheet missing')
-        const sheetResult = await input.sheets.applyLivePlayUpdate({
+        const sheetResult = input.sheets.applyLivePlayUpdate({
           kind: nextMap.sheet.kind,
           slug: nextMap.sheet.slug,
           expectedRevision: nextMap.sheet.revision,
@@ -205,7 +207,11 @@ const executeHpCommand = async (
         if (sheetResult === 'stale') throw new Error('sheet stale')
         if (input.failAfterWrites) throw new Error('forced commit failure')
         saveOpResult()
+        if (input.failAfterOpResult) throw new Error('forced commit failure')
       })
+    },
+    publish: ({ result }) => {
+      input.publish?.(result)
     },
   })
 }
@@ -219,11 +225,11 @@ describe('live-play sheet persistence transactions', () => {
     const result = await executeHpCommand({ command, database, maps, sheets, ops })
 
     expect(result).toMatchObject({ ok: true, previousRevision: 7, revision: 8 })
-    await expect(maps.getBySlug('arena')).resolves.toMatchObject({
+    expect(maps.getBySlug('arena')).toMatchObject({
       revision: 8,
       metadata: { lastHpCommand: command.opId },
     })
-    await expect(sheets.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+    expect(sheets.getByRef('pokemon', 'pikachu')).toMatchObject({
       revision: 3,
       sheet: { combat: { currentHp: 12 }, revision: 3 },
     })
@@ -240,18 +246,80 @@ describe('live-play sheet persistence transactions', () => {
     const { maps, sheets, ops } = await setupRepositories(database)
     const command = hpCommand({ opId: 'op_sheetcmd002' })
 
-    const result = await executeHpCommand({ command, database, maps, sheets, ops, failAfterWrites: true })
+    const published: unknown[] = []
+    const result = await executeHpCommand({
+      command,
+      database,
+      maps,
+      sheets,
+      ops,
+      failAfterOpResult: true,
+      publish: (event) => published.push(event),
+    })
 
     expect(result).toMatchObject({ ok: false, reason: 'persistence-failed', currentRevision: 7 })
-    await expect(maps.getBySlug('arena')).resolves.toMatchObject({
+    expect(maps.getBySlug('arena')).toMatchObject({
       revision: 7,
       metadata: {},
     })
-    await expect(sheets.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+    expect(sheets.getByRef('pokemon', 'pikachu')).toMatchObject({
       revision: 2,
       sheet: { combat: { currentHp: 20 }, revision: 2 },
     })
+    expect(published).toEqual([])
     expect(ops.getStoredOpRecord('arena', command.opId)).toBeNull()
+  })
+
+  it('does not share rollback fate between concurrent commands for different maps', async () => {
+    const database = openTempDatabase()
+    const { maps, sheets, ops } = await setupRepositories(database)
+    maps.saveSetupMap(baseMap({
+      slug: 'dojo',
+      name: 'Dojo',
+      placements: [
+        { id: 'token-1', sheetKind: 'pokemon', sheetSlug: 'eevee', position: { x: 2, y: 0, z: 2 } },
+      ],
+    }))
+    sheets.saveSetupSheet('pokemon', 'eevee', {
+      slug: 'eevee',
+      nickname: 'Eon',
+      combat: { currentHp: 18 },
+      revision: 2,
+      updatedAt: 1_700_000_000_300,
+    })
+
+    const successCommand = hpCommand({ opId: 'op_sheetcmd_success' })
+    const failingCommand = hpCommand({
+      opId: 'op_sheetcmd_fail',
+      mapSlug: 'dojo',
+      scopes: [
+        { kind: 'token', placementId: 'token-1', field: 'hp' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'eevee', field: 'combat.currentHp' },
+      ],
+    })
+
+    const [success, failure] = await Promise.all([
+      executeHpCommand({ command: successCommand, database, maps, sheets, ops }),
+      executeHpCommand({ command: failingCommand, database, maps, sheets, ops, failAfterWrites: true }),
+    ])
+
+    expect(success).toMatchObject({ ok: true, mapSlug: 'arena', previousRevision: 7, revision: 8 })
+    expect(failure).toMatchObject({ ok: false, mapSlug: 'dojo', reason: 'persistence-failed', currentRevision: 7 })
+    expect(maps.getBySlug('arena')).toMatchObject({
+      revision: 8,
+      metadata: { lastHpCommand: successCommand.opId },
+    })
+    expect(sheets.getByRef('pokemon', 'pikachu')).toMatchObject({
+      revision: 3,
+      sheet: { combat: { currentHp: 12 }, revision: 3 },
+    })
+    expect(ops.getStoredOpRecord('arena', successCommand.opId)).toMatchObject({ result: success })
+    expect(maps.getBySlug('dojo')).toMatchObject({ revision: 7, metadata: {} })
+    expect(sheets.getByRef('pokemon', 'eevee')).toMatchObject({
+      revision: 2,
+      sheet: { combat: { currentHp: 18 }, revision: 2 },
+    })
+    expect(ops.getStoredOpRecord('dojo', failingCommand.opId)).toBeNull()
   })
 
   it('returns duplicate op results without reapplying sheet updates', async () => {
@@ -263,7 +331,7 @@ describe('live-play sheet persistence transactions', () => {
     const second = await executeHpCommand({ command, database, maps, sheets, ops })
 
     expect(second).toEqual(first)
-    await expect(sheets.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+    expect(sheets.getByRef('pokemon', 'pikachu')).toMatchObject({
       revision: 3,
       sheet: { combat: { currentHp: 12 }, revision: 3 },
     })
@@ -278,10 +346,10 @@ describe('live-play sheet persistence transactions', () => {
     const result = await executeHpCommand({ command, database, maps, sheets, ops })
 
     expect(result).toMatchObject({ ok: false, reason: 'stale-revision', currentRevision: 7 })
-    await expect(sheets.getByRef('pokemon', 'pikachu')).resolves.toMatchObject({
+    expect(sheets.getByRef('pokemon', 'pikachu')).toMatchObject({
       revision: 2,
       sheet: { combat: { currentHp: 20 }, revision: 2 },
     })
-    await expect(maps.getBySlug('arena')).resolves.toMatchObject({ revision: 7 })
+    expect(maps.getBySlug('arena')).toMatchObject({ revision: 7 })
   })
 })

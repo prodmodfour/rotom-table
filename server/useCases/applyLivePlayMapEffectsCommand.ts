@@ -53,12 +53,14 @@ import {
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
+import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { campaignPathLabel } from '../utils/campaignPaths'
 import { MAPS_ROOT } from '../utils/mapPaths'
 import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
+import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
 
 export class LivePlayMapEffectsCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
@@ -120,6 +122,7 @@ export interface LivePlayMapEffectsCommandResponse {
 export interface LivePlayMapEffectsCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
+  readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
@@ -180,6 +183,7 @@ const fieldEffectCommandTypes = new Set<string>([
 const actionDependencies = (dependencies: LivePlayMapEffectsCommandDependencies) => ({
   commandExecutor: dependencies.commandExecutor ?? livePlayMapEffectsCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
+  database: dependencies.database ?? getRotomDatabase(),
   publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
   relativePath: dependencies.relativePath ?? campaignPathLabel,
@@ -958,20 +962,21 @@ export const executeLivePlayMapEffectsCommandUseCase = async (
         patches: [commandPatch(command, revision, change)],
       }
     },
-    persist: async ({ actor, currentRevision, nextMap, result }) => {
+    persist: () => {
+      throw new Error('live-play map-effects commands must persist through the accepted-result commit hook')
+    },
+    commit: ({ actor, currentRevision, nextMap, result, saveOpResult }) => {
       const persisted = toPersistedMap(nextMap.map, nextMap.mapPath, deps.now(), { revision: result.revision })
-      const updateResult = await deps.mapRepository.applyLivePlayUpdate({
-        slug: result.mapSlug,
+      const authoritativeMap = commitLivePlayMapUpdate({
+        database: deps.database,
+        mapRepository: deps.mapRepository,
+        mapSlug: result.mapSlug,
         expectedRevision: currentRevision,
         nextMap: persisted,
+        staleError: () => new LivePlayMapEffectsCommandUseCaseError(409, `Map ${result.mapSlug} changed before the live-play map-effects command could be persisted`),
+        missingMapError: () => new LivePlayMapEffectsCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play map-effects command`),
+        saveOpResult,
       })
-      if (updateResult === 'stale') {
-        throw new LivePlayMapEffectsCommandUseCaseError(409, `Map ${result.mapSlug} changed before the live-play map-effects command could be persisted`)
-      }
-      const authoritativeMap = await deps.mapRepository.getBySlug(result.mapSlug)
-      if (!authoritativeMap) {
-        throw new LivePlayMapEffectsCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play map-effects command`)
-      }
       persistedContext = {
         mapPath: nextMap.mapPath,
         relativePath: nextMap.relativePath,

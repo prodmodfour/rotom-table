@@ -154,8 +154,8 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     queue: createInProcessMapWriteQueue(),
   })
   const mapRepository = {
-    getBySlug: vi.fn(async (slug: string) => (slug === 'arena' ? storedMap : null)),
-    applyLivePlayUpdate: vi.fn(async (input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
+    getBySlug: vi.fn((slug: string) => (slug === 'arena' ? storedMap : null)),
+    applyLivePlayUpdate: vi.fn((input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
       if (input.slug !== 'arena' || input.expectedRevision !== storedMap.revision) return 'stale' as const
       storedMap = {
         ...input.nextMap,
@@ -167,6 +167,7 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   }
   const deps = {
     mapRepository,
+    database: { withTransaction: <T>(work: () => T) => work() },
     readSheet: vi.fn((kind: string, slug: string) => ({
       sheet: kind === 'pokemon'
         ? { slug, nickname: 'Bolt', species: 'Pikachu' }
@@ -664,6 +665,7 @@ describe('live-play map token commands', () => {
         expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
       }, {
         mapRepository,
+        database,
         commandExecutor: executor,
         readSheet: vi.fn((kind: string, slug: string) => ({
           sheet: kind === 'pokemon'

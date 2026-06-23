@@ -68,7 +68,7 @@ export const importMapsFromJson = async (
 
   for (const path of listJsonMapImportFiles(mapsRoot, listFiles)) {
     const map = normalizeImportedMap(path, mapsRoot, readFile)
-    const saved = await repository.saveSetupMap(map)
+    const saved = repository.saveSetupMap(map)
     imported.push({
       slug: saved.slug,
       folder: saved.folder ?? '',

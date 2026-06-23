@@ -49,9 +49,9 @@ export interface SheetRepository<TDocument = unknown> {
   list(kind?: SheetKind): readonly StoredSheetDocument<TDocument>[]
   save(input: SaveSheetDocumentInput<TDocument>): StoredSheetDocument<TDocument>
   delete(kind: SheetKind, slug: string): boolean
-  getByRef(kind: SheetKind, slug: string): Promise<PersistedSheet | null>
-  saveSetupSheet(kind: SheetKind, slug: string, sheet: Record<string, unknown>): Promise<PersistedSheet>
-  applyLivePlayUpdate(input: ApplyLivePlaySheetUpdateInput): Promise<LivePlaySheetUpdateResult>
+  getByRef(kind: SheetKind, slug: string): PersistedSheet | null
+  saveSetupSheet(kind: SheetKind, slug: string, sheet: Record<string, unknown>): PersistedSheet
+  applyLivePlayUpdate(input: ApplyLivePlaySheetUpdateInput): LivePlaySheetUpdateResult
 }
 
 interface SheetRow {
@@ -191,16 +191,16 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     return Number(result.changes) > 0
   })
 
-  const getByRef = async (kind: SheetKind, slug: string): Promise<PersistedSheet | null> => {
+  const getByRef = (kind: SheetKind, slug: string): PersistedSheet | null => {
     const stored = get(kind, slug)
     return stored ? storedDocumentToPersistedSheet(stored as StoredSheetDocument) : null
   }
 
-  const saveSetupSheet = async (
+  const saveSetupSheet = (
     kind: SheetKind,
     slug: string,
     sheet: Record<string, unknown>,
-  ): Promise<PersistedSheet> => {
+  ): PersistedSheet => {
     const normalizedKind = parseSheetKind(kind)
     const normalizedSlug = validateSlug(slug, 'sheet slug')
     const document = normalizeSheetForStorage(normalizedKind, normalizedSlug, sheet)
@@ -216,7 +216,7 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     return storedDocumentToPersistedSheet(stored as StoredSheetDocument)
   }
 
-  const applyLivePlayUpdate = async (input: ApplyLivePlaySheetUpdateInput): Promise<LivePlaySheetUpdateResult> =>
+  const applyLivePlayUpdate = (input: ApplyLivePlaySheetUpdateInput): LivePlaySheetUpdateResult =>
     database.withTransaction(() => {
       const kind = parseSheetKind(input.kind)
       const slug = validateSlug(input.slug, 'sheet slug')

@@ -91,6 +91,7 @@ const createDeps = (options: { map?: TabletopMap; now?: number } = {}) => {
     deps: {
       commandExecutor,
       mapRepository,
+      database,
       now: vi.fn(() => options.now ?? 5000),
       publishRealtimeEvent: vi.fn((event) => events.push(event)),
       relativePath: vi.fn((path: string) => path.replace(/.*data\//, 'data/')),

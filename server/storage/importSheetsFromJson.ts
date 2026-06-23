@@ -100,7 +100,7 @@ export const importSheetsFromJson = async (
     const root = roots[kind]
     for (const path of listJsonSheetImportFiles(root, listFiles)) {
       const normalized = normalizeImportedSheet(kind, path, readFile, updatedAtForFile)
-      const saved = await repository.saveSetupSheet(kind, normalized.slug, normalized.sheet)
+      const saved = repository.saveSetupSheet(kind, normalized.slug, normalized.sheet)
       imported.push({
         kind,
         slug: saved.slug,

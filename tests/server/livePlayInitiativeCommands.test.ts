@@ -112,8 +112,8 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     queue: createInProcessMapWriteQueue(),
   })
   const mapRepository = {
-    getBySlug: vi.fn(async (slug: string) => (slug === 'arena' ? storedMap : null)),
-    applyLivePlayUpdate: vi.fn(async (input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
+    getBySlug: vi.fn((slug: string) => (slug === 'arena' ? storedMap : null)),
+    applyLivePlayUpdate: vi.fn((input: { slug: string; expectedRevision: number; nextMap: TabletopMap }) => {
       if (input.slug !== 'arena' || input.expectedRevision !== storedMap.revision) return 'stale' as const
       storedMap = {
         ...input.nextMap,
@@ -126,6 +126,7 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   const deps = {
     commandExecutor: executor,
     mapRepository,
+    database: { withTransaction: <T>(work: () => T) => work() },
     publishRealtimeEvent: vi.fn((event) => published.push(event)),
     readSheet: vi.fn((_kind: 'pokemon' | 'trainer', _slug: string): { path: string; sheet: Record<string, unknown> } | null => null),
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
