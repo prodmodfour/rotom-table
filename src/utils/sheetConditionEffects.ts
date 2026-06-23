@@ -1,3 +1,4 @@
+import { conditionSaveDcText, conditionSaveThresholdText } from '#shared/conditionAutomation'
 import { applyCombatStageToStat } from '~/utils/combatStageStats'
 import { clampCombatStage } from '~/utils/combatStages'
 import { computeEvasionTotal, computeStatEvasion } from '~/utils/evasion'
@@ -408,8 +409,8 @@ export const describeSheetConditionEffects = (
       id: 'paralysis-initiative',
       label: 'Paralysis',
       description: hasQuickFeetAbility(options.abilities)
-        ? 'Quick Feet prevents Initiative from being halved. On a failed 11+ start-of-turn save: Standard or Shift only, Vulnerable, and no attacks of opportunity for 1 full round.'
-        : 'Initiative is halved. On a failed 11+ start-of-turn save: Standard or Shift only, Vulnerable, and no attacks of opportunity for 1 full round.',
+        ? `Quick Feet prevents Initiative from being halved. On a failed ${conditionSaveThresholdText('Paralysis')} start-of-turn save: Standard or Shift only, Vulnerable, and no attacks of opportunity for 1 full round.`
+        : `Initiative is halved. On a failed ${conditionSaveThresholdText('Paralysis')} start-of-turn save: Standard or Shift only, Vulnerable, and no attacks of opportunity for 1 full round.`,
     })
   }
 
@@ -417,7 +418,7 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'frozen-actions-evasion',
       label: 'Frozen',
-      description: 'Cannot act and applies no Evasion. End-of-turn save DC 16; Fire types use DC 11.',
+      description: `Cannot act and applies no Evasion. End-of-turn save ${conditionSaveDcText('Frozen')}; Fire types use DC 11.`,
     })
   }
 
@@ -425,7 +426,7 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'sleep-actions-evasion',
       label: 'Sleep',
-      description: 'Applies no Evasion and cannot act except Free/Swift actions that cure Sleep. End-of-turn save DC 16.',
+      description: `Applies no Evasion and cannot act except Free/Swift actions that cure Sleep. End-of-turn save ${conditionSaveDcText('Sleep')}.`,
     })
   }
 
@@ -472,7 +473,7 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'confused-attacks',
       label: 'Confused',
-      description: 'Cannot make attacks of opportunity. Attacks risk self-damage on 1 on 1d2; end-of-turn save DC 16.',
+      description: `Cannot make attacks of opportunity. Attacks risk self-damage on 1 on 1d2; end-of-turn save ${conditionSaveDcText('Confused')}.`,
     })
   }
 
@@ -522,7 +523,7 @@ export const describeSheetConditionEffects = (
     effects.push({
       id: 'rage-actions',
       label: conditionDisplayName('Rage'),
-      description: 'Must use a damaging Physical or Special Move or Struggle Attack. End-of-turn save DC 15.',
+      description: `Must use a damaging Physical or Special Move or Struggle Attack. End-of-turn save ${conditionSaveDcText('Rage')}.`,
     })
   }
 

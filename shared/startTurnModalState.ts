@@ -1,3 +1,5 @@
+import { conditionSaveDc } from './conditionAutomation'
+
 export const START_TURN_MODAL_METADATA_KEY = 'startTurnModal' as const
 export const START_TURN_MODAL_STATE_SCHEMA_VERSION = 2 as const
 
@@ -96,28 +98,7 @@ const isConditionResolutionAction = (value: unknown): value is StartTurnModalCon
   START_TURN_MODAL_CONDITION_RESOLUTION_ACTIONS.includes(value as StartTurnModalConditionResolutionAction)
 )
 
-const CONDITION_SAVE_DCS: Readonly<Record<string, number>> = {
-  Paralysis: 11,
-  Frozen: 16,
-  Sleep: 16,
-  Rage: 15,
-  Infatuation: 16,
-  Confused: 16,
-}
-
-const CONDITION_DETAIL_SEPARATOR_RE = /\s*(?::|：|[-–—])\s*.+$/
-const CONDITION_DETAIL_PAREN_RE = /\s*\(.+\)\s*$/
-
-const conditionSaveLookupName = (condition: string): string => (
-  condition
-    .trim()
-    .replace(CONDITION_DETAIL_SEPARATOR_RE, '')
-    .replace(CONDITION_DETAIL_PAREN_RE, '')
-)
-
-export const startTurnModalConditionSaveDc = (condition: string): number | null => (
-  CONDITION_SAVE_DCS[conditionSaveLookupName(condition)] ?? null
-)
+export const startTurnModalConditionSaveDc = conditionSaveDc
 
 const randomD20 = (): number => Math.floor(Math.random() * 20) + 1
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { conditionSaveAutomationRule, conditionSaveDc } from '#shared/conditionAutomation'
 import {
   applyStartTurnModalStateUpdate,
   normalizeStartTurnModalStateUpdatePayload,
@@ -137,9 +138,10 @@ describe('startTurnModalState', () => {
     })).toBeNull()
   })
 
-  it('knows common condition save DCs', () => {
+  it('uses shared condition save automation rules', () => {
+    expect(startTurnModalConditionSaveDc('Paralysis')).toBe(conditionSaveDc('Paralysis'))
     expect(startTurnModalConditionSaveDc('Paralysis')).toBe(11)
-    expect(startTurnModalConditionSaveDc('Infatuation: Eevee')).toBe(16)
+    expect(conditionSaveAutomationRule('Infatuation: Eevee')).toMatchObject({ condition: 'Infatuation', dc: 16 })
     expect(startTurnModalConditionSaveDc('Burned')).toBeNull()
   })
 })
