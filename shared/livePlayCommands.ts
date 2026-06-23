@@ -14,6 +14,7 @@ import type {
 } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { AttackOfOpportunityStateUpdatePayload } from './attackOfOpportunityState'
+import type { StartTurnModalStateUpdatePayload } from './startTurnModalState'
 
 type Brand<TValue, TName extends string> = TValue & { readonly __brand: TName }
 
@@ -54,6 +55,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   DELETE_TOKEN: 'deleteToken',
   SET_SCENE: 'setScene',
   UPDATE_ATTACK_OF_OPPORTUNITY: 'updateAttackOfOpportunity',
+  UPDATE_START_TURN_MODAL: 'updateStartTurnModal',
 } as const
 
 export type LivePlayCommandType = (typeof LIVE_PLAY_COMMAND_TYPES)[keyof typeof LIVE_PLAY_COMMAND_TYPES]
@@ -84,6 +86,7 @@ export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
   LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
   LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
+  LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL,
 ] as const satisfies readonly LivePlayCommandType[]
 
 export const LIVE_PLAY_PATCH_TYPES = {
@@ -489,6 +492,12 @@ export type RemoveTerrainVoxelLivePlayCommand = LivePlayCommandEnvelope<
 export type UpdateAttackOfOpportunityLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
   AttackOfOpportunityStateUpdatePayload,
+  LivePlayMapScope
+>
+
+export type UpdateStartTurnModalLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL,
+  StartTurnModalStateUpdatePayload,
   LivePlayMapScope
 >
 

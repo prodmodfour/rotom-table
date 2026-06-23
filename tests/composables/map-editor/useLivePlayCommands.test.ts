@@ -262,6 +262,40 @@ describe('useLivePlayCommands', () => {
     }))
   })
 
+  it('posts live-play start-of-turn modal updates through the command dispatcher', async () => {
+    const map = mapFixture()
+    const mapRevision = ref(4)
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_serverturn01',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision,
+    })
+    const payload = { action: 'dismiss' as const, activeId: 'token-pikachu', round: 2 }
+    const result = await actions.updateStartTurnModal(payload)
+
+    expect(result.dispatched).toBe(true)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.updateStartTurnModal, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL,
+      scopes: [{ kind: 'map', lane: 'metadata' }],
+      payload,
+      clientId: 'ssr',
+    }))
+  })
+
   it('posts live-play delete commands through the command dispatcher', async () => {
     const map = { ...mapFixture(), placements: [] }
     const mapRevision = ref(4)

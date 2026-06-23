@@ -44,6 +44,7 @@ import { getErrorMessage } from '~/utils/errorMessages'
 import { useApiClient } from '~/composables/useApiClient'
 import type { AttackOfOpportunityStateUpdatePayload } from '#shared/attackOfOpportunityState'
 import type { PlayerProfileId } from '#shared/playerProfiles'
+import type { StartTurnModalStateUpdatePayload } from '#shared/startTurnModalState'
 import type { GridAnchor, MapHazardV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 
@@ -179,6 +180,7 @@ export interface UseLivePlayCommandsReturn {
   }) => Promise<LivePlayCommandDispatchResult>
   setScene: (payload: SetScenePayload) => Promise<LivePlayCommandDispatchResult>
   updateAttackOfOpportunity: (payload: AttackOfOpportunityStateUpdatePayload) => Promise<LivePlayCommandDispatchResult>
+  updateStartTurnModal: (payload: StartTurnModalStateUpdatePayload) => Promise<LivePlayCommandDispatchResult>
 }
 
 type LivePlayClientCommandType =
@@ -207,6 +209,7 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_SCENE
   | typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY
+  | typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL
 
 type LivePlayTokenCommandPayload =
   | MoveTokenPayload
@@ -239,6 +242,7 @@ type LivePlayClientCommandPayload =
   | LivePlayMapEffectsCommandPayload
   | SetScenePayload
   | AttackOfOpportunityStateUpdatePayload
+  | StartTurnModalStateUpdatePayload
   | Record<string, never>
 
 const isDuplicateResult = (response: LivePlayCommandResponse): response is LivePlayCommandDuplicate & LivePlayCommandResponse => (
@@ -768,6 +772,15 @@ export const useLivePlayCommands = (
     ),
   )
 
+  const updateStartTurnModal: UseLivePlayCommandsReturn['updateStartTurnModal'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.updateStartTurnModal,
+    commandBody(
+      LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL,
+      payload,
+      [mapScope('metadata')],
+    ),
+  )
+
   return {
     status,
     lastError,
@@ -797,5 +810,6 @@ export const useLivePlayCommands = (
     useOrder,
     setScene,
     updateAttackOfOpportunity,
+    updateStartTurnModal,
   }
 }

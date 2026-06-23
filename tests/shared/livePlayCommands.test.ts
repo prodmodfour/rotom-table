@@ -142,6 +142,7 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('sendOutPokemon')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('deleteToken')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setScene')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('updateStartTurnModal')
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayCommandType('teleportToken')).toBe(false)
     expect(parseLivePlayCommandType('useMove')).toBe('useMove')

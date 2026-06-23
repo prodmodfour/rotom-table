@@ -8,6 +8,7 @@ import MapNavigationRail from '~/components/map/MapNavigationRail.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
 import PokeballCaptureResultModal from '~/components/map/PokeballCaptureResultModal.vue'
 import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
+import StartTurnModal from '~/components/map/StartTurnModal.vue'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
@@ -46,6 +47,7 @@ import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActi
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
+import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import {
   useAttackOfOpportunityPanel,
@@ -775,6 +777,26 @@ const initiativeControlsEnabled = computed(() => (
     || livePlayConnectionState.value === 'ready'
   )
 ))
+
+const {
+  activeStartTurnModal,
+  startTurnModalBusy,
+  closeStartTurnModal,
+} = useStartTurnModal({
+  map,
+  canViewMap,
+  mapInPrepareMode,
+  activeInitiativeId,
+  initiativeRound,
+  sortedInitiativeRows,
+  placementById,
+  isGm,
+  livePlayReady: computed(() => livePlayConnectionState.value === 'ready'),
+  commandSaving: computed(() => livePlayCommands.status.value === 'saving'),
+  dismissTurn: (payload) => {
+    void livePlayCommands.updateStartTurnModal(payload)
+  },
+})
 
 const canManageScene = computed(() => (
   isGm.value
@@ -1641,6 +1663,18 @@ useMapDimensionReconciliation({
     </template>
 
     <template #modals>
+      <StartTurnModal
+        v-if="activeStartTurnModal"
+        :character-name="activeStartTurnModal.characterName"
+        :character-meta="activeStartTurnModal.characterMeta"
+        :profile-url="activeStartTurnModal.profileUrl"
+        :accent-color="activeStartTurnModal.accentColor"
+        :round="activeStartTurnModal.round"
+        :can-manage="isGm"
+        :busy="startTurnModalBusy"
+        @close="closeStartTurnModal"
+      />
+
       <PokeballCaptureResultModal
         v-if="displayedPokeballCaptureResult"
         :key="displayedPokeballCaptureResult.id"
