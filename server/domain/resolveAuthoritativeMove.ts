@@ -2,6 +2,7 @@ import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
 import { resolveCanonicalMoveEntryForPlacement } from '~/utils/authoritativeMoveEntries'
+import { moveUsageKey } from '~/utils/moveUsage'
 import {
   isSeamlessAreaConfirmationScript,
   isSeamlessSelfMoveScript,
@@ -66,6 +67,7 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'move-absent'
   | 'move-condition-blocked'
   | 'move-usage-unavailable'
+  | 'move-usage-key-invalid'
   | 'target-branch-required'
   | 'target-branch-invalid'
   | 'target-branch-unexpected'
@@ -140,6 +142,7 @@ export interface AuthoritativeMoveResolution {
   readonly actorPlacementId: string
   readonly moveName: string
   readonly canonicalMoveName: string
+  readonly moveKey: string
   readonly frequency: string | null
   readonly damageFormula: string | null
   readonly targetBranchId?: string
@@ -682,6 +685,7 @@ const resolveSelfMove = (options: {
   readonly frequency: string | null
   readonly damageFormula: string | null
   readonly canonicalMoveName: string
+  readonly moveKey: string
   readonly targetBranchId?: string
   readonly random: () => number
 }): AuthoritativeMoveResolution => {
@@ -698,6 +702,7 @@ const resolveSelfMove = (options: {
     actorPlacementId: options.actorPlacement.id,
     moveName: options.script.moveName,
     canonicalMoveName: options.canonicalMoveName,
+    moveKey: options.moveKey,
     frequency: options.frequency,
     damageFormula: options.damageFormula,
     ...(options.targetBranchId ? { targetBranchId: options.targetBranchId } : {}),
@@ -717,6 +722,7 @@ const resolveSingleTargetMove = (options: {
   readonly frequency: string | null
   readonly damageFormula: string | null
   readonly canonicalMoveName: string
+  readonly moveKey: string
   readonly targetBranchId?: string
   readonly random: () => number
   readonly idFactory: () => string
@@ -759,6 +765,7 @@ const resolveSingleTargetMove = (options: {
       actorPlacementId: options.actorPlacement.id,
       moveName: options.script.moveName,
       canonicalMoveName: options.canonicalMoveName,
+      moveKey: options.moveKey,
       frequency: options.frequency,
       damageFormula: options.damageFormula,
       ...(options.targetBranchId ? { targetBranchId: options.targetBranchId } : {}),
@@ -777,6 +784,7 @@ const resolveSingleTargetMove = (options: {
     actorPlacementId: options.actorPlacement.id,
     moveName: options.script.moveName,
     canonicalMoveName: options.canonicalMoveName,
+    moveKey: options.moveKey,
     frequency: options.frequency,
     damageFormula: options.damageFormula,
     ...(options.targetBranchId ? { targetBranchId: options.targetBranchId } : {}),
@@ -798,6 +806,7 @@ const resolveTargetCountMove = (options: {
   readonly frequency: string | null
   readonly damageFormula: string | null
   readonly canonicalMoveName: string
+  readonly moveKey: string
   readonly targetBranchId?: string
   readonly random: () => number
 }): AuthoritativeMoveResolution => {
@@ -856,6 +865,7 @@ const resolveTargetCountMove = (options: {
     actorPlacementId: options.actorPlacement.id,
     moveName: options.script.moveName,
     canonicalMoveName: options.canonicalMoveName,
+    moveKey: options.moveKey,
     frequency: options.frequency,
     damageFormula: options.damageFormula,
     ...(options.targetBranchId ? { targetBranchId: options.targetBranchId } : {}),
@@ -876,6 +886,7 @@ const resolveAreaMove = (options: {
   readonly frequency: string | null
   readonly damageFormula: string | null
   readonly canonicalMoveName: string
+  readonly moveKey: string
   readonly targetBranchId?: string
   readonly random: () => number
 }): AuthoritativeMoveResolution => {
@@ -928,6 +939,7 @@ const resolveAreaMove = (options: {
     actorPlacementId: options.actorPlacement.id,
     moveName: confirmedScript.moveName,
     canonicalMoveName: options.canonicalMoveName,
+    moveKey: options.moveKey,
     frequency: options.frequency,
     damageFormula: options.damageFormula,
     ...(options.targetBranchId ? { targetBranchId: options.targetBranchId } : {}),
@@ -986,6 +998,10 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
     baseScript: entry.script,
     targetBranchId: input.intent.targetBranchId,
   })
+  const resolvedMoveKey = moveUsageKey(entry.canonicalMoveName)
+  if (!resolvedMoveKey) {
+    fail('invalid', 'move-usage-key-invalid', `${entry.canonicalMoveName} did not produce a valid move usage key.`)
+  }
   const random = input.random ?? Math.random
   const idFactory = createFeedbackIdFactory(input, random)
 
@@ -998,6 +1014,7 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       frequency: entry.frequency,
       damageFormula: entry.damageFormula,
       canonicalMoveName: entry.canonicalMoveName,
+      moveKey: resolvedMoveKey,
       targetBranchId,
       random,
     })
@@ -1014,6 +1031,7 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       frequency: entry.frequency,
       damageFormula: entry.damageFormula,
       canonicalMoveName: entry.canonicalMoveName,
+      moveKey: resolvedMoveKey,
       targetBranchId,
       random,
       idFactory,
@@ -1031,6 +1049,7 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       frequency: entry.frequency,
       damageFormula: entry.damageFormula,
       canonicalMoveName: entry.canonicalMoveName,
+      moveKey: resolvedMoveKey,
       targetBranchId,
       random,
     })
@@ -1047,6 +1066,7 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
       frequency: entry.frequency,
       damageFormula: entry.damageFormula,
       canonicalMoveName: entry.canonicalMoveName,
+      moveKey: resolvedMoveKey,
       targetBranchId,
       random,
     })

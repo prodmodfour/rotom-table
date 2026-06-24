@@ -6,6 +6,7 @@ import {
   normalizeMapHazardKind,
 } from '~/utils/mapHazardDefinitions'
 import {
+  applyMapHazardPlacement,
   filterMapHazardsInBounds,
   mapHazardCellKey,
   mapHazardKey,
@@ -86,5 +87,54 @@ describe('map hazard normalization', () => {
     expect(filterMapHazardsInBounds(hazards, { x: 2, y: 2, z: 2 })).toEqual([
       { kind: 'spikes', x: 0, y: 0, z: 0 },
     ])
+  })
+})
+
+describe('map hazard placement transitions', () => {
+  it('adds, deduplicates, increments Toxic Spikes, caps layers, validates bounds, and detaches state', () => {
+    const hazards = [
+      { kind: 'spikes' as const, x: 1, y: 0, z: 1 },
+      { kind: 'toxic-spikes' as const, x: 2, y: 0, z: 2, layer: 1 },
+    ]
+
+    const duplicate = applyMapHazardPlacement({
+      hazards,
+      hazard: { kind: 'spikes', x: 1.2, y: 0, z: 1.1 },
+      dimensions: { x: 4, y: 2, z: 4 },
+    })
+    expect(duplicate).toMatchObject({ ok: true, changed: false })
+    expect(duplicate.ok && duplicate.hazards).toEqual(hazards)
+    expect(duplicate.ok && duplicate.hazards).not.toBe(hazards)
+
+    const toxic = applyMapHazardPlacement({
+      hazards,
+      hazard: { kind: 'toxic-spikes', x: 2, y: 0, z: 2 },
+      dimensions: { x: 4, y: 2, z: 4 },
+    })
+    expect(toxic.ok && toxic.hazards.find((item) => item.kind === 'toxic-spikes')?.layer).toBe(2)
+
+    const capped = applyMapHazardPlacement({
+      hazards: toxic.ok ? toxic.hazards : [],
+      hazard: { kind: 'toxic-spikes', x: 2, y: 0, z: 2 },
+      dimensions: { x: 4, y: 2, z: 4 },
+    })
+    expect(capped).toMatchObject({ ok: true, changed: false })
+
+    const added = applyMapHazardPlacement({
+      hazards,
+      hazard: { kind: 'sticky-web', x: 3, y: 0, z: 3 },
+      dimensions: { x: 4, y: 2, z: 4 },
+    })
+    expect(added.ok && added.hazards.at(-1)).toEqual({ kind: 'sticky-web', x: 3, y: 0, z: 3 })
+    expect(hazards).toEqual([
+      { kind: 'spikes', x: 1, y: 0, z: 1 },
+      { kind: 'toxic-spikes', x: 2, y: 0, z: 2, layer: 1 },
+    ])
+
+    expect(applyMapHazardPlacement({
+      hazards,
+      hazard: { kind: 'fire', x: 9, y: 0, z: 0 },
+      dimensions: { x: 4, y: 2, z: 4 },
+    })).toMatchObject({ ok: false, code: 'out-of-bounds' })
   })
 })

@@ -1,0 +1,278 @@
+import { describe, expect, it } from 'vitest'
+import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import { planAuthoritativeMoveState } from '../../server/domain/planAuthoritativeMoveState'
+import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
+import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
+import { passDestinationLogLine } from '~/utils/moveAutomationPass'
+import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
+import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
+import type { MoveAutomationAreaTemplate, MoveAutomationScript } from '~/types/moveAutomation'
+import type { TrainerSheet } from '~/types/trainerSheet'
+
+const moveIntent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): ResolveMoveIntent => ({
+  schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+  ...overrides,
+})
+
+const placement = (id: string, sheetSlug = id, position: GridAnchor = { x: 0, y: 0, z: 0 }): SheetPlacement => ({
+  id,
+  sheetKind: 'pokemon',
+  sheetSlug,
+  position,
+})
+
+const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'planner-test',
+  name: 'Planner Test',
+  revision: 7,
+  dimensions: { x: 12, y: 3, z: 12 },
+  groundLevelY: 0,
+  playerVisible: true,
+  voxels: [],
+  hazards: [],
+  fieldEffects: { weather: [], terrains: [], rooms: [] },
+  placements: [
+    placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+    placement('target-token', 'target', { x: 1, y: 0, z: 0 }),
+  ],
+  lights: [],
+  activeScene: { name: 'Scene A', startedAt: 100 },
+  initiative: { activeId: null, round: 1 },
+  metadata: { note: 'keep me' },
+  createdAt: 1,
+  updatedAt: 2,
+  ...overrides,
+})
+
+const pokemonSheet = (slug: string, moves: CharacterSheetMove[] = [], overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
+  revision: 3,
+  slug,
+  nickname: slug,
+  species: 'Pikachu',
+  level: 20,
+  combat: { currentHp: 40 },
+  movelist: moves,
+  ...overrides,
+})
+
+const pokemonSheets = (
+  actorMoves: CharacterSheetMove[],
+  overrides: Record<string, CharacterSheet> = {},
+): Map<string, CharacterSheet> => new Map<string, CharacterSheet>([
+  ['actor', pokemonSheet('actor', actorMoves, { nickname: 'Actor', combat: { currentHp: 20 } })],
+  ['target', pokemonSheet('target', [], { nickname: 'Target', species: 'Snorlax', level: 30, combat: { currentHp: 80 } })],
+  ...Object.entries(overrides),
+])
+
+const randomSequence = (values: readonly number[]): (() => number) => {
+  let index = 0
+  return () => values[index++] ?? values[values.length - 1] ?? 0
+}
+
+const moveLog = (map: TabletopMap) => map.metadata?.moveLog as Array<{ lines: string[]; at: number }> | undefined
+
+describe('planAuthoritativeMoveState', () => {
+  it('plans usage, self combat stages, one automation log, revisions, timestamp, and detached output', () => {
+    const map = mapFixture()
+    const sheets = pokemonSheets([{ name: 'Swords Dance' }], {
+      actor: pokemonSheet('actor', [{ name: 'Swords Dance' }], { revision: 4, nickname: 'Actor' }),
+    })
+    const before = JSON.stringify({ map, sheets: [...sheets.entries()] })
+
+    let nowCalls = 0
+    const plan = planAuthoritativeMoveState({
+      map,
+      pokemonSheets: sheets,
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Swords Dance', selection: { kind: 'self' } }),
+      random: randomSequence([0]),
+      now: () => {
+        nowCalls += 1
+        return 999
+      },
+    })
+
+    expect(JSON.stringify({ map, sheets: [...sheets.entries()] })).toBe(before)
+    expect(nowCalls).toBe(1)
+    expect(plan.previousRevision).toBe(7)
+    expect(plan.revision).toBe(8)
+    expect(plan.nextMap.revision).toBe(8)
+    expect(plan.nextMap.updatedAt).toBe(999)
+    expect(plan.nextMap.createdAt).toBe(1)
+    expect(plan.usage).toMatchObject({ moveKey: 'swords-dance', tracking: 'map', uses: 1 })
+    expect(plan.mapChanges.moveUsage).toBeDefined()
+    expect(plan.mapChanges.metadata?.previous).toEqual({ note: 'keep me' })
+    expect(moveLog(plan.nextMap)).toHaveLength(1)
+    expect(moveLog(plan.nextMap)?.[0]?.at).toBe(999)
+    expect(moveLog(plan.nextMap)?.[0]?.lines.join('\n')).toContain('Actor used Swords Dance.')
+    expect(plan.sheetWrites).toHaveLength(1)
+    expect(plan.sheetWrites[0]).toMatchObject({
+      kind: 'pokemon',
+      slug: 'actor',
+      expectedRevision: 4,
+      revision: 5,
+      placementIds: ['actor-token'],
+      changedFields: ['combatStages'],
+    })
+    expect(plan.sheetWrites[0]?.nextSheet.revision).toBe(5)
+    expect((plan.sheetWrites[0]?.nextSheet as CharacterSheet & { updatedAt?: number }).updatedAt).toBe(999)
+    expect(plan.nextMap).not.toBe(map)
+    expect(plan.previousMap).not.toBe(map)
+    expect(plan.mapChanges.metadata?.current).not.toBe(map.metadata)
+  })
+
+  it('produces one target sheet write for a single-target HP move and keeps temporary HP map-local', () => {
+    const map = mapFixture({
+      temporaryHitPoints: {
+        scene: { name: 'Scene A', startedAt: 100 },
+        byPlacementId: { 'target-token': 5, unaffected: 7 },
+      },
+    })
+    const sheets = pokemonSheets([{ name: 'Tackle' }])
+
+    const plan = planAuthoritativeMoveState({
+      map,
+      pokemonSheets: sheets,
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-token' } }),
+      random: randomSequence([0.5, 0]),
+      idFactory: () => 'feedback-id',
+      now: () => 1000,
+    })
+
+    expect(plan.sheetWrites).toHaveLength(1)
+    expect(plan.sheetWrites[0]?.slug).toBe('target')
+    expect(plan.sheetWrites[0]?.changedFields).toContain('hp')
+    expect((plan.sheetWrites[0]?.previousSheet as CharacterSheet).combat?.currentHp).toBe(80)
+    expect((plan.sheetWrites[0]?.nextSheet as CharacterSheet).combat?.currentHp).toBeLessThan(80)
+    expect((plan.sheetWrites[0]?.nextSheet as CharacterSheet & { temporaryHp?: number }).temporaryHp).toBeUndefined()
+    expect(plan.mapChanges.temporaryHitPoints?.current?.byPlacementId.unaffected).toBe(7)
+    expect(plan.mapChanges.placements?.current.find((item) => item.id === 'actor-token')?.facing).toBe('south-east')
+  })
+
+  it('combines Daily actor usage and actor HP automation into one sheet revision', () => {
+    const sheets = pokemonSheets([{ name: 'Synthesis' }], {
+      actor: pokemonSheet('actor', [{ name: 'Synthesis' }], { revision: 11, combat: { currentHp: 1 } }),
+    })
+
+    const plan = planAuthoritativeMoveState({
+      map: mapFixture(),
+      pokemonSheets: sheets,
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Synthesis', selection: { kind: 'self' } }),
+      random: randomSequence([0]),
+      now: () => 2000,
+    })
+
+    expect(plan.usage).toMatchObject({ tracking: 'sheet', moveKey: 'synthesis', uses: 1, sceneUses: 1 })
+    expect(plan.mapChanges.moveUsage?.current?.byPlacementId['actor-token']?.synthesis).toMatchObject({ frequency: 'daily', uses: 1 })
+    expect(plan.sheetWrites).toHaveLength(1)
+    expect(plan.sheetWrites[0]).toMatchObject({
+      slug: 'actor',
+      expectedRevision: 11,
+      revision: 12,
+      placementIds: ['actor-token'],
+    })
+    expect(plan.sheetWrites[0]?.changedFields).toEqual(expect.arrayContaining(['moveUsage', 'hp']))
+    expect((plan.sheetWrites[0]?.nextSheet as CharacterSheet).moveUsage?.daily.synthesis).toMatchObject({ uses: 1, updatedAt: 2000 })
+  })
+
+  it('advances the map and logs untracked moves without creating move usage state', () => {
+    const plan = planAuthoritativeMoveState({
+      map: mapFixture(),
+      pokemonSheets: pokemonSheets([{ name: 'Hone Claws' }]),
+      trainerSheets: new Map<string, TrainerSheet>(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Hone Claws', selection: { kind: 'self' } }),
+      random: randomSequence([0]),
+      now: () => 3000,
+    })
+
+    expect(plan.usage).toMatchObject({ tracking: 'none', available: true })
+    expect(plan.mapChanges.moveUsage).toBeUndefined()
+    expect(plan.nextMap.moveUsage).toBeUndefined()
+    expect(moveLog(plan.nextMap)).toHaveLength(1)
+    expect(plan.revision).toBe(8)
+  })
+})
+
+const passTemplate: MoveAutomationAreaTemplate = { kind: 'pass', size: 4, label: 'Pass 4' }
+const passTemplateId = moveAutomationAreaTemplateId(passTemplate)
+
+const passScript = (): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Scratch',
+  version: 1,
+  targetMode: 'multi-target',
+  targetCount: null,
+  damaging: true,
+  requiresAccuracy: true,
+  damageBase: 4,
+  damageClass: 'Physical',
+  type: 'Normal',
+  ac: 2,
+  range: 'Melee, Pass',
+  effect: 'Authoritative planner Pass test script.',
+  keywords: ['Pass 4'],
+  criticalRange: null,
+  areaTemplates: [passTemplate],
+  conditionSuggestions: [],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+})
+
+const withRegisteredScratchScript = async <T>(run: () => T | Promise<T>): Promise<T> => {
+  const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
+  const previous = scripts.get('Scratch')
+  scripts.set('Scratch', passScript())
+  try {
+    return await run()
+  } finally {
+    if (previous) scripts.set('Scratch', previous)
+    else scripts.delete('Scratch')
+  }
+}
+
+describe('planAuthoritativeMoveState Pass movement', () => {
+  it('updates Pass position and facing and logs the Pass destination exactly once', async () => {
+    await withRegisteredScratchScript(() => {
+      const map = mapFixture({
+        dimensions: { x: 8, y: 3, z: 4 },
+        placements: [
+          placement('actor-token', 'actor', { x: 1, y: 0, z: 1 }),
+          placement('target-a', 'target', { x: 2, y: 0, z: 1 }),
+          placement('target-b', 'target-b', { x: 3, y: 0, z: 1 }),
+          placement('occupied-end', 'occupied-end', { x: 5, y: 0, z: 1 }),
+        ],
+      })
+      const sheets = pokemonSheets([{ name: 'Scratch' }], {
+        'target-b': pokemonSheet('target-b'),
+        'occupied-end': pokemonSheet('occupied-end'),
+      })
+
+      const plan = planAuthoritativeMoveState({
+        map,
+        pokemonSheets: sheets,
+        trainerSheets: new Map<string, TrainerSheet>(),
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Scratch',
+          selection: { kind: 'area', areaTemplateId: passTemplateId, direction: 'east' },
+        }),
+        random: randomSequence([0.5, 0]),
+        now: () => 4000,
+      })
+
+      const actor = plan.mapChanges.placements?.current.find((item) => item.id === 'actor-token')
+      expect(actor?.position).toEqual(plan.resolution.movement?.destination)
+      expect(actor?.facing).toBe('north-east')
+      expect(actor?.turned).toBe(false)
+      const expectedLine = passDestinationLogLine({ species: 'Actor' } as never, plan.resolution.movement!.destination)
+      const lines = moveLog(plan.nextMap)?.[0]?.lines ?? []
+      expect(lines.filter((line) => line === expectedLine)).toHaveLength(1)
+    })
+  })
+})

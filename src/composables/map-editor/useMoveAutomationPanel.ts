@@ -83,6 +83,10 @@ import { getErrorMessage } from '~/utils/errorMessages'
 import { MOVE_VFX_DEFAULT_DURATIONS_MS } from '~/utils/isometric/moveVfxTiming'
 import { moveFrequencyTracksOnMap, moveFrequencyTracksOnSheet, parseMoveFrequency } from '~/utils/moveUsage'
 import { appendAbilityAutomationLogEntry } from '~/utils/abilityAutomationLog'
+import {
+  DEFAULT_MOVE_AUTOMATION_LOG_ENTRIES,
+  appendMoveAutomationLogEntry,
+} from '~/utils/moveAutomationLog'
 import { playDiceRollSound } from '~/utils/soundEffects'
 import type { AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -97,7 +101,6 @@ import type {
   MoveAutomationFieldEffectApply,
   MoveAutomationHpUpdate,
   MoveAutomationFeedbackState,
-  MoveAutomationLogEntry,
   MoveAutomationCelebratePrompt,
   MoveAutomationCuteCharmPrompt,
   MoveAutomationMoxiePrompt,
@@ -186,7 +189,7 @@ export interface UseMoveAutomationPanelOptions {
   maxLogEntries?: number
 }
 
-const DEFAULT_MAX_LOG_ENTRIES = 100
+const DEFAULT_MAX_LOG_ENTRIES = DEFAULT_MOVE_AUTOMATION_LOG_ENTRIES
 
 export const MOVE_AUTOMATION_FEEDBACK_TIMING_MS = {
   d20RollAnimation: 650,
@@ -328,25 +331,7 @@ export interface MoveAutomationTargetBranchSelectionState {
   options: MoveAutomationTargetBranchSelectionOption[]
 }
 
-export const appendMoveAutomationLogEntry = (
-  metadata: Record<string, unknown> | undefined,
-  transaction: MoveAutomationTransaction,
-  options: { now?: () => number; maxLogEntries?: number } = {},
-): Record<string, unknown> => {
-  const next = { ...(metadata ?? {}) }
-  const previous = Array.isArray(next.moveLog) ? next.moveLog : []
-  const entry: MoveAutomationLogEntry = {
-    at: options.now?.() ?? Date.now(),
-    userId: transaction.userId,
-    userName: transaction.userName,
-    moveName: transaction.moveName,
-    scriptKind: transaction.scriptKind,
-    scriptVersion: transaction.scriptVersion,
-    lines: transaction.logLines,
-  }
-  next.moveLog = [...previous, entry].slice(-(options.maxLogEntries ?? DEFAULT_MAX_LOG_ENTRIES))
-  return next
-}
+export { appendMoveAutomationLogEntry } from '~/utils/moveAutomationLog'
 
 export const useMoveAutomationPanel = ({
   map,

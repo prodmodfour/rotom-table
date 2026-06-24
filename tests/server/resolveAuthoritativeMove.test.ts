@@ -179,9 +179,23 @@ describe('resolveAuthoritativeMove', () => {
     })
 
     expect(resolution.selectedTargetIds).toEqual([])
+    expect(resolution.moveKey).toBe('swords-dance')
     expect(resolution.desiredFacing).toBeUndefined()
     expect(resolution.transaction.combatStageUpdates).toEqual([{ id: 'actor-token', stages: { atk: 2, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } }])
     expect(snapshotInput(map, pokemonSheets, trainerSheets)).toBe(before)
+  })
+
+  it('uses the same canonical move usage key for case-insensitive client aliases', () => {
+    const resolution = resolveAuthoritativeMove({
+      map: mapFixture(),
+      pokemonSheets: sheetMap([{ name: 'Swords Dance' }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'swords dance', selection: { kind: 'self' } }),
+      random: randomSequence([0]),
+    })
+
+    expect(resolution.canonicalMoveName).toBe('Swords Dance')
+    expect(resolution.moveKey).toBe('swords-dance')
   })
 
   it('resolves in-range single-target moves with authoritative random accuracy, damage and feedback IDs', () => {

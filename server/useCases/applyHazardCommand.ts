@@ -36,8 +36,8 @@ import {
 } from '#shared/sessionState'
 import type { MapHazardKind, MapHazardV2, TabletopMapV2 } from '~/types/map'
 import {
+  applyMapHazardPlacement,
   hazardInBounds,
-  mapHazardKey,
   normalizeMapHazardLayer,
 } from '~/utils/mapHazards'
 import { assertSessionHostEnabled, type SessionHostRuntimeEnv } from '../utils/sessionHosting'
@@ -579,11 +579,6 @@ const cellFromPlacement = (hazard: SessionHazardPlacement): SessionHazardCell =>
   z: hazard.z,
 })
 
-const hazardCellKeyEquals = (
-  left: MapHazardV2,
-  right: Pick<MapHazardV2, 'kind' | 'x' | 'y' | 'z'>,
-): boolean => mapHazardKey(left) === mapHazardKey(right)
-
 const placeHazardOnMap = (
   command: HazardCommand,
   payload: PlaceHazardCommandPayload,
@@ -613,29 +608,31 @@ const placeHazardOnMap = (
     }
   }
 
-  let placed: MapHazardV2 | undefined
-  let changed = false
-  const hazards = (target.mapState.document.hazards ?? []).map(cloneHazard)
-  const nextHazards = hazards.map((existing) => {
-    if (!hazardCellKeyEquals(existing, hazard)) return existing
-    if (hazard.kind !== 'toxic-spikes') {
-      placed = cloneHazard(existing)
-      return existing
-    }
-
-    const nextLayer = Math.min(2, Math.max(existing.layer ?? 1, hazard.layer ?? 1) + 1)
-    placed = { ...existing, layer: nextLayer }
-    if (nextLayer !== (existing.layer ?? 1)) changed = true
-    return cloneHazard(placed)
+  const placementResult = applyMapHazardPlacement({
+    hazards: target.mapState.document.hazards ?? [],
+    hazard,
+    dimensions: target.mapState.document.dimensions,
   })
-
-  if (placed === undefined) {
-    placed = cloneHazard(hazard)
-    nextHazards.push(cloneHazard(hazard))
-    changed = true
+  if (!placementResult.ok) {
+    return {
+      ok: false,
+      result: createConflictRejection(
+        command,
+        record,
+        placementResult.message,
+        processedAt,
+        {
+          retryable: true,
+          currentState: currentHazardState(target.mapSlug, target.mapState, record.revision, cell),
+        },
+      ),
+    }
   }
 
-  if (!changed) {
+  const placed = cloneHazard(placementResult.hazard)
+  const nextHazards = placementResult.hazards.map(cloneHazard)
+
+  if (!placementResult.changed) {
     return {
       ok: false,
       result: createConflictRejection(

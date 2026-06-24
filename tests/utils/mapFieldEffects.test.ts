@@ -11,6 +11,7 @@ import {
   isMapWeatherKind,
 } from '~/utils/mapFieldEffectDefinitions'
 import {
+  applyMoveFieldEffectToFieldEffects,
   createMapRoomEffect,
   createMapTerrainEffect,
   createMapWeatherEffect,
@@ -85,5 +86,35 @@ describe('map field effect normalization', () => {
       terrains: [{ kind: 'misty', rounds: 2, scope: 'field' }],
       rooms: [{ kind: 'wonder', rounds: 1 }],
     })).toBe(3)
+  })
+})
+
+describe('move-generated field effect transitions', () => {
+  it('replaces weather and upserts terrain and rooms without mutating inputs', () => {
+    const previous = {
+      weather: [{ kind: 'sunny' as const, rounds: 1, source: 'Old' }],
+      terrains: [{ kind: 'electric' as const, rounds: 2, scope: 'field' as const, source: 'Old' }],
+      rooms: [{ kind: 'magic' as const, rounds: 3, source: 'Old' }],
+    }
+
+    const rainy = applyMoveFieldEffectToFieldEffects(previous, { kind: 'weather', value: 'rainy', source: 'Rain Dance' })
+    expect(rainy.ok && rainy.fieldEffects.weather).toEqual([{ kind: 'rainy', rounds: 5, source: 'Rain Dance' }])
+
+    const grassy = applyMoveFieldEffectToFieldEffects(rainy.ok ? rainy.fieldEffects : previous, { kind: 'terrain', value: 'grassy' })
+    expect(grassy.ok && grassy.fieldEffects.terrains).toEqual([
+      { kind: 'electric', rounds: 2, scope: 'field', source: 'Old' },
+      { kind: 'grassy', rounds: 5, scope: 'field', source: 'Move automation' },
+    ])
+
+    const room = applyMoveFieldEffectToFieldEffects(grassy.ok ? grassy.fieldEffects : previous, { kind: 'room', value: 'magic', source: 'Magic Room' })
+    expect(room.ok && room.fieldEffects.rooms).toEqual([{ kind: 'magic', rounds: 5, source: 'Magic Room' }])
+    expect(previous.weather).toEqual([{ kind: 'sunny', rounds: 1, source: 'Old' }])
+  })
+
+  it('fails closed for invalid generated effects', () => {
+    expect(applyMoveFieldEffectToFieldEffects(undefined, { kind: 'weather', value: 'fog' as never })).toMatchObject({
+      ok: false,
+      code: 'invalid-field-effect',
+    })
   })
 })

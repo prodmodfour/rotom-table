@@ -4,10 +4,7 @@ import {
   MAIN_MAP_HAZARD_KINDS,
   MAP_HAZARD_DEFINITIONS,
 } from '~/utils/mapHazardDefinitions'
-import {
-  mapHazardKey,
-  normalizeMapHazardLayer,
-} from '~/utils/mapHazards'
+import { applyMapHazardPlacement } from '~/utils/mapHazards'
 import type { MapHazardKind, MapHazardV2, TabletopMap } from '~/types/map'
 
 interface BooleanRef {
@@ -36,29 +33,13 @@ export const useHazardBuilder = ({
 
   const placeHazard = (hazard: MapHazardV2) => {
     if (!map.value || !canEditMap.value) return
-    const normalized: MapHazardV2 = {
-      kind: hazard.kind,
-      x: Math.round(hazard.x),
-      y: Math.round(hazard.y),
-      z: Math.round(hazard.z),
-    }
-    const layer = normalizeMapHazardLayer(normalized.kind, hazard.layer)
-    if (layer !== undefined) normalized.layer = layer
-    if (typeof hazard.owner === 'string' && hazard.owner.trim()) normalized.owner = hazard.owner.trim()
-
-    const key = mapHazardKey(normalized)
-    let found = false
-    const next = mapHazards.value.map((existing) => {
-      if (mapHazardKey(existing) !== key) return existing
-      found = true
-      if (normalized.kind !== 'toxic-spikes') return existing
-      return {
-        ...existing,
-        layer: Math.min(2, Math.max(existing.layer ?? 1, normalized.layer ?? 1) + 1),
-      }
+    const result = applyMapHazardPlacement({
+      hazards: mapHazards.value,
+      hazard,
+      dimensions: map.value.dimensions,
     })
-    if (!found) next.push(normalized)
-    map.value.hazards = next
+    if (!result.ok) return
+    map.value.hazards = [...result.hazards]
   }
 
   const removeHazard = (cell: { x: number; y: number; z: number; kind?: MapHazardKind }) => {

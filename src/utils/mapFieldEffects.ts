@@ -7,6 +7,7 @@ import type {
   MapWeatherEffect,
   MapWeatherKind,
 } from '~/types/map'
+import type { MoveAutomationFieldEffectApply } from '~/types/moveAutomation'
 import {
   MAP_ROOM_DEFINITIONS,
   MAP_TERRAIN_DEFINITIONS,
@@ -108,3 +109,91 @@ export const normalizeMapFieldEffects = (value: unknown): MapFieldEffects => {
 
 export const mapFieldEffectCount = (effects: MapFieldEffects | null | undefined): number =>
   (effects?.weather?.length ?? 0) + (effects?.terrains?.length ?? 0) + (effects?.rooms?.length ?? 0)
+
+export type MoveFieldEffectApplicationFailureCode = 'invalid-field-effect'
+
+export interface ApplyMoveFieldEffectSuccess {
+  readonly ok: true
+  readonly fieldEffects: MapFieldEffects
+}
+
+export interface ApplyMoveFieldEffectFailure {
+  readonly ok: false
+  readonly code: MoveFieldEffectApplicationFailureCode
+  readonly message: string
+}
+
+export type ApplyMoveFieldEffectResult = ApplyMoveFieldEffectSuccess | ApplyMoveFieldEffectFailure
+
+const cloneWeatherEffect = (effect: MapWeatherEffect): MapWeatherEffect => ({
+  kind: effect.kind,
+  ...(effect.rounds === undefined ? {} : { rounds: effect.rounds }),
+  ...(effect.source === undefined ? {} : { source: effect.source }),
+})
+
+const cloneTerrainEffect = (effect: MapTerrainEffect): MapTerrainEffect => ({
+  kind: effect.kind,
+  ...(effect.scope === undefined ? {} : { scope: effect.scope }),
+  ...(effect.rounds === undefined ? {} : { rounds: effect.rounds }),
+  ...(effect.source === undefined ? {} : { source: effect.source }),
+})
+
+const cloneRoomEffect = (effect: MapRoomEffect): MapRoomEffect => ({
+  kind: effect.kind,
+  ...(effect.rounds === undefined ? {} : { rounds: effect.rounds }),
+  ...(effect.startsNextRound === undefined ? {} : { startsNextRound: effect.startsNextRound }),
+  ...(effect.source === undefined ? {} : { source: effect.source }),
+})
+
+export const cloneMapFieldEffects = (effects: MapFieldEffects | null | undefined): Required<MapFieldEffects> => {
+  const normalized = normalizeMapFieldEffects(effects)
+  return {
+    weather: (normalized.weather ?? []).map(cloneWeatherEffect),
+    terrains: (normalized.terrains ?? []).map(cloneTerrainEffect),
+    rooms: (normalized.rooms ?? []).map(cloneRoomEffect),
+  }
+}
+
+const withMoveAutomationSource = <TEffect extends { source?: string }>(
+  effect: TEffect,
+  source: string | undefined,
+): TEffect => ({
+  ...effect,
+  source: source?.trim() || 'Move automation',
+})
+
+export const applyMoveFieldEffectToFieldEffects = (
+  effects: MapFieldEffects | null | undefined,
+  effect: MoveAutomationFieldEffectApply,
+): ApplyMoveFieldEffectResult => {
+  const current = cloneMapFieldEffects(effects)
+  const source = effect.source
+
+  if (effect.kind === 'weather') {
+    if (!isMapWeatherKind(effect.value)) {
+      return { ok: false, code: 'invalid-field-effect', message: `Invalid generated weather effect ${String(effect.value)}.` }
+    }
+    current.weather = [withMoveAutomationSource(createMapWeatherEffect(effect.value), source)]
+    return { ok: true, fieldEffects: current }
+  }
+
+  if (effect.kind === 'terrain') {
+    if (!isMapTerrainKind(effect.value)) {
+      return { ok: false, code: 'invalid-field-effect', message: `Invalid generated terrain effect ${String(effect.value)}.` }
+    }
+    const terrain = withMoveAutomationSource(createMapTerrainEffect(effect.value), source)
+    current.terrains = [...current.terrains.filter((item) => item.kind !== terrain.kind), terrain]
+    return { ok: true, fieldEffects: current }
+  }
+
+  if (effect.kind === 'room') {
+    if (!isMapRoomKind(effect.value)) {
+      return { ok: false, code: 'invalid-field-effect', message: `Invalid generated room effect ${String(effect.value)}.` }
+    }
+    const room = withMoveAutomationSource(createMapRoomEffect(effect.value), source)
+    current.rooms = [...current.rooms.filter((item) => item.kind !== room.kind), room]
+    return { ok: true, fieldEffects: current }
+  }
+
+  return { ok: false, code: 'invalid-field-effect', message: `Invalid generated field effect kind ${String((effect as { kind?: unknown }).kind)}.` }
+}

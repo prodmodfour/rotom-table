@@ -15,22 +15,16 @@ import type { PlayerProfile } from '#shared/playerProfiles'
 import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
-import {
-  eotMoveUsageState,
-  getMapMoveUsageEntry,
-  getSheetDailyMoveUsageEntry,
-  limitedMoveUsageState,
-  normalizeMoveUsageRound,
-  normalizeSheetMoveUsage,
-  parseMoveFrequency,
-  recordMapMoveUsage,
-  recordSheetDailyMoveUsage,
-  type MoveFrequencyKind,
-  type ParsedMoveFrequency,
-} from '~/utils/moveUsage'
+import type { SheetMoveUsageState } from '~/types/moveUsage'
+import { parseMoveFrequency, type ParsedMoveFrequency } from '~/utils/moveUsage'
 import { appendMoveLogEntry, buildMoveUseLogLines, type MoveLogEntry } from '~/utils/moveLog'
 import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
 import { resolveSheetMoveForUsage, type ResolvedSheetMove } from '~/utils/moveUsageResolution'
+import {
+  isMoveUsageTransitionError,
+  planMoveUsageTransition,
+  type UseMoveUsageSummary,
+} from '../domain/planMoveUsageTransition'
 import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControlAsync,
@@ -57,25 +51,7 @@ import { toPersistedMap } from './saveMap'
 
 export class LivePlayUseMoveCommandUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
-export type UseMoveTracking = 'map' | 'sheet' | 'none'
-
-export interface UseMoveUsageSummary {
-  readonly moveName: string
-  readonly moveKey: string
-  readonly frequency: string
-  readonly frequencyKind: MoveFrequencyKind
-  readonly tracking: UseMoveTracking
-  readonly uses: number
-  readonly maxUses?: number
-  readonly remainingUses?: number
-  readonly sceneUses?: number
-  readonly sceneMaxUses?: number
-  readonly sceneRemainingUses?: number
-  readonly sceneAvailable?: boolean
-  readonly lastUsedRound?: number | null
-  readonly nextAvailableRound?: number | null
-  readonly available: boolean
-}
+export type { UseMoveTracking, UseMoveUsageSummary } from '../domain/planMoveUsageTransition'
 
 export interface LivePlayUseMoveCommandActor {
   readonly role: AuthRole
@@ -360,76 +336,6 @@ const sheetDisplayName = (
   return optionalText(sheet.name) ?? placement.sheetSlug
 }
 
-const maxUsesFor = (frequency: ParsedMoveFrequency): number =>
-  Math.max(1, frequency.usesPerPeriod ?? 1)
-
-const untrackedUsageSummary = (
-  move: ResolvedSheetMove,
-  frequency: ParsedMoveFrequency,
-): UseMoveUsageSummary => ({
-  moveName: move.moveName,
-  moveKey: move.moveKey,
-  frequency: frequency.raw,
-  frequencyKind: frequency.kind,
-  tracking: 'none',
-  uses: 0,
-  available: true,
-})
-
-const eotUsageSummary = (
-  move: ResolvedSheetMove,
-  frequency: ParsedMoveFrequency,
-  state: ReturnType<typeof eotMoveUsageState>,
-): UseMoveUsageSummary => ({
-  moveName: move.moveName,
-  moveKey: move.moveKey,
-  frequency: frequency.raw || 'EOT',
-  frequencyKind: 'eot',
-  tracking: 'map',
-  uses: state.uses,
-  lastUsedRound: state.lastUsedRound,
-  nextAvailableRound: state.nextAvailableRound,
-  available: state.available,
-})
-
-const limitedUsageSummary = (
-  move: ResolvedSheetMove,
-  frequency: ParsedMoveFrequency,
-  tracking: Extract<UseMoveTracking, 'map' | 'sheet'>,
-  state: ReturnType<typeof limitedMoveUsageState>,
-): UseMoveUsageSummary => ({
-  moveName: move.moveName,
-  moveKey: move.moveKey,
-  frequency: frequency.raw,
-  frequencyKind: frequency.kind,
-  tracking,
-  uses: state.uses,
-  maxUses: state.maxUses,
-  remainingUses: state.remainingUses,
-  available: state.available,
-})
-
-const dailyUsageSummary = (
-  move: ResolvedSheetMove,
-  frequency: ParsedMoveFrequency,
-  dailyState: ReturnType<typeof limitedMoveUsageState>,
-  sceneState: ReturnType<typeof limitedMoveUsageState>,
-): UseMoveUsageSummary => ({
-  moveName: move.moveName,
-  moveKey: move.moveKey,
-  frequency: frequency.raw,
-  frequencyKind: 'daily',
-  tracking: 'sheet',
-  uses: dailyState.uses,
-  maxUses: dailyState.maxUses,
-  remainingUses: dailyState.remainingUses,
-  sceneUses: sceneState.uses,
-  sceneMaxUses: sceneState.maxUses,
-  sceneRemainingUses: sceneState.remainingUses,
-  sceneAvailable: sceneState.available,
-  available: dailyState.available && sceneState.available,
-})
-
 const sheetPayloadForPersistence = (
   sheet: Record<string, unknown>,
   slug: string,
@@ -557,220 +463,6 @@ const acceptedContext = (
   ...(input.sheetUpdate === undefined ? {} : { sheetUpdate: input.sheetUpdate }),
 })
 
-const applyEotUseMove = (
-  command: UseMoveLivePlayCommand,
-  context: ResolvedUseMoveContext,
-  move: ResolvedSheetMove,
-  frequency: ParsedMoveFrequency,
-  currentRevision: number,
-  updatedAt: number,
-  dependencies: Pick<LivePlayUseMoveDependencySet, 'maxMoveLogEntries'>,
-): AppliedUseMoveChange | { readonly status: 'rejected'; readonly message: string; readonly currentState: UseMoveUsageSummary } => {
-  const currentRound = normalizeMoveUsageRound(context.map.initiative?.round)
-  const previousEntry = getMapMoveUsageEntry(context.map.moveUsage, context.placement.id, move.moveKey, context.map.activeScene)
-  const before = eotMoveUsageState(previousEntry, currentRound)
-  const previousUsage = eotUsageSummary(move, frequency, before)
-  if (!before.available) {
-    const roundText = before.nextAvailableRound == null ? 'later' : `round ${before.nextAvailableRound}`
-    return {
-      status: 'rejected',
-      message: `${move.moveName} is EOT and is not available until ${roundText}`,
-      currentState: previousUsage,
-    }
-  }
-
-  const moveUsage = recordMapMoveUsage({
-    usage: context.map.moveUsage,
-    placementId: context.placement.id,
-    moveKey: move.moveKey,
-    moveName: move.moveName,
-    frequency: 'eot',
-    currentRound,
-    usedAt: updatedAt,
-    scene: context.map.activeScene,
-  })
-  const revision = nextRevision(currentRevision)
-  const log = appendMoveUseLog(context, move, frequency, updatedAt, dependencies)
-  const nextMap = { ...context.map, moveUsage, metadata: log.metadata, revision, updatedAt }
-  const after = eotMoveUsageState(
-    getMapMoveUsageEntry(nextMap.moveUsage, context.placement.id, move.moveKey, context.map.activeScene),
-    currentRound,
-  )
-  const nextContext = acceptedContext(context, {
-    map: nextMap,
-    move,
-    frequency,
-    previousUsage,
-    usage: eotUsageSummary(move, frequency, after),
-    ...(log.moveLogEntry === undefined ? {} : { moveLogEntry: log.moveLogEntry }),
-  })
-  return {
-    nextContext,
-    patches: [useMovePatch(command, nextContext)],
-  }
-}
-
-const applySceneUseMove = (
-  command: UseMoveLivePlayCommand,
-  context: ResolvedUseMoveContext,
-  move: ResolvedSheetMove,
-  frequency: ParsedMoveFrequency,
-  currentRevision: number,
-  updatedAt: number,
-  dependencies: Pick<LivePlayUseMoveDependencySet, 'maxMoveLogEntries'>,
-): AppliedUseMoveChange | { readonly status: 'rejected'; readonly message: string; readonly currentState: UseMoveUsageSummary } => {
-  const maxUses = maxUsesFor(frequency)
-  const previousEntry = getMapMoveUsageEntry(context.map.moveUsage, context.placement.id, move.moveKey, context.map.activeScene)
-  const before = limitedMoveUsageState(previousEntry?.frequency === 'scene' ? previousEntry : null, maxUses)
-  const previousUsage = limitedUsageSummary(move, frequency, 'map', before)
-  if (!before.available) {
-    return {
-      status: 'rejected',
-      message: `${move.moveName} has no remaining Scene uses`,
-      currentState: previousUsage,
-    }
-  }
-
-  const moveUsage = recordMapMoveUsage({
-    usage: context.map.moveUsage,
-    placementId: context.placement.id,
-    moveKey: move.moveKey,
-    moveName: move.moveName,
-    frequency: 'scene',
-    currentRound: normalizeMoveUsageRound(context.map.initiative?.round),
-    usedAt: updatedAt,
-    scene: context.map.activeScene,
-  })
-  const revision = nextRevision(currentRevision)
-  const log = appendMoveUseLog(context, move, frequency, updatedAt, dependencies)
-  const nextMap = { ...context.map, moveUsage, metadata: log.metadata, revision, updatedAt }
-  const after = limitedMoveUsageState(
-    getMapMoveUsageEntry(nextMap.moveUsage, context.placement.id, move.moveKey, context.map.activeScene),
-    maxUses,
-  )
-  const nextContext = acceptedContext(context, {
-    map: nextMap,
-    move,
-    frequency,
-    previousUsage,
-    usage: limitedUsageSummary(move, frequency, 'map', after),
-    ...(log.moveLogEntry === undefined ? {} : { moveLogEntry: log.moveLogEntry }),
-  })
-  return {
-    nextContext,
-    patches: [useMovePatch(command, nextContext)],
-  }
-}
-
-const applyDailyUseMove = (
-  command: UseMoveLivePlayCommand,
-  context: ResolvedUseMoveContext,
-  move: ResolvedSheetMove,
-  frequency: ParsedMoveFrequency,
-  currentRevision: number,
-  updatedAt: number,
-  dependencies: Pick<LivePlayUseMoveDependencySet, 'maxMoveLogEntries'>,
-): AppliedUseMoveChange | { readonly status: 'rejected'; readonly message: string; readonly currentState: UseMoveUsageSummary } => {
-  validateDailyUseMoveSheetScope(command, context.placement)
-
-  const maxUses = maxUsesFor(frequency)
-  const previousSheetUsage = normalizeSheetMoveUsage(context.sheet.sheet.moveUsage)
-  const dailyBefore = limitedMoveUsageState(getSheetDailyMoveUsageEntry(previousSheetUsage, move.moveKey), maxUses)
-  const previousMapEntry = getMapMoveUsageEntry(context.map.moveUsage, context.placement.id, move.moveKey, context.map.activeScene)
-  const sceneBefore = limitedMoveUsageState(previousMapEntry?.frequency === 'daily' ? previousMapEntry : null, 1)
-  const previousUsage = dailyUsageSummary(move, frequency, dailyBefore, sceneBefore)
-  if (!dailyBefore.available) {
-    return {
-      status: 'rejected',
-      message: `${move.moveName} has no remaining Daily uses`,
-      currentState: previousUsage,
-    }
-  }
-  if (!sceneBefore.available) {
-    return {
-      status: 'rejected',
-      message: `${move.moveName} has already been used this Scene`,
-      currentState: previousUsage,
-    }
-  }
-
-  const sheetMoveUsage = recordSheetDailyMoveUsage({
-    usage: previousSheetUsage,
-    moveKey: move.moveKey,
-    moveName: move.moveName,
-    usedAt: updatedAt,
-  })
-  const mapMoveUsage = recordMapMoveUsage({
-    usage: context.map.moveUsage,
-    placementId: context.placement.id,
-    moveKey: move.moveKey,
-    moveName: move.moveName,
-    frequency: 'daily',
-    currentRound: normalizeMoveUsageRound(context.map.initiative?.round),
-    usedAt: updatedAt,
-    scene: context.map.activeScene,
-  })
-  const revision = nextRevision(currentRevision)
-  const log = appendMoveUseLog(context, move, frequency, updatedAt, dependencies)
-  const nextMap = { ...context.map, moveUsage: mapMoveUsage, metadata: log.metadata, revision, updatedAt }
-  const nextSheet = sheetPayloadForPersistence(
-    { ...context.sheet.sheet, moveUsage: sheetMoveUsage },
-    context.sheet.slug,
-    updatedAt,
-  )
-  const sheetRevision = nextRevision(context.sheet.revision)
-  const dailyAfter = limitedMoveUsageState(getSheetDailyMoveUsageEntry(sheetMoveUsage, move.moveKey), maxUses)
-  const sceneAfter = limitedMoveUsageState(
-    getMapMoveUsageEntry(nextMap.moveUsage, context.placement.id, move.moveKey, context.map.activeScene),
-    1,
-  )
-  const nextContext = acceptedContext(context, {
-    map: nextMap,
-    move,
-    frequency,
-    previousUsage,
-    usage: dailyUsageSummary(move, frequency, dailyAfter, sceneAfter),
-    ...(log.moveLogEntry === undefined ? {} : { moveLogEntry: log.moveLogEntry }),
-    nextSheet,
-    sheetUpdate: {
-      kind: context.sheet.kind,
-      slug: context.sheet.slug,
-      sheet: { ...nextSheet, revision: sheetRevision },
-    },
-  })
-  return {
-    nextContext,
-    patches: [useMovePatch(command, nextContext), sheetMoveUsagePatch(command, nextContext)],
-  }
-}
-
-const applyUntrackedUseMove = (
-  command: UseMoveLivePlayCommand,
-  context: ResolvedUseMoveContext,
-  move: ResolvedSheetMove,
-  frequency: ParsedMoveFrequency,
-  currentRevision: number,
-  updatedAt: number,
-  dependencies: LivePlayUseMoveDependencySet,
-): AppliedUseMoveChange => {
-  const log = appendMoveUseLog(context, move, frequency, updatedAt, dependencies)
-  const revision = nextRevision(currentRevision)
-  const nextMap = { ...context.map, metadata: log.metadata, revision, updatedAt }
-  const usage = untrackedUsageSummary(move, frequency)
-  const nextContext = acceptedContext(context, {
-    map: nextMap,
-    move,
-    frequency,
-    previousUsage: usage,
-    usage,
-    ...(log.moveLogEntry === undefined ? {} : { moveLogEntry: log.moveLogEntry }),
-  })
-  return {
-    nextContext,
-    patches: [useMovePatch(command, nextContext)],
-  }
-}
-
 const applyUseMove = (
   command: UseMoveLivePlayCommand,
   context: ResolvedUseMoveContext,
@@ -783,27 +475,76 @@ const applyUseMove = (
     throw new LivePlayUseMoveCommandUseCaseError(404, `Move ${payload.moveName} not found on ${context.placement.sheetSlug}`)
   }
 
-  const frequency = parseMoveFrequency(move.frequency)
+  if (parseMoveFrequency(move.frequency).kind === 'daily') {
+    validateDailyUseMoveSheetScope(command, context.placement)
+  }
+
   const updatedAt = dependencies.now()
-  if (frequency.kind === 'eot') {
-    const result = applyEotUseMove(command, context, move, frequency, currentRevision, updatedAt, dependencies)
-    if ('status' in result) return { reason: 'conflict', ...result }
-    return result
-  }
+  const transition = (() => {
+    try {
+      return planMoveUsageTransition({
+        map: context.map,
+        sheetMoveUsage: context.sheet.sheet.moveUsage as SheetMoveUsageState | undefined,
+        placementId: context.placement.id,
+        move,
+        usedAt: updatedAt,
+      })
+    } catch (error) {
+      if (isMoveUsageTransitionError(error)) {
+        return {
+          status: 'rejected' as const,
+          reason: error.reason,
+          message: error.message,
+          currentState: error.currentUsage,
+        }
+      }
+      throw error
+    }
+  })()
+  if ('status' in transition) return transition
 
-  if (frequency.kind === 'scene') {
-    const result = applySceneUseMove(command, context, move, frequency, currentRevision, updatedAt, dependencies)
-    if ('status' in result) return { reason: 'conflict', ...result }
-    return result
+  const revision = nextRevision(currentRevision)
+  const log = appendMoveUseLog(context, move, transition.frequency, updatedAt, dependencies)
+  const nextMap: TabletopMap = {
+    ...context.map,
+    ...(transition.nextMapMoveUsage === undefined ? {} : { moveUsage: transition.nextMapMoveUsage }),
+    metadata: log.metadata,
+    revision,
+    updatedAt,
   }
+  const nextSheet = transition.nextSheetMoveUsage === undefined
+    ? undefined
+    : sheetPayloadForPersistence(
+        { ...context.sheet.sheet, moveUsage: transition.nextSheetMoveUsage },
+        context.sheet.slug,
+        updatedAt,
+      )
+  const sheetRevision = nextSheet === undefined ? undefined : nextRevision(context.sheet.revision)
+  const nextContext = acceptedContext(context, {
+    map: nextMap,
+    move,
+    frequency: transition.frequency,
+    previousUsage: transition.previousUsage,
+    usage: transition.usage,
+    ...(log.moveLogEntry === undefined ? {} : { moveLogEntry: log.moveLogEntry }),
+    ...(nextSheet === undefined ? {} : { nextSheet }),
+    ...(nextSheet === undefined || sheetRevision === undefined
+      ? {}
+      : {
+          sheetUpdate: {
+            kind: context.sheet.kind,
+            slug: context.sheet.slug,
+            sheet: { ...nextSheet, revision: sheetRevision },
+          },
+        }),
+  })
 
-  if (frequency.kind === 'daily') {
-    const result = applyDailyUseMove(command, context, move, frequency, currentRevision, updatedAt, dependencies)
-    if ('status' in result) return { reason: 'conflict', ...result }
-    return result
+  return {
+    nextContext,
+    patches: nextSheet === undefined
+      ? [useMovePatch(command, nextContext)]
+      : [useMovePatch(command, nextContext), sheetMoveUsagePatch(command, nextContext)],
   }
-
-  return applyUntrackedUseMove(command, context, move, frequency, currentRevision, updatedAt, dependencies)
 }
 
 const sheetEvents = (

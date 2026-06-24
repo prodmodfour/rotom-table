@@ -12,6 +12,7 @@ import {
   createMapRoomEffect,
   createMapTerrainEffect,
   createMapWeatherEffect,
+  applyMoveFieldEffectToFieldEffects,
   mapFieldEffectCount,
 } from '~/utils/mapFieldEffects'
 import type { MoveAutomationTransaction } from '~/types/moveAutomation'
@@ -213,24 +214,11 @@ export const useFieldEffectsEditor = ({
     if (!canEditMap.value) return
     const state = ensureFieldEffectsState()
     if (!state) return
-    const source = effect.source ?? 'Move automation'
-    if (effect.kind === 'weather' && MAP_WEATHER_KINDS.includes(effect.value as MapWeatherKind)) {
-      const weather = createMapWeatherEffect(effect.value as MapWeatherKind)
-      weather.source = source
-      state.weather = [weather]
-      return
-    }
-    if (effect.kind === 'terrain' && MAP_TERRAIN_KINDS.includes(effect.value as MapTerrainKind)) {
-      const terrain = createMapTerrainEffect(effect.value as MapTerrainKind)
-      terrain.source = source
-      state.terrains = [...state.terrains.filter((item) => item.kind !== terrain.kind), terrain]
-      return
-    }
-    if (effect.kind === 'room' && MAP_ROOM_KINDS.includes(effect.value as MapRoomKind)) {
-      const room = createMapRoomEffect(effect.value as MapRoomKind)
-      room.source = source
-      state.rooms = [...state.rooms.filter((item) => item.kind !== room.kind), room]
-    }
+    const result = applyMoveFieldEffectToFieldEffects(state, effect)
+    if (!result.ok) return
+    state.weather = [...(result.fieldEffects.weather ?? [])]
+    state.terrains = [...(result.fieldEffects.terrains ?? [])]
+    state.rooms = [...(result.fieldEffects.rooms ?? [])]
   }
 
   return {
