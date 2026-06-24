@@ -3,10 +3,13 @@ import { PhFolder } from '@phosphor-icons/vue'
 import type { FolderTile } from '~/utils/folderBrowser'
 import type { SheetBrowserItem } from '~/utils/sheetBrowser'
 
-defineProps<{
+withDefaults(defineProps<{
   folders: FolderTile[]
   sheets: SheetBrowserItem[]
-}>()
+  disabled?: boolean
+}>(), {
+  disabled: false,
+})
 
 const emit = defineEmits<{
   openFolder: [path: string]
@@ -21,6 +24,7 @@ const emit = defineEmits<{
       :key="`folder-${folder.path}`"
       type="button"
       class="browser-row browser-row--folder"
+      :disabled="disabled"
       @click="emit('openFolder', folder.path)"
     >
       <span class="row-icon">
@@ -38,6 +42,7 @@ const emit = defineEmits<{
       type="button"
       class="browser-row"
       :class="`browser-row--${item.kind}`"
+      :disabled="disabled"
       @click="emit('selectSheet', item)"
     >
       <span class="row-icon row-icon--sprite">
@@ -83,6 +88,16 @@ const emit = defineEmits<{
 .browser-row:hover {
   border-color: var(--rule-strong);
   background: var(--paper-hover);
+}
+
+.browser-row:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.browser-row:disabled:hover {
+  border-color: var(--rule-soft);
+  background: var(--paper);
 }
 
 .browser-row--folder {

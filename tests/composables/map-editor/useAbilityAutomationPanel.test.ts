@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   appendAbilityAutomationLogEntry,
   useAbilityAutomationPanel,
@@ -108,6 +108,37 @@ describe('useAbilityAutomationPanel', () => {
     expect(map.value.metadata?.abilityLog).toMatchObject([
       { at: 123, userId: 'user-token', abilityName: 'Sand Veil', category: 'sheet' },
     ])
+  })
+
+  it('routes sheet activation abilities through asynchronous dispatch without local duplication', async () => {
+    const map = ref(mapFixture())
+    const calls: string[] = []
+    const dispatchAbilityUse = vi.fn(async () => true)
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Sandile',
+      level: 5,
+      abilities: [{ name: 'Sand Veil' }],
+    } as CharacterSheet
+    const panel = useAbilityAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [spawned('user-token'), spawned('target-token')]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: (update) => { calls.push(`conditions:${update.id}:${update.conditions.join(',')}`) },
+      modifyAbilityActivation: (update) => { calls.push(`ability:${update.id}:${update.abilityName}:${update.activated}`) },
+      now: () => 124,
+      dispatchAbilityUse,
+    })
+
+    await expect(panel.openAbilityAutomation({ id: 'user-token', abilityName: 'Sand Veil' })).resolves.toBe(true)
+
+    expect(dispatchAbilityUse).toHaveBeenCalledWith({ userId: 'user-token', abilityName: 'Sand Veil' })
+    expect(calls).toEqual([])
+    expect(map.value.metadata?.abilityLog).toBeUndefined()
   })
 
   it('does not treat passive ability automation as a manual use action', async () => {
@@ -249,6 +280,90 @@ describe('useAbilityAutomationPanel', () => {
     expect(map.value.metadata?.abilityLog).toMatchObject([
       { at: 456, userId: 'user-token', abilityName: 'Intimidate', category: 'map' },
     ])
+  })
+
+  it('does not apply local ability mutations when asynchronous authoritative dispatch rejects', async () => {
+    const map = ref(mapFixture())
+    const calls: string[] = []
+    const dispatchAbilityUse = vi.fn(async () => false)
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Audino',
+      level: 5,
+      abilities: [{ name: 'Sand Veil' }, { name: 'Moxie' }, { name: 'Healer' }],
+    } as CharacterSheet
+    const panel = useAbilityAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned('user-token', { species: 'Audino', combatStages: stages({ atk: 2 }) }),
+        spawned('target-token', { conditions: ['Burned', 'Confused', 'Vulnerable'] }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: (update) => { calls.push(`conditions:${update.id}:${update.conditions.join(',')}`) },
+      modifyAbilityActivation: (update) => { calls.push(`ability:${update.id}:${update.abilityName}:${update.activated}`) },
+      now: () => 790,
+      dispatchAbilityUse,
+    })
+
+    await expect(panel.openAbilityAutomation({ id: 'user-token', abilityName: 'Sand Veil' })).resolves.toBe(false)
+    await expect(panel.openAbilityAutomation({ id: 'user-token', abilityName: 'Moxie' })).resolves.toBe(false)
+    await expect(panel.openAbilityAutomation({ id: 'user-token', abilityName: 'Healer' })).resolves.toBe(true)
+    await expect(panel.selectAbilityAutomationTarget('target-token')).resolves.toBe(false)
+
+    expect(dispatchAbilityUse).toHaveBeenCalledWith({ userId: 'user-token', abilityName: 'Sand Veil' })
+    expect(dispatchAbilityUse).toHaveBeenCalledWith({ userId: 'user-token', abilityName: 'Moxie' })
+    expect(dispatchAbilityUse).toHaveBeenCalledWith({
+      userId: 'user-token',
+      abilityName: 'Healer',
+      targetTokenId: 'target-token',
+    })
+    expect(calls).toEqual([])
+    expect(map.value.metadata?.abilityLog).toBeUndefined()
+    expect(panel.abilityAutomationTargeting.value).toMatchObject({ moveName: 'Healer' })
+  })
+
+  it('does not append duplicate local ability metadata after accepted authoritative dispatch', async () => {
+    const map = ref(mapFixture())
+    const calls: string[] = []
+    const dispatchAbilityUse = vi.fn(async () => true)
+    const pokemonSheet = {
+      slug: 'bolt',
+      nickname: 'Bolt',
+      species: 'Sandile',
+      level: 5,
+      abilities: [{ name: 'Intimidate' }],
+    } as CharacterSheet
+    const panel = useAbilityAutomationPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        spawned('user-token'),
+        spawned('target-token', { combatStages: stages({ atk: 2 }) }),
+      ]),
+      pokemonBySlug: ref(new Map([[pokemonSheet.slug, pokemonSheet]])),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canControlPlacement: (id) => id === 'user-token',
+      modifyCombatStages: (update) => { calls.push(`stages:${update.id}:${update.stages.atk}`) },
+      modifyConditions: (update) => { calls.push(`conditions:${update.id}:${update.conditions.join(',')}`) },
+      modifyAbilityActivation: () => undefined,
+      now: () => 791,
+      dispatchAbilityUse,
+    })
+
+    await expect(panel.openAbilityAutomation({ id: 'user-token', abilityName: 'Intimidate' })).resolves.toBe(true)
+    await expect(panel.selectAbilityAutomationTarget('target-token')).resolves.toBe(true)
+
+    expect(dispatchAbilityUse).toHaveBeenCalledWith({
+      userId: 'user-token',
+      abilityName: 'Intimidate',
+      targetTokenId: 'target-token',
+    })
+    expect(calls).toEqual([])
+    expect(map.value.metadata?.abilityLog).toBeUndefined()
+    expect(panel.abilityAutomationTargeting.value).toBeNull()
   })
 
   it('applies target condition updates from map abilities', async () => {

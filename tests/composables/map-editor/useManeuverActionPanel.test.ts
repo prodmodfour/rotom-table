@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActionPanel'
 import type { TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -102,5 +102,50 @@ describe('useManeuverActionPanel', () => {
     expect(map.value.metadata?.maneuverLog).toMatchObject([
       { maneuverName: 'Sprint', lines: expect.arrayContaining(['Pike used Sprint.']) },
     ])
+  })
+
+  it('awaits asynchronous authoritative dispatch and skips local fallback on rejection', async () => {
+    const map = ref(mapDoc())
+    const dispatchManeuverUse = vi.fn(async () => false)
+    const panel = useManeuverActionPanel({
+      map,
+      spawnedPokemon: computed(() => [token({ id: 'actor', species: 'Pike', sheetSlug: 'actor' })]),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canControlPlacement: () => true,
+      dispatchManeuverUse,
+      now: () => 100,
+    })
+
+    await expect(panel.useManeuver({ id: 'actor', maneuverName: 'Sprint' })).resolves.toBe(false)
+
+    expect(dispatchManeuverUse).toHaveBeenCalledWith({ userId: 'actor', maneuverName: 'Sprint' })
+    expect(map.value.metadata?.maneuverLog).toBeUndefined()
+  })
+
+  it('does not append duplicate local maneuver metadata after accepted authoritative dispatch', async () => {
+    const map = ref(mapDoc())
+    const dispatchManeuverUse = vi.fn(async () => true)
+    const panel = useManeuverActionPanel({
+      map,
+      spawnedPokemon: computed(() => [
+        token({ id: 'actor', species: 'Pike', sheetSlug: 'actor' }),
+        token({ id: 'adjacent', species: 'Doug', sheetSlug: 'adjacent', position: { x: 1, y: 0, z: 0 } }),
+      ]),
+      trainerBySlug: ref(new Map<string, TrainerSheet>()),
+      canControlPlacement: (id) => id === 'actor',
+      dispatchManeuverUse,
+      now: () => 100,
+    })
+
+    expect(panel.useManeuver({ id: 'actor', maneuverName: 'Trip' })).toBe(true)
+    await expect(panel.selectManeuverActionTarget('adjacent')).resolves.toBe(true)
+
+    expect(dispatchManeuverUse).toHaveBeenCalledWith({
+      userId: 'actor',
+      maneuverName: 'Trip',
+      targetTokenId: 'adjacent',
+    })
+    expect(map.value.metadata?.maneuverLog).toBeUndefined()
+    expect(panel.maneuverActionTargeting.value).toBeNull()
   })
 })

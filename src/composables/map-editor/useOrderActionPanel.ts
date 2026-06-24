@@ -22,6 +22,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
 type MaybePromise<T> = T | Promise<T>
+type ActionDispatchResult = boolean | undefined
 
 export interface OrderActionEvent {
   userId: string
@@ -34,7 +35,7 @@ export interface UseOrderActionPanelOptions {
   trainerBySlug: SheetMapRef<TrainerSheet>
   canControlPlacement: (id: string) => boolean
   onBeforeOrderAction?: (event: OrderActionEvent) => MaybePromise<unknown>
-  dispatchOrderUse?: (event: OrderActionEvent & { targetTokenId?: string }) => boolean | undefined
+  dispatchOrderUse?: (event: OrderActionEvent & { targetTokenId?: string }) => MaybePromise<ActionDispatchResult>
   now?: () => number
   idFactory?: () => string
   maxLogEntries?: number
@@ -163,19 +164,12 @@ export const useOrderActionPanel = ({
     }
   })
 
-  const finishOrderUse = (
+  const appendLocalOrderUse = (
     user: SpawnedPokemon,
     order: TokenOrderMenuOption,
-    target: SpawnedPokemon | null = null,
+    target: SpawnedPokemon | null,
   ): boolean => {
     if (!map.value || !canControlPlacement(user.id)) return false
-
-    const dispatchResult = dispatchOrderUse?.({
-      userId: user.id,
-      orderName: order.name,
-      ...(target === null ? {} : { targetTokenId: target.id }),
-    })
-    if (dispatchResult !== undefined) return dispatchResult
 
     const activeEffect = createActiveOrderEffect({
       user,
@@ -198,6 +192,41 @@ export const useOrderActionPanel = ({
     })
     map.value.metadata = metadata
     return true
+  }
+
+  const finishOrderDispatch = (
+    dispatchResult: ActionDispatchResult,
+    user: SpawnedPokemon,
+    order: TokenOrderMenuOption,
+    target: SpawnedPokemon | null,
+  ): boolean => (
+    dispatchResult !== undefined
+      ? dispatchResult
+      : appendLocalOrderUse(user, order, target)
+  )
+
+  const finishOrderUse = (
+    user: SpawnedPokemon,
+    order: TokenOrderMenuOption,
+    target: SpawnedPokemon | null = null,
+  ): MaybePromise<boolean> => {
+    if (!map.value || !canControlPlacement(user.id)) return false
+
+    try {
+      const dispatchResult = dispatchOrderUse?.({
+        userId: user.id,
+        orderName: order.name,
+        ...(target === null ? {} : { targetTokenId: target.id }),
+      })
+      if (isPromiseLike(dispatchResult)) {
+        return Promise.resolve(dispatchResult)
+          .then((result) => finishOrderDispatch(result, user, order, target))
+          .catch(() => false)
+      }
+      return finishOrderDispatch(dispatchResult, user, order, target)
+    } catch {
+      return false
+    }
   }
 
   const performOrderUse = (
@@ -252,8 +281,15 @@ export const useOrderActionPanel = ({
     const target = findSpawnedPokemon(targetId)
     if (!user || !target) return false
 
-    activeOrderTargeting.value = null
-    return performOrderUse(user, request.order, target)
+    const result = performOrderUse(user, request.order, target)
+    if (isPromiseLike(result)) {
+      return Promise.resolve(result).then((handled) => {
+        if (handled) activeOrderTargeting.value = null
+        return handled
+      })
+    }
+    if (result) activeOrderTargeting.value = null
+    return result
   }
 
   const expireActiveOrdersAfterInitiativeAdvance = (advance: OrderTimelineAdvance) => {

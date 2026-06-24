@@ -1043,6 +1043,94 @@ describe('useLivePlayCommands', () => {
     })
   })
 
+  it('routes GM table action helpers without inventing a player profile id', async () => {
+    const map = mapFixture()
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_gmtableact',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      map: ref(map),
+      mapRevision: ref(4),
+    })
+
+    await expect(actions.useManeuver({
+      placementId: 'token-pikachu',
+      maneuverName: 'Trip',
+      targetPlacementId: 'target-token',
+    })).resolves.toMatchObject({ dispatched: true })
+    await expect(actions.useOrder({
+      placementId: 'token-pikachu',
+      orderName: 'Agility Training',
+      targetPlacementId: 'target-token',
+    })).resolves.toMatchObject({ dispatched: true })
+    await expect(actions.useAbility({
+      placementId: 'token-pikachu',
+      abilityName: 'Sand Veil',
+    })).resolves.toMatchObject({ dispatched: true })
+
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(1, MAP_API_PATHS.useManeuver, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
+      payload: {
+        placementId: 'token-pikachu',
+        maneuverName: 'Trip',
+        targetPlacementId: 'target-token',
+      },
+    }))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(2, MAP_API_PATHS.useOrder, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
+      payload: {
+        placementId: 'token-pikachu',
+        orderName: 'Agility Training',
+        targetPlacementId: 'target-token',
+      },
+    }))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(3, MAP_API_PATHS.useAbility, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+      payload: {
+        placementId: 'token-pikachu',
+        abilityName: 'Sand Veil',
+      },
+    }))
+    for (const [, body] of apiMocks.postJson.mock.calls) {
+      expect(body).not.toHaveProperty('profileId')
+    }
+    expect(apiMocks.postJson.mock.calls.map(([path]) => path)).not.toContain(SHEET_API_PATHS.save)
+  })
+
+  it('keeps the selected player profile on player table action helpers', async () => {
+    const map = mapFixture()
+    const profileId = ref(parsePlayerProfileId('profile_ash00000'))
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_playertableact',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      playerProfileId: profileId,
+      map: ref(map),
+      mapRevision: ref(4),
+    })
+
+    await actions.useManeuver({ placementId: 'token-pikachu', maneuverName: 'Trip' })
+    await actions.useOrder({ placementId: 'token-pikachu', orderName: 'Agility Training' })
+
+    for (const [, body] of apiMocks.postJson.mock.calls) {
+      expect(body).toMatchObject({ profileId: 'profile_ash00000' })
+    }
+  })
+
   it('routes table action helpers through the shared dispatcher and applies returned sheet updates', async () => {
     const map = mapFixture()
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))

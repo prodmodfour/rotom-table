@@ -19,6 +19,7 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
 type MaybePromise<T> = T | Promise<T>
+type ActionDispatchResult = boolean | undefined
 
 export interface ManeuverActionEvent {
   userId: string
@@ -31,7 +32,7 @@ export interface UseManeuverActionPanelOptions {
   trainerBySlug: SheetMapRef<TrainerSheet>
   canControlPlacement: (id: string) => boolean
   onBeforeManeuverAction?: (event: ManeuverActionEvent) => MaybePromise<unknown>
-  dispatchManeuverUse?: (event: ManeuverActionEvent & { targetTokenId?: string }) => boolean | undefined
+  dispatchManeuverUse?: (event: ManeuverActionEvent & { targetTokenId?: string }) => MaybePromise<ActionDispatchResult>
   now?: () => number
   maxLogEntries?: number
 }
@@ -133,20 +134,12 @@ export const useManeuverActionPanel = ({
     }
   })
 
-  const finishManeuverUse = (
+  const appendLocalManeuverUse = (
     user: SpawnedPokemon,
     maneuver: TokenManeuverMenuOption,
-    target: SpawnedPokemon | null = null,
+    target: SpawnedPokemon | null,
   ): boolean => {
     if (!map.value || !canControlPlacement(user.id)) return false
-
-    const dispatchResult = dispatchManeuverUse?.({
-      userId: user.id,
-      maneuverName: maneuver.name,
-      ...(target === null ? {} : { targetTokenId: target.id }),
-    })
-    if (dispatchResult !== undefined) return dispatchResult
-
     map.value.metadata = appendManeuverLogEntry(map.value.metadata, {
       userId: user.id,
       userName: user.species,
@@ -157,6 +150,41 @@ export const useManeuverActionPanel = ({
       maxLogEntries,
     })
     return true
+  }
+
+  const finishManeuverDispatch = (
+    dispatchResult: ActionDispatchResult,
+    user: SpawnedPokemon,
+    maneuver: TokenManeuverMenuOption,
+    target: SpawnedPokemon | null,
+  ): boolean => (
+    dispatchResult !== undefined
+      ? dispatchResult
+      : appendLocalManeuverUse(user, maneuver, target)
+  )
+
+  const finishManeuverUse = (
+    user: SpawnedPokemon,
+    maneuver: TokenManeuverMenuOption,
+    target: SpawnedPokemon | null = null,
+  ): MaybePromise<boolean> => {
+    if (!map.value || !canControlPlacement(user.id)) return false
+
+    try {
+      const dispatchResult = dispatchManeuverUse?.({
+        userId: user.id,
+        maneuverName: maneuver.name,
+        ...(target === null ? {} : { targetTokenId: target.id }),
+      })
+      if (isPromiseLike(dispatchResult)) {
+        return Promise.resolve(dispatchResult)
+          .then((result) => finishManeuverDispatch(result, user, maneuver, target))
+          .catch(() => false)
+      }
+      return finishManeuverDispatch(dispatchResult, user, maneuver, target)
+    } catch {
+      return false
+    }
   }
 
   const performManeuverUse = (
@@ -212,8 +240,15 @@ export const useManeuverActionPanel = ({
     const target = findSpawnedPokemon(targetId)
     if (!user || !target) return false
 
-    activeManeuverTargeting.value = null
-    return performManeuverUse(user, request.maneuver, target)
+    const result = performManeuverUse(user, request.maneuver, target)
+    if (isPromiseLike(result)) {
+      return Promise.resolve(result).then((handled) => {
+        if (handled) activeManeuverTargeting.value = null
+        return handled
+      })
+    }
+    if (result) activeManeuverTargeting.value = null
+    return result
   }
 
   return {

@@ -13,6 +13,8 @@ import { useEditableMap, type MapSaveStatus } from '~/composables/useEditableMap
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
 import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlayStateMachine'
+import { useMapPageTableActionDispatchers } from '~/composables/map-editor/useMapPageTableActionDispatchers'
+import { useMapPageTokenSpawning } from '~/composables/map-editor/useMapPageTokenSpawning'
 import { useLiveTableSnapshotSync } from '~/composables/map-editor/useLiveTableSnapshotSync'
 import { useSharedMapInteractionMode } from '~/composables/map-editor/useSharedMapInteractionMode'
 import { parseRoundInputValue, useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
@@ -76,7 +78,7 @@ import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
-import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind, SheetPlacement } from '~/types/map'
+import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -273,12 +275,6 @@ const shouldSuppressPlayerCharacterAttackOfOpportunity = ({
     trainerBySlug: trainerBySlug.value,
   })
 )
-const persistSpawnedPlacement = (placement: SheetPlacement) => {
-  if (isSetupEditMode()) return
-  void livePlayCommands.spawnToken({
-    placement: deepCloneJson(placement),
-  })
-}
 const tokenControlNotice = computed(() => {
   if (isPlayer.value && mapInPrepareMode.value) {
     return 'The GM is preparing this map. Live play controls are paused.'
@@ -451,11 +447,12 @@ const {
   controllablePlacementIds,
   tokenSendOutOptionsById,
   canControlPlacement,
+  createSpawnPlacement,
+  spawnSheetForSetupEdit,
   createSendOutPokemonPlacement,
   placementById,
   clearSelection,
   updatePreview,
-  spawnSheet,
   sendOutPokemon,
   selectPlacement,
   deletePlacement,
@@ -470,11 +467,28 @@ const {
   canSpawnTokens,
   canControlAllTokens: isGm,
   canSendOutTokens: computed(() => isGm.value || (isPlayer.value && !mapInPrepareMode.value)),
-  persistSpawnedPlacement,
   tokenControl: {
     enabled: computed(() => true),
     controllablePlacementIds: computed(() => playerProfileTokenControlModel.value.controllablePlacementIds),
   },
+})
+
+const {
+  spawnSheetPending,
+  spawnSheetFromMenu,
+} = useMapPageTokenSpawning({
+  isSetupEditMode,
+  authoritativeSnapshotReady: aggregateSnapshotReady,
+  createSpawnPlacement,
+  spawnSheetForSetupEdit,
+  spawnToken: ({ placement }) => livePlayCommands.spawnToken({
+    placement: deepCloneJson(placement),
+  }),
+})
+
+const tableActionDispatchers = useMapPageTableActionDispatchers({
+  isSetupEditMode,
+  livePlayCommands,
 })
 
 const enqueueMoveVfxDebugPreview = (kind: MoveVfxKind | 'all') => {
@@ -515,8 +529,6 @@ const deletePokemon = (id: string) => {
     if (result.dispatched) clearSelection()
   })
 }
-const shouldUseTableActionRoutes = () => isPlayer.value
-
 const turnPokemon = (id: string) => {
   const placement = placementById(id)
   if (!placement || !canControlPlacement(id)) return
@@ -1293,15 +1305,7 @@ const {
   modifyCombatStages: modifyCombatStagesFromScene,
   modifyConditions: modifyConditionsFromScene,
   modifyAbilityActivation,
-  dispatchAbilityUse: (event) => {
-    if (!shouldUseTableActionRoutes()) return undefined
-    void livePlayCommands.useAbility({
-      placementId: event.userId,
-      abilityName: event.abilityName,
-      ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
-    })
-    return true
-  },
+  dispatchAbilityUse: tableActionDispatchers.dispatchAbilityUse,
   onBeforeNonImmediateAction: async (event) => {
     await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId))
     return showActionSplash({ userId: event.userId, actionName: event.abilityName })
@@ -1319,15 +1323,7 @@ const {
   spawnedPokemon,
   trainerBySlug,
   canControlPlacement,
-  dispatchManeuverUse: (event) => {
-    if (!shouldUseTableActionRoutes()) return undefined
-    void livePlayCommands.useManeuver({
-      placementId: event.userId,
-      maneuverName: event.maneuverName,
-      ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
-    })
-    return true
-  },
+  dispatchManeuverUse: tableActionDispatchers.dispatchManeuverUse,
   onBeforeManeuverAction: async (event) => {
     await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId))
     return showActionSplash({ userId: event.userId, actionName: event.maneuverName })
@@ -1339,15 +1335,7 @@ const orderActionPanel = useOrderActionPanel({
   spawnedPokemon,
   trainerBySlug,
   canControlPlacement,
-  dispatchOrderUse: (event) => {
-    if (!shouldUseTableActionRoutes()) return undefined
-    void livePlayCommands.useOrder({
-      placementId: event.userId,
-      orderName: event.orderName,
-      ...(event.targetTokenId ? { targetPlacementId: event.targetTokenId } : {}),
-    })
-    return true
-  },
+  dispatchOrderUse: tableActionDispatchers.dispatchOrderUse,
   onBeforeOrderAction: async (event) => {
     await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(event.userId))
     return showActionSplash({ userId: event.userId, actionName: event.orderName })
@@ -1489,7 +1477,7 @@ const useManeuverFromContext = (payload: { id: string; maneuverName?: string | n
   cancelPokeballCaptureTargeting()
   cancelAbilityAutomationTargeting()
   cancelOrderActionTargeting()
-  useManeuver(payload)
+  void useManeuver(payload)
 }
 
 const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: string | null }) => {
@@ -1505,7 +1493,7 @@ const useOrderFromContext = (payload: { id: string; orderName?: string | null })
   cancelPokeballCaptureTargeting()
   cancelManeuverActionTargeting()
   cancelAbilityAutomationTargeting()
-  useOrder(payload)
+  void useOrder(payload)
 }
 
 const selectActionAutomationTarget = (targetId: string) => {
@@ -1522,10 +1510,10 @@ const selectActionAutomationTarget = (targetId: string) => {
     return
   }
   if (maneuverActionTargeting.value) {
-    selectManeuverActionTarget(targetId)
+    void selectManeuverActionTarget(targetId)
     return
   }
-  if (orderActionTargeting.value) selectOrderActionTarget(targetId)
+  if (orderActionTargeting.value) void selectOrderActionTarget(targetId)
 }
 
 const sceneActionError = computed(() => (
@@ -1829,7 +1817,8 @@ useMapDimensionReconciliation({
       <SheetsMenuModal
         v-if="map && canViewMap && canSpawnTokens && sheetsMenuOpen"
         @close="closeSheetsMenu"
-        @select="spawnSheet"
+        :busy="spawnSheetPending"
+        @select="spawnSheetFromMenu"
       />
 
       <InitiativeMenuModal

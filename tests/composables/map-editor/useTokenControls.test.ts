@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   pokedexPathForSpecies,
   sheetPathForPlacement,
@@ -51,7 +51,6 @@ const makeControls = (
     canSendOutTokens?: boolean
     nextId?: string
     now?: () => number
-    persistSpawnedPlacement?: (placement: TabletopMap['placements'][number]) => void
     tokenControl?: {
       readonly enabled: { readonly value: boolean }
       readonly controllablePlacementIds: { readonly value: readonly string[] }
@@ -75,21 +74,39 @@ const makeControls = (
       canSendOutTokens: ref(options.canSendOutTokens ?? isGm.value),
       tokenControl: options.tokenControl,
       createPlacementId: () => options.nextId ?? 'token-1',
-      persistSpawnedPlacement: options.persistSpawnedPlacement,
       now: options.now,
     }),
   }
 }
 
 describe('useTokenControls', () => {
-  it('spawns a selected sheet onto the first available map position and queues a focused spawn persist', () => {
+  it('plans a spawn placement without mutating the map', () => {
     const sheet = pokemon()
-    const persistSpawnedPlacement = vi.fn()
-    const { map, controls } = makeControls({ pokemonSheets: [sheet], nextId: 'spawned-1', persistSpawnedPlacement })
+    const { map, controls } = makeControls({ pokemonSheets: [sheet], nextId: 'spawned-1' })
 
     controls.updatePreview({ position: { x: 1, y: 0, z: 1 }, reachable: true, pathLength: 2 })
-    controls.spawnSheet({ kind: 'pokemon', sheet })
+    const placement = controls.createSpawnPlacement({ kind: 'pokemon', sheet })
 
+    expect(placement).toMatchObject({
+      id: 'spawned-1',
+      sheetKind: 'pokemon',
+      sheetSlug: 'bolt',
+      facing: 'south-east',
+      turned: false,
+    })
+    expect(placement?.position.x).toBeGreaterThanOrEqual(0)
+    expect(map.value.placements).toHaveLength(0)
+    expect(controls.previewState.value).toEqual({ position: { x: 1, y: 0, z: 1 }, reachable: true, pathLength: 2 })
+    expect(controls.spawnedPokemon.value).toEqual([])
+  })
+
+  it('commits a setup/edit spawn locally exactly once', () => {
+    const sheet = pokemon()
+    const { map, controls } = makeControls({ pokemonSheets: [sheet], nextId: 'spawned-1' })
+
+    controls.updatePreview({ position: { x: 1, y: 0, z: 1 }, reachable: true, pathLength: 2 })
+
+    expect(controls.spawnSheetForSetupEdit({ kind: 'pokemon', sheet })).toBe(true)
     expect(map.value.placements).toHaveLength(1)
     expect(map.value.placements[0]).toMatchObject({
       id: 'spawned-1',
@@ -98,10 +115,8 @@ describe('useTokenControls', () => {
       facing: 'south-east',
       turned: false,
     })
-    expect(map.value.placements[0].position.x).toBeGreaterThanOrEqual(0)
     expect(controls.previewState.value).toEqual({ position: null, reachable: false, pathLength: 0 })
     expect(controls.spawnedPokemon.value[0]?.id).toBe('spawned-1')
-    expect(persistSpawnedPlacement).toHaveBeenCalledWith(map.value.placements[0])
   })
 
   it('uses explicit profile-derived token control and keeps deletion GM-only', () => {
@@ -150,7 +165,6 @@ describe('useTokenControls', () => {
       { id: 'linked-trainer', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 1, y: 0, z: 1 } },
       { id: 'unlinked-trainer', sheetKind: 'trainer', sheetSlug: 'gary', position: { x: 4, y: 0, z: 4 } },
     ]
-    const persistSpawnedPlacement = vi.fn()
     const { controls } = makeControls({
       map,
       pokemonSheets: [teamPokemon],
@@ -158,7 +172,6 @@ describe('useTokenControls', () => {
       isGm: false,
       canSendOutTokens: true,
       nextId: 'sent-out-bolt',
-      persistSpawnedPlacement,
       tokenControl: {
         enabled: ref(true),
         controllablePlacementIds: ref(['linked-trainer']),
@@ -194,7 +207,6 @@ describe('useTokenControls', () => {
       position: { x: 3, y: 0, z: 1 },
     })).toBe(true)
     expect(map.placements.map((entry) => entry.id)).toEqual(['linked-trainer', 'unlinked-trainer', 'sent-out-bolt'])
-    expect(persistSpawnedPlacement).toHaveBeenCalledWith(expect.objectContaining({ id: 'sent-out-bolt' }))
   })
 
   it('does not use public player sheet flags as token control without a profile override', () => {

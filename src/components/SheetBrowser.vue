@@ -16,8 +16,10 @@ export type SheetSelection = SheetBrowserSelection
 
 withDefaults(defineProps<{
   showHeading?: boolean
+  disabled?: boolean
 }>(), {
   showHeading: true,
+  disabled: false,
 })
 
 const emit = defineEmits<{ (event: 'select', selection: SheetSelection): void }>()
@@ -79,12 +81,13 @@ const selectItem = (item: SheetBrowserItem) => {
 
       <label class="search-field">
         <span class="sr-only">Search sheets</span>
-        <input v-model.trim="searchTerm" type="search" placeholder="Search sheets…" />
+        <input v-model.trim="searchTerm" type="search" placeholder="Search sheets…" :disabled="disabled" />
       </label>
 
       <SheetBrowserList
         :folders="visibleFolders"
         :sheets="visibleSheets"
+        :disabled="disabled"
         @open-folder="goToFolder"
         @select-sheet="selectItem"
       />

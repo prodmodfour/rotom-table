@@ -286,6 +286,57 @@ describe('live-play map token table action commands', () => {
     expect((await sheetRepository.getByRef('pokemon', 'target'))?.revision).toBe(3)
   })
 
+  it('rolls back the map, sheet updates, operation record, and realtime publish when an affected sheet is stale', async () => {
+    const { deps, mapRepository, sheetRepository, opRepository, events } = createDeps({ now: 4444 })
+    const staleSheetRepository = {
+      getByRef: sheetRepository.getByRef,
+      applyLivePlayUpdate: vi.fn((input: Parameters<typeof sheetRepository.applyLivePlayUpdate>[0]) => (
+        input.kind === 'pokemon' && input.slug === 'target'
+          ? 'stale' as const
+          : sheetRepository.applyLivePlayUpdate(input)
+      )),
+    }
+    const request = command(
+      LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+      'op_actionstale',
+      { placementId: 'actor', abilityName: 'Intimidate', targetPlacementId: 'target' },
+      [
+        tokenActionScope('actor'),
+        metadataScope,
+        sheetAbilityScope('sandile'),
+        sheetAbilityScope('target'),
+      ],
+    )
+
+    const response = await executeLivePlayTableActionCommandUseCase({
+      role: 'gm',
+      command: request,
+      playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
+    }, { ...deps, sheetRepository: staleSheetRepository })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      reason: 'persistence-failed',
+      currentRevision: 7,
+    })
+    expect(staleSheetRepository.applyLivePlayUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'pokemon',
+      slug: 'target',
+      expectedRevision: 3,
+    }))
+    expect((await mapRepository.getBySlug('arena'))).toMatchObject({
+      revision: 7,
+      metadata: { owner: 'gm' },
+    })
+    expect((await sheetRepository.getByRef('pokemon', 'target'))?.sheet).toMatchObject({
+      revision: 3,
+      stats: { atk: { stage: 2 } },
+    })
+    expect(opRepository.getOpRecord('arena', 'op_actionstale')).toBeNull()
+    expect(events).toHaveLength(0)
+  })
+
   it('keeps GM table actions available on hidden maps through the command path', async () => {
     const { deps, mapRepository } = createDeps({ map: baseMap({ playerVisible: false }) })
     const request = command(

@@ -36,6 +36,7 @@ interface SheetUpdateOptions {
 
 type SheetMapRef<T> = Ref<Map<string, T> | undefined>
 type MaybePromise<T> = T | Promise<T>
+type ActionDispatchResult = boolean | undefined
 
 type SheetUpdateHandler<TUpdate> = (
   update: TUpdate,
@@ -52,7 +53,7 @@ export interface UseAbilityAutomationPanelOptions {
   modifyConditions: SheetUpdateHandler<MoveAutomationConditionUpdate>
   modifyAbilityActivation: SheetUpdateHandler<AbilitySheetActivationUpdate>
   onBeforeNonImmediateAction?: (event: { userId: string; abilityName: string }) => MaybePromise<unknown>
-  dispatchAbilityUse?: (event: { userId: string; abilityName: string; targetTokenId?: string }) => boolean | undefined
+  dispatchAbilityUse?: (event: { userId: string; abilityName: string; targetTokenId?: string }) => MaybePromise<ActionDispatchResult>
   now?: () => number
   maxLogEntries?: number
 }
@@ -147,15 +148,26 @@ export const useAbilityAutomationPanel = ({
   const notifyAbilityAction = (event: { userId: string; abilityName: string }): MaybePromise<unknown> =>
     onBeforeNonImmediateAction?.(event)
 
+  const resolveAbilityDispatch = async (
+    event: { userId: string; abilityName: string; targetTokenId?: string },
+  ): Promise<ActionDispatchResult> => {
+    try {
+      const result = dispatchAbilityUse?.(event)
+      return isPromiseLike(result) ? await result : result
+    } catch {
+      return false
+    }
+  }
+
   const applyAbilityAutomationTransaction = async (
     transaction: AbilityAutomationTransaction,
     options: { skipActionNotification?: boolean } = {},
-  ) => {
-    if (!map.value || !canControlPlacement(transaction.userId)) return
+  ): Promise<boolean> => {
+    if (!map.value || !canControlPlacement(transaction.userId)) return false
     if (!options.skipActionNotification) {
       const notification = notifyAbilityAction({ userId: transaction.userId, abilityName: transaction.abilityName })
       if (isPromiseLike(notification)) await notification
-      if (!map.value || !canControlPlacement(transaction.userId)) return
+      if (!map.value || !canControlPlacement(transaction.userId)) return false
     }
     for (const update of transaction.combatStageUpdates) {
       await modifyCombatStages(update, { allowAnyTarget: true })
@@ -164,18 +176,19 @@ export const useAbilityAutomationPanel = ({
       await modifyConditions(update, { allowAnyTarget: true })
     }
     appendAbilityAutomationLog(transaction)
+    return true
   }
 
   const activateSheetAbility = async (
     user: SpawnedPokemon,
     option: TokenAbilityMenuOption,
-  ) => {
+  ): Promise<boolean> => {
     const notification = notifyAbilityAction({ userId: user.id, abilityName: option.name })
     if (isPromiseLike(notification)) await notification
-    if (!map.value || !canControlPlacement(user.id)) return
+    if (!map.value || !canControlPlacement(user.id)) return false
 
-    const dispatchResult = dispatchAbilityUse?.({ userId: user.id, abilityName: option.name })
-    if (dispatchResult !== undefined) return
+    const dispatchResult = await resolveAbilityDispatch({ userId: user.id, abilityName: option.name })
+    if (dispatchResult !== undefined) return dispatchResult
 
     await modifyAbilityActivation({
       id: user.id,
@@ -191,21 +204,22 @@ export const useAbilityAutomationPanel = ({
       conditionUpdates: [],
       logLines: [`${user.species} activated ${option.name}.`],
     })
+    return true
   }
 
   const applySelfMapAbility = async (
     user: SpawnedPokemon,
     option: TokenAbilityMenuOption,
-  ) => {
+  ): Promise<boolean> => {
     let actionNotified = false
     if (dispatchAbilityUse) {
       const notification = notifyAbilityAction({ userId: user.id, abilityName: option.name })
       if (isPromiseLike(notification)) await notification
       actionNotified = true
-      if (!map.value || !canControlPlacement(user.id)) return
+      if (!map.value || !canControlPlacement(user.id)) return false
 
-      const dispatchResult = dispatchAbilityUse({ userId: user.id, abilityName: option.name })
-      if (dispatchResult !== undefined) return
+      const dispatchResult = await resolveAbilityDispatch({ userId: user.id, abilityName: option.name })
+      if (dispatchResult !== undefined) return dispatchResult
     }
 
     const transaction = resolveMapAbilityAutomationTransaction({
@@ -213,7 +227,9 @@ export const useAbilityAutomationPanel = ({
       user,
       fieldEffects: map.value?.fieldEffects,
     })
-    if (transaction) await applyAbilityAutomationTransaction(transaction, { skipActionNotification: actionNotified })
+    return transaction
+      ? applyAbilityAutomationTransaction(transaction, { skipActionNotification: actionNotified })
+      : false
   }
 
   const beginMapAbilityTargeting = (
@@ -230,55 +246,54 @@ export const useAbilityAutomationPanel = ({
     }
   }
 
-  const openAbilityAutomation = async (input: string | { id: string; abilityName?: string | null }) => {
+  const openAbilityAutomation = async (input: string | { id: string; abilityName?: string | null }): Promise<boolean> => {
     const id = typeof input === 'string' ? input : input.id
-    if (!canControlPlacement(id)) return
+    if (!canControlPlacement(id)) return false
     const abilityName = typeof input === 'string' ? null : input.abilityName?.trim() || null
-    if (!abilityName) return
+    if (!abilityName) return false
 
     const user = findSpawnedPokemon(id)
     const option = abilityOptionForUse(id, abilityName)
-    if (!user || !option?.automation) return
+    if (!user || !option?.automation) return false
 
     activeAbilityTargeting.value = null
-    if (option.automation.category === 'passive') return
+    if (option.automation.category === 'passive') return false
     if (option.automation.category === 'sheet') {
-      if (!option.activated) await activateSheetAbility(user, option)
-      return
+      return option.activated ? false : activateSheetAbility(user, option)
     }
 
     const mapAutomation = getMapAbilityAutomation(option.name)
-    if (mapAutomation?.targetMode === 'self') {
-      await applySelfMapAbility(user, option)
-      return
-    }
+    if (mapAutomation?.targetMode === 'self') return applySelfMapAbility(user, option)
 
     beginMapAbilityTargeting(user, option)
+    return true
   }
 
   const cancelAbilityAutomationTargeting = () => {
     activeAbilityTargeting.value = null
   }
 
-  const selectAbilityAutomationTarget = async (targetId: string) => {
+  const selectAbilityAutomationTarget = async (targetId: string): Promise<boolean> => {
     const request = activeAbilityTargeting.value
     const overlay = abilityAutomationTargeting.value
-    if (!request || !overlay?.candidateIds.includes(targetId)) return
+    if (!request || !overlay?.candidateIds.includes(targetId)) return false
 
     const user = findSpawnedPokemon(request.userId)
     const target = findSpawnedPokemon(targetId)
-    if (!user || !target) return
+    if (!user || !target) return false
 
-    activeAbilityTargeting.value = null
     let actionNotified = false
     if (dispatchAbilityUse) {
       const notification = notifyAbilityAction({ userId: user.id, abilityName: request.abilityName })
       if (isPromiseLike(notification)) await notification
       actionNotified = true
-      if (!map.value || !canControlPlacement(user.id)) return
+      if (!map.value || !canControlPlacement(user.id)) return false
 
-      const dispatchResult = dispatchAbilityUse({ userId: user.id, abilityName: request.abilityName, targetTokenId: target.id })
-      if (dispatchResult !== undefined) return
+      const dispatchResult = await resolveAbilityDispatch({ userId: user.id, abilityName: request.abilityName, targetTokenId: target.id })
+      if (dispatchResult !== undefined) {
+        if (dispatchResult) activeAbilityTargeting.value = null
+        return dispatchResult
+      }
     }
 
     const transaction = resolveMapAbilityAutomationTransaction({
@@ -287,9 +302,11 @@ export const useAbilityAutomationPanel = ({
       target,
       fieldEffects: map.value?.fieldEffects,
     })
-    if (!transaction) return
+    if (!transaction) return false
 
-    await applyAbilityAutomationTransaction(transaction, { skipActionNotification: actionNotified })
+    const applied = await applyAbilityAutomationTransaction(transaction, { skipActionNotification: actionNotified })
+    if (applied) activeAbilityTargeting.value = null
+    return applied
   }
 
   return {

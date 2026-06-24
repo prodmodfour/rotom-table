@@ -66,7 +66,6 @@ export interface UseTokenControlsOptions {
   selectionDisabled?: BooleanRef
   tokenControl?: TokenControlOverrideLike
   createPlacementId?: () => string
-  persistSpawnedPlacement?: (placement: SheetPlacement) => void
   now?: () => number
   maxMovementLogEntries?: number
 }
@@ -109,7 +108,6 @@ export const useTokenControls = ({
   selectionDisabled,
   tokenControl,
   createPlacementId = defaultCreatePlacementId,
-  persistSpawnedPlacement,
   now,
   maxMovementLogEntries,
 }: UseTokenControlsOptions) => {
@@ -192,12 +190,12 @@ export const useTokenControls = ({
     previewState.value = next
   }
 
-  const spawnSheet = (selection: MapTokenSheetSelection) => {
-    if (!map.value || !canSpawnTokens.value) return
+  const createSpawnPlacement = (selection: MapTokenSheetSelection): SheetPlacement | null => {
+    if (!map.value || !canSpawnTokens.value) return null
     const catalog = selection.kind === 'pokemon'
       ? catalogEntryForPokemonSheet(selection.sheet)
       : catalogEntryForTrainerSheet(selection.sheet)
-    if (!catalog) return
+    if (!catalog) return null
 
     const occupiedKeys = buildMapOccupancy({
       voxels: mapVoxels.value,
@@ -210,9 +208,9 @@ export const useTokenControls = ({
       occupiedKeys,
       mapGroundLevelY.value,
     )
-    if (!position) return
+    if (!position) return null
 
-    const placement: SheetPlacement = {
+    return {
       id: createPlacementId(),
       sheetKind: selection.kind,
       sheetSlug: selection.sheet.slug,
@@ -220,9 +218,18 @@ export const useTokenControls = ({
       facing: DEFAULT_TOKEN_FACING_DIRECTION,
       turned: false,
     }
+  }
+
+  const commitSpawnPlacementForSetupEdit = (placement: SheetPlacement): boolean => {
+    if (!map.value || !canSpawnTokens.value) return false
     map.value.placements.push(placement)
-    persistSpawnedPlacement?.(placement)
     clearSelection()
+    return true
+  }
+
+  const spawnSheetForSetupEdit = (selection: MapTokenSheetSelection): boolean => {
+    const placement = createSpawnPlacement(selection)
+    return placement ? commitSpawnPlacementForSetupEdit(placement) : false
   }
 
   const sendOutPokemonContext = (payload: { trainerId: string; pokemonSlug: string; position: GridAnchor }) => {
@@ -281,7 +288,6 @@ export const useTokenControls = ({
     if (!placement) return false
 
     map.value.placements.push(placement)
-    persistSpawnedPlacement?.(placement)
     clearSelection()
     return true
   }
@@ -354,12 +360,13 @@ export const useTokenControls = ({
     tokenSendOutOptionsById,
     canControlPlacement,
     canSendOutPokemon,
+    createSpawnPlacement,
+    spawnSheetForSetupEdit,
     createSendOutPokemonPlacement,
     placementById,
     resetPreview,
     clearSelection,
     updatePreview,
-    spawnSheet,
     sendOutPokemon,
     selectPlacement,
     deletePlacement,
