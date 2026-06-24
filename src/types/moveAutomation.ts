@@ -42,17 +42,20 @@ export interface MoveAutomationLogEntry {
   lines: string[]
 }
 
-export type MoveAutomationAreaDirection =
-  | 'north'
-  | 'north-east'
-  | 'east'
-  | 'south-east'
-  | 'south'
-  | 'south-west'
-  | 'west'
-  | 'north-west'
-  | 'up'
-  | 'down'
+export const MOVE_AUTOMATION_AREA_DIRECTIONS = [
+  'north',
+  'north-east',
+  'east',
+  'south-east',
+  'south',
+  'south-west',
+  'west',
+  'north-west',
+  'up',
+  'down',
+] as const
+
+export type MoveAutomationAreaDirection = typeof MOVE_AUTOMATION_AREA_DIRECTIONS[number]
 
 export interface MoveAutomationAreaDirectionOption {
   direction: MoveAutomationAreaDirection

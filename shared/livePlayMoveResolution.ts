@@ -1,3 +1,6 @@
+import { MOVE_AUTOMATION_AREA_DIRECTIONS, type MoveAutomationAreaDirection } from '~/types/moveAutomation'
+import type { GridAnchor } from '~/types/map'
+
 export const LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION = 1 as const
 
 export const LIVE_PLAY_MOVE_RESOLUTION_MAX_TEXT_LENGTH = 120 as const
@@ -17,10 +20,19 @@ export interface ResolveTargetCountMoveSelection {
   readonly targetPlacementIds: readonly string[]
 }
 
+export interface ResolveAreaMoveSelection {
+  readonly kind: 'area'
+  readonly areaTemplateId: string
+  readonly direction?: MoveAutomationAreaDirection
+  readonly aimCell?: GridAnchor
+  readonly excludedTargetPlacementIds?: readonly string[]
+}
+
 export type ResolveMoveSelection =
   | ResolveSelfMoveSelection
   | ResolveSingleTargetMoveSelection
   | ResolveTargetCountMoveSelection
+  | ResolveAreaMoveSelection
 
 export interface ResolveMoveIntent {
   readonly schemaVersion: typeof LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION
@@ -65,10 +77,15 @@ const TOP_LEVEL_FIELDS = new Set(['schemaVersion', 'placementId', 'moveName', 't
 const SELF_SELECTION_FIELDS = new Set(['kind'])
 const SINGLE_TARGET_SELECTION_FIELDS = new Set(['kind', 'targetPlacementId'])
 const TARGET_COUNT_SELECTION_FIELDS = new Set(['kind', 'targetPlacementIds'])
+const AREA_SELECTION_FIELDS = new Set(['kind', 'areaTemplateId', 'direction', 'aimCell', 'excludedTargetPlacementIds'])
 
 const FORBIDDEN_CLIENT_AUTHORITY_FIELDS = new Set([
+  'roll',
+  'rolls',
   'accuracyRoll',
   'accuracyRolls',
+  'damage',
+  'damageFormula',
   'damageRoll',
   'damageRolls',
   'criticalRoll',
@@ -84,6 +101,14 @@ const FORBIDDEN_CLIENT_AUTHORITY_FIELDS = new Set([
   'hpUpdates',
   'conditionUpdates',
   'combatStageUpdates',
+  'cells',
+  'areaCells',
+  'targetIds',
+  'targetPlacementIds',
+  'candidateIds',
+  'affectedIds',
+  'destination',
+  'passDestination',
   'sheetRevisions',
   'sheetRevision',
   'mapEffects',
@@ -103,6 +128,11 @@ const isRecord = (value: unknown): value is UnknownRecord =>
 
 const hasOwn = (record: UnknownRecord, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
+
+const MOVE_AUTOMATION_AREA_DIRECTION_SET = new Set<string>(MOVE_AUTOMATION_AREA_DIRECTIONS)
+
+const isMoveAutomationAreaDirection = (value: unknown): value is MoveAutomationAreaDirection =>
+  typeof value === 'string' && MOVE_AUTOMATION_AREA_DIRECTION_SET.has(value)
 
 const addIssue = (
   issues: ResolveMoveIntentValidationIssue[],
@@ -166,6 +196,94 @@ const parseBoundedText = (
   return normalized
 }
 
+const parseBoundedTextArray = (
+  value: unknown,
+  path: string,
+  issues: ResolveMoveIntentValidationIssue[],
+  options: { readonly requireNonEmpty: boolean },
+): string[] | null => {
+  if (!Array.isArray(value)) {
+    addIssue(issues, path, 'invalid-field', `${path} must be an array.`)
+    return null
+  }
+
+  if (options.requireNonEmpty && value.length === 0) {
+    addIssue(issues, path, 'invalid-field', `${path} must contain at least one target.`)
+  }
+  if (value.length > LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS) {
+    addIssue(
+      issues,
+      path,
+      'too-many-targets',
+      `${path} must contain at most ${LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS} targets.`,
+    )
+  }
+
+  const parsedItems: string[] = []
+  const seen = new Set<string>()
+  value.forEach((item, index) => {
+    const itemPath = `${path}.${index}`
+    const parsed = parseBoundedText(item, itemPath, issues)
+    if (!parsed) return
+    if (seen.has(parsed)) {
+      addIssue(issues, itemPath, 'duplicate-target', `${itemPath} duplicates target placement ${parsed}.`)
+      return
+    }
+    seen.add(parsed)
+    parsedItems.push(parsed)
+  })
+
+  return parsedItems
+}
+
+const parseAreaDirection = (
+  value: unknown,
+  path: string,
+  issues: ResolveMoveIntentValidationIssue[],
+): MoveAutomationAreaDirection | null => {
+  if (isMoveAutomationAreaDirection(value)) return value
+  addIssue(
+    issues,
+    path,
+    'invalid-field',
+    `${path} must be one of: ${MOVE_AUTOMATION_AREA_DIRECTIONS.join(', ')}.`,
+  )
+  return null
+}
+
+const AIM_CELL_FIELDS = new Set(['x', 'y', 'z'])
+
+const parseAimCellCoordinate = (
+  value: unknown,
+  path: string,
+  issues: ResolveMoveIntentValidationIssue[],
+): number | null => {
+  if (typeof value === 'number' && Number.isSafeInteger(value)) return value
+  addIssue(issues, path, 'invalid-field', `${path} must be a safe integer.`)
+  return null
+}
+
+const parseAimCell = (
+  value: unknown,
+  path: string,
+  issues: ResolveMoveIntentValidationIssue[],
+): GridAnchor | null => {
+  if (!isRecord(value)) {
+    addIssue(issues, path, 'invalid-field', `${path} must be an object with x, y, and z.`)
+    return null
+  }
+
+  addUnknownFieldIssues(issues, value, AIM_CELL_FIELDS, path)
+  requireField(value, 'x', issues, `${path}.x`)
+  requireField(value, 'y', issues, `${path}.y`)
+  requireField(value, 'z', issues, `${path}.z`)
+
+  const x = parseAimCellCoordinate(value.x, `${path}.x`, issues)
+  const y = parseAimCellCoordinate(value.y, `${path}.y`, issues)
+  const z = parseAimCellCoordinate(value.z, `${path}.z`, issues)
+  return x == null || y == null || z == null ? null : { x, y, z }
+}
+
 const parseSelfSelection = (
   selection: UnknownRecord,
   issues: ResolveMoveIntentValidationIssue[],
@@ -190,43 +308,51 @@ const parseTargetCountSelection = (
 ): ResolveTargetCountMoveSelection | null => {
   addUnknownFieldIssues(issues, selection, TARGET_COUNT_SELECTION_FIELDS, 'selection')
   requireField(selection, 'targetPlacementIds', issues, 'selection.targetPlacementIds')
-  if (!Array.isArray(selection.targetPlacementIds)) {
-    addIssue(issues, 'selection.targetPlacementIds', 'invalid-field', 'selection.targetPlacementIds must be an array.')
-    return null
-  }
-
-  if (selection.targetPlacementIds.length === 0) {
-    addIssue(
-      issues,
-      'selection.targetPlacementIds',
-      'invalid-field',
-      'selection.targetPlacementIds must contain at least one target.',
-    )
-  }
-  if (selection.targetPlacementIds.length > LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS) {
-    addIssue(
-      issues,
-      'selection.targetPlacementIds',
-      'too-many-targets',
-      `selection.targetPlacementIds must contain at most ${LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS} targets.`,
-    )
-  }
-
-  const targetPlacementIds: string[] = []
-  const seen = new Set<string>()
-  selection.targetPlacementIds.forEach((item, index) => {
-    const path = `selection.targetPlacementIds.${index}`
-    const parsed = parseBoundedText(item, path, issues)
-    if (!parsed) return
-    if (seen.has(parsed)) {
-      addIssue(issues, path, 'duplicate-target', `${path} duplicates target placement ${parsed}.`)
-      return
-    }
-    seen.add(parsed)
-    targetPlacementIds.push(parsed)
+  const targetPlacementIds = parseBoundedTextArray(selection.targetPlacementIds, 'selection.targetPlacementIds', issues, {
+    requireNonEmpty: true,
   })
 
-  return issues.length === 0 ? { kind: 'target-count', targetPlacementIds } : null
+  return issues.length === 0 && targetPlacementIds ? { kind: 'target-count', targetPlacementIds } : null
+}
+
+const parseAreaSelection = (
+  selection: UnknownRecord,
+  issues: ResolveMoveIntentValidationIssue[],
+): ResolveAreaMoveSelection | null => {
+  addUnknownFieldIssues(issues, selection, AREA_SELECTION_FIELDS, 'selection')
+  requireField(selection, 'areaTemplateId', issues, 'selection.areaTemplateId')
+
+  const areaTemplateId = parseBoundedText(selection.areaTemplateId, 'selection.areaTemplateId', issues)
+  const direction = hasOwn(selection, 'direction')
+    ? parseAreaDirection(selection.direction, 'selection.direction', issues)
+    : null
+  const aimCell = hasOwn(selection, 'aimCell')
+    ? parseAimCell(selection.aimCell, 'selection.aimCell', issues)
+    : null
+  const excludedTargetPlacementIds = hasOwn(selection, 'excludedTargetPlacementIds')
+    ? parseBoundedTextArray(selection.excludedTargetPlacementIds, 'selection.excludedTargetPlacementIds', issues, {
+        requireNonEmpty: false,
+      })
+    : null
+
+  if (hasOwn(selection, 'direction') && hasOwn(selection, 'aimCell')) {
+    addIssue(
+      issues,
+      'selection.aimCell',
+      'invalid-field',
+      'selection.direction and selection.aimCell may not both be supplied.',
+    )
+  }
+
+  if (issues.length > 0 || !areaTemplateId) return null
+
+  return {
+    kind: 'area',
+    areaTemplateId,
+    ...(direction ? { direction } : {}),
+    ...(aimCell ? { aimCell: { ...aimCell } } : {}),
+    ...(excludedTargetPlacementIds ? { excludedTargetPlacementIds: [...excludedTargetPlacementIds] } : {}),
+  }
 }
 
 const parseSelection = (
@@ -242,12 +368,13 @@ const parseSelection = (
   if (value.kind === 'self') return parseSelfSelection(value, issues)
   if (value.kind === 'single-target') return parseSingleTargetSelection(value, issues)
   if (value.kind === 'target-count') return parseTargetCountSelection(value, issues)
+  if (value.kind === 'area') return parseAreaSelection(value, issues)
 
   addIssue(
     issues,
     'selection.kind',
     'invalid-field',
-    'selection.kind must be self, single-target, or target-count.',
+    'selection.kind must be self, single-target, target-count, or area.',
   )
   return null
 }

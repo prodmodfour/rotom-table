@@ -20,6 +20,7 @@ import {
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
+import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
 import {
   buildMoveAutomationAreaTemplateCells,
   buildMoveAutomationAreaTemplatePlacementAtCenter,
@@ -2051,42 +2052,13 @@ export const useMoveAutomationPanel = ({
     if (nextRequest) activeMoveTargeting.value = nextRequest
   }
 
-  const confirmedAreaTemplateKeywordIsAlternative = (
-    keyword: string,
-    request: ActiveAreaConfirmationRequest,
-  ): boolean => {
-    const normalizedKeyword = keyword.toLocaleLowerCase()
-    return request.areaTemplateOptions.some((option) => normalizedKeyword.includes(option.label.toLocaleLowerCase()))
-  }
-
-  const confirmedAreaScriptKeywords = (
-    request: ActiveAreaConfirmationRequest,
-    template: MoveAutomationAreaTemplate,
-  ): string[] => {
-    const selectedLabel = template.label.toLocaleLowerCase()
-    return [
-      template.label,
-      ...request.script.keywords.filter((keyword) => (
-        keyword.toLocaleLowerCase() !== selectedLabel
-        && !confirmedAreaTemplateKeywordIsAlternative(keyword, request)
-      )),
-    ]
-  }
-
   const scriptForConfirmedAreaRequest = (request: ActiveAreaConfirmationRequest): MoveAutomationScript => {
     const template = selectedAreaTemplateForRequest(request)
-    if (!template) return request.script
-    if (!areaTemplateOptionIsVisible(request.areaTemplateOptions)) {
-      return { ...request.script, areaTemplates: [{ ...template }] }
-    }
-
-    const keywords = confirmedAreaScriptKeywords(request, template)
-    return {
-      ...request.script,
-      range: keywords.join(', '),
-      keywords,
-      areaTemplates: [{ ...template }],
-    }
+    return template
+      ? moveAutomationScriptForConfirmedAreaTemplate(request.script, template, {
+          alternativeTemplateLabels: request.areaTemplateOptions.map((option) => option.label),
+        })
+      : request.script
   }
 
   const confirmMoveAutomationTargetCountRequest = async (request: ActiveTargetCountRequest) => {

@@ -9,6 +9,7 @@ import {
   ptuGridDistanceBetweenFootprints,
   ptuGridVectorDistance,
 } from '~/utils/ptuGridDistance'
+import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type {
   MoveAutomationAreaDirection,
   MoveAutomationAreaTemplate,
@@ -94,20 +95,25 @@ export interface BuildMoveAutomationCloseBlastPlacementAtAimCellInput extends Ar
   label?: string
 }
 
-const AREA_DIRECTIONS: readonly DirectionDefinition[] = [
-  { id: 'north', label: 'north', dx: 0, dy: 0, dz: -1 },
-  { id: 'north-east', label: 'north-east', dx: 1, dy: 0, dz: -1 },
-  { id: 'east', label: 'east', dx: 1, dy: 0, dz: 0 },
-  { id: 'south-east', label: 'south-east', dx: 1, dy: 0, dz: 1 },
-  { id: 'south', label: 'south', dx: 0, dy: 0, dz: 1 },
-  { id: 'south-west', label: 'south-west', dx: -1, dy: 0, dz: 1 },
-  { id: 'west', label: 'west', dx: -1, dy: 0, dz: 0 },
-  { id: 'north-west', label: 'north-west', dx: -1, dy: 0, dz: -1 },
-  { id: 'up', label: 'up', dx: 0, dy: 1, dz: 0 },
-  { id: 'down', label: 'down', dx: 0, dy: -1, dz: 0 },
-]
+const AREA_DIRECTION_METADATA: Record<MoveAutomationAreaDirection, Omit<DirectionDefinition, 'id'>> = {
+  north: { label: 'north', dx: 0, dy: 0, dz: -1 },
+  'north-east': { label: 'north-east', dx: 1, dy: 0, dz: -1 },
+  east: { label: 'east', dx: 1, dy: 0, dz: 0 },
+  'south-east': { label: 'south-east', dx: 1, dy: 0, dz: 1 },
+  south: { label: 'south', dx: 0, dy: 0, dz: 1 },
+  'south-west': { label: 'south-west', dx: -1, dy: 0, dz: 1 },
+  west: { label: 'west', dx: -1, dy: 0, dz: 0 },
+  'north-west': { label: 'north-west', dx: -1, dy: 0, dz: -1 },
+  up: { label: 'up', dx: 0, dy: 1, dz: 0 },
+  down: { label: 'down', dx: 0, dy: -1, dz: 0 },
+}
 
-export const MOVE_AUTOMATION_AREA_DIRECTIONS: readonly MoveAutomationAreaDirection[] = AREA_DIRECTIONS.map((item) => item.id)
+const AREA_DIRECTIONS: readonly DirectionDefinition[] = MOVE_AUTOMATION_AREA_DIRECTIONS.map((id) => ({
+  id,
+  ...AREA_DIRECTION_METADATA[id],
+}))
+
+export { MOVE_AUTOMATION_AREA_DIRECTIONS }
 
 const directionDefinition = (direction: MoveAutomationAreaDirection | undefined): DirectionDefinition | null =>
   AREA_DIRECTIONS.find((item) => item.id === direction) ?? null

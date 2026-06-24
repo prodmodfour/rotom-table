@@ -1,7 +1,9 @@
+import { MOVE_AUTOMATION_AREA_DIRECTIONS } from '~/types/moveAutomation'
 import type { ResolveMoveIntent, ResolveMoveSelection } from '#shared/livePlayMoveResolution'
 import { LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS } from '#shared/livePlayMoveResolution'
 import { resolveCanonicalMoveEntryForPlacement } from '~/utils/authoritativeMoveEntries'
 import {
+  isSeamlessAreaConfirmationScript,
   isSeamlessSelfMoveScript,
   isSeamlessSingleTargetMoveScript,
   isSeamlessTargetCountMoveScript,
@@ -10,7 +12,16 @@ import {
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
+import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
 import {
+  buildMoveAutomationAreaTemplateCells,
+  buildMoveAutomationAreaTemplatePlacementAtCenter,
+  buildMoveAutomationCloseBlastPlacementAtAimCell,
+  moveAutomationAreaTemplateId,
+  tokensInMoveAutomationArea,
+} from '~/utils/moveAutomationAreaTemplates'
+import {
+  resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
   resolveInstantMultiTargetMoveAutomation,
   resolveInstantSelfMoveAutomation,
@@ -22,11 +33,14 @@ import {
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
-import { tokenFacingForPlacement, tokenFacingTowardPoint } from '~/utils/tokenFacing'
+import { tokenFacingForPlacement, tokenFacingFromAreaDirection, tokenFacingTowardPoint } from '~/utils/tokenFacing'
+import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
-import type { SheetPlacement, TabletopMap } from '~/types/map'
+import type { GridAnchor, SheetPlacement, TabletopMap } from '~/types/map'
 import type {
+  MoveAutomationAreaDirection,
+  MoveAutomationAreaTemplate,
   MoveAutomationFeedbackState,
   MoveAutomationScript,
   MoveAutomationTransaction,
@@ -61,6 +75,14 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'duplicate-target-id'
   | 'empty-target-selection'
   | 'too-many-targets'
+  | 'area-template-invalid'
+  | 'area-placement-missing'
+  | 'area-placement-unexpected'
+  | 'area-direction-illegal'
+  | 'area-aim-cell-illegal'
+  | 'area-geometry-empty'
+  | 'area-friendly-exclusion-invalid'
+  | 'pass-resolution-deferred'
   | 'unsupported-range'
   | 'unsupported-damage-resolution'
   | 'unsupported-move-script'
@@ -91,6 +113,16 @@ export interface ResolveAuthoritativeMoveInput {
   readonly idFactory?: () => string
 }
 
+export interface AuthoritativeMoveArea {
+  readonly areaTemplateId: string
+  readonly template: MoveAutomationAreaTemplate
+  readonly cells: readonly GridAnchor[]
+  readonly candidateTargetIds: readonly string[]
+  readonly excludedTargetIds: readonly string[]
+  readonly direction?: MoveAutomationAreaDirection
+  readonly aimCell?: GridAnchor
+}
+
 export interface AuthoritativeMoveResolution {
   readonly actorPlacementId: string
   readonly moveName: string
@@ -103,6 +135,7 @@ export interface AuthoritativeMoveResolution {
   readonly transaction: MoveAutomationTransaction
   readonly feedback?: MoveAutomationFeedbackState
   readonly desiredFacing?: TokenFacingDirection
+  readonly area?: AuthoritativeMoveArea
 }
 
 interface SpawnedTokenContext {
@@ -123,7 +156,7 @@ const fail = (
 const cloneJson = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
 const selectedTargetIdsForSelection = (selection: ResolveMoveSelection): readonly string[] => {
-  if (selection.kind === 'self') return []
+  if (selection.kind === 'self' || selection.kind === 'area') return []
   if (selection.kind === 'single-target') return [selection.targetPlacementId]
   return selection.targetPlacementIds
 }
@@ -282,6 +315,241 @@ const desiredFacingTowardNearestTarget = (
 ): TokenFacingDirection | undefined => {
   const target = nearestSelectedTarget(user, targets)
   return target ? desiredFacingTowardToken(userPlacement, user, target) : undefined
+}
+
+const AREA_DIRECTION_SET = new Set<string>(MOVE_AUTOMATION_AREA_DIRECTIONS)
+
+const isMoveAutomationAreaDirection = (value: unknown): value is MoveAutomationAreaDirection =>
+  typeof value === 'string' && AREA_DIRECTION_SET.has(value)
+
+const cloneGridAnchor = (anchor: GridAnchor): GridAnchor => ({ x: anchor.x, y: anchor.y, z: anchor.z })
+
+const cloneGridAnchors = (anchors: readonly GridAnchor[]): GridAnchor[] => anchors.map(cloneGridAnchor)
+
+const cloneAreaTemplate = (template: MoveAutomationAreaTemplate): MoveAutomationAreaTemplate => ({ ...template })
+
+const isSafeGridAnchor = (value: unknown): value is GridAnchor => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const candidate = value as Partial<Record<keyof GridAnchor, unknown>>
+  return Number.isSafeInteger(candidate.x)
+    && Number.isSafeInteger(candidate.y)
+    && Number.isSafeInteger(candidate.z)
+}
+
+const areaCellConstraints = (map: TabletopMap) => ({
+  bounds: map.dimensions,
+  blockedCells: buildAllVoxelOccupancy(map.voxels),
+})
+
+const moveAutomationScriptHasFriendlyKeyword = (script: MoveAutomationScript): boolean =>
+  script.keywords.some((keyword) => /^Friendly$/i.test(keyword.trim()))
+
+const selectedAreaTemplate = (
+  script: MoveAutomationScript,
+  areaTemplateId: string,
+): MoveAutomationAreaTemplate => {
+  const moveName = script.moveName
+  if (!isSeamlessAreaConfirmationScript(script as MoveAutomationScript | null)) {
+    fail('invalid', 'selection-kind-mismatch', `${moveName} is not a seamless area-confirmation move.`)
+  }
+
+  const template = script.areaTemplates?.find((item) => moveAutomationAreaTemplateId(item) === areaTemplateId)
+    ?? fail('invalid', 'area-template-invalid', `Unknown area template ${areaTemplateId} for ${moveName}.`)
+
+  if (template.kind === 'pass') {
+    fail('unsupported', 'pass-resolution-deferred', `${moveName} Pass area resolution is not implemented yet.`)
+  }
+
+  return template
+}
+
+const assertNoAreaDirection = (
+  selection: Extract<ResolveMoveSelection, { kind: 'area' }>,
+  template: MoveAutomationAreaTemplate,
+): void => {
+  if (selection.direction !== undefined) {
+    fail('invalid', 'area-placement-unexpected', `${template.label} does not accept a direction.`)
+  }
+}
+
+const assertNoAreaAimCell = (
+  selection: Extract<ResolveMoveSelection, { kind: 'area' }>,
+  template: MoveAutomationAreaTemplate,
+): void => {
+  if (selection.aimCell !== undefined) {
+    fail('invalid', 'area-placement-unexpected', `${template.label} does not accept an aim cell.`)
+  }
+}
+
+const requireAreaDirection = (
+  selection: Extract<ResolveMoveSelection, { kind: 'area' }>,
+  template: MoveAutomationAreaTemplate,
+): MoveAutomationAreaDirection => {
+  const direction = selection.direction
+  if (direction === undefined) {
+    return fail('invalid', 'area-placement-missing', `${template.label} requires an area direction.`)
+  }
+  if (!isMoveAutomationAreaDirection(direction)) {
+    return fail('invalid', 'area-direction-illegal', `${String(direction)} is not a legal area direction.`)
+  }
+  return direction
+}
+
+const requireAreaAimCell = (
+  selection: Extract<ResolveMoveSelection, { kind: 'area' }>,
+  template: MoveAutomationAreaTemplate,
+): GridAnchor => {
+  const aimCell = selection.aimCell
+  if (aimCell === undefined) {
+    return fail('invalid', 'area-placement-missing', `${template.label} requires an aim cell.`)
+  }
+  if (!isSafeGridAnchor(aimCell)) {
+    return fail('invalid', 'area-aim-cell-illegal', `${template.label} aim cell must contain safe integer x, y, and z.`)
+  }
+  return cloneGridAnchor(aimCell)
+}
+
+const assertAreaCellsPresent = (template: MoveAutomationAreaTemplate, cells: readonly GridAnchor[]): void => {
+  if (!cells.length) {
+    fail('invalid', 'area-geometry-empty', `${template.label} does not produce any legal authoritative area cells.`)
+  }
+}
+
+const authoritativeAreaCandidates = (options: {
+  readonly actor: SpawnedPokemon
+  readonly tokens: readonly SpawnedPokemon[]
+  readonly cells: readonly GridAnchor[]
+}): SpawnedPokemon[] => tokensInMoveAutomationArea({
+  cells: options.cells,
+  tokens: options.tokens,
+  excludeIds: [options.actor.id],
+})
+
+interface ResolvedAuthoritativeAreaPlacement {
+  readonly cells: readonly GridAnchor[]
+  readonly candidateTargets: readonly SpawnedPokemon[]
+  readonly direction?: MoveAutomationAreaDirection
+  readonly aimCell?: GridAnchor
+}
+
+const resolvedAreaPlacement = (options: {
+  readonly input: ResolveAuthoritativeMoveInput
+  readonly context: SpawnedTokenContext
+  readonly actor: SpawnedPokemon
+  readonly template: MoveAutomationAreaTemplate
+  readonly selection: Extract<ResolveMoveSelection, { kind: 'area' }>
+}): ResolvedAuthoritativeAreaPlacement => {
+  const constraints = areaCellConstraints(options.input.map)
+  const common = {
+    user: options.actor,
+    tokens: options.context.tokens,
+    includeEmpty: true,
+    ...constraints,
+  }
+
+  if (options.template.kind === 'burst' || options.template.kind === 'cardinally-adjacent') {
+    assertNoAreaDirection(options.selection, options.template)
+    assertNoAreaAimCell(options.selection, options.template)
+    const cells = buildMoveAutomationAreaTemplateCells({
+      template: options.template,
+      user: options.actor,
+      ...constraints,
+    })
+    assertAreaCellsPresent(options.template, cells)
+    return {
+      cells,
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells }),
+    }
+  }
+
+  if (options.template.kind === 'cone' || options.template.kind === 'line') {
+    assertNoAreaAimCell(options.selection, options.template)
+    const direction = requireAreaDirection(options.selection, options.template)
+    const cells = buildMoveAutomationAreaTemplateCells({
+      template: options.template,
+      user: options.actor,
+      direction,
+      ...constraints,
+    })
+    assertAreaCellsPresent(options.template, cells)
+    return {
+      cells,
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells }),
+      direction,
+    }
+  }
+
+  if (options.template.kind === 'close-blast') {
+    assertNoAreaDirection(options.selection, options.template)
+    const aimCell = requireAreaAimCell(options.selection, options.template)
+    const placement = buildMoveAutomationCloseBlastPlacementAtAimCell({
+      template: options.template,
+      aimCell,
+      ...common,
+    }) ?? fail(
+      'invalid',
+      'area-aim-cell-illegal',
+      `${options.template.label} cannot be placed at (${aimCell.x}, ${aimCell.y}, ${aimCell.z}).`,
+    )
+    assertAreaCellsPresent(options.template, placement.cells)
+    return {
+      cells: placement.cells,
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells: placement.cells }),
+      aimCell,
+    }
+  }
+
+  if (options.template.kind === 'ranged-blast') {
+    assertNoAreaDirection(options.selection, options.template)
+    const aimCell = requireAreaAimCell(options.selection, options.template)
+    const placement = buildMoveAutomationAreaTemplatePlacementAtCenter({
+      template: options.template,
+      center: aimCell,
+      ...common,
+    }) ?? fail(
+      'invalid',
+      'area-aim-cell-illegal',
+      `${options.template.label} cannot be centered at (${aimCell.x}, ${aimCell.y}, ${aimCell.z}).`,
+    )
+    assertAreaCellsPresent(options.template, placement.cells)
+    return {
+      cells: placement.cells,
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells: placement.cells }),
+      aimCell,
+    }
+  }
+
+  return fail('unsupported', 'pass-resolution-deferred', `${options.template.label} resolution is not implemented yet.`)
+}
+
+const excludedAreaTargetIds = (
+  script: MoveAutomationScript,
+  selection: Extract<ResolveMoveSelection, { kind: 'area' }>,
+  candidateTargetIds: readonly string[],
+): string[] => {
+  const excludedIds = [...(selection.excludedTargetPlacementIds ?? [])]
+  if (!excludedIds.length) return []
+
+  if (!moveAutomationScriptHasFriendlyKeyword(script)) {
+    fail('invalid', 'area-friendly-exclusion-invalid', `${script.moveName} does not allow Friendly target exclusions.`)
+  }
+  if (excludedIds.length > LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS) {
+    fail('invalid', 'area-friendly-exclusion-invalid', `At most ${LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS} area targets may be excluded.`)
+  }
+
+  const seen = new Set<string>()
+  const candidateIds = new Set(candidateTargetIds)
+  for (const excludedId of excludedIds) {
+    if (seen.has(excludedId)) {
+      fail('invalid', 'area-friendly-exclusion-invalid', `Area target ${excludedId} was excluded more than once.`)
+    }
+    seen.add(excludedId)
+    if (!candidateIds.has(excludedId)) {
+      fail('invalid', 'area-friendly-exclusion-invalid', `Area target ${excludedId} is not an authoritative candidate for this area.`)
+    }
+  }
+
+  return excludedIds
 }
 
 const createFeedbackIdFactory = (input: ResolveAuthoritativeMoveInput, random: () => number): (() => string) => {
@@ -501,6 +769,71 @@ const resolveTargetCountMove = (options: {
   }
 }
 
+const resolveAreaMove = (options: {
+  readonly input: ResolveAuthoritativeMoveInput
+  readonly context: SpawnedTokenContext
+  readonly actorPlacement: SheetPlacement
+  readonly actor: SpawnedPokemon
+  readonly script: MoveAutomationScript
+  readonly selection: Extract<ResolveMoveSelection, { kind: 'area' }>
+  readonly frequency: string | null
+  readonly damageFormula: string | null
+  readonly canonicalMoveName: string
+  readonly targetBranchId?: string
+  readonly random: () => number
+}): AuthoritativeMoveResolution => {
+  const template = selectedAreaTemplate(options.script, options.selection.areaTemplateId)
+  assertResolvableDamage(options.script, options.damageFormula)
+
+  const placement = resolvedAreaPlacement({
+    input: options.input,
+    context: options.context,
+    actor: options.actor,
+    template,
+    selection: options.selection,
+  })
+  const candidateTargetIds = placement.candidateTargets.map((target) => target.id)
+  const excludedTargetIds = excludedAreaTargetIds(options.script, options.selection, candidateTargetIds)
+  const excludedTargetSet = new Set(excludedTargetIds)
+  const selectedTargets = placement.candidateTargets.filter((target) => !excludedTargetSet.has(target.id))
+  const selectedTargetIds = selectedTargets.map((target) => target.id)
+  const confirmedScript = moveAutomationScriptForConfirmedAreaTemplate(options.script, template)
+  const transaction = resolveInstantAreaMoveAutomation({
+    script: confirmedScript,
+    user: options.actor,
+    targets: selectedTargets,
+    damageFormula: options.damageFormula,
+    fieldEffects: options.input.map.fieldEffects,
+    conditionImmunityContext: { sweetVeilProviders: options.context.tokens },
+    random: options.random,
+  })
+  const desiredFacing = placement.direction
+    ? tokenFacingFromAreaDirection(placement.direction, tokenFacingForPlacement(options.actorPlacement)) ?? undefined
+    : desiredFacingTowardNearestTarget(options.actorPlacement, options.actor, selectedTargets)
+
+  return {
+    actorPlacementId: options.actorPlacement.id,
+    moveName: confirmedScript.moveName,
+    canonicalMoveName: options.canonicalMoveName,
+    frequency: options.frequency,
+    damageFormula: options.damageFormula,
+    ...(options.targetBranchId ? { targetBranchId: options.targetBranchId } : {}),
+    selectedTargetIds,
+    script: confirmedScript,
+    transaction,
+    ...(desiredFacing ? { desiredFacing } : {}),
+    area: {
+      areaTemplateId: options.selection.areaTemplateId,
+      template: cloneAreaTemplate(template),
+      cells: cloneGridAnchors(placement.cells),
+      candidateTargetIds: [...candidateTargetIds],
+      excludedTargetIds: [...excludedTargetIds],
+      ...(placement.direction ? { direction: placement.direction } : {}),
+      ...(placement.aimCell ? { aimCell: cloneGridAnchor(placement.aimCell) } : {}),
+    },
+  }
+}
+
 export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): AuthoritativeMoveResolution => {
   const context = buildSpawnedTokenContext(input)
   const { placement: actorPlacement, token: actor } = resolveActor(context, input.intent.placementId)
@@ -575,6 +908,22 @@ export const resolveAuthoritativeMove = (input: ResolveAuthoritativeMoveInput): 
 
   if (input.intent.selection.kind === 'target-count') {
     return resolveTargetCountMove({
+      input,
+      context,
+      actorPlacement,
+      actor,
+      script,
+      selection: input.intent.selection,
+      frequency: entry.frequency,
+      damageFormula: entry.damageFormula,
+      canonicalMoveName: entry.canonicalMoveName,
+      targetBranchId,
+      random,
+    })
+  }
+
+  if (input.intent.selection.kind === 'area') {
+    return resolveAreaMove({
       input,
       context,
       actorPlacement,
