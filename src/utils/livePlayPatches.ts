@@ -392,6 +392,7 @@ const applyKnownPatch = (map: TabletopMap, patch: LivePlayPatch): LivePlayPatche
     case LIVE_PLAY_PATCH_TYPES.TOKEN_COMBAT_STAGES:
     case LIVE_PLAY_PATCH_TYPES.TOKEN_EXPERIENCE:
     case LIVE_PLAY_PATCH_TYPES.SHEET_FIELD:
+    case LIVE_PLAY_PATCH_TYPES.MOVE_STATE:
       return null
     case LIVE_PLAY_PATCH_TYPES.MAP_METADATA:
       return applyMetadataPatch(map, patch.payload)

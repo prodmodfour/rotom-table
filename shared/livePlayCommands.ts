@@ -15,6 +15,7 @@ import type {
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { AttackOfOpportunityStateUpdatePayload } from './attackOfOpportunityState'
 import type { StartTurnModalStateUpdatePayload } from './startTurnModalState'
+import type { LivePlayResolvedMoveResult, ResolveMoveIntent } from './livePlayMoveResolution'
 
 type Brand<TValue, TName extends string> = TValue & { readonly __brand: TName }
 
@@ -37,6 +38,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   MODIFY_CONDITIONS: 'modifyConditions',
   GRANT_EXPERIENCE: 'grantExperience',
   USE_MOVE: 'useMove',
+  RESOLVE_MOVE: 'resolveMove',
   USE_MANEUVER: 'useManeuver',
   USE_ABILITY: 'useAbility',
   USE_ORDER: 'useOrder',
@@ -69,6 +71,7 @@ export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
   LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
   LIVE_PLAY_COMMAND_TYPES.USE_MOVE,
+  LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
   LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
   LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
   LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
@@ -108,6 +111,7 @@ export const LIVE_PLAY_PATCH_TYPES = {
   MAP_SCENE: 'map.scene',
   MAP_METADATA: 'map.metadata',
   SHEET_FIELD: 'sheet.field',
+  MOVE_STATE: 'move.state',
   RECONCILIATION_REQUIRED: 'reconciliation.required',
 } as const
 
@@ -130,6 +134,7 @@ export const LIVE_PLAY_PATCH_TYPE_VALUES = [
   LIVE_PLAY_PATCH_TYPES.MAP_SCENE,
   LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
   LIVE_PLAY_PATCH_TYPES.SHEET_FIELD,
+  LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
   LIVE_PLAY_PATCH_TYPES.RECONCILIATION_REQUIRED,
 ] as const satisfies readonly LivePlayPatchType[]
 
@@ -427,6 +432,12 @@ export type UseMoveLivePlayCommand = LivePlayCommandEnvelope<
   LivePlayScope
 >
 
+export type ResolveMoveLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+  ResolveMoveIntent,
+  LivePlayScope
+>
+
 export type UseManeuverLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
   UseManeuverPayload,
@@ -691,6 +702,11 @@ export interface TerrainVoxelsUpdatedPatchPayload {
   readonly rendererInvalidation?: readonly string[]
 }
 
+export interface MoveStatePatchPayload {
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE
+  readonly move: LivePlayResolvedMoveResult
+}
+
 export interface TokenSpawnedPatchPayload {
   readonly command:
     | typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
@@ -726,6 +742,7 @@ export type MapMetadataUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES
 export type HazardsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS, HazardsUpdatedPatchPayload, LivePlayMapScope>
 export type FieldEffectsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS, FieldEffectsUpdatedPatchPayload, LivePlayMapScope>
 export type TerrainVoxelsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN, TerrainVoxelsUpdatedPatchPayload, LivePlayMapScope>
+export type MoveStatePatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MOVE_STATE, MoveStatePatchPayload, LivePlayScope>
 export type TokenSpawnedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS, TokenSpawnedPatchPayload, LivePlayTokenScope>
 export type TokenDeletedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_PLACEMENTS, TokenDeletedPatchPayload, LivePlayTokenScope>
 export type SceneUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_SCENE, SceneUpdatedPatchPayload, LivePlayMapScope>
@@ -743,6 +760,7 @@ export type KnownLivePlayPatch =
   | HazardsUpdatedPatch
   | FieldEffectsUpdatedPatch
   | TerrainVoxelsUpdatedPatch
+  | MoveStatePatch
   | TokenSpawnedPatch
   | TokenDeletedPatch
   | SceneUpdatedPatch

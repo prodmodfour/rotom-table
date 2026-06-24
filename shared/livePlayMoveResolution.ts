@@ -1,7 +1,16 @@
-import { MOVE_AUTOMATION_AREA_DIRECTIONS, type MoveAutomationAreaDirection } from '~/types/moveAutomation'
+import {
+  MOVE_AUTOMATION_AREA_DIRECTIONS,
+  type MoveAutomationAreaDirection,
+  type MoveAutomationAreaTemplate,
+  type MoveAutomationFeedbackState,
+  type MoveAutomationScript,
+  type MoveAutomationTransaction,
+} from '~/types/moveAutomation'
 import type { GridAnchor } from '~/types/map'
+import type { TokenFacingDirection } from '~/types/tokenFacing'
 
 export const LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION = 1 as const
+export const LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION = 1 as const
 
 export const LIVE_PLAY_MOVE_RESOLUTION_MAX_TEXT_LENGTH = 120 as const
 export const LIVE_PLAY_MOVE_RESOLUTION_MAX_TARGET_IDS = 32 as const
@@ -41,6 +50,69 @@ export interface ResolveMoveIntent {
   readonly targetBranchId?: string
   readonly selection: ResolveMoveSelection
 }
+
+export interface LivePlayResolvedMoveArea {
+  readonly areaTemplateId: string
+  readonly template: MoveAutomationAreaTemplate
+  readonly cells: readonly GridAnchor[]
+  readonly candidateTargetIds: readonly string[]
+  readonly excludedTargetIds: readonly string[]
+  readonly direction?: MoveAutomationAreaDirection
+  readonly aimCell?: GridAnchor
+}
+
+export interface LivePlayResolvedMovePassMovement {
+  readonly kind: 'pass'
+  readonly from: GridAnchor
+  readonly destination: GridAnchor
+  readonly direction: MoveAutomationAreaDirection
+  readonly pathCells: readonly GridAnchor[]
+}
+
+export interface LivePlayResolvedMoveResult {
+  readonly schemaVersion: typeof LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION
+  readonly actorPlacementId: string
+  readonly moveName: string
+  readonly canonicalMoveName: string
+  readonly moveKey: string
+  readonly frequency: string | null
+  readonly damageFormula: string | null
+  readonly targetBranchId?: string
+  readonly selectedTargetIds: readonly string[]
+  readonly script: MoveAutomationScript
+  readonly transaction: MoveAutomationTransaction
+  readonly feedback?: MoveAutomationFeedbackState
+  readonly desiredFacing?: TokenFacingDirection
+  readonly area?: LivePlayResolvedMoveArea
+  readonly movement?: LivePlayResolvedMovePassMovement
+}
+
+export type LivePlayResolvedMoveResultValidationCode =
+  | 'not-object'
+  | 'invalid-schema-version'
+  | 'missing-field'
+  | 'invalid-field'
+
+export interface LivePlayResolvedMoveResultValidationIssue {
+  readonly path: string
+  readonly code: LivePlayResolvedMoveResultValidationCode
+  readonly message: string
+}
+
+export interface ParseLivePlayResolvedMoveResultSuccess {
+  readonly valid: true
+  readonly move: LivePlayResolvedMoveResult
+  readonly issues: readonly []
+}
+
+export interface ParseLivePlayResolvedMoveResultFailure {
+  readonly valid: false
+  readonly issues: readonly LivePlayResolvedMoveResultValidationIssue[]
+}
+
+export type ParseLivePlayResolvedMoveResultResult =
+  | ParseLivePlayResolvedMoveResultSuccess
+  | ParseLivePlayResolvedMoveResultFailure
 
 export type ResolveMoveIntentValidationCode =
   | 'not-object'
@@ -438,3 +510,396 @@ export const parseResolveMoveIntent = (value: unknown): ParseResolveMoveIntentRe
 
 export const isResolveMoveIntent = (value: unknown): value is ResolveMoveIntent =>
   parseResolveMoveIntent(value).valid
+
+const TOKEN_FACING_DIRECTIONS = new Set<unknown>([
+  'north-east',
+  'south-east',
+  'south-west',
+  'north-west',
+])
+
+const cloneJson = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
+
+const addResolvedMoveIssue = (
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+  path: string,
+  code: LivePlayResolvedMoveResultValidationCode,
+  message: string,
+): void => {
+  issues.push({ path, code, message })
+}
+
+const requireResolvedMoveField = (
+  record: UnknownRecord,
+  key: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+  path = key,
+): boolean => {
+  if (hasOwn(record, key)) return true
+  addResolvedMoveIssue(issues, path, 'missing-field', `${path} is required.`)
+  return false
+}
+
+const parseResolvedMoveText = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): string | null => {
+  if (typeof value !== 'string') {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be a non-empty string.`)
+    return null
+  }
+  const normalized = value.trim()
+  if (!normalized) {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be a non-empty string.`)
+    return null
+  }
+  return normalized
+}
+
+const parseResolvedMoveNullableText = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): string | null => {
+  if (value === null) return null
+  return parseResolvedMoveText(value, path, issues)
+}
+
+const parseResolvedMoveStringArray = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): string[] | null => {
+  if (!Array.isArray(value)) {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be an array.`)
+    return null
+  }
+
+  const parsed: string[] = []
+  value.forEach((item, index) => {
+    const text = parseResolvedMoveText(item, `${path}.${index}`, issues)
+    if (text) parsed.push(text)
+  })
+  return parsed
+}
+
+const parseResolvedMoveRecordArray = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): Record<string, unknown>[] | null => {
+  if (!Array.isArray(value)) {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be an array.`)
+    return null
+  }
+
+  const parsed: Record<string, unknown>[] = []
+  value.forEach((item, index) => {
+    if (!isRecord(item)) {
+      addResolvedMoveIssue(issues, `${path}.${index}`, 'invalid-field', `${path}.${index} must be an object.`)
+      return
+    }
+    parsed.push(cloneJson(item))
+  })
+  return parsed
+}
+
+const parseResolvedMoveGridAnchor = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): GridAnchor | null => {
+  if (!isRecord(value)) {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be an object with x, y, and z.`)
+    return null
+  }
+  if (!Number.isSafeInteger(value.x) || !Number.isSafeInteger(value.y) || !Number.isSafeInteger(value.z)) {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must contain safe integer x, y, and z coordinates.`)
+    return null
+  }
+  return { x: value.x as number, y: value.y as number, z: value.z as number }
+}
+
+const parseResolvedMoveGridAnchorArray = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): GridAnchor[] | null => {
+  if (!Array.isArray(value)) {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be an array.`)
+    return null
+  }
+
+  const parsed: GridAnchor[] = []
+  value.forEach((item, index) => {
+    const anchor = parseResolvedMoveGridAnchor(item, `${path}.${index}`, issues)
+    if (anchor) parsed.push(anchor)
+  })
+  return parsed
+}
+
+const parseResolvedMoveDirection = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): MoveAutomationAreaDirection | null => {
+  if (isMoveAutomationAreaDirection(value)) return value
+  addResolvedMoveIssue(
+    issues,
+    path,
+    'invalid-field',
+    `${path} must be one of: ${MOVE_AUTOMATION_AREA_DIRECTIONS.join(', ')}.`,
+  )
+  return null
+}
+
+const parseResolvedMoveFacing = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): TokenFacingDirection | null => {
+  if (TOKEN_FACING_DIRECTIONS.has(value)) return value as TokenFacingDirection
+  addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be a token-facing direction.`)
+  return null
+}
+
+const parseResolvedMoveTransaction = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): MoveAutomationTransaction | null => {
+  if (!isRecord(value)) {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be an object.`)
+    return null
+  }
+
+  requireResolvedMoveField(value, 'userId', issues, `${path}.userId`)
+  requireResolvedMoveField(value, 'userName', issues, `${path}.userName`)
+  requireResolvedMoveField(value, 'moveName', issues, `${path}.moveName`)
+  requireResolvedMoveField(value, 'scriptKind', issues, `${path}.scriptKind`)
+  requireResolvedMoveField(value, 'scriptVersion', issues, `${path}.scriptVersion`)
+  requireResolvedMoveField(value, 'hpUpdates', issues, `${path}.hpUpdates`)
+  requireResolvedMoveField(value, 'conditionUpdates', issues, `${path}.conditionUpdates`)
+  requireResolvedMoveField(value, 'combatStageUpdates', issues, `${path}.combatStageUpdates`)
+  requireResolvedMoveField(value, 'hazardsToAdd', issues, `${path}.hazardsToAdd`)
+  requireResolvedMoveField(value, 'fieldEffectsToApply', issues, `${path}.fieldEffectsToApply`)
+  requireResolvedMoveField(value, 'logLines', issues, `${path}.logLines`)
+
+  const userId = parseResolvedMoveText(value.userId, `${path}.userId`, issues)
+  const userName = parseResolvedMoveText(value.userName, `${path}.userName`, issues)
+  const moveName = parseResolvedMoveText(value.moveName, `${path}.moveName`, issues)
+  const scriptKind = parseResolvedMoveText(value.scriptKind, `${path}.scriptKind`, issues)
+  if (typeof value.scriptVersion !== 'number' || !Number.isSafeInteger(value.scriptVersion)) {
+    addResolvedMoveIssue(issues, `${path}.scriptVersion`, 'invalid-field', `${path}.scriptVersion must be a safe integer.`)
+  }
+
+  const attackedTargetIds = hasOwn(value, 'attackedTargetIds')
+    ? parseResolvedMoveStringArray(value.attackedTargetIds, `${path}.attackedTargetIds`, issues)
+    : null
+  const hitTargetIds = hasOwn(value, 'hitTargetIds')
+    ? parseResolvedMoveStringArray(value.hitTargetIds, `${path}.hitTargetIds`, issues)
+    : null
+  const hpUpdates = parseResolvedMoveRecordArray(value.hpUpdates, `${path}.hpUpdates`, issues)
+  const conditionUpdates = parseResolvedMoveRecordArray(value.conditionUpdates, `${path}.conditionUpdates`, issues)
+  const combatStageUpdates = parseResolvedMoveRecordArray(value.combatStageUpdates, `${path}.combatStageUpdates`, issues)
+  const hazardsToAdd = parseResolvedMoveRecordArray(value.hazardsToAdd, `${path}.hazardsToAdd`, issues)
+  const fieldEffectsToApply = parseResolvedMoveRecordArray(value.fieldEffectsToApply, `${path}.fieldEffectsToApply`, issues)
+  const logLines = parseResolvedMoveStringArray(value.logLines, `${path}.logLines`, issues)
+
+  if (
+    issues.length > 0
+    || !userId
+    || !userName
+    || !moveName
+    || !scriptKind
+    || typeof value.scriptVersion !== 'number'
+    || !Number.isSafeInteger(value.scriptVersion)
+    || !hpUpdates
+    || !conditionUpdates
+    || !combatStageUpdates
+    || !hazardsToAdd
+    || !fieldEffectsToApply
+    || !logLines
+  ) {
+    return null
+  }
+
+  return {
+    userId,
+    userName,
+    moveName,
+    scriptKind: scriptKind as MoveAutomationTransaction['scriptKind'],
+    scriptVersion: value.scriptVersion,
+    ...(attackedTargetIds ? { attackedTargetIds } : {}),
+    ...(hitTargetIds ? { hitTargetIds } : {}),
+    hpUpdates: hpUpdates as unknown as MoveAutomationTransaction['hpUpdates'],
+    conditionUpdates: conditionUpdates as unknown as MoveAutomationTransaction['conditionUpdates'],
+    combatStageUpdates: combatStageUpdates as unknown as MoveAutomationTransaction['combatStageUpdates'],
+    hazardsToAdd: hazardsToAdd as unknown as MoveAutomationTransaction['hazardsToAdd'],
+    fieldEffectsToApply: fieldEffectsToApply as unknown as MoveAutomationTransaction['fieldEffectsToApply'],
+    logLines,
+  }
+}
+
+const parseResolvedMoveArea = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): LivePlayResolvedMoveArea | null => {
+  if (!isRecord(value)) {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be an object.`)
+    return null
+  }
+
+  requireResolvedMoveField(value, 'areaTemplateId', issues, `${path}.areaTemplateId`)
+  requireResolvedMoveField(value, 'template', issues, `${path}.template`)
+  requireResolvedMoveField(value, 'cells', issues, `${path}.cells`)
+  requireResolvedMoveField(value, 'candidateTargetIds', issues, `${path}.candidateTargetIds`)
+  requireResolvedMoveField(value, 'excludedTargetIds', issues, `${path}.excludedTargetIds`)
+
+  const areaTemplateId = parseResolvedMoveText(value.areaTemplateId, `${path}.areaTemplateId`, issues)
+  if (!isRecord(value.template)) {
+    addResolvedMoveIssue(issues, `${path}.template`, 'invalid-field', `${path}.template must be an object.`)
+  }
+  const cells = parseResolvedMoveGridAnchorArray(value.cells, `${path}.cells`, issues)
+  const candidateTargetIds = parseResolvedMoveStringArray(value.candidateTargetIds, `${path}.candidateTargetIds`, issues)
+  const excludedTargetIds = parseResolvedMoveStringArray(value.excludedTargetIds, `${path}.excludedTargetIds`, issues)
+  const direction = hasOwn(value, 'direction')
+    ? parseResolvedMoveDirection(value.direction, `${path}.direction`, issues)
+    : null
+  const aimCell = hasOwn(value, 'aimCell')
+    ? parseResolvedMoveGridAnchor(value.aimCell, `${path}.aimCell`, issues)
+    : null
+
+  if (issues.length > 0 || !areaTemplateId || !isRecord(value.template) || !cells || !candidateTargetIds || !excludedTargetIds) {
+    return null
+  }
+
+  return {
+    areaTemplateId,
+    template: cloneJson(value.template) as unknown as MoveAutomationAreaTemplate,
+    cells,
+    candidateTargetIds,
+    excludedTargetIds,
+    ...(direction ? { direction } : {}),
+    ...(aimCell ? { aimCell } : {}),
+  }
+}
+
+const parseResolvedMoveMovement = (
+  value: unknown,
+  path: string,
+  issues: LivePlayResolvedMoveResultValidationIssue[],
+): LivePlayResolvedMovePassMovement | null => {
+  if (!isRecord(value)) {
+    addResolvedMoveIssue(issues, path, 'invalid-field', `${path} must be an object.`)
+    return null
+  }
+  if (value.kind !== 'pass') {
+    addResolvedMoveIssue(issues, `${path}.kind`, 'invalid-field', `${path}.kind must be pass.`)
+  }
+  requireResolvedMoveField(value, 'from', issues, `${path}.from`)
+  requireResolvedMoveField(value, 'destination', issues, `${path}.destination`)
+  requireResolvedMoveField(value, 'direction', issues, `${path}.direction`)
+  requireResolvedMoveField(value, 'pathCells', issues, `${path}.pathCells`)
+
+  const from = parseResolvedMoveGridAnchor(value.from, `${path}.from`, issues)
+  const destination = parseResolvedMoveGridAnchor(value.destination, `${path}.destination`, issues)
+  const direction = parseResolvedMoveDirection(value.direction, `${path}.direction`, issues)
+  const pathCells = parseResolvedMoveGridAnchorArray(value.pathCells, `${path}.pathCells`, issues)
+
+  if (issues.length > 0 || value.kind !== 'pass' || !from || !destination || !direction || !pathCells) return null
+  return { kind: 'pass', from, destination, direction, pathCells }
+}
+
+export const parseLivePlayResolvedMoveResult = (value: unknown): ParseLivePlayResolvedMoveResultResult => {
+  const issues: LivePlayResolvedMoveResultValidationIssue[] = []
+  if (!isRecord(value)) {
+    return {
+      valid: false,
+      issues: [{ path: '', code: 'not-object', message: 'Resolved move result must be an object.' }],
+    }
+  }
+
+  if (hasOwn(value, 'schemaVersion') && value.schemaVersion !== LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION) {
+    addResolvedMoveIssue(
+      issues,
+      'schemaVersion',
+      'invalid-schema-version',
+      `schemaVersion must be ${LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION}.`,
+    )
+  }
+  requireResolvedMoveField(value, 'actorPlacementId', issues)
+  requireResolvedMoveField(value, 'moveName', issues)
+  requireResolvedMoveField(value, 'canonicalMoveName', issues)
+  requireResolvedMoveField(value, 'moveKey', issues)
+  requireResolvedMoveField(value, 'frequency', issues)
+  requireResolvedMoveField(value, 'damageFormula', issues)
+  requireResolvedMoveField(value, 'selectedTargetIds', issues)
+  requireResolvedMoveField(value, 'script', issues)
+  requireResolvedMoveField(value, 'transaction', issues)
+
+  const actorPlacementId = parseResolvedMoveText(value.actorPlacementId, 'actorPlacementId', issues)
+  const moveName = parseResolvedMoveText(value.moveName, 'moveName', issues)
+  const canonicalMoveName = parseResolvedMoveText(value.canonicalMoveName, 'canonicalMoveName', issues)
+  const moveKey = parseResolvedMoveText(value.moveKey, 'moveKey', issues)
+  const frequency = parseResolvedMoveNullableText(value.frequency, 'frequency', issues)
+  const damageFormula = parseResolvedMoveNullableText(value.damageFormula, 'damageFormula', issues)
+  const targetBranchId = hasOwn(value, 'targetBranchId')
+    ? parseResolvedMoveText(value.targetBranchId, 'targetBranchId', issues)
+    : null
+  const selectedTargetIds = parseResolvedMoveStringArray(value.selectedTargetIds, 'selectedTargetIds', issues)
+  if (!isRecord(value.script)) {
+    addResolvedMoveIssue(issues, 'script', 'invalid-field', 'script must be an object.')
+  }
+  const transaction = parseResolvedMoveTransaction(value.transaction, 'transaction', issues)
+  const feedback = hasOwn(value, 'feedback')
+    ? isRecord(value.feedback)
+      ? cloneJson(value.feedback) as unknown as MoveAutomationFeedbackState
+      : (addResolvedMoveIssue(issues, 'feedback', 'invalid-field', 'feedback must be an object.'), null)
+    : null
+  const desiredFacing = hasOwn(value, 'desiredFacing')
+    ? parseResolvedMoveFacing(value.desiredFacing, 'desiredFacing', issues)
+    : null
+  const area = hasOwn(value, 'area') ? parseResolvedMoveArea(value.area, 'area', issues) : null
+  const movement = hasOwn(value, 'movement') ? parseResolvedMoveMovement(value.movement, 'movement', issues) : null
+
+  if (
+    issues.length > 0
+    || !actorPlacementId
+    || !moveName
+    || !canonicalMoveName
+    || !moveKey
+    || !selectedTargetIds
+    || !isRecord(value.script)
+    || !transaction
+  ) {
+    return { valid: false, issues }
+  }
+
+  return {
+    valid: true,
+    move: {
+      schemaVersion: LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
+      actorPlacementId,
+      moveName,
+      canonicalMoveName,
+      moveKey,
+      frequency,
+      damageFormula,
+      ...(targetBranchId ? { targetBranchId } : {}),
+      selectedTargetIds,
+      script: cloneJson(value.script) as unknown as MoveAutomationScript,
+      transaction,
+      ...(feedback ? { feedback } : {}),
+      ...(desiredFacing ? { desiredFacing } : {}),
+      ...(area ? { area } : {}),
+      ...(movement ? { movement } : {}),
+    },
+    issues: [],
+  }
+}
+
+export const isLivePlayResolvedMoveResult = (value: unknown): value is LivePlayResolvedMoveResult =>
+  parseLivePlayResolvedMoveResult(value).valid

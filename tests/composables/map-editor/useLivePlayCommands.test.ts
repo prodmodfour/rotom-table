@@ -12,7 +12,13 @@ import {
   LIVE_PLAY_PATCH_TYPES,
 } from '#shared/livePlayCommands'
 import { parsePlayerProfileId } from '#shared/playerProfiles'
+import {
+  LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
+  LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+  type LivePlayResolvedMoveResult,
+} from '#shared/livePlayMoveResolution'
 import type { TabletopMap } from '~/types/map'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
 
 const apiMocks = vi.hoisted(() => ({
   postJson: vi.fn(),
@@ -56,6 +62,56 @@ const mapFixture = (): TabletopMap => ({
   lights: [],
   initiative: { activeId: null, round: 1 },
   updatedAt: 100,
+})
+
+const resolvedMoveFixture = (overrides: Partial<LivePlayResolvedMoveResult> = {}): LivePlayResolvedMoveResult => ({
+  schemaVersion: LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
+  actorPlacementId: 'token-pikachu',
+  moveName: 'Thunderbolt',
+  canonicalMoveName: 'Thunderbolt',
+  moveKey: 'thunderbolt',
+  frequency: 'At-Will',
+  damageFormula: '2d6+8',
+  selectedTargetIds: ['target-token'],
+  script: {
+    kind: 'explicit',
+    moveName: 'Thunderbolt',
+    version: 1,
+    targetMode: 'one-target',
+    targetCount: null,
+    damaging: true,
+    requiresAccuracy: true,
+    damageBase: 6,
+    damageClass: 'Special',
+    type: 'Electric',
+    ac: 2,
+    range: '6, 1 Target',
+    effect: '',
+    keywords: [],
+    criticalRange: 20,
+    conditionSuggestions: [],
+    stageSuggestions: [],
+    hpSuggestions: [],
+    fieldSuggestions: [],
+    hazardSuggestions: [],
+    automationNotes: [],
+  } satisfies MoveAutomationScript,
+  transaction: {
+    userId: 'token-pikachu',
+    userName: 'Pikachu',
+    moveName: 'Thunderbolt',
+    scriptKind: 'explicit',
+    scriptVersion: 1,
+    attackedTargetIds: ['target-token'],
+    hitTargetIds: ['target-token'],
+    hpUpdates: [{ id: 'target-token', currentHp: 12 }],
+    conditionUpdates: [],
+    combatStageUpdates: [],
+    hazardsToAdd: [],
+    fieldEffectsToApply: [],
+    logLines: ['Pikachu used Thunderbolt!'],
+  },
+  ...overrides,
 })
 
 describe('useLivePlayCommands', () => {
@@ -1305,5 +1361,251 @@ describe('useLivePlayCommands', () => {
     }))
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
     expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
+  })
+
+  it('posts resolveMove once with a normalized intent, authoritative revision, profile id, and conservative scopes', async () => {
+    const map = mapFixture()
+    const profileId = ref(parsePlayerProfileId('profile_ash00000'))
+    const move = resolvedMoveFixture()
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_resolvemove1',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
+        mapSlug: 'arena-map',
+        revision: 5,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
+        payload: { command: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE, move },
+      }],
+      move,
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      playerProfileId: profileId,
+      map: ref(map),
+      mapRevision: ref(4),
+    })
+    const result = await actions.resolveMove({
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: ' token-pikachu ',
+        moveName: ' Thunderbolt ',
+        selection: { kind: 'single-target', targetPlacementId: ' target-token ' },
+      },
+      candidateScopePlacementIds: ['target-token'],
+    })
+
+    expect(result).toMatchObject({ dispatched: true, move })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.resolveMove, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+      payload: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'token-pikachu',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+      },
+      clientId: 'ssr',
+      profileId: 'profile_ash00000',
+    }))
+    const [, body] = apiMocks.postJson.mock.calls[0]
+    expect(body.payload).not.toHaveProperty('candidateScopePlacementIds')
+    expect(body.scopes).toEqual(expect.arrayContaining([
+      { kind: 'token', placementId: 'token-pikachu', field: 'action' },
+      { kind: 'token', placementId: 'token-pikachu', field: 'moveUsage' },
+      { kind: 'token', placementId: 'token-pikachu', field: 'position' },
+      { kind: 'token', placementId: 'target-token', field: 'hp' },
+      { kind: 'map', lane: 'metadata' },
+      { kind: 'map', lane: 'hazards' },
+      { kind: 'map', lane: 'fieldEffects' },
+      { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' },
+      { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'bulbasaur', field: 'conditions' },
+    ]))
+  })
+
+  it('does not invent a profile id for GM resolveMove dispatch', async () => {
+    const move = resolvedMoveFixture()
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_resolvemove2',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      move,
+    })
+
+    const actions = useLivePlayCommands({ slug: 'arena-map', map: ref(mapFixture()), mapRevision: ref(4) })
+    await actions.resolveMove({
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'token-pikachu',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'self' },
+      },
+    })
+
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.resolveMove, expect.not.objectContaining({
+      profileId: expect.anything(),
+    }))
+  })
+
+  it('adopts complete resolveMove map and sheet updates before resolving with the move result', async () => {
+    const map = mapFixture()
+    const authoritativeMap = { ...map, revision: 5, metadata: { resolved: true } }
+    const move = resolvedMoveFixture()
+    const callOrder: string[] = []
+    const applyPersistedMap = vi.fn(() => { callOrder.push('map') })
+    const applySheetUpdate = vi.fn(() => { callOrder.push('sheet') })
+    const sheetUpdate = { kind: 'pokemon' as const, slug: 'pikachu', sheet: { slug: 'pikachu', revision: 2 } }
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_resolvemove3',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
+        mapSlug: 'arena-map',
+        revision: 5,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
+        payload: { command: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE, move },
+      }],
+      map: authoritativeMap,
+      sheetUpdates: [sheetUpdate],
+      move,
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      map: ref(map),
+      mapRevision: ref(4),
+      applyPersistedMap,
+      applySheetUpdate,
+    })
+    const result = await actions.resolveMove({
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'token-pikachu',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+      },
+    })
+    callOrder.push('resolved')
+
+    expect(result.move).toEqual(move)
+    expect(applyPersistedMap).toHaveBeenCalledTimes(1)
+    expect(applySheetUpdate).toHaveBeenCalledTimes(1)
+    expect(callOrder).toEqual(['map', 'sheet', 'resolved'])
+  })
+
+  it('locally rejects invalid resolveMove intents without creating an operation or HTTP request', async () => {
+    const onCommandBlocked = vi.fn()
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      map: ref(mapFixture()),
+      mapRevision: ref(4),
+      onCommandBlocked,
+    })
+
+    const result = await actions.resolveMove({
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: '',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'self' },
+      } as never,
+    })
+
+    expect(result).toMatchObject({ dispatched: false, move: null, message: expect.stringContaining('Move intent is invalid') })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    expect(onCommandBlocked).toHaveBeenCalledWith(expect.stringContaining('Move intent is invalid'))
+  })
+
+  it('returns dispatched true with a presentation error and requests reconciliation when resolveMove presentation data is invalid', async () => {
+    const requestReconciliation = vi.fn()
+    const onCommandFailed = vi.fn()
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_resolvemove4',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
+        mapSlug: 'arena-map',
+        revision: 5,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
+        payload: { command: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE, move: { invalid: true } },
+      }],
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      map: ref(mapFixture()),
+      mapRevision: ref(4),
+      requestReconciliation,
+      onCommandFailed,
+    })
+    const result = await actions.resolveMove({
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'token-pikachu',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'self' },
+      },
+    })
+
+    expect(result).toMatchObject({ dispatched: true, move: null, presentationError: expect.stringContaining('presentation data') })
+    expect(requestReconciliation).toHaveBeenCalledWith({
+      request: MAP_API_PATHS.resolveMove,
+      response: expect.objectContaining({ opId: 'op_resolvemove4' }),
+    })
+    expect(onCommandFailed).toHaveBeenCalledWith(expect.stringContaining('presentation data'))
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+  })
+
+  it('maps resolveMove rejections and transport failures to dispatched false without retrying', async () => {
+    const actions = useLivePlayCommands({ slug: 'arena-map', map: ref(mapFixture()), mapRevision: ref(4) })
+    apiMocks.postJson.mockResolvedValueOnce({
+      ok: false,
+      opId: 'op_resolvemove5',
+      mapSlug: 'arena-map',
+      reason: 'conflict',
+      message: 'Resolve move conflict',
+      currentRevision: 5,
+    })
+
+    await expect(actions.resolveMove({
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'token-pikachu',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'self' },
+      },
+    })).resolves.toMatchObject({ dispatched: false, move: null, message: 'Resolve move conflict' })
+
+    apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
+    await expect(actions.resolveMove({
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'token-pikachu',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'self' },
+      },
+    })).resolves.toMatchObject({ dispatched: false, move: null, message: 'Network down' })
+
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(2)
   })
 })

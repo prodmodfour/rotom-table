@@ -363,6 +363,26 @@ describe('live-play patch application', () => {
     expect(map.metadata).toEqual({ encounterName: 'Rooftop Ambush' })
   })
 
+  it('accepts MOVE_STATE patches as durable presentation state without mutating map resources', () => {
+    const map = baseMap()
+    const beforePlacements = JSON.stringify(map.placements)
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [patchBase(LIVE_PLAY_PATCH_TYPES.MOVE_STATE, {
+        command: 'resolveMove',
+        move: { actorPlacementId: 'token-a' },
+      })],
+    })
+
+    expect(result).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(map.revision).toBe(5)
+    expect(JSON.stringify(map.placements)).toBe(beforePlacements)
+  })
+
   it('requests reconciliation for unknown patch types and revision gaps', () => {
     const unknown = applyLivePlayPatchesToMap({
       map: baseMap(),

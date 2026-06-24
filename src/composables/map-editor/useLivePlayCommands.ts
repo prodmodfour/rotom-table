@@ -23,6 +23,7 @@ import {
   type RemoveFieldEffectPayload,
   type RemoveHazardPayload,
   type RemoveTerrainVoxelPayload,
+  type ResolveMoveLivePlayCommand,
   type SendOutPokemonPayload,
   type SetFieldEffectPayload,
   type SetInitiativePayload,
@@ -36,12 +37,19 @@ import {
   type UseMovePayload,
   type UseOrderPayload,
 } from '#shared/livePlayCommands'
+import {
+  parseResolveMoveIntent,
+  type LivePlayResolvedMoveResult,
+  type ResolveMoveIntent,
+} from '#shared/livePlayMoveResolution'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import { bindPendingLivePlayCommandUnloadWarning } from '~/utils/livePlayCommandUnloadWarning'
 import { getErrorMessage } from '~/utils/errorMessages'
+import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
+import { extractResolvedMoveResult } from '~/utils/livePlayResolvedMoveResponse'
 import { useApiClient } from '~/composables/useApiClient'
 import type { AttackOfOpportunityStateUpdatePayload } from '#shared/attackOfOpportunityState'
 import type { PlayerProfileId } from '#shared/playerProfiles'
@@ -69,12 +77,23 @@ export type LivePlayCommandResponse = LivePlayCommandResult & {
   placement?: SheetPlacement
   sheetUpdates?: LivePlayCommandSheetUpdate[]
   capture?: PokeballCaptureOutcomeEvent
+  move?: LivePlayResolvedMoveResult
 }
 
 export interface LivePlayCommandDispatchResult {
   dispatched: boolean
   message?: string
   response?: LivePlayCommandResponse
+}
+
+export interface LivePlayResolveMoveDispatchResult extends LivePlayCommandDispatchResult {
+  /**
+   * The original server-generated move result.
+   * Null means the durable command was accepted but presentation data
+   * could not be validated or recovered.
+   */
+  readonly move: LivePlayResolvedMoveResult | null
+  readonly presentationError?: string
 }
 
 export interface UseLivePlayCommandsOptions {
@@ -158,6 +177,10 @@ export interface UseLivePlayCommandsReturn {
     placementId: string
     moveName: string
   }) => Promise<LivePlayCommandDispatchResult>
+  resolveMove: (input: {
+    readonly intent: ResolveMoveIntent
+    readonly candidateScopePlacementIds?: readonly string[]
+  }) => Promise<LivePlayResolveMoveDispatchResult>
   setInitiative: (payload: SetInitiativePayload) => Promise<LivePlayCommandDispatchResult>
   nextInitiative: (payload: AdvanceInitiativePayload) => Promise<LivePlayCommandDispatchResult>
   previousInitiative: (payload: AdvanceInitiativePayload) => Promise<LivePlayCommandDispatchResult>
@@ -204,6 +227,7 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS
   | typeof LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_MOVE
+  | typeof LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY
   | typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER
@@ -251,6 +275,7 @@ type LivePlayClientCommandPayload =
   | SetInitiativePayload
   | AdvanceInitiativePayload
   | LivePlayMapEffectsCommandPayload
+  | ResolveMoveLivePlayCommand['payload']
   | SetScenePayload
   | AttackOfOpportunityStateUpdatePayload
   | StartTurnModalStateUpdatePayload
@@ -433,6 +458,45 @@ export const useLivePlayCommands = (
     ])
   }
 
+  const localCommandBlockedResult = (message: string): LivePlayCommandDispatchResult => {
+    status.value = 'error'
+    lastError.value = message
+    options.onCommandBlocked?.(message)
+    return { dispatched: false, message }
+  }
+
+  const adoptAcceptedLivePlayResponse = async (
+    request: string,
+    response: LivePlayCommandResponse,
+  ): Promise<void> => {
+    const patchResult = acceptedPatchResult(response)
+    if (response.map) options.applyPersistedMap?.(response.map)
+    else if (patchResult && options.map?.value) {
+      const applied = applyLivePlayPatchesToMap({
+        map: options.map.value,
+        mapSlug: patchResult.mapSlug,
+        previousRevision: patchResult.previousRevision,
+        revision: patchResult.revision,
+        patches: patchResult.patches,
+      })
+      if (!applied.ok) await options.requestReconciliation?.({ request, response })
+    } else if (acceptedResultRequiresReconciliation(response)) {
+      await options.requestReconciliation?.({ request, response })
+    }
+    for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
+  }
+
+  const requestPresentationReconciliation = async (
+    request: string,
+    response: LivePlayCommandResponse,
+  ): Promise<void> => {
+    try {
+      await options.requestReconciliation?.({ request, response })
+    } catch (reconciliationError) {
+      options.onCommandFailed?.(getErrorMessage(reconciliationError, { fallback: 'Live-play reconciliation failed' }))
+    }
+  }
+
   const runLivePlayCommand = async (
     request: string,
     body: Record<string, unknown>,
@@ -478,21 +542,7 @@ export const useLivePlayCommands = (
         return { dispatched: false, message, response }
       }
 
-      const patchResult = acceptedPatchResult(response)
-      if (response.map) options.applyPersistedMap?.(response.map)
-      else if (patchResult && options.map?.value) {
-        const applied = applyLivePlayPatchesToMap({
-          map: options.map.value,
-          mapSlug: patchResult.mapSlug,
-          previousRevision: patchResult.previousRevision,
-          revision: patchResult.revision,
-          patches: patchResult.patches,
-        })
-        if (!applied.ok) await options.requestReconciliation?.({ request, response })
-      } else if (acceptedResultRequiresReconciliation(response)) {
-        await options.requestReconciliation?.({ request, response })
-      }
-      for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
+      await adoptAcceptedLivePlayResponse(request, response)
       status.value = 'idle'
       options.onCommandAccepted?.(response)
       return { dispatched: true, response }
@@ -670,6 +720,75 @@ export const useLivePlayCommands = (
     )
   }
 
+  const resolveMove: UseLivePlayCommandsReturn['resolveMove'] = async (input) => {
+    if (status.value === 'saving') {
+      const message = 'A live-play command is already in flight.'
+      options.onCommandBlocked?.(message)
+      return { dispatched: false, move: null, message }
+    }
+
+    const blockedMessage = blockedCommandMessage()
+    if (blockedMessage) {
+      return { ...localCommandBlockedResult(blockedMessage), move: null }
+    }
+
+    const intentResult = parseResolveMoveIntent(input.intent)
+    if (!intentResult.valid) {
+      const message = `Move intent is invalid: ${intentResult.issues.map((issue) => issue.message).join(' ')}`
+      return { ...localCommandBlockedResult(message), move: null }
+    }
+
+    const currentMap = options.map?.value ?? null
+    if (!currentMap) {
+      const message = 'Cannot resolve a move before the current map has loaded.'
+      return { ...localCommandBlockedResult(message), move: null }
+    }
+
+    const scopeResult = buildResolveMoveScopes({
+      map: currentMap,
+      intent: intentResult.intent,
+      candidateScopePlacementIds: input.candidateScopePlacementIds,
+    })
+    if (!scopeResult.ok) {
+      return { ...localCommandBlockedResult(scopeResult.message), move: null }
+    }
+
+    const result = await runLivePlayCommand(
+      MAP_API_PATHS.resolveMove,
+      commandBody(
+        LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+        intentResult.intent,
+        scopeResult.scopes,
+      ),
+    )
+    if (!result.dispatched) return { ...result, move: null }
+
+    const response = result.response
+    if (!response) {
+      const presentationError = 'Resolve-move command was accepted without a response body.'
+      status.value = 'error'
+      lastError.value = presentationError
+      options.onCommandFailed?.(presentationError)
+      return { ...result, move: null, message: presentationError, presentationError }
+    }
+
+    const extracted = extractResolvedMoveResult(response)
+    if (extracted.ok) return { ...result, move: extracted.move }
+
+    const presentationError = `Resolve-move presentation data is unavailable: ${extracted.message}`
+    status.value = 'error'
+    lastError.value = presentationError
+    options.onCommandFailed?.(presentationError)
+    await requestPresentationReconciliation(MAP_API_PATHS.resolveMove, response)
+    return {
+      ...result,
+      dispatched: true,
+      move: null,
+      message: presentationError,
+      presentationError,
+    }
+  }
+
   const setInitiative: UseLivePlayCommandsReturn['setInitiative'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.setInitiative,
     commandBody(
@@ -838,6 +957,7 @@ export const useLivePlayCommands = (
     modifyConditions,
     grantExperience,
     useMove,
+    resolveMove,
     setInitiative,
     nextInitiative,
     previousInitiative,

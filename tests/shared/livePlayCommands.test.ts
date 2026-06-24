@@ -133,6 +133,7 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('modifyHp')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('grantExperience')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('useAbility')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('resolveMove')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setInitiative')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('placeHazard')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setFieldEffect')
@@ -153,6 +154,7 @@ describe('live-play command contract', () => {
 
     expect(LIVE_PLAY_PATCH_TYPE_VALUES).toContain('token.position')
     expect(LIVE_PLAY_PATCH_TYPE_VALUES).toContain('sheet.field')
+    expect(LIVE_PLAY_PATCH_TYPE_VALUES).toContain('move.state')
     expect(LIVE_PLAY_PATCH_TYPE_VALUES).toContain('map.scene')
     expect(isLivePlayPatchType(LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS)).toBe(true)
     expect(isLivePlayPatchType('map.updated-document')).toBe(false)

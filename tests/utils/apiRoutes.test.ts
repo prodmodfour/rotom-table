@@ -51,6 +51,7 @@ describe('API route constants', () => {
       save: '/api/maps/save',
       interactionMode: '/api/maps/interaction-mode',
       useMove: '/api/maps/use-move',
+      resolveMove: '/api/maps/tokens/resolve-move',
       actionEvent: '/api/maps/action-event',
       spawnToken: '/api/maps/tokens/spawn',
       sendOutPokemon: '/api/maps/tokens/send-out',
