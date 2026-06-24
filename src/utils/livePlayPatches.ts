@@ -190,7 +190,10 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
     return null
   }
 
-  if (payload.command === LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN) {
+  if (
+    payload.command === LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
+    || payload.command === LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL
+  ) {
     const index = placementIndex(map, payload.placementId)
     if (index >= 0) map.placements.splice(index, 1)
     if (map.initiative?.activeId === payload.placementId) {
@@ -199,7 +202,7 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
     return null
   }
 
-  return failed('unknown-patch', 'map.placements patch command must be spawnToken, sendOutPokemon, or deleteToken')
+  return failed('unknown-patch', 'map.placements patch command must be spawnToken, sendOutPokemon, deleteToken, or throwPokeball')
 }
 
 const applyInitiativePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {

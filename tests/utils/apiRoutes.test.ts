@@ -55,6 +55,7 @@ describe('API route constants', () => {
       spawnToken: '/api/maps/tokens/spawn',
       sendOutPokemon: '/api/maps/tokens/send-out',
       deleteToken: '/api/maps/tokens/delete',
+      throwPokeball: '/api/maps/tokens/throw-pokeball',
       moveToken: '/api/maps/tokens/move',
       turnToken: '/api/maps/tokens/turn',
       modifyHp: '/api/maps/tokens/modify-hp',

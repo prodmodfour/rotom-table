@@ -105,10 +105,9 @@ export const createPokeballThrowVfxEvents = (
 /**
  * Runtime-only bridge for Poké Ball capture map action events.
  *
- * Local capture resolution remains the only path that consumes inventory,
- * updates trainer sheets, deletes captured tokens, writes capture logs, or saves
- * map/sheet state. Remote replay only enqueues transient VFX and drives local
- * display refs for feedback/result UI.
+ * Persistent live-play capture state is owned by the server-authoritative
+ * throwPokeball command. Remote replay only enqueues transient VFX and drives
+ * local display refs for feedback/result UI.
  */
 export const useMapActionPokeballCapture = (options: UseMapActionPokeballCaptureOptions = {}) => {
   const nowMs = options.nowMs ?? defaultAnimationNowMs

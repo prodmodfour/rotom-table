@@ -73,6 +73,12 @@ export interface PokeballCaptureResultVisualEvent {
   error?: string | null
 }
 
+export type PokeballCaptureAttemptDispatcher = (request: {
+  trainerId: string
+  targetId: string
+  pokeballName: string
+}) => Promise<PokeballCaptureOutcomeEvent | false | undefined>
+
 export interface UsePokeballCapturePanelOptions {
   map: Ref<TabletopMap | null>
   spawnedPokemon: ComputedRef<SpawnedPokemon[]>
@@ -80,6 +86,7 @@ export interface UsePokeballCapturePanelOptions {
   trainerBySlug: SheetMapRef<TrainerSheet>
   canControlPlacement: (id: string) => boolean
   applyCaptureOutcome?: (event: PokeballCaptureOutcomeEvent) => MaybePromise<void>
+  dispatchCaptureAttempt?: PokeballCaptureAttemptDispatcher
   onBeforePokeballThrow?: (event: { userId: string; pokeballName: string }) => MaybePromise<unknown>
   onPokeballThrow?: (event: PokeballThrowVisualEvent) => MaybePromise<unknown>
   onPokeballFeedback?: (event: PokeballCaptureFeedbackEvent) => MaybePromise<unknown>
@@ -101,6 +108,7 @@ export const usePokeballCapturePanel = ({
   trainerBySlug,
   canControlPlacement,
   applyCaptureOutcome,
+  dispatchCaptureAttempt,
   onBeforePokeballThrow,
   onPokeballThrow,
   onPokeballFeedback,
@@ -112,6 +120,7 @@ export const usePokeballCapturePanel = ({
   const pokeballCaptureResult = ref<PokeballCaptureAttemptResult | null>(null)
   const pokeballCaptureFeedback = ref<MoveAutomationFeedbackState | null>(null)
   const pokeballCaptureError = ref<string | null>(null)
+  const pokeballCapturePending = ref(false)
   const feedbackTimers: Array<ReturnType<typeof setTimeout>> = []
   let pendingCaptureOutcomeApplier: (() => void) | null = null
 
@@ -183,8 +192,11 @@ export const usePokeballCapturePanel = ({
     })
   }
 
-  const revealPokeballCaptureResult = (event: PokeballCaptureOutcomeEvent) => {
-    appendPokeballCaptureLog(event)
+  const revealPokeballCaptureResult = (
+    event: PokeballCaptureOutcomeEvent,
+    options: { readonly applyPersistentOutcome: boolean },
+  ) => {
+    if (options.applyPersistentOutcome) appendPokeballCaptureLog(event)
     const visibleResult = event.result.hit ? event.result : null
     const visibleError = event.result.hit ? null : (event.result.failureReason ?? 'The Poké Ball missed.')
     pokeballCaptureResult.value = visibleResult
@@ -195,7 +207,7 @@ export const usePokeballCapturePanel = ({
       error: visibleError,
     })
 
-    if (applyCaptureOutcome) {
+    if (options.applyPersistentOutcome && applyCaptureOutcome) {
       void Promise.resolve(applyCaptureOutcome(event)).catch((error) => {
         const errorMessage = getErrorMessage(error, { fallback: 'Poké Ball inventory update failed' })
         pokeballCaptureError.value = errorMessage
@@ -214,7 +226,10 @@ export const usePokeballCapturePanel = ({
     apply?.()
   }
 
-  const showPokeballCaptureResolution = (event: PokeballCaptureOutcomeEvent) => {
+  const showPokeballCaptureResolution = (
+    event: PokeballCaptureOutcomeEvent,
+    options: { readonly applyPersistentOutcome: boolean } = { applyPersistentOutcome: true },
+  ) => {
     flushPendingCaptureOutcome()
     clearFeedbackTimers()
 
@@ -232,7 +247,7 @@ export const usePokeballCapturePanel = ({
       pendingCaptureOutcomeApplier = null
       clearFeedbackTimers()
       pokeballCaptureFeedback.value = null
-      revealPokeballCaptureResult(event)
+      revealPokeballCaptureResult(event, options)
     }
     const scheduleFeedbackStep = (delay: number, step: () => void) => {
       feedbackTimers.push(setTimeout(step, delay))
@@ -308,6 +323,7 @@ export const usePokeballCapturePanel = ({
   })
 
   const openPokeballCapture = (payload: { id: string; pokeballName?: string | null }) => {
+    if (pokeballCapturePending.value) return
     clearPokeballCaptureFeedback()
     pokeballCaptureError.value = null
     pokeballCaptureResult.value = null
@@ -331,12 +347,13 @@ export const usePokeballCapturePanel = ({
   }
 
   const cancelPokeballCaptureTargeting = () => {
+    if (pokeballCapturePending.value) return
     activePokeballCapture.value = null
   }
 
   const selectPokeballCaptureTarget = async (targetId: string) => {
     const request = activePokeballCapture.value
-    if (!request) return
+    if (!request || pokeballCapturePending.value) return
 
     const user = findToken(request.trainerId)
     const trainer = trainerSheetForToken(user)
@@ -359,47 +376,86 @@ export const usePokeballCapturePanel = ({
       return
     }
 
+    pokeballCapturePending.value = true
     try {
-      const notification = onBeforePokeballThrow?.({ userId: user.id, pokeballName: livePokeball.name })
-      if (isPromiseLike(notification)) await notification
-    } catch (error) {
-      warnPokeballThrowNotificationFailure(error)
+      try {
+        const notification = onBeforePokeballThrow?.({ userId: user.id, pokeballName: livePokeball.name })
+        if (isPromiseLike(notification)) await notification
+      } catch (error) {
+        warnPokeballThrowNotificationFailure(error)
+      }
+      if (activePokeballCapture.value !== request || !canControlPlacement(request.trainerId)) return
+
+      const currentUser = findToken(request.trainerId)
+      const currentTrainer = trainerSheetForToken(currentUser)
+      const currentTarget = findToken(targetId)
+      const currentPokeball = findPokeballOption(request.trainerId, livePokeball.name)
+      if (!currentUser || !currentTrainer || !currentTarget || !currentPokeball) return
+
+      const dispatched = dispatchCaptureAttempt
+        ? await dispatchCaptureAttempt({
+            trainerId: request.trainerId,
+            targetId,
+            pokeballName: currentPokeball.name,
+          })
+        : undefined
+
+      if (dispatched === false) {
+        activePokeballCapture.value = null
+        const errorMessage = pokeballCaptureError.value ?? 'Poké Ball throw was rejected.'
+        pokeballCaptureError.value = errorMessage
+        notifyPokeballCaptureCallback('result', onPokeballResult, {
+          trainerId: request.trainerId,
+          result: null,
+          error: errorMessage,
+        })
+        return
+      }
+
+      if (dispatched !== undefined) {
+        activePokeballCapture.value = null
+        pokeballCaptureResult.value = null
+        pokeballCaptureError.value = null
+        notifyPokeballCaptureCallback('throw', onPokeballThrow, {
+          userId: request.trainerId,
+          targetId,
+          pokeballName: dispatched.pokeballName,
+          resultId: dispatched.result.id,
+        })
+        showPokeballCaptureResolution(dispatched, { applyPersistentOutcome: false })
+        return
+      }
+
+      const result = resolvePokeballCaptureAttempt({
+        trainer: currentTrainer,
+        user: currentUser,
+        target: currentTarget,
+        targetSheet: pokemonSheetForToken(currentTarget),
+        pokeball: currentPokeball,
+        pokemonBySlug: pokemonBySlug.value,
+        currentRound: map.value?.initiative?.round ?? null,
+        now,
+      })
+
+      activePokeballCapture.value = null
+      pokeballCaptureResult.value = null
+      pokeballCaptureError.value = null
+      notifyPokeballCaptureCallback('throw', onPokeballThrow, {
+        userId: request.trainerId,
+        targetId,
+        pokeballName: currentPokeball.name,
+        resultId: result.id,
+      })
+      showPokeballCaptureResolution({
+        trainerId: request.trainerId,
+        targetId,
+        targetSlug: currentTarget.sheetSlug,
+        pokeballName: currentPokeball.name,
+        result,
+      })
+    } finally {
+      pokeballCapturePending.value = false
     }
-    if (activePokeballCapture.value !== request || !canControlPlacement(request.trainerId)) return
-
-    const currentUser = findToken(request.trainerId)
-    const currentTrainer = trainerSheetForToken(currentUser)
-    const currentTarget = findToken(targetId)
-    const currentPokeball = findPokeballOption(request.trainerId, livePokeball.name)
-    if (!currentUser || !currentTrainer || !currentTarget || !currentPokeball) return
-
-    const result = resolvePokeballCaptureAttempt({
-      trainer: currentTrainer,
-      user: currentUser,
-      target: currentTarget,
-      targetSheet: pokemonSheetForToken(currentTarget),
-      pokeball: currentPokeball,
-      pokemonBySlug: pokemonBySlug.value,
-      currentRound: map.value?.initiative?.round ?? null,
-      now,
-    })
-
-    activePokeballCapture.value = null
-    pokeballCaptureResult.value = null
-    pokeballCaptureError.value = null
-    notifyPokeballCaptureCallback('throw', onPokeballThrow, {
-      userId: request.trainerId,
-      targetId,
-      pokeballName: currentPokeball.name,
-      resultId: result.id,
-    })
-    showPokeballCaptureResolution({
-      trainerId: request.trainerId,
-      targetId,
-      targetSlug: currentTarget.sheetSlug,
-      pokeballName: currentPokeball.name,
-      result,
-    })
   }
 
   const dismissPokeballCaptureResult = () => {
@@ -416,6 +472,7 @@ export const usePokeballCapturePanel = ({
     pokeballCaptureResult,
     pokeballCaptureFeedback,
     pokeballCaptureError,
+    pokeballCapturePending,
     tokenPokeballOptionsById,
     openPokeballCapture,
     selectPokeballCaptureTarget,

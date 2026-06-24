@@ -68,6 +68,7 @@ import { textValueFromEvent } from '~/utils/domEvents'
 import {
   applyPokeballCaptureOutcomeToPokemonSheet,
   applyPokeballCaptureOutcomeToTrainerSheet,
+  type PokeballCaptureOutcomeEvent,
 } from '~/utils/pokeballCapture'
 import { isSameAnchor } from '~/utils/gridGeometry'
 import { normalizeMapSceneName, MAP_SCENE_NAME_MAX_LENGTH } from '~/utils/mapSceneState'
@@ -1350,7 +1351,7 @@ const {
 } = orderActionPanel
 expireActiveOrdersAfterInitiativeAdvance = orderActionPanel.expireActiveOrdersAfterInitiativeAdvance
 
-const applyPokeballCaptureOutcome = async (event: Parameters<typeof applyPokeballCaptureOutcomeToTrainerSheet>[1] & { trainerId: string; targetId: string }) => {
+const applyPokeballCaptureOutcomeForSetupEdit = async (event: PokeballCaptureOutcomeEvent) => {
   const sheetUpdated = await updatePlacedSheet(
     event.trainerId,
     (kind, sheet) => {
@@ -1363,7 +1364,7 @@ const applyPokeballCaptureOutcome = async (event: Parameters<typeof applyPokebal
   )
 
   if (sheetUpdated && event.result.success) {
-    await updatePlacedSheet(
+    const targetUpdated = await updatePlacedSheet(
       event.targetId,
       (kind, sheet) => {
         if (kind !== 'pokemon') return sheet
@@ -1375,11 +1376,28 @@ const applyPokeballCaptureOutcome = async (event: Parameters<typeof applyPokebal
       { allowAnyTarget: true },
     )
 
-    if (isGm.value) {
-      const result = await livePlayCommands.deleteToken({ placementId: event.targetId })
-      if (result.dispatched && selectedId.value === event.targetId) clearSelection()
+    if (targetUpdated) {
+      deletePlacement(event.targetId)
+      if (selectedId.value === event.targetId) clearSelection()
     }
   }
+}
+
+const dispatchPokeballCaptureAttempt = async (request: {
+  trainerId: string
+  targetId: string
+  pokeballName: string
+}): Promise<PokeballCaptureOutcomeEvent | false | undefined> => {
+  if (isSetupEditMode()) return undefined
+  const result = await livePlayCommands.throwPokeball({
+    trainerPlacementId: request.trainerId,
+    targetPlacementId: request.targetId,
+    pokeballName: request.pokeballName,
+  })
+  if (!result.dispatched || !result.response?.capture) return false
+  const capture = result.response.capture
+  if (capture.result.success && selectedId.value === capture.targetId) clearSelection()
+  return capture
 }
 
 const {
@@ -1398,7 +1416,8 @@ const {
   pokemonBySlug,
   trainerBySlug,
   canControlPlacement,
-  applyCaptureOutcome: applyPokeballCaptureOutcome,
+  applyCaptureOutcome: applyPokeballCaptureOutcomeForSetupEdit,
+  dispatchCaptureAttempt: dispatchPokeballCaptureAttempt,
   onBeforePokeballThrow: (event) => showActionSplash({
     userId: event.userId,
     actionName: event.pokeballName,

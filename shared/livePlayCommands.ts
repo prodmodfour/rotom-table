@@ -53,6 +53,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   SPAWN_TOKEN: 'spawnToken',
   SEND_OUT_POKEMON: 'sendOutPokemon',
   DELETE_TOKEN: 'deleteToken',
+  THROW_POKEBALL: 'throwPokeball',
   SET_SCENE: 'setScene',
   UPDATE_ATTACK_OF_OPPORTUNITY: 'updateAttackOfOpportunity',
   UPDATE_START_TURN_MODAL: 'updateStartTurnModal',
@@ -84,6 +85,7 @@ export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
   LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
   LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+  LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
   LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
   LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
   LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL,
@@ -216,6 +218,12 @@ export interface SendOutPokemonPayload {
   readonly tokenId: string
   readonly position: GridAnchor
   readonly facing?: TokenFacingDirection
+}
+
+export interface ThrowPokeballPayload {
+  readonly trainerPlacementId: string
+  readonly targetPlacementId: string
+  readonly pokeballName: string
 }
 
 export interface ModifyHpPayload {
@@ -375,6 +383,12 @@ export type SendOutPokemonLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
   SendOutPokemonPayload,
   LivePlayTokenScope
+>
+
+export type ThrowPokeballLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+  ThrowPokeballPayload,
+  LivePlayScope
 >
 
 export type SetSceneLivePlayCommand = LivePlayCommandEnvelope<
@@ -683,7 +697,7 @@ export interface SceneUpdatedPatchPayload {
 }
 
 export interface TokenDeletedPatchPayload {
-  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN | typeof LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL
   readonly placementId: string
   readonly previous: SheetPlacement
   readonly current: null

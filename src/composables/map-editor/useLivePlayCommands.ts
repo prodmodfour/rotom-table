@@ -28,6 +28,7 @@ import {
   type SetInitiativePayload,
   type SetScenePayload,
   type SpawnTokenPayload,
+  type ThrowPokeballPayload,
   type TickFieldEffectDurationsPayload,
   type TurnTokenPayload,
   type UseAbilityPayload,
@@ -47,6 +48,7 @@ import type { PlayerProfileId } from '#shared/playerProfiles'
 import type { StartTurnModalStateUpdatePayload } from '#shared/startTurnModalState'
 import type { GridAnchor, MapHazardV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import type { PokeballCaptureOutcomeEvent } from '~/utils/pokeballCapture'
 
 interface ReadonlyValueRef<TValue> {
   readonly value: TValue
@@ -66,6 +68,7 @@ export type LivePlayCommandResponse = LivePlayCommandResult & {
   map?: TabletopMap
   placement?: SheetPlacement
   sheetUpdates?: LivePlayCommandSheetUpdate[]
+  capture?: PokeballCaptureOutcomeEvent
 }
 
 export interface LivePlayCommandDispatchResult {
@@ -117,6 +120,11 @@ export interface UseLivePlayCommandsReturn {
   }) => Promise<LivePlayCommandDispatchResult>
   deleteToken: (payload: {
     placementId: string
+  }) => Promise<LivePlayCommandDispatchResult>
+  throwPokeball: (payload: {
+    trainerPlacementId: string
+    targetPlacementId: string
+    pokeballName: string
   }) => Promise<LivePlayCommandDispatchResult>
   moveToken: (payload: {
     placementId: string
@@ -190,6 +198,7 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
   | typeof LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES
   | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS
@@ -238,6 +247,7 @@ type LivePlayClientCommandPayload =
   | LivePlayTokenCommandPayload
   | SpawnTokenPayload
   | SendOutPokemonPayload
+  | ThrowPokeballPayload
   | SetInitiativePayload
   | AdvanceInitiativePayload
   | LivePlayMapEffectsCommandPayload
@@ -531,6 +541,36 @@ export const useLivePlayCommands = (
     ),
   )
 
+  const throwPokeball: UseLivePlayCommandsReturn['throwPokeball'] = (payload) => {
+    const trainerPlacement = options.map?.value?.placements.find((placement) => placement.id === payload.trainerPlacementId) ?? null
+    const targetPlacement = options.map?.value?.placements.find((placement) => placement.id === payload.targetPlacementId) ?? null
+    const scopes: LivePlayScope[] = [
+      { kind: 'token', placementId: payload.trainerPlacementId, field: 'action' },
+      { kind: 'token', placementId: payload.targetPlacementId, field: 'action' },
+      mapScope('metadata'),
+      mapScope('placements'),
+      ...(trainerPlacement ? [
+        { kind: 'sheet' as const, sheetKind: trainerPlacement.sheetKind, sheetSlug: trainerPlacement.sheetSlug, field: 'inventory' },
+        { kind: 'sheet' as const, sheetKind: trainerPlacement.sheetKind, sheetSlug: trainerPlacement.sheetSlug, field: 'pokemonRoster' },
+      ] : []),
+      ...(targetPlacement ? [
+        { kind: 'sheet' as const, sheetKind: targetPlacement.sheetKind, sheetSlug: targetPlacement.sheetSlug, field: 'caughtBall' },
+      ] : []),
+    ]
+    return runLivePlayCommand(
+      MAP_API_PATHS.throwPokeball,
+      commandBody(
+        LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+        {
+          trainerPlacementId: payload.trainerPlacementId,
+          targetPlacementId: payload.targetPlacementId,
+          pokeballName: payload.pokeballName,
+        },
+        scopes,
+      ),
+    )
+  }
+
   const moveToken: UseLivePlayCommandsReturn['moveToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.moveToken,
     tokenCommandBody(
@@ -790,6 +830,7 @@ export const useLivePlayCommands = (
     spawnToken,
     sendOutPokemon,
     deleteToken,
+    throwPokeball,
     moveToken,
     turnToken,
     modifyHp,

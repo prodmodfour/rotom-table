@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
+import type { PokeballCaptureOutcomeEvent } from '~/utils/pokeballCapture'
 import type { TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
 import type { TrainerSheet } from '~/types/trainerSheet'
@@ -58,10 +59,59 @@ const trainerSheet = (): TrainerSheet => ({
   },
 })
 
+const serverOutcome = (overrides: Partial<PokeballCaptureOutcomeEvent['result']> = {}): PokeballCaptureOutcomeEvent => ({
+  trainerId: 'trainer',
+  targetId: 'pidgey',
+  targetSlug: 'pidgey',
+  pokeballName: 'Basic Ball',
+  result: {
+    id: 'capture-server-result',
+    trainerId: 'trainer',
+    trainerName: 'Lenora',
+    targetId: 'pidgey',
+    targetName: 'Pidgey',
+    targetSpecies: 'Pidgey',
+    targetSpriteUrl: null,
+    pokeballName: 'Basic Ball',
+    success: false,
+    hit: false,
+    shakeCount: 0,
+    accuracyRoll: 1,
+    modifiedAccuracyRoll: 1,
+    accuracyCheck: 6,
+    userAccuracy: 0,
+    targetEvasion: 0,
+    targetEvasionLabel: '0',
+    captureRoll: null,
+    adjustedCaptureRoll: null,
+    captureRate: 100,
+    naturalTwentyCaptureBonus: 0,
+    naturalCaptureSuccess: false,
+    failureReason: 'The server says the Poké Ball missed.',
+    breakdown: {
+      captureRate: 100,
+      captureRateLines: [{ label: 'Base', value: 100 }],
+      rollModifier: 0,
+      rollModifierLines: [],
+      hitChance: { targetId: 'pidgey', percent: 50, label: '50%', tone: 'medium', title: '50%' },
+      captureChance: 50,
+      captureChanceLabel: '50%',
+      naturalTwentyCaptureChance: 50,
+      naturalTwentyCaptureChanceLabel: '50%',
+      combinedChance: 25,
+      combinedChanceLabel: '25%',
+      capturable: true,
+      uncatchableReason: null,
+      notes: [],
+    },
+    ...overrides,
+  },
+})
+
 const buildPanel = (
   applyCaptureOutcome = vi.fn(),
   onBeforePokeballThrow?: (event: { userId: string; pokeballName: string }) => unknown,
-  callbacks: Partial<Pick<Parameters<typeof usePokeballCapturePanel>[0], 'onPokeballThrow' | 'onPokeballFeedback' | 'onPokeballResult'>> = {},
+  callbacks: Partial<Pick<Parameters<typeof usePokeballCapturePanel>[0], 'onPokeballThrow' | 'onPokeballFeedback' | 'onPokeballResult' | 'dispatchCaptureAttempt'>> = {},
 ) => {
   const trainer = trainerSheet()
   const map = ref(mapDoc())
@@ -286,5 +336,64 @@ describe('usePokeballCapturePanel', () => {
         ]),
       },
     ])
+  })
+
+  it('uses authoritative dispatcher results without local rolls, local metadata, or local sheet mutation fallback', async () => {
+    vi.useFakeTimers()
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.99)
+    const applyCaptureOutcome = vi.fn()
+    const dispatchCaptureAttempt = vi.fn().mockResolvedValue(serverOutcome())
+    const onPokeballThrow = vi.fn()
+    const { panel, map } = buildPanel(applyCaptureOutcome, undefined, {
+      dispatchCaptureAttempt,
+      onPokeballThrow,
+    })
+
+    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
+    await panel.selectPokeballCaptureTarget('pidgey')
+
+    expect(dispatchCaptureAttempt).toHaveBeenCalledWith({
+      trainerId: 'trainer',
+      targetId: 'pidgey',
+      pokeballName: 'Basic Ball',
+    })
+    expect(random).not.toHaveBeenCalled()
+    expect(onPokeballThrow).toHaveBeenCalledWith({
+      userId: 'trainer',
+      targetId: 'pidgey',
+      pokeballName: 'Basic Ball',
+      resultId: 'capture-server-result',
+    })
+    vi.advanceTimersByTime(2100)
+    expect(map.value.metadata?.captureLog).toBeUndefined()
+    expect(applyCaptureOutcome).not.toHaveBeenCalled()
+    expect(panel.pokeballCaptureError.value).toBe('The server says the Poké Ball missed.')
+  })
+
+  it('does not locally fall back or submit twice while an authoritative throw is pending', async () => {
+    vi.useFakeTimers()
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.99)
+    const applyCaptureOutcome = vi.fn()
+    let resolveDispatch: (value: false) => void = () => undefined
+    const dispatchCaptureAttempt = vi.fn(() => new Promise<false>((resolve) => {
+      resolveDispatch = resolve
+    }))
+    const { panel, map } = buildPanel(applyCaptureOutcome, undefined, { dispatchCaptureAttempt })
+
+    panel.openPokeballCapture({ id: 'trainer', pokeballName: 'Basic Ball' })
+    const first = panel.selectPokeballCaptureTarget('pidgey')
+    const second = panel.selectPokeballCaptureTarget('pidgey')
+
+    expect(panel.pokeballCapturePending.value).toBe(true)
+    expect(dispatchCaptureAttempt).toHaveBeenCalledTimes(1)
+    resolveDispatch(false)
+    await first
+    await second
+
+    expect(panel.pokeballCapturePending.value).toBe(false)
+    expect(random).not.toHaveBeenCalled()
+    expect(applyCaptureOutcome).not.toHaveBeenCalled()
+    expect(map.value.metadata?.captureLog).toBeUndefined()
+    expect(panel.pokeballCaptureError.value).toBe('Poké Ball throw was rejected.')
   })
 })

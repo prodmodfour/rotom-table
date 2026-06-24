@@ -332,6 +332,112 @@ describe('useLivePlayCommands', () => {
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
   })
 
+  it('posts authoritative throwPokeball commands with placement-derived sheet scopes and adopts the response', async () => {
+    const map = {
+      ...mapFixture(),
+      placements: [
+        { id: 'trainer-ash', sheetKind: 'trainer' as const, sheetSlug: 'ash', position: { x: 0, y: 0, z: 0 } },
+        ...mapFixture().placements,
+      ],
+    }
+    const mapRevision = ref(4)
+    const profileId = ref(parsePlayerProfileId('profile_ash00000'))
+    const applyPersistedMap = vi.fn()
+    const applySheetUpdate = vi.fn()
+    const trainerUpdate = { kind: 'trainer' as const, slug: 'ash', sheet: { slug: 'ash', revision: 3 } }
+    const targetUpdate = { kind: 'pokemon' as const, slug: 'bulbasaur', sheet: { slug: 'bulbasaur', revision: 2 } }
+    const capture = {
+      trainerId: 'trainer-ash',
+      targetId: 'target-token',
+      targetSlug: 'bulbasaur',
+      pokeballName: 'Basic Ball',
+      result: { id: 'capture-server-1', hit: true, success: true },
+    }
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_servercapture',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      path: 'data/maps/arena-map.json',
+      map,
+      sheetUpdates: [trainerUpdate, targetUpdate],
+      capture,
+    })
+
+    const actions = useLivePlayCommands({
+      slug: 'arena-map',
+      playerProfileId: profileId,
+      map: ref(map),
+      mapRevision,
+      applyPersistedMap,
+      applySheetUpdate,
+    })
+    const result = await actions.throwPokeball({
+      trainerPlacementId: 'trainer-ash',
+      targetPlacementId: 'target-token',
+      pokeballName: 'Basic Ball',
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(result.response?.capture).toBe(capture)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.throwPokeball, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+      scopes: [
+        { kind: 'token', placementId: 'trainer-ash', field: 'action' },
+        { kind: 'token', placementId: 'target-token', field: 'action' },
+        { kind: 'map', lane: 'metadata' },
+        { kind: 'map', lane: 'placements' },
+        { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'inventory' },
+        { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'pokemonRoster' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'bulbasaur', field: 'caughtBall' },
+      ],
+      payload: {
+        trainerPlacementId: 'trainer-ash',
+        targetPlacementId: 'target-token',
+        pokeballName: 'Basic Ball',
+      },
+      clientId: 'ssr',
+      profileId: 'profile_ash00000',
+    }))
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
+    expect(applySheetUpdate).toHaveBeenCalledTimes(2)
+    expect(applySheetUpdate).toHaveBeenNthCalledWith(1, trainerUpdate)
+    expect(applySheetUpdate).toHaveBeenNthCalledWith(2, targetUpdate)
+  })
+
+  it('omits profileId from throwPokeball requests when no player profile is selected', async () => {
+    const map = {
+      ...mapFixture(),
+      placements: [
+        { id: 'trainer-ash', sheetKind: 'trainer' as const, sheetSlug: 'ash', position: { x: 0, y: 0, z: 0 } },
+        ...mapFixture().placements,
+      ],
+    }
+    apiMocks.postJson.mockResolvedValue({
+      ok: true,
+      opId: 'op_servercapturegm',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      map,
+      capture: { trainerId: 'trainer-ash', targetId: 'target-token', targetSlug: 'bulbasaur', pokeballName: 'Basic Ball', result: { id: 'capture-server-2' } },
+    })
+
+    const actions = useLivePlayCommands({ slug: 'arena-map', map: ref(map), mapRevision: ref(4) })
+    await actions.throwPokeball({ trainerPlacementId: 'trainer-ash', targetPlacementId: 'target-token', pokeballName: 'Basic Ball' })
+
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.throwPokeball, expect.not.objectContaining({
+      profileId: expect.anything(),
+    }))
+  })
+
   it('posts live-play HP sheet commands to map token command routes and applies returned sheet updates', async () => {
     const map = mapFixture()
     const mapRevision = ref(4)
