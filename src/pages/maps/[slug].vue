@@ -41,7 +41,10 @@ import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimation
 import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
 import { useInitiativeAutoFocusSettings } from '~/composables/useInitiativeAutoFocusSettings'
 import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
-import { useMoveAutomationPanel } from '~/composables/map-editor/useMoveAutomationPanel'
+import {
+  useMoveAutomationPanel,
+  type MoveAutomationAuthoritativeDispatchHandler,
+} from '~/composables/map-editor/useMoveAutomationPanel'
 import {
   createMoveVfxDebugPreviewEvents,
   isMoveVfxDebugHarnessEnabled,
@@ -1113,9 +1116,26 @@ const grantExperienceFromScene: typeof grantExperienceViaSetupSheetSave = async 
   })
 }
 
-const recordMoveUsage = async (request: { placementId: string; moveName: string }) => {
-  const result = await livePlayCommands.useMove(request)
-  if (!result.dispatched) throw new Error(result.message ?? 'Move usage could not be recorded.')
+const dispatchMoveAutomationAuthoritatively: MoveAutomationAuthoritativeDispatchHandler = async (request) => {
+  if (isSetupEditMode()) return undefined
+
+  const result = await livePlayCommands.resolveMove({
+    intent: request.intent,
+    candidateScopePlacementIds: request.candidateScopePlacementIds,
+  })
+
+  if (!result.dispatched) {
+    return {
+      accepted: false,
+      ...(result.message ? { message: result.message } : {}),
+    }
+  }
+
+  return {
+    accepted: true,
+    move: result.move,
+    ...(result.presentationError ? { presentationError: result.presentationError } : {}),
+  }
 }
 
 const moveTokenFromMoveAutomation = async (payload: { id: string; position: GridAnchor }) => {
@@ -1220,21 +1240,22 @@ const {
   moveAutomationTargetBranchSelection,
   moveAutomationFeedback,
   moveUsageError,
+  moveDispatchPending,
   spiteReactionPrompts,
   cuteCharmReactionPrompts,
   poisonPointReactionPrompts,
   moxieTriggerPrompts,
   celebrateTriggerPrompts,
   tokenMoveOptionsById,
-  openMoveAutomation,
+  openMoveAutomation: openMoveAutomationPanel,
   useMoveAgainstTarget,
-  cancelMoveAutomationTargeting,
-  selectMoveAutomationTarget,
-  confirmMoveAutomationTargetCount,
-  selectMoveAutomationTargetBranch,
-  selectMoveAutomationAreaTemplate,
-  selectMoveAutomationAreaDirection,
-  aimMoveAutomationArea,
+  cancelMoveAutomationTargeting: cancelMoveAutomationTargetingPanel,
+  selectMoveAutomationTarget: selectMoveAutomationTargetPanel,
+  confirmMoveAutomationTargetCount: confirmMoveAutomationTargetCountPanel,
+  selectMoveAutomationTargetBranch: selectMoveAutomationTargetBranchPanel,
+  selectMoveAutomationAreaTemplate: selectMoveAutomationAreaTemplatePanel,
+  selectMoveAutomationAreaDirection: selectMoveAutomationAreaDirectionPanel,
+  aimMoveAutomationArea: aimMoveAutomationAreaPanel,
   dismissSpiteReactionPrompt,
   applySpiteReactionPrompt,
   dismissCuteCharmReactionPrompt,
@@ -1258,7 +1279,7 @@ const {
   applyMoveFieldEffect: applyMoveFieldEffectFromScene,
   placeHazard: placeHazardFromScene,
   moveToken: moveTokenFromMoveAutomation,
-  recordMoveUsage,
+  dispatchAuthoritativeMove: dispatchMoveAutomationAuthoritatively,
   enqueueMoveAnimations: enqueueAndBroadcastMoveAnimations,
   onMoveUse: (event) => showActionSplash({ userId: event.userId, actionName: event.moveName }),
   onMoveFeedback: (event) => {
@@ -1482,15 +1503,54 @@ const actionAutomationFeedback = computed(() => (
   ?? remoteMoveAutomationFeedback.value
 ))
 
+const moveAutomationDispatchInFlight = () => moveDispatchPending.value
+
+const cancelMoveAutomationTargeting = () => {
+  if (moveAutomationDispatchInFlight()) return
+  cancelMoveAutomationTargetingPanel()
+}
+
+const selectMoveAutomationTarget = (targetId: string) => {
+  if (moveAutomationDispatchInFlight()) return
+  void selectMoveAutomationTargetPanel(targetId)
+}
+
+const confirmMoveAutomationTargetCount = () => {
+  if (moveAutomationDispatchInFlight()) return
+  void confirmMoveAutomationTargetCountPanel()
+}
+
+const selectMoveAutomationTargetBranch = (branchId: string) => {
+  if (moveAutomationDispatchInFlight()) return
+  selectMoveAutomationTargetBranchPanel(branchId)
+}
+
+const selectMoveAutomationAreaTemplate = (templateId: string) => {
+  if (moveAutomationDispatchInFlight()) return
+  selectMoveAutomationAreaTemplatePanel(templateId)
+}
+
+const selectMoveAutomationAreaDirection = (direction: Parameters<typeof selectMoveAutomationAreaDirectionPanel>[0]) => {
+  if (moveAutomationDispatchInFlight()) return
+  selectMoveAutomationAreaDirectionPanel(direction)
+}
+
+const aimMoveAutomationArea = (aimCell: GridAnchor) => {
+  if (moveAutomationDispatchInFlight()) return
+  aimMoveAutomationAreaPanel(aimCell)
+}
+
 const openMoveAutomationFromContext = (payload: { id: string; moveName?: string | null }) => {
+  if (moveAutomationDispatchInFlight()) return
   cancelPokeballCaptureTargeting()
   cancelAbilityAutomationTargeting()
   cancelManeuverActionTargeting()
   cancelOrderActionTargeting()
-  openMoveAutomation(payload)
+  openMoveAutomationPanel(payload)
 }
 
 const openPokeballCaptureFromContext = (payload: { id: string; pokeballName: string }) => {
+  if (moveAutomationDispatchInFlight()) return
   clearRemotePokeballCapture()
   cancelMoveAutomationTargeting()
   cancelAbilityAutomationTargeting()
@@ -1500,6 +1560,7 @@ const openPokeballCaptureFromContext = (payload: { id: string; pokeballName: str
 }
 
 const useManeuverFromContext = (payload: { id: string; maneuverName?: string | null }) => {
+  if (moveAutomationDispatchInFlight()) return
   cancelMoveAutomationTargeting()
   cancelPokeballCaptureTargeting()
   cancelAbilityAutomationTargeting()
@@ -1508,6 +1569,7 @@ const useManeuverFromContext = (payload: { id: string; maneuverName?: string | n
 }
 
 const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: string | null }) => {
+  if (moveAutomationDispatchInFlight()) return
   cancelMoveAutomationTargeting()
   cancelPokeballCaptureTargeting()
   cancelManeuverActionTargeting()
@@ -1516,6 +1578,7 @@ const openAbilityAutomationFromContext = (payload: { id: string; abilityName?: s
 }
 
 const useOrderFromContext = (payload: { id: string; orderName?: string | null }) => {
+  if (moveAutomationDispatchInFlight()) return
   cancelMoveAutomationTargeting()
   cancelPokeballCaptureTargeting()
   cancelManeuverActionTargeting()
@@ -1524,6 +1587,7 @@ const useOrderFromContext = (payload: { id: string; orderName?: string | null })
 }
 
 const selectActionAutomationTarget = (targetId: string) => {
+  if (moveAutomationDispatchInFlight()) return
   if (moveAutomationTargeting.value) {
     selectMoveAutomationTarget(targetId)
     return
@@ -1552,6 +1616,7 @@ const sceneActionError = computed(() => (
 ))
 
 const cancelActionAutomationTargeting = () => {
+  if (moveAutomationDispatchInFlight()) return
   if (moveAutomationTargeting.value || moveAutomationTargetBranchSelection.value) {
     cancelMoveAutomationTargeting()
     return

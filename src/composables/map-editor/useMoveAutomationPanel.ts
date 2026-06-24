@@ -1888,8 +1888,11 @@ export const useMoveAutomationPanel = ({
       return 'Resolved self move unexpectedly selected targets.'
     }
 
-    if (intent.selection.kind === 'single-target' && !move.selectedTargetIds.includes(intent.selection.targetPlacementId)) {
-      return `Resolved move did not include selected target ${intent.selection.targetPlacementId}.`
+    if (
+      intent.selection.kind === 'single-target'
+      && !sameStringSet([...move.selectedTargetIds], [intent.selection.targetPlacementId])
+    ) {
+      return `Resolved move targets did not exactly match selected target ${intent.selection.targetPlacementId}.`
     }
 
     if (
@@ -2239,9 +2242,13 @@ export const useMoveAutomationPanel = ({
     if (activeMoveTargeting.value === options.request) activeMoveTargeting.value = null
     if (activeMoveTargetBranchSelection.value?.userId === options.request.userId) activeMoveTargetBranchSelection.value = null
 
+    const validatedAuthoritativeTargetIds = outcome.move
+      && !validateAuthoritativeMoveResult(outcome.move, options.request, options.dispatchRequest.intent)
+      ? [...outcome.move.selectedTargetIds]
+      : null
     const callbackWarnings = await runAuthoritativePostAcceptanceCallbacks(
       options.request,
-      options.targetIdsForCallbacks ?? [],
+      validatedAuthoritativeTargetIds ?? options.targetIdsForCallbacks ?? [],
       { skipActionNotifications: options.skipActionNotifications },
     )
     const presentationWarnings: string[] = []

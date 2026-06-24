@@ -631,4 +631,403 @@ describe('useMoveAutomationPanel authoritative dispatcher', () => {
       expect(JSON.stringify(dispatch.mock.calls[0]?.[0].intent)).not.toContain('Client-authored AoO text')
     })
   })
+
+  it('dispatches self moves authoritatively exactly once without local usage recording', async () => {
+    const moveScript = reviewedScript('Swords Dance')
+    await withRegisteredScripts([moveScript], async () => {
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: false,
+        message: 'stay in live targeting path',
+      })
+      const recordMoveUsage = vi.fn()
+      const modifyCombatStages = vi.fn()
+      const { panel } = panelFixture({
+        moveName: moveScript.moveName,
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        recordMoveUsage,
+        modifyCombatStages,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await Promise.resolve()
+      await nextTick()
+
+      expect(dispatch).toHaveBeenCalledTimes(1)
+      expect(dispatch.mock.calls[0]?.[0].intent.selection).toEqual({ kind: 'self' })
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(modifyCombatStages).not.toHaveBeenCalled()
+    })
+  })
+
+  it('submits all selected target-count targets to the authoritative dispatcher', async () => {
+    const moveScript = targetCountScript()
+    await withRegisteredScripts([moveScript], async () => {
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: false,
+        message: 'keep targeting for retry',
+      })
+      const { panel } = panelFixture({
+        moveName: moveScript.moveName,
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await panel.selectMoveAutomationTarget('target-a')
+      await panel.selectMoveAutomationTarget('target-b')
+      await panel.confirmMoveAutomationTargetCount()
+
+      expect(dispatch).toHaveBeenCalledTimes(1)
+      expect(dispatch.mock.calls[0]?.[0].intent.selection).toEqual({
+        kind: 'target-count',
+        targetPlacementIds: ['target-a', 'target-b'],
+      })
+    })
+  })
+
+  it('forwards stationary area template, direction, friendly exclusions, and pre-exclusion candidates authoritatively', async () => {
+    const areaTemplate: MoveAutomationAreaTemplate = { kind: 'line', size: 3, label: 'Line 3' }
+    const baseScript = branchScript()
+    const friendlyScript: MoveAutomationScript = {
+      ...baseScript,
+      moveName: 'Authoritative Friendly Line',
+      targetBranches: baseScript.targetBranches?.map((branch) => branch.id === 'line-branch'
+        ? { ...branch, range: 'Line 3, Friendly', areaTemplates: [areaTemplate] }
+        : branch),
+    }
+    await withRegisteredScripts([friendlyScript], async () => {
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: false,
+        message: 'keep targeting for retry',
+      })
+      const { panel } = panelFixture({
+        moveName: friendlyScript.moveName,
+        scripts: [friendlyScript],
+        dispatchAuthoritativeMove: dispatch,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: friendlyScript.moveName })
+      panel.selectMoveAutomationTargetBranch('line-branch')
+      panel.selectMoveAutomationAreaDirection('east')
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        mode: 'area-confirmation',
+        candidateIds: ['target-a', 'target-b'],
+        affectedIds: ['target-a', 'target-b'],
+      })
+
+      await panel.selectMoveAutomationTarget('target-b')
+      expect(panel.moveAutomationTargeting.value).toMatchObject({
+        affectedIds: ['target-a'],
+      })
+
+      await panel.selectMoveAutomationTarget('user-token')
+
+      expect(dispatch).toHaveBeenCalledTimes(1)
+      expect(dispatch.mock.calls[0]?.[0]).toEqual({
+        intent: expect.objectContaining({
+          placementId: 'user-token',
+          moveName: friendlyScript.moveName,
+          targetBranchId: 'line-branch',
+          selection: {
+            kind: 'area',
+            areaTemplateId: moveAutomationAreaTemplateId(areaTemplate),
+            direction: 'east',
+            excludedTargetPlacementIds: ['target-b'],
+          },
+        }),
+        candidateScopePlacementIds: ['target-a', 'target-b'],
+      })
+    })
+  })
+
+  it('submits Pass direction without the preview destination and never moves afterward in authoritative mode', async () => {
+    const passTemplate: MoveAutomationAreaTemplate = { kind: 'pass', size: 4, label: 'Pass 4' }
+    const moveScript = reviewedScript('Scratch')
+    const destination = { x: 5, y: 0, z: 1 }
+    const pathCells = [{ x: 2, y: 0, z: 1 }, { x: 3, y: 0, z: 1 }, destination]
+    await withRegisteredScripts([moveScript], async () => {
+      const moveToken = vi.fn()
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: true,
+        move: resolvedMove({
+          script: moveScript,
+          moveName: moveScript.moveName,
+          canonicalMoveName: moveScript.moveName,
+          selectedTargetIds: ['target-a'],
+          transaction: transaction({ moveName: moveScript.moveName }),
+          area: {
+            areaTemplateId: moveAutomationAreaTemplateId(passTemplate),
+            template: passTemplate,
+            cells: pathCells,
+            candidateTargetIds: ['target-a'],
+            excludedTargetIds: [],
+            direction: 'east',
+          },
+          movement: {
+            kind: 'pass',
+            from: { x: 1, y: 0, z: 1 },
+            destination,
+            direction: 'east',
+            pathCells,
+          },
+        }),
+      })
+      const { panel } = panelFixture({
+        moveName: moveScript.moveName,
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        moveToken,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      panel.selectMoveAutomationAreaDirection('east')
+      await panel.selectMoveAutomationTarget('user-token')
+
+      expect(dispatch).toHaveBeenCalledTimes(1)
+      const intent = dispatch.mock.calls[0]?.[0].intent
+      expect(intent.selection).toEqual({
+        kind: 'area',
+        areaTemplateId: moveAutomationAreaTemplateId(passTemplate),
+        direction: 'east',
+      })
+      expect(JSON.stringify(intent)).not.toContain('destination')
+      expect(moveToken).not.toHaveBeenCalled()
+    })
+  })
+
+  it('bypasses every local persistent mutation handler for an accepted authoritative move', async () => {
+    const moveScript = reviewedScript('Ember')
+    await withRegisteredScripts([moveScript], async () => {
+      const recordMoveUsage = vi.fn()
+      const modifyHp = vi.fn()
+      const modifyCombatStages = vi.fn()
+      const modifyConditions = vi.fn()
+      const placeHazard = vi.fn()
+      const applyMoveFieldEffect = vi.fn()
+      const moveToken = vi.fn()
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: true,
+        move: resolvedMove({
+          script: moveScript,
+          transaction: transaction({
+            moveName: moveScript.moveName,
+            hpUpdates: [{ id: 'target-a', currentHp: 1 }],
+            combatStageUpdates: [{ id: 'target-a', stages: { atk: -1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } }],
+            conditionUpdates: [{ id: 'target-a', conditions: ['Burned'] }],
+            hazardsToAdd: [{ kind: 'spikes', x: 2, y: 0, z: 2 }],
+            fieldEffectsToApply: [{ kind: 'weather', value: 'rainy', source: moveScript.moveName }],
+          }),
+        }),
+      })
+      const { map, panel } = panelFixture({
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        recordMoveUsage,
+        modifyHp,
+        modifyCombatStages,
+        modifyConditions,
+        placeHazard,
+        applyMoveFieldEffect,
+        moveToken,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await panel.selectMoveAutomationTarget('target-a')
+
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(modifyHp).not.toHaveBeenCalled()
+      expect(modifyCombatStages).not.toHaveBeenCalled()
+      expect(modifyConditions).not.toHaveBeenCalled()
+      expect(placeHazard).not.toHaveBeenCalled()
+      expect(applyMoveFieldEffect).not.toHaveBeenCalled()
+      expect(moveToken).not.toHaveBeenCalled()
+      expect(map.value.metadata?.moveLog).toBeUndefined()
+    })
+  })
+
+  it('emits no accepted-result VFX or feedback for rejected authoritative moves', async () => {
+    const moveScript = reviewedScript('Ember')
+    await withRegisteredScripts([moveScript], async () => {
+      const enqueueMoveAnimations = vi.fn()
+      const onMoveFeedback = vi.fn()
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: false,
+        message: 'Rejected by the server.',
+      })
+      const { panel } = panelFixture({
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        enqueueMoveAnimations,
+        onMoveFeedback,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await panel.selectMoveAutomationTarget('target-a')
+
+      expect(panel.moveAutomationTargeting.value).not.toBeNull()
+      expect(panel.moveUsageError.value).toBe('Rejected by the server.')
+      expect(enqueueMoveAnimations).not.toHaveBeenCalled()
+      expect(onMoveFeedback).not.toHaveBeenCalled()
+      expect(panel.moveAutomationFeedback.value).toBeNull()
+    })
+  })
+
+  it('clears targeting and warns without retry or local fallback when an accepted move has no presentation result', async () => {
+    const moveScript = reviewedScript('Ember')
+    await withRegisteredScripts([moveScript], async () => {
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: true,
+        move: null,
+        presentationError: 'Server omitted presentation data.',
+      })
+      const modifyHp = vi.fn()
+      const enqueueMoveAnimations = vi.fn()
+      const { map, panel } = panelFixture({
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        modifyHp,
+        enqueueMoveAnimations,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await panel.selectMoveAutomationTarget('target-a')
+
+      expect(dispatch).toHaveBeenCalledTimes(1)
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(panel.moveUsageError.value).toContain('Move was accepted, but')
+      expect(panel.moveUsageError.value).toContain('presentation data is unavailable')
+      expect(panel.moveUsageError.value).toContain('Server omitted presentation data.')
+      expect(modifyHp).not.toHaveBeenCalled()
+      expect(enqueueMoveAnimations).not.toHaveBeenCalled()
+      expect(map.value.metadata?.moveLog).toBeUndefined()
+    })
+  })
+
+  it('rejects single-target presentation results that include additional selected targets', async () => {
+    const moveScript = reviewedScript('Ember')
+    await withRegisteredScripts([moveScript], async () => {
+      const enqueueMoveAnimations = vi.fn()
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: true,
+        move: resolvedMove({
+          script: moveScript,
+          selectedTargetIds: ['target-a', 'target-b'],
+          transaction: transaction({
+            moveName: moveScript.moveName,
+            attackedTargetIds: ['target-a', 'target-b'],
+            hitTargetIds: ['target-a', 'target-b'],
+          }),
+        }),
+      })
+      const { panel } = panelFixture({
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        enqueueMoveAnimations,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await panel.selectMoveAutomationTarget('target-a')
+
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(panel.moveUsageError.value).toContain('did not exactly match selected target target-a')
+      expect(enqueueMoveAnimations).not.toHaveBeenCalled()
+    })
+  })
+
+  it('uses authoritative selected target ids for post-acceptance target-dependent callbacks', async () => {
+    const moveScript = reviewedScript('Ember')
+    await withRegisteredScripts([moveScript], async () => {
+      const onRangedAttackOfOpportunity = vi.fn()
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: true,
+        move: resolvedMove({
+          script: moveScript,
+          selectedTargetIds: ['target-a'],
+        }),
+      })
+      const { panel } = panelFixture({
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        onRangedAttackOfOpportunity,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await panel.selectMoveAutomationTarget('target-a')
+
+      expect(onRangedAttackOfOpportunity).toHaveBeenCalledWith({
+        provokerId: 'user-token',
+        targetIds: ['target-a'],
+        moveName: moveScript.moveName,
+      })
+    })
+  })
+
+  it('uses one authoritative dispatch for accepted Attack of Opportunity attacks without persisting client log lines', async () => {
+    const moveScript = reviewedScript('Ember')
+    await withRegisteredScripts([moveScript], async () => {
+      const recordMoveUsage = vi.fn()
+      const modifyHp = vi.fn()
+      const onBeforeNonImmediateAction = vi.fn()
+      const onRangedAttackOfOpportunity = vi.fn()
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue({
+        accepted: true,
+        move: resolvedMove({
+          script: moveScript,
+          transaction: transaction({
+            moveName: moveScript.moveName,
+            logLines: ['Server-authored AoO move log.'],
+          }),
+        }),
+      })
+      const { map, panel } = panelFixture({
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        recordMoveUsage,
+        modifyHp,
+        onBeforeNonImmediateAction,
+        onRangedAttackOfOpportunity,
+      })
+
+      await expect(panel.useMoveAgainstTarget({
+        id: 'user-token',
+        targetId: 'target-a',
+        moveName: moveScript.moveName,
+        skipActionNotifications: true,
+        logLine: 'Client-authored AoO text.',
+      })).resolves.toBe(true)
+
+      expect(dispatch).toHaveBeenCalledTimes(1)
+      expect(dispatch.mock.calls[0]?.[0].intent.selection).toEqual({ kind: 'single-target', targetPlacementId: 'target-a' })
+      expect(JSON.stringify(dispatch.mock.calls[0]?.[0].intent)).not.toContain('Client-authored AoO text')
+      expect(recordMoveUsage).not.toHaveBeenCalled()
+      expect(modifyHp).not.toHaveBeenCalled()
+      expect(onBeforeNonImmediateAction).not.toHaveBeenCalled()
+      expect(onRangedAttackOfOpportunity).not.toHaveBeenCalled()
+      expect(map.value.metadata?.moveLog).toBeUndefined()
+    })
+  })
+
+  it('keeps tracked Prepare Map moves local when the dispatcher declines to handle them', async () => {
+    const moveScript: MoveAutomationScript = { ...reviewedScript('Ember'), requiresAccuracy: false }
+    await withRegisteredScripts([moveScript], async () => {
+      const dispatch = vi.fn<MoveAutomationAuthoritativeDispatchHandler>().mockResolvedValue(undefined)
+      const modifyHp = vi.fn()
+      const { map, panel } = panelFixture({
+        scripts: [moveScript],
+        dispatchAuthoritativeMove: dispatch,
+        modifyHp,
+      })
+
+      panel.openMoveAutomation({ id: 'user-token', moveName: moveScript.moveName })
+      await panel.selectMoveAutomationTarget('target-a')
+
+      expect(dispatch).toHaveBeenCalledTimes(1)
+      expect(modifyHp).toHaveBeenCalled()
+      expect(panel.moveAutomationTargeting.value).toBeNull()
+      expect(panel.moveUsageError.value).toBeNull()
+      expect(map.value.metadata?.moveLog).toMatchObject([{ moveName: moveScript.moveName }])
+    })
+  })
+
 })
