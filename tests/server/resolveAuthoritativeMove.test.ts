@@ -1,0 +1,404 @@
+import { describe, expect, it } from 'vitest'
+import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import {
+  AuthoritativeMoveResolutionError,
+  resolveAuthoritativeMove,
+} from '../../server/domain/resolveAuthoritativeMove'
+import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
+import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
+import type { SheetPlacement, TabletopMap } from '~/types/map'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
+import type { TrainerSheet } from '~/types/trainerSheet'
+
+const moveIntent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): ResolveMoveIntent => ({
+  schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+  ...overrides,
+})
+
+const placement = (id: string, sheetSlug = id, position = { x: 0, y: 0, z: 0 }): SheetPlacement => ({
+  id,
+  sheetKind: 'pokemon',
+  sheetSlug,
+  position,
+})
+
+const mapFixture = (placements: SheetPlacement[] = [
+  placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+  placement('target-a', 'target-a', { x: 1, y: 0, z: 0 }),
+  placement('target-b', 'target-b', { x: 2, y: 0, z: 0 }),
+  placement('target-c', 'target-c', { x: 3, y: 0, z: 0 }),
+  placement('far-target', 'far-target', { x: 9, y: 0, z: 0 }),
+]): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'move-resolution-test',
+  name: 'Move Resolution Test',
+  dimensions: { x: 12, y: 3, z: 12 },
+  groundLevelY: 0,
+  playerVisible: true,
+  voxels: [],
+  hazards: [],
+  fieldEffects: { weather: [], terrains: [], rooms: [] },
+  placements,
+  lights: [],
+  initiative: { activeId: null, round: 1 },
+})
+
+const pokemonSheet = (slug: string, moves: CharacterSheetMove[] = [], overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
+  slug,
+  nickname: slug,
+  species: 'Pikachu',
+  level: 20,
+  movelist: moves,
+  ...overrides,
+})
+
+const targetSheet = (slug: string): CharacterSheet => pokemonSheet(slug, [], {
+  species: 'Snorlax',
+  level: 30,
+  combat: { currentHp: 80 },
+})
+
+const sheetMap = (
+  actorMoves: CharacterSheetMove[],
+  overrides: Record<string, CharacterSheet> = {},
+): Map<string, CharacterSheet> => new Map<string, CharacterSheet>([
+  ['actor', pokemonSheet('actor', actorMoves)],
+  ['target-a', targetSheet('target-a')],
+  ['target-b', targetSheet('target-b')],
+  ['target-c', targetSheet('target-c')],
+  ['far-target', targetSheet('far-target')],
+  ...Object.entries(overrides),
+])
+
+const randomSequence = (values: readonly number[]): (() => number) => {
+  let index = 0
+  return () => values[index++] ?? values[values.length - 1] ?? 0
+}
+
+const snapshotInput = (map: TabletopMap, pokemonSheets: ReadonlyMap<string, CharacterSheet>, trainerSheets: ReadonlyMap<string, TrainerSheet>): string => JSON.stringify({
+  map,
+  pokemonSheets: [...pokemonSheets.entries()],
+  trainerSheets: [...trainerSheets.entries()],
+})
+
+const expectFailure = (
+  run: () => unknown,
+  code: AuthoritativeMoveResolutionError['code'],
+): AuthoritativeMoveResolutionError => {
+  try {
+    run()
+  } catch (error) {
+    expect(error).toBeInstanceOf(AuthoritativeMoveResolutionError)
+    const resolutionError = error as AuthoritativeMoveResolutionError
+    expect(resolutionError.code).toBe(code)
+    return resolutionError
+  }
+  throw new Error(`Expected ${code} failure`)
+}
+
+const fakeTargetCountScript = (overrides: Partial<MoveAutomationScript> = {}): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Fake 6, 2 Targets',
+  version: 1,
+  targetMode: 'multi-target',
+  targetCount: 2,
+  damaging: true,
+  requiresAccuracy: true,
+  damageBase: 4,
+  damageClass: 'Physical',
+  type: 'Normal',
+  ac: 2,
+  range: '6, 2 Targets',
+  effect: 'Fake explicit target-count test script.',
+  keywords: ['6', '2 Targets'],
+  criticalRange: null,
+  areaTemplates: [],
+  conditionSuggestions: [],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+  ...overrides,
+})
+
+const branchSelectionScript = (): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Tackle',
+  version: 1,
+  targetMode: 'one-target',
+  targetCount: 1,
+  damaging: false,
+  requiresAccuracy: false,
+  damageBase: null,
+  damageClass: 'Status',
+  type: 'Normal',
+  ac: null,
+  range: 'Melee, 1 Target or 6, 2 Targets',
+  effect: 'Test branch selection.',
+  keywords: ['Melee', '1 Target', '6', '2 Targets'],
+  criticalRange: null,
+  areaTemplates: [],
+  targetBranches: [
+    { id: 'single', label: 'Melee — 1 Target', targetMode: 'one-target', targetCount: 1, range: 'Melee, 1 Target' },
+    { id: 'two-targets', label: '6m — 2 Targets', targetMode: 'multi-target', targetCount: 2, range: '6, 2 Targets' },
+  ],
+  conditionSuggestions: [],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+})
+
+const withRegisteredMoveAutomationScript = async <T>(script: MoveAutomationScript, run: () => T | Promise<T>): Promise<T> => {
+  const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
+  const previous = scripts.get(script.moveName)
+  scripts.set(script.moveName, script)
+  try {
+    return await run()
+  } finally {
+    if (previous) scripts.set(script.moveName, previous)
+    else scripts.delete(script.moveName)
+  }
+}
+
+describe('resolveAuthoritativeMove', () => {
+  it('resolves self moves without mutating authoritative inputs', () => {
+    const map = mapFixture()
+    const pokemonSheets = sheetMap([{ name: 'Swords Dance' }])
+    const trainerSheets = new Map<string, TrainerSheet>()
+    const before = snapshotInput(map, pokemonSheets, trainerSheets)
+
+    const resolution = resolveAuthoritativeMove({
+      map,
+      pokemonSheets,
+      trainerSheets,
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Swords Dance', selection: { kind: 'self' } }),
+      random: randomSequence([0]),
+    })
+
+    expect(resolution.selectedTargetIds).toEqual([])
+    expect(resolution.desiredFacing).toBeUndefined()
+    expect(resolution.transaction.combatStageUpdates).toEqual([{ id: 'actor-token', stages: { atk: 2, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 } }])
+    expect(snapshotInput(map, pokemonSheets, trainerSheets)).toBe(before)
+  })
+
+  it('resolves in-range single-target moves with authoritative random accuracy, damage and feedback IDs', () => {
+    const map = mapFixture()
+    const pokemonSheets = sheetMap([{ name: 'Tackle' }])
+    const baseIntent = moveIntent({
+      placementId: 'actor-token',
+      moveName: 'Tackle',
+      selection: { kind: 'single-target', targetPlacementId: 'target-a' },
+    })
+
+    const lowDamage = resolveAuthoritativeMove({
+      map,
+      pokemonSheets,
+      trainerSheets: new Map(),
+      intent: baseIntent,
+      random: randomSequence([0.5, 0]),
+      idFactory: () => 'feedback-id',
+    })
+    const highDamage = resolveAuthoritativeMove({
+      map,
+      pokemonSheets,
+      trainerSheets: new Map(),
+      intent: baseIntent,
+      random: randomSequence([0.5, 0.99]),
+      idFactory: () => 'feedback-id',
+    })
+
+    expect(lowDamage.selectedTargetIds).toEqual(['target-a'])
+    expect(lowDamage.feedback).toMatchObject({ id: 'feedback-id', naturalRoll: 11, targetId: 'target-a' })
+    expect(lowDamage.desiredFacing).toBe('south-east')
+    expect(highDamage.transaction.hpUpdates).not.toEqual(lowDamage.transaction.hpUpdates)
+  })
+
+  it('rejects missing and out-of-range single targets and preserves inputs after failure', () => {
+    const map = mapFixture()
+    const pokemonSheets = sheetMap([{ name: 'Tackle' }])
+    const trainerSheets = new Map<string, TrainerSheet>()
+    const before = snapshotInput(map, pokemonSheets, trainerSheets)
+
+    expectFailure(() => resolveAuthoritativeMove({
+      map,
+      pokemonSheets,
+      trainerSheets,
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'missing' } }),
+    }), 'target-placement-missing')
+
+    expectFailure(() => resolveAuthoritativeMove({
+      map,
+      pokemonSheets,
+      trainerSheets,
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'far-target' } }),
+    }), 'target-out-of-range')
+
+    expect(snapshotInput(map, pokemonSheets, trainerSheets)).toBe(before)
+  })
+
+  it('resolves no-roll single-target moves through the no-roll transaction path', () => {
+    const resolution = resolveAuthoritativeMove({
+      map: mapFixture(),
+      pokemonSheets: sheetMap([{ name: 'Helping Hand' }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Helping Hand', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+      random: randomSequence([0]),
+      idFactory: () => 'unused',
+    })
+
+    expect(resolution.feedback).toBeUndefined()
+    expect(resolution.transaction.conditionUpdates).toEqual([{ id: 'target-a', conditions: ['Helping Hand'] }])
+  })
+
+  it('accepts the acting token as a single target only for Self-inclusive range semantics', () => {
+    const selfTarget = resolveAuthoritativeMove({
+      map: mapFixture(),
+      pokemonSheets: sheetMap([{ name: 'Acupressure' }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Acupressure', selection: { kind: 'single-target', targetPlacementId: 'actor-token' } }),
+      random: randomSequence([0.5, 0.2]),
+      idFactory: () => 'acu-feedback',
+    })
+    expect(selfTarget.selectedTargetIds).toEqual(['actor-token'])
+
+    expectFailure(() => resolveAuthoritativeMove({
+      map: mapFixture(),
+      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'actor-token' } }),
+    }), 'target-out-of-range')
+  })
+
+  it('handles target branch validation and applies valid branch scripts', async () => {
+    await withRegisteredMoveAutomationScript(branchSelectionScript(), () => {
+      const map = mapFixture()
+      const pokemonSheets = sheetMap([{ name: 'Tackle' }])
+      const trainerSheets = new Map<string, TrainerSheet>()
+
+      expectFailure(() => resolveAuthoritativeMove({
+        map,
+        pokemonSheets,
+        trainerSheets,
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+      }), 'target-branch-required')
+
+      expectFailure(() => resolveAuthoritativeMove({
+        map,
+        pokemonSheets,
+        trainerSheets,
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', targetBranchId: 'bad', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+      }), 'target-branch-invalid')
+
+      const resolution = resolveAuthoritativeMove({
+        map,
+        pokemonSheets,
+        trainerSheets,
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', targetBranchId: 'single', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+      })
+      expect(resolution.targetBranchId).toBe('single')
+      expect(resolution.script.range).toBe('Melee, 1 Target')
+    })
+
+    expectFailure(() => resolveAuthoritativeMove({
+      map: mapFixture(),
+      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', targetBranchId: 'unexpected', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+    }), 'target-branch-unexpected')
+  })
+
+  it('rejects selection-kind and script-mode mismatches', async () => {
+    expectFailure(() => resolveAuthoritativeMove({
+      map: mapFixture(),
+      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'self' } }),
+    }), 'selection-kind-mismatch')
+
+    await withRegisteredMoveAutomationScript(fakeTargetCountScript(), () => {
+      expectFailure(() => resolveAuthoritativeMove({
+        map: mapFixture(),
+        pokemonSheets: sheetMap([{ name: 'Fake 6, 2 Targets', db: 4, category: 'Physical', ac: 2, range: '6, 2 Targets' }]),
+        trainerSheets: new Map(),
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Fake 6, 2 Targets', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+      }), 'selection-kind-mismatch')
+    })
+  })
+
+  it('resolves target-count selections using script maximum, authoritative range and deterministic target order', async () => {
+    await withRegisteredMoveAutomationScript(fakeTargetCountScript(), () => {
+      const map = mapFixture()
+      const pokemonSheets = sheetMap([{ name: 'Fake 6, 2 Targets', db: 4, category: 'Physical', ac: 2, range: '6, 2 Targets' }])
+      const trainerSheets = new Map<string, TrainerSheet>()
+
+      const resolution = resolveAuthoritativeMove({
+        map,
+        pokemonSheets,
+        trainerSheets,
+        intent: moveIntent({
+          placementId: 'actor-token',
+          moveName: 'Fake 6, 2 Targets',
+          selection: { kind: 'target-count', targetPlacementIds: ['target-b', 'target-a'] },
+        }),
+        random: randomSequence([0.5, 0, 0.5, 0.25]),
+      })
+
+      expect(resolution.selectedTargetIds).toEqual(['target-a', 'target-b'])
+      expect(resolution.transaction.attackedTargetIds).toEqual(['target-a', 'target-b'])
+      expect(resolution.desiredFacing).toBe('south-east')
+
+      expectFailure(() => resolveAuthoritativeMove({
+        map,
+        pokemonSheets,
+        trainerSheets,
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Fake 6, 2 Targets', selection: { kind: 'target-count', targetPlacementIds: ['target-a', 'target-b', 'target-c'] } }),
+      }), 'too-many-targets')
+
+      expectFailure(() => resolveAuthoritativeMove({
+        map,
+        pokemonSheets,
+        trainerSheets,
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Fake 6, 2 Targets', selection: { kind: 'target-count', targetPlacementIds: ['target-a', 'far-target'] } }),
+      }), 'target-out-of-range')
+    })
+  })
+
+  it('reproduces multi-target random rolls with injected randomness', async () => {
+    await withRegisteredMoveAutomationScript(fakeTargetCountScript(), () => {
+      const common = {
+        map: mapFixture(),
+        pokemonSheets: sheetMap([{ name: 'Fake 6, 2 Targets', db: 4, category: 'Physical', ac: 2, range: '6, 2 Targets' }]),
+        trainerSheets: new Map<string, TrainerSheet>(),
+        intent: moveIntent({ placementId: 'actor-token', moveName: 'Fake 6, 2 Targets', selection: { kind: 'target-count', targetPlacementIds: ['target-a', 'target-b'] } }),
+      }
+      const first = resolveAuthoritativeMove({ ...common, random: randomSequence([0.5, 0, 0.5, 0.25]) })
+      const second = resolveAuthoritativeMove({ ...common, random: randomSequence([0.5, 0, 0.5, 0.25]) })
+      const different = resolveAuthoritativeMove({ ...common, random: randomSequence([0.5, 0.99, 0.5, 0.99]) })
+
+      expect(second.transaction).toEqual(first.transaction)
+      expect(different.transaction.hpUpdates).not.toEqual(first.transaction.hpUpdates)
+    })
+  })
+
+  it('rejects missing actor sheets and duplicate placement ids', () => {
+    expectFailure(() => resolveAuthoritativeMove({
+      map: mapFixture(),
+      pokemonSheets: new Map(),
+      trainerSheets: new Map(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+    }), 'actor-sheet-missing')
+
+    expectFailure(() => resolveAuthoritativeMove({
+      map: mapFixture([
+        placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+        placement('actor-token', 'actor-copy', { x: 1, y: 0, z: 0 }),
+      ]),
+      pokemonSheets: sheetMap([{ name: 'Tackle' }]),
+      trainerSheets: new Map(),
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } }),
+    }), 'duplicate-placement-id')
+  })
+})

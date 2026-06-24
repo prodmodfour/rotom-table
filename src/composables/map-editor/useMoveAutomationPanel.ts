@@ -2,13 +2,15 @@ import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from 'vue'
 import { findMove } from '~~/data/ptuReference'
 import {
   buildTokenMoveMenuOptions,
-  buildTokenMoveUsageState,
   moveEntriesForPlacement,
   type TokenSheetMoveEntry,
 } from '~/utils/mapTokenMoves'
 import {
+  resolveCanonicalMoveEntryForPlacement,
+  type ResolvedCanonicalMoveEntry,
+} from '~/utils/authoritativeMoveEntries'
+import {
   buildMoveAutomationScriptFromMoveData,
-  damageFormulaForMove,
   isSeamlessAreaConfirmationScript,
   isSeamlessSelfMoveScript,
   isSeamlessSingleTargetMoveScript,
@@ -17,7 +19,6 @@ import {
   moveAutomationScriptForTargetBranch,
   moveAutomationTargetBranches,
 } from '~/utils/moveAutomation'
-import { directHpLossRollFormulaForScript } from '~/utils/moveAutomationDirectHpLoss'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
 import {
   buildMoveAutomationAreaTemplateCells,
@@ -28,7 +29,6 @@ import {
   tokensInMoveAutomationArea,
   type MoveAutomationAreaTemplatePlacement,
 } from '~/utils/moveAutomationAreaTemplates'
-import { buildMoveAutomationMoveEntries } from '~/utils/moveAutomationMoves'
 import {
   resolveInstantAreaMoveAutomation,
   resolveInstantMoveAutomation,
@@ -41,7 +41,6 @@ import {
   planMoveAnimations,
   type MoveAnimationPlanTargetOutcome,
 } from '~/utils/moveAnimationPlanner'
-import { moveConditionUseBlock } from '~/utils/moveConditionRestrictions'
 import {
   setTokenFacingOnPlacement,
   tokenFacingAreaDirection,
@@ -474,36 +473,16 @@ export const useMoveAutomationPanel = ({
     if (target) faceTokenTowardToken(user, target)
   }
 
-  const moveAutomationEntryForUse = (id: string, moveName: string) => {
+  const moveAutomationEntryForUse = (id: string, moveName: string): ResolvedCanonicalMoveEntry | null => {
     const user = findSpawnedPokemon(id)
-    if (!user) return null
-
-    const normalizedMoveName = moveName.trim().toLowerCase()
-    const moves = moveEntriesForId(id).map((entry) => entry.move)
-    const entry = buildMoveAutomationMoveEntries(moves, {
-      stabTypes: user.sheetKind === 'pokemon' ? user.defenderTypes : [],
-      combatSkillRankValue: user.combatSkillRankValue,
-      loyalty: user.sheetKind === 'pokemon' ? user.loyalty : undefined,
-    }).find((candidate) =>
-      candidate.move.name.toLowerCase() === normalizedMoveName
-        || candidate.sheetMove.name.toLowerCase() === normalizedMoveName,
-    ) ?? null
-
-    if (!entry) return null
-    const blocked = moveConditionUseBlock({
-      name: entry.move.name,
-      aliases: [entry.sheetMove.name, entry.script.moveName],
-      damageClass: entry.script.damageClass ?? entry.move.damage_class,
-    }, user.conditions)
-    if (blocked) return null
-
-    const usage = buildTokenMoveUsageState(
-      user.id,
-      entry.move.name,
-      entry.move.frequency ?? entry.sheetMove.frequency ?? null,
-      tokenMoveUsageContext(user.id),
-    )
-    return usage?.available === false ? null : entry
+    const result = resolveCanonicalMoveEntryForPlacement({
+      placement: placementById(id),
+      token: user,
+      sheets: sheetLookup(),
+      moveName,
+      usageContext: tokenMoveUsageContext(id),
+    })
+    return result.ok ? result.entry : null
   }
 
   const moveTargetHitChances = (
@@ -922,10 +901,10 @@ export const useMoveAutomationPanel = ({
   }
 
   const rollFormulaForEntry = (entry: NonNullable<ReturnType<typeof moveAutomationEntryForUse>>): string | null =>
-    directHpLossRollFormulaForScript(entry.script) ?? damageFormulaForMove(entry.move)
+    entry.damageFormula
 
   const frequencyForEntry = (entry: NonNullable<ReturnType<typeof moveAutomationEntryForUse>>): string | null =>
-    entry.move.frequency ?? entry.sheetMove.frequency ?? null
+    entry.frequency
 
   const usageIsTracked = (frequency: string | null): boolean => {
     const parsed = parseMoveFrequency(frequency)

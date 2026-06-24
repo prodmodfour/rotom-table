@@ -258,6 +258,58 @@ describe('instant move automation', () => {
     expect(transaction.logLines).toContain('Sprout: Synthesis heals weather-adjusted HP (66 HP).')
   })
 
+  it('uses injected randomness for self-move random stage suggestions', () => {
+    const script: MoveAutomationScript = {
+      kind: 'explicit',
+      moveName: 'Random Self Boost',
+      version: 1,
+      targetMode: 'self',
+      targetCount: 1,
+      damaging: false,
+      requiresAccuracy: false,
+      damageBase: null,
+      damageClass: 'Status',
+      type: 'Normal',
+      ac: null,
+      range: 'Self',
+      effect: 'Roll for a random boost.',
+      keywords: ['Self'],
+      criticalRange: null,
+      stageSuggestions: [
+        { recipient: 'user', key: 'atk', delta: 2, label: 'Attack boost', optional: true },
+        { recipient: 'user', key: 'acc', delta: 2, label: 'Accuracy boost', optional: true },
+      ],
+      randomStageSuggestion: {
+        kind: 'roll-table',
+        rollFormula: '1d6',
+        label: 'Random Self Boost',
+        entries: [
+          { roll: 1, stageSuggestionIndex: 0, label: 'Attack boost' },
+          { roll: 6, stageSuggestionIndex: 1, label: 'Accuracy boost' },
+        ],
+      },
+      conditionSuggestions: [],
+      hpSuggestions: [],
+      fieldSuggestions: [],
+      hazardSuggestions: [],
+      automationNotes: [],
+    }
+
+    const lowRoll = resolveInstantSelfMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Booster' }),
+      random: sequenceRandom([0]),
+    })
+    const highRoll = resolveInstantSelfMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Booster' }),
+      random: sequenceRandom([0.99]),
+    })
+
+    expect(lowRoll.combatStageUpdates).toEqual([{ id: 'u', stages: { ...stages, atk: 2 } }])
+    expect(highRoll.combatStageUpdates).toEqual([{ id: 'u', stages: { ...stages, acc: 2 } }])
+  })
+
   it('resolves Howl as a no-accuracy Burst buff for the user and selected allies', () => {
     const script = explicitScriptForMove('Howl')!
     const transaction = resolveInstantAreaMoveAutomation({

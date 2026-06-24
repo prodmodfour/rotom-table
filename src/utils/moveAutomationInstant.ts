@@ -93,6 +93,7 @@ export interface ResolveInstantSelfMoveAutomationInput {
   script: MoveAutomationScript
   user: SpawnedPokemon
   fieldEffects?: MapFieldEffects
+  random?: () => number
 }
 
 const emptyStageDeltas = (): Record<CombatStageKey, number> => ({
@@ -601,10 +602,11 @@ export const resolveInstantSelfMoveAutomation = ({
   script,
   user,
   fieldEffects,
+  random,
 }: ResolveInstantSelfMoveAutomationInput): MoveAutomationTransaction => {
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
-  const randomStageNote = resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions })
+  const randomStageNote = resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions, random })
   return buildMoveAutomationTransaction({
     script,
     user,

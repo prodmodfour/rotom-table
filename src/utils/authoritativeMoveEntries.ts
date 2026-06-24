@@ -1,0 +1,173 @@
+import { directHpLossRollFormulaForScript } from '~/utils/moveAutomationDirectHpLoss'
+import { damageFormulaForMove } from '~/utils/moveAutomation'
+import { buildMoveAutomationMoveEntries, type MoveAutomationMoveEntry } from '~/utils/moveAutomationMoves'
+import {
+  buildTokenMoveUsageState,
+  moveEntriesForPlacement,
+  type MapTokenSheetLookup,
+  type TokenMoveUsageContext,
+  type TokenMoveUsageMenuState,
+  type TokenSheetMoveEntry,
+} from '~/utils/mapTokenMoves'
+import { moveConditionUseBlock, type MoveConditionUseBlock } from '~/utils/moveConditionRestrictions'
+import type { SheetPlacement } from '~/types/map'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
+import type { SpawnedPokemon } from '~/types/pokemon'
+
+export type CanonicalMoveEntryFailureReason =
+  | 'missing-placement'
+  | 'missing-token'
+  | 'move-absent'
+  | 'condition-blocked'
+  | 'usage-blocked'
+
+export interface ResolvedCanonicalMoveEntry extends MoveAutomationMoveEntry {
+  readonly canonicalMoveName: string
+  readonly sourceEntry: TokenSheetMoveEntry
+  readonly automatic: boolean
+  readonly script: MoveAutomationScript
+  readonly frequency: string | null
+  readonly damageFormula: string | null
+  readonly conditionUseBlock: MoveConditionUseBlock | null
+  readonly usage: TokenMoveUsageMenuState | null
+}
+
+export interface CanonicalMoveEntrySuccess {
+  readonly ok: true
+  readonly entry: ResolvedCanonicalMoveEntry
+}
+
+export interface CanonicalMoveEntryFailure {
+  readonly ok: false
+  readonly reason: CanonicalMoveEntryFailureReason
+  readonly message: string
+  readonly conditionUseBlock?: MoveConditionUseBlock
+  readonly usage?: TokenMoveUsageMenuState
+}
+
+export type CanonicalMoveEntryResult = CanonicalMoveEntrySuccess | CanonicalMoveEntryFailure
+
+export interface ResolveCanonicalMoveEntryInput {
+  readonly placement: Pick<SheetPlacement, 'id' | 'sheetKind' | 'sheetSlug'> | null | undefined
+  readonly token: SpawnedPokemon | null | undefined
+  readonly sheets: MapTokenSheetLookup
+  readonly moveName: string
+  readonly usageContext?: TokenMoveUsageContext
+}
+
+const cloneJson = <T>(value: T): T => {
+  if (value == null) return value
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
+const resolvedFrequencyForEntry = (entry: MoveAutomationMoveEntry): string | null =>
+  entry.move.frequency ?? entry.sheetMove.frequency ?? null
+
+export const damageFormulaForResolvedMoveEntry = (entry: Pick<MoveAutomationMoveEntry, 'script' | 'move'>): string | null =>
+  directHpLossRollFormulaForScript(entry.script) ?? damageFormulaForMove(entry.move)
+
+const normalizeMoveName = (value: string): string => value.trim().toLowerCase()
+
+const moveEntryMatchesName = (entry: MoveAutomationMoveEntry, normalizedMoveName: string): boolean => [
+  entry.move.name,
+  entry.sheetMove.name,
+  entry.script.moveName,
+]
+  .some((name) => name.trim().toLowerCase() === normalizedMoveName)
+
+const buildResolvedMoveEntries = (
+  sourceEntries: readonly TokenSheetMoveEntry[],
+  token: SpawnedPokemon,
+): ResolvedCanonicalMoveEntry[] => sourceEntries.flatMap((sourceEntry) => buildMoveAutomationMoveEntries([sourceEntry.move], {
+  stabTypes: token.sheetKind === 'pokemon' ? token.defenderTypes : [],
+  combatSkillRankValue: token.combatSkillRankValue,
+  loyalty: token.sheetKind === 'pokemon' ? token.loyalty : undefined,
+}).map((entry) => {
+  const clonedEntry: MoveAutomationMoveEntry = {
+    label: entry.label,
+    sheetMove: cloneJson(entry.sheetMove),
+    move: cloneJson(entry.move),
+    script: cloneJson(entry.script),
+    hasStab: entry.hasStab,
+  }
+  const frequency = resolvedFrequencyForEntry(clonedEntry)
+  return {
+    ...clonedEntry,
+    canonicalMoveName: clonedEntry.move.name,
+    sourceEntry: {
+      move: cloneJson(sourceEntry.move),
+      automatic: sourceEntry.automatic,
+    },
+    automatic: sourceEntry.automatic,
+    frequency,
+    damageFormula: damageFormulaForResolvedMoveEntry(clonedEntry),
+    conditionUseBlock: null,
+    usage: null,
+  }
+}))
+
+export const resolveCanonicalMoveEntryForPlacement = ({
+  placement,
+  token,
+  sheets,
+  moveName,
+  usageContext = {},
+}: ResolveCanonicalMoveEntryInput): CanonicalMoveEntryResult => {
+  if (!placement) {
+    return { ok: false, reason: 'missing-placement', message: 'Actor placement is missing.' }
+  }
+  if (!token) {
+    return { ok: false, reason: 'missing-token', message: 'Actor token could not be resolved.' }
+  }
+
+  const normalizedMoveName = normalizeMoveName(moveName)
+  const sourceEntries = moveEntriesForPlacement(placement, sheets)
+  const entry = buildResolvedMoveEntries(sourceEntries, token)
+    .find((candidate) => moveEntryMatchesName(candidate, normalizedMoveName)) ?? null
+
+  if (!entry) {
+    return {
+      ok: false,
+      reason: 'move-absent',
+      message: `${moveName.trim() || 'Move'} is not available to ${token.species}.`,
+    }
+  }
+
+  const conditionUseBlock = moveConditionUseBlock({
+    name: entry.move.name,
+    aliases: [entry.sheetMove.name, entry.script.moveName],
+    damageClass: entry.script.damageClass ?? entry.move.damage_class,
+  }, token.conditions)
+  if (conditionUseBlock) {
+    return {
+      ok: false,
+      reason: 'condition-blocked',
+      message: `${entry.move.name} is blocked by ${conditionUseBlock.label}.`,
+      conditionUseBlock,
+    }
+  }
+
+  const usage = buildTokenMoveUsageState(
+    token.id,
+    entry.move.name,
+    entry.frequency,
+    usageContext,
+  )
+  if (usage?.available === false) {
+    return {
+      ok: false,
+      reason: 'usage-blocked',
+      message: `${entry.move.name} is not currently available (${usage.label}).`,
+      usage,
+    }
+  }
+
+  return {
+    ok: true,
+    entry: {
+      ...entry,
+      conditionUseBlock,
+      usage,
+    },
+  }
+}
