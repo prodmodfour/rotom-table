@@ -241,6 +241,7 @@ const livePlayCommandBlockedMessage = computed(() => (
 ))
 const livePlayCommands = useLivePlayCommands({
   slug,
+  authRole: role,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
   map,
   mapRevision,

@@ -1,4 +1,5 @@
 import { getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
+import { isAuthRole, type AuthRole } from '#shared/auth'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -37,6 +38,7 @@ import {
   type UseMovePayload,
   type UseOrderPayload,
 } from '#shared/livePlayCommands'
+import { validateTerminalResponseForCommand } from '#shared/livePlayCommandResults'
 import {
   parseResolveMoveIntent,
   type LivePlayResolvedMoveResult,
@@ -47,6 +49,12 @@ import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import { bindPendingLivePlayCommandUnloadWarning } from '~/utils/livePlayCommandUnloadWarning'
+import {
+  getLivePlayCommandOutbox,
+  type LivePlayCommandOutbox,
+  type LivePlayCommandOutboxAuthContext,
+  type LivePlayCommandOutboxEntry,
+} from '~/utils/livePlayCommandOutbox'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
 import { extractResolvedMoveResult } from '~/utils/livePlayResolvedMoveResponse'
@@ -81,9 +89,12 @@ export type LivePlayCommandResponse = LivePlayCommandResult & {
 }
 
 export interface LivePlayCommandDispatchResult {
-  dispatched: boolean
-  message?: string
-  response?: LivePlayCommandResponse
+  readonly dispatched: boolean
+  readonly message?: string
+  readonly response?: LivePlayCommandResponse
+  readonly opId?: string
+  readonly uncertain?: boolean
+  readonly outboxError?: string
 }
 
 export interface LivePlayResolveMoveDispatchResult extends LivePlayCommandDispatchResult {
@@ -98,6 +109,7 @@ export interface LivePlayResolveMoveDispatchResult extends LivePlayCommandDispat
 
 export interface UseLivePlayCommandsOptions {
   slug: string
+  authRole: ReadonlyValueRef<AuthRole | null | undefined>
   playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   map?: ReadonlyValueRef<TabletopMap | null | undefined>
   mapRevision?: ReadonlyValueRef<number | null | undefined>
@@ -116,6 +128,8 @@ export interface UseLivePlayCommandsOptions {
   onCommandFailed?: (message: string) => void
   onCommandBlocked?: (message: string) => void
   onCommandErrorCleared?: () => void
+  outbox?: LivePlayCommandOutbox
+  leaseOwner?: string
 }
 
 export interface LivePlayCommandReconciliationRequest {
@@ -281,6 +295,20 @@ type LivePlayClientCommandPayload =
   | StartTurnModalStateUpdatePayload
   | Record<string, never>
 
+type LivePlayCommandBodyFactory = (
+  authContext: LivePlayCommandOutboxAuthContext,
+) => Record<string, unknown>
+
+const livePlayLeaseOwner = (): string => `live-play-command:${getClientId()}`
+
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+)
+
+const validationIssueSummary = (
+  issues: readonly { readonly path: string; readonly message: string }[],
+): string => issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+
 const isDuplicateResult = (response: LivePlayCommandResponse): response is LivePlayCommandDuplicate & LivePlayCommandResponse => (
   response.ok === true && 'duplicate' in response && response.duplicate === true
 )
@@ -345,6 +373,8 @@ export const useLivePlayCommands = (
   options: UseLivePlayCommandsOptions,
 ): UseLivePlayCommandsReturn => {
   const { postJson } = useApiClient()
+  const outbox = options.outbox ?? getLivePlayCommandOutbox()
+  const leaseOwner = options.leaseOwner ?? livePlayLeaseOwner()
   const status = ref<LivePlayCommandStatus>('idle')
   const lastError = ref<string | null>(null)
 
@@ -367,9 +397,9 @@ export const useLivePlayCommands = (
       ?? 'Live-play commands are paused until realtime reconciliation completes'
   }
 
-  const profileBody = (): { profileId?: PlayerProfileId } => {
-    const profileId = options.playerProfileId?.value ?? null
-    return profileId ? { profileId } : {}
+  const profileBody = (authContext: LivePlayCommandOutboxAuthContext): { profileId?: PlayerProfileId } => {
+    if (authContext.role !== 'player') return {}
+    return authContext.profileId ? { profileId: authContext.profileId } : {}
   }
 
   const tokenScope = (payload: LivePlayTokenCommandPayload, field: LivePlayTokenScope['field']): LivePlayTokenScope => ({
@@ -407,6 +437,7 @@ export const useLivePlayCommands = (
   ): LivePlaySheetScope | null => sheetScopeForPlacementId(payload.placementId, field)
 
   const commandBody = (
+    authContext: LivePlayCommandOutboxAuthContext,
     type: LivePlayClientCommandType,
     payload: LivePlayClientCommandPayload,
     scopes: readonly LivePlayScope[],
@@ -419,29 +450,32 @@ export const useLivePlayCommands = (
     scopes,
     payload,
     clientId: getClientId(),
-    ...profileBody(),
+    ...profileBody(authContext),
   })
 
   const tokenCommandBody = (
+    authContext: LivePlayCommandOutboxAuthContext,
     type: typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
     payload: MoveTokenPayload | TurnTokenPayload,
     field: LivePlayTokenScope['field'],
-  ): Record<string, unknown> => commandBody(type, payload, [tokenScope(payload, field)])
+  ): Record<string, unknown> => commandBody(authContext, type, payload, [tokenScope(payload, field)])
 
   const sheetCommandBody = (
+    authContext: LivePlayCommandOutboxAuthContext,
     type: typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS | typeof LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
     payload: ModifyHpPayload | ModifyCombatStagesPayload | ModifyConditionsPayload | GrantExperiencePayload,
     field: LivePlayTokenScope['field'],
     sheetField: string,
   ): Record<string, unknown> => {
     const sheet = sheetScope(payload, sheetField)
-    return commandBody(type, payload, [
+    return commandBody(authContext, type, payload, [
       tokenScope(payload, field),
       ...(sheet ? [sheet] : []),
     ])
   }
 
   const tableActionCommandBody = (
+    authContext: LivePlayCommandOutboxAuthContext,
     type: typeof LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER | typeof LIVE_PLAY_COMMAND_TYPES.USE_ABILITY | typeof LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
     payload: UseManeuverPayload | UseAbilityPayload | UseOrderPayload,
   ): Record<string, unknown> => {
@@ -451,19 +485,111 @@ export const useLivePlayCommands = (
           ...(payload.targetPlacementId ? [sheetScopeForPlacementId(payload.targetPlacementId, 'ability')] : []),
         ].filter((scope): scope is LivePlaySheetScope => scope !== null)
       : []
-    return commandBody(type, payload, [
+    return commandBody(authContext, type, payload, [
       tokenScope(payload, 'action'),
       mapScope('metadata'),
       ...sheetScopes,
     ])
   }
 
-  const localCommandBlockedResult = (message: string): LivePlayCommandDispatchResult => {
+  const localCommandBlockedResult = (
+    message: string,
+    metadata: Omit<LivePlayCommandDispatchResult, 'dispatched' | 'message'> = {},
+  ): LivePlayCommandDispatchResult => {
     status.value = 'error'
     lastError.value = message
     options.onCommandBlocked?.(message)
-    return { dispatched: false, message }
+    return { dispatched: false, message, ...metadata }
   }
+
+  const localCommandFailedResult = (
+    message: string,
+    metadata: Omit<LivePlayCommandDispatchResult, 'dispatched' | 'message'> = {},
+  ): LivePlayCommandDispatchResult => {
+    status.value = 'error'
+    lastError.value = message
+    options.onCommandFailed?.(message)
+    return { dispatched: false, message, ...metadata }
+  }
+
+  const currentAuthContext = (): LivePlayCommandOutboxAuthContext | null => {
+    const role = options.authRole.value
+    if (!isAuthRole(role)) return null
+    if (role === 'gm') return { role: 'gm', profileId: null }
+    return { role: 'player', profileId: options.playerProfileId?.value ?? null }
+  }
+
+  const validateCommandBodyAuthContext = (
+    body: Record<string, unknown>,
+    authContext: LivePlayCommandOutboxAuthContext,
+  ): string | null => {
+    if (authContext.role === 'gm') {
+      return Object.prototype.hasOwnProperty.call(body, 'profileId')
+        ? 'GM live-play command bodies must not contain a profile ID.'
+        : null
+    }
+
+    const bodyProfileId = isRecord(body) && typeof body.profileId === 'string' ? body.profileId : null
+    return bodyProfileId === (authContext.profileId ?? null)
+      ? null
+      : 'Player live-play command body profile ID must match the durable outbox auth context.'
+  }
+
+  const commandEnvelopeOpId = (body: Record<string, unknown>): string | null => (
+    typeof body.opId === 'string' ? body.opId : null
+  )
+
+  const outboxErrorMessage = (error: unknown): string => (
+    getErrorMessage(error, { fallback: 'Durable live-play command storage failed' })
+  )
+
+  const markClaimedEntryUncertain = async (
+    entry: LivePlayCommandOutboxEntry,
+    error: string,
+  ): Promise<string | undefined> => {
+    try {
+      await outbox.markUncertain({ opId: entry.opId, leaseOwner, error })
+      return undefined
+    } catch (markError) {
+      return getErrorMessage(markError, {
+        fallback: `Failed to mark live-play operation ${entry.opId} as uncertain`,
+      })
+    }
+  }
+
+  const uncertaintyResult = async (
+    entry: LivePlayCommandOutboxEntry,
+    detail: string,
+  ): Promise<LivePlayCommandDispatchResult> => {
+    const message = `The server outcome for live-play operation ${entry.opId} is unknown. Retrying the same operation ID will be safe later. ${detail}`
+    const markError = await markClaimedEntryUncertain(entry, message)
+    status.value = 'error'
+    lastError.value = message
+    options.onCommandFailed?.(message)
+    return {
+      dispatched: false,
+      message,
+      opId: entry.opId,
+      uncertain: true,
+      ...(markError === undefined ? {} : { outboxError: markError }),
+    }
+  }
+
+  const acknowledgeTerminalResponse = async (opId: string): Promise<string | undefined> => {
+    try {
+      await outbox.acknowledgeTerminal(opId)
+      return undefined
+    } catch (error) {
+      return `Live-play operation ${opId} received a terminal response, but removing it from durable command storage failed: ${outboxErrorMessage(error)}`
+    }
+  }
+
+  const withOutboxWarning = <TResult extends LivePlayCommandDispatchResult>(
+    result: TResult,
+    outboxWarning: string | undefined,
+  ): TResult => (
+    outboxWarning === undefined ? result : { ...result, outboxError: outboxWarning }
+  )
 
   const adoptAcceptedLivePlayResponse = async (
     request: string,
@@ -497,9 +623,82 @@ export const useLivePlayCommands = (
     }
   }
 
+  const processRejectedTerminalResponse = async (
+    request: string,
+    response: LivePlayCommandResponse,
+    opId: string,
+    outboxWarning: string | undefined,
+  ): Promise<LivePlayCommandDispatchResult> => {
+    const message = livePlayResponseMessage(response) ?? 'Token action was rejected'
+    const reason = livePlayResponseRejectionReason(response)
+
+    try {
+      status.value = 'error'
+      lastError.value = message
+      options.onCommandRejected?.({ reason, message, response })
+      const needsReconciliation = rejectionNeedsReconciliation(
+        reason,
+        response,
+        normalizeRevision(options.mapRevision?.value),
+      )
+      if (needsReconciliation && options.requestReconciliation) {
+        try {
+          await options.requestReconciliation({ request, response })
+          clearError()
+        } catch (reconciliationError) {
+          options.onCommandFailed?.(getErrorMessage(reconciliationError, { fallback: 'Live-play reconciliation failed' }))
+        }
+      }
+    } catch (processingError) {
+      const processingMessage = getErrorMessage(processingError, {
+        fallback: 'Live-play rejection response was terminal, but local response processing failed',
+      })
+      status.value = 'error'
+      lastError.value = processingMessage
+      options.onCommandFailed?.(processingMessage)
+      return withOutboxWarning({ dispatched: false, message: processingMessage, response, opId }, outboxWarning)
+    }
+
+    return withOutboxWarning({ dispatched: false, message, response, opId }, outboxWarning)
+  }
+
+  const processAcceptedTerminalResponse = async (
+    request: string,
+    response: LivePlayCommandResponse,
+    opId: string,
+    outboxWarning: string | undefined,
+  ): Promise<LivePlayCommandDispatchResult> => {
+    try {
+      await adoptAcceptedLivePlayResponse(request, response)
+      status.value = 'idle'
+      options.onCommandAccepted?.(response)
+      return withOutboxWarning({ dispatched: true, response, opId }, outboxWarning)
+    } catch (processingError) {
+      const message = getErrorMessage(processingError, {
+        fallback: 'Live-play command was accepted, but local response processing failed. Requesting authoritative reconciliation.',
+      })
+      status.value = 'error'
+      lastError.value = message
+      options.onCommandFailed?.(message)
+      await requestPresentationReconciliation(request, response)
+      return withOutboxWarning({ dispatched: true, message, response, opId }, outboxWarning)
+    }
+  }
+
+  const processTerminalResponse = async (
+    request: string,
+    response: LivePlayCommandResponse,
+    opId: string,
+    outboxWarning: string | undefined,
+  ): Promise<LivePlayCommandDispatchResult> => (
+    acceptedLivePlayResponse(response)
+      ? processAcceptedTerminalResponse(request, response, opId, outboxWarning)
+      : processRejectedTerminalResponse(request, response, opId, outboxWarning)
+  )
+
   const runLivePlayCommand = async (
     request: string,
-    body: Record<string, unknown>,
+    buildBody: LivePlayCommandBodyFactory,
   ): Promise<LivePlayCommandDispatchResult> => {
     if (status.value === 'saving') {
       const message = 'A live-play command is already in flight.'
@@ -508,56 +707,94 @@ export const useLivePlayCommands = (
     }
 
     const blockedMessage = blockedCommandMessage()
-    if (blockedMessage) {
-      status.value = 'error'
-      lastError.value = blockedMessage
-      options.onCommandBlocked?.(blockedMessage)
-      return { dispatched: false, message: blockedMessage }
+    if (blockedMessage) return localCommandBlockedResult(blockedMessage)
+
+    const authContext = currentAuthContext()
+    if (!authContext) {
+      return localCommandBlockedResult('A valid GM or player auth role is required before sending live-play commands.')
+    }
+
+    let body: Record<string, unknown>
+    try {
+      body = buildBody(authContext)
+    } catch (buildError) {
+      return localCommandFailedResult(getErrorMessage(buildError, { fallback: 'Live-play command body could not be built' }))
+    }
+
+    const opId = commandEnvelopeOpId(body)
+    const authBodyIssue = validateCommandBodyAuthContext(body, authContext)
+    if (authBodyIssue) {
+      return localCommandFailedResult(authBodyIssue, opId ? { opId } : {})
     }
 
     status.value = 'saving'
     lastError.value = null
     options.onCommandStarted?.()
+
+    let enqueuedEntry: LivePlayCommandOutboxEntry
     try {
-      const response = await postJson<LivePlayCommandResponse>(request, body)
-      if (!acceptedLivePlayResponse(response)) {
-        const message = livePlayResponseMessage(response) ?? 'Token action was rejected'
-        const reason = livePlayResponseRejectionReason(response)
-        status.value = 'error'
-        lastError.value = message
-        options.onCommandRejected?.({ reason, message, response })
-        const needsReconciliation = rejectionNeedsReconciliation(
-          reason,
-          response,
-          normalizeRevision(options.mapRevision?.value),
+      enqueuedEntry = await outbox.enqueue({ requestPath: request, body, authContext })
+    } catch (enqueueError) {
+      const outboxError = outboxErrorMessage(enqueueError)
+      const message = `Live-play command ${opId ?? '(unknown operation)'} was not sent because durable command storage was unavailable: ${outboxError}`
+      return localCommandFailedResult(message, {
+        ...(opId ? { opId } : {}),
+        outboxError,
+      })
+    }
+
+    let claimResult: Awaited<ReturnType<LivePlayCommandOutbox['claimForSend']>>
+    try {
+      claimResult = await outbox.claimForSend({ opId: enqueuedEntry.opId, leaseOwner })
+    } catch (claimError) {
+      const outboxError = outboxErrorMessage(claimError)
+      const message = `Live-play command ${enqueuedEntry.opId} was not sent because durable command storage could not claim it for sending: ${outboxError}`
+      return localCommandFailedResult(message, { opId: enqueuedEntry.opId, outboxError })
+    }
+
+    if (!claimResult.claimed) {
+      if (claimResult.reason === 'missing') {
+        return localCommandFailedResult(
+          `Live-play command ${enqueuedEntry.opId} was not sent because its durable outbox entry disappeared before sending.`,
+          { opId: enqueuedEntry.opId },
         )
-        if (needsReconciliation && options.requestReconciliation) {
-          try {
-            await options.requestReconciliation({ request, response })
-            clearError()
-          } catch (reconciliationError) {
-            options.onCommandFailed?.(getErrorMessage(reconciliationError, { fallback: 'Live-play reconciliation failed' }))
-          }
-        }
-        return { dispatched: false, message, response }
       }
 
-      await adoptAcceptedLivePlayResponse(request, response)
-      status.value = 'idle'
-      options.onCommandAccepted?.(response)
-      return { dispatched: true, response }
-    } catch (error) {
-      const message = getErrorMessage(error, { fallback: 'Token action failed' })
-      status.value = 'error'
-      lastError.value = message
-      options.onCommandFailed?.(message)
-      return { dispatched: false, message }
+      return localCommandBlockedResult(
+        `Live-play command ${enqueuedEntry.opId} was not sent because another tab or page instance is already sending that operation.`,
+        { opId: enqueuedEntry.opId },
+      )
     }
+
+    const claimedEntry = claimResult.entry
+    let rawResponse: unknown
+    try {
+      rawResponse = await postJson<unknown>(claimedEntry.requestPath, claimedEntry.body)
+    } catch (postError) {
+      const detail = getErrorMessage(postError, { fallback: 'The HTTP request failed before a terminal command result was received.' })
+      return uncertaintyResult(claimedEntry, detail)
+    }
+
+    const validation = validateTerminalResponseForCommand({
+      response: rawResponse,
+      command: claimedEntry.body,
+    })
+    if (!validation.valid) {
+      return uncertaintyResult(
+        claimedEntry,
+        `The command response was not trustworthy: ${validationIssueSummary(validation.issues)}`,
+      )
+    }
+
+    const response = rawResponse as LivePlayCommandResponse
+    const outboxWarning = await acknowledgeTerminalResponse(claimedEntry.opId)
+    return processTerminalResponse(claimedEntry.requestPath, response, claimedEntry.opId, outboxWarning)
   }
 
   const spawnToken: UseLivePlayCommandsReturn['spawnToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.spawnToken,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
       { placement: payload.placement },
       [{ kind: 'token', placementId: payload.placement.id, field: 'spawn' }],
@@ -566,7 +803,8 @@ export const useLivePlayCommands = (
 
   const sendOutPokemon: UseLivePlayCommandsReturn['sendOutPokemon'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.sendOutPokemon,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
       {
         trainerId: payload.trainerId,
@@ -584,32 +822,34 @@ export const useLivePlayCommands = (
 
   const deleteToken: UseLivePlayCommandsReturn['deleteToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.deleteToken,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
       { placementId: payload.placementId },
       [{ kind: 'token', placementId: payload.placementId, field: 'delete' }],
     ),
   )
 
-  const throwPokeball: UseLivePlayCommandsReturn['throwPokeball'] = (payload) => {
-    const trainerPlacement = options.map?.value?.placements.find((placement) => placement.id === payload.trainerPlacementId) ?? null
-    const targetPlacement = options.map?.value?.placements.find((placement) => placement.id === payload.targetPlacementId) ?? null
-    const scopes: LivePlayScope[] = [
-      { kind: 'token', placementId: payload.trainerPlacementId, field: 'action' },
-      { kind: 'token', placementId: payload.targetPlacementId, field: 'action' },
-      mapScope('metadata'),
-      mapScope('placements'),
-      ...(trainerPlacement ? [
-        { kind: 'sheet' as const, sheetKind: trainerPlacement.sheetKind, sheetSlug: trainerPlacement.sheetSlug, field: 'inventory' },
-        { kind: 'sheet' as const, sheetKind: trainerPlacement.sheetKind, sheetSlug: trainerPlacement.sheetSlug, field: 'pokemonRoster' },
-      ] : []),
-      ...(targetPlacement ? [
-        { kind: 'sheet' as const, sheetKind: targetPlacement.sheetKind, sheetSlug: targetPlacement.sheetSlug, field: 'caughtBall' },
-      ] : []),
-    ]
-    return runLivePlayCommand(
-      MAP_API_PATHS.throwPokeball,
-      commandBody(
+  const throwPokeball: UseLivePlayCommandsReturn['throwPokeball'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.throwPokeball,
+    (authContext) => {
+      const trainerPlacement = options.map?.value?.placements.find((placement) => placement.id === payload.trainerPlacementId) ?? null
+      const targetPlacement = options.map?.value?.placements.find((placement) => placement.id === payload.targetPlacementId) ?? null
+      const scopes: LivePlayScope[] = [
+        { kind: 'token', placementId: payload.trainerPlacementId, field: 'action' },
+        { kind: 'token', placementId: payload.targetPlacementId, field: 'action' },
+        mapScope('metadata'),
+        mapScope('placements'),
+        ...(trainerPlacement ? [
+          { kind: 'sheet' as const, sheetKind: trainerPlacement.sheetKind, sheetSlug: trainerPlacement.sheetSlug, field: 'inventory' },
+          { kind: 'sheet' as const, sheetKind: trainerPlacement.sheetKind, sheetSlug: trainerPlacement.sheetSlug, field: 'pokemonRoster' },
+        ] : []),
+        ...(targetPlacement ? [
+          { kind: 'sheet' as const, sheetKind: targetPlacement.sheetKind, sheetSlug: targetPlacement.sheetSlug, field: 'caughtBall' },
+        ] : []),
+      ]
+      return commandBody(
+        authContext,
         LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
         {
           trainerPlacementId: payload.trainerPlacementId,
@@ -617,13 +857,14 @@ export const useLivePlayCommands = (
           pokeballName: payload.pokeballName,
         },
         scopes,
-      ),
-    )
-  }
+      )
+    },
+  )
 
   const moveToken: UseLivePlayCommandsReturn['moveToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.moveToken,
-    tokenCommandBody(
+    (authContext) => tokenCommandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
       {
         placementId: payload.placementId,
@@ -636,7 +877,8 @@ export const useLivePlayCommands = (
 
   const turnToken: UseLivePlayCommandsReturn['turnToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.turnToken,
-    tokenCommandBody(
+    (authContext) => tokenCommandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
       {
         placementId: payload.placementId,
@@ -648,7 +890,8 @@ export const useLivePlayCommands = (
 
   const modifyHp: UseLivePlayCommandsReturn['modifyHp'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.modifyHp,
-    sheetCommandBody(
+    (authContext) => sheetCommandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
       {
         placementId: payload.placementId,
@@ -663,7 +906,8 @@ export const useLivePlayCommands = (
 
   const modifyCombatStages: UseLivePlayCommandsReturn['modifyCombatStages'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.modifyCombatStages,
-    sheetCommandBody(
+    (authContext) => sheetCommandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES,
       {
         placementId: payload.placementId,
@@ -676,7 +920,8 @@ export const useLivePlayCommands = (
 
   const modifyConditions: UseLivePlayCommandsReturn['modifyConditions'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.modifyConditions,
-    sheetCommandBody(
+    (authContext) => sheetCommandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
       {
         placementId: payload.placementId,
@@ -690,7 +935,8 @@ export const useLivePlayCommands = (
 
   const grantExperience: UseLivePlayCommandsReturn['grantExperience'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.grantExperience,
-    sheetCommandBody(
+    (authContext) => sheetCommandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.GRANT_EXPERIENCE,
       {
         placementId: payload.placementId,
@@ -701,24 +947,25 @@ export const useLivePlayCommands = (
     ),
   )
 
-  const useMove: UseLivePlayCommandsReturn['useMove'] = (payload) => {
-    const commandPayload = {
-      placementId: payload.placementId,
-      moveName: payload.moveName,
-    }
-    const sheet = sheetScope(commandPayload, 'moveUsage')
-    return runLivePlayCommand(
-      MAP_API_PATHS.useMove,
-      commandBody(
+  const useMove: UseLivePlayCommandsReturn['useMove'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.useMove,
+    (authContext) => {
+      const commandPayload = {
+        placementId: payload.placementId,
+        moveName: payload.moveName,
+      }
+      const sheet = sheetScope(commandPayload, 'moveUsage')
+      return commandBody(
+        authContext,
         LIVE_PLAY_COMMAND_TYPES.USE_MOVE,
         commandPayload,
         [
           tokenScope(commandPayload, 'moveUsage'),
           ...(sheet ? [sheet] : []),
         ],
-      ),
-    )
-  }
+      )
+    },
+  )
 
   const resolveMove: UseLivePlayCommandsReturn['resolveMove'] = async (input) => {
     if (status.value === 'saving') {
@@ -755,7 +1002,8 @@ export const useLivePlayCommands = (
 
     const result = await runLivePlayCommand(
       MAP_API_PATHS.resolveMove,
-      commandBody(
+      (authContext) => commandBody(
+        authContext,
         LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
         intentResult.intent,
         scopeResult.scopes,
@@ -791,7 +1039,8 @@ export const useLivePlayCommands = (
 
   const setInitiative: UseLivePlayCommandsReturn['setInitiative'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.setInitiative,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE,
       payload,
       [mapScope('initiative')],
@@ -800,7 +1049,8 @@ export const useLivePlayCommands = (
 
   const nextInitiative: UseLivePlayCommandsReturn['nextInitiative'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.nextInitiative,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
       payload,
       [mapScope('initiative'), mapScope('metadata')],
@@ -809,7 +1059,8 @@ export const useLivePlayCommands = (
 
   const previousInitiative: UseLivePlayCommandsReturn['previousInitiative'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.previousInitiative,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
       payload,
       [mapScope('initiative'), mapScope('metadata')],
@@ -818,7 +1069,8 @@ export const useLivePlayCommands = (
 
   const placeHazard: UseLivePlayCommandsReturn['placeHazard'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.placeHazard,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
       { hazard: payload.hazard },
       [mapScope('hazards')],
@@ -827,7 +1079,8 @@ export const useLivePlayCommands = (
 
   const removeHazard: UseLivePlayCommandsReturn['removeHazard'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.removeHazard,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
       { cell: payload.cell },
       [mapScope('hazards')],
@@ -836,7 +1089,8 @@ export const useLivePlayCommands = (
 
   const buildTerrainVoxel: UseLivePlayCommandsReturn['buildTerrainVoxel'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.buildTerrainVoxel,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
       { voxel: payload.voxel },
       [mapScope('terrain')],
@@ -845,7 +1099,8 @@ export const useLivePlayCommands = (
 
   const removeTerrainVoxel: UseLivePlayCommandsReturn['removeTerrainVoxel'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.removeTerrainVoxel,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
       { cell: payload.cell },
       [mapScope('terrain')],
@@ -854,7 +1109,8 @@ export const useLivePlayCommands = (
 
   const setFieldEffect: UseLivePlayCommandsReturn['setFieldEffect'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.setFieldEffect,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
       payload,
       [mapScope('fieldEffects')],
@@ -863,7 +1119,8 @@ export const useLivePlayCommands = (
 
   const removeFieldEffect: UseLivePlayCommandsReturn['removeFieldEffect'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.removeFieldEffect,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
       payload,
       [mapScope('fieldEffects')],
@@ -872,7 +1129,8 @@ export const useLivePlayCommands = (
 
   const tickFieldEffectDurations: UseLivePlayCommandsReturn['tickFieldEffectDurations'] = (payload = {}) => runLivePlayCommand(
     MAP_API_PATHS.tickFieldEffectDurations,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
       payload,
       [mapScope('fieldEffects')],
@@ -881,7 +1139,8 @@ export const useLivePlayCommands = (
 
   const useManeuver: UseLivePlayCommandsReturn['useManeuver'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.useManeuver,
-    tableActionCommandBody(
+    (authContext) => tableActionCommandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.USE_MANEUVER,
       {
         placementId: payload.placementId,
@@ -893,7 +1152,8 @@ export const useLivePlayCommands = (
 
   const useAbility: UseLivePlayCommandsReturn['useAbility'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.useAbility,
-    tableActionCommandBody(
+    (authContext) => tableActionCommandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.USE_ABILITY,
       {
         placementId: payload.placementId,
@@ -905,7 +1165,8 @@ export const useLivePlayCommands = (
 
   const useOrder: UseLivePlayCommandsReturn['useOrder'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.useOrder,
-    tableActionCommandBody(
+    (authContext) => tableActionCommandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.USE_ORDER,
       {
         placementId: payload.placementId,
@@ -917,7 +1178,8 @@ export const useLivePlayCommands = (
 
   const setScene: UseLivePlayCommandsReturn['setScene'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.setScene,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
       payload,
       [mapScope('scene')],
@@ -926,7 +1188,8 @@ export const useLivePlayCommands = (
 
   const updateAttackOfOpportunity: UseLivePlayCommandsReturn['updateAttackOfOpportunity'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.updateAttackOfOpportunity,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
       payload,
       [mapScope('metadata')],
@@ -935,7 +1198,8 @@ export const useLivePlayCommands = (
 
   const updateStartTurnModal: UseLivePlayCommandsReturn['updateStartTurnModal'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.updateStartTurnModal,
-    commandBody(
+    (authContext) => commandBody(
+      authContext,
       LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL,
       payload,
       [mapScope('metadata')],

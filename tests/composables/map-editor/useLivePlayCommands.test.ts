@@ -2,7 +2,11 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
+import { IDBFactory as FakeIDBFactory } from 'fake-indexeddb'
+import {
+  useLivePlayCommands,
+  type UseLivePlayCommandsOptions,
+} from '~/composables/map-editor/useLivePlayCommands'
 import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlayStateMachine'
 import { MAP_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
 import {
@@ -11,14 +15,19 @@ import {
   LIVE_PLAY_OP_ID_RE,
   LIVE_PLAY_PATCH_TYPES,
 } from '#shared/livePlayCommands'
-import { parsePlayerProfileId } from '#shared/playerProfiles'
+import { parsePlayerProfileId, type PlayerProfileId } from '#shared/playerProfiles'
 import {
   LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
   type LivePlayResolvedMoveResult,
 } from '#shared/livePlayMoveResolution'
+import type { AuthRole } from '#shared/auth'
 import type { TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
+import {
+  createLivePlayCommandOutbox,
+  type LivePlayCommandOutbox,
+} from '~/utils/livePlayCommandOutbox'
 
 const apiMocks = vi.hoisted(() => ({
   postJson: vi.fn(),
@@ -29,6 +38,102 @@ vi.mock('~/composables/useApiClient', () => ({
     postJson: apiMocks.postJson,
   }),
 }))
+
+let outboxSequence = 0
+let leaseOwnerSequence = 0
+
+const createTestOutbox = (): LivePlayCommandOutbox => {
+  outboxSequence += 1
+  return createLivePlayCommandOutbox({
+    databaseName: `use-live-play-commands-${outboxSequence}`,
+    indexedDBFactory: new FakeIDBFactory() as unknown as IDBFactory,
+  })
+}
+
+type TestUseLivePlayCommandsOptions =
+  Omit<UseLivePlayCommandsOptions, 'authRole' | 'outbox' | 'leaseOwner'>
+  & Partial<Pick<UseLivePlayCommandsOptions, 'authRole' | 'outbox' | 'leaseOwner'>>
+
+const useTestLivePlayCommands = (options: TestUseLivePlayCommandsOptions) => {
+  leaseOwnerSequence += 1
+  return useLivePlayCommands({
+    authRole: ref<AuthRole>('gm'),
+    outbox: createTestOutbox(),
+    leaseOwner: `test-lease-owner-${leaseOwnerSequence}`,
+    ...options,
+  })
+}
+
+const createCommandHarness = (options: TestUseLivePlayCommandsOptions) => {
+  leaseOwnerSequence += 1
+  const outbox = options.outbox ?? createTestOutbox()
+  const leaseOwner = options.leaseOwner ?? `test-lease-owner-${leaseOwnerSequence}`
+  const actions = useLivePlayCommands({
+    authRole: ref<AuthRole>('gm'),
+    ...options,
+    outbox,
+    leaseOwner,
+  })
+  return { actions, outbox, leaseOwner }
+}
+
+const commandRecord = (body: unknown): Record<string, unknown> => (
+  body && typeof body === 'object' && !Array.isArray(body) ? body as Record<string, unknown> : {}
+)
+
+const alignTerminalResponseToCommand = <TResponse>(response: TResponse, body: unknown): TResponse => {
+  if (!response || typeof response !== 'object' || Array.isArray(response)) return response
+  const command = commandRecord(body)
+  const opId = command.opId
+  const mapSlug = command.mapSlug
+  if (typeof opId !== 'string' || typeof mapSlug !== 'string') return response
+  const record = response as Record<string, unknown>
+  if (record.ok === true && record.duplicate === true && record.original && typeof record.original === 'object') {
+    return {
+      ...record,
+      opId,
+      original: {
+        ...(record.original as Record<string, unknown>),
+        opId,
+        mapSlug,
+      },
+    } as TResponse
+  }
+  if (record.ok === true || record.ok === false) {
+    return { ...record, opId, mapSlug } as TResponse
+  }
+  return response
+}
+
+const mockTerminalResponse = <TResponse>(response: TResponse) => {
+  apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => (
+    alignTerminalResponseToCommand(response, body)
+  ))
+}
+
+const mockTerminalResponseOnce = <TResponse>(response: TResponse) => {
+  apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => (
+    alignTerminalResponseToCommand(response, body)
+  ))
+}
+
+const wrapOutbox = (
+  delegate: LivePlayCommandOutbox,
+  overrides: Partial<LivePlayCommandOutbox>,
+): LivePlayCommandOutbox => ({
+  enqueue: (input) => (overrides.enqueue ?? delegate.enqueue.bind(delegate))(input),
+  claimForSend: (input) => (overrides.claimForSend ?? delegate.claimForSend.bind(delegate))(input),
+  markUncertain: (input) => (overrides.markUncertain ?? delegate.markUncertain.bind(delegate))(input),
+  acknowledgeTerminal: (opId) => (overrides.acknowledgeTerminal ?? delegate.acknowledgeTerminal.bind(delegate))(opId),
+  recoverExpiredLeases: (now) => (overrides.recoverExpiredLeases ?? delegate.recoverExpiredLeases.bind(delegate))(now),
+  get: (opId) => (overrides.get ?? delegate.get.bind(delegate))(opId),
+  list: (filter) => (overrides.list ?? delegate.list.bind(delegate))(filter),
+  inspect: () => (overrides.inspect ?? delegate.inspect.bind(delegate))(),
+  hasPending: (filter) => (overrides.hasPending ?? delegate.hasPending.bind(delegate))(filter),
+  count: (filter) => (overrides.count ?? delegate.count.bind(delegate))(filter),
+  discard: (opId) => (overrides.discard ?? delegate.discard.bind(delegate))(opId),
+  close: () => (overrides.close ?? delegate.close.bind(delegate))(),
+})
 
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2,
@@ -129,6 +234,369 @@ describe('useLivePlayCommands', () => {
     expect(source).toContain('bindPendingLivePlayCommandUnloadWarning')
   })
 
+  it('journals a command before POST and sends the route/body returned by the claimed entry', async () => {
+    const events: string[] = []
+    const delegate = createTestOutbox()
+    let enqueuedBody: Record<string, unknown> | null = null
+    let enqueuedPath: string | null = null
+    const outbox = wrapOutbox(delegate, {
+      enqueue: async (input) => {
+        events.push('enqueue:start')
+        const entry = await delegate.enqueue(input)
+        events.push('enqueue:done')
+        enqueuedBody = entry.body
+        enqueuedPath = entry.requestPath
+        return entry
+      },
+      claimForSend: async (input) => {
+        events.push('claim:start')
+        const result = await delegate.claimForSend(input)
+        events.push('claim:done')
+        if (!result.claimed) return result
+        return {
+          claimed: true,
+          entry: {
+            ...result.entry,
+            requestPath: MAP_API_PATHS.turnToken,
+            body: {
+              ...result.entry.body,
+              claimedEnvelope: true,
+            },
+          },
+        }
+      },
+    })
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      events.push('post')
+      const command = commandRecord(body)
+      expect(events).toEqual(['enqueue:start', 'enqueue:done', 'claim:start', 'claim:done', 'post'])
+      expect(request).toBe(MAP_API_PATHS.turnToken)
+      expect(command.claimedEnvelope).toBe(true)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+      }
+    })
+
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox,
+    })
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 3, y: 0, z: 2 },
+      pathLength: 2,
+    })
+
+    expect(result).toMatchObject({ dispatched: true, opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE) })
+    expect(enqueuedPath).toBe(MAP_API_PATHS.moveToken)
+    expect(enqueuedBody).toMatchObject({
+      opId: result.opId,
+      baseRevision: 4,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+      payload: {
+        placementId: 'token-pikachu',
+        position: { x: 3, y: 0, z: 2 },
+        pathLength: 2,
+      },
+    })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson.mock.calls[0]?.[1]).toMatchObject({ opId: result.opId, claimedEnvelope: true })
+    await expect(delegate.get(result.opId!)).resolves.toBeNull()
+  })
+
+  it('removes outbox entries for accepted, rejected, duplicate-accepted, and duplicate-rejected terminal responses', async () => {
+    const cases = [
+      {
+        name: 'accepted',
+        response: (body: Record<string, unknown>) => ({ ok: true, opId: body.opId, mapSlug: body.mapSlug, previousRevision: 4, revision: 5, patches: [] }),
+        expectedDispatched: true,
+      },
+      {
+        name: 'rejected',
+        response: (body: Record<string, unknown>) => ({ ok: false, opId: body.opId, mapSlug: body.mapSlug, reason: 'conflict', message: 'Conflict', currentRevision: 5 }),
+        expectedDispatched: false,
+      },
+      {
+        name: 'duplicate accepted',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: { ok: true, opId: body.opId, mapSlug: body.mapSlug, previousRevision: 4, revision: 5, patches: [] },
+        }),
+        expectedDispatched: true,
+      },
+      {
+        name: 'duplicate rejected',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: { ok: false, opId: body.opId, mapSlug: body.mapSlug, reason: 'stale-revision', message: 'Stale', currentRevision: 5 },
+        }),
+        expectedDispatched: false,
+      },
+    ] as const
+
+    for (const terminalCase of cases) {
+      apiMocks.postJson.mockReset()
+      const outbox = createTestOutbox()
+      apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => terminalCase.response(commandRecord(body)))
+      const { actions } = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox })
+
+      const result = await actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+
+      expect(result.dispatched, terminalCase.name).toBe(terminalCase.expectedDispatched)
+      expect(result.uncertain, terminalCase.name).not.toBe(true)
+      expect(result.opId, terminalCase.name).toEqual(expect.stringMatching(LIVE_PLAY_OP_ID_RE))
+      await expect(outbox.get(result.opId!), terminalCase.name).resolves.toBeNull()
+    }
+  })
+
+  it('marks transport failures uncertain while preserving the exact stored route and command body', async () => {
+    const outbox = createTestOutbox()
+    let postedBody: unknown = null
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      postedBody = body
+      throw new Error('Network down')
+    })
+    const { actions } = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox })
+
+    const result = await actions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 1 } })
+
+    expect(result).toMatchObject({ dispatched: false, uncertain: true, opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE) })
+    const entry = await outbox.get(result.opId!)
+    expect(entry).toMatchObject({
+      state: 'uncertain',
+      requestPath: MAP_API_PATHS.moveToken,
+      body: postedBody,
+    })
+    expect(entry?.lastError).toContain(result.opId!)
+  })
+
+  it('marks malformed or mismatched terminal responses uncertain without applying untrusted data', async () => {
+    const untrustedResponses = [
+      { ok: true, opId: 'op_badshape1', mapSlug: 'arena-map', previousRevision: 4, revision: 5 },
+      { ok: true, opId: 'op_wrongop01', mapSlug: 'arena-map', previousRevision: 4, revision: 5, patches: [] },
+      { ok: true, opId: 'op_wrongmap1', mapSlug: 'other-map', previousRevision: 4, revision: 5, patches: [] },
+    ]
+
+    for (const response of untrustedResponses) {
+      apiMocks.postJson.mockReset()
+      const outbox = createTestOutbox()
+      const applyPersistedMap = vi.fn()
+      const applySheetUpdate = vi.fn()
+      apiMocks.postJson.mockResolvedValue(response)
+      const { actions } = createCommandHarness({
+        slug: 'arena-map',
+        mapRevision: ref(4),
+        applyPersistedMap,
+        applySheetUpdate,
+        outbox,
+      })
+
+      const result = await actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+
+      expect(result).toMatchObject({ dispatched: false, uncertain: true, opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE) })
+      await expect(outbox.get(result.opId!)).resolves.toMatchObject({ state: 'uncertain' })
+      expect(applyPersistedMap).not.toHaveBeenCalled()
+      expect(applySheetUpdate).not.toHaveBeenCalled()
+    }
+  })
+
+  it('does not send HTTP when enqueue or claim fails before transmission', async () => {
+    const enqueueOutbox = wrapOutbox(createTestOutbox(), {
+      enqueue: async () => { throw new Error('IndexedDB unavailable') },
+    })
+    const enqueueHarness = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox: enqueueOutbox })
+    await expect(enqueueHarness.actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })).resolves.toMatchObject({
+      dispatched: false,
+      outboxError: expect.stringContaining('IndexedDB unavailable'),
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    const missingOutbox = wrapOutbox(createTestOutbox(), {
+      claimForSend: async () => ({ claimed: false as const, reason: 'missing' as const }),
+    })
+    const missingHarness = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox: missingOutbox })
+    await expect(missingHarness.actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('disappeared'),
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    const leasedOutbox = wrapOutbox(createTestOutbox(), {
+      claimForSend: async () => ({ claimed: false as const, reason: 'leased-by-another-owner' as const }),
+    })
+    const leasedHarness = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox: leasedOutbox })
+    await expect(leasedHarness.actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('another tab'),
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('treats local processing failures after accepted responses as terminal and requests reconciliation', async () => {
+    const outbox = createTestOutbox()
+    const requestReconciliation = vi.fn()
+    const applyPersistedMap = vi.fn(() => { throw new Error('adoption failed') })
+    mockTerminalResponse({
+      ok: true,
+      opId: 'op_adoptfail',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      map: mapFixture(),
+    })
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      applyPersistedMap,
+      requestReconciliation,
+      outbox,
+    })
+
+    const result = await actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+
+    expect(result).toMatchObject({ dispatched: true, message: expect.stringContaining('adoption failed') })
+    expect(result).not.toHaveProperty('uncertain')
+    await expect(outbox.get(result.opId!)).resolves.toBeNull()
+    expect(requestReconciliation).toHaveBeenCalledWith({ request: MAP_API_PATHS.moveToken, response: expect.any(Object) })
+  })
+
+  it('treats sheet-adoption failures as terminal and not uncertain', async () => {
+    const outbox = createTestOutbox()
+    const requestReconciliation = vi.fn()
+    const applySheetUpdate = vi.fn(() => { throw new Error('sheet adoption failed') })
+    mockTerminalResponse({
+      ok: true,
+      opId: 'op_sheetfail',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+      sheetUpdates: [{ kind: 'pokemon', slug: 'pikachu', sheet: { slug: 'pikachu' } }],
+    })
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      applySheetUpdate,
+      requestReconciliation,
+      outbox,
+    })
+
+    const result = await actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+
+    expect(result).toMatchObject({ dispatched: true, message: expect.stringContaining('sheet adoption failed') })
+    expect(result).not.toHaveProperty('uncertain')
+    await expect(outbox.get(result.opId!)).resolves.toBeNull()
+    expect(requestReconciliation).toHaveBeenCalled()
+  })
+
+  it('surfaces outbox acknowledgement failures without changing accepted or rejected semantics', async () => {
+    for (const terminal of ['accepted', 'rejected'] as const) {
+      apiMocks.postJson.mockReset()
+      const delegate = createTestOutbox()
+      const outbox = wrapOutbox(delegate, {
+        acknowledgeTerminal: async () => { throw new Error('delete failed') },
+      })
+      apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+        const command = commandRecord(body)
+        return terminal === 'accepted'
+          ? { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] }
+          : { ok: false, opId: command.opId, mapSlug: command.mapSlug, reason: 'conflict', message: 'Conflict', currentRevision: 5 }
+      })
+      const { actions } = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox })
+
+      const result = await actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+
+      expect(result.dispatched).toBe(terminal === 'accepted')
+      expect(result.uncertain).not.toBe(true)
+      expect(result.outboxError).toContain('delete failed')
+      await expect(delegate.get(result.opId!)).resolves.toMatchObject({ state: 'sending' })
+    }
+  })
+
+  it('stores explicit auth context and blocks missing auth roles before enqueue', async () => {
+    const profileId = ref<PlayerProfileId | null>(parsePlayerProfileId('profile_ash00000'))
+    const capturedAuthContexts: unknown[] = []
+    const capturedBodies: Record<string, unknown>[] = []
+    const delegate = createTestOutbox()
+    const outbox = wrapOutbox(delegate, {
+      enqueue: async (input) => {
+        capturedAuthContexts.push(input.authContext)
+        capturedBodies.push(input.body)
+        return delegate.enqueue(input)
+      },
+    })
+    mockTerminalResponse({ ok: true, opId: 'op_authctx01', mapSlug: 'arena-map', previousRevision: 4, revision: 5, patches: [] })
+    const playerHarness = createCommandHarness({
+      slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
+      playerProfileId: profileId,
+      mapRevision: ref(4),
+      outbox,
+    })
+    await playerHarness.actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+
+    profileId.value = null
+    await playerHarness.actions.turnToken({ placementId: 'token-pikachu', facing: 'north-west' })
+
+    const gmHarness = createCommandHarness({ slug: 'arena-map', authRole: ref<AuthRole>('gm'), mapRevision: ref(4), outbox })
+    await gmHarness.actions.deleteToken({ placementId: 'token-pikachu' })
+
+    expect(capturedAuthContexts).toEqual([
+      { role: 'player', profileId: 'profile_ash00000' },
+      { role: 'player', profileId: null },
+      { role: 'gm', profileId: null },
+    ])
+    expect(capturedBodies[0]).toMatchObject({ profileId: 'profile_ash00000' })
+    expect(capturedBodies[1]).not.toHaveProperty('profileId')
+    expect(capturedBodies[2]).not.toHaveProperty('profileId')
+
+    apiMocks.postJson.mockReset()
+    const missingAuthEnqueue = vi.fn()
+    const missingAuthOutbox = wrapOutbox(createTestOutbox(), { enqueue: missingAuthEnqueue })
+    const missingAuthHarness = createCommandHarness({
+      slug: 'arena-map',
+      authRole: ref<AuthRole | null>(null),
+      mapRevision: ref(4),
+      outbox: missingAuthOutbox,
+    })
+    await expect(missingAuthHarness.actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('auth role'),
+    })
+    expect(missingAuthEnqueue).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('does not enqueue or send locally invalid resolveMove intents', async () => {
+    const enqueue = vi.fn()
+    const outbox = wrapOutbox(createTestOutbox(), { enqueue })
+    const { actions } = createCommandHarness({ slug: 'arena-map', map: ref(mapFixture()), mapRevision: ref(4), outbox })
+
+    const result = await actions.resolveMove({
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: '',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'self' },
+      } as never,
+    })
+
+    expect(result).toMatchObject({ dispatched: false, move: null })
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
   it('posts live-play spawn commands once through explicit opId command dispatch', async () => {
     const map = mapFixture()
     const mapRevision = ref(4)
@@ -141,7 +609,7 @@ describe('useLivePlayCommands', () => {
       facing: 'south-east' as const,
       turned: false,
     }
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_serverspawn',
       mapSlug: 'arena-map',
@@ -153,7 +621,7 @@ describe('useLivePlayCommands', () => {
       placement,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
       applyPersistedMap,
@@ -179,7 +647,7 @@ describe('useLivePlayCommands', () => {
     const map = mapFixture()
     const mapRevision = ref(4)
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_serversendout',
       mapSlug: 'arena-map',
@@ -196,8 +664,9 @@ describe('useLivePlayCommands', () => {
       },
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
       playerProfileId: profileId,
       mapRevision,
     })
@@ -237,7 +706,7 @@ describe('useLivePlayCommands', () => {
     const applyPersistedMap = vi.fn()
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
     const mapRevision = ref(4)
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_servermove01',
       mapSlug: 'arena-map',
@@ -249,8 +718,9 @@ describe('useLivePlayCommands', () => {
       placement: map.placements[0],
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
       playerProfileId: profileId,
       mapRevision,
       applyPersistedMap,
@@ -285,7 +755,7 @@ describe('useLivePlayCommands', () => {
     const map = mapFixture()
     const mapRevision = ref(4)
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_serveraoo001',
       mapSlug: 'arena-map',
@@ -296,8 +766,9 @@ describe('useLivePlayCommands', () => {
       map,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
       playerProfileId: profileId,
       mapRevision,
     })
@@ -321,7 +792,7 @@ describe('useLivePlayCommands', () => {
   it('posts live-play start-of-turn modal updates through the command dispatcher', async () => {
     const map = mapFixture()
     const mapRevision = ref(4)
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_serverturn01',
       mapSlug: 'arena-map',
@@ -332,7 +803,7 @@ describe('useLivePlayCommands', () => {
       map,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
     })
@@ -356,7 +827,7 @@ describe('useLivePlayCommands', () => {
     const map = { ...mapFixture(), placements: [] }
     const mapRevision = ref(4)
     const applyPersistedMap = vi.fn()
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_serverdelete',
       mapSlug: 'arena-map',
@@ -367,7 +838,7 @@ describe('useLivePlayCommands', () => {
       map,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
       applyPersistedMap,
@@ -409,7 +880,7 @@ describe('useLivePlayCommands', () => {
       pokeballName: 'Basic Ball',
       result: { id: 'capture-server-1', hit: true, success: true },
     }
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_servercapture',
       mapSlug: 'arena-map',
@@ -422,8 +893,9 @@ describe('useLivePlayCommands', () => {
       capture,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
       playerProfileId: profileId,
       map: ref(map),
       mapRevision,
@@ -475,7 +947,7 @@ describe('useLivePlayCommands', () => {
         ...mapFixture().placements,
       ],
     }
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_servercapturegm',
       mapSlug: 'arena-map',
@@ -486,7 +958,7 @@ describe('useLivePlayCommands', () => {
       capture: { trainerId: 'trainer-ash', targetId: 'target-token', targetSlug: 'bulbasaur', pokeballName: 'Basic Ball', result: { id: 'capture-server-2' } },
     })
 
-    const actions = useLivePlayCommands({ slug: 'arena-map', map: ref(map), mapRevision: ref(4) })
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', map: ref(map), mapRevision: ref(4) })
     await actions.throwPokeball({ trainerPlacementId: 'trainer-ash', targetPlacementId: 'target-token', pokeballName: 'Basic Ball' })
 
     expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.throwPokeball, expect.not.objectContaining({
@@ -504,7 +976,7 @@ describe('useLivePlayCommands', () => {
       slug: 'pikachu',
       sheet: { slug: 'pikachu', combat: { currentHp: 8, injuries: 1 }, revision: 3 },
     }
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_serverhp001',
       mapSlug: 'arena-map',
@@ -517,7 +989,7 @@ describe('useLivePlayCommands', () => {
       sheetUpdates: [sheetUpdate],
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       map: ref(map),
       mapRevision,
@@ -563,7 +1035,7 @@ describe('useLivePlayCommands', () => {
       slug: 'pikachu',
       sheet: { slug: 'pikachu', totalExp: 140, level: 12, revision: 3 },
     }
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_serverxp001',
       mapSlug: 'arena-map',
@@ -575,7 +1047,7 @@ describe('useLivePlayCommands', () => {
       sheetUpdates: [sheetUpdate],
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       map: ref(map),
       mapRevision,
@@ -620,7 +1092,7 @@ describe('useLivePlayCommands', () => {
         moveUsage: { daily: { thunderbolt: { moveName: 'Thunderbolt', uses: 1 } } },
       },
     }
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_usemoveclient',
       mapSlug: 'arena-map',
@@ -633,7 +1105,7 @@ describe('useLivePlayCommands', () => {
       sheetUpdates: [sheetUpdate],
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       map: ref(map),
       mapRevision,
@@ -672,7 +1144,7 @@ describe('useLivePlayCommands', () => {
     const map = mapFixture()
     const mapRevision = ref(4)
     const applyPersistedMap = vi.fn()
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_initclient1',
       mapSlug: 'arena-map',
@@ -683,7 +1155,7 @@ describe('useLivePlayCommands', () => {
       map,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
       applyPersistedMap,
@@ -723,11 +1195,11 @@ describe('useLivePlayCommands', () => {
     const mapRevision = ref(4)
     const applyPersistedMap = vi.fn()
     let resolveFirst!: (response: unknown) => void
-    apiMocks.postJson.mockReturnValueOnce(new Promise((resolve) => {
-      resolveFirst = resolve
+    apiMocks.postJson.mockImplementationOnce((_request: string, body: unknown) => new Promise((resolve) => {
+      resolveFirst = (response) => resolve(alignTerminalResponseToCommand(response, body))
     }))
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
       applyPersistedMap,
@@ -741,6 +1213,9 @@ describe('useLivePlayCommands', () => {
       dispatched: false,
       message: 'A live-play command is already in flight.',
     })
+    for (let attempts = 0; attempts < 20 && apiMocks.postJson.mock.calls.length === 0; attempts += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    }
     expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
     expect(actions.status.value).toBe('saving')
 
@@ -764,7 +1239,7 @@ describe('useLivePlayCommands', () => {
     const map = mapFixture()
     const mapRevision = ref(4)
     const applyPersistedMap = vi.fn()
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_mapeffect1',
       mapSlug: 'arena-map',
@@ -775,7 +1250,7 @@ describe('useLivePlayCommands', () => {
       map,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision,
       applyPersistedMap,
@@ -838,7 +1313,7 @@ describe('useLivePlayCommands', () => {
 
   it('posts live-play scene commands through the command dispatcher', async () => {
     const map = mapFixture()
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_setscene1',
       mapSlug: 'arena-map',
@@ -849,7 +1324,7 @@ describe('useLivePlayCommands', () => {
       map,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
     })
@@ -875,7 +1350,7 @@ describe('useLivePlayCommands', () => {
   })
 
   it('blocks live-play token commands while realtime reconciliation is pending', async () => {
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
       livePlayCommandBlocked: ref(true),
@@ -900,14 +1375,14 @@ describe('useLivePlayCommands', () => {
     const map = ref(mapFixture())
     const requestReconciliation = vi.fn()
     const applyPersistedMap = vi.fn()
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       map,
       mapRevision: ref(4),
       applyPersistedMap,
       requestReconciliation,
     })
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_patchonly1',
       mapSlug: 'arena-map',
@@ -942,12 +1417,12 @@ describe('useLivePlayCommands', () => {
 
   it('requests reconciliation when an accepted command returns a reconciliation patch instead of a map', async () => {
     const requestReconciliation = vi.fn()
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
       requestReconciliation,
     })
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_reconcile1',
       mapSlug: 'arena-map',
@@ -971,13 +1446,13 @@ describe('useLivePlayCommands', () => {
     expect(result.dispatched).toBe(true)
     expect(requestReconciliation).toHaveBeenCalledWith({
       request: MAP_API_PATHS.moveToken,
-      response: expect.objectContaining({ opId: 'op_reconcile1', revision: 5 }),
+      response: expect.objectContaining({ opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE), revision: 5 }),
     })
   })
 
   it('posts live-play turn commands and surfaces command rejections', async () => {
-    const actions = useLivePlayCommands({ slug: 'arena-map', mapRevision: ref(4) })
-    apiMocks.postJson.mockResolvedValue({
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', mapRevision: ref(4) })
+    mockTerminalResponse({
       ok: false,
       opId: 'op_turnreject1',
       mapSlug: 'arena-map',
@@ -1021,7 +1496,7 @@ describe('useLivePlayCommands', () => {
     const onCommandStarted = vi.fn()
     const onCommandRejected = vi.fn()
     const onCommandErrorCleared = vi.fn()
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
       requestReconciliation,
@@ -1029,7 +1504,7 @@ describe('useLivePlayCommands', () => {
       onCommandRejected,
       onCommandErrorCleared,
     })
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: false,
       opId: 'op_stalemove01',
       mapSlug: 'arena-map',
@@ -1066,14 +1541,14 @@ describe('useLivePlayCommands', () => {
     const requestReconciliation = vi.fn().mockRejectedValue(new Error('Runtime sheet reload failed'))
     const onCommandErrorCleared = vi.fn()
     const onCommandFailed = vi.fn()
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
       requestReconciliation,
       onCommandErrorCleared,
       onCommandFailed,
     })
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: false,
       opId: 'op_stalemove02',
       mapSlug: 'arena-map',
@@ -1106,7 +1581,7 @@ describe('useLivePlayCommands', () => {
       mapStatus: ref('idle'),
       realtimeStatus: ref('synced'),
     })
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
       requestReconciliation: () => stateMachine.reconcile(async () => {
@@ -1120,7 +1595,7 @@ describe('useLivePlayCommands', () => {
       onCommandFailed: stateMachine.commandFailed,
       onCommandErrorCleared: stateMachine.clearCommandError,
     })
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: false,
       opId: 'op_staleinit01',
       mapSlug: 'arena-map',
@@ -1143,7 +1618,7 @@ describe('useLivePlayCommands', () => {
       mapStatus: ref('idle'),
       realtimeStatus: ref('synced'),
     })
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
       requestReconciliation: () => stateMachine.reconcile(async () => {
@@ -1157,7 +1632,7 @@ describe('useLivePlayCommands', () => {
       onCommandFailed: stateMachine.commandFailed,
       onCommandErrorCleared: stateMachine.clearCommandError,
     })
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: false,
       opId: 'op_staleinit02',
       mapSlug: 'arena-map',
@@ -1177,13 +1652,13 @@ describe('useLivePlayCommands', () => {
   it('requests reconciliation for stale-base conflicts and reports the rejection to state hooks', async () => {
     const requestReconciliation = vi.fn()
     const onCommandRejected = vi.fn()
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       mapRevision: ref(4),
       requestReconciliation,
       onCommandRejected,
     })
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: false,
       opId: 'op_conflict01',
       mapSlug: 'arena-map',
@@ -1214,7 +1689,7 @@ describe('useLivePlayCommands', () => {
 
   it('routes GM table action helpers without inventing a player profile id', async () => {
     const map = mapFixture()
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_gmtableact',
       mapSlug: 'arena-map',
@@ -1223,7 +1698,7 @@ describe('useLivePlayCommands', () => {
       patches: [],
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       map: ref(map),
       mapRevision: ref(4),
@@ -1276,7 +1751,7 @@ describe('useLivePlayCommands', () => {
   it('keeps the selected player profile on player table action helpers', async () => {
     const map = mapFixture()
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_playertableact',
       mapSlug: 'arena-map',
@@ -1285,8 +1760,9 @@ describe('useLivePlayCommands', () => {
       patches: [],
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
       playerProfileId: profileId,
       map: ref(map),
       mapRevision: ref(4),
@@ -1311,7 +1787,7 @@ describe('useLivePlayCommands', () => {
       path: 'data/pokemon/pikachu.json',
       sheet: { slug: 'pikachu', combat: { conditions: ['Burned'] } },
     }
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_serverability',
       mapSlug: 'arena-map',
@@ -1324,8 +1800,9 @@ describe('useLivePlayCommands', () => {
       sheetUpdates: [sheetUpdate],
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
       playerProfileId: profileId,
       map: ref(map),
       mapRevision: ref(4),
@@ -1367,7 +1844,7 @@ describe('useLivePlayCommands', () => {
     const map = mapFixture()
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
     const move = resolvedMoveFixture()
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_resolvemove1',
       mapSlug: 'arena-map',
@@ -1384,8 +1861,9 @@ describe('useLivePlayCommands', () => {
       move,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
       playerProfileId: profileId,
       map: ref(map),
       mapRevision: ref(4),
@@ -1434,7 +1912,7 @@ describe('useLivePlayCommands', () => {
 
   it('does not invent a profile id for GM resolveMove dispatch', async () => {
     const move = resolvedMoveFixture()
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_resolvemove2',
       mapSlug: 'arena-map',
@@ -1444,7 +1922,7 @@ describe('useLivePlayCommands', () => {
       move,
     })
 
-    const actions = useLivePlayCommands({ slug: 'arena-map', map: ref(mapFixture()), mapRevision: ref(4) })
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', map: ref(mapFixture()), mapRevision: ref(4) })
     await actions.resolveMove({
       intent: {
         schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
@@ -1467,7 +1945,7 @@ describe('useLivePlayCommands', () => {
     const applyPersistedMap = vi.fn(() => { callOrder.push('map') })
     const applySheetUpdate = vi.fn(() => { callOrder.push('sheet') })
     const sheetUpdate = { kind: 'pokemon' as const, slug: 'pikachu', sheet: { slug: 'pikachu', revision: 2 } }
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_resolvemove3',
       mapSlug: 'arena-map',
@@ -1486,7 +1964,7 @@ describe('useLivePlayCommands', () => {
       move,
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       map: ref(map),
       mapRevision: ref(4),
@@ -1511,7 +1989,7 @@ describe('useLivePlayCommands', () => {
 
   it('locally rejects invalid resolveMove intents without creating an operation or HTTP request', async () => {
     const onCommandBlocked = vi.fn()
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       map: ref(mapFixture()),
       mapRevision: ref(4),
@@ -1535,7 +2013,7 @@ describe('useLivePlayCommands', () => {
   it('returns dispatched true with a presentation error and requests reconciliation when resolveMove presentation data is invalid', async () => {
     const requestReconciliation = vi.fn()
     const onCommandFailed = vi.fn()
-    apiMocks.postJson.mockResolvedValue({
+    mockTerminalResponse({
       ok: true,
       opId: 'op_resolvemove4',
       mapSlug: 'arena-map',
@@ -1551,7 +2029,7 @@ describe('useLivePlayCommands', () => {
       }],
     })
 
-    const actions = useLivePlayCommands({
+    const actions = useTestLivePlayCommands({
       slug: 'arena-map',
       map: ref(mapFixture()),
       mapRevision: ref(4),
@@ -1570,15 +2048,15 @@ describe('useLivePlayCommands', () => {
     expect(result).toMatchObject({ dispatched: true, move: null, presentationError: expect.stringContaining('presentation data') })
     expect(requestReconciliation).toHaveBeenCalledWith({
       request: MAP_API_PATHS.resolveMove,
-      response: expect.objectContaining({ opId: 'op_resolvemove4' }),
+      response: expect.objectContaining({ opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE) }),
     })
     expect(onCommandFailed).toHaveBeenCalledWith(expect.stringContaining('presentation data'))
     expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
   })
 
   it('maps resolveMove rejections and transport failures to dispatched false without retrying', async () => {
-    const actions = useLivePlayCommands({ slug: 'arena-map', map: ref(mapFixture()), mapRevision: ref(4) })
-    apiMocks.postJson.mockResolvedValueOnce({
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', map: ref(mapFixture()), mapRevision: ref(4) })
+    mockTerminalResponseOnce({
       ok: false,
       opId: 'op_resolvemove5',
       mapSlug: 'arena-map',
@@ -1604,7 +2082,12 @@ describe('useLivePlayCommands', () => {
         moveName: 'Thunderbolt',
         selection: { kind: 'self' },
       },
-    })).resolves.toMatchObject({ dispatched: false, move: null, message: 'Network down' })
+    })).resolves.toMatchObject({
+      dispatched: false,
+      move: null,
+      uncertain: true,
+      message: expect.stringContaining('server outcome'),
+    })
 
     expect(apiMocks.postJson).toHaveBeenCalledTimes(2)
   })
