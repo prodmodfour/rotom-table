@@ -6,6 +6,7 @@ import {
   type LivePlayPatch,
   type LivePlayPatchType,
 } from '#shared/livePlayCommands'
+import { parseLivePlayMoveStatePatchPayload } from '#shared/livePlayMoveState'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import type {
   GridAnchor,
@@ -365,6 +366,40 @@ const applyMetadataPatch = (map: TabletopMap, payload: unknown): LivePlayPatches
   return null
 }
 
+const applyMoveStatePatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
+  const parsed = parseLivePlayMoveStatePatchPayload(payload)
+  if (!parsed.valid) {
+    return failed(
+      'invalid-patch',
+      `move.state patch payload is invalid: ${parsed.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`,
+    )
+  }
+
+  const { changes } = parsed.payload
+  if (changes.placements) map.placements = deepCloneJson([...changes.placements.current])
+
+  if (changes.temporaryHitPoints) {
+    if (changes.temporaryHitPoints.current === null) delete map.temporaryHitPoints
+    else map.temporaryHitPoints = deepCloneJson(changes.temporaryHitPoints.current)
+  }
+
+  if (changes.moveUsage) {
+    if (changes.moveUsage.current === null) delete map.moveUsage
+    else map.moveUsage = deepCloneJson(changes.moveUsage.current)
+  }
+
+  if (changes.hazards) map.hazards = deepCloneJson([...changes.hazards.current])
+  if (changes.fieldEffects) map.fieldEffects = deepCloneJson(changes.fieldEffects.current)
+
+  if (changes.metadata) {
+    if (changes.metadata.current === null) delete map.metadata
+    else map.metadata = deepCloneJson(changes.metadata.current)
+  }
+
+  map.updatedAt = parsed.payload.updatedAt
+  return null
+}
+
 const applyKnownPatch = (map: TabletopMap, patch: LivePlayPatch): LivePlayPatchesRejected | null => {
   switch (patch.type) {
     case LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION:
@@ -392,8 +427,9 @@ const applyKnownPatch = (map: TabletopMap, patch: LivePlayPatch): LivePlayPatche
     case LIVE_PLAY_PATCH_TYPES.TOKEN_COMBAT_STAGES:
     case LIVE_PLAY_PATCH_TYPES.TOKEN_EXPERIENCE:
     case LIVE_PLAY_PATCH_TYPES.SHEET_FIELD:
-    case LIVE_PLAY_PATCH_TYPES.MOVE_STATE:
       return null
+    case LIVE_PLAY_PATCH_TYPES.MOVE_STATE:
+      return applyMoveStatePatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.MAP_METADATA:
       return applyMetadataPatch(map, patch.payload)
     case LIVE_PLAY_PATCH_TYPES.RECONCILIATION_REQUIRED:

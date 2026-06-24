@@ -1,0 +1,461 @@
+import { afterEach, describe, expect, it } from 'vitest'
+import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
+import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
+import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
+import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
+import { createSqliteMapInteractionModeRepository } from '~~/server/storage/mapInteractionModeRepository'
+import { executeLivePlayResolveMoveCommandUseCase, type LivePlayResolveMoveCommandDependencies } from '~~/server/useCases/applyResolveMoveCommand'
+import { planAuthoritativeMoveState } from '~~/server/domain/planAuthoritativeMoveState'
+import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES, type LivePlayCommandAccepted, type ResolveMoveLivePlayCommand } from '#shared/livePlayCommands'
+import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import { parseLivePlayMoveStatePatchPayload } from '#shared/livePlayMoveState'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
+import type { PlayerProfile } from '#shared/playerProfiles'
+import { buildResolveMoveScopes } from '~/utils/livePlayMoveCommandScopes'
+import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
+import { deepCloneJson } from '~/utils/serialization'
+import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
+import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
+import type { CharacterSheet, CharacterSheetMove } from '~/types/characterSheet'
+import type { MoveAutomationScript } from '~/types/moveAutomation'
+import type { SheetPlacement, TabletopMap } from '~/types/map'
+import type { TrainerSheet } from '~/types/trainerSheet'
+
+interface Harness {
+  readonly database: RotomDatabase
+  readonly maps: ReturnType<typeof createSqliteMapRepository<TabletopMap>>
+  readonly sheets: ReturnType<typeof createSqliteSheetRepository<Record<string, unknown>>>
+  readonly ops: ReturnType<typeof createSqliteLivePlayOpRepository>
+  readonly events: unknown[]
+}
+
+const openDatabases: RotomDatabase[] = []
+
+afterEach(() => {
+  while (openDatabases.length > 0) openDatabases.pop()?.close()
+})
+
+const randomSequence = (values: readonly number[]): (() => number) => {
+  let index = 0
+  return () => values[index++] ?? values[values.length - 1] ?? 0
+}
+
+const placement = (id: string, sheetSlug = id, position = { x: 0, y: 0, z: 0 }): SheetPlacement => ({
+  id,
+  sheetKind: 'pokemon',
+  sheetSlug,
+  position,
+})
+
+const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'arena',
+  name: 'Arena',
+  folder: '',
+  revision: 4,
+  dimensions: { x: 12, y: 3, z: 12 },
+  groundLevelY: 0,
+  playerVisible: true,
+  voxels: [],
+  hazards: [],
+  fieldEffects: { weather: [], terrains: [], rooms: [] },
+  placements: [
+    placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+    placement('target-a', 'target-a', { x: 1, y: 0, z: 0 }),
+    placement('target-b', 'target-b', { x: 2, y: 0, z: 0 }),
+  ],
+  lights: [],
+  initiative: { activeId: null, round: 1 },
+  activeScene: { name: 'Scene A', startedAt: 100 },
+  metadata: { note: 'start' },
+  createdAt: 1,
+  updatedAt: 100,
+  ...overrides,
+})
+
+const pokemonSheet = (slug: string, moves: CharacterSheetMove[] = [], overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
+  slug,
+  nickname: slug,
+  species: 'Pikachu',
+  level: 20,
+  movelist: moves,
+  revision: 2,
+  ...overrides,
+})
+
+const targetSheet = (slug: string, overrides: Partial<CharacterSheet> = {}): CharacterSheet => pokemonSheet(slug, [], {
+  species: 'Snorlax',
+  level: 30,
+  combat: { currentHp: 80 },
+  ...overrides,
+})
+
+const seedHarness = (options: {
+  readonly map?: TabletopMap
+  readonly actorMoves?: readonly CharacterSheetMove[]
+  readonly extraSheets?: readonly CharacterSheet[]
+} = {}): Harness => {
+  const database = openRotomDatabase({ path: ':memory:', enableWal: false })
+  openDatabases.push(database)
+  const maps = createSqliteMapRepository<TabletopMap>(database)
+  const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+  const ops = createSqliteLivePlayOpRepository({ database, clock: () => 1_700_000_000_000 })
+  const map = options.map ?? mapFixture()
+  maps.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: map.updatedAt ?? 100 })
+  const actor = pokemonSheet('actor', [...(options.actorMoves ?? [{ name: 'Tackle' }])])
+  const targets = [targetSheet('target-a'), targetSheet('target-b'), ...(options.extraSheets ?? [])]
+  for (const sheet of [actor, ...targets]) {
+    sheets.save({ kind: 'pokemon', slug: sheet.slug, document: sheet as unknown as Record<string, unknown>, revision: sheet.revision ?? 0, updatedAt: (sheet as { readonly updatedAt?: number }).updatedAt ?? 50 })
+  }
+  return { database, maps, sheets, ops, events: [] }
+}
+
+const intent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): ResolveMoveIntent => ({
+  schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+  ...overrides,
+})
+
+const commandFor = (
+  map: TabletopMap,
+  moveIntent: ResolveMoveIntent,
+  opId: string,
+  candidateScopePlacementIds: readonly string[] = [],
+  overrides: Partial<ResolveMoveLivePlayCommand> = {},
+): ResolveMoveLivePlayCommand => {
+  const scopes = buildResolveMoveScopes({ map, intent: moveIntent, candidateScopePlacementIds })
+  if (!scopes.ok) throw new Error(scopes.message)
+  return {
+    schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+    opId,
+    mapSlug: map.slug,
+    baseRevision: map.revision ?? 0,
+    type: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+    scopes: scopes.scopes,
+    payload: moveIntent,
+    ...overrides,
+  }
+}
+
+const execute = (
+  harness: Harness,
+  command: ResolveMoveLivePlayCommand,
+  options: {
+    readonly role?: 'gm' | 'player'
+    readonly profile?: PlayerProfile | null
+    readonly random?: () => number
+    readonly now?: () => number
+    readonly idFactory?: () => string
+    readonly planner?: LivePlayResolveMoveCommandDependencies['planner']
+  } = {},
+) => executeLivePlayResolveMoveCommandUseCase({
+  role: options.role ?? 'gm',
+  command,
+  clientId: 'client-test',
+  playerProfile: options.profile ?? null,
+  expectedType: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+}, {
+  database: harness.database,
+  mapRepository: harness.maps,
+  sheetRepository: harness.sheets,
+  planner: options.planner,
+  random: options.random ?? randomSequence([0.5, 0]),
+  now: options.now ?? (() => 1000),
+  idFactory: options.idFactory ?? (() => 'feedback-id'),
+  publishRealtimeEvent: (event) => harness.events.push(event),
+})
+
+const accepted = (result: unknown): LivePlayCommandAccepted => {
+  if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true || 'duplicate' in result) {
+    throw new Error('expected accepted result')
+  }
+  return result as LivePlayCommandAccepted
+}
+
+const moveStatePatchPayload = (result: LivePlayCommandAccepted) => {
+  expect(result.patches).toHaveLength(1)
+  expect(result.patches[0]?.type).toBe(LIVE_PLAY_PATCH_TYPES.MOVE_STATE)
+  const parsed = parseLivePlayMoveStatePatchPayload(result.patches[0]?.payload)
+  expect(parsed.valid).toBe(true)
+  if (!parsed.valid) throw new Error('invalid move-state payload')
+  return parsed.payload
+}
+
+const playerProfile = (linkedSlug: string): PlayerProfile => ({
+  schemaVersion: 1,
+  id: 'profile_test0000' as PlayerProfile['id'],
+  displayName: 'Player' as PlayerProfile['displayName'],
+  linkedCharacters: [{ sheetKind: 'pokemon', sheetSlug: linkedSlug }],
+})
+
+const areaTemplate = { kind: 'burst' as const, size: 1, label: 'Burst 1' }
+const passTemplate = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+
+const areaScript = (name: string): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: name,
+  version: 1,
+  targetMode: 'multi-target',
+  targetCount: null,
+  damaging: false,
+  requiresAccuracy: false,
+  damageBase: null,
+  damageClass: 'Status',
+  type: 'Normal',
+  ac: null,
+  range: 'Burst 1',
+  effect: 'Resolve move command area test script.',
+  keywords: ['Burst 1'],
+  criticalRange: null,
+  areaTemplates: [areaTemplate],
+  conditionSuggestions: [],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+})
+
+const passScript = (): MoveAutomationScript => ({
+  kind: 'explicit',
+  moveName: 'Scratch',
+  version: 1,
+  targetMode: 'multi-target',
+  targetCount: null,
+  damaging: true,
+  requiresAccuracy: true,
+  damageBase: 4,
+  damageClass: 'Physical',
+  type: 'Normal',
+  ac: 2,
+  range: 'Melee, Pass',
+  effect: 'Resolve move command Pass test script.',
+  keywords: ['Pass 4'],
+  criticalRange: null,
+  areaTemplates: [passTemplate],
+  conditionSuggestions: [],
+  stageSuggestions: [],
+  hpSuggestions: [],
+  fieldSuggestions: [],
+  hazardSuggestions: [],
+  automationNotes: [],
+})
+
+const withRegisteredScript = async <T>(script: MoveAutomationScript, run: () => T | Promise<T>): Promise<T> => {
+  const scripts = EXPLICIT_MOVE_AUTOMATION_SCRIPTS as Map<string, MoveAutomationScript>
+  const previous = scripts.get(script.moveName)
+  scripts.set(script.moveName, script)
+  try {
+    return await run()
+  } finally {
+    if (previous) scripts.set(script.moveName, previous)
+    else scripts.delete(script.moveName)
+  }
+}
+
+describe('executeLivePlayResolveMoveCommandUseCase', () => {
+  it('accepts self and single-target resolveMove commands and returns committed map, sheets, and one MOVE_STATE patch', async () => {
+    const selfHarness = seedHarness({ actorMoves: [{ name: 'Swords Dance' }] })
+    const selfMap = selfHarness.maps.getBySlug('arena')!
+    const selfIntent = intent({ placementId: 'actor-token', moveName: 'Swords Dance', selection: { kind: 'self' } })
+    const selfResponse = await execute(selfHarness, commandFor(selfMap, selfIntent, 'op_resolveself01'), { random: randomSequence([0]) })
+    expect(selfResponse.result.ok).toBe(true)
+    const selfPayload = moveStatePatchPayload(accepted(selfResponse.result))
+    expect(selfPayload.move.canonicalMoveName).toBe('Swords Dance')
+    expect(selfResponse.map?.revision).toBe(5)
+    expect(selfResponse.sheetUpdates?.[0]).toMatchObject({ kind: 'pokemon', slug: 'actor', sheet: { revision: 3 } })
+
+    const targetHarness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const targetMap = targetHarness.maps.getBySlug('arena')!
+    const targetIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
+    const beforeMap = deepCloneJson(targetMap)
+    const targetResponse = await execute(targetHarness, commandFor(targetMap, targetIntent, 'op_resolvetarg1'), { random: randomSequence([0.5, 0]) })
+
+    const targetResult = accepted(targetResponse.result)
+    const targetPayload = moveStatePatchPayload(targetResult)
+    expect(targetPayload.move).toEqual(targetResponse.move)
+    expect(targetPayload.sheets.map((sheet) => `${sheet.kind}:${sheet.slug}`)).toContain('pokemon:target-a')
+    expect(targetResponse.map).toEqual(targetHarness.maps.getBySlug('arena'))
+    expect(targetResponse.sheetUpdates?.[0]?.sheet).toEqual(targetHarness.sheets.getByRef('pokemon', 'target-a')?.sheet)
+    expect(targetHarness.events.map((event) => (event as { type?: string }).type)).toEqual(['updated', 'updated', 'live-play-command-accepted'])
+
+    const patchedMap = deepCloneJson(beforeMap)
+    const patchResult = applyLivePlayPatchesToMap({
+      map: patchedMap,
+      mapSlug: 'arena',
+      previousRevision: beforeMap.revision,
+      revision: targetResult.revision,
+      patches: targetResult.patches,
+    })
+    expect(patchResult.ok).toBe(true)
+    expect(patchedMap.placements).toEqual(targetResponse.map?.placements)
+    expect(patchedMap.temporaryHitPoints).toEqual(targetResponse.map?.temporaryHitPoints)
+    expect(patchedMap.moveUsage).toEqual(targetResponse.map?.moveUsage)
+    expect(patchedMap.hazards).toEqual(targetResponse.map?.hazards)
+    expect(patchedMap.fieldEffects).toEqual(targetResponse.map?.fieldEffects)
+    expect(patchedMap.metadata).toEqual(targetResponse.map?.metadata)
+    expect(patchedMap.updatedAt).toBe(targetResponse.map?.updatedAt)
+  })
+
+  it('accepts area and Pass resolveMove commands with conservative candidate scopes', async () => {
+    await withRegisteredScript(areaScript('Tail Whip'), async () => {
+      const areaMap = mapFixture({ placements: [
+        placement('actor-token', 'actor', { x: 0, y: 0, z: 0 }),
+        placement('target-a', 'target-a', { x: 1, y: 0, z: 0 }),
+        placement('target-b', 'target-b', { x: 0, y: 0, z: 1 }),
+      ] })
+      const harness = seedHarness({ map: areaMap, actorMoves: [{ name: 'Tail Whip' }] })
+      const map = harness.maps.getBySlug('arena')!
+      const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tail Whip', selection: { kind: 'area', areaTemplateId: moveAutomationAreaTemplateId(areaTemplate) } })
+      const response = await execute(harness, commandFor(map, moveIntent, 'op_resolvearea1', ['target-a', 'target-b']), { random: randomSequence([0.5, 0, 0.5, 0]) })
+      expect(response.result.ok).toBe(true)
+      const payload = moveStatePatchPayload(accepted(response.result))
+      expect(payload.move.area?.candidateTargetIds).toEqual(['target-a', 'target-b'])
+      expect(accepted(response.result).patches[0]?.scopes.every((scope) => !(scope.kind === 'token' && scope.placementId === 'target-b' && scope.field === 'hp'))).toBe(true)
+    })
+
+    await withRegisteredScript(passScript(), async () => {
+      const map = mapFixture({ dimensions: { x: 8, y: 3, z: 4 }, placements: [
+        placement('actor-token', 'actor', { x: 1, y: 0, z: 1 }),
+        placement('target-a', 'target-a', { x: 2, y: 0, z: 1 }),
+        placement('target-b', 'target-b', { x: 3, y: 0, z: 1 }),
+      ] })
+      const harness = seedHarness({ map, actorMoves: [{ name: 'Scratch' }] })
+      const moveIntent = intent({ placementId: 'actor-token', moveName: 'Scratch', selection: { kind: 'area', areaTemplateId: moveAutomationAreaTemplateId(passTemplate), direction: 'east' } })
+      const response = await execute(harness, commandFor(map, moveIntent, 'op_resolvepass1', ['target-a', 'target-b']), { random: randomSequence([0.5, 0]) })
+      expect(response.result.ok).toBe(true)
+      const payload = moveStatePatchPayload(accepted(response.result))
+      expect(payload.move.movement?.kind).toBe('pass')
+      expect(response.map?.placements.find((item) => item.id === 'actor-token')?.position).toEqual(payload.move.movement?.destination)
+    })
+  })
+
+  it('enforces command type, intent shape, map mode, visibility, token control, and exact base revisions', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
+
+    const invalidIntent = await execute(harness, { ...commandFor(map, moveIntent, 'op_badintent01'), payload: { placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'self' }, rolls: [20] } as never })
+    expect(invalidIntent.result).toMatchObject({ ok: false, reason: 'invalid' })
+
+    createSqliteMapInteractionModeRepository(harness.database).set({ slug: 'arena', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT, updatedAt: 1 })
+    const prepareMode = await execute(harness, commandFor(map, moveIntent, 'op_preparemode1'))
+    expect(prepareMode.result).toMatchObject({ ok: false, reason: 'conflict' })
+    createSqliteMapInteractionModeRepository(harness.database).set({ slug: 'arena', interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 2 })
+
+    const hiddenHarness = seedHarness({ map: mapFixture({ playerVisible: false }), actorMoves: [{ name: 'Tackle' }] })
+    const hidden = await execute(hiddenHarness, commandFor(hiddenHarness.maps.getBySlug('arena')!, moveIntent, 'op_hiddenmap01'), { role: 'player', profile: playerProfile('actor') })
+    expect(hidden.result).toMatchObject({ ok: false, reason: 'unauthorized' })
+
+    const noProfile = await execute(harness, commandFor(map, moveIntent, 'op_noprofile01'), { role: 'player', profile: null })
+    expect(noProfile.result).toMatchObject({ ok: false, reason: 'unauthorized', message: expect.stringContaining('Select a player profile') })
+
+    const controlled = await execute(harness, commandFor(map, moveIntent, 'op_playerok001'), { role: 'player', profile: playerProfile('actor'), random: randomSequence([0.5, 0]) })
+    expect(controlled.result.ok).toBe(true)
+
+    const staleMap = harness.maps.getBySlug('arena')!
+    const stale = await execute(harness, commandFor(staleMap, moveIntent, 'op_stalerev01', [], { baseRevision: (staleMap.revision ?? 0) - 1 }))
+    expect(stale.result).toMatchObject({ ok: false, reason: 'stale-revision', currentRevision: staleMap.revision })
+  })
+
+  it('validates submitted scopes against actual writes and emits actual scopes only', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
+    const valid = commandFor(map, moveIntent, 'op_scopevalid1')
+
+    const duplicate = await execute(harness, { ...valid, opId: 'op_scopedupe01', scopes: [...valid.scopes, valid.scopes[0]!] })
+    expect(duplicate.result).toMatchObject({ ok: false, reason: 'invalid', message: expect.stringContaining('more than once') })
+
+    const missingHpScope = await execute(harness, { ...valid, opId: 'op_scopemiss1', scopes: valid.scopes.filter((scope) => !(scope.kind === 'token' && scope.placementId === 'target-a' && scope.field === 'hp')) })
+    expect(missingHpScope.result).toMatchObject({ ok: false, reason: 'invalid', message: expect.stringContaining('missing required write scope') })
+
+    const unrelated = await execute(harness, { ...valid, opId: 'op_scopeunrel1', scopes: [...valid.scopes, { kind: 'token', placementId: 'target-b', field: 'hp' }] })
+    expect(unrelated.result).toMatchObject({ ok: false, reason: 'invalid', message: expect.stringContaining('not related') })
+
+    const acceptedResponse = await execute(harness, valid, { random: randomSequence([0.5, 0]) })
+    const scopes = accepted(acceptedResponse.result).patches[0]!.scopes
+    expect(scopes).toContainEqual({ kind: 'token', placementId: 'actor-token', field: 'action' })
+    expect(scopes).toContainEqual({ kind: 'map', lane: 'metadata' })
+    expect(scopes).toContainEqual({ kind: 'token', placementId: 'target-a', field: 'hp' })
+    expect(scopes).not.toContainEqual({ kind: 'map', lane: 'hazards' })
+    expect(scopes).not.toContainEqual({ kind: 'token', placementId: 'target-b', field: 'hp' })
+  })
+
+  it('commits map, sheets, and op result atomically and rolls back on sheet persistence failure', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
+    const response = await execute(harness, commandFor(map, moveIntent, 'op_atomicok01'), { random: randomSequence([0.5, 0]) })
+    expect(response.result.ok).toBe(true)
+    expect(harness.ops.getOpResult('arena', 'op_atomicok01')).toEqual(response.result)
+    expect(harness.maps.getBySlug('arena')?.revision).toBe(5)
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(3)
+
+    const failingHarness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const failingMap = failingHarness.maps.getBySlug('arena')!
+    const failingSheetRepo = {
+      ...failingHarness.sheets,
+      applyLivePlayUpdate: () => 'stale' as const,
+    }
+    const failingEvents: unknown[] = []
+    const failing = await executeLivePlayResolveMoveCommandUseCase({
+      role: 'gm',
+      command: commandFor(failingMap, moveIntent, 'op_atomicfail1'),
+      clientId: 'client-test',
+      playerProfile: null,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+    }, {
+      database: failingHarness.database,
+      mapRepository: failingHarness.maps,
+      sheetRepository: failingSheetRepo,
+      random: randomSequence([0.5, 0]),
+      now: () => 1000,
+      idFactory: () => 'feedback-id',
+      publishRealtimeEvent: (event) => failingEvents.push(event),
+    })
+    expect(failing.result).toMatchObject({ ok: false, reason: 'persistence-failed' })
+    expect(failingHarness.maps.getBySlug('arena')?.revision).toBe(4)
+    expect(failingHarness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(2)
+    expect(failingHarness.ops.getOpResult('arena', 'op_atomicfail1')).toBeNull()
+    expect(failingEvents).toHaveLength(0)
+  })
+
+  it('replays duplicate opIds from stored MOVE_STATE without replanning, rerolling, publishing, or advancing revisions', async () => {
+    const harness = seedHarness({ actorMoves: [{ name: 'Tackle' }] })
+    const map = harness.maps.getBySlug('arena')!
+    const moveIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-a' } })
+    let plannerCalls = 0
+    let randomCalls = 0
+    const countingPlanner: typeof planAuthoritativeMoveState = (input) => {
+      plannerCalls += 1
+      return planAuthoritativeMoveState(input)
+    }
+    const random = () => {
+      randomCalls += 1
+      return randomCalls === 1 ? 0.5 : 0
+    }
+
+    const command = commandFor(map, moveIntent, 'op_duplicate01')
+    const first = await execute(harness, command, { random, planner: countingPlanner })
+    const firstResult = accepted(first.result)
+    const firstMove = first.move
+    const firstEventCount = harness.events.length
+    const firstCommittedMap = deepCloneJson(harness.maps.getBySlug('arena'))
+    const firstMapRevision = firstCommittedMap?.revision
+    const firstSheetRevision = harness.sheets.getByRef('pokemon', 'target-a')?.revision
+
+    const second = await execute(harness, command, { random: () => { throw new Error('random should not run') }, planner: () => { throw new Error('planner should not run') } })
+    expect(second.result).toEqual(firstResult)
+    expect(second.move).toEqual(firstMove)
+    expect(plannerCalls).toBe(1)
+    expect(randomCalls).toBeGreaterThan(0)
+    expect(harness.events).toHaveLength(firstEventCount)
+    expect(harness.maps.getBySlug('arena')).toEqual(firstCommittedMap)
+    expect(harness.maps.getBySlug('arena')?.revision).toBe(firstMapRevision)
+    expect(harness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(firstSheetRevision)
+
+    const differentIntent = intent({ placementId: 'actor-token', moveName: 'Tackle', selection: { kind: 'single-target', targetPlacementId: 'target-b' } })
+    const violation = await execute(harness, { ...commandFor(harness.maps.getBySlug('arena')!, differentIntent, 'op_duplicate01'), baseRevision: command.baseRevision })
+    expect(violation.result).toMatchObject({ ok: false, reason: 'conflict', message: expect.stringContaining('already recorded') })
+  })
+})

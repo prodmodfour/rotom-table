@@ -363,24 +363,138 @@ describe('live-play patch application', () => {
     expect(map.metadata).toEqual({ encounterName: 'Rooftop Ambush' })
   })
 
-  it('accepts MOVE_STATE patches as durable presentation state without mutating map resources', () => {
+  it('applies MOVE_STATE patches as authoritative committed map lanes without mutating the payload', () => {
     const map = baseMap()
-    const beforePlacements = JSON.stringify(map.placements)
+    const nextPlacements = [
+      { ...map.placements[0]!, position: { x: 4, y: 0, z: 3 }, facing: 'north-east' as const, turned: false },
+      map.placements[1]!,
+    ]
+    const payload = {
+      command: 'resolveMove',
+      updatedAt: 999,
+      move: {
+        schemaVersion: 1,
+        actorPlacementId: 'token-a',
+        moveName: 'Tackle',
+        canonicalMoveName: 'Tackle',
+        moveKey: 'tackle',
+        frequency: 'Scene',
+        damageFormula: null,
+        selectedTargetIds: ['token-b'],
+        script: { kind: 'explicit' },
+        transaction: {
+          userId: 'token-a',
+          userName: 'Pika',
+          moveName: 'Tackle',
+          scriptKind: 'explicit',
+          scriptVersion: 1,
+          hpUpdates: [],
+          conditionUpdates: [],
+          combatStageUpdates: [],
+          hazardsToAdd: [],
+          fieldEffectsToApply: [],
+          logLines: ['Pika used Tackle.'],
+        },
+      },
+      sheets: [],
+      changes: {
+        placements: { previous: map.placements, current: nextPlacements },
+        temporaryHitPoints: {
+          previous: null,
+          current: { scene: { name: 'Scene A', startedAt: 900 }, byPlacementId: { 'token-b': 5 } },
+        },
+        moveUsage: {
+          previous: null,
+          current: { byPlacementId: { 'token-a': { tackle: { moveName: 'Tackle', frequency: 'scene', uses: 1 } } } },
+        },
+        hazards: { previous: [], current: [{ kind: 'fire', x: 2, y: 0, z: 2 }] },
+        fieldEffects: { previous: { weather: [], terrains: [], rooms: [] }, current: { weather: [{ kind: 'sunny', rounds: 2 }], terrains: [], rooms: [] } },
+        metadata: { previous: null, current: { moveLog: [{ at: 999, lines: ['Pika used Tackle.'] }] } },
+      },
+    }
+    const beforePayload = JSON.stringify(payload)
 
     const result = applyLivePlayPatchesToMap({
       map,
       mapSlug: 'arena',
       previousRevision: 4,
       revision: 5,
-      patches: [patchBase(LIVE_PLAY_PATCH_TYPES.MOVE_STATE, {
-        command: 'resolveMove',
-        move: { actorPlacementId: 'token-a' },
-      })],
+      patches: [patchBase(LIVE_PLAY_PATCH_TYPES.MOVE_STATE, payload)],
     })
 
     expect(result).toMatchObject({ ok: true, applied: true, revision: 5 })
-    expect(map.revision).toBe(5)
-    expect(JSON.stringify(map.placements)).toBe(beforePlacements)
+    expect(map).toMatchObject({ revision: 5, updatedAt: 999 })
+    expect(map.placements).toEqual(nextPlacements)
+    expect(map.temporaryHitPoints).toEqual({ scene: { name: 'Scene A', startedAt: 900 }, byPlacementId: { 'token-b': 5 } })
+    expect(map.moveUsage?.byPlacementId['token-a']?.tackle).toMatchObject({ moveName: 'Tackle', frequency: 'scene', uses: 1 })
+    expect(map.hazards).toEqual([{ kind: 'fire', x: 2, y: 0, z: 2 }])
+    expect(map.fieldEffects).toEqual({ weather: [{ kind: 'sunny', rounds: 2 }], terrains: [], rooms: [] })
+    expect(map.metadata).toEqual({ moveLog: [{ at: 999, lines: ['Pika used Tackle.'] }] })
+    expect(JSON.stringify(payload)).toBe(beforePayload)
+  })
+
+  it('applies MOVE_STATE optional state deletions and rejects malformed payloads', () => {
+    const map = baseMap({
+      temporaryHitPoints: { scene: { name: 'Scene A', startedAt: 1 }, byPlacementId: { 'token-a': 4 } },
+      moveUsage: { byPlacementId: { 'token-a': { tackle: { moveName: 'Tackle', frequency: 'scene', uses: 1 } } } },
+      metadata: { moveLog: [] },
+    })
+    const move = {
+      schemaVersion: 1,
+      actorPlacementId: 'token-a',
+      moveName: 'Tackle',
+      canonicalMoveName: 'Tackle',
+      moveKey: 'tackle',
+      frequency: null,
+      damageFormula: null,
+      selectedTargetIds: [],
+      script: {},
+      transaction: {
+        userId: 'token-a',
+        userName: 'Pika',
+        moveName: 'Tackle',
+        scriptKind: 'explicit',
+        scriptVersion: 1,
+        hpUpdates: [],
+        conditionUpdates: [],
+        combatStageUpdates: [],
+        hazardsToAdd: [],
+        fieldEffectsToApply: [],
+        logLines: ['Pika used Tackle.'],
+      },
+    }
+
+    const deleted = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [patchBase(LIVE_PLAY_PATCH_TYPES.MOVE_STATE, {
+        command: 'resolveMove',
+        updatedAt: 1000,
+        move,
+        sheets: [],
+        changes: {
+          temporaryHitPoints: { previous: map.temporaryHitPoints, current: null },
+          moveUsage: { previous: map.moveUsage, current: null },
+          metadata: { previous: map.metadata, current: null },
+        },
+      })],
+    })
+
+    expect(deleted).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(map.temporaryHitPoints).toBeUndefined()
+    expect(map.moveUsage).toBeUndefined()
+    expect(map.metadata).toBeUndefined()
+
+    const malformed = applyLivePlayPatchesToMap({
+      map: baseMap(),
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [patchBase(LIVE_PLAY_PATCH_TYPES.MOVE_STATE, { command: 'resolveMove', move: { actorPlacementId: 'token-a' } })],
+    })
+    expect(malformed).toMatchObject({ ok: false, reason: 'invalid-patch' })
   })
 
   it('requests reconciliation for unknown patch types and revision gaps', () => {

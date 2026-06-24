@@ -15,7 +15,8 @@ import type {
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { AttackOfOpportunityStateUpdatePayload } from './attackOfOpportunityState'
 import type { StartTurnModalStateUpdatePayload } from './startTurnModalState'
-import type { LivePlayResolvedMoveResult, ResolveMoveIntent } from './livePlayMoveResolution'
+import type { ResolveMoveIntent } from './livePlayMoveResolution'
+import type { LivePlayMoveStatePatchPayload } from './livePlayMoveState'
 
 type Brand<TValue, TName extends string> = TValue & { readonly __brand: TName }
 
@@ -702,10 +703,7 @@ export interface TerrainVoxelsUpdatedPatchPayload {
   readonly rendererInvalidation?: readonly string[]
 }
 
-export interface MoveStatePatchPayload {
-  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE
-  readonly move: LivePlayResolvedMoveResult
-}
+export type MoveStatePatchPayload = LivePlayMoveStatePatchPayload
 
 export interface TokenSpawnedPatchPayload {
   readonly command:

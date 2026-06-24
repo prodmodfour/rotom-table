@@ -1,8 +1,9 @@
 import type { ResolveMoveIntent } from '#shared/livePlayMoveResolution'
+import { LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT } from '#shared/livePlayMoveState'
 import type { LivePlayScope, LivePlaySheetScope, LivePlayTokenScope } from '#shared/livePlayCommands'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 
-export const LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT = 128 as const
+export { LIVE_PLAY_RESOLVE_MOVE_SCOPE_LIMIT }
 
 export interface BuildResolveMoveScopesInput {
   readonly map: TabletopMap

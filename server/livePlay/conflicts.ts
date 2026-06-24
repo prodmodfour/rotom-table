@@ -399,6 +399,13 @@ export const evaluateLivePlayCommandConflicts = (
     )
   }
 
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE) {
+    return staleDecision(
+      `resolveMove requires an exact map revision. Refresh and retry from revision ${currentRevision}.`,
+      currentRevision,
+    )
+  }
+
   if (!input.recentAcceptedOps) {
     return staleDecision(
       `Command baseRevision ${baseRevision} is stale and accepted operation history through revision ${currentRevision} is unavailable`,
