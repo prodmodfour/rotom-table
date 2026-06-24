@@ -24,6 +24,16 @@ export interface SharedMapInteractionModeResponse {
   readonly syncedMapForLivePlay?: boolean
 }
 
+export interface ApplyAuthoritativeMapInteractionModeInput {
+  readonly slug: string
+  readonly interactionMode: MapInteractionMode
+  readonly updatedAt: number
+}
+
+export interface UseSharedMapInteractionModeOptions {
+  readonly autoLoad?: boolean
+}
+
 export interface UseSharedMapInteractionModeReturn {
   readonly interactionMode: Ref<MapInteractionMode>
   readonly status: Ref<SharedMapInteractionModeStatus>
@@ -31,6 +41,7 @@ export interface UseSharedMapInteractionModeReturn {
   readonly updatedAt: Ref<number>
   readonly load: () => Promise<void>
   readonly setInteractionMode: (mode: MapInteractionMode) => Promise<void>
+  readonly applyAuthoritativeMode: (state: ApplyAuthoritativeMapInteractionModeInput) => void
 }
 
 const isModePayload = (value: unknown): value is MapInteractionModeRealtimePayload => {
@@ -41,7 +52,10 @@ const isModePayload = (value: unknown): value is MapInteractionModeRealtimePaylo
     && typeof record.updatedAt === 'number'
 }
 
-export const useSharedMapInteractionMode = (slug: string): UseSharedMapInteractionModeReturn => {
+export const useSharedMapInteractionMode = (
+  slug: string,
+  options: UseSharedMapInteractionModeOptions = {},
+): UseSharedMapInteractionModeReturn => {
   const interactionMode = ref<MapInteractionMode>(DEFAULT_MAP_INTERACTION_MODE)
   const status = ref<SharedMapInteractionModeStatus>('loading')
   const error = ref<string | null>(null)
@@ -49,11 +63,13 @@ export const useSharedMapInteractionMode = (slug: string): UseSharedMapInteracti
   const clientId = getClientId()
   const { getJson, postJson } = useApiClient()
 
-  const applyResponse = (response: SharedMapInteractionModeResponse) => {
+  const applyAuthoritativeMode = (response: ApplyAuthoritativeMapInteractionModeInput) => {
     const parsedMode = parseMapInteractionMode(response.interactionMode)
     if (response.slug !== slug || !parsedMode) return
     interactionMode.value = parsedMode
     updatedAt.value = response.updatedAt
+    status.value = 'idle'
+    error.value = null
   }
 
   const load = async () => {
@@ -63,8 +79,7 @@ export const useSharedMapInteractionMode = (slug: string): UseSharedMapInteracti
       const response = await getJson<SharedMapInteractionModeResponse>(MAP_API_PATHS.interactionMode, {
         params: { slug },
       })
-      applyResponse(response)
-      status.value = 'idle'
+      applyAuthoritativeMode(response)
     } catch (err) {
       status.value = 'error'
       error.value = getErrorMessage(err, { fallback: 'Map mode could not be loaded' })
@@ -82,8 +97,7 @@ export const useSharedMapInteractionMode = (slug: string): UseSharedMapInteracti
         interactionMode: mode,
         clientId,
       })
-      applyResponse(response)
-      status.value = 'idle'
+      applyAuthoritativeMode(response)
     } catch (err) {
       status.value = 'error'
       error.value = getErrorMessage(err, { fallback: 'Map mode could not be changed' })
@@ -102,7 +116,7 @@ export const useSharedMapInteractionMode = (slug: string): UseSharedMapInteracti
   }
 
   useRealtimeChannel(mapChannel(slug), handleRealtimeModeEvent)
-  void load()
+  if (options.autoLoad !== false) void load()
 
   return {
     interactionMode,
@@ -111,5 +125,6 @@ export const useSharedMapInteractionMode = (slug: string): UseSharedMapInteracti
     updatedAt,
     load,
     setInteractionMode,
+    applyAuthoritativeMode,
   }
 }

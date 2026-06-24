@@ -694,6 +694,129 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
   })
 
+  it('can skip automatic /api/maps/load for aggregate snapshot ownership', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10, autoLoad: false })
+    await flushPromises()
+
+    expect(apiMocks.getJson).not.toHaveBeenCalled()
+    expect(editable.status.value).toBe('loading')
+    expect(editable.map.value).toBeNull()
+  })
+
+  it('uses external authoritative reconciliation on reconnect without independent map reloads', async () => {
+    const requestAuthoritativeReconciliation = vi.fn(async () => undefined)
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      autoLoad: false,
+      requestAuthoritativeReconciliation,
+    })
+
+    apiMocks.connectionHandlers[0]?.({
+      state: 'reconnecting',
+      previousState: 'connected',
+      reconnected: false,
+    })
+    apiMocks.connectionHandlers[0]?.({
+      state: 'connected',
+      previousState: 'reconnecting',
+      reconnected: true,
+    })
+    await flushPromises()
+
+    expect(requestAuthoritativeReconciliation).toHaveBeenCalledTimes(1)
+    expect(apiMocks.getJson).not.toHaveBeenCalled()
+    expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
+    expect(editable.livePlayCommandsBlocked.value).toBe(false)
+  })
+
+  it('supersedes active external reconciliation when the authoritative access key changes', async () => {
+    const reconciliationKey = ref('player:profile-a')
+    const resolvers: Array<() => void> = []
+    const requestAuthoritativeReconciliation = vi.fn(() => new Promise<void>((resolve) => {
+      resolvers.push(resolve)
+    }))
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      autoLoad: false,
+      requestAuthoritativeReconciliation,
+      authoritativeReconciliationKey: reconciliationKey,
+    })
+
+    const profileA = editable.reconcileAuthoritativeMap('profile A')
+    reconciliationKey.value = 'player:profile-b'
+    const profileB = editable.reconcileAuthoritativeMap('profile B')
+
+    expect(requestAuthoritativeReconciliation).toHaveBeenCalledTimes(2)
+    expect(editable.livePlayCommandsBlocked.value).toBe(true)
+
+    resolvers[1]?.()
+    await profileB
+    expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
+
+    resolvers[0]?.()
+    await profileA
+    expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
+  })
+
+  it('coalesces external reconciliation requests from simultaneous revision gaps', async () => {
+    let resolveReconciliation!: () => void
+    const requestAuthoritativeReconciliation = vi.fn(() => new Promise<void>((resolve) => {
+      resolveReconciliation = resolve
+    }))
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      autoLoad: false,
+      requestAuthoritativeReconciliation,
+    })
+    editable.applyPersistedMap(mapFixture({ revision: 1 }))
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: 'updated',
+      revision: 3,
+      previousRevision: 2,
+      clientId: 'other-tab',
+      timestamp: 650,
+      data: mapFixture({ revision: 3, name: 'Gap Event Arena', updatedAt: 650 }),
+    })
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
+      mapSlug: 'arena-map',
+      previousRevision: 2,
+      revision: 3,
+      opId: 'op_gap',
+      clientId: 'other-tab',
+      timestamp: 651,
+      patches: [],
+    } as unknown as RealtimeEvent & { mapSlug: string })
+
+    expect(requestAuthoritativeReconciliation).toHaveBeenCalledTimes(1)
+    expect(editable.livePlayCommandsBlocked.value).toBe(true)
+
+    resolveReconciliation()
+    await flushPromises()
+
+    expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
+  })
+
+  it('does not setup-autosave the initial authoritative map adopted from an aggregate snapshot', async () => {
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      autoLoad: false,
+      interactionMode: setupEditMode(),
+    })
+
+    editable.applyPersistedMap(mapFixture({ name: 'Prepared Arena' }))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(editable.map.value?.name).toBe('Prepared Arena')
+    expect(editable.status.value).toBe('idle')
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
   it('pauses whole-map autosave while disabled and resumes it for document-backed editing', async () => {
     const autosaveEnabled = ref(false)
     const editable = useEditableMap('arena-map', {

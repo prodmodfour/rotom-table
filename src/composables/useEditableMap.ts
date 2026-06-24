@@ -69,6 +69,11 @@ interface MapSaveBody {
 
 export interface UseEditableMapOptions {
   readonly debounceMs?: number
+  /** Existing callers load /api/maps/load automatically. Map pages that hydrate
+   * from /api/maps/live-state disable this and apply the authoritative map from
+   * the aggregate snapshot instead.
+   */
+  readonly autoLoad?: boolean
   /**
    * Explicitly declares which interaction surface owns current mutations.
    * Whole-map autosave is enabled only for `setup-edit`; omitted modes default
@@ -82,6 +87,8 @@ export interface UseEditableMapOptions {
    */
   readonly autosaveEnabled?: BooleanRef
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
+  readonly requestAuthoritativeReconciliation?: (reason: string) => Promise<void> | void
+  readonly authoritativeReconciliationKey?: ReadonlyValueRef<string | null | undefined>
 }
 
 export interface UseEditableMapReturn {
@@ -106,21 +113,27 @@ export interface UseEditableMapReturn {
   livePlayRealtimeNotice: Readonly<Ref<string | null>>
   saveNow: () => Promise<void>
   reload: () => Promise<void>
+  reconcileAuthoritativeMap: (reason?: string) => Promise<void>
   applyPersistedMap: (incoming: TabletopMap) => void
 }
 
-const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pick<UseEditableMapOptions, 'debounceMs'>> & {
+const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pick<UseEditableMapOptions, 'debounceMs' | 'autoLoad'>> & {
   readonly interactionMode?: ReadonlyValueRef<MapInteractionMode>
   readonly autosaveEnabled?: BooleanRef
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
+  readonly requestAuthoritativeReconciliation?: (reason: string) => Promise<void> | void
+  readonly authoritativeReconciliationKey?: ReadonlyValueRef<string | null | undefined>
 } => (
   typeof options === 'number'
-    ? { debounceMs: options }
+    ? { debounceMs: options, autoLoad: true }
     : {
         debounceMs: options.debounceMs ?? 200,
+        autoLoad: options.autoLoad !== false,
         interactionMode: options.interactionMode,
         autosaveEnabled: options.autosaveEnabled,
         playerProfileId: options.playerProfileId,
+        requestAuthoritativeReconciliation: options.requestAuthoritativeReconciliation,
+        authoritativeReconciliationKey: options.authoritativeReconciliationKey,
       }
 )
 
@@ -130,9 +143,12 @@ export const useEditableMap = (
 ): UseEditableMapReturn => {
   const {
     debounceMs,
+    autoLoad,
     interactionMode: interactionModeRef,
     autosaveEnabled: autosaveEnabledRef,
     playerProfileId: playerProfileIdRef,
+    requestAuthoritativeReconciliation,
+    authoritativeReconciliationKey: authoritativeReconciliationKeyRef,
   } = normalizeOptions(options)
   const currentInteractionMode = (): MapInteractionMode => interactionModeRef?.value ?? MAP_INTERACTION_MODES.LIVE_PLAY
   const setupEditMode = computed(() => currentInteractionMode() === MAP_INTERACTION_MODES.SETUP_EDIT)
@@ -351,15 +367,56 @@ export const useEditableMap = (
     }
   }
 
+  let activeReconciliationPromise: Promise<void> | null = null
+  let activeReconciliationKey: string | null = null
   let reconciliationSequence = 0
-  const reconcileAuthoritativeMap = async () => {
+  const currentAuthoritativeReconciliationKey = (): string => (
+    requestAuthoritativeReconciliation
+      ? authoritativeReconciliationKeyRef?.value ?? 'external-authoritative-reconciliation'
+      : 'standalone-map-reload'
+  )
+  const reconcileAuthoritativeMap = async (
+    reason = 'Reloading the authoritative map before live play resumes.',
+  ): Promise<void> => {
+    const reconciliationKey = currentAuthoritativeReconciliationKey()
+    if (activeReconciliationPromise && activeReconciliationKey === reconciliationKey) return activeReconciliationPromise
+
     const sequence = ++reconciliationSequence
     realtimeReconciliationStatus.value = 'reconciling'
-    await reload()
-    if (sequence !== reconciliationSequence) return
-    realtimeReconciliationStatus.value = status.value === 'error' || status.value === 'not-found'
-      ? 'error'
-      : 'reconciled'
+    let reconciliationPromise!: Promise<void>
+    const runReconciliation = async () => {
+      try {
+        if (requestAuthoritativeReconciliation) {
+          await Promise.resolve(requestAuthoritativeReconciliation(reason))
+        } else {
+          await reload()
+        }
+        if (sequence !== reconciliationSequence) return
+        realtimeReconciliationStatus.value = status.value === 'error' || status.value === 'not-found'
+          ? 'error'
+          : 'reconciled'
+      } catch (err) {
+        if (sequence === reconciliationSequence) {
+          error.value = getErrorMessage(err, { fallback: 'Realtime reconciliation failed.' })
+          realtimeReconciliationStatus.value = 'error'
+        }
+        throw err
+      } finally {
+        if (activeReconciliationPromise === reconciliationPromise) {
+          activeReconciliationPromise = null
+          activeReconciliationKey = null
+        }
+      }
+    }
+
+    reconciliationPromise = runReconciliation()
+    activeReconciliationPromise = reconciliationPromise
+    activeReconciliationKey = reconciliationKey
+    return reconciliationPromise
+  }
+
+  const requestRealtimeReconciliation = (reason: string): void => {
+    void reconcileAuthoritativeMap(reason).catch(() => undefined)
   }
 
   watch(
@@ -439,19 +496,19 @@ export const useEditableMap = (
 
     if (event.type === 'updated' && event.data) {
       if (revisionGapRequiresReconcile(event)) {
-        void reconcileAuthoritativeMap()
+        requestRealtimeReconciliation('Map revision gap detected. Reloading the live table snapshot.')
         return
       }
       const incoming = event.data as TabletopMap
       applyPersistedMap(incoming)
     } else if (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED) {
       if (incomingRevision === null || !event.patches?.length) {
-        void reconcileAuthoritativeMap()
+        requestRealtimeReconciliation('Live-play command event was incomplete. Reloading the live table snapshot.')
         return
       }
       if (currentRevision !== null && incomingRevision <= currentRevision) return
       if (revisionGapRequiresReconcile(event)) {
-        void reconcileAuthoritativeMap()
+        requestRealtimeReconciliation('Live-play command revision gap detected. Reloading the live table snapshot.')
         return
       }
 
@@ -464,7 +521,7 @@ export const useEditableMap = (
       })
       if (!patchResult.ok) {
         console.warn('[useEditableMap] live-play patch reconcile required', patchResult.message)
-        void reconcileAuthoritativeMap()
+        requestRealtimeReconciliation(patchResult.message)
         return
       }
       if (patchResult.applied && map.value) {
@@ -480,7 +537,7 @@ export const useEditableMap = (
         return
       }
       if (incomingRevision !== null && currentRevision !== null && incomingRevision > currentRevision) {
-        void reconcileAuthoritativeMap()
+        requestRealtimeReconciliation('Map reconciliation event requires a fresh live table snapshot.')
       }
     } else if (event.type === 'deleted') {
       status.value = 'not-found'
@@ -506,7 +563,7 @@ export const useEditableMap = (
       return
     }
     if (change.state === 'connected' && change.reconnected) {
-      void reconcileAuthoritativeMap()
+      requestRealtimeReconciliation('Realtime reconnected. Reloading the live table snapshot.')
     }
   })
 
@@ -530,7 +587,7 @@ export const useEditableMap = (
     void autosave.task.flushPending()
   })
 
-  void reload()
+  if (autoLoad) void reload()
 
   return {
     map,
@@ -544,6 +601,7 @@ export const useEditableMap = (
     livePlayRealtimeNotice,
     saveNow,
     reload,
+    reconcileAuthoritativeMap,
     applyPersistedMap,
   }
 }

@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLiveSheets, teardownLiveSheets } from '~/composables/useLiveSheets'
 import { SHEET_API_PATHS } from '~/utils/apiRoutes'
+import type { PlayerProfileId } from '#shared/playerProfiles'
+import type { CharacterSheet } from '~/types/characterSheet'
 
 const apiMocks = vi.hoisted(() => ({
   getJson: vi.fn(),
@@ -55,7 +57,7 @@ describe('useLiveSheets runtime hydration', () => {
   it('hydrates runtime campaign sheets in production as well as development', () => {
     const source = readText('src/composables/useLiveSheets.ts')
 
-    expect(source).toContain('if (!runtimeLoadStarted)')
+    expect(source).toContain('if (runtimeLoadStarted) return')
     expect(source).not.toContain('import.meta.dev && !runtimeLoadStarted')
   })
 
@@ -154,5 +156,95 @@ describe('useLiveSheets runtime hydration', () => {
 
     expect(liveSheets.pokemonBySlug.value.get('bolt')).toMatchObject({ folder: 'two', revision: 1 })
     expect(liveSheets.reconciliationRequired.value).toBe(false)
+  })
+
+  it('retains the exact selected profile ID for generic sheet fallback reconciliation', async () => {
+    ;(globalThis as { window?: unknown }).window = {}
+    apiMocks.getJson.mockResolvedValueOnce({ pokemonSheets: [], trainerSheets: [] })
+    const liveSheets = useLiveSheets()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const profileA = 'profile-a' as PlayerProfileId
+    apiMocks.getJson.mockResolvedValueOnce({ pokemonSheets: [], trainerSheets: [] })
+    await liveSheets.reloadRuntimeSheets({ role: 'player', profileId: profileA })
+    expect(apiMocks.getJson).toHaveBeenLastCalledWith(SHEET_API_PATHS.list, {
+      params: { profileId: 'profile-a' },
+    })
+
+    apiMocks.getJson.mockClear()
+    apiMocks.getJson.mockResolvedValueOnce({
+      pokemonSheets: [{ slug: 'bolt', nickname: 'Bolt', revision: 1 }],
+      trainerSheets: [],
+    })
+
+    realtimeMocks.handlers[0]?.({ type: 'moved', data: { kind: 'pokemon', slug: 'bolt', folder: 'two' } })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.getJson).toHaveBeenCalledWith(SHEET_API_PATHS.list, {
+      params: { profileId: 'profile-a' },
+    })
+    expect(liveSheets.accessRequestContext.value).toMatchObject({
+      accessScopeKey: 'player:profile-a',
+      role: 'player',
+      profileId: 'profile-a',
+    })
+  })
+
+  it('prevents later incidental callers from starting sheet-list hydration while an external owner is active', async () => {
+    ;(globalThis as { window?: unknown }).window = {}
+    useLiveSheets({ autoHydrate: false, hydrationOwner: 'map:arena-map' })
+    useLiveSheets()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(realtimeMocks.subscribeChannel).toHaveBeenCalledTimes(1)
+    expect(apiMocks.getJson).not.toHaveBeenCalled()
+  })
+
+  it('uses aggregate reconciliation handlers instead of sheet-list fallback while a map page owns hydration', async () => {
+    ;(globalThis as { window?: unknown }).window = {}
+    const liveSheets = useLiveSheets({ autoHydrate: false, hydrationOwner: 'map:arena-map' })
+    const aggregateReconciler = vi.fn(async () => {
+      const token = liveSheets.beginAuthoritativeLoad({
+        accessScopeKey: 'gm',
+        role: 'gm',
+        profileId: null,
+      })
+      liveSheets.adoptAuthoritativeSet({
+        pokemonSheets: [{ slug: 'bolt', nickname: 'Bolt', species: 'Pikachu', level: 5, revision: 1 } as CharacterSheet],
+        trainerSheets: [],
+      }, token)
+    })
+    liveSheets.registerAuthoritativeReconciler(aggregateReconciler)
+    await Promise.resolve()
+
+    realtimeMocks.handlers[0]?.({ type: 'moved', data: { kind: 'pokemon', slug: 'bolt', folder: 'one' } })
+    realtimeMocks.handlers[0]?.({ type: 'moved', data: { kind: 'pokemon', slug: 'bolt', folder: 'two' } })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(aggregateReconciler).toHaveBeenCalledTimes(1)
+    expect(apiMocks.getJson).not.toHaveBeenCalled()
+    expect(liveSheets.pokemonBySlug.value.get('bolt')).toMatchObject({ nickname: 'Bolt' })
+    expect(liveSheets.reconciliationRequired.value).toBe(false)
+  })
+
+  it('keeps reconciliation-required and exposes handler errors when aggregate reconciliation fails', async () => {
+    ;(globalThis as { window?: unknown }).window = {}
+    const liveSheets = useLiveSheets({ autoHydrate: false, hydrationOwner: 'map:arena-map' })
+    liveSheets.registerAuthoritativeReconciler(() => {
+      throw new Error('aggregate snapshot unavailable')
+    })
+
+    realtimeMocks.handlers[0]?.({ type: 'moved', data: { kind: 'pokemon', slug: 'bolt', folder: 'one' } })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(apiMocks.getJson).not.toHaveBeenCalled()
+    expect(liveSheets.reconciliationRequired.value).toBe(true)
+    expect(liveSheets.loadError.value).toBe('aggregate snapshot unavailable')
   })
 })

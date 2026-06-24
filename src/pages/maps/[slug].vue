@@ -9,10 +9,11 @@ import MapScenePanel from '~/components/map/MapScenePanel.vue'
 import PokeballCaptureResultModal from '~/components/map/PokeballCaptureResultModal.vue'
 import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import StartTurnModal from '~/components/map/StartTurnModal.vue'
-import { useEditableMap } from '~/composables/useEditableMap'
+import { useEditableMap, type MapSaveStatus } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
 import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlayStateMachine'
+import { useLiveTableSnapshotSync } from '~/composables/map-editor/useLiveTableSnapshotSync'
 import { useSharedMapInteractionMode } from '~/composables/map-editor/useSharedMapInteractionMode'
 import { parseRoundInputValue, useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
 import { useHazardBuilder } from '~/composables/map-editor/useHazardBuilder'
@@ -97,12 +98,30 @@ const {
   lastError: playerProfileError,
 } = usePlayerProfiles()
 
+if (import.meta.client && isPlayer.value) loadRememberedProfile()
+
+const liveSheets = useLiveSheets({
+  autoHydrate: false,
+  hydrationOwner: `map:${slug}`,
+})
+const {
+  pokemonBySlug,
+  trainerBySlug,
+  hydrated: liveSheetsHydrated,
+  accessScopeKey: hydratedLiveSheetAccessScopeKey,
+  loadError: liveSheetsLoadError,
+  reconciliationRequired: liveSheetsReconciliationRequired,
+  adoptSheetUpdate,
+  reportReconciliationRequired: reportLiveSheetReconciliationRequired,
+} = liveSheets
+
 const {
   interactionMode: sharedMapInteractionMode,
   status: sharedMapInteractionModeStatus,
   error: sharedMapInteractionModeError,
   setInteractionMode: setSharedMapInteractionMode,
-} = useSharedMapInteractionMode(slug)
+  applyAuthoritativeMode: applyAuthoritativeMapInteractionMode,
+} = useSharedMapInteractionMode(slug, { autoLoad: false })
 const mapInPrepareMode = computed(() => sharedMapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT)
 const mapInteractionMode = computed<MapInteractionMode>(() => (
   isGm.value && mapInPrepareMode.value
@@ -110,6 +129,15 @@ const mapInteractionMode = computed<MapInteractionMode>(() => (
     : MAP_INTERACTION_MODES.LIVE_PLAY
 ))
 const isSetupEditMode = () => mapInteractionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT
+const liveSheetAccessScopeKey = computed(() => buildLiveSheetAccessScopeKey({
+  role: role.value,
+  profileId: isPlayer.value ? selectedProfileId.value : null,
+}))
+
+let requestLiveTableSnapshot: (reason?: string) => Promise<void> = async () => {
+  throw new Error('Live table snapshot synchroniser is not initialised.')
+}
+
 const {
   map,
   status,
@@ -120,23 +148,60 @@ const {
   realtimeReconciliationStatus,
   livePlayRealtimeNotice,
   saveNow: saveMapNow,
-  reload: reloadAuthoritativeMap,
+  reconcileAuthoritativeMap,
   applyPersistedMap,
 } = useEditableMap(slug, {
+  autoLoad: false,
   interactionMode: mapInteractionMode,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  requestAuthoritativeReconciliation: (reason) => requestLiveTableSnapshot(reason),
+  authoritativeReconciliationKey: liveSheetAccessScopeKey,
 })
-const {
-  pokemonBySlug,
-  trainerBySlug,
-  reloadRuntimeSheets,
-  adoptSheetUpdate,
-  reportReconciliationRequired: reportLiveSheetReconciliationRequired,
-} = useLiveSheets()
-const liveSheetAccessScopeKey = computed(() => buildLiveSheetAccessScopeKey({
-  role: role.value,
-  profileId: isPlayer.value ? selectedProfileId.value : null,
-}))
+
+const liveTableSnapshotSync = useLiveTableSnapshotSync({
+  slug,
+  role,
+  playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  sheetCache: liveSheets,
+  applyMap: applyPersistedMap,
+  applyInteractionMode: applyAuthoritativeMapInteractionMode,
+})
+requestLiveTableSnapshot = liveTableSnapshotSync.requestSnapshot
+
+const sheetCacheHydratedForCurrentScope = computed(() => (
+  liveSheetsHydrated.value
+  && hydratedLiveSheetAccessScopeKey.value === liveSheetAccessScopeKey.value
+))
+const aggregateSnapshotReady = computed(() => (
+  liveTableSnapshotSync.ready.value
+  && sheetCacheHydratedForCurrentScope.value
+  && !liveSheetsReconciliationRequired.value
+))
+const livePlayMapStatus = computed<MapSaveStatus>(() => {
+  if (status.value === 'loading' || status.value === 'error' || status.value === 'not-found') return status.value
+  if (liveTableSnapshotSync.status.value === 'error' || liveSheetsReconciliationRequired.value) return 'error'
+  if (!aggregateSnapshotReady.value) return 'loading'
+  return status.value
+})
+const livePlayMapError = computed(() => (
+  liveTableSnapshotSync.error.value
+  ?? liveSheetsLoadError.value
+  ?? error.value
+))
+const sceneStatus = computed<MapSaveStatus>(() => (
+  map.value
+    ? status.value
+    : livePlayMapStatus.value
+))
+const sceneError = computed(() => (
+  map.value
+    ? error.value
+    : livePlayMapError.value
+))
+
+const reconcileLivePlayState = () => reconcileAuthoritativeMap('Reconciling the live table snapshot.')
+liveSheets.registerAuthoritativeReconciler((reason) => reconcileAuthoritativeMap(reason))
+
 const applyLivePlaySheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: string; sheet: Record<string, unknown> }) => {
   const result = adoptSheetUpdate({
     kind: update.kind,
@@ -151,23 +216,9 @@ const applyLivePlaySheetUpdate = (update: { kind: 'pokemon' | 'trainer'; slug: s
     throw new Error(message)
   }
 }
-const runtimeSheetReloadContext = () => ({
-  accessScopeKey: liveSheetAccessScopeKey.value,
-  ...(isPlayer.value ? { profileId: selectedProfileId.value } : {}),
-})
-const reconciliationSheetReloadContext = () => ({
-  ...runtimeSheetReloadContext(),
-  throwOnError: true,
-})
-const reconcileLivePlayState = async () => {
-  await Promise.all([
-    reloadAuthoritativeMap(),
-    reloadRuntimeSheets(reconciliationSheetReloadContext()),
-  ])
-}
 const livePlayStateMachine = useLivePlayStateMachine({
-  mapStatus: status,
-  mapError: error,
+  mapStatus: livePlayMapStatus,
+  mapError: livePlayMapError,
   realtimeStatus: realtimeReconciliationStatus,
   realtimeNotice: livePlayRealtimeNotice,
 })
@@ -311,9 +362,18 @@ onBeforeUnmount(() => {
   clearMoveAnimations()
 })
 
-if (import.meta.client && isPlayer.value) loadRememberedProfile()
+let liveTableSnapshotRequested = false
 
-const syncPlayerProfilesForMapControl = async () => {
+const loadLiveTableSnapshotForCurrentAccess = async (reason: string) => {
+  if (!liveTableSnapshotRequested) {
+    liveTableSnapshotRequested = true
+    await requestLiveTableSnapshot(reason)
+    return
+  }
+  await reconcileAuthoritativeMap(reason)
+}
+
+const syncPlayerProfilesForMapControl = async (reason = 'Loading the initial live table snapshot.') => {
   if (!import.meta.client || (!isGm.value && !isPlayer.value)) return
   if (isPlayer.value) loadRememberedProfile()
   try {
@@ -324,7 +384,7 @@ const syncPlayerProfilesForMapControl = async () => {
   } catch {
     // Keep the map view available; token-control notices surface the profile loading problem.
   }
-  await reloadRuntimeSheets(runtimeSheetReloadContext())
+  await loadLiveTableSnapshotForCurrentAccess(reason)
 }
 
 onMounted(() => {
@@ -346,9 +406,19 @@ onMounted(() => {
   void syncPlayerProfilesForMapControl()
 })
 
-watch([isGm, isPlayer], ([nextIsGm, nextIsPlayer]) => {
-  if (nextIsGm || nextIsPlayer) void syncPlayerProfilesForMapControl()
+watch([isGm, isPlayer], ([nextIsGm, nextIsPlayer], [previousIsGm, previousIsPlayer]) => {
+  if (nextIsGm === previousIsGm && nextIsPlayer === previousIsPlayer) return
+  if (nextIsGm || nextIsPlayer) void syncPlayerProfilesForMapControl('Auth role changed. Reloading the live table snapshot.')
 })
+
+watch(
+  selectedProfileId,
+  (nextProfileId, previousProfileId) => {
+    if (!liveTableSnapshotRequested || nextProfileId === previousProfileId) return
+    void reconcileAuthoritativeMap('Selected player profile changed. Reloading the live table snapshot.')
+  },
+  { flush: 'sync' },
+)
 
 const {
   canEditMap,
@@ -1581,8 +1651,8 @@ useMapDimensionReconciliation({
         ref="gridRef"
         :map="map"
         :can-view-map="canViewMap"
-        :status="status"
-        :error="error"
+        :status="sceneStatus"
+        :error="sceneError"
         :slug="slug"
         :spawned-pokemon="spawnedPokemon"
         :selected-id="selectedId"
