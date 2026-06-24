@@ -1,4 +1,4 @@
-import { getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue'
 import { isAuthRole, type AuthRole } from '#shared/auth'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -71,6 +71,7 @@ interface ReadonlyValueRef<TValue> {
 }
 
 export type LivePlayCommandStatus = 'idle' | 'saving' | 'error'
+export type LivePlayCommandOutboxRecoveryStatus = 'idle' | 'loading' | 'retrying' | 'error'
 
 export interface LivePlayCommandSheetUpdate {
   kind: 'pokemon' | 'trainer'
@@ -140,7 +141,14 @@ export interface LivePlayCommandReconciliationRequest {
 export interface UseLivePlayCommandsReturn {
   status: Ref<LivePlayCommandStatus>
   lastError: Ref<string | null>
+  outboxEntries: ComputedRef<readonly LivePlayCommandOutboxEntry[]>
+  outboxRecoveryStatus: Ref<LivePlayCommandOutboxRecoveryStatus>
+  outboxRecoveryError: Ref<string | null>
+  hasPendingOutboxCommands: ComputedRef<boolean>
   clearError: () => void
+  refreshOutboxEntries: () => Promise<readonly LivePlayCommandOutboxEntry[]>
+  recoverInterruptedOutboxCommands: () => Promise<readonly LivePlayCommandOutboxEntry[]>
+  retryOutboxCommand: (opId: string) => Promise<LivePlayCommandDispatchResult>
   spawnToken: (payload: {
     placement: SheetPlacement
   }) => Promise<LivePlayCommandDispatchResult>
@@ -301,6 +309,37 @@ type LivePlayCommandBodyFactory = (
 
 const livePlayLeaseOwner = (): string => `live-play-command:${getClientId()}`
 
+const LIVE_PLAY_COMMAND_REQUEST_PATHS = new Set<string>([
+  MAP_API_PATHS.spawnToken,
+  MAP_API_PATHS.sendOutPokemon,
+  MAP_API_PATHS.deleteToken,
+  MAP_API_PATHS.throwPokeball,
+  MAP_API_PATHS.moveToken,
+  MAP_API_PATHS.turnToken,
+  MAP_API_PATHS.modifyHp,
+  MAP_API_PATHS.modifyCombatStages,
+  MAP_API_PATHS.modifyConditions,
+  MAP_API_PATHS.grantExperience,
+  MAP_API_PATHS.useMove,
+  MAP_API_PATHS.resolveMove,
+  MAP_API_PATHS.setInitiative,
+  MAP_API_PATHS.nextInitiative,
+  MAP_API_PATHS.previousInitiative,
+  MAP_API_PATHS.placeHazard,
+  MAP_API_PATHS.removeHazard,
+  MAP_API_PATHS.buildTerrainVoxel,
+  MAP_API_PATHS.removeTerrainVoxel,
+  MAP_API_PATHS.setFieldEffect,
+  MAP_API_PATHS.removeFieldEffect,
+  MAP_API_PATHS.tickFieldEffectDurations,
+  MAP_API_PATHS.useManeuver,
+  MAP_API_PATHS.useAbility,
+  MAP_API_PATHS.useOrder,
+  MAP_API_PATHS.setScene,
+  MAP_API_PATHS.updateAttackOfOpportunity,
+  MAP_API_PATHS.updateStartTurnModal,
+])
+
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
 )
@@ -377,6 +416,10 @@ export const useLivePlayCommands = (
   const leaseOwner = options.leaseOwner ?? livePlayLeaseOwner()
   const status = ref<LivePlayCommandStatus>('idle')
   const lastError = ref<string | null>(null)
+  const outboxEntrySnapshot = ref<readonly LivePlayCommandOutboxEntry[]>([])
+  const outboxRecoveryStatus = ref<LivePlayCommandOutboxRecoveryStatus>('idle')
+  const outboxRecoveryError = ref<string | null>(null)
+  let recoverySendActive = false
 
   if (getCurrentScope()) {
     const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => status.value === 'saving')
@@ -523,17 +566,53 @@ export const useLivePlayCommands = (
     body: Record<string, unknown>,
     authContext: LivePlayCommandOutboxAuthContext,
   ): string | null => {
+    const hasProfileId = Object.prototype.hasOwnProperty.call(body, 'profileId')
     if (authContext.role === 'gm') {
-      return Object.prototype.hasOwnProperty.call(body, 'profileId')
+      return hasProfileId
         ? 'GM live-play command bodies must not contain a profile ID.'
         : null
     }
 
-    const bodyProfileId = isRecord(body) && typeof body.profileId === 'string' ? body.profileId : null
-    return bodyProfileId === (authContext.profileId ?? null)
+    const expectedProfileId = authContext.profileId ?? null
+    if (expectedProfileId === null) {
+      return hasProfileId
+        ? 'Unprofiled player live-play command bodies must not contain a profile ID.'
+        : null
+    }
+
+    return body.profileId === expectedProfileId
       ? null
       : 'Player live-play command body profile ID must match the durable outbox auth context.'
   }
+
+  const authContextsEqual = (
+    left: LivePlayCommandOutboxAuthContext,
+    right: LivePlayCommandOutboxAuthContext,
+  ): boolean => left.role === right.role && (left.profileId ?? null) === (right.profileId ?? null)
+
+  const isStoredLivePlayCommandRequestPath = (requestPath: string): boolean => {
+    if (typeof requestPath !== 'string') return false
+    if (!requestPath.startsWith('/api/')) return false
+    if (requestPath.includes('?') || requestPath.includes('#')) return false
+    if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(requestPath) || requestPath.startsWith('//') || requestPath.includes('://')) return false
+    if (/\p{C}/u.test(requestPath)) return false
+    return LIVE_PLAY_COMMAND_REQUEST_PATHS.has(requestPath)
+  }
+
+  const entryMatchesAuthContext = (
+    entry: LivePlayCommandOutboxEntry,
+    authContext: LivePlayCommandOutboxAuthContext,
+  ): boolean => entry.mapSlug === options.slug && authContextsEqual(entry.authContext, authContext)
+
+  const entryMatchesCurrentContext = (entry: LivePlayCommandOutboxEntry): boolean => {
+    const authContext = currentAuthContext()
+    return authContext !== null && entryMatchesAuthContext(entry, authContext)
+  }
+
+  const outboxEntries = computed<readonly LivePlayCommandOutboxEntry[]>(() => (
+    outboxEntrySnapshot.value.filter(entryMatchesCurrentContext)
+  ))
+  const hasPendingOutboxCommands = computed(() => outboxEntries.value.length > 0)
 
   const commandEnvelopeOpId = (body: Record<string, unknown>): string | null => (
     typeof body.opId === 'string' ? body.opId : null
@@ -543,35 +622,123 @@ export const useLivePlayCommands = (
     getErrorMessage(error, { fallback: 'Durable live-play command storage failed' })
   )
 
+  const combineOutboxWarnings = (
+    ...warnings: readonly (string | null | undefined)[]
+  ): string | undefined => {
+    const messages = warnings.filter((warning): warning is string => (
+      typeof warning === 'string' && warning.trim().length > 0
+    ))
+    return messages.length === 0 ? undefined : messages.join(' ')
+  }
+
+  const outboxRefreshAuthErrorMessage = (): string => (
+    'A valid GM or player auth role is required before refreshing durable live-play command recovery entries.'
+  )
+
+  const outboxRefreshFailureMessage = (error: unknown): string => (
+    `Failed to refresh durable live-play command recovery entries: ${outboxErrorMessage(error)}`
+  )
+
+  const setOutboxRecoveryFailure = (message: string): void => {
+    outboxRecoveryStatus.value = 'error'
+    outboxRecoveryError.value = message
+  }
+
+  const replaceOutboxEntriesForCurrentContext = (
+    entries: readonly LivePlayCommandOutboxEntry[],
+  ): readonly LivePlayCommandOutboxEntry[] => {
+    outboxEntrySnapshot.value = entries
+    return outboxEntries.value
+  }
+
+  const listCurrentOutboxEntries = async (
+    authContext: LivePlayCommandOutboxAuthContext,
+  ): Promise<readonly LivePlayCommandOutboxEntry[]> => outbox.list({
+    mapSlug: options.slug,
+    authContext,
+  })
+
+  const refreshOutboxEntriesQuiet = async (): Promise<string | undefined> => {
+    const authContext = currentAuthContext()
+    if (!authContext) {
+      const message = outboxRefreshAuthErrorMessage()
+      outboxEntrySnapshot.value = []
+      setOutboxRecoveryFailure(message)
+      return message
+    }
+
+    try {
+      replaceOutboxEntriesForCurrentContext(await listCurrentOutboxEntries(authContext))
+      if (outboxRecoveryStatus.value === 'error') {
+        outboxRecoveryStatus.value = 'idle'
+        outboxRecoveryError.value = null
+      }
+      return undefined
+    } catch (error) {
+      const message = outboxRefreshFailureMessage(error)
+      setOutboxRecoveryFailure(message)
+      return message
+    }
+  }
+
+  const refreshOutboxEntries: UseLivePlayCommandsReturn['refreshOutboxEntries'] = async () => {
+    outboxRecoveryStatus.value = 'loading'
+    outboxRecoveryError.value = null
+
+    const authContext = currentAuthContext()
+    if (!authContext) {
+      const message = outboxRefreshAuthErrorMessage()
+      outboxEntrySnapshot.value = []
+      setOutboxRecoveryFailure(message)
+      throw new Error(message)
+    }
+
+    try {
+      const entries = replaceOutboxEntriesForCurrentContext(await listCurrentOutboxEntries(authContext))
+      outboxRecoveryStatus.value = 'idle'
+      outboxRecoveryError.value = null
+      return entries
+    } catch (error) {
+      const message = outboxRefreshFailureMessage(error)
+      setOutboxRecoveryFailure(message)
+      throw new Error(message, { cause: error })
+    }
+  }
+
   const markClaimedEntryUncertain = async (
     entry: LivePlayCommandOutboxEntry,
     error: string,
   ): Promise<string | undefined> => {
+    let markWarning: string | undefined
     try {
       await outbox.markUncertain({ opId: entry.opId, leaseOwner, error })
-      return undefined
     } catch (markError) {
-      return getErrorMessage(markError, {
+      markWarning = getErrorMessage(markError, {
         fallback: `Failed to mark live-play operation ${entry.opId} as uncertain`,
       })
     }
+
+    const refreshWarning = await refreshOutboxEntriesQuiet()
+    return combineOutboxWarnings(markWarning, refreshWarning)
   }
 
   const uncertaintyResult = async (
     entry: LivePlayCommandOutboxEntry,
     detail: string,
+    origin: 'immediate' | 'recovery',
   ): Promise<LivePlayCommandDispatchResult> => {
     const message = `The server outcome for live-play operation ${entry.opId} is unknown. Retrying the same operation ID will be safe later. ${detail}`
-    const markError = await markClaimedEntryUncertain(entry, message)
+    const outboxWarning = await markClaimedEntryUncertain(entry, message)
     status.value = 'error'
     lastError.value = message
+    if (origin === 'recovery') setOutboxRecoveryFailure(message)
     options.onCommandFailed?.(message)
     return {
       dispatched: false,
       message,
       opId: entry.opId,
       uncertain: true,
-      ...(markError === undefined ? {} : { outboxError: markError }),
+      ...(outboxWarning === undefined ? {} : { outboxError: outboxWarning }),
     }
   }
 
@@ -587,9 +754,10 @@ export const useLivePlayCommands = (
   const withOutboxWarning = <TResult extends LivePlayCommandDispatchResult>(
     result: TResult,
     outboxWarning: string | undefined,
-  ): TResult => (
-    outboxWarning === undefined ? result : { ...result, outboxError: outboxWarning }
-  )
+  ): TResult => {
+    const combinedWarning = combineOutboxWarnings(result.outboxError, outboxWarning)
+    return combinedWarning === undefined ? result : { ...result, outboxError: combinedWarning }
+  }
 
   const adoptAcceptedLivePlayResponse = async (
     request: string,
@@ -620,6 +788,19 @@ export const useLivePlayCommands = (
       await options.requestReconciliation?.({ request, response })
     } catch (reconciliationError) {
       options.onCommandFailed?.(getErrorMessage(reconciliationError, { fallback: 'Live-play reconciliation failed' }))
+    }
+  }
+
+  const requestRecoveryReconciliation = async (
+    request: string,
+    response: LivePlayCommandResponse,
+  ): Promise<string | undefined> => {
+    if (!options.requestReconciliation) return undefined
+    try {
+      await options.requestReconciliation({ request, response })
+      return undefined
+    } catch (reconciliationError) {
+      return getErrorMessage(reconciliationError, { fallback: 'Live-play recovery reconciliation failed' })
     }
   }
 
@@ -667,12 +848,21 @@ export const useLivePlayCommands = (
     response: LivePlayCommandResponse,
     opId: string,
     outboxWarning: string | undefined,
+    origin: 'immediate' | 'recovery',
   ): Promise<LivePlayCommandDispatchResult> => {
     try {
       await adoptAcceptedLivePlayResponse(request, response)
+      const recoveryReconciliationWarning = origin === 'recovery'
+        ? await requestRecoveryReconciliation(request, response)
+        : undefined
       status.value = 'idle'
       options.onCommandAccepted?.(response)
-      return withOutboxWarning({ dispatched: true, response, opId }, outboxWarning)
+      return withOutboxWarning({
+        dispatched: true,
+        ...(recoveryReconciliationWarning === undefined ? {} : { message: recoveryReconciliationWarning }),
+        response,
+        opId,
+      }, outboxWarning)
     } catch (processingError) {
       const message = getErrorMessage(processingError, {
         fallback: 'Live-play command was accepted, but local response processing failed. Requesting authoritative reconciliation.',
@@ -690,17 +880,55 @@ export const useLivePlayCommands = (
     response: LivePlayCommandResponse,
     opId: string,
     outboxWarning: string | undefined,
+    origin: 'immediate' | 'recovery',
   ): Promise<LivePlayCommandDispatchResult> => (
     acceptedLivePlayResponse(response)
-      ? processAcceptedTerminalResponse(request, response, opId, outboxWarning)
+      ? processAcceptedTerminalResponse(request, response, opId, outboxWarning, origin)
       : processRejectedTerminalResponse(request, response, opId, outboxWarning)
   )
+
+  const sendClaimedOutboxEntry = async (input: {
+    readonly entry: LivePlayCommandOutboxEntry
+    readonly origin: 'immediate' | 'recovery'
+  }): Promise<LivePlayCommandDispatchResult> => {
+    const { entry, origin } = input
+    let rawResponse: unknown
+    try {
+      rawResponse = await postJson<unknown>(entry.requestPath, entry.body)
+    } catch (postError) {
+      const detail = getErrorMessage(postError, { fallback: 'The HTTP request failed before a terminal command result was received.' })
+      return uncertaintyResult(entry, detail, origin)
+    }
+
+    const validation = validateTerminalResponseForCommand({
+      response: rawResponse,
+      command: entry.body,
+    })
+    if (!validation.valid) {
+      return uncertaintyResult(
+        entry,
+        `The command response was not trustworthy: ${validationIssueSummary(validation.issues)}`,
+        origin,
+      )
+    }
+
+    const response = rawResponse as LivePlayCommandResponse
+    const acknowledgeWarning = await acknowledgeTerminalResponse(entry.opId)
+    const refreshWarning = await refreshOutboxEntriesQuiet()
+    return processTerminalResponse(
+      entry.requestPath,
+      response,
+      entry.opId,
+      combineOutboxWarnings(acknowledgeWarning, refreshWarning),
+      origin,
+    )
+  }
 
   const runLivePlayCommand = async (
     request: string,
     buildBody: LivePlayCommandBodyFactory,
   ): Promise<LivePlayCommandDispatchResult> => {
-    if (status.value === 'saving') {
+    if (status.value === 'saving' || recoverySendActive) {
       const message = 'A live-play command is already in flight.'
       options.onCommandBlocked?.(message)
       return { dispatched: false, message }
@@ -743,52 +971,38 @@ export const useLivePlayCommands = (
       })
     }
 
+    let outboxSyncWarning = await refreshOutboxEntriesQuiet()
+
     let claimResult: Awaited<ReturnType<LivePlayCommandOutbox['claimForSend']>>
     try {
       claimResult = await outbox.claimForSend({ opId: enqueuedEntry.opId, leaseOwner })
     } catch (claimError) {
-      const outboxError = outboxErrorMessage(claimError)
+      const refreshWarning = await refreshOutboxEntriesQuiet()
+      const outboxError = combineOutboxWarnings(outboxErrorMessage(claimError), refreshWarning)
       const message = `Live-play command ${enqueuedEntry.opId} was not sent because durable command storage could not claim it for sending: ${outboxError}`
       return localCommandFailedResult(message, { opId: enqueuedEntry.opId, outboxError })
     }
+
+    outboxSyncWarning = combineOutboxWarnings(outboxSyncWarning, await refreshOutboxEntriesQuiet())
 
     if (!claimResult.claimed) {
       if (claimResult.reason === 'missing') {
         return localCommandFailedResult(
           `Live-play command ${enqueuedEntry.opId} was not sent because its durable outbox entry disappeared before sending.`,
-          { opId: enqueuedEntry.opId },
+          { opId: enqueuedEntry.opId, ...(outboxSyncWarning === undefined ? {} : { outboxError: outboxSyncWarning }) },
         )
       }
 
       return localCommandBlockedResult(
         `Live-play command ${enqueuedEntry.opId} was not sent because another tab or page instance is already sending that operation.`,
-        { opId: enqueuedEntry.opId },
+        { opId: enqueuedEntry.opId, ...(outboxSyncWarning === undefined ? {} : { outboxError: outboxSyncWarning }) },
       )
     }
 
-    const claimedEntry = claimResult.entry
-    let rawResponse: unknown
-    try {
-      rawResponse = await postJson<unknown>(claimedEntry.requestPath, claimedEntry.body)
-    } catch (postError) {
-      const detail = getErrorMessage(postError, { fallback: 'The HTTP request failed before a terminal command result was received.' })
-      return uncertaintyResult(claimedEntry, detail)
-    }
-
-    const validation = validateTerminalResponseForCommand({
-      response: rawResponse,
-      command: claimedEntry.body,
-    })
-    if (!validation.valid) {
-      return uncertaintyResult(
-        claimedEntry,
-        `The command response was not trustworthy: ${validationIssueSummary(validation.issues)}`,
-      )
-    }
-
-    const response = rawResponse as LivePlayCommandResponse
-    const outboxWarning = await acknowledgeTerminalResponse(claimedEntry.opId)
-    return processTerminalResponse(claimedEntry.requestPath, response, claimedEntry.opId, outboxWarning)
+    return withOutboxWarning(
+      await sendClaimedOutboxEntry({ entry: claimResult.entry, origin: 'immediate' }),
+      outboxSyncWarning,
+    )
   }
 
   const spawnToken: UseLivePlayCommandsReturn['spawnToken'] = (payload) => runLivePlayCommand(
@@ -968,7 +1182,7 @@ export const useLivePlayCommands = (
   )
 
   const resolveMove: UseLivePlayCommandsReturn['resolveMove'] = async (input) => {
-    if (status.value === 'saving') {
+    if (status.value === 'saving' || recoverySendActive) {
       const message = 'A live-play command is already in flight.'
       options.onCommandBlocked?.(message)
       return { dispatched: false, move: null, message }
@@ -1206,10 +1420,200 @@ export const useLivePlayCommands = (
     ),
   )
 
+  const recoverInterruptedOutboxCommands: UseLivePlayCommandsReturn['recoverInterruptedOutboxCommands'] = async () => {
+    outboxRecoveryStatus.value = 'loading'
+    outboxRecoveryError.value = null
+
+    try {
+      await outbox.recoverExpiredLeases()
+    } catch (error) {
+      const message = `Failed to recover interrupted durable live-play command sends: ${outboxErrorMessage(error)}`
+      setOutboxRecoveryFailure(message)
+      throw new Error(message, { cause: error })
+    }
+
+    return refreshOutboxEntries()
+  }
+
+  const validateStoredEntryForRetry = (
+    entry: LivePlayCommandOutboxEntry,
+    authContext: LivePlayCommandOutboxAuthContext,
+  ): string | null => {
+    if (entry.mapSlug !== options.slug) {
+      return `Live-play operation ${entry.opId} belongs to map ${entry.mapSlug}, not the current map ${options.slug}.`
+    }
+
+    if (!authContextsEqual(entry.authContext, authContext)) {
+      return `Live-play operation ${entry.opId} belongs to a different auth/profile context and cannot be retried here.`
+    }
+
+    if (entry.state === 'sending') {
+      return `Live-play operation ${entry.opId} is already leased for sending. Recover expired leases before retrying it.`
+    }
+    if (entry.state !== 'queued' && entry.state !== 'uncertain') {
+      return `Live-play operation ${entry.opId} is not in a retryable outbox state.`
+    }
+
+    if (!isStoredLivePlayCommandRequestPath(entry.requestPath)) {
+      return `Live-play operation ${entry.opId} has an invalid stored API request path.`
+    }
+
+    if (!isRecord(entry.body)) {
+      return `Live-play operation ${entry.opId} has an invalid stored command body.`
+    }
+    if (entry.body.opId !== entry.opId) {
+      return `Live-play operation ${entry.opId} cannot be retried because body.opId does not match the outbox entry.`
+    }
+    if (entry.body.mapSlug !== entry.mapSlug) {
+      return `Live-play operation ${entry.opId} cannot be retried because body.mapSlug does not match the outbox entry.`
+    }
+    if (entry.body.type !== entry.commandType) {
+      return `Live-play operation ${entry.opId} cannot be retried because body.type does not match the outbox entry.`
+    }
+
+    return validateCommandBodyAuthContext(entry.body, entry.authContext)
+  }
+
+  const recoveryLocalFailedResult = (
+    message: string,
+    metadata: Omit<LivePlayCommandDispatchResult, 'dispatched' | 'message'> = {},
+  ): LivePlayCommandDispatchResult => {
+    setOutboxRecoveryFailure(message)
+    return localCommandFailedResult(message, metadata)
+  }
+
+  const recoveryLocalBlockedResult = (
+    message: string,
+    metadata: Omit<LivePlayCommandDispatchResult, 'dispatched' | 'message'> = {},
+  ): LivePlayCommandDispatchResult => {
+    setOutboxRecoveryFailure(message)
+    return localCommandBlockedResult(message, metadata)
+  }
+
+  const finalizeRecoveryRetryResult = (
+    result: LivePlayCommandDispatchResult,
+  ): LivePlayCommandDispatchResult => {
+    const terminalRejected = result.response !== undefined && !acceptedLivePlayResponse(result.response)
+    if (result.uncertain) {
+      setOutboxRecoveryFailure(result.message ?? 'The recovered live-play command outcome is uncertain.')
+    } else if (result.outboxError) {
+      setOutboxRecoveryFailure(result.outboxError)
+    } else if (!terminalRejected && status.value === 'error' && result.message) {
+      setOutboxRecoveryFailure(result.message)
+    } else {
+      outboxRecoveryStatus.value = 'idle'
+      outboxRecoveryError.value = null
+    }
+    return result
+  }
+
+  const retryOutboxCommand: UseLivePlayCommandsReturn['retryOutboxCommand'] = async (opId) => {
+    if (status.value === 'saving' || recoverySendActive) {
+      const message = 'A live-play command is already in flight.'
+      setOutboxRecoveryFailure(message)
+      options.onCommandBlocked?.(message)
+      return { dispatched: false, message, opId }
+    }
+
+    const blockedMessage = blockedCommandMessage()
+    if (blockedMessage) {
+      setOutboxRecoveryFailure(blockedMessage)
+      return localCommandBlockedResult(blockedMessage, { opId })
+    }
+
+    recoverySendActive = true
+    outboxRecoveryStatus.value = 'retrying'
+    outboxRecoveryError.value = null
+
+    try {
+      const authContext = currentAuthContext()
+      if (!authContext) {
+        const message = 'A valid GM or player auth role is required before retrying durable live-play commands.'
+        outboxEntrySnapshot.value = []
+        return recoveryLocalFailedResult(message, { opId })
+      }
+
+      let entry: LivePlayCommandOutboxEntry | null
+      try {
+        entry = await outbox.get(opId)
+      } catch (error) {
+        const refreshWarning = await refreshOutboxEntriesQuiet()
+        const outboxError = combineOutboxWarnings(outboxErrorMessage(error), refreshWarning)
+        return recoveryLocalFailedResult(
+          `Live-play operation ${opId} could not be read from durable command storage: ${outboxError}`,
+          { opId, outboxError },
+        )
+      }
+
+      if (!entry) {
+        const refreshWarning = await refreshOutboxEntriesQuiet()
+        return recoveryLocalFailedResult(
+          `Live-play operation ${opId} is no longer present in durable command storage.`,
+          { opId, ...(refreshWarning === undefined ? {} : { outboxError: refreshWarning }) },
+        )
+      }
+
+      const validationIssue = validateStoredEntryForRetry(entry, authContext)
+      if (validationIssue) {
+        const refreshWarning = await refreshOutboxEntriesQuiet()
+        return recoveryLocalFailedResult(
+          validationIssue,
+          { opId: entry.opId, ...(refreshWarning === undefined ? {} : { outboxError: refreshWarning }) },
+        )
+      }
+
+      status.value = 'saving'
+      lastError.value = null
+      options.onCommandStarted?.()
+
+      let claimResult: Awaited<ReturnType<LivePlayCommandOutbox['claimForSend']>>
+      try {
+        claimResult = await outbox.claimForSend({ opId: entry.opId, leaseOwner })
+      } catch (error) {
+        const refreshWarning = await refreshOutboxEntriesQuiet()
+        const outboxError = combineOutboxWarnings(outboxErrorMessage(error), refreshWarning)
+        return recoveryLocalFailedResult(
+          `Live-play operation ${entry.opId} could not be claimed for retry: ${outboxError}`,
+          { opId: entry.opId, outboxError },
+        )
+      }
+
+      const claimRefreshWarning = await refreshOutboxEntriesQuiet()
+      if (!claimResult.claimed) {
+        if (claimResult.reason === 'missing') {
+          return recoveryLocalFailedResult(
+            `Live-play operation ${entry.opId} disappeared from durable command storage before it could be retried.`,
+            { opId: entry.opId, ...(claimRefreshWarning === undefined ? {} : { outboxError: claimRefreshWarning }) },
+          )
+        }
+
+        return recoveryLocalBlockedResult(
+          `Live-play operation ${entry.opId} is being sent by another tab or page instance.`,
+          { opId: entry.opId, ...(claimRefreshWarning === undefined ? {} : { outboxError: claimRefreshWarning }) },
+        )
+      }
+
+      const result = withOutboxWarning(
+        await sendClaimedOutboxEntry({ entry: claimResult.entry, origin: 'recovery' }),
+        claimRefreshWarning,
+      )
+      return finalizeRecoveryRetryResult(result)
+    } finally {
+      recoverySendActive = false
+    }
+  }
+
   return {
     status,
     lastError,
+    outboxEntries,
+    outboxRecoveryStatus,
+    outboxRecoveryError,
+    hasPendingOutboxCommands,
     clearError,
+    refreshOutboxEntries,
+    recoverInterruptedOutboxCommands,
+    retryOutboxCommand,
     spawnToken,
     sendOutPokemon,
     deleteToken,

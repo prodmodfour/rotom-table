@@ -27,6 +27,8 @@ import type { MoveAutomationScript } from '~/types/moveAutomation'
 import {
   createLivePlayCommandOutbox,
   type LivePlayCommandOutbox,
+  type LivePlayCommandOutboxAuthContext,
+  type LivePlayCommandOutboxEntry,
 } from '~/utils/livePlayCommandOutbox'
 
 const apiMocks = vi.hoisted(() => ({
@@ -77,9 +79,55 @@ const createCommandHarness = (options: TestUseLivePlayCommandsOptions) => {
   return { actions, outbox, leaseOwner }
 }
 
+let storedCommandSequence = 0
+
 const commandRecord = (body: unknown): Record<string, unknown> => (
   body && typeof body === 'object' && !Array.isArray(body) ? body as Record<string, unknown> : {}
 )
+
+const nextStoredOpId = (label = 'stored'): string => {
+  storedCommandSequence += 1
+  return `op_${label}${storedCommandSequence.toString(36).padStart(8, '0')}`
+}
+
+const storedMoveCommandBody = (overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: nextStoredOpId(),
+  mapSlug: 'arena-map',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+  scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+  payload: { placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } },
+  clientId: 'stored-client',
+  ...overrides,
+})
+
+const enqueueStoredCommand = async (
+  outbox: LivePlayCommandOutbox,
+  input: {
+    readonly requestPath?: string
+    readonly body?: Record<string, unknown>
+    readonly authContext?: LivePlayCommandOutboxAuthContext
+    readonly now?: number
+  } = {},
+): Promise<LivePlayCommandOutboxEntry> => outbox.enqueue({
+  requestPath: input.requestPath ?? MAP_API_PATHS.moveToken,
+  body: input.body ?? storedMoveCommandBody(),
+  authContext: input.authContext ?? { role: 'gm', profileId: null },
+  ...(input.now === undefined ? {} : { now: input.now }),
+})
+
+const makeStoredCommandUncertain = async (
+  outbox: LivePlayCommandOutbox,
+  entry: LivePlayCommandOutboxEntry,
+  leaseOwner = 'stored-lease-owner',
+): Promise<LivePlayCommandOutboxEntry> => {
+  const claim = await outbox.claimForSend({ opId: entry.opId, leaseOwner })
+  if (!claim.claimed) throw new Error(`Failed to claim test outbox entry ${entry.opId}`)
+  const uncertain = await outbox.markUncertain({ opId: entry.opId, leaseOwner, error: 'test uncertainty' })
+  if (!uncertain) throw new Error(`Failed to mark test outbox entry ${entry.opId} uncertain`)
+  return uncertain
+}
 
 const alignTerminalResponseToCommand = <TResponse>(response: TResponse, body: unknown): TResponse => {
   if (!response || typeof response !== 'object' || Array.isArray(response)) return response
@@ -2052,6 +2100,501 @@ describe('useLivePlayCommands', () => {
     })
     expect(onCommandFailed).toHaveBeenCalledWith(expect.stringContaining('presentation data'))
     expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+  })
+
+  it('refreshes filtered outbox entries for the exact map/auth/profile context without sending or mutating', async () => {
+    const outbox = createTestOutbox()
+    const profileA = parsePlayerProfileId('profile_ash00000')
+    const profileB = parsePlayerProfileId('profile_misty000')
+    const currentBody = storedMoveCommandBody({ profileId: profileA })
+    const otherMapBody = storedMoveCommandBody({ mapSlug: 'other-map', profileId: profileA })
+    const profileBBody = storedMoveCommandBody({ profileId: profileB })
+
+    const currentEntry = await enqueueStoredCommand(outbox, {
+      body: currentBody,
+      authContext: { role: 'player', profileId: profileA },
+      now: 1,
+    })
+    await enqueueStoredCommand(outbox, {
+      body: otherMapBody,
+      authContext: { role: 'player', profileId: profileA },
+      now: 2,
+    })
+    const gmEntry = await enqueueStoredCommand(outbox, {
+      body: storedMoveCommandBody(),
+      authContext: { role: 'gm', profileId: null },
+      now: 3,
+    })
+    const profileBEntry = await enqueueStoredCommand(outbox, {
+      body: profileBBody,
+      authContext: { role: 'player', profileId: profileB },
+      now: 4,
+    })
+    const unprofiledEntry = await enqueueStoredCommand(outbox, {
+      body: storedMoveCommandBody(),
+      authContext: { role: 'player', profileId: null },
+      now: 5,
+    })
+
+    const role = ref<AuthRole>('player')
+    const profileId = ref<PlayerProfileId | null>(profileA)
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      authRole: role,
+      playerProfileId: profileId,
+      outbox,
+    })
+
+    await expect(actions.refreshOutboxEntries()).resolves.toEqual([currentEntry])
+    expect(actions.outboxEntries.value.map((entry) => entry.opId)).toEqual([currentEntry.opId])
+    expect(actions.hasPendingOutboxCommands.value).toBe(true)
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    await expect(outbox.get(currentEntry.opId)).resolves.toMatchObject({ state: 'queued' })
+
+    profileId.value = profileB
+    await expect(actions.refreshOutboxEntries()).resolves.toEqual([profileBEntry])
+    expect(actions.outboxEntries.value.map((entry) => entry.opId)).toEqual([profileBEntry.opId])
+
+    profileId.value = null
+    await expect(actions.refreshOutboxEntries()).resolves.toEqual([unprofiledEntry])
+    expect(actions.outboxEntries.value.map((entry) => entry.opId)).toEqual([unprofiledEntry.opId])
+
+    role.value = 'gm'
+    await expect(actions.refreshOutboxEntries()).resolves.toEqual([gmEntry])
+    expect(actions.outboxEntries.value.map((entry) => entry.opId)).toEqual([gmEntry.opId])
+
+    const list = vi.fn(outbox.list.bind(outbox))
+    const missingAuthOutbox = wrapOutbox(outbox, { list })
+    const missingAuthActions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      authRole: ref<AuthRole | null>(null),
+      outbox: missingAuthOutbox,
+    })
+    await expect(missingAuthActions.refreshOutboxEntries()).rejects.toThrow('auth role')
+    expect(missingAuthActions.outboxEntries.value).toEqual([])
+    expect(missingAuthActions.outboxRecoveryStatus.value).toBe('error')
+    expect(list).not.toHaveBeenCalled()
+  })
+
+  it('recovers expired sending leases without HTTP and exposes only the matching context', async () => {
+    const outbox = createTestOutbox()
+    const expired = await enqueueStoredCommand(outbox, { now: 1 })
+    const unexpired = await enqueueStoredCommand(outbox, { now: 2 })
+    const otherMap = await enqueueStoredCommand(outbox, {
+      body: storedMoveCommandBody({ mapSlug: 'other-map' }),
+      now: 3,
+    })
+
+    await outbox.claimForSend({ opId: expired.opId, leaseOwner: 'expired-owner', now: 10, leaseDurationMs: 1 })
+    await outbox.claimForSend({ opId: unexpired.opId, leaseOwner: 'active-owner', now: Date.now(), leaseDurationMs: 60_000 })
+    await outbox.claimForSend({ opId: otherMap.opId, leaseOwner: 'other-owner', now: 10, leaseDurationMs: 1 })
+
+    const { actions } = createCommandHarness({ slug: 'arena-map', outbox })
+    await expect(actions.recoverInterruptedOutboxCommands()).resolves.toMatchObject([
+      { opId: expired.opId, state: 'uncertain' },
+      { opId: unexpired.opId, state: 'sending' },
+    ])
+
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    await expect(outbox.get(expired.opId)).resolves.toMatchObject({ state: 'uncertain' })
+    await expect(outbox.get(unexpired.opId)).resolves.toMatchObject({ state: 'sending' })
+    await expect(outbox.get(otherMap.opId)).resolves.toMatchObject({ state: 'uncertain' })
+    expect(actions.outboxEntries.value.map((entry) => entry.opId)).toEqual([expired.opId, unexpired.opId])
+
+    await expect(actions.recoverInterruptedOutboxCommands()).resolves.toMatchObject([
+      { opId: expired.opId, state: 'uncertain' },
+      { opId: unexpired.opId, state: 'sending' },
+    ])
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('retries a stored command with its exact route, body, profile, base revision, scopes, payload, and opId', async () => {
+    const delegate = createTestOutbox()
+    const profileId = parsePlayerProfileId('profile_ash00000')
+    const storedBody = storedMoveCommandBody({
+      baseRevision: 37,
+      profileId,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+      payload: { placementId: 'token-pikachu', position: { x: 5, y: 0, z: 4 }, pathLength: 9 },
+    })
+    const entry = await enqueueStoredCommand(delegate, {
+      requestPath: MAP_API_PATHS.moveToken,
+      body: storedBody,
+      authContext: { role: 'player', profileId },
+    })
+    const enqueue = vi.fn(delegate.enqueue.bind(delegate))
+    const outbox = wrapOutbox(delegate, { enqueue })
+    const requestReconciliation = vi.fn()
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
+      playerProfileId: ref(profileId),
+      outbox,
+      requestReconciliation,
+    })
+
+    let postedRequest: string | null = null
+    let postedBody: unknown = null
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      expect(actions.status.value).toBe('saving')
+      expect(actions.outboxRecoveryStatus.value).toBe('retrying')
+      postedRequest = request
+      postedBody = body
+      const command = commandRecord(body)
+      return { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 37, revision: 38, patches: [] }
+    })
+
+    const result = await actions.retryOutboxCommand(entry.opId)
+
+    expect(result).toMatchObject({ dispatched: true, opId: entry.opId })
+    expect(postedRequest).toBe(MAP_API_PATHS.moveToken)
+    expect(postedBody).toStrictEqual(storedBody)
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(requestReconciliation).toHaveBeenCalledTimes(1)
+    await expect(delegate.get(entry.opId)).resolves.toBeNull()
+    expect(actions.outboxEntries.value).toEqual([])
+    expect(actions.outboxRecoveryStatus.value).toBe('idle')
+  })
+
+  it('does not send retry HTTP for map/auth mismatches, missing entries, unexpired leases, or concurrent retries', async () => {
+    const mapMismatchOutbox = createTestOutbox()
+    const mapMismatch = await enqueueStoredCommand(mapMismatchOutbox, {
+      body: storedMoveCommandBody({ mapSlug: 'other-map' }),
+    })
+    const mapMismatchActions = createCommandHarness({ slug: 'arena-map', outbox: mapMismatchOutbox }).actions
+    await expect(mapMismatchActions.retryOutboxCommand(mapMismatch.opId)).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('belongs to map other-map'),
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    await expect(mapMismatchOutbox.get(mapMismatch.opId)).resolves.toMatchObject({ state: 'queued' })
+
+    const authMismatchOutbox = createTestOutbox()
+    const authMismatch = await enqueueStoredCommand(authMismatchOutbox, { authContext: { role: 'gm', profileId: null } })
+    const authMismatchActions = createCommandHarness({
+      slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
+      playerProfileId: ref(null),
+      outbox: authMismatchOutbox,
+    }).actions
+    await expect(authMismatchActions.retryOutboxCommand(authMismatch.opId)).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('different auth/profile context'),
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    const missingActions = createCommandHarness({ slug: 'arena-map', outbox: createTestOutbox() }).actions
+    await expect(missingActions.retryOutboxCommand(nextStoredOpId('missing'))).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('no longer present'),
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    const leasedOutbox = createTestOutbox()
+    const leased = await enqueueStoredCommand(leasedOutbox)
+    await leasedOutbox.claimForSend({ opId: leased.opId, leaseOwner: 'other-tab', now: Date.now(), leaseDurationMs: 60_000 })
+    const leasedActions = createCommandHarness({ slug: 'arena-map', outbox: leasedOutbox }).actions
+    await expect(leasedActions.retryOutboxCommand(leased.opId)).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('already leased'),
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    const delegate = createTestOutbox()
+    const claimBlocked = await enqueueStoredCommand(delegate)
+    const claimBlockedOutbox = wrapOutbox(delegate, {
+      claimForSend: async () => ({ claimed: false as const, reason: 'leased-by-another-owner' as const }),
+    })
+    const claimBlockedActions = createCommandHarness({ slug: 'arena-map', outbox: claimBlockedOutbox }).actions
+    await expect(claimBlockedActions.retryOutboxCommand(claimBlocked.opId)).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('another tab'),
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+
+    const concurrentOutbox = createTestOutbox()
+    const concurrent = await enqueueStoredCommand(concurrentOutbox)
+    const concurrentActions = createCommandHarness({ slug: 'arena-map', outbox: concurrentOutbox }).actions
+    let releasePost!: () => void
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      await new Promise<void>((resolve) => { releasePost = resolve })
+      const command = commandRecord(body)
+      return { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] }
+    })
+    const first = concurrentActions.retryOutboxCommand(concurrent.opId)
+    const second = concurrentActions.retryOutboxCommand(concurrent.opId)
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(1))
+    releasePost()
+    const results = await Promise.all([first, second])
+    expect(results.filter((result) => result.dispatched)).toHaveLength(1)
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+  })
+
+  it('removes recovered entries for all terminal retry outcomes and keeps transport or invalid responses uncertain', async () => {
+    const terminalCases = [
+      {
+        name: 'accepted',
+        response: (body: Record<string, unknown>) => ({ ok: true, opId: body.opId, mapSlug: body.mapSlug, previousRevision: 4, revision: 5, patches: [] }),
+        dispatched: true,
+      },
+      {
+        name: 'rejected',
+        response: (body: Record<string, unknown>) => ({ ok: false, opId: body.opId, mapSlug: body.mapSlug, reason: 'conflict', message: 'Conflict', currentRevision: 5 }),
+        dispatched: false,
+      },
+      {
+        name: 'duplicate accepted',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: { ok: true, opId: body.opId, mapSlug: body.mapSlug, previousRevision: 4, revision: 5, patches: [] },
+        }),
+        dispatched: true,
+      },
+      {
+        name: 'duplicate rejected',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: { ok: false, opId: body.opId, mapSlug: body.mapSlug, reason: 'stale-revision', message: 'Stale', currentRevision: 5 },
+        }),
+        dispatched: false,
+      },
+    ] as const
+
+    for (const terminalCase of terminalCases) {
+      apiMocks.postJson.mockReset()
+      const outbox = createTestOutbox()
+      const entry = await makeStoredCommandUncertain(outbox, await enqueueStoredCommand(outbox))
+      apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => terminalCase.response(commandRecord(body)))
+      const { actions } = createCommandHarness({ slug: 'arena-map', outbox })
+
+      const result = await actions.retryOutboxCommand(entry.opId)
+
+      expect(result.dispatched, terminalCase.name).toBe(terminalCase.dispatched)
+      expect(result.opId, terminalCase.name).toBe(entry.opId)
+      expect(result.uncertain, terminalCase.name).not.toBe(true)
+      await expect(outbox.get(entry.opId), terminalCase.name).resolves.toBeNull()
+    }
+
+    const transportOutbox = createTestOutbox()
+    const transportEntry = await enqueueStoredCommand(transportOutbox)
+    apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
+    const transportActions = createCommandHarness({ slug: 'arena-map', outbox: transportOutbox }).actions
+    await expect(transportActions.retryOutboxCommand(transportEntry.opId)).resolves.toMatchObject({
+      dispatched: false,
+      uncertain: true,
+      opId: transportEntry.opId,
+    })
+    await expect(transportOutbox.get(transportEntry.opId)).resolves.toMatchObject({
+      state: 'uncertain',
+      requestPath: transportEntry.requestPath,
+      body: transportEntry.body,
+    })
+
+    const invalidOutbox = createTestOutbox()
+    const invalidEntry = await enqueueStoredCommand(invalidOutbox)
+    const applyPersistedMap = vi.fn()
+    apiMocks.postJson.mockResolvedValueOnce({ ok: true, opId: invalidEntry.opId, mapSlug: 'other-map', previousRevision: 4, revision: 5, patches: [] })
+    const invalidActions = createCommandHarness({ slug: 'arena-map', outbox: invalidOutbox, applyPersistedMap }).actions
+    await expect(invalidActions.retryOutboxCommand(invalidEntry.opId)).resolves.toMatchObject({
+      dispatched: false,
+      uncertain: true,
+      opId: invalidEntry.opId,
+    })
+    await expect(invalidOutbox.get(invalidEntry.opId)).resolves.toMatchObject({ state: 'uncertain' })
+    expect(applyPersistedMap).not.toHaveBeenCalled()
+  })
+
+  it('adopts accepted recovery responses, reconciles once, and treats reconciliation/adoption failures as local only', async () => {
+    const outbox = createTestOutbox()
+    const entry = await enqueueStoredCommand(outbox)
+    const map = mapFixture()
+    const sheetUpdate = { kind: 'pokemon' as const, slug: 'pikachu', sheet: { slug: 'pikachu', revision: 9 } }
+    const applyPersistedMap = vi.fn()
+    const applySheetUpdate = vi.fn()
+    const requestReconciliation = vi.fn()
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+        map,
+        sheetUpdates: [sheetUpdate],
+      }
+    })
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      outbox,
+      applyPersistedMap,
+      applySheetUpdate,
+      requestReconciliation,
+    })
+
+    await expect(actions.retryOutboxCommand(entry.opId)).resolves.toMatchObject({ dispatched: true, opId: entry.opId })
+    expect(applyPersistedMap).toHaveBeenCalledWith(map)
+    expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
+    expect(requestReconciliation).toHaveBeenCalledTimes(1)
+    await expect(outbox.get(entry.opId)).resolves.toBeNull()
+
+    const reconciliationOutbox = createTestOutbox()
+    const reconciliationEntry = await enqueueStoredCommand(reconciliationOutbox)
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      return { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [], map }
+    })
+    const reconciliationActions = createCommandHarness({
+      slug: 'arena-map',
+      outbox: reconciliationOutbox,
+      requestReconciliation: vi.fn(async () => { throw new Error('reconcile failed') }),
+    }).actions
+    await expect(reconciliationActions.retryOutboxCommand(reconciliationEntry.opId)).resolves.toMatchObject({
+      dispatched: true,
+      message: expect.stringContaining('reconcile failed'),
+    })
+    await expect(reconciliationOutbox.get(reconciliationEntry.opId)).resolves.toBeNull()
+    expect(reconciliationActions.outboxRecoveryStatus.value).toBe('idle')
+
+    const adoptionOutbox = createTestOutbox()
+    const adoptionEntry = await enqueueStoredCommand(adoptionOutbox)
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      return { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [], map }
+    })
+    const adoptionActions = createCommandHarness({
+      slug: 'arena-map',
+      outbox: adoptionOutbox,
+      applyPersistedMap: vi.fn(() => { throw new Error('adoption failed') }),
+      requestReconciliation: vi.fn(),
+    }).actions
+    await expect(adoptionActions.retryOutboxCommand(adoptionEntry.opId)).resolves.toMatchObject({
+      dispatched: true,
+      message: expect.stringContaining('adoption failed'),
+    })
+    await expect(adoptionOutbox.get(adoptionEntry.opId)).resolves.toBeNull()
+    expect(adoptionActions.outboxRecoveryStatus.value).toBe('error')
+  })
+
+  it('does not run route-specific resolve-move or capture presentation when retrying recovered commands', async () => {
+    const resolveOutbox = createTestOutbox()
+    const resolveBody = storedMoveCommandBody({
+      type: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
+      payload: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'token-pikachu',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'self' },
+      },
+    })
+    const resolveEntry = await enqueueStoredCommand(resolveOutbox, {
+      requestPath: MAP_API_PATHS.resolveMove,
+      body: resolveBody,
+    })
+    const move = resolvedMoveFixture()
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      return { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [], move }
+    })
+    const resolveActions = createCommandHarness({ slug: 'arena-map', outbox: resolveOutbox }).actions
+    const resolveResult = await resolveActions.retryOutboxCommand(resolveEntry.opId)
+    expect(resolveResult).toMatchObject({ dispatched: true, response: expect.objectContaining({ move }) })
+    expect(resolveResult).not.toHaveProperty('move')
+    expect(resolveResult).not.toHaveProperty('presentationError')
+
+    const captureOutbox = createTestOutbox()
+    const capture = { trainerId: 'trainer-ash', targetId: 'target-token', targetSlug: 'bulbasaur', pokeballName: 'Basic Ball', result: { id: 'capture-1', success: true } }
+    const captureBody = storedMoveCommandBody({
+      type: LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+      scopes: [
+        { kind: 'token', placementId: 'trainer-ash', field: 'action' },
+        { kind: 'token', placementId: 'target-token', field: 'action' },
+        { kind: 'map', lane: 'metadata' },
+        { kind: 'map', lane: 'placements' },
+      ],
+      payload: { trainerPlacementId: 'trainer-ash', targetPlacementId: 'target-token', pokeballName: 'Basic Ball' },
+    })
+    const captureEntry = await enqueueStoredCommand(captureOutbox, {
+      requestPath: MAP_API_PATHS.throwPokeball,
+      body: captureBody,
+    })
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      return { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [], capture }
+    })
+    const captureActions = createCommandHarness({ slug: 'arena-map', outbox: captureOutbox }).actions
+    const captureResult = await captureActions.retryOutboxCommand(captureEntry.opId)
+    expect(captureResult).toMatchObject({ dispatched: true, response: expect.objectContaining({ capture }) })
+    expect(captureResult).not.toHaveProperty('capture')
+  })
+
+  it('keeps exposed outbox state synchronized after immediate enqueue, terminal, uncertainty, and refresh failures', async () => {
+    const outbox = createTestOutbox()
+    let releasePost!: () => void
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      expect(outboxActions.outboxEntries.value).toHaveLength(1)
+      expect(outboxActions.outboxEntries.value[0]).toMatchObject({ state: 'sending' })
+      await new Promise<void>((resolve) => { releasePost = resolve })
+      const command = commandRecord(body)
+      return { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] }
+    })
+    const outboxActions = createCommandHarness({ slug: 'arena-map', outbox }).actions
+    const terminalPromise = outboxActions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(1))
+    expect(outboxActions.outboxEntries.value).toHaveLength(1)
+    releasePost()
+    await expect(terminalPromise).resolves.toMatchObject({ dispatched: true })
+    expect(outboxActions.outboxEntries.value).toEqual([])
+
+    const uncertainOutbox = createTestOutbox()
+    apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
+    const uncertainActions = createCommandHarness({ slug: 'arena-map', outbox: uncertainOutbox }).actions
+    const uncertainResult = await uncertainActions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 1 } })
+    expect(uncertainResult).toMatchObject({ dispatched: false, uncertain: true })
+    expect(uncertainActions.outboxEntries.value).toMatchObject([{ opId: uncertainResult.opId, state: 'uncertain' }])
+
+    const delegate = createTestOutbox()
+    const failingListOutbox = wrapOutbox(delegate, {
+      list: async () => { throw new Error('list failed') },
+    })
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      return { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] }
+    })
+    const failingListActions = createCommandHarness({ slug: 'arena-map', outbox: failingListOutbox }).actions
+    await expect(failingListActions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 1 } })).resolves.toMatchObject({
+      dispatched: true,
+      outboxError: expect.stringContaining('list failed'),
+    })
+    expect(failingListActions.status.value).toBe('idle')
+    expect(failingListActions.outboxRecoveryStatus.value).toBe('error')
+  })
+
+  it('keeps recovery loading separate from command saving status', async () => {
+    let releaseRecovery!: () => void
+    const delegate = createTestOutbox()
+    const outbox = wrapOutbox(delegate, {
+      recoverExpiredLeases: async () => {
+        await new Promise<void>((resolve) => { releaseRecovery = resolve })
+        return []
+      },
+    })
+    const { actions } = createCommandHarness({ slug: 'arena-map', outbox })
+
+    const recovery = actions.recoverInterruptedOutboxCommands()
+    expect(actions.status.value).toBe('idle')
+    expect(actions.outboxRecoveryStatus.value).toBe('loading')
+    releaseRecovery()
+    await expect(recovery).resolves.toEqual([])
+    expect(actions.status.value).toBe('idle')
+    expect(actions.outboxRecoveryStatus.value).toBe('idle')
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
   it('maps resolveMove rejections and transport failures to dispatched false without retrying', async () => {
