@@ -6,6 +6,7 @@ import {
 } from '~/composables/map-editor/useMoveAutomationPanel'
 import { EXPLICIT_MOVE_AUTOMATION_SCRIPTS } from '~/utils/moveAutomation'
 import { moveAutomationAreaTemplateId } from '~/utils/moveAutomationAreaTemplates'
+import { passDestinationLogLine } from '~/utils/moveAutomationPass'
 import { MOVE_VFX_KIND, type MoveAnimationEvent } from '~/types/moveAnimation'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
@@ -2724,7 +2725,7 @@ describe('useMoveAutomationPanel', () => {
       { moveName: 'Scratch', scriptKind: 'explicit' },
     ])
     expect((map.value.metadata?.moveLog as Array<{ lines: string[] }>)[0].lines).toEqual(expect.arrayContaining([
-      'Scratcher ends the Pass dash at (4, 0, 1).',
+      passDestinationLogLine({ species: 'Scratcher' }, { x: 4, y: 0, z: 1 }),
     ]))
   })
 

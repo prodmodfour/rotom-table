@@ -21,6 +21,7 @@ import {
 } from '~/utils/moveAutomation'
 import { moveAutomationCanResolveDamageAtRuntime } from '~/utils/moveAutomationDynamicDamage'
 import { moveAutomationScriptForConfirmedAreaTemplate } from '~/utils/moveAutomationConfirmedAreaTemplate'
+import { passDestinationLogLine } from '~/utils/moveAutomationPass'
 import {
   buildMoveAutomationAreaTemplateCells,
   buildMoveAutomationAreaTemplatePlacementAtCenter,
@@ -457,9 +458,6 @@ export const useMoveAutomationPanel = ({
     if (!placement) return
     placement.position = position
   }
-
-  const passDestinationLogLine = (user: SpawnedPokemon, destination: GridAnchor | undefined): string | null =>
-    destination ? `${user.species} ends the Pass dash at (${destination.x}, ${destination.y}, ${destination.z}).` : null
 
   const faceTokenTowardNearestTarget = (user: SpawnedPokemon, targets: readonly SpawnedPokemon[]) => {
     const origin = tokenFacingPoint(user)
@@ -2139,7 +2137,7 @@ export const useMoveAutomationPanel = ({
       fieldEffects: map.value?.fieldEffects,
       conditionImmunityContext: { sweetVeilProviders: spawnedPokemon.value },
     })
-    const destinationLogLine = passDestinationLogLine(user, request.passDestination)
+    const destinationLogLine = request.passDestination ? passDestinationLogLine(user, request.passDestination) : null
     if (destinationLogLine) transaction.logLines.push(destinationLogLine)
     planAndEnqueueAreaMoveAnimations({
       script: confirmedScript,

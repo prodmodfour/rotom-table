@@ -95,6 +95,21 @@ export interface BuildMoveAutomationCloseBlastPlacementAtAimCellInput extends Ar
   label?: string
 }
 
+export interface BuildMoveAutomationPassPlacementInput extends AreaTemplateCellConstraints {
+  readonly template: MoveAutomationAreaTemplate
+  readonly user: SpawnedPokemon
+  readonly tokens: readonly SpawnedPokemon[]
+  readonly direction: MoveAutomationAreaDirection
+}
+
+export interface MoveAutomationPassPlacement {
+  readonly template: MoveAutomationAreaTemplate
+  readonly direction: MoveAutomationAreaDirection
+  readonly cells: readonly GridAnchor[]
+  readonly targetIds: readonly string[]
+  readonly destination: GridAnchor
+}
+
 const AREA_DIRECTION_METADATA: Record<MoveAutomationAreaDirection, Omit<DirectionDefinition, 'id'>> = {
   north: { label: 'north', dx: 0, dy: 0, dz: -1 },
   'north-east': { label: 'north-east', dx: 1, dy: 0, dz: -1 },
@@ -248,6 +263,12 @@ export const parseMoveAutomationAreaTemplates = (range: string | null | undefine
 }
 
 const cellKey = (cell: GridAnchor): string => `${cell.x},${cell.y},${cell.z}`
+
+const cloneGridAnchor = (anchor: GridAnchor): GridAnchor => ({ x: anchor.x, y: anchor.y, z: anchor.z })
+
+const cloneGridAnchors = (anchors: readonly GridAnchor[]): GridAnchor[] => anchors.map(cloneGridAnchor)
+
+const cloneAreaTemplate = (template: MoveAutomationAreaTemplate): MoveAutomationAreaTemplate => ({ ...template })
 
 const uniqueCells = (cells: GridAnchor[]): GridAnchor[] => Array.from(
   new Map(cells.map((cell) => [cellKey(cell), cell])).values(),
@@ -701,6 +722,32 @@ const buildPassPlacementForDirection = (
   }
 }
 
+export const buildMoveAutomationPassPlacement = ({
+  template,
+  user,
+  tokens,
+  direction,
+  bounds,
+  blockedCells,
+}: BuildMoveAutomationPassPlacementInput): MoveAutomationPassPlacement | null => {
+  if (template.kind !== 'pass') return null
+  const resolvedDirection = directionDefinition(direction)
+  if (!resolvedDirection) return null
+
+  const path = buildPassPlacementForDirection(template, user, tokens, resolvedDirection, { bounds, blockedCells })
+  if (!path) return null
+
+  const cells = cloneGridAnchors(path.cells)
+  const targetIds = tokensInMoveAutomationArea({ cells, tokens, excludeIds: [user.id] }).map((token) => token.id)
+  return {
+    template: cloneAreaTemplate(template),
+    direction,
+    cells,
+    targetIds,
+    destination: cloneGridAnchor(path.destination),
+  }
+}
+
 export const buildMoveAutomationAreaTemplateCells = ({
   template,
   user,
@@ -1018,17 +1065,22 @@ export const buildMoveAutomationAreaTemplatePlacements = ({
 
     if (template.kind === 'pass') {
       for (const direction of AREA_DIRECTIONS) {
-        const path = buildPassPlacementForDirection(template, user, tokens, direction, constraints)
-        if (!path) continue
-        const targetIds = tokensInMoveAutomationArea({ cells: path.cells, tokens, excludeIds: [user.id] }).map((token) => token.id)
+        const passPlacement = buildMoveAutomationPassPlacement({
+          template,
+          user,
+          tokens,
+          direction: direction.id,
+          ...constraints,
+        })
+        if (!passPlacement) continue
         addPlacement(placements, seen, {
           id: `${template.kind}:${template.size}:${direction.id}`,
           label: `${template.label} ${direction.label}`,
-          template,
-          cells: path.cells,
-          targetIds,
-          direction: direction.id,
-          destination: path.destination,
+          template: passPlacement.template,
+          cells: cloneGridAnchors(passPlacement.cells),
+          targetIds: [...passPlacement.targetIds],
+          direction: passPlacement.direction,
+          destination: cloneGridAnchor(passPlacement.destination),
         }, includeEmpty)
       }
       continue

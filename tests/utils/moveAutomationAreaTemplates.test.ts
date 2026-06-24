@@ -4,6 +4,7 @@ import {
   buildMoveAutomationAreaTemplatePlacementAtCenter,
   buildMoveAutomationAreaTemplatePlacements,
   buildMoveAutomationCloseBlastPlacementAtAimCell,
+  buildMoveAutomationPassPlacement,
   parseMoveAutomationAreaTemplates,
   tokensInMoveAutomationArea,
 } from '~/utils/moveAutomationAreaTemplates'
@@ -310,5 +311,166 @@ describe('move automation area templates', () => {
       destination: { x: 4, y: 0, z: 1 },
     })
     expect(east?.cells).toEqual(cells([[2, 0, 1], [3, 0, 1], [4, 0, 1]]))
+  })
+
+  it('exports Pass geometry for the farthest legal destination and crossed token footprints', () => {
+    const pass = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+    const user = token('user', 'Eevee', { x: 1, y: 0, z: 1 })
+    const wideTarget = { ...token('wide', 'Onix', { x: 2, y: 0, z: 1 }), base: 2 }
+
+    const placement = buildMoveAutomationPassPlacement({
+      template: pass,
+      user,
+      tokens: [user, wideTarget],
+      direction: 'east',
+      bounds: { x: 8, y: 2, z: 4 },
+    })
+
+    expect(placement).toMatchObject({
+      template: pass,
+      direction: 'east',
+      targetIds: ['wide'],
+      destination: { x: 5, y: 0, z: 1 },
+    })
+    expect(placement?.cells).toEqual(cells([[2, 0, 1], [3, 0, 1], [4, 0, 1], [5, 0, 1]]))
+  })
+
+  it('stops Pass movement before terrain blockers and map bounds', () => {
+    const pass = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+    const user = token('user', 'Eevee', { x: 1, y: 0, z: 1 })
+
+    expect(buildMoveAutomationPassPlacement({
+      template: pass,
+      user,
+      tokens: [user],
+      direction: 'east',
+      bounds: { x: 8, y: 2, z: 4 },
+      blockedCells: new Set(['4,0,1']),
+    })?.destination).toEqual({ x: 3, y: 0, z: 1 })
+
+    expect(buildMoveAutomationPassPlacement({
+      template: pass,
+      user,
+      tokens: [user],
+      direction: 'east',
+      bounds: { x: 4, y: 2, z: 4 },
+    })?.destination).toEqual({ x: 3, y: 0, z: 1 })
+  })
+
+  it('passes through occupied intermediate cells but cannot finish overlapping a token', () => {
+    const pass = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+    const user = token('user', 'Eevee', { x: 1, y: 0, z: 1 })
+    const crossed = token('crossed', 'Rattata', { x: 2, y: 0, z: 1 })
+    const occupiedEnd = token('occupied-end', 'Pidgey', { x: 5, y: 0, z: 1 })
+
+    const placement = buildMoveAutomationPassPlacement({
+      template: pass,
+      user,
+      tokens: [user, crossed, occupiedEnd],
+      direction: 'east',
+      bounds: { x: 7, y: 2, z: 4 },
+    })
+
+    expect(placement?.destination).toEqual({ x: 4, y: 0, z: 1 })
+    expect(placement?.targetIds).toEqual(['crossed'])
+  })
+
+  it('returns null when no legal empty Pass destination exists', () => {
+    const pass = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+    const user = token('user', 'Eevee', { x: 1, y: 0, z: 1 })
+    const blockers = [2, 3, 4, 5].map((x) => token(`blocker-${x}`, `Blocker ${x}`, { x, y: 0, z: 1 }))
+
+    expect(buildMoveAutomationPassPlacement({
+      template: pass,
+      user,
+      tokens: [user, ...blockers],
+      direction: 'east',
+      bounds: { x: 7, y: 2, z: 4 },
+    })).toBeNull()
+  })
+
+  it('respects actor footprint size and clearance when choosing Pass destinations', () => {
+    const pass = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+    const user = { ...token('user', 'Snorlax', { x: 1, y: 0, z: 1 }), base: 2, clearance: 2 }
+
+    const placement = buildMoveAutomationPassPlacement({
+      template: pass,
+      user,
+      tokens: [user],
+      direction: 'east',
+      bounds: { x: 8, y: 3, z: 5 },
+      blockedCells: new Set(['4,1,1']),
+    })
+
+    expect(placement?.destination).toEqual({ x: 2, y: 0, z: 1 })
+    expect(placement?.cells).toEqual(cells([[3, 0, 1], [3, 1, 1]]))
+  })
+
+  it('uses PTU alternating-diagonal distance for horizontal diagonal Pass movement', () => {
+    const pass = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+    const user = token('user', 'Eevee', { x: 1, y: 0, z: 5 })
+
+    const placement = buildMoveAutomationPassPlacement({
+      template: pass,
+      user,
+      tokens: [user],
+      direction: 'north-east',
+      bounds: { x: 8, y: 2, z: 8 },
+    })
+
+    expect(placement?.destination).toEqual({ x: 4, y: 0, z: 2 })
+    expect(placement?.cells).toEqual(cells([[2, 0, 4], [3, 0, 3], [4, 0, 2]]))
+  })
+
+  it('builds all-direction Pass placements from the exported helper result', () => {
+    const pass = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+    const user = token('user', 'Eevee', { x: 1, y: 0, z: 1 })
+    const target = token('target', 'Rattata', { x: 2, y: 0, z: 1 })
+    const helperPlacement = buildMoveAutomationPassPlacement({
+      template: pass,
+      user,
+      tokens: [user, target],
+      direction: 'east',
+      bounds: { x: 7, y: 2, z: 4 },
+    })
+    const generatedPlacement = buildMoveAutomationAreaTemplatePlacements({
+      script: { range: 'Melee, Pass', areaTemplates: [pass] },
+      user,
+      tokens: [user, target],
+      bounds: { x: 7, y: 2, z: 4 },
+      includeEmpty: true,
+    }).find((placement) => placement.direction === 'east')
+
+    expect(generatedPlacement).toMatchObject({
+      cells: helperPlacement?.cells,
+      targetIds: helperPlacement?.targetIds,
+      destination: helperPlacement?.destination,
+    })
+  })
+
+  it('does not mutate Pass inputs and returns cloned placement values', () => {
+    const pass = { kind: 'pass' as const, size: 4, label: 'Pass 4' }
+    const user = token('user', 'Eevee', { x: 1, y: 0, z: 1 })
+    const target = token('target', 'Rattata', { x: 2, y: 0, z: 1 })
+    const blockedCells = new Set<string>()
+    const before = JSON.stringify({ pass, user, target, blockedCells: [...blockedCells] })
+
+    const placement = buildMoveAutomationPassPlacement({
+      template: pass,
+      user,
+      tokens: [user, target],
+      direction: 'east',
+      bounds: { x: 7, y: 2, z: 4 },
+      blockedCells,
+    })
+
+    expect(JSON.stringify({ pass, user, target, blockedCells: [...blockedCells] })).toBe(before)
+    expect(placement?.template).toEqual(pass)
+    expect(placement?.template).not.toBe(pass)
+    expect(placement?.destination).not.toBe(user.position)
+    const mutableCells = placement?.cells as Array<{ x: number; y: number; z: number }> | undefined
+    if (!mutableCells) throw new Error('expected placement')
+    mutableCells[0]!.x = 99
+    expect(user.position).toEqual({ x: 1, y: 0, z: 1 })
   })
 })

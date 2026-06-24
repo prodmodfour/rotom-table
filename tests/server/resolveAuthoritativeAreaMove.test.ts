@@ -161,6 +161,7 @@ describe('resolveAuthoritativeMove area selections', () => {
       expect(resolution.area?.candidateTargetIds).toEqual(['target-a', 'target-b'])
       expect(resolution.selectedTargetIds).toEqual(['target-a', 'target-b'])
       expect(resolution.desiredFacing).toBe('north-east')
+      expect(resolution.movement).toBeUndefined()
     })
 
     await withRegisteredMoveAutomationScript(areaScript('Disarming Voice', [cardinalTemplate]), () => {
@@ -304,8 +305,8 @@ describe('resolveAuthoritativeMove area selections', () => {
       map: mapFixture(),
       pokemonSheets: sheetMap([{ name: 'Scratch' }]),
       trainerSheets: new Map(),
-      intent: moveIntent({ placementId: 'actor-token', moveName: 'Scratch', selection: { kind: 'area', areaTemplateId: 'pass:any:4', direction: 'east' } }),
-    }), 'pass-resolution-deferred')
+      intent: moveIntent({ placementId: 'actor-token', moveName: 'Scratch', selection: { kind: 'area', areaTemplateId: 'pass:any:4' } }),
+    }), 'pass-direction-required')
   })
 
   it('applies Friendly exclusions only to authoritative area candidates', async () => {

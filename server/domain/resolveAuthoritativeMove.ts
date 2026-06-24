@@ -17,6 +17,7 @@ import {
   buildMoveAutomationAreaTemplateCells,
   buildMoveAutomationAreaTemplatePlacementAtCenter,
   buildMoveAutomationCloseBlastPlacementAtAimCell,
+  buildMoveAutomationPassPlacement,
   moveAutomationAreaTemplateId,
   tokensInMoveAutomationArea,
 } from '~/utils/moveAutomationAreaTemplates'
@@ -33,6 +34,7 @@ import {
   parseSingleTargetMoveRangeMeters,
 } from '~/utils/moveAutomationRange'
 import { placementToSpawned, type SheetLookup } from '~/utils/placement'
+import { passDestinationLogLine } from '~/utils/moveAutomationPass'
 import { tokenFacingForPlacement, tokenFacingFromAreaDirection, tokenFacingTowardPoint } from '~/utils/tokenFacing'
 import { buildAllVoxelOccupancy } from '~/utils/voxelOccupancy'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -82,7 +84,10 @@ export type AuthoritativeMoveResolutionFailureCode =
   | 'area-aim-cell-illegal'
   | 'area-geometry-empty'
   | 'area-friendly-exclusion-invalid'
-  | 'pass-resolution-deferred'
+  | 'pass-direction-required'
+  | 'pass-aim-cell-unexpected'
+  | 'pass-destination-unavailable'
+  | 'pass-geometry-empty'
   | 'unsupported-range'
   | 'unsupported-damage-resolution'
   | 'unsupported-move-script'
@@ -123,6 +128,14 @@ export interface AuthoritativeMoveArea {
   readonly aimCell?: GridAnchor
 }
 
+export interface AuthoritativeMovePassMovement {
+  readonly kind: 'pass'
+  readonly from: GridAnchor
+  readonly destination: GridAnchor
+  readonly direction: MoveAutomationAreaDirection
+  readonly pathCells: readonly GridAnchor[]
+}
+
 export interface AuthoritativeMoveResolution {
   readonly actorPlacementId: string
   readonly moveName: string
@@ -136,6 +149,7 @@ export interface AuthoritativeMoveResolution {
   readonly feedback?: MoveAutomationFeedbackState
   readonly desiredFacing?: TokenFacingDirection
   readonly area?: AuthoritativeMoveArea
+  readonly movement?: AuthoritativeMovePassMovement
 }
 
 interface SpawnedTokenContext {
@@ -328,6 +342,32 @@ const cloneGridAnchors = (anchors: readonly GridAnchor[]): GridAnchor[] => ancho
 
 const cloneAreaTemplate = (template: MoveAutomationAreaTemplate): MoveAutomationAreaTemplate => ({ ...template })
 
+const copyTransactionTargetIdDescriptor = (
+  source: MoveAutomationTransaction,
+  target: MoveAutomationTransaction,
+  key: 'attackedTargetIds' | 'hitTargetIds',
+): void => {
+  const descriptor = Object.getOwnPropertyDescriptor(source, key)
+  if (!descriptor) return
+  Object.defineProperty(target, key, {
+    ...descriptor,
+    value: Array.isArray(descriptor.value) ? [...descriptor.value] : descriptor.value,
+  })
+}
+
+const moveAutomationTransactionWithAppendedLogLine = (
+  transaction: MoveAutomationTransaction,
+  line: string,
+): MoveAutomationTransaction => {
+  const next: MoveAutomationTransaction = {
+    ...transaction,
+    logLines: [...transaction.logLines, line],
+  }
+  copyTransactionTargetIdDescriptor(transaction, next, 'attackedTargetIds')
+  copyTransactionTargetIdDescriptor(transaction, next, 'hitTargetIds')
+  return next
+}
+
 const isSafeGridAnchor = (value: unknown): value is GridAnchor => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
   const candidate = value as Partial<Record<keyof GridAnchor, unknown>>
@@ -353,14 +393,8 @@ const selectedAreaTemplate = (
     fail('invalid', 'selection-kind-mismatch', `${moveName} is not a seamless area-confirmation move.`)
   }
 
-  const template = script.areaTemplates?.find((item) => moveAutomationAreaTemplateId(item) === areaTemplateId)
+  return script.areaTemplates?.find((item) => moveAutomationAreaTemplateId(item) === areaTemplateId)
     ?? fail('invalid', 'area-template-invalid', `Unknown area template ${areaTemplateId} for ${moveName}.`)
-
-  if (template.kind === 'pass') {
-    fail('unsupported', 'pass-resolution-deferred', `${moveName} Pass area resolution is not implemented yet.`)
-  }
-
-  return template
 }
 
 const assertNoAreaDirection = (
@@ -409,6 +443,35 @@ const requireAreaAimCell = (
   return cloneGridAnchor(aimCell)
 }
 
+const assertNoPassAimCell = (
+  selection: Extract<ResolveMoveSelection, { kind: 'area' }>,
+  template: MoveAutomationAreaTemplate,
+): void => {
+  if (selection.aimCell !== undefined) {
+    fail('invalid', 'pass-aim-cell-unexpected', `${template.label} does not accept an aim cell.`)
+  }
+}
+
+const requirePassDirection = (
+  selection: Extract<ResolveMoveSelection, { kind: 'area' }>,
+  template: MoveAutomationAreaTemplate,
+): MoveAutomationAreaDirection => {
+  const direction = selection.direction
+  if (direction === undefined) {
+    return fail('invalid', 'pass-direction-required', `${template.label} requires a Pass direction.`)
+  }
+  if (!isMoveAutomationAreaDirection(direction)) {
+    return fail('invalid', 'area-direction-illegal', `${String(direction)} is not a legal area direction.`)
+  }
+  return direction
+}
+
+const assertSupportedPassTemplate = (template: MoveAutomationAreaTemplate): void => {
+  if (template.kind !== 'pass' || !Number.isSafeInteger(template.size) || template.size <= 0) {
+    fail('unsupported', 'pass-geometry-empty', `${template.label} is not a supported Pass template.`)
+  }
+}
+
 const assertAreaCellsPresent = (template: MoveAutomationAreaTemplate, cells: readonly GridAnchor[]): void => {
   if (!cells.length) {
     fail('invalid', 'area-geometry-empty', `${template.label} does not produce any legal authoritative area cells.`)
@@ -430,6 +493,7 @@ interface ResolvedAuthoritativeAreaPlacement {
   readonly candidateTargets: readonly SpawnedPokemon[]
   readonly direction?: MoveAutomationAreaDirection
   readonly aimCell?: GridAnchor
+  readonly movement?: AuthoritativeMovePassMovement
 }
 
 const resolvedAreaPlacement = (options: {
@@ -519,7 +583,40 @@ const resolvedAreaPlacement = (options: {
     }
   }
 
-  return fail('unsupported', 'pass-resolution-deferred', `${options.template.label} resolution is not implemented yet.`)
+  if (options.template.kind === 'pass') {
+    assertSupportedPassTemplate(options.template)
+    assertNoPassAimCell(options.selection, options.template)
+    const direction = requirePassDirection(options.selection, options.template)
+    const placement = buildMoveAutomationPassPlacement({
+      template: options.template,
+      user: options.actor,
+      tokens: options.context.tokens,
+      direction,
+      ...constraints,
+    }) ?? fail(
+      'conflict',
+      'pass-destination-unavailable',
+      `${options.template.label} cannot reach a legal empty Pass destination in the current map state.`,
+    )
+    if (!placement.cells.length) {
+      fail('unsupported', 'pass-geometry-empty', `${options.template.label} did not produce authoritative Pass path cells.`)
+    }
+    const cells = cloneGridAnchors(placement.cells)
+    return {
+      cells,
+      candidateTargets: authoritativeAreaCandidates({ actor: options.actor, tokens: options.context.tokens, cells }),
+      direction,
+      movement: {
+        kind: 'pass',
+        from: cloneGridAnchor(options.actor.position),
+        destination: cloneGridAnchor(placement.destination),
+        direction,
+        pathCells: cloneGridAnchors(cells),
+      },
+    }
+  }
+
+  return fail('unsupported', 'unsupported-move-script', `${options.template.label} resolution is not implemented.`)
 }
 
 const excludedAreaTargetIds = (
@@ -798,7 +895,7 @@ const resolveAreaMove = (options: {
   const selectedTargets = placement.candidateTargets.filter((target) => !excludedTargetSet.has(target.id))
   const selectedTargetIds = selectedTargets.map((target) => target.id)
   const confirmedScript = moveAutomationScriptForConfirmedAreaTemplate(options.script, template)
-  const transaction = resolveInstantAreaMoveAutomation({
+  const baseTransaction = resolveInstantAreaMoveAutomation({
     script: confirmedScript,
     user: options.actor,
     targets: selectedTargets,
@@ -807,9 +904,25 @@ const resolveAreaMove = (options: {
     conditionImmunityContext: { sweetVeilProviders: options.context.tokens },
     random: options.random,
   })
+  const transaction = placement.movement?.kind === 'pass'
+    ? moveAutomationTransactionWithAppendedLogLine(
+        baseTransaction,
+        passDestinationLogLine(options.actor, placement.movement.destination),
+      )
+    : baseTransaction
+  const currentFacing = tokenFacingForPlacement(options.actorPlacement)
   const desiredFacing = placement.direction
-    ? tokenFacingFromAreaDirection(placement.direction, tokenFacingForPlacement(options.actorPlacement)) ?? undefined
+    ? tokenFacingFromAreaDirection(placement.direction, currentFacing) ?? (placement.movement?.kind === 'pass' ? currentFacing : undefined)
     : desiredFacingTowardNearestTarget(options.actorPlacement, options.actor, selectedTargets)
+  const movement = placement.movement
+    ? {
+        kind: 'pass' as const,
+        from: cloneGridAnchor(placement.movement.from),
+        destination: cloneGridAnchor(placement.movement.destination),
+        direction: placement.movement.direction,
+        pathCells: cloneGridAnchors(placement.movement.pathCells),
+      }
+    : undefined
 
   return {
     actorPlacementId: options.actorPlacement.id,
@@ -822,6 +935,7 @@ const resolveAreaMove = (options: {
     script: confirmedScript,
     transaction,
     ...(desiredFacing ? { desiredFacing } : {}),
+    ...(movement ? { movement } : {}),
     area: {
       areaTemplateId: options.selection.areaTemplateId,
       template: cloneAreaTemplate(template),
