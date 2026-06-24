@@ -9,12 +9,18 @@ import {
   type LivePlayInitiativeCommand,
   type LivePlayMapScope,
   type LivePlayPatch,
+  type LivePlayScope,
   type NextInitiativeLivePlayCommand,
   type PreviousInitiativeLivePlayCommand,
   type SetInitiativeLivePlayCommand,
   type SetInitiativePayload,
 } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
+import {
+  applyAttackOfOpportunityStateUpdate,
+  readAttackOfOpportunityState,
+  writeAttackOfOpportunityState,
+} from '#shared/attackOfOpportunityState'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { InitiativeTrackerState, SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import {
@@ -38,6 +44,8 @@ import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { initiativeOrderIdsForPlacements, type InitiativeSheetReader } from '~/utils/initiativeOrderEntries'
+import { expireActiveOrderEffectsForInitiativeAdvanceWithResult } from '~/utils/activeOrderEffects'
+import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import type { RealtimeEvent } from '#shared/realtime'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
@@ -66,6 +74,17 @@ export interface InitiativePatchPayload {
   readonly current: InitiativeLaneState
   readonly changedTokenIds: readonly string[]
   readonly logEntry?: InitiativeLogEntry
+}
+
+export interface InitiativeMetadataPatchPayload {
+  readonly command:
+    | typeof LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE
+    | typeof LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE
+  readonly previous: Record<string, unknown>
+  readonly current: Record<string, unknown>
+  readonly clearedAttackOfOpportunityPromptIds: readonly string[]
+  readonly expiredOrderEffectIds: readonly string[]
+  readonly progressedOrderEffectIds: readonly string[]
 }
 
 export interface LivePlayInitiativeCommandActor {
@@ -105,11 +124,20 @@ interface ResolvedInitiativeContext {
   readonly map: TabletopMap
 }
 
+interface InitiativeMetadataSideEffectChange {
+  readonly previous: Record<string, unknown>
+  readonly current: Record<string, unknown>
+  readonly clearedAttackOfOpportunityPromptIds: readonly string[]
+  readonly expiredOrderEffectIds: readonly string[]
+  readonly progressedOrderEffectIds: readonly string[]
+}
+
 interface AppliedInitiativeChange {
   readonly nextMap: TabletopMap
   readonly previous: InitiativeLaneState
   readonly current: InitiativeLaneState
   readonly logEntry?: InitiativeLogEntry
+  readonly metadataChange?: InitiativeMetadataSideEffectChange
 }
 
 type UnknownRecord = Record<string, unknown>
@@ -228,15 +256,48 @@ const initiativeLaneStatesEqual = (left: InitiativeLaneState, right: InitiativeL
 const mapPathForDocument = (map: Pick<TabletopMap, 'folder' | 'slug'>): string => logicalMapResourcePath(map)
 
 const initiativeScope = (): LivePlayMapScope => ({ kind: 'map', lane: 'initiative' })
+const metadataScope = (): LivePlayMapScope => ({ kind: 'map', lane: 'metadata' })
 
-const commandHasInitiativeScope = (command: LivePlayInitiativeCommand): boolean => command.scopes.some((scope) => (
-  scope.kind === 'map' && scope.lane === 'initiative'
-))
+const commandScopes = (command: LivePlayInitiativeCommand): readonly LivePlayScope[] => (
+  command.scopes as readonly LivePlayScope[]
+)
 
-const expectInitiativeScope = (command: LivePlayInitiativeCommand): void => {
-  if (!commandHasInitiativeScope(command)) {
+const commandHasMapScope = (
+  command: LivePlayInitiativeCommand,
+  lane: LivePlayMapScope['lane'],
+): boolean => commandScopes(command).some((scope) => scope.kind === 'map' && scope.lane === lane)
+
+const unsupportedScopeLabel = (scope: LivePlayScope): string => {
+  if (scope.kind === 'map') return `map ${scope.lane}`
+  if (scope.kind === 'token') return `token ${scope.placementId} ${scope.field}`
+  return `sheet ${scope.sheetKind}:${scope.sheetSlug} ${scope.field}`
+}
+
+const expectOnlyMapScopes = (
+  command: LivePlayInitiativeCommand,
+  allowedLanes: ReadonlySet<LivePlayMapScope['lane']>,
+): void => {
+  const unsupported = commandScopes(command).find((scope) => scope.kind !== 'map' || !allowedLanes.has(scope.lane))
+  if (unsupported) {
+    rejectLivePlayCommand('invalid', `${command.type} scopes include unsupported ${unsupportedScopeLabel(unsupported)} scope`)
+  }
+}
+
+const expectSetInitiativeScopes = (command: LivePlayInitiativeCommand): void => {
+  if (!commandHasMapScope(command, 'initiative')) {
     rejectLivePlayCommand('invalid', `${command.type} scopes must include the map initiative scope`)
   }
+  expectOnlyMapScopes(command, new Set(['initiative']))
+}
+
+const expectAdvanceInitiativeScopes = (command: LivePlayInitiativeCommand): void => {
+  if (!commandHasMapScope(command, 'initiative')) {
+    rejectLivePlayCommand('invalid', `${command.type} scopes must include the map initiative scope`)
+  }
+  if (!commandHasMapScope(command, 'metadata')) {
+    rejectLivePlayCommand('invalid', `${command.type} scopes must include the map metadata scope`)
+  }
+  expectOnlyMapScopes(command, new Set(['initiative', 'metadata']))
 }
 
 const expectSetInitiativePayload = (payload: unknown): SetInitiativePayload => {
@@ -365,8 +426,16 @@ const assertInitiativeCommandType = (
 }
 
 const validateCommandPayloadAndScopes = (command: LivePlayInitiativeCommand): SetInitiativePayload | AdvanceInitiativePayload => {
-  expectInitiativeScope(command)
-  if (command.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE) return expectSetInitiativePayload(command.payload)
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE) {
+    // setInitiative remains an explicit administrative edit in this phase: it only
+    // claims the initiative lane and does not run automatic AoO or Order side effects.
+    expectSetInitiativeScopes(command)
+    return expectSetInitiativePayload(command.payload)
+  }
+
+  // Live initiative advancement owns both the initiative lane and the map metadata
+  // lane so turn transitions and their AoO/Order side effects commit atomically.
+  expectAdvanceInitiativeScopes(command)
   return expectAdvanceInitiativePayload(command.payload)
 }
 
@@ -578,6 +647,79 @@ const mapWithInitiativeLogEntry = (
   }
 }
 
+const cloneMetadata = (metadata: Record<string, unknown> | null | undefined): Record<string, unknown> => (
+  deepCloneJson(metadata ?? {})
+)
+
+const clearPendingAttackOfOpportunityPrompts = (
+  metadata: Record<string, unknown> | undefined,
+): {
+  readonly metadata: Record<string, unknown>
+  readonly clearedPromptIds: readonly string[]
+} => {
+  const previous = readAttackOfOpportunityState(metadata)
+  if (previous.prompts.length === 0) return { metadata: metadata ?? {}, clearedPromptIds: [] }
+
+  return {
+    metadata: writeAttackOfOpportunityState(
+      metadata,
+      applyAttackOfOpportunityStateUpdate(previous, { action: 'clear-all' }),
+    ),
+    clearedPromptIds: previous.prompts.map((prompt) => prompt.id),
+  }
+}
+
+const applyAdvanceMetadataSideEffects = (
+  command: NextInitiativeLivePlayCommand | PreviousInitiativeLivePlayCommand,
+  previous: InitiativeLaneState,
+  current: InitiativeLaneState,
+  metadata: Record<string, unknown> | undefined,
+  timestamp: number,
+): {
+  readonly metadata: Record<string, unknown> | undefined
+  readonly change?: InitiativeMetadataSideEffectChange
+} => {
+  const sideEffectPrevious = cloneMetadata(metadata)
+  const attackOfOpportunityUpdate = clearPendingAttackOfOpportunityPrompts(metadata)
+  let nextMetadata = attackOfOpportunityUpdate.metadata
+  let expiredOrderEffectIds: readonly string[] = []
+  let progressedOrderEffectIds: readonly string[] = []
+
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE) {
+    const expiration = expireActiveOrderEffectsForInitiativeAdvanceWithResult(nextMetadata, {
+      before: {
+        activeId: previous.activeId,
+        round: previous.round,
+      },
+      after: {
+        activeId: current.activeId,
+        round: current.round,
+      },
+    }, {
+      now: () => timestamp,
+    })
+    nextMetadata = expiration.metadata
+    expiredOrderEffectIds = expiration.expiredEffects.map((effect) => effect.id)
+    progressedOrderEffectIds = expiration.progressedEffects.map((effect) => effect.id)
+  }
+
+  const sideEffectCurrent = cloneMetadata(nextMetadata)
+  if (sameJsonValue(sideEffectPrevious, sideEffectCurrent)) {
+    return { metadata }
+  }
+
+  return {
+    metadata: nextMetadata,
+    change: {
+      previous: sideEffectPrevious,
+      current: sideEffectCurrent,
+      clearedAttackOfOpportunityPromptIds: attackOfOpportunityUpdate.clearedPromptIds,
+      expiredOrderEffectIds,
+      progressedOrderEffectIds,
+    },
+  }
+}
+
 const applyInitiativeChange = (
   command: LivePlayInitiativeCommand,
   context: ResolvedInitiativeContext,
@@ -602,12 +744,32 @@ const applyInitiativeChange = (
     })
   }
 
-  const logEntry = createInitiativeGainLogEntry(command, previous, current, changedMap, timestamp)
+  const metadataSideEffects = command.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
+    ? null
+    : applyAdvanceMetadataSideEffects(command, previous, current, changedMap.metadata, timestamp)
+
+  const mapWithSideEffects: TabletopMap = metadataSideEffects
+    ? {
+        ...changedMap,
+        metadata: metadataSideEffects.metadata,
+      }
+    : changedMap
+  const logEntry = createInitiativeGainLogEntry(command, previous, current, mapWithSideEffects, timestamp)
+  const nextMap = mapWithInitiativeLogEntry(mapWithSideEffects, logEntry, dependencies.maxInitiativeLogEntries)
+
   return {
     previous,
     current,
     logEntry,
-    nextMap: mapWithInitiativeLogEntry(changedMap, logEntry, dependencies.maxInitiativeLogEntries),
+    ...(metadataSideEffects?.change === undefined
+      ? {}
+      : {
+          metadataChange: {
+            ...metadataSideEffects.change,
+            current: cloneMetadata(nextMap.metadata),
+          },
+        }),
+    nextMap,
   }
 }
 
@@ -629,6 +791,38 @@ const commandPatch = (
     ...(change.logEntry === undefined ? {} : { logEntry: change.logEntry }),
   },
 })
+
+const metadataPatch = (
+  command: NextInitiativeLivePlayCommand | PreviousInitiativeLivePlayCommand,
+  revision: number,
+  change: InitiativeMetadataSideEffectChange,
+): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_METADATA, InitiativeMetadataPatchPayload, LivePlayMapScope> => ({
+  schemaVersion: command.schemaVersion,
+  type: LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
+  mapSlug: command.mapSlug,
+  revision,
+  scopes: [metadataScope()],
+  payload: {
+    command: command.type,
+    previous: cloneMetadata(change.previous),
+    current: cloneMetadata(change.current),
+    clearedAttackOfOpportunityPromptIds: [...change.clearedAttackOfOpportunityPromptIds],
+    expiredOrderEffectIds: [...change.expiredOrderEffectIds],
+    progressedOrderEffectIds: [...change.progressedOrderEffectIds],
+  },
+})
+
+const acceptedPatches = (
+  command: LivePlayInitiativeCommand,
+  revision: number,
+  change: AppliedInitiativeChange,
+): readonly LivePlayPatch[] => {
+  const patches: LivePlayPatch[] = [commandPatch(command, revision, change)]
+  if (command.type !== LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE && change.metadataChange !== undefined) {
+    patches.push(metadataPatch(command, revision, change.metadataChange))
+  }
+  return patches
+}
 
 const resolveContext = async (
   command: LivePlayInitiativeCommand,
@@ -716,14 +910,14 @@ export const executeLivePlayInitiativeCommandUseCase = async (
         nextMap,
         previousRevision: currentRevision,
         revision,
-        patches: [commandPatch(command, revision, change)],
+        patches: acceptedPatches(command, revision, change),
       }
     },
     persist: () => {
       throw new Error('live-play initiative commands must persist through the accepted-result commit hook')
     },
     commit: ({ actor, currentRevision, nextMap, result, saveOpResult }) => {
-      const persisted = toPersistedMap(nextMap.map, nextMap.map.folder ?? '', deps.now(), { revision: result.revision })
+      const persisted = toPersistedMap(nextMap.map, nextMap.map.folder ?? '', nextMap.map.updatedAt ?? deps.now(), { revision: result.revision })
       const authoritativeMap = commitLivePlayMapUpdate({
         database: deps.database,
         mapRepository: deps.mapRepository,

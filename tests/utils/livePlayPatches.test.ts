@@ -302,6 +302,38 @@ describe('live-play patch application', () => {
     })
   })
 
+  it('replaces metadata patches so removed authoritative keys do not survive shallow merges', () => {
+    const map = baseMap({
+      metadata: {
+        keep: 'yes',
+        attackOfOpportunity: {
+          schemaVersion: 1,
+          prompts: [{ id: 'old-prompt' }],
+          usedRoundByAttackerId: {},
+        },
+        activeOrderEffects: [{ id: 'expired-order' }],
+      },
+    })
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [patchBase(LIVE_PLAY_PATCH_TYPES.MAP_METADATA, {
+        command: 'nextInitiative',
+        previous: map.metadata,
+        current: { keep: 'yes' },
+        clearedAttackOfOpportunityPromptIds: ['old-prompt'],
+        expiredOrderEffectIds: ['expired-order'],
+        progressedOrderEffectIds: [],
+      })],
+    })
+
+    expect(result).toMatchObject({ ok: true, applied: true, revision: 5 })
+    expect(map.metadata).toEqual({ keep: 'yes' })
+  })
+
   it('applies active scene patches and clears combat log metadata', () => {
     const map = baseMap({
       metadata: {

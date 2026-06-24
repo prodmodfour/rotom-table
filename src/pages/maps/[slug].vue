@@ -1017,7 +1017,7 @@ onBeforeUnmount(() => {
   clearRemotePokeballCapture()
 })
 
-let expireActiveOrdersAfterInitiativeAdvance: (advance: {
+let expireActiveOrdersLocallyAfterInitiativeAdvance: (advance: {
   before: { activeId: string | null; round: number }
   after: { activeId: string | null; round: number }
 }) => void = () => {}
@@ -1027,16 +1027,24 @@ const orderTimelinePoint = () => ({
   round: initiativeRound.value,
 })
 
-const previousInitiativeAndExpireAoo = async () => {
+const previousInitiativeFromControls = async () => {
+  if (!isSetupEditMode()) {
+    await Promise.resolve(previousInitiative())
+    return
+  }
   await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction())
   await Promise.resolve(previousInitiative())
 }
 
-const nextInitiativeAndExpireAoo = async () => {
+const nextInitiativeFromControls = async () => {
+  if (!isSetupEditMode()) {
+    await Promise.resolve(nextInitiative())
+    return
+  }
   const before = orderTimelinePoint()
   await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction())
   await Promise.resolve(nextInitiative())
-  expireActiveOrdersAfterInitiativeAdvance({ before, after: orderTimelinePoint() })
+  expireActiveOrdersLocallyAfterInitiativeAdvance({ before, after: orderTimelinePoint() })
 }
 
 const {
@@ -1349,7 +1357,7 @@ const {
   cancelOrderActionTargeting,
   selectOrderActionTarget,
 } = orderActionPanel
-expireActiveOrdersAfterInitiativeAdvance = orderActionPanel.expireActiveOrdersAfterInitiativeAdvance
+expireActiveOrdersLocallyAfterInitiativeAdvance = orderActionPanel.expireActiveOrdersLocallyAfterInitiativeAdvance
 
 const applyPokeballCaptureOutcomeForSetupEdit = async (event: PokeballCaptureOutcomeEvent) => {
   const sheetUpdated = await updatePlacedSheet(
@@ -1714,8 +1722,8 @@ useMapDimensionReconciliation({
         :token-pokeball-options-by-id="tokenPokeballOptionsById"
         @select-pokemon="selectPokemon"
         @focus-initiative-entry="focusInitiativeEntry"
-        @previous-initiative="previousInitiativeAndExpireAoo"
-        @next-initiative="nextInitiativeAndExpireAoo"
+        @previous-initiative="previousInitiativeFromControls"
+        @next-initiative="nextInitiativeFromControls"
         @start-scene="startSceneFromPanel"
         @end-scene="endSceneFromPanel"
         @move-pokemon="movePokemon"
@@ -1851,8 +1859,8 @@ useMapDimensionReconciliation({
         :has-initiative-values="hasInitiativeValues"
         @close="closeInitiativeMenu"
         @set-round="setInitiativeRound"
-        @previous="previousInitiativeAndExpireAoo"
-        @next="nextInitiativeAndExpireAoo"
+        @previous="previousInitiativeFromControls"
+        @next="nextInitiativeFromControls"
         @fill-from-speed="fillInitiativeFromSpeed"
         @clear-active="clearActiveInitiative"
         @clear-values="clearInitiativeValues"

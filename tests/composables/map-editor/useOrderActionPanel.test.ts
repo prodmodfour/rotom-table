@@ -103,7 +103,7 @@ describe('useOrderActionPanel', () => {
       },
     ])
 
-    panel.expireActiveOrdersAfterInitiativeAdvance({
+    panel.expireActiveOrdersLocallyAfterInitiativeAdvance({
       before: { activeId: 'pika', round: 1 },
       after: { activeId: 'trainer', round: 2 },
     })

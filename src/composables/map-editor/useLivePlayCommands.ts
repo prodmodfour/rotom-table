@@ -684,7 +684,7 @@ export const useLivePlayCommands = (
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
       payload,
-      [mapScope('initiative')],
+      [mapScope('initiative'), mapScope('metadata')],
     ),
   )
 
@@ -693,7 +693,7 @@ export const useLivePlayCommands = (
     commandBody(
       LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
       payload,
-      [mapScope('initiative')],
+      [mapScope('initiative'), mapScope('metadata')],
     ),
   )
 

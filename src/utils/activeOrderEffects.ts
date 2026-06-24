@@ -43,6 +43,14 @@ export interface OrderTimelineAdvance {
   after: OrderTimelinePoint
 }
 
+export interface ActiveOrderExpirationResult {
+  readonly metadata: Record<string, unknown>
+  readonly previousEffects: readonly ActiveOrderEffect[]
+  readonly currentEffects: readonly ActiveOrderEffect[]
+  readonly expiredEffects: readonly ActiveOrderEffect[]
+  readonly progressedEffects: readonly ActiveOrderEffect[]
+}
+
 export interface CreateActiveOrderEffectInput {
   user: Pick<SpawnedPokemon, 'id' | 'species'>
   order: TokenOrderMenuOption
@@ -284,6 +292,7 @@ const shouldExpireOrderEffect = (effect: ActiveOrderEffect, advance: OrderTimeli
 
 const markTurnEndWatcherProgress = (effect: ActiveOrderEffect, advance: OrderTimelineAdvance): ActiveOrderEffect => {
   if (effect.expiration.kind !== 'turn-end') return effect
+  if (effect.expiration.seenTurnStart === true) return effect
   if (!startsWatchedTurn(effect, advance)) return effect
   return {
     ...effect,
@@ -294,23 +303,38 @@ const markTurnEndWatcherProgress = (effect: ActiveOrderEffect, advance: OrderTim
   }
 }
 
-export const expireActiveOrderEffectsForInitiativeAdvance = (
+export const expireActiveOrderEffectsForInitiativeAdvanceWithResult = (
   metadata: Record<string, unknown> | undefined,
   advance: OrderTimelineAdvance,
   options: { now?: () => number; maxLogEntries?: number } = {},
-): Record<string, unknown> => {
-  const activeEffects = readActiveOrderEffects(metadata)
-  if (!activeEffects.length) return metadata ?? {}
-
-  const kept: ActiveOrderEffect[] = []
-  const expired: ActiveOrderEffect[] = []
-  for (const effect of activeEffects) {
-    if (shouldExpireOrderEffect(effect, advance)) expired.push(effect)
-    else kept.push(markTurnEndWatcherProgress(effect, advance))
+): ActiveOrderExpirationResult => {
+  const previousEffects = readActiveOrderEffects(metadata)
+  if (!previousEffects.length) {
+    return {
+      metadata: metadata ?? {},
+      previousEffects,
+      currentEffects: [],
+      expiredEffects: [],
+      progressedEffects: [],
+    }
   }
 
-  let next = writeActiveOrderEffects(metadata, kept)
-  for (const effect of expired) {
+  const currentEffects: ActiveOrderEffect[] = []
+  const expiredEffects: ActiveOrderEffect[] = []
+  const progressedEffects: ActiveOrderEffect[] = []
+  for (const effect of previousEffects) {
+    if (shouldExpireOrderEffect(effect, advance)) {
+      expiredEffects.push(effect)
+      continue
+    }
+
+    const current = markTurnEndWatcherProgress(effect, advance)
+    currentEffects.push(current)
+    if (current !== effect) progressedEffects.push(current)
+  }
+
+  let next = writeActiveOrderEffects(metadata, currentEffects)
+  for (const effect of expiredEffects) {
     next = appendOrderLogEntry(next, {
       userId: effect.userId,
       userName: effect.userName,
@@ -318,5 +342,18 @@ export const expireActiveOrderEffectsForInitiativeAdvance = (
       lines: [activeOrderWoreOffLine(effect)],
     }, options)
   }
-  return next
+
+  return {
+    metadata: next,
+    previousEffects,
+    currentEffects,
+    expiredEffects,
+    progressedEffects,
+  }
 }
+
+export const expireActiveOrderEffectsForInitiativeAdvance = (
+  metadata: Record<string, unknown> | undefined,
+  advance: OrderTimelineAdvance,
+  options: { now?: () => number; maxLogEntries?: number } = {},
+): Record<string, unknown> => expireActiveOrderEffectsForInitiativeAdvanceWithResult(metadata, advance, options).metadata

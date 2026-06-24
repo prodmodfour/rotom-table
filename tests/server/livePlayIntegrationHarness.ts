@@ -366,7 +366,7 @@ export class LivePlayIntegrationHarness {
       mapSlug: 'integration-arena',
       baseRevision: input.baseRevision,
       type: LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
-      scopes: [{ kind: 'map', lane: 'initiative' }],
+      scopes: [{ kind: 'map', lane: 'initiative' }, { kind: 'map', lane: 'metadata' }],
       payload: {
         orderIds: [...(input.orderIds ?? ['token-a', 'token-b'])],
         activeId: input.activeId === undefined ? 'token-a' : input.activeId,
@@ -388,7 +388,7 @@ export class LivePlayIntegrationHarness {
       mapSlug: 'integration-arena',
       baseRevision: input.baseRevision,
       type: LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
-      scopes: [{ kind: 'map', lane: 'initiative' }],
+      scopes: [{ kind: 'map', lane: 'initiative' }, { kind: 'map', lane: 'metadata' }],
       payload: {
         orderIds: [...(input.orderIds ?? ['token-a', 'token-b'])],
         activeId: input.activeId === undefined ? 'token-a' : input.activeId,

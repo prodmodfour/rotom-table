@@ -645,6 +645,17 @@ export interface InitiativeUpdatedPatchPayload {
   readonly logEntry?: Record<string, unknown>
 }
 
+export interface MapMetadataUpdatedPatchPayload {
+  /** Command or legacy metadata action that produced the authoritative metadata document. */
+  readonly command?: string
+  readonly action?: string
+  readonly previous: Record<string, unknown>
+  readonly current: Record<string, unknown>
+  readonly clearedAttackOfOpportunityPromptIds?: readonly string[]
+  readonly expiredOrderEffectIds?: readonly string[]
+  readonly progressedOrderEffectIds?: readonly string[]
+}
+
 export interface HazardsUpdatedPatchPayload {
   readonly command:
     | typeof LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD
@@ -711,6 +722,7 @@ export type CombatStagesModifiedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYP
 export type ExperienceGrantedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_EXPERIENCE, ExperienceGrantedPatchPayload, LivePlayScope>
 export type MoveUsedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.TOKEN_MOVE_USAGE | typeof LIVE_PLAY_PATCH_TYPES.TOKEN_ACTION, MoveUsedPatchPayload, LivePlayScope>
 export type InitiativeUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE, InitiativeUpdatedPatchPayload, LivePlayMapScope>
+export type MapMetadataUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_METADATA, MapMetadataUpdatedPatchPayload, LivePlayMapScope>
 export type HazardsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS, HazardsUpdatedPatchPayload, LivePlayMapScope>
 export type FieldEffectsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS, FieldEffectsUpdatedPatchPayload, LivePlayMapScope>
 export type TerrainVoxelsUpdatedPatch = LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN, TerrainVoxelsUpdatedPatchPayload, LivePlayMapScope>
@@ -727,6 +739,7 @@ export type KnownLivePlayPatch =
   | ExperienceGrantedPatch
   | MoveUsedPatch
   | InitiativeUpdatedPatch
+  | MapMetadataUpdatedPatch
   | HazardsUpdatedPatch
   | FieldEffectsUpdatedPatch
   | TerrainVoxelsUpdatedPatch

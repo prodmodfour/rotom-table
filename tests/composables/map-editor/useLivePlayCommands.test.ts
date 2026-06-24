@@ -650,8 +650,15 @@ describe('useLivePlayCommands', () => {
     await actions.nextInitiative({ orderIds: ['token-pikachu', 'target-token'], activeId: null, round: 1 })
     expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.nextInitiative, expect.objectContaining({
       type: LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE,
-      scopes: [{ kind: 'map', lane: 'initiative' }],
+      scopes: [{ kind: 'map', lane: 'initiative' }, { kind: 'map', lane: 'metadata' }],
       payload: { orderIds: ['token-pikachu', 'target-token'], activeId: null, round: 1 },
+    }))
+
+    await actions.previousInitiative({ orderIds: ['token-pikachu', 'target-token'], activeId: 'target-token', round: 1 })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.previousInitiative, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
+      scopes: [{ kind: 'map', lane: 'initiative' }, { kind: 'map', lane: 'metadata' }],
+      payload: { orderIds: ['token-pikachu', 'target-token'], activeId: 'target-token', round: 1 },
     }))
   })
 

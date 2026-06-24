@@ -292,7 +292,12 @@ export const useOrderActionPanel = ({
     return result
   }
 
-  const expireActiveOrdersAfterInitiativeAdvance = (advance: OrderTimelineAdvance) => {
+  /**
+   * Setup/edit-only helper. Live initiative commands already expire Orders on the
+   * server and return authoritative metadata; callers must not run this after a
+   * live nextInitiative response.
+   */
+  const expireActiveOrdersLocallyAfterInitiativeAdvance = (advance: OrderTimelineAdvance) => {
     if (!map.value) return
     map.value.metadata = expireActiveOrderEffectsForInitiativeAdvance(map.value.metadata, advance, {
       now,
@@ -306,7 +311,7 @@ export const useOrderActionPanel = ({
     useOrder,
     cancelOrderActionTargeting,
     selectOrderActionTarget,
-    expireActiveOrdersAfterInitiativeAdvance,
+    expireActiveOrdersLocallyAfterInitiativeAdvance,
   }
 }
 
