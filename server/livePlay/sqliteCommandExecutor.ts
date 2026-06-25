@@ -3,7 +3,7 @@ import { acceptedCommandRealtimeAppendInput } from './acceptedCommandRealtime'
 import {
   createAuthoritativeLivePlayCommandExecutor,
   type AcceptedLivePlayAfterCommitPublicationFailureReporter,
-  type AcceptedLivePlayRealtimePublisher,
+  type PersistedLivePlayRealtimeEventPublisher,
 } from './commandExecutor'
 import type { RotomDatabase } from '../storage/database'
 import { createSqliteLivePlayOpRepository, sqliteLivePlayOpRepository, type LivePlayOpRepository } from '../storage/opRepository'
@@ -18,8 +18,9 @@ import { publishSequencedRealtime } from '../utils/realtime'
 export interface CreateSqliteAuthoritativeLivePlayCommandExecutorOptions {
   readonly database?: RotomDatabase
   readonly opStore?: LivePlayOpRepository
-  readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'append'>
-  readonly publishAcceptedRealtimeEvent?: AcceptedLivePlayRealtimePublisher
+  readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'appendMany'>
+  readonly publishPersistedRealtimeEvent?: PersistedLivePlayRealtimeEventPublisher
+  readonly publishAcceptedRealtimeEvent?: PersistedLivePlayRealtimeEventPublisher
   readonly reportAfterCommitPublicationFailure?: AcceptedLivePlayAfterCommitPublicationFailureReporter
   readonly readMapInteractionMode?: (mapSlug: string) => MapInteractionMode
 }
@@ -40,10 +41,16 @@ export const createSqliteAuthoritativeLivePlayCommandExecutor = (
   return createAuthoritativeLivePlayCommandExecutor({
     opStore,
     readMapInteractionMode,
-    recordAcceptedRealtimeEvent: ({ command, result, clientId }) => realtimeEventRepository.append(
-      acceptedCommandRealtimeAppendInput({ command, result, clientId }),
-    ),
-    publishAcceptedRealtimeEvent: options.publishAcceptedRealtimeEvent
+    recordRealtimeEvents: (inputs) => realtimeEventRepository.appendMany(inputs),
+    recordAcceptedRealtimeEvent: ({ command, result, clientId }) => {
+      const [event] = realtimeEventRepository.appendMany([
+        acceptedCommandRealtimeAppendInput({ command, result, clientId }),
+      ])
+      if (!event) throw new Error('accepted live-play realtime event append returned no event')
+      return event
+    },
+    publishPersistedRealtimeEvent: options.publishPersistedRealtimeEvent
+      ?? options.publishAcceptedRealtimeEvent
       ?? ((event) => publishSequencedRealtime(event.event)),
     reportAfterCommitPublicationFailure: options.reportAfterCommitPublicationFailure,
   })

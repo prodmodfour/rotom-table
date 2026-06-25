@@ -12,7 +12,6 @@ import {
   type UseManeuverPayload,
   type UseOrderPayload,
 } from '#shared/livePlayCommands'
-import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -43,6 +42,7 @@ import {
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
+import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import {
   actorCanControlMapPlacement,
@@ -53,7 +53,6 @@ import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { sqliteSheetRepository, type PersistedSheet, type SheetRepository } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 
@@ -106,7 +105,6 @@ export interface LivePlayTableActionCommandDependencies {
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
-  readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
   readonly idFactory?: () => string
   readonly relativePath?: (path: string) => string
@@ -154,7 +152,6 @@ const actionDependencies = (dependencies: LivePlayTableActionCommandDependencies
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
   sheetRepository: dependencies.sheetRepository ?? sqliteSheetRepository,
   database: dependencies.database ?? getRotomDatabase(),
-  publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
   idFactory: dependencies.idFactory,
   relativePath: dependencies.relativePath ?? ((path: string) => path),
@@ -861,17 +858,6 @@ const responseFromContext = (
   } : {}),
 })
 
-const sheetRealtimeEvents = (
-  updates: readonly LivePlayTableActionSheetUpdate[],
-  clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => updates.flatMap((update) => {
-  const data = { kind: update.kind, slug: update.slug, sheet: update.sheet }
-  return [
-    { channel: sheetChannel(update.kind, update.slug), type: 'updated' as const, clientId, data },
-    { channel: sheetsChannel, type: 'updated' as const, clientId, data },
-  ]
-})
-
 const currentContextForAcceptedResult = async (
   result: LivePlayCommandAccepted,
   role: AuthRole,
@@ -969,7 +955,7 @@ export const executeLivePlayTableActionCommandUseCase = async (
     persist: () => {
       throw new Error('live-play table action commands must persist through the accepted-result commit hook')
     },
-    commit: ({ currentRevision, nextMap, result, saveOpResult }) => {
+    commit: ({ actor, command, currentRevision, nextMap, result, recordRealtimeEvents, saveOpResult }) => {
       deps.database.withTransaction(() => {
         const persistedMap = toPersistedMap(
           nextMap.map,
@@ -998,6 +984,17 @@ export const executeLivePlayTableActionCommandUseCase = async (
           }
         }
 
+        const sheetUpdates: LivePlayTableActionSheetUpdate[] = []
+        for (const plan of nextMap.nextSheets ?? []) {
+          const sheet = deps.sheetRepository.getByRef(plan.kind, plan.slug)
+          if (!sheet) throw new MapTokenTableActionUseCaseError(404, `Sheet ${plan.kind}/${plan.slug} not found after live-play command`)
+          sheetUpdates.push(sheetUpdateFromPersisted(sheet))
+        }
+        recordRealtimeEvents(livePlaySheetUpdateRealtimeAppendInputs({
+          command,
+          updates: sheetUpdates,
+          clientId: actor.clientId,
+        }))
         saveOpResult()
 
         const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
@@ -1011,11 +1008,6 @@ export const executeLivePlayTableActionCommandUseCase = async (
         const targetSheet = targetPlacement
           ? readRequiredSheetSync(targetPlacement, deps, 'table action target response')
           : undefined
-        const sheetUpdates: LivePlayTableActionSheetUpdate[] = []
-        for (const plan of nextMap.nextSheets ?? []) {
-          const sheet = deps.sheetRepository.getByRef(plan.kind, plan.slug)
-          if (sheet) sheetUpdates.push(sheetUpdateFromPersisted(sheet))
-        }
         persistedContext = {
           ...nextMap,
           map: authoritativeMap,
@@ -1026,12 +1018,6 @@ export const executeLivePlayTableActionCommandUseCase = async (
           sheetUpdates,
         }
       })
-    },
-    publish: ({ actor, result }) => {
-      if (!persistedContext) return
-      for (const event of sheetRealtimeEvents(persistedContext.sheetUpdates ?? [], actor.clientId)) {
-        deps.publishRealtimeEvent(event)
-      }
     },
   })
 

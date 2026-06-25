@@ -22,17 +22,18 @@ import {
   type PlayerProfileId,
 } from '#shared/playerProfiles'
 import { LIVE_PLAY_REALTIME_EVENT_TYPES, type RealtimeEvent } from '#shared/realtime'
+import { acceptedCommandRealtimeAppendInput } from '~~/server/livePlay/acceptedCommandRealtime'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteLivePlayOpRepository, type LivePlayOpRepository } from '~~/server/storage/opRepository'
 import { createSqliteMapRepository, type MapRepository } from '~~/server/storage/mapRepository'
+import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository, type PersistedSheet, type SheetRepository } from '~~/server/storage/sheetRepository'
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
 import { executeLivePlaySheetCommandUseCase } from '~~/server/useCases/applyLivePlaySheetCommand'
 import { executeLivePlayUseMoveCommandUseCase } from '~~/server/useCases/applyLivePlayUseMoveCommand'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
-import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import type { SheetKind, TabletopMap } from '~/types/map'
 
@@ -151,12 +152,22 @@ export class LivePlayIntegrationHarness {
       database: this.database,
       clock: () => this.nextTimestamp(),
     })
-    const acceptedRealtimeHooks = acceptedRealtimeTestHooks([], { clock: () => this.nextTimestamp() })
+    const realtimeRepository = createSqliteRealtimeEventRepository({
+      database: this.database,
+      clock: () => this.nextTimestamp(),
+    })
     this.commandExecutor = createAuthoritativeLivePlayCommandExecutor({
       opStore: this.opRepository,
       queue: this.queue,
-      recordAcceptedRealtimeEvent: acceptedRealtimeHooks.recordAcceptedRealtimeEvent,
-      publishAcceptedRealtimeEvent: (event) => this.publishSequencedRealtimeEvent(event.event),
+      recordRealtimeEvents: (inputs) => realtimeRepository.appendMany(inputs),
+      recordAcceptedRealtimeEvent: ({ command, result, clientId }) => {
+        const [event] = realtimeRepository.appendMany([
+          acceptedCommandRealtimeAppendInput({ command, result, clientId }),
+        ])
+        if (!event) throw new Error('accepted live-play realtime event append returned no event')
+        return event
+      },
+      publishPersistedRealtimeEvent: (event) => this.publishSequencedRealtimeEvent(event.event),
     })
 
     this.seed(options)
@@ -562,11 +573,6 @@ export class LivePlayIntegrationHarness {
       mapRepository: this.mapRepository,
       sheetRepository: this.sheetRepository,
       database: this.database,
-      publishRealtimeEvent: (event: Omit<RealtimeEvent, 'timestamp'>) => {
-        const withTimestamp = { ...event, timestamp: this.nextTimestamp() } as RealtimeEvent
-        this.publishedEvents.push(cloneJson(withTimestamp))
-        for (const client of this.clients.values()) client.receive(withTimestamp)
-      },
       relativePath: (path: string) => path,
       now: () => this.nextTimestamp(),
     }

@@ -12,7 +12,6 @@ import {
 } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
-import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { SheetPlacement, TabletopMap } from '~/types/map'
 import type { SheetMoveUsageState } from '~/types/moveUsage'
@@ -36,6 +35,7 @@ import {
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
+import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import {
@@ -44,7 +44,6 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 
@@ -86,7 +85,6 @@ export interface LivePlayUseMoveCommandDependencies {
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
-  readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
   readonly maxMoveLogEntries?: number
@@ -129,7 +127,6 @@ const actionDependencies = (dependencies: LivePlayUseMoveCommandDependencies) =>
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
   sheetRepository: dependencies.sheetRepository ?? sqliteSheetRepository,
   database: dependencies.database ?? getRotomDatabase(),
-  publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
   relativePath: dependencies.relativePath ?? ((path: string) => path),
   maxMoveLogEntries: dependencies.maxMoveLogEntries,
@@ -546,17 +543,6 @@ const applyUseMove = (
   }
 }
 
-const sheetEvents = (
-  updates: readonly LivePlayUseMoveCommandSheetUpdate[],
-  clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => updates.flatMap((update) => {
-  const data = { kind: update.kind, slug: update.slug, sheet: update.sheet }
-  return [
-    { channel: sheetChannel(update.kind, update.slug), type: 'updated' as const, clientId, data },
-    { channel: sheetsChannel, type: 'updated' as const, clientId, data },
-  ]
-})
-
 const isAcceptedResult = (result: LivePlayCommandResult): result is LivePlayCommandAccepted => (
   result.ok === true && !('duplicate' in result)
 )
@@ -675,7 +661,7 @@ export const executeLivePlayUseMoveCommandUseCase = async (
     persist: () => {
       throw new Error('live-play useMove commands must persist through the accepted-result commit hook')
     },
-    commit: ({ currentRevision, nextMap, result, saveOpResult }) => {
+    commit: ({ actor, command, currentRevision, nextMap, result, recordRealtimeEvents, saveOpResult }) => {
       const acceptedNextMap = nextMap as AcceptedUseMoveContext
       deps.database.withTransaction(() => {
         const persisted = toPersistedMap(
@@ -705,34 +691,34 @@ export const executeLivePlayUseMoveCommandUseCase = async (
           }
         }
 
-        saveOpResult()
-
-        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
-        if (!authoritativeMap) throw new LivePlayUseMoveCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play useMove command`)
-        const authoritativePlacement = authoritativeMap.placements.find((candidate) => candidate.id === acceptedNextMap.placement.id)
-        if (!authoritativePlacement) throw new LivePlayUseMoveCommandUseCaseError(404, `Placement ${acceptedNextMap.placement.id} not found after live-play useMove command`)
         const authoritativeSheet = acceptedNextMap.nextSheet
           ? deps.sheetRepository.getByRef(acceptedNextMap.sheet.kind, acceptedNextMap.sheet.slug)
           : null
         if (acceptedNextMap.nextSheet && !authoritativeSheet) {
           throw new LivePlayUseMoveCommandUseCaseError(404, `Sheet ${acceptedNextMap.sheet.kind}/${acceptedNextMap.sheet.slug} not found after live-play useMove command`)
         }
+        const sheetUpdate = authoritativeSheet ? sheetUpdateFromPersisted(authoritativeSheet) : undefined
+        recordRealtimeEvents(livePlaySheetUpdateRealtimeAppendInputs({
+          command,
+          updates: sheetUpdate ? [sheetUpdate] : [],
+          clientId: actor.clientId,
+        }))
+        saveOpResult()
+
+        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
+        if (!authoritativeMap) throw new LivePlayUseMoveCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after live-play useMove command`)
+        const authoritativePlacement = authoritativeMap.placements.find((candidate) => candidate.id === acceptedNextMap.placement.id)
+        if (!authoritativePlacement) throw new LivePlayUseMoveCommandUseCaseError(404, `Placement ${acceptedNextMap.placement.id} not found after live-play useMove command`)
         persistedContext = {
           ...acceptedNextMap,
           map: authoritativeMap,
           placement: authoritativePlacement,
-          ...(authoritativeSheet ? {
+          ...(authoritativeSheet && sheetUpdate ? {
             sheet: authoritativeSheet,
-            sheetUpdate: sheetUpdateFromPersisted(authoritativeSheet),
+            sheetUpdate,
           } : {}),
         }
       })
-    },
-    publish: ({ actor, result }) => {
-      if (!persistedContext) return
-      for (const event of sheetEvents(persistedContext.sheetUpdate ? [persistedContext.sheetUpdate] : [], actor.clientId)) {
-        deps.publishRealtimeEvent(event)
-      }
     },
   })
 

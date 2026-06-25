@@ -174,7 +174,6 @@ const execute = (
   random: options.random ?? randomSequence([0.5, 0]),
   now: options.now ?? (() => 1000),
   idFactory: options.idFactory ?? (() => 'feedback-id'),
-  publishRealtimeEvent: (event) => harness.events.push(event),
 })
 
 const accepted = (result: unknown): LivePlayCommandAccepted => {
@@ -410,7 +409,6 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       ...failingHarness.sheets,
       applyLivePlayUpdate: () => 'stale' as const,
     }
-    const failingEvents: unknown[] = []
     const failing = await executeLivePlayResolveMoveCommandUseCase({
       role: 'gm',
       command: commandFor(failingMap, moveIntent, 'op_atomicfail1'),
@@ -424,13 +422,11 @@ describe('executeLivePlayResolveMoveCommandUseCase', () => {
       random: randomSequence([0.5, 0]),
       now: () => 1000,
       idFactory: () => 'feedback-id',
-      publishRealtimeEvent: (event) => failingEvents.push(event),
     })
     expect(failing.result).toMatchObject({ ok: false, reason: 'persistence-failed' })
     expect(failingHarness.maps.getBySlug('arena')?.revision).toBe(4)
     expect(failingHarness.sheets.getByRef('pokemon', 'target-a')?.revision).toBe(2)
     expect(failingHarness.ops.getOpResult('arena', 'op_atomicfail1')).toBeNull()
-    expect(failingEvents).toHaveLength(0)
   })
 
   it('replays duplicate opIds from stored MOVE_STATE without replanning, rerolling, publishing, or advancing revisions', async () => {

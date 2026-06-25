@@ -1,11 +1,11 @@
 /**
  * Durable realtime journaling for accepted live-play map command events.
  *
- * Accepted map command events are now appended to the SQLite realtime event log
- * in the same transaction as the authoritative map/sheet and operation-result
- * writes. Full sheet update events remain transitional and process-local in this
- * phase; reconnect still relies on aggregate snapshot reconciliation. A later
- * phase will journal sheet events transactionally as well.
+ * Accepted map command events are appended to the SQLite realtime event log in
+ * the same transaction as the authoritative map/sheet and operation-result
+ * writes. Full sheet update events produced by accepted live-play commands are
+ * also journaled transactionally by the sheet-update realtime helper; reconnect
+ * still relies on aggregate snapshot reconciliation until SSE replay migrates.
  */
 
 import type { LivePlayCommandAccepted, LivePlayCommandEnvelope } from '#shared/livePlayCommands'

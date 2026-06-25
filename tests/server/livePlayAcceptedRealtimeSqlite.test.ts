@@ -11,6 +11,7 @@ import {
 } from '#shared/livePlayCommands'
 import { LIVE_PLAY_REALTIME_EVENT_TYPES, type RealtimeEvent } from '#shared/realtime'
 import { acceptedCommandRealtimeDedupeKey } from '~~/server/livePlay/acceptedCommandRealtime'
+import { livePlaySheetUpdateRealtimeAppendInputs } from '~~/server/livePlay/sheetUpdateRealtime'
 import {
   createSqliteAuthoritativeLivePlayCommandExecutor,
   type CreateSqliteAuthoritativeLivePlayCommandExecutorOptions,
@@ -114,7 +115,7 @@ const sheetPatch = (currentCommand: LivePlayCommandEnvelope, revision: number): 
 
 const createHarness = (options: {
   readonly database?: RotomDatabase
-  readonly realtime?: Pick<RealtimeEventRepository, 'append'>
+  readonly realtime?: Pick<RealtimeEventRepository, 'appendMany'>
   readonly opStore?: LivePlayOpRepository
   readonly publishAcceptedRealtimeEvent?: CreateSqliteAuthoritativeLivePlayCommandExecutorOptions['publishAcceptedRealtimeEvent']
   readonly reportAfterCommitPublicationFailure?: CreateSqliteAuthoritativeLivePlayCommandExecutorOptions['reportAfterCommitPublicationFailure']
@@ -204,7 +205,7 @@ const executeSheetChanging = (
   persist: () => {
     throw new Error('commit hook required')
   },
-  commit: ({ currentRevision, nextMap, saveOpResult }) => harness.database.withTransaction(() => {
+  commit: ({ actor, command, currentRevision, nextMap, recordRealtimeEvents, saveOpResult }) => harness.database.withTransaction(() => {
     const mapResult = harness.maps.applyLivePlayUpdate({
       slug: currentCommand.mapSlug,
       expectedRevision: currentRevision,
@@ -220,11 +221,15 @@ const executeSheetChanging = (
       nextSheet: { ...sheet.sheet, hp: 12, updatedAt: 2_000 },
     })
     if (sheetResult === 'stale') throw new Error('sheet stale')
+    const authoritativeSheet = harness.sheets.getByRef('pokemon', 'pikachu')
+    if (!authoritativeSheet) throw new Error('sheet missing after update')
+    recordRealtimeEvents(livePlaySheetUpdateRealtimeAppendInputs({
+      command,
+      updates: [{ kind: authoritativeSheet.kind, slug: authoritativeSheet.slug, sheet: authoritativeSheet.sheet }],
+      clientId: actor.clientId,
+    }))
     saveOpResult()
   }),
-  publish: () => {
-    harness.published.push({ channel: 'sheet:pokemon:pikachu', type: 'updated', timestamp: 9_999 })
-  },
 })
 
 const opRecord = (harness: SqliteHarness, opId: string) =>
@@ -269,7 +274,7 @@ describe('SQLite accepted command realtime journaling', () => {
     expect(harness.published).toEqual([event?.event])
   })
 
-  it('commits sheet-changing map, sheet, op result, and accepted event; transitional sheet events publish first', async () => {
+  it('commits sheet-changing map, sheet, sheet events, op result, and accepted event in sequence order', async () => {
     const harness = createHarness()
 
     const result = await executeSheetChanging(harness, sheetCommand('op_sqlsheet1'))
@@ -278,10 +283,16 @@ describe('SQLite accepted command realtime journaling', () => {
     expect(harness.maps.getBySlug('arena')).toMatchObject({ revision: 1, metadata: { sheetChanged: true } })
     expect(harness.sheets.getByRef('pokemon', 'pikachu')).toMatchObject({ revision: 1, sheet: { hp: 12 } })
     expect(opRecord(harness, 'op_sqlsheet1')?.result).toEqual(result)
+    const events = harness.realtime.readAfter({ afterSequence: 0 }).events
+    expect(events).toHaveLength(3)
+    expect(events.map((stored) => stored.event.channel)).toEqual(['sheet:pokemon:pikachu', 'sheets', 'map:arena'])
+    expect(events.slice(0, 2).map((stored) => stored.access)).toEqual([
+      { kind: 'sheet-access', sheetKind: 'pokemon', sheetSlug: 'pikachu' },
+      { kind: 'sheet-access', sheetKind: 'pokemon', sheetSlug: 'pikachu' },
+    ])
     const event = eventRecord(harness, 'op_sqlsheet1')
-    expect(event?.event).toMatchObject({ type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED, sequence: 1 })
-    expect(harness.published.map((published) => published.type)).toEqual(['updated', LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED])
-    expect(harness.published.at(-1)).toStrictEqual(event?.event)
+    expect(event?.event).toMatchObject({ type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED, sequence: 3 })
+    expect(harness.published).toEqual(events.map((stored) => stored.event))
   })
 
   it('rolls back durable events with map, sheet, op-result, append, dedupe, and later commit failures', async () => {
@@ -300,6 +311,16 @@ describe('SQLite accepted command realtime journaling', () => {
     expect(opRecord(sheetFailure, 'op_sheetfail1')).toBeNull()
     expect(eventRecord(sheetFailure, 'op_sheetfail1')).toBeNull()
 
+    const sheetEventAppendFailure = createHarness({
+      realtime: { appendMany: vi.fn(() => { throw new Error('sheet event append failed') }) },
+    })
+    await expect(executeSheetChanging(sheetEventAppendFailure, sheetCommand('op_sheetevtfail')))
+      .resolves.toMatchObject({ ok: false, reason: 'persistence-failed' })
+    expect(sheetEventAppendFailure.maps.getBySlug('arena')?.revision).toBe(0)
+    expect(sheetEventAppendFailure.sheets.getByRef('pokemon', 'pikachu')?.revision).toBe(0)
+    expect(opRecord(sheetEventAppendFailure, 'op_sheetevtfail')).toBeNull()
+    expect(sheetEventAppendFailure.realtime.cursorState().latestSequence).toBe(0)
+
     const database = closeLater(openRotomDatabase({ path: ':memory:', enableWal: false }))
     const throwingOpStore: LivePlayOpRepository = {
       ...createSqliteLivePlayOpRepository({ database }),
@@ -317,7 +338,7 @@ describe('SQLite accepted command realtime journaling', () => {
     expect(eventRecord(opFailure, 'op_opfail001')).toBeNull()
 
     const appendFailure = createHarness({
-      realtime: { append: vi.fn(() => { throw new Error('event append failed') }) },
+      realtime: { appendMany: vi.fn(() => { throw new Error('event append failed') }) },
     })
     await expect(executeMapOnly(appendFailure, command('op_appendf01')))
       .resolves.toMatchObject({ ok: false, reason: 'persistence-failed' })

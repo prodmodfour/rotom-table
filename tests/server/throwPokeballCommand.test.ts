@@ -126,7 +126,6 @@ const execute = async (input: ReturnType<typeof setup> & {
   readonly profile?: PlayerProfile | null
   readonly random?: () => number
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list' | 'applyLivePlayUpdate'>
-  readonly publish?: (event: unknown) => void
 }) => executeThrowPokeballCommandUseCase({
   role: input.role ?? 'gm',
   command: input.command ?? commandFor(input.map),
@@ -139,7 +138,6 @@ const execute = async (input: ReturnType<typeof setup> & {
   commandExecutor: input.executor,
   random: input.random,
   now: () => 1_700_000_002_000,
-  publishRealtimeEvent: input.publish ?? ((event) => input.published.push(event)),
 })
 
 describe('throwPokeball live-play command', () => {
@@ -321,7 +319,6 @@ describe('throwPokeball live-play command', () => {
 
   it('rolls back map, trainer, target, and op-result writes when the target sheet write is stale', async () => {
     const env = setup()
-    const published: unknown[] = []
     const staleTargetSheetRepository = {
       getByRef: env.sheets.getByRef,
       list: env.sheets.list,
@@ -336,7 +333,6 @@ describe('throwPokeball live-play command', () => {
       ...env,
       sheetRepository: staleTargetSheetRepository,
       random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
-      publish: (event) => published.push(event),
     })
 
     expect(response.result).toMatchObject({ ok: false, reason: 'persistence-failed', currentRevision: 0 })
@@ -346,12 +342,11 @@ describe('throwPokeball live-play command', () => {
     expect(env.sheets.getByRef('trainer', 'ash')?.sheet.inventory).toMatchObject({ pokeBalls: [{ qty: 2 }] })
     expect(env.sheets.getByRef('pokemon', 'pidgey')?.revision).toBe(0)
     expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toBeNull()
-    expect(published).toEqual([])
+    expect(env.published).toEqual([])
   })
 
   it('rolls back the map and op result when the trainer sheet write is stale', async () => {
     const env = setup()
-    const published: unknown[] = []
     const staleTrainerSheetRepository = {
       getByRef: env.sheets.getByRef,
       list: env.sheets.list,
@@ -366,7 +361,6 @@ describe('throwPokeball live-play command', () => {
       ...env,
       sheetRepository: staleTrainerSheetRepository,
       random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
-      publish: (event) => published.push(event),
     })
 
     expect(response.result).toMatchObject({ ok: false, reason: 'persistence-failed', currentRevision: 0 })
@@ -376,12 +370,11 @@ describe('throwPokeball live-play command', () => {
     expect(env.sheets.getByRef('trainer', 'ash')?.sheet.inventory).toMatchObject({ pokeBalls: [{ qty: 2 }] })
     expect(env.sheets.getByRef('pokemon', 'pidgey')?.revision).toBe(0)
     expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toBeNull()
-    expect(published).toEqual([])
+    expect(env.published).toEqual([])
   })
 
   it('rolls back operation state when the map write fails before sheet writes', async () => {
     const env = setup()
-    const published: unknown[] = []
     const mapRepository = {
       getBySlug: env.maps.getBySlug,
       applyLivePlayUpdate: vi.fn((input: Parameters<typeof env.maps.applyLivePlayUpdate>[0]) => {
@@ -402,7 +395,6 @@ describe('throwPokeball live-play command', () => {
       commandExecutor: env.executor,
       random: vi.fn().mockReturnValueOnce(0.99).mockReturnValueOnce(0),
       now: () => 1_700_000_002_000,
-      publishRealtimeEvent: (event) => published.push(event),
     })
 
     expect(response.result).toMatchObject({ ok: false, reason: 'persistence-failed', currentRevision: 0 })
@@ -410,7 +402,7 @@ describe('throwPokeball live-play command', () => {
     expect(env.sheets.getByRef('trainer', 'ash')?.revision).toBe(0)
     expect(env.sheets.getByRef('pokemon', 'pidgey')?.revision).toBe(0)
     expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toBeNull()
-    expect(published).toEqual([])
+    expect(env.published).toEqual([])
   })
 
   it('returns the stored capture result for duplicate opIds without rerolling, re-consuming, or advancing revisions', async () => {

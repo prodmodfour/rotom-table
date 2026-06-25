@@ -15,7 +15,6 @@ import {
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
 import { normalizeRevision, nextRevision } from '#shared/sessionRevisions'
-import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetKind, SheetPlacement, TabletopMap } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -47,6 +46,7 @@ import {
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
+import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import {
   createSqliteMapRepository,
@@ -59,7 +59,6 @@ import {
   type StoredSheetDocument,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 
@@ -99,7 +98,6 @@ export interface ThrowPokeballCommandDependencies {
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'> & Partial<RotomDatabase>
-  readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly random?: () => number
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
@@ -161,7 +159,6 @@ const actionDependencies = (dependencies: ThrowPokeballCommandDependencies) => {
     mapRepository,
     sheetRepository,
     commandExecutor,
-    publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
     random: dependencies.random,
     now: dependencies.now ?? defaultNow,
     relativePath: dependencies.relativePath ?? ((path: string) => path),
@@ -637,17 +634,6 @@ const sheetUpdateFromPersisted = (sheet: PersistedSheet): LivePlayPokeballComman
   sheet: sheet.sheet,
 })
 
-const sheetRealtimeEvents = (
-  updates: readonly LivePlayPokeballCommandSheetUpdate[],
-  clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => updates.flatMap((update) => {
-  const data = { kind: update.kind, slug: update.slug, sheet: update.sheet }
-  return [
-    { channel: sheetChannel(update.kind, update.slug), type: 'updated' as const, clientId, data },
-    { channel: sheetsChannel, type: 'updated' as const, clientId, data },
-  ]
-})
-
 const applyThrowPokeballCommand = (
   command: ThrowPokeballLivePlayCommand,
   context: ResolvedThrowPokeballCommandContext,
@@ -882,7 +868,7 @@ export const executeThrowPokeballCommandUseCase = async (
     persist: () => {
       throw new Error('throwPokeball live-play commands must persist through the accepted-result commit hook')
     },
-    commit: ({ currentRevision, nextMap, result, saveOpResult }) => {
+    commit: ({ actor, command, currentRevision, nextMap, result, recordRealtimeEvents, saveOpResult }) => {
       deps.database.withTransaction(() => {
         if (!nextMap.nextMap || !nextMap.nextTrainerSheet) {
           throw new ThrowPokeballCommandUseCaseError(409, 'throwPokeball accepted without a complete map and trainer sheet update')
@@ -924,10 +910,6 @@ export const executeThrowPokeballCommandUseCase = async (
           }
         }
 
-        saveOpResult()
-
-        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
-        if (!authoritativeMap) throw new ThrowPokeballCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after Poké Ball command`)
         const authoritativeTrainerSheet = deps.sheetRepository.getByRef('trainer', nextMap.trainerSheet.slug)
         if (!authoritativeTrainerSheet) throw new ThrowPokeballCommandUseCaseError(404, `Trainer sheet ${nextMap.trainerSheet.slug} not found after Poké Ball command`)
         const updates = [sheetUpdateFromPersisted(authoritativeTrainerSheet)]
@@ -936,18 +918,21 @@ export const executeThrowPokeballCommandUseCase = async (
           if (!authoritativeTargetSheet) throw new ThrowPokeballCommandUseCaseError(404, `Target Pokémon sheet ${nextMap.targetSheet.slug} not found after Poké Ball command`)
           updates.push(sheetUpdateFromPersisted(authoritativeTargetSheet))
         }
+        recordRealtimeEvents(livePlaySheetUpdateRealtimeAppendInputs({
+          command,
+          updates,
+          clientId: actor.clientId,
+        }))
+        saveOpResult()
+
+        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
+        if (!authoritativeMap) throw new ThrowPokeballCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after Poké Ball command`)
         persistedContext = {
           ...nextMap,
           map: authoritativeMap,
           sheetUpdates: updates,
         }
       })
-    },
-    publish: ({ actor, result }) => {
-      if (!persistedContext) return
-      for (const event of sheetRealtimeEvents(persistedContext.sheetUpdates ?? [], actor.clientId)) {
-        deps.publishRealtimeEvent(event)
-      }
     },
   })
 

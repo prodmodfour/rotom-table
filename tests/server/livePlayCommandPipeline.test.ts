@@ -13,6 +13,7 @@ import {
 } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
+import type { AppendRealtimeEventInput } from '~~/server/storage/realtimeEventRepository'
 import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 
 interface TestMap {
@@ -55,6 +56,12 @@ const createPatch = (
   revision,
   scopes: command.scopes,
   payload: command.payload,
+})
+
+const supplementalRealtimeInput = (id: string): AppendRealtimeEventInput => ({
+  event: { channel: 'sheets', type: 'updated', data: { id } },
+  access: { kind: 'gm-only' },
+  dedupeKey: `supplemental:${id}`,
 })
 
 const deferred = <T = void>() => {
@@ -303,6 +310,112 @@ describe('authoritative live-play command pipeline', () => {
     expect(published).toHaveLength(1)
     expect(published[0]).toBe((recorded[0] as { readonly event: unknown }).event)
     expect(opStore.recordCount).toBe(1)
+  })
+
+  it('records supplemental durable realtime events before the accepted event and publishes them in sequence order', async () => {
+    const maps = new Map<string, TestMap>([['arena', { slug: 'arena', revision: 0, log: [] }]])
+    const opStore = createInMemoryLivePlayOpStore()
+    const published: unknown[] = []
+    const hooks = acceptedRealtimeTestHooks(published)
+    const executor = createAuthoritativeLivePlayCommandExecutor({
+      opStore,
+      queue: createInProcessMapWriteQueue(),
+      recordRealtimeEvents: hooks.recordRealtimeEvents,
+      recordAcceptedRealtimeEvent: hooks.recordAcceptedRealtimeEvent,
+      publishPersistedRealtimeEvent: hooks.publishPersistedRealtimeEvent,
+    })
+    const command = createCommand('arena', 'op_supplemental1', 0, 'first')
+    const supplementalEvents: unknown[] = []
+
+    const result = await executor.execute<typeof command, TestMap, undefined, undefined>({
+      command,
+      readMap: ({ command: currentCommand }) => maps.get(currentCommand.mapSlug)!,
+      apply: ({ command: currentCommand, map, currentRevision }) => ({
+        status: 'accepted',
+        nextMap: { ...map, revision: currentRevision + 1, log: [...map.log, currentCommand.payload.label] },
+        patches: [createPatch(currentCommand, currentRevision + 1)],
+      }),
+      persist: () => {
+        throw new Error('commit required')
+      },
+      commit: ({ nextMap, recordRealtimeEvents, saveOpResult }) => {
+        maps.set(nextMap.slug, nextMap)
+        expect(recordRealtimeEvents([])).toEqual([])
+        supplementalEvents.push(...recordRealtimeEvents([supplementalRealtimeInput('sheet-1')]))
+        const first = saveOpResult()
+        const second = saveOpResult()
+        expect(second).toEqual(first)
+      },
+    })
+
+    expect(result).toMatchObject({ ok: true, revision: 1 })
+    expect(supplementalEvents).toHaveLength(1)
+    expect(published).toHaveLength(2)
+    expect(published).toEqual([
+      expect.objectContaining({ sequence: 1, channel: 'sheets', type: 'updated' }),
+      expect.objectContaining({ sequence: 2, channel: 'map:arena', type: 'live-play-command-accepted' }),
+    ])
+    expect(opStore.recordCount).toBe(1)
+  })
+
+  it('rejects supplemental durable realtime recording after saveOpResult', async () => {
+    const maps = new Map<string, TestMap>([['arena', { slug: 'arena', revision: 0, log: [] }]])
+    const hooks = acceptedRealtimeTestHooks([])
+    const executor = createAuthoritativeLivePlayCommandExecutor({
+      opStore: createInMemoryLivePlayOpStore(),
+      queue: createInProcessMapWriteQueue(),
+      recordRealtimeEvents: hooks.recordRealtimeEvents,
+      recordAcceptedRealtimeEvent: hooks.recordAcceptedRealtimeEvent,
+    })
+    const command = createCommand('arena', 'op_suppafter1', 0, 'first')
+
+    const result = await executor.execute<typeof command, TestMap, undefined, undefined>({
+      command,
+      readMap: ({ command: currentCommand }) => maps.get(currentCommand.mapSlug)!,
+      apply: ({ command: currentCommand, map, currentRevision }) => ({
+        status: 'accepted',
+        nextMap: { ...map, revision: currentRevision + 1, log: [...map.log, currentCommand.payload.label] },
+        patches: [createPatch(currentCommand, currentRevision + 1)],
+      }),
+      persist: () => {
+        throw new Error('commit required')
+      },
+      commit: ({ saveOpResult, recordRealtimeEvents }) => {
+        saveOpResult()
+        recordRealtimeEvents([supplementalRealtimeInput('late')])
+      },
+    })
+
+    expect(result).toMatchObject({ ok: false, reason: 'persistence-failed' })
+    expect(result).toMatchObject({ message: expect.stringContaining('before saveOpResult') })
+  })
+
+  it('fails clearly when supplemental durable realtime storage is not configured', async () => {
+    const maps = new Map<string, TestMap>([['arena', { slug: 'arena', revision: 0, log: [] }]])
+    const executor = createAuthoritativeLivePlayCommandExecutor({
+      opStore: createInMemoryLivePlayOpStore(),
+      queue: createInProcessMapWriteQueue(),
+    })
+    const command = createCommand('arena', 'op_suppmissing1', 0, 'first')
+
+    const result = await executor.execute<typeof command, TestMap, undefined, undefined>({
+      command,
+      readMap: ({ command: currentCommand }) => maps.get(currentCommand.mapSlug)!,
+      apply: ({ command: currentCommand, map, currentRevision }) => ({
+        status: 'accepted',
+        nextMap: { ...map, revision: currentRevision + 1, log: [...map.log, currentCommand.payload.label] },
+        patches: [createPatch(currentCommand, currentRevision + 1)],
+      }),
+      persist: () => {
+        throw new Error('commit required')
+      },
+      commit: ({ recordRealtimeEvents }) => {
+        recordRealtimeEvents([supplementalRealtimeInput('missing')])
+      },
+    })
+
+    expect(result).toMatchObject({ ok: false, reason: 'persistence-failed' })
+    expect(result).toMatchObject({ message: expect.stringContaining('durable live-play realtime event recording is not configured') })
   })
 
   it('fails accepted commits when durable realtime recording fails', async () => {

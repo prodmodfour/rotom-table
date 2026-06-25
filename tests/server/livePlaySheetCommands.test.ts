@@ -309,6 +309,22 @@ describe('live-play sheet commands', () => {
     expect(response.sheetUpdates?.[0]?.sheet).toMatchObject({ combat: { conditions: ['Burned'] }, revision: 3 })
   })
 
+  it('does not emit sheet updates for temporary-HP-only changes', async () => {
+    const harness = createHarness(baseMap({ activeScene: { name: 'Battle', startedAt: 100 } }))
+    const command = hpCommand({
+      opId: 'op_sheet_temphp',
+      payload: { placementId: 'linked-token', currentHp: 30, temporaryHp: 5 },
+    })
+
+    const response = await execute(harness, command)
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.mapWrites).toHaveLength(1)
+    expect(harness.sheetWrites).toHaveLength(0)
+    expect(response.sheetUpdates).toBeUndefined()
+    expect(harness.published.map((event) => (event as { channel?: string }).channel)).toEqual(['map:arena'])
+  })
+
   it('allows a selected player profile to grant experience to a linked Pokémon token', async () => {
     const harness = createHarness()
 

@@ -9,7 +9,6 @@ import {
 } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
-import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import {
   LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
@@ -46,6 +45,7 @@ import {
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
 import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
+import { livePlaySheetUpdateRealtimeAppendInputs } from '../livePlay/sheetUpdateRealtime'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import {
   createSqliteMapRepository,
@@ -57,7 +57,6 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath, logicalSheetResourcePath } from '../utils/runtimeResourcePaths'
-import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { validateResolveMoveScopes } from './resolveMoveCommandScopes'
@@ -99,7 +98,6 @@ export interface LivePlayResolveMoveCommandDependencies {
   readonly mapRepository?: Pick<MapRepository<TabletopMap>, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
   readonly planner?: (input: PlanAuthoritativeMoveStateInput) => AuthoritativeMoveStatePlan
-  readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly random?: () => number
   readonly now?: () => number
   readonly idFactory?: () => string
@@ -143,7 +141,6 @@ const actionDependencies = (dependencies: LivePlayResolveMoveCommandDependencies
     sheetRepository,
     commandExecutor,
     planner: dependencies.planner ?? planAuthoritativeMoveState,
-    publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
     random: dependencies.random,
     now: dependencies.now ?? defaultNow,
     idFactory: dependencies.idFactory,
@@ -479,17 +476,6 @@ const sheetUpdateFromPersisted = (
   }
 }
 
-const sheetRealtimeEvents = (
-  updates: readonly LivePlayResolveMoveCommandSheetUpdate[],
-  clientId: string | undefined,
-): Array<Omit<RealtimeEvent, 'timestamp'>> => updates.flatMap((update) => {
-  const data = { kind: update.kind, slug: update.slug, sheet: update.sheet }
-  return [
-    { channel: sheetChannel(update.kind, update.slug), type: 'updated' as const, clientId, data },
-    { channel: sheetsChannel, type: 'updated' as const, clientId, data },
-  ]
-})
-
 const assertCommittedMapMatchesPlan = (map: TabletopMap, plan: AuthoritativeMoveStatePlan): void => {
   if (normalizeRevision(map.revision) !== plan.revision) {
     throw new LivePlayResolveMoveCommandUseCaseError(409, `Committed map revision ${normalizeRevision(map.revision)} did not match planned revision ${plan.revision}`)
@@ -603,7 +589,7 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
     persist: () => {
       throw new Error('resolveMove live-play commands must persist through the accepted-result commit hook')
     },
-    commit: ({ currentRevision, nextMap, result, saveOpResult }) => {
+    commit: ({ actor, command, currentRevision, nextMap, result, recordRealtimeEvents, saveOpResult }) => {
       deps.database.withTransaction(() => {
         const plan = nextMap.plan
         if (!plan || !nextMap.move) {
@@ -645,12 +631,6 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
           }
         }
 
-        saveOpResult()
-
-        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
-        if (!authoritativeMap) throw new LivePlayResolveMoveCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after resolveMove command`)
-        assertCommittedMapMatchesPlan(authoritativeMap, plan)
-
         const updates: LivePlayResolveMoveCommandSheetUpdate[] = []
         for (const write of plan.sheetWrites) {
           const authoritativeSheet = deps.sheetRepository.getByRef(write.kind, write.slug)
@@ -658,6 +638,16 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
           assertCommittedSheetMatchesPlan(authoritativeSheet, write.revision)
           updates.push(sheetUpdateFromPersisted(authoritativeSheet, deps))
         }
+        recordRealtimeEvents(livePlaySheetUpdateRealtimeAppendInputs({
+          command,
+          updates,
+          clientId: actor.clientId,
+        }))
+        saveOpResult()
+
+        const authoritativeMap = deps.mapRepository.getBySlug(result.mapSlug)
+        if (!authoritativeMap) throw new LivePlayResolveMoveCommandUseCaseError(404, `Map ${result.mapSlug}.json not found after resolveMove command`)
+        assertCommittedMapMatchesPlan(authoritativeMap, plan)
 
         persistedContext = {
           ...nextMap,
@@ -665,12 +655,6 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
           sheetUpdates: updates,
         }
       })
-    },
-    publish: ({ actor, result }) => {
-      if (!persistedContext) return
-      for (const event of sheetRealtimeEvents(persistedContext.sheetUpdates ?? [], actor.clientId)) {
-        deps.publishRealtimeEvent(event)
-      }
     },
   })
 
