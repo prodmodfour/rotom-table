@@ -6,12 +6,24 @@ export interface PokegenRunResult {
   stderr: string
 }
 
+export interface PokegenSheetRunResult extends PokegenRunResult {
+  content?: string
+  fileName?: string
+}
+
 export type RunPokegen = (
   species: string,
   level: number,
   outputDir: string,
   slugPrefix: string,
 ) => Promise<PokegenRunResult>
+
+export type RunPokegenSheet = (
+  species: string,
+  level: number,
+  slugPrefix: string,
+  sequence: number,
+) => Promise<PokegenSheetRunResult>
 
 export interface PokegenSpawnOptions {
   cwd: string
@@ -43,13 +55,10 @@ export interface RunPokegenScriptOptions {
   spawn?: PokegenSpawn
 }
 
-export const runPokegenScript = (
-  species: string,
-  level: number,
-  outputDir: string,
-  slugPrefix: string,
+const runPokegenProcess = (
+  args: string[],
   options: RunPokegenScriptOptions = {},
-): Promise<PokegenRunResult> => {
+): Promise<PokegenRunResult & { stdout: string }> => {
   const projectRoot = options.projectRoot ?? DEFAULT_PROJECT_ROOT
   const pokegenScript = options.pokegenScript ?? resolvePath(projectRoot, 'scripts/pokegen.sh')
   const spawnProcess = options.spawn ?? (nodeSpawn as unknown as PokegenSpawn)
@@ -57,32 +66,63 @@ export const runPokegenScript = (
   return new Promise((resolve) => {
     const child = spawnProcess(
       pokegenScript,
-      [
-        '--species', species,
-        '--level', String(level),
-        '--output-dir', outputDir,
-        '--slug-prefix', slugPrefix,
-      ],
+      args,
       { cwd: projectRoot, stdio: ['ignore', 'pipe', 'pipe'] },
     )
+    let stdout = ''
     let stderr = ''
     let settled = false
-    const resolveOnce = (result: PokegenRunResult) => {
+    const resolveOnce = (result: PokegenRunResult & { stdout: string }) => {
       if (settled) return
       settled = true
       resolve(result)
     }
 
+    child.stdout.on('data', (chunk) => {
+      stdout += String(chunk)
+    })
     child.stderr.on('data', (chunk) => {
       stderr += String(chunk)
     })
-    // Drain stdout so the child can't block on a full pipe.
-    child.stdout.on('data', () => {})
     child.on('error', (err) => {
-      resolveOnce({ ok: false, stderr: stderr + String(err) })
+      resolveOnce({ ok: false, stderr: stderr + String(err), stdout })
     })
     child.on('close', (code) => {
-      resolveOnce({ ok: code === 0, stderr })
+      resolveOnce({ ok: code === 0, stderr, stdout })
     })
   })
+}
+
+export const runPokegenScript = (
+  species: string,
+  level: number,
+  outputDir: string,
+  slugPrefix: string,
+  options: RunPokegenScriptOptions = {},
+): Promise<PokegenRunResult> => runPokegenProcess([
+  '--species', species,
+  '--level', String(level),
+  '--output-dir', outputDir,
+  '--slug-prefix', slugPrefix,
+], options).then(({ ok, stderr }) => ({ ok, stderr }))
+
+export const runPokegenSheetScript = async (
+  species: string,
+  level: number,
+  slugPrefix: string,
+  sequence: number,
+  options: RunPokegenScriptOptions = {},
+): Promise<PokegenSheetRunResult> => {
+  const result = await runPokegenProcess([
+    '--species', species,
+    '--level', String(level),
+    '--slug-prefix', slugPrefix,
+    '--slug-sequence', String(sequence),
+    '--stdout-json',
+  ], options)
+  return {
+    ok: result.ok,
+    stderr: result.stderr,
+    ...(result.stdout.trim() ? { content: result.stdout } : {}),
+  }
 }

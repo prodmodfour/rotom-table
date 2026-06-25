@@ -31,14 +31,18 @@ export interface RunPokegenBatchResult {
 
 const encounterLabel = (encounter: RolledEncounter): string => `${encounter.species} Lv ${encounter.level}`
 
+export const decorateGeneratedPokemonSheet = (sheet: CharacterSheet, random: () => number): CharacterSheet => ({
+  ...sheet,
+  skillBackground: rollWildPokemonSkillBackground(random),
+})
+
 const decorateGeneratedPokemonSheetContent = (content: string, random: () => number): string => {
   const parsed = JSON.parse(content) as unknown
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     throw new Error('generated sheet JSON must be an object')
   }
 
-  const sheet = parsed as CharacterSheet
-  sheet.skillBackground = rollWildPokemonSkillBackground(random)
+  const sheet = decorateGeneratedPokemonSheet(parsed as CharacterSheet, random)
   return `${JSON.stringify(sheet, null, 2)}\n`
 }
 

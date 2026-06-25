@@ -91,6 +91,10 @@ def main():
     parser.add_argument("--slug-prefix", type=str, default=None,
                         help="Prefix added to the sheet ``slug`` for global "
                              "uniqueness (default: leaf of --output-dir)")
+    parser.add_argument("--stdout-json", action="store_true",
+                        help="Write the generated sheet JSON to stdout instead of creating an output file")
+    parser.add_argument("--slug-sequence", type=int, default=None,
+                        help="Sequence number to use in stdout-json slug generation (default: first free file index)")
     parser.add_argument("--nickname", type=str, default=None,
                         help="Override the sheet ``nickname`` (default: species name)")
 
@@ -125,9 +129,9 @@ def main():
         )
         sys.exit(1)
 
-    # Create output directory
     output_dir = args.output_dir
-    os.makedirs(output_dir, exist_ok=True)
+    if not args.stdout_json:
+        os.makedirs(output_dir, exist_ok=True)
 
     # Generate
     poke = generate_pokemon(
@@ -140,13 +144,18 @@ def main():
     # --output-dir don't clobber earlier files.
     shiny_prefix = "shiny_" if poke["shiny"] else ""
     base = f"{shiny_prefix}{sanitize_filename(poke['species'])}_lv{poke['level']}".lower()
-    n = 1
-    while True:
+    if args.stdout_json:
+        n = args.slug_sequence if args.slug_sequence and args.slug_sequence > 0 else 1
         fname = f"{base}_{n}.json"
         out_path = os.path.join(output_dir, fname)
-        if not os.path.exists(out_path):
-            break
-        n += 1
+    else:
+        n = 1
+        while True:
+            fname = f"{base}_{n}.json"
+            out_path = os.path.join(output_dir, fname)
+            if not os.path.exists(out_path):
+                break
+            n += 1
 
     # Slug must be globally unique across data/sheets/**/*.json so the
     # ``characterSheetsBySlug`` Map doesn't drop one. The caller (the
@@ -160,6 +169,11 @@ def main():
     slug = f"{prefix}-{slugify(base)}-{n}"
 
     sheet = to_character_sheet(poke, slug=slug, nickname=args.nickname)
+
+    if args.stdout_json:
+        json.dump(sheet, sys.stdout, indent=2, ensure_ascii=False)
+        sys.stdout.write("\n")
+        return
 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(sheet, f, indent=2, ensure_ascii=False)
