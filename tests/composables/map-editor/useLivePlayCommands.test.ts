@@ -1419,6 +1419,101 @@ describe('useLivePlayCommands', () => {
     expect(actions.lastError.value).toBe('Reconnected. Reloading the authoritative map before live play resumes.')
   })
 
+  it('blocks newly-created commands with the new-command gate before generating or storing an operation', async () => {
+    const delegate = createTestOutbox()
+    const enqueue = vi.fn(delegate.enqueue.bind(delegate))
+    const outbox = wrapOutbox(delegate, { enqueue })
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox,
+      newCommandBlocked: ref(true),
+      newCommandBlockedMessage: ref('Resolve pending live-play command first.'),
+    })
+
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 2, y: 0, z: 1 },
+    })
+
+    expect(result).toEqual({
+      dispatched: false,
+      message: 'Resolve pending live-play command first.',
+    })
+    expect('opId' in result).toBe(false)
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    await expect(delegate.list()).resolves.toEqual([])
+  })
+
+  it('checks the new-command gate before resolveMove builds local intent scopes', async () => {
+    const delegate = createTestOutbox()
+    const enqueue = vi.fn(delegate.enqueue.bind(delegate))
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox: wrapOutbox(delegate, { enqueue }),
+      newCommandBlocked: ref(true),
+      newCommandBlockedMessage: ref('Checking pending durable commands.'),
+    })
+
+    const result = await actions.resolveMove({
+      intent: {} as never,
+      candidateScopePlacementIds: ['token-pikachu'],
+    })
+
+    expect(result).toEqual({
+      dispatched: false,
+      message: 'Checking pending durable commands.',
+      move: null,
+    })
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('lets retries ignore the new-command gate while keeping the fundamental command block', async () => {
+    const retryOutbox = createTestOutbox()
+    const retryEntry = await enqueueStoredCommand(retryOutbox)
+    const retryActions = createCommandHarness({
+      slug: 'arena-map',
+      outbox: retryOutbox,
+      newCommandBlocked: ref(true),
+      newCommandBlockedMessage: ref('Pending commands block only new envelopes.'),
+    }).actions
+    mockTerminalResponseOnce({
+      ok: true,
+      opId: retryEntry.opId,
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [],
+    })
+
+    await expect(retryActions.retryOutboxCommand(retryEntry.opId)).resolves.toMatchObject({
+      dispatched: true,
+      opId: retryEntry.opId,
+    })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+
+    apiMocks.postJson.mockReset()
+    const blockedOutbox = createTestOutbox()
+    const blockedEntry = await enqueueStoredCommand(blockedOutbox)
+    const blockedActions = createCommandHarness({
+      slug: 'arena-map',
+      outbox: blockedOutbox,
+      livePlayCommandBlocked: ref(true),
+      livePlayCommandBlockedMessage: ref('Snapshot reconciliation is required.'),
+      newCommandBlocked: ref(false),
+    }).actions
+
+    await expect(blockedActions.retryOutboxCommand(blockedEntry.opId)).resolves.toMatchObject({
+      dispatched: false,
+      message: 'Snapshot reconciliation is required.',
+      opId: blockedEntry.opId,
+    })
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
   it('applies accepted patch-only command responses when the current map revision matches', async () => {
     const map = ref(mapFixture())
     const requestReconciliation = vi.fn()

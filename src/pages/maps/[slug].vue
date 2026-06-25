@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
 import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
+import LivePlayCommandRecoveryPanel from '~/components/map/LivePlayCommandRecoveryPanel.vue'
 import MapEditorLayout from '~/components/map/MapEditorLayout.vue'
 import MapNavigationRail from '~/components/map/MapNavigationRail.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
@@ -12,7 +13,8 @@ import StartTurnModal from '~/components/map/StartTurnModal.vue'
 import { useEditableMap, type MapSaveStatus } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
-import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlayStateMachine'
+import { useLivePlayCommandRecoveryGate } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
+import { useLivePlayStateMachine, type LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import { useMapPageTableActionDispatchers } from '~/composables/map-editor/useMapPageTableActionDispatchers'
 import { useMapPageTokenSpawning } from '~/composables/map-editor/useMapPageTokenSpawning'
 import { useLiveTableSnapshotSync } from '~/composables/map-editor/useLiveTableSnapshotSync'
@@ -228,25 +230,28 @@ const livePlayStateMachine = useLivePlayStateMachine({
   realtimeStatus: realtimeReconciliationStatus,
   realtimeNotice: livePlayRealtimeNotice,
 })
-const livePlayConnectionState = livePlayStateMachine.state
-const livePlayStatusMessage = computed(() => (
-  mapInPrepareMode.value
-    ? 'Prepare Map mode is active. Live-play commands are paused until the GM switches to Run Live Play.'
-    : livePlayStateMachine.notice.value
+const fundamentalLivePlayCommandBlocked = computed(() => (
+  mapInPrepareMode.value || !livePlayStateMachine.commandsAllowed.value
 ))
 const livePlayCommandBlockedMessage = computed(() => (
   mapInPrepareMode.value
     ? 'Map is in Prepare Map mode. Switch to Run Live Play before live-play commands.'
     : livePlayStateMachine.commandBlockMessage.value
 ))
+const livePlayRecoveryNewCommandBlocked = ref(true)
+const livePlayRecoveryNewCommandBlockedMessage = ref<string | null>(
+  'Checking for interrupted live-play commands before actions resume.',
+)
 const livePlayCommands = useLivePlayCommands({
   slug,
   authRole: role,
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
   map,
   mapRevision,
-  livePlayCommandBlocked: computed(() => mapInPrepareMode.value || !livePlayStateMachine.commandsAllowed.value),
+  livePlayCommandBlocked: fundamentalLivePlayCommandBlocked,
   livePlayCommandBlockedMessage,
+  newCommandBlocked: livePlayRecoveryNewCommandBlocked,
+  newCommandBlockedMessage: livePlayRecoveryNewCommandBlockedMessage,
   applyPersistedMap,
   applySheetUpdate: applyLivePlaySheetUpdate,
   requestReconciliation: () => livePlayStateMachine.reconcile(reconcileLivePlayState),
@@ -257,6 +262,66 @@ const livePlayCommands = useLivePlayCommands({
   onCommandBlocked: livePlayStateMachine.commandBlocked,
   onCommandErrorCleared: livePlayStateMachine.clearCommandError,
 })
+const livePlayRecoveryContextKey = computed(() => {
+  if (role.value === 'gm') return `${slug}:gm`
+  if (role.value === 'player') return `${slug}:player:${selectedProfileId.value ?? 'none'}`
+  return null
+})
+const livePlayCommandRecoveryGate = useLivePlayCommandRecoveryGate({
+  contextKey: livePlayRecoveryContextKey,
+  enabled: computed(() => livePlayRecoveryContextKey.value !== null),
+  interactionMode: mapInteractionMode,
+  commandStatus: livePlayCommands.status,
+  entries: livePlayCommands.outboxEntries,
+  recoveryStatus: livePlayCommands.outboxRecoveryStatus,
+  recoveryError: livePlayCommands.outboxRecoveryError,
+  recoverInterrupted: livePlayCommands.recoverInterruptedOutboxCommands,
+  refresh: livePlayCommands.refreshOutboxEntries,
+  retry: livePlayCommands.retryOutboxCommand,
+})
+watchEffect(() => {
+  livePlayRecoveryNewCommandBlocked.value = livePlayCommandRecoveryGate.blocksNewLiveCommands.value
+  livePlayRecoveryNewCommandBlockedMessage.value = livePlayCommandRecoveryGate.blockMessage.value
+})
+const livePlayCommandsAllowed = computed(() => (
+  !mapInPrepareMode.value
+  && livePlayStateMachine.commandsAllowed.value
+  && !livePlayCommandRecoveryGate.blocksNewLiveCommands.value
+))
+const livePlayConnectionState = computed<LivePlayConnectionState>(() => {
+  if (mapInPrepareMode.value) return livePlayStateMachine.state.value
+  if (livePlayCommandRecoveryGate.retryingOpId.value) return 'saving-command'
+  if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.state.value
+  if (livePlayCommands.outboxRecoveryStatus.value === 'error' || livePlayCommands.outboxRecoveryError.value) return 'error'
+  if (!livePlayCommandRecoveryGate.readyForCurrentContext.value) return 'reconciling'
+  if (livePlayCommands.outboxEntries.value.length > 0) return 'stale'
+  return 'ready'
+})
+const livePlayStatusMessage = computed(() => {
+  if (mapInPrepareMode.value) {
+    return 'Prepare Map mode is active. Live-play commands are paused until the GM switches to Run Live Play.'
+  }
+  if (livePlayCommandRecoveryGate.retryingOpId.value) {
+    return livePlayCommandRecoveryGate.blockMessage.value
+  }
+  if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.notice.value
+  return livePlayCommandRecoveryGate.blockMessage.value ?? livePlayStateMachine.notice.value
+})
+const livePlayRetryDisabledMessage = computed(() => {
+  if (isSetupEditMode()) return 'Switch to Run Live Play to retry pending live-play commands.'
+  if (!livePlayStateMachine.commandsAllowed.value) return livePlayStateMachine.commandBlockMessage.value
+  if (livePlayCommands.status.value === 'saving') return 'A live-play command is already in flight.'
+  if (livePlayCommandRecoveryGate.retryingOpId.value) {
+    return 'Retrying the pending live-play command with its original operation ID.'
+  }
+  return null
+})
+const refreshLivePlayCommandRecovery = () => {
+  void livePlayCommandRecoveryGate.refreshRecovery().catch(() => undefined)
+}
+const retryLivePlayCommandRecoveryEntry = (opId: string) => {
+  void livePlayCommandRecoveryGate.retryEntry(opId).catch(() => undefined)
+}
 
 watch(renamedTo, (newSlug) => {
   if (newSlug) router.replace(mapEditorPath(newSlug))
@@ -432,6 +497,9 @@ const {
   isPlayer,
   redirectHiddenPlayerMap: () => router.replace(mapLibraryPath()),
 })
+const mapActionEditingEnabled = computed(() => (
+  canEditMap.value && (isSetupEditMode() || livePlayCommandsAllowed.value)
+))
 
 const {
   mapVoxels,
@@ -483,7 +551,7 @@ const {
   spawnSheetFromMenu,
 } = useMapPageTokenSpawning({
   isSetupEditMode,
-  authoritativeSnapshotReady: aggregateSnapshotReady,
+  authoritativeSnapshotReady: computed(() => aggregateSnapshotReady.value && livePlayCommandsAllowed.value),
   createSpawnPlacement,
   spawnSheetForSetupEdit,
   spawnToken: ({ placement }) => livePlayCommands.spawnToken({
@@ -649,8 +717,7 @@ const setWeatherCoexistNext = (value: boolean) => {
 
 const livePlayActionablePlacementIds = computed(() => {
   if (isSetupEditMode()) return controllablePlacementIds.value
-  if (mapInPrepareMode.value) return []
-  return livePlayStateMachine.commandsAllowed.value ? controllablePlacementIds.value : []
+  return livePlayCommandsAllowed.value ? controllablePlacementIds.value : []
 })
 
 const clearWeatherCoexistIfNoWeather = () => {
@@ -1751,14 +1818,14 @@ useMapDimensionReconciliation({
         :map-field-effects="mapFieldEffects"
         :map-ground-level-y="mapGroundLevelY"
         :layer-visibility="layerVisibility"
-        :build-mode="buildMode && canEditMap"
+        :build-mode="buildMode && mapActionEditingEnabled"
         :build-tool="buildTool"
         :build-material="buildMaterial"
         :build-color="buildColor"
         :build-ghost-voxel="buildGhostVoxel"
         :ghost-voxels-faded="ghostVoxelsFaded"
         :smart-terrain-cutaway-enabled="smartTerrainCutawayEnabled"
-        :hazard-mode="hazardMode && canEditMap"
+        :hazard-mode="hazardMode && mapActionEditingEnabled"
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
         :can-delete-tokens="isGm"
@@ -1836,6 +1903,19 @@ useMapDimensionReconciliation({
         @use-attack-of-opportunity="useAttackOfOpportunity"
         @clear-attack-of-opportunity="removeAttackOfOpportunityPrompt"
       />
+
+      <LivePlayCommandRecoveryPanel
+        v-if="livePlayCommandRecoveryGate.panelVisible.value"
+        :entries="livePlayCommands.outboxEntries.value"
+        :recovery-status="livePlayCommands.outboxRecoveryStatus.value"
+        :recovery-error="livePlayCommands.outboxRecoveryError.value"
+        :block-message="livePlayCommandRecoveryGate.blockMessage.value"
+        :interaction-mode="mapInteractionMode"
+        :retrying-op-id="livePlayCommandRecoveryGate.retryingOpId.value"
+        :retry-disabled-message="livePlayRetryDisabledMessage"
+        @refresh="refreshLivePlayCommandRecovery"
+        @retry="retryLivePlayCommandRecoveryEntry"
+      />
     </template>
 
     <template #modals>
@@ -1865,7 +1945,7 @@ useMapDimensionReconciliation({
 
       <FieldEffectsMenuModal
         v-if="map && canViewMap && fieldEffectsMenuOpen"
-        :can-edit-map="canEditMap"
+        :can-edit-map="mapActionEditingEnabled"
         :field-effect-count="fieldEffectCount"
         :hazard-mode="hazardMode"
         :hazard-count="hazardCount"

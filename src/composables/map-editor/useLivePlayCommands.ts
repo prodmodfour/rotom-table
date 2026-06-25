@@ -116,6 +116,8 @@ export interface UseLivePlayCommandsOptions {
   mapRevision?: ReadonlyValueRef<number | null | undefined>
   livePlayCommandBlocked?: ReadonlyValueRef<boolean>
   livePlayCommandBlockedMessage?: ReadonlyValueRef<string | null | undefined>
+  newCommandBlocked?: ReadonlyValueRef<boolean>
+  newCommandBlockedMessage?: ReadonlyValueRef<string | null | undefined>
   applyPersistedMap?: (map: TabletopMap) => void
   applySheetUpdate?: (update: LivePlayCommandSheetUpdate) => void
   requestReconciliation?: (reason: LivePlayCommandReconciliationRequest) => void | Promise<void>
@@ -438,6 +440,12 @@ export const useLivePlayCommands = (
     if (!options.livePlayCommandBlocked?.value) return null
     return options.livePlayCommandBlockedMessage?.value
       ?? 'Live-play commands are paused until realtime reconciliation completes'
+  }
+
+  const newCommandBlockedMessage = (): string | null => {
+    if (!options.newCommandBlocked?.value) return null
+    return options.newCommandBlockedMessage?.value
+      ?? 'Live-play commands are paused until durable command recovery completes'
   }
 
   const profileBody = (authContext: LivePlayCommandOutboxAuthContext): { profileId?: PlayerProfileId } => {
@@ -937,6 +945,9 @@ export const useLivePlayCommands = (
     const blockedMessage = blockedCommandMessage()
     if (blockedMessage) return localCommandBlockedResult(blockedMessage)
 
+    const pendingCommandMessage = newCommandBlockedMessage()
+    if (pendingCommandMessage) return localCommandBlockedResult(pendingCommandMessage)
+
     const authContext = currentAuthContext()
     if (!authContext) {
       return localCommandBlockedResult('A valid GM or player auth role is required before sending live-play commands.')
@@ -1191,6 +1202,11 @@ export const useLivePlayCommands = (
     const blockedMessage = blockedCommandMessage()
     if (blockedMessage) {
       return { ...localCommandBlockedResult(blockedMessage), move: null }
+    }
+
+    const pendingCommandMessage = newCommandBlockedMessage()
+    if (pendingCommandMessage) {
+      return { ...localCommandBlockedResult(pendingCommandMessage), move: null }
     }
 
     const intentResult = parseResolveMoveIntent(input.intent)

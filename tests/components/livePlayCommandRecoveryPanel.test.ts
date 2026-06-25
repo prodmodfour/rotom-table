@@ -1,0 +1,149 @@
+/**
+ * @vitest-environment happy-dom
+ */
+import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
+import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
+import { parsePlayerProfileId } from '#shared/playerProfiles'
+import LivePlayCommandRecoveryPanel from '~/components/map/LivePlayCommandRecoveryPanel.vue'
+import {
+  LIVE_PLAY_COMMAND_OUTBOX_SCHEMA_VERSION,
+  type LivePlayCommandOutboxEntry,
+} from '~/utils/livePlayCommandOutbox'
+
+const createEntry = (
+  state: LivePlayCommandOutboxEntry['state'],
+  overrides: Partial<LivePlayCommandOutboxEntry> = {},
+): LivePlayCommandOutboxEntry => {
+  const opId = overrides.opId ?? `op_panel${state}001`
+  return {
+    schemaVersion: LIVE_PLAY_COMMAND_OUTBOX_SCHEMA_VERSION,
+    opId,
+    mapSlug: 'arena-map',
+    commandType: overrides.commandType ?? LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    requestPath: '/api/maps/token/move',
+    body: {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug: 'arena-map',
+      baseRevision: 7,
+      type: overrides.commandType ?? LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'secret-token-id', field: 'position' }],
+      payload: { placementId: 'secret-token-id', privateSheet: 'do-not-render' },
+      clientId: 'secret-client',
+    },
+    authContext: { role: 'player', profileId: parsePlayerProfileId('profile_secret000') },
+    fingerprint: `fingerprint-${opId}`,
+    state,
+    createdAt: 1,
+    updatedAt: 1,
+    attemptCount: 2,
+    ...(state === 'sending' ? { leaseOwner: 'other-tab', leaseExpiresAt: Date.now() + 30_000 } : {}),
+    ...overrides,
+  }
+}
+
+describe('LivePlayCommandRecoveryPanel', () => {
+  it('renders queued, uncertain, and sending entries with safe retry guidance', () => {
+    const wrapper = mount(LivePlayCommandRecoveryPanel, {
+      props: {
+        entries: [
+          createEntry('queued', { commandType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN, opId: 'op_panelqueued01' }),
+          createEntry('uncertain', {
+            commandType: LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+            opId: 'op_paneluncertain01',
+            lastError: 'The previous send ended without a terminal response.',
+          }),
+          createEntry('sending', { commandType: LIVE_PLAY_COMMAND_TYPES.SET_SCENE, opId: 'op_panelsending01' }),
+        ],
+        recoveryStatus: 'idle',
+        recoveryError: null,
+        blockMessage: 'Resolve the pending live-play commands before sending another action.',
+        interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+        retryingOpId: null,
+        retryDisabledMessage: null,
+      },
+    })
+
+    expect(wrapper.text()).toContain('Move token')
+    expect(wrapper.text()).toContain('Throw Poké Ball')
+    expect(wrapper.text()).toContain('Set scene')
+    expect(wrapper.text()).toContain('Queued')
+    expect(wrapper.text()).toContain('Uncertain')
+    expect(wrapper.text()).toContain('Sending')
+    expect(wrapper.text()).toContain('Retry reuses the original operation ID')
+    expect(wrapper.text()).toContain('server is idempotent')
+    expect(wrapper.text()).toContain('Another tab or page instance may own this send lease')
+
+    const retryButtons = wrapper.findAll('button').filter((button) => button.text().includes('Retry'))
+    expect(retryButtons).toHaveLength(3)
+    expect(retryButtons[0]?.attributes('disabled')).toBeUndefined()
+    expect(retryButtons[1]?.attributes('disabled')).toBeUndefined()
+    expect(retryButtons[2]?.attributes('disabled')).toBeDefined()
+  })
+
+  it('disables retries in Prepare Map and while another send is active', async () => {
+    const wrapper = mount(LivePlayCommandRecoveryPanel, {
+      props: {
+        entries: [createEntry('queued', { opId: 'op_panelqueued02' })],
+        recoveryStatus: 'idle',
+        interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+        retryingOpId: null,
+        retryDisabledMessage: null,
+      },
+    })
+
+    let retryButton = wrapper.findAll('button').find((button) => button.text() === 'Retry')
+    expect(retryButton?.attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('Switch to Run Live Play')
+
+    await wrapper.setProps({
+      interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+      retryDisabledMessage: 'A live-play command is already in flight.',
+    })
+    retryButton = wrapper.findAll('button').find((button) => button.text() === 'Retry')
+    expect(retryButton?.attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('A live-play command is already in flight.')
+  })
+
+  it('emits refresh and retry with accessible labels and the existing operation ID', async () => {
+    const entry = createEntry('uncertain', { opId: 'op_panelretry01' })
+    const wrapper = mount(LivePlayCommandRecoveryPanel, {
+      props: {
+        entries: [entry],
+        recoveryStatus: 'idle',
+        interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+        retryingOpId: null,
+        retryDisabledMessage: null,
+      },
+    })
+
+    const refresh = wrapper.find('button[aria-label="Refresh live-play command recovery without sending commands"]')
+    expect(refresh.exists()).toBe(true)
+    await refresh.trigger('click')
+    expect(wrapper.emitted('refresh')).toHaveLength(1)
+
+    const retry = wrapper.find(`button[aria-label="Retry Move token operation op_panelretry01 with its original operation ID"]`)
+    expect(retry.exists()).toBe(true)
+    await retry.trigger('click')
+    expect(wrapper.emitted('retry')).toEqual([[entry.opId]])
+  })
+
+  it('does not render raw command payloads, sheets, or auth context', () => {
+    const wrapper = mount(LivePlayCommandRecoveryPanel, {
+      props: {
+        entries: [createEntry('uncertain', { lastError: 'Outcome unknown' })],
+        recoveryStatus: 'idle',
+        interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+        retryingOpId: null,
+        retryDisabledMessage: null,
+      },
+    })
+
+    expect(wrapper.text()).not.toContain('do-not-render')
+    expect(wrapper.text()).not.toContain('secret-token-id')
+    expect(wrapper.text()).not.toContain('secret-client')
+    expect(wrapper.text()).not.toContain('profile_secret000')
+  })
+})
