@@ -4,20 +4,11 @@ import { HOSTED_WRITES_DISABLED_MESSAGE } from '~~/server/utils/http'
 
 const mocks = vi.hoisted(() => ({
   spawnGeneratedEncountersUseCase: vi.fn(),
-  publishUseCaseRealtimeEvents: vi.fn(),
 }))
 
 vi.mock('../../server/useCases/spawnGeneratedEncounters', () => ({
   spawnGeneratedEncountersUseCase: mocks.spawnGeneratedEncountersUseCase,
 }))
-
-vi.mock('../../server/utils/useCaseHttp', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../server/utils/useCaseHttp')>()
-  return {
-    ...actual,
-    publishUseCaseRealtimeEvents: mocks.publishUseCaseRealtimeEvents,
-  }
-})
 
 const spawnRoute = (await import('../../server/api/encounters/spawn.post')).default
 
@@ -74,9 +65,8 @@ describe('encounter spawn API route', () => {
     expect(mocks.spawnGeneratedEncountersUseCase).not.toHaveBeenCalled()
   })
 
-  it('publishes realtime events but omits them from the response', async () => {
+  it('omits durable realtime rows from the response because publication happens after commit in the use case', async () => {
     process.env.NODE_ENV = 'development'
-    const events = [{ channel: 'maps', type: 'updated', data: {} }]
     mocks.spawnGeneratedEncountersUseCase.mockResolvedValue({
       ok: true,
       dir: '/repo/data/sheets/wild/forest_1',
@@ -88,7 +78,7 @@ describe('encounter spawn API route', () => {
       beforeCount: 0,
       count: 0,
       spawn: { mapSlug: 'map', mapName: 'Map', spawned: 0, failures: 0, placements: [] },
-      events,
+      realtimeEvents: [{ sequence: 1, access: { kind: 'gm-only' }, event: { sequence: 1, channel: 'maps', type: 'updated', timestamp: 1 } }],
     })
 
     const response = await invokeRoute(spawnRoute, {
@@ -96,13 +86,7 @@ describe('encounter spawn API route', () => {
       body: { region: 'kanto', table: 'forest', count: 2, mapSlug: 'map' },
     })
 
-    expect(mocks.publishUseCaseRealtimeEvents).toHaveBeenCalledWith([
-      {
-        event: events[0],
-        access: { kind: 'map-access', mapSlug: 'map' },
-      },
-    ])
-    expect(response).not.toHaveProperty('events')
+    expect(response).not.toHaveProperty('realtimeEvents')
     expect(response).toMatchObject({ ok: true, spawn: { mapSlug: 'map' } })
   })
 })

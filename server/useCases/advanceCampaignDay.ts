@@ -1,7 +1,10 @@
-import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
 import type { CampaignNextDayResult } from '#shared/campaign'
+import { nextRevision } from '#shared/sessionRevisions'
+import type { SheetKind } from '#shared/sheets'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import { deepCloneJson } from '~/utils/serialization'
 import { stablePersistableSheetJson } from '~/utils/sheets/persistence'
 import {
   addHealingMutationSummary,
@@ -10,19 +13,50 @@ import {
   emptyHealingMutationSummary,
   type SheetHealingMutationSummary,
 } from '~/utils/sheets/healing'
-import { sqliteSheetRepository, type SheetRepository, type StoredSheetDocument } from '../storage/sheetRepository'
-import type { SheetKind } from '#shared/sheets'
+import { getRotomDatabase, type RotomDatabase } from '../storage/database'
+import {
+  createSqliteSheetRepository,
+  type SheetRepository,
+  type StoredSheetDocument,
+} from '../storage/sheetRepository'
+import {
+  createSqliteRealtimeEventRepository,
+  type AppendRealtimeEventInput,
+  type RealtimeEventRepository,
+} from '../storage/realtimeEventRepository'
+import { setupSheetSaveRealtimeAppendInputs } from '../realtime/setupDocumentRealtime'
+import {
+  defaultPersistedRealtimeEventPublisher,
+  defaultPersistedRealtimePublicationFailureReporter,
+  publishPersistedRealtimeEventsAfterCommit,
+  type PersistedRealtimeEventPublisher,
+  type PersistedRealtimePublicationFailureReporter,
+} from '../realtime/persistedBatchPublication'
 import { logicalSheetResourcePath } from '../utils/runtimeResourcePaths'
 
 export interface AdvanceCampaignDayInput {
   clientId?: string
 }
 
+type AdvanceCampaignDaySheetRepository = Pick<SheetRepository<Record<string, unknown>>, 'list' | 'applyLivePlayUpdate' | 'getByRef'> & {
+  readonly database?: RotomDatabase
+}
+
+type AdvanceCampaignDayRealtimeEventRepository = Pick<RealtimeEventRepository, 'appendMany'> & {
+  readonly database?: RotomDatabase
+}
+
 export interface AdvanceCampaignDayDependencies {
-  sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'list' | 'applyLivePlayUpdate' | 'getByRef'>
-  listPokemonSheets?: () => StoredSheetDocument<Record<string, unknown>>[]
-  listTrainerSheets?: () => StoredSheetDocument<Record<string, unknown>>[]
+  database?: RotomDatabase
+  sheetRepository?: AdvanceCampaignDaySheetRepository
+  realtimeEventRepository?: AdvanceCampaignDayRealtimeEventRepository
+  publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
+  reportAfterCommitPublicationFailure?: PersistedRealtimePublicationFailureReporter
   now?: () => number
+  /** @deprecated Runtime campaign-day updates use authoritative SQLite sheets. */
+  listPokemonSheets?: () => StoredSheetDocument<Record<string, unknown>>[]
+  /** @deprecated Runtime campaign-day updates use authoritative SQLite sheets. */
+  listTrainerSheets?: () => StoredSheetDocument<Record<string, unknown>>[]
   /** @deprecated Runtime campaign-day updates use SQLite sheets. */
   listPokemonSheetPaths?: () => string[]
   /** @deprecated Runtime campaign-day updates use SQLite sheets. */
@@ -38,112 +72,187 @@ export interface AdvanceCampaignDayDependencies {
 }
 
 export interface AdvanceCampaignDayResult extends CampaignNextDayResult {
-  events: Array<Omit<RealtimeEvent, 'timestamp'>>
+  realtimeEvents: readonly PersistedRealtimeEvent[]
   paths: string[]
 }
 
-interface ProcessSheetResult {
-  updated: boolean
-  slug: string
-  path: string
-  summary: SheetHealingMutationSummary
-  events?: Array<Omit<RealtimeEvent, 'timestamp'>>
+interface CampaignDaySheetPlan {
+  readonly kind: SheetKind
+  readonly slug: string
+  readonly path: string
+  readonly originalSheet: Record<string, unknown>
+  readonly changed: boolean
+  readonly expectedRevision: number
+  readonly nextRevision: number
+  readonly nextSheet: Record<string, unknown>
+  readonly summary: SheetHealingMutationSummary
 }
 
-const processSheet = <TSheet extends { slug: string }>(
+const databaseFromDependencies = (dependencies: AdvanceCampaignDayDependencies): RotomDatabase => {
+  const sheetDatabase = dependencies.sheetRepository?.database
+  const realtimeDatabase = dependencies.realtimeEventRepository?.database
+  const database = dependencies.database ?? sheetDatabase ?? realtimeDatabase ?? getRotomDatabase()
+
+  if (sheetDatabase && sheetDatabase !== database) {
+    throw new Error('Campaign-day sheet repository must use the same RotomDatabase as the transaction')
+  }
+  if (realtimeDatabase && realtimeDatabase !== database) {
+    throw new Error('Campaign-day realtime event repository must use the same RotomDatabase as the transaction')
+  }
+  return database
+}
+
+const sheetWithAuthorityFields = (
+  stored: StoredSheetDocument<Record<string, unknown>>,
+): Record<string, unknown> => ({
+  ...(deepCloneJson(stored.document) as Record<string, unknown>),
+  slug: stored.slug,
+  revision: stored.revision,
+  updatedAt: stored.updatedAt,
+})
+
+const planSheet = <TSheet extends { slug: string }>(
   kind: SheetKind,
   stored: StoredSheetDocument<Record<string, unknown>>,
   applyNextDay: (sheet: TSheet) => SheetHealingMutationSummary,
-  input: AdvanceCampaignDayInput,
-  dependencies: Required<Pick<AdvanceCampaignDayDependencies, 'sheetRepository' | 'now'>>,
-): ProcessSheetResult => {
-  const sheet = {
-    ...stored.document,
-    slug: stored.slug,
-    revision: stored.revision,
-    updatedAt: stored.updatedAt,
-  } as unknown as TSheet & Record<string, unknown>
-  const beforeJson = stablePersistableSheetJson(sheet)
-  const summary = applyNextDay(sheet as TSheet)
-  const afterJson = stablePersistableSheetJson(sheet)
-  const path = logicalSheetResourcePath(kind, sheet)
-  if (beforeJson === afterJson) {
-    return { updated: false, slug: stored.slug, path, summary }
-  }
+  timestamp: number,
+): CampaignDaySheetPlan => {
+  const originalSheet = sheetWithAuthorityFields(stored)
+  const candidate = deepCloneJson(originalSheet) as TSheet & Record<string, unknown>
+  const beforeJson = stablePersistableSheetJson(originalSheet)
+  const summary = applyNextDay(candidate as TSheet)
+  const afterJson = stablePersistableSheetJson(candidate)
+  const changed = beforeJson !== afterJson
+  const plannedNextRevision = nextRevision(stored.revision)
+  const nextSheet = changed
+    ? {
+        ...candidate,
+        slug: stored.slug,
+        revision: plannedNextRevision,
+        updatedAt: timestamp,
+      }
+    : {
+        ...candidate,
+        slug: stored.slug,
+        revision: stored.revision,
+        updatedAt: stored.updatedAt,
+      }
 
-  const updatedAt = dependencies.now()
-  const nextSheet = { ...sheet, updatedAt }
-  const updateResult = dependencies.sheetRepository.applyLivePlayUpdate({
+  return {
     kind,
     slug: stored.slug,
+    path: logicalSheetResourcePath(kind, originalSheet),
+    originalSheet,
+    changed,
     expectedRevision: stored.revision,
+    nextRevision: plannedNextRevision,
     nextSheet,
-  })
-  if (updateResult === 'stale') throw new Error(`${kind} sheet ${stored.slug} changed during campaign-day advancement`)
-  const persisted = dependencies.sheetRepository.getByRef(kind, stored.slug)
-  if (!persisted) throw new Error(`${kind} sheet ${stored.slug} not found after campaign-day advancement`)
-
-  const data = { kind, slug: stored.slug, sheet: persisted.sheet }
-  return {
-    updated: true,
-    slug: stored.slug,
-    path: logicalSheetResourcePath(kind, persisted.sheet),
     summary,
-    events: [
-      { channel: sheetChannel(kind, stored.slug), type: 'updated', clientId: input.clientId, data },
-      { channel: sheetsChannel, type: 'updated', clientId: input.clientId, data },
-    ],
   }
 }
+
+const buildCampaignDayPlan = (
+  pokemonSheets: readonly StoredSheetDocument<Record<string, unknown>>[],
+  trainerSheets: readonly StoredSheetDocument<Record<string, unknown>>[],
+  timestamp: number,
+): readonly CampaignDaySheetPlan[] => [
+  ...pokemonSheets.map((stored) => planSheet(
+    'pokemon',
+    stored,
+    applyPokemonNextDay as (sheet: CharacterSheet) => SheetHealingMutationSummary,
+    timestamp,
+  )),
+  ...trainerSheets.map((stored) => planSheet(
+    'trainer',
+    stored,
+    applyTrainerNextDay as (sheet: TrainerSheet) => SheetHealingMutationSummary,
+    timestamp,
+  )),
+]
+
+const timestampAppendInputs = (
+  inputs: readonly AppendRealtimeEventInput[],
+  timestamp: number,
+): readonly AppendRealtimeEventInput[] => inputs.map((input) => ({ ...input, timestamp }))
+
+const appendInputsForPersistedSheet = (
+  plan: CampaignDaySheetPlan,
+  sheet: Record<string, unknown>,
+  clientId: string | undefined,
+  timestamp: number,
+): readonly AppendRealtimeEventInput[] => timestampAppendInputs(setupSheetSaveRealtimeAppendInputs({
+  kind: plan.kind,
+  slug: plan.slug,
+  sheet,
+  clientId,
+}), timestamp)
 
 export const advanceCampaignDayUseCase = (
   input: AdvanceCampaignDayInput = {},
   dependencies: AdvanceCampaignDayDependencies = {},
 ): AdvanceCampaignDayResult => {
-  const sheetRepository = dependencies.sheetRepository ?? (sqliteSheetRepository as Pick<SheetRepository<Record<string, unknown>>, 'list' | 'applyLivePlayUpdate' | 'getByRef'>)
-  const listPokemonSheets = dependencies.listPokemonSheets ?? (() => [...sheetRepository.list('pokemon')] as StoredSheetDocument<Record<string, unknown>>[])
-  const listTrainerSheets = dependencies.listTrainerSheets ?? (() => [...sheetRepository.list('trainer')] as StoredSheetDocument<Record<string, unknown>>[])
+  const database = databaseFromDependencies(dependencies)
+  const sheetRepository = dependencies.sheetRepository
+    ?? createSqliteSheetRepository<Record<string, unknown>>(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? createSqliteRealtimeEventRepository({ database })
   const now = dependencies.now ?? Date.now
+  const timestamp = now()
 
-  const pokemonSheets = listPokemonSheets()
-  const trainerSheets = listTrainerSheets()
+  const pokemonSheets = [...sheetRepository.list('pokemon')] as StoredSheetDocument<Record<string, unknown>>[]
+  const trainerSheets = [...sheetRepository.list('trainer')] as StoredSheetDocument<Record<string, unknown>>[]
+  const sheetPlans = buildCampaignDayPlan(pokemonSheets, trainerSheets, timestamp)
+  const changedPlans = sheetPlans.filter((plan) => plan.changed)
   const summary = emptyHealingMutationSummary()
-  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = []
-  const updatedPaths: string[] = []
-  let pokemonUpdated = 0
-  let trainerUpdated = 0
+  for (const plan of sheetPlans) addHealingMutationSummary(summary, plan.summary)
 
-  for (const stored of pokemonSheets) {
-    const result = processSheet(
-      'pokemon',
-      stored,
-      applyPokemonNextDay as (sheet: CharacterSheet) => SheetHealingMutationSummary,
-      input,
-      { sheetRepository, now },
-    )
-    addHealingMutationSummary(summary, result.summary)
-    if (result.updated) {
-      pokemonUpdated += 1
-      updatedPaths.push(result.path)
-      if (result.events) events.push(...result.events)
-    }
-  }
+  const pokemonUpdated = changedPlans.filter((plan) => plan.kind === 'pokemon').length
+  const trainerUpdated = changedPlans.filter((plan) => plan.kind === 'trainer').length
 
-  for (const stored of trainerSheets) {
-    const result = processSheet(
-      'trainer',
-      stored,
-      applyTrainerNextDay as (sheet: TrainerSheet) => SheetHealingMutationSummary,
-      input,
-      { sheetRepository, now },
-    )
-    addHealingMutationSummary(summary, result.summary)
-    if (result.updated) {
-      trainerUpdated += 1
-      updatedPaths.push(result.path)
-      if (result.events) events.push(...result.events)
-    }
-  }
+  const transactionResult = changedPlans.length === 0
+    ? { paths: [] as string[], realtimeEvents: [] as readonly PersistedRealtimeEvent[] }
+    : database.withTransaction(() => {
+        for (const plan of changedPlans) {
+          const current = sheetRepository.getByRef(plan.kind, plan.slug)
+          if (!current) throw new Error(`${plan.kind} sheet ${plan.slug} changed during campaign-day advancement`)
+          if (current.revision !== plan.expectedRevision) {
+            throw new Error(
+              `${plan.kind} sheet ${plan.slug} changed during campaign-day advancement; expected revision ${plan.expectedRevision}, current revision ${current.revision}`,
+            )
+          }
+          const result = sheetRepository.applyLivePlayUpdate({
+            kind: plan.kind,
+            slug: plan.slug,
+            expectedRevision: plan.expectedRevision,
+            nextSheet: plan.nextSheet,
+          })
+          if (result === 'stale') throw new Error(`${plan.kind} sheet ${plan.slug} changed during campaign-day advancement`)
+        }
+
+        const appendInputs: AppendRealtimeEventInput[] = []
+        const paths: string[] = []
+        for (const plan of changedPlans) {
+          const persisted = sheetRepository.getByRef(plan.kind, plan.slug)
+          if (!persisted) throw new Error(`${plan.kind} sheet ${plan.slug} not found after campaign-day advancement`)
+          if (persisted.revision !== plan.nextRevision || persisted.updatedAt !== timestamp) {
+            throw new Error(
+              `${plan.kind} sheet ${plan.slug} authoritative re-read did not match campaign-day revision ${plan.nextRevision} and timestamp ${timestamp}`,
+            )
+          }
+          paths.push(logicalSheetResourcePath(plan.kind, persisted.sheet))
+          appendInputs.push(...appendInputsForPersistedSheet(plan, persisted.sheet, input.clientId, timestamp))
+        }
+
+        const realtimeEvents = realtimeEventRepository.appendMany(appendInputs)
+        return { paths, realtimeEvents }
+      })
+
+  publishPersistedRealtimeEventsAfterCommit({
+    events: transactionResult.realtimeEvents,
+    operation: 'campaign-next-day',
+    publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultPersistedRealtimePublicationFailureReporter,
+  })
 
   return {
     ok: true,
@@ -159,7 +268,7 @@ export const advanceCampaignDayUseCase = (
     dailyMoveEntriesCleared: summary.dailyMoveEntriesCleared,
     conditionsCleared: summary.conditionsCleared,
     trainerApRestored: summary.trainerApRestored,
-    events,
-    paths: updatedPaths,
+    realtimeEvents: transactionResult.realtimeEvents,
+    paths: transactionResult.paths,
   }
 }

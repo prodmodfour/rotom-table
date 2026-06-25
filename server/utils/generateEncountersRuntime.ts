@@ -12,7 +12,7 @@ import { join as joinPath, resolve as resolvePath } from 'node:path'
 import { CAMPAIGN_ROOT } from './campaignPaths'
 import type { UniqueEncounterOutputDir } from './encounterOutput'
 import { PROJECT_ROOT } from './fsPaths'
-import { runPokegenScript, type RunPokegen } from './pokegenRunner'
+import { runPokegenScript, runPokegenSheetScript, type RunPokegen, type RunPokegenSheet } from './pokegenRunner'
 
 export interface GenerateEncountersRuntimeOverrides {
   projectRoot?: string
@@ -30,6 +30,7 @@ export interface GenerateEncountersRuntimeOverrides {
   cleanupDirectory?: (path: string) => void
   uniqueOutputDir?: UniqueEncounterOutputDir
   runPokegen?: RunPokegen
+  runPokegenSheet?: RunPokegenSheet
 }
 
 export interface GenerateEncountersRuntime {
@@ -46,6 +47,7 @@ export interface GenerateEncountersRuntime {
   cleanupDirectory: (path: string) => void
   uniqueOutputDir?: UniqueEncounterOutputDir
   runPokegen: RunPokegen
+  runPokegenSheet: RunPokegenSheet
 }
 
 export const DEFAULT_ENCOUNTER_GENERATION_PROJECT_ROOT = CAMPAIGN_ROOT
@@ -60,6 +62,12 @@ export const resolveGenerateEncountersRuntime = (
   const runPokegen = overrides.runPokegen
     ?? ((species: string, level: number, outputDir: string, slugPrefix: string) =>
       runPokegenScript(species, level, outputDir, slugPrefix, {
+        projectRoot: pokegenProjectRoot,
+        pokegenScript: overrides.pokegenScript,
+      }))
+  const runPokegenSheet = overrides.runPokegenSheet
+    ?? ((species: string, level: number, slugPrefix: string, sequence: number) =>
+      runPokegenSheetScript(species, level, slugPrefix, sequence, {
         projectRoot: pokegenProjectRoot,
         pokegenScript: overrides.pokegenScript,
       }))
@@ -78,5 +86,6 @@ export const resolveGenerateEncountersRuntime = (
     cleanupDirectory: overrides.cleanupDirectory ?? ((path: string) => rmSync(path, { recursive: true, force: true })),
     ...(overrides.uniqueOutputDir ? { uniqueOutputDir: overrides.uniqueOutputDir } : {}),
     runPokegen,
+    runPokegenSheet,
   }
 }
