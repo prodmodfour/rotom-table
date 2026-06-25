@@ -12,9 +12,11 @@ const apiMocks = vi.hoisted(() => ({
   postJson: vi.fn(),
   realtimeHandlers: [] as Array<(event: RealtimeEvent) => void>,
   connectionHandlers: [] as Array<(change: {
-    state: 'idle' | 'connecting' | 'connected' | 'reconnecting'
-    previousState: 'idle' | 'connecting' | 'connected' | 'reconnecting'
+    state: 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'replaying'
+    previousState: 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'replaying'
     reconnected: boolean
+    reason?: string
+    reconciliation?: { reason: 'gap' | 'ahead'; requestedAfterSequence: number; earliestAvailableSequence: number; latestSequence: number }
   }) => void>,
 }))
 
@@ -31,9 +33,11 @@ vi.mock('~/composables/useApiClient', () => ({
 
 vi.mock('~/composables/useRealtime', () => ({
   subscribeRealtimeConnection: vi.fn((handler: (change: {
-    state: 'idle' | 'connecting' | 'connected' | 'reconnecting'
-    previousState: 'idle' | 'connecting' | 'connected' | 'reconnecting'
+    state: 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'replaying'
+    previousState: 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'replaying'
     reconnected: boolean
+    reason?: string
+    reconciliation?: { reason: 'gap' | 'ahead'; requestedAfterSequence: number; earliestAvailableSequence: number; latestSequence: number }
   }) => void) => {
     apiMocks.connectionHandlers.push(handler)
     return vi.fn()
@@ -760,27 +764,8 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
-  it('reloads the authoritative map after an SSE reconnect so missed remote commands reconcile', async () => {
-    apiMocks.getJson
-      .mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
-      .mockResolvedValueOnce({
-        revision: 2,
-        map: mapFixture({
-          revision: 2,
-          name: 'Remote Command Arena',
-          placements: [
-            {
-              id: 'token-pikachu',
-              sheetKind: 'pokemon',
-              sheetSlug: 'pikachu',
-              position: { x: 5, y: 0, z: 2 },
-              facing: 'north-east',
-              turned: false,
-            },
-          ],
-          updatedAt: 600,
-        }),
-      })
+  it('does not reload the authoritative map after a successful replay reconnect', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
 
     const editable = useEditableMap('arena-map', { debounceMs: 10 })
     await flushPromises()
@@ -789,28 +774,33 @@ describe('useEditableMap autosave boundary', () => {
       state: 'reconnecting',
       previousState: 'connected',
       reconnected: false,
+      reason: 'transport-loss',
     })
 
     expect(editable.livePlayCommandsBlocked.value).toBe(true)
-    expect(editable.livePlayRealtimeNotice.value).toContain('Realtime connection lost')
+    expect(editable.livePlayRealtimeNotice.value).toContain('Realtime stream is synchronizing')
+
+    apiMocks.connectionHandlers[0]?.({
+      state: 'replaying',
+      previousState: 'reconnecting',
+      reconnected: true,
+      reason: 'transport-open',
+    })
+    expect(editable.livePlayCommandsBlocked.value).toBe(true)
 
     apiMocks.connectionHandlers[0]?.({
       state: 'connected',
-      previousState: 'reconnecting',
+      previousState: 'replaying',
       reconnected: true,
+      reason: 'replay-caught-up',
     })
     await flushPromises()
 
-    expect(apiMocks.getJson).toHaveBeenCalledTimes(2)
-    expect(editable.map.value).toMatchObject({
-      revision: 2,
-      name: 'Remote Command Arena',
-      placements: [expect.objectContaining({ position: { x: 5, y: 0, z: 2 } })],
-    })
-    expect(editable.mapRevision.value).toBe(2)
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(1)
+    expect(editable.mapRevision.value).toBe(1)
     expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
     expect(editable.livePlayCommandsBlocked.value).toBe(false)
-    expect(editable.livePlayRealtimeNotice.value).toContain('map revision 2')
+    expect(editable.livePlayRealtimeNotice.value).toContain('map revision 1')
   })
 
   it('reloads instead of applying a revision-gap realtime event directly', async () => {
@@ -849,7 +839,7 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.map.value).toBeNull()
   })
 
-  it('uses external authoritative reconciliation on reconnect without independent map reloads', async () => {
+  it('requests external authoritative reconciliation for replay gap and ahead controls', async () => {
     const requestAuthoritativeReconciliation = vi.fn(async () => undefined)
     const editable = useEditableMap('arena-map', {
       debounceMs: 10,
@@ -858,21 +848,45 @@ describe('useEditableMap autosave boundary', () => {
     })
 
     apiMocks.connectionHandlers[0]?.({
-      state: 'reconnecting',
-      previousState: 'connected',
-      reconnected: false,
-    })
-    apiMocks.connectionHandlers[0]?.({
-      state: 'connected',
-      previousState: 'reconnecting',
+      state: 'replaying',
+      previousState: 'replaying',
       reconnected: true,
+      reason: 'reconcile-required',
+      reconciliation: {
+        reason: 'gap',
+        requestedAfterSequence: 1,
+        earliestAvailableSequence: 3,
+        latestSequence: 6,
+      },
     })
     await flushPromises()
 
     expect(requestAuthoritativeReconciliation).toHaveBeenCalledTimes(1)
-    expect(apiMocks.getJson).not.toHaveBeenCalled()
+    expect(requestAuthoritativeReconciliation).toHaveBeenLastCalledWith(
+      'Realtime replay history has a gap. Reloading the live table snapshot.',
+    )
     expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
     expect(editable.livePlayCommandsBlocked.value).toBe(false)
+
+    apiMocks.connectionHandlers[0]?.({
+      state: 'replaying',
+      previousState: 'replaying',
+      reconnected: true,
+      reason: 'reconcile-required',
+      reconciliation: {
+        reason: 'ahead',
+        requestedAfterSequence: 9,
+        earliestAvailableSequence: 1,
+        latestSequence: 6,
+      },
+    })
+    await flushPromises()
+
+    expect(requestAuthoritativeReconciliation).toHaveBeenCalledTimes(2)
+    expect(requestAuthoritativeReconciliation).toHaveBeenLastCalledWith(
+      'Realtime replay cursor was ahead of the server. Reloading the live table snapshot.',
+    )
+    expect(apiMocks.getJson).not.toHaveBeenCalled()
   })
 
   it('supersedes active external reconciliation when the authoritative access key changes', async () => {

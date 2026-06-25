@@ -16,6 +16,7 @@ import {
   playerProfileSelectionStorage,
   type PlayerProfileSelectionStorage,
 } from '~/utils/playerProfileSelectionStorage'
+import { publishRealtimeSelectedPlayerProfileId } from '~/utils/realtimeClientPrincipalContext'
 
 export interface PlayerProfileListResponse {
   readonly profiles: readonly PlayerProfile[]
@@ -133,6 +134,10 @@ export const usePlayerProfiles = (options: UsePlayerProfilesOptions = {}) => {
   ))
   const hasSelectedProfile = computed(() => selectedProfileId.value !== null)
 
+  const publishSelectedProfileContext = (): void => {
+    publishRealtimeSelectedPlayerProfileId(selectedProfileId.value)
+  }
+
   const findLoadedProfile = (profileId: PlayerProfileId): PlayerProfile | null => (
     profiles.value.find((profile) => profile.id === profileId) ?? null
   )
@@ -156,6 +161,7 @@ export const usePlayerProfiles = (options: UsePlayerProfilesOptions = {}) => {
     selectedProfile.value = normalizedProfile
     selectedProfileSummary.value = summary
     selectionStorage.remember(summary)
+    publishSelectedProfileContext()
     lastError.value = null
     if (rememberOptions.silent !== true) {
       lastNotice.value = `Selected player profile ${normalizedProfile.displayName}.`
@@ -179,6 +185,7 @@ export const usePlayerProfiles = (options: UsePlayerProfilesOptions = {}) => {
     const loadedSelection = selectionStorage.load()
     selectedProfileSummary.value = loadedSelection
     selectedProfile.value = loadedSelection === null ? null : findLoadedProfile(loadedSelection.profileId)
+    publishSelectedProfileContext()
     lastError.value = null
     lastNotice.value = loadedSelection === null
       ? 'No selected player profile was remembered in this browser.'
@@ -194,6 +201,7 @@ export const usePlayerProfiles = (options: UsePlayerProfilesOptions = {}) => {
 
     if (loadedSelection === null) {
       selectedProfile.value = null
+      publishSelectedProfileContext()
       return 'none'
     }
 
@@ -204,6 +212,7 @@ export const usePlayerProfiles = (options: UsePlayerProfilesOptions = {}) => {
         selectionStorage.clear()
         selectedProfileSummary.value = null
       }
+      publishSelectedProfileContext()
       return 'missing'
     }
 
@@ -214,6 +223,7 @@ export const usePlayerProfiles = (options: UsePlayerProfilesOptions = {}) => {
     selectedProfile.value = matchingProfile
     selectedProfileSummary.value = refreshedSummary
     selectionStorage.remember(refreshedSummary)
+    publishSelectedProfileContext()
     return 'selected'
   }
 
@@ -278,6 +288,7 @@ export const usePlayerProfiles = (options: UsePlayerProfilesOptions = {}) => {
     selectionStorage.clear()
     selectedProfile.value = null
     selectedProfileSummary.value = null
+    publishSelectedProfileContext()
     lastError.value = null
     lastNotice.value = 'Cleared the selected player profile for this browser.'
   }

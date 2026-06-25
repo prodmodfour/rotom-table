@@ -47,7 +47,7 @@ import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { clonePersistableMapPayload, stablePersistableMapJson } from '~/utils/maps/persistence'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import { useApiClient } from './useApiClient'
-import { subscribeRealtimeConnection, useRealtimeChannel } from './useRealtime'
+import { subscribeRealtimeConnection, useRealtimeChannel, type RealtimeConnectionChange } from './useRealtime'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import type { TabletopMap } from '~/types/map'
 
@@ -182,7 +182,7 @@ export const useEditableMap = (
     const revision = mapRevision.value
     switch (realtimeReconciliationStatus.value) {
       case 'reconnecting':
-        return 'Realtime connection lost. Reconnecting before more live-play commands are sent.'
+        return 'Realtime stream is synchronizing. Live-play commands are paused until replay catches up.'
       case 'reconciling':
         return 'Reconnected. Reloading the authoritative map before live play resumes.'
       case 'reconciled':
@@ -595,15 +595,46 @@ export const useEditableMap = (
     }
   }
 
-  const removeRealtimeConnection = subscribeRealtimeConnection((change) => {
-    if (change.state === 'reconnecting') {
-      realtimeReconciliationStatus.value = 'reconnecting'
+  const realtimeReconciliationReasonText = (change: RealtimeConnectionChange): string => {
+    const requirement = change.reconciliation
+    if (!requirement) return 'Realtime replay requires an authoritative live table snapshot.'
+    if (requirement.reason === 'gap') {
+      return 'Realtime replay history has a gap. Reloading the live table snapshot.'
+    }
+    return 'Realtime replay cursor was ahead of the server. Reloading the live table snapshot.'
+  }
+
+  const handleRealtimeConnectionChange = (change: RealtimeConnectionChange): void => {
+    if (change.reason === 'reconcile-required') {
+      requestRealtimeReconciliation(realtimeReconciliationReasonText(change))
       return
     }
-    if (change.state === 'connected' && change.reconnected) {
-      requestRealtimeReconciliation('Realtime reconnected. Reloading the live table snapshot.')
+
+    if (change.reason === 'malformed-message' || change.reason === 'handler-error') {
+      requestRealtimeReconciliation('Realtime stream validation failed. Reloading the live table snapshot.')
+      return
     }
-  })
+
+    if (change.state === 'connecting' || change.state === 'reconnecting' || change.state === 'replaying') {
+      if (realtimeReconciliationStatus.value !== 'reconciling') {
+        realtimeReconciliationStatus.value = 'reconnecting'
+      }
+      return
+    }
+
+    if (change.state === 'connected' && change.reason === 'replay-caught-up') {
+      if (realtimeReconciliationStatus.value !== 'reconciling') {
+        realtimeReconciliationStatus.value = change.reconnected ? 'reconciled' : 'synced'
+      }
+      return
+    }
+
+    if (change.state === 'idle' && realtimeReconciliationStatus.value !== 'reconciling') {
+      realtimeReconciliationStatus.value = 'synced'
+    }
+  }
+
+  const removeRealtimeConnection = subscribeRealtimeConnection(handleRealtimeConnectionChange, { immediate: true })
 
   useRealtimeChannel(mapChannel(slug), handleRealtimeMapEvent)
 
