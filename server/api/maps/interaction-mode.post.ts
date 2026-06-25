@@ -3,7 +3,7 @@ import { parseMapInteractionMode } from '#shared/mapInteractionMode'
 import { normalizeRealtimeClientId } from '#shared/realtime'
 import { requireGm } from '../../utils/auth'
 import { badRequest, expectSlug, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { setMapInteractionModeUseCase } from '../../useCases/setMapInteractionMode'
 
 interface SetMapInteractionModeBody {
@@ -27,7 +27,6 @@ export default defineEventHandler(async (event) => {
       interactionMode,
       clientId: normalizeRealtimeClientId(body.clientId),
     })
-    publishUseCaseRealtimeEvents(result.events)
     return {
       slug: result.slug,
       interactionMode: result.interactionMode,

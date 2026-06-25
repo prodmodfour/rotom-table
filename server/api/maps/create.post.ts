@@ -14,7 +14,7 @@
 import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
 import { requireWritableCampaignMode } from '../../utils/http'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { createMapUseCase } from '../../useCases/createMap'
 import { normalizeRealtimeClientId } from '#shared/realtime'
 import type { GridDimensions } from '~/types/map'
@@ -37,7 +37,6 @@ export default defineEventHandler(async (event) => {
       ...(body ?? {}),
       clientId: normalizeRealtimeClientId(body?.clientId),
     })
-    publishUseCaseRealtimeEvents(result.events)
     return { map: result.map }
   } catch (err) {
     throwUseCaseHttpError(err)

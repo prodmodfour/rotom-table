@@ -24,7 +24,8 @@ describe('sheet folder use cases', () => {
     const result = createSheetFolderUseCase({ folder: ' party/boxed ' }, { createFolder })
 
     expect(createFolder).toHaveBeenCalledWith('party/boxed')
-    expect(result).toEqual({ ok: true, created: true, path: 'data/sheets/party/boxed' })
+    expect(result).toMatchObject({ ok: true, created: true, path: 'data/sheets/party/boxed' })
+    expect(result.realtimeEvents[0]).toMatchObject({ access: { kind: 'gm-only' }, event: { channel: 'sheets', type: 'folder-created', data: { folder: 'party/boxed' } } })
   })
 
   it('maps create-folder validation failures while preserving unexpected storage failures', () => {
@@ -49,7 +50,8 @@ describe('sheet folder use cases', () => {
     const result = moveSheetFolderUseCase({ from: '/party', to: 'archive/party/' }, { moveFolder })
 
     expect(moveFolder).toHaveBeenCalledWith('party', 'archive/party')
-    expect(result).toEqual({ ok: true, moved: true, count: 2 })
+    expect(result).toMatchObject({ ok: true, moved: true, count: 2 })
+    expect(result.realtimeEvents[0]).toMatchObject({ access: { kind: 'gm-only' }, event: { channel: 'sheets', type: 'folder-moved', data: { from: 'party', to: 'archive/party' } } })
   })
 
   it('maps missing, conflict, and invalid move-folder failures', () => {
@@ -91,11 +93,12 @@ describe('sheet folder use cases', () => {
     const result = deleteSheetFolderUseCase({ folder: 'archive/party' }, { deleteFolder })
 
     expect(deleteFolder).toHaveBeenCalledWith('archive/party')
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       ok: true,
       count: 2,
       removed: ['data/sheets/archive/party', 'data/trainers/archive/party'],
     })
+    expect(result.realtimeEvents[0]).toMatchObject({ access: { kind: 'gm-only' }, event: { channel: 'sheets', type: 'folder-deleted', data: { folder: 'archive/party' } } })
   })
 
   it('maps missing and invalid delete-folder failures', () => {

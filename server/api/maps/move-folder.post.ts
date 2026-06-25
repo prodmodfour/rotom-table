@@ -8,7 +8,7 @@
 import { defineEventHandler, readBody } from 'h3'
 import { requireGm } from '../../utils/auth'
 import { requireWritableCampaignMode } from '../../utils/http'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { moveMapFolderUseCase } from '../../useCases/moveMapFolder'
 import { normalizeRealtimeClientId } from '#shared/realtime'
 
@@ -30,7 +30,6 @@ export default defineEventHandler(async (event) => {
       to: body?.to,
       clientId: normalizeRealtimeClientId(body?.clientId),
     })
-    publishUseCaseRealtimeEvents(result.events)
     return {
       ok: true as const,
       moved: result.moved,

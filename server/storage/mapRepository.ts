@@ -87,6 +87,7 @@ export interface MoveMapFolderResult {
 export interface DeleteMapFolderResult {
   readonly folder: string
   readonly deletedMapSlugs: readonly string[]
+  readonly deletedMaps: readonly TabletopMap[]
 }
 
 export interface RetargetMapSheetPlacementsResult {
@@ -620,6 +621,7 @@ export const createSqliteMapRepository = <TDocument = unknown>(
     if (!folderExists(folder) && !folderHasResources(folder)) return null
 
     const deletedMapSlugs: string[] = []
+    const deletedMaps: TabletopMap[] = []
     for (const stored of list() as readonly StoredMapDocument[]) {
       const map = storedDocumentToTabletopMap(stored)
       const mapFolder = map.folder ?? ''
@@ -628,9 +630,10 @@ export const createSqliteMapRepository = <TDocument = unknown>(
       database.connection.prepare('DELETE FROM map_interaction_modes WHERE slug = ?').run(map.slug)
       clearOperationHistory(map.slug)
       deletedMapSlugs.push(map.slug)
+      deletedMaps.push(map)
     }
     database.connection.prepare('DELETE FROM map_folders WHERE path = ? OR path LIKE ?').run(folder, `${folder}/%`)
-    return { folder, deletedMapSlugs }
+    return { folder, deletedMapSlugs, deletedMaps }
   })
 
   const updateMapReferences = (

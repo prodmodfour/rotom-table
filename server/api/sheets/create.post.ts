@@ -1,6 +1,5 @@
 import { defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { publishUseCaseRealtimeEvents } from '../../utils/useCaseHttp'
 import { expectFolderPath, expectSheetKind, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { createSheetUseCase } from '../../useCases/createSheet'
 import { normalizeRealtimeClientId } from '#shared/realtime'
@@ -23,8 +22,6 @@ export default defineEventHandler(async (event) => {
     folder,
     clientId: normalizeRealtimeClientId(body.clientId),
   })
-
-  publishUseCaseRealtimeEvents(result.events)
 
   return {
     ok: result.ok,

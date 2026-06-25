@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { expectSheetKind, expectSlug, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { deleteSheetUseCase } from '../../useCases/deleteSheet'
 import { normalizeRealtimeClientId } from '#shared/realtime'
@@ -25,7 +25,6 @@ export default defineEventHandler(async (event) => {
       slug,
       clientId: normalizeRealtimeClientId(body.clientId),
     })
-    publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, path: result.path }
   } catch (err) {
     throwUseCaseHttpError(err)

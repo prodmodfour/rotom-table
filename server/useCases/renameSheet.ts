@@ -1,13 +1,24 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { sheetChannel, sheetsChannel, type RealtimeEvent } from '#shared/realtime'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type { SheetKind } from '#shared/sheets'
+import type { RotomDatabase } from '../storage/database'
 import {
-  sqliteSheetRepository,
+  createSqliteSheetRepository,
   type RenameSheetDocumentInput,
   type RenameSheetDocumentResult,
   type SheetRepository,
 } from '../storage/sheetRepository'
-import { mapRetargetRealtimeEvents } from '../utils/mapRetargetRealtime'
+import { createSqliteRealtimeEventRepository, type RealtimeEventRepository } from '../storage/realtimeEventRepository'
+import {
+  defaultLibraryRealtimePublicationFailureReporter,
+  defaultPersistedLibraryRealtimeEventPublisher,
+  publishPersistedLibraryRealtimeEventsAfterCommit,
+  resolveLibraryMutationDatabase,
+  sheetLibraryRenamedRealtimeAppendInputs,
+  sheetRenameMapRetargetRealtimeAppendInputs,
+  type LibraryRealtimePublicationFailureReporter,
+  type PersistedLibraryRealtimeEventPublisher,
+} from '../realtime/libraryMutationRealtime'
 
 export class RenameSheetUseCaseError extends UseCaseHttpError<404 | 409 | 500> {}
 
@@ -18,8 +29,20 @@ export interface RenameSheetInput {
   clientId?: string
 }
 
+type RenameSheetRepository = Pick<SheetRepository<Record<string, unknown>>, 'rename' | 'getByRef'> & {
+  readonly database?: RotomDatabase
+}
+
+type RenameSheetRealtimeEventRepository = Pick<RealtimeEventRepository, 'appendMany'> & {
+  readonly database?: RotomDatabase
+}
+
 export interface RenameSheetDependencies {
-  sheetRepository?: Pick<SheetRepository, 'rename'>
+  database?: RotomDatabase
+  sheetRepository?: RenameSheetRepository
+  realtimeEventRepository?: RenameSheetRealtimeEventRepository
+  publishPersistedRealtimeEvent?: PersistedLibraryRealtimeEventPublisher
+  reportAfterCommitPublicationFailure?: LibraryRealtimePublicationFailureReporter
   now?: () => number
   failAfterSheetUpdate?: () => void
 }
@@ -30,63 +53,77 @@ export interface RenameSheetResult {
   name: string
   path: string
   sheet: Record<string, unknown>
-  events: Array<Omit<RealtimeEvent, 'timestamp'>>
+  realtimeEvents: readonly PersistedRealtimeEvent[]
 }
 
 export const renameSheetUseCase = (
   input: RenameSheetInput,
   dependencies: RenameSheetDependencies = {},
 ): RenameSheetResult => {
-  const sheetRepository = dependencies.sheetRepository ?? sqliteSheetRepository
+  const database = resolveLibraryMutationDatabase({
+    database: dependencies.database,
+    dependencies: [
+      { label: 'Rename sheet repository', dependency: dependencies.sheetRepository },
+      { label: 'Rename sheet realtime event repository', dependency: dependencies.realtimeEventRepository },
+    ],
+  })
+  const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? createSqliteRealtimeEventRepository({ database })
 
-  let renamed: RenameSheetDocumentResult | null
-  try {
-    renamed = sheetRepository.rename({
-      kind: input.kind,
-      slug: input.slug,
-      name: input.name,
-      now: dependencies.now?.(),
-      failAfterSheetUpdate: dependencies.failAfterSheetUpdate,
-    } as RenameSheetDocumentInput)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    if (message.includes('already exists') || message.includes('UNIQUE')) throw new RenameSheetUseCaseError(409, message)
-    throw new RenameSheetUseCaseError(500, `Failed to rename sheet: ${message}`)
-  }
+  const transactionResult = database.withTransaction(() => {
+    let renamed: RenameSheetDocumentResult | null
+    try {
+      renamed = sheetRepository.rename({
+        kind: input.kind,
+        slug: input.slug,
+        name: input.name,
+        now: dependencies.now?.(),
+        failAfterSheetUpdate: dependencies.failAfterSheetUpdate,
+      } as RenameSheetDocumentInput)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes('already exists') || message.includes('UNIQUE')) throw new RenameSheetUseCaseError(409, message)
+      throw new RenameSheetUseCaseError(500, `Failed to rename sheet: ${message}`)
+    }
 
-  if (!renamed) throw new RenameSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
+    if (!renamed) throw new RenameSheetUseCaseError(404, `Sheet ${input.slug}.json not found`)
 
-  const data = { kind: input.kind, slug: renamed.newSlug, sheet: renamed.sheet.sheet }
-  const renameData = {
-    kind: input.kind,
-    slug: renamed.newSlug,
-    oldSlug: input.slug,
-    newSlug: renamed.newSlug,
-    sheet: renamed.sheet.sheet,
-  }
-  const clientId = input.clientId
-  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = [
-    ...(!renamed.changed
-      ? []
-      : renamed.renamed
-        ? [
-            { channel: sheetChannel(input.kind, input.slug), type: 'renamed' as const, clientId, data: renameData },
-            { channel: sheetChannel(input.kind, renamed.newSlug), type: 'updated' as const, clientId, data },
-            { channel: sheetsChannel, type: 'renamed' as const, clientId, data: renameData },
-          ]
-        : [
-            { channel: sheetChannel(input.kind, input.slug), type: 'updated' as const, clientId, data },
-            { channel: sheetsChannel, type: 'updated' as const, clientId, data },
-          ]),
-    ...mapRetargetRealtimeEvents(renamed.mapUpdates, clientId),
-  ]
+    const authoritativeSheet = renamed.changed
+      ? sheetRepository.getByRef(input.kind, renamed.newSlug)
+      : renamed.sheet
+    if (!authoritativeSheet) throw new Error(`${input.kind} sheet ${renamed.newSlug} was not readable after rename`)
+    if (renamed.changed && (authoritativeSheet.revision !== renamed.sheet.revision || authoritativeSheet.updatedAt !== renamed.sheet.updatedAt)) {
+      throw new Error(`${input.kind} sheet ${renamed.newSlug} authoritative re-read did not match renamed revision ${renamed.sheet.revision} and timestamp ${renamed.sheet.updatedAt}`)
+    }
+
+    const realtimeEvents = renamed.changed
+      ? realtimeEventRepository.appendMany([
+          ...sheetLibraryRenamedRealtimeAppendInputs({
+            oldSlug: input.slug,
+            sheet: authoritativeSheet,
+            renamed: renamed.renamed,
+            clientId: input.clientId,
+          }),
+          ...sheetRenameMapRetargetRealtimeAppendInputs(renamed.mapUpdates, input.clientId),
+        ])
+      : []
+
+    return { renamed, authoritativeSheet, realtimeEvents }
+  })
+
+  publishPersistedLibraryRealtimeEventsAfterCommit({
+    events: transactionResult.realtimeEvents,
+    publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedLibraryRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultLibraryRealtimePublicationFailureReporter,
+  })
 
   return {
     ok: true,
-    slug: renamed.newSlug,
+    slug: transactionResult.renamed.newSlug,
     name: input.name,
-    path: renamed.path,
-    sheet: renamed.sheet.sheet,
-    events,
+    path: transactionResult.renamed.path,
+    sheet: transactionResult.authoritativeSheet.sheet,
+    realtimeEvents: transactionResult.realtimeEvents,
   }
 }
