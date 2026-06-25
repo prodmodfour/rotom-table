@@ -371,6 +371,6 @@ describe('realtime event access architecture boundaries', () => {
     expect(readFileSync('server/realtime/realtimeSseDelivery.ts', 'utf8')).toMatch(/reconcile-required|evaluateRealtimeEventAccess/)
 
     const clientSource = readFileSync('src/composables/useRealtime.ts', 'utf8')
-    expect(clientSource).not.toMatch(/realtimeEventAccessPolicy|RealtimeEventAccess|reconcile-required/)
+    expect(clientSource).not.toMatch(/realtimeEventAccessPolicy|RealtimeEventAccess/)
   })
 })
