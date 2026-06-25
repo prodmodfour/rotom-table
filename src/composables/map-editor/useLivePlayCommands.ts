@@ -474,7 +474,9 @@ export const useLivePlayCommands = (
   const outboxEntrySnapshot = ref<readonly LivePlayCommandOutboxEntry[]>([])
   const outboxRecoveryStatus = ref<LivePlayCommandOutboxRecoveryStatus>('idle')
   const outboxRecoveryError = ref<string | null>(null)
-  let recoverySendActive = false
+  let recoveryRetryActive = false
+  let activeStatusCheck: Promise<LivePlayOperationStatusCheckResult> | null = null
+  let activeStatusCheckOpId: string | null = null
 
   if (getCurrentScope()) {
     const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => status.value === 'saving')
@@ -999,7 +1001,7 @@ export const useLivePlayCommands = (
     request: string,
     buildBody: LivePlayCommandBodyFactory,
   ): Promise<LivePlayCommandDispatchResult> => {
-    if (status.value === 'saving' || recoverySendActive) {
+    if (status.value === 'saving' || recoveryRetryActive) {
       const message = 'A live-play command is already in flight.'
       options.onCommandBlocked?.(message)
       return { dispatched: false, message }
@@ -1259,7 +1261,7 @@ export const useLivePlayCommands = (
   )
 
   const resolveMove: UseLivePlayCommandsReturn['resolveMove'] = async (input) => {
-    if (status.value === 'saving' || recoverySendActive) {
+    if (status.value === 'saving' || recoveryRetryActive) {
       const message = 'A live-play command is already in flight.'
       options.onCommandBlocked?.(message)
       return { dispatched: false, move: null, message }
@@ -1634,8 +1636,15 @@ export const useLivePlayCommands = (
   }
 
   const retryOutboxCommand: UseLivePlayCommandsReturn['retryOutboxCommand'] = async (opId) => {
-    if (status.value === 'saving' || recoverySendActive) {
+    if (status.value === 'saving' || recoveryRetryActive) {
       const message = 'A live-play command is already in flight.'
+      setOutboxRecoveryFailure(message)
+      options.onCommandBlocked?.(message)
+      return { dispatched: false, message, opId }
+    }
+
+    if (activeStatusCheck !== null) {
+      const message = 'A live-play command status check is already in flight.'
       setOutboxRecoveryFailure(message)
       options.onCommandBlocked?.(message)
       return { dispatched: false, message, opId }
@@ -1652,7 +1661,7 @@ export const useLivePlayCommands = (
       return recoveryLocalBlockedResult(realtimeAckBlockedMessage, { opId })
     }
 
-    recoverySendActive = true
+    recoveryRetryActive = true
     outboxRecoveryStatus.value = 'retrying'
     outboxRecoveryError.value = null
 
@@ -1730,7 +1739,7 @@ export const useLivePlayCommands = (
       )
       return finalizeRecoveryRetryResult(result)
     } finally {
-      recoverySendActive = false
+      recoveryRetryActive = false
     }
   }
 
@@ -1738,10 +1747,7 @@ export const useLivePlayCommands = (
     opId: string,
     message: string,
   ): LivePlayOperationStatusCheckResult => {
-    status.value = 'error'
-    lastError.value = message
     setOutboxRecoveryFailure(message)
-    options.onCommandFailed?.(message)
     return { status: 'error', opId, message }
   }
 
@@ -1750,9 +1756,13 @@ export const useLivePlayCommands = (
     message: string,
   ): LivePlayOperationStatusCheckResult => {
     setOutboxRecoveryFailure(message)
-    options.onCommandBlocked?.(message)
     return { status: 'error', opId, message }
   }
+
+  const operationStatusConcurrentBlocked = (
+    opId: string,
+    message: string,
+  ): LivePlayOperationStatusCheckResult => ({ status: 'error', opId, message })
 
   const processAcceptedStatusTerminalResponse = async (
     response: LivePlayCommandResponse,
@@ -1779,10 +1789,12 @@ export const useLivePlayCommands = (
     if (message === undefined) {
       status.value = 'idle'
       lastError.value = null
+      outboxRecoveryStatus.value = 'idle'
+      outboxRecoveryError.value = null
+    } else {
+      setOutboxRecoveryFailure(message)
     }
 
-    outboxRecoveryStatus.value = 'idle'
-    outboxRecoveryError.value = null
     return {
       status: 'accepted',
       opId,
@@ -1806,129 +1818,141 @@ export const useLivePlayCommands = (
     }
   }
 
-  const checkOutboxCommandStatus: UseLivePlayCommandsReturn['checkOutboxCommandStatus'] = async (opId) => {
-    if (status.value === 'saving' || recoverySendActive) {
-      return operationStatusBlocked(opId, 'A live-play command is already in flight.')
+  const checkOutboxCommandStatusOnce = async (opId: string): Promise<LivePlayOperationStatusCheckResult> => {
+    const authContext = currentAuthContext()
+    if (!authContext) {
+      outboxEntrySnapshot.value = []
+      return operationStatusFailure(
+        opId,
+        'A valid GM or player auth role is required before checking durable live-play command status.',
+      )
     }
 
-    const blockedMessage = blockedCommandMessage()
-    if (blockedMessage) return operationStatusBlocked(opId, blockedMessage)
+    let entry: LivePlayCommandOutboxEntry | null
+    try {
+      entry = await outbox.get(opId)
+    } catch (error) {
+      const refreshWarning = await refreshOutboxEntriesQuiet()
+      const outboxError = combineOutboxWarnings(outboxErrorMessage(error), refreshWarning)
+      return operationStatusFailure(
+        opId,
+        `Live-play operation ${opId} could not be read from durable command storage: ${outboxError}`,
+      )
+    }
 
-    const realtimeAckBlockedMessage = realtimeAcknowledgementBlockedMessage()
-    if (realtimeAckBlockedMessage) return operationStatusBlocked(opId, realtimeAckBlockedMessage)
+    if (!entry) {
+      const refreshWarning = await refreshOutboxEntriesQuiet()
+      return operationStatusFailure(
+        opId,
+        combineOutboxWarnings(
+          `Live-play operation ${opId} is no longer present in durable command storage.`,
+          refreshWarning,
+        ) ?? `Live-play operation ${opId} is no longer present in durable command storage.`,
+      )
+    }
 
-    recoverySendActive = true
-    outboxRecoveryStatus.value = 'checking'
+    const validationIssue = validateStoredEntryForStatusCheck(entry, authContext)
+    if (validationIssue) {
+      const refreshWarning = await refreshOutboxEntriesQuiet()
+      return operationStatusFailure(
+        entry.opId,
+        combineOutboxWarnings(validationIssue, refreshWarning) ?? validationIssue,
+      )
+    }
+
+    let rawStatus: unknown
+    try {
+      rawStatus = await postJson<unknown>(MAP_API_PATHS.operationStatus, { command: entry.body })
+    } catch (error) {
+      return operationStatusFailure(
+        entry.opId,
+        `Live-play operation ${entry.opId} status could not be checked. The outbox entry was left unchanged. ${getErrorMessage(error, { fallback: 'The HTTP request failed before an operation status was received.' })}`,
+      )
+    }
+
+    let operationStatus
+    try {
+      operationStatus = parseLivePlayOperationStatusResponse(rawStatus)
+    } catch (error) {
+      return operationStatusFailure(
+        entry.opId,
+        `Live-play operation ${entry.opId} status response was not trustworthy. The outbox entry was left unchanged. ${getErrorMessage(error, { fallback: 'Invalid operation status response' })}`,
+      )
+    }
+
+    if (operationStatus.mapSlug !== entry.mapSlug || operationStatus.opId !== entry.opId) {
+      return operationStatusFailure(
+        entry.opId,
+        `Live-play operation ${entry.opId} status response did not match the stored outbox entry. The outbox entry was left unchanged.`,
+      )
+    }
+
+    if (operationStatus.status === 'unknown') {
+      outboxRecoveryStatus.value = 'idle'
+      outboxRecoveryError.value = null
+      return {
+        status: 'unknown',
+        opId: entry.opId,
+        message: `The server has no terminal record for live-play operation ${entry.opId} yet. The outbox entry was left unchanged; an earlier in-flight request may still finish later.`,
+      }
+    }
+
+    const terminalValidation = validateTerminalResponseForCommand({
+      response: operationStatus.result,
+      command: entry.body,
+    })
+    if (!terminalValidation.valid) {
+      return operationStatusFailure(
+        entry.opId,
+        `Live-play operation ${entry.opId} terminal status did not match the stored command. The outbox entry was left unchanged. ${validationIssueSummary(terminalValidation.issues)}`,
+      )
+    }
+
+    outboxRecoveryStatus.value = 'synchronizing'
     outboxRecoveryError.value = null
 
-    try {
-      const authContext = currentAuthContext()
-      if (!authContext) {
-        outboxEntrySnapshot.value = []
-        return operationStatusFailure(
-          opId,
-          'A valid GM or player auth role is required before checking durable live-play command status.',
-        )
-      }
-
-      let entry: LivePlayCommandOutboxEntry | null
-      try {
-        entry = await outbox.get(opId)
-      } catch (error) {
-        const refreshWarning = await refreshOutboxEntriesQuiet()
-        const outboxError = combineOutboxWarnings(outboxErrorMessage(error), refreshWarning)
-        return operationStatusFailure(
-          opId,
-          `Live-play operation ${opId} could not be read from durable command storage: ${outboxError}`,
-        )
-      }
-
-      if (!entry) {
-        const refreshWarning = await refreshOutboxEntriesQuiet()
-        return operationStatusFailure(
-          opId,
-          combineOutboxWarnings(
-            `Live-play operation ${opId} is no longer present in durable command storage.`,
-            refreshWarning,
-          ) ?? `Live-play operation ${opId} is no longer present in durable command storage.`,
-        )
-      }
-
-      const validationIssue = validateStoredEntryForStatusCheck(entry, authContext)
-      if (validationIssue) {
-        const refreshWarning = await refreshOutboxEntriesQuiet()
-        return operationStatusFailure(
-          entry.opId,
-          combineOutboxWarnings(validationIssue, refreshWarning) ?? validationIssue,
-        )
-      }
-
-      let rawStatus: unknown
-      try {
-        rawStatus = await postJson<unknown>(MAP_API_PATHS.operationStatus, { command: entry.body })
-      } catch (error) {
-        return operationStatusFailure(
-          entry.opId,
-          `Live-play operation ${entry.opId} status could not be checked. The outbox entry was left unchanged. ${getErrorMessage(error, { fallback: 'The HTTP request failed before an operation status was received.' })}`,
-        )
-      }
-
-      let operationStatus
-      try {
-        operationStatus = parseLivePlayOperationStatusResponse(rawStatus)
-      } catch (error) {
-        return operationStatusFailure(
-          entry.opId,
-          `Live-play operation ${entry.opId} status response was not trustworthy. The outbox entry was left unchanged. ${getErrorMessage(error, { fallback: 'Invalid operation status response' })}`,
-        )
-      }
-
-      if (operationStatus.mapSlug !== entry.mapSlug || operationStatus.opId !== entry.opId) {
-        return operationStatusFailure(
-          entry.opId,
-          `Live-play operation ${entry.opId} status response did not match the stored outbox entry. The outbox entry was left unchanged.`,
-        )
-      }
-
-      if (operationStatus.status === 'unknown') {
-        outboxRecoveryStatus.value = 'idle'
-        outboxRecoveryError.value = null
-        return {
-          status: 'unknown',
-          opId: entry.opId,
-          message: `The server has no terminal record for live-play operation ${entry.opId} yet. The outbox entry was left unchanged; an earlier in-flight request may still finish later.`,
-        }
-      }
-
-      const terminalValidation = validateTerminalResponseForCommand({
-        response: operationStatus.result,
-        command: entry.body,
-      })
-      if (!terminalValidation.valid) {
-        return operationStatusFailure(
-          entry.opId,
-          `Live-play operation ${entry.opId} terminal status did not match the stored command. The outbox entry was left unchanged. ${validationIssueSummary(terminalValidation.issues)}`,
-        )
-      }
-
-      const acknowledgeWarning = await acknowledgeTerminalResponse(entry.opId)
-      if (acknowledgeWarning) {
-        await refreshOutboxEntriesQuiet({ preserveRecoveryError: true })
-        return operationStatusFailure(entry.opId, acknowledgeWarning)
-      }
-
-      const refreshWarning = await refreshOutboxEntriesQuiet()
-      if (refreshWarning) {
-        return operationStatusFailure(entry.opId, refreshWarning)
-      }
-
-      const response = operationStatus.result as LivePlayCommandResponse
-      return acceptedLivePlayResponse(response)
-        ? await processAcceptedStatusTerminalResponse(response, entry.opId)
-        : await processRejectedStatusTerminalResponse(entry, response)
-    } finally {
-      recoverySendActive = false
+    const acknowledgeWarning = await acknowledgeTerminalResponse(entry.opId)
+    if (acknowledgeWarning) {
+      await refreshOutboxEntriesQuiet({ preserveRecoveryError: true })
+      return operationStatusFailure(entry.opId, acknowledgeWarning)
     }
+
+    const refreshWarning = await refreshOutboxEntriesQuiet()
+    if (refreshWarning) {
+      return operationStatusFailure(entry.opId, refreshWarning)
+    }
+
+    const response = operationStatus.result as LivePlayCommandResponse
+    return acceptedLivePlayResponse(response)
+      ? await processAcceptedStatusTerminalResponse(response, entry.opId)
+      : await processRejectedStatusTerminalResponse(entry, response)
+  }
+
+  const checkOutboxCommandStatus: UseLivePlayCommandsReturn['checkOutboxCommandStatus'] = (opId) => {
+    if (activeStatusCheck !== null) {
+      if (activeStatusCheckOpId === opId) return activeStatusCheck
+      return Promise.resolve(operationStatusConcurrentBlocked(
+        opId,
+        `Live-play operation ${activeStatusCheckOpId ?? '(unknown)'} is already being checked with the server. Wait for that read-only status check to finish before checking another operation.`,
+      ))
+    }
+
+    if (status.value === 'saving' || recoveryRetryActive) {
+      return Promise.resolve(operationStatusBlocked(opId, 'A live-play command is already in flight.'))
+    }
+
+    outboxRecoveryStatus.value = 'checking'
+    outboxRecoveryError.value = null
+    activeStatusCheckOpId = opId
+    activeStatusCheck = checkOutboxCommandStatusOnce(opId)
+      .finally(() => {
+        if (activeStatusCheckOpId === opId) {
+          activeStatusCheckOpId = null
+          activeStatusCheck = null
+        }
+      })
+
+    return activeStatusCheck
   }
 
   const acceptedRealtimeResponse = (

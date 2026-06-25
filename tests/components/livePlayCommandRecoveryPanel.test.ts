@@ -76,6 +76,10 @@ describe('LivePlayCommandRecoveryPanel', () => {
     expect(wrapper.text()).toContain('server is idempotent')
     expect(wrapper.text()).toContain('Another tab or page instance may own this send lease')
 
+    const checkButtons = wrapper.findAll('button').filter((button) => button.text().includes('Check server'))
+    expect(checkButtons).toHaveLength(3)
+    expect(checkButtons.every((button) => button.attributes('disabled') === undefined)).toBe(true)
+
     const retryButtons = wrapper.findAll('button').filter((button) => button.text().includes('Retry'))
     expect(retryButtons).toHaveLength(3)
     expect(retryButtons[0]?.attributes('disabled')).toBeUndefined()
@@ -102,12 +106,15 @@ describe('LivePlayCommandRecoveryPanel', () => {
       interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
       retryDisabledMessage: 'A live-play command is already in flight.',
     })
+    const checkButton = wrapper.findAll('button').find((button) => button.text() === 'Check server')
+    expect(checkButton?.attributes('disabled')).toBeUndefined()
+
     retryButton = wrapper.findAll('button').find((button) => button.text() === 'Retry')
     expect(retryButton?.attributes('disabled')).toBeDefined()
     expect(wrapper.text()).toContain('A live-play command is already in flight.')
   })
 
-  it('emits refresh and retry with accessible labels and the existing operation ID', async () => {
+  it('emits refresh, retry, and status checks with accessible labels and the existing operation ID', async () => {
     const entry = createEntry('uncertain', { opId: 'op_panelretry01' })
     const wrapper = mount(LivePlayCommandRecoveryPanel, {
       props: {
@@ -123,6 +130,11 @@ describe('LivePlayCommandRecoveryPanel', () => {
     expect(refresh.exists()).toBe(true)
     await refresh.trigger('click')
     expect(wrapper.emitted('refresh')).toHaveLength(1)
+
+    const check = wrapper.find(`button[aria-label="Check whether operation op_panelretry01 has a terminal server result"]`)
+    expect(check.exists()).toBe(true)
+    await check.trigger('click')
+    expect(wrapper.emitted('checkStatus')).toEqual([[entry.opId]])
 
     const retry = wrapper.find(`button[aria-label="Retry Move token operation op_panelretry01 with its original operation ID"]`)
     expect(retry.exists()).toBe(true)
@@ -144,6 +156,41 @@ describe('LivePlayCommandRecoveryPanel', () => {
     expect(wrapper.text()).toContain('Synchronizing accepted command')
     expect(wrapper.findAll('button').some((button) => button.text() === 'Retry')).toBe(false)
     expect(wrapper.find('button[aria-label="Refresh live-play command recovery without sending commands"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('shows status checks separately from last send errors and active checking state', async () => {
+    const entry = createEntry('uncertain', {
+      opId: 'op_panelstatus01',
+      lastError: 'The original send timed out.',
+    })
+    const wrapper = mount(LivePlayCommandRecoveryPanel, {
+      props: {
+        entries: [entry],
+        recoveryStatus: 'idle',
+        interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+        retryingOpId: null,
+        checkingOpId: null,
+        retryDisabledMessage: null,
+        statusResultByOpId: {
+          [entry.opId]: {
+            status: 'unknown',
+            message: 'The server has no terminal record for this operation yet.',
+            checkedAt: 1,
+          },
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('Last send error')
+    expect(wrapper.text()).toContain('The original send timed out.')
+    expect(wrapper.text()).toContain('Server status check')
+    expect(wrapper.text()).toContain('The server has no terminal record for this operation yet.')
+
+    await wrapper.setProps({ checkingOpId: entry.opId, recoveryStatus: 'checking' })
+    expect(wrapper.text()).toContain('Checking the server for a terminal command result without resending the command.')
+    const checkButton = wrapper.find(`button[aria-label="Check whether operation ${entry.opId} has a terminal server result"]`)
+    expect(checkButton.text()).toBe('Checking…')
+    expect(checkButton.attributes('disabled')).toBeDefined()
   })
 
   it('does not render raw command payloads, sheets, or auth context', () => {

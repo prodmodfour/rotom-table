@@ -298,6 +298,7 @@ const livePlayCommandRecoveryGate = useLivePlayCommandRecoveryGate({
   recoverInterrupted: livePlayCommands.recoverInterruptedOutboxCommands,
   refresh: livePlayCommands.refreshOutboxEntries,
   retry: livePlayCommands.retryOutboxCommand,
+  checkStatus: livePlayCommands.checkOutboxCommandStatus,
 })
 watchEffect(() => {
   livePlayRecoveryNewCommandBlocked.value = livePlayCommandRecoveryGate.blocksNewLiveCommands.value
@@ -341,6 +342,9 @@ const livePlayRetryDisabledMessage = computed(() => {
   if (livePlayCommandRecoveryGate.retryingOpId.value) {
     return 'Retrying the pending live-play command with its original operation ID.'
   }
+  if (livePlayCommandRecoveryGate.checkingOpId.value) {
+    return 'Checking the server for a terminal command result without resending the command.'
+  }
   return null
 })
 const refreshLivePlayCommandRecovery = () => {
@@ -348,6 +352,9 @@ const refreshLivePlayCommandRecovery = () => {
 }
 const retryLivePlayCommandRecoveryEntry = (opId: string) => {
   void livePlayCommandRecoveryGate.retryEntry(opId).catch(() => undefined)
+}
+const checkLivePlayCommandRecoveryEntryStatus = (opId: string) => {
+  void livePlayCommandRecoveryGate.checkEntry(opId).catch(() => undefined)
 }
 
 watch(renamedTo, (newSlug) => {
@@ -1939,9 +1946,12 @@ useMapDimensionReconciliation({
         :block-message="livePlayCommandRecoveryGate.blockMessage.value"
         :interaction-mode="mapInteractionMode"
         :retrying-op-id="livePlayCommandRecoveryGate.retryingOpId.value"
+        :checking-op-id="livePlayCommandRecoveryGate.checkingOpId.value"
+        :status-result-by-op-id="livePlayCommandRecoveryGate.statusResultByOpId.value"
         :retry-disabled-message="livePlayRetryDisabledMessage"
         @refresh="refreshLivePlayCommandRecovery"
         @retry="retryLivePlayCommandRecoveryEntry"
+        @check-status="checkLivePlayCommandRecoveryEntryStatus"
       />
     </template>
 

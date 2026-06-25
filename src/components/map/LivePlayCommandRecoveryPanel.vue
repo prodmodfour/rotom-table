@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { LIVE_PLAY_COMMAND_TYPES, type LivePlayCommandType } from '#shared/livePlayCommands'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import type { LivePlayCommandOutboxRecoveryStatus } from '~/composables/map-editor/useLivePlayCommands'
+import type { LivePlayCommandStatusInspection } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
 import type { LivePlayCommandOutboxEntry, LivePlayCommandOutboxState } from '~/utils/livePlayCommandOutbox'
 
 const props = defineProps<{
@@ -12,12 +13,15 @@ const props = defineProps<{
   blockMessage?: string | null
   interactionMode: MapInteractionMode
   retryingOpId?: string | null
+  checkingOpId?: string | null
+  statusResultByOpId?: Readonly<Record<string, LivePlayCommandStatusInspection>>
   retryDisabledMessage?: string | null
 }>()
 
 const emit = defineEmits<{
   refresh: []
   retry: [opId: string]
+  checkStatus: [opId: string]
 }>()
 
 const COMMAND_LABELS: Record<LivePlayCommandType, string> = {
@@ -59,6 +63,7 @@ const STATE_LABELS: Record<LivePlayCommandOutboxState, string> = {
 
 const summaryMessage = computed(() => {
   if (props.retryingOpId) return 'Retrying the pending live-play command with its original operation ID.'
+  if (props.checkingOpId || props.recoveryStatus === 'checking') return 'Checking the server for a terminal command result without resending the command.'
   if (props.recoveryStatus === 'synchronizing') return 'Synchronizing accepted command with the authoritative live table snapshot.'
   if (props.recoveryStatus === 'loading') return 'Checking for interrupted live-play commands before actions resume.'
   if (props.recoveryError) return props.recoveryError
@@ -71,7 +76,13 @@ const summaryMessage = computed(() => {
 const refreshBusy = computed(() => (
   props.recoveryStatus === 'loading'
   || props.recoveryStatus === 'retrying'
+  || props.recoveryStatus === 'checking'
   || props.recoveryStatus === 'synchronizing'
+  || Boolean(props.checkingOpId)
+))
+
+const refreshButtonLabel = computed(() => (
+  props.checkingOpId || props.recoveryStatus === 'checking' ? 'Checking…' : refreshBusy.value ? 'Refreshing…' : 'Refresh'
 ))
 
 const commandLabel = (entry: LivePlayCommandOutboxEntry): string => COMMAND_LABELS[entry.commandType]
@@ -91,9 +102,21 @@ const retryDisabledReason = (entry: LivePlayCommandOutboxEntry): string | null =
     return 'Switch to Run Live Play to retry pending live-play commands.'
   }
   if (props.retryingOpId) return 'Another live-play command retry is already active.'
+  if (props.checkingOpId) return 'Wait for the server status check to finish before retrying.'
   if (props.retryDisabledMessage) return props.retryDisabledMessage
   if (props.recoveryStatus === 'synchronizing') return 'Wait for accepted-command synchronization to finish before retrying.'
   if (props.recoveryStatus === 'loading') return 'Wait for recovery inspection to finish before retrying.'
+  if (props.recoveryStatus === 'checking') return 'Wait for the server status check to finish before retrying.'
+  return null
+}
+
+const checkStatusDisabledReason = (entry: LivePlayCommandOutboxEntry): string | null => {
+  if (props.retryingOpId) return 'Wait for the active retry to finish before checking the server.'
+  if (props.checkingOpId === entry.opId) return 'This operation is already being checked with the server.'
+  if (props.checkingOpId) return 'Wait for the active server status check to finish before checking another operation.'
+  if (props.recoveryStatus === 'loading') return 'Wait for recovery inspection to finish before checking the server.'
+  if (props.recoveryStatus === 'synchronizing') return 'Wait for accepted-command synchronization to finish before checking the server.'
+  if (props.recoveryStatus === 'checking') return 'Wait for the active server status check to finish before checking another operation.'
   return null
 }
 
@@ -105,9 +128,26 @@ const retryAriaLabel = (entry: LivePlayCommandOutboxEntry): string => (
   `Retry ${commandLabel(entry)} operation ${shortOpId(entry.opId)} with its original operation ID`
 )
 
+const checkStatusButtonLabel = (entry: LivePlayCommandOutboxEntry): string => (
+  props.checkingOpId === entry.opId ? 'Checking…' : 'Check server'
+)
+
+const checkStatusAriaLabel = (entry: LivePlayCommandOutboxEntry): string => (
+  `Check whether operation ${shortOpId(entry.opId)} has a terminal server result`
+)
+
+const statusInspection = (entry: LivePlayCommandOutboxEntry): LivePlayCommandStatusInspection | null => (
+  props.statusResultByOpId?.[entry.opId] ?? null
+)
+
 const onRetry = (entry: LivePlayCommandOutboxEntry): void => {
   if (retryDisabledReason(entry)) return
   emit('retry', entry.opId)
+}
+
+const onCheckStatus = (entry: LivePlayCommandOutboxEntry): void => {
+  if (checkStatusDisabledReason(entry)) return
+  emit('checkStatus', entry.opId)
 }
 </script>
 
@@ -128,7 +168,7 @@ const onRetry = (entry: LivePlayCommandOutboxEntry): void => {
         aria-label="Refresh live-play command recovery without sending commands"
         @click="emit('refresh')"
       >
-        {{ refreshBusy ? 'Refreshing…' : 'Refresh' }}
+        {{ refreshButtonLabel }}
       </button>
     </header>
 
@@ -159,15 +199,26 @@ const onRetry = (entry: LivePlayCommandOutboxEntry): void => {
               <span>Operation <code>{{ shortOpId(entry.opId) }}</code></span>
             </p>
           </div>
-          <button
-            class="live-play-command-recovery-panel__button"
-            type="button"
-            :disabled="retryDisabledReason(entry) !== null"
-            :aria-label="retryAriaLabel(entry)"
-            @click="onRetry(entry)"
-          >
-            {{ retryButtonLabel(entry) }}
-          </button>
+          <div class="live-play-command-recovery-panel__actions">
+            <button
+              class="live-play-command-recovery-panel__button live-play-command-recovery-panel__button--secondary"
+              type="button"
+              :disabled="checkStatusDisabledReason(entry) !== null"
+              :aria-label="checkStatusAriaLabel(entry)"
+              @click="onCheckStatus(entry)"
+            >
+              {{ checkStatusButtonLabel(entry) }}
+            </button>
+            <button
+              class="live-play-command-recovery-panel__button"
+              type="button"
+              :disabled="retryDisabledReason(entry) !== null"
+              :aria-label="retryAriaLabel(entry)"
+              @click="onRetry(entry)"
+            >
+              {{ retryButtonLabel(entry) }}
+            </button>
+          </div>
         </div>
 
         <dl class="live-play-command-recovery-panel__meta">
@@ -176,8 +227,12 @@ const onRetry = (entry: LivePlayCommandOutboxEntry): void => {
             <dd>{{ entry.attemptCount }}</dd>
           </div>
           <div v-if="entry.lastError">
-            <dt>Last error</dt>
+            <dt>Last send error</dt>
             <dd>{{ entry.lastError }}</dd>
+          </div>
+          <div v-if="statusInspection(entry)">
+            <dt>Server status check</dt>
+            <dd>{{ statusInspection(entry)?.message }}</dd>
           </div>
         </dl>
 
@@ -211,11 +266,19 @@ const onRetry = (entry: LivePlayCommandOutboxEntry): void => {
 }
 
 .live-play-command-recovery-panel__header,
-.live-play-command-recovery-panel__entry-main {
+.live-play-command-recovery-panel__entry-main,
+.live-play-command-recovery-panel__actions {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.live-play-command-recovery-panel__actions {
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.45rem;
 }
 
 .live-play-command-recovery-panel__eyebrow,
@@ -365,7 +428,8 @@ const onRetry = (entry: LivePlayCommandOutboxEntry): void => {
   }
 
   .live-play-command-recovery-panel__header,
-  .live-play-command-recovery-panel__entry-main {
+  .live-play-command-recovery-panel__entry-main,
+  .live-play-command-recovery-panel__actions {
     align-items: stretch;
     flex-direction: column;
   }

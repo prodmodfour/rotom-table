@@ -2785,6 +2785,34 @@ describe('useLivePlayCommands', () => {
     expect(actions.outboxRecoveryStatus.value).toBe('idle')
   })
 
+  it('checks operation status while mutation gates block retry and new commands', async () => {
+    const outbox = createTestOutbox()
+    const entry = await enqueueStoredCommand(outbox)
+    const livePlayCommandBlocked = ref(true)
+    const newCommandBlocked = ref(true)
+    apiMocks.postJson.mockResolvedValueOnce(operationStatusUnknownResponse(entry))
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      outbox,
+      livePlayCommandBlocked,
+      livePlayCommandBlockedMessage: ref('Realtime reconciliation is blocking mutations.'),
+      newCommandBlocked,
+      newCommandBlockedMessage: ref('Pending commands are blocking new mutations.'),
+    })
+
+    await expect(actions.checkOutboxCommandStatus(entry.opId)).resolves.toMatchObject({ status: 'unknown' })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.operationStatus, { command: entry.body })
+    expect(actions.status.value).toBe('idle')
+    expect(actions.lastError.value).toBeNull()
+
+    await expect(actions.retryOutboxCommand(entry.opId)).resolves.toMatchObject({
+      dispatched: false,
+      message: 'Realtime reconciliation is blocking mutations.',
+    })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+  })
+
   it('checks operation status with the exact stored command without retrying or claiming a lease', async () => {
     const delegate = createTestOutbox()
     const storedBody = storedMoveCommandBody({ baseRevision: 37 })
@@ -2853,18 +2881,26 @@ describe('useLivePlayCommands', () => {
     await expect(sendingOutbox.get(sending.opId)).resolves.toEqual(sendingBefore)
 
     apiMocks.postJson.mockReset()
-    const failingOutbox = createTestOutbox()
-    const failing = await enqueueStoredCommand(failingOutbox)
-    const failingBefore = cloneJson(await failingOutbox.get(failing.opId))
+    const failingDelegate = createTestOutbox()
+    const failing = await enqueueStoredCommand(failingDelegate)
+    const failingBefore = cloneJson(await failingDelegate.get(failing.opId))
+    const markUncertain = vi.fn(failingDelegate.markUncertain.bind(failingDelegate))
+    const onCommandFailed = vi.fn()
+    const failingOutbox = wrapOutbox(failingDelegate, { markUncertain })
     apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
-    const failingActions = createCommandHarness({ slug: 'arena-map', outbox: failingOutbox }).actions
+    const failingActions = createCommandHarness({ slug: 'arena-map', outbox: failingOutbox, onCommandFailed }).actions
 
     await expect(failingActions.checkOutboxCommandStatus(failing.opId)).resolves.toMatchObject({
       status: 'error',
       message: expect.stringContaining('left unchanged'),
     })
-    await expect(failingOutbox.get(failing.opId)).resolves.toEqual(failingBefore)
+    await expect(failingDelegate.get(failing.opId)).resolves.toEqual(failingBefore)
     expect(failingActions.outboxRecoveryStatus.value).toBe('error')
+    expect(failingActions.outboxRecoveryError.value).toContain('Network down')
+    expect(failingActions.status.value).toBe('idle')
+    expect(failingActions.lastError.value).toBeNull()
+    expect(onCommandFailed).not.toHaveBeenCalled()
+    expect(markUncertain).not.toHaveBeenCalled()
   })
 
   it('removes accepted terminal status entries, adopts authoritative state, and reconciles once without presentation callbacks', async () => {
@@ -3015,6 +3051,8 @@ describe('useLivePlayCommands', () => {
       message: expect.stringContaining('not trustworthy'),
     })
     await expect(malformedOutbox.get(malformed.opId)).resolves.toMatchObject({ state: 'queued' })
+    expect(malformedActions.status.value).toBe('idle')
+    expect(malformedActions.lastError.value).toBeNull()
 
     apiMocks.postJson.mockReset()
     const mismatchOutbox = createTestOutbox()
@@ -3033,6 +3071,37 @@ describe('useLivePlayCommands', () => {
     const mismatchActions = createCommandHarness({ slug: 'arena-map', outbox: mismatchOutbox }).actions
     await expect(mismatchActions.checkOutboxCommandStatus(mismatch.opId)).resolves.toMatchObject({ status: 'error' })
     await expect(mismatchOutbox.get(mismatch.opId)).resolves.toMatchObject({ state: 'queued' })
+    expect(mismatchActions.status.value).toBe('idle')
+    expect(mismatchActions.lastError.value).toBeNull()
+  })
+
+  it('coalesces repeated status checks for one operation and blocks a different concurrent check', async () => {
+    const outbox = createTestOutbox()
+    const firstEntry = await enqueueStoredCommand(outbox)
+    const secondEntry = await enqueueStoredCommand(outbox)
+    const releaseStatus = deferred<void>()
+    apiMocks.postJson.mockImplementationOnce(async () => {
+      await releaseStatus.promise
+      return operationStatusUnknownResponse(firstEntry)
+    })
+    const actions = createCommandHarness({ slug: 'arena-map', outbox }).actions
+
+    const first = actions.checkOutboxCommandStatus(firstEntry.opId)
+    const repeated = actions.checkOutboxCommandStatus(firstEntry.opId)
+    const blocked = actions.checkOutboxCommandStatus(secondEntry.opId)
+    expect(first).toBe(repeated)
+    await expect(blocked).resolves.toMatchObject({
+      status: 'error',
+      opId: secondEntry.opId,
+      message: expect.stringContaining('already being checked'),
+    })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(1))
+
+    releaseStatus.resolve()
+    await expect(first).resolves.toMatchObject({ status: 'unknown', opId: firstEntry.opId })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    await expect(outbox.get(firstEntry.opId)).resolves.toMatchObject({ state: 'queued', attemptCount: 0 })
+    await expect(outbox.get(secondEntry.opId)).resolves.toMatchObject({ state: 'queued', attemptCount: 0 })
   })
 
   it('blocks concurrent status and retry operations without duplicate requests', async () => {
@@ -3052,7 +3121,10 @@ describe('useLivePlayCommands', () => {
     releaseStatus.resolve()
 
     await expect(check).resolves.toMatchObject({ status: 'unknown' })
-    await expect(retry).resolves.toMatchObject({ dispatched: false, message: 'A live-play command is already in flight.' })
+    await expect(retry).resolves.toMatchObject({
+      dispatched: false,
+      message: 'A live-play command status check is already in flight.',
+    })
     expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
     await expect(outbox.get(entry.opId)).resolves.toMatchObject({ state: 'queued', attemptCount: 0 })
   })

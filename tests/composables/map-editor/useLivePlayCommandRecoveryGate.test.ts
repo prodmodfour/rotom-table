@@ -7,6 +7,7 @@ import type {
   LivePlayCommandDispatchResult,
   LivePlayCommandOutboxRecoveryStatus,
   LivePlayCommandStatus,
+  LivePlayOperationStatusCheckResult,
 } from '~/composables/map-editor/useLivePlayCommands'
 import {
   LIVE_PLAY_COMMAND_OUTBOX_SCHEMA_VERSION,
@@ -103,6 +104,7 @@ interface HarnessOptions {
   readonly recoverInterrupted?: () => Promise<readonly LivePlayCommandOutboxEntry[]>
   readonly refresh?: () => Promise<readonly LivePlayCommandOutboxEntry[]>
   readonly retry?: (opId: string) => Promise<LivePlayCommandDispatchResult>
+  readonly checkStatus?: (opId: string) => Promise<LivePlayOperationStatusCheckResult>
   readonly now?: () => number
   readonly document?: ReturnType<typeof createVisibilityDocument>
   readonly window?: ReturnType<typeof createEventTarget>
@@ -119,6 +121,11 @@ const createHarness = (options: HarnessOptions = {}) => {
   const recoverInterrupted = vi.fn(options.recoverInterrupted ?? (async () => entries.value))
   const refresh = vi.fn(options.refresh ?? (async () => entries.value))
   const retry = vi.fn(options.retry ?? (async (opId: string) => ({ dispatched: true, opId })))
+  const checkStatus = vi.fn(options.checkStatus ?? (async (opId: string) => ({
+    status: 'unknown' as const,
+    opId,
+    message: 'The server has no terminal record for this operation yet.',
+  })))
   const document = options.document ?? createVisibilityDocument()
   const window = options.window ?? createEventTarget()
   const scope = effectScope()
@@ -133,6 +140,7 @@ const createHarness = (options: HarnessOptions = {}) => {
     recoverInterrupted,
     refresh,
     retry,
+    checkStatus,
     clock: options.now ? { now: options.now, timers: globalThis } : { timers: globalThis },
     browser: {
       isClient: options.isClient ?? true,
@@ -156,6 +164,7 @@ const createHarness = (options: HarnessOptions = {}) => {
     recoverInterrupted,
     refresh,
     retry,
+    checkStatus,
     document,
     window,
   }
@@ -480,5 +489,168 @@ describe('useLivePlayCommandRecoveryGate', () => {
     await expect(first).resolves.toMatchObject({ dispatched: true, opId: 'op_retry0001' })
     await expect(second).resolves.toMatchObject({ dispatched: true, opId: 'op_retry0001' })
     expect(gate.retryingOpId.value).toBeNull()
+  })
+
+  it('coalesces repeated status checks and blocks conflicting retry, check, and refresh work', async () => {
+    const firstEntry = createEntry({ opId: 'op_checksame01' })
+    const secondEntry = createEntry({ opId: 'op_checkother1' })
+    const entries = ref<readonly LivePlayCommandOutboxEntry[]>([firstEntry, secondEntry])
+    const statusDeferred = deferred<LivePlayOperationStatusCheckResult>()
+    const checkStatus = vi.fn(() => statusDeferred.promise)
+    const { gate, checkStatus: checkStatusMock, recoverInterrupted, retry } = createHarness({ entries, checkStatus })
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+
+    const first = gate.checkEntry(firstEntry.opId)
+    const repeated = gate.checkEntry(firstEntry.opId)
+    const blockedOther = gate.checkEntry(secondEntry.opId)
+    const blockedRetry = gate.retryEntry(firstEntry.opId)
+    const refresh = gate.refreshRecovery()
+
+    expect(first).toBe(repeated)
+    expect(gate.checkingOpId.value).toBe(firstEntry.opId)
+    expect(checkStatusMock).toHaveBeenCalledTimes(1)
+    await expect(blockedOther).resolves.toMatchObject({
+      status: 'error',
+      opId: secondEntry.opId,
+      message: expect.stringContaining('already being checked'),
+    })
+    await expect(blockedRetry).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('status check'),
+    })
+    expect(retry).not.toHaveBeenCalled()
+    expect(recoverInterrupted).toHaveBeenCalledTimes(1)
+
+    statusDeferred.resolve({
+      status: 'unknown',
+      opId: firstEntry.opId,
+      message: 'The server has no terminal record for this operation yet.',
+    })
+    await expect(first).resolves.toMatchObject({ status: 'unknown', opId: firstEntry.opId })
+    await refresh
+    expect(checkStatusMock).toHaveBeenCalledTimes(1)
+    expect(recoverInterrupted).toHaveBeenCalledTimes(1)
+    expect(gate.checkingOpId.value).toBeNull()
+    expect(gate.statusResultByOpId.value[firstEntry.opId]).toMatchObject({ status: 'unknown' })
+  })
+
+  it('blocks status checks while retry is active', async () => {
+    const entry = createEntry({ opId: 'op_retryblockscheck' })
+    const entries = ref<readonly LivePlayCommandOutboxEntry[]>([entry])
+    const retryDeferred = deferred<LivePlayCommandDispatchResult>()
+    const retry = vi.fn(() => retryDeferred.promise)
+    const { gate, checkStatus } = createHarness({ entries, retry })
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+
+    const retryPromise = gate.retryEntry(entry.opId)
+    const check = gate.checkEntry(entry.opId)
+
+    await expect(check).resolves.toMatchObject({
+      status: 'error',
+      message: expect.stringContaining('retry is already active'),
+    })
+    expect(checkStatus).not.toHaveBeenCalled()
+    retryDeferred.resolve({ dispatched: false, opId: entry.opId, message: 'still pending' })
+    await retryPromise
+  })
+
+  it('records unknown and error status inspections without removing entries or blocking retry', async () => {
+    const entry = createEntry({ opId: 'op_unknownstatus1', state: 'uncertain', attemptCount: 3 })
+    const entries = ref<readonly LivePlayCommandOutboxEntry[]>([entry])
+    let result: LivePlayOperationStatusCheckResult = {
+      status: 'unknown',
+      opId: entry.opId,
+      message: 'The server has no terminal record for this operation yet.',
+    }
+    const checkStatus = vi.fn(async () => result)
+    const retry = vi.fn(async (opId: string) => ({ dispatched: false, opId, message: 'retry attempted' }))
+    const { gate } = createHarness({ entries, checkStatus, retry })
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+
+    await expect(gate.checkEntry(entry.opId)).resolves.toMatchObject({ status: 'unknown' })
+    expect(entries.value).toEqual([entry])
+    expect(entries.value[0]?.attemptCount).toBe(3)
+    expect(gate.blocksNewLiveCommands.value).toBe(true)
+    expect(gate.statusResultByOpId.value[entry.opId]).toMatchObject({
+      status: 'unknown',
+      message: expect.stringContaining('no terminal record'),
+    })
+
+    result = { status: 'error', opId: entry.opId, message: 'Status endpoint failed' }
+    await expect(gate.checkEntry(entry.opId)).resolves.toMatchObject({ status: 'error' })
+    expect(gate.statusResultByOpId.value[entry.opId]).toMatchObject({
+      status: 'error',
+      message: 'Status endpoint failed',
+    })
+
+    await gate.retryEntry(entry.opId)
+    expect(retry).toHaveBeenCalledWith(entry.opId)
+    expect(gate.statusResultByOpId.value[entry.opId]).toBeUndefined()
+  })
+
+  it('clears transient status inspections for terminal results, entry removal, context changes, and unmount', async () => {
+    const contextKey = ref<string | null>('arena-map:gm')
+    const entry = createEntry({ opId: 'op_lifecycle001' })
+    const entries = ref<readonly LivePlayCommandOutboxEntry[]>([entry])
+    let result: LivePlayOperationStatusCheckResult = {
+      status: 'unknown',
+      opId: entry.opId,
+      message: 'No terminal record yet.',
+    }
+    const checkStatus = vi.fn(async () => {
+      if (result.status === 'accepted' || result.status === 'rejected') entries.value = []
+      return result
+    })
+    const harness = createHarness({ contextKey, entries, checkStatus })
+    const { gate } = harness
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+
+    await gate.checkEntry(entry.opId)
+    expect(gate.statusResultByOpId.value[entry.opId]).toBeDefined()
+
+    entries.value = []
+    await flushMicrotasks()
+    expect(gate.statusResultByOpId.value[entry.opId]).toBeUndefined()
+
+    entries.value = [entry]
+    await gate.checkEntry(entry.opId)
+    contextKey.value = 'arena-map:player:none'
+    await flushMicrotasks()
+    expect(gate.statusResultByOpId.value).toEqual({})
+
+    entries.value = [entry]
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+    await gate.checkEntry(entry.opId)
+    result = {
+      status: 'accepted',
+      opId: entry.opId,
+      response: { ok: true, opId: entry.opId, mapSlug: entry.mapSlug, previousRevision: 4, revision: 5, patches: [] },
+    }
+    await expect(gate.checkEntry(entry.opId)).resolves.toMatchObject({ status: 'accepted' })
+    expect(entries.value).toEqual([])
+    expect(gate.statusResultByOpId.value[entry.opId]).toBeUndefined()
+
+    entries.value = [entry]
+    result = {
+      status: 'rejected',
+      opId: entry.opId,
+      response: { ok: false, opId: entry.opId, mapSlug: entry.mapSlug, reason: 'conflict', message: 'Conflict', currentRevision: 5 },
+    }
+    await expect(gate.checkEntry(entry.opId)).resolves.toMatchObject({ status: 'rejected' })
+    expect(entries.value).toEqual([])
+    expect(gate.statusResultByOpId.value[entry.opId]).toBeUndefined()
+
+    entries.value = [entry]
+    const pending = deferred<LivePlayOperationStatusCheckResult>()
+    const unmountHarness = createHarness({ entries, checkStatus: () => pending.promise })
+    await vi.waitFor(() => expect(unmountHarness.gate.readyForCurrentContext.value).toBe(true))
+    const pendingCheck = unmountHarness.gate.checkEntry(entry.opId)
+    expect(unmountHarness.gate.checkingOpId.value).toBe(entry.opId)
+    unmountHarness.scope.stop()
+    expect(unmountHarness.gate.checkingOpId.value).toBeNull()
+    expect(unmountHarness.gate.statusResultByOpId.value).toEqual({})
+    pending.resolve({ status: 'unknown', opId: entry.opId, message: 'Late result' })
+    await pendingCheck
+    expect(unmountHarness.gate.statusResultByOpId.value).toEqual({})
   })
 })
