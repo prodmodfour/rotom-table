@@ -1,9 +1,15 @@
 import { createError } from 'h3'
 import type { RealtimeEvent } from '#shared/realtime'
-import { publishRealtime } from './realtime'
+import type { RealtimeEventAccess } from '#shared/realtimeEventLog'
+import { publishTransientRealtime } from './realtime'
 import { isUseCaseHttpErrorLike, type HttpUseCaseErrorLike } from './useCaseErrors'
 
 export type UseCaseRealtimeEvent = Omit<RealtimeEvent, 'timestamp'>
+
+export interface ScopedUseCaseRealtimeEvent {
+  readonly event: UseCaseRealtimeEvent
+  readonly access: RealtimeEventAccess
+}
 
 export const isHttpUseCaseError = (error: unknown): error is HttpUseCaseErrorLike => (
   isUseCaseHttpErrorLike(error)
@@ -16,6 +22,6 @@ export const throwUseCaseHttpError = (error: unknown): never => {
   throw error
 }
 
-export const publishUseCaseRealtimeEvents = (events: Iterable<UseCaseRealtimeEvent>): void => {
-  for (const event of events) publishRealtime(event)
+export const publishUseCaseRealtimeEvents = (events: Iterable<ScopedUseCaseRealtimeEvent>): void => {
+  for (const publication of events) publishTransientRealtime(publication)
 }

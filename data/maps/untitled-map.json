@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "slug": "untitled-map",
+  "name": "Untitled Map",
+  "dimensions": { "x": 8, "y": 4, "z": 8 },
+  "groundLevelY": 0,
+  "playerVisible": true,
+  "placements": [],
+  "voxels": [],
+  "hazards": [],
+  "fieldEffects": { "weather": [], "terrains": [], "rooms": [] },
+  "lights": [],
+  "initiative": { "activeId": null, "round": 1 }
+}

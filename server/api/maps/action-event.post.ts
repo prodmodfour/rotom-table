@@ -1,7 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
 import { expectSlug, readObjectBody } from '../../utils/http'
-import { publishRealtime } from '../../utils/realtime'
+import { publishTransientRealtime } from '../../utils/realtime'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { publishMapActionEventUseCase } from '../../useCases/publishMapActionEvent'
@@ -27,7 +27,10 @@ export default defineEventHandler(async (event) => {
       event: body.event,
       playerProfile,
     })
-    publishRealtime(result.event)
+    publishTransientRealtime({
+      event: result.event,
+      access: { kind: 'map-access', mapSlug: slug },
+    })
     return { ok: true as const }
   } catch (err) {
     throwUseCaseHttpError(err)

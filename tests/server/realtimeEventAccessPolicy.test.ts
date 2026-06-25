@@ -366,15 +366,11 @@ describe('realtime event access architecture boundaries', () => {
     expect(source).not.toMatch(/src\/composables|useRealtime|from ['"]vue['"]|EventSource/)
   })
 
-  it('does not integrate replay contracts into production SSE files yet', () => {
-    for (const path of [
-      'server/api/events.get.ts',
-      'server/utils/sseStream.ts',
-      'server/utils/realtime.ts',
-      'src/composables/useRealtime.ts',
-    ]) {
-      const source = readFileSync(path, 'utf8')
-      expect(source).not.toMatch(/realtimeReplay|realtimeEventAccessPolicy|ReplayCursor|reconcile-required/)
-    }
+  it('keeps authorised replay delivery on the server side of the SSE boundary', () => {
+    expect(readFileSync('server/api/events.get.ts', 'utf8')).toMatch(/resolveH3RealtimeConnectionContext|openRealtimeSseStream/)
+    expect(readFileSync('server/realtime/realtimeSseDelivery.ts', 'utf8')).toMatch(/reconcile-required|evaluateRealtimeEventAccess/)
+
+    const clientSource = readFileSync('src/composables/useRealtime.ts', 'utf8')
+    expect(clientSource).not.toMatch(/realtimeEventAccessPolicy|RealtimeEventAccess|reconcile-required/)
   })
 })

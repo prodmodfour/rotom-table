@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { publishSequencedRealtime, subscribeRealtime } from '~~/server/utils/realtime'
+import { publishSequencedRealtime, subscribeDurableRealtimeWakeup, subscribeRealtime } from '~~/server/utils/realtime'
 
 const unsubscribers: Array<() => void> = []
 
@@ -9,9 +9,10 @@ afterEach(() => {
 })
 
 describe('sequenced in-process realtime publication', () => {
-  it('forwards the exact persisted event without assigning a new timestamp and isolates subscriber failures', () => {
+  it('publishes a durable wake-up without assigning a new timestamp and isolates legacy subscriber failures', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const received: unknown[] = []
+    const wakeups: number[] = []
     const event = {
       channel: 'map:arena',
       type: 'live-play-command-accepted',
@@ -29,11 +30,13 @@ describe('sequenced in-process realtime publication', () => {
       throw new Error('subscriber failed')
     }))
     unsubscribers.push(subscribeRealtime((published) => received.push(published)))
+    unsubscribers.push(subscribeDurableRealtimeWakeup((sequence) => wakeups.push(sequence)))
 
     publishSequencedRealtime(event)
 
     expect(received).toEqual([event])
-    expect(received[0]).toBe(event)
-    expect(errorSpy).toHaveBeenCalledWith('[realtime] subscriber threw', expect.any(Error))
+    expect(received[0]).toMatchObject({ sequence: 42, timestamp: 12345 })
+    expect(wakeups).toEqual([42])
+    expect(errorSpy).toHaveBeenCalledWith('[realtime] legacy subscriber threw', expect.any(Error))
   })
 })
