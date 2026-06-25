@@ -979,13 +979,14 @@ describe('useLivePlayCommands', () => {
       status: 'acknowledged',
       opId: sseEntry!.opId,
     })
-    expect(sseFirstActions.status.value).toBe('saving')
-    await expect(sseFirstActions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 1 } })).resolves.toMatchObject({
-      dispatched: false,
-      message: 'A live-play command is already in flight.',
-    })
+    expect(sseFirstActions.status.value).toBe('idle')
+    expect(sseFirstAccepted).toHaveBeenCalledTimes(1)
     releaseHttp()
-    await expect(httpResult).resolves.toMatchObject({ dispatched: true, opId: sseEntry!.opId })
+    await expect(httpResult).resolves.toMatchObject({
+      dispatched: true,
+      recoveredByRealtime: true,
+      opId: sseEntry!.opId,
+    })
     await expect(sseFirstOutbox.get(sseEntry!.opId)).resolves.toBeNull()
     expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
     expect(sseFirstReconciliation).toHaveBeenCalledTimes(1)
@@ -1019,6 +1020,54 @@ describe('useLivePlayCommands', () => {
     expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
     expect(httpFirstReconciliation).not.toHaveBeenCalled()
     expect(httpFirstAccepted).toHaveBeenCalledTimes(1)
+  })
+
+  it('treats a lost HTTP response as recovered when accepted SSE already acknowledged the operation', async () => {
+    const outbox = createTestOutbox()
+    const requestReconciliation = vi.fn()
+    const onCommandAccepted = vi.fn()
+    const onCommandFailed = vi.fn()
+    let rejectHttp!: (error: Error) => void
+    let sentBody: Record<string, unknown> | null = null
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      sentBody = commandRecord(body)
+      await new Promise<never>((_resolve, reject) => { rejectHttp = reject })
+    })
+    const actions = createCommandHarness({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox,
+      requestReconciliation,
+      onCommandAccepted,
+      onCommandFailed,
+    }).actions
+
+    const httpResult = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(sentBody).not.toBeNull())
+    const entry = await outbox.get(sentBody!.opId as string)
+    expect(entry).not.toBeNull()
+
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry!))).resolves.toEqual({
+      status: 'acknowledged',
+      opId: entry!.opId,
+    })
+    expect(actions.status.value).toBe('idle')
+    await expect(outbox.get(entry!.opId)).resolves.toBeNull()
+
+    rejectHttp(new Error('HTTP response body was lost'))
+    const recoveredResult = await httpResult
+    expect(recoveredResult).toMatchObject({
+      dispatched: true,
+      recoveredByRealtime: true,
+      opId: entry!.opId,
+    })
+    expect(recoveredResult.uncertain).not.toBe(true)
+    expect(actions.status.value).toBe('idle')
+    expect(actions.outboxEntries.value).toEqual([])
+    expect(actions.outboxRecoveryStatus.value).toBe('idle')
+    expect(onCommandAccepted).toHaveBeenCalledTimes(1)
+    expect(onCommandFailed).not.toHaveBeenCalled()
+    expect(requestReconciliation).toHaveBeenCalledTimes(1)
   })
 
   it('lets two tabs race to acknowledge the same accepted realtime operation safely', async () => {
