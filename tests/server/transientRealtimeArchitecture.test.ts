@@ -77,6 +77,18 @@ describe('transient realtime publication architecture', () => {
     expect(actionUseCase).not.toMatch(/saveSetup|replaceSetup|applyLivePlayUpdate|appendMany|withTransaction/)
   })
 
+  it('fails persistent SQLite mutations that publish only transient realtime events', () => {
+    const persistentMutationPattern = /\b(saveSetupMap|replaceSetupMap|saveSetupSheet|replaceSetupSheet|applyLivePlayUpdate|deleteDocument|createFolder|moveFolder|deleteFolder|moveToFolder|setMapInteractionMode|retargetSheetReferences|removeSheetReferences)\b/
+    const transientPublicationPattern = /\b(publishTransientRealtime|publishUseCaseRealtimeEvents|publishRealtime)\s*\(/
+    const offenders = serverFiles
+      .filter((file) => file.relativePath.startsWith('server/useCases/') || file.relativePath.startsWith('server/livePlay/'))
+      .filter((file) => persistentMutationPattern.test(file.text))
+      .filter((file) => transientPublicationPattern.test(file.text))
+      .map((file) => file.relativePath)
+
+    expect(offenders).toEqual([])
+  })
+
   it('keeps runtime encounter spawn independent from generated JSON import/export helpers', () => {
     const source = readProjectFile('server/useCases/spawnGeneratedEncounters.ts')
     expect(source).not.toContain('readJsonFile')

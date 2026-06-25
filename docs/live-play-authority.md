@@ -1,111 +1,133 @@
 # Live play authority
 
-This document defines Rotom Table's normal multiplayer direction: server-authoritative profile play on regular `/maps/<slug>` routes.
+This document defines Rotom Table's normal multiplayer system: server-authoritative profile play on regular `/maps/<slug>` routes. This is normal profile play. The legacy `/sessions` surface is maintenance-only while it remains in the codebase.
 
-Normal play uses persistent player profiles. The legacy `/sessions` lobby, join-code flow, session-local socket identity, and session snapshots are maintenance-only while that surface remains in the codebase.
+## Non-negotiable authority boundary
 
-## Non-negotiable boundary
+SQLite is the only runtime authority for maps, Pokémon sheets, trainer sheets, map folders, sheet folders, shared map interaction mode, live-play operation results, and durable realtime replay events.
 
-Browser-owned whole-map autosave is forbidden as the authority for live gameplay.
+Normal API requests must not read runtime maps or sheets from `data/maps`, `data/sheets`, or `data/trainers`, and normal mutations must not write authoritative map/sheet JSON. JSON map/sheet files are limited to explicit migration/import, explicit export/interchange, operator backup material, or clearly labeled generation output. Encounter spawn generates Pokémon sheets in memory, then persists the generated sheets and map placements to SQLite in one transaction.
 
-A browser may use document autosave during GM setup/edit workflows, local maintenance, or temporary compatibility flows. During live play, clients send explicit commands. The server accepts or rejects those commands after validating the actor, profile, map visibility, token/sheet authority, command shape, `baseRevision`, and conflicts. Accepted commands advance authoritative revisions and broadcast patches or accepted results.
+Browser-owned whole-map autosave is never the authority for live gameplay. During live play, clients send explicit commands. The server accepts or rejects those commands after validating actor, profile, visibility, token/sheet control, command shape, `baseRevision`, and conflict scope.
 
 ## Mode split
 
-### Setup/edit mode
+### Prepare Map / setup-edit
 
-Setup/edit mode is map and sheet preparation or maintenance. It includes GM map administration, library organization, visibility setup, sheet edits, explicit imports/exports, and local data repair. Setup/edit whole-document saves write the same SQLite documents used by live play and require an `expectedRevision`; stale saves reject instead of overwriting newer state. Debounced autosave and explicitly setup/edit-named unload autosave fallbacks may remain in this mode because a GM/operator is preparing campaign data rather than resolving concurrent live table actions. The GM map admin panel owns a shared server-side mode switch: **Run Live Play** or **Prepare Map**. The map save route requires GM role, an explicit `interactionMode: "setup-edit"` marker, and the shared map mode to be **Prepare Map** for whole-map saves.
+Setup/edit mode is GM/operator preparation and maintenance. Whole-document map and sheet saves write SQLite documents and require an `expectedRevision`; stale saves reject. The map save route requires GM role, explicit `interactionMode: "setup-edit"`, and the shared map mode to be **Prepare Map**.
 
-### Live play mode
+### Run Live Play
 
-Live play mode is the multiplayer table state that players and the GM act on together. It uses persistent player profiles and regular `/maps/<slug>` URLs. Gameplay mutations are commands such as move token, turn token, modify HP, use move, advance initiative, place a hazard, edit terrain, spawn/delete token, or update sheet-backed combat state.
+Live play uses persistent player profiles and normal map URLs. Gameplay mutations are commands such as move token, turn token, modify HP/conditions/combat stages, resolve a move, use a move/ability/order/manoeuvre, send out, capture, advance initiative, place hazards, edit terrain, spawn/delete tokens, and update sheet-backed combat state. Command routes reject while the map is in **Prepare Map**.
 
-Live play commands must be server-authoritative. A client can optimistically preview an action, but the accepted server result, rejection, patch, or reconciliation response determines durable state. Live play mode does not deep-watch the map document and does not call `/api/maps/save`; player requests and explicit `interactionMode: "live-play"` requests to that route are rejected. Command executors reject new live-play commands while the shared map mode is **Prepare Map**; the GM must switch the map back to **Run Live Play** before command persistence resumes.
+## Atomic command and batch workflows
 
-## Command flow
+Every accepted persistent command or batch workflow uses one synchronous SQLite transaction for all affected documents, live-operation results, and durable realtime rows. Expected map/sheet revisions are checked before writing. Complete changed documents are written once. Durable event rows are appended before commit. Exact sequenced events are published only after commit, so rollback cannot produce a success publication.
 
-1. The client creates a command envelope with a unique `opId`, the current `baseRevision`, actor/profile context, command type, resource scope, and command-specific payload.
-2. The server resolves the role and selected persistent profile, then validates map visibility and token/sheet control.
-3. The server validates command shape and command-specific invariants.
-4. The server compares `baseRevision` and resource scope against current authoritative state and recent accepted changes.
-5. If valid and non-conflicting, the server applies the command, persists the result, increments affected revisions, stores the `opId` result, and broadcasts the accepted patch/result.
-6. If invalid, unauthorized, stale, or conflicting, the server rejects the command without advancing revisions.
-7. If retried with the same `opId`, the server returns the stored result without applying effects twice.
+This applies to:
 
-Idempotency records are keyed by map and `opId`. Each record stores the accepted or rejected result plus a deterministic hash of the normalized command envelope. A retry with the same map, `opId`, and command body returns the stored result without advancing map or sheet revisions. Reusing the same map/`opId` for a different command body is rejected as an idempotency conflict and does not replace the original record.
+- live move resolution, capture, send out, ability/order/manoeuvre, move usage, HP/condition/combat-stage changes, initiative, terrain, hazards, field effects, scene, start-turn modal, token spawn/delete/move/turn, and attack of opportunity commands;
+- sheet rename/delete with map placement retargeting or cleanup;
+- encounter spawn;
+- campaign next-day processing;
+- setup map and sheet saves;
+- map/sheet library and folder mutations;
+- shared map interaction-mode changes.
 
-Server command routes use the authoritative live-play command executor as the cross-cutting pipeline for envelope validation, actor resolution, duplicate `opId` checks, per-map write queueing, revision validation, authorization, conflict hooks, pure command application, persistence, idempotency-result storage, and realtime patch publishing. When a command's `baseRevision` is older than the current map revision, the executor checks retained accepted-operation metadata from the `opId` store before applying the command. It allows the command only if every accepted operation between `baseRevision` and the current revision has a disjoint resource scope; same token fields, same non-terrain map lanes, same sheet fields, and the same terrain cell reject as conflicts. Missing or incomplete operation history rejects safely as a stale revision. Token move and token turn on normal map play now use this path for both GM and player actions: the client sends `moveToken` or `turnToken` with `opId`, `baseRevision`, token scope, and selected profile context when applicable; the server reads and updates the accepted map revision through the SQLite map repository before broadcasting a `live-play-command-accepted` event with token patches. The map page defaults to live-play mode, so these command-backed movement and facing actions do not rely on whole-map autosave or whole-map realtime updates. The initial queue is in-process: commands targeting the same map run sequentially, while commands targeting different maps can continue independently. Persistence or idempotency-storage failures return structured rejections and must not publish success patches.
+Idempotency records are keyed by map and `opId`. A retry with the same command body returns the stored result without applying effects twice. Reusing an `opId` with different material is rejected.
 
-HP, injury, combat-stage, and condition controls in live play use `modifyHp`, `modifyCombatStages`, and `modifyConditions` command envelopes. The server resolves the placement's backing sheet, checks GM authority or selected-profile token control, applies the same sheet normalization helpers used by setup/edit flows, writes the map revision, sheet revision, and `opId` result transactionally through SQLite, then broadcasts the accepted command patches; sheet update events remain for sheet-store subscribers. The client adopts the returned authoritative map and sheet update, while other map viewers apply the patch event or reconcile if they cannot; live-play controls do not post `/api/sheets/save`.
+## Durable realtime events and authorised SSE replay
 
-Move usage in live play uses the `useMove` command envelope with `placementId` and `moveName` in the payload. The server resolves the placed token and backing sheet, determines the move frequency, records EOT and Scene usage on the authoritative map document, records Daily usage on the authoritative sheet document, records untracked move use as an ordered map combat-log action, persists the affected map/sheet revisions and `opId` result through the live-play executor, and returns token and/or sheet patches. The map page dispatches this command and adopts the returned authoritative map and sheet updates instead of splitting move usage into local map usage saves and direct sheet usage saves.
+Persistent map, sheet, library, folder, and mode mutations append durable realtime events in the same SQLite transaction as their authoritative writes. Each row carries an explicit server-internal access descriptor: `gm-only`, `map-access`, or `sheet-access`. Delivery evaluates that descriptor against current SQLite state and the connection principal; it does not trust channel names or payload fields.
 
-Initiative management in live play uses GM-only `setInitiative`, `nextInitiative`, and `previousInitiative` command envelopes with the map initiative scope. The server validates token IDs, initiative values, active combatant IDs, and rounds, rejects player commands, advances the authoritative map revision for accepted changes, stores the `opId` result, and returns a `map.initiative` patch containing the previous and current initiative lane. The map page dispatches these commands for live-play initiative controls instead of mutating map initiative locally and waiting for whole-map autosave.
+The normal live-play stream is `GET /api/events` using Server-Sent Events. The stream keeps quiet tables open with heartbeat comments and records SSE connect/disconnect events for operator diagnostics. A reconnect is a possible missed-event gap, so clients reconcile from `/api/maps/load?slug=<slug>` when replay cannot bridge the cursor. Replay rows have one globally monotonic sequence. Initial connections without a cursor start at the current tail and do not replay stale history. Reconnects send a per-context `after` cursor and receive only authorised retained rows. Denied rows are never serialized to the client; they still advance checkpoints so clients do not loop on inaccessible events.
 
-Hazards and field effects in live play use GM-only `placeHazard`, `removeHazard`, `setFieldEffect`, `removeFieldEffect`, and `tickFieldEffectDurations` command envelopes with the map hazards or field-effects scope. The server validates map bounds, hazard kind and layers, field-effect category/kind/duration options, no-op requests, stale revisions, and player rejection before persisting a new map revision. Accepted hazard commands return `map.hazards` patches with the previous and current cell state; accepted field-effect commands return `map.fieldEffects` patches with the previous and current field-effects lane. The map page dispatches these commands for live-play hazard and field-effect controls instead of relying on whole-map autosave.
+Access boundaries:
 
-Terrain voxel edits in live play use GM-only `buildTerrainVoxel` and `removeTerrainVoxel` command envelopes with the map terrain scope. A dedicated terrain domain service validates bounds, material palette availability, token occupancy, blocking/build rules, no-op requests, stale revisions, and player rejection before persisting the authoritative map revision through SQLite. Accepted terrain commands return `map.terrain` patches with previous/current voxel cell state plus renderer invalidation labels such as `terrain`, `movement-preview`, `build-preview`, and `hazard-preview`; the command handler does not depend on renderer internals beyond those labels. The map page dispatches these commands for live-play terrain building instead of mutating voxels and waiting for whole-map autosave.
+- hidden maps never reach players;
+- a profile receives only its own profile-linked sheets plus public/player-visible map sheets;
+- unprofiled player context has its own cursor and sheet-access rules;
+- GM-only folders, tombstones, and administrative library events never reach players;
+- profile changes close the old stream before opening the new profiled stream.
 
-Token placement edits in live play use GM-only `spawnToken` and `deleteToken` command envelopes with token `spawn` and `delete` scopes. The server validates sheet references, map bounds, placement ID uniqueness, stale revisions, duplicate `opId` retries, and player rejection before persisting the authoritative map revision through SQLite. Accepted placement commands return `map.placements` patches containing the spawned or removed placement, and the map page dispatches these commands instead of relying on unload fallbacks or whole-map autosave for live token placement changes.
+The server combines in-process wakeups with SQLite polling, so one process can commit a durable event and another process can deliver it after polling or restart. Wakeups and polling share the same sequence cursor and do not duplicate delivery.
 
-Maneuver, ability, and order use in live play uses canonical `useManeuver`, `useAbility`, and `useOrder` command envelopes with token action and map metadata scopes, plus sheet scopes when an ability can update actor or target sheet state. The server resolves actor and target placement/sheet context, validates selected-profile token control, applies the existing maneuver/order/ability domain helpers, persists map metadata and any sheet updates through SQLite, stores the `opId` result, records durable sheet-update events when sheets change, and broadcasts accepted command patches rather than whole-map document updates.
+## Retention and gap reconciliation
 
-Commands that update both map state and sheet-backed state must use the executor's accepted-result commit hook with the SQLite map, sheet, operation, and realtime-event repositories inside one database transaction. The command result and any live-play command sheet-update events are stored in the same transaction as the map/sheet revisions, so stale or failed commands roll back all durable changes and duplicate `opId` retries cannot apply HP, condition, combat-stage, daily move usage, ability, order, maneuver, or capture sheet effects twice.
+The durable realtime log is replay history, not permanent campaign state. Retention can prune old rows by age and row count while preserving cursor-state invariants. A pruned cursor produces a controlled `gap` response; a cursor beyond the latest sequence produces an `ahead` response. The client treats either as a single aggregate snapshot requirement, reloads authoritative SQLite map/sheet/mode state, advances the context cursor to the server tail, and never rewinds a stored cursor.
 
-## Shared command contract
+Retention is configured by environment variables and can be inspected or run manually with the operator scripts:
 
-`shared/livePlayCommands.ts` is the canonical client/server-safe contract for live-play command envelopes, command type constants, patch type constants, resource scopes, `opId`/`baseRevision`/map slug validators, and reusable accepted/rejected/duplicate result builders. Command routes and client dispatchers should import these definitions instead of inventing local request or rejection shapes. The map UI uses `src/composables/map-editor/useLivePlayCommands.ts` as the single client dispatcher for live-play command envelopes, selected-profile context, authoritative map/sheet adoption, command rejection status, and reconciliation requests.
+```sh
+npm run realtime:status
+npm run realtime:prune
+```
 
-## Persistence direction
+The scheduler uses the same repository pruning path as the CLI and must not mutate client cursor storage; clients reconcile from server cursor state on their next stream.
 
-SQLite is the sole runtime authority for campaign maps and Pokémon/trainer sheets. Prepare Map and Run Live Play read and write the same SQLite documents; interaction mode controls which operations are allowed, not which storage backend is used. Runtime APIs do not fall back to `data/maps`, `data/sheets`, or `data/trainers`, and runtime mutations do not dual-write JSON.
+## Client cursor and recovery model
 
-Persisted map and sheet documents carry a server-owned numeric `revision`. The database row revision is authoritative and returned documents have their embedded revision normalized to that row. Setup/edit saves and live-play commands use revision-checked repository operations; a stale `expectedRevision`/`baseRevision` rejects instead of overwriting newer state. Accepted map-affecting commands advance the map revision once; accepted sheet-backed commands advance the affected sheet revision once; no-op or rejected commands do not advance revisions.
+Realtime cursors are stored per delivery context: GM, unprofiled player, and each selected player profile. Reconnect/replay pauses live-play command dispatch until the client is caught up or reconciled. The map page state machine exposes loading, ready, saving-command, reconnecting, reconciling, stale, and error states.
 
-The storage foundation uses Node's built-in `node:sqlite` module, keeps SQL behind server-side repository modules, and migrates deterministically on database access. The default database path is `rotom-table.sqlite` under `ROTOM_CAMPAIGN_ROOT`; operators can override it with `ROTOM_DB_PATH`, for example `/srv/rotom-table/campaign/rotom-table.sqlite`. File-backed databases enable WAL mode. Backups must include the database plus `-wal` and `-shm` sidecar files.
+The recovery panel means:
 
-The map repository owns map get/list/create/save/move/rename/delete, sheet-reference retargeting, logical resource paths, folder create/list/move/delete, interaction-mode cleanup, and live-operation-history barriers. The sheet repository owns Pokémon/trainer get/list/create/save/move/rename/delete and sheet folders. Empty and nested map/sheet folders are stored in SQLite tables, so library folders survive process restarts without filesystem directories.
+- **Pending/queued**: command is journaled locally before send and has not reached a terminal state.
+- **Sending**: a lease-owning tab is sending the exact journaled body.
+- **Uncertain**: the HTTP response was lost; retry/status must reuse the exact same `opId` and body.
+- **Accepted/acknowledged**: accepted SSE or terminal status removed the outbox row.
+- **Abandoned**: abandonment serialized against execution and no future retry should send the command.
 
-Whole-document setup replacements are maintenance barriers for live-operation history. After a setup whole-map replacement, map move/rename/delete, folder moves that revise maps, or sheet retargeting that revises maps, old accepted live-operation rows for the affected map are cleared. Stale commands crossing that boundary reject safely because the executor cannot prove complete revision coverage; fresh commands created from the newly loaded revision work normally.
+Recovery never replays local presentation-only effects. Duplicate accepted/status results are idempotent and do not apply state twice.
 
-Renaming or deleting a sheet updates related map placements in one SQLite transaction. The sheet row change, map placement retarget/removal, affected map revision increments, sheet revision increment, and operation-history cleanup commit together; realtime events are published only after commit.
+## Outbox, status, retry, and abandonment
 
-JSON is explicit maintenance I/O only. Operators can migrate an existing private campaign with `npm run migrate:sqlite` after setting an external `ROTOM_CAMPAIGN_ROOT`; the command backs up the campaign, imports maps/sheets/folders into SQLite, validates rows, and validates that imported maps/sheets can be loaded from the database. Operators can export the SQLite runtime state with `npm run export:sqlite-json -- --output /safe/export/path` (add `--force` only to replace an existing export). Export recreates the legacy `data/maps`, `data/sheets`, and `data/trainers` hierarchy for backup/interchange; it does not export the realtime event log, whose rows are transient replay history. It never runs from normal app startup or a request.
+Every live-play command is journaled in IndexedDB before send. The journal stores request path, exact body, auth context, fingerprint, state, attempts, and lease data. Retry resends the exact body and `opId`. Status checks are read-only. Abandonment serializes against execution; if the server has already accepted the command, the accepted result wins and acknowledges the outbox. Accepted SSE also acknowledges matching outbox entries.
 
-## Realtime direction
+## JSON import/export boundary
 
-Realtime messages for live play are authoritative accepted results, patches, or reconciliation responses. Map-scoped command realtime events carry a numeric `revision`; accepted command events use `live-play-command-accepted` with `mapSlug`, `opId`, `previousRevision`, `revision`, and `patches`. Live-play command handlers do not broadcast whole map documents on `map:<slug>` as the normal command event. Clients apply known patches from `src/utils/livePlayPatches.ts`, ignore stale revisions, detect gaps between their current map revision and incoming events, and reload the authoritative `/api/maps/load?slug=<slug>` snapshot when a patch is unknown, has a schema/version mismatch, or cannot bridge the local revision.
+Use JSON only for explicit maintenance:
 
-Schema version 5 adds a durable SQLite realtime event log as the future replay authority. Accepted map-command events are durable, and full sheet update events generated by accepted live-play commands are durable as well. Setup/edit whole-document map and sheet saves record their full-document and aggregate-channel update events durably: the authoritative document revision and its setup-save realtime rows commit atomically in one SQLite transaction, and after commit the server publishes the exact persisted sequenced events through the current in-process hub in global sequence order. Map/sheet library mutations, map/sheet folder mutations, sheet rename/delete placement retargeting or cleanup, and shared map interaction-mode changes also commit their authoritative SQLite changes and durable realtime rows atomically before publishing those exact persisted sequenced events. Folder events use GM-only access descriptors; deletion tombstones for removed maps/sheets use GM-only; events for resources that still exist use map-access or sheet-access for the affected resource, including aggregate `maps`/`sheets` channel messages. Setting a map to its already-current interaction mode intentionally remains a timestamped shared-state refresh for compatibility, so it records and publishes a new mode event without changing the map revision. For a sheet-changing accepted command, the authoritative map change, every authoritative sheet change, the stored operation result, each sheet-specific and global sheets-channel update event, and the accepted map-command event commit atomically in one SQLite transaction. Campaign-day/generated-sheet events outside the setup-save/library routes and transient action/VFX events remain transitional and are not yet fully journaled.
+- Operators can migrate an existing private campaign with `npm run migrate:sqlite`; the command imports maps/sheets/folders into SQLite, creates a pre-migration backup, validates rows, and validates that imported maps/sheets can be loaded from the database.
+- `npm run export:sqlite-json -- --output /safe/export/path` exports SQLite maps/sheets/trainers for backup or interchange. Use `--force` only to replace a known export destination.
+- Standalone encounter generation may emit JSON as explicit generation output; encounter spawn does not use generated JSON as runtime authority.
 
-The existing in-process realtime hub and `/api/events` SSE forwarding remain the live delivery path temporarily; SSE replay, `Last-Event-ID`, client `EventSource` replay handling, delivery authorisation, and retention policy are not migrated in this phase. Event-log rows use one global monotonically increasing sequence across all channels, not one sequence per map or sheet. Every durable row carries an explicit server-internal access descriptor (`gm-only`, `map-access`, or `sheet-access`); delivery code in later phases must evaluate that descriptor at send/replay time against the connection's current role, map access, selected profile, and session context rather than treating the descriptor as client payload. Setup map save summary events still carry map-specific access, and setup sheet saves carry sheet access for both sheet-specific and global sheets-channel events. The event log is replay history, not permanent campaign state: SQLite backups naturally include it while retained, but JSON export skips it, retention may prune rows, and pruned dedupe keys may be reused because the durable record no longer exists. Production retention must therefore exceed all supported reconnect, replay, and command idempotency/recovery windows. Reconnect still performs aggregate snapshot reconciliation through authoritative map/sheet reloads rather than durable SSE replay.
+Do not treat residual JSON under campaign roots as fallback state. Do not commit private campaign JSON or generated runtime artifacts.
 
-The map page exposes the current map revision for command `baseRevision` values. During SSE reconnect and reconciliation, live-play commands are paused and a visible status notice is shown; once the authoritative map reload completes, command dispatch resumes from the reconciled revision.
+## Operator runbook
 
-The normal live-play realtime stream is `GET /api/events` using Server-Sent Events. The server keeps quiet table sessions open with heartbeat comments and logs SSE connect/disconnect events for operator diagnostics; behind a reverse proxy those heartbeats must be allowed to stream instead of being buffered. A browser reconnect is treated as a possible missed-event gap, not as harmless packet loss. The client marks the map as reconnecting/reconciling, reloads the authoritative `/api/maps/load?slug=<slug>` snapshot, and resumes commands only from the reconciled revision.
+Required/private-host environment variables:
 
-The map page drives command availability through a live-play state machine with `loading`, `ready`, `saving-command`, `reconnecting`, `reconciling`, `stale`, and `error` states. Commands are sent only from `ready`; stale command rejections move through the stale state and trigger reconciliation before further commands can be sent, while fatal command failures enter `error` with a user-visible message. If a browser close or refresh occurs while a live-play command is in flight, the client may show the browser's generic unload warning; it must not silently send a beacon/keepalive whole-map save or a second fallback command.
+- `ROTOM_CAMPAIGN_ROOT`: private campaign directory. Keep it outside the app repository for production-like hosts.
+- `ROTOM_DB_PATH`: optional SQLite database path. Defaults to `rotom-table.sqlite` under `ROTOM_CAMPAIGN_ROOT`.
+- `ROTOM_ENABLE_HOSTED_WRITES=1`: exact production opt-in for hosted writes. Production without this flag fails closed for covered writes.
+- Realtime retention variables from `server/realtime/realtimeEventRetentionConfig.ts`: enablement, retention days, max rows, and prune interval.
 
-Realtime must not rely on every browser saving or receiving whole map documents as a last-writer-wins conflict strategy.
+Backup expectations:
+
+1. Stop the service when possible, or pause table activity and use SQLite's backup API.
+2. Back up the database plus WAL sidecars: `rotom-table.sqlite`, `rotom-table.sqlite-wal`, and `rotom-table.sqlite-shm` when present.
+3. Include residual maintenance JSON such as player profiles, encounter tables, reference overrides, assets, and any intentional import/export copies.
+4. Store archives outside the tracked app repository and verify a restore before relying on them.
+
+Retention operations:
+
+```sh
+npm run realtime:status        # inspect current cursor/log/retention plan
+npm run realtime:prune         # apply configured prune policy once
+```
+
+Diagnosing replay gaps:
+
+- A `gap` means the client's cursor is older than retained history. Reload the aggregate snapshot and continue from the reported latest sequence.
+- An `ahead` means the client cursor is newer than the server tail, usually after restore or rollback. Reload the aggregate snapshot and reset only through the normal client reconciliation path.
+- Repeated gaps usually mean retention is shorter than the supported reconnect/recovery window.
+
+Safe rollback/restore:
+
+- Restore SQLite database and WAL sidecars as one unit.
+- Expect clients with cursors from the abandoned future to receive `ahead` and reconcile from a snapshot.
+- Do not copy JSON maps/sheets over SQLite as a rollback mechanism; import/export is an explicit maintenance operation.
 
 ## Legacy `/sessions` boundary
 
-Documents and code with `session` or `/sessions` names describe the legacy guarded session-local surface unless they explicitly say otherwise. The legacy documentation is archived under [Archived legacy live-session documents](archive/live-session/README.md). That surface may stay available for direct maintenance and smoke checks behind its runtime guard, but it is not normal profile play.
-
-Normal profile play has no join code, map attachment step, session-owned map copy, share link, invite link, or per-map invite. Players choose a persistent profile and open player-visible maps through the normal app navigation.
-
-## Glossary
-
-| Term | Meaning |
-| --- | --- |
-| Setup/edit mode | GM/operator preparation and maintenance workflow where revision-checked whole-document SQLite saves and debounced autosave may be used for maps, sheets, libraries, imports, exports, and repairs. |
-| Live play mode | Multiplayer table workflow on `/maps/<slug>` where the GM and players mutate gameplay state through server-authoritative commands. |
-| Command | An explicit client request for a domain state change, such as moving a token, changing HP, using a move, or advancing initiative. |
-| `opId` | Client-generated operation identifier used by the server to recognize retries and return idempotent results without applying an effect twice. |
-| `baseRevision` | The authoritative revision the client observed when it created a command. The server uses it to detect stale or conflicting commands. |
-| Map revision | Server-owned monotonic revision for authoritative map state. Accepted map-affecting commands advance it; rejected commands do not. |
-| Sheet revision | Server-owned monotonic revision for authoritative sheet-backed gameplay state. Accepted sheet-affecting commands advance it; rejected commands do not. |
-| Patch | Small realtime payload that describes an accepted authoritative change without broadcasting a client-owned whole map or whole sheet save as the live authority. |
-| Stale command | A command whose `baseRevision` is older than the current authoritative revision. It may be rejected, or accepted only when retained resource-scope history proves it is independent and still authorized. |
-| Conflict | A valid-looking command that cannot safely apply because current authoritative state or recent accepted changes touched the same or incompatible resource scope. |
-| Idempotent retry | Resending the same command with the same `opId`; the server returns the previous result or duplicate acknowledgement without applying effects again or advancing a revision for the retry. |
+Documents and code with `session` or `/sessions` names describe the legacy guarded session-local surface unless they explicitly say otherwise. The legacy documentation is archived under [Archived legacy live-session documents](archive/live-session/README.md). Normal profile play has no join code, map attachment step, session-owned map copy, share link, invite link, or per-map invite.

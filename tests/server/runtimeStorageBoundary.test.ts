@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -49,6 +50,19 @@ describe('runtime map/sheet storage boundary', () => {
         }
       }
     }
+    expect(offenders).toEqual([])
+  })
+
+  it('does not track normal runtime map/trainer JSON artifacts', () => {
+    const trackedFiles = execFileSync('git', ['ls-files'], { encoding: 'utf8' })
+      .split('\n')
+      .filter(Boolean)
+    const offenders = trackedFiles.filter((path) => (
+      path.startsWith('data/maps/')
+      || path.startsWith('data/trainers/')
+      || (path.startsWith('data/sheets/') && !path.startsWith('data/sheets/examples/'))
+    ))
+
     expect(offenders).toEqual([])
   })
 })

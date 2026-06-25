@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { LIVE_TABLE_SNAPSHOT_SCHEMA_VERSION } from '#shared/liveTableSnapshot'
@@ -371,13 +370,7 @@ describe('load live table snapshot use case', () => {
     }
   })
 
-  it('ignores conflicting JSON map and sheet files and returns only SQLite state', () => {
-    const jsonMap = JSON.parse(readFileSync('data/maps/untitled-map.json', 'utf8')) as { name?: unknown }
-    const jsonSheet = JSON.parse(readFileSync('data/sheets/examples/pikachu.json', 'utf8')) as { slug?: unknown; nickname?: unknown }
-    expect(jsonMap.name).not.toBe('SQLite Untitled')
-    expect(jsonSheet.slug).toBe('examples-pikachu')
-    expect(jsonSheet.nickname).not.toBe('SQLite Pika')
-
+  it('returns only SQLite state for map and sheet slugs that historically existed as JSON files', () => {
     const database = db()
     const maps = createSqliteMapRepository(database)
     const modes = createSqliteMapInteractionModeRepository(database)

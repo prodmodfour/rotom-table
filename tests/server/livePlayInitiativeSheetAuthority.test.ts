@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
 import { listSheetsUseCase } from '~~/server/useCases/listSheets'
 import type { PersistedSheet } from '~~/server/storage/sheetRepository'
-import { playerVisibleMapSheetAccessKeys } from '~~/server/utils/mapStorage'
+import { sqlitePlayerVisibleMapSheetAccessKeys } from '~~/server/utils/mapSheetAccess'
 import type { TabletopMap } from '~/types/map'
 import { LivePlayIntegrationHarness, assertAccepted } from './livePlayIntegrationHarness'
 
@@ -382,7 +382,7 @@ describe('live-play initiative sheet authority', () => {
 
   it('derives player runtime sheet access from the SQLite authoritative map source', () => {
     const harness = createHarness()
-    const visibleSheetKeys = playerVisibleMapSheetAccessKeys(harness.mapRepository)
+    const visibleSheetKeys = sqlitePlayerVisibleMapSheetAccessKeys(harness.mapRepository)
     const listed = listSheetsUseCase({
       role: 'player',
       canAccessPlayerSheet: (kind, slug) => visibleSheetKeys.has(`${kind}:${slug}`),

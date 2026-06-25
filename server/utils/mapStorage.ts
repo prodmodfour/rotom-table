@@ -21,7 +21,6 @@ import {
   slugify as slugifyMapBase,
 } from './mapPaths'
 import { summarizeMap, sortMapSummaries } from './mapSummaries'
-import { sqliteMapRepository, type MapRepository, type StoredMapDocument } from '../storage/mapRepository'
 
 /** Walk `data/maps/` recursively, return the first `<slug>.json` match. */
 export const findMapFile = (slug: string): string | null =>
@@ -111,30 +110,6 @@ export const retargetMapSheetPlacements = (
     updated.push({ path: full, map: nextMap, placementCount })
   }
   return updated
-}
-
-const addPlayerVisibleMapSheetAccessKeys = (
-  keys: Set<`${SheetKind}:${string}`>,
-  map: TabletopMap,
-): void => {
-  if (map.playerVisible !== true) return
-  for (const placement of map.placements ?? []) {
-    keys.add(`${placement.sheetKind}:${placement.sheetSlug}`)
-  }
-}
-
-const storedMapDocumentToTabletopMap = (
-  stored: StoredMapDocument<unknown>,
-): TabletopMap => normalizeMapDocument(stored.document, { sourceLabel: `SQLite map ${stored.slug}` })
-
-export const playerVisibleMapSheetAccessKeys = (
-  mapRepository: Pick<MapRepository<unknown>, 'list'> = sqliteMapRepository,
-): Set<`${SheetKind}:${string}`> => {
-  const keys = new Set<`${SheetKind}:${string}`>()
-  for (const stored of mapRepository.list()) {
-    addPlayerVisibleMapSheetAccessKeys(keys, storedMapDocumentToTabletopMap(stored as StoredMapDocument<unknown>))
-  }
-  return keys
 }
 
 export const allocateSlug = (base: string): string => {

@@ -26,6 +26,18 @@ import type { TabletopMap } from '~/types/map'
 const tempRoots: string[] = []
 const openDatabases: RotomDatabase[] = []
 
+const withRotomDbPath = <T>(value: string | undefined, work: () => T): T => {
+  const previous = process.env.ROTOM_DB_PATH
+  if (value === undefined) delete process.env.ROTOM_DB_PATH
+  else process.env.ROTOM_DB_PATH = value
+  try {
+    return work()
+  } finally {
+    if (previous === undefined) delete process.env.ROTOM_DB_PATH
+    else process.env.ROTOM_DB_PATH = previous
+  }
+}
+
 const makeTempRoot = (): string => {
   const root = mkdtempSync(join(tmpdir(), 'rotom-storage-'))
   tempRoots.push(root)
@@ -81,12 +93,14 @@ const mapDocument = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
 
 describe('SQLite storage foundation', () => {
   it('resolves configured database paths under the campaign root by default', () => {
-    const campaignRoot = resolve(makeTempRoot(), 'campaign')
+    withRotomDbPath(undefined, () => {
+      const campaignRoot = resolve(makeTempRoot(), 'campaign')
 
-    expect(resolveConfiguredDatabasePath({ campaignRoot })).toBe(join(campaignRoot, 'rotom-table.sqlite'))
-    expect(resolveConfiguredDatabasePath({ rawPath: 'table.sqlite', campaignRoot })).toBe(join(campaignRoot, 'table.sqlite'))
-    expect(resolveConfiguredDatabasePath({ rawPath: '/srv/rotom-table/campaign/rotom-table.sqlite', campaignRoot }))
-      .toBe('/srv/rotom-table/campaign/rotom-table.sqlite')
+      expect(resolveConfiguredDatabasePath({ campaignRoot })).toBe(join(campaignRoot, 'rotom-table.sqlite'))
+      expect(resolveConfiguredDatabasePath({ rawPath: 'table.sqlite', campaignRoot })).toBe(join(campaignRoot, 'table.sqlite'))
+      expect(resolveConfiguredDatabasePath({ rawPath: '/srv/rotom-table/campaign/rotom-table.sqlite', campaignRoot }))
+        .toBe('/srv/rotom-table/campaign/rotom-table.sqlite')
+    })
   })
 
   it('opens, enables WAL for file databases, and applies deterministic migrations', () => {
