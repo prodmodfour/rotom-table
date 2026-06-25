@@ -10,6 +10,7 @@ import {
   type PlayerProfileId,
 } from '#shared/playerProfiles'
 import type { RealtimeEventAccess } from '#shared/realtimeEventLog'
+import type { RealtimeEventRetentionPolicy } from '../../server/realtime/realtimeEventRetentionConfig'
 import { openRealtimeSseStream } from '../../server/realtime/realtimeSseDelivery'
 import { createSqliteRealtimeEventAccessDependencies } from '../../server/realtime/sqliteRealtimeEventAccessAdapter'
 import type { RealtimeDeliveryPrincipal, RealtimePlayerSheetAccessKey } from '../../server/realtime/realtimeEventAccessPolicy'
@@ -134,6 +135,14 @@ const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): Pla
   linkedCharacters,
 })
 
+const retentionPolicy = (overrides: Partial<RealtimeEventRetentionPolicy> = {}): RealtimeEventRetentionPolicy => ({
+  enabled: true,
+  retentionDays: 30,
+  maxRows: 250_000,
+  pruneIntervalMs: 10_000,
+  ...overrides,
+})
+
 describe('repository-backed realtime SSE replay', () => {
   it('starts a cursorless connection after the current latest sequence without replaying retained history', async () => {
     const harness = createHarness()
@@ -203,6 +212,115 @@ describe('repository-backed realtime SSE replay', () => {
     ])
     expect(aheadConnection.writes.join('')).not.toContain('two')
     await closeStream(aheadConnection)
+  })
+
+  it('sends gap reconciliation when retention prunes the requested cursor out of range', async () => {
+    const harness = createHarness()
+    harness.maps.saveSetupMap(mapDoc({ slug: 'visible', playerVisible: true }))
+    append(harness, 'one', { kind: 'map-access', mapSlug: 'visible' })
+    append(harness, 'two', { kind: 'map-access', mapSlug: 'visible' })
+    harness.realtime.pruneRetention({ policy: retentionPolicy({ maxRows: 1 }), now: 1_000 })
+
+    const connection = startStream({ harness, afterSequence: 0 })
+    const frames = await waitForFrameCount(connection.writes, 1)
+
+    expect(frames).toEqual([
+      { id: '2', data: expect.objectContaining({ type: 'reconcile-required', reason: 'gap' }) },
+    ])
+    expect(connection.writes.join('')).not.toContain('one')
+    await closeStream(connection)
+  })
+
+  it('lets a caught-up open client receive later events after retention pruning', async () => {
+    const harness = createHarness()
+    harness.maps.saveSetupMap(mapDoc({ slug: 'visible', playerVisible: true }))
+    append(harness, 'one', { kind: 'map-access', mapSlug: 'visible' })
+    append(harness, 'two', { kind: 'map-access', mapSlug: 'visible' })
+    const connection = startStream({ harness, afterSequence: null, pollIntervalMs: 60_000 })
+    await waitForFrameCount(connection.writes, 1)
+
+    harness.realtime.pruneRetention({
+      policy: retentionPolicy({ retentionDays: 1, maxRows: 10 }),
+      now: 4 * 24 * 60 * 60 * 1000,
+    })
+    const later = append(harness, 'three', { kind: 'map-access', mapSlug: 'visible' })
+    harness.hub.publishSequencedRealtime(later.event)
+
+    await vi.waitFor(() => expect(connection.writes.join('')).toContain('three'))
+    const matching = dataFrames(connection.writes).filter((frame) => (
+      (frame.data as { data?: { label?: string } }).data?.label === 'three'
+    ))
+    expect(matching).toHaveLength(1)
+    expect(connection.writes.join('')).not.toContain('one')
+    await closeStream(connection)
+  })
+
+  it('does not duplicate replayed rows when pruning while a connection is open', async () => {
+    const harness = createHarness()
+    harness.maps.saveSetupMap(mapDoc({ slug: 'visible', playerVisible: true }))
+    append(harness, 'one', { kind: 'map-access', mapSlug: 'visible' })
+    append(harness, 'two', { kind: 'map-access', mapSlug: 'visible' })
+    const connection = startStream({ harness, afterSequence: 0, pollIntervalMs: 60_000 })
+    await waitForFrameCount(connection.writes, 3)
+
+    harness.realtime.pruneRetention({ policy: retentionPolicy({ maxRows: 1 }), now: 1_000 })
+    const later = append(harness, 'three', { kind: 'map-access', mapSlug: 'visible' })
+    harness.hub.publishSequencedRealtime(later.event)
+
+    await vi.waitFor(() => expect(connection.writes.join('')).toContain('three'))
+    const labels = dataFrames(connection.writes)
+      .map((frame) => (frame.data as { data?: { label?: string } }).data?.label)
+      .filter(Boolean)
+    expect(labels).toEqual(['one', 'two', 'three'])
+    await closeStream(connection)
+  })
+
+  it('does not repeatedly emit gap controls while polling a pruned log', async () => {
+    vi.useFakeTimers()
+    const harness = createHarness()
+    harness.maps.saveSetupMap(mapDoc({ slug: 'visible', playerVisible: true }))
+    append(harness, 'one', { kind: 'map-access', mapSlug: 'visible' })
+    append(harness, 'two', { kind: 'map-access', mapSlug: 'visible' })
+    harness.realtime.pruneRetention({ policy: retentionPolicy({ maxRows: 1 }), now: 1_000 })
+
+    const connection = startStream({ harness, afterSequence: 0, pollIntervalMs: 10 })
+    await waitForFrameCount(connection.writes, 1)
+    await vi.advanceTimersByTimeAsync(50)
+
+    const gapFrames = dataFrames(connection.writes).filter((frame) => (
+      (frame.data as { type?: string; reason?: string }).type === 'reconcile-required'
+    ))
+    expect(gapFrames).toHaveLength(1)
+    await closeStream(connection)
+  })
+
+  it('keeps denied-event checkpoints safe across pruning', async () => {
+    const harness = createHarness()
+    harness.maps.saveSetupMap(mapDoc({ slug: 'visible', playerVisible: true }))
+    append(harness, 'denied', { kind: 'gm-only' })
+    append(harness, 'visible', { kind: 'map-access', mapSlug: 'visible' })
+
+    const firstConnection = startStream({
+      harness,
+      afterSequence: 0,
+      readLimit: 1,
+      principal: { role: 'player', playerProfile: null, sessionAccess: null },
+    })
+    const firstFrames = await waitForFrameCount(firstConnection.writes, 3)
+    expect(firstFrames.map((frame) => frame.id)).toEqual(['1', '2', '2'])
+    expect(firstConnection.writes.join('')).not.toContain('denied')
+    await closeStream(firstConnection)
+
+    harness.realtime.pruneRetention({ policy: retentionPolicy({ maxRows: 1 }), now: 1_000 })
+    const reconnect = startStream({
+      harness,
+      afterSequence: 1,
+      principal: { role: 'player', playerProfile: null, sessionAccess: null },
+    })
+    const reconnectFrames = await waitForFrameCount(reconnect.writes, 2)
+    expect(reconnectFrames.map((frame) => frame.id)).toEqual(['2', '2'])
+    expect(reconnectFrames[0]?.data).toMatchObject({ sequence: 2, data: { label: 'visible' } })
+    await closeStream(reconnect)
   })
 
   it('emits an interim checkpoint when a replay page contains only denied events', async () => {

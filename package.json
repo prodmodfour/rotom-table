@@ -14,6 +14,8 @@
     "preview": "nuxt preview",
     "migrate:sqlite": "node scripts/migrate-campaign-to-sqlite.mjs",
     "export:sqlite-json": "node scripts/export-sqlite-json.mjs",
+    "realtime:status": "node scripts/realtime-retention.mjs status",
+    "realtime:prune": "node scripts/realtime-retention.mjs prune",
     "postinstall": "NODE_ENV=development nuxt prepare",
     "typecheck": "NODE_ENV=development nuxt typecheck",
     "test": "vitest run",
