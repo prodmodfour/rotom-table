@@ -9,7 +9,6 @@ import {
 } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
-import type { RealtimeEvent } from '#shared/realtime'
 import type { MapVoxelV2, TabletopMap } from '~/types/map'
 import {
   applyLivePlayTerrainChange,
@@ -27,8 +26,6 @@ import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sq
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
-import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
@@ -62,7 +59,6 @@ export interface LivePlayTerrainCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
-  readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
 }
@@ -86,7 +82,6 @@ const actionDependencies = (dependencies: LivePlayTerrainCommandDependencies) =>
   commandExecutor: dependencies.commandExecutor ?? livePlayTerrainCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
   database: dependencies.database ?? getRotomDatabase(),
-  publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
   relativePath: dependencies.relativePath ?? ((path: string) => path),
 })
@@ -237,10 +232,6 @@ export const executeLivePlayTerrainCommandUseCase = async (
         map: authoritativeMap,
       }
       void actor
-    },
-    publish: ({ actor, result }) => {
-      if (!persistedContext) return
-      deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))
     },
   })
 

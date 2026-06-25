@@ -7,7 +7,6 @@ import {
   type LivePlayPatch,
   type UpdateAttackOfOpportunityLivePlayCommand,
 } from '#shared/livePlayCommands'
-import type { RealtimeEvent } from '#shared/realtime'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -35,8 +34,6 @@ import {
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
-import { publishRealtime } from '../utils/realtime'
 import { readRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
@@ -74,7 +71,6 @@ export interface AttackOfOpportunityCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
-  readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly readSheet?: (kind: SheetKind, slug: string) => SheetFileRecord | null
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
@@ -98,7 +94,6 @@ const actionDependencies = (dependencies: AttackOfOpportunityCommandDependencies
   commandExecutor: dependencies.commandExecutor ?? livePlayAttackOfOpportunityCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
   database: dependencies.database ?? getRotomDatabase(),
-  publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   readSheet: dependencies.readSheet ?? readDefaultSheet,
   now: dependencies.now ?? Date.now,
   relativePath: dependencies.relativePath ?? ((path: string) => path),
@@ -449,10 +444,6 @@ export const executeAttackOfOpportunityLivePlayCommandUseCase = async (
       }
       void actor
       void command
-    },
-    publish: ({ actor, result }) => {
-      if (!persistedContext) return
-      deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))
     },
   })
 

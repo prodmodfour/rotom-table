@@ -17,7 +17,6 @@ import {
   type TurnTokenLivePlayCommand,
   type TurnTokenPayload,
 } from '#shared/livePlayCommands'
-import type { RealtimeEvent } from '#shared/realtime'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -44,8 +43,6 @@ import {
 import { buildVoxelOccupancy } from '~/utils/voxelOccupancy'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
 import { readRuntimeSheet } from '../utils/sqliteSheetRuntimeHelpers'
-import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
-import { publishRealtime } from '../utils/realtime'
 import { canAccessMapForRole, clampAnchorToDimensions } from '../policies/mapPolicy'
 import {
   actorCanControlMapPlacement,
@@ -130,7 +127,6 @@ export interface MapTokenActionDependencies {
   commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   database?: Pick<RotomDatabase, 'withTransaction'>
-  publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
 }
 
 interface ResolvedMapWriteContext {
@@ -192,7 +188,6 @@ const actionDependencies = (dependencies: MapTokenActionDependencies) => ({
   commandExecutor: dependencies.commandExecutor ?? livePlayMapTokenCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
   database: dependencies.database ?? getRotomDatabase(),
-  publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
 })
 
 type MapTokenActionDependencySet = ReturnType<typeof actionDependencies>
@@ -1142,10 +1137,6 @@ export const executeMapTokenLivePlayCommandUseCase = async (
         ...(placement === undefined ? {} : { placement }),
       }
       void actor
-    },
-    publish: ({ actor, result }) => {
-      if (!persistedContext) return
-      deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))
     },
   })
 

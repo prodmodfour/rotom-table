@@ -10,6 +10,7 @@ import {
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { LIVE_PLAY_TERRAIN_RENDER_INVALIDATION_REASONS } from '~~/server/livePlay/terrainDomain'
 import { executeLivePlayTerrainCommandUseCase } from '~~/server/useCases/applyLivePlayTerrainCommand'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
@@ -78,6 +79,7 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   const executor = createAuthoritativeLivePlayCommandExecutor({
     opStore: createInMemoryLivePlayOpStore(),
     queue: createInProcessMapWriteQueue(),
+    ...acceptedRealtimeTestHooks(published),
   })
   const mapRepository = {
     getBySlug: vi.fn((slug: string) => (slug === 'arena' ? storedMap : null)),
@@ -95,7 +97,6 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     commandExecutor: executor,
     mapRepository,
     database: { withTransaction: <T>(work: () => T) => work() },
-    publishRealtimeEvent: vi.fn((event) => published.push(event)),
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2_000),
   }

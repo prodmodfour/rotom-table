@@ -12,6 +12,7 @@ import {
   readAttackOfOpportunityState,
   writeAttackOfOpportunityState,
 } from '#shared/attackOfOpportunityState'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore, type LivePlayOpStore } from '~~/server/livePlay/opStore'
@@ -142,6 +143,7 @@ const createHarness = (
   const executor = createAuthoritativeLivePlayCommandExecutor({
     opStore,
     queue: createInProcessMapWriteQueue(),
+    ...acceptedRealtimeTestHooks(published),
   })
   const mapRepository = {
     getBySlug: vi.fn((slug: string) => (slug === 'arena' ? storedMap : null)),
@@ -170,7 +172,6 @@ const createHarness = (
     commandExecutor: executor,
     mapRepository,
     database,
-    publishRealtimeEvent: vi.fn((event) => published.push(event)),
     readSheet: vi.fn((_kind: 'pokemon' | 'trainer', _slug: string): { path: string; sheet: Record<string, unknown> } | null => null),
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2_000),

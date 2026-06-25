@@ -40,13 +40,10 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
-import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { initiativeOrderIdsForPlacements, type InitiativeSheetReader } from '~/utils/initiativeOrderEntries'
 import { expireActiveOrderEffectsForInitiativeAdvanceWithResult } from '~/utils/activeOrderEffects'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
-import type { RealtimeEvent } from '#shared/realtime'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
 
@@ -111,7 +108,6 @@ export interface LivePlayInitiativeCommandDependencies {
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
   readonly sheetRepository?: InitiativeSheetRepository
-  readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly readSheet?: InitiativeSheetReader
   readonly now?: () => number
   readonly relativePath?: (path: string) => string
@@ -167,8 +163,7 @@ const actionDependencies = (dependencies: LivePlayInitiativeCommandDependencies)
     mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
     database: dependencies.database ?? getRotomDatabase(),
     sheetRepository,
-    publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
-    readSheet: dependencies.readSheet ?? initiativeSheetReaderFromRepository(sheetRepository),
+      readSheet: dependencies.readSheet ?? initiativeSheetReaderFromRepository(sheetRepository),
     now: dependencies.now ?? Date.now,
     relativePath: dependencies.relativePath ?? ((path: string) => path),
     maxInitiativeLogEntries: dependencies.maxInitiativeLogEntries,
@@ -934,10 +929,6 @@ export const executeLivePlayInitiativeCommandUseCase = async (
         map: authoritativeMap,
       }
       void actor
-    },
-    publish: ({ actor, result }) => {
-      if (!persistedContext) return
-      deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))
     },
   })
 

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LIVE_PLAY_COMMAND_TYPES, type ThrowPokeballLivePlayCommand } from '#shared/livePlayCommands'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
@@ -96,6 +97,7 @@ const setup = (options: {
   readonly trainer?: TrainerSheet
   readonly target?: CharacterSheet
   readonly extraTrainer?: TrainerSheet
+  readonly published?: unknown[]
 } = {}) => {
   const database = openMemoryDatabase()
   const maps = createSqliteMapRepository<TabletopMap>(database)
@@ -108,12 +110,14 @@ const setup = (options: {
   sheets.saveSetupSheet('pokemon', 'pidgey', (options.target ?? targetSheet()) as unknown as Record<string, unknown>)
   if (options.extraTrainer) sheets.saveSetupSheet('trainer', options.extraTrainer.slug, options.extraTrainer as unknown as Record<string, unknown>)
   modes.set({ slug: map.slug, interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: 1_700_000_000_000 })
+  const published = options.published ?? []
   const executor = createAuthoritativeLivePlayCommandExecutor({
     opStore: ops,
     queue: createInProcessMapWriteQueue(),
     readMapInteractionMode: (mapSlug) => modes.get(mapSlug).interactionMode,
+    ...acceptedRealtimeTestHooks(published),
   })
-  return { database, maps, sheets, ops, executor, map }
+  return { database, maps, sheets, ops, executor, map, published }
 }
 
 const execute = async (input: ReturnType<typeof setup> & {
@@ -135,7 +139,7 @@ const execute = async (input: ReturnType<typeof setup> & {
   commandExecutor: input.executor,
   random: input.random,
   now: () => 1_700_000_002_000,
-  publishRealtimeEvent: input.publish,
+  publishRealtimeEvent: input.publish ?? ((event) => input.published.push(event)),
 })
 
 describe('throwPokeball live-play command', () => {
@@ -144,9 +148,8 @@ describe('throwPokeball live-play command', () => {
     const random = vi.fn()
       .mockReturnValueOnce(0.99)
       .mockReturnValueOnce(0)
-    const published: unknown[] = []
 
-    const response = await execute({ ...env, random, publish: (event) => published.push(event) })
+    const response = await execute({ ...env, random })
 
     expect(response.result).toMatchObject({ ok: true, previousRevision: 0, revision: 1 })
     expect(response.capture).toMatchObject({
@@ -181,8 +184,8 @@ describe('throwPokeball live-play command', () => {
       'pokemon:pidgey:1',
     ])
     expect(env.ops.getStoredOpRecord('arena', 'op_capture001')).toMatchObject({ result: response.result })
-    expect(published).toHaveLength(5)
-    expect(published.at(-1)).toMatchObject({ type: 'live-play-command-accepted', opId: 'op_capture001' })
+    expect(env.published).toHaveLength(5)
+    expect(env.published.at(-1)).toMatchObject({ type: 'live-play-command-accepted', opId: 'op_capture001' })
   })
 
   it('puts a captured Pokémon in the box when the trainer team is full', async () => {

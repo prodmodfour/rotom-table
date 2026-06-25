@@ -46,10 +46,8 @@ import {
   rejectLivePlayCommand,
   type AuthoritativeLivePlayCommandExecutor,
 } from '../livePlay/commandExecutor'
-import { createAuthoritativeLivePlayCommandExecutor } from '../livePlay/commandExecutor'
+import { createSqliteAuthoritativeLivePlayCommandExecutor } from '../livePlay/sqliteCommandExecutor'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
-import { createSqliteLivePlayOpRepository } from '../storage/opRepository'
-import { createSqliteMapInteractionModeRepository } from '../storage/mapInteractionModeRepository'
 import {
   createSqliteMapRepository,
   type MapRepository,
@@ -61,7 +59,6 @@ import {
   type StoredSheetDocument,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
@@ -156,9 +153,8 @@ const actionDependencies = (dependencies: ThrowPokeballCommandDependencies) => {
   const concreteDatabase = database as RotomDatabase
   const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(concreteDatabase)
   const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(concreteDatabase)
-  const commandExecutor = dependencies.commandExecutor ?? createAuthoritativeLivePlayCommandExecutor({
-    opStore: createSqliteLivePlayOpRepository({ database: concreteDatabase }),
-    readMapInteractionMode: (mapSlug) => createSqliteMapInteractionModeRepository(concreteDatabase).get(mapSlug).interactionMode,
+  const commandExecutor = dependencies.commandExecutor ?? createSqliteAuthoritativeLivePlayCommandExecutor({
+    database: concreteDatabase,
   })
   return {
     database,
@@ -952,7 +948,6 @@ export const executeThrowPokeballCommandUseCase = async (
       for (const event of sheetRealtimeEvents(persistedContext.sheetUpdates ?? [], actor.clientId)) {
         deps.publishRealtimeEvent(event)
       }
-      deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))
     },
   })
 

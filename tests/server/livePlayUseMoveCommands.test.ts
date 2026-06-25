@@ -14,6 +14,7 @@ import {
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { executeLivePlayUseMoveCommandUseCase } from '~~/server/useCases/applyLivePlayUseMoveCommand'
 import { MAPS_ROOT } from '~~/server/utils/mapPaths'
 import type { PersistedSheet } from '~~/server/storage/sheetRepository'
@@ -97,6 +98,7 @@ const createHarness = (
   const executor = createAuthoritativeLivePlayCommandExecutor({
     opStore: createInMemoryLivePlayOpStore(),
     queue: createInProcessMapWriteQueue(),
+    ...acceptedRealtimeTestHooks(published),
   })
   const mapRepository = {
     getBySlug: vi.fn((slug: string) => (slug === 'arena' ? storedMap : null)),

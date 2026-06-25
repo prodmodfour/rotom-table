@@ -19,6 +19,7 @@ import {
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
 import { openRotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
@@ -152,6 +153,7 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   const executor = createAuthoritativeLivePlayCommandExecutor({
     opStore: createInMemoryLivePlayOpStore(),
     queue: createInProcessMapWriteQueue(),
+    ...acceptedRealtimeTestHooks(published),
   })
   const mapRepository = {
     getBySlug: vi.fn((slug: string) => (slug === 'arena' ? storedMap : null)),
@@ -176,7 +178,6 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
     relativePath: vi.fn((filePath: string) => filePath.replace(`${MAPS_ROOT}/`, 'data/maps/')),
     now: vi.fn(() => 2000),
     commandExecutor: executor,
-    publishRealtimeEvent: vi.fn((event) => published.push(event)),
   }
 
   return {
@@ -673,7 +674,6 @@ describe('live-play map token commands', () => {
             : { slug, name: 'Boss' },
         })),
         now: vi.fn(() => 2_000),
-        publishRealtimeEvent: vi.fn(),
       })
 
       expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })

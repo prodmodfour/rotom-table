@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { createAuthoritativeLivePlayCommandExecutor } from '../../server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '../../server/livePlay/mapWriteQueue'
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
@@ -79,11 +80,12 @@ const createDeps = (options: { map?: TabletopMap; now?: number } = {}) => {
   databases.push(database)
   const mapRepository = createSqliteMapRepository(database)
   const opRepository = createSqliteLivePlayOpRepository({ database, clock: () => options.now ?? 5000 })
+  const events: unknown[] = []
   const commandExecutor = createAuthoritativeLivePlayCommandExecutor({
     opStore: opRepository,
     queue: createInProcessMapWriteQueue(),
+    ...acceptedRealtimeTestHooks(events),
   })
-  const events: unknown[] = []
   const map = options.map ?? baseMap()
   mapRepository.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: map.updatedAt ?? 20 })
 
@@ -93,7 +95,6 @@ const createDeps = (options: { map?: TabletopMap; now?: number } = {}) => {
       mapRepository,
       database,
       now: vi.fn(() => options.now ?? 5000),
-      publishRealtimeEvent: vi.fn((event) => events.push(event)),
       relativePath: vi.fn((path: string) => path.replace(/.*data\//, 'data/')),
       readSheet: vi.fn(() => null),
     },

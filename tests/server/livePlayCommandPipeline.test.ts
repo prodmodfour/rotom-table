@@ -13,6 +13,7 @@ import {
 } from '~~/server/livePlay/commandExecutor'
 import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { createInMemoryLivePlayOpStore } from '~~/server/livePlay/opStore'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 
 interface TestMap {
   readonly slug: string
@@ -255,5 +256,212 @@ describe('authoritative live-play command pipeline', () => {
     expect(harness.maps.get('arena')).toEqual({ slug: 'arena', revision: 0, log: [] })
     expect(harness.opStore.getOpRecord(command.mapSlug, command.opId)).toBeNull()
     expect(publish).not.toHaveBeenCalled()
+  })
+
+  it('records an accepted realtime event once on the first saveOpResult call', async () => {
+    const maps = new Map<string, TestMap>([['arena', { slug: 'arena', revision: 0, log: [] }]])
+    const opStore = createInMemoryLivePlayOpStore()
+    const recorded: unknown[] = []
+    const published: unknown[] = []
+    const hooks = acceptedRealtimeTestHooks(published)
+    const recordAcceptedRealtimeEvent = vi.fn((context: Parameters<typeof hooks.recordAcceptedRealtimeEvent>[0]) => {
+      const event = hooks.recordAcceptedRealtimeEvent(context)
+      recorded.push(event)
+      return event
+    })
+    const executor = createAuthoritativeLivePlayCommandExecutor({
+      opStore,
+      queue: createInProcessMapWriteQueue(),
+      recordAcceptedRealtimeEvent,
+      publishAcceptedRealtimeEvent: hooks.publishAcceptedRealtimeEvent,
+    })
+    const command = createCommand('arena', 'op_durable001', 0, 'first')
+
+    const result = await executor.execute<typeof command, TestMap, { readonly clientId: string }, { readonly clientId: string }>({
+      command,
+      actor: { clientId: 'client-1' },
+      readMap: ({ command: currentCommand }) => maps.get(currentCommand.mapSlug)!,
+      apply: ({ command: currentCommand, map, currentRevision }) => ({
+        status: 'accepted',
+        nextMap: { ...map, revision: currentRevision + 1, log: [...map.log, currentCommand.payload.label] },
+        patches: [createPatch(currentCommand, currentRevision + 1)],
+      }),
+      persist: () => {
+        throw new Error('commit required')
+      },
+      commit: ({ nextMap, saveOpResult }) => {
+        maps.set(nextMap.slug, nextMap)
+        const first = saveOpResult()
+        const second = saveOpResult()
+        expect(second).toEqual(first)
+      },
+    })
+
+    expect(result).toMatchObject({ ok: true, revision: 1 })
+    expect(recordAcceptedRealtimeEvent).toHaveBeenCalledTimes(1)
+    expect(recorded).toHaveLength(1)
+    expect(published).toHaveLength(1)
+    expect(published[0]).toBe((recorded[0] as { readonly event: unknown }).event)
+    expect(opStore.recordCount).toBe(1)
+  })
+
+  it('fails accepted commits when durable realtime recording fails', async () => {
+    const maps = new Map<string, TestMap>([['arena', { slug: 'arena', revision: 0, log: [] }]])
+    const opStore = createInMemoryLivePlayOpStore()
+    const recordAcceptedRealtimeEvent = vi.fn(() => {
+      throw new Error('event log unavailable')
+    })
+    const executor = createAuthoritativeLivePlayCommandExecutor({
+      opStore,
+      queue: createInProcessMapWriteQueue(),
+      recordAcceptedRealtimeEvent,
+    })
+    const command = createCommand('arena', 'op_durablefail1', 0, 'first')
+
+    const result = await executor.execute<typeof command, TestMap, undefined, undefined>({
+      command,
+      readMap: ({ command: currentCommand }) => maps.get(currentCommand.mapSlug)!,
+      apply: ({ command: currentCommand, map, currentRevision }) => ({
+        status: 'accepted',
+        nextMap: { ...map, revision: currentRevision + 1, log: [...map.log, currentCommand.payload.label] },
+        patches: [createPatch(currentCommand, currentRevision + 1)],
+      }),
+      persist: () => {
+        throw new Error('commit required')
+      },
+      commit: ({ saveOpResult }) => {
+        saveOpResult()
+      },
+    })
+
+    expect(result).toMatchObject({
+      ok: false,
+      reason: 'persistence-failed',
+      message: expect.stringContaining('event log unavailable'),
+    })
+    expect(recordAcceptedRealtimeEvent).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects the legacy non-commit persistence path before persisting when durable recording is configured', async () => {
+    const harness = createHarness([{ slug: 'arena', revision: 0, log: [] }])
+    const recordAcceptedRealtimeEvent = vi.fn()
+    const executor = createAuthoritativeLivePlayCommandExecutor({
+      opStore: harness.opStore,
+      queue: harness.queue,
+      recordAcceptedRealtimeEvent,
+    })
+    const command = createCommand('arena', 'op_nocommit001', 0, 'first')
+    const persist = vi.fn()
+
+    const result = await executor.execute<typeof command, TestMap, undefined, undefined>({
+      command,
+      readMap: ({ command: currentCommand }) => harness.maps.get(currentCommand.mapSlug)!,
+      apply: ({ command: currentCommand, map, currentRevision }) => ({
+        status: 'accepted',
+        nextMap: { ...map, revision: currentRevision + 1, log: [...map.log, currentCommand.payload.label] },
+        patches: [createPatch(currentCommand, currentRevision + 1)],
+      }),
+      persist,
+    })
+
+    expect(result).toMatchObject({
+      ok: false,
+      reason: 'persistence-failed',
+      message: expect.stringContaining('accepted-result commit hook'),
+    })
+    expect(persist).not.toHaveBeenCalled()
+    expect(recordAcceptedRealtimeEvent).not.toHaveBeenCalled()
+    expect(harness.opStore.getOpRecord(command.mapSlug, command.opId)).toBeNull()
+  })
+
+  it('does not record accepted realtime events for rejected or duplicate commands', async () => {
+    const maps = new Map<string, TestMap>([['arena', { slug: 'arena', revision: 0, log: [] }]])
+    const opStore = createInMemoryLivePlayOpStore()
+    const published: unknown[] = []
+    const hooks = acceptedRealtimeTestHooks(published)
+    const recordAcceptedRealtimeEvent = vi.fn(hooks.recordAcceptedRealtimeEvent)
+    const executor = createAuthoritativeLivePlayCommandExecutor({
+      opStore,
+      queue: createInProcessMapWriteQueue(),
+      recordAcceptedRealtimeEvent,
+      publishAcceptedRealtimeEvent: hooks.publishAcceptedRealtimeEvent,
+    })
+    const rejectedCommand = createCommand('arena', 'op_rejected001', 0, 'bad')
+
+    const rejected = await executor.execute<typeof rejectedCommand, TestMap, undefined, undefined>({
+      command: rejectedCommand,
+      readMap: ({ command: currentCommand }) => maps.get(currentCommand.mapSlug)!,
+      apply: () => ({ status: 'rejected', reason: 'invalid', message: 'nope' }),
+      persist: () => {
+        throw new Error('should not persist accepted state')
+      },
+    })
+    expect(rejected).toMatchObject({ ok: false, reason: 'invalid' })
+    expect(recordAcceptedRealtimeEvent).not.toHaveBeenCalled()
+
+    const acceptedCommand = createCommand('arena', 'op_duplicate001', 0, 'first')
+    const executeAccepted = () => executor.execute<typeof acceptedCommand, TestMap, undefined, undefined>({
+      command: acceptedCommand,
+      readMap: ({ command: currentCommand }) => maps.get(currentCommand.mapSlug)!,
+      apply: ({ command: currentCommand, map, currentRevision }) => ({
+        status: 'accepted',
+        nextMap: { ...map, revision: currentRevision + 1, log: [...map.log, currentCommand.payload.label] },
+        patches: [createPatch(currentCommand, currentRevision + 1)],
+      }),
+      persist: () => {
+        throw new Error('commit required')
+      },
+      commit: ({ nextMap, saveOpResult }) => {
+        maps.set(nextMap.slug, nextMap)
+        saveOpResult()
+      },
+    })
+
+    const first = await executeAccepted()
+    const second = await executeAccepted()
+    expect(second).toEqual(first)
+    expect(recordAcceptedRealtimeEvent).toHaveBeenCalledTimes(1)
+    expect(published).toHaveLength(1)
+  })
+
+  it('keeps accepted results when after-commit publication fails and continues accepted-event publication', async () => {
+    const maps = new Map<string, TestMap>([['arena', { slug: 'arena', revision: 0, log: [] }]])
+    const opStore = createInMemoryLivePlayOpStore()
+    const published: unknown[] = []
+    const reports: unknown[] = []
+    const hooks = acceptedRealtimeTestHooks(published)
+    const executor = createAuthoritativeLivePlayCommandExecutor({
+      opStore,
+      queue: createInProcessMapWriteQueue(),
+      recordAcceptedRealtimeEvent: hooks.recordAcceptedRealtimeEvent,
+      publishAcceptedRealtimeEvent: hooks.publishAcceptedRealtimeEvent,
+      reportAfterCommitPublicationFailure: (context) => reports.push(context),
+    })
+    const command = createCommand('arena', 'op_publishfail1', 0, 'first')
+
+    const result = await executor.execute<typeof command, TestMap, undefined, undefined>({
+      command,
+      readMap: ({ command: currentCommand }) => maps.get(currentCommand.mapSlug)!,
+      apply: ({ command: currentCommand, map, currentRevision }) => ({
+        status: 'accepted',
+        nextMap: { ...map, revision: currentRevision + 1, log: [...map.log, currentCommand.payload.label] },
+        patches: [createPatch(currentCommand, currentRevision + 1)],
+      }),
+      persist: () => {
+        throw new Error('commit required')
+      },
+      commit: ({ nextMap, saveOpResult }) => {
+        maps.set(nextMap.slug, nextMap)
+        saveOpResult()
+      },
+      publish: () => {
+        throw new Error('sheet publish failed')
+      },
+    })
+
+    expect(result).toMatchObject({ ok: true, revision: 1 })
+    expect(published).toHaveLength(1)
+    expect(reports).toHaveLength(1)
+    expect(reports[0]).toMatchObject({ phase: 'use-case' })
   })
 })

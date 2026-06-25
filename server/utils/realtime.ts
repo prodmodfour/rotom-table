@@ -13,6 +13,7 @@
  */
 
 import type { RealtimeEvent } from '#shared/realtime'
+import type { SequencedRealtimeEvent } from '#shared/realtimeEventLog'
 
 export type { RealtimeEvent } from '#shared/realtime'
 
@@ -27,13 +28,21 @@ export const subscribeRealtime = (subscriber: Subscriber): (() => void) => {
   }
 }
 
-export const publishRealtime = (event: Omit<RealtimeEvent, 'timestamp'>): void => {
-  const full: RealtimeEvent = { ...event, timestamp: Date.now() }
+const deliverRealtimeEvent = (event: RealtimeEvent): void => {
   for (const sub of subscribers) {
     try {
-      sub(full)
+      sub(event)
     } catch (err) {
       console.error('[realtime] subscriber threw', err)
     }
   }
+}
+
+export const publishRealtime = (event: Omit<RealtimeEvent, 'timestamp'>): void => {
+  const full: RealtimeEvent = { ...event, timestamp: Date.now() }
+  deliverRealtimeEvent(full)
+}
+
+export const publishSequencedRealtime = (event: SequencedRealtimeEvent): void => {
+  deliverRealtimeEvent(event)
 }

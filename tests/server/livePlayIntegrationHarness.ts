@@ -32,6 +32,7 @@ import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/appl
 import { executeLivePlaySheetCommandUseCase } from '~~/server/useCases/applyLivePlaySheetCommand'
 import { executeLivePlayUseMoveCommandUseCase } from '~~/server/useCases/applyLivePlayUseMoveCommand'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import type { SheetKind, TabletopMap } from '~/types/map'
 
@@ -150,9 +151,12 @@ export class LivePlayIntegrationHarness {
       database: this.database,
       clock: () => this.nextTimestamp(),
     })
+    const acceptedRealtimeHooks = acceptedRealtimeTestHooks([], { clock: () => this.nextTimestamp() })
     this.commandExecutor = createAuthoritativeLivePlayCommandExecutor({
       opStore: this.opRepository,
       queue: this.queue,
+      recordAcceptedRealtimeEvent: acceptedRealtimeHooks.recordAcceptedRealtimeEvent,
+      publishAcceptedRealtimeEvent: (event) => this.publishSequencedRealtimeEvent(event.event),
     })
 
     this.seed(options)
@@ -545,6 +549,11 @@ export class LivePlayIntegrationHarness {
   private nextTimestamp(): number {
     this.nowValue += 1
     return this.nowValue
+  }
+
+  private publishSequencedRealtimeEvent(event: RealtimeEvent): void {
+    this.publishedEvents.push(cloneJson(event))
+    for (const client of this.clients.values()) client.receive(event)
   }
 
   private commandDependencies() {

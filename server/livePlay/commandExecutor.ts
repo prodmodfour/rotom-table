@@ -9,6 +9,7 @@ import {
   type LivePlayCommandResult,
   type LivePlayPatch,
 } from '#shared/livePlayCommands'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import {
   LIVE_PLAY_MODE_REQUIRED_FOR_COMMAND_MESSAGE,
   MAP_INTERACTION_MODES,
@@ -174,10 +175,38 @@ export interface ExecuteAuthoritativeLivePlayCommandOptions<
   readonly recordedAt?: string
 }
 
+export interface AcceptedLivePlayRealtimeRecordContext {
+  readonly command: LivePlayCommandEnvelope
+  readonly result: LivePlayCommandAccepted
+  readonly clientId?: string
+}
+
+export type AcceptedLivePlayRealtimeRecorder = (
+  context: AcceptedLivePlayRealtimeRecordContext,
+) => PersistedRealtimeEvent
+
+export type AcceptedLivePlayRealtimePublisher = (
+  event: PersistedRealtimeEvent,
+) => MaybePromise<void>
+
+export interface AcceptedLivePlayAfterCommitPublicationFailureContext {
+  readonly phase: 'use-case' | 'accepted-realtime'
+  readonly command: LivePlayCommandEnvelope
+  readonly result: LivePlayCommandAccepted
+  readonly error: unknown
+}
+
+export type AcceptedLivePlayAfterCommitPublicationFailureReporter = (
+  context: AcceptedLivePlayAfterCommitPublicationFailureContext,
+) => void
+
 export interface AuthoritativeLivePlayCommandExecutorOptions {
   readonly opStore?: LivePlayOpStore
   readonly queue?: MapWriteQueue
   readonly readMapInteractionMode?: (mapSlug: string) => MaybePromise<MapInteractionMode>
+  readonly recordAcceptedRealtimeEvent?: AcceptedLivePlayRealtimeRecorder
+  readonly publishAcceptedRealtimeEvent?: AcceptedLivePlayRealtimePublisher
+  readonly reportAfterCommitPublicationFailure?: AcceptedLivePlayAfterCommitPublicationFailureReporter
 }
 
 interface ValidCommandExecutionContext<
@@ -353,15 +382,26 @@ const canReadOperationHistory = (store: LivePlayOpStore): store is OperationHist
   typeof (store as { readonly listAcceptedOpsSinceRevision?: unknown }).listAcceptedOpsSinceRevision === 'function'
 )
 
+interface AcceptedLivePlayCommandCommitResult {
+  readonly acceptedRealtimeEvent: PersistedRealtimeEvent | null
+}
+
 export class AuthoritativeLivePlayCommandExecutor {
   private readonly opStore: LivePlayOpStore
   private readonly queue: MapWriteQueue
   private readonly readMapInteractionMode?: (mapSlug: string) => MaybePromise<MapInteractionMode>
+  private readonly recordAcceptedRealtimeEvent?: AcceptedLivePlayRealtimeRecorder
+  private readonly publishAcceptedRealtimeEvent?: AcceptedLivePlayRealtimePublisher
+  private readonly reportAfterCommitPublicationFailure: AcceptedLivePlayAfterCommitPublicationFailureReporter
 
   constructor(options: AuthoritativeLivePlayCommandExecutorOptions = {}) {
     this.opStore = options.opStore ?? livePlayOpStore
     this.queue = options.queue ?? livePlayMapWriteQueue
     this.readMapInteractionMode = options.readMapInteractionMode
+    this.recordAcceptedRealtimeEvent = options.recordAcceptedRealtimeEvent
+    this.publishAcceptedRealtimeEvent = options.publishAcceptedRealtimeEvent
+    this.reportAfterCommitPublicationFailure = options.reportAfterCommitPublicationFailure
+      ?? ((context) => console.error(`[live-play] after-commit ${context.phase} publication failed`, context.error))
   }
 
   async execute<
@@ -466,8 +506,9 @@ export class AuthoritativeLivePlayCommandExecutor {
       }
 
       const result = this.acceptedResult(command, map, application, options)
+      let commitResult: AcceptedLivePlayCommandCommitResult
       try {
-        await this.commitAcceptedResult({
+        commitResult = await this.commitAcceptedResult({
           command,
           commandHash,
           options,
@@ -482,13 +523,15 @@ export class AuthoritativeLivePlayCommandExecutor {
           ?? persistenceFailedResult(command, error, currentRevision)
       }
 
-      await options.publish?.({
+      await this.publishAcceptedResultAfterCommit({
         command,
+        options,
         actor,
         map,
         currentRevision,
         nextMap: application.nextMap,
         result,
+        acceptedRealtimeEvent: commitResult.acceptedRealtimeEvent,
       })
 
       return result
@@ -509,7 +552,7 @@ export class AuthoritativeLivePlayCommandExecutor {
     readonly currentRevision: number
     readonly nextMap: TMap
     readonly result: LivePlayCommandAccepted
-  }): Promise<void> {
+  }): Promise<AcceptedLivePlayCommandCommitResult> {
     const { command, commandHash, options, actor, map, currentRevision, nextMap, result } = context
     const persistContext: LivePlayCommandPersistContext<TCommand, TActor, TMap> = {
       command,
@@ -521,24 +564,90 @@ export class AuthoritativeLivePlayCommandExecutor {
     }
 
     if (!options.commit) {
+      if (this.recordAcceptedRealtimeEvent) {
+        throw new Error('accepted live-play commands with durable realtime recording must persist through the accepted-result commit hook')
+      }
       await options.persist(persistContext)
       this.saveOpResult(command, commandHash, result, options.recordedAt)
-      return
+      return { acceptedRealtimeEvent: null }
     }
 
     let savedRecord: LivePlayOpRecord | null = null
+    let acceptedRealtimeEvent: PersistedRealtimeEvent | null = null
     await options.commit({
       ...persistContext,
       commandHash,
       saveOpResult: () => {
         if (savedRecord) return savedRecord
-        savedRecord = this.saveOpResult(command, commandHash, result, options.recordedAt)
+        const record = this.saveOpResult(command, commandHash, result, options.recordedAt)
+        const realtimeEvent = this.recordAcceptedRealtimeEvent?.({
+          command,
+          result,
+          clientId: this.clientIdFromActor(actor),
+        }) ?? null
+        savedRecord = record
+        acceptedRealtimeEvent = realtimeEvent
         return savedRecord
       },
     })
 
     if (!savedRecord) {
       throw new Error('accepted live-play command commit did not save its operation result')
+    }
+    return { acceptedRealtimeEvent }
+  }
+
+  private clientIdFromActor(actor: unknown): string | undefined {
+    if (!isRecord(actor)) return undefined
+    const clientId = actor.clientId
+    return typeof clientId === 'string' ? clientId : undefined
+  }
+
+  private async publishAcceptedResultAfterCommit<
+    TCommand extends LivePlayCommandEnvelope,
+    TMap,
+    TActorInput,
+    TActor,
+  >(context: {
+    readonly command: TCommand
+    readonly options: ExecuteAuthoritativeLivePlayCommandOptions<TCommand, TMap, TActorInput, TActor>
+    readonly actor: TActor
+    readonly map: TMap
+    readonly currentRevision: number
+    readonly nextMap: TMap
+    readonly result: LivePlayCommandAccepted
+    readonly acceptedRealtimeEvent: PersistedRealtimeEvent | null
+  }): Promise<void> {
+    const {
+      command,
+      options,
+      actor,
+      map,
+      currentRevision,
+      nextMap,
+      result,
+      acceptedRealtimeEvent,
+    } = context
+
+    try {
+      await options.publish?.({
+        command,
+        actor,
+        map,
+        currentRevision,
+        nextMap,
+        result,
+      })
+    } catch (error) {
+      this.reportAfterCommitPublicationFailure({ phase: 'use-case', command, result, error })
+    }
+
+    if (!acceptedRealtimeEvent || !this.publishAcceptedRealtimeEvent) return
+
+    try {
+      await this.publishAcceptedRealtimeEvent(acceptedRealtimeEvent)
+    } catch (error) {
+      this.reportAfterCommitPublicationFailure({ phase: 'accepted-realtime', command, result, error })
     }
   }
 

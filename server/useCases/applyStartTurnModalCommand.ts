@@ -9,7 +9,6 @@ import {
 } from '#shared/livePlayCommands'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type { AuthRole } from '#shared/auth'
-import type { RealtimeEvent } from '#shared/realtime'
 import {
   applyStartTurnModalStateUpdate,
   normalizeStartTurnModalStateUpdatePayload,
@@ -29,8 +28,6 @@ import { canAccessMapForRole } from '../policies/mapPolicy'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { livePlayCommandAcceptedRealtimeEvent } from '../utils/mapRealtimeEvents'
-import { publishRealtime } from '../utils/realtime'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { commitLivePlayMapUpdate } from './livePlayMapPersistence'
 import { toPersistedMap } from './saveMap'
@@ -61,7 +58,6 @@ export interface StartTurnModalCommandDependencies {
   readonly commandExecutor?: Pick<AuthoritativeLivePlayCommandExecutor, 'execute'>
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'applyLivePlayUpdate'>
   readonly database?: Pick<RotomDatabase, 'withTransaction'>
-  readonly publishRealtimeEvent?: (event: Omit<RealtimeEvent, 'timestamp'>) => void
   readonly now?: () => number
   readonly rollD20?: () => number
   readonly relativePath?: (path: string) => string
@@ -82,7 +78,6 @@ const actionDependencies = (dependencies: StartTurnModalCommandDependencies) => 
   commandExecutor: dependencies.commandExecutor ?? livePlayStartTurnModalCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
   database: dependencies.database ?? getRotomDatabase(),
-  publishRealtimeEvent: dependencies.publishRealtimeEvent ?? publishRealtime,
   now: dependencies.now ?? Date.now,
   rollD20: dependencies.rollD20 ?? (() => Math.floor(Math.random() * 20) + 1),
   relativePath: dependencies.relativePath ?? ((path: string) => path),
@@ -317,10 +312,6 @@ export const executeStartTurnModalLivePlayCommandUseCase = async (
       }
       void actor
       void command
-    },
-    publish: ({ actor, result }) => {
-      if (!persistedContext) return
-      deps.publishRealtimeEvent(livePlayCommandAcceptedRealtimeEvent(result, actor.clientId))
     },
   })
 

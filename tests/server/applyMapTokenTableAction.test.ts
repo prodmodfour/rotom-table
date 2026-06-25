@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createAuthoritativeLivePlayCommandExecutor } from '../../server/livePlay/commandExecutor'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { createInProcessMapWriteQueue } from '../../server/livePlay/mapWriteQueue'
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
 import { createSqliteLivePlayOpRepository } from '../../server/storage/opRepository'
@@ -97,11 +98,12 @@ const createDeps = (options: {
   const mapRepository = createSqliteMapRepository(database)
   const sheetRepository = createSqliteSheetRepository(database)
   const opRepository = createSqliteLivePlayOpRepository({ database, clock: () => options.now ?? 5000 })
+  const events: unknown[] = []
   const commandExecutor = createAuthoritativeLivePlayCommandExecutor({
     opStore: opRepository,
     queue: createInProcessMapWriteQueue(),
+    ...acceptedRealtimeTestHooks(events),
   })
-  const events: unknown[] = []
   const sheets = options.sheets ?? {
     'pokemon:sandile': pokemonSheet(),
     'pokemon:target': pokemonSheet({

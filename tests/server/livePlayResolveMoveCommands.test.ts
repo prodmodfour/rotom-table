@@ -4,7 +4,10 @@ import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
 import { createSqliteLivePlayOpRepository } from '~~/server/storage/opRepository'
 import { createSqliteMapInteractionModeRepository } from '~~/server/storage/mapInteractionModeRepository'
+import { createAuthoritativeLivePlayCommandExecutor, type AuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
+import { createInProcessMapWriteQueue } from '~~/server/livePlay/mapWriteQueue'
 import { executeLivePlayResolveMoveCommandUseCase, type LivePlayResolveMoveCommandDependencies } from '~~/server/useCases/applyResolveMoveCommand'
+import { acceptedRealtimeTestHooks } from './livePlayAcceptedRealtimeTestUtils'
 import { planAuthoritativeMoveState } from '~~/server/domain/planAuthoritativeMoveState'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES, type LivePlayCommandAccepted, type ResolveMoveLivePlayCommand } from '#shared/livePlayCommands'
 import { LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION, type ResolveMoveIntent } from '#shared/livePlayMoveResolution'
@@ -26,6 +29,7 @@ interface Harness {
   readonly maps: ReturnType<typeof createSqliteMapRepository<TabletopMap>>
   readonly sheets: ReturnType<typeof createSqliteSheetRepository<Record<string, unknown>>>
   readonly ops: ReturnType<typeof createSqliteLivePlayOpRepository>
+  readonly commandExecutor: AuthoritativeLivePlayCommandExecutor
   readonly events: unknown[]
 }
 
@@ -100,6 +104,14 @@ const seedHarness = (options: {
   const maps = createSqliteMapRepository<TabletopMap>(database)
   const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
   const ops = createSqliteLivePlayOpRepository({ database, clock: () => 1_700_000_000_000 })
+  const modes = createSqliteMapInteractionModeRepository(database)
+  const events: unknown[] = []
+  const commandExecutor = createAuthoritativeLivePlayCommandExecutor({
+    opStore: ops,
+    queue: createInProcessMapWriteQueue(),
+    readMapInteractionMode: (mapSlug) => modes.get(mapSlug).interactionMode,
+    ...acceptedRealtimeTestHooks(events),
+  })
   const map = options.map ?? mapFixture()
   maps.save({ slug: map.slug, document: map, revision: map.revision ?? 0, updatedAt: map.updatedAt ?? 100 })
   const actor = pokemonSheet('actor', [...(options.actorMoves ?? [{ name: 'Tackle' }])])
@@ -107,7 +119,7 @@ const seedHarness = (options: {
   for (const sheet of [actor, ...targets]) {
     sheets.save({ kind: 'pokemon', slug: sheet.slug, document: sheet as unknown as Record<string, unknown>, revision: sheet.revision ?? 0, updatedAt: (sheet as { readonly updatedAt?: number }).updatedAt ?? 50 })
   }
-  return { database, maps, sheets, ops, events: [] }
+  return { database, maps, sheets, ops, commandExecutor, events }
 }
 
 const intent = (overrides: Omit<ResolveMoveIntent, 'schemaVersion'>): ResolveMoveIntent => ({
@@ -157,6 +169,7 @@ const execute = (
   database: harness.database,
   mapRepository: harness.maps,
   sheetRepository: harness.sheets,
+  commandExecutor: harness.commandExecutor,
   planner: options.planner,
   random: options.random ?? randomSequence([0.5, 0]),
   now: options.now ?? (() => 1000),
