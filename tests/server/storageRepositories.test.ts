@@ -54,6 +54,7 @@ const tableNames = (database: RotomDatabase): string[] => database.connection.pr
   SELECT name
   FROM sqlite_master
   WHERE type = 'table'
+    AND name NOT LIKE 'sqlite_%'
   ORDER BY name ASC
 `).all().map((row) => String(row.name))
 
@@ -94,12 +95,30 @@ describe('SQLite storage foundation', () => {
     expect(existsSync(database.path)).toBe(true)
     expect(database.journalMode?.toLowerCase()).toBe('wal')
     expect(getStorageSchemaVersion(database.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
-    expect(tableNames(database)).toEqual(['live_play_ops', 'map_folders', 'map_interaction_modes', 'maps', 'sheet_folders', 'sheets'])
+    expect(tableNames(database)).toEqual([
+      'live_play_ops',
+      'map_folders',
+      'map_interaction_modes',
+      'maps',
+      'realtime_event_log_state',
+      'realtime_events',
+      'sheet_folders',
+      'sheets',
+    ])
 
     const reopened = openRotomDatabase({ path: database.path })
     openDatabases.push(reopened)
     expect(getStorageSchemaVersion(reopened.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
-    expect(tableNames(reopened)).toEqual(['live_play_ops', 'map_folders', 'map_interaction_modes', 'maps', 'sheet_folders', 'sheets'])
+    expect(tableNames(reopened)).toEqual([
+      'live_play_ops',
+      'map_folders',
+      'map_interaction_modes',
+      'maps',
+      'realtime_event_log_state',
+      'realtime_events',
+      'sheet_folders',
+      'sheets',
+    ])
   })
 
   it('reads and writes map, sheet, and shared interaction-mode state through repository interfaces', () => {

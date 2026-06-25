@@ -2,6 +2,8 @@ import type { LivePlayPatch } from './livePlayCommands'
 import type { SheetKind } from './sheets'
 
 export interface RealtimeEvent<TData = unknown> {
+  /** Durable global sequence when the event came from the replayable event log. */
+  readonly sequence?: number
   /** Channel name, e.g. `map:foo` or `sheets`. */
   channel: string
   /** Operation type, e.g. `updated`, `deleted`, `renamed`, `moved`. */

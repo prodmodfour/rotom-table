@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 4
+export const LATEST_STORAGE_SCHEMA_VERSION = 5
 
 export interface StorageMigration {
   readonly version: number
@@ -77,6 +77,39 @@ const createRuntimeFolderTables = (connection: DatabaseSync): void => {
   `)
 }
 
+const createRealtimeEventLogTables = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS realtime_events (
+      sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+      dedupe_key TEXT UNIQUE,
+      material_hash TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      access_json TEXT NOT NULL,
+      event_json TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS realtime_events_channel_sequence_idx
+      ON realtime_events (channel, sequence);
+
+    CREATE INDEX IF NOT EXISTS realtime_events_created_at_idx
+      ON realtime_events (created_at, sequence);
+
+    CREATE TABLE IF NOT EXISTS realtime_event_log_state (
+      singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+      latest_sequence INTEGER NOT NULL,
+      earliest_available_sequence INTEGER NOT NULL
+    );
+
+    INSERT OR IGNORE INTO realtime_event_log_state (
+      singleton,
+      latest_sequence,
+      earliest_available_sequence
+    ) VALUES (1, 0, 1);
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -97,6 +130,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 4,
     name: 'store runtime map and sheet library folders',
     up: createRuntimeFolderTables,
+  },
+  {
+    version: 5,
+    name: 'store durable realtime event log',
+    up: createRealtimeEventLogTables,
   },
 ]
 

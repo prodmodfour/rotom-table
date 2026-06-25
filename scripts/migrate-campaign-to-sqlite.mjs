@@ -29,7 +29,7 @@ export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
 export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
 export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
-export const STORAGE_SCHEMA_VERSION = 4
+export const STORAGE_SCHEMA_VERSION = 5
 
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
@@ -550,6 +550,39 @@ const applyStorageMigrations = (connection) => {
         );
       `)
       setUserVersion(connection, 4)
+    }
+    if (fromVersion < 5) {
+      connection.exec(`
+        CREATE TABLE IF NOT EXISTS realtime_events (
+          sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+          dedupe_key TEXT UNIQUE,
+          material_hash TEXT NOT NULL,
+          channel TEXT NOT NULL,
+          event_type TEXT NOT NULL,
+          access_json TEXT NOT NULL,
+          event_json TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS realtime_events_channel_sequence_idx
+          ON realtime_events (channel, sequence);
+
+        CREATE INDEX IF NOT EXISTS realtime_events_created_at_idx
+          ON realtime_events (created_at, sequence);
+
+        CREATE TABLE IF NOT EXISTS realtime_event_log_state (
+          singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+          latest_sequence INTEGER NOT NULL,
+          earliest_available_sequence INTEGER NOT NULL
+        );
+
+        INSERT OR IGNORE INTO realtime_event_log_state (
+          singleton,
+          latest_sequence,
+          earliest_available_sequence
+        ) VALUES (1, 0, 1);
+      `)
+      setUserVersion(connection, 5)
     }
     connection.exec('COMMIT')
   } catch (error) {

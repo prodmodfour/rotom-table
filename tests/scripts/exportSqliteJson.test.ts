@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
+import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
 import type { TabletopMap } from '~/types/map'
 
@@ -49,6 +50,7 @@ const seedCampaignDatabase = (campaignRoot: string): void => {
   openDatabases.push(database)
   const maps = createSqliteMapRepository<TabletopMap>(database)
   const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+  const realtimeEvents = createSqliteRealtimeEventRepository({ database, clock: () => 1_700_000_000_800 })
 
   maps.createFolder('empty/nested')
   maps.saveSetupMap(mapDocument())
@@ -67,6 +69,11 @@ const seedCampaignDatabase = (campaignRoot: string): void => {
     folder: 'npcs',
     revision: 2,
     updatedAt: 1_700_000_000_700,
+  })
+  realtimeEvents.append({
+    event: { channel: 'maps', type: 'updated', data: { export: 'event-log-only' } },
+    access: { kind: 'gm-only' },
+    dedupeKey: 'export-ignored-event',
   })
   database.close()
   openDatabases.pop()
@@ -124,6 +131,8 @@ describe('SQLite JSON export script', () => {
       folder: 'npcs',
       revision: 2,
     })
+    expect(existsSync(join(output, 'realtime_events.json'))).toBe(false)
+    expect(readFileSync(join(output, 'data/maps/region/one/arena.json'), 'utf8')).not.toContain('event-log-only')
   })
 
   it('refuses surprising overwrites unless --force is passed', () => {
