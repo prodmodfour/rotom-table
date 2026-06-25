@@ -20,6 +20,15 @@ import {
   type RealtimeEventCursorStatus,
   type RealtimeEventDraft,
 } from '#shared/realtimeEventLog'
+import {
+  MAX_REALTIME_EVENT_MAX_ROWS,
+  MAX_REALTIME_EVENT_PRUNE_INTERVAL_MS,
+  MAX_REALTIME_EVENT_RETENTION_DAYS,
+  MIN_REALTIME_EVENT_MAX_ROWS,
+  MIN_REALTIME_EVENT_PRUNE_INTERVAL_MS,
+  MIN_REALTIME_EVENT_RETENTION_DAYS,
+  type RealtimeEventRetentionPolicy,
+} from '../realtime/realtimeEventRetentionConfig'
 import { getRotomDatabase, type RotomDatabase } from './database'
 
 export {
@@ -62,6 +71,40 @@ export interface RealtimeEventPruneResult {
   readonly currentCursorState: RealtimeEventCursorState
 }
 
+export interface PlanRealtimeEventRetentionInput {
+  readonly policy: RealtimeEventRetentionPolicy
+  readonly now?: number
+}
+
+export interface RealtimeEventRetentionInspection {
+  readonly rowCount: number
+  readonly cursorState: RealtimeEventCursorState
+  readonly oldestTimestamp: number | null
+  readonly newestTimestamp: number | null
+  readonly cutoffSequence: number
+  readonly eligibleByAge: number
+  readonly eligibleByCount: number
+}
+
+export type RealtimeEventRetentionCutoffReason = 'disabled' | 'none' | 'age' | 'row-count' | 'age-and-row-count'
+
+export interface RealtimeEventRetentionPlan extends RealtimeEventRetentionInspection {
+  readonly policy: RealtimeEventRetentionPolicy
+  readonly now: number
+  readonly ageCutoffTimestamp: number
+  readonly ageCutoffSequence: number
+  readonly rowCountCutoffSequence: number
+  readonly estimatedDeleteCount: number
+  readonly cutoffReason: RealtimeEventRetentionCutoffReason
+}
+
+export interface RealtimeEventRetentionPruneResult extends RealtimeEventRetentionPlan {
+  readonly deletedCount: number
+  readonly deletedThroughSequence: number
+  readonly previousCursorState: RealtimeEventCursorState
+  readonly currentCursorState: RealtimeEventCursorState
+}
+
 export interface RealtimeEventRepository {
   readonly database?: RotomDatabase
   append(input: AppendRealtimeEventInput): PersistedRealtimeEvent
@@ -70,7 +113,14 @@ export interface RealtimeEventRepository {
   getByDedupeKey(dedupeKey: string): PersistedRealtimeEvent | null
   cursorState(): RealtimeEventCursorState
   readAfter(input: ReadRealtimeEventsAfterInput): ReadRealtimeEventsAfterResult
+  inspectRetention(input: PlanRealtimeEventRetentionInput): RealtimeEventRetentionPlan
+  planRetention(input: PlanRealtimeEventRetentionInput): RealtimeEventRetentionPlan
+  /**
+   * Deletes retained durable realtime rows through a sequence cursor.
+   * Pruned dedupe keys intentionally become reusable because their unique rows no longer exist.
+   */
   pruneThrough(sequence: number): RealtimeEventPruneResult
+  pruneRetention(input: PlanRealtimeEventRetentionInput): RealtimeEventRetentionPruneResult
 }
 
 export interface CreateSqliteRealtimeEventRepositoryOptions {
@@ -121,6 +171,16 @@ interface RealtimeEventStateRow {
   readonly earliest_available_sequence: unknown
 }
 
+interface RealtimeEventRetentionAggregateRow {
+  readonly row_count: unknown
+  readonly oldest_timestamp: unknown
+  readonly newest_timestamp: unknown
+}
+
+interface RealtimeEventSequenceRow {
+  readonly sequence: unknown
+}
+
 interface StoredRealtimeEvent {
   readonly materialHash: string
   readonly record: PersistedRealtimeEvent
@@ -147,11 +207,59 @@ const REALTIME_EVENT_COLUMNS = `
 `
 
 const MATERIAL_HASH_RE = /^[a-f0-9]{64}$/
+const REALTIME_EVENT_RETENTION_DAY_MS = 24 * 60 * 60 * 1000
 
 const sqliteIntegerToNumber = (value: unknown, label: string): number => {
   const numberValue = typeof value === 'bigint' ? Number(value) : value
   return parseRealtimeEventSequence(numberValue, label)
 }
+
+const nullableSqliteIntegerToNumber = (value: unknown, label: string): number | null => {
+  if (value === null || value === undefined) return null
+  return sqliteIntegerToNumber(value, label)
+}
+
+const parseBoundedRetentionInteger = (input: {
+  readonly value: unknown
+  readonly label: string
+  readonly min: number
+  readonly max: number
+}): number => {
+  if (typeof input.value !== 'number' || !Number.isSafeInteger(input.value)) {
+    throw new Error(`${input.label} must be a safe integer`)
+  }
+  if (input.value < input.min || input.value > input.max) {
+    throw new Error(`${input.label} must be between ${input.min} and ${input.max}`)
+  }
+  return input.value
+}
+
+const parseRetentionPolicy = (policy: RealtimeEventRetentionPolicy): RealtimeEventRetentionPolicy => {
+  if (typeof policy.enabled !== 'boolean') throw new Error('realtime event retention enabled must be a boolean')
+  return {
+    enabled: policy.enabled,
+    retentionDays: parseBoundedRetentionInteger({
+      value: policy.retentionDays,
+      label: 'realtime event retention days',
+      min: MIN_REALTIME_EVENT_RETENTION_DAYS,
+      max: MAX_REALTIME_EVENT_RETENTION_DAYS,
+    }),
+    maxRows: parseBoundedRetentionInteger({
+      value: policy.maxRows,
+      label: 'realtime event max retained rows',
+      min: MIN_REALTIME_EVENT_MAX_ROWS,
+      max: MAX_REALTIME_EVENT_MAX_ROWS,
+    }),
+    pruneIntervalMs: parseBoundedRetentionInteger({
+      value: policy.pruneIntervalMs,
+      label: 'realtime event prune interval ms',
+      min: MIN_REALTIME_EVENT_PRUNE_INTERVAL_MS,
+      max: MAX_REALTIME_EVENT_PRUNE_INTERVAL_MS,
+    }),
+  }
+}
+
+const parseRetentionNow = (value: unknown): number => parseRealtimeEventTimestamp(value, 'realtime event retention timestamp')
 
 const parseMaterialHash = (value: unknown, label = 'material_hash'): string => {
   if (typeof value !== 'string' || !MATERIAL_HASH_RE.test(value)) {
@@ -347,6 +455,135 @@ export const createSqliteRealtimeEventRepository = (
     return sqliteIntegerToNumber(row.sequence, 'minimum retained realtime event sequence')
   }
 
+  const readInSnapshot = <T>(work: () => T): T => {
+    if (database.connection.isTransaction) return work()
+    database.connection.exec('BEGIN')
+    try {
+      const result = work()
+      database.connection.exec('COMMIT')
+      return result
+    } catch (error) {
+      database.connection.exec('ROLLBACK')
+      throw error
+    }
+  }
+
+  const countRowsThroughSequence = (sequence: number): number => {
+    if (sequence <= 0) return 0
+    const row = database.connection.prepare(`
+      SELECT COUNT(*) AS row_count
+      FROM realtime_events
+      WHERE sequence <= ?
+    `).get(sequence) as { readonly row_count: unknown } | undefined
+    return sqliteIntegerToNumber(row?.row_count ?? 0, 'retained realtime event delete count')
+  }
+
+  const readRetentionAggregate = (): {
+    readonly rowCount: number
+    readonly oldestTimestamp: number | null
+    readonly newestTimestamp: number | null
+  } => {
+    const row = database.connection.prepare(`
+      SELECT
+        COUNT(*) AS row_count,
+        MIN(created_at) AS oldest_timestamp,
+        MAX(created_at) AS newest_timestamp
+      FROM realtime_events
+    `).get() as RealtimeEventRetentionAggregateRow | undefined
+    return {
+      rowCount: sqliteIntegerToNumber(row?.row_count ?? 0, 'retained realtime event row count'),
+      oldestTimestamp: nullableSqliteIntegerToNumber(row?.oldest_timestamp, 'oldest retained realtime event timestamp'),
+      newestTimestamp: nullableSqliteIntegerToNumber(row?.newest_timestamp, 'newest retained realtime event timestamp'),
+    }
+  }
+
+  const readYoungestContiguousExpiredSequence = (ageCutoffTimestamp: number, latestSequence: number): number => {
+    const expiredRow = database.connection.prepare(`
+      SELECT sequence
+      FROM realtime_events
+      WHERE created_at < ?
+      ORDER BY sequence ASC
+      LIMIT 1
+    `).get(ageCutoffTimestamp) as RealtimeEventSequenceRow | undefined
+    if (!expiredRow) return 0
+
+    const firstRetainedByAge = database.connection.prepare(`
+      SELECT sequence
+      FROM realtime_events
+      WHERE created_at >= ?
+      ORDER BY sequence ASC
+      LIMIT 1
+    `).get(ageCutoffTimestamp) as RealtimeEventSequenceRow | undefined
+    if (!firstRetainedByAge) return latestSequence
+
+    const firstYoungSequence = sqliteIntegerToNumber(
+      firstRetainedByAge.sequence,
+      'first retained realtime event sequence by age',
+    )
+    return Math.max(0, firstYoungSequence - 1)
+  }
+
+  const readRowCountCutoffSequence = (rowCount: number, maxRows: number): number => {
+    if (rowCount <= maxRows) return 0
+    const row = database.connection.prepare(`
+      SELECT sequence
+      FROM realtime_events
+      ORDER BY sequence DESC
+      LIMIT 1 OFFSET ?
+    `).get(maxRows) as RealtimeEventSequenceRow | undefined
+    if (!row) throw new Error('realtime event row-count cutoff could not be computed')
+    return sqliteIntegerToNumber(row.sequence, 'row-count realtime event retention cutoff sequence')
+  }
+
+  const cutoffReason = (input: {
+    readonly policy: RealtimeEventRetentionPolicy
+    readonly cutoffSequence: number
+    readonly ageCutoffSequence: number
+    readonly rowCountCutoffSequence: number
+  }): RealtimeEventRetentionCutoffReason => {
+    if (!input.policy.enabled) return 'disabled'
+    if (input.cutoffSequence <= 0) return 'none'
+    const ageSelected = input.ageCutoffSequence === input.cutoffSequence
+    const countSelected = input.rowCountCutoffSequence === input.cutoffSequence
+    if (ageSelected && countSelected) return 'age-and-row-count'
+    return ageSelected ? 'age' : 'row-count'
+  }
+
+  const planRetention = (input: PlanRealtimeEventRetentionInput): RealtimeEventRetentionPlan => readInSnapshot(() => {
+    const policy = parseRetentionPolicy(input.policy)
+    const now = parseRetentionNow(input.now ?? clock())
+    const cursorState = readCursorState()
+    const aggregate = readRetentionAggregate()
+    const ageCutoffTimestamp = now - (policy.retentionDays * REALTIME_EVENT_RETENTION_DAY_MS)
+    const ageCutoffSequence = policy.enabled
+      ? readYoungestContiguousExpiredSequence(ageCutoffTimestamp, cursorState.latestSequence)
+      : 0
+    const rowCountCutoffSequence = policy.enabled
+      ? readRowCountCutoffSequence(aggregate.rowCount, policy.maxRows)
+      : 0
+    const cutoffSequence = policy.enabled ? Math.max(ageCutoffSequence, rowCountCutoffSequence) : 0
+    const eligibleByAge = countRowsThroughSequence(ageCutoffSequence)
+    const eligibleByCount = Math.max(aggregate.rowCount - policy.maxRows, 0)
+    const estimatedDeleteCount = countRowsThroughSequence(cutoffSequence)
+
+    return {
+      policy,
+      now,
+      ageCutoffTimestamp,
+      rowCount: aggregate.rowCount,
+      cursorState,
+      oldestTimestamp: aggregate.oldestTimestamp,
+      newestTimestamp: aggregate.newestTimestamp,
+      ageCutoffSequence,
+      rowCountCutoffSequence,
+      cutoffSequence,
+      eligibleByAge,
+      eligibleByCount,
+      estimatedDeleteCount,
+      cutoffReason: cutoffReason({ policy, cutoffSequence, ageCutoffSequence, rowCountCutoffSequence }),
+    }
+  })
+
   const appendMany = (inputs: readonly AppendRealtimeEventInput[]): readonly PersistedRealtimeEvent[] => {
     if (inputs.length === 0) return []
     const defaultTimestamp = inputs.some((input) => input.timestamp === undefined)
@@ -363,6 +600,44 @@ export const createSqliteRealtimeEventRepository = (
     return event
   }
 
+  const pruneThroughSequence = (sequence: number): RealtimeEventPruneResult => {
+    const requestedSequence = parseRealtimeEventCursorValue(sequence, 'prune sequence')
+    return database.withTransaction(() => {
+      const previousCursorState = readCursorState()
+      const deleted = database.connection.prepare(`
+        DELETE FROM realtime_events
+        WHERE sequence <= ?
+      `).run(requestedSequence)
+      const retainedEarliest = readMinimumRetainedSequence()
+      const earliestAvailableSequence = retainedEarliest ?? previousCursorState.latestSequence + 1
+      database.connection.prepare(`
+        UPDATE realtime_event_log_state
+        SET earliest_available_sequence = ?
+        WHERE singleton = 1
+      `).run(earliestAvailableSequence)
+      const currentCursorState = readCursorState()
+      return {
+        deletedCount: sqliteIntegerToNumber(deleted.changes, 'deleted realtime event count'),
+        previousCursorState,
+        currentCursorState,
+      }
+    })
+  }
+
+  const pruneRetention = (input: PlanRealtimeEventRetentionInput): RealtimeEventRetentionPruneResult => (
+    database.withTransaction(() => {
+      const plan = planRetention(input)
+      const pruneResult = pruneThroughSequence(plan.cutoffSequence)
+      return {
+        ...plan,
+        deletedCount: pruneResult.deletedCount,
+        deletedThroughSequence: plan.cutoffSequence,
+        previousCursorState: pruneResult.previousCursorState,
+        currentCursorState: pruneResult.currentCursorState,
+      }
+    })
+  )
+
   return {
     database,
     append,
@@ -375,7 +650,7 @@ export const createSqliteRealtimeEventRepository = (
 
     cursorState: (): RealtimeEventCursorState => readCursorState(),
 
-    readAfter: (input: ReadRealtimeEventsAfterInput): ReadRealtimeEventsAfterResult => {
+    readAfter: (input: ReadRealtimeEventsAfterInput): ReadRealtimeEventsAfterResult => readInSnapshot(() => {
       const afterSequence = parseRealtimeEventCursorValue(input.afterSequence, 'afterSequence')
       const limit = parseRealtimeEventReadLimit(input.limit)
       const state = readCursorState()
@@ -418,31 +693,15 @@ export const createSqliteRealtimeEventRepository = (
         events: records.slice(0, limit),
         hasMore: records.length > limit,
       }
-    },
+    }),
 
-    pruneThrough: (sequence: number): RealtimeEventPruneResult => {
-      const requestedSequence = parseRealtimeEventCursorValue(sequence, 'prune sequence')
-      return database.withTransaction(() => {
-        const previousCursorState = readCursorState()
-        const deleted = database.connection.prepare(`
-          DELETE FROM realtime_events
-          WHERE sequence <= ?
-        `).run(requestedSequence)
-        const retainedEarliest = readMinimumRetainedSequence()
-        const earliestAvailableSequence = retainedEarliest ?? previousCursorState.latestSequence + 1
-        database.connection.prepare(`
-          UPDATE realtime_event_log_state
-          SET earliest_available_sequence = ?
-          WHERE singleton = 1
-        `).run(earliestAvailableSequence)
-        const currentCursorState = readCursorState()
-        return {
-          deletedCount: sqliteIntegerToNumber(deleted.changes, 'deleted realtime event count'),
-          previousCursorState,
-          currentCursorState,
-        }
-      })
-    },
+    inspectRetention: (input: PlanRealtimeEventRetentionInput): RealtimeEventRetentionPlan => planRetention(input),
+
+    planRetention: (input: PlanRealtimeEventRetentionInput): RealtimeEventRetentionPlan => planRetention(input),
+
+    pruneThrough: (sequence: number): RealtimeEventPruneResult => pruneThroughSequence(sequence),
+
+    pruneRetention,
   }
 }
 
@@ -456,5 +715,8 @@ export const sqliteRealtimeEventRepository: RealtimeEventRepository = {
   getByDedupeKey: (dedupeKey) => defaultRealtimeEventRepository().getByDedupeKey(dedupeKey),
   cursorState: () => defaultRealtimeEventRepository().cursorState(),
   readAfter: (input) => defaultRealtimeEventRepository().readAfter(input),
+  inspectRetention: (input) => defaultRealtimeEventRepository().inspectRetention(input),
+  planRetention: (input) => defaultRealtimeEventRepository().planRetention(input),
   pruneThrough: (sequence) => defaultRealtimeEventRepository().pruneThrough(sequence),
+  pruneRetention: (input) => defaultRealtimeEventRepository().pruneRetention(input),
 }

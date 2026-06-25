@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { RealtimeEventDraft } from '#shared/realtimeEventLog'
+import type { RealtimeEventRetentionPolicy } from '~~/server/realtime/realtimeEventRetentionConfig'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import {
@@ -48,6 +49,15 @@ const eventDraft = (overrides: Partial<RealtimeEventDraft> = {}): RealtimeEventD
 const appendInput = (overrides: Partial<AppendRealtimeEventInput> = {}): AppendRealtimeEventInput => ({
   event: eventDraft(),
   access: gmAccess,
+  ...overrides,
+})
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const retentionPolicy = (overrides: Partial<RealtimeEventRetentionPolicy> = {}): RealtimeEventRetentionPolicy => ({
+  enabled: true,
+  retentionDays: 30,
+  maxRows: 250_000,
+  pruneIntervalMs: 10_000,
   ...overrides,
 })
 
@@ -272,6 +282,162 @@ describe('SQLite realtime event repository', () => {
     expect(repository.append(appendInput({ event: eventDraft({ data: { batch: 'after-conflict' } }), access: gmAccess, timestamp: 22 })).sequence).toBe(3)
   })
 
+  it('plans age retention without mutating rows', () => {
+    const database = openMemoryDatabase()
+    const repository = createSqliteRealtimeEventRepository({ database })
+    const now = 10 * DAY_MS
+
+    repository.appendMany([
+      appendInput({ event: eventDraft({ data: { n: 1 } }), timestamp: now - (3 * DAY_MS) }),
+      appendInput({ event: eventDraft({ data: { n: 2 } }), timestamp: now - (2 * DAY_MS) }),
+      appendInput({ event: eventDraft({ data: { n: 3 } }), timestamp: now - DAY_MS }),
+    ])
+
+    const plan = repository.planRetention({
+      policy: retentionPolicy({ retentionDays: 2, maxRows: 10 }),
+      now,
+    })
+
+    expect(plan).toMatchObject({
+      rowCount: 3,
+      oldestTimestamp: now - (3 * DAY_MS),
+      newestTimestamp: now - DAY_MS,
+      ageCutoffTimestamp: now - (2 * DAY_MS),
+      ageCutoffSequence: 1,
+      rowCountCutoffSequence: 0,
+      cutoffSequence: 1,
+      eligibleByAge: 1,
+      eligibleByCount: 0,
+      estimatedDeleteCount: 1,
+      cutoffReason: 'age',
+    })
+    expect(repository.readAfter({ afterSequence: 0 }).events.map((event) => event.sequence)).toEqual([1, 2, 3])
+  })
+
+  it('plans row-count retention and combined policies through the more aggressive cutoff', () => {
+    const database = openMemoryDatabase()
+    const repository = createSqliteRealtimeEventRepository({ database })
+    const now = 10 * DAY_MS
+
+    repository.appendMany([
+      appendInput({ event: eventDraft({ data: { n: 1 } }), timestamp: now - (2 * DAY_MS) }),
+      appendInput({ event: eventDraft({ data: { n: 2 } }), timestamp: now }),
+      appendInput({ event: eventDraft({ data: { n: 3 } }), timestamp: now }),
+      appendInput({ event: eventDraft({ data: { n: 4 } }), timestamp: now }),
+      appendInput({ event: eventDraft({ data: { n: 5 } }), timestamp: now }),
+    ])
+
+    const rowPlan = repository.planRetention({
+      policy: retentionPolicy({ retentionDays: 30, maxRows: 2 }),
+      now,
+    })
+    expect(rowPlan).toMatchObject({
+      ageCutoffSequence: 0,
+      rowCountCutoffSequence: 3,
+      cutoffSequence: 3,
+      eligibleByAge: 0,
+      eligibleByCount: 3,
+      estimatedDeleteCount: 3,
+      cutoffReason: 'row-count',
+    })
+
+    const combinedPlan = repository.planRetention({
+      policy: retentionPolicy({ retentionDays: 1, maxRows: 2 }),
+      now,
+    })
+    expect(combinedPlan).toMatchObject({
+      ageCutoffSequence: 1,
+      rowCountCutoffSequence: 3,
+      cutoffSequence: 3,
+      eligibleByAge: 1,
+      eligibleByCount: 3,
+      estimatedDeleteCount: 3,
+      cutoffReason: 'row-count',
+    })
+  })
+
+  it('applies retention atomically, keeps cursor state valid, and continues increasing sequences', () => {
+    const database = openMemoryDatabase()
+    const repository = createSqliteRealtimeEventRepository({ database, clock: () => 10 })
+
+    repository.appendMany([
+      appendInput({ event: eventDraft({ data: { n: 1 } }), access: gmAccess }),
+      appendInput({ event: eventDraft({ data: { n: 2 } }), access: gmAccess }),
+      appendInput({ event: eventDraft({ data: { n: 3 } }), access: gmAccess }),
+      appendInput({ event: eventDraft({ data: { n: 4 } }), access: gmAccess }),
+    ])
+
+    const dryRun = repository.inspectRetention({ policy: retentionPolicy({ maxRows: 2 }), now: 10 })
+    expect(dryRun.estimatedDeleteCount).toBe(2)
+    expect(repository.readAfter({ afterSequence: 0 }).events.map((event) => event.sequence)).toEqual([1, 2, 3, 4])
+
+    const applied = repository.pruneRetention({ policy: retentionPolicy({ maxRows: 2 }), now: 10 })
+    expect(applied).toMatchObject({
+      deletedCount: 2,
+      deletedThroughSequence: 2,
+      previousCursorState: { latestSequence: 4, earliestAvailableSequence: 1 },
+      currentCursorState: { latestSequence: 4, earliestAvailableSequence: 3 },
+    })
+    expect(repository.readAfter({ afterSequence: 0 })).toMatchObject({ status: 'gap', events: [], hasMore: false })
+    expect(repository.readAfter({ afterSequence: 2 }).events.map((event) => event.sequence)).toEqual([3, 4])
+
+    const next = repository.append(appendInput({ event: eventDraft({ data: { n: 5 } }), access: gmAccess }))
+    expect(next.sequence).toBe(5)
+    expect(repository.cursorState()).toEqual({ latestSequence: 5, earliestAvailableSequence: 3 })
+  })
+
+  it('retention can prune all rows while preserving an empty-log cursor and sequence allocation', () => {
+    const database = openMemoryDatabase()
+    const repository = createSqliteRealtimeEventRepository({ database })
+    const now = 5 * DAY_MS
+
+    repository.appendMany([
+      appendInput({ event: eventDraft({ data: { n: 1 } }), timestamp: now - (3 * DAY_MS) }),
+      appendInput({ event: eventDraft({ data: { n: 2 } }), timestamp: now - (2 * DAY_MS) }),
+    ])
+
+    const applied = repository.pruneRetention({
+      policy: retentionPolicy({ retentionDays: 1, maxRows: 10 }),
+      now,
+    })
+    expect(applied).toMatchObject({
+      deletedCount: 2,
+      currentCursorState: { latestSequence: 2, earliestAvailableSequence: 3 },
+    })
+    expect(repository.readAfter({ afterSequence: 2 })).toMatchObject({ status: 'ok', events: [], hasMore: false })
+    expect(repository.readAfter({ afterSequence: 1 })).toMatchObject({ status: 'gap', events: [], hasMore: false })
+    expect(repository.append(appendInput({ event: eventDraft({ data: { n: 3 } }), timestamp: now }))).toMatchObject({ sequence: 3 })
+    expect(repository.cursorState()).toEqual({ latestSequence: 3, earliestAvailableSequence: 3 })
+  })
+
+  it('runs retention safely from two file-backed connections', () => {
+    const root = makeTempRoot()
+    const databasePath = join(root, 'events.sqlite')
+    const databaseA = openRotomDatabase({ path: databasePath })
+    const databaseB = openRotomDatabase({ path: databasePath })
+    openDatabases.push(databaseA, databaseB)
+    const repositoryA = createSqliteRealtimeEventRepository({ database: databaseA, clock: () => 10 })
+    const repositoryB = createSqliteRealtimeEventRepository({ database: databaseB, clock: () => 11 })
+
+    repositoryA.appendMany([
+      appendInput({ event: eventDraft({ data: { n: 1 } }) }),
+      appendInput({ event: eventDraft({ data: { n: 2 } }) }),
+      appendInput({ event: eventDraft({ data: { n: 3 } }) }),
+      appendInput({ event: eventDraft({ data: { n: 4 } }) }),
+    ])
+
+    const first = repositoryA.pruneRetention({ policy: retentionPolicy({ maxRows: 2 }), now: 10 })
+    const second = repositoryB.pruneRetention({ policy: retentionPolicy({ maxRows: 2 }), now: 10 })
+    expect(first.deletedCount).toBe(2)
+    expect(second.deletedCount).toBe(0)
+    expect(repositoryA.cursorState()).toEqual({ latestSequence: 4, earliestAvailableSequence: 3 })
+    expect(repositoryB.readAfter({ afterSequence: 2 }).events.map((event) => event.sequence)).toEqual([3, 4])
+
+    const appended = repositoryB.append(appendInput({ event: eventDraft({ data: { n: 5 } }) }))
+    expect(appended.sequence).toBe(5)
+    expect(repositoryA.cursorState()).toEqual({ latestSequence: 5, earliestAvailableSequence: 3 })
+  })
+
   it('exposes synchronous repository methods', () => {
     const database = openMemoryDatabase()
     const repository = createSqliteRealtimeEventRepository({ database, clock: () => 10 })
@@ -282,6 +448,9 @@ describe('SQLite realtime event repository', () => {
     expect(typeof (repository.cursorState() as { then?: unknown }).then).not.toBe('function')
     expect(typeof (repository.getBySequence(1) as { then?: unknown }).then).not.toBe('function')
     expect(typeof (repository.readAfter({ afterSequence: 0 }) as { then?: unknown }).then).not.toBe('function')
+    expect(typeof (repository.inspectRetention({ policy: retentionPolicy(), now: 10 }) as { then?: unknown }).then).not.toBe('function')
+    expect(typeof (repository.planRetention({ policy: retentionPolicy(), now: 10 }) as { then?: unknown }).then).not.toBe('function')
     expect(typeof (repository.pruneThrough(0) as { then?: unknown }).then).not.toBe('function')
+    expect(typeof (repository.pruneRetention({ policy: retentionPolicy(), now: 10 }) as { then?: unknown }).then).not.toBe('function')
   })
 })
