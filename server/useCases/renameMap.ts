@@ -1,15 +1,20 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { mapChannel, mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type { TabletopMap } from '~/types/map'
 import { validateSlug } from '#shared/paths'
-import { summarizeMap } from '../utils/mapSummaries'
-import {
-  mapRevisionForRealtime,
-  mapSummaryUpdatedRealtimeEvent,
-  mapUpdatedRealtimeEvent,
-} from '../utils/mapRealtimeEvents'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import type { RotomDatabase } from '../storage/database'
+import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { createSqliteRealtimeEventRepository, type RealtimeEventRepository } from '../storage/realtimeEventRepository'
+import {
+  defaultLibraryRealtimePublicationFailureReporter,
+  defaultPersistedLibraryRealtimeEventPublisher,
+  mapLibraryRenamedRealtimeAppendInputs,
+  publishPersistedLibraryRealtimeEventsAfterCommit,
+  resolveLibraryMutationDatabase,
+  type LibraryRealtimePublicationFailureReporter,
+  type PersistedLibraryRealtimeEventPublisher,
+} from '../realtime/libraryMutationRealtime'
 
 export class RenameMapUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
@@ -19,9 +24,21 @@ export interface RenameMapInput {
   clientId?: string
 }
 
+type RenameMapRepository = Pick<MapRepository<TabletopMap>, 'rename' | 'get'> & {
+  readonly database?: RotomDatabase
+}
+
+type RenameMapRealtimeEventRepository = Pick<RealtimeEventRepository, 'appendMany'> & {
+  readonly database?: RotomDatabase
+}
+
 export interface RenameMapDependencies {
+  database?: RotomDatabase
   now?: () => number
-  mapRepository?: Pick<MapRepository, 'rename'>
+  mapRepository?: RenameMapRepository
+  realtimeEventRepository?: RenameMapRealtimeEventRepository
+  publishPersistedRealtimeEvent?: PersistedLibraryRealtimeEventPublisher
+  reportAfterCommitPublicationFailure?: LibraryRealtimePublicationFailureReporter
 }
 
 export interface RenameMapResult {
@@ -30,7 +47,7 @@ export interface RenameMapResult {
   name: string
   path: string
   map: TabletopMap
-  events: Array<Omit<RealtimeEvent, 'timestamp'>>
+  realtimeEvents: readonly PersistedRealtimeEvent[]
 }
 
 const MAX_MAP_NAME_LENGTH = 80
@@ -52,60 +69,80 @@ export const normalizeRenameMapName = (value: unknown): string => {
   return name
 }
 
+const readAuthoritativeMapOrThrow = (
+  mapRepository: RenameMapRepository,
+  slug: string,
+  expected: Pick<TabletopMap, 'revision' | 'updatedAt'>,
+): TabletopMap => {
+  const stored = mapRepository.get(slug)
+  if (!stored) throw new RenameMapUseCaseError(404, `Map ${slug}.json not found`)
+  if (stored.revision !== expected.revision || stored.updatedAt !== expected.updatedAt) {
+    throw new Error(`Map ${slug} authoritative re-read did not match renamed revision ${expected.revision} and timestamp ${expected.updatedAt}`)
+  }
+  return stored.document as unknown as TabletopMap
+}
+
 export const renameMapUseCase = (
   input: RenameMapInput,
   dependencies: RenameMapDependencies = {},
 ): RenameMapResult => {
-  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
+  const database = resolveLibraryMutationDatabase({
+    database: dependencies.database,
+    dependencies: [
+      { label: 'Rename map repository', dependency: dependencies.mapRepository },
+      { label: 'Rename map realtime event repository', dependency: dependencies.realtimeEventRepository },
+    ],
+  })
+  const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? createSqliteRealtimeEventRepository({ database })
   const now = dependencies.now ?? Date.now
 
   const slug = normalizeRenameMapSlug(input.slug)
   const name = normalizeRenameMapName(input.name)
 
-  let renamed
-  try {
-    renamed = mapRepository.rename({ slug, name, now: now() })
-  } catch (err) {
-    const message = (err as Error).message
-    if (message.includes('already exists') || message.includes('UNIQUE')) throw new RenameMapUseCaseError(409, message)
-    throw new RenameMapUseCaseError(400, message)
-  }
-  if (!renamed) throw new RenameMapUseCaseError(404, `Map ${slug}.json not found`)
+  const transactionResult = database.withTransaction(() => {
+    let renamed
+    try {
+      renamed = mapRepository.rename({ slug, name, now: now() })
+    } catch (err) {
+      const message = (err as Error).message
+      if (message.includes('already exists') || message.includes('UNIQUE')) throw new RenameMapUseCaseError(409, message)
+      throw new RenameMapUseCaseError(400, message)
+    }
+    if (!renamed) throw new RenameMapUseCaseError(404, `Map ${slug}.json not found`)
 
-  const map = renamed.map
-  const summary = summarizeMap(map)
-  const revision = mapRevisionForRealtime(map)
-  const events: Array<Omit<RealtimeEvent, 'timestamp'>> = !renamed.changed
-    ? []
-    : renamed.renamed
-      ? [
-          {
-            channel: mapChannel(slug),
-            type: 'renamed',
-            revision,
-            clientId: input.clientId,
-            data: { oldSlug: slug, newSlug: renamed.newSlug, map },
-          },
-          mapUpdatedRealtimeEvent(map, input.clientId),
-          {
-            channel: mapsChannel,
-            type: 'renamed',
-            revision,
-            clientId: input.clientId,
-            data: { oldSlug: slug, summary },
-          },
-        ]
-      : [
-          mapUpdatedRealtimeEvent(map, input.clientId),
-          mapSummaryUpdatedRealtimeEvent(map, input.clientId),
-        ]
+    const map = renamed.changed
+      ? readAuthoritativeMapOrThrow(mapRepository, renamed.newSlug, renamed.map)
+      : renamed.map
+    const realtimeEvents = renamed.changed
+      ? realtimeEventRepository.appendMany(mapLibraryRenamedRealtimeAppendInputs({
+          oldSlug: slug,
+          map,
+          renamed: renamed.renamed,
+          clientId: input.clientId,
+        }))
+      : []
+
+    return {
+      newSlug: renamed.newSlug,
+      map,
+      realtimeEvents,
+    }
+  })
+
+  publishPersistedLibraryRealtimeEventsAfterCommit({
+    events: transactionResult.realtimeEvents,
+    publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedLibraryRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultLibraryRealtimePublicationFailureReporter,
+  })
 
   return {
     ok: true,
-    slug: renamed.newSlug,
+    slug: transactionResult.newSlug,
     name,
-    path: logicalMapResourcePath(map),
-    map,
-    events,
+    path: logicalMapResourcePath(transactionResult.map),
+    map: transactionResult.map,
+    realtimeEvents: transactionResult.realtimeEvents,
   }
 }

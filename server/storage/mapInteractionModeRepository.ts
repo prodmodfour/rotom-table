@@ -20,6 +20,7 @@ export interface SaveMapInteractionModeInput {
 }
 
 export interface MapInteractionModeRepository {
+  readonly database?: RotomDatabase
   get(slug: string): StoredMapInteractionMode
   set(input: SaveMapInteractionModeInput): StoredMapInteractionMode
   delete(slug: string): boolean
@@ -94,7 +95,7 @@ export const createSqliteMapInteractionModeRepository = (
     return Number(result.changes) > 0
   })
 
-  return { get, set, delete: remove }
+  return { database, get, set, delete: remove }
 }
 
 const defaultMapInteractionModeRepository = (): MapInteractionModeRepository =>

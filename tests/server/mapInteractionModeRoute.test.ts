@@ -1,7 +1,6 @@
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
-import { subscribeRealtime } from '~~/server/utils/realtime'
 
 const mocks = vi.hoisted(() => ({
   getMapInteractionModeUseCase: vi.fn(),
@@ -67,54 +66,36 @@ describe('map interaction mode API routes', () => {
     expect(mocks.getMapInteractionModeUseCase).toHaveBeenCalledWith({ role: 'player', slug: 'arena' })
   })
 
-  it('lets GMs change shared map mode and publishes realtime', async () => {
-    const events = [
-      {
-        channel: 'map:arena',
-        type: 'map-interaction-mode-updated' as const,
+  it('lets GMs change shared map mode through the durable-publishing use case', async () => {
+    mocks.setMapInteractionModeUseCase.mockResolvedValue({
+      slug: 'arena',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      previousInteractionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+      updatedAt: 25,
+      syncedMapForLivePlay: false,
+      realtimeEvents: [],
+    })
+
+    await expect(invokeRoute(postRoute, {
+      role: 'gm',
+      body: {
+        slug: 'arena',
+        interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
         clientId: 'gm-client',
-        data: { slug: 'arena', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT, updatedAt: 25 },
       },
-    ]
-    const received: unknown[] = []
-    const unsubscribe = subscribeRealtime((event) => received.push(event))
-    const now = vi.spyOn(Date, 'now').mockReturnValue(999)
-
-    try {
-      mocks.setMapInteractionModeUseCase.mockResolvedValue({
-        slug: 'arena',
-        interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
-        previousInteractionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
-        updatedAt: 25,
-        syncedMapForLivePlay: false,
-        events,
-      })
-
-      await expect(invokeRoute(postRoute, {
-        role: 'gm',
-        body: {
-          slug: 'arena',
-          interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
-          clientId: 'gm-client',
-        },
-      })).resolves.toEqual({
-        slug: 'arena',
-        interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
-        previousInteractionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
-        updatedAt: 25,
-        syncedMapForLivePlay: false,
-      })
-    } finally {
-      unsubscribe()
-      now.mockRestore()
-    }
+    })).resolves.toEqual({
+      slug: 'arena',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      previousInteractionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+      updatedAt: 25,
+      syncedMapForLivePlay: false,
+    })
 
     expect(mocks.setMapInteractionModeUseCase).toHaveBeenCalledWith({
       slug: 'arena',
       interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
       clientId: 'gm-client',
     })
-    expect(received).toEqual([{ ...events[0], timestamp: 999 }])
   })
 
   it('requires GM role and a valid explicit mode for changes', async () => {

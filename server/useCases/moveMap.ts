@@ -1,12 +1,21 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type { TabletopMap } from '~/types/map'
 import { validateSlug } from '#shared/paths'
 import { sanitizeMapFolderPath } from '../utils/mapPaths'
-import { summarizeMap } from '../utils/mapSummaries'
-import { mapRevisionForRealtime, mapUpdatedRealtimeEvent } from '../utils/mapRealtimeEvents'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import type { RotomDatabase } from '../storage/database'
+import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { createSqliteRealtimeEventRepository, type RealtimeEventRepository } from '../storage/realtimeEventRepository'
+import {
+  defaultLibraryRealtimePublicationFailureReporter,
+  defaultPersistedLibraryRealtimeEventPublisher,
+  mapLibraryMovedRealtimeAppendInputs,
+  publishPersistedLibraryRealtimeEventsAfterCommit,
+  resolveLibraryMutationDatabase,
+  type LibraryRealtimePublicationFailureReporter,
+  type PersistedLibraryRealtimeEventPublisher,
+} from '../realtime/libraryMutationRealtime'
 
 export class MoveMapUseCaseError extends UseCaseHttpError<400 | 404 | 409> {}
 
@@ -16,10 +25,22 @@ export interface MoveMapInput {
   clientId?: string
 }
 
+type MoveMapRepository = Pick<MapRepository<TabletopMap>, 'moveToFolder' | 'get'> & {
+  readonly database?: RotomDatabase
+}
+
+type MoveMapRealtimeEventRepository = Pick<RealtimeEventRepository, 'appendMany'> & {
+  readonly database?: RotomDatabase
+}
+
 export interface MoveMapDependencies {
+  database?: RotomDatabase
   now?: () => number
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
-  mapRepository?: Pick<MapRepository, 'moveToFolder'>
+  mapRepository?: MoveMapRepository
+  realtimeEventRepository?: MoveMapRealtimeEventRepository
+  publishPersistedRealtimeEvent?: PersistedLibraryRealtimeEventPublisher
+  reportAfterCommitPublicationFailure?: LibraryRealtimePublicationFailureReporter
 }
 
 export interface MoveMapResult {
@@ -27,7 +48,7 @@ export interface MoveMapResult {
   moved: boolean
   path: string
   map: TabletopMap
-  events: Array<Omit<RealtimeEvent, 'timestamp'>>
+  realtimeEvents: readonly PersistedRealtimeEvent[]
 }
 
 export const normalizeMoveMapSlug = (value: unknown): string => {
@@ -49,43 +70,75 @@ export const normalizeMoveMapFolder = (
   }
 }
 
+const readAuthoritativeMapOrThrow = (
+  mapRepository: MoveMapRepository,
+  slug: string,
+  expected: Pick<TabletopMap, 'revision' | 'updatedAt'>,
+): TabletopMap => {
+  const stored = mapRepository.get(slug)
+  if (!stored) throw new MoveMapUseCaseError(404, `Map ${slug}.json not found`)
+  if (stored.revision !== expected.revision || stored.updatedAt !== expected.updatedAt) {
+    throw new Error(`Map ${slug} authoritative re-read did not match moved revision ${expected.revision} and timestamp ${expected.updatedAt}`)
+  }
+  return stored.document as unknown as TabletopMap
+}
+
 export const moveMapUseCase = (
   input: MoveMapInput,
   dependencies: MoveMapDependencies = {},
 ): MoveMapResult => {
+  const database = resolveLibraryMutationDatabase({
+    database: dependencies.database,
+    dependencies: [
+      { label: 'Move map repository', dependency: dependencies.mapRepository },
+      { label: 'Move map realtime event repository', dependency: dependencies.realtimeEventRepository },
+    ],
+  })
   const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeMapFolderPath
-  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
+  const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? createSqliteRealtimeEventRepository({ database })
   const now = dependencies.now ?? Date.now
 
   const slug = normalizeMoveMapSlug(input.slug)
   const folder = normalizeMoveMapFolder(input.folder, sanitizeFolder)
 
-  let result
-  try {
-    result = mapRepository.moveToFolder({ slug, folder, now: now() })
-  } catch (err) {
-    const message = (err as Error).message
-    if (message.includes('already exists')) throw new MoveMapUseCaseError(409, message)
-    throw new MoveMapUseCaseError(400, message)
-  }
-  if (!result) throw new MoveMapUseCaseError(404, `Map ${slug}.json not found`)
+  const transactionResult = database.withTransaction(() => {
+    let result
+    try {
+      result = mapRepository.moveToFolder({ slug, folder, now: now() })
+    } catch (err) {
+      const message = (err as Error).message
+      if (message.includes('already exists')) throw new MoveMapUseCaseError(409, message)
+      throw new MoveMapUseCaseError(400, message)
+    }
+    if (!result) throw new MoveMapUseCaseError(404, `Map ${slug}.json not found`)
+
+    const authoritativeMap = result.moved
+      ? readAuthoritativeMapOrThrow(mapRepository, slug, result.map)
+      : result.map
+    const realtimeEvents = result.moved
+      ? realtimeEventRepository.appendMany(mapLibraryMovedRealtimeAppendInputs(authoritativeMap, input.clientId))
+      : []
+
+    return {
+      moved: result.moved,
+      map: authoritativeMap,
+      realtimeEvents,
+    }
+  })
+
+  publishPersistedLibraryRealtimeEventsAfterCommit({
+    events: transactionResult.realtimeEvents,
+    publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedLibraryRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultLibraryRealtimePublicationFailureReporter,
+  })
 
   return {
     ok: true,
-    moved: result.moved,
-    path: logicalMapResourcePath(result.map),
-    map: result.map,
-    events: result.moved
-      ? [
-          mapUpdatedRealtimeEvent(result.map, input.clientId),
-          {
-            channel: mapsChannel,
-            type: 'moved',
-            revision: mapRevisionForRealtime(result.map),
-            clientId: input.clientId,
-            data: summarizeMap(result.map),
-          },
-        ]
-      : [],
+    moved: transactionResult.moved,
+    path: logicalMapResourcePath(transactionResult.map),
+    map: transactionResult.map,
+    realtimeEvents: transactionResult.realtimeEvents,
   }
 }

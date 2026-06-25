@@ -130,6 +130,7 @@ export interface DeleteSheetFolderResult {
   readonly count: number
   readonly removed: readonly string[]
   readonly deletedSheets: readonly { readonly kind: SheetKind; readonly slug: string }[]
+  readonly deletedSheetResults: readonly DeleteSheetDocumentResult[]
 }
 
 export interface ApplyLivePlaySheetUpdateInput {
@@ -755,18 +756,22 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     return { moved: true, count: movedKinds, affectedSheets }
   })
 
-  const deleteFolderForKind = (kind: SheetKind, folder: string): { removed: boolean; deleted: Array<{ kind: SheetKind; slug: string }> } => {
-    if (!folderExists(kind, folder) && !folderHasResources(kind, folder)) return { removed: false, deleted: [] }
+  const deleteFolderForKind = (kind: SheetKind, folder: string): { removed: boolean; deleted: Array<{ kind: SheetKind; slug: string }>; deletedResults: DeleteSheetDocumentResult[] } => {
+    if (!folderExists(kind, folder) && !folderHasResources(kind, folder)) return { removed: false, deleted: [], deletedResults: [] }
     const deleted: Array<{ kind: SheetKind; slug: string }> = []
+    const deletedResults: DeleteSheetDocumentResult[] = []
     for (const stored of list(kind) as readonly StoredSheetDocument[]) {
       const sheet = storedDocumentToPersistedSheet(stored)
       const sheetFolder = String(sheet.sheet.folder ?? '')
       if (sheetFolder !== folder && !sheetFolder.startsWith(`${folder}/`)) continue
       const cleanup = deleteDocument(kind, sheet.slug)
-      if (cleanup) deleted.push({ kind, slug: sheet.slug })
+      if (cleanup) {
+        deleted.push({ kind, slug: sheet.slug })
+        deletedResults.push(cleanup)
+      }
     }
     database.connection.prepare('DELETE FROM sheet_folders WHERE kind = ? AND (path = ? OR path LIKE ?)').run(kind, folder, `${folder}/%`)
-    return { removed: true, deleted }
+    return { removed: true, deleted, deletedResults }
   }
 
   const deleteFolder = (folderInput: string, kindInput?: SheetKind): DeleteSheetFolderResult | null => database.withTransaction(() => {
@@ -775,14 +780,16 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     const kinds = kindInput === undefined ? SHEET_KINDS : [parseSheetKind(kindInput)]
     const removed: string[] = []
     const deletedSheets: Array<{ kind: SheetKind; slug: string }> = []
+    const deletedSheetResults: DeleteSheetDocumentResult[] = []
     for (const kind of kinds) {
       const result = deleteFolderForKind(kind, folder)
       if (!result.removed) continue
       removed.push(logicalSheetResourcePath(kind, { slug: '', folder }).replace(/\/\.json$/, ''))
       deletedSheets.push(...result.deleted)
+      deletedSheetResults.push(...result.deletedResults)
     }
     if (removed.length === 0) return null
-    return { count: removed.length, removed, deletedSheets }
+    return { count: removed.length, removed, deletedSheets, deletedSheetResults }
   })
 
   const applyLivePlayUpdate = (input: ApplyLivePlaySheetUpdateInput): LivePlaySheetUpdateResult =>

@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import {
   expectSheetKind,
   expectSlug,
@@ -34,7 +34,6 @@ export default defineEventHandler(async (event) => {
       name,
       clientId: normalizeRealtimeClientId(body.clientId),
     })
-    publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, slug: result.slug, name: result.name, path: result.path }
   } catch (err) {
     throwUseCaseHttpError(err)

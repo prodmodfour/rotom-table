@@ -1,10 +1,20 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { mapsChannel, type RealtimeEvent } from '#shared/realtime'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type { GridDimensions, TabletopMap } from '~/types/map'
 import { sanitizeMapFolderPath } from '../utils/mapPaths'
-import { summarizeMap } from '../utils/mapSummaries'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { type RotomDatabase } from '../storage/database'
+import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { createSqliteRealtimeEventRepository, type RealtimeEventRepository } from '../storage/realtimeEventRepository'
+import {
+  defaultLibraryRealtimePublicationFailureReporter,
+  defaultPersistedLibraryRealtimeEventPublisher,
+  mapLibraryCreatedRealtimeAppendInputs,
+  publishPersistedLibraryRealtimeEventsAfterCommit,
+  resolveLibraryMutationDatabase,
+  type LibraryRealtimePublicationFailureReporter,
+  type PersistedLibraryRealtimeEventPublisher,
+} from '../realtime/libraryMutationRealtime'
 
 export class CreateMapUseCaseError extends UseCaseHttpError<400 | 409> {}
 
@@ -15,16 +25,28 @@ export interface CreateMapInput {
   clientId?: string
 }
 
+type CreateMapRepository = Pick<MapRepository<TabletopMap>, 'allocateSlug' | 'create' | 'get'> & {
+  readonly database?: RotomDatabase
+}
+
+type CreateMapRealtimeEventRepository = Pick<RealtimeEventRepository, 'appendMany'> & {
+  readonly database?: RotomDatabase
+}
+
 export interface CreateMapDependencies {
+  database?: RotomDatabase
   now?: () => number
   sanitizeFolder?: (folder: string, allowEmpty: boolean) => string
-  mapRepository?: Pick<MapRepository, 'allocateSlug' | 'create'>
+  mapRepository?: CreateMapRepository
+  realtimeEventRepository?: CreateMapRealtimeEventRepository
+  publishPersistedRealtimeEvent?: PersistedLibraryRealtimeEventPublisher
+  reportAfterCommitPublicationFailure?: LibraryRealtimePublicationFailureReporter
 }
 
 export interface CreateMapResult {
   map: TabletopMap
   path: string
-  events: Array<Omit<RealtimeEvent, 'timestamp'>>
+  realtimeEvents: readonly PersistedRealtimeEvent[]
 }
 
 export const DEFAULT_MAP_DIMENSIONS: GridDimensions = { x: 20, y: 12, z: 20 }
@@ -66,56 +88,85 @@ const normalizeCreateMapFolder = (
   }
 }
 
+const readAuthoritativeMapOrThrow = (
+  mapRepository: CreateMapRepository,
+  slug: string,
+  expected: Pick<TabletopMap, 'revision' | 'updatedAt'>,
+): TabletopMap => {
+  const stored = mapRepository.get(slug)
+  if (!stored) throw new Error(`Map ${slug} was not readable after create`)
+  if (stored.revision !== expected.revision || stored.updatedAt !== expected.updatedAt) {
+    throw new Error(`Map ${slug} authoritative re-read did not match created revision ${expected.revision} and timestamp ${expected.updatedAt}`)
+  }
+  return stored.document as unknown as TabletopMap
+}
+
 export const createMapUseCase = (
   input: CreateMapInput,
   dependencies: CreateMapDependencies = {},
 ): CreateMapResult => {
+  const database = resolveLibraryMutationDatabase({
+    database: dependencies.database,
+    dependencies: [
+      { label: 'Create map repository', dependency: dependencies.mapRepository },
+      { label: 'Create map realtime event repository', dependency: dependencies.realtimeEventRepository },
+    ],
+  })
   const sanitizeFolder = dependencies.sanitizeFolder ?? sanitizeMapFolderPath
-  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
+  const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? createSqliteRealtimeEventRepository({ database })
   const now = dependencies.now ?? Date.now
 
   const name = normalizeCreateMapName(input.name)
   const folder = normalizeCreateMapFolder(input.folder, sanitizeFolder)
   const dimensions = normalizeCreateMapDimensions(input.dimensions)
-  const slug = mapRepository.allocateSlug(name)
-  const timestamp = now()
-  const map: TabletopMap = {
-    schemaVersion: 2,
-    revision: 0,
-    slug,
-    name,
-    folder,
-    dimensions,
-    groundLevelY: 0,
-    playerVisible: false,
-    placements: [],
-    initiative: { activeId: null, round: 1 },
-    voxels: [],
-    hazards: [],
-    fieldEffects: { weather: [], terrains: [], rooms: [] },
-    lights: [],
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  }
 
-  let created: TabletopMap
-  try {
-    created = mapRepository.create({ slug, map, now: timestamp })
-  } catch (err) {
-    throw new CreateMapUseCaseError(409, (err as Error).message)
-  }
+  const transactionResult = database.withTransaction(() => {
+    const slug = mapRepository.allocateSlug(name)
+    const timestamp = now()
+    const map: TabletopMap = {
+      schemaVersion: 2,
+      revision: 0,
+      slug,
+      name,
+      folder,
+      dimensions,
+      groundLevelY: 0,
+      playerVisible: false,
+      placements: [],
+      initiative: { activeId: null, round: 1 },
+      voxels: [],
+      hazards: [],
+      fieldEffects: { weather: [], terrains: [], rooms: [] },
+      lights: [],
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    }
+
+    let created: TabletopMap
+    try {
+      created = mapRepository.create({ slug, map, now: timestamp })
+    } catch (err) {
+      throw new CreateMapUseCaseError(409, (err as Error).message)
+    }
+
+    const authoritativeMap = readAuthoritativeMapOrThrow(mapRepository, created.slug, created)
+    const realtimeEvents = realtimeEventRepository.appendMany(
+      mapLibraryCreatedRealtimeAppendInputs(authoritativeMap, input.clientId),
+    )
+    return { map: authoritativeMap, realtimeEvents }
+  })
+
+  publishPersistedLibraryRealtimeEventsAfterCommit({
+    events: transactionResult.realtimeEvents,
+    publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedLibraryRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultLibraryRealtimePublicationFailureReporter,
+  })
 
   return {
-    map: created,
-    path: logicalMapResourcePath(created),
-    events: [
-      {
-        channel: mapsChannel,
-        type: 'created',
-        revision: created.revision,
-        clientId: input.clientId,
-        data: summarizeMap(created),
-      },
-    ],
+    map: transactionResult.map,
+    path: logicalMapResourcePath(transactionResult.map),
+    realtimeEvents: transactionResult.realtimeEvents,
   }
 }
