@@ -130,6 +130,22 @@ describe('LivePlayCommandRecoveryPanel', () => {
     expect(wrapper.emitted('retry')).toEqual([[entry.opId]])
   })
 
+  it('shows accepted-command synchronization without retry controls when no entries remain', () => {
+    const wrapper = mount(LivePlayCommandRecoveryPanel, {
+      props: {
+        entries: [],
+        recoveryStatus: 'synchronizing',
+        interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+        retryingOpId: null,
+        retryDisabledMessage: null,
+      },
+    })
+
+    expect(wrapper.text()).toContain('Synchronizing accepted command')
+    expect(wrapper.findAll('button').some((button) => button.text() === 'Retry')).toBe(false)
+    expect(wrapper.find('button[aria-label="Refresh live-play command recovery without sending commands"]').attributes('disabled')).toBeDefined()
+  })
+
   it('does not render raw command payloads, sheets, or auth context', () => {
     const wrapper = mount(LivePlayCommandRecoveryPanel, {
       props: {

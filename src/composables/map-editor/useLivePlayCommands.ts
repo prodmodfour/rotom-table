@@ -39,6 +39,7 @@ import {
   type UseOrderPayload,
 } from '#shared/livePlayCommands'
 import { validateTerminalResponseForCommand } from '#shared/livePlayCommandResults'
+import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import {
   parseResolveMoveIntent,
   type LivePlayResolvedMoveResult,
@@ -71,7 +72,7 @@ interface ReadonlyValueRef<TValue> {
 }
 
 export type LivePlayCommandStatus = 'idle' | 'saving' | 'error'
-export type LivePlayCommandOutboxRecoveryStatus = 'idle' | 'loading' | 'retrying' | 'error'
+export type LivePlayCommandOutboxRecoveryStatus = 'idle' | 'loading' | 'retrying' | 'synchronizing' | 'error'
 
 export interface LivePlayCommandSheetUpdate {
   kind: 'pokemon' | 'trainer'
@@ -107,6 +108,25 @@ export interface LivePlayResolveMoveDispatchResult extends LivePlayCommandDispat
   readonly move: LivePlayResolvedMoveResult | null
   readonly presentationError?: string
 }
+
+export type LivePlayRealtimeAcknowledgementResult =
+  | {
+      readonly status: 'acknowledged'
+      readonly opId: string
+    }
+  | {
+      readonly status: 'not-local'
+      readonly opId: string
+    }
+  | {
+      readonly status: 'invalid'
+      readonly message: string
+    }
+  | {
+      readonly status: 'error'
+      readonly opId?: string
+      readonly message: string
+    }
 
 export interface UseLivePlayCommandsOptions {
   slug: string
@@ -151,6 +171,9 @@ export interface UseLivePlayCommandsReturn {
   refreshOutboxEntries: () => Promise<readonly LivePlayCommandOutboxEntry[]>
   recoverInterruptedOutboxCommands: () => Promise<readonly LivePlayCommandOutboxEntry[]>
   retryOutboxCommand: (opId: string) => Promise<LivePlayCommandDispatchResult>
+  acknowledgeAcceptedRealtimeEvent: (
+    event: LivePlayAcceptedRealtimeEvent,
+  ) => Promise<LivePlayRealtimeAcknowledgementResult>
   spawnToken: (payload: {
     placement: SheetPlacement
   }) => Promise<LivePlayCommandDispatchResult>
@@ -342,6 +365,9 @@ const LIVE_PLAY_COMMAND_REQUEST_PATHS = new Set<string>([
   MAP_API_PATHS.updateStartTurnModal,
 ])
 
+const REALTIME_ACKNOWLEDGEMENT_SYNC_MESSAGE =
+  'Synchronizing accepted command with the authoritative live table snapshot.'
+
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
 )
@@ -447,6 +473,12 @@ export const useLivePlayCommands = (
     return options.newCommandBlockedMessage?.value
       ?? 'Live-play commands are paused until durable command recovery completes'
   }
+
+  const realtimeAcknowledgementBlockedMessage = (): string | null => (
+    outboxRecoveryStatus.value === 'synchronizing'
+      ? REALTIME_ACKNOWLEDGEMENT_SYNC_MESSAGE
+      : null
+  )
 
   const profileBody = (authContext: LivePlayCommandOutboxAuthContext): { profileId?: PlayerProfileId } => {
     if (authContext.role !== 'player') return {}
@@ -666,7 +698,9 @@ export const useLivePlayCommands = (
     authContext,
   })
 
-  const refreshOutboxEntriesQuiet = async (): Promise<string | undefined> => {
+  const refreshOutboxEntriesQuiet = async (
+    options: { readonly preserveRecoveryError?: boolean } = {},
+  ): Promise<string | undefined> => {
     const authContext = currentAuthContext()
     if (!authContext) {
       const message = outboxRefreshAuthErrorMessage()
@@ -677,7 +711,7 @@ export const useLivePlayCommands = (
 
     try {
       replaceOutboxEntriesForCurrentContext(await listCurrentOutboxEntries(authContext))
-      if (outboxRecoveryStatus.value === 'error') {
+      if (outboxRecoveryStatus.value === 'error' && !options.preserveRecoveryError) {
         outboxRecoveryStatus.value = 'idle'
         outboxRecoveryError.value = null
       }
@@ -945,6 +979,9 @@ export const useLivePlayCommands = (
     const blockedMessage = blockedCommandMessage()
     if (blockedMessage) return localCommandBlockedResult(blockedMessage)
 
+    const realtimeAckBlockedMessage = realtimeAcknowledgementBlockedMessage()
+    if (realtimeAckBlockedMessage) return localCommandBlockedResult(realtimeAckBlockedMessage)
+
     const pendingCommandMessage = newCommandBlockedMessage()
     if (pendingCommandMessage) return localCommandBlockedResult(pendingCommandMessage)
 
@@ -1202,6 +1239,11 @@ export const useLivePlayCommands = (
     const blockedMessage = blockedCommandMessage()
     if (blockedMessage) {
       return { ...localCommandBlockedResult(blockedMessage), move: null }
+    }
+
+    const realtimeAckBlockedMessage = realtimeAcknowledgementBlockedMessage()
+    if (realtimeAckBlockedMessage) {
+      return { ...localCommandBlockedResult(realtimeAckBlockedMessage), move: null }
     }
 
     const pendingCommandMessage = newCommandBlockedMessage()
@@ -1537,6 +1579,11 @@ export const useLivePlayCommands = (
       return localCommandBlockedResult(blockedMessage, { opId })
     }
 
+    const realtimeAckBlockedMessage = realtimeAcknowledgementBlockedMessage()
+    if (realtimeAckBlockedMessage) {
+      return recoveryLocalBlockedResult(realtimeAckBlockedMessage, { opId })
+    }
+
     recoverySendActive = true
     outboxRecoveryStatus.value = 'retrying'
     outboxRecoveryError.value = null
@@ -1619,6 +1666,128 @@ export const useLivePlayCommands = (
     }
   }
 
+  const acceptedRealtimeResponse = (
+    event: LivePlayAcceptedRealtimeEvent,
+  ): LivePlayCommandResponse => ({
+    ok: true,
+    opId: event.opId,
+    mapSlug: event.mapSlug,
+    previousRevision: event.previousRevision,
+    revision: event.revision,
+    patches: [...event.patches],
+  })
+
+  const validateEntryForRealtimeAcknowledgement = (
+    entry: LivePlayCommandOutboxEntry,
+    event: LivePlayAcceptedRealtimeEvent,
+  ): string | null => {
+    if (event.mapSlug !== options.slug) {
+      return 'Accepted live-play command event belongs to a different map.'
+    }
+    if (entry.mapSlug !== options.slug || entry.mapSlug !== event.mapSlug) {
+      return `Live-play operation ${event.opId} does not belong to this map.`
+    }
+    if (!isRecord(entry.body)) {
+      return `Live-play operation ${event.opId} has an invalid stored command body.`
+    }
+    if (entry.body.opId !== entry.opId || entry.body.opId !== event.opId) {
+      return `Live-play operation ${event.opId} cannot be acknowledged because its stored operation ID does not match.`
+    }
+    if (entry.body.mapSlug !== entry.mapSlug || entry.body.mapSlug !== event.mapSlug) {
+      return `Live-play operation ${event.opId} cannot be acknowledged because its stored map identity does not match.`
+    }
+    if (entry.state !== 'queued' && entry.state !== 'sending' && entry.state !== 'uncertain') {
+      return `Live-play operation ${event.opId} is not in an acknowledgeable outbox state.`
+    }
+    if (!isStoredLivePlayCommandRequestPath(entry.requestPath)) {
+      return `Live-play operation ${event.opId} has an invalid stored API request path.`
+    }
+    return null
+  }
+
+  const startRealtimeAcknowledgementReconciliation = (
+    entry: LivePlayCommandOutboxEntry,
+    event: LivePlayAcceptedRealtimeEvent,
+  ): Promise<void> => {
+    if (!options.requestReconciliation) return Promise.resolve()
+    try {
+      return Promise.resolve(options.requestReconciliation({
+        request: entry.requestPath,
+        response: acceptedRealtimeResponse(event),
+      }))
+    } catch (error) {
+      return Promise.reject(error)
+    }
+  }
+
+  const acknowledgeAcceptedRealtimeEvent: UseLivePlayCommandsReturn['acknowledgeAcceptedRealtimeEvent'] = async (event) => {
+    if (event.mapSlug !== options.slug) {
+      return {
+        status: 'invalid',
+        message: 'Accepted live-play command event belongs to a different map.',
+      }
+    }
+
+    let entry: LivePlayCommandOutboxEntry | null
+    try {
+      entry = await outbox.get(event.opId)
+    } catch (error) {
+      const message = `Accepted live-play operation ${event.opId} could not be read from durable command storage: ${outboxErrorMessage(error)}`
+      status.value = 'error'
+      lastError.value = message
+      setOutboxRecoveryFailure(message)
+      return { status: 'error', opId: event.opId, message }
+    }
+
+    if (!entry) return { status: 'not-local', opId: event.opId }
+
+    const validationIssue = validateEntryForRealtimeAcknowledgement(entry, event)
+    if (validationIssue) return { status: 'invalid', message: validationIssue }
+
+    outboxRecoveryStatus.value = 'synchronizing'
+    outboxRecoveryError.value = null
+
+    try {
+      await outbox.acknowledgeTerminal(event.opId)
+    } catch (error) {
+      const message = `Accepted live-play operation ${event.opId} was committed by the server, but removing it from durable command storage failed: ${outboxErrorMessage(error)}`
+      status.value = 'error'
+      lastError.value = message
+      setOutboxRecoveryFailure(message)
+      await refreshOutboxEntriesQuiet({ preserveRecoveryError: true })
+      return { status: 'error', opId: event.opId, message }
+    }
+
+    const reconciliation = startRealtimeAcknowledgementReconciliation(entry, event)
+    const refreshWarning = await refreshOutboxEntriesQuiet()
+
+    try {
+      await reconciliation
+    } catch (error) {
+      const message = `Accepted live-play operation ${event.opId} was acknowledged, but authoritative synchronization failed: ${getErrorMessage(error, { fallback: 'Live-play realtime acknowledgement reconciliation failed' })}`
+      status.value = 'error'
+      lastError.value = message
+      setOutboxRecoveryFailure(message)
+      return { status: 'error', opId: event.opId, message }
+    }
+
+    if (refreshWarning) {
+      const message = `Accepted live-play operation ${event.opId} was acknowledged, but durable command recovery state could not be refreshed: ${refreshWarning}`
+      status.value = 'error'
+      lastError.value = message
+      setOutboxRecoveryFailure(message)
+      return { status: 'error', opId: event.opId, message }
+    }
+
+    if (status.value !== 'saving') {
+      status.value = 'idle'
+      lastError.value = null
+    }
+    outboxRecoveryStatus.value = 'idle'
+    outboxRecoveryError.value = null
+    return { status: 'acknowledged', opId: event.opId }
+  }
+
   return {
     status,
     lastError,
@@ -1630,6 +1799,7 @@ export const useLivePlayCommands = (
     refreshOutboxEntries,
     recoverInterruptedOutboxCommands,
     retryOutboxCommand,
+    acknowledgeAcceptedRealtimeEvent,
     spawnToken,
     sendOutPokemon,
     deleteToken,

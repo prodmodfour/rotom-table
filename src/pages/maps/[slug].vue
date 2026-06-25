@@ -55,6 +55,7 @@ import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActi
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
+import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
 import {
@@ -145,6 +146,15 @@ const liveSheetAccessScopeKey = computed(() => buildLiveSheetAccessScopeKey({
 let requestLiveTableSnapshot: (reason?: string) => Promise<void> = async () => {
   throw new Error('Live table snapshot synchroniser is not initialised.')
 }
+let acceptedRealtimeAcknowledgementHandler: ((event: LivePlayAcceptedRealtimeEvent) => Promise<unknown> | unknown) | null = null
+const queuedAcceptedRealtimeEvents: LivePlayAcceptedRealtimeEvent[] = []
+let acknowledgeAcceptedRealtimeEvent = async (event: LivePlayAcceptedRealtimeEvent): Promise<void> => {
+  if (acceptedRealtimeAcknowledgementHandler) {
+    await acceptedRealtimeAcknowledgementHandler(event)
+    return
+  }
+  queuedAcceptedRealtimeEvents.push(event)
+}
 
 const {
   map,
@@ -164,6 +174,7 @@ const {
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
   requestAuthoritativeReconciliation: (reason) => requestLiveTableSnapshot(reason),
   authoritativeReconciliationKey: liveSheetAccessScopeKey,
+  onLivePlayCommandAcceptedEvent: (event) => acknowledgeAcceptedRealtimeEvent(event),
 })
 
 const liveTableSnapshotSync = useLiveTableSnapshotSync({
@@ -262,6 +273,15 @@ const livePlayCommands = useLivePlayCommands({
   onCommandBlocked: livePlayStateMachine.commandBlocked,
   onCommandErrorCleared: livePlayStateMachine.clearCommandError,
 })
+acceptedRealtimeAcknowledgementHandler = livePlayCommands.acknowledgeAcceptedRealtimeEvent
+acknowledgeAcceptedRealtimeEvent = async (event: LivePlayAcceptedRealtimeEvent): Promise<void> => {
+  await acceptedRealtimeAcknowledgementHandler?.(event)
+}
+for (const event of queuedAcceptedRealtimeEvents.splice(0)) {
+  void acknowledgeAcceptedRealtimeEvent(event).catch((error: unknown) => {
+    console.error('[map page] queued accepted live-play command acknowledgement failed', error)
+  })
+}
 const livePlayRecoveryContextKey = computed(() => {
   if (role.value === 'gm') return `${slug}:gm`
   if (role.value === 'player') return `${slug}:player:${selectedProfileId.value ?? 'none'}`
@@ -286,13 +306,16 @@ watchEffect(() => {
 const livePlayCommandsAllowed = computed(() => (
   !mapInPrepareMode.value
   && livePlayStateMachine.commandsAllowed.value
+  && livePlayCommands.status.value !== 'saving'
   && !livePlayCommandRecoveryGate.blocksNewLiveCommands.value
 ))
 const livePlayConnectionState = computed<LivePlayConnectionState>(() => {
   if (mapInPrepareMode.value) return livePlayStateMachine.state.value
   if (livePlayCommandRecoveryGate.retryingOpId.value) return 'saving-command'
   if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.state.value
+  if (livePlayCommands.status.value === 'saving') return 'saving-command'
   if (livePlayCommands.outboxRecoveryStatus.value === 'error' || livePlayCommands.outboxRecoveryError.value) return 'error'
+  if (livePlayCommands.outboxRecoveryStatus.value === 'synchronizing') return 'reconciling'
   if (!livePlayCommandRecoveryGate.readyForCurrentContext.value) return 'reconciling'
   if (livePlayCommands.outboxEntries.value.length > 0) return 'stale'
   return 'ready'
@@ -305,11 +328,15 @@ const livePlayStatusMessage = computed(() => {
     return livePlayCommandRecoveryGate.blockMessage.value
   }
   if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.notice.value
+  if (livePlayCommands.status.value === 'saving') return 'Sending live-play command to the server.'
   return livePlayCommandRecoveryGate.blockMessage.value ?? livePlayStateMachine.notice.value
 })
 const livePlayRetryDisabledMessage = computed(() => {
   if (isSetupEditMode()) return 'Switch to Run Live Play to retry pending live-play commands.'
   if (!livePlayStateMachine.commandsAllowed.value) return livePlayStateMachine.commandBlockMessage.value
+  if (livePlayCommands.outboxRecoveryStatus.value === 'synchronizing') {
+    return 'Synchronizing accepted command with the authoritative live table snapshot.'
+  }
   if (livePlayCommands.status.value === 'saving') return 'A live-play command is already in flight.'
   if (livePlayCommandRecoveryGate.retryingOpId.value) {
     return 'Retrying the pending live-play command with its original operation ID.'

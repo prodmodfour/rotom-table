@@ -71,6 +71,31 @@ const mapFixture = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   ...overrides,
 })
 
+const acceptedCommandEvent = (overrides: Partial<RealtimeEvent & { mapSlug: string }> = {}): RealtimeEvent & { mapSlug: string } => ({
+  channel: 'map:arena-map',
+  type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
+  mapSlug: 'arena-map',
+  previousRevision: 1,
+  revision: 2,
+  opId: 'op_realtime001',
+  clientId: 'other-tab',
+  timestamp: 350,
+  patches: [{
+    schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+    type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+    mapSlug: 'arena-map',
+    revision: 2,
+    scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+    payload: {
+      placementId: 'token-pikachu',
+      position: { x: 4, y: 0, z: 2 },
+      facing: 'north-west',
+      turned: true,
+    },
+  }],
+  ...overrides,
+})
+
 const flushPromises = async () => {
   await Promise.resolve()
   await Promise.resolve()
@@ -555,6 +580,127 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.map.value?.name).toBe('Arena Map')
     expect(editable.map.value?.updatedAt).toBe(100)
     expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('does not suppress same-client accepted command events before acknowledgement or patching', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+    const onAccepted = vi.fn()
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      onLivePlayCommandAcceptedEvent: onAccepted,
+    })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.(acceptedCommandEvent({ clientId: 'map-client' }))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(onAccepted).toHaveBeenCalledTimes(1)
+    expect(onAccepted).toHaveBeenCalledWith(expect.objectContaining({
+      type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
+      opId: 'op_realtime001',
+      clientId: 'map-client',
+    }))
+    expect(editable.map.value?.placements[0]).toMatchObject({
+      position: { x: 4, y: 0, z: 2 },
+      facing: 'north-west',
+      turned: true,
+    })
+    expect(editable.mapRevision.value).toBe(2)
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('logs accepted callback failures without blocking patch application', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      onLivePlayCommandAcceptedEvent: () => { throw new Error('ack failed') },
+    })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.(acceptedCommandEvent())
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(consoleError).toHaveBeenCalledWith(
+      '[useEditableMap] accepted live-play command event callback failed',
+      expect.any(Error),
+    )
+    expect(editable.mapRevision.value).toBe(2)
+    expect(editable.map.value?.placements[0]?.position).toEqual({ x: 4, y: 0, z: 2 })
+    consoleError.mockRestore()
+  })
+
+  it('invokes accepted callbacks for repeated events without applying patches twice', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+    const onAccepted = vi.fn()
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      onLivePlayCommandAcceptedEvent: onAccepted,
+    })
+    await flushPromises()
+
+    const event = acceptedCommandEvent()
+    apiMocks.realtimeHandlers[0]?.(event)
+    apiMocks.realtimeHandlers[0]?.(event)
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(onAccepted).toHaveBeenCalledTimes(2)
+    expect(editable.mapRevision.value).toBe(2)
+    expect(editable.map.value?.placements[0]?.position).toEqual({ x: 4, y: 0, z: 2 })
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(1)
+  })
+
+  it('requests reconciliation for valid accepted events whose map patch cannot apply after acknowledgement', async () => {
+    apiMocks.getJson
+      .mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+      .mockResolvedValueOnce({ map: mapFixture({ revision: 2, name: 'Reloaded After Invalid Patch' }), revision: 2 })
+    const onAccepted = vi.fn()
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      onLivePlayCommandAcceptedEvent: onAccepted,
+    })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.(acceptedCommandEvent({
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: 'arena-map',
+        revision: 2,
+        scopes: [{ kind: 'token', placementId: 'missing-token', field: 'position' }],
+        payload: { placementId: 'missing-token', position: { x: 4, y: 0, z: 2 } },
+      }],
+    }))
+    await flushPromises()
+
+    expect(onAccepted).toHaveBeenCalledTimes(1)
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(2)
+    expect(editable.map.value?.name).toBe('Reloaded After Invalid Patch')
+  })
+
+  it('rejects invalid accepted command events without invoking the acknowledgement callback', async () => {
+    apiMocks.getJson
+      .mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+      .mockResolvedValueOnce({ map: mapFixture({ revision: 2, name: 'Reloaded After Invalid Event' }), revision: 2 })
+    const onAccepted = vi.fn()
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      onLivePlayCommandAcceptedEvent: onAccepted,
+    })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.(acceptedCommandEvent({ opId: undefined }))
+    await flushPromises()
+
+    expect(onAccepted).not.toHaveBeenCalled()
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(2)
+    expect(editable.map.value?.name).toBe('Reloaded After Invalid Event')
   })
 
   it('cancels pending dirty setup/edit saves when another viewer publishes an authoritative map update', async () => {

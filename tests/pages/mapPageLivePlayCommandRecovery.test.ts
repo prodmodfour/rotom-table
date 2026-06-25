@@ -23,11 +23,24 @@ describe('map page live-play command recovery integration', () => {
     expect(mapPage).toContain('refresh: livePlayCommands.refreshOutboxEntries')
     expect(mapPage).toContain('retry: livePlayCommands.retryOutboxCommand')
     expect(mapPage).toContain('const livePlayCommandsAllowed = computed')
+    expect(mapPage).toContain("&& livePlayCommands.status.value !== 'saving'")
     expect(mapPage).toContain('&& !livePlayCommandRecoveryGate.blocksNewLiveCommands.value')
     expect(mapPage).toContain('return livePlayCommandsAllowed.value ? controllablePlacementIds.value : []')
+    expect(mapPage).toContain("if (livePlayCommands.status.value === 'saving') return 'saving-command'")
+    expect(mapPage).toContain("if (livePlayCommands.outboxRecoveryStatus.value === 'synchronizing') return 'reconciling'")
     expect(mapPage).toContain("if (!livePlayCommandRecoveryGate.readyForCurrentContext.value) return 'reconciling'")
     expect(mapPage).toContain("if (livePlayCommands.outboxEntries.value.length > 0) return 'stale'")
     expect(mapPage).toContain("if (livePlayCommandRecoveryGate.retryingOpId.value) return 'saving-command'")
+  })
+
+  it('wires accepted realtime command events through safe acknowledgement indirection', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+
+    expect(mapPage).toContain("import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'")
+    expect(mapPage).toContain('queuedAcceptedRealtimeEvents')
+    expect(mapPage).toContain('onLivePlayCommandAcceptedEvent: (event) => acknowledgeAcceptedRealtimeEvent(event)')
+    expect(mapPage).toContain('acceptedRealtimeAcknowledgementHandler = livePlayCommands.acknowledgeAcceptedRealtimeEvent')
+    expect(mapPage).toContain('void acknowledgeAcceptedRealtimeEvent(event).catch')
   })
 
   it('renders the retry panel without adding discard or automatic resend controls', () => {

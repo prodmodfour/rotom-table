@@ -59,6 +59,7 @@ const STATE_LABELS: Record<LivePlayCommandOutboxState, string> = {
 
 const summaryMessage = computed(() => {
   if (props.retryingOpId) return 'Retrying the pending live-play command with its original operation ID.'
+  if (props.recoveryStatus === 'synchronizing') return 'Synchronizing accepted command with the authoritative live table snapshot.'
   if (props.recoveryStatus === 'loading') return 'Checking for interrupted live-play commands before actions resume.'
   if (props.recoveryError) return props.recoveryError
   if (props.blockMessage) return props.blockMessage
@@ -67,7 +68,11 @@ const summaryMessage = computed(() => {
   return 'Durable live-play command recovery is up to date.'
 })
 
-const refreshBusy = computed(() => props.recoveryStatus === 'loading' || props.recoveryStatus === 'retrying')
+const refreshBusy = computed(() => (
+  props.recoveryStatus === 'loading'
+  || props.recoveryStatus === 'retrying'
+  || props.recoveryStatus === 'synchronizing'
+))
 
 const commandLabel = (entry: LivePlayCommandOutboxEntry): string => COMMAND_LABELS[entry.commandType]
 
@@ -87,6 +92,7 @@ const retryDisabledReason = (entry: LivePlayCommandOutboxEntry): string | null =
   }
   if (props.retryingOpId) return 'Another live-play command retry is already active.'
   if (props.retryDisabledMessage) return props.retryDisabledMessage
+  if (props.recoveryStatus === 'synchronizing') return 'Wait for accepted-command synchronization to finish before retrying.'
   if (props.recoveryStatus === 'loading') return 'Wait for recovery inspection to finish before retrying.'
   return null
 }

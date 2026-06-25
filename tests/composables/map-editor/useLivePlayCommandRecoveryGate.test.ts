@@ -264,6 +264,11 @@ describe('useLivePlayCommandRecoveryGate', () => {
     await flushMicrotasks()
     expect(gate.blocksNewLiveCommands.value).toBe(false)
 
+    recoveryStatus.value = 'synchronizing'
+    expect(gate.blocksNewLiveCommands.value).toBe(true)
+    expect(gate.blockMessage.value).toContain('Synchronizing accepted command')
+
+    recoveryStatus.value = 'idle'
     entries.value = [createEntry({ state: 'queued' })]
     await flushMicrotasks()
     expect(gate.blocksNewLiveCommands.value).toBe(true)

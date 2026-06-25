@@ -33,6 +33,10 @@ import {
   mapChannel,
   type RealtimeEvent,
 } from '#shared/realtime'
+import {
+  parseAcceptedLivePlayRealtimeEvent,
+  type LivePlayAcceptedRealtimeEvent,
+} from '#shared/livePlayRealtimeEvents'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { createAutosaveResourceController } from '~/utils/autosaveResource'
 import { runLatestAutosave } from '~/utils/autosaveSaveRunner'
@@ -89,6 +93,9 @@ export interface UseEditableMapOptions {
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   readonly requestAuthoritativeReconciliation?: (reason: string) => Promise<void> | void
   readonly authoritativeReconciliationKey?: ReadonlyValueRef<string | null | undefined>
+  readonly onLivePlayCommandAcceptedEvent?: (
+    event: LivePlayAcceptedRealtimeEvent,
+  ) => void | Promise<void>
 }
 
 export interface UseEditableMapReturn {
@@ -123,6 +130,9 @@ const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pic
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   readonly requestAuthoritativeReconciliation?: (reason: string) => Promise<void> | void
   readonly authoritativeReconciliationKey?: ReadonlyValueRef<string | null | undefined>
+  readonly onLivePlayCommandAcceptedEvent?: (
+    event: LivePlayAcceptedRealtimeEvent,
+  ) => void | Promise<void>
 } => (
   typeof options === 'number'
     ? { debounceMs: options, autoLoad: true }
@@ -134,6 +144,7 @@ const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pic
         playerProfileId: options.playerProfileId,
         requestAuthoritativeReconciliation: options.requestAuthoritativeReconciliation,
         authoritativeReconciliationKey: options.authoritativeReconciliationKey,
+        onLivePlayCommandAcceptedEvent: options.onLivePlayCommandAcceptedEvent,
       }
 )
 
@@ -149,6 +160,7 @@ export const useEditableMap = (
     playerProfileId: playerProfileIdRef,
     requestAuthoritativeReconciliation,
     authoritativeReconciliationKey: authoritativeReconciliationKeyRef,
+    onLivePlayCommandAcceptedEvent,
   } = normalizeOptions(options)
   const currentInteractionMode = (): MapInteractionMode => interactionModeRef?.value ?? MAP_INTERACTION_MODES.LIVE_PLAY
   const setupEditMode = computed(() => currentInteractionMode() === MAP_INTERACTION_MODES.SETUP_EDIT)
@@ -488,7 +500,62 @@ export const useEditableMap = (
 
   let removeUnloadFlushers: (() => void) | null = bindAutosaveUnloadFlushers(flushWithBeacon)
 
+  const notifyLivePlayCommandAcceptedEvent = (event: LivePlayAcceptedRealtimeEvent): void => {
+    if (!onLivePlayCommandAcceptedEvent) return
+    try {
+      void Promise.resolve(onLivePlayCommandAcceptedEvent(event)).catch((err) => {
+        console.error('[useEditableMap] accepted live-play command event callback failed', err)
+      })
+    } catch (err) {
+      console.error('[useEditableMap] accepted live-play command event callback failed', err)
+    }
+  }
+
+  const handleAcceptedLivePlayCommandEvent = (event: RealtimeEvent): void => {
+    const parsed = parseAcceptedLivePlayRealtimeEvent(event)
+    if (!parsed.valid) {
+      console.warn('[useEditableMap] invalid accepted live-play command event', parsed.issues)
+      requestRealtimeReconciliation('Accepted live-play command event was invalid. Reloading the live table snapshot.')
+      return
+    }
+
+    const acceptedEvent = parsed.event
+    notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+
+    const incomingRevision = acceptedEvent.revision
+    const currentRevision = documentRevision(map.value)
+    if (currentRevision !== null && incomingRevision <= currentRevision) return
+    if (revisionGapRequiresReconcile(acceptedEvent)) {
+      requestRealtimeReconciliation('Live-play command revision gap detected. Reloading the live table snapshot.')
+      return
+    }
+
+    const patchResult = applyLivePlayPatchesToMap({
+      map: map.value,
+      mapSlug: acceptedEvent.mapSlug,
+      previousRevision: acceptedEvent.previousRevision,
+      revision: incomingRevision,
+      patches: acceptedEvent.patches,
+    })
+    if (!patchResult.ok) {
+      console.warn('[useEditableMap] live-play patch reconcile required', patchResult.message)
+      requestRealtimeReconciliation(patchResult.message)
+      return
+    }
+    if (patchResult.applied && map.value) {
+      autosave.cancelPendingSave()
+      autosave.snapshot.markClean(map.value)
+      status.value = 'idle'
+      error.value = null
+    }
+  }
+
   const handleRealtimeMapEvent = (event: RealtimeEvent) => {
+    if (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED) {
+      handleAcceptedLivePlayCommandEvent(event)
+      return
+    }
+
     if (isRealtimeEcho(event, clientId)) return
     const incomingRevision = eventRevision(event)
     const currentRevision = documentRevision(map.value)
@@ -501,35 +568,6 @@ export const useEditableMap = (
       }
       const incoming = event.data as TabletopMap
       applyPersistedMap(incoming)
-    } else if (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED) {
-      if (incomingRevision === null || !event.patches?.length) {
-        requestRealtimeReconciliation('Live-play command event was incomplete. Reloading the live table snapshot.')
-        return
-      }
-      if (currentRevision !== null && incomingRevision <= currentRevision) return
-      if (revisionGapRequiresReconcile(event)) {
-        requestRealtimeReconciliation('Live-play command revision gap detected. Reloading the live table snapshot.')
-        return
-      }
-
-      const patchResult = applyLivePlayPatchesToMap({
-        map: map.value,
-        mapSlug: (event as { mapSlug?: string }).mapSlug ?? slug,
-        previousRevision: event.previousRevision,
-        revision: incomingRevision,
-        patches: event.patches,
-      })
-      if (!patchResult.ok) {
-        console.warn('[useEditableMap] live-play patch reconcile required', patchResult.message)
-        requestRealtimeReconciliation(patchResult.message)
-        return
-      }
-      if (patchResult.applied && map.value) {
-        autosave.cancelPendingSave()
-        autosave.snapshot.markClean(map.value)
-        status.value = 'idle'
-        error.value = null
-      }
     } else if (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.MAP_RECONCILED) {
       if (event.data && !revisionGapRequiresReconcile(event)) {
         applyPersistedMap(event.data as TabletopMap)

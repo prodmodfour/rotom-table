@@ -73,6 +73,7 @@ export interface UseLivePlayCommandRecoveryGateReturn {
 
 const RECOVERY_INSPECTION_MESSAGE = 'Checking for interrupted live-play commands before actions resume.'
 const RECOVERY_ERROR_MESSAGE = 'Durable command recovery is unavailable. Refresh recovery before sending live-play actions.'
+const REALTIME_SYNCHRONIZING_MESSAGE = 'Synchronizing accepted command with the authoritative live table snapshot.'
 const RETRYING_MESSAGE = 'Retrying the pending live-play command with its original operation ID.'
 
 const pendingCommandMessage = (count: number): string => (
@@ -264,6 +265,8 @@ export const useLivePlayCommandRecoveryGate = (
   const blocksNewLiveCommands = computed(() => {
     if (options.interactionMode.value !== MAP_INTERACTION_MODES.LIVE_PLAY) return false
     return !readyForCurrentContext.value
+      || options.recoveryStatus.value === 'loading'
+      || options.recoveryStatus.value === 'synchronizing'
       || hasRecoveryError.value
       || options.entries.value.length > 0
       || retryingOpId.value !== null
@@ -272,8 +275,9 @@ export const useLivePlayCommandRecoveryGate = (
   const blockMessage = computed<string | null>(() => {
     if (options.interactionMode.value !== MAP_INTERACTION_MODES.LIVE_PLAY) return null
     if (retryingOpId.value !== null) return RETRYING_MESSAGE
+    if (options.recoveryStatus.value === 'synchronizing') return REALTIME_SYNCHRONIZING_MESSAGE
     if (hasRecoveryError.value) return options.recoveryError.value ?? RECOVERY_ERROR_MESSAGE
-    if (!readyForCurrentContext.value) return RECOVERY_INSPECTION_MESSAGE
+    if (!readyForCurrentContext.value || options.recoveryStatus.value === 'loading') return RECOVERY_INSPECTION_MESSAGE
     if (options.entries.value.length > 0) return pendingCommandMessage(options.entries.value.length)
     return null
   })
@@ -293,6 +297,7 @@ export const useLivePlayCommandRecoveryGate = (
     const hasActiveContext = currentContextKey() !== null
     return options.recoveryStatus.value === 'loading'
       || options.recoveryStatus.value === 'retrying'
+      || options.recoveryStatus.value === 'synchronizing'
       || (hasActiveContext && !readyForCurrentContext.value)
       || hasRecoveryError.value
       || options.entries.value.length > 0

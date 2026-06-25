@@ -16,6 +16,7 @@ import {
   LIVE_PLAY_PATCH_TYPES,
 } from '#shared/livePlayCommands'
 import { parsePlayerProfileId, type PlayerProfileId } from '#shared/playerProfiles'
+import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import {
   LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
   LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
@@ -81,6 +82,21 @@ const createCommandHarness = (options: TestUseLivePlayCommandsOptions) => {
 
 let storedCommandSequence = 0
 
+const deferred = <TValue>() => {
+  let resolve!: (value: TValue | PromiseLike<TValue>) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<TValue>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve
+    reject = promiseReject
+  })
+  return { promise, resolve, reject }
+}
+
+const flushMicrotasks = async () => {
+  await Promise.resolve()
+  await Promise.resolve()
+}
+
 const commandRecord = (body: unknown): Record<string, unknown> => (
   body && typeof body === 'object' && !Array.isArray(body) ? body as Record<string, unknown> : {}
 )
@@ -127,6 +143,45 @@ const makeStoredCommandUncertain = async (
   const uncertain = await outbox.markUncertain({ opId: entry.opId, leaseOwner, error: 'test uncertainty' })
   if (!uncertain) throw new Error(`Failed to mark test outbox entry ${entry.opId} uncertain`)
   return uncertain
+}
+
+const makeStoredCommandSending = async (
+  outbox: LivePlayCommandOutbox,
+  entry: LivePlayCommandOutboxEntry,
+  leaseOwner = 'stored-lease-owner',
+): Promise<LivePlayCommandOutboxEntry> => {
+  const claim = await outbox.claimForSend({ opId: entry.opId, leaseOwner })
+  if (!claim.claimed) throw new Error(`Failed to claim test outbox entry ${entry.opId}`)
+  return claim.entry
+}
+
+const acceptedRealtimeEventForEntry = (
+  entry: LivePlayCommandOutboxEntry,
+  overrides: Partial<LivePlayAcceptedRealtimeEvent> = {},
+): LivePlayAcceptedRealtimeEvent => {
+  const revision = overrides.revision ?? 5
+  const mapSlug = overrides.mapSlug ?? entry.mapSlug
+  return {
+    channel: overrides.channel ?? `map:${mapSlug}`,
+    type: 'live-play-command-accepted',
+    mapSlug,
+    opId: overrides.opId ?? entry.opId,
+    previousRevision: overrides.previousRevision ?? 4,
+    revision,
+    timestamp: overrides.timestamp ?? 1_000,
+    clientId: overrides.clientId ?? 'other-tab',
+    patches: overrides.patches ?? [{
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+      mapSlug,
+      revision,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+      payload: {
+        placementId: 'token-pikachu',
+        position: { x: 2, y: 0, z: 1 },
+      },
+    }],
+  }
 }
 
 const alignTerminalResponseToCommand = <TResponse>(response: TResponse, body: unknown): TResponse => {
@@ -570,6 +625,322 @@ describe('useLivePlayCommands', () => {
       expect(result.outboxError).toContain('delete failed')
       await expect(delegate.get(result.opId!)).resolves.toMatchObject({ state: 'sending' })
     }
+  })
+
+  it('acknowledges accepted realtime events for queued, sending, and uncertain entries', async () => {
+    for (const state of ['queued', 'sending', 'uncertain'] as const) {
+      const outbox = createTestOutbox()
+      const queued = await enqueueStoredCommand(outbox)
+      const entry = state === 'queued'
+        ? queued
+        : state === 'sending'
+          ? await makeStoredCommandSending(outbox, queued)
+          : await makeStoredCommandUncertain(outbox, queued)
+      const requestReconciliation = vi.fn()
+      const { actions } = createCommandHarness({ slug: 'arena-map', outbox, requestReconciliation })
+      await actions.refreshOutboxEntries()
+
+      const result = await actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry))
+
+      expect(result, state).toEqual({ status: 'acknowledged', opId: entry.opId })
+      await expect(outbox.get(entry.opId), state).resolves.toBeNull()
+      expect(actions.outboxEntries.value, state).toEqual([])
+      expect(requestReconciliation, state).toHaveBeenCalledTimes(1)
+      expect(apiMocks.postJson, state).not.toHaveBeenCalled()
+    }
+  })
+
+  it('treats missing or mismatched accepted realtime entries as non-local or invalid without deleting outbox data', async () => {
+    const emptyActions = createCommandHarness({ slug: 'arena-map' }).actions
+    const missingEntry = await enqueueStoredCommand(createTestOutbox())
+    await expect(emptyActions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(missingEntry))).resolves.toEqual({
+      status: 'not-local',
+      opId: missingEntry.opId,
+    })
+
+    const outbox = createTestOutbox()
+    const entry = await enqueueStoredCommand(outbox)
+    const { actions } = createCommandHarness({ slug: 'arena-map', outbox })
+
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry, {
+      channel: 'map:other-map',
+      mapSlug: 'other-map',
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: 'other-map',
+        revision: 5,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+        payload: { placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } },
+      }],
+    }))).resolves.toMatchObject({ status: 'invalid' })
+    await expect(outbox.get(entry.opId)).resolves.toMatchObject({ opId: entry.opId })
+  })
+
+  it('allows a different selected profile or client ID to acknowledge the shared realtime outbox entry', async () => {
+    const outbox = createTestOutbox()
+    const entry = await enqueueStoredCommand(outbox, {
+      authContext: { role: 'player', profileId: parsePlayerProfileId('profile_ash00000') },
+      body: storedMoveCommandBody({ profileId: 'profile_ash00000' }),
+    })
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
+      playerProfileId: ref<PlayerProfileId | null>(parsePlayerProfileId('profile_misty000')),
+      outbox,
+    })
+
+    const result = await actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry, {
+      clientId: 'different-tab',
+    }))
+
+    expect(result).toEqual({ status: 'acknowledged', opId: entry.opId })
+    await expect(outbox.get(entry.opId)).resolves.toBeNull()
+  })
+
+  it('handles repeated accepted realtime acknowledgements harmlessly', async () => {
+    const outbox = createTestOutbox()
+    const entry = await enqueueStoredCommand(outbox)
+    const event = acceptedRealtimeEventForEntry(entry)
+    const { actions } = createCommandHarness({ slug: 'arena-map', outbox, requestReconciliation: vi.fn() })
+
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(event)).resolves.toEqual({
+      status: 'acknowledged',
+      opId: entry.opId,
+    })
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(event)).resolves.toEqual({
+      status: 'not-local',
+      opId: entry.opId,
+    })
+    await expect(outbox.get(entry.opId)).resolves.toBeNull()
+  })
+
+  it('keeps the outbox entry and reports an error when realtime acknowledgement deletion fails', async () => {
+    const delegate = createTestOutbox()
+    const entry = await enqueueStoredCommand(delegate)
+    const outbox = wrapOutbox(delegate, {
+      acknowledgeTerminal: async () => { throw new Error('delete failed') },
+    })
+    const { actions } = createCommandHarness({ slug: 'arena-map', outbox })
+    await actions.refreshOutboxEntries()
+
+    const result = await actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry))
+
+    expect(result).toMatchObject({ status: 'error', opId: entry.opId, message: expect.stringContaining('delete failed') })
+    expect(actions.outboxRecoveryStatus.value).toBe('error')
+    expect(actions.outboxRecoveryError.value).toContain('delete failed')
+    await expect(delegate.get(entry.opId)).resolves.toMatchObject({ opId: entry.opId })
+    expect(actions.outboxEntries.value).toHaveLength(1)
+  })
+
+  it('requests aggregate reconciliation from accepted realtime events without route-specific presentation callbacks', async () => {
+    const outbox = createTestOutbox()
+    const entry = await enqueueStoredCommand(outbox, { requestPath: MAP_API_PATHS.resolveMove })
+    const requestReconciliation = vi.fn()
+    const onCommandAccepted = vi.fn()
+    const onCommandStarted = vi.fn()
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      outbox,
+      requestReconciliation,
+      onCommandAccepted,
+      onCommandStarted,
+    })
+
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry))).resolves.toEqual({
+      status: 'acknowledged',
+      opId: entry.opId,
+    })
+
+    expect(requestReconciliation).toHaveBeenCalledTimes(1)
+    expect(requestReconciliation).toHaveBeenCalledWith({
+      request: MAP_API_PATHS.resolveMove,
+      response: {
+        ok: true,
+        opId: entry.opId,
+        mapSlug: 'arena-map',
+        previousRevision: 4,
+        revision: 5,
+        patches: expect.any(Array),
+      },
+    })
+    expect(onCommandAccepted).not.toHaveBeenCalled()
+    expect(onCommandStarted).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('reconciles and acknowledges revision-gap or map-patch-invalid accepted realtime events', async () => {
+    const gapOutbox = createTestOutbox()
+    const gapEntry = await enqueueStoredCommand(gapOutbox)
+    const gapReconciliation = vi.fn()
+    const gapActions = createCommandHarness({ slug: 'arena-map', outbox: gapOutbox, requestReconciliation: gapReconciliation }).actions
+
+    await expect(gapActions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(gapEntry, {
+      previousRevision: 8,
+      revision: 9,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: 'arena-map',
+        revision: 9,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+        payload: { placementId: 'token-pikachu', position: { x: 9, y: 0, z: 1 } },
+      }],
+    }))).resolves.toEqual({ status: 'acknowledged', opId: gapEntry.opId })
+    await expect(gapOutbox.get(gapEntry.opId)).resolves.toBeNull()
+    expect(gapReconciliation).toHaveBeenCalledTimes(1)
+
+    const invalidPatchOutbox = createTestOutbox()
+    const invalidPatchEntry = await enqueueStoredCommand(invalidPatchOutbox)
+    const invalidPatchReconciliation = vi.fn()
+    const invalidPatchActions = createCommandHarness({
+      slug: 'arena-map',
+      outbox: invalidPatchOutbox,
+      requestReconciliation: invalidPatchReconciliation,
+    }).actions
+
+    await expect(invalidPatchActions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(invalidPatchEntry, {
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: 'arena-map',
+        revision: 5,
+        scopes: [{ kind: 'token', placementId: 'missing-token', field: 'position' }],
+        payload: { placementId: 'missing-token' },
+      }],
+    }))).resolves.toEqual({ status: 'acknowledged', opId: invalidPatchEntry.opId })
+    await expect(invalidPatchOutbox.get(invalidPatchEntry.opId)).resolves.toBeNull()
+    expect(invalidPatchReconciliation).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps acknowledged realtime operations terminal when reconciliation fails', async () => {
+    const outbox = createTestOutbox()
+    const entry = await makeStoredCommandUncertain(outbox, await enqueueStoredCommand(outbox))
+    const requestReconciliation = vi.fn(async () => { throw new Error('snapshot failed') })
+    const { actions } = createCommandHarness({ slug: 'arena-map', outbox, requestReconciliation })
+
+    const result = await actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry))
+
+    expect(result).toMatchObject({ status: 'error', opId: entry.opId, message: expect.stringContaining('snapshot failed') })
+    await expect(outbox.get(entry.opId)).resolves.toBeNull()
+    expect(actions.outboxRecoveryStatus.value).toBe('error')
+    expect(actions.outboxRecoveryError.value).toContain('snapshot failed')
+    expect(actions.outboxRecoveryError.value).not.toContain('unknown')
+  })
+
+  it('blocks new commands between accepted realtime acknowledgement and reconciliation completion', async () => {
+    const outbox = createTestOutbox()
+    const entry = await enqueueStoredCommand(outbox)
+    const reconciliation = deferred<void>()
+    const requestReconciliation = vi.fn(() => reconciliation.promise)
+    const { actions } = createCommandHarness({ slug: 'arena-map', outbox, requestReconciliation })
+
+    const acknowledgement = actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry))
+    await vi.waitFor(() => expect(requestReconciliation).toHaveBeenCalledTimes(1))
+    await flushMicrotasks()
+
+    expect(actions.outboxRecoveryStatus.value).toBe('synchronizing')
+    await expect(actions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 1 } })).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('Synchronizing accepted command'),
+    })
+
+    reconciliation.resolve()
+    await expect(acknowledgement).resolves.toEqual({ status: 'acknowledged', opId: entry.opId })
+    expect(actions.outboxRecoveryStatus.value).toBe('idle')
+  })
+
+  it('handles SSE-first and HTTP-first terminal races without retrying or duplicate acknowledgement side effects', async () => {
+    const sseFirstOutbox = createTestOutbox()
+    const sseFirstReconciliation = vi.fn()
+    const sseFirstAccepted = vi.fn()
+    let releaseHttp!: () => void
+    let sentBody: Record<string, unknown> | null = null
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      sentBody = commandRecord(body)
+      await new Promise<void>((resolve) => { releaseHttp = resolve })
+      return {
+        ok: true,
+        opId: sentBody.opId,
+        mapSlug: sentBody.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+      }
+    })
+    const sseFirstActions = createCommandHarness({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox: sseFirstOutbox,
+      requestReconciliation: sseFirstReconciliation,
+      onCommandAccepted: sseFirstAccepted,
+    }).actions
+    const httpResult = sseFirstActions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(sentBody).not.toBeNull())
+    const sseEntry = await sseFirstOutbox.get(sentBody!.opId as string)
+    expect(sseEntry).not.toBeNull()
+
+    await expect(sseFirstActions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(sseEntry!))).resolves.toEqual({
+      status: 'acknowledged',
+      opId: sseEntry!.opId,
+    })
+    expect(sseFirstActions.status.value).toBe('saving')
+    await expect(sseFirstActions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 1 } })).resolves.toMatchObject({
+      dispatched: false,
+      message: 'A live-play command is already in flight.',
+    })
+    releaseHttp()
+    await expect(httpResult).resolves.toMatchObject({ dispatched: true, opId: sseEntry!.opId })
+    await expect(sseFirstOutbox.get(sseEntry!.opId)).resolves.toBeNull()
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(sseFirstReconciliation).toHaveBeenCalledTimes(1)
+    expect(sseFirstAccepted).toHaveBeenCalledTimes(1)
+
+    apiMocks.postJson.mockReset()
+    const httpFirstOutbox = createTestOutbox()
+    const httpFirstReconciliation = vi.fn()
+    const httpFirstAccepted = vi.fn()
+    let httpFirstOpId = ''
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      httpFirstOpId = command.opId as string
+      return { ok: true, opId: command.opId, mapSlug: command.mapSlug, previousRevision: 4, revision: 5, patches: [] }
+    })
+    const httpFirstActions = createCommandHarness({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox: httpFirstOutbox,
+      requestReconciliation: httpFirstReconciliation,
+      onCommandAccepted: httpFirstAccepted,
+    }).actions
+    await expect(httpFirstActions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 1 } })).resolves.toMatchObject({ dispatched: true })
+    await expect(httpFirstOutbox.get(httpFirstOpId)).resolves.toBeNull()
+
+    const absentEntry = await enqueueStoredCommand(createTestOutbox(), { body: storedMoveCommandBody({ opId: httpFirstOpId }) })
+    await expect(httpFirstActions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(absentEntry))).resolves.toEqual({
+      status: 'not-local',
+      opId: httpFirstOpId,
+    })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(httpFirstReconciliation).not.toHaveBeenCalled()
+    expect(httpFirstAccepted).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets two tabs race to acknowledge the same accepted realtime operation safely', async () => {
+    const outbox = createTestOutbox()
+    const entry = await enqueueStoredCommand(outbox)
+    const event = acceptedRealtimeEventForEntry(entry)
+    const first = createCommandHarness({ slug: 'arena-map', outbox, leaseOwner: 'tab-one', requestReconciliation: vi.fn() }).actions
+    const second = createCommandHarness({ slug: 'arena-map', outbox, leaseOwner: 'tab-two', requestReconciliation: vi.fn() }).actions
+
+    const results = await Promise.all([
+      first.acknowledgeAcceptedRealtimeEvent(event),
+      second.acknowledgeAcceptedRealtimeEvent(event),
+    ])
+
+    expect(results.map((result) => result.status).sort()).toEqual(expect.arrayContaining(['acknowledged']))
+    expect(results.every((result) => result.status === 'acknowledged' || result.status === 'not-local')).toBe(true)
+    await expect(outbox.get(entry.opId)).resolves.toBeNull()
   })
 
   it('stores explicit auth context and blocks missing auth roles before enqueue', async () => {
