@@ -88,6 +88,30 @@ describe('live-play operation-status parser', () => {
     })
   })
 
+  it('parses abandoned rejected terminal responses', () => {
+    const result = createLivePlayRejectedResult({
+      opId,
+      mapSlug,
+      reason: 'abandoned',
+      message: 'This live-play operation was abandoned before execution.',
+      currentRevision: 4,
+    })
+
+    expect(parseLivePlayOperationStatusResponse({
+      schemaVersion: LIVE_PLAY_OPERATION_STATUS_SCHEMA_VERSION,
+      status: 'terminal',
+      mapSlug,
+      opId,
+      result,
+    })).toEqual({
+      schemaVersion: LIVE_PLAY_OPERATION_STATUS_SCHEMA_VERSION,
+      status: 'terminal',
+      mapSlug,
+      opId,
+      result,
+    })
+  })
+
   it('rejects outer/result operation mismatches', () => {
     expect(() => parseLivePlayOperationStatusResponse({
       schemaVersion: LIVE_PLAY_OPERATION_STATUS_SCHEMA_VERSION,

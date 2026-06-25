@@ -4,6 +4,7 @@ import { campaignPath } from '../utils/campaignPaths'
 import { joinSafeUnderRoot } from '../utils/fsPaths'
 import { writeJsonFile } from '../utils/jsonFiles'
 import {
+  assertLivePlayOperationResultCompatible,
   isStorableLivePlayCommandResult,
   livePlayIdempotencyViolationMessage,
   type LivePlayCommandHash,
@@ -95,10 +96,19 @@ const recordFromSaveInput = (
 const assertExistingRecordCompatible = (
   existing: LivePlayOpRecord,
   commandHash: LivePlayCommandHash,
+  attemptedResult: StorableLivePlayCommandResult,
 ): void => {
   if (existing.commandHash !== commandHash) {
     throw new Error(livePlayIdempotencyViolationMessage(existing.mapSlug, existing.opId))
   }
+
+  assertLivePlayOperationResultCompatible({
+    mapSlug: existing.mapSlug,
+    opId: existing.opId,
+    commandHash,
+    existingResult: existing.result,
+    attemptedResult,
+  })
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -163,7 +173,7 @@ export const createFileLivePlayOpStore = (
       const path = recordPath(root, input.mapSlug, input.opId)
       const existing = readRecordFile(path)
       if (existing) {
-        assertExistingRecordCompatible(existing, input.commandHash)
+        assertExistingRecordCompatible(existing, input.commandHash, input.result)
         return cloneRecord(existing)
       }
 
@@ -196,7 +206,7 @@ export const createInMemoryLivePlayOpStore = (
       const key = recordKey(input.mapSlug, input.opId)
       const existing = records.get(key)
       if (existing) {
-        assertExistingRecordCompatible(existing, input.commandHash)
+        assertExistingRecordCompatible(existing, input.commandHash, input.result)
         return cloneRecord(existing)
       }
 

@@ -133,6 +133,7 @@ export class LivePlayIntegrationHarness {
   readonly mapRepository: MapRepository<TabletopMap>
   readonly sheetRepository: SheetRepository<Record<string, unknown>>
   readonly opRepository: LivePlayOpRepository
+  readonly queue = createInProcessMapWriteQueue()
   readonly publishedEvents: RealtimeEvent[] = []
 
   private readonly clients = new Map<string, LivePlayRealtimeClient>()
@@ -151,7 +152,7 @@ export class LivePlayIntegrationHarness {
     })
     this.commandExecutor = createAuthoritativeLivePlayCommandExecutor({
       opStore: this.opRepository,
-      queue: createInProcessMapWriteQueue(),
+      queue: this.queue,
     })
 
     this.seed(options)

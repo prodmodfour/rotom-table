@@ -66,6 +66,11 @@ describe('live-play terminal command response validation', () => {
       sheetUpdates: [],
     }).valid).toBe(true)
 
+    expect(validateTerminalLivePlayCommandResponse(rejected({
+      reason: 'abandoned',
+      message: 'This live-play operation was abandoned before execution.',
+    })).valid).toBe(true)
+
     expect(validateTerminalLivePlayCommandResponse({
       ok: true,
       duplicate: true,

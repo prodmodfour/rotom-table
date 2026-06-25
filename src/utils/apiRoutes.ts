@@ -32,6 +32,7 @@ export const MAP_API_PATHS = {
   resolveMove: '/api/maps/tokens/resolve-move',
   actionEvent: '/api/maps/action-event',
   operationStatus: '/api/maps/operations/status',
+  operationAbandon: '/api/maps/operations/abandon',
   spawnToken: '/api/maps/tokens/spawn',
   sendOutPokemon: '/api/maps/tokens/send-out',
   deleteToken: '/api/maps/tokens/delete',

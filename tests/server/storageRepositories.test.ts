@@ -7,6 +7,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
   createLivePlayAcceptedResult,
+  createLivePlayRejectedResult,
   type LivePlayCommandEnvelope,
   type LivePlayPatch,
   type LivePlayTokenScope,
@@ -546,5 +547,107 @@ describe('SQLite storage foundation', () => {
       command,
       result,
     })).toThrow('already recorded for a different command envelope')
+  })
+
+  it('rejects SQLite operation result collisions for the same command hash', () => {
+    const database = openTempDatabase()
+    const ops = createSqliteLivePlayOpRepository({ database })
+    const command: LivePlayCommandEnvelope = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: 'op_liveplaydb02',
+      mapSlug: 'training-yard',
+      baseRevision: 2,
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-1', field: 'position' }],
+      payload: { placementId: 'token-1', position: { x: 2, y: 0, z: 1 } },
+    }
+    const commandHash = createLivePlayCommandHash(command)
+    const accepted = createLivePlayAcceptedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      previousRevision: 2,
+      revision: 3,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: command.mapSlug,
+        revision: 3,
+        scopes: command.scopes,
+        payload: command.payload,
+      }],
+    })
+    const differentAccepted = createLivePlayAcceptedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      previousRevision: 2,
+      revision: 4,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: command.mapSlug,
+        revision: 4,
+        scopes: command.scopes,
+        payload: command.payload,
+      }],
+    })
+    const abandoned = createLivePlayRejectedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'abandoned',
+      message: 'This live-play operation was abandoned before execution.',
+      currentRevision: 2,
+    })
+    const rejected = createLivePlayRejectedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'stale-revision',
+      message: 'Refresh before retrying.',
+      currentRevision: 5,
+    })
+
+    const stored = ops.saveCommandResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, command, result: accepted })
+    expect(ops.saveCommandResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, command, result: accepted })).toEqual(stored)
+    expect(() => ops.saveCommandResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, command, result: differentAccepted }))
+      .toThrow(/different terminal result/)
+    expect(() => ops.saveCommandResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, command, result: abandoned }))
+      .toThrow(/different terminal result/)
+
+    const rejectedCommand = { ...command, opId: 'op_liveplaydb03' }
+    const rejectedHash = createLivePlayCommandHash(rejectedCommand)
+    ops.saveCommandResult({ mapSlug: rejectedCommand.mapSlug, opId: rejectedCommand.opId, commandHash: rejectedHash, command: rejectedCommand, result: { ...rejected, opId: rejectedCommand.opId } })
+    expect(() => ops.saveCommandResult({
+      mapSlug: rejectedCommand.mapSlug,
+      opId: rejectedCommand.opId,
+      commandHash: rejectedHash,
+      command: rejectedCommand,
+      result: { ...rejected, opId: rejectedCommand.opId, message: 'Different rejection.' },
+    })).toThrow(/different terminal result/)
+  })
+
+  it('stores abandoned SQLite operation tombstones without accepted-operation history revisions', () => {
+    const database = openTempDatabase()
+    const ops = createSqliteLivePlayOpRepository({ database })
+    const command: LivePlayCommandEnvelope = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: 'op_liveplaydb04',
+      mapSlug: 'training-yard',
+      baseRevision: 2,
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-1', field: 'position' }],
+      payload: { placementId: 'token-1', position: { x: 2, y: 0, z: 1 } },
+    }
+    const result = createLivePlayRejectedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'abandoned',
+      message: 'This live-play operation was abandoned before execution.',
+      currentRevision: 2,
+    })
+    const commandHash = createLivePlayCommandHash(command)
+
+    const stored = ops.saveCommandResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, command, result })
+
+    expect(stored.resultRevision).toBeUndefined()
+    expect(ops.listAcceptedOpsSinceRevision({ mapSlug: command.mapSlug, baseRevision: 0, currentRevision: 5 })).toEqual([])
   })
 })

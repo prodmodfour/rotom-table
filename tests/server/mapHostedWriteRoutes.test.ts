@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   executeLivePlayMapEffectsCommandUseCase: vi.fn(),
   executeLivePlayTerrainCommandUseCase: vi.fn(),
   executeAttackOfOpportunityLivePlayCommandUseCase: vi.fn(),
+  abandonLivePlayOperationUseCase: vi.fn(),
   resolvePlayerProfileForPolicy: vi.fn(),
 }))
 
@@ -77,6 +78,9 @@ vi.mock('../../server/useCases/applyLivePlayTerrainCommand', () => ({
 vi.mock('../../server/useCases/applyAttackOfOpportunityCommand', () => ({
   executeAttackOfOpportunityLivePlayCommandUseCase: mocks.executeAttackOfOpportunityLivePlayCommandUseCase,
 }))
+vi.mock('../../server/useCases/abandonLivePlayOperation', () => ({
+  abandonLivePlayOperationUseCase: mocks.abandonLivePlayOperationUseCase,
+}))
 vi.mock('../../server/policies/playerProfilePolicy', () => ({
   resolvePlayerProfileForPolicy: mocks.resolvePlayerProfileForPolicy,
 }))
@@ -113,6 +117,7 @@ const setFieldEffectRoute = (await import('../../server/api/maps/field-effects/s
 const removeFieldEffectRoute = (await import('../../server/api/maps/field-effects/remove.post')).default
 const tickFieldEffectDurationsRoute = (await import('../../server/api/maps/field-effects/tick.post')).default
 const attackOfOpportunityRoute = (await import('../../server/api/maps/attack-of-opportunity/update.post')).default
+const operationAbandonRoute = (await import('../../server/api/maps/operations/abandon.post')).default
 
 type MapRouteHandler = EventHandler<EventHandlerRequest, unknown>
 
@@ -339,6 +344,21 @@ describe('map hosted-write API routes', () => {
         },
         mock: mocks.executeAttackOfOpportunityLivePlayCommandUseCase,
       },
+      {
+        route: operationAbandonRoute,
+        body: {
+          command: {
+            schemaVersion: 1,
+            opId: 'op_hostedabngm',
+            mapSlug: 'arena',
+            baseRevision: 0,
+            type: 'moveToken',
+            scopes: [{ kind: 'token', placementId: 'token-1', field: 'position' }],
+            payload: { placementId: 'token-1', position: { x: 1, y: 0, z: 1 } },
+          },
+        },
+        mock: mocks.abandonLivePlayOperationUseCase,
+      },
     ]
 
     for (const routeCase of routeCases) {
@@ -521,6 +541,22 @@ describe('map hosted-write API routes', () => {
           payload: { orderIds: ['token-1', 'token-2'], activeId: 'token-1', round: 1 },
         },
         mock: mocks.executeLivePlayInitiativeCommandUseCase,
+      },
+      {
+        route: operationAbandonRoute,
+        body: {
+          command: {
+            schemaVersion: 1,
+            opId: 'op_hostedabnplayer',
+            mapSlug: 'arena',
+            baseRevision: 0,
+            type: 'moveToken',
+            scopes: [{ kind: 'token', placementId: 'token-1', field: 'position' }],
+            payload: { placementId: 'token-1', position: { x: 1, y: 0, z: 1 } },
+            profileId: 'profile_ash00000',
+          },
+        },
+        mock: mocks.abandonLivePlayOperationUseCase,
       },
     ]
 

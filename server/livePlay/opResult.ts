@@ -11,6 +11,36 @@ export type LivePlayCommandHash = string & { readonly __brand: 'LivePlayCommandH
 
 export type StorableLivePlayCommandResult = LivePlayCommandAccepted | LivePlayCommandRejected
 
+export interface LivePlayOperationResultConflictInput {
+  readonly mapSlug: string
+  readonly opId: string
+  readonly commandHash: LivePlayCommandHash
+  readonly existingResult: StorableLivePlayCommandResult
+  readonly attemptedResult: StorableLivePlayCommandResult
+}
+
+export class LivePlayOperationResultConflictError extends Error {
+  readonly mapSlug: string
+  readonly opId: string
+  readonly commandHash: LivePlayCommandHash
+  readonly existingResult: StorableLivePlayCommandResult
+  readonly attemptedResult: StorableLivePlayCommandResult
+
+  constructor(input: LivePlayOperationResultConflictInput) {
+    super(`Operation ID ${input.mapSlug}:${input.opId} already has a different terminal result for the same command envelope`)
+    this.name = 'LivePlayOperationResultConflictError'
+    this.mapSlug = input.mapSlug
+    this.opId = input.opId
+    this.commandHash = input.commandHash
+    this.existingResult = cloneJson(input.existingResult)
+    this.attemptedResult = cloneJson(input.attemptedResult)
+  }
+}
+
+export const isLivePlayOperationResultConflictError = (
+  error: unknown,
+): error is LivePlayOperationResultConflictError => error instanceof LivePlayOperationResultConflictError
+
 export interface LivePlayCommandHashMaterial {
   readonly schemaVersion: LivePlayCommandEnvelope['schemaVersion']
   readonly opId: string
@@ -28,6 +58,8 @@ export interface LivePlayRecordedResultReference {
 }
 
 type JsonRecord = Record<string, unknown>
+
+const cloneJson = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -125,6 +157,18 @@ export const isStorableLivePlayCommandResult = (
   if (result.ok === false) return typeof result.mapSlug === 'string'
   if (result.ok !== true || typeof result.mapSlug !== 'string') return false
   return !hasOwn(result, 'duplicate') || result.duplicate !== true
+}
+
+export const areLivePlayCommandResultsSemanticallyEqual = (
+  left: StorableLivePlayCommandResult,
+  right: StorableLivePlayCommandResult,
+): boolean => canonicalJsonStringify(left, 'leftResult') === canonicalJsonStringify(right, 'rightResult')
+
+export const assertLivePlayOperationResultCompatible = (
+  input: LivePlayOperationResultConflictInput,
+): void => {
+  if (areLivePlayCommandResultsSemanticallyEqual(input.existingResult, input.attemptedResult)) return
+  throw new LivePlayOperationResultConflictError(input)
 }
 
 export const assertLivePlayResultMatchesCommand = (

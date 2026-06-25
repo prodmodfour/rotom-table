@@ -18,6 +18,7 @@ import { isRevision, normalizeRevision } from '#shared/sessionRevisions'
 import {
   createLivePlayCommandHash,
   createLivePlayIdempotencyViolationResult,
+  isLivePlayOperationResultConflictError,
   type LivePlayCommandHash,
   type StorableLivePlayCommandResult,
 } from './opResult'
@@ -336,6 +337,16 @@ const canRecordCommand = (store: LivePlayOpStore): store is CommandRecordingOpSt
   typeof (store as { readonly saveCommandResult?: unknown }).saveCommandResult === 'function'
 )
 
+const collisionResultForCommand = (
+  command: LivePlayCommandEnvelope,
+  commandHash: LivePlayCommandHash,
+  error: unknown,
+): StorableLivePlayCommandResult | null => {
+  if (!isLivePlayOperationResultConflictError(error)) return null
+  if (error.mapSlug !== command.mapSlug || error.opId !== command.opId || error.commandHash !== commandHash) return null
+  return error.existingResult
+}
+
 type OperationHistoryOpStore = LivePlayOpStore & LivePlayAcceptedOperationHistoryStore
 
 const canReadOperationHistory = (store: LivePlayOpStore): store is OperationHistoryOpStore => (
@@ -467,7 +478,8 @@ export class AuthoritativeLivePlayCommandExecutor {
           result,
         })
       } catch (error) {
-        return persistenceFailedResult(command, error, currentRevision)
+        return collisionResultForCommand(command, commandHash, error)
+          ?? persistenceFailedResult(command, error, currentRevision)
       }
 
       await options.publish?.({
@@ -630,7 +642,8 @@ export class AuthoritativeLivePlayCommandExecutor {
       this.saveOpResult(command, commandHash, result)
       return result
     } catch (error) {
-      return persistenceFailedResult(command, error, result.ok ? result.previousRevision : result.currentRevision ?? 0)
+      return collisionResultForCommand(command, commandHash, error)
+        ?? persistenceFailedResult(command, error, result.ok ? result.previousRevision : result.currentRevision ?? 0)
     }
   }
 }

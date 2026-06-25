@@ -6,6 +6,7 @@ import {
   type LivePlayScope,
 } from '#shared/livePlayCommands'
 import {
+  assertLivePlayOperationResultCompatible,
   isStorableLivePlayCommandResult,
   livePlayIdempotencyViolationMessage,
   type LivePlayCommandHash,
@@ -141,6 +142,7 @@ const acceptedOperationFromRecord = (
 }
 
 const resultRevision = (result: StorableLivePlayCommandResult): number | null => {
+  if (!result.ok && result.reason === 'abandoned') return null
   const revision = result.ok ? result.revision : result.currentRevision
   return typeof revision === 'number' ? parseStoredRevision(revision, 'live-play op result revision') : null
 }
@@ -228,6 +230,13 @@ export const createSqliteLivePlayOpRepository = (
         if (existing.mapSlug !== mapSlug || existing.commandHash !== input.commandHash) {
           throw new Error(livePlayIdempotencyViolationMessage(existing.mapSlug, existing.opId))
         }
+        assertLivePlayOperationResultCompatible({
+          mapSlug: existing.mapSlug,
+          opId: existing.opId,
+          commandHash: input.commandHash,
+          existingResult: existing.result,
+          attemptedResult: input.result,
+        })
         return existing
       }
 

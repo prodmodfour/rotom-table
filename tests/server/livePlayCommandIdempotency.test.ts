@@ -289,6 +289,59 @@ describe('live-play command idempotency', () => {
     expect(handler).toHaveBeenCalledTimes(1)
   })
 
+  it('rejects same-hash in-memory saves with different terminal results', () => {
+    const store = createInMemoryLivePlayOpStore()
+    const command = createMoveCommand()
+    const commandHash = createLivePlayCommandHash(command)
+    const accepted = createAccepted(command, 4)
+    const differentAccepted = createAccepted(command, 5)
+    const abandoned = createLivePlayRejectedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'abandoned',
+      message: 'This live-play operation was abandoned before execution.',
+      currentRevision: 4,
+    })
+    const rejected = createLivePlayRejectedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'stale-revision',
+      message: 'Refresh before retrying.',
+      currentRevision: 6,
+    })
+
+    const stored = store.saveOpResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, result: accepted })
+    expect(store.saveOpResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, result: accepted })).toEqual(stored)
+    expect(() => store.saveOpResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, result: differentAccepted }))
+      .toThrow(/different terminal result/)
+    expect(() => store.saveOpResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, result: abandoned }))
+      .toThrow(/different terminal result/)
+
+    const rejectedStore = createInMemoryLivePlayOpStore()
+    rejectedStore.saveOpResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, result: rejected })
+    expect(() => rejectedStore.saveOpResult({
+      mapSlug: command.mapSlug,
+      opId: command.opId,
+      commandHash,
+      result: { ...rejected, message: 'Different rejection.' },
+    })).toThrow(/different terminal result/)
+  })
+
+  it('rejects same-hash file-backed saves with different terminal results', () => {
+    const root = mkdtempSync(join(tmpdir(), 'rotom-live-play-ops-'))
+    cleanupRoots.push(root)
+    const store = createFileLivePlayOpStore({ root, clock: () => '2026-06-01T00:00:00.000Z' })
+    const command = createTurnCommand()
+    const commandHash = createLivePlayCommandHash(command)
+    const accepted = createAccepted(command, 4)
+    const differentAccepted = createAccepted(command, 5)
+
+    const stored = store.saveOpResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, result: accepted })
+    expect(store.saveOpResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, result: accepted })).toEqual(stored)
+    expect(() => store.saveOpResult({ mapSlug: command.mapSlug, opId: command.opId, commandHash, result: differentAccepted }))
+      .toThrow(/different terminal result/)
+  })
+
   it('persists command hashes beside stored results in the file-backed operation store', () => {
     const root = mkdtempSync(join(tmpdir(), 'rotom-live-play-ops-'))
     cleanupRoots.push(root)

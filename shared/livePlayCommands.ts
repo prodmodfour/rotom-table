@@ -771,6 +771,7 @@ export const LIVE_PLAY_COMMAND_REJECTION_REASONS = [
   'conflict',
   'no-op',
   'persistence-failed',
+  'abandoned',
 ] as const
 export type LivePlayCommandRejectionReason = (typeof LIVE_PLAY_COMMAND_REJECTION_REASONS)[number]
 

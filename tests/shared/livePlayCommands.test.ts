@@ -427,8 +427,10 @@ describe('live-play command contract', () => {
       'conflict',
       'no-op',
       'persistence-failed',
+      'abandoned',
     ])
     expect(isLivePlayCommandRejectionReason('conflict')).toBe(true)
+    expect(isLivePlayCommandRejectionReason('abandoned')).toBe(true)
     expect(isLivePlayCommandRejectionReason('stale')).toBe(false)
 
     expect(accepted).toMatchObject({ ok: true, opId, mapSlug, previousRevision: 7, revision: 8 })
