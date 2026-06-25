@@ -193,6 +193,10 @@ const livePlayStateLabel = computed(() => {
   }
 })
 const showLivePlaySavingIcon = computed(() => props.livePlayState === 'saving-command')
+const showLivePlayStateBanner = computed(() => (
+  Boolean(props.livePlayStatusMessage)
+  && (props.livePlayState ?? 'ready') !== 'ready'
+))
 const livePlaySavingIconLabel = computed(() => (
   props.livePlayStatusMessage ?? 'Sending live-play command to the server.'
 ))
@@ -335,7 +339,7 @@ defineExpose({ focusPokemon })
       </div>
 
       <div
-        v-if="props.map && canViewMap && props.livePlayStatusMessage && !showLivePlaySavingIcon"
+        v-if="props.map && canViewMap && showLivePlayStateBanner && !showLivePlaySavingIcon"
         class="live-play-state-banner"
         :class="`live-play-state-banner--${props.livePlayState ?? 'ready'}`"
         role="status"
