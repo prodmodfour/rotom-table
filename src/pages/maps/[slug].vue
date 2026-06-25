@@ -299,6 +299,7 @@ const livePlayCommandRecoveryGate = useLivePlayCommandRecoveryGate({
   refresh: livePlayCommands.refreshOutboxEntries,
   retry: livePlayCommands.retryOutboxCommand,
   checkStatus: livePlayCommands.checkOutboxCommandStatus,
+  abandon: livePlayCommands.abandonOutboxCommand,
 })
 watchEffect(() => {
   livePlayRecoveryNewCommandBlocked.value = livePlayCommandRecoveryGate.blocksNewLiveCommands.value
@@ -313,9 +314,11 @@ const livePlayCommandsAllowed = computed(() => (
 const livePlayConnectionState = computed<LivePlayConnectionState>(() => {
   if (mapInPrepareMode.value) return livePlayStateMachine.state.value
   if (livePlayCommandRecoveryGate.retryingOpId.value) return 'saving-command'
+  if (livePlayCommandRecoveryGate.abandoningOpId.value) return 'saving-command'
   if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.state.value
   if (livePlayCommands.status.value === 'saving') return 'saving-command'
   if (livePlayCommands.outboxRecoveryStatus.value === 'error' || livePlayCommands.outboxRecoveryError.value) return 'error'
+  if (livePlayCommands.outboxRecoveryStatus.value === 'abandoning') return 'saving-command'
   if (livePlayCommands.outboxRecoveryStatus.value === 'synchronizing') return 'reconciling'
   if (!livePlayCommandRecoveryGate.readyForCurrentContext.value) return 'reconciling'
   if (livePlayCommands.outboxEntries.value.length > 0) return 'stale'
@@ -325,7 +328,7 @@ const livePlayStatusMessage = computed(() => {
   if (mapInPrepareMode.value) {
     return 'Prepare Map mode is active. Live-play commands are paused until the GM switches to Run Live Play.'
   }
-  if (livePlayCommandRecoveryGate.retryingOpId.value) {
+  if (livePlayCommandRecoveryGate.retryingOpId.value || livePlayCommandRecoveryGate.abandoningOpId.value) {
     return livePlayCommandRecoveryGate.blockMessage.value
   }
   if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.notice.value
@@ -338,12 +341,18 @@ const livePlayRetryDisabledMessage = computed(() => {
   if (livePlayCommands.outboxRecoveryStatus.value === 'synchronizing') {
     return 'Synchronizing accepted command with the authoritative live table snapshot.'
   }
+  if (livePlayCommands.outboxRecoveryStatus.value === 'abandoning') {
+    return 'Abandoning the pending live-play operation safely on the server.'
+  }
   if (livePlayCommands.status.value === 'saving') return 'A live-play command is already in flight.'
   if (livePlayCommandRecoveryGate.retryingOpId.value) {
     return 'Retrying the pending live-play command with its original operation ID.'
   }
   if (livePlayCommandRecoveryGate.checkingOpId.value) {
     return 'Checking the server for a terminal command result without resending the command.'
+  }
+  if (livePlayCommandRecoveryGate.abandoningOpId.value) {
+    return 'Abandoning the pending live-play operation safely on the server.'
   }
   return null
 })
@@ -355,6 +364,18 @@ const retryLivePlayCommandRecoveryEntry = (opId: string) => {
 }
 const checkLivePlayCommandRecoveryEntryStatus = (opId: string) => {
   void livePlayCommandRecoveryGate.checkEntry(opId).catch(() => undefined)
+}
+const requestLivePlayCommandAbandonConfirmation = (opId: string) => {
+  livePlayCommandRecoveryGate.requestAbandonConfirmation(opId)
+}
+const cancelLivePlayCommandAbandonConfirmation = () => {
+  livePlayCommandRecoveryGate.cancelAbandonConfirmation()
+}
+const confirmLivePlayCommandAbandonment = (opId: string) => {
+  void livePlayCommandRecoveryGate.confirmAbandon(opId).catch(() => undefined)
+}
+const clearLivePlayCommandRecoveryResolutionNotice = () => {
+  livePlayCommandRecoveryGate.clearResolutionNotice()
 }
 
 watch(renamedTo, (newSlug) => {
@@ -1947,11 +1968,18 @@ useMapDimensionReconciliation({
         :interaction-mode="mapInteractionMode"
         :retrying-op-id="livePlayCommandRecoveryGate.retryingOpId.value"
         :checking-op-id="livePlayCommandRecoveryGate.checkingOpId.value"
+        :confirming-abandon-op-id="livePlayCommandRecoveryGate.confirmingAbandonOpId.value"
+        :abandoning-op-id="livePlayCommandRecoveryGate.abandoningOpId.value"
         :status-result-by-op-id="livePlayCommandRecoveryGate.statusResultByOpId.value"
         :retry-disabled-message="livePlayRetryDisabledMessage"
+        :resolution-notice="livePlayCommandRecoveryGate.resolutionNotice.value"
         @refresh="refreshLivePlayCommandRecovery"
         @retry="retryLivePlayCommandRecoveryEntry"
         @check-status="checkLivePlayCommandRecoveryEntryStatus"
+        @request-abandon-confirmation="requestLivePlayCommandAbandonConfirmation"
+        @cancel-abandon-confirmation="cancelLivePlayCommandAbandonConfirmation"
+        @confirm-abandon="confirmLivePlayCommandAbandonment"
+        @clear-resolution-notice="clearLivePlayCommandRecoveryResolutionNotice"
       />
     </template>
 

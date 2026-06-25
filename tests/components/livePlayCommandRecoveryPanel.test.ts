@@ -85,6 +85,10 @@ describe('LivePlayCommandRecoveryPanel', () => {
     expect(retryButtons[0]?.attributes('disabled')).toBeUndefined()
     expect(retryButtons[1]?.attributes('disabled')).toBeUndefined()
     expect(retryButtons[2]?.attributes('disabled')).toBeDefined()
+
+    const abandonButtons = wrapper.findAll('button').filter((button) => button.text().includes('Abandon…'))
+    expect(abandonButtons).toHaveLength(3)
+    expect(abandonButtons.every((button) => button.attributes('disabled') === undefined)).toBe(true)
   })
 
   it('disables retries in Prepare Map and while another send is active', async () => {
@@ -191,6 +195,67 @@ describe('LivePlayCommandRecoveryPanel', () => {
     const checkButton = wrapper.find(`button[aria-label="Check whether operation ${entry.opId} has a terminal server result"]`)
     expect(checkButton.text()).toBe('Checking…')
     expect(checkButton.attributes('disabled')).toBeDefined()
+  })
+
+  it('requires an inline accessible confirmation before emitting abandonment confirmation', async () => {
+    const entry = createEntry('queued', { opId: 'op_panelabandon01' })
+    const wrapper = mount(LivePlayCommandRecoveryPanel, {
+      props: {
+        entries: [entry],
+        recoveryStatus: 'idle',
+        interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+        retryingOpId: null,
+        checkingOpId: null,
+        abandoningOpId: null,
+        confirmingAbandonOpId: null,
+        retryDisabledMessage: null,
+      },
+    })
+
+    const abandon = wrapper.findAll('button').find((button) => button.text() === 'Abandon…')
+    expect(abandon?.exists()).toBe(true)
+    await abandon?.trigger('click')
+    expect(wrapper.emitted('requestAbandonConfirmation')).toEqual([[entry.opId]])
+    expect(wrapper.emitted('confirmAbandon')).toBeUndefined()
+
+    await wrapper.setProps({ confirmingAbandonOpId: entry.opId })
+    const dialog = wrapper.find('[role="alertdialog"]')
+    expect(dialog.exists()).toBe(true)
+    expect(dialog.attributes('aria-labelledby')).toBeTruthy()
+    expect(dialog.attributes('aria-describedby')).toBeTruthy()
+    expect(dialog.text()).toContain('Abandoning does not undo an operation that already committed')
+    expect(dialog.text()).toContain('if the command already finished, its existing terminal result wins')
+    expect(dialog.text()).toContain('prevents future execution under this operation ID')
+
+    await dialog.find('button[aria-label="Cancel abandoning this live-play operation"]').trigger('click')
+    expect(wrapper.emitted('cancelAbandonConfirmation')).toHaveLength(1)
+
+    await dialog.findAll('button').find((button) => button.text() === 'Abandon operation')?.trigger('click')
+    expect(wrapper.emitted('confirmAbandon')).toEqual([[entry.opId]])
+  })
+
+  it('disables other controls and displays Abandoning while abandonment is active', () => {
+    const active = createEntry('uncertain', { opId: 'op_panelabandon02' })
+    const other = createEntry('queued', { opId: 'op_panelabandon03' })
+    const wrapper = mount(LivePlayCommandRecoveryPanel, {
+      props: {
+        entries: [active, other],
+        recoveryStatus: 'abandoning',
+        interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY,
+        retryingOpId: null,
+        checkingOpId: null,
+        abandoningOpId: active.opId,
+        confirmingAbandonOpId: active.opId,
+        retryDisabledMessage: null,
+      },
+    })
+
+    expect(wrapper.text()).toContain('Abandoning the pending live-play operation safely on the server.')
+    expect(wrapper.find('button[aria-label="Refresh live-play command recovery without sending commands"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.findAll('button').filter((button) => button.text() === 'Check server').every((button) => button.attributes('disabled') !== undefined)).toBe(true)
+    expect(wrapper.findAll('button').filter((button) => button.text() === 'Retry').every((button) => button.attributes('disabled') !== undefined)).toBe(true)
+    expect(wrapper.findAll('button').some((button) => button.text() === 'Abandoning…')).toBe(true)
+    expect(wrapper.findAll('button').filter((button) => button.text() === 'Abandon…').every((button) => button.attributes('disabled') !== undefined)).toBe(true)
   })
 
   it('does not render raw command payloads, sheets, or auth context', () => {

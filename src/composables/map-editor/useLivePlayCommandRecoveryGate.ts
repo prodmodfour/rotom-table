@@ -12,6 +12,7 @@ import type {
   LivePlayCommandDispatchResult,
   LivePlayCommandOutboxRecoveryStatus,
   LivePlayCommandStatus,
+  LivePlayOperationAbandonmentClientResult,
   LivePlayOperationStatusCheckResult,
 } from '~/composables/map-editor/useLivePlayCommands'
 import type { LivePlayCommandOutboxEntry } from '~/utils/livePlayCommandOutbox'
@@ -64,6 +65,7 @@ export interface UseLivePlayCommandRecoveryGateOptions {
   readonly refresh: () => Promise<readonly LivePlayCommandOutboxEntry[]>
   readonly retry: (opId: string) => Promise<LivePlayCommandDispatchResult>
   readonly checkStatus: (opId: string) => Promise<LivePlayOperationStatusCheckResult>
+  readonly abandon: (opId: string) => Promise<LivePlayOperationAbandonmentClientResult>
 
   readonly clock?: UseLivePlayCommandRecoveryGateClock
   readonly browser?: UseLivePlayCommandRecoveryGateBrowserBindings
@@ -76,10 +78,17 @@ export interface UseLivePlayCommandRecoveryGateReturn {
   readonly panelVisible: ComputedRef<boolean>
   readonly retryingOpId: Ref<string | null>
   readonly checkingOpId: Ref<string | null>
+  readonly confirmingAbandonOpId: Ref<string | null>
+  readonly abandoningOpId: Ref<string | null>
   readonly statusResultByOpId: Readonly<Ref<Record<string, LivePlayCommandStatusInspection>>>
+  readonly resolutionNotice: Ref<string | null>
   readonly refreshRecovery: () => Promise<void>
   readonly retryEntry: (opId: string) => Promise<LivePlayCommandDispatchResult>
   readonly checkEntry: (opId: string) => Promise<LivePlayOperationStatusCheckResult>
+  readonly requestAbandonConfirmation: (opId: string) => void
+  readonly cancelAbandonConfirmation: () => void
+  readonly confirmAbandon: (opId: string) => Promise<LivePlayOperationAbandonmentClientResult>
+  readonly clearResolutionNotice: () => void
 }
 
 const RECOVERY_INSPECTION_MESSAGE = 'Checking for interrupted live-play commands before actions resume.'
@@ -87,8 +96,14 @@ const RECOVERY_ERROR_MESSAGE = 'Durable command recovery is unavailable. Refresh
 const REALTIME_SYNCHRONIZING_MESSAGE = 'Synchronizing accepted command with the authoritative live table snapshot.'
 const RETRYING_MESSAGE = 'Retrying the pending live-play command with its original operation ID.'
 const STATUS_CHECKING_MESSAGE = 'Checking the server for a terminal command result without resending the command.'
+const ABANDONING_MESSAGE = 'Abandoning the pending live-play operation safely on the server.'
 const STATUS_CHECK_BLOCKED_BY_RETRY_MESSAGE = 'A live-play command retry is already active. Wait for it to finish before checking the server.'
 const RETRY_BLOCKED_BY_STATUS_CHECK_MESSAGE = 'A read-only server status check is already active. Wait for it to finish before retrying.'
+const RETRY_BLOCKED_BY_ABANDON_MESSAGE = 'A live-play operation abandonment is already active. Wait for it to finish before retrying.'
+const STATUS_CHECK_BLOCKED_BY_ABANDON_MESSAGE = 'A live-play operation abandonment is already active. Wait for it to finish before checking the server.'
+const ABANDON_BLOCKED_BY_RETRY_MESSAGE = 'A live-play command retry is already active. Wait for it to finish before abandoning an operation.'
+const ABANDON_BLOCKED_BY_STATUS_CHECK_MESSAGE = 'A read-only server status check is already active. Wait for it to finish before abandoning an operation.'
+const ABANDON_CONFIRMATION_REQUIRED_MESSAGE = 'Choose Abandon… for this operation before confirming abandonment.'
 
 const pendingCommandMessage = (count: number): string => (
   count === 1
@@ -133,7 +148,10 @@ export const useLivePlayCommandRecoveryGate = (
   const readyContextKey = ref<string | null>(null)
   const retryingOpId = ref<string | null>(null)
   const checkingOpId = ref<string | null>(null)
+  const confirmingAbandonOpId = ref<string | null>(null)
+  const abandoningOpId = ref<string | null>(null)
   const statusResultByOpId = ref<Record<string, LivePlayCommandStatusInspection>>({})
+  const resolutionNotice = ref<string | null>(null)
 
   let requestGeneration = 0
   let statusContextGeneration = 0
@@ -147,6 +165,10 @@ export const useLivePlayCommandRecoveryGate = (
   let activeStatusCheckOpId: string | null = null
   let activeStatusCheckContextKey: string | null = null
   let activeStatusCheckGeneration: number | null = null
+  let activeAbandonment: Promise<LivePlayOperationAbandonmentClientResult> | null = null
+  let activeAbandonmentOpId: string | null = null
+  let activeAbandonmentContextKey: string | null = null
+  let activeAbandonmentGeneration: number | null = null
   let leaseTimer: TimeoutHandle | null = null
 
   const clearLeaseTimer = (): void => {
@@ -213,6 +235,19 @@ export const useLivePlayCommandRecoveryGate = (
     message: string,
   ): LivePlayOperationStatusCheckResult => ({ status: 'error', opId, message })
 
+  const abandonmentResultBlocked = (
+    opId: string,
+    message: string,
+  ): LivePlayOperationAbandonmentClientResult => ({ status: 'error', opId, message })
+
+  const clearAbandonConfirmation = (): void => {
+    confirmingAbandonOpId.value = null
+  }
+
+  const clearResolutionNotice = (): void => {
+    resolutionNotice.value = null
+  }
+
   const earliestFutureLeaseExpiry = (): number | null => {
     const currentTime = now()
     let earliest: number | null = null
@@ -247,6 +282,11 @@ export const useLivePlayCommandRecoveryGate = (
       readyContextKey.value = null
       clearLeaseTimer()
       return []
+    }
+
+    if (activeAbandonment !== null) {
+      await activeAbandonment.catch(() => undefined)
+      return options.entries.value
     }
 
     if (
@@ -286,6 +326,10 @@ export const useLivePlayCommandRecoveryGate = (
   }
 
   const refreshRecovery = async (): Promise<void> => {
+    if (activeAbandonment !== null) {
+      await activeAbandonment.catch(() => undefined)
+      return
+    }
     if (activeStatusCheck !== null) {
       await activeStatusCheck.catch(() => undefined)
       return
@@ -308,6 +352,14 @@ export const useLivePlayCommandRecoveryGate = (
   }
 
   const retryEntry = (opId: string): Promise<LivePlayCommandDispatchResult> => {
+    if (activeAbandonment !== null) {
+      return Promise.resolve({
+        dispatched: false,
+        message: RETRY_BLOCKED_BY_ABANDON_MESSAGE,
+        opId,
+      })
+    }
+
     if (activeStatusCheck !== null) {
       return Promise.resolve({
         dispatched: false,
@@ -325,6 +377,7 @@ export const useLivePlayCommandRecoveryGate = (
       })
     }
 
+    clearAbandonConfirmation()
     clearStatusInspection(opId)
     retryingOpId.value = opId
     activeRetryOpId = opId
@@ -363,6 +416,11 @@ export const useLivePlayCommandRecoveryGate = (
   }
 
   const checkEntry = (opId: string): Promise<LivePlayOperationStatusCheckResult> => {
+    if (activeAbandonment !== null) {
+      recordStatusInspection(opId, 'error', STATUS_CHECK_BLOCKED_BY_ABANDON_MESSAGE)
+      return Promise.resolve(statusCheckResultBlocked(opId, STATUS_CHECK_BLOCKED_BY_ABANDON_MESSAGE))
+    }
+
     if (activeStatusCheck !== null) {
       if (activeStatusCheckOpId === opId) return activeStatusCheck
       const message = `Live-play operation ${activeStatusCheckOpId ?? '(unknown)'} is already being checked with the server. Wait for that read-only status check to finish before checking another operation.`
@@ -383,6 +441,7 @@ export const useLivePlayCommandRecoveryGate = (
     }
 
     const generation = statusContextGeneration
+    clearAbandonConfirmation()
     clearStatusInspection(opId)
     checkingOpId.value = opId
     activeStatusCheckOpId = opId
@@ -412,6 +471,110 @@ export const useLivePlayCommandRecoveryGate = (
     return activeStatusCheck
   }
 
+  const requestAbandonConfirmation = (opId: string): void => {
+    if (!entryExists(opId)) return
+    if (activeAbandonment !== null) return
+    confirmingAbandonOpId.value = opId
+    clearResolutionNotice()
+  }
+
+  const cancelAbandonConfirmation = (): void => {
+    if (activeAbandonment !== null) return
+    clearAbandonConfirmation()
+  }
+
+  const applyAbandonmentResult = (
+    opId: string,
+    result: LivePlayOperationAbandonmentClientResult,
+    contextKey: string,
+    generation: number,
+  ): void => {
+    if (disposed) return
+    if (currentContextKey() !== contextKey || statusContextGeneration !== generation) return
+
+    if (result.status === 'error') {
+      recordStatusInspection(opId, 'error', result.message)
+      return
+    }
+
+    clearStatusInspection(opId)
+    pruneStatusInspections()
+    resolutionNotice.value = result.message ?? (
+      result.status === 'accepted'
+        ? 'The operation had already been accepted by the server. The authoritative table state was synchronized.'
+        : 'The pending live-play operation reached a terminal server result.'
+    )
+  }
+
+  const confirmAbandon = (opId: string): Promise<LivePlayOperationAbandonmentClientResult> => {
+    if (activeAbandonment !== null) {
+      if (activeAbandonmentOpId === opId) return activeAbandonment
+      return Promise.resolve(abandonmentResultBlocked(
+        opId,
+        `Live-play operation ${activeAbandonmentOpId ?? '(unknown)'} is already being abandoned. Wait for it to finish before abandoning another operation.`,
+      ))
+    }
+
+    if (activeRetry !== null) return Promise.resolve(abandonmentResultBlocked(opId, ABANDON_BLOCKED_BY_RETRY_MESSAGE))
+    if (activeStatusCheck !== null) return Promise.resolve(abandonmentResultBlocked(opId, ABANDON_BLOCKED_BY_STATUS_CHECK_MESSAGE))
+
+    const contextKey = currentContextKey()
+    if (contextKey === null) {
+      return Promise.resolve(abandonmentResultBlocked(
+        opId,
+        'A valid live-play recovery context is required before abandoning an operation.',
+      ))
+    }
+
+    if (confirmingAbandonOpId.value !== opId) {
+      return Promise.resolve(abandonmentResultBlocked(opId, ABANDON_CONFIRMATION_REQUIRED_MESSAGE))
+    }
+
+    if (!entryExists(opId)) {
+      clearAbandonConfirmation()
+      return Promise.resolve(abandonmentResultBlocked(
+        opId,
+        'The live-play operation is no longer present in the recovery list.',
+      ))
+    }
+
+    const generation = statusContextGeneration
+    clearStatusInspection(opId)
+    abandoningOpId.value = opId
+    activeAbandonmentOpId = opId
+    activeAbandonmentContextKey = contextKey
+    activeAbandonmentGeneration = generation
+    activeAbandonment = options.abandon(opId)
+      .catch((error): LivePlayOperationAbandonmentClientResult => ({
+        status: 'error',
+        opId,
+        message: error instanceof Error
+          ? error.message
+          : 'Live-play operation abandonment failed before a result was returned.',
+      }))
+      .then((result) => {
+        applyAbandonmentResult(opId, result, contextKey, generation)
+        return result
+      })
+      .finally(() => {
+        const belongsToThisRequest = activeAbandonmentOpId === opId && activeAbandonmentContextKey === contextKey
+        const stillCurrent = belongsToThisRequest && activeAbandonmentGeneration === generation
+        if (stillCurrent) {
+          abandoningOpId.value = null
+          clearAbandonConfirmation()
+          scheduleLeaseRecovery()
+        }
+        if (belongsToThisRequest) {
+          activeAbandonmentOpId = null
+          activeAbandonmentContextKey = null
+          activeAbandonmentGeneration = null
+          activeAbandonment = null
+        }
+      })
+
+    return activeAbandonment
+  }
+
   const readyForCurrentContext = computed(() => {
     const contextKey = currentContextKey()
     return contextKey !== null && readyContextKey.value === contextKey
@@ -426,17 +589,20 @@ export const useLivePlayCommandRecoveryGate = (
     return !readyForCurrentContext.value
       || options.recoveryStatus.value === 'loading'
       || options.recoveryStatus.value === 'checking'
+      || options.recoveryStatus.value === 'abandoning'
       || options.recoveryStatus.value === 'synchronizing'
       || hasRecoveryError.value
       || options.entries.value.length > 0
       || retryingOpId.value !== null
       || checkingOpId.value !== null
+      || abandoningOpId.value !== null
   })
 
   const blockMessage = computed<string | null>(() => {
     if (options.interactionMode.value !== MAP_INTERACTION_MODES.LIVE_PLAY) return null
     if (retryingOpId.value !== null) return RETRYING_MESSAGE
     if (checkingOpId.value !== null || options.recoveryStatus.value === 'checking') return STATUS_CHECKING_MESSAGE
+    if (abandoningOpId.value !== null || options.recoveryStatus.value === 'abandoning') return ABANDONING_MESSAGE
     if (options.recoveryStatus.value === 'synchronizing') return REALTIME_SYNCHRONIZING_MESSAGE
     if (hasRecoveryError.value) return options.recoveryError.value ?? RECOVERY_ERROR_MESSAGE
     if (!readyForCurrentContext.value || options.recoveryStatus.value === 'loading') return RECOVERY_INSPECTION_MESSAGE
@@ -448,11 +614,13 @@ export const useLivePlayCommandRecoveryGate = (
     options.commandStatus.value === 'saving'
     && options.recoveryStatus.value !== 'retrying'
     && options.recoveryStatus.value !== 'checking'
+    && options.recoveryStatus.value !== 'abandoning'
     && readyForCurrentContext.value
     && options.entries.value.length === 1
     && options.entries.value[0]?.state === 'sending'
     && retryingOpId.value === null
     && checkingOpId.value === null
+    && abandoningOpId.value === null
   ))
 
   const panelVisible = computed(() => {
@@ -462,12 +630,16 @@ export const useLivePlayCommandRecoveryGate = (
     return options.recoveryStatus.value === 'loading'
       || options.recoveryStatus.value === 'retrying'
       || options.recoveryStatus.value === 'checking'
+      || options.recoveryStatus.value === 'abandoning'
       || options.recoveryStatus.value === 'synchronizing'
       || (hasActiveContext && !readyForCurrentContext.value)
       || hasRecoveryError.value
       || options.entries.value.length > 0
       || retryingOpId.value !== null
       || checkingOpId.value !== null
+      || confirmingAbandonOpId.value !== null
+      || abandoningOpId.value !== null
+      || resolutionNotice.value !== null
   })
 
   watch(
@@ -477,6 +649,9 @@ export const useLivePlayCommandRecoveryGate = (
       statusContextGeneration += 1
       readyContextKey.value = null
       retryingOpId.value = null
+      confirmingAbandonOpId.value = null
+      abandoningOpId.value = null
+      resolutionNotice.value = null
       activeRetry = null
       activeRetryOpId = null
       clearActiveStatusCheck()
@@ -491,6 +666,9 @@ export const useLivePlayCommandRecoveryGate = (
     () => options.entries.value.map((entry) => `${entry.opId}:${entry.state}:${entry.leaseExpiresAt ?? ''}`).join('|'),
     () => {
       pruneStatusInspections()
+      if (confirmingAbandonOpId.value !== null && !entryExists(confirmingAbandonOpId.value)) {
+        confirmingAbandonOpId.value = null
+      }
       scheduleLeaseRecovery()
     },
     { flush: 'post' },
@@ -516,6 +694,9 @@ export const useLivePlayCommandRecoveryGate = (
     onScopeDispose(() => {
       disposed = true
       statusContextGeneration += 1
+      confirmingAbandonOpId.value = null
+      abandoningOpId.value = null
+      resolutionNotice.value = null
       clearActiveStatusCheck()
       clearAllStatusInspections()
       clearLeaseTimer()
@@ -533,9 +714,16 @@ export const useLivePlayCommandRecoveryGate = (
     panelVisible,
     retryingOpId,
     checkingOpId,
+    confirmingAbandonOpId,
+    abandoningOpId,
     statusResultByOpId,
+    resolutionNotice,
     refreshRecovery,
     retryEntry,
     checkEntry,
+    requestAbandonConfirmation,
+    cancelAbandonConfirmation,
+    confirmAbandon,
+    clearResolutionNotice,
   }
 }

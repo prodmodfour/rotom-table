@@ -2,11 +2,13 @@ import { effectScope, ref, type Ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
+import { LIVE_PLAY_OPERATION_ABANDONMENT_SCHEMA_VERSION } from '#shared/livePlayOperationAbandonment'
 import { useLivePlayCommandRecoveryGate } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
 import type {
   LivePlayCommandDispatchResult,
   LivePlayCommandOutboxRecoveryStatus,
   LivePlayCommandStatus,
+  LivePlayOperationAbandonmentClientResult,
   LivePlayOperationStatusCheckResult,
 } from '~/composables/map-editor/useLivePlayCommands'
 import {
@@ -92,6 +94,26 @@ const createEntry = (
   }
 }
 
+const abandonedResultForEntry = (entry: LivePlayCommandOutboxEntry): LivePlayOperationAbandonmentClientResult => ({
+  status: 'abandoned',
+  opId: entry.opId,
+  message: 'The operation was safely abandoned before execution.',
+  response: {
+    schemaVersion: LIVE_PLAY_OPERATION_ABANDONMENT_SCHEMA_VERSION,
+    disposition: 'abandoned',
+    mapSlug: entry.mapSlug,
+    opId: entry.opId,
+    result: {
+      ok: false,
+      opId: entry.opId,
+      mapSlug: entry.mapSlug,
+      reason: 'abandoned',
+      message: 'This live-play operation was abandoned before execution.',
+      currentRevision: 4,
+    },
+  },
+})
+
 interface HarnessOptions {
   readonly isClient?: boolean
   readonly contextKey?: Ref<string | null>
@@ -105,6 +127,7 @@ interface HarnessOptions {
   readonly refresh?: () => Promise<readonly LivePlayCommandOutboxEntry[]>
   readonly retry?: (opId: string) => Promise<LivePlayCommandDispatchResult>
   readonly checkStatus?: (opId: string) => Promise<LivePlayOperationStatusCheckResult>
+  readonly abandon?: (opId: string) => Promise<LivePlayOperationAbandonmentClientResult>
   readonly now?: () => number
   readonly document?: ReturnType<typeof createVisibilityDocument>
   readonly window?: ReturnType<typeof createEventTarget>
@@ -126,6 +149,11 @@ const createHarness = (options: HarnessOptions = {}) => {
     opId,
     message: 'The server has no terminal record for this operation yet.',
   })))
+  const abandon = vi.fn(options.abandon ?? (async (opId: string) => ({
+    status: 'error' as const,
+    opId,
+    message: 'Test abandonment is not configured.',
+  })))
   const document = options.document ?? createVisibilityDocument()
   const window = options.window ?? createEventTarget()
   const scope = effectScope()
@@ -141,6 +169,7 @@ const createHarness = (options: HarnessOptions = {}) => {
     refresh,
     retry,
     checkStatus,
+    abandon,
     clock: options.now ? { now: options.now, timers: globalThis } : { timers: globalThis },
     browser: {
       isClient: options.isClient ?? true,
@@ -165,6 +194,7 @@ const createHarness = (options: HarnessOptions = {}) => {
     refresh,
     retry,
     checkStatus,
+    abandon,
     document,
     window,
   }
@@ -652,5 +682,109 @@ describe('useLivePlayCommandRecoveryGate', () => {
     pending.resolve({ status: 'unknown', opId: entry.opId, message: 'Late result' })
     await pendingCheck
     expect(unmountHarness.gate.statusResultByOpId.value).toEqual({})
+  })
+
+  it('requires two-step abandonment confirmation and coalesces repeated confirmations', async () => {
+    const entry = createEntry({ opId: 'op_abandonconfirm' })
+    const entries = ref<readonly LivePlayCommandOutboxEntry[]>([entry])
+    const pending = deferred<LivePlayOperationAbandonmentClientResult>()
+    const abandon = vi.fn(() => pending.promise)
+    const { gate } = createHarness({ entries, abandon })
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+
+    await expect(gate.confirmAbandon(entry.opId)).resolves.toMatchObject({
+      status: 'error',
+      message: expect.stringContaining('Choose Abandon'),
+    })
+    expect(abandon).not.toHaveBeenCalled()
+
+    gate.requestAbandonConfirmation(entry.opId)
+    expect(gate.confirmingAbandonOpId.value).toBe(entry.opId)
+    const first = gate.confirmAbandon(entry.opId)
+    const repeated = gate.confirmAbandon(entry.opId)
+    expect(repeated).toBe(first)
+    expect(gate.abandoningOpId.value).toBe(entry.opId)
+    expect(gate.blocksNewLiveCommands.value).toBe(true)
+    expect(abandon).toHaveBeenCalledTimes(1)
+
+    pending.resolve(abandonedResultForEntry(entry))
+    await expect(first).resolves.toMatchObject({ status: 'abandoned' })
+    expect(gate.abandoningOpId.value).toBeNull()
+    expect(gate.confirmingAbandonOpId.value).toBeNull()
+    expect(gate.resolutionNotice.value).toContain('safely abandoned')
+  })
+
+  it('blocks retry, status check, refresh, and different-operation abandonment while abandoning', async () => {
+    const firstEntry = createEntry({ opId: 'op_abandonactive1' })
+    const secondEntry = createEntry({ opId: 'op_abandonactive2' })
+    const entries = ref<readonly LivePlayCommandOutboxEntry[]>([firstEntry, secondEntry])
+    const pending = deferred<LivePlayOperationAbandonmentClientResult>()
+    const abandon = vi.fn(() => pending.promise)
+    const retry = vi.fn(async (opId: string) => ({ dispatched: true, opId }))
+    const checkStatus = vi.fn(async (opId: string) => ({ status: 'unknown' as const, opId, message: 'Unknown' }))
+    const refresh = vi.fn(async () => entries.value)
+    const { gate } = createHarness({ entries, abandon, retry, checkStatus, refresh })
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+
+    gate.requestAbandonConfirmation(firstEntry.opId)
+    const active = gate.confirmAbandon(firstEntry.opId)
+    await expect(gate.confirmAbandon(secondEntry.opId)).resolves.toMatchObject({
+      status: 'error',
+      message: expect.stringContaining('already being abandoned'),
+    })
+    await expect(gate.retryEntry(firstEntry.opId)).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('abandonment is already active'),
+    })
+    await expect(gate.checkEntry(firstEntry.opId)).resolves.toMatchObject({
+      status: 'error',
+      message: expect.stringContaining('abandonment is already active'),
+    })
+    const refreshDuringAbandon = gate.refreshRecovery()
+    expect(retry).not.toHaveBeenCalled()
+    expect(checkStatus).not.toHaveBeenCalled()
+    expect(refresh).not.toHaveBeenCalled()
+
+    pending.resolve(abandonedResultForEntry(firstEntry))
+    await active
+    await refreshDuringAbandon
+  })
+
+  it('clears abandonment confirmation on cancel, context changes, entry removal, retry, status check, and unmount', async () => {
+    const contextKey = ref<string | null>('arena-map:gm')
+    const entry = createEntry({ opId: 'op_abandonlife1' })
+    const entries = ref<readonly LivePlayCommandOutboxEntry[]>([entry])
+    const harness = createHarness({ contextKey, entries })
+    const { gate } = harness
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+
+    gate.requestAbandonConfirmation(entry.opId)
+    expect(gate.confirmingAbandonOpId.value).toBe(entry.opId)
+    gate.cancelAbandonConfirmation()
+    expect(gate.confirmingAbandonOpId.value).toBeNull()
+
+    gate.requestAbandonConfirmation(entry.opId)
+    contextKey.value = 'arena-map:player:none'
+    await flushMicrotasks()
+    expect(gate.confirmingAbandonOpId.value).toBeNull()
+
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+    gate.requestAbandonConfirmation(entry.opId)
+    entries.value = []
+    await flushMicrotasks()
+    expect(gate.confirmingAbandonOpId.value).toBeNull()
+
+    entries.value = [entry]
+    gate.requestAbandonConfirmation(entry.opId)
+    await gate.retryEntry(entry.opId)
+    expect(gate.confirmingAbandonOpId.value).toBeNull()
+
+    gate.requestAbandonConfirmation(entry.opId)
+    await gate.checkEntry(entry.opId)
+    expect(gate.confirmingAbandonOpId.value).toBeNull()
+
+    gate.requestAbandonConfirmation(entry.opId)
+    harness.scope.stop()
+    expect(gate.confirmingAbandonOpId.value).toBeNull()
   })
 })

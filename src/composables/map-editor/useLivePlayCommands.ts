@@ -40,6 +40,10 @@ import {
 } from '#shared/livePlayCommands'
 import { validateTerminalResponseForCommand } from '#shared/livePlayCommandResults'
 import { parseLivePlayOperationStatusResponse } from '#shared/livePlayOperationStatus'
+import {
+  parseLivePlayOperationAbandonmentResponse,
+  type LivePlayOperationAbandonmentResponse,
+} from '#shared/livePlayOperationAbandonment'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import {
   parseResolveMoveIntent,
@@ -74,7 +78,7 @@ interface ReadonlyValueRef<TValue> {
 }
 
 export type LivePlayCommandStatus = 'idle' | 'saving' | 'error'
-export type LivePlayCommandOutboxRecoveryStatus = 'idle' | 'loading' | 'retrying' | 'checking' | 'synchronizing' | 'error'
+export type LivePlayCommandOutboxRecoveryStatus = 'idle' | 'loading' | 'retrying' | 'checking' | 'abandoning' | 'synchronizing' | 'error'
 
 export interface LivePlayCommandSheetUpdate {
   kind: 'pokemon' | 'trainer'
@@ -154,6 +158,33 @@ export type LivePlayOperationStatusCheckResult =
       readonly message: string
     }
 
+export type LivePlayOperationAbandonmentClientResult =
+  | {
+      readonly status: 'abandoned'
+      readonly opId: string
+      readonly response: LivePlayOperationAbandonmentResponse
+      readonly message: string
+    }
+  | {
+      readonly status: 'accepted'
+      readonly opId: string
+      readonly response: LivePlayOperationAbandonmentResponse
+      readonly commandResponse: LivePlayCommandResponse
+      readonly message?: string
+    }
+  | {
+      readonly status: 'rejected'
+      readonly opId: string
+      readonly response: LivePlayOperationAbandonmentResponse
+      readonly commandResponse: LivePlayCommandResponse
+      readonly message?: string
+    }
+  | {
+      readonly status: 'error'
+      readonly opId: string
+      readonly message: string
+    }
+
 export interface UseLivePlayCommandsOptions {
   slug: string
   authRole: ReadonlyValueRef<AuthRole | null | undefined>
@@ -198,6 +229,7 @@ export interface UseLivePlayCommandsReturn {
   recoverInterruptedOutboxCommands: () => Promise<readonly LivePlayCommandOutboxEntry[]>
   retryOutboxCommand: (opId: string) => Promise<LivePlayCommandDispatchResult>
   checkOutboxCommandStatus: (opId: string) => Promise<LivePlayOperationStatusCheckResult>
+  abandonOutboxCommand: (opId: string) => Promise<LivePlayOperationAbandonmentClientResult>
   acknowledgeAcceptedRealtimeEvent: (
     event: LivePlayAcceptedRealtimeEvent,
   ) => Promise<LivePlayRealtimeAcknowledgementResult>
@@ -477,6 +509,8 @@ export const useLivePlayCommands = (
   let recoveryRetryActive = false
   let activeStatusCheck: Promise<LivePlayOperationStatusCheckResult> | null = null
   let activeStatusCheckOpId: string | null = null
+  let activeAbandonment: Promise<LivePlayOperationAbandonmentClientResult> | null = null
+  let activeAbandonmentOpId: string | null = null
 
   if (getCurrentScope()) {
     const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => status.value === 'saving')
@@ -720,6 +754,10 @@ export const useLivePlayCommands = (
     return outboxEntries.value
   }
 
+  const removeAcknowledgedEntryFromSnapshot = (opId: string): void => {
+    outboxEntrySnapshot.value = outboxEntrySnapshot.value.filter((entry) => entry.opId !== opId)
+  }
+
   const listCurrentOutboxEntries = async (
     authContext: LivePlayCommandOutboxAuthContext,
   ): Promise<readonly LivePlayCommandOutboxEntry[]> => outbox.list({
@@ -753,6 +791,11 @@ export const useLivePlayCommands = (
   }
 
   const refreshOutboxEntries: UseLivePlayCommandsReturn['refreshOutboxEntries'] = async () => {
+    if (activeAbandonment !== null) {
+      await activeAbandonment.catch(() => undefined)
+      return outboxEntries.value
+    }
+
     outboxRecoveryStatus.value = 'loading'
     outboxRecoveryError.value = null
 
@@ -1001,8 +1044,10 @@ export const useLivePlayCommands = (
     request: string,
     buildBody: LivePlayCommandBodyFactory,
   ): Promise<LivePlayCommandDispatchResult> => {
-    if (status.value === 'saving' || recoveryRetryActive) {
-      const message = 'A live-play command is already in flight.'
+    if (status.value === 'saving' || recoveryRetryActive || activeAbandonment !== null) {
+      const message = activeAbandonment !== null
+        ? 'A live-play command abandonment is already active. Wait for it to finish before sending another command.'
+        : 'A live-play command is already in flight.'
       options.onCommandBlocked?.(message)
       return { dispatched: false, message }
     }
@@ -1261,8 +1306,10 @@ export const useLivePlayCommands = (
   )
 
   const resolveMove: UseLivePlayCommandsReturn['resolveMove'] = async (input) => {
-    if (status.value === 'saving' || recoveryRetryActive) {
-      const message = 'A live-play command is already in flight.'
+    if (status.value === 'saving' || recoveryRetryActive || activeAbandonment !== null) {
+      const message = activeAbandonment !== null
+        ? 'A live-play command abandonment is already active. Wait for it to finish before sending another command.'
+        : 'A live-play command is already in flight.'
       options.onCommandBlocked?.(message)
       return { dispatched: false, move: null, message }
     }
@@ -1510,6 +1557,11 @@ export const useLivePlayCommands = (
   )
 
   const recoverInterruptedOutboxCommands: UseLivePlayCommandsReturn['recoverInterruptedOutboxCommands'] = async () => {
+    if (activeAbandonment !== null) {
+      await activeAbandonment.catch(() => undefined)
+      return outboxEntries.value
+    }
+
     outboxRecoveryStatus.value = 'loading'
     outboxRecoveryError.value = null
 
@@ -1526,7 +1578,7 @@ export const useLivePlayCommands = (
 
   const validateStoredEntryIdentity = (
     entry: LivePlayCommandOutboxEntry,
-    action: 'retried' | 'checked',
+    action: 'retried' | 'checked' | 'abandoned',
   ): string | null => {
     if (!isStoredLivePlayCommandRequestPath(entry.requestPath)) {
       return `Live-play operation ${entry.opId} has an invalid stored API request path.`
@@ -1602,6 +1654,25 @@ export const useLivePlayCommands = (
     return validateStoredEntryIdentity(entry, 'checked')
   }
 
+  const validateStoredEntryForAbandonment = (
+    entry: LivePlayCommandOutboxEntry,
+    authContext: LivePlayCommandOutboxAuthContext,
+  ): string | null => {
+    if (entry.mapSlug !== options.slug) {
+      return `Live-play operation ${entry.opId} belongs to map ${entry.mapSlug}, not the current map ${options.slug}.`
+    }
+
+    if (!authContextsEqual(entry.authContext, authContext)) {
+      return `Live-play operation ${entry.opId} belongs to a different auth/profile context and cannot be abandoned here.`
+    }
+
+    if (entry.state !== 'queued' && entry.state !== 'sending' && entry.state !== 'uncertain') {
+      return `Live-play operation ${entry.opId} is not in an abandonable outbox state.`
+    }
+
+    return validateStoredEntryIdentity(entry, 'abandoned')
+  }
+
   const recoveryLocalFailedResult = (
     message: string,
     metadata: Omit<LivePlayCommandDispatchResult, 'dispatched' | 'message'> = {},
@@ -1636,6 +1707,12 @@ export const useLivePlayCommands = (
   }
 
   const retryOutboxCommand: UseLivePlayCommandsReturn['retryOutboxCommand'] = async (opId) => {
+    if (activeAbandonment !== null) {
+      const message = 'A live-play command abandonment is already active. Wait for it to finish before retrying another operation.'
+      options.onCommandBlocked?.(message)
+      return { dispatched: false, message, opId }
+    }
+
     if (status.value === 'saving' || recoveryRetryActive) {
       const message = 'A live-play command is already in flight.'
       setOutboxRecoveryFailure(message)
@@ -1929,6 +2006,13 @@ export const useLivePlayCommands = (
   }
 
   const checkOutboxCommandStatus: UseLivePlayCommandsReturn['checkOutboxCommandStatus'] = (opId) => {
+    if (activeAbandonment !== null) {
+      return Promise.resolve(operationStatusConcurrentBlocked(
+        opId,
+        'A live-play command abandonment is already active. Wait for it to finish before checking the server.',
+      ))
+    }
+
     if (activeStatusCheck !== null) {
       if (activeStatusCheckOpId === opId) return activeStatusCheck
       return Promise.resolve(operationStatusConcurrentBlocked(
@@ -1953,6 +2037,296 @@ export const useLivePlayCommands = (
       })
 
     return activeStatusCheck
+  }
+
+  const ABANDONED_OPERATION_MESSAGE =
+    'The operation was safely abandoned before execution. Future requests using this operation ID cannot apply its effects.'
+  const ALREADY_ACCEPTED_ABANDONMENT_MESSAGE =
+    'The operation had already been accepted by the server. The authoritative table state was synchronized.'
+
+  const abandonmentFailure = (
+    opId: string,
+    message: string,
+  ): LivePlayOperationAbandonmentClientResult => {
+    setOutboxRecoveryFailure(message)
+    return { status: 'error', opId, message }
+  }
+
+  const abandonmentConcurrentBlocked = (
+    opId: string,
+    message: string,
+  ): LivePlayOperationAbandonmentClientResult => ({ status: 'error', opId, message })
+
+  const finishAbandonmentRecovery = (message: string | undefined): void => {
+    status.value = 'idle'
+    lastError.value = null
+    if (message === undefined) {
+      outboxRecoveryStatus.value = 'idle'
+      outboxRecoveryError.value = null
+      return
+    }
+    setOutboxRecoveryFailure(message)
+  }
+
+  const validateAbandonmentResponseForEntry = (
+    entry: LivePlayCommandOutboxEntry,
+    rawResponse: unknown,
+  ): { readonly ok: true; readonly response: LivePlayOperationAbandonmentResponse } | { readonly ok: false; readonly message: string } => {
+    let response: LivePlayOperationAbandonmentResponse
+    try {
+      response = parseLivePlayOperationAbandonmentResponse(rawResponse)
+    } catch (error) {
+      return {
+        ok: false,
+        message: `Live-play operation ${entry.opId} abandonment response was not trustworthy. The outbox entry was left unchanged. ${getErrorMessage(error, { fallback: 'Invalid operation-abandonment response' })}`,
+      }
+    }
+
+    if (response.opId !== entry.opId || response.mapSlug !== entry.mapSlug || response.mapSlug !== options.slug) {
+      return {
+        ok: false,
+        message: `Live-play operation ${entry.opId} abandonment response did not match the stored outbox entry and current map. The outbox entry was left unchanged.`,
+      }
+    }
+
+    if (response.result.opId !== entry.opId || response.result.mapSlug !== entry.mapSlug) {
+      return {
+        ok: false,
+        message: `Live-play operation ${entry.opId} abandonment terminal result did not match the stored outbox entry. The outbox entry was left unchanged.`,
+      }
+    }
+
+    const terminalValidation = validateTerminalResponseForCommand({
+      response: response.result,
+      command: entry.body,
+    })
+    if (!terminalValidation.valid) {
+      return {
+        ok: false,
+        message: `Live-play operation ${entry.opId} abandonment terminal result did not match the stored command. The outbox entry was left unchanged. ${validationIssueSummary(terminalValidation.issues)}`,
+      }
+    }
+
+    return { ok: true, response }
+  }
+
+  const acknowledgeAbandonmentTerminalResponse = async (opId: string): Promise<string | undefined> => {
+    try {
+      await outbox.acknowledgeTerminal(opId)
+      removeAcknowledgedEntryFromSnapshot(opId)
+      return undefined
+    } catch (error) {
+      return `Live-play operation ${opId} received a trustworthy terminal server result, but local durable recovery state could not be removed: ${outboxErrorMessage(error)} You may safely repeat Abandon or Check server later.`
+    }
+  }
+
+  const processAbandonedAbandonmentResponse = async (
+    abandonmentResponse: LivePlayOperationAbandonmentResponse,
+    opId: string,
+    warning: string | undefined,
+  ): Promise<LivePlayOperationAbandonmentClientResult> => {
+    const commandResponse = abandonmentResponse.result as LivePlayCommandResponse
+    if (commandResponse.ok !== false || commandResponse.reason !== 'abandoned') {
+      return abandonmentFailure(
+        opId,
+        `Live-play operation ${opId} abandonment response did not contain an abandoned terminal rejection. The outbox entry was left unchanged.`,
+      )
+    }
+
+    const reconciliationWarning = await requestRecoveryReconciliation(MAP_API_PATHS.operationAbandon, commandResponse)
+    const combinedWarning = combineOutboxWarnings(warning, reconciliationWarning)
+    finishAbandonmentRecovery(combinedWarning)
+
+    return {
+      status: 'abandoned',
+      opId,
+      response: abandonmentResponse,
+      message: combineOutboxWarnings(ABANDONED_OPERATION_MESSAGE, combinedWarning) ?? ABANDONED_OPERATION_MESSAGE,
+    }
+  }
+
+  const processAcceptedAbandonmentResponse = async (
+    abandonmentResponse: LivePlayOperationAbandonmentResponse,
+    opId: string,
+    warning: string | undefined,
+  ): Promise<LivePlayOperationAbandonmentClientResult> => {
+    const commandResponse = abandonmentResponse.result as LivePlayCommandResponse
+    let processingWarning: string | undefined
+
+    try {
+      await adoptAcceptedLivePlayResponse(MAP_API_PATHS.operationAbandon, commandResponse, {
+        reconcileOnPatchFailure: false,
+      })
+    } catch (error) {
+      processingWarning = getErrorMessage(error, {
+        fallback: 'Live-play command was already accepted, but local durable state adoption failed.',
+      })
+    }
+
+    const reconciliationWarning = await requestRecoveryReconciliation(MAP_API_PATHS.operationAbandon, commandResponse)
+    const combinedWarning = combineOutboxWarnings(warning, processingWarning, reconciliationWarning)
+    finishAbandonmentRecovery(combinedWarning)
+
+    return {
+      status: 'accepted',
+      opId,
+      response: abandonmentResponse,
+      commandResponse,
+      message: combineOutboxWarnings(ALREADY_ACCEPTED_ABANDONMENT_MESSAGE, combinedWarning),
+    }
+  }
+
+  const processRejectedAbandonmentResponse = async (
+    entry: LivePlayCommandOutboxEntry,
+    abandonmentResponse: LivePlayOperationAbandonmentResponse,
+    warning: string | undefined,
+  ): Promise<LivePlayOperationAbandonmentClientResult> => {
+    const commandResponse = abandonmentResponse.result as LivePlayCommandResponse
+    const result = await processRejectedTerminalResponse(entry.requestPath, commandResponse, entry.opId, warning)
+
+    if (result.outboxError) setOutboxRecoveryFailure(result.outboxError)
+    else {
+      outboxRecoveryStatus.value = 'idle'
+      outboxRecoveryError.value = null
+    }
+
+    return {
+      status: 'rejected',
+      opId: entry.opId,
+      response: abandonmentResponse,
+      commandResponse,
+      ...(combineOutboxWarnings(result.message, result.outboxError) === undefined
+        ? {}
+        : { message: combineOutboxWarnings(result.message, result.outboxError) }),
+    }
+  }
+
+  const processAbandonmentTerminalResponse = async (
+    entry: LivePlayCommandOutboxEntry,
+    abandonmentResponse: LivePlayOperationAbandonmentResponse,
+    warning: string | undefined,
+  ): Promise<LivePlayOperationAbandonmentClientResult> => {
+    const commandResponse = abandonmentResponse.result as LivePlayCommandResponse
+    if (abandonmentResponse.disposition === 'abandoned') {
+      return processAbandonedAbandonmentResponse(abandonmentResponse, entry.opId, warning)
+    }
+    if (acceptedLivePlayResponse(commandResponse)) {
+      return processAcceptedAbandonmentResponse(abandonmentResponse, entry.opId, warning)
+    }
+    if (!commandResponse.ok && commandResponse.reason === 'abandoned') {
+      return processAbandonedAbandonmentResponse(abandonmentResponse, entry.opId, warning)
+    }
+    return processRejectedAbandonmentResponse(entry, abandonmentResponse, warning)
+  }
+
+  const abandonOutboxCommandOnce = async (opId: string): Promise<LivePlayOperationAbandonmentClientResult> => {
+    const authContext = currentAuthContext()
+    if (!authContext) {
+      return abandonmentFailure(
+        opId,
+        'A valid GM or player auth role is required before abandoning durable live-play commands.',
+      )
+    }
+
+    let entry: LivePlayCommandOutboxEntry | null
+    try {
+      entry = await outbox.get(opId)
+    } catch (error) {
+      return abandonmentFailure(
+        opId,
+        `Live-play operation ${opId} could not be read from durable command storage: ${outboxErrorMessage(error)}`,
+      )
+    }
+
+    if (!entry) {
+      return abandonmentFailure(
+        opId,
+        `Live-play operation ${opId} is no longer present in durable command storage.`,
+      )
+    }
+
+    const validationIssue = validateStoredEntryForAbandonment(entry, authContext)
+    if (validationIssue) return abandonmentFailure(entry.opId, validationIssue)
+
+    let rawResponse: unknown
+    try {
+      rawResponse = await postJson<unknown>(MAP_API_PATHS.operationAbandon, { command: entry.body })
+    } catch (error) {
+      return abandonmentFailure(
+        entry.opId,
+        `Live-play operation ${entry.opId} abandonment request failed before a terminal server response was received. The outbox entry was left unchanged. ${getErrorMessage(error, { fallback: 'The HTTP request failed.' })}`,
+      )
+    }
+
+    const validation = validateAbandonmentResponseForEntry(entry, rawResponse)
+    if (!validation.ok) return abandonmentFailure(entry.opId, validation.message)
+
+    const acknowledgeWarning = await acknowledgeAbandonmentTerminalResponse(entry.opId)
+    if (acknowledgeWarning) {
+      const refreshWarning = await refreshOutboxEntriesQuiet({ preserveRecoveryError: true })
+      return abandonmentFailure(
+        entry.opId,
+        combineOutboxWarnings(acknowledgeWarning, refreshWarning) ?? acknowledgeWarning,
+      )
+    }
+
+    const refreshWarning = await refreshOutboxEntriesQuiet()
+    return processAbandonmentTerminalResponse(entry, validation.response, refreshWarning)
+  }
+
+  const abandonOutboxCommand: UseLivePlayCommandsReturn['abandonOutboxCommand'] = (opId) => {
+    if (activeAbandonment !== null) {
+      if (activeAbandonmentOpId === opId) return activeAbandonment
+      return Promise.resolve(abandonmentConcurrentBlocked(
+        opId,
+        `Live-play operation ${activeAbandonmentOpId ?? '(unknown)'} is already being abandoned. Wait for that server-confirmed abandonment to finish before abandoning another operation.`,
+      ))
+    }
+
+    if (recoveryRetryActive) {
+      return Promise.resolve(abandonmentConcurrentBlocked(
+        opId,
+        'A live-play command retry is already active. Wait for it to finish before abandoning an operation.',
+      ))
+    }
+
+    if (activeStatusCheck !== null) {
+      return Promise.resolve(abandonmentConcurrentBlocked(
+        opId,
+        'A live-play command status check is already active. Wait for it to finish before abandoning an operation.',
+      ))
+    }
+
+    if (outboxRecoveryStatus.value === 'loading') {
+      return Promise.resolve(abandonmentFailure(
+        opId,
+        'Durable command recovery inspection is still loading. Wait for it to finish before abandoning an operation.',
+      ))
+    }
+
+    if (outboxRecoveryStatus.value === 'synchronizing') {
+      return Promise.resolve(abandonmentFailure(
+        opId,
+        'Accepted-command synchronization is active. Wait for it to finish before abandoning an operation.',
+      ))
+    }
+
+    outboxRecoveryStatus.value = 'abandoning'
+    outboxRecoveryError.value = null
+    activeAbandonmentOpId = opId
+    activeAbandonment = abandonOutboxCommandOnce(opId)
+      .catch((error): LivePlayOperationAbandonmentClientResult => abandonmentFailure(
+        opId,
+        getErrorMessage(error, { fallback: 'Live-play operation abandonment failed.' }),
+      ))
+      .finally(() => {
+        if (activeAbandonmentOpId === opId) {
+          activeAbandonmentOpId = null
+          activeAbandonment = null
+        }
+      })
+
+    return activeAbandonment
   }
 
   const acceptedRealtimeResponse = (
@@ -2089,6 +2463,7 @@ export const useLivePlayCommands = (
     recoverInterruptedOutboxCommands,
     retryOutboxCommand,
     checkOutboxCommandStatus,
+    abandonOutboxCommand,
     acknowledgeAcceptedRealtimeEvent,
     spawnToken,
     sendOutPokemon,
