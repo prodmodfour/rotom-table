@@ -19,4 +19,14 @@ const resolveNuxtFetch = (): NuxtApiFetch => {
 const nuxtFetch: ApiFetch = <T = unknown>(request: string, options?: ApiFetchOptions): Promise<T> =>
   resolveNuxtFetch()<T>(request, sameOriginOptions(options))
 
-export const useApiClient = (): ApiClient => createApiClient(nuxtFetch)
+let apiClientOverride: ApiClient | null | undefined
+
+export const configureApiClientForTests = (apiClient: ApiClient | null): void => {
+  apiClientOverride = apiClient
+}
+
+export const resetApiClientForTests = (): void => {
+  apiClientOverride = undefined
+}
+
+export const useApiClient = (): ApiClient => apiClientOverride ?? createApiClient(nuxtFetch)
