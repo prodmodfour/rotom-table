@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { afterEach, describe, expect, it } from 'vitest'
+import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
+import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createPlayerProfileUseCase } from '~~/server/useCases/createPlayerProfile'
 import { loadMapUseCase } from '~~/server/useCases/loadMap'
 import { loadSheetUseCase } from '~~/server/useCases/loadSheet'
@@ -35,6 +37,7 @@ import type { TabletopMap } from '~/types/map'
 type PostRouteHandler = EventHandler<EventHandlerRequest, unknown>
 
 const tempRoots: string[] = []
+const databases: RotomDatabase[] = []
 
 const createTempRoot = (): string => {
   const root = mkdtempSync(join(tmpdir(), 'rotom-profile-play-smoke-'))
@@ -134,6 +137,7 @@ const createArenaMap = (): TabletopMap => ({
 afterEach(() => {
   for (const root of tempRoots) rmSync(root, { recursive: true, force: true })
   tempRoots.length = 0
+  for (const database of databases.splice(0)) database.close()
 })
 
 describe('profile-based play smoke flow', () => {
@@ -308,6 +312,10 @@ describe('profile-based play smoke flow', () => {
 
     expect(linkedSheetLoad.sheet).toMatchObject({ nickname: 'Pika', player: false })
 
+    const setupSaveDatabase = openRotomDatabase({ path: ':memory:' })
+    databases.push(setupSaveDatabase)
+    const setupSaveRealtime = createSqliteRealtimeEventRepository({ database: setupSaveDatabase })
+
     const savedSheet = saveSheetUseCase({
       role: 'player',
       interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
@@ -322,7 +330,10 @@ describe('profile-based play smoke flow', () => {
       playerProfile: selectedProfile,
       clientId: 'player-client',
     }, {
+      database: setupSaveDatabase,
       sheetRepository,
+      realtimeEventRepository: setupSaveRealtime,
+      publishPersistedRealtimeEvent: () => undefined,
       isPlayerAccessible: (kind, slug) => sheets.get(sheetKey(kind, slug))?.player === true,
     })
 

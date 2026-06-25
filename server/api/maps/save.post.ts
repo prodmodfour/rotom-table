@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
 import { requireAuthRole } from '../../utils/auth'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { badRequest, expectRecord, expectRevision, expectSlug, readObjectBody, requireWritableCampaignMode } from '../../utils/http'
 import { saveMapUseCase } from '../../useCases/saveMap'
 import { parseMapInteractionMode, MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
@@ -37,7 +37,6 @@ export default defineEventHandler(async (event) => {
       clientId: normalizeRealtimeClientId(body.clientId),
       interactionMode,
     })
-    publishUseCaseRealtimeEvents(result.events)
     return { ok: true as const, path: result.path, map: result.map }
   } catch (err) {
     throwUseCaseHttpError(err)

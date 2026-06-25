@@ -1,6 +1,6 @@
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
-import type { RealtimeEvent } from '#shared/realtime'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import { isRevision, normalizeRevision, nextRevision } from '#shared/sessionRevisions'
 import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapMoveUsage } from '~/utils/moveUsage'
@@ -8,10 +8,22 @@ import { normalizeMapSceneState } from '~/utils/mapSceneState'
 import { normalizeMapTemporaryHitPointsState } from '~/utils/mapTemporaryHitPoints'
 import type { AuthRole } from '#shared/auth'
 import type { TabletopMap } from '~/types/map'
-import { mapDocumentUpdatedRealtimeEvents } from '../utils/mapRealtimeEvents'
 import { normalizeMapGroundLevelY } from '../utils/mapNormalization'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
-import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { getRotomDatabase, type RotomDatabase } from '../storage/database'
+import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import {
+  createSqliteRealtimeEventRepository,
+  type RealtimeEventRepository,
+} from '../storage/realtimeEventRepository'
+import { setupMapSaveRealtimeAppendInputs } from '../realtime/setupDocumentRealtime'
+import {
+  defaultPersistedSetupSaveRealtimeEventPublisher,
+  defaultSetupSaveRealtimePublicationFailureReporter,
+  publishPersistedSetupSaveRealtimeEventsAfterCommit,
+  type PersistedSetupSaveRealtimeEventPublisher,
+  type SetupSaveRealtimePublicationFailureReporter,
+} from '../realtime/persistedRealtimePublication'
 
 export class SaveMapUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
@@ -24,8 +36,20 @@ export interface SaveMapInput {
   interactionMode: MapInteractionMode
 }
 
+type SaveMapRepository = Pick<MapRepository<TabletopMap>, 'replaceSetupMap' | 'get'> & {
+  readonly database?: RotomDatabase
+}
+
+type SaveMapRealtimeEventRepository = Pick<RealtimeEventRepository, 'appendMany'> & {
+  readonly database?: RotomDatabase
+}
+
 export interface SaveMapDependencies {
-  mapRepository?: Pick<MapRepository, 'replaceSetupMap'>
+  database?: RotomDatabase
+  mapRepository?: SaveMapRepository
+  realtimeEventRepository?: SaveMapRealtimeEventRepository
+  publishPersistedRealtimeEvent?: PersistedSetupSaveRealtimeEventPublisher
+  reportAfterCommitPublicationFailure?: SetupSaveRealtimePublicationFailureReporter
   now?: () => number
 }
 
@@ -33,7 +57,7 @@ export interface SaveMapResult {
   ok: true
   path: string
   map: TabletopMap
-  events: Array<Omit<RealtimeEvent, 'timestamp'>>
+  realtimeEvents: readonly PersistedRealtimeEvent[]
 }
 
 export interface ToPersistedMapOptions {
@@ -81,6 +105,56 @@ export const toPersistedMap = (
   }
 }
 
+const databaseFromDependencies = (dependencies: SaveMapDependencies): RotomDatabase => {
+  const mapDatabase = dependencies.mapRepository?.database
+  const realtimeDatabase = dependencies.realtimeEventRepository?.database
+  const database = dependencies.database ?? mapDatabase ?? realtimeDatabase ?? getRotomDatabase()
+
+  if (mapDatabase && mapDatabase !== database) {
+    throw new Error('Map setup save map repository must use the same RotomDatabase as the save transaction')
+  }
+  if (realtimeDatabase && realtimeDatabase !== database) {
+    throw new Error('Map setup save realtime event repository must use the same RotomDatabase as the save transaction')
+  }
+  return database
+}
+
+const replaceMapOrThrow = (
+  mapRepository: SaveMapRepository,
+  input: SaveMapInput,
+  timestamp: number,
+) => {
+  try {
+    return mapRepository.replaceSetupMap({
+      slug: input.slug,
+      expectedRevision: input.expectedRevision as number,
+      map: input.map,
+      now: timestamp,
+    })
+  } catch (err) {
+    const message = (err as Error).message
+    if (message.includes('stale') || message.includes('expected revision')) {
+      throw new SaveMapUseCaseError(409, message)
+    }
+    throw new SaveMapUseCaseError(400, message)
+  }
+}
+
+const readAuthoritativeMapOrThrow = (
+  mapRepository: SaveMapRepository,
+  slug: string,
+  expected: Pick<TabletopMap, 'revision' | 'updatedAt'>,
+): TabletopMap => {
+  const stored = mapRepository.get(slug)
+  if (!stored) throw new SaveMapUseCaseError(404, `Map ${slug}.json not found`)
+  if (stored.revision !== expected.revision || stored.updatedAt !== expected.updatedAt) {
+    throw new Error(
+      `Map ${slug} authoritative re-read did not match saved revision ${expected.revision} and timestamp ${expected.updatedAt}`,
+    )
+  }
+  return stored.document as unknown as TabletopMap
+}
+
 export const saveMapUseCase = (
   input: SaveMapInput,
   dependencies: SaveMapDependencies = {},
@@ -103,32 +177,38 @@ export const saveMapUseCase = (
     throw new SaveMapUseCaseError(400, 'expectedRevision must be a safe non-negative integer')
   }
 
-  const mapRepository = dependencies.mapRepository ?? sqliteMapRepository
-  const expectedRevision = input.expectedRevision
+  const database = databaseFromDependencies(dependencies)
+  const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository<TabletopMap>(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? createSqliteRealtimeEventRepository({ database })
   const now = dependencies.now ?? Date.now
 
-  let result
-  try {
-    result = mapRepository.replaceSetupMap({
-      slug: input.slug,
-      expectedRevision,
-      map: input.map,
-      now: now(),
-    })
-  } catch (err) {
-    const message = (err as Error).message
-    if (message.includes('stale') || message.includes('expected revision')) {
-      throw new SaveMapUseCaseError(409, message)
-    }
-    throw new SaveMapUseCaseError(400, message)
-  }
+  const transactionResult = database.withTransaction(() => {
+    const saved = replaceMapOrThrow(mapRepository, input, now())
+    if (!saved) throw new SaveMapUseCaseError(404, `Map ${input.slug}.json not found`)
 
-  if (!result) throw new SaveMapUseCaseError(404, `Map ${input.slug}.json not found`)
+    const authoritativeMap = readAuthoritativeMapOrThrow(mapRepository, input.slug, saved.map)
+    const realtimeEvents = saved.changed
+      ? realtimeEventRepository.appendMany(setupMapSaveRealtimeAppendInputs(authoritativeMap, input.clientId))
+      : []
+
+    return {
+      map: authoritativeMap,
+      realtimeEvents,
+    }
+  })
+
+  publishPersistedSetupSaveRealtimeEventsAfterCommit({
+    events: transactionResult.realtimeEvents,
+    resource: { kind: 'map', mapSlug: input.slug },
+    publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedSetupSaveRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultSetupSaveRealtimePublicationFailureReporter,
+  })
 
   return {
     ok: true,
-    path: logicalMapResourcePath(result.map),
-    map: result.map,
-    events: result.changed ? mapDocumentUpdatedRealtimeEvents(result.map, input.clientId) : [],
+    path: logicalMapResourcePath(transactionResult.map),
+    map: transactionResult.map,
+    realtimeEvents: transactionResult.realtimeEvents,
   }
 }

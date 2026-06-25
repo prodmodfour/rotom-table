@@ -142,6 +142,7 @@ export interface ApplyLivePlaySheetUpdateInput {
 export type LivePlaySheetUpdateResult = 'applied' | 'stale'
 
 export interface SheetRepository<TDocument = unknown> {
+  readonly database?: RotomDatabase
   get(kind: SheetKind, slug: string): StoredSheetDocument<TDocument> | null
   list(kind?: SheetKind): readonly StoredSheetDocument<TDocument>[]
   save(input: SaveSheetDocumentInput<TDocument>): StoredSheetDocument<TDocument>
@@ -812,6 +813,7 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     })
 
   return {
+    database,
     get,
     list,
     save,

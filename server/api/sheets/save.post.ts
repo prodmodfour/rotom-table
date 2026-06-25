@@ -1,7 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { parseMapInteractionMode } from '#shared/mapInteractionMode'
 import { requireAuthRole } from '../../utils/auth'
-import { publishUseCaseRealtimeEvents, throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import {
   badRequest,
   expectRecord,
@@ -53,7 +53,6 @@ export default defineEventHandler(async (event) => {
       interactionMode,
       allowSlugSync: body.allowSlugSync === false ? false : undefined,
     })
-    publishUseCaseRealtimeEvents(result.events)
     return { ok: result.ok, slug: result.slug, path: result.path, sheet: result.sheet }
   } catch (err) {
     throwUseCaseHttpError(err)

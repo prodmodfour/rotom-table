@@ -65,7 +65,7 @@ describe('hosted-write enabled route behavior', () => {
       slug: 'pikachu',
       path: 'data/sheets/pikachu.json',
       sheet: savedSheet,
-      events: [],
+      realtimeEvents: [],
     })
 
     await expect(invokeRoute(saveSheetRoute, {

@@ -1,6 +1,5 @@
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { subscribeRealtime } from '~~/server/utils/realtime'
 import { UseCaseHttpError } from '~~/server/utils/useCaseErrors'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import type { TabletopMap } from '~/types/map'
@@ -62,7 +61,7 @@ describe('map save API route', () => {
 
   it('accepts explicit GM setup/edit map saves', async () => {
     const map = mapFixture()
-    mocks.saveMapUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, events: [] })
+    mocks.saveMapUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, realtimeEvents: [] })
 
     await expect(invokeRoute(saveRoute, {
       role: 'gm',
@@ -87,38 +86,20 @@ describe('map save API route', () => {
     })
   })
 
-  it('publishes GM setup/edit whole-map save events to realtime subscribers', async () => {
+  it('does not publish draft events from the route after setup/edit whole-map saves', async () => {
     const map = mapFixture()
-    const events = [
-      { channel: 'map:arena', type: 'updated' as const, clientId: 'client-1', data: map },
-      { channel: 'maps', type: 'updated' as const, clientId: 'client-1', data: { slug: 'arena', name: 'Arena' } },
-    ]
-    const received: unknown[] = []
-    const unsubscribe = subscribeRealtime((event) => received.push(event))
-    const now = vi.spyOn(Date, 'now').mockReturnValue(654_321)
+    mocks.saveMapUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, realtimeEvents: [] })
 
-    try {
-      mocks.saveMapUseCase.mockReturnValue({ ok: true, path: 'data/maps/arena.json', map, events })
-
-      await expect(invokeRoute(saveRoute, {
-        role: 'gm',
-        body: {
-          slug: 'arena',
-          map,
-          expectedRevision: 0,
-          clientId: 'client-1',
-          interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
-        },
-      })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map })
-    } finally {
-      unsubscribe()
-      now.mockRestore()
-    }
-
-    expect(received).toEqual([
-      { ...events[0], timestamp: 654_321 },
-      { ...events[1], timestamp: 654_321 },
-    ])
+    await expect(invokeRoute(saveRoute, {
+      role: 'gm',
+      body: {
+        slug: 'arena',
+        map,
+        expectedRevision: 0,
+        clientId: 'client-1',
+        interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      },
+    })).resolves.toEqual({ ok: true, path: 'data/maps/arena.json', map })
   })
 
   it('rejects player whole-map save requests', async () => {

@@ -108,6 +108,7 @@ export interface ApplyLivePlayMapUpdateInput {
 export type LivePlayMapUpdateResult = 'applied' | 'stale'
 
 export interface MapRepository<TDocument = unknown> {
+  readonly database?: RotomDatabase
   get(slug: string): StoredMapDocument<TDocument> | null
   list(): readonly StoredMapDocument<TDocument>[]
   save(input: SaveMapDocumentInput<TDocument>): StoredMapDocument<TDocument>
@@ -706,6 +707,7 @@ export const createSqliteMapRepository = <TDocument = unknown>(
     })
 
   return {
+    database,
     get,
     list,
     save,

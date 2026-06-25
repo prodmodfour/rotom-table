@@ -63,6 +63,7 @@ export interface RealtimeEventPruneResult {
 }
 
 export interface RealtimeEventRepository {
+  readonly database?: RotomDatabase
   append(input: AppendRealtimeEventInput): PersistedRealtimeEvent
   appendMany(inputs: readonly AppendRealtimeEventInput[]): readonly PersistedRealtimeEvent[]
   getBySequence(sequence: number): PersistedRealtimeEvent | null
@@ -363,6 +364,7 @@ export const createSqliteRealtimeEventRepository = (
   }
 
   return {
+    database,
     append,
 
     appendMany,

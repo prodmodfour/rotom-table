@@ -62,7 +62,7 @@ export interface SpawnGeneratedEncountersResult extends GenerateEncountersResult
 interface PersistedMapResult {
   path?: string
   map: TabletopMap
-  events: Array<Omit<RealtimeEvent, 'timestamp'>>
+  events?: Array<Omit<RealtimeEvent, 'timestamp'>>
 }
 
 export interface SpawnGeneratedEncountersDependencies extends GenerateEncountersDependencies {
@@ -262,14 +262,17 @@ const appendPlacementsForGeneratedSheets = ({
 
 const defaultLoadMap = (slug: string): TabletopMap => loadMapUseCase({ role: 'gm', slug }).map
 
-const defaultSaveMap = (slug: string, map: TabletopMap, clientId?: string): SaveMapResult => saveMapUseCase({
-  role: 'gm',
-  slug,
-  map,
-  expectedRevision: map.revision ?? 0,
-  clientId,
-  interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
-})
+const defaultSaveMap = (slug: string, map: TabletopMap, clientId?: string): PersistedMapResult => {
+  const result: SaveMapResult = saveMapUseCase({
+    role: 'gm',
+    slug,
+    map,
+    expectedRevision: map.revision ?? 0,
+    clientId,
+    interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+  })
+  return { path: result.path, map: result.map, events: [] }
+}
 
 const normalizeSpawnGeneratedEncountersError = (error: unknown): unknown => {
   if (error instanceof SpawnGeneratedEncountersUseCaseError) return error
@@ -348,7 +351,7 @@ export const spawnGeneratedEncountersUseCase = async (
       ...(persisted.path ? { mapPath: persisted.path } : {}),
       events: [
         ...sheetCreatedEvents({ sheets: persistedGeneratedSheets, folder, clientId }),
-        ...persisted.events,
+        ...(persisted.events ?? []),
       ],
     }
   } catch (error) {
