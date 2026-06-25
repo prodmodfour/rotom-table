@@ -48,7 +48,10 @@ describe('legacy realtime SSE boundary', () => {
     expect(headers.get('Cache-Control')).toBe('no-cache, no-transform')
     expect(headers.get('Connection')).toBe('keep-alive')
     expect(res.flushHeaders).toHaveBeenCalledOnce()
-    expect(writes).toEqual([': ok\n\n'])
+    await vi.waitFor(() => {
+      expect(writes[0]).toBe(': ok\n\n')
+      expect(writes[1]).toContain('"type":"replay-caught-up"')
+    })
 
     publishRealtime({
       channel: 'maps',
@@ -57,9 +60,11 @@ describe('legacy realtime SSE boundary', () => {
       clientId: 'client-local-tab',
     })
 
-    expect(writes.at(-1)).toBe(
-      'data: {"channel":"maps","type":"updated","data":{"slug":"pallet-town"},"clientId":"client-local-tab","timestamp":48000}\n\n',
-    )
+    await vi.waitFor(() => {
+      expect(writes.at(-1)).toBe(
+        'data: {"channel":"maps","type":"updated","data":{"slug":"pallet-town"},"clientId":"client-local-tab","timestamp":48000}\n\n',
+      )
+    })
     expect(writes.join('')).not.toContain('session-host-disabled')
 
     req.emit('close')

@@ -42,8 +42,14 @@ describe('useCaseHttp utilities', () => {
 
     try {
       publishUseCaseRealtimeEvents([
-        { channel: 'maps', type: 'updated', data: { slug: 'demo' }, clientId: 'client-1' },
-        { channel: 'map:demo', type: 'deleted', data: { slug: 'demo' } },
+        {
+          event: { channel: 'maps', type: 'updated', data: { slug: 'demo' }, clientId: 'client-1' },
+          access: { kind: 'gm-only' },
+        },
+        {
+          event: { channel: 'map:demo', type: 'deleted', data: { slug: 'demo' } },
+          access: { kind: 'gm-only' },
+        },
       ])
     } finally {
       unsubscribe()

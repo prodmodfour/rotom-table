@@ -12,6 +12,8 @@ export interface SseResponse {
   setHeader(name: string, value: string): void
   write(chunk: string): unknown
   flushHeaders?: () => void
+  once?: (event: 'drain', listener: () => void) => unknown
+  end?: () => void
 }
 
 export interface SseRequest {
@@ -37,6 +39,28 @@ export interface OpenSseEventStreamOptions<TEvent> {
   connectionLabel?: string
 }
 
+export interface FormatSseDataOptions {
+  readonly id?: string | number
+}
+
+export interface SseSerializedWriter {
+  writeComment(comment: string): Promise<void>
+  writeData(event: unknown, options?: FormatSseDataOptions): Promise<void>
+  writeRaw(chunk: string): Promise<void>
+  close(): void
+}
+
+const SSE_ID_CONTROL_CHARACTER_RE = /[\u0000-\u001F\u007F]/
+
+export const normalizeSseEventId = (id: string | number): string => {
+  const text = typeof id === 'number' ? String(id) : id
+  if (text.length === 0) throw new Error('SSE event id must not be empty')
+  if (SSE_ID_CONTROL_CHARACTER_RE.test(text)) {
+    throw new Error('SSE event id must not contain control characters')
+  }
+  return text
+}
+
 export const setSseHeaders = (res: SseResponse): void => {
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
   res.setHeader('Cache-Control', 'no-cache, no-transform')
@@ -48,14 +72,58 @@ export const setSseHeaders = (res: SseResponse): void => {
 
 export const formatSseComment = (comment: string): string => `: ${comment}\n\n`
 
-export const formatSseData = (event: unknown): string => `data: ${JSON.stringify(event)}\n\n`
+export const formatSseData = (event: unknown, options: FormatSseDataOptions = {}): string => {
+  const id = options.id === undefined ? null : normalizeSseEventId(options.id)
+  return `${id === null ? '' : `id: ${id}\n`}data: ${JSON.stringify(event)}\n\n`
+}
 
 export const writeSseComment = (res: SseResponse, comment: string): void => {
   res.write(formatSseComment(comment))
 }
 
-export const writeSseData = (res: SseResponse, event: unknown): void => {
-  res.write(formatSseData(event))
+export const writeSseData = (res: SseResponse, event: unknown, options?: FormatSseDataOptions): void => {
+  res.write(formatSseData(event, options))
+}
+
+export const createSseSerializedWriter = (res: SseResponse): SseSerializedWriter => {
+  let closed = false
+  let chain: Promise<void> = Promise.resolve()
+  const pendingDrainResolvers = new Set<() => void>()
+
+  const waitForDrain = (): Promise<void> => {
+    if (typeof res.once !== 'function') return Promise.resolve()
+    return new Promise((resolve) => {
+      const done = () => {
+        pendingDrainResolvers.delete(done)
+        resolve()
+      }
+      pendingDrainResolvers.add(done)
+      res.once?.('drain', done)
+    })
+  }
+
+  const writeChunk = async (chunk: string): Promise<void> => {
+    if (closed) throw new Error('SSE writer is closed')
+    const result = res.write(chunk)
+    if (result === false) await waitForDrain()
+  }
+
+  const enqueue = (chunk: string): Promise<void> => {
+    const write = chain.then(() => writeChunk(chunk))
+    chain = write.catch(() => {})
+    return write
+  }
+
+  return {
+    writeComment: (comment) => enqueue(formatSseComment(comment)),
+    writeData: (event, options) => enqueue(formatSseData(event, options)),
+    writeRaw: (chunk) => enqueue(chunk),
+    close: () => {
+      closed = true
+      for (const resolve of [...pendingDrainResolvers]) resolve()
+      pendingDrainResolvers.clear()
+    },
+  }
 }
 
 export const openSseEventStream = async <TEvent>({

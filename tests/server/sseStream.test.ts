@@ -2,8 +2,10 @@ import { EventEmitter } from 'node:events'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   SSE_HEARTBEAT_COMMENT,
+  createSseSerializedWriter,
   formatSseComment,
   formatSseData,
+  normalizeSseEventId,
   openSseEventStream,
   setSseHeaders,
   type SseResponse,
@@ -30,11 +32,45 @@ afterEach(() => {
 })
 
 describe('SSE stream helpers', () => {
-  it('formats SSE comments and data frames', () => {
+  it('formats SSE comments, data frames, and sequenced ids', () => {
     expect(formatSseComment('ok')).toBe(': ok\n\n')
     expect(formatSseData({ channel: 'maps', type: 'updated' })).toBe(
       'data: {"channel":"maps","type":"updated"}\n\n',
     )
+    expect(formatSseData({ channel: 'maps', type: 'updated' }, { id: 42 })).toBe(
+      'id: 42\ndata: {"channel":"maps","type":"updated"}\n\n',
+    )
+    expect(normalizeSseEventId('0')).toBe('0')
+    expect(() => normalizeSseEventId('1\n2')).toThrow('control characters')
+  })
+
+  it('serializes SSE writes and waits for drain when backpressure is exposed', async () => {
+    const drain = new EventEmitter()
+    const writes: string[] = []
+    let writeCount = 0
+    const res: SseResponse = {
+      setHeader: vi.fn(),
+      write: vi.fn((chunk: string) => {
+        writes.push(chunk)
+        writeCount += 1
+        return writeCount !== 1
+      }),
+      once: (event, listener) => drain.once(event, listener),
+    }
+    const writer = createSseSerializedWriter(res)
+
+    const first = writer.writeData({ order: 1 }, { id: 1 })
+    const second = writer.writeData({ order: 2 }, { id: 2 })
+    await Promise.resolve()
+
+    expect(writes).toEqual(['id: 1\ndata: {"order":1}\n\n'])
+    drain.emit('drain')
+    await Promise.all([first, second])
+
+    expect(writes).toEqual([
+      'id: 1\ndata: {"order":1}\n\n',
+      'id: 2\ndata: {"order":2}\n\n',
+    ])
   })
 
   it('sets event-stream headers and flushes response headers when supported', () => {

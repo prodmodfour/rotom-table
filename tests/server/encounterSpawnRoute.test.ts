@@ -96,7 +96,12 @@ describe('encounter spawn API route', () => {
       body: { region: 'kanto', table: 'forest', count: 2, mapSlug: 'map' },
     })
 
-    expect(mocks.publishUseCaseRealtimeEvents).toHaveBeenCalledWith(events)
+    expect(mocks.publishUseCaseRealtimeEvents).toHaveBeenCalledWith([
+      {
+        event: events[0],
+        access: { kind: 'map-access', mapSlug: 'map' },
+      },
+    ])
     expect(response).not.toHaveProperty('events')
     expect(response).toMatchObject({ ok: true, spawn: { mapSlug: 'map' } })
   })
