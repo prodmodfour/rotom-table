@@ -15,6 +15,7 @@ import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
 import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 import { setPokemonCaughtBall } from '~/utils/sheets/pokemonCaughtBall'
 import { normalizeTrainerInventoryLegacyFishingRodAutofill } from '~/utils/sheets/trainerInventoryItems'
+import { stripLegacyTrainerSheetSkillRanks } from '~/utils/sheets/trainerSkillEntries'
 import {
   POKEMON_RARE_CANDY_LIMIT,
   POKEMON_VITAMIN_STAT_KEYS,
@@ -143,6 +144,7 @@ export const normalizeTrainerSheet = (sheet: TrainerSheet): TrainerSheet => {
   ensureArr<string>(sheet.skillBackground as Record<string, unknown>, 'pathetic')
 
   ensureObj<NonNullable<TrainerSheet['skills']>>(sheet, 'skills')
+  stripLegacyTrainerSheetSkillRanks(sheet)
   ensureObj<NonNullable<TrainerSheet['equipmentSlots']>>(sheet, 'equipmentSlots')
 
   const inv = ensureObj<NonNullable<TrainerSheet['inventory']>>(sheet, 'inventory')

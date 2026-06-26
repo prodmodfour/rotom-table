@@ -14,7 +14,7 @@ describe('useTrainerCapabilityModels', () => {
   it('displays trainer default capabilities from current skill ranks', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet({
       skillBackground: { adept: 'acrobatics', novice: 'athletics' },
-      skills: { combat: { rank: 'Adept' } },
+      edges: [{ name: 'Adept Skills', choices: { skill: 'combat' } }],
     }))
     const capabilities = useTrainerCapabilityModels(sheet)
 

@@ -1,7 +1,6 @@
 import type { Ref } from 'vue'
 import type {
   InventoryEntry,
-  SkillRank,
   TrainerAbilityEntry,
   TrainerAdvancementRow,
   TrainerClassEntry,
@@ -12,6 +11,7 @@ import type {
   TrainerMove,
   TrainerOrder,
   TrainerSheet,
+  TrainerSkillEntry,
   TrainerSkillKey,
   TrainerStatKey,
 } from '~/types/trainerSheet'
@@ -19,6 +19,7 @@ import { moveArrayItem } from '~/utils/arrayReorder'
 import { coerceEvasionBonus } from '~/utils/evasion'
 import { setSheetAccuracyStage } from '~/utils/sheetAccuracy'
 import { parseCsvList } from '~/utils/sheets/csvFields'
+import { stripLegacyTrainerSkillRank } from '~/utils/sheets/trainerSkillEntries'
 
 export type TrainerEvasionBonusKey = Extract<
   keyof TrainerEvasion,
@@ -132,45 +133,43 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
     setSheetAccuracyStage(sheet.value, value)
   }
 
-  /** Update a skill's legacy rank override, misc rank bonus, or non-rank roll modifier. */
-  const setSkillRank = (key: TrainerSkillKey, rank: SkillRank | undefined) => {
+  const updateSkillEntry = (
+    key: TrainerSkillKey,
+    apply: (entry: TrainerSkillEntry) => void,
+  ) => {
     if (!sheet.value) return
-    const existing = sheet.value.skills?.[key] ?? {}
-    if (!rank && existing.rank == null && existing.rankBonus == null && existing.modifier == null) return
 
-    const skills = sheet.value.skills ?? (sheet.value.skills = {})
-    if (!rank) delete existing.rank
-    else existing.rank = rank
-    if (existing.rank == null && existing.rankBonus == null && existing.modifier == null) delete skills[key]
-    else skills[key] = existing
+    const skills = sheet.value.skills
+    const existing: TrainerSkillEntry = { ...(skills?.[key] ?? {}) }
+    stripLegacyTrainerSkillRank(existing)
+    apply(existing)
+
+    if (existing.rankBonus == null && existing.modifier == null) {
+      if (skills) delete skills[key]
+      return
+    }
+
+    const mutableSkills = sheet.value.skills ?? (sheet.value.skills = {})
+    mutableSkills[key] = existing
   }
 
+  /** Update a skill's misc rank bonus or non-rank roll modifier. */
   const setSkillRankBonus = (key: TrainerSkillKey, rankBonus: number | undefined) => {
-    if (!sheet.value) return
     const normalizedRankBonus = typeof rankBonus !== 'number' || !Number.isFinite(rankBonus) || rankBonus === 0
       ? undefined
       : Math.trunc(rankBonus)
-    const existing = sheet.value.skills?.[key] ?? {}
-    if (normalizedRankBonus == null && existing.rank == null && existing.rankBonus == null && existing.modifier == null) return
-
-    const skills = sheet.value.skills ?? (sheet.value.skills = {})
-    if (normalizedRankBonus == null) delete existing.rankBonus
-    else existing.rankBonus = normalizedRankBonus
-    if (existing.rank == null && existing.rankBonus == null && existing.modifier == null) delete skills[key]
-    else skills[key] = existing
+    updateSkillEntry(key, (entry) => {
+      if (normalizedRankBonus == null) delete entry.rankBonus
+      else entry.rankBonus = normalizedRankBonus
+    })
   }
 
   const setSkillModifier = (key: TrainerSkillKey, modifier: number | undefined) => {
-    if (!sheet.value) return
     const normalizedModifier = modifier === undefined || modifier === 0 ? undefined : modifier
-    const existing = sheet.value.skills?.[key] ?? {}
-    if (normalizedModifier == null && existing.rank == null && existing.rankBonus == null && existing.modifier == null) return
-
-    const skills = sheet.value.skills ?? (sheet.value.skills = {})
-    if (normalizedModifier == null) delete existing.modifier
-    else existing.modifier = normalizedModifier
-    if (existing.rank == null && existing.rankBonus == null && existing.modifier == null) delete skills[key]
-    else skills[key] = existing
+    updateSkillEntry(key, (entry) => {
+      if (normalizedModifier == null) delete entry.modifier
+      else entry.modifier = normalizedModifier
+    })
   }
 
   const skillModifier = (key: TrainerSkillKey): number =>
@@ -203,7 +202,6 @@ export function useTrainerSheetRowActions(sheet: Readonly<Ref<TrainerSheet | nul
     setStatField,
     setEvasionBonus,
     setAccuracyStage,
-    setSkillRank,
     setSkillRankBonus,
     setSkillModifier,
     skillModifier,

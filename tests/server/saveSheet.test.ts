@@ -120,10 +120,19 @@ describe('save sheet use case', () => {
       kind: 'trainer',
       slug: 'brock',
       expectedRevision: 2,
-      sheet: { slug: 'brock', name: 'Brock Prime', level: 4 },
+      sheet: {
+        slug: 'brock',
+        name: 'Brock Prime',
+        level: 4,
+        skills: {
+          command: { rank: 'Master', modifier: 2 },
+          focus: { rank: 'Adept' },
+        },
+      },
     }, { database, sheetRepository: sheets, realtimeEventRepository: realtime, now: () => 201 })
 
     expect(result.sheet).toMatchObject({ slug: 'brock', name: 'Brock Prime', revision: 3, updatedAt: 201 })
+    expect(result.sheet.skills).toEqual({ command: { modifier: 2 } })
     expect(result.realtimeEvents.map((event) => event.event.channel)).toEqual(['sheet:trainer:brock', 'sheets'])
     expect(result.realtimeEvents.every((event) => event.access.kind === 'sheet-access')).toBe(true)
     expect(result.realtimeEvents[0]?.event.data).toEqual({ kind: 'trainer', slug: 'brock', sheet: result.sheet })

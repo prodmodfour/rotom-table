@@ -23,7 +23,7 @@ const trainer = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
 describe('trainer training helpers', () => {
   it('uses Command rank for Experience Training limits and rank bonus', () => {
     const sheet = trainer({
-      skills: { command: { rank: 'Novice' } },
+      skillBackground: { novice: 'command' },
     })
 
     expect(trainerExperienceTrainingLimit(sheet)).toBe(3)
@@ -32,17 +32,15 @@ describe('trainer training helpers', () => {
   })
 
   it('awards at least 1 Experience Training XP', () => {
-    const sheet = trainer({
-      skills: { command: { rank: 'Untrained' } },
-    })
+    const sheet = trainer()
 
     expect(pokemonTrainingExperienceGain(sheet, { level: 1 })).toBe(1)
   })
 
   it('includes Train the Reserves and Trainer of Champions', () => {
     const sheet = trainer({
-      skills: { command: { rank: 'Expert' } },
       edges: [
+        { name: 'Expert Skills', choices: { skill: 'command' } },
         { name: 'Train the Reserves' },
         { name: 'Trainer of Champions' },
       ],
@@ -55,10 +53,7 @@ describe('trainer training helpers', () => {
 
   it('can calculate Beast Master Intimidate-based training', () => {
     const sheet = trainer({
-      skills: {
-        command: { rank: 'Untrained' },
-        intimidate: { rank: 'Adept' },
-      },
+      skillBackground: { adept: 'intimidate' },
       edges: [{ name: 'Beast Master' }],
     })
 
@@ -68,8 +63,10 @@ describe('trainer training helpers', () => {
 
   it('detects annotated Virtuoso Command as effective rank 8', () => {
     const sheet = trainer({
-      skills: { command: { rank: 'Master' } },
-      edges: [{ name: 'Virtuoso (Command)' }],
+      edges: [
+        { name: 'Master Skills', choices: { skill: 'command' } },
+        { name: 'Virtuoso (Command)' },
+      ],
     })
 
     expect(trainerSkillRankNameForTraining(sheet)).toBe('Virtuoso')
@@ -79,8 +76,10 @@ describe('trainer training helpers', () => {
 
   it('detects Virtuoso Command stored as a subchoice selection', () => {
     const sheet = trainer({
-      skills: { command: { rank: 'Master' } },
-      edges: [{ name: 'Virtuoso', choices: { skill: 'command' } }],
+      edges: [
+        { name: 'Master Skills', choices: { skill: 'command' } },
+        { name: 'Virtuoso', choices: { skill: 'command' } },
+      ],
     })
 
     expect(trainerSkillRankNameForTraining(sheet)).toBe('Virtuoso')

@@ -11,7 +11,7 @@ import {
   SKILL_RANK_TO_VALUE,
 } from '~/utils/skillRanks'
 
-export type TrainerSkillRankSourceKind = 'base' | 'background' | 'edge' | 'misc' | 'manual'
+export type TrainerSkillRankSourceKind = 'base' | 'background' | 'edge' | 'misc'
 export type TrainerSkillModifierSourceKind = 'edge'
 
 export interface TrainerSkillRankSource {
@@ -36,7 +36,7 @@ export interface TrainerSkillModifierSource {
 export interface TrainerSkillCalculation {
   key: TrainerSkillKey
   label: string
-  /** Rank from default + background + edges before any miscellaneous rank bonus or legacy manual override. */
+  /** Rank from default + background + edges before any miscellaneous rank bonus. */
   automaticRank: SkillRank
   rank: SkillRank
   rankValue: number
@@ -382,22 +382,6 @@ const applyMiscRankBonus = (
   })
 }
 
-const applyLegacyManualRank = (
-  sheet: TrainerSheet,
-  row: MutableSkillCalculation,
-): void => {
-  const manualRank = sheet.skills?.[row.key]?.rank
-  if (!manualRank) return
-
-  applyRankSource(row, {
-    id: `${row.key}:manual-rank`,
-    kind: 'manual',
-    label: 'Legacy manual rank override',
-    detail: rankChangeDetail(row.rank, manualRank, `Already ${manualRank}`),
-    rank: manualRank,
-  })
-}
-
 export const resolveTrainerSkillCalculations = (sheet: TrainerSheet): TrainerSkillCalculation[] => {
   const rows = createSkillRows()
   applySkillBackground(sheet, rows)
@@ -408,7 +392,6 @@ export const resolveTrainerSkillCalculations = (sheet: TrainerSheet): TrainerSki
     const automaticRank = row.rank
     const rankBonus = coerceInteger(sheet.skills?.[key]?.rankBonus)
     applyMiscRankBonus(row, rankBonus)
-    applyLegacyManualRank(sheet, row)
 
     const miscModifier = coerceFiniteNumber(sheet.skills?.[key]?.modifier)
     const modifier = row.edgeModifier + miscModifier

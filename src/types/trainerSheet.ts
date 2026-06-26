@@ -65,9 +65,7 @@ export type SkillRank =
   | 'Master'
 
 export interface TrainerSkillEntry {
-  /** Legacy/manual rank override. Prefer deriving rank from Skill Background, rank-up Edges, and rankBonus. */
-  rank?: SkillRank
-  /** Miscellaneous rank-step bonus stacked on top of automatic Skill Background/Edge rank calculation. */
+  /** Miscellaneous rank-step bonus stacked on top of Skill Background/Edge rank calculation. */
   rankBonus?: number
   /** Non-rank flat modifier added to the dice roll (Skill Enhancement, gear, situational bonuses). */
   modifier?: number

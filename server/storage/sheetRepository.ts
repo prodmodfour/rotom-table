@@ -3,6 +3,7 @@ import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import { isSheetKind, SHEET_KINDS, type SheetKind } from '#shared/sheets'
 import { sameJsonValue } from '~/utils/serialization'
 import { stripDerivedSheetRuntimeFields } from '~/utils/sheets/persistence'
+import { stripLegacyTrainerSheetSkillRanks } from '~/utils/sheets/trainerSkillEntries'
 import { getRotomDatabase, type RotomDatabase } from './database'
 import {
   cloneStoredJson,
@@ -253,8 +254,11 @@ const normalizeSheetForStorage = (
   const folder = normalizeFolder(overrides.folder ?? sheet.folder ?? '', `${kind} sheet folder`)
   const revision = normalizeRevision(overrides.revision ?? sheet.revision)
   const updatedAt = timestampOrNow(overrides.updatedAt ?? sheet.updatedAt, `${kind} sheet ${slug} updatedAt`)
+  const payload = sheetPayloadBase(sheet)
+  if (kind === 'trainer') stripLegacyTrainerSheetSkillRanks(payload)
+
   return {
-    ...sheetPayloadBase(sheet),
+    ...payload,
     slug,
     folder,
     revision,

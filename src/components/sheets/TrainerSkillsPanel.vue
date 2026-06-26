@@ -128,7 +128,7 @@ const setSelectedMiscModifier = (event: Event): void => {
         </div>
 
         <p v-if="selectedSkill.automaticRank !== selectedSkill.rank" class="skill-modal-note">
-          Automatic rank before miscellaneous/manual rank adjustments is {{ selectedSkill.automaticRank }}.
+          Automatic rank before miscellaneous rank adjustments is {{ selectedSkill.automaticRank }}.
         </p>
 
         <section class="skill-modal-section">

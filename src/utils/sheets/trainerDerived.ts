@@ -106,7 +106,7 @@ export type ResolvedTrainerSkill = TrainerSkillCalculation
 
 /**
  * Resolve trainer skills from default rank, Skill Background choices, skill
- * rank/bonus Edges, and any legacy manual rank or miscellaneous bonus fields.
+ * rank/bonus Edges, and miscellaneous bonus fields.
  */
 export const resolveTrainerSkills = (sheet: TrainerSheet): ResolvedTrainerSkill[] =>
   resolveTrainerSkillCalculations(sheet)

@@ -46,7 +46,7 @@ describe('trainer sheet derived helpers', () => {
     expect(computeTrainerMaxAp(makeTrainer({ level: 14, ap: { max: 12 } }))).toBe(12)
   })
 
-  it('applies skill background, skill edges, and explicit legacy skill overrides', () => {
+  it('applies skill background, skill edges, and sheet skill bonuses', () => {
     const skills = resolveTrainerSkills(makeTrainer({
       skillBackground: { adept: 'command', novice: ['focus'], pathetic: ['stealth'] },
       edges: [
@@ -57,7 +57,7 @@ describe('trainer sheet derived helpers', () => {
         { name: 'Skill Enhancement', choices: { skill: 'focus', skill2: 'stealth' } },
         { name: 'Skill Enhancement (Focus, Combat)' },
       ],
-      skills: { combat: { rank: 'Master', modifier: 2 }, focus: { rankBonus: 1, modifier: 1 } },
+      skills: { combat: { modifier: 2 }, focus: { rankBonus: 1, modifier: 1 } },
     }))
 
     expect(skills.find((row) => row.key === 'command')).toMatchObject({ rank: 'Adept', dice: '4d6', raised: true })
@@ -87,9 +87,9 @@ describe('trainer sheet derived helpers', () => {
       raised: true,
     })
     expect(skills.find((row) => row.key === 'combat')).toMatchObject({
-      rank: 'Master',
+      rank: 'Untrained',
       automaticRank: 'Untrained',
-      rankValue: 6,
+      rankValue: 2,
       modifier: 4,
     })
   })
@@ -97,7 +97,7 @@ describe('trainer sheet derived helpers', () => {
   it('computes default trainer capabilities from skill ranks using Core formulas', () => {
     const capabilities = computeDefaultTrainerCapabilities(makeTrainer({
       skillBackground: { adept: 'acrobatics', novice: 'athletics' },
-      skills: { combat: { rank: 'Adept' } },
+      edges: [{ name: 'Adept Skills', choices: { skill: 'combat' } }],
     }))
 
     expect(capabilities).toEqual({

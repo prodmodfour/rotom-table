@@ -127,24 +127,35 @@ describe('useTrainerSheetRowActions', () => {
     expect(sheet.value?.combatStages?.acc).toBe(-6)
   })
 
-  it('sets, clears, and reads skill overrides', () => {
+  it('sets, clears, and reads skill bonuses', () => {
     const sheet = ref<TrainerSheet | null>(makeSheet())
     const actions = useTrainerSheetRowActions(sheet)
 
-    actions.setSkillRank('focus', 'Adept')
     actions.setSkillRankBonus('focus', 1)
     actions.setSkillModifier('focus', 2)
-    expect(sheet.value?.skills?.focus).toEqual({ rank: 'Adept', rankBonus: 1, modifier: 2 })
-    expect(actions.skillModifier('focus')).toBe(2)
-
-    actions.setSkillRank('focus', undefined)
     expect(sheet.value?.skills?.focus).toEqual({ rankBonus: 1, modifier: 2 })
+    expect(actions.skillModifier('focus')).toBe(2)
 
     actions.setSkillRankBonus('focus', 0)
     expect(sheet.value?.skills?.focus).toEqual({ modifier: 2 })
 
     actions.setSkillModifier('focus', 0)
     expect(sheet.value?.skills?.focus).toBeUndefined()
+  })
+
+  it('drops stale legacy skill ranks while updating bonuses', () => {
+    const sheet = ref<TrainerSheet | null>(makeSheet())
+    const actions = useTrainerSheetRowActions(sheet)
+    sheet.value!.skills = {
+      focus: { rank: 'Master', modifier: 2 } as unknown as NonNullable<TrainerSheet['skills']>['focus'],
+      combat: { rank: 'Adept' } as unknown as NonNullable<TrainerSheet['skills']>['combat'],
+    }
+
+    actions.setSkillRankBonus('focus', 1)
+    actions.setSkillModifier('combat', 0)
+
+    expect(sheet.value?.skills?.focus).toEqual({ modifier: 2, rankBonus: 1 })
+    expect(sheet.value?.skills?.combat).toBeUndefined()
   })
 
   it('is inert when no trainer sheet is loaded', () => {
@@ -155,7 +166,6 @@ describe('useTrainerSheetRowActions', () => {
     actions.reorderMove(0, 1)
     actions.setStatField('atk', 'base', 10)
     actions.setAccuracyStage(1)
-    actions.setSkillRank('focus', 'Adept')
     actions.setSkillRankBonus('focus', 1)
 
     expect(sheet.value).toBeNull()
