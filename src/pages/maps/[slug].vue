@@ -12,7 +12,10 @@ import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import StartTurnModal from '~/components/map/StartTurnModal.vue'
 import { useEditableMap, type MapSaveStatus } from '~/composables/useEditableMap'
 import { useLiveSheets } from '~/composables/useLiveSheets'
-import { useLivePlayCommands } from '~/composables/map-editor/useLivePlayCommands'
+import {
+  pokeballCaptureFromAcceptedRealtimeEvent,
+  useLivePlayCommands,
+} from '~/composables/map-editor/useLivePlayCommands'
 import { useLivePlayCommandRecoveryGate } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
 import { useLivePlayStateMachine, type LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import { useMapPageTableActionDispatchers } from '~/composables/map-editor/useMapPageTableActionDispatchers'
@@ -55,6 +58,7 @@ import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActi
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
+import { isRealtimeEcho } from '#shared/realtime'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
@@ -81,6 +85,7 @@ import { normalizeMapSceneName, MAP_SCENE_NAME_MAX_LENGTH } from '~/utils/mapSce
 import { setTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { buildLiveSheetAccessScopeKey } from '~/utils/liveSheetCache'
+import { getClientId } from '~/utils/clientId'
 import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import { routeSlugParam } from '~/utils/routeParams'
@@ -148,8 +153,13 @@ let requestLiveTableSnapshot: (reason?: string) => Promise<void> = async () => {
 }
 let acceptedRealtimeAcknowledgementHandler: ((event: LivePlayAcceptedRealtimeEvent) => Promise<unknown> | unknown) | null = null
 const queuedAcceptedRealtimeEvents: LivePlayAcceptedRealtimeEvent[] = []
+const queuedAcceptedRealtimeCaptureEvents: LivePlayAcceptedRealtimeEvent[] = []
+let scheduleAcceptedRealtimePokeballCaptureResult = (event: LivePlayAcceptedRealtimeEvent): void => {
+  queuedAcceptedRealtimeCaptureEvents.push(event)
+}
 let acknowledgeAcceptedRealtimeEvent = async (event: LivePlayAcceptedRealtimeEvent): Promise<void> => {
   if (acceptedRealtimeAcknowledgementHandler) {
+    scheduleAcceptedRealtimePokeballCaptureResult(event)
     await acceptedRealtimeAcknowledgementHandler(event)
     return
   }
@@ -275,6 +285,7 @@ const livePlayCommands = useLivePlayCommands({
 })
 acceptedRealtimeAcknowledgementHandler = livePlayCommands.acknowledgeAcceptedRealtimeEvent
 acknowledgeAcceptedRealtimeEvent = async (event: LivePlayAcceptedRealtimeEvent): Promise<void> => {
+  scheduleAcceptedRealtimePokeballCaptureResult(event)
   await acceptedRealtimeAcknowledgementHandler?.(event)
 }
 for (const event of queuedAcceptedRealtimeEvents.splice(0)) {
@@ -1090,6 +1101,7 @@ const {
   replayPokeballFeedback,
   broadcastPokeballResult,
   replayPokeballResult,
+  scheduleRemotePokeballCaptureResultFallback,
   clearRemotePokeballCapture,
   clearRemotePokeballCaptureFeedback,
   dismissRemotePokeballCaptureResult,
@@ -1098,6 +1110,23 @@ const {
   publishPokeballFeedback: (request) => publishSyncedPokeballFeedback?.(request),
   publishPokeballResult: (request) => publishSyncedPokeballResult?.(request),
 })
+
+const scheduleAcceptedRealtimePokeballCaptureResultNow = (event: LivePlayAcceptedRealtimeEvent): void => {
+  // The acting browser normally publishes transient pokeball-result map-actions.
+  // Authoritative accepted-command patches are the fallback so remote live-play
+  // viewers still get the capture modal if that transient publish is missed.
+  if (isRealtimeEcho(event, getClientId())) return
+  const capture = pokeballCaptureFromAcceptedRealtimeEvent(event)
+  if (!capture) return
+  scheduleRemotePokeballCaptureResultFallback({
+    result: capture.result,
+    error: capture.result.hit ? null : capture.result.failureReason ?? 'The Poké Ball missed.',
+  })
+}
+scheduleAcceptedRealtimePokeballCaptureResult = scheduleAcceptedRealtimePokeballCaptureResultNow
+for (const event of queuedAcceptedRealtimeCaptureEvents.splice(0)) {
+  scheduleAcceptedRealtimePokeballCaptureResultNow(event)
+}
 
 const mapActionEventSync = useMapActionEventSync({
   slug,

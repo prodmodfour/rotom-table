@@ -432,6 +432,17 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
 )
 
+export const pokeballCaptureFromAcceptedRealtimeEvent = (
+  event: Pick<LivePlayAcceptedRealtimeEvent, 'patches'>,
+): PokeballCaptureOutcomeEvent | undefined => {
+  for (const patch of event.patches) {
+    if (!isRecord(patch.payload)) continue
+    const capture = patch.payload.capture
+    if (isRecord(capture) && isRecord(capture.result)) return capture as unknown as PokeballCaptureOutcomeEvent
+  }
+  return undefined
+}
+
 const validationIssueSummary = (
   issues: readonly { readonly path: string; readonly message: string }[],
 ): string => issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
@@ -2421,17 +2432,6 @@ export const useLivePlayCommands = (
     return activeAbandonment
   }
 
-  const pokeballCaptureFromRealtimePatches = (
-    event: LivePlayAcceptedRealtimeEvent,
-  ): PokeballCaptureOutcomeEvent | undefined => {
-    for (const patch of event.patches) {
-      if (!isRecord(patch.payload)) continue
-      const capture = patch.payload.capture
-      if (isRecord(capture) && isRecord(capture.result)) return capture as unknown as PokeballCaptureOutcomeEvent
-    }
-    return undefined
-  }
-
   const resolvedMoveFromRealtimeResponse = (
     response: LivePlayCommandResponse,
   ): LivePlayResolvedMoveResult | undefined => {
@@ -2451,7 +2451,7 @@ export const useLivePlayCommands = (
       patches: [...event.patches],
     }
     const move = resolvedMoveFromRealtimeResponse(response)
-    const capture = pokeballCaptureFromRealtimePatches(event)
+    const capture = pokeballCaptureFromAcceptedRealtimeEvent(event)
 
     return {
       ...response,

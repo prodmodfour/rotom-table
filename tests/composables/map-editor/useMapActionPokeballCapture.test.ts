@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createPokeballThrowVfxEvents,
+  REMOTE_POKEBALL_RESULT_FALLBACK_DELAY_MS,
   useMapActionPokeballCapture,
 } from '~/composables/map-editor/useMapActionPokeballCapture'
 import { MOVE_AUTOMATION_FEEDBACK_TIMING_MS } from '~/composables/map-editor/useMoveAutomationPanel'
@@ -87,6 +88,19 @@ const escapeResult = {
   naturalTwentyCaptureBonus: 0,
   naturalCaptureSuccess: false,
   failureReason: 'The Pokémon broke free.',
+} satisfies PokeballCaptureAttemptResult
+
+const missResult = {
+  ...captureResult,
+  id: 'capture-trainer-pidgey-300',
+  success: false,
+  hit: false,
+  shakeCount: 0,
+  captureRoll: null,
+  adjustedCaptureRoll: null,
+  naturalTwentyCaptureBonus: 0,
+  naturalCaptureSuccess: false,
+  failureReason: 'The Poké Ball missed.',
 } satisfies PokeballCaptureAttemptResult
 
 describe('useMapActionPokeballCapture', () => {
@@ -264,5 +278,68 @@ describe('useMapActionPokeballCapture', () => {
 
     capture.clearRemotePokeballCapture()
     expect(capture.remotePokeballCaptureResult.value).toBeNull()
+  })
+
+  it('falls back to the authoritative live-play capture result when transient result events do not arrive', async () => {
+    vi.useFakeTimers()
+    const capture = useMapActionPokeballCapture()
+
+    capture.scheduleRemotePokeballCaptureResultFallback({ result: captureResult, error: null })
+
+    expect(capture.remotePokeballCaptureResult.value).toBeNull()
+
+    await vi.advanceTimersByTimeAsync(REMOTE_POKEBALL_RESULT_FALLBACK_DELAY_MS - 1)
+    expect(capture.remotePokeballCaptureResult.value).toBeNull()
+
+    await vi.advanceTimersByTimeAsync(1)
+    expect(capture.remotePokeballCaptureResult.value).toEqual(captureResult)
+  })
+
+  it('lets transient feedback keep its fallback while ignoring stale feedback after the fallback result is visible', async () => {
+    vi.useFakeTimers()
+    const capture = useMapActionPokeballCapture()
+
+    capture.scheduleRemotePokeballCaptureResultFallback({ result: captureResult, error: null })
+    capture.replayPokeballFeedback(feedback)
+
+    expect(capture.remotePokeballCaptureFeedback.value?.id).toBe(captureResult.id)
+
+    await vi.advanceTimersByTimeAsync(REMOTE_POKEBALL_RESULT_FALLBACK_DELAY_MS)
+    expect(capture.remotePokeballCaptureResult.value).toEqual(captureResult)
+    expect(capture.remotePokeballCaptureFeedback.value).toBeNull()
+
+    capture.replayPokeballFeedback(feedback)
+
+    expect(capture.remotePokeballCaptureResult.value).toEqual(captureResult)
+    expect(capture.remotePokeballCaptureFeedback.value).toBeNull()
+  })
+
+  it('cancels an authoritative fallback once a transient result event arrives first', async () => {
+    vi.useFakeTimers()
+    const capture = useMapActionPokeballCapture()
+
+    capture.scheduleRemotePokeballCaptureResultFallback({ result: captureResult, error: null })
+    capture.replayPokeballResult({ result: escapeResult, error: null })
+
+    await vi.advanceTimersByTimeAsync(REMOTE_POKEBALL_RESULT_FALLBACK_DELAY_MS)
+
+    expect(capture.remotePokeballCaptureResult.value).toEqual(escapeResult)
+  })
+
+  it('keeps a settled miss error visible when matching stale feedback arrives late', async () => {
+    vi.useFakeTimers()
+    const capture = useMapActionPokeballCapture()
+    const missFeedback = { ...feedback, id: missResult.id, hit: false }
+
+    capture.scheduleRemotePokeballCaptureResultFallback({ result: missResult, error: missResult.failureReason })
+    await vi.advanceTimersByTimeAsync(REMOTE_POKEBALL_RESULT_FALLBACK_DELAY_MS)
+
+    expect(capture.remotePokeballCaptureResult.value).toBeNull()
+    expect(capture.remotePokeballCaptureError.value).toBe('The Poké Ball missed.')
+
+    capture.replayPokeballFeedback(missFeedback)
+
+    expect(capture.remotePokeballCaptureFeedback.value).toBeNull()
+    expect(capture.remotePokeballCaptureError.value).toBe('The Poké Ball missed.')
   })
 })

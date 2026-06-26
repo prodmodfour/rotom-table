@@ -30,4 +30,13 @@ describe('map page Poké Ball capture result modal sync', () => {
     expect(mapPage).toContain('watch(mapDataRevision, () => {\n  clearRemoteMoveFeedback()\n  if (remotePokeballCaptureResult.value) clearRemotePokeballCaptureFeedback()\n  else clearRemotePokeballCapture()\n})')
     expect(mapPage).not.toContain('watch(mapDataRevision, () => {\n  clearRemoteMoveFeedback()\n  clearRemotePokeballCapture()\n})')
   })
+
+  it('uses authoritative live-play capture patches as a fallback for the remote modal', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+
+    expect(mapPage).toContain('pokeballCaptureFromAcceptedRealtimeEvent')
+    expect(mapPage).toContain('queuedAcceptedRealtimeCaptureEvents')
+    expect(mapPage).toContain('if (isRealtimeEcho(event, getClientId())) return')
+    expect(mapPage).toContain('scheduleRemotePokeballCaptureResultFallback({')
+  })
 })

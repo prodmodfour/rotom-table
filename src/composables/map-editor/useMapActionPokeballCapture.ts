@@ -76,6 +76,16 @@ const initialPokeballFeedback = (feedback: MoveAutomationFeedbackState): MoveAut
   phase: 'rolling',
 })
 
+export const REMOTE_POKEBALL_RESULT_FALLBACK_DELAY_MS = MOVE_AUTOMATION_FEEDBACK_TIMING_MS.d20RollAnimation
+  + MOVE_AUTOMATION_FEEDBACK_TIMING_MS.hitRollVisible
+  + MOVE_AUTOMATION_FEEDBACK_TIMING_MS.hitResultVisible
+  + 100
+
+export interface MapActionPokeballResultReplayPayload {
+  readonly result: PokeballCaptureAttemptResult | null
+  readonly error?: string | null
+}
+
 export const createPokeballThrowVfxEvents = (
   request: MapActionPokeballThrowRequest,
   nowMs: number,
@@ -115,12 +125,21 @@ export const useMapActionPokeballCapture = (options: UseMapActionPokeballCapture
   const remotePokeballCaptureResult = ref<PokeballCaptureAttemptResult | null>(null)
   const remotePokeballCaptureError = ref<string | null>(null)
   const remoteFeedbackTimers: Array<ReturnType<typeof setTimeout>> = []
+  let remoteResultFallbackTimer: ReturnType<typeof setTimeout> | null = null
+  let remoteResultFallbackId: string | null = null
+  let remoteSettledCaptureResultId: string | null = null
 
   const clearRemoteFeedbackTimers = () => {
     while (remoteFeedbackTimers.length) {
       const timer = remoteFeedbackTimers.pop()
       if (timer) clearTimeout(timer)
     }
+  }
+
+  const clearRemoteResultFallbackTimer = () => {
+    if (remoteResultFallbackTimer) clearTimeout(remoteResultFallbackTimer)
+    remoteResultFallbackTimer = null
+    remoteResultFallbackId = null
   }
 
   const clearRemotePokeballCaptureFeedback = () => {
@@ -130,6 +149,8 @@ export const useMapActionPokeballCapture = (options: UseMapActionPokeballCapture
 
   const clearRemotePokeballCapture = () => {
     clearRemotePokeballCaptureFeedback()
+    clearRemoteResultFallbackTimer()
+    remoteSettledCaptureResultId = null
     remotePokeballCaptureResult.value = null
     remotePokeballCaptureError.value = null
   }
@@ -152,7 +173,10 @@ export const useMapActionPokeballCapture = (options: UseMapActionPokeballCapture
   }
 
   const replayPokeballFeedback = (feedback: MoveAutomationFeedbackState) => {
+    if (remoteSettledCaptureResultId === feedback.id || remotePokeballCaptureResult.value?.id === feedback.id) return
     clearRemoteFeedbackTimers()
+    if (remoteResultFallbackId !== null && remoteResultFallbackId !== feedback.id) clearRemoteResultFallbackTimer()
+    remoteSettledCaptureResultId = null
     remotePokeballCaptureResult.value = null
     remotePokeballCaptureError.value = null
 
@@ -208,17 +232,28 @@ export const useMapActionPokeballCapture = (options: UseMapActionPokeballCapture
     }
   }
 
-  const replayPokeballResult = (payload: {
-    readonly result: PokeballCaptureAttemptResult | null
-    readonly error?: string | null
-  }) => {
+  const replayPokeballResult = (payload: MapActionPokeballResultReplayPayload) => {
+    clearRemoteResultFallbackTimer()
     clearRemotePokeballCaptureFeedback()
+    remoteSettledCaptureResultId = payload.result?.id ?? null
     remotePokeballCaptureResult.value = payload.result?.hit ? payload.result : null
     remotePokeballCaptureError.value = payload.error ?? (
       payload.result && !payload.result.hit
         ? payload.result.failureReason ?? 'The Poké Ball missed.'
         : null
     )
+  }
+
+  const scheduleRemotePokeballCaptureResultFallback = (payload: MapActionPokeballResultReplayPayload) => {
+    clearRemoteResultFallbackTimer()
+    const fallbackId = payload.result?.id ?? null
+    remoteResultFallbackId = fallbackId
+    remoteResultFallbackTimer = setTimeout(() => {
+      remoteResultFallbackTimer = null
+      remoteResultFallbackId = null
+      if (payload.result && remotePokeballCaptureResult.value?.id === payload.result.id) return
+      replayPokeballResult(payload)
+    }, REMOTE_POKEBALL_RESULT_FALLBACK_DELAY_MS)
   }
 
   const broadcastPokeballResult = (request: {
@@ -254,6 +289,7 @@ export const useMapActionPokeballCapture = (options: UseMapActionPokeballCapture
     replayPokeballFeedback,
     broadcastPokeballResult,
     replayPokeballResult,
+    scheduleRemotePokeballCaptureResultFallback,
     clearRemotePokeballCapture,
     clearRemotePokeballCaptureFeedback,
     dismissRemotePokeballCaptureResult,
