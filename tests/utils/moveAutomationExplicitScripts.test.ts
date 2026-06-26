@@ -921,6 +921,7 @@ describe('explicit move automation scripts', () => {
       targetMode: 'one-target',
       damaging: true,
     })
+    expect(explicitScriptForMove('U-Turn')?.conditionSuggestions).toEqual([])
     expect(explicitScriptForMove('U-Turn')?.automationNotes).toEqual(expect.arrayContaining([
       expect.stringContaining('recalled immediately after damage'),
     ]))

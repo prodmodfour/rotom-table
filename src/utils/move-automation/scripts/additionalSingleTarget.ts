@@ -100,6 +100,7 @@ export const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, Move
   ['U-Turn', reviewedMoveScriptFromCanonical('U-Turn', 1, {
     targetMode: 'one-target',
     targetCount: 1,
+    conditionSuggestions: [],
     automationNotes: [
       'On hit, the user is recalled immediately after damage and may send out a new Pokémon; perform the token recall/send-out after the automated damage resolves.',
       'U-Turn explicitly allows a Trapped user to be recalled.',
