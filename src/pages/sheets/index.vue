@@ -78,6 +78,7 @@ const {
       />
 
       <FolderBreadcrumbNav
+        v-if="!isPlayer"
         :breadcrumbs="breadcrumbs"
         :current-path="currentPath"
         :hover-target="hoverTarget"

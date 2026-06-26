@@ -118,6 +118,7 @@ useHead(() => ({
     :save-error="saveError"
     :sheet-folder="sheetFolder"
     :sheet-path-label="sheetPathLabel"
+    :show-path-breadcrumbs="!isPlayer"
   >
     <TrainerSheetEditor
       v-if="sheet"

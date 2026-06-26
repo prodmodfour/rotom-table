@@ -170,6 +170,7 @@ useHead(() => ({
     :save-error="saveError"
     :sheet-folder="sheetFolder"
     :sheet-path-label="sheetPathLabel"
+    :show-path-breadcrumbs="!isPlayer"
   >
     <PokemonSheetEditor
       v-if="sheet"

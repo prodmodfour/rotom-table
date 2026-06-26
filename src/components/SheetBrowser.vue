@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { getSpriteUrl } from '~~/data/characterSheets'
+import SheetBrowserBreadcrumbs from '~/components/sheets/SheetBrowserBreadcrumbs.vue'
+import SheetBrowserList from '~/components/sheets/SheetBrowserList.vue'
+import { useAuth } from '~/composables/useAuth'
 import { useLiveSheets } from '~/composables/useLiveSheets'
 import { buildFolderBreadcrumbs } from '~/utils/folderBrowser'
 import {
@@ -24,6 +27,7 @@ withDefaults(defineProps<{
 
 const emit = defineEmits<{ (event: 'select', selection: SheetSelection): void }>()
 
+const { isPlayer } = useAuth()
 const currentPath = ref('')
 const searchTerm = ref('')
 const collapsed = ref(false)
@@ -36,6 +40,7 @@ const items = computed<SheetBrowserItem[]>(() => buildSheetBrowserItems({
 }))
 
 const breadcrumbs = computed(() => buildFolderBreadcrumbs(currentPath.value))
+const canShowBreadcrumbs = computed(() => !isPlayer.value)
 
 const visibleSheets = computed<SheetBrowserItem[]>(() =>
   filterSheetBrowserItems(items.value, currentPath.value, searchTerm.value),
@@ -74,6 +79,7 @@ const selectItem = (item: SheetBrowserItem) => {
 
     <div id="sheet-browser-body" v-show="!showHeading || !collapsed" class="sheet-browser__body">
       <SheetBrowserBreadcrumbs
+        v-if="canShowBreadcrumbs"
         :breadcrumbs="breadcrumbs"
         :current-path="currentPath"
         @navigate="goToFolder"

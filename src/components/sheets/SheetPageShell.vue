@@ -8,6 +8,7 @@ interface Props {
   saveError?: string | null
   sheetFolder?: string | null
   sheetPathLabel?: string | null
+  showPathBreadcrumbs?: boolean
   backTo?: string
   backLabel?: string
 }
@@ -17,6 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
   saveError: null,
   sheetFolder: '',
   sheetPathLabel: null,
+  showPathBreadcrumbs: true,
   backTo: SHEET_LIBRARY_PATH,
   backLabel: '← Sheets',
 })
@@ -29,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
 
       <div class="sheet-page-shell__path-row">
         <SheetPathBreadcrumbs
-          v-if="props.hasSheet && props.sheetPathLabel"
+          v-if="props.hasSheet && props.sheetPathLabel && props.showPathBreadcrumbs"
           :folder="props.sheetFolder"
           :current-label="props.sheetPathLabel"
         />
