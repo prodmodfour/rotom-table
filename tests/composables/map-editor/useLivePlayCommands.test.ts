@@ -417,6 +417,39 @@ const resolvedMoveFixture = (overrides: Partial<LivePlayResolvedMoveResult> = {}
   ...overrides,
 })
 
+type TestLivePlayPatch = LivePlayAcceptedRealtimeEvent['patches'][number]
+
+const moveStatePatchForMove = (
+  move: LivePlayResolvedMoveResult,
+  overrides: Partial<TestLivePlayPatch> = {},
+): TestLivePlayPatch => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  type: LIVE_PLAY_PATCH_TYPES.MOVE_STATE,
+  mapSlug: 'arena-map',
+  revision: 5,
+  scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'action' }],
+  payload: { command: LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE, move },
+  ...overrides,
+})
+
+const captureMetadataPatch = (
+  capture: Record<string, unknown>,
+  overrides: Partial<TestLivePlayPatch> = {},
+): TestLivePlayPatch => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  type: LIVE_PLAY_PATCH_TYPES.MAP_METADATA,
+  mapSlug: 'arena-map',
+  revision: 5,
+  scopes: [{ kind: 'map', lane: 'metadata' }],
+  payload: {
+    command: LIVE_PLAY_COMMAND_TYPES.THROW_POKEBALL,
+    previous: {},
+    current: {},
+    capture,
+  },
+  ...overrides,
+})
+
 describe('useLivePlayCommands', () => {
   beforeEach(() => {
     apiMocks.postJson.mockReset()
@@ -1502,6 +1535,65 @@ describe('useLivePlayCommands', () => {
     expect(applySheetUpdate).toHaveBeenNthCalledWith(2, targetUpdate)
   })
 
+  it('recovers Poké Ball capture presentation from accepted realtime patches when SSE wins the immediate-send race', async () => {
+    const outbox = createTestOutbox()
+    const map = {
+      ...mapFixture(),
+      placements: [
+        { id: 'trainer-ash', sheetKind: 'trainer' as const, sheetSlug: 'ash', position: { x: 0, y: 0, z: 0 } },
+        ...mapFixture().placements,
+      ],
+    }
+    const capture = {
+      trainerId: 'trainer-ash',
+      targetId: 'target-token',
+      targetSlug: 'bulbasaur',
+      pokeballName: 'Basic Ball',
+      result: { id: 'capture-server-realtime', hit: true, success: false },
+    }
+    let releaseHttp!: () => void
+    let sentBody: Record<string, unknown> | null = null
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      sentBody = commandRecord(body)
+      await new Promise<void>((resolve) => { releaseHttp = resolve })
+      return {
+        ok: true,
+        opId: sentBody.opId,
+        mapSlug: sentBody.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+        capture,
+      }
+    })
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      map: ref(map),
+      mapRevision: ref(4),
+      outbox,
+    })
+
+    const resultPromise = actions.throwPokeball({
+      trainerPlacementId: 'trainer-ash',
+      targetPlacementId: 'target-token',
+      pokeballName: 'Basic Ball',
+    })
+    await vi.waitFor(() => expect(sentBody).not.toBeNull())
+    const entry = await outbox.get(sentBody!.opId as string)
+    expect(entry).not.toBeNull()
+
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry!, {
+      patches: [captureMetadataPatch(capture)],
+    }))).resolves.toEqual({ status: 'acknowledged', opId: entry!.opId })
+    releaseHttp()
+
+    await expect(resultPromise).resolves.toMatchObject({
+      dispatched: true,
+      recoveredByRealtime: true,
+      response: expect.objectContaining({ capture }),
+    })
+  })
+
   it('omits profileId from throwPokeball requests when no player profile is selected', async () => {
     const map = {
       ...mapFixture(),
@@ -2566,6 +2658,56 @@ describe('useLivePlayCommands', () => {
       { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'moveUsage' },
       { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'bulbasaur', field: 'conditions' },
     ]))
+  })
+
+  it('recovers resolveMove presentation from accepted realtime MOVE_STATE patches when SSE wins the immediate-send race', async () => {
+    const outbox = createTestOutbox()
+    const move = resolvedMoveFixture()
+    let releaseHttp!: () => void
+    let sentBody: Record<string, unknown> | null = null
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      sentBody = commandRecord(body)
+      await new Promise<void>((resolve) => { releaseHttp = resolve })
+      return {
+        ok: true,
+        opId: sentBody.opId,
+        mapSlug: sentBody.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+        move,
+      }
+    })
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      map: ref(mapFixture()),
+      mapRevision: ref(4),
+      outbox,
+    })
+
+    const resultPromise = actions.resolveMove({
+      intent: {
+        schemaVersion: LIVE_PLAY_MOVE_RESOLUTION_SCHEMA_VERSION,
+        placementId: 'token-pikachu',
+        moveName: 'Thunderbolt',
+        selection: { kind: 'single-target', targetPlacementId: 'target-token' },
+      },
+      candidateScopePlacementIds: ['target-token'],
+    })
+    await vi.waitFor(() => expect(sentBody).not.toBeNull())
+    const entry = await outbox.get(sentBody!.opId as string)
+    expect(entry).not.toBeNull()
+
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry!, {
+      patches: [moveStatePatchForMove(move)],
+    }))).resolves.toEqual({ status: 'acknowledged', opId: entry!.opId })
+    releaseHttp()
+
+    await expect(resultPromise).resolves.toMatchObject({
+      dispatched: true,
+      recoveredByRealtime: true,
+      move,
+    })
   })
 
   it('does not invent a profile id for GM resolveMove dispatch', async () => {

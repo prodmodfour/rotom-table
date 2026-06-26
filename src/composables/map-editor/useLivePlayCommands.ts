@@ -1453,7 +1453,6 @@ export const useLivePlayCommands = (
       ),
     )
     if (!result.dispatched) return { ...result, move: null }
-    if (result.recoveredByRealtime) return { ...result, move: null }
 
     const response = result.response
     if (!response) {
@@ -2422,16 +2421,44 @@ export const useLivePlayCommands = (
     return activeAbandonment
   }
 
+  const pokeballCaptureFromRealtimePatches = (
+    event: LivePlayAcceptedRealtimeEvent,
+  ): PokeballCaptureOutcomeEvent | undefined => {
+    for (const patch of event.patches) {
+      if (!isRecord(patch.payload)) continue
+      const capture = patch.payload.capture
+      if (isRecord(capture) && isRecord(capture.result)) return capture as unknown as PokeballCaptureOutcomeEvent
+    }
+    return undefined
+  }
+
+  const resolvedMoveFromRealtimeResponse = (
+    response: LivePlayCommandResponse,
+  ): LivePlayResolvedMoveResult | undefined => {
+    const extracted = extractResolvedMoveResult(response)
+    return extracted.ok ? extracted.move : undefined
+  }
+
   const acceptedRealtimeResponse = (
     event: LivePlayAcceptedRealtimeEvent,
-  ): LivePlayCommandResponse => ({
-    ok: true,
-    opId: event.opId,
-    mapSlug: event.mapSlug,
-    previousRevision: event.previousRevision,
-    revision: event.revision,
-    patches: [...event.patches],
-  })
+  ): LivePlayCommandResponse => {
+    const response: LivePlayCommandResponse = {
+      ok: true,
+      opId: event.opId,
+      mapSlug: event.mapSlug,
+      previousRevision: event.previousRevision,
+      revision: event.revision,
+      patches: [...event.patches],
+    }
+    const move = resolvedMoveFromRealtimeResponse(response)
+    const capture = pokeballCaptureFromRealtimePatches(event)
+
+    return {
+      ...response,
+      ...(move === undefined ? {} : { move }),
+      ...(capture === undefined ? {} : { capture }),
+    }
+  }
 
   const validateEntryForRealtimeAcknowledgement = (
     entry: LivePlayCommandOutboxEntry,
