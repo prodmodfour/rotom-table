@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: number | undefined
   pointsLeft: number
   label: string
-}>()
+  min?: number
+  max?: number
+  constraintLabel?: string
+}>(), {
+  min: undefined,
+  max: undefined,
+  constraintLabel: 'allocation rules',
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
@@ -16,19 +23,42 @@ const normalizePointValue = (value: unknown): number => {
   return Math.max(0, Math.trunc(value))
 }
 
+const normalizeOptionalPointValue = (value: unknown): number | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null
+  return Math.max(0, Math.trunc(value))
+}
+
 const currentValue = computed(() => normalizePointValue(props.modelValue))
-const sliderMax = computed(() => Math.max(
-  currentValue.value,
-  currentValue.value + normalizePointValue(props.pointsLeft),
-  0,
-))
-const sliderDisabled = computed(() => sliderMax.value <= 0)
+const ruleMin = computed(() => normalizeOptionalPointValue(props.min) ?? 0)
+const ruleMax = computed(() => normalizeOptionalPointValue(props.max))
+const budgetMax = computed(() => currentValue.value + normalizePointValue(props.pointsLeft))
+const sliderMin = computed(() => Math.min(currentValue.value, ruleMin.value))
+const sliderMax = computed(() => {
+  const constrainedMax = ruleMax.value == null
+    ? budgetMax.value
+    : Math.min(budgetMax.value, ruleMax.value)
+  return Math.max(currentValue.value, constrainedMax, sliderMin.value)
+})
+const sliderDisabled = computed(() => sliderMax.value <= sliderMin.value)
 const sliderLabel = computed(() => `${props.label} allocation`)
-const ariaValueText = computed(() => `${currentValue.value} of ${sliderMax.value} points currently available for ${props.label}`)
-const titleText = computed(() => `${props.label}: ${currentValue.value} allocated. Drag to assign available points; reduce another stat first to raise this beyond ${sliderMax.value}.`)
+const ariaValueText = computed(() => (
+  `${currentValue.value} points for ${props.label}; allowed range ${sliderMin.value} to ${sliderMax.value}`
+))
+const constraintSummary = computed(() => {
+  const clauses: string[] = []
+  if (ruleMin.value > 0) clauses.push(`minimum ${ruleMin.value}`)
+  if (ruleMax.value != null) clauses.push(`maximum ${ruleMax.value}`)
+  return clauses.length ? ` ${props.constraintLabel} sets ${clauses.join(' and ')}.` : ''
+})
+const titleText = computed(() => (
+  `${props.label}: ${currentValue.value} allocated. Drag to assign available points; `
+  + `reduce another stat first to raise this beyond ${sliderMax.value}.${constraintSummary.value}`
+))
+
+const clampToSliderRange = (value: number): number => Math.min(Math.max(value, sliderMin.value), sliderMax.value)
 
 const commitValue = (value: unknown) => {
-  const nextValue = Math.min(normalizePointValue(value), sliderMax.value)
+  const nextValue = clampToSliderRange(normalizePointValue(value))
   emit('update:modelValue', nextValue)
 }
 
@@ -44,7 +74,7 @@ const updateFromRange = (event: Event) => {
       <EditableCell
         :model-value="currentValue"
         type="number"
-        :min="0"
+        :min="sliderMin"
         :max="sliderMax"
         @update:model-value="commitValue"
       />
@@ -54,7 +84,7 @@ const updateFromRange = (event: Event) => {
       <span class="sr-only">{{ sliderLabel }}</span>
       <input
         type="range"
-        min="0"
+        :min="sliderMin"
         :max="sliderMax"
         step="1"
         :value="currentValue"

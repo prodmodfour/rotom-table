@@ -3,6 +3,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import {
   computeFullMaxHp,
   computeMaxHp,
+  resolveBaseRelationAddedStatPointBounds,
   resolveCapabilities,
   resolveSkills,
   resolveStats,
@@ -14,6 +15,14 @@ const makeAbraSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet 
   nickname: 'Test Abra',
   species: 'Abra',
   level: 10,
+  ...overrides,
+})
+
+const makeCharmanderSheet = (overrides: Partial<CharacterSheet> = {}): CharacterSheet => ({
+  slug: 'test-charmander',
+  nickname: 'Test Charmander',
+  species: 'Charmander',
+  level: 5,
   ...overrides,
 })
 
@@ -61,6 +70,26 @@ describe('pokemon sheet derived helpers', () => {
 
     expect(violations.some((violation) => violation.higher.key === 'satk' && violation.lower.key === 'atk'))
       .toBe(true)
+  })
+
+  it('resolves Added stat slider bounds from Base Stat Relations', () => {
+    const stats = resolveStats(makeCharmanderSheet({
+      stats: {
+        hp: { added: 2 },
+        atk: { added: 3 },
+        def: { added: 2 },
+        satk: { added: 3 },
+        sdef: { added: 2 },
+        spd: { added: 3 },
+      },
+    }))
+
+    const bounds = resolveBaseRelationAddedStatPointBounds(stats)
+
+    expect(bounds.hp).toEqual({ min: 0, max: 2 })
+    expect(bounds.atk).toEqual({ min: 2, max: 3 })
+    expect(bounds.satk).toEqual({ min: 3, max: 3 })
+    expect(bounds.spd).toEqual({ min: 3 })
   })
 
   it('resolves species skills and sheet overrides', () => {

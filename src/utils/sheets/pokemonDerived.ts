@@ -87,6 +87,15 @@ export interface BaseRelationViolation {
   lower: ResolvedStat
 }
 
+export interface BaseRelationAddedStatPointBounds {
+  /** Lowest Added value that keeps this stat above all lower Base Stats. */
+  min: number
+  /** Highest Added value that keeps this stat below all higher Base Stats. Undefined means unbounded by BSR. */
+  max?: number
+}
+
+export type BaseRelationAddedStatPointBoundsByKey = Partial<Record<StatKey, BaseRelationAddedStatPointBounds>>
+
 export const validateBaseRelations = (stats: ResolvedStat[]): BaseRelationViolation[] => {
   const violations: BaseRelationViolation[] = []
   const knownStats = stats.filter((row) => row.base > 0)
@@ -106,6 +115,40 @@ export const validateBaseRelations = (stats: ResolvedStat[]): BaseRelationViolat
       || a.higher.label.localeCompare(b.higher.label)
       || a.lower.label.localeCompare(b.lower.label),
   )
+}
+
+export const resolveBaseRelationAddedStatPointBounds = (
+  stats: readonly ResolvedStat[],
+): BaseRelationAddedStatPointBoundsByKey => {
+  const bounds: BaseRelationAddedStatPointBoundsByKey = {}
+  const knownStats = stats.filter((row) => row.base > 0)
+
+  for (const stat of stats) {
+    if (stat.base <= 0) {
+      bounds[stat.key] = { min: 0 }
+      continue
+    }
+
+    let min = 0
+    let max = Number.POSITIVE_INFINITY
+
+    for (const other of knownStats) {
+      if (other.key === stat.key) continue
+
+      if (stat.base > other.base) {
+        min = Math.max(min, other.baseTotal - stat.base + 1)
+      } else if (other.base > stat.base) {
+        max = Math.min(max, other.baseTotal - stat.base - 1)
+      }
+    }
+
+    bounds[stat.key] = {
+      min: Math.max(0, Math.trunc(min)),
+      ...(Number.isFinite(max) ? { max: Math.max(0, Math.trunc(max)) } : {}),
+    }
+  }
+
+  return bounds
 }
 
 export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
