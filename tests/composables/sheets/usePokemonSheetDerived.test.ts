@@ -63,6 +63,47 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.tutorPointsLeft.value).toBe(3)
   })
 
+  it('applies Vitamins, stat suppressants, and Heart Booster to derived values', async () => {
+    const baseSheet = ref<CharacterSheet | null>(makeSheet({ items: {}, tutorPoints: { spent: 1 } }))
+    const baseDerived = usePokemonSheetDerived(baseSheet)
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      items: {},
+      tutorPoints: { earned: 0, spent: 1 },
+      vitamins: {
+        statBoosts: { hp: 1, atk: 2 },
+        statSuppressants: { atk: 1, sdef: 2 },
+        heartBooster: true,
+      },
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    const baseHp = baseDerived.stats.value.find((row) => row.key === 'hp')!
+    const hp = derived.stats.value.find((row) => row.key === 'hp')!
+    const atk = derived.stats.value.find((row) => row.key === 'atk')!
+    const sdef = derived.stats.value.find((row) => row.key === 'sdef')!
+
+    expect(hp.vitaminAdjustment).toBe(1)
+    expect(hp.base).toBe(baseHp.base + 1)
+    expect(derived.fullMaxHp.value).toBe(baseDerived.fullMaxHp.value + 3)
+    expect(atk.vitaminAdjustment).toBe(1)
+    expect(sdef.vitaminAdjustment).toBe(-2)
+    expect(derived.vitaminSummary.value).toMatchObject({
+      statVitaminCount: 3,
+      vitaminSlotsUsed: 4,
+      vitaminSlotsLeft: 1,
+      heartBoosterTutorPointBonus: 2,
+    })
+    expect(derived.tutorPointsEarned.value).toBe(5)
+    expect(derived.tutorPointsLeft.value).toBe(4)
+    expect(sheet.value?.tutorPoints?.earned).toBe(5)
+
+    sheet.value!.vitamins!.heartBooster = false
+    await nextTick()
+
+    expect(derived.tutorPointsEarned.value).toBe(3)
+    expect(sheet.value?.tutorPoints?.earned).toBe(3)
+  })
+
   it('lists auto-added Struggle moves before sheet moves', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const derived = usePokemonSheetDerived(sheet)

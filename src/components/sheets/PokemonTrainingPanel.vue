@@ -33,7 +33,7 @@ const emit = defineEmits<{
     <section class="panel-card">
       <h2 class="panel-title">Tutor Points</h2>
       <dl class="kv-list">
-        <div title="Automatically calculated from level: 1 Tutor Point at hatching, plus 1 at Level 5 and each later multiple of 5.">
+        <div title="Automatically calculated from level: 1 Tutor Point at hatching, plus 1 at Level 5 and each later multiple of 5. Heart Booster bonuses from the Vitamins section are included.">
           <dt>Earned</dt>
           <dd><span class="derived-value">{{ tutorPointsEarned ?? 0 }}</span></dd>
         </div>

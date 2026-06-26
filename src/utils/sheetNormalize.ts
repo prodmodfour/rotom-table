@@ -15,6 +15,11 @@ import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
 import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 import { setPokemonCaughtBall } from '~/utils/sheets/pokemonCaughtBall'
 import { normalizeTrainerInventoryLegacyFishingRodAutofill } from '~/utils/sheets/trainerInventoryItems'
+import {
+  POKEMON_RARE_CANDY_LIMIT,
+  POKEMON_VITAMIN_STAT_KEYS,
+  coercePokemonVitaminCount,
+} from '~/utils/sheets/pokemonVitamins'
 
 const STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
 const TRAINER_STAT_KEYS: TrainerStatKey[] = ['hp', 'atk', 'def', 'satk', 'sdef', 'spd']
@@ -56,6 +61,24 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
   if (typeof evasion.vsSatkBonus !== 'number') evasion.vsSatkBonus = 0
   if (typeof evasion.vsAnyBonus  !== 'number') evasion.vsAnyBonus  = 0
   combat.conditions = mergeLegacyConditions(combat.conditions, combat.statusAfflictions)
+
+  const vitamins = ensureObj<NonNullable<CharacterSheet['vitamins']>>(sheet, 'vitamins')
+  const statBoosts = ensureObj<NonNullable<NonNullable<CharacterSheet['vitamins']>['statBoosts']>>(vitamins, 'statBoosts')
+  const statSuppressants = ensureObj<NonNullable<NonNullable<CharacterSheet['vitamins']>['statSuppressants']>>(vitamins, 'statSuppressants')
+  for (const key of POKEMON_VITAMIN_STAT_KEYS) {
+    statBoosts[key] = coercePokemonVitaminCount(statBoosts[key])
+    statSuppressants[key] = coercePokemonVitaminCount(statSuppressants[key])
+  }
+  vitamins.heartBooster = vitamins.heartBooster === true
+  vitamins.ppUp = vitamins.ppUp === true
+  vitamins.rareCandies = coercePokemonVitaminCount(vitamins.rareCandies, { max: POKEMON_RARE_CANDY_LIMIT })
+  vitamins.heartScales = coercePokemonVitaminCount(vitamins.heartScales)
+  if (typeof vitamins.ppUpMove !== 'string') vitamins.ppUpMove = ''
+  if (typeof vitamins.notes !== 'string') vitamins.notes = ''
+  if (typeof combat.vitamins === 'string' && combat.vitamins.trim() && !vitamins.notes.trim()) {
+    vitamins.notes = combat.vitamins
+  }
+  delete combat.vitamins
 
   const combatStages = ensureObj<NonNullable<CharacterSheet['combatStages']>>(sheet, 'combatStages')
   if (typeof combatStages.acc !== 'number') combatStages.acc = 0

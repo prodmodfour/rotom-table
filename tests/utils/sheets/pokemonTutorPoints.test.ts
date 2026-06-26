@@ -28,4 +28,19 @@ describe('pokemon tutor points', () => {
 
     expect(sheet.tutorPoints).toEqual({ earned: 4, spent: 2 })
   })
+
+  it('includes Heart Booster tutor points when syncing a sheet', () => {
+    const sheet = {
+      slug: 'spark',
+      nickname: 'Spark',
+      species: 'Pikachu',
+      level: 15,
+      vitamins: { heartBooster: true },
+      tutorPoints: { earned: 99, spent: 2 },
+    } satisfies CharacterSheet
+
+    syncPokemonTutorPointsForSheet(sheet)
+
+    expect(sheet.tutorPoints).toEqual({ earned: 6, spent: 2 })
+  })
 })

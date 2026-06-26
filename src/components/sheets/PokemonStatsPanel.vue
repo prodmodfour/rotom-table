@@ -34,7 +34,8 @@ const emit = defineEmits<{
           <tr>
             <th>Stat</th>
             <th>Species</th>
-            <th>Mod</th>
+            <th title="Nature adjustment">Mod</th>
+            <th title="Vitamins and stat suppressants applied to Base Stat">Items</th>
             <th>Base</th>
             <th>Added</th>
             <th title="Current stat after Combat Stages">Total</th>
@@ -47,6 +48,9 @@ const emit = defineEmits<{
             <td>{{ row.species || '—' }}</td>
             <td :class="['mod', { plus: row.mod > 0, minus: row.mod < 0 }]">
               {{ row.mod > 0 ? `+${row.mod}` : row.mod }}
+            </td>
+            <td :class="['vitamin-adjustment', { plus: row.vitaminAdjustment > 0, minus: row.vitaminAdjustment < 0 }]">
+              {{ row.vitaminAdjustment ? formatSignedModifier(row.vitaminAdjustment) : '—' }}
             </td>
             <td class="base">{{ row.base || '—' }}</td>
             <td>
@@ -93,7 +97,7 @@ const emit = defineEmits<{
             class="stat-points-row"
             title="Pokémon added Stat Points = Level + 10 (PTU Core, Pokémon p.198)."
           >
-            <th colspan="4" scope="row">Total points to spend</th>
+            <th colspan="5" scope="row">Total points to spend</th>
             <td :class="['stat-points-row__value', { negative: statPointsLeft < 0 }]">
               {{ statPointsLeft }}
             </td>
@@ -208,9 +212,11 @@ const emit = defineEmits<{
 }
 
 .stats-table .mod.plus,
+.stats-table .vitamin-adjustment.plus,
 .stage-effective.plus { color: var(--good); }
 
 .stats-table .mod.minus,
+.stats-table .vitamin-adjustment.minus,
 .stage-effective.minus { color: var(--bad); }
 
 .stage-cell {

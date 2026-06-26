@@ -35,9 +35,10 @@ import {
 } from '~/utils/sheets/pokemonExperience'
 import { resolvePokemonTrainingFeatureEffects } from '~/utils/sheets/pokemonTrainingFeatures'
 import {
-  computePokemonTutorPointsEarned,
+  computePokemonTutorPointsEarnedForSheet,
   syncPokemonTutorPointsForSheet,
 } from '~/utils/sheets/pokemonTutorPoints'
+import { resolvePokemonVitaminSummary } from '~/utils/sheets/pokemonVitamins'
 import { resolvePokemonSheetTypes } from '~/utils/sheets/pokemonTypes'
 import { resolveUnlockedPokemonLevelUpMoves } from '~/utils/sheets/pokemonKnownMoves'
 import {
@@ -112,6 +113,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   const activeTrainingFeatureEffects = computed(() =>
     resolvePokemonTrainingFeatureEffects(sheet.value?.activeTrainingFeature),
   )
+  const vitaminSummary = computed(() => resolvePokemonVitaminSummary(sheet.value))
   const sheetTypes = computed(() => resolvePokemonSheetTypes(sheet.value))
   const eggGroups = computed(() => sheet.value?.eggGroups ?? species.value?.egg_groups ?? [])
   const unlockedLevelUpMoves = computed(() => resolveUnlockedPokemonLevelUpMoves(sheet.value, species.value))
@@ -260,7 +262,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   })
 
   const tutorPointsEarned = computed(() => (
-    sheet.value ? computePokemonTutorPointsEarned(sheet.value.level) : null
+    sheet.value ? computePokemonTutorPointsEarnedForSheet(sheet.value) : null
   ))
   const tutorPointsSpent = computed(() => {
     const spent = sheet.value?.tutorPoints?.spent
@@ -362,6 +364,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     initiativeItemBonus,
     initiativeTrainingBonus,
     activeTrainingFeatureEffects,
+    vitaminSummary,
     combatConditions,
     conditionEffects,
     statPointsSpent,

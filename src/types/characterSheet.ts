@@ -96,9 +96,27 @@ export interface CharacterSheetCombat {
   conditions?: string[]
   /** Legacy/free-form status notes that do not map to a canonical condition. */
   statusAfflictions?: string
+  /** Legacy free-form Vitamins notes. Normalization migrates this to CharacterSheet.vitamins.notes. */
   vitamins?: string
   notes?: string
   trainingExp?: number
+}
+
+export interface CharacterSheetVitaminTracking {
+  /** HP Up / Protein / Iron / Calcium / Zinc / Carbos uses, keyed by affected stat. */
+  statBoosts?: Partial<Record<StatKey, number>>
+  /** Stat Suppressant / Suppressant Berry uses, keyed by lowered Base Stat. */
+  statSuppressants?: Partial<Record<StatKey, number>>
+  /** Heart Booster vitamin consumed; grants +2 Tutor Points and may only be used once per Pokémon. */
+  heartBooster?: boolean
+  /** PP Up vitamin consumed; target move is tracked in ppUpMove and may only be used once per Pokémon. */
+  ppUp?: boolean
+  ppUpMove?: string
+  /** Rare Candies consumed in this Pokémon's lifetime; tracked separately from the five-vitamin limit. */
+  rareCandies?: number
+  /** Related Heart Scale inventory/count tracked for Heart Booster crafting. */
+  heartScales?: number
+  notes?: string
 }
 
 export interface CharacterSheetItems {
@@ -196,6 +214,8 @@ export interface CharacterSheet {
   eggGroups?: string[]
 
   stats?: Partial<Record<StatKey, CharacterSheetStat>>
+  /** Vitamins, stat suppressants, and related Pokémon nutrition/permanent stat items. */
+  vitamins?: CharacterSheetVitaminTracking
   /** Non-stat stage-like modifiers, such as Accuracy. Stat stages live in `stats.*.stage`. */
   combatStages?: Partial<Record<CombatStageKey, number>>
 

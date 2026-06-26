@@ -12,6 +12,14 @@ import { moveArrayItem } from '~/utils/arrayReorder'
 import { coerceEvasionBonus } from '~/utils/evasion'
 import { setSheetAccuracyStage } from '~/utils/sheetAccuracy'
 import { toggleSheetAbilityActivation } from '~/utils/sheetAbilityActivation'
+import {
+  POKEMON_RARE_CANDY_LIMIT,
+  coercePokemonVitaminCount,
+  type PokemonVitaminFlagKey,
+  type PokemonVitaminNumberKey,
+  type PokemonVitaminStatCountKind,
+  type PokemonVitaminTextKey,
+} from '~/utils/sheets/pokemonVitamins'
 
 export type PokemonEvasionBonusKey = Extract<
   keyof CharacterSheetEvasion,
@@ -113,6 +121,49 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     setSheetAccuracyStage(sheet.value, value)
   }
 
+  const ensureVitaminTracking = (): NonNullable<CharacterSheet['vitamins']> | null => {
+    if (!sheet.value) return null
+    const vitamins = sheet.value.vitamins ?? {}
+    if (!vitamins.statBoosts || typeof vitamins.statBoosts !== 'object' || Array.isArray(vitamins.statBoosts)) {
+      vitamins.statBoosts = {}
+    }
+    if (!vitamins.statSuppressants || typeof vitamins.statSuppressants !== 'object' || Array.isArray(vitamins.statSuppressants)) {
+      vitamins.statSuppressants = {}
+    }
+    sheet.value.vitamins = vitamins
+    return vitamins
+  }
+
+  const setVitaminStatCount = (kind: PokemonVitaminStatCountKind, key: StatKey, value: unknown) => {
+    const vitamins = ensureVitaminTracking()
+    if (!vitamins) return
+    const counts = vitamins[kind] ?? {}
+    counts[key] = coercePokemonVitaminCount(value)
+    vitamins[kind] = counts
+  }
+
+  const setVitaminFlag = (key: PokemonVitaminFlagKey, value: boolean) => {
+    const vitamins = ensureVitaminTracking()
+    if (!vitamins) return
+    vitamins[key] = value === true
+  }
+
+  const setVitaminNumber = (key: PokemonVitaminNumberKey, value: unknown) => {
+    const vitamins = ensureVitaminTracking()
+    if (!vitamins) return
+    vitamins[key] = coercePokemonVitaminCount(
+      value,
+      key === 'rareCandies' ? { max: POKEMON_RARE_CANDY_LIMIT } : {},
+    )
+  }
+
+  const setVitaminText = (key: PokemonVitaminTextKey, value: string | undefined) => {
+    const vitamins = ensureVitaminTracking()
+    if (!vitamins) return
+    const next = typeof value === 'string' ? value : value == null ? '' : String(value)
+    vitamins[key] = next
+  }
+
   const setInheritedMove = (level: string, value: string | undefined) => {
     if (!sheet.value) return
     const inherited = sheet.value.inheritedMoves ?? {}
@@ -138,6 +189,10 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     setStat,
     setEvasionBonus,
     setAccuracyStage,
+    setVitaminStatCount,
+    setVitaminFlag,
+    setVitaminNumber,
+    setVitaminText,
     setInheritedMove,
   }
 }

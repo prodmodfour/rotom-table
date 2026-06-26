@@ -43,6 +43,7 @@ const {
   initiative,
   initiativeTrainingBonus,
   conditionEffects,
+  vitaminSummary,
   statPointsSpent,
   statPointsBudget,
   statPointsLeft,
@@ -92,6 +93,10 @@ const {
   setStat,
   setEvasionBonus,
   setAccuracyStage,
+  setVitaminStatCount,
+  setVitaminFlag,
+  setVitaminNumber,
+  setVitaminText,
   setInheritedMove,
 } = usePokemonSheetRowActions(sheet)
 
@@ -166,6 +171,18 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
           @set-accuracy-stage="setAccuracyStage"
         />
       </div>
+
+      <!-- ============ Vitamins / Permanent stat items ============ -->
+      <PokemonVitaminsPanel
+        :sheet="sheet"
+        :vitamin-summary="vitaminSummary"
+        :tutor-points-earned="tutorPointsEarned"
+        :tutor-points-left="tutorPointsLeft"
+        @set-vitamin-stat-count="setVitaminStatCount"
+        @set-vitamin-flag="setVitaminFlag"
+        @set-vitamin-number="setVitaminNumber"
+        @set-vitamin-text="setVitaminText"
+      />
 
       <!-- ============ Items / Weapon ============ -->
       <PokemonEquipmentPanel

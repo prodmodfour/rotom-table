@@ -13,6 +13,7 @@ import {
   applyNumberedCapabilityBonus,
   resolveMoveGrantedCapabilities,
 } from '~/utils/sheets/pokemonMoveGrantedCapabilities'
+import { resolvePokemonVitaminSummary } from '~/utils/sheets/pokemonVitamins'
 
 const pokedexBySpecies = new Map<string, PokedexRecord>(
   (pokedexData as PokedexRecord[]).map((entry) => [entry.species, entry]),
@@ -62,7 +63,9 @@ export interface ResolvedStat {
   species: number
   /** Effective Nature modifier after PTU's stat-specific delta and minimum-1 floor. */
   mod: number
-  /** Nature-adjusted Base Stat (Species + Mod). */
+  /** Net Base Stat adjustment from Vitamins minus stat suppressants. */
+  vitaminAdjustment: number
+  /** Nature- and Vitamin-adjusted Base Stat (Species + Mod + Vitamin adjustment). */
   base: number
   /** Stat points earned on level-up. */
   added: number
@@ -173,12 +176,15 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
   const chartNatureMod = resolveNatureMod(sheet.nature)
   const plus = chartNatureMod?.plus
   const minus = chartNatureMod?.minus
+  const vitaminSummary = resolvePokemonVitaminSummary(sheet)
 
   return POKEMON_STAT_KEYS.map((key) => {
     const personal = sheet.stats?.[key] ?? {}
     const speciesValue = speciesValueFor(key)
     const mod = baseStats ? adjustedNatureModForStat(speciesValue, key, plus, minus) : 0
-    const base = speciesValue + mod
+    const vitaminAdjustment = vitaminSummary.statNetAdjustments[key]
+    const rawBase = speciesValue + mod + vitaminAdjustment
+    const base = speciesValue > 0 ? Math.max(1, rawBase) : Math.max(0, rawBase)
     const added = personal.added ?? 0
     const stage = personal.stage ?? 0
     const baseTotal = base + added
@@ -187,6 +193,7 @@ export const resolveStats = (sheet: CharacterSheet): ResolvedStat[] => {
       label: STAT_LABELS[key],
       species: speciesValue,
       mod,
+      vitaminAdjustment,
       base,
       added,
       stage,

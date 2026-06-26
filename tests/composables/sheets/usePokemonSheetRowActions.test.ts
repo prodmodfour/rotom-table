@@ -138,6 +138,31 @@ describe('usePokemonSheetRowActions', () => {
     expect(sheet.value?.inheritedMoves).toEqual({ '20': 'Volt Tackle' })
   })
 
+  it('updates Pokémon vitamin tracking fields', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet())
+    const actions = usePokemonSheetRowActions(sheet)
+
+    actions.setVitaminStatCount('statBoosts', 'atk', 2)
+    actions.setVitaminStatCount('statSuppressants', 'def', -3)
+    actions.setVitaminFlag('heartBooster', true)
+    actions.setVitaminFlag('ppUp', true)
+    actions.setVitaminNumber('rareCandies', 99)
+    actions.setVitaminNumber('heartScales', '3')
+    actions.setVitaminText('ppUpMove', 'Thunderbolt')
+    actions.setVitaminText('notes', undefined)
+
+    expect(sheet.value?.vitamins).toMatchObject({
+      statBoosts: { atk: 2 },
+      statSuppressants: { def: 0 },
+      heartBooster: true,
+      ppUp: true,
+      rareCandies: 5,
+      heartScales: 3,
+      ppUpMove: 'Thunderbolt',
+      notes: '',
+    })
+  })
+
   it('is inert when no Pokémon sheet is loaded', () => {
     const sheet = ref<CharacterSheet | null>(null)
     const actions = usePokemonSheetRowActions(sheet)
@@ -149,6 +174,10 @@ describe('usePokemonSheetRowActions', () => {
     actions.setStat('atk', 'added', 5)
     actions.setEvasionBonus('vsAtkBonus', 1)
     actions.setAccuracyStage(1)
+    actions.setVitaminStatCount('statBoosts', 'atk', 1)
+    actions.setVitaminFlag('heartBooster', true)
+    actions.setVitaminNumber('heartScales', 1)
+    actions.setVitaminText('notes', 'Ignored')
     actions.toggleAbilityActivation(0)
     actions.removeEggMove(0)
     actions.removeAppliedMove(0)

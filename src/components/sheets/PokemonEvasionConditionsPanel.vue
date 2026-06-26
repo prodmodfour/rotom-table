@@ -203,10 +203,6 @@ const emit = defineEmits<{
       </li>
     </ul>
   </div>
-  <p class="combat-line">
-    <strong>Vitamins:</strong>
-    <EditableCell v-model="combat.vitamins" placeholder="—" />
-  </p>
   <p class="combat-line notes">
     <EditableCell v-model="combat.notes" type="textarea" placeholder="Combat notes…" multiline />
   </p>
