@@ -8,7 +8,7 @@
  * and mutate it in place.
  */
 import { normalizeRevision } from '#shared/sessionRevisions'
-import type { CharacterSheet, StatKey } from '~/types/characterSheet'
+import type { CharacterSheet, CharacterSheetAppliedMove, StatKey } from '~/types/characterSheet'
 import type { InventoryEntry, TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
@@ -71,6 +71,10 @@ export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet =
 
   ensureArr(sheet, 'movelist')
   ensureArr(sheet, 'eggMoves')
+  for (const move of ensureArr<CharacterSheetAppliedMove>(sheet, 'appliedMoves')) {
+    const source = String(move.source ?? '').trim().toLowerCase()
+    move.source = source === 'tutor' || source === 'tutoring' ? 'tutor' : 'tm'
+  }
   ensureArr(sheet, 'abilities')
   ensureArr(sheet, 'edges')
 

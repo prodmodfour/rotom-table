@@ -39,6 +39,7 @@ import {
   syncPokemonTutorPointsForSheet,
 } from '~/utils/sheets/pokemonTutorPoints'
 import { resolvePokemonSheetTypes } from '~/utils/sheets/pokemonTypes'
+import { resolveUnlockedPokemonLevelUpMoves } from '~/utils/sheets/pokemonKnownMoves'
 import {
   resolvedStatBaseTotal,
   resolvedStatEffectiveStage,
@@ -113,6 +114,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   )
   const sheetTypes = computed(() => resolvePokemonSheetTypes(sheet.value))
   const eggGroups = computed(() => sheet.value?.eggGroups ?? species.value?.egg_groups ?? [])
+  const unlockedLevelUpMoves = computed(() => resolveUnlockedPokemonLevelUpMoves(sheet.value, species.value))
 
   const levelFromExperience = computed(() => calculatePokemonLevelFromExperience(sheet.value?.totalExp))
   const levelIsExperienceDerived = computed(() => levelFromExperience.value != null)
@@ -344,6 +346,7 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     capabilities,
     sheetTypes,
     eggGroups,
+    unlockedLevelUpMoves,
     levelFromExperience,
     levelIsExperienceDerived,
     experienceToNextLevel,

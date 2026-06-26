@@ -39,6 +39,13 @@ export interface CharacterSheetMove {
   contestStats?: string
 }
 
+export type CharacterSheetAppliedMoveSource = 'tm' | 'tutor'
+
+export interface CharacterSheetAppliedMove extends CharacterSheetMove {
+  /** How this move was applied to the Pokémon outside level-up or egg inheritance. */
+  source: CharacterSheetAppliedMoveSource
+}
+
 export interface CharacterSheetAbility {
   name: string
   frequency?: string
@@ -210,6 +217,8 @@ export interface CharacterSheet {
   movelist?: CharacterSheetMove[]
   /** Egg Moves this Pokémon has inherited or otherwise has available to learn. */
   eggMoves?: CharacterSheetMove[]
+  /** TM/HM or Tutor moves manually recorded as applied to this Pokémon. */
+  appliedMoves?: CharacterSheetAppliedMove[]
   /** Persistent Daily move frequency usage. EOT/Scene and per-Scene Daily locks are map-scoped. */
   moveUsage?: SheetMoveUsageState
 

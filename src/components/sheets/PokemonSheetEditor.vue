@@ -28,6 +28,7 @@ const {
   skills,
   sheetTypes,
   eggGroups,
+  unlockedLevelUpMoves,
   levelFromExperience,
   levelIsExperienceDerived,
   experienceToNextLevel,
@@ -81,6 +82,8 @@ const {
   reorderMove,
   addEggMove,
   removeEggMove,
+  addAppliedMove,
+  removeAppliedMove,
   addAbility,
   removeAbility,
   toggleAbilityActivation,
@@ -219,11 +222,14 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
       />
     </div>
 
-    <PokemonEggMovesPanel
-      v-if="activeTab === 'eggMoves'"
+    <PokemonKnownMovesPanel
+      v-if="activeTab === 'knownMoves'"
       :sheet="sheet"
+      :unlocked-level-up-moves="unlockedLevelUpMoves"
       @add-egg-move="addEggMove"
       @remove-egg-move="removeEggMove"
+      @add-applied-move="addAppliedMove"
+      @remove-applied-move="removeAppliedMove"
     />
   </article>
 

@@ -19,23 +19,26 @@ const makeSheet = (): CharacterSheet => ({
   },
   movelist: [],
   eggMoves: [],
+  appliedMoves: [],
   abilities: [],
   edges: [],
   inheritedMoves: {},
 })
 
 describe('usePokemonSheetRowActions', () => {
-  it('adds and removes Pokémon move, egg move, ability, and edge rows', () => {
+  it('adds and removes Pokémon move, egg move, applied move, ability, and edge rows', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     const actions = usePokemonSheetRowActions(sheet)
 
     actions.addMove()
     actions.addEggMove()
+    actions.addAppliedMove()
     actions.addAbility()
     actions.addEdge()
 
     expect(sheet.value?.movelist?.[0]).toEqual({ name: '' })
     expect(sheet.value?.eggMoves?.[0]).toEqual({ name: '' })
+    expect(sheet.value?.appliedMoves?.[0]).toEqual({ name: '', source: 'tm' })
     expect(sheet.value?.abilities?.[0]).toEqual({ name: '' })
     expect(sheet.value?.edges?.[0]).toEqual({ name: 'New Edge' })
 
@@ -44,22 +47,28 @@ describe('usePokemonSheetRowActions', () => {
 
     actions.removeMove(0)
     actions.removeEggMove(0)
+    actions.removeAppliedMove(0)
     actions.removeAbility(0)
     actions.removeEdge(0)
 
     expect(sheet.value?.movelist).toHaveLength(0)
     expect(sheet.value?.eggMoves).toHaveLength(0)
+    expect(sheet.value?.appliedMoves).toHaveLength(0)
     expect(sheet.value?.abilities).toHaveLength(0)
     expect(sheet.value?.edges).toHaveLength(0)
   })
 
-  it('creates a default egg move list for older sheet payloads', () => {
+  it('creates default known move lists for older sheet payloads', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet())
     delete sheet.value!.eggMoves
+    delete sheet.value!.appliedMoves
 
-    usePokemonSheetRowActions(sheet).addEggMove()
+    const actions = usePokemonSheetRowActions(sheet)
+    actions.addEggMove()
+    actions.addAppliedMove()
 
     expect(sheet.value?.eggMoves).toEqual([{ name: '' }])
+    expect(sheet.value?.appliedMoves).toEqual([{ name: '', source: 'tm' }])
   })
 
   it('reorders Pokémon move rows by sheet index', () => {
@@ -135,12 +144,14 @@ describe('usePokemonSheetRowActions', () => {
 
     actions.addMove()
     actions.addEggMove()
+    actions.addAppliedMove()
     actions.reorderMove(0, 1)
     actions.setStat('atk', 'added', 5)
     actions.setEvasionBonus('vsAtkBonus', 1)
     actions.setAccuracyStage(1)
     actions.toggleAbilityActivation(0)
     actions.removeEggMove(0)
+    actions.removeAppliedMove(0)
     actions.setInheritedMove('20', 'Ignored')
     actions.setHeldItemName('Ignored')
 

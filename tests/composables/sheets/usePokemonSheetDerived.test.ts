@@ -25,6 +25,11 @@ describe('usePokemonSheetDerived', () => {
     expect(derived.species.value?.species).toBe('Pikachu')
     expect(derived.sheetTypes.value).toEqual(['Electric'])
     expect(derived.eggGroups.value).toContain('Field')
+    expect(derived.unlockedLevelUpMoves.value.map((move) => move.name)).toEqual([
+      'Tail Whip',
+      'Play Nice',
+      'Quick Attack',
+    ])
     expect(derived.stats.value.find((row) => row.key === 'hp')?.total).toBeGreaterThan(0)
     expect(derived.moveRows.value.some((row) => row.move.name === 'Thunder Shock' && !row.automatic)).toBe(true)
     expect(derived.abilityRows.value).toEqual([])

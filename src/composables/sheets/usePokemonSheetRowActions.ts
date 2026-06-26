@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import type {
   CharacterSheet,
   CharacterSheetAbility,
+  CharacterSheetAppliedMove,
   CharacterSheetEdge,
   CharacterSheetEvasion,
   CharacterSheetMove,
@@ -61,6 +62,17 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     sheet.value?.eggMoves?.splice(i, 1)
   }
 
+  const addAppliedMove = () => {
+    if (!sheet.value) return
+    const appliedMoves = sheet.value.appliedMoves ?? []
+    appliedMoves.push({ name: '', source: 'tm' } as CharacterSheetAppliedMove)
+    sheet.value.appliedMoves = appliedMoves
+  }
+
+  const removeAppliedMove = (i: number) => {
+    sheet.value?.appliedMoves?.splice(i, 1)
+  }
+
   const addAbility = () => {
     sheet.value?.abilities?.push({ name: '' } as CharacterSheetAbility)
   }
@@ -116,6 +128,8 @@ export function usePokemonSheetRowActions(sheet: Readonly<Ref<CharacterSheet | n
     reorderMove,
     addEggMove,
     removeEggMove,
+    addAppliedMove,
+    removeAppliedMove,
     addAbility,
     removeAbility,
     toggleAbilityActivation,

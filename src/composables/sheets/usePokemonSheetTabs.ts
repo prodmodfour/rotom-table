@@ -2,7 +2,7 @@ import { ref } from 'vue'
 
 const POKEMON_SHEET_TAB_DEFS = [
   { key: 'sheet', label: 'Sheet' },
-  { key: 'eggMoves', label: 'Egg Moves' },
+  { key: 'knownMoves', label: 'Known Moves' },
 ] as const
 
 export type PokemonSheetTabKey = (typeof POKEMON_SHEET_TAB_DEFS)[number]['key']
