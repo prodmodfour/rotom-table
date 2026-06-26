@@ -57,6 +57,7 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath, logicalSheetResourcePath } from '../utils/runtimeResourcePaths'
+import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 import { validateResolveMoveScopes } from './resolveMoveCommandScopes'
@@ -494,13 +495,18 @@ const assertCommittedSheetMatchesPlan = (sheet: PersistedSheet, expectedRevision
 const responseFromContext = (
   result: LivePlayCommandResult,
   context: ResolvedResolveMoveCommandContext | null,
+  role: AuthRole,
   move: LivePlayResolvedMoveResult | undefined = context?.move,
 ): LivePlayResolveMoveCommandResponse => ({
   result,
   ...(context ? {
     path: context.relativePath,
     map: context.map,
-    ...(context.sheetUpdates?.length ? { sheetUpdates: [...context.sheetUpdates] } : {}),
+    ...(context.sheetUpdates?.length ? {
+      sheetUpdates: role === 'player'
+        ? (redactSheetUpdatesForPlayer([...context.sheetUpdates]) ?? [])
+        : [...context.sheetUpdates],
+    } : {}),
   } : {}),
   ...(move === undefined ? {} : { move }),
 })
@@ -663,5 +669,5 @@ export const executeLivePlayResolveMoveCommandUseCase = async (
   const responseContext = committedContext
     ?? (accepted ? currentContextForAcceptedResult(accepted, input.role, deps) : null)
   const move = committedContext?.move ?? responseContext?.move
-  return responseFromContext(result, responseContext, move)
+  return responseFromContext(result, responseContext, input.role, move)
 }

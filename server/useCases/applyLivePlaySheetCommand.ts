@@ -64,6 +64,7 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
+import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 
@@ -736,15 +737,23 @@ const placementIdFromAcceptedResult = (result: LivePlayCommandAccepted): string 
 const responseFromContext = (
   result: LivePlayCommandResult,
   context: ResolvedLivePlaySheetCommandContext | null,
-): LivePlaySheetCommandResponse => ({
-  result,
-  ...(context ? {
-    path: context.relativePath,
-    map: context.map,
-    placement: context.placement,
-    ...(context.sheetUpdate ? { sheetUpdates: [context.sheetUpdate] } : {}),
-  } : {}),
-})
+  role: AuthRole,
+): LivePlaySheetCommandResponse => {
+  const sheetUpdates = context?.sheetUpdate ? [context.sheetUpdate] : undefined
+  return {
+    result,
+    ...(context ? {
+      path: context.relativePath,
+      map: context.map,
+      placement: context.placement,
+      ...(sheetUpdates ? {
+        sheetUpdates: role === 'player'
+          ? (redactSheetUpdatesForPlayer(sheetUpdates) ?? [])
+          : sheetUpdates,
+      } : {}),
+    } : {}),
+  }
+}
 
 const currentContextForAcceptedResult = async (
   result: LivePlayCommandAccepted,
@@ -884,5 +893,5 @@ export const executeLivePlaySheetCommandUseCase = async (
     ?? (isAcceptedResult(result)
       ? await currentContextForAcceptedResult(result, input.role, input.playerProfile, deps)
       : null)
-  return responseFromContext(result, responseContext)
+  return responseFromContext(result, responseContext, input.role)
 }

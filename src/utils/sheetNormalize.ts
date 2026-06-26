@@ -12,6 +12,7 @@ import type { CharacterSheet, CharacterSheetAppliedMove, StatKey } from '~/types
 import type { InventoryEntry, TrainerSheet, TrainerStatKey } from '~/types/trainerSheet'
 import { mergeLegacyConditions } from '~/utils/statusConditions'
 import { normalizePokemonLoyalty } from '~/utils/sheets/pokemonLoyalty'
+import { normalizePokemonGmSection } from '~/utils/sheets/pokemonGmFields'
 import { normalizeTrainerAccentColor } from '~/utils/trainerAccent'
 import { setPokemonCaughtBall } from '~/utils/sheets/pokemonCaughtBall'
 import { normalizeTrainerInventoryLegacyFishingRodAutofill } from '~/utils/sheets/trainerInventoryItems'
@@ -40,6 +41,7 @@ const ensureArr = <T>(host: any, key: string): T[] => {
 export const normalizeCharacterSheet = (sheet: CharacterSheet): CharacterSheet => {
   sheet.revision = normalizeRevision(sheet.revision)
   if (typeof sheet.player !== 'boolean') sheet.player = false
+  normalizePokemonGmSection(sheet)
   const loyalty = normalizePokemonLoyalty(sheet.loyalty)
   if (loyalty == null) delete sheet.loyalty
   else sheet.loyalty = loyalty

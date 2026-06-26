@@ -3,6 +3,7 @@ import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import { isSheetKind, SHEET_KINDS, type SheetKind } from '#shared/sheets'
 import { sameJsonValue } from '~/utils/serialization'
 import { stripDerivedSheetRuntimeFields } from '~/utils/sheets/persistence'
+import { preservePokemonGmFieldsForPlayerSave } from '~/utils/sheets/pokemonGmFields'
 import { stripLegacyTrainerSheetSkillRanks } from '~/utils/sheets/trainerSkillEntries'
 import { getRotomDatabase, type RotomDatabase } from './database'
 import {
@@ -68,6 +69,7 @@ export interface ReplaceSetupSheetInput {
   readonly sheet: Record<string, unknown>
   readonly now?: number
   readonly preservePlayerFlag?: boolean
+  readonly preservePokemonGmFields?: boolean
 }
 
 export interface ReplaceSetupSheetResult {
@@ -515,15 +517,18 @@ export const createSqliteSheetRepository = <TDocument = unknown>(
     if (current.revision !== expectedRevision) throw new Error(`${kind} sheet ${slug} is stale; expected revision ${expectedRevision}, current revision ${current.revision}`)
 
     const currentSheet = current.sheet
+    const inputSheet = input.preservePokemonGmFields && kind === 'pokemon'
+      ? preservePokemonGmFieldsForPlayerSave(input.sheet, currentSheet)
+      : input.sheet
     const sourceWithServerFields = {
-      ...input.sheet,
+      ...inputSheet,
       slug,
       folder: currentSheet.folder ?? '',
       revision: current.revision,
       createdAt: currentSheet.createdAt,
       updatedAt: current.updatedAt,
       ...(input.preservePlayerFlag ? { player: currentSheet.player } : {}),
-      ...(Object.prototype.hasOwnProperty.call(input.sheet, 'moveUsage') || currentSheet.moveUsage === undefined
+      ...(Object.prototype.hasOwnProperty.call(inputSheet, 'moveUsage') || currentSheet.moveUsage === undefined
         ? {}
         : { moveUsage: currentSheet.moveUsage }),
     }

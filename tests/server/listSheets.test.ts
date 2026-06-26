@@ -83,6 +83,20 @@ describe('list sheets use case', () => {
     })
   })
 
+  it('redacts Pokémon GM fields from player sheet listings', () => {
+    const listPokemonSheets = vi.fn(() => [pokemon({ gm: { notes: 'secret roster note' } })])
+    const listTrainerSheets = vi.fn(() => [])
+
+    expect(listSheetsUseCase({ role: 'player' }, { listPokemonSheets, listTrainerSheets })).toEqual({
+      pokemonSheets: [pokemon()],
+      trainerSheets: [],
+    })
+    expect(listSheetsUseCase({ role: 'gm' }, { listPokemonSheets, listTrainerSheets })).toEqual({
+      pokemonSheets: [pokemon({ gm: { notes: 'secret roster note' } })],
+      trainerSheets: [],
+    })
+  })
+
   it('includes sheets linked to the selected player profile for players', () => {
     const listPokemonSheets = vi.fn(() => [
       pokemon({ player: false }),

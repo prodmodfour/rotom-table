@@ -375,6 +375,39 @@ describe('repository-backed realtime SSE replay', () => {
     await closeStream(reconnect)
   })
 
+  it('redacts Pokémon GM fields while delivering allowed sheet events to players', async () => {
+    const harness = createHarness()
+    const sheet = pokemonSheet({ slug: 'pika', player: true, gm: { notes: 'secret GM hook' } })
+    harness.sheets.saveSetupSheet('pokemon', 'pika', sheet)
+    harness.realtime.append({
+      event: {
+        channel: 'sheet:pokemon:pika',
+        type: 'updated',
+        data: { kind: 'pokemon', slug: 'pika', sheet },
+      },
+      access: { kind: 'sheet-access', sheetKind: 'pokemon', sheetSlug: 'pika' },
+      timestamp: 1_000,
+    })
+
+    const connection = startStream({
+      harness,
+      afterSequence: 0,
+      principal: { role: 'player', playerProfile: null, sessionAccess: null },
+    })
+    const frames = await waitForFrameCount(connection.writes, 2)
+
+    expect(frames[0]?.data).toMatchObject({
+      type: 'updated',
+      data: {
+        kind: 'pokemon',
+        slug: 'pika',
+        sheet: expect.not.objectContaining({ gm: expect.anything() }),
+      },
+    })
+    expect(connection.writes.join('')).not.toContain('secret GM hook')
+    await closeStream(connection)
+  })
+
   it('uses current SQLite sheet/profile/session/map-placement policy while delivering retained rows', async () => {
     const harness = createHarness()
     harness.sheets.saveSetupSheet('trainer', 'ash', trainerSheet({ slug: 'ash', currentTeam: ['team-pika'] }))

@@ -140,6 +140,11 @@ export interface CharacterSheetSkillBackground {
   lowered?: string[]
 }
 
+export interface CharacterSheetGm {
+  /** Private GM-only notes. Player sheet APIs and realtime streams redact this section. */
+  notes?: string
+}
+
 export interface CharacterSheetCapabilities {
   overland?: number
   sky?: number
@@ -198,6 +203,8 @@ export interface CharacterSheet {
   caughtBall?: string
   /** Marks this sheet as broadly visible to players. */
   player?: boolean
+  /** Private GM-only Pokémon metadata. Never expose this section to player clients. */
+  gm?: CharacterSheetGm
   /** Runtime API marker: this private sheet is linked to the selected player profile. */
   playerProfileAccessible?: boolean
   /** Runtime API marker: this private sheet is visible through a legacy session grant. */

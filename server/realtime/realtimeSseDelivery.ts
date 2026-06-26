@@ -31,6 +31,7 @@ import {
   type RealtimeDeliveryPrincipal,
   type RealtimeEventAccessDependencies,
 } from './realtimeEventAccessPolicy'
+import { redactRealtimeEventForPrincipal } from './realtimeEventRedaction'
 import { createSqliteRealtimeEventAccessDependencies } from './sqliteRealtimeEventAccessAdapter'
 
 export const DEFAULT_REALTIME_SSE_POLL_INTERVAL_MS = 500
@@ -334,7 +335,7 @@ class RealtimeSseConnection {
 
       if (!decision.allowed) continue
 
-      await this.writeData(record.event, record.sequence)
+      await this.writeData(redactRealtimeEventForPrincipal(record.event, this.principal), record.sequence)
       lastAllowedSequence = record.sequence
     }
 
@@ -428,7 +429,7 @@ class RealtimeSseConnection {
           dependencies: this.accessDependencies,
         })
         if (!decision.allowed) continue
-        await this.writeData(publication.event)
+        await this.writeData(redactRealtimeEventForPrincipal(publication.event, this.principal))
       }
     } catch (error) {
       this.logger.error?.('[events] transient SSE delivery failed', { ...this.logContext, error })

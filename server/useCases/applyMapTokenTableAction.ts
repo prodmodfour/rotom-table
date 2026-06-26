@@ -53,6 +53,7 @@ import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { sqliteMapRepository, type MapRepository } from '../storage/mapRepository'
 import { sqliteSheetRepository, type PersistedSheet, type SheetRepository } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
+import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 
@@ -847,6 +848,7 @@ const sheetRefsFromAcceptedResult = (result: LivePlayCommandAccepted): readonly 
 const responseFromContext = (
   result: LivePlayCommandResult,
   context: ResolvedActionContext | null,
+  role: AuthRole,
 ): LivePlayTableActionCommandResponse => ({
   result,
   ...(context ? {
@@ -854,7 +856,9 @@ const responseFromContext = (
     map: context.map,
     placement: context.actorPlacement,
     ...(context.action ? { action: context.action } : {}),
-    sheetUpdates: [...(context.sheetUpdates ?? [])],
+    sheetUpdates: role === 'player'
+      ? (redactSheetUpdatesForPlayer([...(context.sheetUpdates ?? [])]) ?? [])
+      : [...(context.sheetUpdates ?? [])],
   } : {}),
 })
 
@@ -1025,5 +1029,5 @@ export const executeLivePlayTableActionCommandUseCase = async (
     ?? (isAcceptedResult(result)
       ? await currentContextForAcceptedResult(result, input.role, input.playerProfile, deps)
       : null)
-  return responseFromContext(result, responseContext)
+  return responseFromContext(result, responseContext, input.role)
 }

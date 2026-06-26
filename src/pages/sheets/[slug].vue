@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { normalizeCharacterSheet } from '~/utils/sheetNormalize'
 import { useEditableSheetResource } from '~/composables/sheets/useEditableSheetResource'
+import { usePokemonAddedStatsAdminAction } from '~/composables/sheets/usePokemonAddedStatsAdminAction'
 import { useSheetRenameUrlSync } from '~/composables/sheets/useSheetRenameUrlSync'
 import { syncNatureModForSheet } from '~/composables/sheets/usePokemonNatureControls'
 import { useWindowKeydown } from '~/composables/useWindowKeydown'
@@ -10,8 +11,6 @@ import { SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { trainerAccentColorForPokemonSheet } from '~/utils/trainerAccent'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { isCtrlShiftLetter, isEditableKeyboardEventTarget, isEscapeKey } from '~/utils/keyboardShortcuts'
-import { randomizePokemonAddedStats } from '~/utils/sheets/pokemonAddedStatRandomizer'
-import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import { routeSlugParam } from '~/utils/routeParams'
 import {
   buildSheetLoadQuery,
@@ -110,24 +109,21 @@ const linkedTrainerAccentColor = computed(() => trainerAccentColorForPokemonShee
 ))
 
 const adminPanelOpen = ref(false)
-const adminStatusMessage = ref<string | null>(null)
-const adminErrorMessage = ref<string | null>(null)
 const canUseSheetAdminPanel = computed(() => (
   isGm.value && editorCapabilities.value.canEditSheet && Boolean(sheet.value)
 ))
+const {
+  statusMessage: adminStatusMessage,
+  errorMessage: adminErrorMessage,
+  statPointsBudget: adminStatPointsBudget,
+  clearMessages: clearAdminMessages,
+  randomizeAddedStats: randomizeAddedStatsFromAdmin,
+} = usePokemonAddedStatsAdminAction({ sheet, canUse: canUseSheetAdminPanel })
 const adminSheetLabel = computed(() => {
   if (!sheet.value) return null
   const name = sheet.value.nickname || sheet.value.slug
   return sheet.value.species ? `${name} · ${sheet.value.species}` : name
 })
-const adminStatPointsBudget = computed(() => (
-  sheet.value ? computePokemonLevelUpStatPointBudget(sheet.value.level) : null
-))
-
-const clearAdminMessages = () => {
-  adminStatusMessage.value = null
-  adminErrorMessage.value = null
-}
 
 const closeAdminPanel = () => {
   adminPanelOpen.value = false
@@ -137,18 +133,6 @@ const toggleAdminPanel = () => {
   if (!canUseSheetAdminPanel.value) return
   clearAdminMessages()
   adminPanelOpen.value = !adminPanelOpen.value
-}
-
-const randomizeAddedStatsFromAdmin = () => {
-  if (!canUseSheetAdminPanel.value || !sheet.value) return
-
-  clearAdminMessages()
-  try {
-    const result = randomizePokemonAddedStats(sheet.value)
-    adminStatusMessage.value = `Randomised ${result.budget} Added Stat Points. Sheet autosave will persist the change.`
-  } catch (error) {
-    adminErrorMessage.value = getErrorMessage(error, { fallback: 'Unable to randomise Added Stat Points.' })
-  }
 }
 
 watch(canUseSheetAdminPanel, (canUseAdminPanel) => {

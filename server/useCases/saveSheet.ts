@@ -21,6 +21,7 @@ import {
   type RealtimeEventRepository,
 } from '../storage/realtimeEventRepository'
 import { logicalSheetResourcePath } from '../utils/runtimeResourcePaths'
+import { redactSheetRecordForPlayer } from '../utils/sheetPrivacy'
 import { setupSheetSaveRealtimeAppendInputs } from '../realtime/setupDocumentRealtime'
 import {
   defaultPersistedSetupSaveRealtimeEventPublisher,
@@ -100,6 +101,7 @@ const replaceSheetOrThrow = (
       sheet: input.sheet,
       now: timestamp,
       preservePlayerFlag: input.role === 'player',
+      preservePokemonGmFields: input.role === 'player' && input.kind === 'pokemon',
     })
   } catch (err) {
     const message = (err as Error).message
@@ -219,7 +221,9 @@ export const saveSheetUseCase = (
     ok: true,
     slug: transactionResult.slug,
     path: transactionResult.path,
-    sheet: transactionResult.sheet,
+    sheet: input.role === 'player'
+      ? redactSheetRecordForPlayer(input.kind, transactionResult.sheet)
+      : transactionResult.sheet,
     realtimeEvents: transactionResult.realtimeEvents,
   }
 }

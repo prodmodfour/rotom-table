@@ -44,6 +44,7 @@ import {
   type SheetRepository,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
+import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 
@@ -567,6 +568,7 @@ const sheetUpdatesForResponse = (
 const responseFromContext = (
   result: LivePlayCommandResult,
   context: AcceptedUseMoveContext | ResolvedUseMoveContext | null,
+  role: AuthRole,
 ): LivePlayUseMoveCommandResponse => {
   const sheetUpdates = sheetUpdatesForResponse(result, context)
   return {
@@ -577,7 +579,11 @@ const responseFromContext = (
       placement: context.placement,
     } : {}),
     ...((context && 'usage' in context) ? { usage: context.usage } : {}),
-    ...(sheetUpdates === undefined ? {} : { sheetUpdates }),
+    ...(sheetUpdates === undefined ? {} : {
+      sheetUpdates: role === 'player'
+        ? (redactSheetUpdatesForPlayer(sheetUpdates) ?? [])
+        : sheetUpdates,
+    }),
   }
 }
 
@@ -726,5 +732,5 @@ export const executeLivePlayUseMoveCommandUseCase = async (
     ?? (isAcceptedResult(result)
       ? await currentContextForAcceptedResult(result, input.role, input.playerProfile, deps)
       : null)
-  return responseFromContext(result, responseContext)
+  return responseFromContext(result, responseContext, input.role)
 }

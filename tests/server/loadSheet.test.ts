@@ -50,6 +50,34 @@ describe('load sheet use case', () => {
     }, { sheetRepository: sheetRepositoryFor(sheet) })).toEqual({ kind: 'pokemon', slug: 'pika', sheet })
   })
 
+  it('redacts Pokémon GM fields from player sheet loads', () => {
+    const sheet = {
+      slug: 'pika',
+      nickname: 'Pika',
+      species: 'Pikachu',
+      level: 5,
+      player: true,
+      gm: { notes: 'secret encounter hook' },
+    }
+
+    expect(loadSheetUseCase({
+      role: 'player',
+      kind: 'pokemon',
+      slug: 'pika',
+    }, { sheetRepository: sheetRepositoryFor(sheet) }).sheet).toEqual({
+      slug: 'pika',
+      nickname: 'Pika',
+      species: 'Pikachu',
+      level: 5,
+      player: true,
+    })
+    expect(loadSheetUseCase({
+      role: 'gm',
+      kind: 'pokemon',
+      slug: 'pika',
+    }, { sheetRepository: sheetRepositoryFor(sheet) }).sheet).toEqual(sheet)
+  })
+
   it('rejects inaccessible player sheet loads', () => {
     expect(() => loadSheetUseCase({
       role: 'player',

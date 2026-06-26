@@ -59,6 +59,7 @@ import {
   type StoredSheetDocument,
 } from '../storage/sheetRepository'
 import { logicalMapResourcePath } from '../utils/runtimeResourcePaths'
+import { redactSheetUpdatesForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { toPersistedMap } from './saveMap'
 
@@ -742,13 +743,18 @@ const captureFromAcceptedResult = (result: LivePlayCommandAccepted): PokeballCap
 const responseFromContext = (
   result: LivePlayCommandResult,
   context: ResolvedThrowPokeballCommandContext | null,
+  role: AuthRole,
   capture: PokeballCaptureOutcomeEvent | undefined = context?.capture,
 ): LivePlayPokeballCommandResponse => ({
   result,
   ...(context ? {
     path: context.relativePath,
     map: context.map,
-    ...(context.sheetUpdates?.length ? { sheetUpdates: [...context.sheetUpdates] } : {}),
+    ...(context.sheetUpdates?.length ? {
+      sheetUpdates: role === 'player'
+        ? (redactSheetUpdatesForPlayer([...context.sheetUpdates]) ?? [])
+        : [...context.sheetUpdates],
+    } : {}),
   } : {}),
   ...(capture === undefined ? {} : { capture }),
 })
@@ -941,7 +947,7 @@ export const executeThrowPokeballCommandUseCase = async (
   const responseContext = committedContext
     ?? (accepted ? await currentContextForAcceptedResult(accepted, input.role, deps) : null)
   const capture = committedContext?.capture ?? (accepted ? captureFromAcceptedResult(accepted) : undefined)
-  return responseFromContext(result, responseContext, capture)
+  return responseFromContext(result, responseContext, input.role, capture)
 }
 
 export const buildThrowPokeballCommandEnvelope = (input: {

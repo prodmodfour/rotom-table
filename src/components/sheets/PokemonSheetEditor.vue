@@ -5,6 +5,7 @@ import { usePokemonSheetCsvFields } from '~/composables/sheets/usePokemonSheetCs
 import { usePokemonSheetRowActions } from '~/composables/sheets/usePokemonSheetRowActions'
 import { usePokemonSheetTabs } from '~/composables/sheets/usePokemonSheetTabs'
 import { usePokemonNatureControls } from '~/composables/sheets/usePokemonNatureControls'
+import { usePokemonAddedStatsAdminAction } from '~/composables/sheets/usePokemonAddedStatsAdminAction'
 import { trainerAccentCssVariables } from '~/utils/trainerAccent'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { SheetEditorCapabilities } from '~/utils/sheetEditorCapabilities'
@@ -18,9 +19,10 @@ const props = defineProps<{
 const sheet = computed<CharacterSheet>(() => props.sheet)
 const canEditSheet = computed(() => props.capabilities.canEditSheet)
 const canManagePlayerAccess = computed(() => props.capabilities.canManagePlayerAccess)
+const canUseGmTab = computed(() => props.capabilities.accessMode === 'gm')
 const pokemonAccentStyle = computed(() => props.accentColor ? trainerAccentCssVariables(props.accentColor) : undefined)
 
-const { tabs, activeTab, setActiveTab } = usePokemonSheetTabs()
+const { tabs, activeTab, setActiveTab } = usePokemonSheetTabs({ includeGmTab: canUseGmTab })
 
 const {
   spriteUrl,
@@ -101,6 +103,12 @@ const {
 } = usePokemonSheetRowActions(sheet)
 
 const healingModalOpen = ref(false)
+const {
+  statusMessage: gmStatusMessage,
+  errorMessage: gmErrorMessage,
+  statPointsBudget: gmStatPointsBudget,
+  randomizeAddedStats: randomizeAddedStatsFromGmTab,
+} = usePokemonAddedStatsAdminAction({ sheet, canUse: canUseGmTab })
 const openHealingModal = () => {
   healingModalOpen.value = true
 }
@@ -247,6 +255,15 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
       @remove-egg-move="removeEggMove"
       @add-applied-move="addAppliedMove"
       @remove-applied-move="removeAppliedMove"
+    />
+
+    <PokemonGmTabPanel
+      v-if="canUseGmTab && activeTab === 'gm'"
+      :sheet="sheet"
+      :stat-points-budget="gmStatPointsBudget"
+      :status-message="gmStatusMessage"
+      :error-message="gmErrorMessage"
+      @randomize-added-stats="randomizeAddedStatsFromGmTab"
     />
   </article>
 

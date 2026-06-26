@@ -4,6 +4,7 @@ import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { playerCanAccessSheet, type PlayerProfileLinkedTrainerSheet } from '../policies/playerProfilePolicy'
+import { redactSheetForPlayer } from '../utils/sheetPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { sqliteSheetRepository, type SheetRepository, type PersistedSheet } from '../storage/sheetRepository'
 
@@ -73,6 +74,8 @@ export const loadSheetUseCase = (
   return {
     kind: input.kind,
     slug: input.slug,
-    sheet: result.sheet,
+    sheet: input.role === 'player'
+      ? redactSheetForPlayer(input.kind, result.sheet)
+      : result.sheet,
   }
 }

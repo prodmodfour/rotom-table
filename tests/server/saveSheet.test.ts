@@ -203,6 +203,34 @@ describe('save sheet use case', () => {
     expect(result.realtimeEvents.every((event) => event.access.kind === 'sheet-access')).toBe(true)
   })
 
+  it('preserves and redacts Pokémon GM fields for player saves', () => {
+    const database = db()
+    const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    sheets.saveSetupSheet('pokemon', 'pika', pokemonSheet({
+      player: true,
+      revision: 1,
+      gm: { notes: 'secret capture twist' },
+    }))
+
+    const result = saveSheetUseCase({
+      role: 'player',
+      interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT,
+      kind: 'pokemon',
+      slug: 'pika',
+      expectedRevision: 1,
+      sheet: { slug: 'pika', nickname: 'Pika Prime', species: 'Pikachu', level: 5, gm: { notes: 'player should not write this' } },
+    }, { database, sheetRepository: sheets, realtimeEventRepository: realtime })
+
+    expect(result.sheet).toMatchObject({ slug: 'pika', nickname: 'Pika Prime', revision: 2 })
+    expect(result.sheet).not.toHaveProperty('gm')
+    expect(sheets.getByRef('pokemon', 'pika')?.sheet).toMatchObject({
+      nickname: 'Pika Prime',
+      gm: { notes: 'secret capture twist' },
+      revision: 2,
+    })
+  })
+
   it('rolls back the sheet when the specific realtime event append fails', () => {
     const database = db()
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
