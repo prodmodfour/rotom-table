@@ -52,4 +52,19 @@ describe('PTU item reference data', () => {
       })
     }
   })
+
+  it('exposes type braces as one item per elemental type', () => {
+    expect(items.map((item) => item.name)).not.toContain('Type Brace')
+    expect(findItem('Type Brace')).toBeNull()
+
+    for (const typeName of typeNames) {
+      expect(findItem(`${typeName} Type Brace`)).toMatchObject({
+        name: `${typeName} Type Brace`,
+        costs: ['$2000'],
+        effects: [
+          `Grants the holder 15 Damage Reduction against ${typeName} Type attacks. Accessory Item for Trainers.`,
+        ],
+      })
+    }
+  })
 })

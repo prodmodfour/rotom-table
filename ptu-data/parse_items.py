@@ -630,17 +630,32 @@ def _type_booster_effect(type_name: str) -> str:
     )
 
 
-def _add_type_booster_items(items: dict[str, dict], *, cost: str | None, source: str):
+def _type_brace_effect(type_name: str) -> str:
+    return (
+        f"Grants the holder 15 Damage Reduction against {type_name} Type attacks. "
+        "Accessory Item for Trainers."
+    )
+
+
+def _add_typed_held_items(items: dict[str, dict], suffix: str, effect_factory, *, cost: str | None, source: str):
     for type_name in ALL_TYPES:
         _add_item(
             items,
-            f"{type_name} Type Booster",
+            f"{type_name} Type {suffix}",
             category="Held Item",
-            effect=_type_booster_effect(type_name),
+            effect=effect_factory(type_name),
             cost=cost,
             section="Held Items",
             source=source,
         )
+
+
+def _add_type_booster_items(items: dict[str, dict], *, cost: str | None, source: str):
+    _add_typed_held_items(items, "Booster", _type_booster_effect, cost=cost, source=source)
+
+
+def _add_type_brace_items(items: dict[str, dict], *, cost: str | None, source: str):
+    _add_typed_held_items(items, "Brace", _type_brace_effect, cost=cost, source=source)
 
 
 def _parse_held_items(text: str, items: dict[str, dict], source: str):
@@ -661,9 +676,12 @@ def _parse_held_items(text: str, items: dict[str, dict], source: str):
         if name == "Type Boosters":
             _add_type_booster_items(items, cost=cost, source=source)
             continue
+        if name == "Type Brace":
+            _add_type_brace_items(items, cost=cost, source=source)
+            continue
 
         aliases = []
-        if name in {"Type Gem", "Type Plate", "Type Brace"}:
+        if name in {"Type Gem", "Type Plate"}:
             aliases.extend([f"{t} {name[:-1] if name.endswith('s') else name}" for t in ALL_TYPES])
         if name in {"Choice Item", "Lagging Item", "Stat Boosters"}:
             aliases.extend([f"{stat} {name[:-1] if name.endswith('s') else name}" for stat in ALL_STATS])

@@ -3150,13 +3150,13 @@
     "notes": [],
     "source": "09-gear-and-items.md"
   },
-  "Type Brace": {
-    "name": "Type Brace",
+  "Normal Type Brace": {
+    "name": "Normal Type Brace",
     "categories": [
       "Held Item"
     ],
     "effects": [
-      "These items come in a variety of each of the Elemental Types, and grant the holder 15 Damage Reduction against that specific Type. Accessory Item for Trainers."
+      "Grants the holder 15 Damage Reduction against Normal Type attacks. Accessory Item for Trainers."
     ],
     "costs": [
       "$2000"
@@ -3164,26 +3164,313 @@
     "sections": [
       "Held Items"
     ],
-    "aliases": [
-      "Normal Type Brace",
-      "Fire Type Brace",
-      "Water Type Brace",
-      "Electric Type Brace",
-      "Grass Type Brace",
-      "Ice Type Brace",
-      "Fighting Type Brace",
-      "Poison Type Brace",
-      "Ground Type Brace",
-      "Flying Type Brace",
-      "Psychic Type Brace",
-      "Bug Type Brace",
-      "Rock Type Brace",
-      "Ghost Type Brace",
-      "Dragon Type Brace",
-      "Dark Type Brace",
-      "Steel Type Brace",
-      "Fairy Type Brace"
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fire Type Brace": {
+    "name": "Fire Type Brace",
+    "categories": [
+      "Held Item"
     ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Fire Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Water Type Brace": {
+    "name": "Water Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Water Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Electric Type Brace": {
+    "name": "Electric Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Electric Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Grass Type Brace": {
+    "name": "Grass Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Grass Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Ice Type Brace": {
+    "name": "Ice Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Ice Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fighting Type Brace": {
+    "name": "Fighting Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Fighting Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Poison Type Brace": {
+    "name": "Poison Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Poison Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Ground Type Brace": {
+    "name": "Ground Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Ground Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Flying Type Brace": {
+    "name": "Flying Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Flying Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Psychic Type Brace": {
+    "name": "Psychic Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Psychic Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Bug Type Brace": {
+    "name": "Bug Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Bug Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Rock Type Brace": {
+    "name": "Rock Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Rock Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Ghost Type Brace": {
+    "name": "Ghost Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Ghost Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dragon Type Brace": {
+    "name": "Dragon Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Dragon Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Dark Type Brace": {
+    "name": "Dark Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Dark Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Steel Type Brace": {
+    "name": "Steel Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Steel Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
+    "notes": [],
+    "source": "09-gear-and-items.md"
+  },
+  "Fairy Type Brace": {
+    "name": "Fairy Type Brace",
+    "categories": [
+      "Held Item"
+    ],
+    "effects": [
+      "Grants the holder 15 Damage Reduction against Fairy Type attacks. Accessory Item for Trainers."
+    ],
+    "costs": [
+      "$2000"
+    ],
+    "sections": [
+      "Held Items"
+    ],
+    "aliases": [],
     "notes": [],
     "source": "09-gear-and-items.md"
   },
