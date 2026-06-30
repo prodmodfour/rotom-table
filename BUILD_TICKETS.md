@@ -75,7 +75,7 @@ None.
 
 ## 002 — SHOPS-002: Add shop SQLite migration
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Create durable storage for shop table documents.

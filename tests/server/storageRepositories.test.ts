@@ -119,6 +119,7 @@ describe('SQLite storage foundation', () => {
       'realtime_events',
       'sheet_folders',
       'sheets',
+      'shop_tables',
     ])
 
     const reopened = openRotomDatabase({ path: database.path })
@@ -134,6 +135,7 @@ describe('SQLite storage foundation', () => {
       'realtime_events',
       'sheet_folders',
       'sheets',
+      'shop_tables',
     ])
   })
 

@@ -29,7 +29,7 @@ export const ROTOM_DB_PATH_ENV = 'ROTOM_DB_PATH'
 export const DEFAULT_ROTOM_DB_FILENAME = 'rotom-table.sqlite'
 export const DEFAULT_MIGRATION_BACKUP_DIRNAME = 'backups'
 export const SQLITE_MIGRATION_BACKUP_PREFIX = 'rotom-sqlite-migration-'
-export const STORAGE_SCHEMA_VERSION = 6
+export const STORAGE_SCHEMA_VERSION = 7
 
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
@@ -723,6 +723,17 @@ const applyStorageMigrations = (connection) => {
         );
       `)
       setUserVersion(connection, 6)
+    }
+    if (fromVersion < 7) {
+      connection.exec(`
+        CREATE TABLE IF NOT EXISTS shop_tables (
+          slug TEXT PRIMARY KEY,
+          document_json TEXT NOT NULL,
+          revision INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+      `)
+      setUserVersion(connection, 7)
     }
     connection.exec('COMMIT')
   } catch (error) {
