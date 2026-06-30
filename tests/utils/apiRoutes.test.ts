@@ -25,6 +25,7 @@ describe('API route constants', () => {
   it('exposes group inventory API paths', () => {
     expect(GROUP_INVENTORY_API_PATHS).toEqual({
       load: '/api/group-inventory/load',
+      save: '/api/group-inventory/save',
     })
   })
 

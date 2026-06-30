@@ -130,7 +130,7 @@ Expose the authoritative group inventory document to the browser.
 
 ## 031 — #31: Group inventory: add GM-only revision-checked save API route
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/31
 
