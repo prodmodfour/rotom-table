@@ -15,7 +15,7 @@ Autonomous cycle rules for every ticket: implement only the selected ticket, run
 
 ## 001 — SHOPS-001: Add shop document types and normalizers
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Introduce the shared shop document model without adding persistence, routes, or UI.
