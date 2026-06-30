@@ -10,6 +10,7 @@ import type { RealtimeEventAccess, PersistedRealtimeEvent } from '#shared/realti
 import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
+import type { ShopTableDocument } from '~/types/shop'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   evaluateRealtimeEventAccess,
@@ -54,6 +55,19 @@ const trainer = (overrides: Partial<TrainerSheet> = {}): TrainerSheet => ({
   level: 1,
   folder: '',
   player: false,
+  ...overrides,
+})
+
+const shop = (overrides: Partial<ShopTableDocument> = {}): ShopTableDocument => ({
+  slug: 'viridian-mart',
+  revision: 1,
+  updatedAt: 100,
+  name: 'Viridian Mart',
+  playerVisible: true,
+  open: true,
+  allowedPaymentSources: ['trainer'],
+  allowedDeliveryTargets: ['trainer'],
+  entries: [],
   ...overrides,
 })
 
@@ -105,10 +119,12 @@ const dependencies = (input: {
   readonly pokemonSheets?: readonly CharacterSheet[]
   readonly trainerSheets?: readonly TrainerSheet[]
   readonly groupInventorySlugs?: readonly string[]
+  readonly shops?: readonly ShopTableDocument[]
   readonly playerVisibleMapKeys?: readonly RealtimePlayerSheetAccessKey[]
 } = {}): RealtimeEventAccessDependencies => {
   const maps = new Map((input.maps ?? []).map((item) => [item.slug, item]))
   const groupInventories = new Set(input.groupInventorySlugs ?? [])
+  const shops = new Map((input.shops ?? []).map((item) => [item.slug, item]))
   const sheets = new Map<string, RealtimePolicyPersistedSheet>()
 
   for (const sheet of input.pokemonSheets ?? []) {
@@ -122,6 +138,7 @@ const dependencies = (input: {
     getMap: vi.fn((slug: string) => maps.get(slug) ?? null),
     getSheet: vi.fn((kind: SheetKind, slug: string) => sheets.get(`${kind}:${slug}`) ?? null),
     getGroupInventory: vi.fn((slug: string) => (groupInventories.has(slug) ? { slug } : null)),
+    getShop: vi.fn((slug: string) => shops.get(slug) ?? null),
     listTrainerSheets: vi.fn(() => [...(input.trainerSheets ?? [])]),
     playerVisibleMapSheetAccessKeys: vi.fn(() => new Set(input.playerVisibleMapKeys ?? [])),
   }
@@ -312,6 +329,39 @@ describe('realtime event group inventory access policy', () => {
     expect(evaluate({ kind: 'group-inventory-access', groupSlug: 'missing' }, gm, dependencies())).toEqual({
       allowed: false,
       reason: 'group-inventory-not-found',
+    })
+  })
+})
+
+describe('realtime event shop access policy', () => {
+  it('allows GMs to receive hidden or closed shop updates', () => {
+    const deps = dependencies({ shops: [shop({ slug: 'back-room', playerVisible: false, open: false })] })
+
+    expect(evaluate({ kind: 'shop-access', shopSlug: 'back-room' }, gm, deps)).toEqual({ allowed: true })
+  })
+
+  it('allows players to receive only open player-visible shop updates', () => {
+    const deps = dependencies({ shops: [
+      shop({ slug: 'open-visible', playerVisible: true, open: true }),
+      shop({ slug: 'hidden', playerVisible: false, open: true }),
+      shop({ slug: 'closed', playerVisible: true, open: false }),
+    ] })
+
+    expect(evaluate({ kind: 'shop-access', shopSlug: 'open-visible' }, player(), deps)).toEqual({ allowed: true })
+    expect(evaluate({ kind: 'shop-access', shopSlug: 'hidden' }, player(), deps)).toEqual({
+      allowed: false,
+      reason: 'shop-not-accessible',
+    })
+    expect(evaluate({ kind: 'shop-access', shopSlug: 'closed' }, player(), deps)).toEqual({
+      allowed: false,
+      reason: 'shop-not-accessible',
+    })
+  })
+
+  it('denies missing shop update records', () => {
+    expect(evaluate({ kind: 'shop-access', shopSlug: 'missing' }, gm, dependencies())).toEqual({
+      allowed: false,
+      reason: 'shop-not-found',
     })
   })
 })

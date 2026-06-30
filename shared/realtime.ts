@@ -26,6 +26,7 @@ export interface RealtimeEvent<TData = unknown> {
 
 export const mapsChannel = 'maps'
 export const sheetsChannel = 'sheets'
+export const shopsChannel = 'shops'
 export const groupInventoryChannel = (slug: string): `group-inventory:${string}` => `group-inventory:${slug}`
 
 export const LIVE_PLAY_REALTIME_EVENT_TYPES = {
@@ -49,6 +50,7 @@ export interface LivePlayRealtimeEvent<TData = unknown> extends RealtimeEvent<TD
 }
 
 export const mapChannel = (slug: string): `map:${string}` => `map:${slug}`
+export const shopChannel = (slug: string): `shop:${string}` => `shop:${slug}`
 export const sheetChannel = (kind: SheetKind, slug: string): `sheet:${SheetKind}:${string}` =>
   `sheet:${kind}:${slug}`
 

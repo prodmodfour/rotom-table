@@ -1,5 +1,6 @@
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfile } from '#shared/playerProfiles'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type {
   LivePlayCommandRejectionReason,
   ShopCheckoutChangedDocuments,
@@ -50,10 +51,22 @@ import {
   type ShopCheckoutOperationRepository,
 } from '../storage/shopCheckoutOperationRepository'
 import {
+  createSqliteRealtimeEventRepository,
+  type RealtimeEventRepository,
+} from '../storage/realtimeEventRepository'
+import {
   createSqliteShopTableRepository,
   type ShopTableRepository,
 } from '../storage/shopTableRepository'
 import { playerProfileCanAccessSheet } from '../policies/playerProfilePolicy'
+import { shopCheckoutRealtimeAppendInputs } from '../realtime/shopCheckoutRealtime'
+import {
+  defaultPersistedRealtimeEventPublisher,
+  defaultPersistedRealtimePublicationFailureReporter,
+  publishPersistedRealtimeEventsAfterCommit,
+  type PersistedRealtimeEventPublisher,
+  type PersistedRealtimePublicationFailureReporter,
+} from '../realtime/persistedBatchPublication'
 
 export interface ExecuteShopCheckoutCommandUseCaseInput {
   readonly role: AuthRole
@@ -75,6 +88,9 @@ export interface ExecuteShopCheckoutCommandDependencies {
   readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'get' | 'applyLivePlayUpdate'> & { readonly database?: RotomDatabase }
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'> & { readonly database?: RotomDatabase }
   readonly operationRepository?: Pick<ShopCheckoutOperationRepository, 'getStoredOperation' | 'saveCommandResult'>
+  readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'appendMany'> & { readonly database?: RotomDatabase }
+  readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
+  readonly reportAfterCommitPublicationFailure?: PersistedRealtimePublicationFailureReporter
   readonly now?: () => number
   readonly createGroupInventoryRowId?: InventoryTransferTargetRowIdGenerator
 }
@@ -85,6 +101,9 @@ interface ShopCheckoutCommandDependencySet {
   readonly groupInventoryRepository: Pick<GroupInventoryRepository, 'get' | 'applyLivePlayUpdate'>
   readonly sheetRepository: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
   readonly operationRepository: Pick<ShopCheckoutOperationRepository, 'getStoredOperation' | 'saveCommandResult'>
+  readonly realtimeEventRepository: Pick<RealtimeEventRepository, 'appendMany'>
+  readonly publishPersistedRealtimeEvent: PersistedRealtimeEventPublisher
+  readonly reportAfterCommitPublicationFailure: PersistedRealtimePublicationFailureReporter
   readonly now: () => number
   readonly createGroupInventoryRowId?: InventoryTransferTargetRowIdGenerator
 }
@@ -131,6 +150,11 @@ interface PersistedShopCheckoutDocuments {
   readonly trainerSheets: readonly TrainerSheet[]
 }
 
+interface ExecutedFreshShopCheckoutCommand {
+  readonly result: StorableShopCheckoutCommandResult
+  readonly realtimeEvents: readonly PersistedRealtimeEvent[]
+}
+
 type UnknownRecord = Record<string, unknown>
 
 const isRecord = (value: unknown): value is UnknownRecord => (
@@ -145,10 +169,12 @@ const actionDependencies = (
   const groupInventoryRepository = dependencies.groupInventoryRepository ?? createSqliteGroupInventoryRepository(database)
   const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(database)
   const operationRepository = dependencies.operationRepository ?? createSqliteShopCheckoutOperationRepository({ database })
+  const realtimeEventRepository = dependencies.realtimeEventRepository ?? createSqliteRealtimeEventRepository({ database })
 
   assertRepositoryDatabase(database, dependencies.shopTableRepository?.database, 'shop table repository')
   assertRepositoryDatabase(database, dependencies.groupInventoryRepository?.database, 'group inventory repository')
   assertRepositoryDatabase(database, dependencies.sheetRepository?.database, 'sheet repository')
+  assertRepositoryDatabase(database, dependencies.realtimeEventRepository?.database, 'realtime event repository')
 
   return {
     database,
@@ -156,6 +182,9 @@ const actionDependencies = (
     groupInventoryRepository,
     sheetRepository,
     operationRepository,
+    realtimeEventRepository,
+    publishPersistedRealtimeEvent: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedRealtimeEventPublisher,
+    reportAfterCommitPublicationFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultPersistedRealtimePublicationFailureReporter,
     now: dependencies.now ?? Date.now,
     ...(dependencies.createGroupInventoryRowId ? { createGroupInventoryRowId: dependencies.createGroupInventoryRowId } : {}),
   }
@@ -727,6 +756,19 @@ const storeTerminalResult = (
   result,
 }).result
 
+const appendAcceptedCheckoutRealtimeEvents = (
+  command: ShopCheckoutLivePlayCommand,
+  result: ShopCheckoutCommandAccepted,
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+  dependencies: ShopCheckoutCommandDependencySet,
+): readonly PersistedRealtimeEvent[] => dependencies.realtimeEventRepository.appendMany(
+  shopCheckoutRealtimeAppendInputs({
+    command,
+    result,
+    clientId: input.clientId,
+  }),
+)
+
 const collisionResultForCommand = (
   command: ShopCheckoutLivePlayCommand,
   commandHash: ShopCheckoutCommandHash,
@@ -784,12 +826,17 @@ const storedResultOrViolation = (
   return createShopCheckoutIdempotencyViolationResult(command, existing)
 }
 
+const executedFreshResult = (
+  result: StorableShopCheckoutCommandResult,
+  realtimeEvents: readonly PersistedRealtimeEvent[] = [],
+): ExecutedFreshShopCheckoutCommand => ({ result, realtimeEvents })
+
 const executeFreshCheckout = (
   command: ShopCheckoutLivePlayCommand,
   input: ExecuteShopCheckoutCommandUseCaseInput,
   commandHash: ShopCheckoutCommandHash,
   dependencies: ShopCheckoutCommandDependencySet,
-): StorableShopCheckoutCommandResult => {
+): ExecutedFreshShopCheckoutCommand => {
   let loaded: LoadedShopCheckoutDocuments | null = null
 
   try {
@@ -807,32 +854,39 @@ const executeFreshCheckout = (
         trainerSheets: persistedParticipants.trainerSheets,
       }
       const result = acceptedResult(command, loaded as LoadedShopCheckoutDocuments, applied, persisted)
-      return storeTerminalResult(command, commandHash, result, dependencies)
+      const storedResult = storeTerminalResult(command, commandHash, result, dependencies)
+      if (storedResult.ok !== true || 'duplicate' in storedResult) return executedFreshResult(storedResult)
+      return executedFreshResult(
+        storedResult,
+        appendAcceptedCheckoutRealtimeEvents(command, storedResult, input, dependencies),
+      )
     })
   } catch (error) {
     if (error instanceof ShopCheckoutCalculationError && loaded) {
-      return saveRejectedResult(
+      return executedFreshResult(saveRejectedResult(
         command,
         commandHash,
         rejectionFromCheckoutCalculationError(command, error, loaded.shop),
         dependencies,
-      )
+      ))
     }
 
     const currentShopRevision = loaded?.shop.revision
     const currentState = loaded?.shop
     if (error instanceof LivePlayCommandRejectionError) {
-      return saveRejectedResult(
+      return executedFreshResult(saveRejectedResult(
         command,
         commandHash,
         rejectionFromError(command, error, currentShopRevision, currentState),
         dependencies,
-      )
+      ))
     }
 
-    return collisionResultForCommand(command, commandHash, error)
-      ?? idempotencyViolationResultFromError(command, error, currentShopRevision)
-      ?? persistenceFailedResult(command, error, currentShopRevision)
+    return executedFreshResult(
+      collisionResultForCommand(command, commandHash, error)
+        ?? idempotencyViolationResultFromError(command, error, currentShopRevision)
+        ?? persistenceFailedResult(command, error, currentShopRevision),
+    )
   }
 }
 
@@ -862,5 +916,13 @@ export const executeShopCheckoutCommandUseCase = (
   const storedResult = storedResultOrViolation(command, commandHash, deps)
   if (storedResult) return responseFromResult(storedResult)
 
-  return responseFromResult(executeFreshCheckout(command, input, commandHash, deps))
+  const fresh = executeFreshCheckout(command, input, commandHash, deps)
+  publishPersistedRealtimeEventsAfterCommit({
+    events: fresh.realtimeEvents,
+    operation: 'shop-checkout',
+    publish: deps.publishPersistedRealtimeEvent,
+    reportFailure: deps.reportAfterCommitPublicationFailure,
+  })
+
+  return responseFromResult(fresh.result)
 }

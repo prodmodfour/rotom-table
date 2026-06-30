@@ -4,6 +4,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   type ShopCheckoutLivePlayCommand,
 } from '#shared/livePlayCommands'
+import { groupInventoryChannel, sheetChannel, sheetsChannel, shopChannel, shopsChannel } from '#shared/realtime'
 import { PLAYER_PROFILE_SCHEMA_VERSION, type PlayerProfile } from '#shared/playerProfiles'
 import {
   GROUP_INVENTORY_MAIN_SLUG,
@@ -17,6 +18,7 @@ import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInv
 import { createSqliteSheetRepository, type PersistedSheet } from '~~/server/storage/sheetRepository'
 import { createSqliteShopCheckoutOperationRepository } from '~~/server/storage/shopCheckoutOperationRepository'
 import { createSqliteShopTableRepository } from '~~/server/storage/shopTableRepository'
+import { createSqliteRealtimeEventRepository, type RealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { executeShopCheckoutCommandUseCase } from '~~/server/useCases/executeShopCheckoutCommand'
 
 const openDatabases: RotomDatabase[] = []
@@ -137,6 +139,8 @@ const operationCount = (database: RotomDatabase): number => {
   const row = database.connection.prepare('SELECT COUNT(*) AS count FROM shop_checkout_ops').get() as { readonly count?: unknown }
   return typeof row.count === 'number' ? row.count : 0
 }
+
+const realtimeEvents = (realtime: RealtimeEventRepository) => realtime.readAfter({ afterSequence: 0, limit: 20 }).events
 
 const trainerCommand = (
   overrides: Partial<ShopCheckoutLivePlayCommand> = {},
@@ -286,6 +290,81 @@ describe('executeShopCheckoutCommandUseCase', () => {
       .toEqual(response.result)
   })
 
+  it('publishes trainer-only checkout realtime updates after the accepted transaction commits', () => {
+    const database = openMemoryDatabase()
+    const realtime = createSqliteRealtimeEventRepository({ database, clock: () => 1_234 })
+    const published: ReturnType<typeof realtimeEvents>[number][] = []
+    seedShop(database)
+    seedTrainer(database)
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'gm',
+      command: trainerCommand({ opId: 'op_shopcheckout_realtime_trainer' }),
+      clientId: 'client-shop',
+    }, {
+      database,
+      realtimeEventRepository: realtime,
+      publishPersistedRealtimeEvent: (event) => published.push(event),
+      now: () => 900,
+    })
+
+    expect(response.result).toMatchObject({ ok: true, opId: 'op_shopcheckout_realtime_trainer' })
+    const events = realtimeEvents(realtime)
+    expect(published).toEqual(events)
+    expect(events.map((event) => event.event.channel)).toEqual([
+      shopChannel('viridian-mart'),
+      shopsChannel,
+      sheetChannel('trainer', 'ash'),
+      sheetsChannel,
+    ])
+    expect(events.map((event) => event.access)).toEqual([
+      { kind: 'shop-access', shopSlug: 'viridian-mart' },
+      { kind: 'shop-access', shopSlug: 'viridian-mart' },
+      { kind: 'sheet-access', sheetKind: 'trainer', sheetSlug: 'ash' },
+      { kind: 'sheet-access', sheetKind: 'trainer', sheetSlug: 'ash' },
+    ])
+    expect(events.map((event) => event.event.clientId)).toEqual([
+      'client-shop',
+      'client-shop',
+      'client-shop',
+      'client-shop',
+    ])
+    expect(events[0]?.event).toMatchObject({
+      type: 'updated',
+      revision: 1,
+      data: {
+        slug: 'viridian-mart',
+        document: {
+          slug: 'viridian-mart',
+          revision: 1,
+          entries: [expect.objectContaining({ id: 'potion-row', stock: 3 })],
+        },
+      },
+    })
+    expect(events[1]?.event).toMatchObject({
+      type: 'updated',
+      revision: 1,
+      data: {
+        slug: 'viridian-mart',
+        summary: expect.objectContaining({
+          slug: 'viridian-mart',
+          revision: 1,
+          entryCount: 1,
+          open: true,
+          playerVisible: true,
+        }),
+      },
+    })
+    expect(events[2]?.event).toMatchObject({
+      type: 'updated',
+      data: {
+        kind: 'trainer',
+        slug: 'ash',
+        sheet: expect.objectContaining({ slug: 'ash', revision: 1, money: 600 }),
+      },
+    })
+  })
+
   it('supports GM group inventory payment and delivery in the same checkout transaction', () => {
     const database = openMemoryDatabase()
     seedShop(database, shopDocument({ entries: [shopEntry({ stock: 2 })] }))
@@ -315,6 +394,53 @@ describe('executeShopCheckoutCommandUseCase', () => {
     expect(storedGroupInventory(database).inventory.medicalKit).toEqual([
       { id: 'checkout-medicalKit-0', name: 'Potion', qty: 1, cost: 200 },
     ])
+  })
+
+  it('publishes group checkout realtime updates for group payment and delivery', () => {
+    const database = openMemoryDatabase()
+    const realtime = createSqliteRealtimeEventRepository({ database, clock: () => 1_235 })
+    const published: ReturnType<typeof realtimeEvents>[number][] = []
+    seedShop(database, shopDocument({ entries: [shopEntry({ stock: 2 })] }))
+    seedGroupInventory(database)
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'gm',
+      command: groupCommand({ opId: 'op_shopcheckout_realtime_group' }),
+      clientId: 'client-group',
+    }, {
+      database,
+      realtimeEventRepository: realtime,
+      publishPersistedRealtimeEvent: (event) => published.push(event),
+      now: () => 950,
+      createGroupInventoryRowId: ({ section, index }) => `checkout-${section}-${index}`,
+    })
+
+    expect(response.result).toMatchObject({ ok: true, opId: 'op_shopcheckout_realtime_group' })
+    const events = realtimeEvents(realtime)
+    expect(published).toEqual(events)
+    expect(events.map((event) => event.event.channel)).toEqual([
+      shopChannel('viridian-mart'),
+      shopsChannel,
+      groupInventoryChannel(GROUP_INVENTORY_MAIN_SLUG),
+    ])
+    expect(events.map((event) => event.access)).toEqual([
+      { kind: 'shop-access', shopSlug: 'viridian-mart' },
+      { kind: 'shop-access', shopSlug: 'viridian-mart' },
+      { kind: 'group-inventory-access', groupSlug: GROUP_INVENTORY_MAIN_SLUG },
+    ])
+    expect(events[2]?.event).toMatchObject({
+      type: 'updated',
+      revision: 1,
+      clientId: 'client-group',
+      data: {
+        slug: GROUP_INVENTORY_MAIN_SLUG,
+        document: expect.objectContaining({
+          slug: GROUP_INVENTORY_MAIN_SLUG,
+          revision: 1,
+          money: 800,
+        }),
+      },
+    })
   })
 
   it('allows a player with a linked trainer to buy using trainer money into trainer inventory', () => {
@@ -556,6 +682,33 @@ describe('executeShopCheckoutCommandUseCase', () => {
     ])
   })
 
+  it('does not append or publish realtime updates for failed checkout', () => {
+    const database = openMemoryDatabase()
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const published: ReturnType<typeof realtimeEvents>[number][] = []
+    seedShop(database)
+    seedTrainer(database)
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'gm',
+      command: trainerCommand({
+        opId: 'op_shopcheckout_realtime_failed',
+        payload: {
+          ...trainerCommand().payload,
+          shopRevision: 99,
+        },
+      }),
+    }, {
+      database,
+      realtimeEventRepository: realtime,
+      publishPersistedRealtimeEvent: (event) => published.push(event),
+    })
+
+    expect(response.result).toMatchObject({ ok: false, opId: 'op_shopcheckout_realtime_failed' })
+    expect(realtime.cursorState().latestSequence).toBe(0)
+    expect(published).toEqual([])
+  })
+
   it('rejects stale shop revisions without changing money stock or inventory', () => {
     const database = openMemoryDatabase()
     seedShop(database)
@@ -630,19 +783,36 @@ describe('executeShopCheckoutCommandUseCase', () => {
 
   it('returns the stored result for duplicate operation IDs with the same command without double-applying', () => {
     const database = openMemoryDatabase()
+    const realtime = createSqliteRealtimeEventRepository({ database })
+    const published: ReturnType<typeof realtimeEvents>[number][] = []
     seedShop(database)
     seedTrainer(database)
     const command = trainerCommand({ opId: 'op_shopcheckout_duplicate' })
 
-    const first = executeShopCheckoutCommandUseCase({ role: 'gm', command }, { database, now: () => 1_000 })
-    const duplicate = executeShopCheckoutCommandUseCase({ role: 'gm', command }, { database, now: () => 2_000 })
+    const first = executeShopCheckoutCommandUseCase({ role: 'gm', command }, {
+      database,
+      realtimeEventRepository: realtime,
+      publishPersistedRealtimeEvent: (event) => published.push(event),
+      now: () => 1_000,
+    })
+    const firstRealtimeSequence = realtime.cursorState().latestSequence
+    published.length = 0
+    const duplicate = executeShopCheckoutCommandUseCase({ role: 'gm', command }, {
+      database,
+      realtimeEventRepository: realtime,
+      publishPersistedRealtimeEvent: (event) => published.push(event),
+      now: () => 2_000,
+    })
 
     expect(duplicate.result).toEqual(first.result)
+    expect(realtime.cursorState().latestSequence).toBe(firstRealtimeSequence)
+    expect(published).toEqual([])
     expect(storedShop(database)).toMatchObject({ revision: 1, updatedAt: 1_000 })
     expect(storedShop(database).entries[0]?.stock).toBe(3)
     expect(storedTrainer(database)).toMatchObject({ revision: 1, updatedAt: 1_000, money: 600 })
     expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
     expect(operationCount(database)).toBe(1)
+    expect(firstRealtimeSequence).toBe(4)
   })
 
   it('rejects duplicate operation IDs reused for a changed command without applying it', () => {

@@ -657,7 +657,7 @@ Expose shop checkout as a live-play command route.
 
 ## 021 — SHOPS-021: Add shop checkout realtime event publication
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Keep other clients synchronized after shop checkout commits.

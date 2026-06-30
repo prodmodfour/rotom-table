@@ -6,6 +6,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
+import type { ShopTableDocument } from '~/types/shop'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import { authorizeSheetList, playerSheetAccessContextFromKeys } from '../useCases/authorizeSheetList'
 
@@ -36,6 +37,7 @@ export interface RealtimeEventAccessDependencies {
     slug: string,
   ) => RealtimePolicyPersistedSheet | null
   readonly getGroupInventory?: (slug: string) => Pick<GroupInventoryDocument, 'slug'> | null
+  readonly getShop?: (slug: string) => Pick<ShopTableDocument, 'slug' | 'playerVisible' | 'open'> | null
   readonly listTrainerSheets: () => readonly TrainerSheet[]
   readonly playerVisibleMapSheetAccessKeys: () => ReadonlySet<RealtimePlayerSheetAccessKey>
 }
@@ -51,6 +53,8 @@ export type RealtimeEventAccessDecision =
         | 'sheet-not-found'
         | 'sheet-not-accessible'
         | 'group-inventory-not-found'
+        | 'shop-not-found'
+        | 'shop-not-accessible'
         | 'invalid-access'
     }
 
@@ -184,6 +188,20 @@ const evaluateGroupInventoryAccess = (
   return allowed()
 }
 
+const evaluateShopAccess = (
+  access: Extract<RealtimeEventAccess, { readonly kind: 'shop-access' }>,
+  principal: RealtimeDeliveryPrincipal,
+  dependencies: RealtimeEventAccessDependencies,
+): RealtimeEventAccessDecision => {
+  const shop = dependencies.getShop?.(access.shopSlug) ?? null
+  if (shop === null) return denied('shop-not-found')
+  if (shop.slug !== access.shopSlug) return denied('invalid-access')
+  if (principal.role === 'gm') return allowed()
+  return shop.playerVisible === true && shop.open === true
+    ? allowed()
+    : denied('shop-not-accessible')
+}
+
 /**
  * Evaluates durable event-log records only. Replay control messages are
  * connection metadata without RealtimeEventAccess and must be delivered outside
@@ -203,6 +221,9 @@ export const evaluateRealtimeEventAccess = (
   }
   if (input.access.kind === 'group-inventory-access') {
     return evaluateGroupInventoryAccess(input.access, input.dependencies)
+  }
+  if (input.access.kind === 'shop-access') {
+    return evaluateShopAccess(input.access, input.principal, input.dependencies)
   }
 
   return denied('invalid-access')

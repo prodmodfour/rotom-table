@@ -5,6 +5,8 @@ import {
   mapChannel,
   normalizeRealtimeClientId,
   sheetChannel,
+  shopChannel,
+  shopsChannel,
   type RealtimeEvent,
 } from '#shared/realtime'
 
@@ -14,6 +16,8 @@ describe('realtime helpers', () => {
     expect(sheetChannel('pokemon', 'pikachu')).toBe('sheet:pokemon:pikachu')
     expect(sheetChannel('trainer', 'brock')).toBe('sheet:trainer:brock')
     expect(groupInventoryChannel('main')).toBe('group-inventory:main')
+    expect(shopChannel('viridian-mart')).toBe('shop:viridian-mart')
+    expect(shopsChannel).toBe('shops')
   })
 
   it('normalizes optional client ids at request boundaries', () => {

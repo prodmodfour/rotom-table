@@ -37,13 +37,14 @@ This applies to:
 - setup map and sheet saves;
 - map/sheet library and folder mutations;
 - shared map interaction-mode changes;
-- group inventory GM saves and trainer transfers.
+- group inventory GM saves and trainer transfers;
+- accepted shop checkout commands that update shop stock plus trainer sheet or group inventory money/inventory.
 
-Idempotency records are keyed by map and `opId`. A retry with the same command body returns the stored result without applying effects twice. Reusing an `opId` with different material is rejected.
+Map live-play idempotency records are keyed by map and `opId`; shop checkout idempotency records are keyed by shop and `opId`. A retry with the same command body returns the stored result without applying effects twice. Reusing an `opId` with different material is rejected.
 
 ## Durable realtime events and authorised SSE replay
 
-Persistent map, sheet, library, folder, and mode mutations append durable realtime events in the same SQLite transaction as their authoritative writes. Each row carries an explicit server-internal access descriptor: `gm-only`, `map-access`, or `sheet-access`. Delivery evaluates that descriptor against current SQLite state and the connection principal; it does not trust channel names or payload fields.
+Persistent map, sheet, shop, group inventory, library, folder, and mode mutations append durable realtime events in the same SQLite transaction as their authoritative writes. Each row carries an explicit server-internal access descriptor: `gm-only`, `map-access`, `sheet-access`, `group-inventory-access`, or `shop-access`. Delivery evaluates that descriptor against current SQLite state and the connection principal; it does not trust channel names or payload fields.
 
 The normal live-play stream is `GET /api/events` using Server-Sent Events. The stream keeps quiet tables open with heartbeat comments and records SSE connect/disconnect events for operator diagnostics. A reconnect is a possible missed-event gap, so clients reconcile from `/api/maps/load?slug=<slug>` when replay cannot bridge the cursor. Replay rows have one globally monotonic sequence. Initial connections without a cursor start at the current tail and do not replay stale history. Reconnects send a per-context `after` cursor and receive only authorised retained rows. Denied rows are never serialized to the client; they still advance checkpoints so clients do not loop on inaccessible events.
 
@@ -53,6 +54,7 @@ Access boundaries:
 - a profile receives only its own profile-linked sheets plus public/player-visible map sheets;
 - unprofiled player context has its own cursor and sheet-access rules;
 - GM-only folders, tombstones, and administrative library events never reach players;
+- shop updates reach players only while the referenced shop is currently open and player-visible;
 - profile changes close the old stream before opening the new profiled stream.
 
 The server combines in-process wakeups with SQLite polling, so one process can commit a durable event and another process can deliver it after polling or restart. Wakeups and polling share the same sequence cursor and do not duplicate delivery.
