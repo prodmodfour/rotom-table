@@ -47,10 +47,34 @@ default:
       '      Read/write maps, sheets, profiles, sessions, and encounter tables from a separate campaign repo.' \
       '' \
       '  just rebuild-ptu-data-cache' \
-      '      Rebuild documentary ptu-data parser output (not app runtime reference).' 
+      '      Rebuild documentary ptu-data parser output (not app runtime reference).' \
+      '' \
+      '  just quality' \
+      '      Run the autonomous build quality gate.' \
+      '' \
+      '  just autobuild' \
+      '      Run one no-push autonomous ticket cycle from a clean tree.' \
+      '' \
+      '  just autobuild <cycles>' \
+      '      Run multiple no-push autonomous ticket cycles.' \
+      '' \
+      '  just run' \
+      '      Run the default 180-cycle autonomous build loop with push enabled.' 
 
 help:
     @just default
+
+# Run the project-specific autonomous build quality gate.
+quality:
+    bash scripts/quality-gate.sh
+
+# Run the autonomous ticket loop locally without pushing.
+autobuild cycles="1":
+    bash scripts/build-loop.sh --max-cycles {{cycles}} --no-push
+
+# Compatibility recipe from the autonomous build template.
+run cycles="180":
+    bash scripts/build-loop.sh --max-cycles {{cycles}}
 
 trainer +name:
     @python3 scripts/trainer_lookup.py {{quote(name)}}

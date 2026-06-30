@@ -45,6 +45,16 @@ npm test
 npm run build
 ```
 
+## Autonomous build loop
+
+This checkout includes a ticket-driven autonomous build loop for the group inventory wave, mapping GitHub issues #27-#44 to `BUILD_TICKETS.md`. See [docs/autonomous-build.md](docs/autonomous-build.md) for setup and usage.
+
+Run one local cycle from a clean working tree:
+
+```bash
+scripts/build-loop.sh --max-cycles 1 --no-push
+```
+
 
 ## npm scripts
 

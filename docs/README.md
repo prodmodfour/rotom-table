@@ -11,6 +11,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
 - [Live play authority](live-play-authority.md) — normal `/maps/<slug>` profile-play command direction, setup/edit versus live-play boundaries, revision/idempotency glossary, and the rule forbidding browser-owned whole-map autosave for live gameplay.
 - [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
+- [Autonomous build loop](autonomous-build.md) — ticket-driven Pi build loop for issues #27-#44 and its quality gate.
 - [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to filesystem/security docs.
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy private VPS checks for install, validation, built-server start, health, outer-gated profile play, write persistence after restart, Git hygiene, and legacy `/sessions` boundaries.
 - [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md) — multi-browser command/revision, SSE reconnect, conflict, refresh, and restart checks for private hosted profile play.
