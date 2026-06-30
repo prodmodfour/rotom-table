@@ -353,7 +353,7 @@ Move item quantities from the shared group inventory into a trainer sheet atomic
 
 ## 039 — #39: Group inventory: add atomic trainer-to-group transfer route
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/39
 

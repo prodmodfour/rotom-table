@@ -27,6 +27,7 @@ describe('API route constants', () => {
       load: '/api/group-inventory/load',
       save: '/api/group-inventory/save',
       transferToTrainer: '/api/group-inventory/transfer-to-trainer',
+      transferToGroup: '/api/group-inventory/transfer-to-group',
     })
   })
 

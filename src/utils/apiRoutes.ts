@@ -8,6 +8,7 @@ export const GROUP_INVENTORY_API_PATHS = {
   load: '/api/group-inventory/load',
   save: '/api/group-inventory/save',
   transferToTrainer: '/api/group-inventory/transfer-to-trainer',
+  transferToGroup: '/api/group-inventory/transfer-to-group',
 } as const
 
 export const SESSION_API_PATHS = {
