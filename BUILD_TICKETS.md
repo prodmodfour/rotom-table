@@ -564,7 +564,7 @@ Validate shop checkout live-play command envelopes before applying them.
 
 ## 018 — SHOPS-018: Add GM shop checkout live-play use case
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Allow GM actors to run checkout through the live-play command boundary.

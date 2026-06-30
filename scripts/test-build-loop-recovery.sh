@@ -11,6 +11,15 @@ fail() {
   exit 1
 }
 
+git_log_has_subject() {
+  local expected="$1"
+
+  git log --format=%s | awk -v expected="$expected" '
+    $0 == expected { found = 1 }
+    END { exit found ? 0 : 1 }
+  '
+}
+
 tmp_dir="$(mktemp -d)"
 cleanup() {
   rm -rf "$tmp_dir"
@@ -138,13 +147,13 @@ RUN_AGENT
   AUTONOMOUS_BUILD_RETRY_SECONDS=0 \
     bash scripts/build-loop.sh --max-cycles 1 --no-push
 
-  git log --format=%s | grep -q '^chore: split oversized build ticket$' \
+  git_log_has_subject 'chore: split oversized build ticket' \
     || fail "context failure did not create a ticket split commit"
-  git log --format=%s | grep -q '^test: implementation after split$' \
+  git_log_has_subject 'test: implementation after split' \
     || fail "build loop did not continue after splitting the ticket"
   grep -q 'Oversized ticket part 2' BUILD_TICKETS.md \
     || fail "BUILD_TICKETS.md was not split into a second ticket"
-  git log --format=%s | grep -q '^chore: checkpoint failed autonomous cycle$' \
+  git_log_has_subject 'chore: checkpoint failed autonomous cycle' \
     || fail "context failure did not create a failure checkpoint commit"
   grep -q 'Partial oversized attempt that should be checkpointed' WORK_LOG.md \
     || fail "dirty context-failure changes were not checkpointed before recovery"
@@ -191,12 +200,12 @@ RUN_AGENT
   AUTONOMOUS_BUILD_RETRY_SECONDS=0 \
     bash scripts/build-loop.sh --max-cycles 1 --no-push
 
-  git log --format=%s | grep -q '^test: implementation after retry$' \
+  git_log_has_subject 'test: implementation after retry' \
     || fail "build loop did not retry after a transient failure"
-  if git log --format=%s | grep -q '^chore: split oversized build ticket$'; then
+  if git_log_has_subject 'chore: split oversized build ticket'; then
     fail "transient failure unexpectedly triggered ticket splitting"
   fi
-  git log --format=%s | grep -q '^chore: checkpoint failed autonomous cycle$' \
+  git_log_has_subject 'chore: checkpoint failed autonomous cycle' \
     || fail "transient failure did not create a failure checkpoint commit"
   grep -q 'Partial transient attempt that should be checkpointed' WORK_LOG.md \
     || fail "dirty transient-failure changes were not checkpointed before retry"
