@@ -74,7 +74,7 @@ Create the durable SQLite storage table for group inventory documents.
 
 ## 029 — #29: Group inventory: add SQLite repository with revision-checked updates
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/29
 
