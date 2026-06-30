@@ -4,7 +4,7 @@ This document defines Rotom Table's normal multiplayer system: server-authoritat
 
 ## Non-negotiable authority boundary
 
-SQLite is the only runtime authority for maps, Pokémon sheets, trainer sheets, group inventories, shop tables, map folders, sheet folders, shared map interaction mode, live-play operation results, and durable realtime replay events.
+SQLite is the only runtime authority for maps, Pokémon sheets, trainer sheets, group inventories, shop tables, map folders, sheet folders, shared map interaction mode, map live-play operation results, shop checkout operation results, and durable realtime replay events.
 
 Normal API requests must not read runtime maps, sheets, group inventories, or shop tables from `data/maps`, `data/sheets`, `data/trainers`, `data/group-inventories`, or `data/shops`, and normal mutations must not write authoritative map/sheet/group-inventory/shop JSON. JSON map/sheet/group-inventory/shop files are limited to explicit migration/import where supported, explicit export/interchange, operator backup material, or clearly labeled generation output. Encounter spawn generates Pokémon sheets in memory, then persists the generated sheets and map placements to SQLite in one transaction.
 

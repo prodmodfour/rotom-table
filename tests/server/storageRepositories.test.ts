@@ -119,6 +119,7 @@ describe('SQLite storage foundation', () => {
       'realtime_events',
       'sheet_folders',
       'sheets',
+      'shop_checkout_ops',
       'shop_tables',
     ])
 
@@ -135,6 +136,7 @@ describe('SQLite storage foundation', () => {
       'realtime_events',
       'sheet_folders',
       'sheets',
+      'shop_checkout_ops',
       'shop_tables',
     ])
   })

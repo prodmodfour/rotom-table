@@ -452,7 +452,7 @@ interface ShopCheckoutPayload {
 
 ## 014 — SHOPS-014: Add shop live-play operation history storage
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Provide durable idempotency for shop checkout commands.

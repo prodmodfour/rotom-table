@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 7
+export const LATEST_STORAGE_SCHEMA_VERSION = 8
 
 export interface StorageMigration {
   readonly version: number
@@ -132,6 +132,23 @@ const createShopTableDocumentsTable = (connection: DatabaseSync): void => {
   `)
 }
 
+const createShopCheckoutOperationHistoryTable = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS shop_checkout_ops (
+      op_id TEXT PRIMARY KEY,
+      shop_slug TEXT NOT NULL,
+      command_hash TEXT NOT NULL,
+      command_json TEXT NOT NULL,
+      result_json TEXT NOT NULL,
+      result_revision INTEGER,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS shop_checkout_ops_shop_revision_idx
+      ON shop_checkout_ops (shop_slug, result_revision);
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -167,6 +184,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 7,
     name: 'store campaign shop table documents',
     up: createShopTableDocumentsTable,
+  },
+  {
+    version: 8,
+    name: 'store shop checkout operation history',
+    up: createShopCheckoutOperationHistoryTable,
   },
 ]
 
