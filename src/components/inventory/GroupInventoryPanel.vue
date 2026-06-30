@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import GroupInventoryTransferDialog from '~/components/inventory/GroupInventoryTransferDialog.vue'
 import InventoryItemTable from '~/components/inventory/InventoryItemTable.vue'
 import InventorySectionTabs from '~/components/inventory/InventorySectionTabs.vue'
 import {
@@ -8,6 +9,14 @@ import {
   type GroupInventoryEntry,
 } from '~/types/groupInventory'
 import type { InventoryEntry } from '~/types/trainerSheet'
+import type {
+  GroupInventoryTrainerLoadStatus,
+  GroupInventoryTransferDirection,
+  GroupInventoryTransferStatus,
+  GroupInventoryTransferToGroupRequest,
+  GroupInventoryTransferToTrainerRequest,
+  GroupInventoryTransferTrainerOption,
+} from '~/types/groupInventoryTransferUi'
 import {
   setTrainerInventoryItemName,
   trainerInventoryItemOptions,
@@ -22,19 +31,51 @@ const props = withDefaults(defineProps<{
   isDirty?: boolean
   saveStatus?: GroupInventorySaveStatus
   saveError?: string | null
+  canTransfer?: boolean
+  transferUnavailableReason?: string | null
+  transferTrainers?: readonly GroupInventoryTransferTrainerOption[]
+  trainerLoadStatus?: GroupInventoryTrainerLoadStatus
+  trainerLoadError?: string | null
+  transferStatus?: GroupInventoryTransferStatus
+  transferError?: string | null
+  transferNotice?: string | null
 }>(), {
   canEdit: false,
   isDirty: false,
   saveStatus: 'idle',
   saveError: null,
+  canTransfer: false,
+  transferUnavailableReason: null,
+  transferTrainers: () => [],
+  trainerLoadStatus: 'idle',
+  trainerLoadError: null,
+  transferStatus: 'idle',
+  transferError: null,
+  transferNotice: null,
 })
 
 const emit = defineEmits<{
   save: []
   reloadAfterConflict: []
+  refreshTransferTrainers: []
+  transferToTrainer: [request: GroupInventoryTransferToTrainerRequest]
+  transferToGroup: [request: GroupInventoryTransferToGroupRequest]
 }>()
 
+type TransferDialogState =
+  | {
+    readonly direction: 'group-to-trainer'
+    readonly sectionKey: TrainerInventoryKey
+    readonly groupRow: GroupInventoryEntry
+  }
+  | {
+    readonly direction: 'trainer-to-group'
+    readonly sectionKey: TrainerInventoryKey
+    readonly groupRow?: null
+  }
+
 const activeSectionKey = ref<TrainerInventoryKey>(TRAINER_INVENTORY_SECTIONS[0].key)
+const transferDialog = ref<TransferDialogState | null>(null)
 const activeSection = computed(() => (
   TRAINER_INVENTORY_SECTIONS.find((section) => section.key === activeSectionKey.value)
   ?? TRAINER_INVENTORY_SECTIONS[0]
@@ -68,6 +109,41 @@ const saveStatusMessage = computed(() => {
   return null
 })
 const saveStatusRole = computed(() => (props.saveStatus === 'conflict' || props.saveStatus === 'error' ? 'alert' : 'status'))
+
+const hasTransferTrainers = computed(() => props.transferTrainers.length > 0)
+const isTransferBusy = computed(() => props.transferStatus === 'loading')
+const showTransferControls = computed(() => (
+  props.canTransfer
+  || !!props.transferUnavailableReason
+  || props.trainerLoadStatus === 'loading'
+  || props.trainerLoadStatus === 'error'
+  || props.transferStatus !== 'idle'
+))
+const canOpenTransferDialog = computed(() => (
+  props.canTransfer && hasTransferTrainers.value && !isTransferBusy.value && !props.transferUnavailableReason
+))
+const transferStatusMessage = computed(() => {
+  if (props.transferStatus === 'loading') return 'Transferring inventory with revision checks…'
+  if (props.transferStatus === 'success') return props.transferNotice ?? 'Inventory transfer complete.'
+  if (props.transferStatus === 'conflict') {
+    return props.transferError ?? 'The group inventory or trainer sheet changed. Reload before transferring again.'
+  }
+  if (props.transferStatus === 'error') return props.transferError ?? 'The inventory transfer could not be completed.'
+  if (props.trainerLoadStatus === 'loading') return 'Loading eligible trainer sheets…'
+  if (props.trainerLoadStatus === 'error') return props.trainerLoadError ?? 'Eligible trainer sheets could not be loaded.'
+  if (props.transferUnavailableReason) return props.transferUnavailableReason
+  if (props.canTransfer) {
+    return `Use row Transfer buttons to send ${activeSection.value.title} to trainers, or receive rows from an eligible trainer.`
+  }
+  return null
+})
+const transferStatusRole = computed(() => (
+  props.transferStatus === 'conflict'
+  || props.transferStatus === 'error'
+  || props.trainerLoadStatus === 'error'
+    ? 'alert'
+    : 'status'
+))
 
 const coerceMoney = (value: unknown): number => {
   const numericValue = typeof value === 'number'
@@ -117,6 +193,71 @@ const setItemName = (item: InventoryEntry, value: string) => {
   if (!props.canEdit) return
   setTrainerInventoryItemName(item, value, activeSection.value.variant)
 }
+
+const inventoryEntryQuantity = (item: InventoryEntry, sectionKey: TrainerInventoryKey): number => {
+  if (sectionKey === 'equipment') return 1
+  const quantity = item.qty
+  return typeof quantity === 'number' && Number.isFinite(quantity) && quantity > 0
+    ? Math.floor(quantity)
+    : 0
+}
+
+const groupRowFromInventoryEntry = (item: InventoryEntry): GroupInventoryEntry | null => {
+  const candidate = item as GroupInventoryEntry
+  return typeof candidate.id === 'string' && candidate.id.trim() ? candidate : null
+}
+
+const canTransferGroupRow = (item: InventoryEntry, sectionKey: TrainerInventoryKey): boolean => (
+  canOpenTransferDialog.value
+  && groupRowFromInventoryEntry(item) !== null
+  && inventoryEntryQuantity(item, sectionKey) > 0
+)
+
+const groupTransferButtonTitle = (item: InventoryEntry, sectionKey: TrainerInventoryKey): string => {
+  if (props.transferUnavailableReason) return props.transferUnavailableReason
+  if (!hasTransferTrainers.value) return 'No eligible trainer sheets are available for transfers.'
+  if (isTransferBusy.value) return 'An inventory transfer is already in progress.'
+  if (groupRowFromInventoryEntry(item) === null) return 'This shared inventory row is missing its row id.'
+  if (inventoryEntryQuantity(item, sectionKey) <= 0) return 'This shared inventory row has no transferable quantity.'
+  return 'Transfer this shared inventory row to a trainer.'
+}
+
+const openTransferToTrainer = (item: InventoryEntry, sectionKey: TrainerInventoryKey) => {
+  if (!canTransferGroupRow(item, sectionKey)) return
+  const groupRow = groupRowFromInventoryEntry(item)
+  if (!groupRow) return
+  transferDialog.value = {
+    direction: 'group-to-trainer',
+    sectionKey,
+    groupRow,
+  }
+}
+
+const openTransferToGroup = () => {
+  if (!canOpenTransferDialog.value) return
+  transferDialog.value = {
+    direction: 'trainer-to-group',
+    sectionKey: activeSection.value.key,
+  }
+}
+
+const closeTransferDialog = () => {
+  if (isTransferBusy.value) return
+  transferDialog.value = null
+}
+
+const transferDialogDirection = computed<GroupInventoryTransferDirection | null>(() => transferDialog.value?.direction ?? null)
+const transferDialogSectionKey = computed(() => transferDialog.value?.sectionKey ?? activeSection.value.key)
+const transferDialogGroupRow = computed(() => (
+  transferDialog.value?.direction === 'group-to-trainer' ? transferDialog.value.groupRow : null
+))
+
+watch(
+  () => props.transferStatus,
+  (status) => {
+    if (status === 'success') transferDialog.value = null
+  },
+)
 </script>
 
 <template>
@@ -130,7 +271,10 @@ const setItemName = (item: InventoryEntry, value: string) => {
             Edit the authoritative campaign inventory document, then save with revision protection before other clients rely on the changes.
           </template>
           <template v-else>
-            This read-only view shows the authoritative campaign inventory document for both GMs and players.
+            This view shows the authoritative campaign inventory document for both GMs and players.
+          </template>
+          <template v-if="showTransferControls">
+            Transfers move item quantities only after the server accepts both the party and trainer revisions.
           </template>
         </p>
       </div>
@@ -194,6 +338,49 @@ const setItemName = (item: InventoryEntry, value: string) => {
       </button>
     </div>
 
+    <div v-if="showTransferControls" class="group-inventory-panel__transfer-bar" aria-label="Shared inventory transfer controls">
+      <div>
+        <p class="group-inventory-panel__transfer-title">Trainer transfers</p>
+        <p
+          v-if="transferStatusMessage"
+          :class="[
+            'group-inventory-panel__transfer-message',
+            `group-inventory-panel__transfer-message--${transferStatus}`,
+          ]"
+          :role="transferStatusRole"
+          aria-live="polite"
+        >
+          {{ transferStatusMessage }}
+        </p>
+      </div>
+      <div class="group-inventory-panel__transfer-actions">
+        <button
+          type="button"
+          class="group-inventory-panel__transfer-button"
+          :disabled="!canOpenTransferDialog"
+          @click="openTransferToGroup"
+        >
+          Receive from trainer
+        </button>
+        <button
+          v-if="transferStatus === 'conflict'"
+          type="button"
+          class="group-inventory-panel__reload-button"
+          @click="emit('reloadAfterConflict')"
+        >
+          Reload inventory
+        </button>
+        <button
+          type="button"
+          class="group-inventory-panel__reload-button"
+          :disabled="trainerLoadStatus === 'loading'"
+          @click="emit('refreshTransferTrainers')"
+        >
+          Refresh trainers
+        </button>
+      </div>
+    </div>
+
     <p
       v-if="isInventoryEmpty"
       class="group-inventory-panel__empty"
@@ -221,13 +408,38 @@ const setItemName = (item: InventoryEntry, value: string) => {
         @add-item="addItem"
         @remove-item="removeItem"
         @set-item-name="setItemName"
-      />
+      >
+        <template v-if="showTransferControls" #rowActions="{ item, sectionKey }">
+          <button
+            type="button"
+            class="group-inventory-panel__row-transfer-button"
+            :disabled="!canTransferGroupRow(item, sectionKey)"
+            :title="groupTransferButtonTitle(item, sectionKey)"
+            @click="openTransferToTrainer(item, sectionKey)"
+          >
+            Transfer
+          </button>
+        </template>
+      </InventoryItemTable>
     </div>
 
     <aside v-if="notes" class="group-inventory-panel__notes" aria-label="Group inventory notes">
       <h3>Notes</h3>
       <p>{{ notes }}</p>
     </aside>
+
+    <GroupInventoryTransferDialog
+      v-if="transferDialogDirection"
+      :direction="transferDialogDirection"
+      :section-key="transferDialogSectionKey"
+      :group-row="transferDialogGroupRow"
+      :trainers="transferTrainers"
+      :status="transferStatus"
+      :error="transferError"
+      @close="closeTransferDialog"
+      @transfer-to-trainer="(request) => emit('transferToTrainer', request)"
+      @transfer-to-group="(request) => emit('transferToGroup', request)"
+    />
   </article>
 </template>
 
@@ -342,10 +554,12 @@ const setItemName = (item: InventoryEntry, value: string) => {
   outline-offset: 2px;
 }
 
-.group-inventory-panel__save-bar {
+.group-inventory-panel__save-bar,
+.group-inventory-panel__transfer-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 0.55rem 0.7rem;
   border: 1px solid var(--rule-soft);
   border-radius: 12px;
@@ -354,7 +568,9 @@ const setItemName = (item: InventoryEntry, value: string) => {
 }
 
 .group-inventory-panel__save-button,
-.group-inventory-panel__reload-button {
+.group-inventory-panel__reload-button,
+.group-inventory-panel__transfer-button,
+.group-inventory-panel__row-transfer-button {
   border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--rule-soft));
   border-radius: 999px;
   background: rgba(var(--accent-rgb), 0.14);
@@ -373,33 +589,65 @@ const setItemName = (item: InventoryEntry, value: string) => {
   color: var(--accent);
 }
 
+.group-inventory-panel__row-transfer-button {
+  margin-right: 0.35rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.68rem;
+}
+
 .group-inventory-panel__save-button:hover:not(:disabled),
 .group-inventory-panel__save-button:focus-visible:not(:disabled),
-.group-inventory-panel__reload-button:hover,
-.group-inventory-panel__reload-button:focus-visible {
+.group-inventory-panel__reload-button:hover:not(:disabled),
+.group-inventory-panel__reload-button:focus-visible:not(:disabled),
+.group-inventory-panel__transfer-button:hover:not(:disabled),
+.group-inventory-panel__transfer-button:focus-visible:not(:disabled),
+.group-inventory-panel__row-transfer-button:hover:not(:disabled),
+.group-inventory-panel__row-transfer-button:focus-visible:not(:disabled) {
   border-color: var(--accent);
   background: rgba(var(--accent-rgb), 0.22);
   outline: none;
 }
 
-.group-inventory-panel__save-button:disabled {
+.group-inventory-panel__save-button:disabled,
+.group-inventory-panel__reload-button:disabled,
+.group-inventory-panel__transfer-button:disabled,
+.group-inventory-panel__row-transfer-button:disabled {
   cursor: not-allowed;
   opacity: 0.58;
 }
 
-.group-inventory-panel__save-message {
+.group-inventory-panel__save-message,
+.group-inventory-panel__transfer-message,
+.group-inventory-panel__transfer-title {
   margin: 0;
   color: var(--ink-soft);
   font-size: 0.88rem;
   font-weight: 700;
 }
 
-.group-inventory-panel__save-message--saved {
+.group-inventory-panel__transfer-title {
+  color: var(--ink-bright);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.group-inventory-panel__transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.group-inventory-panel__save-message--saved,
+.group-inventory-panel__transfer-message--success {
   color: var(--good, #9be282);
 }
 
 .group-inventory-panel__save-message--conflict,
-.group-inventory-panel__save-message--error {
+.group-inventory-panel__save-message--error,
+.group-inventory-panel__transfer-message--conflict,
+.group-inventory-panel__transfer-message--error {
   color: var(--bad, #ffb3b3);
 }
 

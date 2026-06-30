@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useSlots } from 'vue'
 import { PhPlus, PhX } from '@phosphor-icons/vue'
 import EditableCell from '~/components/EditableCell.vue'
 import TrainerInventoryItemNameCell from '~/components/sheets/TrainerInventoryItemNameCell.vue'
@@ -35,10 +35,13 @@ const emit = defineEmits<{
   setItemName: [item: InventoryEntry, value: string]
 }>()
 
+const slots = useSlots()
+const hasRowActionsSlot = computed(() => !!slots.rowActions)
+const hasActionsColumn = computed(() => !props.readOnly || hasRowActionsSlot.value)
 const hasQuantityColumn = computed(() => props.variant !== 'equipment')
 const hasSlotColumn = computed(() => props.variant === 'equipment')
 const hasModColumn = computed(() => props.variant === 'pokeBalls')
-const emptyColumnCount = computed(() => inventoryTableColumnCount(props.variant) - (props.readOnly ? 1 : 0))
+const emptyColumnCount = computed(() => inventoryTableColumnCount(props.variant) - (hasActionsColumn.value ? 0 : 1))
 
 const setItemName = (item: InventoryEntry, value: string) => {
   emit('setItemName', item, value)
@@ -68,7 +71,7 @@ const displayValue = (value: number | string | undefined): string => {
           <th>Cost</th>
           <th v-if="hasModColumn">Mod</th>
           <th>Description</th>
-          <th v-if="!readOnly" aria-label="Row actions"></th>
+          <th v-if="hasActionsColumn" aria-label="Row actions"></th>
         </tr>
       </thead>
       <tbody>
@@ -105,8 +108,9 @@ const displayValue = (value: number | string | undefined): string => {
             </span>
             <EditableCell v-else v-model="item.description" type="textarea" placeholder="—" multiline />
           </td>
-          <td v-if="!readOnly" class="row-actions">
-            <button type="button" class="row-remove" title="Remove" @click="emit('removeItem', sectionKey, index)">
+          <td v-if="hasActionsColumn" class="row-actions">
+            <slot name="rowActions" :item="item" :index="index" :section-key="sectionKey" />
+            <button v-if="!readOnly" type="button" class="row-remove" title="Remove" @click="emit('removeItem', sectionKey, index)">
               <PhX :size="14" weight="bold" />
             </button>
           </td>

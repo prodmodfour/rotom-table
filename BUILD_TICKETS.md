@@ -418,7 +418,7 @@ Extend transfer routes so player users can move items only for trainer sheets li
 
 ## 041 — #41: Group inventory: add transfer UI between party inventory and trainers
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/41
 

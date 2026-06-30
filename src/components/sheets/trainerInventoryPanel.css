@@ -93,8 +93,10 @@
 }
 
 .row-actions {
-  width: 1.5rem;
+  width: auto;
+  min-width: 1.5rem;
   text-align: right;
+  white-space: nowrap;
 }
 
 .equipped-item {

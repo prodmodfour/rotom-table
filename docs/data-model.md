@@ -42,7 +42,7 @@ Trainer sheets model a PTU trainer workbook: core trainer identity, stats, skill
 
 ## Group inventory
 
-The shared party inventory is campaign-level SQLite state in the `group_inventories` table. The `/group-inventory` page loads the authoritative `main` document through the group inventory load API, renders campaign money, section counts, notes, and normalized trainer-inventory-style sections, and lets GMs directly edit money and item rows through a revision-checked save API. Transfer APIs move item quantities atomically between the group inventory and trainer sheets: GMs can transfer with any trainer, while player requests must include the selected player profile ID and that profile must link the source or target trainer sheet. Players still cannot perform direct full-document group inventory saves.
+The shared party inventory is campaign-level SQLite state in the `group_inventories` table. The `/group-inventory` page loads the authoritative `main` document through the group inventory load API, renders campaign money, section counts, notes, and normalized trainer-inventory-style sections, and lets GMs directly edit money and item rows through a revision-checked save API. The same page exposes trainer transfer controls that wait for server acceptance before changing local state. Transfer APIs move item quantities atomically between the group inventory and trainer sheets: GMs can transfer with any trainer, while player requests must include the selected player profile ID and that profile must link the source or target trainer sheet. Players still cannot perform direct full-document group inventory saves.
 
 ## Player profiles
 

@@ -3,11 +3,18 @@ import { computed } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import GroupInventoryPanel from '~/components/inventory/GroupInventoryPanel.vue'
 import { useGroupInventoryEditor } from '~/composables/useGroupInventoryEditor'
+import { useGroupInventoryTransfers } from '~/composables/useGroupInventoryTransfers'
 import { GROUP_INVENTORY_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 
-const { isGm } = useAuth()
+const { isGm, isPlayer } = useAuth()
+const {
+  selectedProfileId,
+  loadRememberedProfile,
+} = usePlayerProfiles()
+
+if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
 const {
   data: groupInventoryDocument,
@@ -20,6 +27,20 @@ const {
 })
 
 const groupInventoryEditor = useGroupInventoryEditor(groupInventoryDocument, { canEdit: isGm })
+const transferBlockedByUnsavedEdits = computed(() => (
+  groupInventoryEditor.isDirty.value || groupInventoryEditor.saveStatus.value === 'saving'
+))
+const groupInventoryTransfers = useGroupInventoryTransfers({
+  groupInventoryDocument: groupInventoryEditor.document,
+  adoptGroupInventoryDocument: (document) => {
+    groupInventoryDocument.value = document
+    groupInventoryEditor.adoptAuthoritativeDocument(document)
+  },
+  isGm,
+  isPlayer,
+  selectedProfileId,
+  transferBlocked: transferBlockedByUnsavedEdits,
+})
 
 const isGroupInventoryLoading = computed(() => (
   groupInventoryStatus.value === 'idle' || groupInventoryStatus.value === 'pending'
@@ -54,7 +75,7 @@ useHead({
         <p class="group-inventory-eyebrow">Party inventory</p>
         <h1>Inventory</h1>
         <p>
-          View the shared campaign inventory for the table. GMs can edit and save the authoritative document with revision protection; players continue to see read-only inventory state.
+          View the shared campaign inventory for the table. GMs can edit and save the authoritative document with revision protection; GMs and players can transfer items with eligible trainer sheets after revision checks pass.
         </p>
       </div>
     </header>
@@ -91,8 +112,19 @@ useHead({
         :is-dirty="groupInventoryEditor.isDirty.value"
         :save-status="groupInventoryEditor.saveStatus.value"
         :save-error="groupInventoryEditor.saveError.value"
+        :can-transfer="groupInventoryTransfers.canTransfer.value"
+        :transfer-unavailable-reason="groupInventoryTransfers.transferUnavailableReason.value"
+        :transfer-trainers="groupInventoryTransfers.eligibleTrainers.value"
+        :trainer-load-status="groupInventoryTransfers.trainerLoadStatus.value"
+        :trainer-load-error="groupInventoryTransfers.trainerLoadError.value"
+        :transfer-status="groupInventoryTransfers.transferStatus.value"
+        :transfer-error="groupInventoryTransfers.transferError.value"
+        :transfer-notice="groupInventoryTransfers.transferNotice.value"
         @save="groupInventoryEditor.save"
         @reload-after-conflict="reloadGroupInventory"
+        @refresh-transfer-trainers="groupInventoryTransfers.loadTrainers"
+        @transfer-to-trainer="groupInventoryTransfers.transferToTrainer"
+        @transfer-to-group="groupInventoryTransfers.transferToGroup"
       />
 
       <article v-else class="group-inventory-panel panel-card" role="status">

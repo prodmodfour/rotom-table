@@ -7,6 +7,7 @@ import { defineComponent } from 'vue'
 import GroupInventoryPanel from '~/components/inventory/GroupInventoryPanel.vue'
 import { createDefaultGroupInventoryDocument } from '~/types/groupInventory'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
+import type { GroupInventoryTransferTrainerOption } from '~/types/groupInventoryTransferUi'
 
 const IconStub = defineComponent({
   template: '<span aria-hidden="true" />',
@@ -86,6 +87,29 @@ const groupInventoryFixture = (): GroupInventoryDocument => {
         { id: 'boots-row', name: 'Heavy Boots', slot: 'Feet', cost: '$500', description: 'Trail gear.' },
       ],
     },
+  }
+}
+
+const trainerTransferOptionFixture = (): GroupInventoryTransferTrainerOption => {
+  const inventory = {
+    pokemonItems: [
+      { name: 'Antidote', qty: 1, cost: '$200' },
+    ],
+  }
+  const sheet = {
+    slug: 'ash',
+    name: 'Ash',
+    level: 5,
+    revision: 8,
+    inventory,
+  }
+
+  return {
+    slug: sheet.slug,
+    name: sheet.name,
+    revision: 8,
+    inventory,
+    sheet,
   }
 }
 
@@ -173,6 +197,56 @@ describe('GroupInventoryPanel', () => {
 
     await wrapper.find('.group-inventory-panel__save-button').trigger('click')
     expect(wrapper.emitted('save')).toEqual([[]])
+  })
+
+  it('emits a server-backed transfer request without mutating local inventory first', async () => {
+    const document = groupInventoryFixture()
+    const wrapper = mount(GroupInventoryPanel, {
+      props: {
+        document,
+        canTransfer: true,
+        transferTrainers: [trainerTransferOptionFixture()],
+        trainerLoadStatus: 'loaded',
+      },
+      global: mountGlobal,
+    })
+
+    await wrapper.findAll('.inventory-subtab')[1]?.trigger('click')
+    await wrapper.find('.group-inventory-panel__row-transfer-button').trigger('click')
+
+    expect(wrapper.find('[role="dialog"]').text()).toContain('Transfer Potion to a trainer')
+    await wrapper.find('.group-transfer-dialog__field input').setValue('2')
+    await wrapper.find('.group-transfer-dialog__primary').trigger('click')
+
+    expect(wrapper.emitted('transferToTrainer')).toEqual([[
+      {
+        trainerSlug: 'ash',
+        section: 'pokemonItems',
+        itemId: 'potion-row',
+        quantity: 2,
+      },
+    ]])
+    expect(document.inventory.pokemonItems?.[0]).toMatchObject({ id: 'potion-row', name: 'Potion', qty: 2 })
+  })
+
+  it('shows rejected transfer feedback without hiding the refresh path', () => {
+    const wrapper = mount(GroupInventoryPanel, {
+      props: {
+        document: groupInventoryFixture(),
+        canTransfer: true,
+        transferTrainers: [trainerTransferOptionFixture()],
+        trainerLoadStatus: 'loaded',
+        transferStatus: 'conflict',
+        transferError: 'Group inventory main changed before the transfer could be persisted; reload before transferring.',
+      },
+      global: mountGlobal,
+    })
+
+    expect(wrapper.find('[role="alert"]').text()).toContain('reload before transferring')
+    expect(wrapper.findAll('.group-inventory-panel__reload-button').map((button) => button.text())).toEqual([
+      'Reload inventory',
+      'Refresh trainers',
+    ])
   })
 
   it('shows conflict feedback with an explicit reload action', async () => {

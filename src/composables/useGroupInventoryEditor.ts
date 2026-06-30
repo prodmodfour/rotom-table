@@ -23,6 +23,7 @@ export interface UseGroupInventoryEditorReturn {
   readonly isDirty: ComputedRef<boolean>
   readonly saveStatus: Ref<GroupInventorySaveStatus>
   readonly saveError: Ref<string | null>
+  readonly adoptAuthoritativeDocument: (nextDocument: GroupInventoryDocument | null | undefined) => void
   readonly save: () => Promise<void>
 }
 
@@ -125,6 +126,7 @@ export const useGroupInventoryEditor = (
     isDirty,
     saveStatus,
     saveError,
+    adoptAuthoritativeDocument,
     save,
   }
 }
