@@ -334,7 +334,7 @@ Add a GM-facing editor component for shop entries.
 
 ## 011 — SHOPS-011: Add GM shop editor page
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Let GMs edit full shop table documents.
