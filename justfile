@@ -46,6 +46,9 @@ default:
       '  ROTOM_CAMPAIGN_ROOT=/path/to/campaign-repo npm run dev' \
       '      Read/write maps, sheets, profiles, sessions, and encounter tables from a separate campaign repo.' \
       '' \
+      '  just prod-dev' \
+      '      Start Nuxt dev mode with the local production-like Ranger workspace env.' \
+      '' \
       '  just rebuild-ptu-data-cache' \
       '      Rebuild documentary ptu-data parser output (not app runtime reference).' \
       '' \
@@ -75,6 +78,10 @@ autobuild cycles="1":
 # Compatibility recipe from the autonomous build template.
 run cycles="180":
     bash scripts/build-loop.sh --max-cycles {{cycles}}
+
+# Start Nuxt dev mode against the local production-like Ranger workspace data.
+prod-dev:
+    ../bin/start-dev.sh
 
 trainer +name:
     @python3 scripts/trainer_lookup.py {{quote(name)}}
