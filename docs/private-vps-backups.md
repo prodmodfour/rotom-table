@@ -9,6 +9,7 @@ Back up the entire configured campaign root, not only the file you edited most r
 - `data/maps/` if retained as maintenance/export copies (not runtime authority)
 - `data/sheets/` if retained as maintenance/export copies (not runtime authority)
 - `data/trainers/` if retained as maintenance/export copies (not runtime authority)
+- `data/group-inventories/` if retained as maintenance/export copies (not runtime authority)
 - `data/player-profiles/`
 - `data/reference-overrides/` for campaign-owned reference override diffs such as Pokédex edits
 - `encounter_tables/`
@@ -17,7 +18,7 @@ Back up the entire configured campaign root, not only the file you edited most r
 
 For the documented VPS layout, the app runs from `/srv/rotom-table/app`, campaign data lives in `/srv/rotom-table/campaign`, the default SQLite database path is `/srv/rotom-table/campaign/rotom-table.sqlite`, and private archives live outside the app checkout in `/srv/rotom-table/backups`. If `ROTOM_DB_PATH` points outside the default campaign root, it must still be private operator-controlled campaign storage; include that database path and sidecars in a separate private backup step.
 
-After the SQLite authority migration, maps and Pokémon/trainer sheets load from SQLite at runtime. Keep backing up residual JSON campaign files only as explicit maintenance/export/interchange artifacts. Player profiles, encounter tables, campaign reference overrides, and other non-map/sheet campaign material may still live as JSON. Do not treat residual map/sheet JSON as runtime fallback state.
+After the SQLite authority migration, maps, Pokémon/trainer sheets, and group inventory load from SQLite at runtime. Keep backing up residual JSON campaign files only as explicit maintenance/export/interchange artifacts. Player profiles, encounter tables, campaign reference overrides, and other non-map/sheet/group-inventory campaign material may still live as JSON. Do not treat residual map/sheet/group-inventory JSON as runtime fallback state.
 
 ## Backup timing and SQLite safety
 
@@ -85,7 +86,7 @@ SESSION_TAG=post-session
 For any archive intended to protect live-play state, verify that the listing includes the SQLite database and any WAL sidecars that exist, plus residual JSON campaign files:
 
 ```bash
-sudo grep -E 'campaign/(rotom-table\.sqlite|rotom-table\.sqlite-wal|rotom-table\.sqlite-shm|data/maps/|data/sheets/|data/trainers/|data/player-profiles/|encounter_tables/)' "${ARCHIVE}.listing"
+sudo grep -E 'campaign/(rotom-table\.sqlite|rotom-table\.sqlite-wal|rotom-table\.sqlite-shm|data/maps/|data/sheets/|data/trainers/|data/group-inventories/|data/player-profiles/|encounter_tables/)' "${ARCHIVE}.listing"
 ```
 
 If `ROTOM_DB_PATH` points outside `CAMPAIGN_ROOT`, create and verify a second private archive for that database path and its sidecars or place the safe SQLite snapshot in the campaign archive staging area before running `tar`.
@@ -145,6 +146,7 @@ RESTORED_CAMPAIGN_ROOT="${RESTORE_ROOT}/campaign"
 test -d "$RESTORED_CAMPAIGN_ROOT/data/maps"
 test -d "$RESTORED_CAMPAIGN_ROOT/data/sheets"
 test -d "$RESTORED_CAMPAIGN_ROOT/data/trainers"
+test ! -d "$RESTORED_CAMPAIGN_ROOT/data/group-inventories" || test -r "$RESTORED_CAMPAIGN_ROOT/data/group-inventories"
 test -d "$RESTORED_CAMPAIGN_ROOT/data/player-profiles"
 test -d "$RESTORED_CAMPAIGN_ROOT/encounter_tables"
 test ! -d "$RESTORED_CAMPAIGN_ROOT/data/reference-overrides" || test -f "$RESTORED_CAMPAIGN_ROOT/data/reference-overrides/pokedex.json"
@@ -177,6 +179,7 @@ In a browser on the host or through the same private access path, verify the res
 - open `http://127.0.0.1:3100/login` and choose the GM role, remembering that this is still the trust-based table role picker, not public authentication;
 - open `/maps` and load at least one restored map;
 - open `/sheets` and load at least one restored Pokémon sheet and one trainer sheet;
+- open `/group-inventory` and confirm the restored shared party inventory loads from SQLite;
 - open `/players` and confirm restored player profiles and linked character references are present;
 - open `/encounter-tables` and confirm restored encounter-table regions and tables are listed;
 - if the campaign has Pokédex overrides, open `/pokedex` and confirm one campaign-specific entry reflects the restored override.
@@ -187,7 +190,7 @@ Then verify a temporary restore smoke write persists after restart:
 2. Confirm the matching map/sheet state loads from SQLite after a refresh; if `sqlite3` is available, inspect the restored `maps`, `sheets`, `map_folders`, or `sheet_folders` tables rather than looking for runtime JSON writes.
 3. If the backup includes live-play state, open a disposable restored map and run a small command-backed action such as moving a smoke token or changing a smoke token's HP. Confirm the map/sheet values update in the UI and, if `sqlite3` is available, that the restored database still reports `PRAGMA integrity_check;` after the command.
 4. Stop the temporary app process with `Ctrl+C` and start it again with the same environment values.
-5. Reload the edited map, sheet, player profile list, encounter table, and any command-backed smoke map to confirm the disposable write and live-play state are still present.
+5. Reload the edited map, sheet, group inventory, player profile list, encounter table, and any command-backed smoke map to confirm the disposable write and live-play state are still present.
 6. Delete the disposable item from the temporary root, or discard the entire temporary restore root after recording the result.
 
 After the check, clean up only the staging directory created for this smoke pass:

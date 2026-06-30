@@ -479,7 +479,7 @@ Keep other open clients in sync when the group inventory changes.
 
 ## 043 — #43: Group inventory: include campaign inventories in maintenance export/backup scripts
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/43
 

@@ -23,6 +23,7 @@ Options:
 const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
 const sheetKinds = ['pokemon', 'trainer']
+const groupInventoryRootRel = 'data/group-inventories'
 
 class ExportError extends Error {
   constructor(message) {
@@ -115,7 +116,7 @@ const writeDocument = (outputRoot, rootRel, folder, slug, document) => {
 }
 
 const exportDatabase = (connection, outputRoot) => {
-  const counts = { maps: 0, pokemon: 0, trainer: 0, folders: 0 }
+  const counts = { maps: 0, pokemon: 0, trainer: 0, groupInventories: 0, folders: 0 }
   connection.exec('BEGIN')
   try {
     const mapFolders = new Set()
@@ -151,6 +152,16 @@ const exportDatabase = (connection, outputRoot) => {
       for (const prefix of folderPrefixes(folder)) sheetFolders[row.kind].add(prefix)
       writeDocument(outputRoot, row.kind === 'pokemon' ? 'data/sheets' : 'data/trainers', folder, row.slug, document)
       counts[row.kind] += 1
+    }
+
+    const groupInventories = connection.prepare('SELECT slug, document_json, revision, updated_at FROM group_inventories ORDER BY slug ASC').all()
+    for (const row of groupInventories) {
+      const document = parseDocument(row.document_json, `group inventory ${row.slug}`)
+      document.slug = row.slug
+      document.revision = Number(row.revision)
+      document.updatedAt = Number(row.updated_at)
+      writeDocument(outputRoot, groupInventoryRootRel, '', row.slug, document)
+      counts.groupInventories += 1
     }
 
     for (const folder of [...mapFolders].sort()) {
@@ -196,6 +207,7 @@ export const runExportCli = (argv = process.argv.slice(2), env = process.env) =>
         `Maps exported: ${counts.maps}`,
         `Pokémon sheets exported: ${counts.pokemon}`,
         `Trainer sheets exported: ${counts.trainer}`,
+        `Group inventories exported: ${counts.groupInventories}`,
         `Folders recreated: ${counts.folders}`,
       ].join('\n') + '\n')
       return 0

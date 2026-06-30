@@ -5,9 +5,15 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
+import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
+import {
+  GROUP_INVENTORY_MAIN_SLUG,
+  GROUP_INVENTORY_SECTION_KEYS,
+  type GroupInventoryDocument,
+} from '~/types/groupInventory'
 import type { TabletopMap } from '~/types/map'
 
 const testDir = dirname(fileURLToPath(import.meta.url))
@@ -45,11 +51,16 @@ const mapDocument = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
 
 const readJson = (path: string): Record<string, unknown> => JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>
 
+const emptyGroupInventory = (): GroupInventoryDocument['inventory'] => Object.fromEntries(
+  GROUP_INVENTORY_SECTION_KEYS.map((section) => [section, []]),
+) as unknown as GroupInventoryDocument['inventory']
+
 const seedCampaignDatabase = (campaignRoot: string): void => {
   const database = openRotomDatabase({ path: join(campaignRoot, 'rotom-table.sqlite') })
   openDatabases.push(database)
   const maps = createSqliteMapRepository<TabletopMap>(database)
   const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+  const groupInventories = createSqliteGroupInventoryRepository(database)
   const realtimeEvents = createSqliteRealtimeEventRepository({ database, clock: () => 1_700_000_000_800 })
 
   maps.createFolder('empty/nested')
@@ -69,6 +80,22 @@ const seedCampaignDatabase = (campaignRoot: string): void => {
     folder: 'npcs',
     revision: 2,
     updatedAt: 1_700_000_000_700,
+  })
+  groupInventories.save({
+    slug: GROUP_INVENTORY_MAIN_SLUG,
+    revision: 7,
+    updatedAt: 1_700_000_000_900,
+    document: {
+      slug: GROUP_INVENTORY_MAIN_SLUG,
+      revision: 7,
+      updatedAt: 1_700_000_000_900,
+      money: 1200,
+      notes: 'Shared stash',
+      inventory: {
+        ...emptyGroupInventory(),
+        pokemonItems: [{ id: 'group-item-potion', name: 'Potion', qty: 5 }],
+      },
+    },
   })
   realtimeEvents.append({
     event: { channel: 'maps', type: 'updated', data: { export: 'event-log-only' } },
@@ -111,6 +138,7 @@ describe('SQLite JSON export script', () => {
     expect(result.stdout).toContain('Maps exported: 1')
     expect(result.stdout).toContain('Pokémon sheets exported: 1')
     expect(result.stdout).toContain('Trainer sheets exported: 1')
+    expect(result.stdout).toContain('Group inventories exported: 1')
 
     expect(existsSync(join(output, 'data/maps/empty/nested'))).toBe(true)
     expect(existsSync(join(output, 'data/sheets/bench/empty'))).toBe(true)
@@ -130,6 +158,15 @@ describe('SQLite JSON export script', () => {
       slug: 'brock',
       folder: 'npcs',
       revision: 2,
+    })
+    expect(readJson(join(output, 'data/group-inventories/main.json'))).toMatchObject({
+      slug: GROUP_INVENTORY_MAIN_SLUG,
+      revision: 7,
+      updatedAt: 1_700_000_000_900,
+      money: 1200,
+      inventory: {
+        pokemonItems: [{ id: 'group-item-potion', name: 'Potion', qty: 5 }],
+      },
     })
     expect(existsSync(join(output, 'realtime_events.json'))).toBe(false)
     expect(readFileSync(join(output, 'data/maps/region/one/arena.json'), 'utf8')).not.toContain('event-log-only')

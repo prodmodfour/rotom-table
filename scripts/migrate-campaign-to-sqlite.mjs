@@ -38,10 +38,14 @@ const slugRe = /^[a-z0-9-]+$/
 const playerProfileIdRe = /^profile_[A-Za-z0-9_-]{8,64}$/
 const playerProfileDisplayNameMaxLength = 64
 const sheetKinds = ['pokemon', 'trainer']
+const groupInventoryRootRelativePath = 'data/group-inventories'
+const groupInventorySectionKeys = ['keyItems', 'pokemonItems', 'medicalKit', 'pokeBalls', 'foodStuff', 'equipment']
+const groupInventoryRowIdPrefix = 'group-item'
 const knownCampaignDirectories = [
   'data/maps',
   'data/sheets',
   'data/trainers',
+  groupInventoryRootRelativePath,
   'data/player-profiles',
   'data/reference-overrides',
   'encounter_tables',
@@ -309,6 +313,25 @@ const timestampFromFile = (path) => Math.max(0, Math.round(statSync(path).mtimeM
 
 const normalizeTimestamp = (value, fallback) => Number.isSafeInteger(value) && value >= 0 ? value : fallback
 
+const trimString = (value) => typeof value === 'string' ? value.trim() : ''
+
+const normalizeOptionalString = (value) => {
+  const trimmed = trimString(value)
+  return trimmed ? trimmed : undefined
+}
+
+const coerceSafeNonNegativeInteger = (value, fallback = 0) => {
+  const numericValue = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim() !== ''
+      ? Number(value)
+      : Number.NaN
+
+  if (!Number.isFinite(numericValue)) return fallback
+  if (numericValue <= 0) return 0
+  return Math.min(Math.floor(numericValue), Number.MAX_SAFE_INTEGER)
+}
+
 const folderFromRoot = (root, filePath) => {
   const directory = dirname(relative(root, filePath)).split(sep).join('/')
   return directory === '.' ? '' : directory
@@ -398,6 +421,105 @@ const normalizeSheetFile = (kind, root, sourcePath) => {
   }
 }
 
+const groupInventoryRowsFromUnknown = (value) => {
+  if (Array.isArray(value)) return value.filter((entry) => isRecord(entry) || typeof entry === 'string')
+  if (!isRecord(value)) return []
+  if (Object.hasOwn(value, 'name') || Object.hasOwn(value, 'id')) return [value]
+  return Object.values(value).filter((entry) => isRecord(entry) || typeof entry === 'string')
+}
+
+const sectionUsesQuantity = (section) => section !== 'equipment'
+
+const uniqueGroupInventoryRowId = (rawId, section, index, usedIds) => {
+  const preferred = trimString(rawId)
+  if (preferred && !usedIds.has(preferred)) {
+    usedIds.add(preferred)
+    return preferred
+  }
+
+  for (let counter = index + 1; counter < Number.MAX_SAFE_INTEGER; counter += 1) {
+    const candidate = `${groupInventoryRowIdPrefix}-${section}-${counter.toString(36)}`
+    if (!usedIds.has(candidate)) {
+      usedIds.add(candidate)
+      return candidate
+    }
+  }
+
+  throw new Error('Could not allocate a unique group inventory row id')
+}
+
+const normalizeGroupInventoryEntry = (rawEntry, section, index, usedIds) => {
+  const source = typeof rawEntry === 'string' ? { name: rawEntry } : rawEntry
+  const entry = {
+    id: uniqueGroupInventoryRowId(source.id, section, index, usedIds),
+    name: trimString(source.name),
+  }
+
+  if (sectionUsesQuantity(section) && Object.hasOwn(source, 'qty')) {
+    entry.qty = coerceSafeNonNegativeInteger(source.qty)
+  }
+
+  for (const field of ['cost', 'description', 'mod', 'slot']) {
+    if (!Object.hasOwn(source, field)) continue
+    if (field === 'cost' && typeof source[field] === 'number' && Number.isFinite(source[field])) {
+      entry[field] = source[field]
+      continue
+    }
+    const normalized = normalizeOptionalString(source[field])
+    if (normalized !== undefined) entry[field] = normalized
+  }
+
+  return entry
+}
+
+const normalizeGroupInventorySections = (inventory) => {
+  const source = isRecord(inventory) ? inventory : {}
+  const usedIds = new Set()
+  return Object.fromEntries(groupInventorySectionKeys.map((section) => [
+    section,
+    groupInventoryRowsFromUnknown(source[section]).map((entry, index) => (
+      normalizeGroupInventoryEntry(entry, section, index, usedIds)
+    )),
+  ]))
+}
+
+const normalizeGroupInventoryDocument = (document, { slug, revision, updatedAt }) => {
+  const source = assertObjectDocument(document, `Group inventory ${slug}`)
+  const normalized = {
+    slug,
+    revision,
+    updatedAt,
+    money: coerceSafeNonNegativeInteger(source.money),
+    inventory: normalizeGroupInventorySections(source.inventory),
+  }
+  const notes = normalizeOptionalString(source.notes)
+  if (notes !== undefined) normalized.notes = notes
+  return normalized
+}
+
+const normalizeGroupInventoryFile = (sourcePath) => {
+  const groupInventory = assertObjectDocument(
+    parseJsonFile(sourcePath, `Group inventory ${sourcePath}`),
+    `Group inventory ${sourcePath}`,
+  )
+  const slug = validateSlug(
+    typeof groupInventory.slug === 'string' && groupInventory.slug.trim()
+      ? groupInventory.slug
+      : slugFromFilePath(sourcePath),
+    `Group inventory ${sourcePath} slug`,
+  )
+  const revision = normalizeRevision(groupInventory.revision)
+  const updatedAt = normalizeTimestamp(groupInventory.updatedAt, timestampFromFile(sourcePath))
+
+  return {
+    slug,
+    document: normalizeGroupInventoryDocument(groupInventory, { slug, revision, updatedAt }),
+    revision,
+    updatedAt,
+    sourcePath,
+  }
+}
+
 const validatePlayerProfileFile = (profilesRoot, sourcePath) => {
   const profile = assertObjectDocument(parseJsonFile(sourcePath, `Player profile ${sourcePath}`), `Player profile ${sourcePath}`)
   const expectedId = basename(sourcePath, extname(sourcePath))
@@ -437,6 +559,7 @@ export const createMigrationPlan = (campaignRoot) => {
   const mapsRoot = resolve(campaignRoot, 'data/maps')
   const pokemonSheetsRoot = resolve(campaignRoot, 'data/sheets')
   const trainerSheetsRoot = resolve(campaignRoot, 'data/trainers')
+  const groupInventoriesRoot = resolve(campaignRoot, groupInventoryRootRelativePath)
   const profilesRoot = resolve(campaignRoot, 'data/player-profiles')
 
   const mapPlan = collectWithErrors(walkJsonFiles(mapsRoot), (path) => normalizeMapFile(mapsRoot, path))
@@ -446,6 +569,10 @@ export const createMigrationPlan = (campaignRoot) => {
     sheetPlan.records.push(...plan.records)
     sheetPlan.errors.push(...plan.errors)
   }
+  const groupInventoryPlan = collectWithErrors(
+    walkJsonFiles(groupInventoriesRoot),
+    (path) => normalizeGroupInventoryFile(path),
+  )
   const profilePlan = collectWithErrors(walkJsonFiles(profilesRoot), (path) => validatePlayerProfileFile(profilesRoot, path))
   const mapFolders = walkFolders(mapsRoot)
   const sheetFolders = [
@@ -458,14 +585,16 @@ export const createMigrationPlan = (campaignRoot) => {
       maps: mapsRoot,
       pokemonSheets: pokemonSheetsRoot,
       trainerSheets: trainerSheetsRoot,
+      groupInventories: groupInventoriesRoot,
       playerProfiles: profilesRoot,
     },
     maps: mapPlan.records,
     sheets: sheetPlan.records,
+    groupInventories: groupInventoryPlan.records,
     mapFolders,
     sheetFolders,
     playerProfiles: profilePlan.records,
-    errors: [...mapPlan.errors, ...sheetPlan.errors, ...profilePlan.errors],
+    errors: [...mapPlan.errors, ...sheetPlan.errors, ...groupInventoryPlan.errors, ...profilePlan.errors],
   }
 }
 
@@ -665,6 +794,26 @@ const upsertSheetRecord = (connection, record) => {
   return true
 }
 
+const upsertGroupInventoryRecord = (connection, record) => {
+  const documentJson = stringifyDocument(record.document)
+  const existing = connection.prepare(`
+    SELECT document_json, revision, updated_at
+    FROM group_inventories
+    WHERE slug = ?
+  `).get(record.slug)
+  if (storedDocumentUnchanged(existing, documentJson, record.revision, record.updatedAt)) return false
+
+  connection.prepare(`
+    INSERT INTO group_inventories (slug, document_json, revision, updated_at)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(slug) DO UPDATE SET
+      document_json = excluded.document_json,
+      revision = excluded.revision,
+      updated_at = excluded.updated_at
+  `).run(record.slug, documentJson, record.revision, record.updatedAt)
+  return true
+}
+
 const upsertMapFolder = (connection, path, updatedAt) => {
   connection.prepare(`
     INSERT INTO map_folders (path, updated_at)
@@ -685,6 +834,7 @@ const applyImportPlan = (connection, plan) => {
   const counts = {
     mapsImported: 0,
     sheetsImported: 0,
+    groupInventoriesImported: 0,
     foldersImported: 0,
     skippedUnchanged: 0,
   }
@@ -708,6 +858,10 @@ const applyImportPlan = (connection, plan) => {
     for (const sheet of plan.sheets) {
       if (sheet.folder) upsertSheetFolder(connection, sheet.kind, sheet.folder, sheet.updatedAt)
       if (upsertSheetRecord(connection, sheet)) counts.sheetsImported += 1
+      else counts.skippedUnchanged += 1
+    }
+    for (const groupInventory of plan.groupInventories) {
+      if (upsertGroupInventoryRecord(connection, groupInventory)) counts.groupInventoriesImported += 1
       else counts.skippedUnchanged += 1
     }
     connection.exec('COMMIT')
@@ -743,9 +897,21 @@ const validateSheetRow = (row, record) => {
   if (document.slug !== record.slug) throw new Error(`Imported ${record.kind} sheet ${record.slug} document slug mismatch`)
 }
 
+const validateGroupInventoryRow = (row, record) => {
+  if (!row) throw new Error(`Imported group inventory ${record.slug} is missing from SQLite`)
+  if (Number(row.revision) !== record.revision) throw new Error(`Imported group inventory ${record.slug} revision mismatch`)
+  if (Number(row.updated_at) !== record.updatedAt) throw new Error(`Imported group inventory ${record.slug} updatedAt mismatch`)
+  const document = parseStoredJson(row.document_json, `group inventory ${record.slug}`)
+  if (!isRecord(document)) throw new Error(`Imported group inventory ${record.slug} document must be an object`)
+  if (document.slug !== record.slug) throw new Error(`Imported group inventory ${record.slug} document slug mismatch`)
+  if (document.revision !== record.revision) throw new Error(`Imported group inventory ${record.slug} document revision mismatch`)
+  if (document.updatedAt !== record.updatedAt) throw new Error(`Imported group inventory ${record.slug} document updatedAt mismatch`)
+}
+
 const validateMigratedDatabase = (connection, plan) => {
   let mapsLoaded = 0
   let sheetsLoaded = 0
+  let groupInventoriesLoaded = 0
 
   for (const map of plan.maps) {
     const row = connection.prepare(`
@@ -767,9 +933,20 @@ const validateMigratedDatabase = (connection, plan) => {
     sheetsLoaded += 1
   }
 
+  for (const groupInventory of plan.groupInventories) {
+    const row = connection.prepare(`
+      SELECT document_json, revision, updated_at
+      FROM group_inventories
+      WHERE slug = ?
+    `).get(groupInventory.slug)
+    validateGroupInventoryRow(row, groupInventory)
+    groupInventoriesLoaded += 1
+  }
+
   return {
     mapsLoaded,
     sheetsLoaded,
+    groupInventoriesLoaded,
   }
 }
 
@@ -792,12 +969,14 @@ export const runCampaignSqliteMigration = ({ argv = [], env = process.env, now =
   let counts = {
     mapsImported: 0,
     sheetsImported: 0,
+    groupInventoriesImported: 0,
     foldersImported: 0,
     skippedUnchanged: 0,
   }
   let validation = {
     mapsLoaded: 0,
     sheetsLoaded: 0,
+    groupInventoriesLoaded: 0,
   }
 
   if (errors.length === 0) {
@@ -837,10 +1016,11 @@ export const formatMigrationResult = (result) => {
     `Backup entries copied: ${result.backup.copiedCount}`,
     `Maps imported: ${result.counts.mapsImported}`,
     `Sheets imported: ${result.counts.sheetsImported}`,
+    `Group inventories imported: ${result.counts.groupInventoriesImported}`,
     `Folders imported: ${result.counts.foldersImported ?? 0}`,
     `Skipped unchanged: ${result.counts.skippedUnchanged}`,
     `Player profiles validated: ${result.plan.playerProfiles.length} (current profile storage remains JSON-backed)`,
-    `Validation: loaded ${result.validation.mapsLoaded} maps and ${result.validation.sheetsLoaded} sheets from SQLite`,
+    `Validation: loaded ${result.validation.mapsLoaded} maps, ${result.validation.sheetsLoaded} sheets, and ${result.validation.groupInventoriesLoaded} group inventories from SQLite`,
     `Errors: ${result.errors.length}`,
   ]
 

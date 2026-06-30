@@ -19,6 +19,7 @@ With the variable set, Rotom Table resolves campaign-owned state under that root
 | `data/maps/` | Legacy map JSON import/export hierarchy; not runtime authority. |
 | `data/sheets/` | Legacy Pokémon sheet JSON import/export hierarchy; not runtime authority. |
 | `data/trainers/` | Legacy trainer sheet JSON import/export hierarchy; not runtime authority. |
+| `data/group-inventories/` | Legacy group inventory JSON import/export hierarchy; not runtime authority. |
 | `data/player-profiles/` | Local player profile JSON. |
 | `data/reference-overrides/` | Campaign-owned reference override diffs, currently Pokédex maintenance entries. |
 | `encounter_tables/` | Encounter-table JSON. |
@@ -41,6 +42,7 @@ For a private VPS, keep the application checkout, campaign root, and backups sep
       maps/
       sheets/
       trainers/
+      group-inventories/
       player-profiles/
       reference-overrides/
     encounter_tables/
@@ -53,7 +55,7 @@ Use the campaign directory as the configured root:
 ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign
 ```
 
-With that setting, Rotom Table reads and writes runtime maps/sheets in `/srv/rotom-table/campaign/rotom-table.sqlite`, player profiles under `/srv/rotom-table/campaign/data/player-profiles/`, campaign reference overrides under `/srv/rotom-table/campaign/data/reference-overrides/`, and encounter tables under `/srv/rotom-table/campaign/encounter_tables/`. Map/sheet JSON directories are used only by explicit import/export maintenance tooling.
+With that setting, Rotom Table reads and writes runtime maps/sheets/group inventory in `/srv/rotom-table/campaign/rotom-table.sqlite`, player profiles under `/srv/rotom-table/campaign/data/player-profiles/`, campaign reference overrides under `/srv/rotom-table/campaign/data/reference-overrides/`, and encounter tables under `/srv/rotom-table/campaign/encounter_tables/`. Map/sheet/group-inventory JSON directories are used only by explicit import/export maintenance tooling.
 
 Do not put private campaign JSON, campaign-specific reference overrides, player profile data, backup archives, unreleased notes, or real environment files in the app checkout at `/srv/rotom-table/app`, especially if that checkout is pushed to a public or shared Git repository.
 
@@ -88,7 +90,7 @@ temp/
 .DS_Store
 ```
 
-Commit and push remaining JSON campaign material normally with Git when that fits your private workflow. Treat SQLite database files as runtime state: prefer private backups or explicit export artifacts over committing the database and WAL sidecars directly. Existing map JSON, Pokémon sheet JSON, and trainer sheet JSON can be imported into SQLite with `ROTOM_CAMPAIGN_ROOT=/path/to/campaign npm run migrate:sqlite -- --backup-root /path/to/private/backups`. The command creates a pre-migration backup, validates JSON-backed player profiles, preserves revisions and folders, leaves source JSON files in place, reports imported and skipped rows, and is safe to rerun. Runtime export uses `npm run export:sqlite-json -- --output /safe/export/path`. Rotom Table does not run Git operations itself; runtime map/sheet APIs read and write SQLite.
+Commit and push remaining JSON campaign material normally with Git when that fits your private workflow. Treat SQLite database files as runtime state: prefer private backups or explicit export artifacts over committing the database and WAL sidecars directly. Existing map JSON, Pokémon sheet JSON, trainer sheet JSON, and exported group inventory JSON can be imported into SQLite with `ROTOM_CAMPAIGN_ROOT=/path/to/campaign npm run migrate:sqlite -- --backup-root /path/to/private/backups`. The command creates a pre-migration backup, validates JSON-backed player profiles, preserves revisions and folders, restores exported group inventory documents with revisions and timestamps, leaves source JSON files in place, reports imported and skipped rows, and is safe to rerun. Runtime export uses `npm run export:sqlite-json -- --output /safe/export/path`, which writes group inventory documents under `data/group-inventories/`. Rotom Table does not run Git operations itself; runtime map/sheet/group-inventory APIs read and write SQLite.
 
 ## Notes
 

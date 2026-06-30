@@ -13,8 +13,14 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
+import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
+import {
+  GROUP_INVENTORY_MAIN_SLUG,
+  GROUP_INVENTORY_SECTION_KEYS,
+  type GroupInventoryDocument,
+} from '~/types/groupInventory'
 import type { TabletopMap } from '~/types/map'
 
 const testDir = dirname(fileURLToPath(import.meta.url))
@@ -55,6 +61,10 @@ const writeJson = (path: string, value: unknown): void => {
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
 }
 
+const emptyGroupInventory = (): GroupInventoryDocument['inventory'] => Object.fromEntries(
+  GROUP_INVENTORY_SECTION_KEYS.map((section) => [section, []]),
+) as unknown as GroupInventoryDocument['inventory']
+
 const makeFixtureCampaign = (): string => {
   const parent = makeTempRoot()
   const campaignRoot = join(parent, 'campaign')
@@ -71,6 +81,17 @@ const makeFixtureCampaign = (): string => {
   })
   writeJson(join(campaignRoot, 'data/trainers/brock.json'), {
     name: 'Brock',
+  })
+  writeJson(join(campaignRoot, 'data/group-inventories/main.json'), {
+    slug: GROUP_INVENTORY_MAIN_SLUG,
+    revision: 7,
+    updatedAt: 1_700_000_000_900,
+    money: 1200,
+    notes: 'Shared stash',
+    inventory: {
+      ...emptyGroupInventory(),
+      pokemonItems: [{ id: 'group-item-potion', name: 'Potion', qty: 5 }],
+    },
   })
   writeJson(join(campaignRoot, 'data/player-profiles/profile_ash00000.json'), {
     schemaVersion: 1,
@@ -116,9 +137,10 @@ describe('SQLite campaign migration script', () => {
     expect(first.status, first.stderr || first.stdout).toBe(0)
     expect(first.stdout).toContain('Maps imported: 1')
     expect(first.stdout).toContain('Sheets imported: 2')
+    expect(first.stdout).toContain('Group inventories imported: 1')
     expect(first.stdout).toContain('Skipped unchanged: 0')
     expect(first.stdout).toContain('Player profiles validated: 1')
-    expect(first.stdout).toContain('Validation: loaded 1 maps and 2 sheets from SQLite')
+    expect(first.stdout).toContain('Validation: loaded 1 maps, 2 sheets, and 1 group inventories from SQLite')
     expect(first.stdout).toContain('Errors: 0')
 
     const backupRoot = join(dirname(campaignRoot), 'backups')
@@ -127,11 +149,13 @@ describe('SQLite campaign migration script', () => {
     const backupPath = join(backupRoot, backupNames[0])
     expect(existsSync(join(backupPath, 'manifest.json'))).toBe(true)
     expect(existsSync(join(backupPath, 'campaign/data/maps/region-one/training-yard.json'))).toBe(true)
+    expect(existsSync(join(backupPath, 'campaign/data/group-inventories/main.json'))).toBe(true)
     expect(existsSync(join(backupPath, 'campaign/data/player-profiles/profile_ash00000.json'))).toBe(true)
 
     const database = openDatabase(campaignRoot)
     const maps = createSqliteMapRepository<TabletopMap>(database)
     const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
+    const groupInventories = createSqliteGroupInventoryRepository(database)
 
     expect(maps.getBySlug('training-yard')).toMatchObject({
       slug: 'training-yard',
@@ -151,12 +175,23 @@ describe('SQLite campaign migration script', () => {
       revision: 0,
       sheet: { slug: 'brock', name: 'Brock', revision: 0 },
     })
+    expect(groupInventories.get(GROUP_INVENTORY_MAIN_SLUG)?.document).toMatchObject({
+      slug: GROUP_INVENTORY_MAIN_SLUG,
+      revision: 7,
+      updatedAt: 1_700_000_000_900,
+      money: 1200,
+      notes: 'Shared stash',
+      inventory: {
+        pokemonItems: [{ id: 'group-item-potion', name: 'Potion', qty: 5 }],
+      },
+    })
 
     const second = runMigration(campaignRoot)
     expect(second.status, second.stderr || second.stdout).toBe(0)
     expect(second.stdout).toContain('Maps imported: 0')
     expect(second.stdout).toContain('Sheets imported: 0')
-    expect(second.stdout).toContain('Skipped unchanged: 3')
+    expect(second.stdout).toContain('Group inventories imported: 0')
+    expect(second.stdout).toContain('Skipped unchanged: 4')
     expect(second.stdout).toContain('Errors: 0')
   })
 
