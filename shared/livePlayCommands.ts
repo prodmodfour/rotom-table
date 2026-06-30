@@ -12,7 +12,10 @@ import type {
   MapWeatherKind,
   SheetPlacement,
 } from '~/types/map'
+import type { GroupInventoryDocument } from '~/types/groupInventory'
+import type { ShopEntrySectionKey, ShopStockValue, ShopTableDocument } from '~/types/shop'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import type { TrainerSheet } from '~/types/trainerSheet'
 import type { AttackOfOpportunityStateUpdatePayload } from './attackOfOpportunityState'
 import type { StartTurnModalStateUpdatePayload } from './startTurnModalState'
 import type { ResolveMoveIntent } from './livePlayMoveResolution'
@@ -60,11 +63,14 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   SET_SCENE: 'setScene',
   UPDATE_ATTACK_OF_OPPORTUNITY: 'updateAttackOfOpportunity',
   UPDATE_START_TURN_MODAL: 'updateStartTurnModal',
+  SHOP_CHECKOUT: 'shopCheckout',
 } as const
 
 export type LivePlayCommandType = (typeof LIVE_PLAY_COMMAND_TYPES)[keyof typeof LIVE_PLAY_COMMAND_TYPES]
+export type LivePlayShopCheckoutCommandType = typeof LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT
+export type LivePlayMapCommandType = Exclude<LivePlayCommandType, LivePlayShopCheckoutCommandType>
 
-export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
+export const LIVE_PLAY_MAP_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
   LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
@@ -93,6 +99,11 @@ export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.SET_SCENE,
   LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
   LIVE_PLAY_COMMAND_TYPES.UPDATE_START_TURN_MODAL,
+] as const satisfies readonly LivePlayMapCommandType[]
+
+export const LIVE_PLAY_COMMAND_TYPE_VALUES = [
+  ...LIVE_PLAY_MAP_COMMAND_TYPE_VALUES,
+  LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
 ] as const satisfies readonly LivePlayCommandType[]
 
 export const LIVE_PLAY_PATCH_TYPES = {
@@ -165,6 +176,15 @@ export const LIVE_PLAY_TOKEN_SCOPE_FIELDS = [
 ] as const
 export type LivePlayTokenScopeField = (typeof LIVE_PLAY_TOKEN_SCOPE_FIELDS)[number]
 
+export const LIVE_PLAY_SHOP_SCOPE_FIELDS = ['stock', 'purchase'] as const
+export type LivePlayShopScopeField = (typeof LIVE_PLAY_SHOP_SCOPE_FIELDS)[number]
+
+export const LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS = ['money', 'inventory'] as const
+export type LivePlayGroupInventoryScopeField = (typeof LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS)[number]
+
+export const SHOP_CHECKOUT_TRAINER_SHEET_SCOPE_FIELDS = ['money', 'inventory'] as const
+export type ShopCheckoutTrainerSheetScopeField = (typeof SHOP_CHECKOUT_TRAINER_SHEET_SCOPE_FIELDS)[number]
+
 export interface LivePlayMapScope {
   readonly kind: 'map'
   readonly lane: LivePlayMapScopeLane
@@ -183,20 +203,48 @@ export interface LivePlaySheetScope {
   readonly field: string
 }
 
-export type LivePlayScope = LivePlayMapScope | LivePlayTokenScope | LivePlaySheetScope
+export interface LivePlayShopScope {
+  readonly kind: 'shop'
+  readonly shopSlug: string
+  readonly field: LivePlayShopScopeField
+}
 
-export interface LivePlayCommandEnvelope<
+export interface LivePlayGroupInventoryScope {
+  readonly kind: 'groupInventory'
+  readonly slug: string
+  readonly field: LivePlayGroupInventoryScopeField
+}
+
+export type ShopCheckoutTrainerSheetScope = LivePlaySheetScope & {
+  readonly sheetKind: 'trainer'
+  readonly field: ShopCheckoutTrainerSheetScopeField
+}
+
+export type LivePlayScope = LivePlayMapScope | LivePlayTokenScope | LivePlaySheetScope
+export type ShopCheckoutLivePlayScope =
+  | LivePlayShopScope
+  | LivePlayGroupInventoryScope
+  | ShopCheckoutTrainerSheetScope
+
+export interface LivePlayCommandCoreEnvelope<
   TType extends string = LivePlayCommandType,
   TPayload = unknown,
-  TScope extends LivePlayScope = LivePlayScope,
+  TScope = unknown,
 > {
   readonly schemaVersion: typeof LIVE_PLAY_COMMAND_SCHEMA_VERSION
   readonly opId: string
-  readonly mapSlug: string
-  readonly baseRevision: number
   readonly type: TType
   readonly scopes: readonly TScope[]
   readonly payload: TPayload
+}
+
+export interface LivePlayCommandEnvelope<
+  TType extends LivePlayMapCommandType = LivePlayMapCommandType,
+  TPayload = unknown,
+  TScope extends LivePlayScope = LivePlayScope,
+> extends LivePlayCommandCoreEnvelope<TType, TPayload, TScope> {
+  readonly mapSlug: string
+  readonly baseRevision: number
 }
 
 export interface MoveTokenPayload {
