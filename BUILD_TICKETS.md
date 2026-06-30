@@ -104,7 +104,7 @@ Add the server-side repository for loading, creating, saving, and live-play-styl
 
 ## 030 — #30: Group inventory: add load API route and client route constants
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/30
 

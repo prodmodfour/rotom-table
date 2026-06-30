@@ -3,6 +3,7 @@ import {
   API_EVENTS_PATH,
   CAMPAIGN_API_PATHS,
   ENCOUNTER_API_PATHS,
+  GROUP_INVENTORY_API_PATHS,
   MAP_API_PATHS,
   PLAYER_PROFILE_API_PATHS,
   POKEDEX_API_PATHS,
@@ -18,6 +19,12 @@ describe('API route constants', () => {
   it('exposes campaign API paths', () => {
     expect(CAMPAIGN_API_PATHS).toEqual({
       nextDay: '/api/campaign/next-day',
+    })
+  })
+
+  it('exposes group inventory API paths', () => {
+    expect(GROUP_INVENTORY_API_PATHS).toEqual({
+      load: '/api/group-inventory/load',
     })
   })
 

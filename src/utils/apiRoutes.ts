@@ -4,6 +4,10 @@ export const CAMPAIGN_API_PATHS = {
   nextDay: '/api/campaign/next-day',
 } as const
 
+export const GROUP_INVENTORY_API_PATHS = {
+  load: '/api/group-inventory/load',
+} as const
+
 export const SESSION_API_PATHS = {
   safety: '/api/sessions/safety',
   start: '/api/sessions/start',
