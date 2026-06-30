@@ -158,7 +158,7 @@ Allow GM users to save direct edits to the group inventory document with revisio
 
 ## 032 — #32: Inventory UI: extract reusable item table from trainer inventory table
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/32
 
