@@ -10,13 +10,13 @@ Rotom Table is a Nuxt 3 application with the app source under `src/`.
 - `src/components/` contains reusable Vue components for dense product UI: library grids, editors, map controls, sheet rows, encounter panels, and reference cards.
 - `src/composables/` coordinates feature state, API calls, autosave flows, and page-level behaviours.
 - `src/utils/` contains pure domain helpers, route helpers, persistence clients, reference indexes, map/sheet utilities, and automation logic.
-- `src/types/` captures the map, sheet, trainer, encounter, Pokémon, and app-owned PTU reference models used across the app.
+- `src/types/` captures the map, sheet, trainer, shop, encounter, Pokémon, and app-owned PTU reference models used across the app.
 
 ## Nitro/server routes
 
 The `server/` directory holds Nitro API routes and server-side application logic.
 
-- `server/api/` exposes endpoints for maps, sheets, player profiles, encounters, Pokédex data, trainer sprites, and realtime events.
+- `server/api/` exposes endpoints for maps, sheets, shops, player profiles, encounters, Pokédex data, trainer sprites, and realtime events.
 - `server/useCases/` keeps core behaviours separate from HTTP route handlers.
 - `server/utils/` contains filesystem paths, JSON read/write helpers, storage adapters, policies, and runtime wrappers.
 
@@ -26,7 +26,7 @@ This structure keeps route handlers thin and makes persistence-heavy behaviours 
 
 Runtime maps and Pokémon/trainer sheets are stored in SQLite. `ROTOM_CAMPAIGN_ROOT` still points campaign-owned paths, remaining JSON systems, and the default SQLite database at a private campaign repository or private host directory.
 
-- Runtime maps, map folders, Pokémon sheets, trainer sheets, sheet folders, and shared group inventory live in `rotom-table.sqlite` (or `ROTOM_DB_PATH`).
+- Runtime maps, map folders, Pokémon sheets, trainer sheets, sheet folders, shared group inventory, and reusable shop tables live in `rotom-table.sqlite` (or `ROTOM_DB_PATH`).
 - Persistent player profiles live under `data/player-profiles/`.
 - Encounter tables live under `encounter_tables/`.
 - Campaign reference override diffs, currently Pokédex maintenance entries, live under `data/reference-overrides/`.
@@ -39,7 +39,7 @@ This keeps private data operator-owned while avoiding a dual JSON/SQLite runtime
 
 All runtime map and Pokémon/trainer sheet paths use a SQLite document store behind server-only repository interfaces. The implementation uses Node's built-in `node:sqlite` module, so there is no additional native SQLite package. `server/storage/database.ts` resolves `ROTOM_DB_PATH` or defaults to `ROTOM_CAMPAIGN_ROOT/rotom-table.sqlite`, opens the database on first repository access, enables WAL for file-backed databases, and applies deterministic migrations from `server/storage/migrations.ts`.
 
-The repositories keep SQL out of use cases and UI code. Map, sheet, folder, interaction-mode, group inventory, and live-play operation records are stored with explicit revision and timestamp columns while preserving JSON document payloads for setup/edit, imports, exports, and backups. The map repository provides normalized map reads, revision-checked setup saves, create/move/rename/delete, logical folders, sheet-reference retargeting, operation-history barriers, and revision-checked live-play updates. The sheet repository provides sheet reads by kind/slug, revision-checked setup saves, create/move/rename/delete, logical folders, atomic map retargeting on sheet rename/delete, and revision-checked live-play sheet updates. Group inventory saves and trainer transfer routes append durable realtime events for the shared inventory and affected trainer sheet documents so other open clients can converge after the committing transaction; see [Group inventory workflow](group-inventory.md) for the page-level workflow and deferred live-play command boundary. Live-play commands that change map state, sheet state, or both use SQLite repository updates and operation-result storage; multi-document commands use one SQLite transaction for the map update, sheet update, and accepted operation result. Operation history also supports terminal `abandoned` rejections: abandonment stores a tombstone under the same map write queue and command hash without changing map/sheet documents, so later exact command retries return the stored rejection instead of applying effects.
+The repositories keep SQL out of use cases and UI code. Map, sheet, folder, interaction-mode, group inventory, and live-play operation records are stored with explicit revision and timestamp columns while preserving JSON document payloads for setup/edit, imports, exports, and backups. The map repository provides normalized map reads, revision-checked setup saves, create/move/rename/delete, logical folders, sheet-reference retargeting, operation-history barriers, and revision-checked live-play updates. The sheet repository provides sheet reads by kind/slug, revision-checked setup saves, create/move/rename/delete, logical folders, atomic map retargeting on sheet rename/delete, and revision-checked live-play sheet updates. The shop table repository stores reusable campaign shop documents with explicit revisions and timestamps in `shop_tables`; current read routes let GMs list/load all shops while players can list/load only shops that are both player-visible and open. Group inventory saves and trainer transfer routes append durable realtime events for the shared inventory and affected trainer sheet documents so other open clients can converge after the committing transaction; see [Group inventory workflow](group-inventory.md) for the page-level workflow and deferred live-play command boundary. Live-play commands that change map state, sheet state, or both use SQLite repository updates and operation-result storage; multi-document commands use one SQLite transaction for the map update, sheet update, and accepted operation result. Operation history also supports terminal `abandoned` rejections: abandonment stores a tombstone under the same map write queue and command hash without changing map/sheet documents, so later exact command retries return the stored rejection instead of applying effects.
 
 ## Shared helpers
 

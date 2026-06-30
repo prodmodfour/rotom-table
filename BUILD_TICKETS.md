@@ -143,7 +143,7 @@ Add the server-side repository for normalized shop table persistence.
 
 ## 004 — SHOPS-004: Add shop route constants and list/load APIs
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Expose shop discovery and loading to browser clients.

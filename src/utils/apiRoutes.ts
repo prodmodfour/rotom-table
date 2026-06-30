@@ -11,6 +11,15 @@ export const GROUP_INVENTORY_API_PATHS = {
   transferToGroup: '/api/group-inventory/transfer-to-group',
 } as const
 
+export const SHOP_API_PATHS = {
+  list: '/api/shops/list',
+  load: '/api/shops/load',
+  create: '/api/shops/create',
+  save: '/api/shops/save',
+  deleteShop: '/api/shops/delete',
+  checkout: '/api/shops/checkout',
+} as const
+
 export const SESSION_API_PATHS = {
   safety: '/api/sessions/safety',
   start: '/api/sessions/start',

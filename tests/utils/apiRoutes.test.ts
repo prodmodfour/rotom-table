@@ -9,6 +9,7 @@ import {
   POKEDEX_API_PATHS,
   SESSION_API_PATHS,
   SHEET_API_PATHS,
+  SHOP_API_PATHS,
 } from '~/utils/apiRoutes'
 
 describe('API route constants', () => {
@@ -49,6 +50,17 @@ describe('API route constants', () => {
       list: '/api/player-profiles/list',
       create: '/api/player-profiles/create',
       update: '/api/player-profiles/update',
+    })
+  })
+
+  it('exposes shop API paths', () => {
+    expect(SHOP_API_PATHS).toEqual({
+      list: '/api/shops/list',
+      load: '/api/shops/load',
+      create: '/api/shops/create',
+      save: '/api/shops/save',
+      deleteShop: '/api/shops/delete',
+      checkout: '/api/shops/checkout',
     })
   })
 
