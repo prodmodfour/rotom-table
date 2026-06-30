@@ -631,7 +631,7 @@ Allow player checkout only when the selected profile is authorized for the reque
 
 ## 020 — SHOPS-020: Add checkout API route for live-play command dispatch
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Expose shop checkout as a live-play command route.
