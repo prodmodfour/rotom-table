@@ -174,7 +174,7 @@ Expose shop discovery and loading to browser clients.
 
 ## 005 — SHOPS-005: Add GM create/save/delete APIs
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Allow GMs to manage shop tables through revision-checked API routes.
