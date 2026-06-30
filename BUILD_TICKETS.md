@@ -291,7 +291,7 @@ Let GM users edit the shared inventory directly through the group inventory page
 
 ## 037 — #37: Group inventory: add shared item merge and quantity transfer helpers
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/37
 
