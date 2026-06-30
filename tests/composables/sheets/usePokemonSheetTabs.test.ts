@@ -11,15 +11,17 @@ describe('usePokemonSheetTabs', () => {
   it('defines the stable pokemon sheet tab order', () => {
     expect(POKEMON_SHEET_TABS.map((tab) => [tab.key, tab.label])).toEqual([
       ['sheet', 'Sheet'],
+      ['vitamins', 'Vitamins'],
       ['knownMoves', 'Known Moves'],
       ['gm', 'GM'],
     ])
-    expect(pokemonSheetTabsFor(false).map((tab) => tab.key)).toEqual(['sheet', 'knownMoves'])
-    expect(pokemonSheetTabsFor(true).map((tab) => tab.key)).toEqual(['sheet', 'knownMoves', 'gm'])
+    expect(pokemonSheetTabsFor(false).map((tab) => tab.key)).toEqual(['sheet', 'vitamins', 'knownMoves'])
+    expect(pokemonSheetTabsFor(true).map((tab) => tab.key)).toEqual(['sheet', 'vitamins', 'knownMoves', 'gm'])
   })
 
   it('validates tab keys', () => {
     expect(isPokemonSheetTabKey('sheet')).toBe(true)
+    expect(isPokemonSheetTabKey('vitamins')).toBe(true)
     expect(isPokemonSheetTabKey('knownMoves')).toBe(true)
     expect(isPokemonSheetTabKey('gm')).toBe(true)
     expect(isPokemonSheetTabKey('eggMoves')).toBe(false)
@@ -32,8 +34,10 @@ describe('usePokemonSheetTabs', () => {
     const includeGmTab = ref(false)
     const tabs = usePokemonSheetTabs({ includeGmTab: computed(() => includeGmTab.value) })
 
-    expect(tabs.tabs.value.map((tab) => tab.key)).toEqual(['sheet', 'knownMoves'])
+    expect(tabs.tabs.value.map((tab) => tab.key)).toEqual(['sheet', 'vitamins', 'knownMoves'])
     expect(tabs.activeTab.value).toBe('sheet')
+    tabs.setActiveTab('vitamins')
+    expect(tabs.activeTab.value).toBe('vitamins')
     tabs.setActiveTab('knownMoves')
     expect(tabs.activeTab.value).toBe('knownMoves')
     tabs.setActiveTab('gm')
@@ -45,7 +49,7 @@ describe('usePokemonSheetTabs', () => {
 
     includeGmTab.value = true
     await nextTick()
-    expect(tabs.tabs.value.map((tab) => tab.key)).toEqual(['sheet', 'knownMoves', 'gm'])
+    expect(tabs.tabs.value.map((tab) => tab.key)).toEqual(['sheet', 'vitamins', 'knownMoves', 'gm'])
     tabs.setActiveTab('gm')
     expect(tabs.activeTab.value).toBe('gm')
 

@@ -2,6 +2,7 @@ import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 
 const POKEMON_SHEET_TAB_DEFS = [
   { key: 'sheet', label: 'Sheet' },
+  { key: 'vitamins', label: 'Vitamins' },
   { key: 'knownMoves', label: 'Known Moves' },
   { key: 'gm', label: 'GM' },
 ] as const

@@ -180,18 +180,6 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
         />
       </div>
 
-      <!-- ============ Vitamins / Permanent stat items ============ -->
-      <PokemonVitaminsPanel
-        :sheet="sheet"
-        :vitamin-summary="vitaminSummary"
-        :tutor-points-earned="tutorPointsEarned"
-        :tutor-points-left="tutorPointsLeft"
-        @set-vitamin-stat-count="setVitaminStatCount"
-        @set-vitamin-flag="setVitaminFlag"
-        @set-vitamin-number="setVitaminNumber"
-        @set-vitamin-text="setVitaminText"
-      />
-
       <!-- ============ Items / Weapon ============ -->
       <PokemonEquipmentPanel
         :sheet="sheet"
@@ -244,6 +232,20 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
       <PokemonSkillsPanel
         :sheet="sheet"
         :skills="skills"
+      />
+    </div>
+
+    <div v-if="activeTab === 'vitamins'" class="pokemon-sheet__tab-panel">
+      <!-- ============ Vitamins / Permanent stat items ============ -->
+      <PokemonVitaminsPanel
+        :sheet="sheet"
+        :vitamin-summary="vitaminSummary"
+        :tutor-points-earned="tutorPointsEarned"
+        :tutor-points-left="tutorPointsLeft"
+        @set-vitamin-stat-count="setVitaminStatCount"
+        @set-vitamin-flag="setVitaminFlag"
+        @set-vitamin-number="setVitaminNumber"
+        @set-vitamin-text="setVitaminText"
       />
     </div>
 
