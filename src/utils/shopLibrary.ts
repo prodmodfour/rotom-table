@@ -9,6 +9,10 @@ export const shopEntryCountLabel = (shop: Pick<ShopTableDocument, 'entries'>): s
   formatShopEntryCount(shop.entries.length)
 )
 
+export const isOpenPlayerVisibleShop = (
+  shop: Pick<ShopTableDocument, 'open' | 'playerVisible'>,
+): boolean => shop.open === true && shop.playerVisible === true
+
 const updatedAtDate = (updatedAt: number): Date | null => {
   const date = new Date(updatedAt)
   return Number.isNaN(date.getTime()) ? null : date

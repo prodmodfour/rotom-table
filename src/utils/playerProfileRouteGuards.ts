@@ -10,6 +10,7 @@ import { POKEDEX_PATH } from '~/utils/pokedex/routes'
 import { PLAYER_TRAINER_PORTAL_PATH } from '~/utils/playerTrainerPortalRoutes'
 import { REFERENCE_PATH_BY_KIND } from '~/utils/reference/routes'
 import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
+import { SHOP_LIBRARY_PATH } from '~/utils/shopRoutes'
 
 export const PLAYER_PROFILE_REQUIRED_QUERY_KEY = 'profileRequired' as const
 export const PLAYER_PROFILE_REQUIRED_QUERY_VALUE = '1' as const
@@ -23,11 +24,13 @@ export const PLAYER_PROFILE_OPTIONAL_EXACT_PATHS = [
   MAP_LIBRARY_PATH,
   GROUP_INVENTORY_PATH,
   PLAYER_TRAINER_PORTAL_PATH,
+  SHOP_LIBRARY_PATH,
   SESSION_LOBBY_PATH,
   SETTINGS_PATH,
 ] as const
 
 export const PLAYER_PROFILE_OPTIONAL_PATH_PREFIXES = [
+  SHOP_LIBRARY_PATH,
   POKEDEX_PATH,
   ...Object.values(REFERENCE_PATH_BY_KIND),
 ] as const

@@ -277,7 +277,7 @@ Let GMs browse and create shop tables from `/shops`.
 
 ## 009 — SHOPS-009: Add player shop library page
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Let players browse open, visible shops from `/shops`.

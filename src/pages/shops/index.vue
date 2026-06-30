@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import PlayerShopLibraryCard from '~/components/shops/PlayerShopLibraryCard.vue'
 import ShopLibraryCard from '~/components/shops/ShopLibraryCard.vue'
 import { useGmShopLibraryPage } from '~/composables/shops/useGmShopLibraryPage'
+import { usePlayerShopLibraryPage } from '~/composables/shops/usePlayerShopLibraryPage'
 
-type PlayerShopLibraryShellStatus = 'loading' | 'empty' | 'error'
-
-const { isGm } = useAuth()
-
-const playerLibraryStatus = ref<PlayerShopLibraryShellStatus>('empty')
-const playerLibraryErrorMessage = ref<string | null>(null)
+const { isGm, isPlayer } = useAuth()
+const isPlayerShopLibraryEnabled = computed(() => isPlayer.value)
 
 const {
   shops,
@@ -21,15 +19,12 @@ const {
   createShop,
 } = useGmShopLibraryPage({ isGm })
 
-const playerEmptyHeading = computed(() => 'No shops are currently displayed')
-const playerEmptyDescription = computed(() => (
-  'The player shop browser route is ready. Open, player-visible shopfronts will appear here once the browser is wired.'
-))
-
-const resetPlayerShopLibraryShell = () => {
-  playerLibraryErrorMessage.value = null
-  playerLibraryStatus.value = 'empty'
-}
+const {
+  shops: playerShops,
+  status: playerShopLibraryStatus,
+  loadErrorMessage: playerShopLibraryErrorMessage,
+  loadPlayerShops,
+} = usePlayerShopLibraryPage({ isEnabled: isPlayerShopLibraryEnabled })
 
 useHead({
   title: 'Shops · Rotom Table',
@@ -116,36 +111,44 @@ useHead({
       </section>
     </section>
 
-    <section v-else class="shops-state" aria-label="Shop library status">
+    <section v-else class="shops-state" aria-label="Open shop library">
       <article
-        v-if="playerLibraryStatus === 'loading'"
+        v-if="playerShopLibraryStatus === 'loading'"
         class="shops-panel panel-card"
         aria-busy="true"
         aria-live="polite"
       >
         <p class="shops-eyebrow">Loading</p>
-        <h2>Loading shops…</h2>
-        <p>Preparing the shop library shell.</p>
+        <h2>Loading open shops…</h2>
+        <p>Loading open, player-visible shopfronts for this campaign.</p>
       </article>
 
       <article
-        v-else-if="playerLibraryStatus === 'error'"
+        v-else-if="playerShopLibraryStatus === 'error'"
         class="shops-panel shops-panel--error panel-card"
         role="alert"
       >
         <p class="shops-eyebrow">Unavailable</p>
-        <h2>Could not open shops</h2>
-        <p>{{ playerLibraryErrorMessage ?? 'The shop library shell could not be prepared.' }}</p>
-        <button type="button" class="shops-action" @click="resetPlayerShopLibraryShell">
-          Return to shop shell
+        <h2>Could not load shops</h2>
+        <p>{{ playerShopLibraryErrorMessage ?? 'Open shops could not be loaded.' }}</p>
+        <button type="button" class="shops-action" @click="loadPlayerShops">
+          Retry loading shops
         </button>
       </article>
 
-      <article v-else class="shops-panel panel-card" role="status">
+      <article v-else-if="playerShopLibraryStatus === 'empty'" class="shops-panel panel-card" role="status">
         <p class="shops-eyebrow">Empty</p>
-        <h2>{{ playerEmptyHeading }}</h2>
-        <p>{{ playerEmptyDescription }}</p>
+        <h2>No shops are currently open</h2>
+        <p>Open player-visible shopfronts will appear here when the GM opens them for players.</p>
       </article>
+
+      <section v-else class="shops-grid" aria-label="Open shops">
+        <PlayerShopLibraryCard
+          v-for="shop in playerShops"
+          :key="shop.slug"
+          :shop="shop"
+        />
+      </section>
     </section>
   </main>
 </template>

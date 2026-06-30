@@ -1,6 +1,7 @@
 import { computed, onMounted, ref, type Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ShopTableDocument } from '~/types/shop'
+import type { ShopListResponse } from '~/composables/shops/shopLibraryApi'
 import type { ApiClient } from '~/utils/apiClient'
 import { SHOP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
@@ -11,10 +12,6 @@ import { useAuth } from '~/composables/useAuth'
 
 export type GmShopLibraryStatus = 'loading' | 'empty' | 'ready' | 'error'
 export type GmShopCreateStatus = 'idle' | 'creating'
-
-export interface ShopListResponse {
-  readonly shops: readonly ShopTableDocument[]
-}
 
 export interface CreateShopResponse {
   readonly ok: true
