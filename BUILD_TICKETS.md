@@ -302,7 +302,7 @@ Let players browse open, visible shops from `/shops`.
 
 ## 010 — SHOPS-010: Add reusable shop entry editor table
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Add a GM-facing editor component for shop entries.
