@@ -2,9 +2,12 @@
 import { computed } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import GroupInventoryPanel from '~/components/inventory/GroupInventoryPanel.vue'
+import { useGroupInventoryEditor } from '~/composables/useGroupInventoryEditor'
 import { GROUP_INVENTORY_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
+
+const { isGm } = useAuth()
 
 const {
   data: groupInventoryDocument,
@@ -16,6 +19,8 @@ const {
   key: 'group-inventory-main',
 })
 
+const groupInventoryEditor = useGroupInventoryEditor(groupInventoryDocument, { canEdit: isGm })
+
 const isGroupInventoryLoading = computed(() => (
   groupInventoryStatus.value === 'idle' || groupInventoryStatus.value === 'pending'
 ))
@@ -24,6 +29,10 @@ const groupInventoryErrorMessage = computed(() => (
     ? getErrorMessage(groupInventoryError.value, { fallback: 'The shared inventory could not be loaded.' })
     : null
 ))
+
+const reloadGroupInventory = async () => {
+  await refreshGroupInventory()
+}
 
 useHead({
   title: 'Inventory · Rotom Table',
@@ -45,7 +54,7 @@ useHead({
         <p class="group-inventory-eyebrow">Party inventory</p>
         <h1>Inventory</h1>
         <p>
-          View the shared campaign inventory for the table. This page loads the authoritative group inventory document for both GMs and players in read-only mode.
+          View the shared campaign inventory for the table. GMs can edit and save the authoritative document with revision protection; players continue to see read-only inventory state.
         </p>
       </div>
     </header>
@@ -76,8 +85,14 @@ useHead({
       </article>
 
       <GroupInventoryPanel
-        v-else-if="groupInventoryDocument"
-        :document="groupInventoryDocument"
+        v-else-if="groupInventoryEditor.document.value"
+        :document="groupInventoryEditor.document.value"
+        :can-edit="isGm"
+        :is-dirty="groupInventoryEditor.isDirty.value"
+        :save-status="groupInventoryEditor.saveStatus.value"
+        :save-error="groupInventoryEditor.saveError.value"
+        @save="groupInventoryEditor.save"
+        @reload-after-conflict="reloadGroupInventory"
       />
 
       <article v-else class="group-inventory-panel panel-card" role="status">

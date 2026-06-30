@@ -263,7 +263,7 @@ Render the authoritative group inventory document in the new page using the reus
 
 ## 036 — #36: Group inventory: enable GM direct editing and save on the inventory page
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/36
 

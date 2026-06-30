@@ -12,8 +12,56 @@ const IconStub = defineComponent({
   template: '<span aria-hidden="true" />',
 })
 
+const NameCellStub = defineComponent({
+  name: 'TrainerInventoryItemNameCell',
+  props: {
+    modelValue: { type: String, default: '' },
+    options: { type: Array, default: () => [] },
+    placeholder: { type: String, default: '' },
+  },
+  emits: ['commit'],
+  template: `
+    <button
+      type="button"
+      class="name-cell-stub"
+      :data-options-count="options.length"
+      :data-placeholder="placeholder"
+      @click="$emit('commit', 'Potion')"
+    >
+      {{ modelValue || placeholder }}
+    </button>
+  `,
+})
+
+const EditableCellStub = defineComponent({
+  name: 'EditableCell',
+  props: {
+    modelValue: { type: [String, Number], default: undefined },
+    type: { type: String, default: 'text' },
+    min: { type: Number, default: undefined },
+    placeholder: { type: String, default: '' },
+    multiline: { type: Boolean, default: false },
+  },
+  emits: ['update:modelValue'],
+  template: `
+    <button
+      type="button"
+      class="editable-cell-stub"
+      :data-type="type"
+      :data-min="min ?? ''"
+      :data-placeholder="placeholder"
+      :data-multiline="multiline ? 'true' : 'false'"
+      @click="$emit('update:modelValue', 7)"
+    >
+      {{ modelValue ?? placeholder ?? '—' }}
+    </button>
+  `,
+})
+
 const mountGlobal = {
   stubs: {
+    EditableCell: EditableCellStub,
+    TrainerInventoryItemNameCell: NameCellStub,
     PhPlus: IconStub,
     PhX: IconStub,
   },
@@ -56,6 +104,8 @@ describe('GroupInventoryPanel', () => {
     expect(wrapper.findAll('.inventory-subtab-count').map((count) => count.text())).toEqual(['1', '1', '0', '0', '0', '1'])
     expect(wrapper.find('.row-add').exists()).toBe(false)
     expect(wrapper.find('.row-remove').exists()).toBe(false)
+    expect(wrapper.find('.name-cell-stub').exists()).toBe(false)
+    expect(wrapper.find('.editable-cell-stub').exists()).toBe(false)
     expect(wrapper.text()).toContain('Town Map')
     expect(wrapper.text()).toContain('Shared supplies are kept at the lodge.')
 
@@ -82,6 +132,64 @@ describe('GroupInventoryPanel', () => {
       'Cost',
       'Description',
     ])
+  })
+
+  it('lets GMs edit money and manage rows before emitting a save request', async () => {
+    const document = groupInventoryFixture()
+    const wrapper = mount(GroupInventoryPanel, {
+      props: {
+        document,
+        canEdit: true,
+        isDirty: true,
+        saveStatus: 'idle',
+      },
+      global: mountGlobal,
+    })
+
+    expect(wrapper.text()).toContain('Edit the authoritative campaign inventory document')
+    expect(wrapper.find('[aria-label="Shared inventory save controls"]').exists()).toBe(true)
+    const moneyInput = wrapper.find('.group-inventory-panel__money-editor input')
+    expect((moneyInput.element as HTMLInputElement).value).toBe('1250')
+
+    await moneyInput.setValue('1500')
+    expect(document.money).toBe(1500)
+
+    await wrapper.find('.row-add').trigger('click')
+    expect(document.inventory.keyItems).toHaveLength(2)
+    expect(document.inventory.keyItems?.[1]).toMatchObject({ name: '', qty: 1 })
+    expect(document.inventory.keyItems?.[1]?.id).toMatch(/^group-item-/)
+
+    const nameCells = wrapper.findAll('.name-cell-stub')
+    await nameCells[nameCells.length - 1]?.trigger('click')
+    expect(document.inventory.keyItems?.[1]).toMatchObject({
+      name: 'Potion',
+      qty: 1,
+      cost: '$200',
+    })
+
+    const removeButtons = wrapper.findAll('.row-remove')
+    await removeButtons[removeButtons.length - 1]?.trigger('click')
+    expect(document.inventory.keyItems).toHaveLength(1)
+
+    await wrapper.find('.group-inventory-panel__save-button').trigger('click')
+    expect(wrapper.emitted('save')).toEqual([[]])
+  })
+
+  it('shows conflict feedback with an explicit reload action', async () => {
+    const wrapper = mount(GroupInventoryPanel, {
+      props: {
+        document: groupInventoryFixture(),
+        canEdit: true,
+        isDirty: true,
+        saveStatus: 'conflict',
+        saveError: 'Group inventory main has changed; reload before saving.',
+      },
+      global: mountGlobal,
+    })
+
+    expect(wrapper.find('[role="alert"]').text()).toContain('reload before saving')
+    await wrapper.find('.group-inventory-panel__reload-button').trigger('click')
+    expect(wrapper.emitted('reloadAfterConflict')).toEqual([[]])
   })
 
   it('announces an accessible empty state when every section is empty', () => {
