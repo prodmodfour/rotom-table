@@ -540,7 +540,7 @@ Implement the domain logic for checkout without persistence or API side effects.
 
 ## 017 — SHOPS-017: Add server-side checkout command parser and scope validation
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Validate shop checkout live-play command envelopes before applying them.
