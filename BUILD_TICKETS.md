@@ -15,7 +15,7 @@ Autonomous cycle rules for every ticket: implement only the selected ticket, run
 
 ## 027 — #27: Group inventory: add shared document types and normalizers
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/27
 
