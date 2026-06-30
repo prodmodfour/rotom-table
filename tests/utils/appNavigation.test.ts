@@ -5,7 +5,7 @@ import {
   filterAppNavItems,
   isAppNavItemActive,
 } from '~/utils/appNavigation'
-import { CAMPAIGN_PATH, LOGIN_PATH, SETTINGS_PATH, USEFUL_CHARTS_PATH } from '~/utils/appRoutes'
+import { CAMPAIGN_PATH, GROUP_INVENTORY_PATH, LOGIN_PATH, SETTINGS_PATH, USEFUL_CHARTS_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import {
@@ -18,6 +18,7 @@ describe('app navigation helpers', () => {
   it('filters GM-only nav items while keeping normal player navigation available', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
       '/maps',
+      GROUP_INVENTORY_PATH,
       '/pokedex',
       '/trainers',
       SETTINGS_PATH,
@@ -26,6 +27,7 @@ describe('app navigation helpers', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).map((item) => item.path)).toEqual([
       '/maps',
       CAMPAIGN_PATH,
+      GROUP_INVENTORY_PATH,
       '/pokedex',
       '/sheets',
       SETTINGS_PATH,
@@ -33,6 +35,8 @@ describe('app navigation helpers', () => {
       '/generate',
     ])
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).some((item) => item.path === '/sessions')).toBe(false)
+    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).find((item) => item.path === GROUP_INVENTORY_PATH)?.label).toBe('Inventory')
+    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === GROUP_INVENTORY_PATH)?.label).toBe('Inventory')
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === SETTINGS_PATH)?.label).toBe('Settings')
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === PLAYER_PROFILE_MANAGEMENT_PATH)?.label).toBe('Players')
     expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
@@ -56,6 +60,9 @@ describe('app navigation helpers', () => {
     expect(isAppNavItemActive('/maps/airship', '/maps')).toBe(true)
     expect(isAppNavItemActive('/grids/legacy', '/maps')).toBe(true)
     expect(isAppNavItemActive('/sheets', '/maps')).toBe(false)
+    expect(isAppNavItemActive('/group-inventory', GROUP_INVENTORY_PATH)).toBe(true)
+    expect(isAppNavItemActive('/group-inventory/history', GROUP_INVENTORY_PATH)).toBe(true)
+    expect(isAppNavItemActive('/group-inventory-tools', GROUP_INVENTORY_PATH)).toBe(false)
     expect(isAppNavItemActive('/trainers', '/trainers')).toBe(true)
     expect(isAppNavItemActive('/sheets/trainers/brock', '/trainers')).toBe(true)
     expect(isAppNavItemActive('/sheets/pikachu', '/trainers')).toBe(true)

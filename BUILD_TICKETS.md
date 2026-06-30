@@ -208,7 +208,7 @@ Extract the inventory section tab UI so group inventory and trainer inventory ca
 
 ## 034 — #34: Group inventory: add page shell and navigation entry
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/34
 

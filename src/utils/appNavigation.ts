@@ -1,4 +1,13 @@
-import { CAMPAIGN_PATH, HOME_PATH, SETTINGS_PATH, USEFUL_CHARTS_PATH, isHomePath, isSettingsPath } from '~/utils/appRoutes'
+import {
+  CAMPAIGN_PATH,
+  GROUP_INVENTORY_PATH,
+  HOME_PATH,
+  SETTINGS_PATH,
+  USEFUL_CHARTS_PATH,
+  isGroupInventoryPath,
+  isHomePath,
+  isSettingsPath,
+} from '~/utils/appRoutes'
 import { ENCOUNTER_GENERATOR_PATH, ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { isLegacyGridPath } from '~/utils/legacyGridRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
@@ -18,6 +27,7 @@ export interface AppNavItem {
 export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: MAP_LIBRARY_PATH, label: 'Maps' },
   { path: CAMPAIGN_PATH, label: 'Campaign', gmOnly: true },
+  { path: GROUP_INVENTORY_PATH, label: 'Inventory' },
   { path: POKEDEX_PATH, label: 'Pokédex' },
   { path: PLAYER_TRAINER_PORTAL_PATH, label: 'Trainers', playerOnly: true },
   { path: SHEET_LIBRARY_PATH, label: 'Sheets', gmOnly: true },
@@ -63,6 +73,8 @@ export const isAppNavItemActive = (currentPath: string, itemPath: string): boole
       || currentPath === SHEET_LIBRARY_PATH
       || currentPath.startsWith(`${SHEET_LIBRARY_PATH}/`)
   }
+
+  if (itemPath === GROUP_INVENTORY_PATH) return isGroupInventoryPath(currentPath)
 
   if (itemPath === SETTINGS_PATH) return isSettingsPath(currentPath)
 

@@ -1,6 +1,7 @@
 export const HOME_PATH = '/'
 export const LOGIN_PATH = '/login'
 export const CAMPAIGN_PATH = '/campaign'
+export const GROUP_INVENTORY_PATH = '/group-inventory'
 export const SETTINGS_PATH = '/settings'
 export const USEFUL_CHARTS_PATH = '/useful-charts'
 export const SESSION_LOBBY_PATH = '/sessions'
@@ -22,6 +23,8 @@ export const loginPath = (): typeof LOGIN_PATH => LOGIN_PATH
 
 export const campaignPath = (): typeof CAMPAIGN_PATH => CAMPAIGN_PATH
 
+export const groupInventoryPath = (): typeof GROUP_INVENTORY_PATH => GROUP_INVENTORY_PATH
+
 export const settingsPath = (): typeof SETTINGS_PATH => SETTINGS_PATH
 
 export const usefulChartsPath = (): typeof USEFUL_CHARTS_PATH => USEFUL_CHARTS_PATH
@@ -42,6 +45,10 @@ export const GM_ONLY_PATH_PREFIXES = [
 ] as const
 
 export const isHomePath = (path: string): boolean => path === HOME_PATH
+
+export const isGroupInventoryPath = (path: string): boolean => (
+  path === GROUP_INVENTORY_PATH || path.startsWith(`${GROUP_INVENTORY_PATH}/`)
+)
 
 export const isSettingsPath = (path: string): boolean => (
   path === SETTINGS_PATH || path.startsWith(`${SETTINGS_PATH}/`)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CAMPAIGN_PATH, LOGIN_PATH, SESSION_LOBBY_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
+import { CAMPAIGN_PATH, GROUP_INVENTORY_PATH, LOGIN_PATH, SESSION_LOBBY_PATH, SETTINGS_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_GENERATOR_PATH } from '~/utils/encounterRoutes'
 import { DEFAULT_LOGIN_REDIRECT } from '~/utils/loginRedirect'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
@@ -29,6 +29,8 @@ describe('player profile-aware route guards', () => {
     expect(isPlayerProfileOptionalPath(referenceDetailPath('rule', 'combat-stages'))).toBe(true)
     expect(isPlayerProfileOptionalPath(MAP_LIBRARY_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(`${MAP_LIBRARY_PATH}?folder=routes`)).toBe(true)
+    expect(isPlayerProfileOptionalPath(GROUP_INVENTORY_PATH)).toBe(true)
+    expect(isPlayerProfileOptionalPath(`${GROUP_INVENTORY_PATH}?tab=medicalKit`)).toBe(true)
     expect(isPlayerProfileOptionalPath(PLAYER_TRAINER_PORTAL_PATH)).toBe(true)
     expect(isPlayerProfileOptionalPath(`${PLAYER_TRAINER_PORTAL_PATH}?folder=party`)).toBe(true)
     expect(isPlayerProfileOptionalPath(SHEET_LIBRARY_PATH)).toBe(false)
@@ -59,6 +61,17 @@ describe('player profile-aware route guards', () => {
     })).toEqual({
       type: 'login',
       location: authRequiredLoginRoute('/moves/tackle?from=map'),
+    })
+
+    expect(resolveProfileAwareRouteGuard({
+      path: GROUP_INVENTORY_PATH,
+      fullPath: GROUP_INVENTORY_PATH,
+      hasRole: false,
+      isPlayer: false,
+      hasSelectedPlayerProfile: false,
+    })).toEqual({
+      type: 'login',
+      location: authRequiredLoginRoute(GROUP_INVENTORY_PATH),
     })
 
     expect(resolveProfileAwareRouteGuard({
@@ -97,6 +110,7 @@ describe('player profile-aware route guards', () => {
   it('does not over-restrict players without profiles from browsing allowed app routes', () => {
     for (const path of [
       '/maps',
+      GROUP_INVENTORY_PATH,
       PLAYER_TRAINER_PORTAL_PATH,
       '/pokedex/pikachu',
       '/moves/tackle',

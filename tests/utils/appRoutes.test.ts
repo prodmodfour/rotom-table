@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CAMPAIGN_PATH,
   GM_ONLY_PATH_PREFIXES,
+  GROUP_INVENTORY_PATH,
   HOME_PATH,
   LOGIN_PATH,
   SESSION_LOBBY_GM_SECTION_ID,
@@ -10,7 +11,9 @@ import {
   SESSION_LOBBY_REMEMBERED_SECTION_ID,
   SETTINGS_PATH,
   campaignPath,
+  groupInventoryPath,
   homePath,
+  isGroupInventoryPath,
   isHomePath,
   isSettingsPath,
   loginPath,
@@ -23,13 +26,15 @@ import {
 } from '~/utils/appRoutes'
 
 describe('app route helpers', () => {
-  it('exposes canonical home, login, campaign, settings, and session lobby routes', () => {
+  it('exposes canonical home, login, campaign, inventory, settings, and session lobby routes', () => {
     expect(HOME_PATH).toBe('/')
     expect(homePath()).toBe('/')
     expect(LOGIN_PATH).toBe('/login')
     expect(loginPath()).toBe('/login')
     expect(CAMPAIGN_PATH).toBe('/campaign')
     expect(campaignPath()).toBe('/campaign')
+    expect(GROUP_INVENTORY_PATH).toBe('/group-inventory')
+    expect(groupInventoryPath()).toBe('/group-inventory')
     expect(SETTINGS_PATH).toBe('/settings')
     expect(settingsPath()).toBe('/settings')
     expect(GM_ONLY_PATH_PREFIXES).toEqual([CAMPAIGN_PATH])
@@ -47,10 +52,13 @@ describe('app route helpers', () => {
     expect(sessionLobbyRememberedPath()).toBe('/sessions#remembered-session-title')
   })
 
-  it('recognizes only the exact home path and exact-or-nested settings paths', () => {
+  it('recognizes exact home, exact-or-nested inventory, and exact-or-nested settings paths', () => {
     expect(isHomePath('/')).toBe(true)
     expect(isHomePath('/maps')).toBe(false)
     expect(isHomePath('/?redirect=/maps')).toBe(false)
+    expect(isGroupInventoryPath('/group-inventory')).toBe(true)
+    expect(isGroupInventoryPath('/group-inventory/history')).toBe(true)
+    expect(isGroupInventoryPath('/group-inventory-tools')).toBe(false)
     expect(isSettingsPath('/settings')).toBe(true)
     expect(isSettingsPath('/settings/campaign')).toBe(true)
     expect(isSettingsPath('/settings-tools')).toBe(false)
