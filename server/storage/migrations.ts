@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 5
+export const LATEST_STORAGE_SCHEMA_VERSION = 6
 
 export interface StorageMigration {
   readonly version: number
@@ -110,6 +110,17 @@ const createRealtimeEventLogTables = (connection: DatabaseSync): void => {
   `)
 }
 
+const createGroupInventoryTables = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS group_inventories (
+      slug TEXT PRIMARY KEY,
+      document_json TEXT NOT NULL,
+      revision INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -135,6 +146,11 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 5,
     name: 'store durable realtime event log',
     up: createRealtimeEventLogTables,
+  },
+  {
+    version: 6,
+    name: 'store campaign group inventory documents',
+    up: createGroupInventoryTables,
   },
 ]
 

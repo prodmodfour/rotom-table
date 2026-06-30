@@ -46,7 +46,7 @@ None.
 
 ## 028 — #28: Group inventory: add SQLite migration for campaign inventories
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/28
 
