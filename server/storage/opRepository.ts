@@ -1,6 +1,5 @@
 import {
   parseLivePlayMapSlug,
-  parseLivePlayOpId,
   validateLivePlayCommandEnvelope,
   type LivePlayCommandAccepted,
   type LivePlayScope,
@@ -12,6 +11,7 @@ import {
   type LivePlayCommandHash,
   type StorableLivePlayCommandResult,
 } from '../livePlay/opResult'
+import { validateLivePlayOperationId } from '../livePlay/commandIdempotency'
 import {
   LIVE_PLAY_OP_STORE_SCHEMA_VERSION,
   type LivePlayOpRecord,
@@ -86,7 +86,7 @@ const rowToOpRecord = (row: OpRow): SqliteLivePlayOpRecord => {
   if (typeof row.command_json !== 'string') throw new Error('live_play_ops.command_json must be a string')
   if (typeof row.result_json !== 'string') throw new Error('live_play_ops.result_json must be a string')
 
-  const opId = parseLivePlayOpId(row.op_id, 'live_play_ops.op_id')
+  const opId = validateLivePlayOperationId(row.op_id, 'live_play_ops.op_id')
   const mapSlug = parseLivePlayMapSlug(row.map_slug, 'live_play_ops.map_slug')
   const commandHash = validateCommandHash(row.command_hash)
   const command = parseStoredDocumentJson<unknown>(row.command_json, `live-play op ${opId} command`)
@@ -161,7 +161,7 @@ const createdAtFromInput = (
 
 const validateSaveInput = (input: SaveLivePlayOpResultInput): void => {
   const mapSlug = parseLivePlayMapSlug(input.mapSlug, 'live-play op mapSlug')
-  const opId = parseLivePlayOpId(input.opId, 'live-play op opId')
+  const opId = validateLivePlayOperationId(input.opId, 'live-play op opId')
   validateCommandHash(input.commandHash)
 
   if (!isStorableLivePlayCommandResult(input.result)) {
@@ -182,7 +182,7 @@ export const createSqliteLivePlayOpRepository = (
   const clock = options.clock ?? Date.now
 
   const findByOpId = (opId: string): SqliteLivePlayOpRecord | null => {
-    const parsedOpId = parseLivePlayOpId(opId, 'live-play op opId')
+    const parsedOpId = validateLivePlayOperationId(opId, 'live-play op opId')
     const row = database.connection.prepare(`
       SELECT op_id, map_slug, command_hash, command_json, result_json, result_revision, created_at
       FROM live_play_ops
@@ -224,7 +224,7 @@ export const createSqliteLivePlayOpRepository = (
     database.withTransaction(() => {
       validateSaveInput(input)
       const mapSlug = parseLivePlayMapSlug(input.mapSlug, 'live-play op mapSlug')
-      const opId = parseLivePlayOpId(input.opId, 'live-play op opId')
+      const opId = validateLivePlayOperationId(input.opId, 'live-play op opId')
       const existing = findByOpId(opId)
       if (existing) {
         if (existing.mapSlug !== mapSlug || existing.commandHash !== input.commandHash) {

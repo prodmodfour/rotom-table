@@ -483,7 +483,7 @@ Provide durable idempotency for shop checkout commands.
 
 ## 015 — SHOPS-015: Extract reusable live-play command idempotency helpers
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Avoid duplicating hash/result/idempotency logic between map live-play commands and shop checkout commands.

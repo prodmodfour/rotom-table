@@ -1,6 +1,5 @@
 import { validateSlug } from '#shared/paths'
 import {
-  parseLivePlayOpId,
   validateShopCheckoutCommandEnvelope,
   type ShopCheckoutLivePlayCommand,
 } from '#shared/livePlayCommands'
@@ -14,6 +13,7 @@ import {
   type ShopCheckoutCommandHash,
   type StorableShopCheckoutCommandResult,
 } from '../livePlay/shopCheckoutOpResult'
+import { validateLivePlayOperationId } from '../livePlay/commandIdempotency'
 import { getRotomDatabase, type RotomDatabase } from './database'
 import {
   cloneStoredJson,
@@ -117,7 +117,7 @@ const rowToOperationRecord = (row: ShopCheckoutOperationRow): SqliteShopCheckout
   if (typeof row.command_json !== 'string') throw new Error('shop_checkout_ops.command_json must be a string')
   if (typeof row.result_json !== 'string') throw new Error('shop_checkout_ops.result_json must be a string')
 
-  const opId = parseLivePlayOpId(row.op_id, 'shop_checkout_ops.op_id')
+  const opId = validateLivePlayOperationId(row.op_id, 'shop_checkout_ops.op_id')
   const shopSlug = validateSlug(row.shop_slug, 'shop_checkout_ops.shop_slug')
   const commandHash = validateCommandHash(row.command_hash)
   const command = parseStoredCommand(row.command_json, opId)
@@ -170,7 +170,7 @@ const validateSaveInput = (
   input: SaveShopCheckoutOperationResultInput,
 ): { readonly shopSlug: string; readonly opId: string; readonly commandHash: ShopCheckoutCommandHash } => {
   const shopSlug = validateSlug(input.shopSlug, 'shop checkout op shopSlug')
-  const opId = parseLivePlayOpId(input.opId, 'shop checkout op opId')
+  const opId = validateLivePlayOperationId(input.opId, 'shop checkout op opId')
   const validation = validateShopCheckoutCommandEnvelope(input.command)
   if (!validation.valid) {
     const summary = validation.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
@@ -202,7 +202,7 @@ export const createSqliteShopCheckoutOperationRepository = (
   const clock = options.clock ?? Date.now
 
   const findByOpId = (opId: string): SqliteShopCheckoutOperationRecord | null => {
-    const parsedOpId = parseLivePlayOpId(opId, 'shop checkout op opId')
+    const parsedOpId = validateLivePlayOperationId(opId, 'shop checkout op opId')
     const row = database.connection.prepare(`
       SELECT op_id, shop_slug, command_hash, command_json, result_json, result_revision, created_at
       FROM shop_checkout_ops

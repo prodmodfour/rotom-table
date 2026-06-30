@@ -1,11 +1,21 @@
-import { createHash } from 'node:crypto'
 import {
   isLivePlayCommandRejectionReason,
   type ShopCheckoutCommandAccepted,
   type ShopCheckoutCommandRejected,
   type ShopCheckoutLivePlayCommand,
 } from '#shared/livePlayCommands'
-import { canonicalJsonStringify } from './opResult'
+import {
+  areCanonicalCommandsSemanticallyEqual,
+  areTerminalCommandResultsSemanticallyEqual,
+  assertTerminalOperationResultCompatible,
+  cloneJson,
+  createCanonicalCommandHash,
+  hasOwn,
+  isAcceptedTerminalResult,
+  isRecord,
+  isRejectedTerminalResult,
+  stringifyCanonicalCommandForHash,
+} from './commandIdempotency'
 
 export type ShopCheckoutCommandHash = string & { readonly __brand: 'ShopCheckoutCommandHash' }
 
@@ -51,21 +61,6 @@ export interface ShopCheckoutCommandHashMaterial {
   readonly payload: ShopCheckoutLivePlayCommand['payload']
 }
 
-type JsonRecord = Record<string, unknown>
-
-const cloneJson = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
-
-const isRecord = (value: unknown): value is JsonRecord => (
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-)
-
-const hasOwn = (value: object, key: string): boolean =>
-  Object.prototype.hasOwnProperty.call(value, key)
-
-const messageFromError = (error: unknown): string => (
-  error instanceof Error ? error.message : String(error)
-)
-
 const isSafeNonNegativeInteger = (value: unknown): value is number => (
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 )
@@ -81,9 +76,7 @@ const isResultLine = (value: unknown): value is ShopCheckoutCommandAccepted['lin
 }
 
 const isShopCheckoutAcceptedResult = (result: unknown): result is ShopCheckoutCommandAccepted => {
-  if (!isRecord(result)) return false
-  if (result.ok !== true || typeof result.opId !== 'string' || typeof result.shopSlug !== 'string') return false
-  if (hasOwn(result, 'duplicate') && result.duplicate === true) return false
+  if (!isAcceptedTerminalResult(result) || typeof result.shopSlug !== 'string') return false
   if (!isSafeNonNegativeInteger(result.previousShopRevision)) return false
   if (!isSafeNonNegativeInteger(result.shopRevision)) return false
   if (!isSafeNonNegativeInteger(result.totalPrice)) return false
@@ -92,8 +85,7 @@ const isShopCheckoutAcceptedResult = (result: unknown): result is ShopCheckoutCo
 }
 
 const isShopCheckoutRejectedResult = (result: unknown): result is ShopCheckoutCommandRejected => {
-  if (!isRecord(result)) return false
-  if (result.ok !== false || typeof result.opId !== 'string') return false
+  if (!isRejectedTerminalResult(result)) return false
   if (!isLivePlayCommandRejectionReason(result.reason)) return false
   if (typeof result.message !== 'string') return false
   if (hasOwn(result, 'shopSlug') && result.shopSlug !== undefined && typeof result.shopSlug !== 'string') return false
@@ -111,24 +103,33 @@ export const normalizeShopCheckoutCommandForHash = (
   payload: command.payload,
 })
 
-export const stringifyShopCheckoutCommandForHash = (command: ShopCheckoutLivePlayCommand): string => {
-  try {
-    return canonicalJsonStringify(normalizeShopCheckoutCommandForHash(command), 'shopCheckoutCommand')
-  } catch (error) {
-    throw new Error(`Shop checkout command envelope could not be hashed: ${messageFromError(error)}`)
-  }
-}
+export const stringifyShopCheckoutCommandForHash = (command: ShopCheckoutLivePlayCommand): string =>
+  stringifyCanonicalCommandForHash({
+    command,
+    normalize: normalizeShopCheckoutCommandForHash,
+    path: 'shopCheckoutCommand',
+    errorPrefix: 'Shop checkout command envelope could not be hashed',
+  })
 
 export const createShopCheckoutCommandHash = (command: ShopCheckoutLivePlayCommand): ShopCheckoutCommandHash => (
-  createHash('sha256')
-    .update(stringifyShopCheckoutCommandForHash(command))
-    .digest('hex') as ShopCheckoutCommandHash
+  createCanonicalCommandHash({
+    command,
+    normalize: normalizeShopCheckoutCommandForHash,
+    path: 'shopCheckoutCommand',
+    errorPrefix: 'Shop checkout command envelope could not be hashed',
+  })
 )
 
 export const areShopCheckoutCommandsSemanticallyEqual = (
   left: ShopCheckoutLivePlayCommand,
   right: ShopCheckoutLivePlayCommand,
-): boolean => stringifyShopCheckoutCommandForHash(left) === stringifyShopCheckoutCommandForHash(right)
+): boolean => areCanonicalCommandsSemanticallyEqual({
+  left,
+  right,
+  normalize: normalizeShopCheckoutCommandForHash,
+  path: 'shopCheckoutCommand',
+  errorPrefix: 'Shop checkout command envelope could not be hashed',
+})
 
 export const isStorableShopCheckoutCommandResult = (
   result: unknown,
@@ -139,14 +140,22 @@ export const isStorableShopCheckoutCommandResult = (
 export const areShopCheckoutCommandResultsSemanticallyEqual = (
   left: StorableShopCheckoutCommandResult,
   right: StorableShopCheckoutCommandResult,
-): boolean => canonicalJsonStringify(left, 'leftShopCheckoutResult') === canonicalJsonStringify(right, 'rightShopCheckoutResult')
+): boolean => areTerminalCommandResultsSemanticallyEqual(
+  left,
+  right,
+  'leftShopCheckoutResult',
+  'rightShopCheckoutResult',
+)
 
 export const assertShopCheckoutOperationResultCompatible = (
   input: ShopCheckoutOperationResultConflictInput,
-): void => {
-  if (areShopCheckoutCommandResultsSemanticallyEqual(input.existingResult, input.attemptedResult)) return
-  throw new ShopCheckoutOperationResultConflictError(input)
-}
+): void => assertTerminalOperationResultCompatible({
+  existingResult: input.existingResult,
+  attemptedResult: input.attemptedResult,
+  existingPath: 'leftShopCheckoutResult',
+  attemptedPath: 'rightShopCheckoutResult',
+  conflictError: () => new ShopCheckoutOperationResultConflictError(input),
+})
 
 export const assertShopCheckoutResultMatchesCommand = (
   command: ShopCheckoutLivePlayCommand,

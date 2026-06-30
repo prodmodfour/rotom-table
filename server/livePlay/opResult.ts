@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import {
   createLivePlayRejectedResult,
   type LivePlayCommandAccepted,
@@ -6,6 +5,18 @@ import {
   type LivePlayCommandRejected,
   type LivePlayCommandResult,
 } from '#shared/livePlayCommands'
+import {
+  areTerminalCommandResultsSemanticallyEqual,
+  assertTerminalOperationResultCompatible,
+  cloneJson,
+  createCanonicalCommandHash,
+  isAcceptedTerminalResult,
+  isRecord,
+  isRejectedTerminalResult,
+  stringifyCanonicalCommandForHash,
+} from './commandIdempotency'
+
+export { canonicalJsonStringify } from './commandIdempotency'
 
 export type LivePlayCommandHash = string & { readonly __brand: 'LivePlayCommandHash' }
 
@@ -57,74 +68,6 @@ export interface LivePlayRecordedResultReference {
   readonly result: StorableLivePlayCommandResult
 }
 
-type JsonRecord = Record<string, unknown>
-
-const cloneJson = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
-
-const isRecord = (value: unknown): value is JsonRecord =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const hasOwn = <TKey extends string>(value: object, key: TKey): value is Record<TKey, unknown> =>
-  Object.prototype.hasOwnProperty.call(value, key)
-
-const messageFromError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error)
-
-export const canonicalJsonStringify = (
-  value: unknown,
-  path = 'value',
-  seen: WeakSet<object> = new WeakSet(),
-): string => {
-  if (value === null) return 'null'
-
-  if (typeof value === 'string' || typeof value === 'boolean') {
-    return JSON.stringify(value)
-  }
-
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) {
-      throw new Error(`${path} must be JSON-serializable; non-finite numbers are not allowed`)
-    }
-    return JSON.stringify(value)
-  }
-
-  if (value === undefined) {
-    throw new Error(`${path} must be JSON-serializable; undefined values are not allowed`)
-  }
-
-  if (typeof value === 'bigint' || typeof value === 'function' || typeof value === 'symbol') {
-    throw new Error(`${path} must be JSON-serializable`)
-  }
-
-  if (Array.isArray(value)) {
-    if (seen.has(value)) {
-      throw new Error(`${path} must be JSON-serializable; circular references are not allowed`)
-    }
-    seen.add(value)
-    const serialized = `[${value
-      .map((item, index) => canonicalJsonStringify(item, `${path}[${index}]`, seen))
-      .join(',')}]`
-    seen.delete(value)
-    return serialized
-  }
-
-  if (!isRecord(value)) {
-    throw new Error(`${path} must be JSON-serializable`)
-  }
-
-  if (seen.has(value)) {
-    throw new Error(`${path} must be JSON-serializable; circular references are not allowed`)
-  }
-
-  seen.add(value)
-  const serializedEntries = Object.keys(value)
-    .sort()
-    .map((key) => `${JSON.stringify(key)}:${canonicalJsonStringify(value[key], `${path}.${key}`, seen)}`)
-  seen.delete(value)
-
-  return `{${serializedEntries.join(',')}}`
-}
-
 export const normalizeLivePlayCommandForHash = (
   command: LivePlayCommandEnvelope,
 ): LivePlayCommandHashMaterial => ({
@@ -137,39 +80,44 @@ export const normalizeLivePlayCommandForHash = (
   payload: command.payload,
 })
 
-export const stringifyLivePlayCommandForHash = (command: LivePlayCommandEnvelope): string => {
-  try {
-    return canonicalJsonStringify(normalizeLivePlayCommandForHash(command), 'command')
-  } catch (error) {
-    throw new Error(`Live-play command envelope could not be hashed: ${messageFromError(error)}`)
-  }
-}
+export const stringifyLivePlayCommandForHash = (command: LivePlayCommandEnvelope): string =>
+  stringifyCanonicalCommandForHash({
+    command,
+    normalize: normalizeLivePlayCommandForHash,
+    path: 'command',
+    errorPrefix: 'Live-play command envelope could not be hashed',
+  })
 
 export const createLivePlayCommandHash = (command: LivePlayCommandEnvelope): LivePlayCommandHash =>
-  createHash('sha256')
-    .update(stringifyLivePlayCommandForHash(command))
-    .digest('hex') as LivePlayCommandHash
+  createCanonicalCommandHash({
+    command,
+    normalize: normalizeLivePlayCommandForHash,
+    path: 'command',
+    errorPrefix: 'Live-play command envelope could not be hashed',
+  })
 
 export const isStorableLivePlayCommandResult = (
   result: unknown,
 ): result is StorableLivePlayCommandResult => {
-  if (!isRecord(result) || typeof result.opId !== 'string') return false
-  if (result.ok === false) return typeof result.mapSlug === 'string'
-  if (result.ok !== true || typeof result.mapSlug !== 'string') return false
-  return !hasOwn(result, 'duplicate') || result.duplicate !== true
+  if (!isRecord(result)) return false
+  if (isRejectedTerminalResult(result)) return typeof result.mapSlug === 'string'
+  return isAcceptedTerminalResult(result) && typeof result.mapSlug === 'string'
 }
 
 export const areLivePlayCommandResultsSemanticallyEqual = (
   left: StorableLivePlayCommandResult,
   right: StorableLivePlayCommandResult,
-): boolean => canonicalJsonStringify(left, 'leftResult') === canonicalJsonStringify(right, 'rightResult')
+): boolean => areTerminalCommandResultsSemanticallyEqual(left, right, 'leftResult', 'rightResult')
 
 export const assertLivePlayOperationResultCompatible = (
   input: LivePlayOperationResultConflictInput,
-): void => {
-  if (areLivePlayCommandResultsSemanticallyEqual(input.existingResult, input.attemptedResult)) return
-  throw new LivePlayOperationResultConflictError(input)
-}
+): void => assertTerminalOperationResultCompatible({
+  existingResult: input.existingResult,
+  attemptedResult: input.attemptedResult,
+  existingPath: 'leftResult',
+  attemptedPath: 'rightResult',
+  conflictError: () => new LivePlayOperationResultConflictError(input),
+})
 
 export const assertLivePlayResultMatchesCommand = (
   command: LivePlayCommandEnvelope,

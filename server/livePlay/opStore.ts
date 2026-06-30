@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { parseLivePlayMapSlug, parseLivePlayOpId } from '#shared/livePlayCommands'
+import { parseLivePlayMapSlug } from '#shared/livePlayCommands'
 import { campaignPath } from '../utils/campaignPaths'
 import { joinSafeUnderRoot } from '../utils/fsPaths'
 import { writeJsonFile } from '../utils/jsonFiles'
@@ -10,6 +10,7 @@ import {
   type LivePlayCommandHash,
   type StorableLivePlayCommandResult,
 } from './opResult'
+import { validateLivePlayOperationId } from './commandIdempotency'
 
 export const LIVE_PLAY_OP_STORE_SCHEMA_VERSION = 1 as const
 export const LIVE_PLAY_OP_STORE_ROOT = campaignPath('data', 'live-play-ops')
@@ -58,7 +59,7 @@ const cloneJson = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
 const recordKey = (mapSlug: string, opId: string): string => {
   const parsedMapSlug = parseLivePlayMapSlug(mapSlug)
-  const parsedOpId = parseLivePlayOpId(opId)
+  const parsedOpId = validateLivePlayOperationId(opId)
   return `${parsedMapSlug}:${parsedOpId}`
 }
 
@@ -66,7 +67,7 @@ const cloneRecord = (record: LivePlayOpRecord): LivePlayOpRecord => cloneJson(re
 
 const validateRecordIdentity = (mapSlug: string, opId: string): void => {
   parseLivePlayMapSlug(mapSlug)
-  parseLivePlayOpId(opId)
+  validateLivePlayOperationId(opId)
 }
 
 const assertSaveInputMatchesResult = (input: SaveLivePlayOpResultInput): void => {
@@ -122,7 +123,7 @@ const parseStoredRecord = (value: unknown, source: string): LivePlayOpRecord => 
     throw new Error(`Live-play op record ${source} has an unsupported schemaVersion`)
   }
   const mapSlug = parseLivePlayMapSlug(value.mapSlug, `${source}.mapSlug`)
-  const opId = parseLivePlayOpId(value.opId, `${source}.opId`)
+  const opId = validateLivePlayOperationId(value.opId, `${source}.opId`)
   if (typeof value.commandHash !== 'string' || value.commandHash.length === 0) {
     throw new Error(`Live-play op record ${source}.commandHash must be a non-empty string`)
   }
