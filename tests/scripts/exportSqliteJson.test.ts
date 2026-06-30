@@ -9,6 +9,7 @@ import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInv
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
+import { createSqliteShopTableRepository } from '~~/server/storage/shopTableRepository'
 import {
   GROUP_INVENTORY_MAIN_SLUG,
   GROUP_INVENTORY_SECTION_KEYS,
@@ -62,6 +63,7 @@ const seedCampaignDatabase = (campaignRoot: string): void => {
   const sheets = createSqliteSheetRepository<Record<string, unknown>>(database)
   const groupInventories = createSqliteGroupInventoryRepository(database)
   const realtimeEvents = createSqliteRealtimeEventRepository({ database, clock: () => 1_700_000_000_800 })
+  const shops = createSqliteShopTableRepository(database)
 
   maps.createFolder('empty/nested')
   maps.saveSetupMap(mapDocument())
@@ -97,6 +99,30 @@ const seedCampaignDatabase = (campaignRoot: string): void => {
       },
     },
   })
+  shops.create({
+    slug: 'potion-mart',
+    now: 1_700_000_001_000,
+    document: {
+      name: 'Potion Mart',
+      folder: 'city/shops',
+      playerVisible: true,
+      open: true,
+      allowedPaymentSources: ['trainer', 'groupInventory'],
+      allowedDeliveryTargets: ['trainer'],
+      entries: [{
+        id: 'potion-row',
+        itemName: 'Potion',
+        section: 'medicalKit',
+        price: 300,
+        stock: 5,
+        maxPerPurchase: 2,
+        playerDescription: 'Restores HP.',
+        gmNotes: 'Wholesale stock.',
+        tags: ['medicine'],
+      }],
+      gmNotes: 'Restock between sessions.',
+    },
+  })
   realtimeEvents.append({
     event: { channel: 'maps', type: 'updated', data: { export: 'event-log-only' } },
     access: { kind: 'gm-only' },
@@ -127,7 +153,7 @@ afterEach(() => {
 })
 
 describe('SQLite JSON export script', () => {
-  it('exports maps, sheets, trainers, and empty folders to the legacy hierarchy', () => {
+  it('exports maps, sheets, trainers, shops, group inventories, and empty folders to the maintenance hierarchy', () => {
     const root = makeTempRoot()
     const campaignRoot = join(root, 'campaign')
     seedCampaignDatabase(campaignRoot)
@@ -139,6 +165,7 @@ describe('SQLite JSON export script', () => {
     expect(result.stdout).toContain('Pokémon sheets exported: 1')
     expect(result.stdout).toContain('Trainer sheets exported: 1')
     expect(result.stdout).toContain('Group inventories exported: 1')
+    expect(result.stdout).toContain('Shops exported: 1')
 
     expect(existsSync(join(output, 'data/maps/empty/nested'))).toBe(true)
     expect(existsSync(join(output, 'data/sheets/bench/empty'))).toBe(true)
@@ -167,6 +194,23 @@ describe('SQLite JSON export script', () => {
       inventory: {
         pokemonItems: [{ id: 'group-item-potion', name: 'Potion', qty: 5 }],
       },
+    })
+    expect(readJson(join(output, 'data/shops/city/shops/potion-mart.json'))).toMatchObject({
+      slug: 'potion-mart',
+      folder: 'city/shops',
+      revision: 0,
+      updatedAt: 1_700_000_001_000,
+      name: 'Potion Mart',
+      playerVisible: true,
+      open: true,
+      entries: [{
+        id: 'potion-row',
+        itemName: 'Potion',
+        section: 'medicalKit',
+        price: 300,
+        stock: 5,
+        maxPerPurchase: 2,
+      }],
     })
     expect(existsSync(join(output, 'realtime_events.json'))).toBe(false)
     expect(readFileSync(join(output, 'data/maps/region/one/arena.json'), 'utf8')).not.toContain('event-log-only')

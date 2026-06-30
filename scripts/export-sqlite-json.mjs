@@ -24,6 +24,7 @@ const scriptPath = fileURLToPath(import.meta.url)
 const appRoot = resolve(dirname(scriptPath), '..')
 const sheetKinds = ['pokemon', 'trainer']
 const groupInventoryRootRel = 'data/group-inventories'
+const shopTableRootRel = 'data/shops'
 
 class ExportError extends Error {
   constructor(message) {
@@ -116,11 +117,12 @@ const writeDocument = (outputRoot, rootRel, folder, slug, document) => {
 }
 
 const exportDatabase = (connection, outputRoot) => {
-  const counts = { maps: 0, pokemon: 0, trainer: 0, groupInventories: 0, folders: 0 }
+  const counts = { maps: 0, pokemon: 0, trainer: 0, groupInventories: 0, shops: 0, folders: 0 }
   connection.exec('BEGIN')
   try {
     const mapFolders = new Set()
     const sheetFolders = { pokemon: new Set(), trainer: new Set() }
+    const shopFolders = new Set()
 
     for (const row of connection.prepare('SELECT path FROM map_folders ORDER BY path ASC').all()) {
       if (typeof row.path === 'string' && row.path) mapFolders.add(row.path)
@@ -164,6 +166,18 @@ const exportDatabase = (connection, outputRoot) => {
       counts.groupInventories += 1
     }
 
+    const shopTables = connection.prepare('SELECT slug, document_json, revision, updated_at FROM shop_tables ORDER BY slug ASC').all()
+    for (const row of shopTables) {
+      const document = parseDocument(row.document_json, `shop table ${row.slug}`)
+      document.slug = row.slug
+      document.revision = Number(row.revision)
+      document.updatedAt = Number(row.updated_at)
+      const folder = typeof document.folder === 'string' ? document.folder : ''
+      for (const prefix of folderPrefixes(folder)) shopFolders.add(prefix)
+      writeDocument(outputRoot, shopTableRootRel, folder, row.slug, document)
+      counts.shops += 1
+    }
+
     for (const folder of [...mapFolders].sort()) {
       ensureFolder(join(outputRoot, 'data/maps', folder))
       counts.folders += 1
@@ -173,6 +187,10 @@ const exportDatabase = (connection, outputRoot) => {
         ensureFolder(join(outputRoot, kind === 'pokemon' ? 'data/sheets' : 'data/trainers', folder))
         counts.folders += 1
       }
+    }
+    for (const folder of [...shopFolders].sort()) {
+      ensureFolder(join(outputRoot, shopTableRootRel, folder))
+      counts.folders += 1
     }
 
     connection.exec('COMMIT')
@@ -208,6 +226,7 @@ export const runExportCli = (argv = process.argv.slice(2), env = process.env) =>
         `Pokémon sheets exported: ${counts.pokemon}`,
         `Trainer sheets exported: ${counts.trainer}`,
         `Group inventories exported: ${counts.groupInventories}`,
+        `Shops exported: ${counts.shops}`,
         `Folders recreated: ${counts.folders}`,
       ].join('\n') + '\n')
       return 0

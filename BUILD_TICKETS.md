@@ -201,7 +201,7 @@ Allow GMs to manage shop tables through revision-checked API routes.
 
 ## 006 — SHOPS-006: Include shops in SQLite export and maintenance paths
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Ensure shop table data is not dropped by maintenance export/backup flows.

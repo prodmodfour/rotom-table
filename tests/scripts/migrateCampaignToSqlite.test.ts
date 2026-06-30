@@ -93,6 +93,17 @@ const makeFixtureCampaign = (): string => {
       pokemonItems: [{ id: 'group-item-potion', name: 'Potion', qty: 5 }],
     },
   })
+  writeJson(join(campaignRoot, 'data/shops/city/potion-mart.json'), {
+    slug: 'potion-mart',
+    revision: 3,
+    updatedAt: 1_700_000_001_000,
+    name: 'Potion Mart',
+    playerVisible: true,
+    open: true,
+    allowedPaymentSources: ['trainer'],
+    allowedDeliveryTargets: ['trainer'],
+    entries: [{ id: 'potion-row', itemName: 'Potion', section: 'medicalKit', price: 300, stock: 5 }],
+  })
   writeJson(join(campaignRoot, 'data/player-profiles/profile_ash00000.json'), {
     schemaVersion: 1,
     id: 'profile_ash00000',
@@ -150,6 +161,7 @@ describe('SQLite campaign migration script', () => {
     expect(existsSync(join(backupPath, 'manifest.json'))).toBe(true)
     expect(existsSync(join(backupPath, 'campaign/data/maps/region-one/training-yard.json'))).toBe(true)
     expect(existsSync(join(backupPath, 'campaign/data/group-inventories/main.json'))).toBe(true)
+    expect(existsSync(join(backupPath, 'campaign/data/shops/city/potion-mart.json'))).toBe(true)
     expect(existsSync(join(backupPath, 'campaign/data/player-profiles/profile_ash00000.json'))).toBe(true)
 
     const database = openDatabase(campaignRoot)

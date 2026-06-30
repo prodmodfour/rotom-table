@@ -31,7 +31,7 @@ Runtime maps and Pokémon/trainer sheets are stored in SQLite. `ROTOM_CAMPAIGN_R
 - Encounter tables live under `encounter_tables/`.
 - Campaign reference override diffs, currently Pokédex maintenance entries, live under `data/reference-overrides/`.
 - App-owned PTU reference content lives under `data/reference/` with indexes in `data/ptuReference.ts` and `src/utils/reference/`. `ptu-data/` is documentary upstream/source material and parser output, not the runtime source of truth.
-- `data/maps/`, `data/sheets/`, and `data/trainers/` are legacy/maintenance import and export hierarchies for maps and sheets, not runtime fallback authority.
+- `data/maps/`, `data/sheets/`, `data/trainers/`, `data/group-inventories/`, and `data/shops/` are maintenance import/export hierarchies for SQLite-backed campaign documents, not runtime fallback authority.
 
 This keeps private data operator-owned while avoiding a dual JSON/SQLite runtime authority model.
 

@@ -4,9 +4,9 @@ This document defines Rotom Table's normal multiplayer system: server-authoritat
 
 ## Non-negotiable authority boundary
 
-SQLite is the only runtime authority for maps, Pokémon sheets, trainer sheets, group inventories, map folders, sheet folders, shared map interaction mode, live-play operation results, and durable realtime replay events.
+SQLite is the only runtime authority for maps, Pokémon sheets, trainer sheets, group inventories, shop tables, map folders, sheet folders, shared map interaction mode, live-play operation results, and durable realtime replay events.
 
-Normal API requests must not read runtime maps, sheets, or group inventories from `data/maps`, `data/sheets`, `data/trainers`, or `data/group-inventories`, and normal mutations must not write authoritative map/sheet/group-inventory JSON. JSON map/sheet/group-inventory files are limited to explicit migration/import where supported, explicit export/interchange, operator backup material, or clearly labeled generation output. Encounter spawn generates Pokémon sheets in memory, then persists the generated sheets and map placements to SQLite in one transaction.
+Normal API requests must not read runtime maps, sheets, group inventories, or shop tables from `data/maps`, `data/sheets`, `data/trainers`, `data/group-inventories`, or `data/shops`, and normal mutations must not write authoritative map/sheet/group-inventory/shop JSON. JSON map/sheet/group-inventory/shop files are limited to explicit migration/import where supported, explicit export/interchange, operator backup material, or clearly labeled generation output. Encounter spawn generates Pokémon sheets in memory, then persists the generated sheets and map placements to SQLite in one transaction.
 
 Browser-owned whole-map autosave is never the authority for live gameplay. During live play, clients send explicit commands. The server accepts or rejects those commands after validating actor, profile, visibility, token/sheet control, command shape, `baseRevision`, and conflict scope.
 
@@ -93,7 +93,7 @@ Every live-play command is journaled in IndexedDB before send. The journal store
 Use JSON only for explicit maintenance:
 
 - Operators can migrate an existing private campaign with `npm run migrate:sqlite`; the command imports maps/sheets/folders into SQLite, creates a pre-migration backup, validates rows, and validates that imported maps/sheets can be loaded from the database.
-- `npm run export:sqlite-json -- --output /safe/export/path` exports SQLite maps/sheets/trainers and group inventories for backup or interchange. Use `--force` only to replace a known export destination.
+- `npm run export:sqlite-json -- --output /safe/export/path` exports SQLite maps/sheets/trainers, group inventories, and shop tables for backup or interchange. Use `--force` only to replace a known export destination.
 - Standalone encounter generation may emit JSON as explicit generation output; encounter spawn does not use generated JSON as runtime authority.
 
 Do not treat residual JSON under campaign roots as fallback state. Do not commit private campaign JSON or generated runtime artifacts.

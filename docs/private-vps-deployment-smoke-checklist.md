@@ -11,7 +11,7 @@ Use synthetic or clearly disposable campaign edits for smoke checks. Do not put 
 - [ ] The Node service binds to loopback, for example `NITRO_HOST=127.0.0.1` and `NITRO_PORT=3000`, unless the private host uses an equivalent non-public bind.
 - [ ] The private host is protected by an outer access gate before Rotom Table's `/login` page, `/api/events`, `/api/health`, all `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths are reachable.
 - [ ] A current private backup exists or the operator is comfortable discarding the disposable smoke edits. Backups include `rotom-table.sqlite` plus `rotom-table.sqlite-wal` and `rotom-table.sqlite-shm` when present. See the [Private VPS backup runbook](private-vps-backups.md).
-- [ ] Existing installations have run the explicit SQLite migration before deploying this version: `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign npm run migrate:sqlite`. JSON map/sheet/group-inventory files are no longer runtime fallback state.
+- [ ] Existing installations have run the explicit SQLite migration before deploying this version: `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign npm run migrate:sqlite`. JSON map/sheet/group-inventory/shop files are no longer runtime fallback state.
 - [ ] If this deployment is intended to save campaign changes in production, the real service environment intentionally sets exactly `ROTOM_ENABLE_HOSTED_WRITES=1`. If the flag is absent or set to any other value, covered production writes should fail closed instead of persisting.
 
 ## Build and process checks
@@ -102,7 +102,7 @@ git status --short
 Confirm that no private data is staged in Git:
 
 - [ ] no real `.env`, `.env.*`, systemd environment file, proxy config, tunnel credential, password file, token, private key, or provider export;
-- [ ] no private `data/maps/`, `data/sheets/`, `data/trainers/`, `data/group-inventories/`, `data/player-profiles/`, `data/reference-overrides/`, `encounter_tables/`, `data/sessions/`, SQLite database, or SQLite WAL sidecar files from the smoke pass;
+- [ ] no private `data/maps/`, `data/sheets/`, `data/trainers/`, `data/group-inventories/`, `data/shops/`, `data/player-profiles/`, `data/reference-overrides/`, `encounter_tables/`, `data/sessions/`, SQLite database, or SQLite WAL sidecar files from the smoke pass;
 - [ ] no backup archive such as `.tar`, `.tar.gz`, `.tgz`, or `.zip`;
 - [ ] no screenshots, logs, player details, unreleased campaign notes, or generated restore staging directories.
 

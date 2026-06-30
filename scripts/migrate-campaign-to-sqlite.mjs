@@ -39,6 +39,7 @@ const playerProfileIdRe = /^profile_[A-Za-z0-9_-]{8,64}$/
 const playerProfileDisplayNameMaxLength = 64
 const sheetKinds = ['pokemon', 'trainer']
 const groupInventoryRootRelativePath = 'data/group-inventories'
+const shopTableRootRelativePath = 'data/shops'
 const groupInventorySectionKeys = ['keyItems', 'pokemonItems', 'medicalKit', 'pokeBalls', 'foodStuff', 'equipment']
 const groupInventoryRowIdPrefix = 'group-item'
 const knownCampaignDirectories = [
@@ -46,6 +47,7 @@ const knownCampaignDirectories = [
   'data/sheets',
   'data/trainers',
   groupInventoryRootRelativePath,
+  shopTableRootRelativePath,
   'data/player-profiles',
   'data/reference-overrides',
   'encounter_tables',
