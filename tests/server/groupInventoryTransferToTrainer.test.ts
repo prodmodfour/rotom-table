@@ -13,7 +13,9 @@ import {
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
+import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository, type PersistedSheet } from '~~/server/storage/sheetRepository'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import {
   TransferGroupInventoryToTrainerUseCaseError,
   transferGroupInventoryToTrainerUseCase,
@@ -150,6 +152,8 @@ describe('group inventory to trainer transfer use case', () => {
         pokemonItems: [{ name: 'pótîon', qty: 2, description: 'Existing trainer notes' }],
       },
     }), 8, 800)
+    const realtimeEventRepository = createSqliteRealtimeEventRepository({ database, clock: () => 901 })
+    const published: PersistedRealtimeEvent[] = []
 
     const response = transferGroupInventoryToTrainerUseCase({
       role: 'gm',
@@ -160,9 +164,12 @@ describe('group inventory to trainer transfer use case', () => {
       section: 'pokemonItems',
       itemId: 'group-potion-row',
       quantity: 3,
+      clientId: 'client-transfer',
     }, {
       database,
+      realtimeEventRepository,
       now: () => 900,
+      publishPersistedRealtimeEvent: (event) => published.push(event),
     })
 
     expect(response.ok).toBe(true)
@@ -190,6 +197,29 @@ describe('group inventory to trainer transfer use case', () => {
     expect((storedTrainerJson(database).inventory as TrainerSheet['inventory'])?.pokemonItems).toEqual([
       { name: 'pótîon', qty: 5, description: 'Existing trainer notes' },
     ])
+    expect(published.map((event) => event.event.channel)).toEqual([
+      'group-inventory:main',
+      'sheet:trainer:misty',
+      'sheets',
+    ])
+    expect(published.map((event) => event.access)).toEqual([
+      { kind: 'group-inventory-access', groupSlug: GROUP_INVENTORY_MAIN_SLUG },
+      { kind: 'sheet-access', sheetKind: 'trainer', sheetSlug: 'misty' },
+      { kind: 'sheet-access', sheetKind: 'trainer', sheetSlug: 'misty' },
+    ])
+    expect(published[0]?.event).toMatchObject({
+      type: 'updated',
+      revision: response.groupInventory.revision,
+      clientId: 'client-transfer',
+      timestamp: 901,
+      data: { slug: GROUP_INVENTORY_MAIN_SLUG, document: response.groupInventory },
+    })
+    expect(published[1]?.event).toMatchObject({
+      type: 'updated',
+      clientId: 'client-transfer',
+      timestamp: 901,
+      data: { kind: 'trainer', slug: 'misty', sheet: response.trainerSheet.sheet },
+    })
   })
 
   it('rejects stale group revisions before changing either document', () => {

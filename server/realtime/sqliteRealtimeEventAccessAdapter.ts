@@ -9,6 +9,10 @@ import {
   createSqliteSheetRepository,
   type SheetRepository,
 } from '../storage/sheetRepository'
+import {
+  createSqliteGroupInventoryRepository,
+  type GroupInventoryRepository,
+} from '../storage/groupInventoryRepository'
 import { sqlitePlayerVisibleMapSheetAccessKeys } from '../utils/mapSheetAccess'
 import type {
   RealtimeEventAccessDependencies,
@@ -19,6 +23,7 @@ export interface SqliteRealtimeEventAccessAdapterOptions {
   readonly database?: RotomDatabase
   readonly mapRepository?: Pick<MapRepository, 'getBySlug' | 'list'>
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list'>
+  readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'get'>
 }
 
 const defaultDatabase = (database: RotomDatabase | undefined): RotomDatabase => database ?? getRotomDatabase()
@@ -30,6 +35,10 @@ const defaultMapRepository = (
 const defaultSheetRepository = (
   database: RotomDatabase,
 ): Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'list'> => createSqliteSheetRepository<Record<string, unknown>>(database)
+
+const defaultGroupInventoryRepository = (
+  database: RotomDatabase,
+): Pick<GroupInventoryRepository, 'get'> => createSqliteGroupInventoryRepository(database)
 
 const trainerSheetFromStored = (
   stored: ReturnType<Pick<SheetRepository<Record<string, unknown>>, 'list'>['list']>[number],
@@ -66,10 +75,12 @@ export const createSqliteRealtimeEventAccessDependencies = (
   const database = defaultDatabase(options.database)
   const mapRepository = options.mapRepository ?? defaultMapRepository(database)
   const sheetRepository = options.sheetRepository ?? defaultSheetRepository(database)
+  const groupInventoryRepository = options.groupInventoryRepository ?? defaultGroupInventoryRepository(database)
 
   return {
     getMap: (slug) => mapRepository.getBySlug(slug),
     getSheet: (kind, slug) => persistedSheetForPolicy(sheetRepository, kind, slug),
+    getGroupInventory: (slug) => groupInventoryRepository.get(slug)?.document ?? null,
     listTrainerSheets: () => sheetRepository.list('trainer').map(trainerSheetFromStored),
     playerVisibleMapSheetAccessKeys: () => sqlitePlayerVisibleMapSheetAccessKeys(mapRepository),
   }

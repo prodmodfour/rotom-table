@@ -22,6 +22,10 @@ export type RealtimeEventAccess =
       readonly sheetKind: SheetKind
       readonly sheetSlug: string
     }
+  | {
+      readonly kind: 'group-inventory-access'
+      readonly groupSlug: string
+    }
 
 export interface SequencedRealtimeEvent<TData = unknown> extends RealtimeEvent<TData> {
   readonly sequence: number
@@ -385,7 +389,15 @@ export const parseRealtimeEventAccess = (value: unknown, label = 'access'): Real
     }
   }
 
-  throw new Error(`${label}.kind must be gm-only, map-access, or sheet-access`)
+  if (access.kind === 'group-inventory-access') {
+    assertOnlyKeys(access, ['kind', 'groupSlug'], label)
+    return {
+      kind: 'group-inventory-access',
+      groupSlug: parseStrictSlug(access.groupSlug, `${label}.groupSlug`),
+    }
+  }
+
+  throw new Error(`${label}.kind must be gm-only, map-access, sheet-access, or group-inventory-access`)
 }
 
 export const parseRealtimeEventDraft = <TData = unknown>(value: unknown): RealtimeEventDraft<TData> => {

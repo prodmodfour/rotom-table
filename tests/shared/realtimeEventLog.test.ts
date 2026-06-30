@@ -22,6 +22,10 @@ describe('durable realtime event-log contracts', () => {
       sheetKind: 'pokemon',
       sheetSlug: 'pikachu',
     })
+    expect(parseRealtimeEventAccess({ kind: 'group-inventory-access', groupSlug: 'main' })).toEqual({
+      kind: 'group-inventory-access',
+      groupSlug: 'main',
+    })
 
     expect(() => parseRealtimeEventAccess({ kind: 'public' })).toThrow(/kind/)
   })
@@ -30,6 +34,7 @@ describe('durable realtime event-log contracts', () => {
     expect(() => parseRealtimeEventAccess({ kind: 'map-access', mapSlug: 'Bad Slug' })).toThrow(/mapSlug/)
     expect(() => parseRealtimeEventAccess({ kind: 'sheet-access', sheetKind: 'item', sheetSlug: 'pikachu' })).toThrow(/sheetKind/)
     expect(() => parseRealtimeEventAccess({ kind: 'sheet-access', sheetKind: 'pokemon', sheetSlug: 'Pika Chu' })).toThrow(/sheetSlug/)
+    expect(() => parseRealtimeEventAccess({ kind: 'group-inventory-access', groupSlug: 'Bad Slug' })).toThrow(/groupSlug/)
   })
 
   it('validates event drafts and rejects caller-owned sequence or timestamp', () => {

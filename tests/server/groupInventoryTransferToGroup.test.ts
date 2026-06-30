@@ -13,7 +13,9 @@ import {
 import type { TrainerSheet } from '~/types/trainerSheet'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
+import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository, type PersistedSheet } from '~~/server/storage/sheetRepository'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import {
   TransferTrainerInventoryToGroupUseCaseError,
   transferTrainerInventoryToGroupUseCase,
@@ -150,6 +152,8 @@ describe('trainer inventory to group inventory transfer use case', () => {
         pokemonItems: [{ name: 'Potion', qty: 5, cost: '$200' }],
       },
     }), 8, 800)
+    const realtimeEventRepository = createSqliteRealtimeEventRepository({ database, clock: () => 901 })
+    const published: PersistedRealtimeEvent[] = []
 
     const response = transferTrainerInventoryToGroupUseCase({
       role: 'gm',
@@ -160,9 +164,12 @@ describe('trainer inventory to group inventory transfer use case', () => {
       section: 'pokemonItems',
       trainerRowIndex: 0,
       quantity: 3,
+      clientId: 'client-transfer',
     }, {
       database,
+      realtimeEventRepository,
       now: () => 900,
+      publishPersistedRealtimeEvent: (event) => published.push(event),
     })
 
     expect(response.ok).toBe(true)
@@ -190,6 +197,29 @@ describe('trainer inventory to group inventory transfer use case', () => {
     expect((storedTrainerJson(database).inventory as TrainerSheet['inventory'])?.pokemonItems).toEqual([
       { name: 'Potion', qty: 2, cost: '$200' },
     ])
+    expect(published.map((event) => event.event.channel)).toEqual([
+      'sheet:trainer:misty',
+      'sheets',
+      'group-inventory:main',
+    ])
+    expect(published.map((event) => event.access)).toEqual([
+      { kind: 'sheet-access', sheetKind: 'trainer', sheetSlug: 'misty' },
+      { kind: 'sheet-access', sheetKind: 'trainer', sheetSlug: 'misty' },
+      { kind: 'group-inventory-access', groupSlug: GROUP_INVENTORY_MAIN_SLUG },
+    ])
+    expect(published[0]?.event).toMatchObject({
+      type: 'updated',
+      clientId: 'client-transfer',
+      timestamp: 901,
+      data: { kind: 'trainer', slug: 'misty', sheet: response.trainerSheet.sheet },
+    })
+    expect(published[2]?.event).toMatchObject({
+      type: 'updated',
+      revision: response.groupInventory.revision,
+      clientId: 'client-transfer',
+      timestamp: 901,
+      data: { slug: GROUP_INVENTORY_MAIN_SLUG, document: response.groupInventory },
+    })
   })
 
   it('moves trainer equipment as whole rows into group inventory rows with stable IDs', () => {

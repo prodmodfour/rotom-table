@@ -1,4 +1,5 @@
 import { defineEventHandler } from 'h3'
+import { normalizeRealtimeClientId } from '#shared/realtime'
 import { requireAuthRole } from '../../utils/auth'
 import {
   expectRevision,
@@ -22,6 +23,7 @@ interface TransferTrainerInventoryToGroupBody {
   readonly trainerRowIndex?: unknown
   readonly quantity?: unknown
   readonly profileId?: unknown
+  readonly clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -51,6 +53,7 @@ export default defineEventHandler(async (event) => {
       trainerItemId: body.trainerItemId ?? body.itemId,
       trainerRowIndex: body.trainerRowIndex,
       quantity: body.quantity,
+      clientId: normalizeRealtimeClientId(body.clientId),
     })
   } catch (error) {
     throwUseCaseHttpError(error)

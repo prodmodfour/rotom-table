@@ -6,6 +6,7 @@ import { getErrorMessage } from '~/utils/errorMessages'
 import { buildSheetListFetchOptions, sheetApiProfileContext } from '~/utils/sheetApiRequests'
 import { useApiClient } from '~/composables/useApiClient'
 import type { ApiClient } from '~/utils/apiClient'
+import { getClientId } from '~/utils/clientId'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { TrainerInventory, TrainerSheet } from '~/types/trainerSheet'
 import type {
@@ -265,6 +266,7 @@ export const useGroupInventoryTransfers = (
         section: request.section,
         itemId: request.itemId,
         quantity: request.quantity,
+        clientId: getClientId(),
         ...profilePayload(),
       })
       adoptTransferResponse(response)
@@ -295,6 +297,7 @@ export const useGroupInventoryTransfers = (
         section: request.section,
         trainerRowIndex: request.trainerRowIndex,
         quantity: request.quantity,
+        clientId: getClientId(),
         ...profilePayload(),
       })
       adoptTransferResponse(response)

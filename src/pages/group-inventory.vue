@@ -2,11 +2,18 @@
 import { computed } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import GroupInventoryPanel from '~/components/inventory/GroupInventoryPanel.vue'
+import { groupInventoryChannel } from '#shared/realtime'
 import { useGroupInventoryEditor } from '~/composables/useGroupInventoryEditor'
 import { useGroupInventoryTransfers } from '~/composables/useGroupInventoryTransfers'
+import { useRealtimeChannel, type RealtimeEvent } from '~/composables/useRealtime'
 import { GROUP_INVENTORY_API_PATHS } from '~/utils/apiRoutes'
+import { getClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
-import type { GroupInventoryDocument } from '~/types/groupInventory'
+import { applyGroupInventoryRealtimeEvent } from '~/utils/groupInventoryRealtime'
+import {
+  GROUP_INVENTORY_MAIN_SLUG,
+  type GroupInventoryDocument,
+} from '~/types/groupInventory'
 
 const { isGm, isPlayer } = useAuth()
 const {
@@ -30,17 +37,31 @@ const groupInventoryEditor = useGroupInventoryEditor(groupInventoryDocument, { c
 const transferBlockedByUnsavedEdits = computed(() => (
   groupInventoryEditor.isDirty.value || groupInventoryEditor.saveStatus.value === 'saving'
 ))
+const adoptGroupInventoryDocument = (document: GroupInventoryDocument) => {
+  groupInventoryDocument.value = document
+  groupInventoryEditor.adoptAuthoritativeDocument(document)
+}
 const groupInventoryTransfers = useGroupInventoryTransfers({
   groupInventoryDocument: groupInventoryEditor.document,
-  adoptGroupInventoryDocument: (document) => {
-    groupInventoryDocument.value = document
-    groupInventoryEditor.adoptAuthoritativeDocument(document)
-  },
+  adoptGroupInventoryDocument,
   isGm,
   isPlayer,
   selectedProfileId,
   transferBlocked: transferBlockedByUnsavedEdits,
 })
+const clientId = getClientId()
+const handleGroupInventoryRealtimeEvent = (event: RealtimeEvent) => {
+  const result = applyGroupInventoryRealtimeEvent(event, {
+    currentDocument: groupInventoryEditor.document.value,
+    clientId,
+    expectedSlug: GROUP_INVENTORY_MAIN_SLUG,
+  })
+  if (result.status === 'adopted') adoptGroupInventoryDocument(result.document)
+}
+
+if (import.meta.client) {
+  useRealtimeChannel(groupInventoryChannel(GROUP_INVENTORY_MAIN_SLUG), handleGroupInventoryRealtimeEvent)
+}
 
 const isGroupInventoryLoading = computed(() => (
   groupInventoryStatus.value === 'idle' || groupInventoryStatus.value === 'pending'

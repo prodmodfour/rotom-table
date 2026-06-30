@@ -451,7 +451,7 @@ Let users move items between the shared group inventory and trainer inventories 
 
 ## 042 — #42: Group inventory: publish realtime updates for saves and transfers
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/42
 

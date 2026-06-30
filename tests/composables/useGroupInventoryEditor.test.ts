@@ -57,6 +57,7 @@ describe('useGroupInventoryEditor', () => {
         revision: 3,
         money: 150,
       }),
+      clientId: expect.any(String),
     })
     expect(editor.document.value).toEqual(authoritative)
     expect(editor.saveStatus.value).toBe('saved')

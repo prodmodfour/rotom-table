@@ -102,6 +102,7 @@ describe('useGroupInventoryTransfers', () => {
       section: 'pokemonItems',
       itemId: 'potion-row',
       quantity: 1,
+      clientId: expect.any(String),
     })
 
     const authoritativeGroupInventory = groupInventoryFixture({

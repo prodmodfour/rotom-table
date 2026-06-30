@@ -4,6 +4,7 @@ import { GROUP_INVENTORY_API_PATHS } from '~/utils/apiRoutes'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
 import { useApiClient } from '~/composables/useApiClient'
+import { getClientId } from '~/utils/clientId'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 
 export type GroupInventorySaveStatus = 'idle' | 'saving' | 'saved' | 'conflict' | 'error'
@@ -110,6 +111,7 @@ export const useGroupInventoryEditor = (
         slug: currentDocument.slug,
         expectedRevision: normalizeRevision(currentDocument.revision),
         document: cloneDocument(currentDocument),
+        clientId: getClientId(),
       })
       document.value = cloneDocument(response.document)
       lastAuthoritativeJson.value = documentJson(document.value)

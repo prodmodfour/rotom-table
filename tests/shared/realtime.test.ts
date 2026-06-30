@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  groupInventoryChannel,
   isRealtimeEcho,
   mapChannel,
   normalizeRealtimeClientId,
@@ -12,6 +13,7 @@ describe('realtime helpers', () => {
     expect(mapChannel('demo-map')).toBe('map:demo-map')
     expect(sheetChannel('pokemon', 'pikachu')).toBe('sheet:pokemon:pikachu')
     expect(sheetChannel('trainer', 'brock')).toBe('sheet:trainer:brock')
+    expect(groupInventoryChannel('main')).toBe('group-inventory:main')
   })
 
   it('normalizes optional client ids at request boundaries', () => {

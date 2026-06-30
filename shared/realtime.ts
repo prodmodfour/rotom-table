@@ -26,6 +26,7 @@ export interface RealtimeEvent<TData = unknown> {
 
 export const mapsChannel = 'maps'
 export const sheetsChannel = 'sheets'
+export const groupInventoryChannel = (slug: string): `group-inventory:${string}` => `group-inventory:${slug}`
 
 export const LIVE_PLAY_REALTIME_EVENT_TYPES = {
   COMMAND_ACCEPTED: 'live-play-command-accepted',

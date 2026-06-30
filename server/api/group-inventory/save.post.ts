@@ -1,4 +1,5 @@
 import { defineEventHandler } from 'h3'
+import { normalizeRealtimeClientId } from '#shared/realtime'
 import { requireAuthRole } from '../../utils/auth'
 import {
   expectRecord,
@@ -14,6 +15,7 @@ interface SaveGroupInventoryBody {
   readonly slug?: unknown
   readonly expectedRevision?: unknown
   readonly document?: unknown
+  readonly clientId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -31,6 +33,7 @@ export default defineEventHandler(async (event) => {
       slug,
       expectedRevision,
       document,
+      clientId: normalizeRealtimeClientId(body.clientId),
     })
 
     return {

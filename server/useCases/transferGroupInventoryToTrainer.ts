@@ -20,6 +20,21 @@ import {
   type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
+import {
+  createSqliteRealtimeEventRepository,
+  type RealtimeEventRepository,
+} from '../storage/realtimeEventRepository'
+import {
+  groupInventoryAffectedSheetUpdatedRealtimeAppendInputs,
+  groupInventoryUpdatedRealtimeAppendInputs,
+} from '../realtime/groupInventoryRealtime'
+import {
+  defaultPersistedRealtimeEventPublisher,
+  defaultPersistedRealtimePublicationFailureReporter,
+  publishPersistedRealtimeEventsAfterCommit,
+  type PersistedRealtimeEventPublisher,
+  type PersistedRealtimePublicationFailureReporter,
+} from '../realtime/persistedBatchPublication'
 import { authorizeGroupInventoryTrainerTransfer } from '../policies/groupInventoryTransferPolicy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
@@ -35,6 +50,7 @@ export interface TransferGroupInventoryToTrainerInput {
   readonly section: unknown
   readonly itemId: unknown
   readonly quantity: unknown
+  readonly clientId?: unknown
 }
 
 type TransferGroupInventoryRepository = Pick<GroupInventoryRepository, 'get' | 'applyLivePlayUpdate'> & {
@@ -45,10 +61,17 @@ type TransferTrainerSheetRepository = Pick<SheetRepository<Record<string, unknow
   readonly database?: RotomDatabase
 }
 
+type TransferGroupInventoryRealtimeEventRepository = Pick<RealtimeEventRepository, 'appendMany'> & {
+  readonly database?: RotomDatabase
+}
+
 export interface TransferGroupInventoryToTrainerDependencies {
   readonly database?: RotomDatabase
   readonly groupInventoryRepository?: TransferGroupInventoryRepository
   readonly sheetRepository?: TransferTrainerSheetRepository
+  readonly realtimeEventRepository?: TransferGroupInventoryRealtimeEventRepository
+  readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
+  readonly reportAfterCommitPublicationFailure?: PersistedRealtimePublicationFailureReporter
   readonly now?: () => number
 }
 
@@ -65,13 +88,17 @@ export interface TransferGroupInventoryToTrainerResult {
 const databaseFromDependencies = (dependencies: TransferGroupInventoryToTrainerDependencies): RotomDatabase => {
   const groupInventoryDatabase = dependencies.groupInventoryRepository?.database
   const sheetDatabase = dependencies.sheetRepository?.database
-  const database = dependencies.database ?? groupInventoryDatabase ?? sheetDatabase ?? getRotomDatabase()
+  const realtimeDatabase = dependencies.realtimeEventRepository?.database
+  const database = dependencies.database ?? groupInventoryDatabase ?? sheetDatabase ?? realtimeDatabase ?? getRotomDatabase()
 
   if (groupInventoryDatabase && groupInventoryDatabase !== database) {
     throw new Error('Group inventory transfer repository must use the same RotomDatabase as the transfer transaction')
   }
   if (sheetDatabase && sheetDatabase !== database) {
     throw new Error('Trainer sheet transfer repository must use the same RotomDatabase as the transfer transaction')
+  }
+  if (realtimeDatabase && realtimeDatabase !== database) {
+    throw new Error('Group inventory transfer realtime event repository must use the same RotomDatabase as the transfer transaction')
   }
 
   return database
@@ -155,9 +182,11 @@ export const transferGroupInventoryToTrainerUseCase = (
     ?? createSqliteGroupInventoryRepository(database)
   const sheetRepository = dependencies.sheetRepository
     ?? createSqliteSheetRepository<Record<string, unknown>>(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? createSqliteRealtimeEventRepository({ database })
   const now = dependencies.now ?? Date.now
 
-  return database.withTransaction(() => {
+  const transactionResult = database.withTransaction(() => {
     const groupInventory = groupInventoryRepository.get(groupSlug)?.document ?? null
     if (!groupInventory) {
       throw new TransferGroupInventoryToTrainerUseCaseError(404, `Group inventory ${groupSlug} not found`)
@@ -228,14 +257,42 @@ export const transferGroupInventoryToTrainerUseCase = (
       throw new TransferGroupInventoryToTrainerUseCaseError(404, `Trainer sheet ${trainerSlug}.json not found after transfer`)
     }
 
+    const trainerSheet = {
+      kind: 'trainer' as const,
+      slug: authoritativeTrainer.slug,
+      sheet: authoritativeTrainer.sheet,
+    }
+    const realtimeEvents = realtimeEventRepository.appendMany([
+      ...groupInventoryUpdatedRealtimeAppendInputs(
+        authoritativeGroupInventory,
+        input.clientId,
+        'transfer-to-trainer',
+      ),
+      ...groupInventoryAffectedSheetUpdatedRealtimeAppendInputs({
+        update: trainerSheet,
+        clientId: input.clientId,
+        operation: 'transfer-to-trainer',
+      }),
+    ])
+
     return {
-      ok: true,
+      ok: true as const,
       groupInventory: authoritativeGroupInventory,
-      trainerSheet: {
-        kind: 'trainer',
-        slug: authoritativeTrainer.slug,
-        sheet: authoritativeTrainer.sheet,
-      },
+      trainerSheet,
+      realtimeEvents,
     }
   })
+
+  publishPersistedRealtimeEventsAfterCommit({
+    events: transactionResult.realtimeEvents,
+    operation: 'group-inventory-transfer-to-trainer',
+    publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultPersistedRealtimePublicationFailureReporter,
+  })
+
+  return {
+    ok: true,
+    groupInventory: transactionResult.groupInventory,
+    trainerSheet: transactionResult.trainerSheet,
+  }
 }

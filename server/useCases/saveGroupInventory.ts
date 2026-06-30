@@ -2,10 +2,23 @@ import type { AuthRole } from '#shared/auth'
 import { validateSlug } from '#shared/paths'
 import { isRevision } from '#shared/sessionRevisions'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
+import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import {
-  sqliteGroupInventoryRepository,
+  createSqliteGroupInventoryRepository,
   type GroupInventoryRepository,
 } from '../storage/groupInventoryRepository'
+import {
+  createSqliteRealtimeEventRepository,
+  type RealtimeEventRepository,
+} from '../storage/realtimeEventRepository'
+import { groupInventoryUpdatedRealtimeAppendInputs } from '../realtime/groupInventoryRealtime'
+import {
+  defaultPersistedRealtimeEventPublisher,
+  defaultPersistedRealtimePublicationFailureReporter,
+  publishPersistedRealtimeEventsAfterCommit,
+  type PersistedRealtimeEventPublisher,
+  type PersistedRealtimePublicationFailureReporter,
+} from '../realtime/persistedBatchPublication'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class SaveGroupInventoryUseCaseError extends UseCaseHttpError<400 | 403 | 409> {}
@@ -15,10 +28,23 @@ export interface SaveGroupInventoryInput {
   readonly slug: unknown
   readonly expectedRevision?: unknown
   readonly document: unknown
+  readonly clientId?: unknown
+}
+
+type SaveGroupInventoryRepository = Pick<GroupInventoryRepository, 'replaceSetupInventory'> & {
+  readonly database?: RotomDatabase
+}
+
+type SaveGroupInventoryRealtimeEventRepository = Pick<RealtimeEventRepository, 'appendMany'> & {
+  readonly database?: RotomDatabase
 }
 
 export interface SaveGroupInventoryDependencies {
-  readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'replaceSetupInventory'>
+  readonly database?: RotomDatabase
+  readonly groupInventoryRepository?: SaveGroupInventoryRepository
+  readonly realtimeEventRepository?: SaveGroupInventoryRealtimeEventRepository
+  readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
+  readonly reportAfterCommitPublicationFailure?: PersistedRealtimePublicationFailureReporter
   readonly now?: () => number
 }
 
@@ -50,6 +76,21 @@ const expectGroupInventoryDocumentRecord = (document: unknown): Record<string, u
 
 const documentSlug = (document: Record<string, unknown>): string => String(document.slug ?? '')
 
+const databaseFromDependencies = (dependencies: SaveGroupInventoryDependencies): RotomDatabase => {
+  const groupInventoryDatabase = dependencies.groupInventoryRepository?.database
+  const realtimeDatabase = dependencies.realtimeEventRepository?.database
+  const database = dependencies.database ?? groupInventoryDatabase ?? realtimeDatabase ?? getRotomDatabase()
+
+  if (groupInventoryDatabase && groupInventoryDatabase !== database) {
+    throw new Error('Group inventory save repository must use the same RotomDatabase as the save transaction')
+  }
+  if (realtimeDatabase && realtimeDatabase !== database) {
+    throw new Error('Group inventory save realtime event repository must use the same RotomDatabase as the save transaction')
+  }
+
+  return database
+}
+
 export const saveGroupInventoryUseCase = (
   input: SaveGroupInventoryInput,
   dependencies: SaveGroupInventoryDependencies = {},
@@ -62,6 +103,7 @@ export const saveGroupInventoryUseCase = (
   if (!isRevision(input.expectedRevision)) {
     throw new SaveGroupInventoryUseCaseError(400, 'expectedRevision must be a safe non-negative integer')
   }
+  const expectedRevision = input.expectedRevision
 
   const document = expectGroupInventoryDocumentRecord(input.document)
   const payloadSlug = documentSlug(document)
@@ -72,28 +114,52 @@ export const saveGroupInventoryUseCase = (
     )
   }
 
-  const groupInventoryRepository = dependencies.groupInventoryRepository ?? sqliteGroupInventoryRepository
-  const result = groupInventoryRepository.replaceSetupInventory({
-    slug,
-    expectedRevision: input.expectedRevision,
-    document,
-    now: dependencies.now?.(),
+  const database = databaseFromDependencies(dependencies)
+  const groupInventoryRepository = dependencies.groupInventoryRepository
+    ?? createSqliteGroupInventoryRepository(database)
+  const realtimeEventRepository = dependencies.realtimeEventRepository
+    ?? createSqliteRealtimeEventRepository({ database })
+  const now = dependencies.now ?? Date.now
+
+  const transactionResult = database.withTransaction(() => {
+    const result = groupInventoryRepository.replaceSetupInventory({
+      slug,
+      expectedRevision,
+      document,
+      now: now(),
+    })
+
+    if (result.stale) {
+      const currentRevision = result.current?.revision
+      const revisionDetail = currentRevision === undefined
+        ? 'no authoritative document exists at that revision'
+        : `current revision is ${currentRevision}`
+      throw new SaveGroupInventoryUseCaseError(
+        409,
+        `Group inventory ${slug} has changed (${revisionDetail}); reload before saving.`,
+      )
+    }
+
+    const realtimeEvents = result.changed
+      ? realtimeEventRepository.appendMany(groupInventoryUpdatedRealtimeAppendInputs(result.document, input.clientId, 'save'))
+      : []
+
+    return {
+      result,
+      realtimeEvents,
+    }
   })
 
-  if (result.stale) {
-    const currentRevision = result.current?.revision
-    const revisionDetail = currentRevision === undefined
-      ? 'no authoritative document exists at that revision'
-      : `current revision is ${currentRevision}`
-    throw new SaveGroupInventoryUseCaseError(
-      409,
-      `Group inventory ${slug} has changed (${revisionDetail}); reload before saving.`,
-    )
-  }
+  publishPersistedRealtimeEventsAfterCommit({
+    events: transactionResult.realtimeEvents,
+    operation: 'group-inventory-save',
+    publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedRealtimeEventPublisher,
+    reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultPersistedRealtimePublicationFailureReporter,
+  })
 
   return {
     ok: true,
-    changed: result.changed,
-    document: result.document,
+    changed: transactionResult.result.changed,
+    document: transactionResult.result.document,
   }
 }

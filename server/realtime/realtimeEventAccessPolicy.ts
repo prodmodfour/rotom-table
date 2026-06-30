@@ -5,6 +5,7 @@ import type { SheetKind } from '#shared/sheets'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { GroupInventoryDocument } from '~/types/groupInventory'
 import { canAccessMapForRole } from '../policies/mapPolicy'
 import { authorizeSheetList, playerSheetAccessContextFromKeys } from '../useCases/authorizeSheetList'
 
@@ -34,6 +35,7 @@ export interface RealtimeEventAccessDependencies {
     kind: SheetKind,
     slug: string,
   ) => RealtimePolicyPersistedSheet | null
+  readonly getGroupInventory?: (slug: string) => Pick<GroupInventoryDocument, 'slug'> | null
   readonly listTrainerSheets: () => readonly TrainerSheet[]
   readonly playerVisibleMapSheetAccessKeys: () => ReadonlySet<RealtimePlayerSheetAccessKey>
 }
@@ -48,6 +50,7 @@ export type RealtimeEventAccessDecision =
         | 'map-not-accessible'
         | 'sheet-not-found'
         | 'sheet-not-accessible'
+        | 'group-inventory-not-found'
         | 'invalid-access'
     }
 
@@ -168,6 +171,19 @@ const evaluateSheetAccess = (
     : denied('sheet-not-accessible')
 }
 
+const evaluateGroupInventoryAccess = (
+  access: Extract<RealtimeEventAccess, { readonly kind: 'group-inventory-access' }>,
+  dependencies: RealtimeEventAccessDependencies,
+): RealtimeEventAccessDecision => {
+  const getGroupInventory = dependencies.getGroupInventory
+  if (!getGroupInventory) return allowed()
+
+  const groupInventory = getGroupInventory(access.groupSlug)
+  if (groupInventory === null) return denied('group-inventory-not-found')
+  if (groupInventory.slug !== access.groupSlug) return denied('invalid-access')
+  return allowed()
+}
+
 /**
  * Evaluates durable event-log records only. Replay control messages are
  * connection metadata without RealtimeEventAccess and must be delivered outside
@@ -184,6 +200,9 @@ export const evaluateRealtimeEventAccess = (
   }
   if (input.access.kind === 'sheet-access') {
     return evaluateSheetAccess(input.access, input.principal, input.dependencies)
+  }
+  if (input.access.kind === 'group-inventory-access') {
+    return evaluateGroupInventoryAccess(input.access, input.dependencies)
   }
 
   return denied('invalid-access')

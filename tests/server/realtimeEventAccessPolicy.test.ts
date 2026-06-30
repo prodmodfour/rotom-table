@@ -104,9 +104,11 @@ const dependencies = (input: {
   readonly maps?: readonly TabletopMap[]
   readonly pokemonSheets?: readonly CharacterSheet[]
   readonly trainerSheets?: readonly TrainerSheet[]
+  readonly groupInventorySlugs?: readonly string[]
   readonly playerVisibleMapKeys?: readonly RealtimePlayerSheetAccessKey[]
 } = {}): RealtimeEventAccessDependencies => {
   const maps = new Map((input.maps ?? []).map((item) => [item.slug, item]))
+  const groupInventories = new Set(input.groupInventorySlugs ?? [])
   const sheets = new Map<string, RealtimePolicyPersistedSheet>()
 
   for (const sheet of input.pokemonSheets ?? []) {
@@ -119,6 +121,7 @@ const dependencies = (input: {
   return {
     getMap: vi.fn((slug: string) => maps.get(slug) ?? null),
     getSheet: vi.fn((kind: SheetKind, slug: string) => sheets.get(`${kind}:${slug}`) ?? null),
+    getGroupInventory: vi.fn((slug: string) => (groupInventories.has(slug) ? { slug } : null)),
     listTrainerSheets: vi.fn(() => [...(input.trainerSheets ?? [])]),
     playerVisibleMapSheetAccessKeys: vi.fn(() => new Set(input.playerVisibleMapKeys ?? [])),
   }
@@ -294,6 +297,22 @@ describe('realtime event sheet access policy', () => {
 
     expect(result.allowed).toEqual([])
     expect(result.denied[0]?.decision).toEqual({ allowed: false, reason: 'sheet-not-accessible' })
+  })
+})
+
+describe('realtime event group inventory access policy', () => {
+  it('allows GMs and players to receive existing shared group inventory updates', () => {
+    const deps = dependencies({ groupInventorySlugs: ['main'] })
+
+    expect(evaluate({ kind: 'group-inventory-access', groupSlug: 'main' }, gm, deps)).toEqual({ allowed: true })
+    expect(evaluate({ kind: 'group-inventory-access', groupSlug: 'main' }, player(), deps)).toEqual({ allowed: true })
+  })
+
+  it('denies missing group inventory update records', () => {
+    expect(evaluate({ kind: 'group-inventory-access', groupSlug: 'missing' }, gm, dependencies())).toEqual({
+      allowed: false,
+      reason: 'group-inventory-not-found',
+    })
   })
 })
 

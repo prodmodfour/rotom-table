@@ -6,6 +6,8 @@ import {
 } from '~/types/groupInventory'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
+import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
+import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import {
   SaveGroupInventoryUseCaseError,
   saveGroupInventoryUseCase,
@@ -91,6 +93,51 @@ describe('save group inventory use case', () => {
       },
     })
     expect(groupInventoryRepository.get()?.document).toEqual(result.document)
+  })
+
+  it('publishes a durable realtime update with the originating client id when content changes', () => {
+    const database = openMemoryDatabase()
+    const groupInventoryRepository = createSqliteGroupInventoryRepository(database)
+    const realtimeEventRepository = createSqliteRealtimeEventRepository({ database, clock: () => 450 })
+    const published: PersistedRealtimeEvent[] = []
+    const current = groupInventoryRepository.save({
+      slug: GROUP_INVENTORY_MAIN_SLUG,
+      revision: 1,
+      updatedAt: 100,
+      document: groupInventoryDocument({ revision: 1, updatedAt: 100, money: 10 }),
+    }).document
+
+    const result = saveGroupInventoryUseCase({
+      role: 'gm',
+      slug: GROUP_INVENTORY_MAIN_SLUG,
+      expectedRevision: 1,
+      document: { ...current, money: 75 },
+      clientId: 'client-save',
+    }, {
+      database,
+      groupInventoryRepository,
+      realtimeEventRepository,
+      now: () => 400,
+      publishPersistedRealtimeEvent: (event) => published.push(event),
+    })
+
+    expect(result.document.revision).toBe(2)
+    expect(published).toHaveLength(1)
+    expect(published[0]).toMatchObject({
+      sequence: 1,
+      access: { kind: 'group-inventory-access', groupSlug: GROUP_INVENTORY_MAIN_SLUG },
+      event: {
+        channel: 'group-inventory:main',
+        type: 'updated',
+        revision: 2,
+        clientId: 'client-save',
+        timestamp: 450,
+        data: {
+          slug: GROUP_INVENTORY_MAIN_SLUG,
+          document: result.document,
+        },
+      },
+    })
   })
 
   it('returns unchanged without advancing revision when semantic content matches storage', () => {
