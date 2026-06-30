@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS shop_tables (
 
 ## 003 — SHOPS-003: Add shop table repository
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Add the server-side repository for normalized shop table persistence.
