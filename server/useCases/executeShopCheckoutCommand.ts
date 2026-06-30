@@ -1,4 +1,5 @@
 import type { AuthRole } from '#shared/auth'
+import type { PlayerProfile } from '#shared/playerProfiles'
 import type {
   LivePlayCommandRejectionReason,
   ShopCheckoutChangedDocuments,
@@ -52,10 +53,13 @@ import {
   createSqliteShopTableRepository,
   type ShopTableRepository,
 } from '../storage/shopTableRepository'
+import { playerProfileCanAccessSheet } from '../policies/playerProfilePolicy'
+
 export interface ExecuteShopCheckoutCommandUseCaseInput {
   readonly role: AuthRole
   readonly command: unknown
   readonly clientId?: string
+  readonly playerProfile?: PlayerProfile | null
 }
 
 export interface ExecuteShopCheckoutCommandUseCaseResponse {
@@ -247,13 +251,14 @@ const rejectionFromError = (
   currentState?: unknown,
 ): ShopCheckoutCommandRejected => {
   if (error instanceof LivePlayCommandRejectionError) {
+    const fallbackCurrentState = error.reason === 'unauthorized' ? undefined : currentState
     return createShopCheckoutRejectedResult({
       opId: command.opId,
       shopSlug: command.payload.shopSlug,
       reason: error.reason,
       message: error.message,
       currentShopRevision: error.currentRevision ?? currentShopRevision,
-      currentState: error.currentState ?? currentState,
+      currentState: error.currentState ?? fallbackCurrentState,
     })
   }
 
@@ -385,8 +390,103 @@ const assertRevisionMatches = (
   )
 }
 
+const checkoutActorProfileRequiredMessage = 'Choose a player profile before checking out from shops.'
+
+const requireSelectedPlayerProfileForCheckout = (
+  playerProfile: PlayerProfile | null | undefined,
+): PlayerProfile => {
+  if (playerProfile) return playerProfile
+  return rejectLivePlayCommand('unauthorized', checkoutActorProfileRequiredMessage)
+}
+
+const assertCheckoutActorHasRequiredProfile = (
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+): void => {
+  if (input.role === 'gm') return
+  requireSelectedPlayerProfileForCheckout(input.playerProfile)
+}
+
+const assertPlayerCanAccessShop = (shop: ShopTableDocument): void => {
+  if (shop.playerVisible !== true) {
+    rejectLivePlayCommand(
+      'unauthorized',
+      `Shop ${shop.slug} is not player visible.`,
+      { currentRevision: shop.revision },
+    )
+  }
+
+  if (shop.open !== true) {
+    rejectLivePlayCommand(
+      'unauthorized',
+      `Shop ${shop.slug} is closed.`,
+      { currentRevision: shop.revision },
+    )
+  }
+}
+
+const paymentSourceKindLabel = (source: ShopCheckoutPaymentSource): string => (
+  source.kind === 'trainer' ? 'trainer money' : 'group inventory funds'
+)
+
+const deliveryTargetKindLabel = (target: ShopCheckoutDeliveryTarget): string => (
+  target.kind === 'trainer' ? 'trainer inventory' : 'group inventory delivery'
+)
+
+const assertShopAllowsPaymentSource = (
+  shop: ShopTableDocument,
+  source: ShopCheckoutPaymentSource,
+): void => {
+  if (shop.allowedPaymentSources.includes(source.kind)) return
+  rejectLivePlayCommand(
+    'unauthorized',
+    `Shop ${shop.slug} does not allow ${paymentSourceKindLabel(source)} as a payment source.`,
+    { currentRevision: shop.revision },
+  )
+}
+
+const assertShopAllowsDeliveryTarget = (
+  shop: ShopTableDocument,
+  target: ShopCheckoutDeliveryTarget,
+): void => {
+  if (shop.allowedDeliveryTargets.includes(target.kind)) return
+  rejectLivePlayCommand(
+    'unauthorized',
+    `Shop ${shop.slug} does not allow ${deliveryTargetKindLabel(target)} as a delivery target.`,
+    { currentRevision: shop.revision },
+  )
+}
+
+const assertPlayerCanUseTrainerParticipant = (
+  playerProfile: PlayerProfile,
+  participant: CheckoutParticipantReference,
+  usage: 'payment source' | 'delivery target',
+): void => {
+  if (participant.kind !== 'trainer') return
+  if (playerProfileCanAccessSheet(playerProfile, 'trainer', participant.slug)) return
+  rejectLivePlayCommand(
+    'unauthorized',
+    `Trainer sheet ${participant.slug} is not linked to the selected player profile for shop checkout ${usage}.`,
+  )
+}
+
+const authorizeCheckoutActorForShop = (
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+  command: ShopCheckoutLivePlayCommand,
+  shop: ShopTableDocument,
+): void => {
+  if (input.role === 'gm') return
+  const playerProfile = requireSelectedPlayerProfileForCheckout(input.playerProfile)
+
+  assertPlayerCanAccessShop(shop)
+  assertShopAllowsPaymentSource(shop, command.payload.paymentSource)
+  assertShopAllowsDeliveryTarget(shop, command.payload.deliveryTarget)
+  assertPlayerCanUseTrainerParticipant(playerProfile, command.payload.paymentSource, 'payment source')
+  assertPlayerCanUseTrainerParticipant(playerProfile, command.payload.deliveryTarget, 'delivery target')
+}
+
 const loadCheckoutDocuments = (
   command: ShopCheckoutLivePlayCommand,
+  input: ExecuteShopCheckoutCommandUseCaseInput,
   dependencies: ShopCheckoutCommandDependencySet,
 ): LoadedShopCheckoutDocuments => {
   const storedShop = dependencies.shopTableRepository.get(command.payload.shopSlug)
@@ -401,6 +501,8 @@ const loadCheckoutDocuments = (
     )
   }
 
+  authorizeCheckoutActorForShop(input, command, shop)
+
   const participants: LoadedCheckoutParticipantMap = new Map()
   const paymentSource = loadParticipant(command.payload.paymentSource, dependencies, participants)
   const deliveryTarget = loadParticipant(command.payload.deliveryTarget, dependencies, participants)
@@ -408,10 +510,6 @@ const loadCheckoutDocuments = (
   assertRevisionMatches(command.payload.deliveryTarget, deliveryTarget)
 
   return { shop, participants }
-}
-
-const requireGmActorForThisTicket = (role: AuthRole): void => {
-  if (role !== 'gm') rejectLivePlayCommand('unauthorized', 'Only GMs can run shop checkout commands')
 }
 
 const paymentParticipant = (
@@ -695,8 +793,8 @@ const executeFreshCheckout = (
   let loaded: LoadedShopCheckoutDocuments | null = null
 
   try {
-    requireGmActorForThisTicket(input.role)
-    loaded = loadCheckoutDocuments(command, dependencies)
+    assertCheckoutActorHasRequiredProfile(input)
+    loaded = loadCheckoutDocuments(command, input, dependencies)
     const applied = applyCheckout(command, loaded, dependencies)
     const updatedAt = dependencies.now()
 

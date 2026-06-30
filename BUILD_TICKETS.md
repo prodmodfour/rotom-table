@@ -599,7 +599,7 @@ Allow GM actors to run checkout through the live-play command boundary.
 
 ## 019 — SHOPS-019: Add player authorization to shop checkout live-play use case
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Allow player checkout only when the selected profile is authorized for the requested payment/delivery targets.

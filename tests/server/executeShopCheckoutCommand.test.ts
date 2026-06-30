@@ -4,6 +4,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   type ShopCheckoutLivePlayCommand,
 } from '#shared/livePlayCommands'
+import { PLAYER_PROFILE_SCHEMA_VERSION, type PlayerProfile } from '#shared/playerProfiles'
 import {
   GROUP_INVENTORY_MAIN_SLUG,
   GROUP_INVENTORY_SECTION_KEYS,
@@ -183,6 +184,59 @@ const groupCommand = (
   ...overrides,
 })
 
+const groupToTrainerCommand = (
+  overrides: Partial<ShopCheckoutLivePlayCommand> = {},
+): ShopCheckoutLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_shopcheckout_group_trainer',
+  type: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+  scopes: [
+    { kind: 'shop', shopSlug: 'viridian-mart', field: 'purchase' },
+    { kind: 'shop', shopSlug: 'viridian-mart', field: 'stock' },
+    { kind: 'groupInventory', slug: GROUP_INVENTORY_MAIN_SLUG, field: 'money' },
+    { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'inventory' },
+  ],
+  payload: {
+    shopSlug: 'viridian-mart',
+    shopRevision: 0,
+    paymentSource: { kind: 'groupInventory', slug: GROUP_INVENTORY_MAIN_SLUG, revision: 0 },
+    deliveryTarget: { kind: 'trainer', slug: 'ash', revision: 0 },
+    lines: [{ entryId: 'potion-row', quantity: 1 }],
+    origin: { kind: 'shopPage' },
+  },
+  ...overrides,
+})
+
+const trainerToGroupCommand = (
+  overrides: Partial<ShopCheckoutLivePlayCommand> = {},
+): ShopCheckoutLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_shopcheckout_trainer_group',
+  type: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+  scopes: [
+    { kind: 'shop', shopSlug: 'viridian-mart', field: 'purchase' },
+    { kind: 'shop', shopSlug: 'viridian-mart', field: 'stock' },
+    { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'money' },
+    { kind: 'groupInventory', slug: GROUP_INVENTORY_MAIN_SLUG, field: 'inventory' },
+  ],
+  payload: {
+    shopSlug: 'viridian-mart',
+    shopRevision: 0,
+    paymentSource: { kind: 'trainer', slug: 'ash', revision: 0 },
+    deliveryTarget: { kind: 'groupInventory', slug: GROUP_INVENTORY_MAIN_SLUG, revision: 0 },
+    lines: [{ entryId: 'potion-row', quantity: 1 }],
+    origin: { kind: 'shopPage' },
+  },
+  ...overrides,
+})
+
+const playerProfile = (linkedTrainerSlugs: readonly string[] = ['ash']): PlayerProfile => ({
+  schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
+  id: 'profile_shoptest' as PlayerProfile['id'],
+  displayName: 'Shop Tester' as PlayerProfile['displayName'],
+  linkedCharacters: linkedTrainerSlugs.map((slug) => ({ sheetKind: 'trainer', sheetSlug: slug })),
+})
+
 afterEach(() => {
   while (openDatabases.length > 0) openDatabases.pop()?.close()
 })
@@ -260,6 +314,245 @@ describe('executeShopCheckoutCommandUseCase', () => {
     expect(storedGroupInventory(database).money).toBe(800)
     expect(storedGroupInventory(database).inventory.medicalKit).toEqual([
       { id: 'checkout-medicalKit-0', name: 'Potion', qty: 1, cost: 200 },
+    ])
+  })
+
+  it('allows a player with a linked trainer to buy using trainer money into trainer inventory', () => {
+    const database = openMemoryDatabase()
+    seedShop(database)
+    seedTrainer(database)
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile(['ash']),
+      command: trainerCommand({ opId: 'op_shopcheckout_player_linked' }),
+    }, {
+      database,
+      now: () => 990,
+    })
+
+    expect(response.result).toMatchObject({
+      ok: true,
+      opId: 'op_shopcheckout_player_linked',
+      shopSlug: 'viridian-mart',
+      previousShopRevision: 0,
+      shopRevision: 1,
+      totalPrice: 400,
+    })
+    expect(response.shop?.entries[0]?.stock).toBe(3)
+    expect(response.trainerSheets?.[0]).toMatchObject({ slug: 'ash', revision: 1, updatedAt: 990, money: 600 })
+    expect(storedShop(database).entries[0]?.stock).toBe(3)
+    expect(storedTrainer(database).money).toBe(600)
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+    expect(operationCount(database)).toBe(1)
+  })
+
+  it('rejects profileless player checkout before changing money stock or inventory', () => {
+    const database = openMemoryDatabase()
+    seedShop(database)
+    seedTrainer(database)
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'player',
+      command: trainerCommand({ opId: 'op_shopcheckout_profileless' }),
+    }, { database })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      opId: 'op_shopcheckout_profileless',
+      shopSlug: 'viridian-mart',
+      reason: 'unauthorized',
+      message: expect.stringContaining('Choose a player profile'),
+    })
+    expect(storedShop(database).entries[0]?.stock).toBe(5)
+    expect(storedTrainer(database).money).toBe(1_000)
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([])
+    expect(operationCount(database)).toBe(1)
+  })
+
+  it('rejects player checkout against trainer payment or delivery sheets outside the selected profile', () => {
+    const cases = [
+      {
+        opId: 'op_shopcheckout_unlinked_pay',
+        expectedMessage: 'payment source',
+        command: trainerCommand({
+          opId: 'op_shopcheckout_unlinked_pay',
+          scopes: [
+            { kind: 'shop', shopSlug: 'viridian-mart', field: 'purchase' },
+            { kind: 'shop', shopSlug: 'viridian-mart', field: 'stock' },
+            { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'misty', field: 'money' },
+            { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'inventory' },
+          ],
+          payload: {
+            ...trainerCommand().payload,
+            paymentSource: { kind: 'trainer', slug: 'misty', revision: 0 },
+            deliveryTarget: { kind: 'trainer', slug: 'ash', revision: 0 },
+          },
+        }),
+      },
+      {
+        opId: 'op_shopcheckout_unlinked_delivery',
+        expectedMessage: 'delivery target',
+        command: trainerCommand({
+          opId: 'op_shopcheckout_unlinked_delivery',
+          scopes: [
+            { kind: 'shop', shopSlug: 'viridian-mart', field: 'purchase' },
+            { kind: 'shop', shopSlug: 'viridian-mart', field: 'stock' },
+            { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'money' },
+            { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'misty', field: 'inventory' },
+          ],
+          payload: {
+            ...trainerCommand().payload,
+            paymentSource: { kind: 'trainer', slug: 'ash', revision: 0 },
+            deliveryTarget: { kind: 'trainer', slug: 'misty', revision: 0 },
+          },
+        }),
+      },
+    ] as const
+
+    for (const testCase of cases) {
+      const database = openMemoryDatabase()
+      seedShop(database)
+      seedTrainer(database, trainerSheet({ slug: 'ash' }))
+      seedTrainer(database, trainerSheet({ slug: 'misty', name: 'Misty' }))
+
+      const response = executeShopCheckoutCommandUseCase({
+        role: 'player',
+        playerProfile: playerProfile(['ash']),
+        command: testCase.command,
+      }, { database })
+
+      expect(response.result).toMatchObject({
+        ok: false,
+        opId: testCase.opId,
+        shopSlug: 'viridian-mart',
+        reason: 'unauthorized',
+        message: expect.stringContaining(testCase.expectedMessage),
+      })
+      expect(storedShop(database).entries[0]?.stock).toBe(5)
+      expect(storedTrainer(database, 'ash').money).toBe(1_000)
+      expect(storedTrainer(database, 'misty').money).toBe(1_000)
+      expect(storedTrainer(database, 'ash').inventory?.medicalKit).toEqual([])
+      expect(storedTrainer(database, 'misty').inventory?.medicalKit).toEqual([])
+      expect(operationCount(database)).toBe(1)
+    }
+  })
+
+  it('rejects player checkout from closed or hidden shops', () => {
+    const cases = [
+      {
+        opId: 'op_shopcheckout_hidden',
+        shop: shopDocument({ playerVisible: false, open: true }),
+        expectedMessage: 'not player visible',
+      },
+      {
+        opId: 'op_shopcheckout_closed',
+        shop: shopDocument({ playerVisible: true, open: false }),
+        expectedMessage: 'closed',
+      },
+    ] as const
+
+    for (const testCase of cases) {
+      const database = openMemoryDatabase()
+      seedShop(database, testCase.shop)
+      seedTrainer(database)
+
+      const response = executeShopCheckoutCommandUseCase({
+        role: 'player',
+        playerProfile: playerProfile(['ash']),
+        command: trainerCommand({ opId: testCase.opId }),
+      }, { database })
+
+      expect(response.result).toMatchObject({
+        ok: false,
+        opId: testCase.opId,
+        shopSlug: 'viridian-mart',
+        reason: 'unauthorized',
+        currentShopRevision: 0,
+        message: expect.stringContaining(testCase.expectedMessage),
+      })
+      expect(response.result).not.toHaveProperty('currentState')
+      expect(storedShop(database).entries[0]?.stock).toBe(5)
+      expect(storedTrainer(database).money).toBe(1_000)
+      expect(storedTrainer(database).inventory?.medicalKit).toEqual([])
+      expect(operationCount(database)).toBe(1)
+    }
+  })
+
+  it('rejects player group payment and group delivery unless the shop allows them', () => {
+    const cases = [
+      {
+        opId: 'op_shopcheckout_group_payment_forbidden',
+        command: groupToTrainerCommand({ opId: 'op_shopcheckout_group_payment_forbidden' }),
+        expectedMessage: 'group inventory funds',
+      },
+      {
+        opId: 'op_shopcheckout_group_delivery_forbidden',
+        command: trainerToGroupCommand({ opId: 'op_shopcheckout_group_delivery_forbidden' }),
+        expectedMessage: 'group inventory delivery',
+      },
+    ] as const
+
+    for (const testCase of cases) {
+      const database = openMemoryDatabase()
+      seedShop(database, shopDocument({
+        allowedPaymentSources: ['trainer'],
+        allowedDeliveryTargets: ['trainer'],
+      }))
+      seedTrainer(database)
+      seedGroupInventory(database)
+
+      const response = executeShopCheckoutCommandUseCase({
+        role: 'player',
+        playerProfile: playerProfile(['ash']),
+        command: testCase.command,
+      }, { database })
+
+      expect(response.result).toMatchObject({
+        ok: false,
+        opId: testCase.opId,
+        shopSlug: 'viridian-mart',
+        reason: 'unauthorized',
+        message: expect.stringContaining(testCase.expectedMessage),
+      })
+      expect(storedShop(database).entries[0]?.stock).toBe(5)
+      expect(storedTrainer(database).money).toBe(1_000)
+      expect(storedGroupInventory(database).money).toBe(1_000)
+      expect(storedGroupInventory(database).inventory.medicalKit).toEqual([])
+      expect(operationCount(database)).toBe(1)
+    }
+  })
+
+  it('keeps GM checkout unrestricted by player visibility and player source configuration', () => {
+    const database = openMemoryDatabase()
+    seedShop(database, shopDocument({
+      playerVisible: false,
+      open: false,
+      allowedPaymentSources: ['trainer'],
+      allowedDeliveryTargets: ['trainer'],
+    }))
+    seedGroupInventory(database)
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'gm',
+      command: groupCommand({ opId: 'op_shopcheckout_gm_unrestricted' }),
+    }, {
+      database,
+      now: () => 1_010,
+      createGroupInventoryRowId: ({ section, index }) => `gm-${section}-${index}`,
+    })
+
+    expect(response.result).toMatchObject({
+      ok: true,
+      opId: 'op_shopcheckout_gm_unrestricted',
+      shopSlug: 'viridian-mart',
+      shopRevision: 1,
+      totalPrice: 200,
+    })
+    expect(storedShop(database).entries[0]?.stock).toBe(4)
+    expect(storedGroupInventory(database).money).toBe(800)
+    expect(storedGroupInventory(database).inventory.medicalKit).toEqual([
+      { id: 'gm-medicalKit-0', name: 'Potion', qty: 1, cost: 200 },
     ])
   })
 
