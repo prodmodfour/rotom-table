@@ -40,6 +40,10 @@ Trainer sheets live as SQLite documents keyed by `kind='trainer'` and slug. `dat
 
 Trainer sheets model a PTU trainer workbook: core trainer identity, stats, skills, AP, features, edges, classes, combat capabilities, movelist, orders, inventory, equipment, Pokémon links, portrait/sprite data, and campaign notes. Like Pokémon sheets, most fields are optional so the UI can render a new sheet from a small starting document.
 
+## Group inventory
+
+The shared party inventory is campaign-level SQLite state in the `group_inventories` table. The `/group-inventory` page loads the authoritative `main` document through the group inventory load API and currently renders it as a read-only view for both GMs and players, including campaign money, section counts, notes, and normalized trainer-inventory-style sections.
+
 ## Player profiles
 
 Persistent player profiles live under `data/player-profiles/` as private campaign JSON.

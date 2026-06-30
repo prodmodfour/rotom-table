@@ -1,11 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import GroupInventoryPanel from '~/components/inventory/GroupInventoryPanel.vue'
+import { GROUP_INVENTORY_API_PATHS } from '~/utils/apiRoutes'
+import { getErrorMessage } from '~/utils/errorMessages'
+import type { GroupInventoryDocument } from '~/types/groupInventory'
 
-type GroupInventoryShellState = 'loading' | 'error' | 'empty'
+const {
+  data: groupInventoryDocument,
+  error: groupInventoryError,
+  refresh: refreshGroupInventory,
+  status: groupInventoryStatus,
+} = await useFetch<GroupInventoryDocument | null>(GROUP_INVENTORY_API_PATHS.load, {
+  default: () => null,
+  key: 'group-inventory-main',
+})
 
-const inventoryShellState = ref<GroupInventoryShellState>('empty')
-const inventoryShellError = ref<string | null>(null)
+const isGroupInventoryLoading = computed(() => (
+  groupInventoryStatus.value === 'idle' || groupInventoryStatus.value === 'pending'
+))
+const groupInventoryErrorMessage = computed(() => (
+  groupInventoryError.value
+    ? getErrorMessage(groupInventoryError.value, { fallback: 'The shared inventory could not be loaded.' })
+    : null
+))
 
 useHead({
   title: 'Inventory · Rotom Table',
@@ -27,46 +45,45 @@ useHead({
         <p class="group-inventory-eyebrow">Party inventory</p>
         <h1>Inventory</h1>
         <p>
-          A shared campaign inventory will live here for the table. This shell is available to both GMs and players before persistence is wired into the page.
+          View the shared campaign inventory for the table. This page loads the authoritative group inventory document for both GMs and players in read-only mode.
         </p>
       </div>
     </header>
 
     <section class="group-inventory-state" aria-label="Shared inventory status">
       <article
-        v-if="inventoryShellState === 'loading'"
+        v-if="isGroupInventoryLoading && !groupInventoryDocument"
         class="group-inventory-panel panel-card"
         aria-busy="true"
         aria-live="polite"
       >
         <p class="group-inventory-eyebrow">Loading</p>
         <h2>Loading shared inventory…</h2>
-        <p>Checking the campaign inventory state. The live load hook will replace this placeholder in a later ticket.</p>
+        <p>Checking the campaign inventory state from the live-play storage API.</p>
       </article>
 
       <article
-        v-else-if="inventoryShellState === 'error'"
+        v-else-if="groupInventoryErrorMessage"
         class="group-inventory-panel group-inventory-panel--error panel-card"
         role="alert"
       >
         <p class="group-inventory-eyebrow">Unavailable</p>
         <h2>Could not open shared inventory</h2>
-        <p>{{ inventoryShellError || 'The shared inventory panel is not connected to campaign storage yet.' }}</p>
+        <p>{{ groupInventoryErrorMessage }}</p>
+        <button type="button" class="group-inventory-retry" @click="refreshGroupInventory()">
+          Retry loading inventory
+        </button>
       </article>
 
-      <article v-else class="group-inventory-panel panel-card">
-        <p class="group-inventory-eyebrow">Ready for wiring</p>
-        <h2>Shared inventory panel</h2>
-        <p>
-          The campaign inventory page is in place. Upcoming tickets will load the authoritative group inventory document, render item sections, and add table-safe transfer flows.
-        </p>
-        <div class="group-inventory-placeholder" aria-label="Empty inventory placeholder">
-          <span aria-hidden="true">▣</span>
-          <div>
-            <strong>No inventory rows loaded yet.</strong>
-            <p>Persistence and item tables are intentionally deferred from this static page shell.</p>
-          </div>
-        </div>
+      <GroupInventoryPanel
+        v-else-if="groupInventoryDocument"
+        :document="groupInventoryDocument"
+      />
+
+      <article v-else class="group-inventory-panel panel-card" role="status">
+        <p class="group-inventory-eyebrow">Empty</p>
+        <h2>No shared inventory document loaded</h2>
+        <p>The campaign inventory API returned no document. Try refreshing the page to request the default shared inventory again.</p>
       </article>
     </section>
   </main>
@@ -133,32 +150,25 @@ useHead({
   border-color: color-mix(in srgb, var(--bad) 60%, var(--rule-soft));
 }
 
-.group-inventory-placeholder {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  width: min(100%, 42rem);
-  padding: 0.9rem 1rem;
-  border: 1px dashed var(--rule-soft);
-  background: var(--paper-inset);
-  color: var(--ink-muted);
-}
-
-.group-inventory-placeholder > span {
-  display: grid;
-  place-items: center;
-  width: 2.4rem;
-  height: 2.4rem;
+.group-inventory-retry {
+  justify-self: start;
   border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper-inset);
   color: var(--accent);
-  font-size: 1.25rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0.55rem 0.85rem;
+  text-transform: uppercase;
 }
 
-.group-inventory-placeholder strong {
-  color: var(--ink-bright);
-}
-
-.group-inventory-placeholder p {
-  margin-top: 0.15rem;
+.group-inventory-retry:hover,
+.group-inventory-retry:focus-visible {
+  border-color: var(--rule-active);
+  background: var(--paper-hover);
+  outline: none;
 }
 </style>

@@ -103,6 +103,36 @@ describe('InventoryItemTable', () => {
     expect(wrapper.emitted('removeItem')).toEqual([['medicalKit', 0]])
   })
 
+  it('renders read-only rows without trainer editing controls or row actions', () => {
+    const items: InventoryEntry[] = [{ name: 'Custom Brew', qty: 2, cost: '$10', description: 'Home made.' }]
+    const wrapper = mount(InventoryItemTable, {
+      props: {
+        sectionKey: 'medicalKit',
+        title: 'Medical Kit',
+        items,
+        namePlaceholder: 'Item',
+        variant: 'standard',
+        readOnly: true,
+      },
+      global: mountGlobal,
+    })
+
+    expect(wrapper.findAll('thead th').map((heading) => heading.text())).toEqual([
+      'Name',
+      'Qty',
+      'Cost',
+      'Description',
+    ])
+    expect(wrapper.find('.row-add').exists()).toBe(false)
+    expect(wrapper.find('.row-remove').exists()).toBe(false)
+    expect(wrapper.find('.name-cell-stub').exists()).toBe(false)
+    expect(wrapper.find('.editable-cell-stub').exists()).toBe(false)
+    expect(wrapper.find('tbody').text()).toContain('Custom Brew')
+    expect(wrapper.find('tbody').text()).toContain('2')
+    expect(wrapper.find('tbody').text()).toContain('$10')
+    expect(wrapper.find('tbody').text()).toContain('Home made.')
+  })
+
   it('keeps variant-specific editable columns for Poké Balls and equipment', () => {
     const pokeBallRows: InventoryEntry[] = [{ name: 'Basic Ball', qty: 1, cost: '$250', mod: '+0', description: 'Capture.' }]
     const pokeBalls = mount(InventoryItemTable, {
@@ -178,8 +208,21 @@ describe('InventoryItemTable', () => {
       global: mountGlobal,
     })
 
+    const readonlyEquipment = mount(InventoryItemTable, {
+      props: {
+        sectionKey: 'equipment',
+        title: 'Equipment',
+        items: [],
+        namePlaceholder: 'Equipment',
+        variant: 'equipment',
+        readOnly: true,
+      },
+      global: mountGlobal,
+    })
+
     expect(standard.find('tbody td').attributes('colspan')).toBe('5')
     expect(pokeBalls.find('tbody td').attributes('colspan')).toBe('6')
+    expect(readonlyEquipment.find('tbody td').attributes('colspan')).toBe('4')
   })
 })
 

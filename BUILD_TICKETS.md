@@ -234,7 +234,7 @@ None.
 
 ## 035 — #35: Group inventory: add read-only panel using shared inventory components
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/35
 
