@@ -320,7 +320,7 @@ Add pure helpers for moving item quantities between inventory documents before w
 
 ## 038 — #38: Group inventory: add atomic group-to-trainer transfer route
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/38
 
