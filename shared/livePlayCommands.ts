@@ -409,6 +409,42 @@ export interface SetScenePayload {
   readonly name: string | null
 }
 
+export type ShopCheckoutParticipantReference =
+  | { readonly kind: 'groupInventory'; readonly slug: string; readonly revision: number }
+  | { readonly kind: 'trainer'; readonly slug: string; readonly revision: number }
+
+export type ShopCheckoutPaymentSource = ShopCheckoutParticipantReference
+export type ShopCheckoutDeliveryTarget = ShopCheckoutParticipantReference
+
+export interface ShopCheckoutLineInput {
+  readonly entryId: string
+  readonly quantity: number
+}
+
+export type ShopCheckoutOrigin =
+  | { readonly kind: 'shopPage' }
+  | {
+      readonly kind: 'mapInterface'
+      readonly mapSlug: string
+      readonly interfaceId: string
+      readonly actorPlacementId?: string
+    }
+
+export interface ShopCheckoutPayload {
+  readonly shopSlug: string
+  readonly shopRevision: number
+  readonly paymentSource: ShopCheckoutPaymentSource
+  readonly deliveryTarget: ShopCheckoutDeliveryTarget
+  readonly lines: readonly ShopCheckoutLineInput[]
+  readonly origin?: ShopCheckoutOrigin
+}
+
+export type ShopCheckoutLivePlayCommand = LivePlayCommandCoreEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+  ShopCheckoutPayload,
+  ShopCheckoutLivePlayScope
+>
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -854,6 +890,56 @@ export interface LivePlayCommandDuplicate {
   readonly original: LivePlayCommandAccepted | LivePlayCommandRejected
 }
 
+export interface ShopCheckoutResultLine {
+  readonly entryId: string
+  readonly itemName: string
+  readonly section: ShopEntrySectionKey
+  readonly quantity: number
+  readonly unitPrice: number
+  readonly lineTotal: number
+  /** Remaining stock for finite entries, or null when the entry remains unlimited. */
+  readonly stock: ShopStockValue
+}
+
+export interface ShopCheckoutChangedDocuments {
+  readonly shop: ShopTableDocument
+  readonly groupInventories?: readonly GroupInventoryDocument[]
+  readonly trainerSheets?: readonly TrainerSheet[]
+}
+
+export interface ShopCheckoutCommandAccepted {
+  readonly ok: true
+  readonly opId: string
+  readonly shopSlug: string
+  readonly previousShopRevision: number
+  readonly shopRevision: number
+  readonly totalPrice: number
+  readonly lines: readonly ShopCheckoutResultLine[]
+  readonly documents: ShopCheckoutChangedDocuments
+}
+
+export interface ShopCheckoutCommandRejected {
+  readonly ok: false
+  readonly opId: string
+  readonly reason: LivePlayCommandRejectionReason
+  readonly message: string
+  readonly shopSlug?: string
+  readonly currentShopRevision?: number
+  readonly currentState?: unknown
+}
+
+export interface ShopCheckoutCommandDuplicate {
+  readonly ok: true
+  readonly duplicate: true
+  readonly opId: string
+  readonly original: ShopCheckoutCommandAccepted | ShopCheckoutCommandRejected
+}
+
+export type ShopCheckoutCommandResult =
+  | ShopCheckoutCommandAccepted
+  | ShopCheckoutCommandRejected
+  | ShopCheckoutCommandDuplicate
+
 export interface CreateLivePlayAcceptedResultInput {
   readonly opId: string
   readonly mapSlug: string
@@ -915,14 +1001,21 @@ export const createLivePlayDuplicateResult = <
 })
 
 const LIVE_PLAY_COMMAND_TYPE_SET = new Set<unknown>(LIVE_PLAY_COMMAND_TYPE_VALUES)
+const LIVE_PLAY_MAP_COMMAND_TYPE_SET = new Set<unknown>(LIVE_PLAY_MAP_COMMAND_TYPE_VALUES)
 const LIVE_PLAY_PATCH_TYPE_SET = new Set<unknown>(LIVE_PLAY_PATCH_TYPE_VALUES)
 const LIVE_PLAY_MAP_SCOPE_LANE_SET = new Set<unknown>(LIVE_PLAY_MAP_SCOPE_LANES)
 const LIVE_PLAY_TOKEN_SCOPE_FIELD_SET = new Set<unknown>(LIVE_PLAY_TOKEN_SCOPE_FIELDS)
+const LIVE_PLAY_SHOP_SCOPE_FIELD_SET = new Set<unknown>(LIVE_PLAY_SHOP_SCOPE_FIELDS)
+const LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELD_SET = new Set<unknown>(LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS)
+const SHOP_CHECKOUT_TRAINER_SHEET_SCOPE_FIELD_SET = new Set<unknown>(SHOP_CHECKOUT_TRAINER_SHEET_SCOPE_FIELDS)
 const LIVE_PLAY_COMMAND_REJECTION_REASON_SET = new Set<unknown>(LIVE_PLAY_COMMAND_REJECTION_REASONS)
 const LIVE_PLAY_OP_ID_RANDOM_PART_UNSAFE_RE = /[^A-Za-z0-9_-]/g
 
 export const isLivePlayCommandType = (value: unknown): value is LivePlayCommandType =>
   LIVE_PLAY_COMMAND_TYPE_SET.has(value)
+
+export const isLivePlayMapCommandType = (value: unknown): value is LivePlayMapCommandType =>
+  LIVE_PLAY_MAP_COMMAND_TYPE_SET.has(value)
 
 export const isLivePlayPatchType = (value: unknown): value is LivePlayPatchType =>
   LIVE_PLAY_PATCH_TYPE_SET.has(value)
@@ -932,6 +1025,17 @@ export const isLivePlayMapScopeLane = (value: unknown): value is LivePlayMapScop
 
 export const isLivePlayTokenScopeField = (value: unknown): value is LivePlayTokenScopeField =>
   LIVE_PLAY_TOKEN_SCOPE_FIELD_SET.has(value)
+
+export const isLivePlayShopScopeField = (value: unknown): value is LivePlayShopScopeField =>
+  LIVE_PLAY_SHOP_SCOPE_FIELD_SET.has(value)
+
+export const isLivePlayGroupInventoryScopeField = (
+  value: unknown,
+): value is LivePlayGroupInventoryScopeField => LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELD_SET.has(value)
+
+export const isShopCheckoutTrainerSheetScopeField = (
+  value: unknown,
+): value is ShopCheckoutTrainerSheetScopeField => SHOP_CHECKOUT_TRAINER_SHEET_SCOPE_FIELD_SET.has(value)
 
 export const isLivePlayCommandRejectionReason = (
   value: unknown,
@@ -996,6 +1100,16 @@ export const parseLivePlayCommandType = (
   return value
 }
 
+export const parseLivePlayMapCommandType = (
+  value: unknown,
+  label = 'type',
+): LivePlayMapCommandType => {
+  if (!isLivePlayMapCommandType(value)) {
+    throw new Error(`${label} must be a supported map live-play command type`)
+  }
+  return value
+}
+
 export const LIVE_PLAY_COMMAND_REQUIRED_FIELDS = [
   'schemaVersion',
   'opId',
@@ -1006,6 +1120,15 @@ export const LIVE_PLAY_COMMAND_REQUIRED_FIELDS = [
   'payload',
 ] as const
 export type LivePlayCommandRequiredField = (typeof LIVE_PLAY_COMMAND_REQUIRED_FIELDS)[number]
+
+export const SHOP_CHECKOUT_COMMAND_REQUIRED_FIELDS = [
+  'schemaVersion',
+  'opId',
+  'type',
+  'scopes',
+  'payload',
+] as const
+export type ShopCheckoutCommandRequiredField = (typeof SHOP_CHECKOUT_COMMAND_REQUIRED_FIELDS)[number]
 
 export const LIVE_PLAY_COMMAND_VALIDATION_CODES = [
   'not-object',
@@ -1020,6 +1143,8 @@ export const LIVE_PLAY_COMMAND_VALIDATION_CODES = [
   'invalid-map-scope',
   'invalid-token-scope',
   'invalid-sheet-scope',
+  'invalid-shop-scope',
+  'invalid-group-inventory-scope',
   'invalid-payload',
 ] as const
 export type LivePlayCommandValidationCode = (typeof LIVE_PLAY_COMMAND_VALIDATION_CODES)[number]
@@ -1033,7 +1158,7 @@ export interface LivePlayCommandValidationIssue {
 }
 
 export interface LivePlayCommandValidationSuccess<
-  TCommand extends LivePlayCommandEnvelope = LivePlayCommandEnvelope,
+  TCommand extends LivePlayCommandCoreEnvelope = LivePlayCommandEnvelope,
 > {
   readonly valid: true
   readonly command: TCommand
@@ -1046,7 +1171,7 @@ export interface LivePlayCommandValidationFailure {
 }
 
 export type LivePlayCommandValidationResult<
-  TCommand extends LivePlayCommandEnvelope = LivePlayCommandEnvelope,
+  TCommand extends LivePlayCommandCoreEnvelope = LivePlayCommandEnvelope,
 > = LivePlayCommandValidationSuccess<TCommand> | LivePlayCommandValidationFailure
 
 type UnknownRecord = Record<string, unknown>
@@ -1087,10 +1212,15 @@ const addIssue = (
   })
 }
 
-const validateRequiredFields = (record: UnknownRecord, issues: MutableIssueList): void => {
-  for (const field of LIVE_PLAY_COMMAND_REQUIRED_FIELDS) {
+const validateRequiredFields = (
+  record: UnknownRecord,
+  issues: MutableIssueList,
+  fields: readonly string[] = LIVE_PLAY_COMMAND_REQUIRED_FIELDS,
+  envelopeDescription = 'live-play command envelopes',
+): void => {
+  for (const field of fields) {
     if (!hasOwn(record, field)) {
-      addIssue(issues, field, 'missing-field', `${field} is required on live-play command envelopes.`)
+      addIssue(issues, field, 'missing-field', `${field} is required on ${envelopeDescription}.`)
     }
   }
 
@@ -1183,6 +1313,101 @@ const validateSheetScope = (
   }
 }
 
+const validateShopCheckoutShopScope = (
+  scope: UnknownRecord,
+  path: string,
+  issues: MutableIssueList,
+): void => {
+  if (!isSlug(scope.shopSlug)) {
+    addIssue(
+      issues,
+      `${path}.shopSlug`,
+      'invalid-shop-scope',
+      `${path}.shopSlug must match ${SLUG_PATTERN_DESCRIPTION}.`,
+      SLUG_PATTERN_DESCRIPTION,
+      scope.shopSlug,
+    )
+  }
+
+  if (!isLivePlayShopScopeField(scope.field)) {
+    addIssue(
+      issues,
+      `${path}.field`,
+      'invalid-shop-scope',
+      `${path}.field must be stock or purchase.`,
+      LIVE_PLAY_SHOP_SCOPE_FIELDS.join(' | '),
+      scope.field,
+    )
+  }
+}
+
+const validateShopCheckoutGroupInventoryScope = (
+  scope: UnknownRecord,
+  path: string,
+  issues: MutableIssueList,
+): void => {
+  if (!isSlug(scope.slug)) {
+    addIssue(
+      issues,
+      `${path}.slug`,
+      'invalid-group-inventory-scope',
+      `${path}.slug must match ${SLUG_PATTERN_DESCRIPTION}.`,
+      SLUG_PATTERN_DESCRIPTION,
+      scope.slug,
+    )
+  }
+
+  if (!isLivePlayGroupInventoryScopeField(scope.field)) {
+    addIssue(
+      issues,
+      `${path}.field`,
+      'invalid-group-inventory-scope',
+      `${path}.field must be money or inventory.`,
+      LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS.join(' | '),
+      scope.field,
+    )
+  }
+}
+
+const validateShopCheckoutTrainerSheetScope = (
+  scope: UnknownRecord,
+  path: string,
+  issues: MutableIssueList,
+): void => {
+  if (scope.sheetKind !== 'trainer') {
+    addIssue(
+      issues,
+      `${path}.sheetKind`,
+      'invalid-sheet-scope',
+      `${path}.sheetKind must be trainer for shop checkout trainer scopes.`,
+      'trainer',
+      scope.sheetKind,
+    )
+  }
+
+  if (!isSlug(scope.sheetSlug)) {
+    addIssue(
+      issues,
+      `${path}.sheetSlug`,
+      'invalid-sheet-scope',
+      `${path}.sheetSlug must match ${SLUG_PATTERN_DESCRIPTION}.`,
+      SLUG_PATTERN_DESCRIPTION,
+      scope.sheetSlug,
+    )
+  }
+
+  if (!isShopCheckoutTrainerSheetScopeField(scope.field)) {
+    addIssue(
+      issues,
+      `${path}.field`,
+      'invalid-sheet-scope',
+      `${path}.field must be money or inventory for shop checkout trainer scopes.`,
+      SHOP_CHECKOUT_TRAINER_SHEET_SCOPE_FIELDS.join(' | '),
+      scope.field,
+    )
+  }
+}
+
 const validateScope = (scope: unknown, path: string, issues: MutableIssueList): void => {
   if (!isRecord(scope)) {
     addIssue(issues, path, 'invalid-scopes', `${path} must be an object.`, EXPECTED_OBJECT, scope)
@@ -1233,6 +1458,62 @@ const validateScopes = (scopes: unknown, issues: MutableIssueList): void => {
   }
 
   scopes.forEach((scope, index) => validateScope(scope, `scopes[${index}]`, issues))
+}
+
+const validateShopCheckoutScope = (
+  scope: unknown,
+  path: string,
+  issues: MutableIssueList,
+): void => {
+  if (!isRecord(scope)) {
+    addIssue(issues, path, 'invalid-scopes', `${path} must be an object.`, EXPECTED_OBJECT, scope)
+    return
+  }
+
+  if (scope.kind === 'shop') {
+    validateShopCheckoutShopScope(scope, path, issues)
+    return
+  }
+
+  if (scope.kind === 'groupInventory') {
+    validateShopCheckoutGroupInventoryScope(scope, path, issues)
+    return
+  }
+
+  if (scope.kind === 'sheet') {
+    validateShopCheckoutTrainerSheetScope(scope, path, issues)
+    return
+  }
+
+  addIssue(
+    issues,
+    `${path}.kind`,
+    'invalid-scope-kind',
+    `${path}.kind must be shop, groupInventory, or trainer sheet.`,
+    'shop | groupInventory | sheet',
+    scope.kind,
+  )
+}
+
+const validateShopCheckoutScopes = (scopes: unknown, issues: MutableIssueList): void => {
+  if (!Array.isArray(scopes)) {
+    addIssue(issues, 'scopes', 'invalid-scopes', 'scopes must be an array.', 'array', scopes)
+    return
+  }
+
+  if (scopes.length === 0) {
+    addIssue(
+      issues,
+      'scopes',
+      'invalid-scopes',
+      'scopes must contain at least one resource scope.',
+      'non-empty array',
+      scopes,
+    )
+    return
+  }
+
+  scopes.forEach((scope, index) => validateShopCheckoutScope(scope, `scopes[${index}]`, issues))
 }
 
 export const collectLivePlayCommandEnvelopeIssues = (
@@ -1298,19 +1579,83 @@ export const collectLivePlayCommandEnvelopeIssues = (
     )
   }
 
-  if (hasOwn(value, 'type') && !isLivePlayCommandType(value.type)) {
+  if (hasOwn(value, 'type') && !isLivePlayMapCommandType(value.type)) {
     addIssue(
       issues,
       'type',
       'unsupported-command-type',
-      'type must be a supported live-play command type.',
-      LIVE_PLAY_COMMAND_TYPE_VALUES.join(' | '),
+      'type must be a supported map live-play command type.',
+      LIVE_PLAY_MAP_COMMAND_TYPE_VALUES.join(' | '),
       value.type,
     )
   }
 
   if (hasOwn(value, 'scopes')) {
     validateScopes(value.scopes, issues)
+  }
+
+  return issues
+}
+
+export const collectShopCheckoutCommandEnvelopeIssues = (
+  value: unknown,
+): readonly LivePlayCommandValidationIssue[] => {
+  const issues: MutableIssueList = []
+
+  if (!isRecord(value)) {
+    addIssue(
+      issues,
+      '$',
+      'not-object',
+      'shop checkout live-play command envelope must be an object.',
+      EXPECTED_OBJECT,
+      value,
+    )
+    return issues
+  }
+
+  validateRequiredFields(
+    value,
+    issues,
+    SHOP_CHECKOUT_COMMAND_REQUIRED_FIELDS,
+    'shop checkout live-play command envelopes',
+  )
+
+  if (hasOwn(value, 'schemaVersion') && value.schemaVersion !== LIVE_PLAY_COMMAND_SCHEMA_VERSION) {
+    addIssue(
+      issues,
+      'schemaVersion',
+      'invalid-schema-version',
+      `schemaVersion must be ${LIVE_PLAY_COMMAND_SCHEMA_VERSION}.`,
+      String(LIVE_PLAY_COMMAND_SCHEMA_VERSION),
+      value.schemaVersion,
+    )
+  }
+
+  if (hasOwn(value, 'opId') && !isLivePlayOpId(value.opId)) {
+    addIssue(
+      issues,
+      'opId',
+      'invalid-op-id',
+      `opId must match ${LIVE_PLAY_OP_ID_PATTERN_DESCRIPTION}.`,
+      LIVE_PLAY_OP_ID_PATTERN_DESCRIPTION,
+      value.opId,
+    )
+  }
+
+  if (hasOwn(value, 'type') && value.type !== LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT) {
+    addIssue(
+      issues,
+      'type',
+      'unsupported-command-type',
+      'type must be shopCheckout for shop checkout live-play command envelopes.',
+      LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+      value.type,
+    )
+  }
+
+  if (hasOwn(value, 'scopes')) {
+    validateShopCheckoutScopes(value.scopes, issues)
   }
 
   return issues
@@ -1339,6 +1684,36 @@ export const assertValidLivePlayCommandEnvelope = <
   label = 'live-play command envelope',
 ): TCommand => {
   const result = validateLivePlayCommandEnvelope<TCommand>(value)
+  if (result.valid) return result.command
+
+  const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+  throw new Error(`${label} is invalid: ${summary}`)
+}
+
+export const validateShopCheckoutCommandEnvelope = <
+  TCommand extends ShopCheckoutLivePlayCommand = ShopCheckoutLivePlayCommand,
+>(
+  value: unknown,
+): LivePlayCommandValidationResult<TCommand> => {
+  const issues = collectShopCheckoutCommandEnvelopeIssues(value)
+  if (issues.length > 0) {
+    return { valid: false, issues }
+  }
+
+  return { valid: true, command: value as TCommand, issues: [] }
+}
+
+export const isValidShopCheckoutCommandEnvelope = (
+  value: unknown,
+): value is ShopCheckoutLivePlayCommand => collectShopCheckoutCommandEnvelopeIssues(value).length === 0
+
+export const assertValidShopCheckoutCommandEnvelope = <
+  TCommand extends ShopCheckoutLivePlayCommand = ShopCheckoutLivePlayCommand,
+>(
+  value: unknown,
+  label = 'shop checkout live-play command envelope',
+): TCommand => {
+  const result = validateShopCheckoutCommandEnvelope<TCommand>(value)
   if (result.valid) return result.command
 
   const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')

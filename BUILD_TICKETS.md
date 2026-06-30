@@ -394,7 +394,7 @@ Render a shopfront where players can inspect items before checkout exists.
 
 ## 013 — SHOPS-013: Add shop checkout payload and live-play scope types
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Define live-play command types/scopes for shopping without implementing checkout yet.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { LIVE_PLAY_COMMAND_TYPES, type LivePlayCommandType } from '#shared/livePlayCommands'
+import { LIVE_PLAY_COMMAND_TYPES, type LivePlayMapCommandType } from '#shared/livePlayCommands'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import type { LivePlayCommandOutboxRecoveryStatus } from '~/composables/map-editor/useLivePlayCommands'
 import type { LivePlayCommandStatusInspection } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
@@ -31,7 +31,7 @@ const emit = defineEmits<{
   clearResolutionNotice: []
 }>()
 
-const COMMAND_LABELS: Record<LivePlayCommandType, string> = {
+const COMMAND_LABELS: Record<LivePlayMapCommandType, string> = {
   [LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN]: 'Move token',
   [LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN]: 'Turn token',
   [LIVE_PLAY_COMMAND_TYPES.MODIFY_HP]: 'Modify HP',

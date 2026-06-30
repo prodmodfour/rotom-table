@@ -4,13 +4,20 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_COMMAND_TYPE_VALUES,
+  LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS,
+  LIVE_PLAY_MAP_COMMAND_TYPE_VALUES,
   LIVE_PLAY_MAP_SCOPE_LANES,
   LIVE_PLAY_OP_ID_PREFIX,
   LIVE_PLAY_PATCH_TYPES,
   LIVE_PLAY_PATCH_TYPE_VALUES,
+  LIVE_PLAY_SHOP_SCOPE_FIELDS,
   LIVE_PLAY_TOKEN_SCOPE_FIELDS,
+  SHOP_CHECKOUT_COMMAND_REQUIRED_FIELDS,
+  SHOP_CHECKOUT_TRAINER_SHEET_SCOPE_FIELDS,
   assertValidLivePlayCommandEnvelope,
+  assertValidShopCheckoutCommandEnvelope,
   collectLivePlayCommandEnvelopeIssues,
+  collectShopCheckoutCommandEnvelopeIssues,
   createLivePlayAcceptedResult,
   createLivePlayDuplicateResult,
   createLivePlayOpId,
@@ -18,17 +25,24 @@ import {
   isLivePlayBaseRevision,
   isLivePlayCommandRejectionReason,
   isLivePlayCommandType,
+  isLivePlayGroupInventoryScopeField,
+  isLivePlayMapCommandType,
   isLivePlayMapScopeLane,
   isLivePlayMapSlug,
   isLivePlayOpId,
   isLivePlayPatchType,
+  isLivePlayShopScopeField,
   isLivePlayTokenScopeField,
+  isShopCheckoutTrainerSheetScopeField,
   isValidLivePlayCommandEnvelope,
+  isValidShopCheckoutCommandEnvelope,
   parseLivePlayBaseRevision,
   parseLivePlayCommandType,
+  parseLivePlayMapCommandType,
   parseLivePlayMapSlug,
   parseLivePlayOpId,
   validateLivePlayCommandEnvelope,
+  validateShopCheckoutCommandEnvelope,
   type BuildTerrainVoxelLivePlayCommand,
   type BuildTerrainVoxelPayload,
   type DeleteTokenLivePlayCommand,
@@ -38,12 +52,14 @@ import {
   type LivePlayBaseRevision,
   type LivePlayCommandEnvelope,
   type LivePlayCommandResult,
+  type LivePlayGroupInventoryScope,
   type LivePlayMapScope,
   type LivePlayMapScopeLane,
   type LivePlayMapSlug,
   type LivePlayOpId,
   type LivePlayPatch,
   type LivePlayScope,
+  type LivePlayShopScope,
   type LivePlayTokenScope,
   type LivePlayTokenScopeField,
   type PlaceHazardLivePlayCommand,
@@ -58,6 +74,12 @@ import {
   type SetFieldEffectPayload,
   type SetInitiativeLivePlayCommand,
   type SetInitiativePayload,
+  type ShopCheckoutCommandAccepted,
+  type ShopCheckoutCommandRejected,
+  type ShopCheckoutCommandResult,
+  type ShopCheckoutLivePlayCommand,
+  type ShopCheckoutPayload,
+  type ShopCheckoutTrainerSheetScope,
   type UseAbilityLivePlayCommand,
   type UseAbilityPayload,
   type UseMoveLivePlayCommand,
@@ -97,6 +119,26 @@ const buildMoveTokenCommand = (): LivePlayCommandEnvelope<
   payload: {
     placementId: 'placement-001',
     position: { x: 4, y: 5, z: 0 },
+  },
+})
+
+const buildShopCheckoutCommand = (): ShopCheckoutLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: parseLivePlayOpId('op_shopbuy001'),
+  type: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+  scopes: [
+    { kind: 'shop', shopSlug: 'general-store', field: 'purchase' },
+    { kind: 'shop', shopSlug: 'general-store', field: 'stock' },
+    { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash-ketchum', field: 'money' },
+    { kind: 'groupInventory', slug: 'party-bag', field: 'inventory' },
+  ],
+  payload: {
+    shopSlug: 'general-store',
+    shopRevision: 3,
+    paymentSource: { kind: 'trainer', slug: 'ash-ketchum', revision: 12 },
+    deliveryTarget: { kind: 'groupInventory', slug: 'party-bag', revision: 5 },
+    lines: [{ entryId: 'shop-entry-1', quantity: 2 }],
+    origin: { kind: 'shopPage' },
   },
 })
 
@@ -145,11 +187,21 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('throwPokeball')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setScene')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('updateStartTurnModal')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('shopCheckout')
+    expect(LIVE_PLAY_MAP_COMMAND_TYPE_VALUES).not.toContain('shopCheckout')
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
+    expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT)).toBe(true)
+    expect(isLivePlayMapCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
+    expect(isLivePlayMapCommandType(LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT)).toBe(false)
     expect(isLivePlayCommandType('teleportToken')).toBe(false)
     expect(parseLivePlayCommandType('useMove')).toBe('useMove')
+    expect(parseLivePlayCommandType('shopCheckout')).toBe('shopCheckout')
+    expect(parseLivePlayMapCommandType('useMove')).toBe('useMove')
     expect(() => parseLivePlayCommandType('teleportToken')).toThrow(
       'supported live-play command type',
+    )
+    expect(() => parseLivePlayMapCommandType('shopCheckout')).toThrow(
+      'supported map live-play command type',
     )
 
     expect(LIVE_PLAY_PATCH_TYPE_VALUES).toContain('token.position')
@@ -181,10 +233,26 @@ describe('live-play command contract', () => {
       'sendOut',
       'delete',
     ])
+    expect(LIVE_PLAY_SHOP_SCOPE_FIELDS).toEqual(['stock', 'purchase'])
+    expect(LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS).toEqual(['money', 'inventory'])
+    expect(SHOP_CHECKOUT_TRAINER_SHEET_SCOPE_FIELDS).toEqual(['money', 'inventory'])
+    expect(SHOP_CHECKOUT_COMMAND_REQUIRED_FIELDS).toEqual([
+      'schemaVersion',
+      'opId',
+      'type',
+      'scopes',
+      'payload',
+    ])
     expect(isLivePlayMapScopeLane('initiative')).toBe(true)
     expect(isLivePlayMapScopeLane('wholeMap')).toBe(false)
     expect(isLivePlayTokenScopeField('position')).toBe(true)
     expect(isLivePlayTokenScopeField('inventory')).toBe(false)
+    expect(isLivePlayShopScopeField('stock')).toBe(true)
+    expect(isLivePlayShopScopeField('price')).toBe(false)
+    expect(isLivePlayGroupInventoryScopeField('money')).toBe(true)
+    expect(isLivePlayGroupInventoryScopeField('stock')).toBe(false)
+    expect(isShopCheckoutTrainerSheetScopeField('inventory')).toBe(true)
+    expect(isShopCheckoutTrainerSheetScopeField('currentHp')).toBe(false)
 
     const mapScope = { kind: 'map', lane: 'initiative' } as const satisfies LivePlayMapScope
     const sheetScope = {
@@ -193,9 +261,28 @@ describe('live-play command contract', () => {
       sheetSlug: 'pikachu',
       field: 'currentHp',
     } as const satisfies LivePlayScope
+    const shopScope = {
+      kind: 'shop',
+      shopSlug: 'general-store',
+      field: 'stock',
+    } as const satisfies LivePlayShopScope
+    const groupInventoryScope = {
+      kind: 'groupInventory',
+      slug: 'party-bag',
+      field: 'inventory',
+    } as const satisfies LivePlayGroupInventoryScope
+    const trainerCheckoutScope = {
+      kind: 'sheet',
+      sheetKind: 'trainer',
+      sheetSlug: 'ash-ketchum',
+      field: 'money',
+    } as const satisfies ShopCheckoutTrainerSheetScope
 
     expect(mapScope.lane).toBe('initiative')
     expect(sheetScope.sheetSlug).toBe('pikachu')
+    expect(shopScope.shopSlug).toBe('general-store')
+    expect(groupInventoryScope.slug).toBe('party-bag')
+    expect(trainerCheckoutScope.field).toBe('money')
     expectTypeOf(mapScope.lane).toMatchTypeOf<LivePlayMapScopeLane>()
     expectTypeOf(tokenScope.field).toMatchTypeOf<LivePlayTokenScopeField>()
   })
@@ -387,6 +474,111 @@ describe('live-play command contract', () => {
     expectTypeOf(spawnTokenCommand.payload).toMatchTypeOf<SpawnTokenPayload>()
     expectTypeOf(sendOutPokemonCommand.payload).toMatchTypeOf<SendOutPokemonPayload>()
     expectTypeOf(deleteTokenCommand.payload).toMatchTypeOf<DeleteTokenPayload>()
+  })
+
+  it('models shop checkout command envelopes without map persistence fields', () => {
+    const command = buildShopCheckoutCommand()
+    const result = validateShopCheckoutCommandEnvelope<typeof command>(command)
+
+    expect(command.schemaVersion).toBe(1)
+    expect(command.type).toBe('shopCheckout')
+    expect(command.payload).toEqual({
+      shopSlug: 'general-store',
+      shopRevision: 3,
+      paymentSource: { kind: 'trainer', slug: 'ash-ketchum', revision: 12 },
+      deliveryTarget: { kind: 'groupInventory', slug: 'party-bag', revision: 5 },
+      lines: [{ entryId: 'shop-entry-1', quantity: 2 }],
+      origin: { kind: 'shopPage' },
+    })
+    expect(command.scopes).toEqual([
+      { kind: 'shop', shopSlug: 'general-store', field: 'purchase' },
+      { kind: 'shop', shopSlug: 'general-store', field: 'stock' },
+      { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash-ketchum', field: 'money' },
+      { kind: 'groupInventory', slug: 'party-bag', field: 'inventory' },
+    ])
+    expect(collectShopCheckoutCommandEnvelopeIssues(command)).toEqual([])
+    expect(isValidShopCheckoutCommandEnvelope(command)).toBe(true)
+    expect(assertValidShopCheckoutCommandEnvelope(command)).toBe(command)
+    expect(validateLivePlayCommandEnvelope(command).valid).toBe(false)
+
+    if (result.valid) {
+      expect(result.command.payload.shopSlug).toBe('general-store')
+      expectTypeOf(result.command).toEqualTypeOf<typeof command>()
+    }
+
+    expectTypeOf(command.payload).toMatchTypeOf<ShopCheckoutPayload>()
+  })
+
+  it('defines shop checkout terminal result interfaces for authoritative document updates', () => {
+    expectTypeOf<ShopCheckoutCommandAccepted>().toMatchTypeOf<ShopCheckoutCommandResult>()
+    expectTypeOf<ShopCheckoutCommandRejected>().toMatchTypeOf<ShopCheckoutCommandResult>()
+
+    const accepted = {
+      ok: true,
+      opId: parseLivePlayOpId('op_shopbuy002'),
+      shopSlug: 'general-store',
+      previousShopRevision: 3,
+      shopRevision: 4,
+      totalPrice: 400,
+      lines: [
+        {
+          entryId: 'shop-entry-1',
+          itemName: 'Potion',
+          section: 'medicalKit',
+          quantity: 2,
+          unitPrice: 200,
+          lineTotal: 400,
+          stock: 8,
+        },
+      ],
+      documents: {
+        shop: {
+          slug: 'general-store',
+          revision: 4,
+          updatedAt: 1_700_000_000,
+          name: 'General Store',
+          playerVisible: true,
+          open: true,
+          allowedPaymentSources: ['trainer'],
+          allowedDeliveryTargets: ['trainer', 'groupInventory'],
+          entries: [],
+        },
+      },
+    } satisfies ShopCheckoutCommandAccepted
+
+    expect(accepted.lines[0].lineTotal).toBe(400)
+    expect(accepted.documents.shop.revision).toBe(4)
+  })
+
+  it('rejects malformed shop checkout command envelopes without requiring map state', () => {
+    const invalidEnvelope = {
+      schemaVersion: 2,
+      opId: 'not-an-op-id',
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [
+        { kind: 'shop', shopSlug: 'Bad Slug', field: 'price' },
+        { kind: 'groupInventory', slug: 'Party Bag', field: 'stock' },
+        { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'currentHp' },
+        { kind: 'map', lane: 'terrain' },
+      ],
+      payload: undefined,
+    }
+
+    const issues = collectShopCheckoutCommandEnvelopeIssues(invalidEnvelope)
+    const issueByPath = new Map(issues.map((issue) => [issue.path, issue]))
+
+    expect(validateShopCheckoutCommandEnvelope(invalidEnvelope).valid).toBe(false)
+    expect(issueByPath.get('schemaVersion')?.code).toBe('invalid-schema-version')
+    expect(issueByPath.get('opId')?.code).toBe('invalid-op-id')
+    expect(issueByPath.get('type')?.code).toBe('unsupported-command-type')
+    expect(issueByPath.get('scopes[0].shopSlug')?.code).toBe('invalid-shop-scope')
+    expect(issueByPath.get('scopes[0].field')?.code).toBe('invalid-shop-scope')
+    expect(issueByPath.get('scopes[1].slug')?.code).toBe('invalid-group-inventory-scope')
+    expect(issueByPath.get('scopes[1].field')?.code).toBe('invalid-group-inventory-scope')
+    expect(issueByPath.get('scopes[2].sheetKind')?.code).toBe('invalid-sheet-scope')
+    expect(issueByPath.get('scopes[2].field')?.code).toBe('invalid-sheet-scope')
+    expect(issueByPath.get('scopes[3].kind')?.code).toBe('invalid-scope-kind')
+    expect(issueByPath.get('payload')?.code).toBe('invalid-payload')
   })
 
   it('builds accepted, rejected, and duplicate results with reusable shapes', () => {

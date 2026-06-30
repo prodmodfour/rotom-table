@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
+import { LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_MAP_COMMAND_TYPE_VALUES } from '#shared/livePlayCommands'
 
 const useCasesDir = join(process.cwd(), 'server/useCases')
 const useCaseFiles = readdirSync(useCasesDir)
@@ -101,9 +101,11 @@ describe('production live-play command architecture', () => {
     expect(wrongOrder).toEqual([])
   })
 
-  it('the production command use cases mention every current live-play command type', () => {
+  it('the production map command use cases mention every current map live-play command type', () => {
     const combined = productionLivePlayCommandFiles.map(({ text }) => text).join('\n')
+    const mapCommandTypes = new Set<string>(LIVE_PLAY_MAP_COMMAND_TYPE_VALUES)
     const missing = Object.entries(LIVE_PLAY_COMMAND_TYPES)
+      .filter(([, type]) => mapCommandTypes.has(type))
       .filter(([constantName]) => !combined.includes(`LIVE_PLAY_COMMAND_TYPES.${constantName}`))
       .map(([, type]) => type)
     expect(missing).toEqual([])

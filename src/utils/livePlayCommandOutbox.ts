@@ -1,10 +1,10 @@
 import { isAuthRole, type AuthRole } from '#shared/auth'
 import {
-  isLivePlayCommandType,
+  isLivePlayMapCommandType,
   isLivePlayMapSlug,
   isLivePlayOpId,
   validateLivePlayCommandEnvelope,
-  type LivePlayCommandType,
+  type LivePlayMapCommandType,
 } from '#shared/livePlayCommands'
 import { isPlayerProfileId, type PlayerProfileId } from '#shared/playerProfiles'
 
@@ -34,7 +34,7 @@ export interface LivePlayCommandOutboxEntry {
   readonly schemaVersion: typeof LIVE_PLAY_COMMAND_OUTBOX_SCHEMA_VERSION
   readonly opId: string
   readonly mapSlug: string
-  readonly commandType: LivePlayCommandType
+  readonly commandType: LivePlayMapCommandType
   readonly requestPath: string
   readonly body: Record<string, unknown>
   readonly authContext: LivePlayCommandOutboxAuthContext
@@ -463,8 +463,8 @@ const validatedCommandIdentityFromBody = (body: Record<string, unknown>) => {
   if (!isLivePlayMapSlug(mapSlug)) {
     throw validationError('body.mapSlug must match the shared live-play map slug format.')
   }
-  if (!isLivePlayCommandType(commandType)) {
-    throw validationError('body.type must be a supported live-play command type.')
+  if (!isLivePlayMapCommandType(commandType)) {
+    throw validationError('body.type must be a supported map live-play command type.')
   }
 
   return { opId, mapSlug, commandType }
