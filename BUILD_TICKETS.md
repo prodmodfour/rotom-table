@@ -252,7 +252,7 @@ Add routes where GMs manage shops and players browse shops.
 
 ## 008 — SHOPS-008: Add GM shop library page
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Let GMs browse and create shop tables from `/shops`.

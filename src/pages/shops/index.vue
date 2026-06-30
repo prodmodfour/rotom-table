@@ -1,26 +1,34 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import ShopLibraryCard from '~/components/shops/ShopLibraryCard.vue'
+import { useGmShopLibraryPage } from '~/composables/shops/useGmShopLibraryPage'
 
-type ShopLibraryShellStatus = 'loading' | 'empty' | 'error'
+type PlayerShopLibraryShellStatus = 'loading' | 'empty' | 'error'
 
 const { isGm } = useAuth()
 
-const shopLibraryStatus = ref<ShopLibraryShellStatus>('empty')
-const shopLibraryErrorMessage = ref<string | null>(null)
+const playerLibraryStatus = ref<PlayerShopLibraryShellStatus>('empty')
+const playerLibraryErrorMessage = ref<string | null>(null)
 
-const emptyHeading = computed(() => (
-  isGm.value ? 'No shop tables are displayed yet' : 'No shops are currently displayed'
-))
-const emptyDescription = computed(() => (
-  isGm.value
-    ? 'The GM shop library route is ready. Shop cards and creation controls will be wired in the next shop tickets.'
-    : 'The player shop browser route is ready. Open, player-visible shopfronts will appear here once the browser is wired.'
+const {
+  shops,
+  status: gmShopLibraryStatus,
+  loadErrorMessage: gmShopLibraryErrorMessage,
+  createErrorMessage,
+  isCreatingShop,
+  loadGmShops,
+  createShop,
+} = useGmShopLibraryPage({ isGm })
+
+const playerEmptyHeading = computed(() => 'No shops are currently displayed')
+const playerEmptyDescription = computed(() => (
+  'The player shop browser route is ready. Open, player-visible shopfronts will appear here once the browser is wired.'
 ))
 
-const resetShopLibraryShell = () => {
-  shopLibraryErrorMessage.value = null
-  shopLibraryStatus.value = 'empty'
+const resetPlayerShopLibraryShell = () => {
+  playerLibraryErrorMessage.value = null
+  playerLibraryStatus.value = 'empty'
 }
 
 useHead({
@@ -48,9 +56,69 @@ useHead({
       </div>
     </header>
 
-    <section class="shops-state" aria-label="Shop library status">
+    <section v-if="isGm" class="shops-state" aria-label="GM shop library">
+      <article class="shops-panel shops-panel--toolbar panel-card">
+        <div>
+          <p class="shops-eyebrow">GM shop library</p>
+          <h2>Shop tables</h2>
+          <p>Browse every campaign shop table, including closed and hidden setup documents.</p>
+        </div>
+        <button
+          type="button"
+          class="shops-action shops-action--primary"
+          :disabled="isCreatingShop"
+          @click="createShop"
+        >
+          {{ isCreatingShop ? 'Creating shop…' : '+ Create shop table' }}
+        </button>
+      </article>
+
+      <p v-if="createErrorMessage" class="shops-inline-error panel-card" role="alert">
+        {{ createErrorMessage }}
+      </p>
+
       <article
-        v-if="shopLibraryStatus === 'loading'"
+        v-if="gmShopLibraryStatus === 'loading'"
+        class="shops-panel panel-card"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <p class="shops-eyebrow">Loading</p>
+        <h2>Loading shop tables…</h2>
+        <p>Loading the authoritative campaign shop library.</p>
+      </article>
+
+      <article
+        v-else-if="gmShopLibraryStatus === 'error'"
+        class="shops-panel shops-panel--error panel-card"
+        role="alert"
+      >
+        <p class="shops-eyebrow">Unavailable</p>
+        <h2>Could not load shop tables</h2>
+        <p>{{ gmShopLibraryErrorMessage ?? 'The GM shop library could not be loaded.' }}</p>
+        <button type="button" class="shops-action" @click="loadGmShops">
+          Retry loading shops
+        </button>
+      </article>
+
+      <article v-else-if="gmShopLibraryStatus === 'empty'" class="shops-panel panel-card" role="status">
+        <p class="shops-eyebrow">Empty</p>
+        <h2>No shop tables yet</h2>
+        <p>Click <strong>+ Create shop table</strong> to create a normalized shop document and open its GM editor.</p>
+      </article>
+
+      <section v-else class="shops-grid" aria-label="Shop tables">
+        <ShopLibraryCard
+          v-for="shop in shops"
+          :key="shop.slug"
+          :shop="shop"
+        />
+      </section>
+    </section>
+
+    <section v-else class="shops-state" aria-label="Shop library status">
+      <article
+        v-if="playerLibraryStatus === 'loading'"
         class="shops-panel panel-card"
         aria-busy="true"
         aria-live="polite"
@@ -61,22 +129,22 @@ useHead({
       </article>
 
       <article
-        v-else-if="shopLibraryStatus === 'error'"
+        v-else-if="playerLibraryStatus === 'error'"
         class="shops-panel shops-panel--error panel-card"
         role="alert"
       >
         <p class="shops-eyebrow">Unavailable</p>
         <h2>Could not open shops</h2>
-        <p>{{ shopLibraryErrorMessage ?? 'The shop library shell could not be prepared.' }}</p>
-        <button type="button" class="shops-action" @click="resetShopLibraryShell">
+        <p>{{ playerLibraryErrorMessage ?? 'The shop library shell could not be prepared.' }}</p>
+        <button type="button" class="shops-action" @click="resetPlayerShopLibraryShell">
           Return to shop shell
         </button>
       </article>
 
       <article v-else class="shops-panel panel-card" role="status">
         <p class="shops-eyebrow">Empty</p>
-        <h2>{{ emptyHeading }}</h2>
-        <p>{{ emptyDescription }}</p>
+        <h2>{{ playerEmptyHeading }}</h2>
+        <p>{{ playerEmptyDescription }}</p>
       </article>
     </section>
   </main>
@@ -101,8 +169,14 @@ useHead({
   gap: 0.7rem;
 }
 
+.shops-panel--toolbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
 .shops-hero p,
-.shops-panel p {
+.shops-panel p,
+.shops-inline-error {
   max-width: 68ch;
   margin: 0;
   color: var(--ink-soft);
@@ -138,8 +212,19 @@ useHead({
   gap: 1rem;
 }
 
-.shops-panel--error {
+.shops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1rem;
+}
+
+.shops-panel--error,
+.shops-inline-error {
   border-color: color-mix(in srgb, var(--bad) 60%, var(--rule-soft));
+}
+
+.shops-inline-error {
+  color: var(--bad);
 }
 
 .shops-action {
@@ -157,10 +242,29 @@ useHead({
   text-transform: uppercase;
 }
 
+.shops-action--primary {
+  justify-self: end;
+}
+
 .shops-action:hover,
 .shops-action:focus-visible {
   border-color: var(--rule-active);
   background: var(--paper-hover);
   outline: none;
+}
+
+.shops-action:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 680px) {
+  .shops-panel--toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .shops-action--primary {
+    justify-self: start;
+  }
 }
 </style>
