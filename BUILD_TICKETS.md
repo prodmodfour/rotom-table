@@ -509,7 +509,7 @@ Avoid duplicating hash/result/idempotency logic between map live-play commands a
 
 ## 016 — SHOPS-016: Add pure shop checkout calculation helpers
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Implement the domain logic for checkout without persistence or API side effects.
