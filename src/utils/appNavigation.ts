@@ -16,6 +16,7 @@ import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import { PLAYER_TRAINER_PORTAL_PATH } from '~/utils/playerTrainerPortalRoutes'
 import { referenceIndexPath } from '~/utils/reference/routes'
 import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
+import { SHOP_LIBRARY_PATH, isShopPath } from '~/utils/shopRoutes'
 
 export interface AppNavItem {
   path: string
@@ -28,6 +29,7 @@ export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: MAP_LIBRARY_PATH, label: 'Maps' },
   { path: CAMPAIGN_PATH, label: 'Campaign', gmOnly: true },
   { path: GROUP_INVENTORY_PATH, label: 'Inventory' },
+  { path: SHOP_LIBRARY_PATH, label: 'Shops' },
   { path: POKEDEX_PATH, label: 'Pokédex' },
   { path: PLAYER_TRAINER_PORTAL_PATH, label: 'Trainers', playerOnly: true },
   { path: SHEET_LIBRARY_PATH, label: 'Sheets', gmOnly: true },
@@ -75,6 +77,8 @@ export const isAppNavItemActive = (currentPath: string, itemPath: string): boole
   }
 
   if (itemPath === GROUP_INVENTORY_PATH) return isGroupInventoryPath(currentPath)
+
+  if (itemPath === SHOP_LIBRARY_PATH) return isShopPath(currentPath)
 
   if (itemPath === SETTINGS_PATH) return isSettingsPath(currentPath)
 

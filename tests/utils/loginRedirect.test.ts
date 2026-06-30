@@ -14,6 +14,7 @@ import {
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
 import { referenceDetailPath, referenceIndexPath } from '~/utils/reference/routes'
+import { SHOP_LIBRARY_PATH, shopEditorPath, shopfrontPath } from '~/utils/shopRoutes'
 
 describe('loginRedirect', () => {
   it('exposes canonical login and player-blocked route constants', () => {
@@ -47,6 +48,9 @@ describe('loginRedirect', () => {
     expect(isPlayerBlockedRedirectPath(`${ENCOUNTER_TABLES_PATH}/kanto`)).toBe(true)
     expect(isPlayerBlockedRedirectPath(PLAYER_PROFILE_MANAGEMENT_PATH)).toBe(true)
     expect(isPlayerBlockedRedirectPath(`${PLAYER_PROFILE_MANAGEMENT_PATH}/profile_ash00000`)).toBe(true)
+    expect(isPlayerBlockedRedirectPath(shopEditorPath('viridian-mart'))).toBe(true)
+    expect(isPlayerBlockedRedirectPath(SHOP_LIBRARY_PATH)).toBe(false)
+    expect(isPlayerBlockedRedirectPath(shopfrontPath('viridian-mart'))).toBe(false)
     expect(isPlayerBlockedRedirectPath('/maps/generate')).toBe(false)
   })
 
@@ -62,6 +66,8 @@ describe('loginRedirect', () => {
     expect(resolveLoginRedirectTarget(ENCOUNTER_GENERATOR_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(`${ENCOUNTER_TABLES_PATH}/kanto`, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
     expect(resolveLoginRedirectTarget(PLAYER_PROFILE_MANAGEMENT_PATH, 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
+    expect(resolveLoginRedirectTarget(shopEditorPath('viridian-mart'), 'player')).toBe(DEFAULT_LOGIN_REDIRECT)
+    expect(resolveLoginRedirectTarget(shopfrontPath('viridian-mart'), 'player')).toBe(shopfrontPath('viridian-mart'))
     expect(resolveLoginRedirectTarget(CAMPAIGN_PATH, 'gm')).toBe(CAMPAIGN_PATH)
     expect(resolveLoginRedirectTarget(GROUP_INVENTORY_PATH, 'gm')).toBe(GROUP_INVENTORY_PATH)
     expect(resolveLoginRedirectTarget(SETTINGS_PATH, 'gm')).toBe(SETTINGS_PATH)

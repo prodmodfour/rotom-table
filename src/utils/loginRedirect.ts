@@ -3,6 +3,7 @@ import { GM_ONLY_PATH_PREFIXES } from '~/utils/appRoutes'
 import { ENCOUNTER_GM_ONLY_PATH_PREFIXES } from '~/utils/encounterRoutes'
 import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { PLAYER_PROFILE_GM_ONLY_PATH_PREFIXES } from '~/utils/playerProfileRoutes'
+import { isShopEditorPath } from '~/utils/shopRoutes'
 
 export const PLAYER_BLOCKED_REDIRECT_PREFIXES = [
   ...GM_ONLY_PATH_PREFIXES,
@@ -18,8 +19,10 @@ export const isSafeInternalRedirect = (value: unknown): value is string =>
 export const isPlayerBlockedRedirectPath = (
   path: string,
   blockedPrefixes: readonly string[] = PLAYER_BLOCKED_REDIRECT_PREFIXES,
-): boolean =>
-  blockedPrefixes.some((blocked) => path === blocked || path.startsWith(`${blocked}/`))
+): boolean => (
+  isShopEditorPath(path)
+  || blockedPrefixes.some((blocked) => path === blocked || path.startsWith(`${blocked}/`))
+)
 
 export const resolveLoginRedirectTarget = (
   rawRedirect: unknown,

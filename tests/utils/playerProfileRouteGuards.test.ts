@@ -6,6 +6,7 @@ import { MAP_LIBRARY_PATH } from '~/utils/mapRoutes'
 import { POKEDEX_PATH } from '~/utils/pokedex/routes'
 import { referenceDetailPath, referenceIndexPath } from '~/utils/reference/routes'
 import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
+import { SHOP_LIBRARY_PATH, shopEditorPath, shopfrontPath } from '~/utils/shopRoutes'
 import {
   PLAYER_PROFILE_REQUIRED_LOGIN_NOTICE,
   PLAYER_PROFILE_REQUIRED_QUERY_KEY,
@@ -112,6 +113,8 @@ describe('player profile-aware route guards', () => {
       '/maps',
       GROUP_INVENTORY_PATH,
       PLAYER_TRAINER_PORTAL_PATH,
+      SHOP_LIBRARY_PATH,
+      shopfrontPath('viridian-mart'),
       '/pokedex/pikachu',
       '/moves/tackle',
       '/rules/combat-stages',
@@ -167,6 +170,14 @@ describe('player profile-aware route guards', () => {
       expect(resolveProfileAwareRouteGuard({
         path: ENCOUNTER_GENERATOR_PATH,
         fullPath: ENCOUNTER_GENERATOR_PATH,
+        hasRole: true,
+        isPlayer: true,
+        hasSelectedPlayerProfile,
+      })).toEqual({ type: 'redirect', location: DEFAULT_LOGIN_REDIRECT })
+
+      expect(resolveProfileAwareRouteGuard({
+        path: shopEditorPath('viridian-mart'),
+        fullPath: shopEditorPath('viridian-mart'),
         hasRole: true,
         isPlayer: true,
         hasSelectedPlayerProfile,

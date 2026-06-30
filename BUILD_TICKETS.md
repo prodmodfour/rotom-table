@@ -224,7 +224,7 @@ Ensure shop table data is not dropped by maintenance export/backup flows.
 
 ## 007 — SHOPS-007: Add shop navigation and page shell
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Add routes where GMs manage shops and players browse shops.

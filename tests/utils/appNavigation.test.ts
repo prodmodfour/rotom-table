@@ -8,6 +8,7 @@ import {
 import { CAMPAIGN_PATH, GROUP_INVENTORY_PATH, LOGIN_PATH, SETTINGS_PATH, USEFUL_CHARTS_PATH } from '~/utils/appRoutes'
 import { ENCOUNTER_TABLES_PATH } from '~/utils/encounterRoutes'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
+import { SHOP_LIBRARY_PATH } from '~/utils/shopRoutes'
 import {
   NO_PLAYER_PROFILE_NAV_LABEL,
   playerProfileNavStatusText,
@@ -19,6 +20,7 @@ describe('app navigation helpers', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
       '/maps',
       GROUP_INVENTORY_PATH,
+      SHOP_LIBRARY_PATH,
       '/pokedex',
       '/trainers',
       SETTINGS_PATH,
@@ -28,6 +30,7 @@ describe('app navigation helpers', () => {
       '/maps',
       CAMPAIGN_PATH,
       GROUP_INVENTORY_PATH,
+      SHOP_LIBRARY_PATH,
       '/pokedex',
       '/sheets',
       SETTINGS_PATH,
@@ -37,6 +40,8 @@ describe('app navigation helpers', () => {
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).some((item) => item.path === '/sessions')).toBe(false)
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).find((item) => item.path === GROUP_INVENTORY_PATH)?.label).toBe('Inventory')
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === GROUP_INVENTORY_PATH)?.label).toBe('Inventory')
+    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).find((item) => item.path === SHOP_LIBRARY_PATH)?.label).toBe('Shops')
+    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === SHOP_LIBRARY_PATH)?.label).toBe('Shops')
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === SETTINGS_PATH)?.label).toBe('Settings')
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === PLAYER_PROFILE_MANAGEMENT_PATH)?.label).toBe('Players')
     expect(filterAppNavItems(REFERENCE_APP_NAV_ITEMS, false).map((item) => item.path)).toEqual([
@@ -63,6 +68,10 @@ describe('app navigation helpers', () => {
     expect(isAppNavItemActive('/group-inventory', GROUP_INVENTORY_PATH)).toBe(true)
     expect(isAppNavItemActive('/group-inventory/history', GROUP_INVENTORY_PATH)).toBe(true)
     expect(isAppNavItemActive('/group-inventory-tools', GROUP_INVENTORY_PATH)).toBe(false)
+    expect(isAppNavItemActive('/shops', SHOP_LIBRARY_PATH)).toBe(true)
+    expect(isAppNavItemActive('/shops/viridian-mart', SHOP_LIBRARY_PATH)).toBe(true)
+    expect(isAppNavItemActive('/shops/viridian-mart/edit', SHOP_LIBRARY_PATH)).toBe(true)
+    expect(isAppNavItemActive('/shops-tools', SHOP_LIBRARY_PATH)).toBe(false)
     expect(isAppNavItemActive('/trainers', '/trainers')).toBe(true)
     expect(isAppNavItemActive('/sheets/trainers/brock', '/trainers')).toBe(true)
     expect(isAppNavItemActive('/sheets/pikachu', '/trainers')).toBe(true)
