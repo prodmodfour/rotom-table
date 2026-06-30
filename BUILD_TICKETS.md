@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: NOT_DONE
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -506,7 +506,7 @@ Make sure group inventory data is not missed by maintenance export/backup flows.
 
 ## 044 — #44: Group inventory: document workflow and future live-play command boundary
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/44
 

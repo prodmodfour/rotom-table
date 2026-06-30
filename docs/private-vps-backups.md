@@ -186,8 +186,8 @@ In a browser on the host or through the same private access path, verify the res
 
 Then verify a temporary restore smoke write persists after restart:
 
-1. In the temporary restore app, create or edit a clearly disposable item such as `Restore Smoke <current-date>` in a map folder or sheet folder.
-2. Confirm the matching map/sheet state loads from SQLite after a refresh; if `sqlite3` is available, inspect the restored `maps`, `sheets`, `map_folders`, or `sheet_folders` tables rather than looking for runtime JSON writes.
+1. In the temporary restore app, create or edit a clearly disposable item such as `Restore Smoke <current-date>` in a map folder, sheet folder, or group inventory row.
+2. Confirm the matching map/sheet/group-inventory state loads from SQLite after a refresh; if `sqlite3` is available, inspect the restored `maps`, `sheets`, `group_inventories`, `map_folders`, or `sheet_folders` tables rather than looking for runtime JSON writes.
 3. If the backup includes live-play state, open a disposable restored map and run a small command-backed action such as moving a smoke token or changing a smoke token's HP. Confirm the map/sheet values update in the UI and, if `sqlite3` is available, that the restored database still reports `PRAGMA integrity_check;` after the command.
 4. Stop the temporary app process with `Ctrl+C` and start it again with the same environment values.
 5. Reload the edited map, sheet, group inventory, player profile list, encounter table, and any command-backed smoke map to confirm the disposable write and live-play state are still present.
@@ -202,7 +202,7 @@ case "$RESTORE_ROOT" in
 esac
 ```
 
-If the app cannot boot with the temporary `ROTOM_CAMPAIGN_ROOT`, any expected folder is missing, restored maps/sheets/trainers/player profiles/reference overrides/encounter tables do not load, or the test write disappears after restart, treat the archive as unverified and create a new backup before the next session.
+If the app cannot boot with the temporary `ROTOM_CAMPAIGN_ROOT`, any expected folder is missing, restored maps/sheets/trainers/group inventory/player profiles/reference overrides/encounter tables do not load, or the test write disappears after restart, treat the archive as unverified and create a new backup before the next session.
 
 ## Rollback after a bad deploy
 

@@ -1,6 +1,6 @@
 # Local development
 
-Rotom Table runs locally with SQLite-backed runtime maps/sheets and remaining inspectable JSON maintenance data.
+Rotom Table runs locally with SQLite-backed runtime maps/sheets/group inventory and remaining inspectable JSON maintenance data.
 
 ## Requirements
 
@@ -24,7 +24,7 @@ Nuxt will print the local URL, usually `http://localhost:3000`. Open the app and
 
 ## Profile play and legacy live-session hosting
 
-Plain `npm run dev` is the standard local development path. Map and sheet routes such as `/maps/<slug>`, `/sheets/<slug>`, and `/sheets/trainers/<slug>` save runtime SQLite documents through revision-checked autosave for setup/edit workflows. Whole-map map saves are GM setup/edit-only and require the setup/edit interaction mode; they are not accepted from Player Login or from live-play mode. Those document saves and legacy `/api/events` realtime updates are not the authority model for live multiplayer gameplay.
+Plain `npm run dev` is the standard local development path. Map, sheet, and group inventory routes such as `/maps/<slug>`, `/sheets/<slug>`, `/sheets/trainers/<slug>`, and `/group-inventory` save runtime SQLite documents through revision-checked setup/edit workflows or atomic transfer APIs. Whole-map map saves are GM setup/edit-only and require the setup/edit interaction mode; they are not accepted from Player Login or from live-play mode. Those document saves and legacy `/api/events` realtime updates are not the authority model for live multiplayer gameplay.
 
 Normal map play uses the saved map document at `/maps/<slug>` with profile-linked token control. GMs manage profile links at `/players`; players select a profile after Player Login, then navigate to the relevant player-visible map and act with linked characters. Live gameplay mutations move through server-authoritative command boundaries with revisions and idempotent `opId` handling; browser-owned whole-map autosave must not be used as the multiplayer strategy. Players can also browse Pokédex, sheet-library, and PTU reference routes without joining a live session.
 
@@ -123,10 +123,10 @@ Encounter spawn flows persist generated Pokémon sheets into SQLite. Standalone 
 
 ## Local data behaviour
 
-The app edits the local SQLite database for runtime maps and sheets during development. By default the campaign root is the app checkout; set `ROTOM_CAMPAIGN_ROOT=/path/to/private-campaign-repo` before `npm run dev` to resolve the database and remaining campaign-owned paths under a separate campaign repository instead. See [Campaign repositories](campaign-repositories.md).
+The app edits the local SQLite database for runtime maps, sheets, and group inventory during development. By default the campaign root is the app checkout; set `ROTOM_CAMPAIGN_ROOT=/path/to/private-campaign-repo` before `npm run dev` to resolve the database and remaining campaign-owned paths under a separate campaign repository instead. See [Campaign repositories](campaign-repositories.md).
 
-- runtime maps/sheets/folders/modes: `rotom-table.sqlite` (or `ROTOM_DB_PATH`)
-- map/sheet JSON import/export artifacts: `data/maps/`, `data/sheets/`, `data/trainers/`
+- runtime maps/sheets/group inventory/folders/modes: `rotom-table.sqlite` (or `ROTOM_DB_PATH`)
+- map/sheet/group-inventory JSON import/export artifacts: `data/maps/`, `data/sheets/`, `data/trainers/`, `data/group-inventories/`
 - player profiles: `data/player-profiles/`
 - Pokédex reference override diff: `data/reference-overrides/pokedex.json`
 - encounter tables: `encounter_tables/`
@@ -141,6 +141,6 @@ Nuxt/Vite are configured to ignore app-written maintenance data changes so admin
 
 Rotom Table is strongest as a local-development and private trusted-table tool. Production hosted writes are fail-closed unless a private operator explicitly opts in. Use `npm run dev` when you need unrestricted local browser editing, autosave, encounter generation, or filesystem JSON management.
 
-The private VPS hosted-write policy uses `ROTOM_ENABLE_HOSTED_WRITES=1` as the exact production opt-in for covered campaign writes, including SQLite map/sheet writes and remaining maintenance JSON writes. When `NODE_ENV=production`, an unset flag or any value other than exactly `1` keeps covered hosted writes disabled with a 403-style error; non-production development writes remain unchanged. See [Private VPS hosting scope](private-vps-hosting.md) for the full flag semantics and private trusted-table boundary, and see the [API route mutation audit](api-route-mutation-audit.md) for route-by-route coverage.
+The private VPS hosted-write policy uses `ROTOM_ENABLE_HOSTED_WRITES=1` as the exact production opt-in for covered campaign writes, including SQLite map/sheet/group-inventory writes and remaining maintenance JSON writes. When `NODE_ENV=production`, an unset flag or any value other than exactly `1` keeps covered hosted writes disabled with a 403-style error; non-production development writes remain unchanged. See [Private VPS hosting scope](private-vps-hosting.md) for the full flag semantics and private trusted-table boundary, and see the [API route mutation audit](api-route-mutation-audit.md) for route-by-route coverage.
 
 A public deployment should replace the trust-based role picker, decide on a durable persistence layer, review mutating routes, review asset/content rights, and separate private campaign data from public reference data.

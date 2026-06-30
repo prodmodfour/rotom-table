@@ -11,7 +11,7 @@ Use synthetic or clearly disposable campaign edits for smoke checks. Do not put 
 - [ ] The Node service binds to loopback, for example `NITRO_HOST=127.0.0.1` and `NITRO_PORT=3000`, unless the private host uses an equivalent non-public bind.
 - [ ] The private host is protected by an outer access gate before Rotom Table's `/login` page, `/api/events`, `/api/health`, all `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths are reachable.
 - [ ] A current private backup exists or the operator is comfortable discarding the disposable smoke edits. Backups include `rotom-table.sqlite` plus `rotom-table.sqlite-wal` and `rotom-table.sqlite-shm` when present. See the [Private VPS backup runbook](private-vps-backups.md).
-- [ ] Existing installations have run the explicit SQLite migration before deploying this version: `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign npm run migrate:sqlite`. JSON map/sheet files are no longer runtime fallback state.
+- [ ] Existing installations have run the explicit SQLite migration before deploying this version: `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign npm run migrate:sqlite`. JSON map/sheet/group-inventory files are no longer runtime fallback state.
 - [ ] If this deployment is intended to save campaign changes in production, the real service environment intentionally sets exactly `ROTOM_ENABLE_HOSTED_WRITES=1`. If the flag is absent or set to any other value, covered production writes should fail closed instead of persisting.
 
 ## Build and process checks
@@ -68,7 +68,7 @@ Use separate browser profiles or private windows so the GM and player cookies do
 - [ ] The GM confirms at least one saved map is player-visible and contains a token linked to the chosen player profile.
 - [ ] A separate authorized player browser passes the same outer access gate, chooses **Player Login**, selects the GM-created profile, and sees the selected profile in the normal app navigation.
 - [ ] The player opens `/maps` or the intended `/maps/<slug>` route, can view the player-visible map, and can act only with tokens linked to the selected profile.
-- [ ] The player can open the linked sheet through the normal sheet flow and can still browse Pokédex/reference routes such as `/pokedex`, `/moves`, `/abilities`, `/rules`, and `/items`.
+- [ ] The player can open the linked sheet through the normal sheet flow, open `/group-inventory` for shared inventory viewing or linked-trainer transfers, and can still browse Pokédex/reference routes such as `/pokedex`, `/moves`, `/abilities`, `/rules`, and `/items`.
 
 ## Write persistence after restart
 
@@ -76,7 +76,8 @@ Run this section with disposable data. If hosted writes are intentionally disabl
 
 - [ ] Create or edit a clearly disposable map item, such as moving a smoke-test token on a player-visible map or creating a temporary map/folder named `Deploy Smoke <date>`.
 - [ ] Create or edit a clearly disposable sheet field on a synthetic Pokémon or trainer sheet, or on a sheet the table explicitly agrees to modify for the smoke check.
-- [ ] Confirm the corresponding map/sheet changes are present in the SQLite database under `ROTOM_CAMPAIGN_ROOT` (or `ROTOM_DB_PATH`) rather than as runtime JSON writes inside `/srv/rotom-table/app`. If you deliberately smoke-test Pokédex maintenance, confirm it writes `data/reference-overrides/pokedex.json` under the campaign root and leaves app-owned `data/reference/pokedex.json` unchanged.
+- [ ] As GM, create or edit a clearly disposable `/group-inventory` row and save it with revision protection, or perform a disposable linked-trainer transfer that the table agrees to keep or roll back.
+- [ ] Confirm the corresponding map/sheet/group-inventory changes are present in the SQLite database under `ROTOM_CAMPAIGN_ROOT` (or `ROTOM_DB_PATH`) rather than as runtime JSON writes inside `/srv/rotom-table/app`. If you deliberately smoke-test Pokédex maintenance, confirm it writes `data/reference-overrides/pokedex.json` under the campaign root and leaves app-owned `data/reference/pokedex.json` unchanged.
 - [ ] Restart the built process:
 
   ```bash
@@ -86,7 +87,7 @@ Run this section with disposable data. If hosted writes are intentionally disabl
 
   For a manual smoke process, stop `npm run start` with `Ctrl+C` and start it again with the same environment values.
 
-- [ ] Reload the GM and player browsers, then confirm the disposable map change and disposable sheet change both survived the restart.
+- [ ] Reload the GM and player browsers, then confirm the disposable map change, disposable sheet change, and disposable group-inventory change all survived the restart.
 - [ ] Delete the disposable smoke data, or keep it only in the private campaign repository if the operator intentionally wants that audit trail.
 
 ## Git and private-data hygiene
@@ -101,7 +102,7 @@ git status --short
 Confirm that no private data is staged in Git:
 
 - [ ] no real `.env`, `.env.*`, systemd environment file, proxy config, tunnel credential, password file, token, private key, or provider export;
-- [ ] no private `data/maps/`, `data/sheets/`, `data/trainers/`, `data/player-profiles/`, `data/reference-overrides/`, `encounter_tables/`, `data/sessions/`, SQLite database, or SQLite WAL sidecar files from the smoke pass;
+- [ ] no private `data/maps/`, `data/sheets/`, `data/trainers/`, `data/group-inventories/`, `data/player-profiles/`, `data/reference-overrides/`, `encounter_tables/`, `data/sessions/`, SQLite database, or SQLite WAL sidecar files from the smoke pass;
 - [ ] no backup archive such as `.tar`, `.tar.gz`, `.tgz`, or `.zip`;
 - [ ] no screenshots, logs, player details, unreleased campaign notes, or generated restore staging directories.
 
@@ -109,6 +110,6 @@ If the campaign root is its own private Git repository, review that repository s
 
 ## Legacy `/sessions` boundary
 
-This checklist verifies the current private VPS profile-play path: `/login`, `/players`, `/maps`, `/maps/<slug>`, `/sheets`, Pokédex, and reference pages. It does not require players to use `/sessions`, join codes, session-map attachment, or special session map URLs.
+This checklist verifies the current private VPS profile-play path: `/login`, `/players`, `/maps`, `/maps/<slug>`, `/sheets`, `/group-inventory`, Pokédex, and reference pages. It does not require players to use `/sessions`, join codes, session-map attachment, or special session map URLs.
 
 Use [Legacy live-session deployment smoke checklist](archive/live-session/live-session-deployment-smoke-checklist.md) only when maintaining the guarded legacy session lobby/socket endpoints. Keep those legacy checks isolated from normal private VPS profile play.

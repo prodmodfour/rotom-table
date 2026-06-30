@@ -8,7 +8,7 @@
 ![Private VPS](https://img.shields.io/badge/private%20VPS-trusted%20table-334155)
 ![Fan project](https://img.shields.io/badge/fan%20project-unofficial-f59e0b)
 
-Rotom Table is a long-running hobby/passion project: a private-hostable Nuxt 3 tabletop companion for Pokémon Tabletop United campaigns. It brings an isometric map table, editable Pokémon and trainer sheets, encounter-table tooling, a searchable Pokédex, and PTU reference pages into one browser app backed by inspectable campaign JSON files.
+Rotom Table is a long-running hobby/passion project: a private-hostable Nuxt 3 tabletop companion for Pokémon Tabletop United campaigns. It brings an isometric map table, editable Pokémon and trainer sheets, shared party inventory, encounter-table tooling, a searchable Pokédex, and PTU reference pages into one browser app backed by SQLite live-play state and inspectable campaign maintenance data.
 
 The project is intentionally product-shaped rather than tutorial-sized. It demonstrates TypeScript/Nuxt application structure, complex Vue UI, Three.js scene management, domain modelling for tabletop rules, hosted/private deployment workflows, campaign JSON persistence, and long-term ownership of a feature-rich tool.
 
@@ -23,7 +23,7 @@ npm install
 npm run dev
 ```
 
-Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose the GM-created persistent player profile for this browser. GMs can open `/players` to create profiles and link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping map/sheet libraries, Pokédex, and reference pages available; direct map-control and editable sheet routes ask profileless players to choose a profile before continuing. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map, session-map management controls, or the legacy session lobby.
+Nuxt will print the local URL, usually `http://localhost:3000`. Open it in a browser and choose **GM Login** for editing/encounter tools or **Player Login** to choose the GM-created persistent player profile for this browser. GMs can open `/players` to create profiles and link or unlink existing Pokémon and trainer sheets to those profiles. When logged in as a player, the app navigation shows the selected profile and lets you switch or clear it while keeping map/sheet libraries, shared inventory, Pokédex, and reference pages available; direct map-control and editable sheet routes ask profileless players to choose a profile before continuing. On map pages, players and GMs use the normal navigation rail; profile-linked token control no longer requires attach-current-map, session-map management controls, or the legacy session lobby.
 
 To keep private campaign JSON and campaign-owned reference override diffs in a separate workspace or Git repository, start Nuxt with a campaign root:
 
@@ -78,11 +78,12 @@ scripts/build-loop.sh --max-cycles 1 --no-push
 
 - **Isometric map table** — create map folders, edit maps, build voxel terrain, place hazards, manage field effects, spawn Pokémon and trainer tokens, move/turn tokens, track initiative, and use move/ability automation. Players browse GM-marked player-visible maps and control tokens through linked character sheets.
 - **Sheet library** — create, organise, rename, edit, and autosave Pokémon and trainer sheets from the browser. GMs manage library files; players browse public sheets plus sheets linked to their selected profile.
+- **Shared party inventory** — view the campaign-level group inventory, let GMs save direct edits with revision protection, and transfer items atomically between party inventory and eligible trainer sheets.
 - **Pokédex browser** — search and filter Pokémon entries, view sprites and detail panes, and jump directly to Pokémon-specific pages.
 - **Reference library** — browse moves, maneuvers, abilities, capabilities, conditions, rules, items, features, and edges.
 - **Encounter tools** — manage JSON encounter tables, roll previews, and generate wild Pokémon sheets into the sheet library.
 - **GM/player access modes** — GM-only routes and controls are hidden from the player role and checked on server routes; Player Login asks for a persistent player profile before continuing, and linked characters grant sheet editing plus map-token control.
-- **Campaign storage** — maps, sheets, trainers, player profiles, encounter tables, campaign reference override diffs, and GM-cropped profile image overrides are stored under `ROTOM_CAMPAIGN_ROOT` for private hosted campaigns, or in the app checkout during local development, for easy inspection, backup, and diffing.
+- **Campaign storage** — runtime maps, sheets, trainers, and shared group inventory live in SQLite under `ROTOM_CAMPAIGN_ROOT` or `ROTOM_DB_PATH`; player profiles, encounter tables, campaign reference override diffs, explicit JSON exports, and GM-cropped profile image overrides remain inspectable campaign-owned data for private backup and review.
 
 
 

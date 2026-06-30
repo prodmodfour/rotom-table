@@ -42,6 +42,7 @@ A selected player profile grants control only through its linked character refs:
 - **Sheets:** players can load and save linked Pokémon/trainer sheets through the normal sheet editor for setup/edit-style sheet maintenance outside live map commands. They can edit the same UI-editable fields the sheet editor exposes while derived/system fields remain protected by the existing save pipeline.
 - **Maps:** players can open player-visible maps and control placed tokens whose `sheetKind`/`sheetSlug` matches a linked character.
 - **Token actions:** linked tokens move, turn, update HP/injuries, change combat stages, change conditions, use moves, trigger maneuvers/abilities/orders, and participate in initiative/map-effect/terrain/token-placement flows through live-play command routes. The live-play authority model is explicit server-authoritative commands, not player-owned whole-map autosave.
+- **Group inventory transfers:** players can view `/group-inventory` and transfer items only with trainer sheets linked to the selected profile. They cannot perform direct full-document group inventory saves.
 
 GM users still control all sheets and map tokens.
 
@@ -51,6 +52,7 @@ Players can navigate normal player-facing app routes, including:
 
 - `/maps` and player-visible `/maps/<slug>` pages;
 - `/sheets` for public sheets and sheets linked to the selected profile;
+- `/group-inventory` for shared party inventory viewing and linked-trainer transfers;
 - `/pokedex` and individual Pokédex pages;
 - PTU reference pages such as `/moves`, `/maneuvers`, `/abilities`, `/capabilities`, `/conditions`, `/rules`, `/items`, `/features`, and `/edges`.
 
@@ -58,7 +60,7 @@ These browsing routes do not require a live session or map-specific invitation.
 
 ## What remains GM-only
 
-Players cannot create player profiles, create maps, delete maps, create sheets, delete sheets, manage encounter tables, generate encounter sheets, manage player profile links, or use GM-only map-building/admin controls such as terrain building, hazards, field effects, token spawning/deletion, or resource library file management.
+Players cannot create player profiles, create maps, delete maps, create sheets, delete sheets, directly save the full group inventory document, manage encounter tables, generate encounter sheets, manage player profile links, or use GM-only map-building/admin controls such as terrain building, hazards, field effects, token spawning/deletion, or resource library file management.
 
 The role picker remains a trust-based table convenience. It is not hardened public authentication and should not be exposed as a public multi-user service without a separate security design.
 
@@ -71,7 +73,7 @@ Profile play distinguishes setup/edit mode from live play mode:
 - Browser-owned whole-map autosave must not be treated as live multiplayer authority.
 - Legacy `/sessions` identity/socket flows are maintenance-only and should not be revived as the normal player route.
 
-See [Live play authority](live-play-authority.md) for the glossary and command/revision direction.
+See [Live play authority](live-play-authority.md) for the glossary and command/revision direction, and [Group inventory workflow](group-inventory.md) for the linked-trainer transfer boundary.
 
 ## Troubleshooting
 

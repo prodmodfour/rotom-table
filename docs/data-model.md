@@ -1,6 +1,6 @@
 # Data model
 
-Rotom Table stores runtime campaign maps and Pokémon/trainer sheets in SQLite while keeping remaining campaign JSON systems inspectable. Set `ROTOM_CAMPAIGN_ROOT` to point campaign-owned paths and the default `rotom-table.sqlite` database at a separate private campaign repository or private host directory; see [Campaign repositories](campaign-repositories.md).
+Rotom Table stores runtime campaign maps, Pokémon/trainer sheets, and shared group inventory in SQLite while keeping remaining campaign JSON systems inspectable. Set `ROTOM_CAMPAIGN_ROOT` to point campaign-owned paths and the default `rotom-table.sqlite` database at a separate private campaign repository or private host directory; see [Campaign repositories](campaign-repositories.md).
 
 ## Maps
 
@@ -42,7 +42,7 @@ Trainer sheets model a PTU trainer workbook: core trainer identity, stats, skill
 
 ## Group inventory
 
-The shared party inventory is campaign-level SQLite state in the `group_inventories` table. The `/group-inventory` page loads the authoritative `main` document through the group inventory load API, renders campaign money, section counts, notes, and normalized trainer-inventory-style sections, and lets GMs directly edit money and item rows through a revision-checked save API. The same page exposes trainer transfer controls that wait for server acceptance before changing local state. Transfer APIs move item quantities atomically between the group inventory and trainer sheets: GMs can transfer with any trainer, while player requests must include the selected player profile ID and that profile must link the source or target trainer sheet. Players still cannot perform direct full-document group inventory saves.
+The shared party inventory is campaign-level SQLite state in the `group_inventories` table, not map metadata and not a fake trainer sheet. The `/group-inventory` page loads the authoritative `main` document through the group inventory load API, renders campaign money, section counts, notes, and normalized trainer-inventory-style sections, and lets GMs directly edit money and item rows through a revision-checked save API. The same page exposes trainer transfer controls that wait for server acceptance before changing local state. Transfer APIs move item quantities atomically between the group inventory and trainer sheets: GMs can transfer with any trainer, while player requests must include the selected player profile ID and that profile must link the source or target trainer sheet. Players still cannot perform direct full-document group inventory saves. See [Group inventory workflow](group-inventory.md) for realtime, export, trusted-table, and future live-play command boundaries.
 
 ## Player profiles
 

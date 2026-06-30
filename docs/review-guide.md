@@ -24,6 +24,7 @@ Rotom Table is best reviewed as a private trusted-table product-style applicatio
 | `/sheets` | Pokémon and trainer sheet library. |
 | `/sheets/:slug` | Pokémon sheet editor backed by filesystem JSON. |
 | `/sheets/trainers/:slug` | Trainer sheet editor backed by filesystem JSON. |
+| `/group-inventory` | Shared party inventory page with GM revision-checked saves and linked-trainer transfer flows. |
 | `/pokedex` and `/pokedex/:pokemon_name` | Search/filter/detail flow over reference data. |
 | `/generate` | GM-only encounter generation from JSON encounter tables. |
 | `/encounter-tables` | GM-only encounter-table browser/editor. |
