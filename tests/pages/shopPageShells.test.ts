@@ -44,18 +44,26 @@ describe('shop page shells', () => {
     expect(source).not.toContain('SHOP_API_PATHS.deleteShop')
   })
 
-  it('adds a player-facing shopfront route shell without loading real shop data yet', () => {
+  it('loads and renders a read-only player-facing shopfront route', () => {
     const source = readSource('src/pages/shops/[slug].vue')
 
     expect(source).toContain("import AppNavigation from '~/components/AppNavigation.vue'")
+    expect(source).toContain("import ShopfrontEntryList from '~/components/shops/ShopfrontEntryList.vue'")
+    expect(source).toContain("import { useShopfrontPage } from '~/composables/shops/useShopfrontPage'")
     expect(source).toContain("import { routeSlugParam } from '~/utils/routeParams'")
     expect(source).toContain("import { shopEditorPath, shopLibraryPath } from '~/utils/shopRoutes'")
     expect(source).toContain('const { isGm } = useAuth()')
     expect(source).toContain('const shopSlug = computed(() => routeSlugParam(route.params))')
+    expect(source).toContain('useShopfrontPage({ slug: shopSlug })')
+    expect(source).toContain('gmPreviewMessage')
     expect(source).toContain('<AppNavigation />')
-    expect(source).toContain('Open GM editor shell')
-    expect(source).toContain('No shop document is rendered yet')
-    expect(source).not.toContain('SHOP_API_PATHS.load')
+    expect(source).toContain('Open GM editor')
+    expect(source).toContain("loadStatus === 'loading'")
+    expect(source).toContain("loadStatus === 'error'")
+    expect(source).toContain('Shopfront unavailable')
+    expect(source).toContain('Players can only view shopfronts that are both open and player-visible.')
+    expect(source).toContain('<ShopfrontEntryList :shop="shop" />')
+    expect(source).toContain('Browse the shop catalog and inspect item prices, stock, and purchase limits')
     expect(source).not.toContain('postJson')
   })
 

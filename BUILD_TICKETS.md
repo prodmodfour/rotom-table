@@ -369,7 +369,7 @@ Let GMs edit full shop table documents.
 
 ## 012 — SHOPS-012: Add read-only player shopfront
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Render a shopfront where players can inspect items before checkout exists.

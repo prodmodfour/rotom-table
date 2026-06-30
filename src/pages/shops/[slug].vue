@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import ShopfrontEntryList from '~/components/shops/ShopfrontEntryList.vue'
+import { useShopfrontPage } from '~/composables/shops/useShopfrontPage'
 import { routeSlugParam } from '~/utils/routeParams'
 import { shopEditorPath, shopLibraryPath } from '~/utils/shopRoutes'
 
@@ -12,12 +14,34 @@ const shopEditorLocation = computed(() => (
   shopSlug.value ? shopEditorPath(shopSlug.value) : shopLibraryPath()
 ))
 
+const {
+  shop,
+  loadStatus,
+  loadErrorMessage,
+  loadShop,
+} = useShopfrontPage({ slug: shopSlug })
+
+const pageTitle = computed(() => shop.value?.name || shopSlug.value || 'Shop')
+const shopStatusLabel = computed(() => (shop.value?.open ? 'Open' : 'Closed'))
+const shopVisibilityLabel = computed(() => (shop.value?.playerVisible ? 'Player visible' : 'Hidden'))
+const gmPreviewMessage = computed(() => {
+  const loadedShop = shop.value
+  if (!isGm.value || !loadedShop) return null
+
+  const reasons: string[] = []
+  if (!loadedShop.open) reasons.push('closed')
+  if (!loadedShop.playerVisible) reasons.push('hidden from players')
+  if (reasons.length === 0) return null
+
+  return `GM preview is showing a ${reasons.join(' and ')} shop. Players can only open this page when the shop is both open and player-visible.`
+})
+
 useHead(() => ({
-  title: shopSlug.value ? `${shopSlug.value} shop · Rotom Table` : 'Shop · Rotom Table',
+  title: `${pageTitle.value} · Rotom Table`,
   meta: [
     {
       name: 'description',
-      content: 'Player-facing shopfront shell for Rotom Table live-play campaigns.',
+      content: 'Read-only player-facing shopfront for Rotom Table live-play campaigns.',
     },
   ],
 }))
@@ -29,28 +53,84 @@ useHead(() => ({
 
     <header class="shopfront-hero panel-card">
       <div>
-        <p class="shopfront-eyebrow">Shopfront shell</p>
-        <h1>{{ shopSlug || 'Shop' }}</h1>
-        <p>
-          This route is reserved for the player-facing shopfront. Item browsing and checkout controls will be added through later live-play shop tickets.
+        <p class="shopfront-eyebrow">Player shopfront</p>
+        <h1>{{ pageTitle }}</h1>
+        <p v-if="shop?.description">
+          {{ shop.description }}
         </p>
+        <p v-else>
+          Browse the shop catalog and inspect item prices, stock, and purchase limits before live-play checkout commands are enabled.
+        </p>
+
+        <div v-if="shop" class="shopfront-badges" aria-label="Shop state">
+          <span
+            class="shopfront-badge"
+            :class="shop.open ? 'shopfront-badge--good' : 'shopfront-badge--warn'"
+          >
+            {{ shopStatusLabel }}
+          </span>
+          <span
+            class="shopfront-badge"
+            :class="shop.playerVisible ? 'shopfront-badge--good' : 'shopfront-badge--warn'"
+          >
+            {{ shopVisibilityLabel }}
+          </span>
+          <span class="shopfront-badge shopfront-badge--neutral">Revision {{ shop.revision }}</span>
+        </div>
       </div>
       <div class="shopfront-actions" aria-label="Shopfront navigation">
         <NuxtLink class="shopfront-action" :to="shopLibraryPath()">
           Back to shops
         </NuxtLink>
         <NuxtLink v-if="isGm" class="shopfront-action" :to="shopEditorLocation">
-          Open GM editor shell
+          Open GM editor
         </NuxtLink>
       </div>
     </header>
 
-    <section class="shopfront-panel panel-card" role="status">
-      <p class="shopfront-eyebrow">Pending shop data</p>
-      <h2>No shop document is rendered yet</h2>
-      <p>
-        The shell keeps the route available without rendering catalog, price, stock, or checkout state until the dedicated shopfront ticket wires the read-only view.
-      </p>
+    <section
+      v-if="loadStatus === 'loading'"
+      class="shopfront-panel panel-card"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <p class="shopfront-eyebrow">Loading</p>
+      <h2>Loading shopfront…</h2>
+      <p>Loading the authoritative campaign shop document.</p>
+    </section>
+
+    <section v-else-if="loadStatus === 'error'" class="shopfront-panel shopfront-panel--error panel-card" role="alert">
+      <p class="shopfront-eyebrow">Unavailable</p>
+      <h2>Shopfront unavailable</h2>
+      <p>{{ loadErrorMessage ?? 'This shopfront is not available.' }}</p>
+      <p>Players can only view shopfronts that are both open and player-visible.</p>
+      <div class="shopfront-actions">
+        <button type="button" class="shopfront-action shopfront-action--button" @click="loadShop">
+          Retry loading shop
+        </button>
+        <NuxtLink class="shopfront-action" :to="shopLibraryPath()">
+          Return to shops
+        </NuxtLink>
+      </div>
+    </section>
+
+    <template v-else-if="shop">
+      <section v-if="gmPreviewMessage" class="shopfront-panel shopfront-panel--warning panel-card" role="status">
+        <p class="shopfront-eyebrow">GM preview</p>
+        <h2>Previewing a private shopfront</h2>
+        <p>{{ gmPreviewMessage }}</p>
+      </section>
+
+      <ShopfrontEntryList :shop="shop" />
+    </template>
+
+    <section v-else class="shopfront-panel panel-card" role="status">
+      <p class="shopfront-eyebrow">No shop loaded</p>
+      <h2>Shopfront unavailable</h2>
+      <p>Return to the shop library or retry loading this shopfront.</p>
+      <button type="button" class="shopfront-action shopfront-action--button" @click="loadShop">
+        Retry loading shop
+      </button>
     </section>
   </main>
 </template>
@@ -83,6 +163,7 @@ useHead(() => ({
 }
 
 .shopfront-eyebrow {
+  margin: 0;
   color: var(--accent);
   font-size: 0.76rem;
   font-weight: 900;
@@ -106,10 +187,37 @@ useHead(() => ({
   font-size: clamp(1.45rem, 3vw, 2.1rem);
 }
 
+.shopfront-badges,
 .shopfront-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.shopfront-badge {
+  border: 1px solid var(--rule-soft);
+  border-radius: 999px;
+  background: var(--paper-inset);
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0.28rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.shopfront-badge--good {
+  border-color: color-mix(in srgb, var(--good) 45%, var(--rule-soft));
+  color: var(--good);
+}
+
+.shopfront-badge--warn {
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--rule-soft));
+  color: var(--warn);
+}
+
+.shopfront-badge--neutral {
+  font-family: var(--font-mono);
 }
 
 .shopfront-action {
@@ -128,10 +236,23 @@ useHead(() => ({
   text-transform: uppercase;
 }
 
+.shopfront-action--button {
+  cursor: pointer;
+  font: inherit;
+}
+
 .shopfront-action:hover,
 .shopfront-action:focus-visible {
   border-color: var(--rule-active);
   background: var(--paper-hover);
   outline: none;
+}
+
+.shopfront-panel--error {
+  border-color: color-mix(in srgb, var(--bad) 55%, var(--rule-soft));
+}
+
+.shopfront-panel--warning {
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--rule-soft));
 }
 </style>
