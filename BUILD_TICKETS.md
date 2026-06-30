@@ -183,7 +183,7 @@ None.
 
 ## 033 — #33: Inventory UI: extract reusable section tabs from trainer inventory panel
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/33
 
