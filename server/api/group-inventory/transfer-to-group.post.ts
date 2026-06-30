@@ -7,6 +7,7 @@ import {
   readObjectBody,
   requireWritableCampaignMode,
 } from '../../utils/http'
+import { resolvePlayerProfileForPolicy } from '../../policies/playerProfilePolicy'
 import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
 import { transferTrainerInventoryToGroupUseCase } from '../../useCases/transferTrainerInventoryToGroup'
 
@@ -20,6 +21,7 @@ interface TransferTrainerInventoryToGroupBody {
   readonly itemId?: unknown
   readonly trainerRowIndex?: unknown
   readonly quantity?: unknown
+  readonly profileId?: unknown
 }
 
 export default defineEventHandler(async (event) => {
@@ -34,8 +36,13 @@ export default defineEventHandler(async (event) => {
   const section = expectString(body.section, 'section')
 
   try {
+    const playerProfile = role === 'player'
+      ? resolvePlayerProfileForPolicy(body.profileId)
+      : null
+
     return transferTrainerInventoryToGroupUseCase({
       role,
+      playerProfile,
       trainerSlug,
       trainerRevision,
       groupSlug,

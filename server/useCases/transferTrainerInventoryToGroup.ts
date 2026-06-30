@@ -1,4 +1,5 @@
 import type { AuthRole } from '#shared/auth'
+import type { PlayerProfile } from '#shared/playerProfiles'
 import { validateSlug } from '#shared/paths'
 import { isRevision } from '#shared/sessionRevisions'
 import {
@@ -24,12 +25,14 @@ import {
   type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
+import { authorizeGroupInventoryTrainerTransfer } from '../policies/groupInventoryTransferPolicy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class TransferTrainerInventoryToGroupUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
 export interface TransferTrainerInventoryToGroupInput {
   readonly role: AuthRole
+  readonly playerProfile?: PlayerProfile | null
   readonly trainerSlug: unknown
   readonly trainerRevision: unknown
   readonly groupSlug: unknown
@@ -165,16 +168,20 @@ export const transferTrainerInventoryToGroupUseCase = (
   input: TransferTrainerInventoryToGroupInput,
   dependencies: TransferTrainerInventoryToGroupDependencies = {},
 ): TransferTrainerInventoryToGroupResult => {
-  if (input.role !== 'gm') {
-    throw new TransferTrainerInventoryToGroupUseCaseError(403, 'Only GMs can transfer trainer inventory to group inventory')
-  }
-
   const trainerSlug = normalizeTransferSlug(input.trainerSlug, 'trainer slug')
   const trainerRevision = normalizeTransferRevision(input.trainerRevision, 'trainerRevision')
   const groupSlug = normalizeTransferSlug(input.groupSlug, 'group inventory slug')
   const groupRevision = normalizeTransferRevision(input.groupRevision, 'groupRevision')
   const section = normalizeTransferSection(input.section)
   const trainerRowSelector = normalizeTrainerRowSelector(input)
+  const authorization = authorizeGroupInventoryTrainerTransfer({
+    role: input.role,
+    playerProfile: input.playerProfile,
+    trainerSlug,
+  })
+  if (!authorization.ok) {
+    throw new TransferTrainerInventoryToGroupUseCaseError(authorization.statusCode, authorization.message)
+  }
 
   const database = databaseFromDependencies(dependencies)
   const sheetRepository = dependencies.sheetRepository

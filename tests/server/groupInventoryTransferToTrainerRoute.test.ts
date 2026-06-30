@@ -2,7 +2,13 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { EventHandler, EventHandlerRequest, H3Event } from 'h3'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  PLAYER_PROFILE_SCHEMA_VERSION,
+  type PlayerProfile,
+  type PlayerProfileDisplayName,
+  type PlayerProfileId,
+} from '#shared/playerProfiles'
 import {
   GROUP_INVENTORY_MAIN_SLUG,
   GROUP_INVENTORY_SECTION_KEYS,
@@ -13,6 +19,19 @@ import { GROUP_INVENTORY_API_PATHS } from '~/utils/apiRoutes'
 import { closeRotomDatabase, getRotomDatabase, ROTOM_DB_PATH_ENV } from '~~/server/storage/database'
 import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
+
+const mocks = vi.hoisted(() => {
+  const profilesById = new Map<string, unknown>()
+
+  return {
+    profilesById,
+    readPlayerProfile: vi.fn((profileId: string) => profilesById.get(profileId) ?? null),
+  }
+})
+
+vi.mock('../../server/utils/playerProfileStorage', () => ({
+  readPlayerProfile: mocks.readPlayerProfile,
+}))
 
 const transferRoute = (await import('../../server/api/group-inventory/transfer-to-trainer.post')).default
 
@@ -91,6 +110,17 @@ const trainerSheetDocument = (
   ...overrides,
 })
 
+const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
+  schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
+  id: 'profile_ash00000' as PlayerProfileId,
+  displayName: 'Ash' as PlayerProfileDisplayName,
+  linkedCharacters,
+})
+
+const setProfile = (profile: PlayerProfile): void => {
+  mocks.profilesById.set(profile.id, profile)
+}
+
 const invokeRoute = async (
   handler: RouteHandler,
   options: { role?: 'gm' | 'player'; body?: unknown; method?: string } = {},
@@ -114,6 +144,8 @@ const invokeRoute = async (
 }
 
 beforeEach(() => {
+  vi.clearAllMocks()
+  mocks.profilesById.clear()
   useFreshTestDatabase()
 })
 
@@ -166,7 +198,43 @@ describe('group inventory to trainer transfer API route', () => {
     ])
   })
 
-  it('rejects player and guest transfers while the route is GM-only', async () => {
+  it('allows players with a linked trainer profile to transfer item quantities', async () => {
+    const groupInventory = seedGroupInventory(groupInventoryDocument({
+      revision: 1,
+      updatedAt: 100,
+      inventory: {
+        ...emptyInventory(),
+        medicalKit: [{ id: 'group-potion-row', name: 'Potion', qty: 2 }],
+      },
+    }))
+    seedTrainer(trainerSheetDocument(), 2, 200)
+    setProfile(playerProfile([{ sheetKind: 'trainer', sheetSlug: 'brock' }]))
+
+    const response = await invokeRoute(transferRoute, {
+      role: 'player',
+      body: {
+        groupSlug: groupInventory.slug,
+        groupRevision: groupInventory.revision,
+        trainerSlug: 'brock',
+        trainerRevision: 2,
+        section: 'medicalKit',
+        itemId: 'group-potion-row',
+        quantity: 1,
+        profileId: 'profile_ash00000',
+      },
+    }) as {
+      readonly ok: true
+      readonly groupInventory: GroupInventoryDocument
+      readonly trainerSheet: { readonly sheet: TrainerSheet }
+    }
+
+    expect(mocks.readPlayerProfile).toHaveBeenCalledWith('profile_ash00000')
+    expect(response.ok).toBe(true)
+    expect(response.groupInventory.revision).toBe(2)
+    expect(response.trainerSheet.sheet.revision).toBe(3)
+  })
+
+  it('rejects player transfers without a selected linked profile and still rejects guests', async () => {
     const body = {
       groupSlug: GROUP_INVENTORY_MAIN_SLUG,
       groupRevision: 0,
@@ -179,7 +247,16 @@ describe('group inventory to trainer transfer API route', () => {
 
     await expect(invokeRoute(transferRoute, { role: 'player', body })).rejects.toMatchObject({
       statusCode: 403,
-      statusMessage: 'Only GMs can transfer group inventory to trainer sheets',
+      statusMessage: 'Choose a player profile before transferring inventory for linked trainer sheets.',
+    })
+
+    setProfile(playerProfile([{ sheetKind: 'trainer', sheetSlug: 'misty' }]))
+    await expect(invokeRoute(transferRoute, {
+      role: 'player',
+      body: { ...body, profileId: 'profile_ash00000' },
+    })).rejects.toMatchObject({
+      statusCode: 403,
+      statusMessage: 'Trainer sheet brock is not linked to the selected player profile.',
     })
 
     await expect(invokeRoute(transferRoute, { body })).rejects.toMatchObject({

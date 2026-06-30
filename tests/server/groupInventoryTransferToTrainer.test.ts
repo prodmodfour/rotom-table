@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  PLAYER_PROFILE_SCHEMA_VERSION,
+  type PlayerProfile,
+  type PlayerProfileDisplayName,
+  type PlayerProfileId,
+} from '#shared/playerProfiles'
+import {
   GROUP_INVENTORY_MAIN_SLUG,
   GROUP_INVENTORY_SECTION_KEYS,
   type GroupInventoryDocument,
@@ -44,6 +50,13 @@ const trainerSheetDocument = (
   level: 1,
   inventory: emptyInventory(),
   ...overrides,
+})
+
+const playerProfile = (linkedCharacters: PlayerProfile['linkedCharacters']): PlayerProfile => ({
+  schemaVersion: PLAYER_PROFILE_SCHEMA_VERSION,
+  id: 'profile_ash00000' as PlayerProfileId,
+  displayName: 'Ash' as PlayerProfileDisplayName,
+  linkedCharacters,
 })
 
 const storedGroupInventoryJson = (database: RotomDatabase): GroupInventoryDocument => {
@@ -354,9 +367,43 @@ describe('group inventory to trainer transfer use case', () => {
     expect(storedTrainerJson(database)).toEqual(trainerBefore)
   })
 
-  it('keeps group-to-trainer transfers GM-only for this ticket', () => {
-    expectTransferUseCaseError(() => transferGroupInventoryToTrainerUseCase({
+  it('allows a player with a linked trainer profile to transfer group inventory to that trainer', () => {
+    const database = openMemoryDatabase()
+    const groupInventory = seedGroupInventory(database, groupInventoryDocument({
+      revision: 1,
+      updatedAt: 100,
+      inventory: {
+        ...emptyInventory(),
+        medicalKit: [{ id: 'group-potion-row', name: 'Potion', qty: 2 }],
+      },
+    }))
+    const trainer = seedTrainer(database, trainerSheetDocument(), 2, 200)
+
+    const response = transferGroupInventoryToTrainerUseCase({
       role: 'player',
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: trainer.slug }]),
+      groupSlug: groupInventory.slug,
+      groupRevision: groupInventory.revision,
+      trainerSlug: trainer.slug,
+      trainerRevision: trainer.revision,
+      section: 'medicalKit',
+      itemId: 'group-potion-row',
+      quantity: 1,
+    }, {
+      database,
+      now: () => 300,
+    })
+
+    expect(response.groupInventory.revision).toBe(2)
+    expect(response.trainerSheet.sheet.revision).toBe(3)
+    expect((response.trainerSheet.sheet.inventory as TrainerSheet['inventory'])?.medicalKit).toEqual([
+      { name: 'Potion', qty: 1 },
+    ])
+  })
+
+  it('requires player transfers to include a selected profile linked to the target trainer', () => {
+    const transferInput = {
+      role: 'player' as const,
       groupSlug: GROUP_INVENTORY_MAIN_SLUG,
       groupRevision: 0,
       trainerSlug: 'misty',
@@ -364,6 +411,16 @@ describe('group inventory to trainer transfer use case', () => {
       section: 'keyItems',
       itemId: 'row-1',
       quantity: 1,
-    }), 403, 'Only GMs can transfer group inventory')
+    }
+
+    expectTransferUseCaseError(() => transferGroupInventoryToTrainerUseCase({
+      ...transferInput,
+      playerProfile: null,
+    }), 403, 'Choose a player profile')
+
+    expectTransferUseCaseError(() => transferGroupInventoryToTrainerUseCase({
+      ...transferInput,
+      playerProfile: playerProfile([{ sheetKind: 'trainer', sheetSlug: 'brock' }]),
+    }), 403, 'Trainer sheet misty is not linked')
   })
 })

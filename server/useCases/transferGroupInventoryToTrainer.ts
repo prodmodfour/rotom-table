@@ -1,4 +1,5 @@
 import type { AuthRole } from '#shared/auth'
+import type { PlayerProfile } from '#shared/playerProfiles'
 import { validateSlug } from '#shared/paths'
 import { isRevision } from '#shared/sessionRevisions'
 import type { GroupInventoryDocument, GroupInventorySectionKey } from '~/types/groupInventory'
@@ -19,12 +20,14 @@ import {
   type PersistedSheet,
   type SheetRepository,
 } from '../storage/sheetRepository'
+import { authorizeGroupInventoryTrainerTransfer } from '../policies/groupInventoryTransferPolicy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class TransferGroupInventoryToTrainerUseCaseError extends UseCaseHttpError<400 | 403 | 404 | 409> {}
 
 export interface TransferGroupInventoryToTrainerInput {
   readonly role: AuthRole
+  readonly playerProfile?: PlayerProfile | null
   readonly groupSlug: unknown
   readonly groupRevision: unknown
   readonly trainerSlug: unknown
@@ -132,16 +135,20 @@ export const transferGroupInventoryToTrainerUseCase = (
   input: TransferGroupInventoryToTrainerInput,
   dependencies: TransferGroupInventoryToTrainerDependencies = {},
 ): TransferGroupInventoryToTrainerResult => {
-  if (input.role !== 'gm') {
-    throw new TransferGroupInventoryToTrainerUseCaseError(403, 'Only GMs can transfer group inventory to trainer sheets')
-  }
-
   const groupSlug = normalizeTransferSlug(input.groupSlug, 'group inventory slug')
   const groupRevision = normalizeTransferRevision(input.groupRevision, 'groupRevision')
   const trainerSlug = normalizeTransferSlug(input.trainerSlug, 'trainer slug')
   const trainerRevision = normalizeTransferRevision(input.trainerRevision, 'trainerRevision')
   const section = normalizeTransferSection(input.section)
   const itemId = normalizeTransferItemId(input.itemId)
+  const authorization = authorizeGroupInventoryTrainerTransfer({
+    role: input.role,
+    playerProfile: input.playerProfile,
+    trainerSlug,
+  })
+  if (!authorization.ok) {
+    throw new TransferGroupInventoryToTrainerUseCaseError(authorization.statusCode, authorization.message)
+  }
 
   const database = databaseFromDependencies(dependencies)
   const groupInventoryRepository = dependencies.groupInventoryRepository

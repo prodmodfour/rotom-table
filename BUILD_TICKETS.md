@@ -387,7 +387,7 @@ Move item quantities from a trainer sheet back into the shared group inventory a
 
 ## 040 — #40: Group inventory: allow player transfers for linked trainer sheets
 
-Status: TODO
+Status: DONE
 
 Issue: https://github.com/prodmodfour/rotom-table/issues/40
 
