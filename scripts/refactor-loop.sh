@@ -5,7 +5,7 @@ usage() {
   cat <<'USAGE'
 Usage: scripts/refactor-loop.sh [options]
 
-Runs fresh pi print-mode refactor cycles until REFACTOR_NOTES.md contains:
+Runs fresh agent print-mode refactor cycles until REFACTOR_NOTES.md contains:
   AUTOMATION_STATUS: DONE
 
 By default there is NO cycle limit. This is intended to run for hours/days inside
@@ -22,8 +22,9 @@ Backward compatibility:
   scripts/refactor-loop.sh 7 is treated as --max-cycles 7.
 
 Optional environment variables:
-  PI_REFACTOR_MODEL          Passes --model to pi, e.g. anthropic/claude-sonnet-4-5
-  PI_REFACTOR_THINKING       Passes --thinking to pi, e.g. high
+  PI_REFACTOR_AGENT_COMMAND  Agent command to run. Default: pi-dan-rinse
+  PI_REFACTOR_MODEL          Passes --model to the agent command, e.g. anthropic/claude-sonnet-4-5
+  PI_REFACTOR_THINKING       Passes --thinking to the agent command, e.g. high
   PI_REFACTOR_MAX_CYCLES     Default max cycle cap if --max-cycles is not provided
   PI_REFACTOR_SLEEP_SECONDS  Default sleep between successful cycles
   PI_REFACTOR_NO_PULL=1      Skip git pull --ff-only before each cycle
@@ -32,6 +33,7 @@ USAGE
 
 MAX_CYCLES="${PI_REFACTOR_MAX_CYCLES:-}"
 SLEEP_SECONDS="${PI_REFACTOR_SLEEP_SECONDS:-0}"
+AGENT_COMMAND="${PI_REFACTOR_AGENT_COMMAND:-pi-dan-rinse}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -206,7 +208,7 @@ acquire_lock() {
 }
 
 require_command git
-require_command pi
+require_command "$AGENT_COMMAND"
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "Not inside a git work tree." >&2
@@ -245,29 +247,29 @@ while true; do
   fi
 
   cycle=$((cycle + 1))
-  echo "=== pi refactor cycle $cycle/$limit_label ==="
+  echo "=== $AGENT_COMMAND refactor cycle $cycle/$limit_label ==="
   require_clean_tree
   require_synced_or_pull
 
   before_head="$(git rev-parse HEAD)"
   log_file="$LOG_DIR/cycle-$(date +%Y%m%d-%H%M%S)-$cycle.log"
 
-  pi_args=(--no-session -p)
+  agent_args=(--no-session -p)
   if [[ -n "${PI_REFACTOR_MODEL:-}" ]]; then
-    pi_args=(--model "$PI_REFACTOR_MODEL" "${pi_args[@]}")
+    agent_args=(--model "$PI_REFACTOR_MODEL" "${agent_args[@]}")
   fi
   if [[ -n "${PI_REFACTOR_THINKING:-}" ]]; then
-    pi_args=(--thinking "$PI_REFACTOR_THINKING" "${pi_args[@]}")
+    agent_args=(--thinking "$PI_REFACTOR_THINKING" "${agent_args[@]}")
   fi
 
   echo "Logging to $log_file"
-  if ! pi "${pi_args[@]}" @original_refactor_prompt.md @REFACTOR_NOTES.md "$PROMPT" 2>&1 | tee "$log_file"; then
-    echo "pi failed during cycle $cycle; stopping. See $log_file" >&2
+  if ! "$AGENT_COMMAND" "${agent_args[@]}" @original_refactor_prompt.md @REFACTOR_NOTES.md "$PROMPT" 2>&1 | tee "$log_file"; then
+    echo "$AGENT_COMMAND failed during cycle $cycle; stopping. See $log_file" >&2
     exit 1
   fi
 
   if [[ -n "$(git status --porcelain)" ]]; then
-    echo "pi left a dirty working tree; stopping for manual review." >&2
+    echo "$AGENT_COMMAND left a dirty working tree; stopping for manual review." >&2
     git status --short >&2
     exit 1
   fi

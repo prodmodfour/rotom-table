@@ -48,7 +48,7 @@ Before making changes, read:
 
 Do not add cycle notes, validation summaries, blocker notes, or other commentary to `BUILD_TICKETS.md`; it should contain ticket descriptions plus status only. The outer build loop handles pushing and optional PR creation/merge when configured. Do not create or merge PRs from inside an agent run unless a ticket explicitly asks for it.
 
-The final issue ticket (#44) may set the top-level `AUTOMATION_STATUS: DONE` after all issue tickets are complete and the final quality gate passes.
+The final ticket may set the top-level `AUTOMATION_STATUS: DONE` after all issue tickets are complete and the final quality gate passes.
 
 ### If blocked
 

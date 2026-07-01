@@ -725,7 +725,7 @@ split_current_ticket_after_context_failure() {
 
   pp_section "Token/context recovery"
   pp_warn "Detected a token/context-length failure in the agent log."
-  pp_info "Asking the configured Pi agent wrapper to split the current ticket into two smaller tickets."
+  pp_info "Asking the configured agent wrapper to split the current ticket into two smaller tickets."
 
   split_before_head="$(git rev-parse HEAD)"
   mkdir -p "$LOG_DIR"
