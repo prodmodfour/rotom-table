@@ -13,8 +13,10 @@ import type {
 } from '~/composables/map-editor/useLivePlayCommands'
 import {
   LIVE_PLAY_COMMAND_OUTBOX_SCHEMA_VERSION,
-  type LivePlayCommandOutboxEntry,
+  type LivePlayMapCommandOutboxEntry,
 } from '~/utils/livePlayCommandOutbox'
+
+type LivePlayCommandOutboxEntry = LivePlayMapCommandOutboxEntry
 
 const flushMicrotasks = async () => {
   await Promise.resolve()

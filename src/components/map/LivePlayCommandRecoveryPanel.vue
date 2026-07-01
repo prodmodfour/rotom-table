@@ -97,7 +97,9 @@ const refreshButtonLabel = computed(() => {
   return refreshBusy.value ? 'Refreshing…' : 'Refresh'
 })
 
-const commandLabel = (entry: LivePlayCommandOutboxEntry): string => COMMAND_LABELS[entry.commandType]
+const commandLabel = (entry: LivePlayCommandOutboxEntry): string => (
+  COMMAND_LABELS[entry.commandType as LivePlayMapCommandType]
+)
 
 const shortOpId = (opId: string): string => (
   opId.length <= 16 ? opId : `${opId.slice(0, 10)}…${opId.slice(-6)}`

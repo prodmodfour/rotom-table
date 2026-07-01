@@ -716,7 +716,7 @@ Build valid `SHOP_CHECKOUT` live-play commands from the shopfront UI.
 
 ## 023 — SHOPS-023: Add durable shop checkout outbox support
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Give shop checkout the same user-safety properties as live-play commands: no silent loss on reload or uncertain HTTP results.

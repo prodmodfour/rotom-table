@@ -29,10 +29,21 @@ import type { TabletopMap } from '~/types/map'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import {
   createLivePlayCommandOutbox,
+  isLivePlayMapCommandOutboxEntry,
   type LivePlayCommandOutbox,
   type LivePlayCommandOutboxAuthContext,
-  type LivePlayCommandOutboxEntry,
+  type LivePlayCommandOutboxEntry as AnyLivePlayCommandOutboxEntry,
+  type LivePlayMapCommandOutboxEntry,
 } from '~/utils/livePlayCommandOutbox'
+
+type LivePlayCommandOutboxEntry = LivePlayMapCommandOutboxEntry
+
+const asMapOutboxEntry = (entry: AnyLivePlayCommandOutboxEntry | null): LivePlayCommandOutboxEntry => {
+  if (entry === null || !isLivePlayMapCommandOutboxEntry(entry)) {
+    throw new Error('Expected a map live-play command outbox entry')
+  }
+  return entry
+}
 
 const apiMocks = vi.hoisted(() => ({
   postJson: vi.fn(),
@@ -133,7 +144,7 @@ const enqueueStoredCommand = async (
   body: input.body ?? storedMoveCommandBody(),
   authContext: input.authContext ?? { role: 'gm', profileId: null },
   ...(input.now === undefined ? {} : { now: input.now }),
-})
+}).then(asMapOutboxEntry)
 
 const makeStoredCommandUncertain = async (
   outbox: LivePlayCommandOutbox,
@@ -144,7 +155,7 @@ const makeStoredCommandUncertain = async (
   if (!claim.claimed) throw new Error(`Failed to claim test outbox entry ${entry.opId}`)
   const uncertain = await outbox.markUncertain({ opId: entry.opId, leaseOwner, error: 'test uncertainty' })
   if (!uncertain) throw new Error(`Failed to mark test outbox entry ${entry.opId} uncertain`)
-  return uncertain
+  return asMapOutboxEntry(uncertain)
 }
 
 const makeStoredCommandSending = async (
@@ -154,20 +165,21 @@ const makeStoredCommandSending = async (
 ): Promise<LivePlayCommandOutboxEntry> => {
   const claim = await outbox.claimForSend({ opId: entry.opId, leaseOwner })
   if (!claim.claimed) throw new Error(`Failed to claim test outbox entry ${entry.opId}`)
-  return claim.entry
+  return asMapOutboxEntry(claim.entry)
 }
 
 const acceptedRealtimeEventForEntry = (
-  entry: LivePlayCommandOutboxEntry,
+  entry: AnyLivePlayCommandOutboxEntry,
   overrides: Partial<LivePlayAcceptedRealtimeEvent> = {},
 ): LivePlayAcceptedRealtimeEvent => {
+  const mapEntry = asMapOutboxEntry(entry)
   const revision = overrides.revision ?? 5
-  const mapSlug = overrides.mapSlug ?? entry.mapSlug
+  const mapSlug = overrides.mapSlug ?? mapEntry.mapSlug
   return {
     channel: overrides.channel ?? `map:${mapSlug}`,
     type: 'live-play-command-accepted',
     mapSlug,
-    opId: overrides.opId ?? entry.opId,
+    opId: overrides.opId ?? mapEntry.opId,
     previousRevision: overrides.previousRevision ?? 4,
     revision,
     timestamp: overrides.timestamp ?? 1_000,

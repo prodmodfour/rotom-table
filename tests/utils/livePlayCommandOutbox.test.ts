@@ -6,6 +6,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
 } from '#shared/livePlayCommands'
 import { parsePlayerProfileId } from '#shared/playerProfiles'
+import { SHOP_API_PATHS } from '~/utils/apiRoutes'
 import {
   LIVE_PLAY_COMMAND_OUTBOX_DB_VERSION,
   LIVE_PLAY_COMMAND_OUTBOX_MAX_BODY_BYTES,
@@ -70,6 +71,38 @@ const buildBody = (overrides: Record<string, unknown> = {}): Record<string, unkn
   clientId: 'client-001',
   ...overrides,
 })
+
+const buildShopBody = (overrides: {
+  readonly opId?: string
+  readonly shopSlug?: string
+  readonly clientId?: string
+  readonly payload?: Record<string, unknown>
+  readonly scopes?: readonly unknown[]
+} = {}): Record<string, unknown> => {
+  const shopSlug = overrides.shopSlug ?? 'viridian-mart'
+  const payload = overrides.payload ?? {
+    shopSlug,
+    shopRevision: 7,
+    paymentSource: { kind: 'trainer', slug: 'ash', revision: 3 },
+    deliveryTarget: { kind: 'trainer', slug: 'ash', revision: 3 },
+    lines: [{ entryId: 'potion-row', quantity: 1 }],
+    origin: { kind: 'shopPage' },
+  }
+
+  return {
+    schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+    opId: overrides.opId ?? 'op_shop000001',
+    type: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+    scopes: overrides.scopes ?? [
+      { kind: 'shop', shopSlug, field: 'purchase' },
+      { kind: 'shop', shopSlug, field: 'stock' },
+      { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'money' },
+      { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'inventory' },
+    ],
+    payload,
+    clientId: overrides.clientId ?? 'client-shop-001',
+  }
+}
 
 const enqueue = (
   outbox: LivePlayCommandOutbox,
@@ -152,6 +185,30 @@ describe('live-play command outbox contracts', () => {
       state: 'queued',
       attemptCount: 0,
     })
+  })
+
+  it('persists shop checkout entries without requiring a map slug', async () => {
+    const harness = createHarness()
+    const body = buildShopBody({ opId: 'op_shop000001' })
+
+    await enqueue(harness.outbox, body, playerAshAuth, SHOP_API_PATHS.checkout)
+    const secondOutbox = createLivePlayCommandOutbox({
+      databaseName: harness.databaseName,
+      indexedDBFactory: harness.indexedDBFactory,
+    })
+
+    const stored = await secondOutbox.get('op_shop000001')
+    expect(stored).toMatchObject({
+      opId: 'op_shop000001',
+      shopSlug: 'viridian-mart',
+      commandType: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+      requestPath: SHOP_API_PATHS.checkout,
+      state: 'queued',
+      attemptCount: 0,
+      authContext: playerAshAuth,
+    })
+    expect(stored).not.toHaveProperty('mapSlug')
+    expect((stored?.body.payload as { origin?: unknown }).origin).toEqual({ kind: 'shopPage' })
   })
 
   it('stores the exact JSON command body and detaches it from caller mutation', async () => {
@@ -344,6 +401,25 @@ describe('live-play command outbox contracts', () => {
     ])
     expect(isAuthRole((await outbox.list({ authContext: playerAshAuth }))[0]?.authContext.role)).toBe(true)
   })
+
+  it('lists shop checkout entries by shop slug and exact auth context', async () => {
+    const { outbox } = createHarness()
+    await enqueue(outbox, buildShopBody({ opId: 'op_shopgm001', shopSlug: 'viridian-mart' }), gmAuth, SHOP_API_PATHS.checkout, 100)
+    await enqueue(outbox, buildShopBody({ opId: 'op_shopgm002', shopSlug: 'celadon-mart' }), gmAuth, SHOP_API_PATHS.checkout, 110)
+    await enqueue(outbox, buildShopBody({ opId: 'op_shoppl001', shopSlug: 'viridian-mart' }), playerAshAuth, SHOP_API_PATHS.checkout, 120)
+    await enqueue(outbox, buildBody({ opId: 'op_mapfilter1' }), gmAuth, '/api/maps/tokens/move', 130)
+
+    await expect(outbox.list({ shopSlug: 'viridian-mart', authContext: gmAuth })).resolves.toMatchObject([
+      { opId: 'op_shopgm001', shopSlug: 'viridian-mart', authContext: gmAuth },
+    ])
+    await expect(outbox.list({ shopSlug: 'viridian-mart', authContext: playerAshAuth })).resolves.toMatchObject([
+      { opId: 'op_shoppl001', shopSlug: 'viridian-mart', authContext: playerAshAuth },
+    ])
+    await expect(outbox.list({ shopSlug: 'celadon-mart' })).resolves.toMatchObject([
+      { opId: 'op_shopgm002', shopSlug: 'celadon-mart' },
+    ])
+    await expect(outbox.hasPending({ shopSlug: 'viridian-mart', authContext: playerMistyAuth })).resolves.toBe(false)
+  })
 })
 
 describe('live-play command outbox state machine', () => {
@@ -376,6 +452,96 @@ describe('live-play command outbox state machine', () => {
     })
     expect(secondClaim).toEqual({ claimed: false, reason: 'leased-by-another-owner' })
     await expect(outbox.get('op_outbox0001')).resolves.toMatchObject({ attemptCount: 1 })
+  })
+
+  it('claims and acknowledges terminal shop checkout entries without a map slug', async () => {
+    const { outbox } = createHarness()
+    await enqueue(outbox, buildShopBody({ opId: 'op_shopclaim1' }), playerAshAuth, SHOP_API_PATHS.checkout)
+
+    const claimed = await outbox.claimForSend({
+      opId: 'op_shopclaim1',
+      leaseOwner: 'shop-owner-a',
+      now: 200,
+      leaseDurationMs: 1_000,
+    })
+
+    expect(claimed).toMatchObject({
+      claimed: true,
+      entry: {
+        opId: 'op_shopclaim1',
+        shopSlug: 'viridian-mart',
+        commandType: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+        state: 'sending',
+        attemptCount: 1,
+      },
+    })
+    if (claimed.claimed) expect(claimed.entry).not.toHaveProperty('mapSlug')
+
+    await expect(outbox.acknowledgeTerminal('op_shopclaim1')).resolves.toMatchObject({
+      opId: 'op_shopclaim1',
+      shopSlug: 'viridian-mart',
+    })
+    await expect(outbox.get('op_shopclaim1')).resolves.toBeNull()
+  })
+
+  it('marks uncertain shop checkout sends retryable while preventing duplicate tab claims', async () => {
+    const harness = createHarness()
+    await enqueue(harness.outbox, buildShopBody({ opId: 'op_shopretry1' }), playerAshAuth, SHOP_API_PATHS.checkout)
+    const otherOutbox = createLivePlayCommandOutbox({
+      databaseName: harness.databaseName,
+      indexedDBFactory: harness.indexedDBFactory,
+    })
+
+    const results = await Promise.all([
+      harness.outbox.claimForSend({
+        opId: 'op_shopretry1',
+        leaseOwner: 'shop-owner-a',
+        now: 210,
+        leaseDurationMs: 1_000,
+      }),
+      otherOutbox.claimForSend({
+        opId: 'op_shopretry1',
+        leaseOwner: 'shop-owner-b',
+        now: 210,
+        leaseDurationMs: 1_000,
+      }),
+    ])
+
+    const winner = results.find((result) => result.claimed)
+    expect(results.filter((result) => result.claimed)).toHaveLength(1)
+    expect(results.filter((result) => !result.claimed)).toHaveLength(1)
+    if (!winner?.claimed) throw new Error('expected one checkout outbox claim winner')
+
+    const uncertain = await harness.outbox.markUncertain({
+      opId: 'op_shopretry1',
+      leaseOwner: winner.entry.leaseOwner ?? '',
+      error: 'network uncertain',
+      now: 220,
+    })
+    expect(uncertain).toMatchObject({
+      opId: 'op_shopretry1',
+      shopSlug: 'viridian-mart',
+      state: 'uncertain',
+      attemptCount: 1,
+      lastError: 'network uncertain',
+    })
+
+    const retried = await otherOutbox.claimForSend({
+      opId: 'op_shopretry1',
+      leaseOwner: 'shop-owner-retry',
+      now: 230,
+      leaseDurationMs: 1_000,
+    })
+    expect(retried).toMatchObject({
+      claimed: true,
+      entry: {
+        opId: 'op_shopretry1',
+        shopSlug: 'viridian-mart',
+        state: 'sending',
+        attemptCount: 2,
+        leaseOwner: 'shop-owner-retry',
+      },
+    })
   })
 
   it('allows only one winner across concurrent claimers', async () => {

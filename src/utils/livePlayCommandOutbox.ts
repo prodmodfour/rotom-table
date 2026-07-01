@@ -1,11 +1,16 @@
 import { isAuthRole, type AuthRole } from '#shared/auth'
 import {
+  LIVE_PLAY_COMMAND_TYPES,
   isLivePlayMapCommandType,
   isLivePlayMapSlug,
   isLivePlayOpId,
   validateLivePlayCommandEnvelope,
+  validateShopCheckoutCommandEnvelope,
+  type LivePlayCommandType,
   type LivePlayMapCommandType,
+  type LivePlayShopCheckoutCommandType,
 } from '#shared/livePlayCommands'
+import { isSlug } from '#shared/paths'
 import { isPlayerProfileId, type PlayerProfileId } from '#shared/playerProfiles'
 
 export const LIVE_PLAY_COMMAND_OUTBOX_DB_NAME = 'rotom-table-client' as const
@@ -33,8 +38,9 @@ export interface LivePlayCommandOutboxAuthContext {
 export interface LivePlayCommandOutboxEntry {
   readonly schemaVersion: typeof LIVE_PLAY_COMMAND_OUTBOX_SCHEMA_VERSION
   readonly opId: string
-  readonly mapSlug: string
-  readonly commandType: LivePlayMapCommandType
+  readonly mapSlug?: string
+  readonly shopSlug?: string
+  readonly commandType: LivePlayCommandType
   readonly requestPath: string
   readonly body: Record<string, unknown>
   readonly authContext: LivePlayCommandOutboxAuthContext
@@ -47,6 +53,18 @@ export interface LivePlayCommandOutboxEntry {
   readonly lastError?: string
   readonly leaseOwner?: string
   readonly leaseExpiresAt?: number
+}
+
+export type LivePlayMapCommandOutboxEntry = LivePlayCommandOutboxEntry & {
+  readonly mapSlug: string
+  readonly shopSlug?: never
+  readonly commandType: LivePlayMapCommandType
+}
+
+export type ShopCheckoutCommandOutboxEntry = LivePlayCommandOutboxEntry & {
+  readonly mapSlug?: never
+  readonly shopSlug: string
+  readonly commandType: LivePlayShopCheckoutCommandType
 }
 
 export type LivePlayCommandOutboxCorruptRecordKind =
@@ -67,6 +85,7 @@ export interface LivePlayCommandOutboxInspectResult {
 
 export interface LivePlayCommandOutboxListFilter {
   readonly mapSlug?: string
+  readonly shopSlug?: string
   readonly authContext?: LivePlayCommandOutboxAuthContext
   readonly states?: readonly LivePlayCommandOutboxState[]
 }
@@ -185,6 +204,20 @@ export interface CreateLivePlayCommandOutboxOptions {
 
 type UnknownRecord = Record<string, unknown>
 
+type LivePlayCommandOutboxIdentity =
+  | {
+      readonly kind: 'map'
+      readonly opId: string
+      readonly mapSlug: string
+      readonly commandType: LivePlayMapCommandType
+    }
+  | {
+      readonly kind: 'shop'
+      readonly opId: string
+      readonly shopSlug: string
+      readonly commandType: LivePlayShopCheckoutCommandType
+    }
+
 type StoredRecordParseResult =
   | { readonly ok: true; readonly entry: LivePlayCommandOutboxEntry }
   | { readonly ok: false; readonly corruptRecord: LivePlayCommandOutboxCorruptRecord }
@@ -206,6 +239,18 @@ const isSafeNonNegativeInteger = (value: unknown): value is number =>
 
 const isOutboxState = (value: unknown): value is LivePlayCommandOutboxState =>
   OUTBOX_STATE_SET.has(value)
+
+export const isShopCheckoutCommandOutboxEntry = (
+  entry: LivePlayCommandOutboxEntry,
+): entry is ShopCheckoutCommandOutboxEntry => (
+  entry.commandType === LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT && typeof entry.shopSlug === 'string'
+)
+
+export const isLivePlayMapCommandOutboxEntry = (
+  entry: LivePlayCommandOutboxEntry,
+): entry is LivePlayMapCommandOutboxEntry => (
+  isLivePlayMapCommandType(entry.commandType) && typeof entry.mapSlug === 'string'
+)
 
 const describeValue = (value: unknown): string => {
   if (value === null) return 'null'
@@ -446,7 +491,33 @@ export const createLivePlayCommandOutboxFingerprint = (input: {
   })
 }
 
-const validatedCommandIdentityFromBody = (body: Record<string, unknown>) => {
+const validatedCommandIdentityFromBody = (
+  body: Record<string, unknown>,
+): LivePlayCommandOutboxIdentity => {
+  if (body.type === LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT) {
+    const result = validateShopCheckoutCommandEnvelope(body)
+    if (!result.valid) {
+      const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+      throw validationError(`body is not a valid shop checkout live-play command envelope: ${summary}`)
+    }
+
+    const opId = result.command.opId
+    const payload = result.command.payload
+    if (!isLivePlayOpId(opId)) {
+      throw validationError('body.opId must match the shared live-play operation-ID format.')
+    }
+    if (!isPlainRecord(payload) || !isSlug(payload.shopSlug)) {
+      throw validationError('body.payload.shopSlug must match the shared slug format.')
+    }
+
+    return {
+      kind: 'shop',
+      opId,
+      shopSlug: payload.shopSlug,
+      commandType: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+    }
+  }
+
   const result = validateLivePlayCommandEnvelope(body)
   if (!result.valid) {
     const summary = result.issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
@@ -467,7 +538,7 @@ const validatedCommandIdentityFromBody = (body: Record<string, unknown>) => {
     throw validationError('body.type must be a supported map live-play command type.')
   }
 
-  return { opId, mapSlug, commandType }
+  return { kind: 'map', opId, mapSlug, commandType }
 }
 
 const sanitizeLastError = (error: string): string => {
@@ -501,6 +572,22 @@ const cloneInspectResult = (
   corruptRecords: cloneJson(result.corruptRecords),
 })
 
+const identityFieldsFromEntry = (
+  entry: LivePlayCommandOutboxEntry,
+): Pick<LivePlayCommandOutboxEntry, 'mapSlug' | 'shopSlug'> => (
+  isShopCheckoutCommandOutboxEntry(entry)
+    ? { shopSlug: entry.shopSlug }
+    : { mapSlug: entry.mapSlug }
+)
+
+const identityFieldsFromBody = (
+  identity: LivePlayCommandOutboxIdentity,
+): Pick<LivePlayCommandOutboxEntry, 'mapSlug' | 'shopSlug'> => (
+  identity.kind === 'shop'
+    ? { shopSlug: identity.shopSlug }
+    : { mapSlug: identity.mapSlug }
+)
+
 const assertStoredEntry = (raw: unknown): LivePlayCommandOutboxEntry => {
   if (!isPlainRecord(raw)) {
     throw new LivePlayCommandOutboxCorruptRecordError('Stored outbox record is not an object.')
@@ -524,8 +611,20 @@ const assertStoredEntry = (raw: unknown): LivePlayCommandOutboxEntry => {
   if (raw.opId !== identity.opId) {
     throw new LivePlayCommandOutboxCorruptRecordError('Stored outbox opId does not match body.opId.')
   }
-  if (raw.mapSlug !== identity.mapSlug) {
-    throw new LivePlayCommandOutboxCorruptRecordError('Stored outbox mapSlug does not match body.mapSlug.')
+  if (identity.kind === 'map') {
+    if (raw.mapSlug !== identity.mapSlug) {
+      throw new LivePlayCommandOutboxCorruptRecordError('Stored outbox mapSlug does not match body.mapSlug.')
+    }
+    if (hasOwn(raw, 'shopSlug')) {
+      throw new LivePlayCommandOutboxCorruptRecordError('Stored map outbox record must not contain shopSlug.')
+    }
+  } else {
+    if (raw.shopSlug !== identity.shopSlug) {
+      throw new LivePlayCommandOutboxCorruptRecordError('Stored outbox shopSlug does not match body.payload.shopSlug.')
+    }
+    if (hasOwn(raw, 'mapSlug')) {
+      throw new LivePlayCommandOutboxCorruptRecordError('Stored shop checkout outbox record must not contain mapSlug.')
+    }
   }
   if (raw.commandType !== identity.commandType) {
     throw new LivePlayCommandOutboxCorruptRecordError('Stored outbox commandType does not match body.type.')
@@ -571,7 +670,7 @@ const assertStoredEntry = (raw: unknown): LivePlayCommandOutboxEntry => {
   const entry: LivePlayCommandOutboxEntry = {
     schemaVersion: LIVE_PLAY_COMMAND_OUTBOX_SCHEMA_VERSION,
     opId: identity.opId,
-    mapSlug: identity.mapSlug,
+    ...identityFieldsFromBody(identity),
     commandType: identity.commandType,
     requestPath,
     body: bodyClone,
@@ -680,6 +779,7 @@ const entryMatchesFilter = (
   filter: LivePlayCommandOutboxListFilter | undefined,
 ): boolean => {
   if (filter?.mapSlug !== undefined && entry.mapSlug !== filter.mapSlug) return false
+  if (filter?.shopSlug !== undefined && entry.shopSlug !== filter.shopSlug) return false
 
   if (filter?.authContext !== undefined) {
     const authContext = normalizeAuthContext(filter.authContext)
@@ -733,6 +833,7 @@ const ensureOutboxObjectStore = (database: IDBDatabase): void => {
   if (store === undefined) return
 
   store.createIndex('mapSlug', 'mapSlug', { unique: false })
+  store.createIndex('shopSlug', 'shopSlug', { unique: false })
   store.createIndex('state', 'state', { unique: false })
   store.createIndex('updatedAt', 'updatedAt', { unique: false })
   store.createIndex('createdAt', 'createdAt', { unique: false })
@@ -784,7 +885,7 @@ class IndexedDbLivePlayCommandOutbox implements LivePlayCommandOutbox {
     const entry: LivePlayCommandOutboxEntry = {
       schemaVersion: LIVE_PLAY_COMMAND_OUTBOX_SCHEMA_VERSION,
       opId: identity.opId,
-      mapSlug: identity.mapSlug,
+      ...identityFieldsFromBody(identity),
       commandType: identity.commandType,
       requestPath,
       body,
@@ -863,7 +964,7 @@ class IndexedDbLivePlayCommandOutbox implements LivePlayCommandOutbox {
       const claimedEntry: LivePlayCommandOutboxEntry = {
         schemaVersion: entry.schemaVersion,
         opId: entry.opId,
-        mapSlug: entry.mapSlug,
+        ...identityFieldsFromEntry(entry),
         commandType: entry.commandType,
         requestPath: entry.requestPath,
         body: entry.body,
@@ -912,7 +1013,7 @@ class IndexedDbLivePlayCommandOutbox implements LivePlayCommandOutbox {
       const uncertainEntry: LivePlayCommandOutboxEntry = {
         schemaVersion: entry.schemaVersion,
         opId: entry.opId,
-        mapSlug: entry.mapSlug,
+        ...identityFieldsFromEntry(entry),
         commandType: entry.commandType,
         requestPath: entry.requestPath,
         body: entry.body,
@@ -977,7 +1078,7 @@ class IndexedDbLivePlayCommandOutbox implements LivePlayCommandOutbox {
         const recoveredEntry: LivePlayCommandOutboxEntry = {
           schemaVersion: entry.schemaVersion,
           opId: entry.opId,
-          mapSlug: entry.mapSlug,
+          ...identityFieldsFromEntry(entry),
           commandType: entry.commandType,
           requestPath: entry.requestPath,
           body: entry.body,

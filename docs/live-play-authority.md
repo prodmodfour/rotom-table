@@ -88,7 +88,7 @@ Recovery never replays local presentation-only effects. Duplicate accepted/statu
 
 ## Outbox, status, retry, and abandonment
 
-Every live-play command is journaled in IndexedDB before send. The journal stores request path, exact body, auth context, fingerprint, state, attempts, and lease data. Retry resends the exact body and `opId`. Status checks are read-only. Abandonment serializes against execution; if the server has already accepted the command, the accepted result wins and acknowledges the outbox. Accepted SSE also acknowledges matching outbox entries.
+Map live-play commands and shop checkout commands can be journaled in IndexedDB before send. The journal stores request path, exact body, auth context, fingerprint, state, attempts, and lease data; shop checkout rows are scoped by `shopSlug` and do not require a top-level `mapSlug` for shop-page-origin purchases. Retry resends the exact body and `opId`. Map command status checks are read-only. Map abandonment serializes against execution; if the server has already accepted the command, the accepted result wins and acknowledges the outbox. Accepted SSE also acknowledges matching map outbox entries.
 
 ## JSON import/export boundary
 
