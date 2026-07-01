@@ -1003,7 +1003,7 @@ Give GMs enough visibility to debug purchases without exposing noisy internals t
 
 ## 033 — SHOPS-033: Add integration tests for concurrent checkout and stock conflicts
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Prove live-play checkout behaves correctly under concurrency.
