@@ -50,8 +50,13 @@ const mountList = (shop: ShopTableDocument) => mount(ShopfrontEntryList, {
 })
 
 describe('ShopfrontEntryList', () => {
-  it('renders player-visible shop entries with price, stock, max-per-purchase, and disabled buy controls', () => {
-    const wrapper = mountList(makeShop())
+  it('renders player-visible shop entries with price, stock, max-per-purchase, and quantity selectors', async () => {
+    const wrapper = mount(ShopfrontEntryList, {
+      props: {
+        shop: makeShop(),
+        quantities: { potion: 1 },
+      },
+    })
     const text = wrapper.text()
 
     expect(text).toContain('Items for sale')
@@ -69,10 +74,14 @@ describe('ShopfrontEntryList', () => {
     expect(text).toContain('No limit')
     expect(text).toContain('A reliable way out of deep caves.')
 
-    const buttons = wrapper.findAll('button')
-    expect(buttons).toHaveLength(2)
-    expect(buttons.every((button) => button.text() === 'Buy coming soon')).toBe(true)
-    expect(buttons.every((button) => button.attributes('disabled') !== undefined)).toBe(true)
+    const inputs = wrapper.findAll<HTMLInputElement>('[data-testid="shopfront-entry-quantity"]')
+    expect(inputs).toHaveLength(2)
+    expect(inputs[0]!.element.value).toBe('1')
+    expect(inputs[0]!.attributes('max')).toBe('2')
+    expect(inputs[1]!.attributes('max')).toBeUndefined()
+
+    await inputs[0]!.setValue('9')
+    expect(wrapper.emitted('update-quantity')?.at(-1)).toEqual(['potion', 2])
   })
 
   it('redacts shop and entry GM notes from the player-facing catalog', () => {
@@ -89,6 +98,6 @@ describe('ShopfrontEntryList', () => {
 
     expect(wrapper.text()).toContain('0 entries')
     expect(wrapper.text()).toContain('This shop does not list any items yet.')
-    expect(wrapper.find('button').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="shopfront-entry-quantity"]').exists()).toBe(false)
   })
 })

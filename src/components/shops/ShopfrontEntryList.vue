@@ -4,6 +4,12 @@ import { TRAINER_INVENTORY_SECTIONS } from '~/utils/sheets/trainerInventorySecti
 
 const props = defineProps<{
   shop: ShopTableDocument
+  quantities?: Readonly<Record<string, number>>
+  disabled?: boolean
+}>()
+
+const emit = defineEmits<{
+  'update-quantity': [entryId: string, quantity: number]
 }>()
 
 const sectionTitleByKey = new Map(
@@ -29,16 +35,42 @@ const maxPerPurchaseLabel = (entry: ShopEntry): string => (
     ? `${safeInteger(entry.maxPerPurchase).toLocaleString('en-US')} per purchase`
     : 'No limit'
 )
+
+const quantityForEntry = (entry: ShopEntry): number => safeInteger(props.quantities?.[entry.id])
+
+const quantityLimit = (entry: ShopEntry): number | null => {
+  const limits: number[] = []
+  if (entry.stock !== null) limits.push(safeInteger(entry.stock))
+  if (entry.maxPerPurchase && entry.maxPerPurchase > 0) limits.push(safeInteger(entry.maxPerPurchase))
+  return limits.length === 0 ? null : Math.max(0, Math.min(...limits))
+}
+
+const quantityMaxAttribute = (entry: ShopEntry): number | undefined => quantityLimit(entry) ?? undefined
+
+const isOutOfStock = (entry: ShopEntry): boolean => entry.stock !== null && safeInteger(entry.stock) <= 0
+
+const normalizeInputQuantity = (entry: ShopEntry, value: string): number => {
+  const numericValue = value.trim() === '' ? 0 : Number(value)
+  if (!Number.isFinite(numericValue) || numericValue <= 0) return 0
+  const quantity = Math.floor(numericValue)
+  const limit = quantityLimit(entry)
+  return limit === null ? quantity : Math.min(quantity, limit)
+}
+
+const handleQuantityInput = (entry: ShopEntry, event: Event): void => {
+  const input = event.target as HTMLInputElement | null
+  emit('update-quantity', entry.id, normalizeInputQuantity(entry, input?.value ?? '0'))
+}
 </script>
 
 <template>
   <section class="shopfront-catalog panel-card" data-testid="shopfront-catalog" aria-labelledby="shopfront-catalog-title">
     <header class="shopfront-catalog__header">
       <div>
-        <p class="shopfront-catalog__eyebrow">Read-only catalog</p>
+        <p class="shopfront-catalog__eyebrow">Shop catalog</p>
         <h2 id="shopfront-catalog-title">Items for sale</h2>
         <p>
-          Browse the current catalog before checkout commands are available. Buy controls are intentionally disabled for now.
+          Inspect current prices, stock, and purchase limits, then set quantities to add items to the live-play checkout cart.
         </p>
       </div>
       <span class="shopfront-catalog__count">
@@ -81,9 +113,24 @@ const maxPerPurchaseLabel = (entry: ShopEntry): string => (
           </div>
         </dl>
 
-        <button type="button" class="shopfront-entry-card__buy" disabled>
-          Buy coming soon
-        </button>
+        <label class="shopfront-entry-card__quantity">
+          <span>Quantity</span>
+          <input
+            type="number"
+            min="0"
+            inputmode="numeric"
+            data-testid="shopfront-entry-quantity"
+            :aria-label="`Quantity for ${entryName(entry)}`"
+            :max="quantityMaxAttribute(entry)"
+            :value="quantityForEntry(entry)"
+            :disabled="props.disabled || isOutOfStock(entry)"
+            @input="handleQuantityInput(entry, $event)"
+          >
+        </label>
+
+        <p v-if="isOutOfStock(entry)" class="shopfront-entry-card__unavailable" role="status">
+          Out of stock
+        </p>
       </li>
     </ul>
   </section>
@@ -105,10 +152,19 @@ const maxPerPurchaseLabel = (entry: ShopEntry): string => (
 
 .shopfront-catalog__header p,
 .shopfront-catalog__empty,
-.shopfront-entry-card__description {
+.shopfront-entry-card__description,
+.shopfront-entry-card__unavailable {
   margin: 0;
   color: var(--ink-soft);
   line-height: 1.5;
+}
+
+.shopfront-entry-card__unavailable {
+  color: var(--bad);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .shopfront-catalog__eyebrow,
@@ -197,19 +253,34 @@ const maxPerPurchaseLabel = (entry: ShopEntry): string => (
   color: var(--ink);
 }
 
-.shopfront-entry-card__buy {
+.shopfront-entry-card__quantity {
+  display: grid;
+  gap: 0.35rem;
   justify-self: start;
-  border: 1px solid var(--rule-soft);
-  border-radius: 999px;
-  background: var(--paper);
   color: var(--ink-soft);
-  cursor: not-allowed;
-  font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.08em;
-  padding: 0.55rem 0.85rem;
   text-transform: uppercase;
-  opacity: 0.72;
+}
+
+.shopfront-entry-card__quantity input {
+  width: 7rem;
+  border: 1px solid var(--rule-soft);
+  border-radius: 0.4rem;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  padding: 0.48rem 0.55rem;
+}
+
+.shopfront-entry-card__quantity input:focus-visible {
+  border-color: var(--rule-active);
+  outline: none;
+}
+
+.shopfront-entry-card__quantity input:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 </style>

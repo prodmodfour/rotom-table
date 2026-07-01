@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
+import ShopfrontCheckoutPanel from '~/components/shops/ShopfrontCheckoutPanel.vue'
 import ShopfrontEntryList from '~/components/shops/ShopfrontEntryList.vue'
+import { useShopfrontCheckout } from '~/composables/shops/useShopfrontCheckout'
 import { useShopfrontPage } from '~/composables/shops/useShopfrontPage'
 import { routeSlugParam } from '~/utils/routeParams'
 import { shopEditorPath, shopLibraryPath } from '~/utils/shopRoutes'
 
 const route = useRoute()
-const { isGm } = useAuth()
+const { role, isGm, isPlayer } = useAuth()
+const {
+  selectedProfileId,
+  selectedProfileDisplayName,
+  loadRememberedProfile,
+} = usePlayerProfiles()
+
+if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
 const shopSlug = computed(() => routeSlugParam(route.params))
 const shopEditorLocation = computed(() => (
@@ -20,6 +29,39 @@ const {
   loadErrorMessage,
   loadShop,
 } = useShopfrontPage({ slug: shopSlug })
+
+const {
+  cartQuantities,
+  cartLines,
+  totalPrice,
+  paymentOptions,
+  deliveryOptions,
+  selectedPaymentOptionKey,
+  selectedDeliveryOptionKey,
+  documentsStatus,
+  documentsErrorMessage,
+  checkoutStatus,
+  checkoutErrorMessage,
+  checkoutUnavailableReason,
+  canCheckout,
+  pendingOutboxEntries,
+  outboxStatus,
+  outboxError,
+  setCartQuantity,
+  selectPaymentOption,
+  selectDeliveryOption,
+  loadCheckoutDocuments,
+  submitCheckout,
+  retryOutboxEntry,
+  discardOutboxEntry,
+  clearCheckoutError,
+} = useShopfrontCheckout({
+  shop,
+  authRole: role,
+  isGm,
+  isPlayer,
+  selectedProfileId,
+})
 
 const pageTitle = computed(() => shop.value?.name || shopSlug.value || 'Shop')
 const shopStatusLabel = computed(() => (shop.value?.open ? 'Open' : 'Closed'))
@@ -41,7 +83,7 @@ useHead(() => ({
   meta: [
     {
       name: 'description',
-      content: 'Read-only player-facing shopfront for Rotom Table live-play campaigns.',
+      content: 'Player-facing shopfront with live-play checkout commands for Rotom Table campaigns.',
     },
   ],
 }))
@@ -59,7 +101,7 @@ useHead(() => ({
           {{ shop.description }}
         </p>
         <p v-else>
-          Browse the shop catalog and inspect item prices, stock, and purchase limits before live-play checkout commands are enabled.
+          Browse the shop catalog, choose cart quantities, and buy through server-authoritative live-play checkout commands.
         </p>
 
         <div v-if="shop" class="shopfront-badges" aria-label="Shop state">
@@ -121,7 +163,38 @@ useHead(() => ({
         <p>{{ gmPreviewMessage }}</p>
       </section>
 
-      <ShopfrontEntryList :shop="shop" />
+      <ShopfrontEntryList
+        :shop="shop"
+        :quantities="cartQuantities"
+        :disabled="checkoutStatus === 'sending'"
+        @update-quantity="setCartQuantity"
+      />
+
+      <ShopfrontCheckoutPanel
+        :cart-lines="cartLines"
+        :total-price="totalPrice"
+        :payment-options="paymentOptions"
+        :delivery-options="deliveryOptions"
+        :selected-payment-option-key="selectedPaymentOptionKey"
+        :selected-delivery-option-key="selectedDeliveryOptionKey"
+        :documents-status="documentsStatus"
+        :documents-error-message="documentsErrorMessage"
+        :checkout-status="checkoutStatus"
+        :checkout-error-message="checkoutErrorMessage"
+        :checkout-unavailable-reason="checkoutUnavailableReason"
+        :can-checkout="canCheckout"
+        :pending-outbox-entries="pendingOutboxEntries"
+        :outbox-status="outboxStatus"
+        :outbox-error="outboxError"
+        :selected-profile-display-name="selectedProfileDisplayName"
+        @update-payment-option="selectPaymentOption"
+        @update-delivery-option="selectDeliveryOption"
+        @checkout="submitCheckout"
+        @retry-outbox-entry="retryOutboxEntry"
+        @discard-outbox-entry="discardOutboxEntry"
+        @reload-documents="loadCheckoutDocuments"
+        @clear-error="clearCheckoutError"
+      />
     </template>
 
     <section v-else class="shopfront-panel panel-card" role="status">

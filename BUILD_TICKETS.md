@@ -774,7 +774,7 @@ Provide a UI-facing command runner for shop checkout.
 
 ## 025 — SHOPS-025: Add cart and checkout UI to player shopfront
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Let players and GMs purchase items from the shopfront through the live-play checkout command.
