@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: NOT_DONE
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -1060,7 +1060,7 @@ Cover the happy path from player shopfront UI to authoritative live-play checkou
 
 ## 035 — SHOPS-035: Document shops, checkout, and live-play boundaries
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Document the shop model and the live-play integration rules for future contributors.
