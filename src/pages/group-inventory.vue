@@ -91,16 +91,6 @@ useHead({
   <main class="group-inventory-page">
     <AppNavigation />
 
-    <header class="group-inventory-hero panel-card">
-      <div>
-        <p class="group-inventory-eyebrow">Party inventory</p>
-        <h1>Inventory</h1>
-        <p>
-          View the shared campaign inventory for the table. GMs can edit and save the authoritative document with revision protection; GMs and players can transfer items with eligible trainer sheets after revision checks pass.
-        </p>
-      </div>
-    </header>
-
     <section class="group-inventory-state" aria-label="Shared inventory status">
       <article
         v-if="isGroupInventoryLoading && !groupInventoryDocument"
@@ -170,13 +160,11 @@ useHead({
   color: var(--ink);
 }
 
-.group-inventory-hero,
 .group-inventory-panel {
   display: grid;
   gap: 0.7rem;
 }
 
-.group-inventory-hero p,
 .group-inventory-panel p {
   max-width: 68ch;
   margin: 0;
@@ -184,7 +172,6 @@ useHead({
   line-height: 1.55;
 }
 
-.group-inventory-hero .group-inventory-eyebrow,
 .group-inventory-panel .group-inventory-eyebrow {
   color: var(--accent);
   font-size: 0.76rem;
@@ -193,20 +180,12 @@ useHead({
   text-transform: uppercase;
 }
 
-.group-inventory-hero h1,
 .group-inventory-panel h2 {
   margin: 0;
   color: var(--ink-bright);
   font-family: var(--font-book);
-  letter-spacing: 0.04em;
-}
-
-.group-inventory-hero h1 {
-  font-size: clamp(2rem, 5vw, 3.4rem);
-}
-
-.group-inventory-panel h2 {
   font-size: clamp(1.45rem, 3vw, 2.1rem);
+  letter-spacing: 0.04em;
 }
 
 .group-inventory-state {

@@ -261,24 +261,8 @@ watch(
 </script>
 
 <template>
-  <article class="group-inventory-panel panel-card" aria-labelledby="group-inventory-panel-title">
+  <article class="group-inventory-panel panel-card" aria-label="Shared party inventory">
     <header class="group-inventory-panel__header">
-      <div>
-        <p class="group-inventory-panel__eyebrow">Shared campaign state</p>
-        <h2 id="group-inventory-panel-title">Shared party inventory</h2>
-        <p>
-          <template v-if="canEdit">
-            Edit the authoritative campaign inventory document, then save with revision protection before other clients rely on the changes.
-          </template>
-          <template v-else>
-            This view shows the authoritative campaign inventory document for both GMs and players.
-          </template>
-          <template v-if="showTransferControls">
-            Transfers move item quantities only after the server accepts both the party and trainer revisions.
-          </template>
-        </p>
-      </div>
-
       <dl class="group-inventory-panel__summary" aria-label="Group inventory summary">
         <div>
           <dt>Money</dt>
@@ -296,14 +280,6 @@ watch(
             >
           </dd>
           <dd v-else>{{ moneyDisplay }}</dd>
-        </div>
-        <div>
-          <dt>Rows</dt>
-          <dd>{{ totalItemRows }}</dd>
-        </div>
-        <div>
-          <dt>Revision</dt>
-          <dd>{{ document.revision }}</dd>
         </div>
       </dl>
     </header>
@@ -469,40 +445,17 @@ watch(
   gap: 1rem;
 }
 
-.group-inventory-panel__header p {
-  max-width: 68ch;
-  margin: 0.35rem 0 0;
-  color: var(--ink-soft);
-  line-height: 1.55;
-}
-
-.group-inventory-panel__header .group-inventory-panel__eyebrow {
-  color: var(--accent);
-  font-size: 0.76rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.group-inventory-panel h2,
 .group-inventory-panel h3 {
   margin: 0;
   color: var(--ink-bright);
   font-family: var(--font-book);
-  letter-spacing: 0.04em;
-}
-
-.group-inventory-panel h2 {
-  font-size: clamp(1.45rem, 3vw, 2.1rem);
-}
-
-.group-inventory-panel h3 {
   font-size: 1.1rem;
+  letter-spacing: 0.04em;
 }
 
 .group-inventory-panel__summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(5.5rem, 1fr));
+  grid-template-columns: minmax(5.5rem, 1fr);
   gap: 0.5rem;
   min-width: min(100%, 24rem);
   margin: 0;
