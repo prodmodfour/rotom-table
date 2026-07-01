@@ -445,6 +445,37 @@ export type ShopCheckoutLivePlayCommand = LivePlayCommandCoreEnvelope<
   ShopCheckoutLivePlayScope
 >
 
+export const shopCheckoutScopeKey = (scope: ShopCheckoutLivePlayScope): string => {
+  if (scope.kind === 'shop') return `shop:${scope.shopSlug}:${scope.field}`
+  if (scope.kind === 'groupInventory') return `groupInventory:${scope.slug}:${scope.field}`
+  return `sheet:trainer:${scope.sheetSlug}:${scope.field}`
+}
+
+const createShopCheckoutPaymentSourceScope = (
+  source: ShopCheckoutPaymentSource,
+): LivePlayGroupInventoryScope | ShopCheckoutTrainerSheetScope => (
+  source.kind === 'groupInventory'
+    ? { kind: 'groupInventory', slug: source.slug, field: 'money' }
+    : { kind: 'sheet', sheetKind: 'trainer', sheetSlug: source.slug, field: 'money' }
+)
+
+const createShopCheckoutDeliveryTargetScope = (
+  target: ShopCheckoutDeliveryTarget,
+): LivePlayGroupInventoryScope | ShopCheckoutTrainerSheetScope => (
+  target.kind === 'groupInventory'
+    ? { kind: 'groupInventory', slug: target.slug, field: 'inventory' }
+    : { kind: 'sheet', sheetKind: 'trainer', sheetSlug: target.slug, field: 'inventory' }
+)
+
+export const createShopCheckoutCommandScopes = (
+  payload: Pick<ShopCheckoutPayload, 'shopSlug' | 'paymentSource' | 'deliveryTarget'>,
+): readonly ShopCheckoutLivePlayScope[] => [
+  { kind: 'shop', shopSlug: payload.shopSlug, field: 'purchase' },
+  { kind: 'shop', shopSlug: payload.shopSlug, field: 'stock' },
+  createShopCheckoutPaymentSourceScope(payload.paymentSource),
+  createShopCheckoutDeliveryTargetScope(payload.deliveryTarget),
+]
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,

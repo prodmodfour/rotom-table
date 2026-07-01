@@ -686,7 +686,7 @@ Keep other clients synchronized after shop checkout commits.
 
 ## 022 — SHOPS-022: Add client-side shop checkout command builder
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Build valid `SHOP_CHECKOUT` live-play commands from the shopfront UI.
