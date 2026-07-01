@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto'
-import type {
-  ShopCheckoutCommandAccepted,
-  ShopCheckoutLivePlayCommand,
+import {
+  LIVE_PLAY_COMMAND_TYPES,
+  type ShopCheckoutCommandAccepted,
+  type ShopCheckoutCommandRejected,
+  type ShopCheckoutLivePlayCommand,
 } from '#shared/livePlayCommands'
-import { shopChannel, shopsChannel } from '#shared/realtime'
+import { LIVE_PLAY_REALTIME_EVENT_TYPES, shopChannel, shopsChannel } from '#shared/realtime'
 import {
   MAX_REALTIME_EVENT_DEDUPE_KEY_LENGTH,
   cloneRealtimeJsonValue,
@@ -41,6 +43,12 @@ export interface ShopRealtimeSummary {
 export interface ShopCheckoutRealtimeAppendInputsOptions {
   readonly command: ShopCheckoutLivePlayCommand & { readonly clientId?: unknown }
   readonly result: ShopCheckoutCommandAccepted
+  readonly clientId?: unknown
+}
+
+export interface ShopCheckoutRejectedRealtimeAppendInputOptions {
+  readonly command: ShopCheckoutLivePlayCommand & { readonly clientId?: unknown }
+  readonly result: ShopCheckoutCommandRejected
   readonly clientId?: unknown
 }
 
@@ -142,6 +150,71 @@ const shopCheckoutShopRealtimeDedupeKey = (input: {
     },
   })
 }
+
+const shopCheckoutCommandRealtimeDedupeKey = (input: {
+  readonly shopSlug: string
+  readonly opId: string
+  readonly disposition: 'accepted' | 'rejected'
+}): string => {
+  const shopSlug = assertSlug(input.shopSlug, 'shop slug')
+  const raw = `shop-checkout-command:${shopSlug}:${input.opId}:${input.disposition}`
+  return boundedDedupeKey({
+    raw,
+    prefix: 'shop-checkout-command',
+    destination: input.disposition,
+    identity: {
+      kind: 'shop-checkout-command-terminal',
+      shopSlug,
+      opId: input.opId,
+      disposition: input.disposition,
+    },
+  })
+}
+
+const acceptedCommandResultForRealtime = (
+  result: ShopCheckoutCommandAccepted,
+): ShopCheckoutCommandAccepted => cloneRealtimeJsonValue({
+  ...result,
+  documents: {
+    shop: result.documents.shop,
+  },
+}, 'shop checkout accepted command result') as ShopCheckoutCommandAccepted
+
+const rejectedCommandResultForRealtime = (
+  result: ShopCheckoutCommandRejected,
+): ShopCheckoutCommandRejected => {
+  const { currentState: _currentState, ...safeResult } = result
+  return cloneRealtimeJsonValue(safeResult, 'shop checkout rejected command result') as ShopCheckoutCommandRejected
+}
+
+const shopCheckoutAcceptedCommandRealtimeAppendInput = (input: {
+  readonly command: ShopCheckoutLivePlayCommand
+  readonly result: ShopCheckoutCommandAccepted
+  readonly clientId?: string
+}): AppendRealtimeEventInput => eventInput({
+  event: stripUndefinedEventFields({
+    channel: shopChannel(input.result.shopSlug),
+    type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED,
+    revision: input.result.shopRevision,
+    previousRevision: input.result.previousShopRevision,
+    opId: input.result.opId,
+    ...(input.clientId === undefined ? {} : { clientId: input.clientId }),
+    data: {
+      commandType: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+      shopSlug: input.result.shopSlug,
+      result: acceptedCommandResultForRealtime(input.result),
+    },
+  }),
+  access: {
+    kind: 'shop-access' as const,
+    shopSlug: input.result.shopSlug,
+  },
+  dedupeKey: shopCheckoutCommandRealtimeDedupeKey({
+    shopSlug: input.result.shopSlug,
+    opId: input.command.opId,
+    disposition: 'accepted',
+  }),
+})
 
 export const shopCheckoutTrainerSheetRealtimeDedupeKey = (input: {
   readonly opId: string
@@ -282,6 +355,41 @@ const groupInventoryRealtimeAppendInputs = (input: {
   'shop-checkout',
 )
 
+export const shopCheckoutRejectedRealtimeAppendInput = (
+  options: ShopCheckoutRejectedRealtimeAppendInputOptions,
+): AppendRealtimeEventInput => {
+  const clientId = normalizeRealtimeEventClientIdForEventLog(options.clientId ?? options.command.clientId)
+  const shopSlug = assertSlug(options.result.shopSlug ?? options.command.payload.shopSlug, 'shop checkout rejected shop slug')
+  const result = rejectedCommandResultForRealtime({
+    ...options.result,
+    shopSlug,
+  })
+
+  return eventInput({
+    event: stripUndefinedEventFields({
+      channel: shopChannel(shopSlug),
+      type: LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_REJECTED,
+      ...(result.currentShopRevision === undefined ? {} : { revision: result.currentShopRevision }),
+      opId: result.opId,
+      ...(clientId === undefined ? {} : { clientId }),
+      data: {
+        commandType: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+        shopSlug,
+        result,
+      },
+    }),
+    access: {
+      kind: 'shop-access' as const,
+      shopSlug,
+    },
+    dedupeKey: shopCheckoutCommandRealtimeDedupeKey({
+      shopSlug,
+      opId: options.command.opId,
+      disposition: 'rejected',
+    }),
+  })
+}
+
 export const shopCheckoutRealtimeAppendInputs = (
   options: ShopCheckoutRealtimeAppendInputsOptions,
 ): readonly AppendRealtimeEventInput[] => {
@@ -303,5 +411,10 @@ export const shopCheckoutRealtimeAppendInputs = (
       command: options.command,
       clientId,
     })),
+    shopCheckoutAcceptedCommandRealtimeAppendInput({
+      command: options.command,
+      result: options.result,
+      clientId,
+    }),
   ]
 }

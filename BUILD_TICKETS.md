@@ -953,7 +953,7 @@ Ensure map-launched shop checkout is authorized against the live map context.
 
 ## 031 — SHOPS-031: Add live-play accepted/rejected realtime result handling for shop checkout
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Let checkout commands participate in the same accepted/rejected/recovered-by-realtime UX as other live-play commands.

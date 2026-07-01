@@ -59,7 +59,7 @@ Access boundaries:
 
 The server combines in-process wakeups with SQLite polling, so one process can commit a durable event and another process can deliver it after polling or restart. Wakeups and polling share the same sequence cursor and do not duplicate delivery.
 
-Shopfront and GM shop editor pages subscribe to `shop:<slug>` for the loaded shop document. Shopfront checkout state also subscribes to `group-inventory:<slug>` and `sheet:trainer:<slug>` only for payment/delivery documents already loaded on the page. Client handlers ignore local echo events by `clientId`, reject stale revisions, and apply only complete authoritative documents. When another client changes finite stock below a cart quantity, the cart clamps to the new limit and shows a non-blocking stock-change notice instead of sending an optimistic or stale checkout.
+Shopfront and GM shop editor pages subscribe to `shop:<slug>` for the loaded shop document. Shop checkout commits also append terminal `live-play-command-accepted`/`live-play-command-rejected` rows on `shop:<slug>` so the originating checkout outbox can be acknowledged even when SSE wins the race with the HTTP response. Accepted terminal shop events carry the authoritative shop document only; trainer sheet and group inventory convergence still uses their resource-specific channels or an explicit reload, so shop-access replay does not expose participant documents to every shop viewer. Shopfront checkout state also subscribes to `group-inventory:<slug>` and `sheet:trainer:<slug>` only for payment/delivery documents already loaded on the page. Client handlers ignore ordinary local echo document events by `clientId`, reject stale revisions, and apply only complete authoritative documents. When another client changes finite stock below a cart quantity, the cart clamps to the new limit and shows a non-blocking stock-change notice instead of sending an optimistic or stale checkout.
 
 ## Retention and gap reconciliation
 
@@ -90,7 +90,7 @@ Recovery never replays local presentation-only effects. Duplicate accepted/statu
 
 ## Outbox, status, retry, and abandonment
 
-Map live-play commands and shop checkout commands can be journaled in IndexedDB before send. The journal stores request path, exact body, auth context, fingerprint, state, attempts, and lease data; shop checkout rows are scoped by `shopSlug` and do not require a top-level `mapSlug` for shop-page-origin purchases. Retry resends the exact body and `opId`. Map command status checks are read-only. Map abandonment serializes against execution; if the server has already accepted the command, the accepted result wins and acknowledges the outbox. Accepted SSE also acknowledges matching map outbox entries.
+Map live-play commands and shop checkout commands can be journaled in IndexedDB before send. The journal stores request path, exact body, auth context, fingerprint, state, attempts, and lease data; shop checkout rows are scoped by `shopSlug` and do not require a top-level `mapSlug` for shop-page-origin purchases. Retry resends the exact body and `opId`. Map command status checks are read-only. Map abandonment serializes against execution; if the server has already accepted the command, the accepted result wins and acknowledges the outbox. Accepted SSE acknowledges matching map outbox entries; shop checkout terminal SSE acknowledges matching checkout outbox entries and stale local shop state requests reload/reconciliation instead of applying an out-of-date result over newer local state.
 
 ## JSON import/export boundary
 

@@ -369,14 +369,17 @@ describe('executeShopCheckoutCommandUseCase', () => {
       shopsChannel,
       sheetChannel('trainer', 'ash'),
       sheetsChannel,
+      shopChannel('viridian-mart'),
     ])
     expect(events.map((event) => event.access)).toEqual([
       { kind: 'shop-access', shopSlug: 'viridian-mart' },
       { kind: 'shop-access', shopSlug: 'viridian-mart' },
       { kind: 'sheet-access', sheetKind: 'trainer', sheetSlug: 'ash' },
       { kind: 'sheet-access', sheetKind: 'trainer', sheetSlug: 'ash' },
+      { kind: 'shop-access', shopSlug: 'viridian-mart' },
     ])
     expect(events.map((event) => event.event.clientId)).toEqual([
+      'client-shop',
       'client-shop',
       'client-shop',
       'client-shop',
@@ -416,6 +419,26 @@ describe('executeShopCheckoutCommandUseCase', () => {
         sheet: expect.objectContaining({ slug: 'ash', revision: 1, money: 600 }),
       },
     })
+    expect(events[4]?.event).toMatchObject({
+      type: 'live-play-command-accepted',
+      revision: 1,
+      previousRevision: 0,
+      opId: 'op_shopcheckout_realtime_trainer',
+      data: {
+        commandType: 'shopCheckout',
+        shopSlug: 'viridian-mart',
+        result: {
+          ok: true,
+          opId: 'op_shopcheckout_realtime_trainer',
+          shopSlug: 'viridian-mart',
+          documents: {
+            shop: expect.objectContaining({ slug: 'viridian-mart', revision: 1 }),
+          },
+        },
+      },
+    })
+    expect((events[4]?.event.data as { result?: { documents?: Record<string, unknown> } } | undefined)?.result?.documents)
+      .not.toHaveProperty('trainerSheets')
   })
 
   it('supports GM group inventory payment and delivery in the same checkout transaction', () => {
@@ -475,11 +498,13 @@ describe('executeShopCheckoutCommandUseCase', () => {
       shopChannel('viridian-mart'),
       shopsChannel,
       groupInventoryChannel(GROUP_INVENTORY_MAIN_SLUG),
+      shopChannel('viridian-mart'),
     ])
     expect(events.map((event) => event.access)).toEqual([
       { kind: 'shop-access', shopSlug: 'viridian-mart' },
       { kind: 'shop-access', shopSlug: 'viridian-mart' },
       { kind: 'group-inventory-access', groupSlug: GROUP_INVENTORY_MAIN_SLUG },
+      { kind: 'shop-access', shopSlug: 'viridian-mart' },
     ])
     expect(events[2]?.event).toMatchObject({
       type: 'updated',
@@ -493,6 +518,12 @@ describe('executeShopCheckoutCommandUseCase', () => {
           money: 800,
         }),
       },
+    })
+    expect(events[3]?.event).toMatchObject({
+      type: 'live-play-command-accepted',
+      revision: 1,
+      opId: 'op_shopcheckout_realtime_group',
+      clientId: 'client-group',
     })
   })
 
@@ -892,7 +923,7 @@ describe('executeShopCheckoutCommandUseCase', () => {
     ])
   })
 
-  it('does not append or publish realtime updates for failed checkout', () => {
+  it('publishes only a terminal rejected realtime result for failed checkout', () => {
     const database = openMemoryDatabase()
     const realtime = createSqliteRealtimeEventRepository({ database })
     const published: ReturnType<typeof realtimeEvents>[number][] = []
@@ -915,8 +946,28 @@ describe('executeShopCheckoutCommandUseCase', () => {
     })
 
     expect(response.result).toMatchObject({ ok: false, opId: 'op_shopcheckout_realtime_failed' })
-    expect(realtime.cursorState().latestSequence).toBe(0)
-    expect(published).toEqual([])
+    const events = realtimeEvents(realtime)
+    expect(published).toEqual(events)
+    expect(events.map((event) => event.event.channel)).toEqual([shopChannel('viridian-mart')])
+    expect(events[0]).toMatchObject({
+      access: { kind: 'shop-access', shopSlug: 'viridian-mart' },
+      event: {
+        type: 'live-play-command-rejected',
+        opId: 'op_shopcheckout_realtime_failed',
+        data: {
+          commandType: 'shopCheckout',
+          shopSlug: 'viridian-mart',
+          result: {
+            ok: false,
+            opId: 'op_shopcheckout_realtime_failed',
+            reason: 'stale-revision',
+            currentShopRevision: 0,
+          },
+        },
+      },
+    })
+    expect(storedShop(database).entries[0]?.stock).toBe(5)
+    expect(storedTrainer(database).money).toBe(1_000)
   })
 
   it('rejects stale shop revisions without changing money stock or inventory', () => {
@@ -1022,7 +1073,7 @@ describe('executeShopCheckoutCommandUseCase', () => {
     expect(storedTrainer(database)).toMatchObject({ revision: 1, updatedAt: 1_000, money: 600 })
     expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
     expect(operationCount(database)).toBe(1)
-    expect(firstRealtimeSequence).toBe(4)
+    expect(firstRealtimeSequence).toBe(5)
   })
 
   it('rejects duplicate operation IDs reused for a changed command without applying it', () => {

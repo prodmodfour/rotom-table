@@ -1,3 +1,4 @@
+import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
 import { isSheetKind } from '#shared/sheets'
 import { redactSheetRecordForPlayer } from '../utils/sheetPrivacy'
 import type { RealtimeDeliveryPrincipal } from './realtimeEventAccessPolicy'
@@ -52,6 +53,32 @@ const redactedShopRealtimeEvent = (
   }
 }
 
+const redactedShopCheckoutResultRealtimeEvent = (
+  event: Record<string, unknown>,
+  data: Record<string, unknown>,
+): unknown => {
+  if (data.commandType !== LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT || !isRecord(data.result)) return null
+
+  const result = { ...data.result }
+  if (result.ok === true && isRecord(result.documents)) {
+    const documents = { ...result.documents }
+    if (isRecord(documents.shop)) documents.shop = redactShopDocumentForPlayer(documents.shop)
+    delete documents.groupInventories
+    delete documents.trainerSheets
+    result.documents = documents
+  } else if (result.ok === false && isRecord(result.currentState)) {
+    result.currentState = redactShopDocumentForPlayer(result.currentState)
+  }
+
+  return {
+    ...event,
+    data: {
+      ...data,
+      result,
+    },
+  }
+}
+
 export const redactRealtimeEventForPrincipal = (
   event: unknown,
   principal: RealtimeDeliveryPrincipal,
@@ -63,5 +90,6 @@ export const redactRealtimeEventForPrincipal = (
 
   return redactedSheetRealtimeEvent(event, data)
     ?? redactedShopRealtimeEvent(event, data)
+    ?? redactedShopCheckoutResultRealtimeEvent(event, data)
     ?? event
 }

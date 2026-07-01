@@ -1,6 +1,7 @@
 import { computed, getCurrentScope, onScopeDispose, ref, type ComputedRef, type Ref } from 'vue'
 import { isAuthRole, type AuthRole } from '#shared/auth'
 import {
+  LIVE_PLAY_COMMAND_TYPES,
   isLivePlayCommandRejectionReason,
   isLivePlayOpId,
   type LivePlayRandomUuidProvider,
@@ -15,6 +16,7 @@ import {
   validateShopCheckoutCommandEnvelope,
 } from '#shared/livePlayCommands'
 import { isSlug } from '#shared/paths'
+import { LIVE_PLAY_REALTIME_EVENT_TYPES, shopChannel, type RealtimeEvent } from '#shared/realtime'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import { SHOP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
@@ -75,6 +77,7 @@ export interface ShopCheckoutCommandDispatchResult {
   readonly response?: ShopCheckoutCommandResult
   readonly message?: string
   readonly uncertain?: boolean
+  readonly recoveredByRealtime?: boolean
   readonly outboxError?: string
 }
 
@@ -88,6 +91,31 @@ export type ShopCheckoutOutboxDiscardResult =
   | {
       readonly discarded: false
       readonly opId: string
+      readonly message: string
+    }
+
+export type ShopCheckoutRealtimeAcknowledgementResult =
+  | {
+      readonly status: 'acknowledged'
+      readonly opId: string
+      readonly response: ShopCheckoutCommandResult
+      readonly message?: string
+    }
+  | {
+      readonly status: 'not-local'
+      readonly opId: string
+    }
+  | {
+      readonly status: 'ignored'
+      readonly message: string
+    }
+  | {
+      readonly status: 'invalid'
+      readonly message: string
+    }
+  | {
+      readonly status: 'error'
+      readonly opId?: string
       readonly message: string
     }
 
@@ -114,6 +142,10 @@ export interface UseShopCheckoutCommandsOptions {
     readonly message: string
   }) => void
   readonly onCheckoutFailed?: (message: string) => void
+  readonly onCheckoutRealtimeReconciliationRequired?: (transition: {
+    readonly response: ShopCheckoutCommandAccepted
+    readonly message: string
+  }) => void | Promise<void>
 }
 
 export interface UseShopCheckoutCommandsReturn {
@@ -128,6 +160,7 @@ export interface UseShopCheckoutCommandsReturn {
   readonly checkout: (input: ShopCheckoutCommandInput) => Promise<ShopCheckoutCommandDispatchResult>
   readonly retryOutboxEntry: (opId: string) => Promise<ShopCheckoutCommandDispatchResult>
   readonly discardOutboxEntry: (opId: string) => Promise<ShopCheckoutOutboxDiscardResult>
+  readonly acknowledgeTerminalRealtimeEvent: (event: RealtimeEvent) => Promise<ShopCheckoutRealtimeAcknowledgementResult>
 }
 
 type UnknownRecord = Record<string, unknown>
@@ -135,6 +168,15 @@ type UnknownRecord = Record<string, unknown>
 type TerminalValidationResult =
   | { readonly valid: true; readonly response: ShopCheckoutCommandResult }
   | { readonly valid: false; readonly issues: readonly string[] }
+
+type ShopCheckoutTerminalRealtimeEventParseResult =
+  | {
+      readonly valid: true
+      readonly opId: string
+      readonly shopSlug: string
+      readonly response: ShopCheckoutCommandResult
+    }
+  | { readonly valid: false; readonly ignored?: boolean; readonly issues: readonly string[] }
 
 const SHOP_CHECKOUT_REQUEST_PATHS = new Set<string>([SHOP_API_PATHS.checkout])
 
@@ -176,6 +218,53 @@ const combineWarnings = (
 }
 
 const validationIssueSummary = (issues: readonly string[]): string => issues.join('; ')
+
+const parseShopCheckoutTerminalRealtimeEvent = (
+  event: RealtimeEvent,
+): ShopCheckoutTerminalRealtimeEventParseResult => {
+  if (
+    event.type !== LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED
+    && event.type !== LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_REJECTED
+  ) {
+    return { valid: false, ignored: true, issues: ['event is not a terminal live-play command result.'] }
+  }
+
+  const issues: string[] = []
+  if (!isLivePlayOpId(event.opId)) issues.push('event.opId must be a valid live-play operation ID.')
+  if (!isRecord(event.data)) {
+    issues.push('event.data must be an object.')
+    return { valid: false, issues }
+  }
+
+  if (event.data.commandType !== LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT) {
+    return { valid: false, ignored: true, issues: ['event.data.commandType is not shopCheckout.'] }
+  }
+  if (!isSlug(event.data.shopSlug)) issues.push('event.data.shopSlug must be a valid shop slug.')
+  if (!isRecord(event.data.result)) issues.push('event.data.result must be an object.')
+
+  if (issues.length > 0) return { valid: false, issues }
+
+  const shopSlug = event.data.shopSlug as string
+  if (event.channel !== shopChannel(shopSlug)) issues.push('event.channel must match shop:<shopSlug>.')
+
+  const response = event.data.result as ShopCheckoutCommandResult
+  if (response.ok !== (event.type === LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED)) {
+    issues.push('event terminal type must match event.data.result.ok.')
+  }
+  if (response.opId !== event.opId) issues.push('event.data.result.opId must match event.opId.')
+  const responseShopSlug = nestedResultShopSlug(response as ShopCheckoutCommandAccepted | ShopCheckoutCommandRejected)
+  if (responseShopSlug !== undefined && responseShopSlug !== shopSlug) {
+    issues.push('event.data.result.shopSlug must match event.data.shopSlug when present.')
+  }
+
+  if (issues.length > 0) return { valid: false, issues }
+  return {
+    valid: true,
+    opId: event.opId as string,
+    shopSlug,
+    response,
+  }
+}
 
 const isShopCheckoutRequestPath = (requestPath: string): boolean => (
   typeof requestPath === 'string'
@@ -338,6 +427,11 @@ const validateShopCheckoutTerminalResponseForCommand = (input: {
     : null
   const expectedShopSlug = commandShopSlug(input.command)
   if (expectedShopSlug === null) issues.push('command.payload.shopSlug must be a valid shop slug.')
+  const expectedShopRevision = isRecord(input.command)
+    && isRecord(input.command.payload)
+    && isSafeNonNegativeInteger(input.command.payload.shopRevision)
+    ? input.command.payload.shopRevision
+    : null
 
   if (!isRecord(input.response)) {
     issues.push('response must be an object.')
@@ -374,10 +468,21 @@ const validateShopCheckoutTerminalResponseForCommand = (input: {
       if (originalShopSlug !== undefined && originalShopSlug !== expectedShopSlug) {
         issues.push('response.original.shopSlug must match the sent command shop slug when present.')
       }
+      if (response.original.ok && expectedShopRevision !== null && response.original.previousShopRevision !== expectedShopRevision) {
+        issues.push('response.original.previousShopRevision must match the sent command shop revision.')
+      }
     } else {
       const terminalShopSlug = nestedResultShopSlug(response as ShopCheckoutCommandAccepted | ShopCheckoutCommandRejected)
       if (terminalShopSlug !== undefined && terminalShopSlug !== expectedShopSlug) {
         issues.push('response.shopSlug must match the sent command shop slug when present.')
+      }
+      if (
+        response.ok
+        && !isDuplicateShopCheckoutResult(response)
+        && expectedShopRevision !== null
+        && response.previousShopRevision !== expectedShopRevision
+      ) {
+        issues.push('response.previousShopRevision must match the sent command shop revision.')
       }
     }
   }
@@ -433,6 +538,8 @@ export const useShopCheckoutCommands = (
   const outboxStatus = ref<ShopCheckoutOutboxStatus>('idle')
   const outboxError = ref<string | null>(null)
   let activeOpId: string | null = null
+  const realtimeAcknowledgedResponses = new Map<string, ShopCheckoutCommandResult>()
+  const realtimeAcknowledgementFailures = new Map<string, string>()
 
   if (getCurrentScope()) {
     const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => status.value === 'sending')
@@ -602,6 +709,44 @@ export const useShopCheckoutCommands = (
     }
   }
 
+  const consumeRealtimeAcknowledgedResponse = (opId: string): {
+    readonly response: ShopCheckoutCommandResult
+    readonly acknowledgementFailure?: string
+  } | null => {
+    const response = realtimeAcknowledgedResponses.get(opId)
+    if (!response) return null
+    const acknowledgementFailure = realtimeAcknowledgementFailures.get(opId)
+    realtimeAcknowledgedResponses.delete(opId)
+    realtimeAcknowledgementFailures.delete(opId)
+    return {
+      response,
+      ...(acknowledgementFailure === undefined ? {} : { acknowledgementFailure }),
+    }
+  }
+
+  const realtimeRecoveredResult = async (
+    entry: ShopCheckoutCommandOutboxEntry,
+    detail: string,
+  ): Promise<ShopCheckoutCommandDispatchResult | null> => {
+    const recovered = consumeRealtimeAcknowledgedResponse(entry.opId)
+    if (!recovered) return null
+
+    const refreshWarning = await refreshPendingOutboxEntriesQuiet()
+    const message = combineWarnings(
+      recovered.acknowledgementFailure
+        ?? `Shop checkout operation ${entry.opId} reached a terminal result by realtime before the original HTTP response completed. ${detail}`,
+      refreshWarning,
+    )
+    return {
+      dispatched: acceptedShopCheckoutResult(recovered.response) !== null,
+      opId: entry.opId,
+      response: recovered.response,
+      recoveredByRealtime: true,
+      ...(message === undefined ? {} : { message }),
+      ...(refreshWarning === undefined ? {} : { outboxError: refreshWarning }),
+    }
+  }
+
   const adoptAcceptedResponse = (response: ShopCheckoutCommandAccepted): void => {
     options.adoptShop?.(cloneJson(response.documents.shop))
     for (const document of response.documents.groupInventories ?? []) {
@@ -609,6 +754,31 @@ export const useShopCheckoutCommands = (
     }
     for (const sheet of response.documents.trainerSheets ?? []) {
       options.adoptTrainerSheet?.(cloneJson(sheet))
+    }
+  }
+
+  const acceptedRealtimeReconciliationMessage = (response: ShopCheckoutCommandAccepted): string | null => {
+    const currentShop = options.shop?.value
+    if (!currentShop) return null
+    if (currentShop.slug !== response.shopSlug) {
+      return `Shop checkout operation ${response.opId} was accepted for ${response.shopSlug}, but the loaded shop changed to ${currentShop.slug}. Reloading authoritative checkout state.`
+    }
+    if (currentShop.revision !== response.previousShopRevision) {
+      return `Shop checkout operation ${response.opId} was accepted from shop revision ${response.previousShopRevision}, but local shop state is revision ${currentShop.revision}. Reloading authoritative checkout state instead of applying stale realtime data.`
+    }
+    return null
+  }
+
+  const reconcileAcceptedRealtimeResponse = async (
+    response: ShopCheckoutCommandAccepted,
+  ): Promise<string | undefined> => {
+    const message = acceptedRealtimeReconciliationMessage(response)
+    if (message === null) return undefined
+    try {
+      await options.onCheckoutRealtimeReconciliationRequired?.({ response, message })
+      return message
+    } catch (error) {
+      return `Shop checkout operation ${response.opId} was accepted, but realtime reconciliation failed: ${getErrorMessage(error, { fallback: 'authoritative checkout reload failed' })}`
     }
   }
 
@@ -659,6 +829,9 @@ export const useShopCheckoutCommands = (
     entry: ShopCheckoutCommandOutboxEntry,
     detail: string,
   ): Promise<ShopCheckoutCommandDispatchResult> => {
+    const recovered = await realtimeRecoveredResult(entry, detail)
+    if (recovered) return recovered
+
     const message = `The server outcome for shop checkout operation ${entry.opId} is unknown. Retrying the same operation ID will be safe later. ${detail}`
     const outboxWarning = await markClaimedEntryUncertain(entry, message)
     setFailure('uncertain', message)
@@ -684,6 +857,12 @@ export const useShopCheckoutCommands = (
         getErrorMessage(error, { fallback: 'The HTTP request failed before a terminal checkout result was received.' }),
       )
     }
+
+    const recoveredBeforeValidation = await realtimeRecoveredResult(
+      entry,
+      'The later HTTP response was ignored because realtime already supplied the terminal checkout result.',
+    )
+    if (recoveredBeforeValidation) return recoveredBeforeValidation
 
     const validation = validateShopCheckoutTerminalResponseForCommand({
       response: rawResponse,
@@ -905,6 +1084,83 @@ export const useShopCheckoutCommands = (
     }
   }
 
+  const acknowledgeTerminalRealtimeEvent: UseShopCheckoutCommandsReturn['acknowledgeTerminalRealtimeEvent'] = async (event) => {
+    const parsedEvent = parseShopCheckoutTerminalRealtimeEvent(event)
+    if (!parsedEvent.valid) {
+      const message = validationIssueSummary(parsedEvent.issues)
+      return parsedEvent.ignored ? { status: 'ignored', message } : { status: 'invalid', message }
+    }
+
+    let rawEntry: LivePlayCommandOutboxEntry | null
+    try {
+      rawEntry = await outbox.get(parsedEvent.opId)
+    } catch (error) {
+      const message = `Terminal shop checkout operation ${parsedEvent.opId} could not be read from durable command storage: ${outboxErrorMessage(error)}`
+      setFailure('error', message)
+      return { status: 'error', opId: parsedEvent.opId, message }
+    }
+
+    if (!rawEntry) return { status: 'not-local', opId: parsedEvent.opId }
+
+    const entry = validateEntryForCurrentContext(rawEntry, parsedEvent.opId)
+    if (typeof entry === 'string') return { status: 'invalid', message: entry }
+    if (entry.state !== 'queued' && entry.state !== 'sending' && entry.state !== 'uncertain') {
+      return { status: 'invalid', message: `Pending shop checkout operation ${entry.opId} is not in an acknowledgeable outbox state.` }
+    }
+    if (entry.shopSlug !== parsedEvent.shopSlug) {
+      return { status: 'invalid', message: `Terminal shop checkout operation ${entry.opId} belongs to shop ${parsedEvent.shopSlug}, not ${entry.shopSlug}.` }
+    }
+
+    const terminalValidation = validateShopCheckoutTerminalResponseForCommand({
+      response: parsedEvent.response,
+      command: entry.body,
+    })
+    if (!terminalValidation.valid) {
+      return {
+        status: 'invalid',
+        message: `Terminal shop checkout realtime result did not match the stored command: ${validationIssueSummary(terminalValidation.issues)}`,
+      }
+    }
+
+    const accepted = acceptedShopCheckoutResult(terminalValidation.response)
+    const reconciliationMessage = accepted ? await reconcileAcceptedRealtimeResponse(accepted) : undefined
+    const shouldAdoptAccepted = accepted !== null && reconciliationMessage === undefined
+    const wasActiveSend = activeOpId === entry.opId
+
+    const acknowledgeWarning = await acknowledgeTerminal(entry.opId)
+    const refreshWarning = await refreshPendingOutboxEntriesQuiet()
+    const warning = combineWarnings(acknowledgeWarning, refreshWarning)
+    if (warning) {
+      realtimeAcknowledgementFailures.set(entry.opId, warning)
+      setFailure('error', warning)
+      return { status: 'error', opId: entry.opId, message: warning }
+    }
+
+    if (wasActiveSend) realtimeAcknowledgedResponses.set(entry.opId, terminalValidation.response)
+    else realtimeAcknowledgedResponses.delete(entry.opId)
+    realtimeAcknowledgementFailures.delete(entry.opId)
+
+    if (accepted) {
+      if (shouldAdoptAccepted) adoptAcceptedResponse(accepted)
+      markAccepted(entry.opId)
+      options.onCheckoutAccepted?.(accepted)
+      return {
+        status: 'acknowledged',
+        opId: entry.opId,
+        response: terminalValidation.response,
+        ...(reconciliationMessage === undefined ? {} : { message: reconciliationMessage }),
+      }
+    }
+
+    markTerminalRejected(entry.opId, terminalValidation.response)
+    return {
+      status: 'acknowledged',
+      opId: entry.opId,
+      response: terminalValidation.response,
+      ...(responseMessage(terminalValidation.response) === null ? {} : { message: responseMessage(terminalValidation.response) ?? undefined }),
+    }
+  }
+
   return {
     status,
     lastError,
@@ -917,5 +1173,6 @@ export const useShopCheckoutCommands = (
     checkout,
     retryOutboxEntry,
     discardOutboxEntry,
+    acknowledgeTerminalRealtimeEvent,
   }
 }

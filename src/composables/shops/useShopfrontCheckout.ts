@@ -1,6 +1,6 @@
 import { computed, getCurrentScope, onMounted, onScopeDispose, ref, watch, type ComputedRef, type Ref } from 'vue'
 import type { AuthRole } from '#shared/auth'
-import { groupInventoryChannel, isRealtimeEcho, sheetChannel, type RealtimeEvent } from '#shared/realtime'
+import { groupInventoryChannel, isRealtimeEcho, sheetChannel, shopChannel, type RealtimeEvent } from '#shared/realtime'
 import { type LivePlayRandomUuidProvider, type ShopCheckoutCommandResult, type ShopCheckoutOrigin } from '#shared/livePlayCommands'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import { normalizeRevision } from '#shared/sessionRevisions'
@@ -111,6 +111,7 @@ export interface UseShopfrontCheckoutReturn {
   readonly clearStockChangeNotice: () => void
   readonly handleGroupInventoryRealtimeEvent: (event: RealtimeEvent) => GroupInventoryRealtimeApplicationResult
   readonly handleTrainerSheetRealtimeEvent: (event: RealtimeEvent) => TrainerSheetRealtimeApplicationResult
+  readonly handleShopCheckoutRealtimeEvent: (event: RealtimeEvent) => void
 }
 
 const MAX_SAFE_CART_QUANTITY = Number.MAX_SAFE_INTEGER
@@ -300,7 +301,14 @@ export const useShopfrontCheckout = (
   const stockChangeNotice = ref<string | null>(null)
   let unsubscribeGroupInventoryRealtime: (() => void) | null = null
   let subscribedGroupInventorySlug: string | null = null
+  let unsubscribeShopCheckoutRealtime: (() => void) | null = null
+  let subscribedShopCheckoutSlug: string | null = null
   const trainerRealtimeUnsubscribers = new Map<string, () => void>()
+
+  const clearCart = (): void => {
+    cartQuantities.value = {}
+    stockChangeNotice.value = null
+  }
 
   const upsertTrainerSheet = (sheet: TrainerSheet): void => {
     const previous = trainerSheets.value.find((candidate) => candidate.slug === sheet.slug)
@@ -328,6 +336,9 @@ export const useShopfrontCheckout = (
       groupInventoryDocument.value = document
     },
     adoptTrainerSheet: upsertTrainerSheet,
+    onCheckoutAccepted: () => {
+      clearCart()
+    },
   })
 
   const handleGroupInventoryRealtimeEvent = (event: RealtimeEvent): GroupInventoryRealtimeApplicationResult => {
@@ -371,6 +382,10 @@ export const useShopfrontCheckout = (
     return { status: 'adopted', sheet: nextSheet }
   }
 
+  const handleShopCheckoutRealtimeEvent = (event: RealtimeEvent): void => {
+    void checkoutCommands.acknowledgeTerminalRealtimeEvent(event)
+  }
+
   const realtimeSubscriber = (): ShopfrontRealtimeChannelSubscriber | null => {
     if (options.realtimeEnabled === false) return null
     if (options.subscribeRealtimeChannel) return options.subscribeRealtimeChannel
@@ -412,12 +427,32 @@ export const useShopfrontCheckout = (
     }
   }
 
+  const syncShopCheckoutRealtimeSubscription = (): void => {
+    const slug = options.shop.value?.slug ?? null
+    const subscriber = realtimeSubscriber()
+    if (!slug || !subscriber) {
+      unsubscribeShopCheckoutRealtime?.()
+      unsubscribeShopCheckoutRealtime = null
+      subscribedShopCheckoutSlug = null
+      return
+    }
+
+    if (subscribedShopCheckoutSlug === slug) return
+    unsubscribeShopCheckoutRealtime?.()
+    subscribedShopCheckoutSlug = slug
+    unsubscribeShopCheckoutRealtime = subscriber(shopChannel(slug), handleShopCheckoutRealtimeEvent)
+  }
+
   const syncRealtimeSubscriptions = (): void => {
+    syncShopCheckoutRealtimeSubscription()
     syncGroupInventoryRealtimeSubscription()
     syncTrainerSheetRealtimeSubscriptions()
   }
 
   const unsubscribeRealtime = (): void => {
+    unsubscribeShopCheckoutRealtime?.()
+    unsubscribeShopCheckoutRealtime = null
+    subscribedShopCheckoutSlug = null
     unsubscribeGroupInventoryRealtime?.()
     unsubscribeGroupInventoryRealtime = null
     subscribedGroupInventorySlug = null
@@ -510,11 +545,6 @@ export const useShopfrontCheckout = (
   const syncSelectedOptions = (): void => {
     selectFirstValidOption(selectedPaymentOptionKey, paymentOptions.value)
     selectFirstValidOption(selectedDeliveryOptionKey, deliveryOptions.value)
-  }
-
-  const clearCart = (): void => {
-    cartQuantities.value = {}
-    stockChangeNotice.value = null
   }
 
   const setCartQuantity = (entryId: string, quantity: unknown): void => {
@@ -617,6 +647,13 @@ export const useShopfrontCheckout = (
     documentsErrorMessage.value = errors.length === 0 ? null : errors.join(' ')
   }
 
+  watch(
+    () => checkoutCommands.status.value,
+    (nextStatus, previousStatus) => {
+      if (nextStatus === 'accepted' && previousStatus === 'sending') void loadCheckoutDocuments()
+    },
+  )
+
   const setValidationFailure = (message: string): ShopCheckoutCommandDispatchResult => {
     localCheckoutError.value = message
     return { dispatched: false, message }
@@ -654,6 +691,7 @@ export const useShopfrontCheckout = (
   }
 
   watch([paymentOptions, deliveryOptions], syncSelectedOptions, { immediate: true })
+  watch(() => options.shop.value?.slug ?? null, syncShopCheckoutRealtimeSubscription)
   watch(() => groupInventoryDocument.value?.slug ?? null, syncGroupInventoryRealtimeSubscription)
   watch(
     () => trainerSheets.value.map((sheet) => sheet.slug).sort().join('\u0000'),
@@ -745,5 +783,6 @@ export const useShopfrontCheckout = (
     clearStockChangeNotice,
     handleGroupInventoryRealtimeEvent,
     handleTrainerSheetRealtimeEvent,
+    handleShopCheckoutRealtimeEvent,
   }
 }

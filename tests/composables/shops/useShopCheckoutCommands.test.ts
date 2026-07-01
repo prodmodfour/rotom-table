@@ -1,7 +1,8 @@
 import { ref, type Ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { IDBFactory as FakeIDBFactory } from 'fake-indexeddb'
-import { LIVE_PLAY_COMMAND_TYPES, type ShopCheckoutCommandResult } from '#shared/livePlayCommands'
+import { LIVE_PLAY_COMMAND_TYPES, type ShopCheckoutCommandAccepted, type ShopCheckoutCommandResult } from '#shared/livePlayCommands'
+import { LIVE_PLAY_REALTIME_EVENT_TYPES, shopChannel, type RealtimeEvent } from '#shared/realtime'
 import type { AuthRole } from '#shared/auth'
 import { GROUP_INVENTORY_MAIN_SLUG, createDefaultGroupInventoryDocument, type GroupInventoryDocument } from '~/types/groupInventory'
 import type { ShopTableDocument } from '~/types/shop'
@@ -158,11 +159,39 @@ const rejectedResponseForBody = (
   }
 }
 
+const terminalRealtimeEvent = (
+  response: ShopCheckoutCommandResult,
+  overrides: Partial<RealtimeEvent> = {},
+): RealtimeEvent => {
+  const accepted = response.ok === true && !('duplicate' in response)
+  const shopSlug = accepted
+    ? response.shopSlug
+    : response.ok === false
+      ? response.shopSlug ?? 'general-store'
+      : response.original.ok
+        ? response.original.shopSlug
+        : response.original.shopSlug ?? 'general-store'
+  return {
+    channel: shopChannel(shopSlug),
+    type: accepted ? LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_ACCEPTED : LIVE_PLAY_REALTIME_EVENT_TYPES.COMMAND_REJECTED,
+    opId: response.opId,
+    timestamp: 1_700_000_000_000,
+    data: {
+      commandType: LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT,
+      shopSlug,
+      result: response,
+    },
+    ...(accepted ? { revision: (response as ShopCheckoutCommandAccepted).shopRevision, previousRevision: (response as ShopCheckoutCommandAccepted).previousShopRevision } : {}),
+    ...overrides,
+  }
+}
+
 const createHarness = (options: {
   readonly postJson?: PostJsonMock
   readonly shop?: Ref<ShopTableDocument | null>
   readonly authRole?: Ref<AuthRole | null>
   readonly outbox?: LivePlayCommandOutbox
+  readonly onCheckoutRealtimeReconciliationRequired?: Parameters<typeof useShopCheckoutCommands>[0]['onCheckoutRealtimeReconciliationRequired']
 } = {}) => {
   leaseOwnerSequence += 1
   const postJson = options.postJson ?? vi.fn<PostJson>()
@@ -191,6 +220,9 @@ const createHarness = (options: {
         sheet,
       ]
     },
+    ...(options.onCheckoutRealtimeReconciliationRequired === undefined
+      ? {}
+      : { onCheckoutRealtimeReconciliationRequired: options.onCheckoutRealtimeReconciliationRequired }),
   })
   return { actions, postJson, shop, adoptedGroupInventories, adoptedTrainerSheets }
 }
@@ -234,6 +266,110 @@ describe('useShopCheckoutCommands', () => {
     expect(adoptedGroupInventories.value).toEqual([expect.objectContaining({ slug: GROUP_INVENTORY_MAIN_SLUG, revision: 2, money: 600 })])
     expect(adoptedTrainerSheets.value).toEqual([expect.objectContaining({ slug: 'ash', revision: 2 })])
     expect(actions.pendingOutboxEntries.value).toEqual([])
+  })
+
+  it('recovers an accepted checkout when realtime arrives before the HTTP response', async () => {
+    const responseDeferred = deferred<ShopCheckoutCommandResult>()
+    const postStarted = deferred<unknown>()
+    const postJson = vi.fn<PostJson>(async (_request, body) => {
+      postStarted.resolve(body)
+      return responseDeferred.promise
+    })
+    const outbox = createTestOutbox()
+    const { actions, shop, adoptedGroupInventories, adoptedTrainerSheets } = createHarness({ postJson, outbox })
+
+    const checkoutPromise = actions.checkout(checkoutInput({ opId: 'op_realtime001' }))
+    const body = await postStarted.promise
+    const realtimeResponse = acceptedResponseForBody(body)
+
+    await expect(actions.acknowledgeTerminalRealtimeEvent(terminalRealtimeEvent(realtimeResponse)))
+      .resolves.toMatchObject({ status: 'acknowledged', opId: 'op_realtime001' })
+
+    expect(actions.status.value).toBe('accepted')
+    expect(shop.value?.revision).toBe(1)
+    expect(shop.value?.entries[0]?.stock).toBe(2)
+    expect(adoptedGroupInventories.value).toEqual([expect.objectContaining({ revision: 2, money: 600 })])
+    expect(adoptedTrainerSheets.value).toEqual([expect.objectContaining({ slug: 'ash', revision: 2 })])
+    await expect(outbox.get('op_realtime001')).resolves.toBeNull()
+    expect(actions.pendingOutboxEntries.value).toEqual([])
+
+    responseDeferred.resolve(acceptedResponseForBody(body, {
+      shop: shopFixture({ revision: 99, entries: [{ ...shopFixture().entries[0]!, stock: 0 }] }),
+    }))
+    await expect(checkoutPromise).resolves.toMatchObject({
+      dispatched: true,
+      opId: 'op_realtime001',
+      recoveredByRealtime: true,
+    })
+    expect(shop.value?.revision).toBe(1)
+    expect(postJson).toHaveBeenCalledTimes(1)
+  })
+
+  it('acknowledges realtime rejected checkout results and removes the outbox entry', async () => {
+    const responseDeferred = deferred<ShopCheckoutCommandResult>()
+    const postStarted = deferred<unknown>()
+    const postJson = vi.fn<PostJson>(async (_request, body) => {
+      postStarted.resolve(body)
+      return responseDeferred.promise
+    })
+    const outbox = createTestOutbox()
+    const { actions, shop, adoptedGroupInventories, adoptedTrainerSheets } = createHarness({ postJson, outbox })
+    const initialShop = shop.value
+
+    const checkoutPromise = actions.checkout(checkoutInput({ opId: 'op_rtrejected1' }))
+    const body = await postStarted.promise
+    const realtimeResponse = rejectedResponseForBody(body, { reason: 'stale-revision', message: 'Refresh the shop first.' })
+
+    await expect(actions.acknowledgeTerminalRealtimeEvent(terminalRealtimeEvent(realtimeResponse)))
+      .resolves.toMatchObject({ status: 'acknowledged', opId: 'op_rtrejected1', message: 'Refresh the shop first.' })
+
+    expect(actions.status.value).toBe('stale')
+    expect(actions.lastError.value).toBe('Refresh the shop first.')
+    expect(shop.value).toEqual(initialShop)
+    expect(adoptedGroupInventories.value).toEqual([])
+    expect(adoptedTrainerSheets.value).toEqual([])
+    await expect(outbox.get('op_rtrejected1')).resolves.toBeNull()
+
+    responseDeferred.resolve(realtimeResponse)
+    await expect(checkoutPromise).resolves.toMatchObject({
+      dispatched: false,
+      opId: 'op_rtrejected1',
+      recoveredByRealtime: true,
+      response: expect.objectContaining({ ok: false, reason: 'stale-revision' }),
+    })
+  })
+
+  it('requests realtime reconciliation instead of applying an accepted result over stale local shop state', async () => {
+    const responseDeferred = deferred<ShopCheckoutCommandResult>()
+    const postStarted = deferred<unknown>()
+    const postJson = vi.fn<PostJson>(async (_request, body) => {
+      postStarted.resolve(body)
+      return responseDeferred.promise
+    })
+    const shop = ref<ShopTableDocument | null>(shopFixture({ revision: 0 }))
+    const reconcile = vi.fn(async () => undefined)
+    const { actions } = createHarness({ postJson, shop, onCheckoutRealtimeReconciliationRequired: reconcile })
+
+    const checkoutPromise = actions.checkout(checkoutInput({ opId: 'op_rtstale001' }))
+    const body = await postStarted.promise
+    shop.value = shopFixture({ revision: 7, entries: [{ ...shopFixture().entries[0]!, stock: 1 }] })
+    const realtimeResponse = acceptedResponseForBody(body, {
+      shop: shopFixture({ revision: 1, entries: [{ ...shopFixture().entries[0]!, stock: 2 }] }),
+    })
+
+    await expect(actions.acknowledgeTerminalRealtimeEvent(terminalRealtimeEvent(realtimeResponse)))
+      .resolves.toMatchObject({ status: 'acknowledged', opId: 'op_rtstale001', message: expect.stringContaining('Reloading authoritative checkout state') })
+
+    expect(reconcile).toHaveBeenCalledWith(expect.objectContaining({
+      response: expect.objectContaining({ opId: 'op_rtstale001' }),
+      message: expect.stringContaining('local shop state is revision 7'),
+    }))
+    expect(shop.value?.revision).toBe(7)
+    expect(shop.value?.entries[0]?.stock).toBe(1)
+
+    responseDeferred.resolve(realtimeResponse)
+    await expect(checkoutPromise).resolves.toMatchObject({ recoveredByRealtime: true })
+    expect(shop.value?.revision).toBe(7)
   })
 
   it('removes terminal rejected checkout commands from the outbox without adopting documents', async () => {

@@ -69,7 +69,10 @@ import {
   actorCanControlMapPlacement,
   playerProfileLinkedTrainerSheetsForTokenControl,
 } from '../policies/playerProfileTokenControlPolicy'
-import { shopCheckoutRealtimeAppendInputs } from '../realtime/shopCheckoutRealtime'
+import {
+  shopCheckoutRealtimeAppendInputs,
+  shopCheckoutRejectedRealtimeAppendInput,
+} from '../realtime/shopCheckoutRealtime'
 import {
   defaultPersistedRealtimeEventPublisher,
   defaultPersistedRealtimePublicationFailureReporter,
@@ -932,6 +935,19 @@ const appendAcceptedCheckoutRealtimeEvents = (
   }),
 )
 
+const appendRejectedCheckoutRealtimeEvent = (
+  command: ShopCheckoutLivePlayCommand,
+  result: ShopCheckoutCommandRejected,
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+  dependencies: ShopCheckoutCommandDependencySet,
+): readonly PersistedRealtimeEvent[] => dependencies.realtimeEventRepository.appendMany([
+  shopCheckoutRejectedRealtimeAppendInput({
+    command,
+    result,
+    clientId: input.clientId,
+  }),
+])
+
 const collisionResultForCommand = (
   command: ShopCheckoutLivePlayCommand,
   commandHash: ShopCheckoutCommandHash,
@@ -994,6 +1010,26 @@ const executedFreshResult = (
   realtimeEvents: readonly PersistedRealtimeEvent[] = [],
 ): ExecutedFreshShopCheckoutCommand => ({ result, realtimeEvents })
 
+const executedRejectedCheckoutResult = (
+  command: ShopCheckoutLivePlayCommand,
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+  commandHash: ShopCheckoutCommandHash,
+  rejection: ShopCheckoutCommandRejected,
+  dependencies: ShopCheckoutCommandDependencySet,
+): ExecutedFreshShopCheckoutCommand => {
+  try {
+    return dependencies.database.withTransaction(() => {
+      const result = saveRejectedResult(command, commandHash, rejection, dependencies)
+      const realtimeEvents = result.ok === false && result.reason !== 'persistence-failed'
+        ? appendRejectedCheckoutRealtimeEvent(command, result, input, dependencies)
+        : []
+      return executedFreshResult(result, realtimeEvents)
+    })
+  } catch (error) {
+    return executedFreshResult(persistenceFailedResult(command, error, rejection.currentShopRevision))
+  }
+}
+
 const executeFreshCheckout = (
   command: ShopCheckoutLivePlayCommand,
   input: ExecuteShopCheckoutCommandUseCaseInput,
@@ -1026,30 +1062,33 @@ const executeFreshCheckout = (
     })
   } catch (error) {
     if (error instanceof ShopCheckoutCalculationError && loaded) {
-      return executedFreshResult(saveRejectedResult(
+      return executedRejectedCheckoutResult(
         command,
+        input,
         commandHash,
         rejectionFromCheckoutCalculationError(command, error, loaded.shop),
         dependencies,
-      ))
+      )
     }
 
     const currentShopRevision = loaded?.shop.revision
     const currentState = loaded?.shop
     if (error instanceof LivePlayCommandRejectionError) {
-      return executedFreshResult(saveRejectedResult(
+      return executedRejectedCheckoutResult(
         command,
+        input,
         commandHash,
         rejectionFromError(command, error, currentShopRevision, currentState),
         dependencies,
-      ))
+      )
     }
 
-    return executedFreshResult(
-      collisionResultForCommand(command, commandHash, error)
-        ?? idempotencyViolationResultFromError(command, error, currentShopRevision)
-        ?? persistenceFailedResult(command, error, currentShopRevision),
-    )
+    const rejection = collisionResultForCommand(command, commandHash, error)
+      ?? idempotencyViolationResultFromError(command, error, currentShopRevision)
+      ?? persistenceFailedResult(command, error, currentShopRevision)
+    return rejection.ok === false
+      ? executedRejectedCheckoutResult(command, input, commandHash, rejection, dependencies)
+      : executedFreshResult(rejection)
   }
 }
 
