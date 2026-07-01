@@ -1030,7 +1030,7 @@ Prove live-play checkout behaves correctly under concurrency.
 
 ## 034 — SHOPS-034: Add end-to-end player shopping test harness
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Cover the happy path from player shopfront UI to authoritative live-play checkout persistence.
