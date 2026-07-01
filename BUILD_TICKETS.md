@@ -746,7 +746,7 @@ Give shop checkout the same user-safety properties as live-play commands: no sil
 
 ## 024 — SHOPS-024: Add client checkout composable
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Provide a UI-facing command runner for shop checkout.
