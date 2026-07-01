@@ -6,6 +6,7 @@ import { normalizeMapFieldEffects } from '~/utils/mapFieldEffects'
 import { normalizeMapHazard } from '~/utils/mapHazards'
 import { normalizeMaterialId } from '~/utils/mapMaterials'
 import { normalizeMapMoveUsage } from '~/utils/moveUsage'
+import { normalizeMapShopInterfaces } from '~/utils/mapShopInterfaces'
 import { normalizeMapTemporaryHitPointsState } from '~/utils/mapTemporaryHitPoints'
 
 export interface NormalizeMapDocumentOptions {
@@ -118,6 +119,7 @@ export const normalizeMapDocument = (
     dimensions,
     groundLevelY: normalizeMapGroundLevelY(record.groundLevelY, dimensions.y),
     playerVisible: record.playerVisible === true,
+    shopInterfaces: normalizeMapShopInterfaces(record.shopInterfaces),
     voxels,
     hazards,
     fieldEffects: normalizeMapFieldEffects(record.fieldEffects),

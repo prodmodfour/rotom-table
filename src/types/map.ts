@@ -99,6 +99,19 @@ export interface MapHazardV2 {
   owner?: string
 }
 
+export interface MapShopInterface {
+  /** Stable map-local id used to address this shop access point. */
+  id: string
+  /** References the authoritative shop table document; catalog, prices, and stock stay in shop_tables. */
+  shopSlug: string
+  label: string
+  /** Optional 3D map point used by interaction/range UI. */
+  position?: GridAnchor
+  interactionRangeMeters?: number
+  /** Players only see interfaces explicitly marked visible. */
+  playerVisible?: boolean
+}
+
 export interface MapVoxelV2 {
   x: number
   y: number
@@ -152,6 +165,8 @@ export interface TabletopMapV2 {
   voxels: MapVoxelV2[]
   /** Whether the map is visible to the shared player login. */
   playerVisible?: boolean
+  /** Map access points that reference campaign shop tables without owning shop catalog state. */
+  shopInterfaces?: MapShopInterface[]
   /** Sparse battlefield hazards placed on map squares. */
   hazards?: MapHazardV2[]
   /** Active PTU Weather, Terrain field effects, and Rooms. */

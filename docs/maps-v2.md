@@ -8,6 +8,7 @@ Map v2 stores only the data the runtime renders or uses:
 - optional `lights[]` for the lighting system
 - optional `fieldEffects` for PTU Weather, Terrain field effects, and Rooms
 - optional `initiative` state
+- optional `shopInterfaces[]` access points that reference campaign shop tables
 
 Object layers such as decals, props, zones, doors, asset packs, and transparent-object toggles have been removed from the runtime and schema. Hazards are the exception: they are rules-state overlays, not decorative object layers.
 
@@ -33,6 +34,10 @@ Hazards are sparse square overlays with integer `x`, `y`, `z` coordinates and a 
 - `fire`
 
 The editor renders hazards as floor decals and persists them in `hazards[]`. They do not block token placement or pathfinding by themselves.
+
+## Shop interfaces
+
+`shopInterfaces[]` stores map-local access points for reusable campaign shop tables. Each interface has a stable map-local `id`, a `shopSlug` reference, a display `label`, optional map `position`, optional `interactionRangeMeters`, and optional `playerVisible` flag. The referenced shop document remains authoritative for item catalog, price, finite/unlimited stock, and open/closed state; maps must not copy that commerce state into metadata or interface rows.
 
 ## Field effects
 

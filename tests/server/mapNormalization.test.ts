@@ -29,6 +29,17 @@ const validMap = () => ({
   hazards: [
     { kind: 'toxic-spikes', x: 2, y: 0, z: 1, layer: 99, owner: ' Nidoran ' },
   ],
+  shopInterfaces: [
+    {
+      id: 'counter-a',
+      shopSlug: 'viridian-mart',
+      label: ' Potion Counter ',
+      position: { x: 1, y: 0, z: 2 },
+      interactionRangeMeters: 4.5,
+      playerVisible: true,
+      entries: [{ itemName: 'Potion', price: 300, stock: 4 }],
+    },
+  ],
   fieldEffects: {
     weather: [{ kind: 'rainy', rounds: 2, source: 'Dance' }],
     terrains: [{ kind: 'grassy', rounds: 4 }],
@@ -94,6 +105,16 @@ describe('map document normalization', () => {
     expect(normalized.hazards).toEqual([
       { kind: 'toxic-spikes', x: 2, y: 0, z: 1, layer: 2, owner: 'Nidoran' },
     ])
+    expect(normalized.shopInterfaces).toEqual([
+      {
+        id: 'counter-a',
+        shopSlug: 'viridian-mart',
+        label: 'Potion Counter',
+        position: { x: 1, y: 0, z: 2 },
+        interactionRangeMeters: 4.5,
+        playerVisible: true,
+      },
+    ])
     const fieldEffects = normalized.fieldEffects!
     expect(fieldEffects.weather).toEqual([{ kind: 'rainy', rounds: 2, source: 'Dance' }])
     expect(fieldEffects.terrains).toEqual([{ kind: 'grassy', rounds: 4, scope: 'field' }])
@@ -113,6 +134,7 @@ describe('map document normalization', () => {
     const map = validMap()
     delete (map as Record<string, unknown>).fieldEffects
     delete (map as Record<string, unknown>).hazards
+    delete (map as Record<string, unknown>).shopInterfaces
     delete (map as Record<string, unknown>).placements
     delete (map as Record<string, unknown>).lights
     delete (map as Record<string, unknown>).initiative
@@ -124,11 +146,98 @@ describe('map document normalization', () => {
     expect(normalized.folder).toBe('stale/persisted-folder')
     expect(normalized.playerVisible).toBe(false)
     expect(normalized.hazards).toEqual([])
+    expect(normalized.shopInterfaces).toEqual([])
     expect(normalized.placements).toEqual([])
     expect(normalized.lights).toEqual([])
     expect(normalized.initiative).toEqual({ activeId: null, round: 1 })
     expect(normalized.moveUsage).toBeUndefined()
     expect(normalized.fieldEffects).toEqual({ weather: [], terrains: [], rooms: [] })
+    expect(normalizeMapDocument({ ...validMap(), shopInterfaces: [] }, { sourceLabel: 'fixture' }).shopInterfaces).toEqual([])
+  })
+
+  it('normalizes partial map shop interfaces with stable IDs', () => {
+    const map = {
+      ...validMap(),
+      shopInterfaces: [
+        { shopSlug: 'celadon-mart' },
+        { id: 'custom-counter', shopSlug: 'pewter-shop', label: '  Fossils  ', playerVisible: 'true' },
+      ],
+    }
+
+    const normalized = normalizeMapDocument(map, { sourceLabel: 'fixture' })
+
+    expect(normalized.shopInterfaces).toEqual([
+      { id: 'map-shop-interface-1', shopSlug: 'celadon-mart', label: 'celadon-mart' },
+      { id: 'custom-counter', shopSlug: 'pewter-shop', label: 'Fossils', playerVisible: true },
+    ])
+  })
+
+  it('allocates deterministic replacement IDs for duplicate shop interface rows', () => {
+    const map = {
+      ...validMap(),
+      shopInterfaces: [
+        { id: 'counter', shopSlug: 'viridian-mart', label: 'Front Counter' },
+        { id: 'counter', shopSlug: 'celadon-mart', label: 'Back Counter' },
+        { id: 'map-shop-interface-3', shopSlug: 'pewter-shop', label: 'Museum Desk' },
+        { shopSlug: 'saffron-market', label: 'Market Stall' },
+      ],
+    }
+
+    const normalized = normalizeMapDocument(map, { sourceLabel: 'fixture' })
+
+    expect(normalized.shopInterfaces?.map((shopInterface) => shopInterface.id)).toEqual([
+      'counter',
+      'map-shop-interface-2',
+      'map-shop-interface-3',
+      'map-shop-interface-4',
+    ])
+  })
+
+  it('drops invalid shop interface rows and normalizes optional values predictably', () => {
+    const map = {
+      ...validMap(),
+      shopInterfaces: [
+        { id: 'bad-slug', shopSlug: 'Bad Slug', label: 'Invalid' },
+        { id: 'missing-slug', label: 'Missing' },
+        null,
+        {
+          id: 'valid',
+          shopSlug: 'valid-shop',
+          label: '  Valid  ',
+          position: { x: '1.5', y: 0, z: 2 },
+          interactionRangeMeters: '6.25',
+          playerVisible: 'false',
+          price: 999,
+          stock: 1,
+        },
+        {
+          id: 'invalid-options',
+          shopSlug: 'options-shop',
+          label: 'Options',
+          position: { x: 1, y: 'nope', z: 3 },
+          interactionRangeMeters: -1,
+          playerVisible: 'sometimes',
+        },
+      ],
+    }
+
+    const normalized = normalizeMapDocument(map, { sourceLabel: 'fixture' })
+
+    expect(normalized.shopInterfaces).toEqual([
+      {
+        id: 'valid',
+        shopSlug: 'valid-shop',
+        label: 'Valid',
+        position: { x: 1.5, y: 0, z: 2 },
+        interactionRangeMeters: 6.25,
+        playerVisible: false,
+      },
+      {
+        id: 'invalid-options',
+        shopSlug: 'options-shop',
+        label: 'Options',
+      },
+    ])
   })
 
   it('reports validation errors with the supplied source label', () => {

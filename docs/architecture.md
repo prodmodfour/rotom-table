@@ -75,7 +75,7 @@ The map table combines Vue controls with a Three.js-rendered isometric scene.
 
 The scene uses dirty render scheduling: Vue watchers, pointer interactions, async texture loads, resize/camera events, and document visibility lifecycle events request focused invalidation reasons, while active animation sources keep frames alive only while visual work is still changing. See [Isometric render scheduler architecture](render-scheduler-architecture.md) for the current dirty-rendering flow and extension checklist.
 
-Maps persist sparse terrain voxels, token placements, hazards, field effects, lights, initiative state, and metadata in SQLite document payloads. Player token control is derived at runtime by matching a placement's `sheetKind`/`sheetSlug` to the selected player profile's linked character refs.
+Maps persist sparse terrain voxels, token placements, shop interface references, hazards, field effects, lights, initiative state, and metadata in SQLite document payloads. Shop interfaces only point at authoritative shop table slugs; catalog, price, stock, and open/closed state remain in shop table documents. Player token control is derived at runtime by matching a placement's `sheetKind`/`sheetSlug` to the selected player profile's linked character refs.
 
 ## Encounter tooling
 

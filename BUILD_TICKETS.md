@@ -834,7 +834,7 @@ Keep open shopfronts and shop editor pages synchronized with authoritative updat
 
 ## 027 — SHOPS-027: Add map shop interface document model
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Represent shop access points on maps without storing shop catalog state in map metadata.
