@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
+import { shopChannel, type RealtimeEvent } from '#shared/realtime'
 import { useShopfrontPage } from '~/composables/shops/useShopfrontPage'
 import type { ShopEntry, ShopTableDocument } from '~/types/shop'
 import type { ApiClient } from '~/utils/apiClient'
@@ -25,6 +26,15 @@ const makeShop = (overrides: Partial<ShopTableDocument> = {}): ShopTableDocument
   allowedPaymentSources: ['trainer'],
   allowedDeliveryTargets: ['trainer'],
   entries: [makeEntry()],
+  ...overrides,
+})
+
+const shopUpdatedEvent = (shop: ShopTableDocument, overrides: Partial<RealtimeEvent> = {}): RealtimeEvent => ({
+  channel: shopChannel(shop.slug),
+  type: 'updated',
+  revision: shop.revision,
+  timestamp: 1_700_000_000_100,
+  data: { slug: shop.slug, document: shop },
   ...overrides,
 })
 
@@ -127,5 +137,38 @@ describe('useShopfrontPage', () => {
     expect(shopfront.shop.value).toBeNull()
     expect(shopfront.loadStatus.value).toBe('error')
     expect(shopfront.loadErrorMessage.value).toBe('No shop slug was provided.')
+  })
+
+  it('subscribes to the loaded shop channel and adopts newer non-echo realtime shop updates', () => {
+    let subscribedHandler: ((event: RealtimeEvent) => void) | null = null
+    const subscribeRealtimeChannel = vi.fn((channel: string, handler: (event: RealtimeEvent) => void) => {
+      subscribedHandler = handler
+      expect(channel).toBe(shopChannel('viridian-mart'))
+      return vi.fn()
+    })
+    const shopfront = useShopfrontPage({
+      slug: ref('viridian-mart'),
+      apiClient: makeApiClient(),
+      clientId: 'client-a',
+      subscribeRealtimeChannel,
+      autoLoadOnMounted: false,
+    })
+    const current = makeShop({ revision: 4, entries: [makeEntry({ stock: 5 })] })
+    const incoming = makeShop({ revision: 5, entries: [makeEntry({ stock: 4 })] })
+    const stale = makeShop({ revision: 3, entries: [makeEntry({ stock: 9 })] })
+
+    shopfront.shop.value = current
+    expect(subscribeRealtimeChannel).toHaveBeenCalledTimes(1)
+    expect(subscribedHandler).not.toBeNull()
+
+    subscribedHandler!(shopUpdatedEvent(stale))
+    expect(shopfront.shop.value).toEqual(current)
+
+    subscribedHandler!(shopUpdatedEvent(incoming, { clientId: 'client-b' }))
+    expect(shopfront.shop.value).toEqual(incoming)
+    expect(shopfront.loadStatus.value).toBe('ready')
+
+    subscribedHandler!(shopUpdatedEvent(makeShop({ revision: 6, entries: [makeEntry({ stock: 1 })] }), { clientId: 'client-a' }))
+    expect(shopfront.shop.value).toEqual(incoming)
   })
 })

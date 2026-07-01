@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
+import { shopChannel, type RealtimeEvent } from '#shared/realtime'
 import { useGmShopEditorPage } from '~/composables/shops/useGmShopEditorPage'
 import type { ShopEntry, ShopTableDocument } from '~/types/shop'
 import type { ApiClient } from '~/utils/apiClient'
@@ -26,6 +27,15 @@ const makeShop = (overrides: Partial<ShopTableDocument> = {}): ShopTableDocument
   allowedDeliveryTargets: ['trainer'],
   entries: [makeEntry()],
   gmNotes: 'Private stock note.',
+  ...overrides,
+})
+
+const shopUpdatedEvent = (shop: ShopTableDocument, overrides: Partial<RealtimeEvent> = {}): RealtimeEvent => ({
+  channel: shopChannel(shop.slug),
+  type: 'updated',
+  revision: shop.revision,
+  timestamp: 1_700_000_000_100,
+  data: { slug: shop.slug, document: shop },
   ...overrides,
 })
 
@@ -216,5 +226,57 @@ describe('useGmShopEditorPage', () => {
     expect(apiClient.postJson).not.toHaveBeenCalled()
     expect(editor.loadStatus.value).toBe('forbidden')
     expect(editor.loadErrorMessage.value).toBe('Only GM users can edit shop tables.')
+  })
+
+  it('subscribes to shop realtime and adopts newer checkout stock updates when the draft is clean', () => {
+    let subscribedHandler: ((event: RealtimeEvent) => void) | null = null
+    const subscribeRealtimeChannel = vi.fn((channel: string, handler: (event: RealtimeEvent) => void) => {
+      subscribedHandler = handler
+      expect(channel).toBe(shopChannel('bazaar'))
+      return vi.fn()
+    })
+    const initialShop = makeShop({ revision: 2, entries: [makeEntry({ stock: 5 })] })
+    const incomingShop = makeShop({ revision: 3, entries: [makeEntry({ stock: 4 })] })
+    const editor = useGmShopEditorPage({
+      isGm: ref(true),
+      slug: ref('bazaar'),
+      apiClient: makeApiClient(),
+      clientId: 'client-a',
+      subscribeRealtimeChannel,
+      autoLoadOnMounted: false,
+    })
+
+    editor.adoptAuthoritativeShop(initialShop)
+    expect(editor.isDirty.value).toBe(false)
+    expect(subscribedHandler).not.toBeNull()
+
+    subscribedHandler!(shopUpdatedEvent(incomingShop, { clientId: 'client-b' }))
+
+    expect(editor.draft.value).toEqual(incomingShop)
+    expect(editor.isDirty.value).toBe(false)
+    expect(editor.loadStatus.value).toBe('ready')
+  })
+
+  it('preserves dirty GM edits and surfaces a conflict when newer shop realtime arrives', () => {
+    const initialShop = makeShop({ revision: 2, entries: [makeEntry({ stock: 5 })] })
+    const incomingShop = makeShop({ revision: 3, entries: [makeEntry({ stock: 4 })] })
+    const editor = useGmShopEditorPage({
+      isGm: ref(true),
+      slug: ref('bazaar'),
+      apiClient: makeApiClient(),
+      clientId: 'client-a',
+      autoLoadOnMounted: false,
+      realtimeEnabled: false,
+    })
+
+    editor.adoptAuthoritativeShop(initialShop)
+    editor.draft.value!.gmNotes = 'Unsaved local note.'
+
+    editor.handleRealtimeShopEvent(shopUpdatedEvent(incomingShop, { clientId: 'client-b' }))
+
+    expect(editor.draft.value?.gmNotes).toBe('Unsaved local note.')
+    expect(editor.draft.value?.revision).toBe(2)
+    expect(editor.saveStatus.value).toBe('conflict')
+    expect(editor.saveErrorMessage.value).toContain('Reload latest shop')
   })
 })

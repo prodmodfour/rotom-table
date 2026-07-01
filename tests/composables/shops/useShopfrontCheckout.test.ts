@@ -1,6 +1,7 @@
-import { ref, type Ref } from 'vue'
+import { nextTick, ref, type Ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { IDBFactory as FakeIDBFactory } from 'fake-indexeddb'
+import { groupInventoryChannel, sheetChannel, type RealtimeEvent } from '#shared/realtime'
 import { LIVE_PLAY_COMMAND_TYPES, type ShopCheckoutCommandResult } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfileId } from '#shared/playerProfiles'
@@ -83,6 +84,29 @@ const groupInventoryFixture = (overrides: Partial<GroupInventoryDocument> = {}):
   ...overrides,
 })
 
+const groupInventoryRealtimeEvent = (
+  document: GroupInventoryDocument,
+  overrides: Partial<RealtimeEvent> = {},
+): RealtimeEvent => ({
+  channel: groupInventoryChannel(document.slug),
+  type: 'updated',
+  revision: document.revision,
+  timestamp: 1_700_000_000_100,
+  data: { slug: document.slug, document },
+  ...overrides,
+})
+
+const trainerRealtimeEvent = (
+  sheet: TrainerSheet,
+  overrides: Partial<RealtimeEvent> = {},
+): RealtimeEvent => ({
+  channel: sheetChannel('trainer', sheet.slug),
+  type: 'updated',
+  timestamp: 1_700_000_000_100,
+  data: { kind: 'trainer', slug: sheet.slug, sheet },
+  ...overrides,
+})
+
 const commandRecord = (body: unknown): Record<string, unknown> => {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Expected command body')
   return body as Record<string, unknown>
@@ -159,6 +183,7 @@ const createHarness = (options: {
   readonly trainerSheets?: readonly TrainerSheet[]
   readonly groupInventory?: GroupInventoryDocument
   readonly postJson?: PostJsonMock
+  readonly subscribeRealtimeChannel?: (channel: string, handler: (event: RealtimeEvent) => void) => () => void
 } = {}): {
   readonly shop: Ref<ShopTableDocument | null>
   readonly getJson: GetJsonMock
@@ -186,6 +211,7 @@ const createHarness = (options: {
     leaseOwner: `shopfront-checkout-test-${leaseOwnerSequence}`,
     clientId: () => 'client-shopfront-checkout-test',
     randomUuid: () => `checkout-${leaseOwnerSequence}`,
+    ...(options.subscribeRealtimeChannel === undefined ? {} : { subscribeRealtimeChannel: options.subscribeRealtimeChannel }),
     autoLoadOnMounted: false,
   })
   return { shop, getJson, postJson, checkout }
@@ -311,6 +337,81 @@ describe('useShopfrontCheckout', () => {
     expect(groupHarness.checkout.deliveryOptions.value).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'groupInventory', slug: GROUP_INVENTORY_MAIN_SLUG }),
     ]))
+  })
+
+  it('subscribes to loaded group and trainer realtime channels and adopts newer group inventory updates', async () => {
+    const subscriptions = new Map<string, (event: RealtimeEvent) => void>()
+    const subscribeRealtimeChannel = vi.fn((channel: string, handler: (event: RealtimeEvent) => void) => {
+      subscriptions.set(channel, handler)
+      return () => subscriptions.delete(channel)
+    })
+    const { checkout } = createHarness({
+      shop: ref(makeShop({
+        allowedPaymentSources: ['trainer', 'groupInventory'],
+        allowedDeliveryTargets: ['trainer', 'groupInventory'],
+      })),
+      subscribeRealtimeChannel,
+    })
+
+    await checkout.loadCheckoutDocuments()
+
+    expect(subscriptions.has(groupInventoryChannel(GROUP_INVENTORY_MAIN_SLUG))).toBe(true)
+    expect(subscriptions.has(sheetChannel('trainer', 'ash'))).toBe(true)
+    expect(checkout.paymentOptions.value.find((option) => option.kind === 'groupInventory')?.money).toBe(2_500)
+
+    subscriptions.get(groupInventoryChannel(GROUP_INVENTORY_MAIN_SLUG))!(groupInventoryRealtimeEvent(
+      groupInventoryFixture({ revision: 6, money: 9_999 }),
+    ))
+    expect(checkout.paymentOptions.value.find((option) => option.kind === 'groupInventory')?.money).toBe(2_500)
+
+    subscriptions.get(groupInventoryChannel(GROUP_INVENTORY_MAIN_SLUG))!(groupInventoryRealtimeEvent(
+      groupInventoryFixture({ revision: 8, money: 1_750 }),
+      { clientId: 'other-client' },
+    ))
+    expect(checkout.paymentOptions.value.find((option) => option.kind === 'groupInventory')?.money).toBe(1_750)
+  })
+
+  it('adopts newer trainer sheet realtime updates for loaded checkout participants and ignores stale or echo events', async () => {
+    const { checkout } = createHarness()
+
+    await checkout.loadCheckoutDocuments()
+
+    expect(checkout.paymentOptions.value.find((option) => option.slug === 'ash')?.money).toBe(1_200)
+
+    expect(checkout.handleTrainerSheetRealtimeEvent(trainerRealtimeEvent(
+      trainerFixture({ slug: 'ash', revision: 1, money: 9_999 }),
+    ))).toEqual({ status: 'ignored-stale' })
+    expect(checkout.paymentOptions.value.find((option) => option.slug === 'ash')?.money).toBe(1_200)
+
+    expect(checkout.handleTrainerSheetRealtimeEvent(trainerRealtimeEvent(
+      trainerFixture({ slug: 'ash', revision: 3, money: 850 }),
+      { clientId: 'other-client' },
+    ))).toMatchObject({ status: 'adopted' })
+    expect(checkout.paymentOptions.value.find((option) => option.slug === 'ash')?.money).toBe(850)
+
+    expect(checkout.handleTrainerSheetRealtimeEvent(trainerRealtimeEvent(
+      trainerFixture({ slug: 'ash', revision: 4, money: 700 }),
+      { clientId: 'client-shopfront-checkout-test' },
+    ))).toEqual({ status: 'ignored-echo' })
+    expect(checkout.paymentOptions.value.find((option) => option.slug === 'ash')?.money).toBe(850)
+  })
+
+  it('clamps cart quantities and shows a non-blocking notice when realtime shop stock drops', async () => {
+    const shop = ref<ShopTableDocument | null>(makeShop({ entries: [makeEntry({ stock: 5 })] }))
+    const { checkout } = createHarness({ shop })
+
+    checkout.setCartQuantity('potion', 3)
+    expect(checkout.cartQuantities.value.potion).toBe(3)
+
+    shop.value = makeShop({ revision: 5, entries: [makeEntry({ stock: 2 })] })
+    await nextTick()
+
+    expect(checkout.cartQuantities.value.potion).toBe(2)
+    expect(checkout.cartLines.value[0]?.quantity).toBe(2)
+    expect(checkout.stockChangeNotice.value).toBe('Shop stock changed; adjusted Potion in your cart.')
+
+    checkout.clearStockChangeNotice()
+    expect(checkout.stockChangeNotice.value).toBeNull()
   })
 
   it('keeps double-clicked checkout submissions to one active command while the first send is in flight', async () => {

@@ -22,6 +22,7 @@ const props = defineProps<{
   checkoutStatus: ShopCheckoutCommandStatus
   checkoutErrorMessage?: string | null
   checkoutUnavailableReason?: string | null
+  stockChangeNotice?: string | null
   canCheckout: boolean
   pendingOutboxEntries: readonly ShopCheckoutCommandOutboxEntry[]
   outboxStatus: ShopCheckoutOutboxStatus
@@ -37,6 +38,7 @@ const emit = defineEmits<{
   'discard-outbox-entry': [opId: string]
   'reload-documents': []
   'clear-error': []
+  'clear-stock-change-notice': []
 }>()
 
 const currency = (value: number): string => `$${value.toLocaleString('en-US')}`
@@ -138,6 +140,24 @@ const handleDeliveryOptionChange = (event: Event): void => {
     <p v-if="documentsErrorMessage" class="shopfront-checkout__message shopfront-checkout__message--error" role="alert">
       {{ documentsErrorMessage }}
     </p>
+
+    <article
+      v-if="stockChangeNotice"
+      class="shopfront-checkout__message shopfront-checkout__message--notice"
+      role="status"
+      aria-live="polite"
+      data-testid="shopfront-stock-change-notice"
+    >
+      <h3>Shop stock changed</h3>
+      <p>{{ stockChangeNotice }}</p>
+      <button
+        type="button"
+        class="shopfront-checkout__action shopfront-checkout__action--secondary"
+        @click="emit('clear-stock-change-notice')"
+      >
+        Dismiss stock notice
+      </button>
+    </article>
 
     <section class="shopfront-checkout__cart" aria-label="Cart summary">
       <h3>Cart summary</h3>
@@ -405,6 +425,10 @@ const handleDeliveryOptionChange = (event: Event): void => {
 
 .shopfront-checkout__message--accepted {
   border-color: color-mix(in srgb, var(--good) 55%, var(--rule-soft));
+}
+
+.shopfront-checkout__message--notice {
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--rule-soft));
 }
 
 .shopfront-checkout__message--rejected,

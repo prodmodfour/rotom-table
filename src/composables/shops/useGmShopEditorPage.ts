@@ -1,27 +1,37 @@
-import { computed, onMounted, ref, watch, type Ref } from 'vue'
+import { computed, getCurrentScope, onMounted, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { normalizeRevision } from '#shared/sessionRevisions'
+import { shopChannel } from '#shared/realtime'
 import type { ShopEntry, ShopTableDocument } from '~/types/shop'
 import type {
   DeleteShopResponse,
   LoadShopResponse,
   SaveShopResponse,
 } from '~/composables/shops/shopLibraryApi'
+import { subscribeChannel, type RealtimeEvent } from '~/composables/useRealtime'
 import type { ApiClient } from '~/utils/apiClient'
 import { SHOP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
+import { applyShopRealtimeEvent } from '~/utils/shopRealtime'
 import { useApiClient } from '~/composables/useApiClient'
 
 export type GmShopEditorLoadStatus = 'loading' | 'ready' | 'error' | 'forbidden'
 export type GmShopEditorSaveStatus = 'idle' | 'saving' | 'saved' | 'conflict' | 'error'
 export type GmShopEditorDeleteStatus = 'idle' | 'deleting' | 'deleted' | 'error'
 
+export type GmShopEditorRealtimeChannelSubscriber = (
+  channel: string,
+  handler: (event: RealtimeEvent) => void,
+) => () => void
+
 export interface UseGmShopEditorPageDependencies {
   readonly isGm: Readonly<Ref<boolean>>
   readonly slug: Readonly<Ref<string | null | undefined>>
   readonly apiClient?: Pick<ApiClient, 'getJson' | 'postJson'>
   readonly clientId?: string
+  readonly subscribeRealtimeChannel?: GmShopEditorRealtimeChannelSubscriber
+  readonly realtimeEnabled?: boolean
   readonly autoLoadOnMounted?: boolean
 }
 
@@ -42,6 +52,7 @@ export interface UseGmShopEditorPageReturn {
   readonly loadShop: () => Promise<ShopTableDocument | null>
   readonly saveShop: () => Promise<ShopTableDocument | null>
   readonly deleteShop: () => Promise<ShopTableDocument | null>
+  readonly handleRealtimeShopEvent: (event: RealtimeEvent) => void
 }
 
 const cloneShop = (shop: ShopTableDocument): ShopTableDocument => deepCloneJson(shop)
@@ -92,6 +103,8 @@ export const useGmShopEditorPage = (
   const deleteStatus = ref<GmShopEditorDeleteStatus>('idle')
   const deleteErrorMessage = ref<string | null>(null)
   const lastAuthoritativeJson = ref(shopJson(null))
+  let unsubscribeRealtime: (() => void) | null = null
+  let subscribedRealtimeSlug: string | null = null
 
   const requestedSlug = computed(() => String(dependencies.slug.value ?? '').trim())
   const isDirty = computed(() => shopJson(draft.value) !== lastAuthoritativeJson.value)
@@ -164,6 +177,62 @@ export const useGmShopEditorPage = (
       ...draft.value,
       entries: cloneEntries(entries),
     }
+  }
+
+  const handleRealtimeShopEvent = (event: RealtimeEvent): void => {
+    const result = applyShopRealtimeEvent(event, {
+      currentDocument: draft.value,
+      clientId,
+      expectedSlug: requestedSlug.value,
+    })
+
+    if (result.status === 'adopted' || result.status === 'unchanged') {
+      if (isDirty.value) {
+        saveStatus.value = 'conflict'
+        saveErrorMessage.value = 'This shop changed in another client. Reload latest shop before saving again.'
+        return
+      }
+      adoptAuthoritativeShop(result.document)
+      loadStatus.value = 'ready'
+      loadErrorMessage.value = null
+      return
+    }
+
+    if (result.status === 'deleted') {
+      if (isDirty.value) {
+        saveStatus.value = 'conflict'
+        saveErrorMessage.value = 'This shop was deleted in another client. Return to the shop library or reload before editing.'
+        return
+      }
+      deletedShop.value = draft.value ? cloneShop(draft.value) : null
+      draft.value = null
+      lastAuthoritativeJson.value = shopJson(null)
+      loadStatus.value = 'error'
+      loadErrorMessage.value = 'This shop table was deleted.'
+    }
+  }
+
+  const realtimeSubscriber = (): GmShopEditorRealtimeChannelSubscriber | null => {
+    if (dependencies.realtimeEnabled === false) return null
+    if (dependencies.subscribeRealtimeChannel) return dependencies.subscribeRealtimeChannel
+    if (typeof window === 'undefined') return null
+    return subscribeChannel
+  }
+
+  const subscribeToRealtimeSlug = (): void => {
+    const slug = requestedSlug.value
+    const subscriber = realtimeSubscriber()
+    if (!slug || !dependencies.isGm.value || !subscriber) {
+      unsubscribeRealtime?.()
+      unsubscribeRealtime = null
+      subscribedRealtimeSlug = null
+      return
+    }
+
+    if (subscribedRealtimeSlug === slug) return
+    unsubscribeRealtime?.()
+    subscribedRealtimeSlug = slug
+    unsubscribeRealtime = subscriber(shopChannel(slug), handleRealtimeShopEvent)
   }
 
   const saveShop = async (): Promise<ShopTableDocument | null> => {
@@ -253,6 +322,17 @@ export const useGmShopEditorPage = (
     })
   }
 
+  subscribeToRealtimeSlug()
+  watch([requestedSlug, dependencies.isGm], subscribeToRealtimeSlug)
+
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      unsubscribeRealtime?.()
+      unsubscribeRealtime = null
+      subscribedRealtimeSlug = null
+    })
+  }
+
   return {
     draft,
     deletedShop,
@@ -270,5 +350,6 @@ export const useGmShopEditorPage = (
     loadShop,
     saveShop,
     deleteShop,
+    handleRealtimeShopEvent,
   }
 }

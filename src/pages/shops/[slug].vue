@@ -43,6 +43,7 @@ const {
   checkoutStatus,
   checkoutErrorMessage,
   checkoutUnavailableReason,
+  stockChangeNotice,
   canCheckout,
   pendingOutboxEntries,
   outboxStatus,
@@ -55,6 +56,7 @@ const {
   retryOutboxEntry,
   discardOutboxEntry,
   clearCheckoutError,
+  clearStockChangeNotice,
 } = useShopfrontCheckout({
   shop,
   authRole: role,
@@ -182,6 +184,7 @@ useHead(() => ({
         :checkout-status="checkoutStatus"
         :checkout-error-message="checkoutErrorMessage"
         :checkout-unavailable-reason="checkoutUnavailableReason"
+        :stock-change-notice="stockChangeNotice"
         :can-checkout="canCheckout"
         :pending-outbox-entries="pendingOutboxEntries"
         :outbox-status="outboxStatus"
@@ -194,6 +197,7 @@ useHead(() => ({
         @discard-outbox-entry="discardOutboxEntry"
         @reload-documents="loadCheckoutDocuments"
         @clear-error="clearCheckoutError"
+        @clear-stock-change-notice="clearStockChangeNotice"
       />
     </template>
 

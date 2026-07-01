@@ -808,7 +808,7 @@ Let players and GMs purchase items from the shopfront through the live-play chec
 
 ## 026 — SHOPS-026: Consume shop/group/trainer realtime updates on shop pages
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Keep open shopfronts and shop editor pages synchronized with authoritative updates.

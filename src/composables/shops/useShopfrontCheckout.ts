@@ -1,9 +1,11 @@
-import { computed, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { computed, getCurrentScope, onMounted, onScopeDispose, ref, watch, type ComputedRef, type Ref } from 'vue'
 import type { AuthRole } from '#shared/auth'
+import { groupInventoryChannel, isRealtimeEcho, sheetChannel, type RealtimeEvent } from '#shared/realtime'
 import { type LivePlayRandomUuidProvider, type ShopCheckoutCommandResult } from '#shared/livePlayCommands'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { useShopCheckoutCommands, type ShopCheckoutCommandDispatchResult, type ShopCheckoutCommandStatus } from '~/composables/shops/useShopCheckoutCommands'
+import { subscribeChannel } from '~/composables/useRealtime'
 import { useApiClient } from '~/composables/useApiClient'
 import type { ApiClient } from '~/utils/apiClient'
 import { GROUP_INVENTORY_MAIN_SLUG, type GroupInventoryDocument } from '~/types/groupInventory'
@@ -12,7 +14,9 @@ import type { TrainerSheet } from '~/types/trainerSheet'
 import { GROUP_INVENTORY_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { getErrorMessage } from '~/utils/errorMessages'
+import { applyGroupInventoryRealtimeEvent, type GroupInventoryRealtimeApplicationResult } from '~/utils/groupInventoryRealtime'
 import { type LivePlayCommandOutbox } from '~/utils/livePlayCommandOutbox'
+import { deepCloneJson, stableJsonStringify } from '~/utils/serialization'
 import { buildSheetListFetchOptions, sheetApiProfileContext } from '~/utils/sheetApiRequests'
 
 interface ReadonlyValueRef<TValue> {
@@ -25,6 +29,18 @@ interface SheetListResponse {
 
 export type ShopfrontCheckoutDocumentsStatus = 'idle' | 'loading' | 'ready' | 'error'
 export type ShopfrontCheckoutParticipantKind = 'trainer' | 'groupInventory'
+export type ShopfrontRealtimeChannelSubscriber = (
+  channel: string,
+  handler: (event: RealtimeEvent) => void,
+) => () => void
+
+export type TrainerSheetRealtimeApplicationResult =
+  | { readonly status: 'ignored' }
+  | { readonly status: 'ignored-echo' }
+  | { readonly status: 'ignored-stale' }
+  | { readonly status: 'unchanged'; readonly sheet: TrainerSheet }
+  | { readonly status: 'adopted'; readonly sheet: TrainerSheet }
+  | { readonly status: 'invalid'; readonly message: string }
 
 export interface ShopfrontCartLine {
   readonly entry: ShopEntry
@@ -55,6 +71,8 @@ export interface UseShopfrontCheckoutOptions {
   readonly leaseOwner?: string
   readonly clientId?: () => string
   readonly randomUuid?: LivePlayRandomUuidProvider
+  readonly subscribeRealtimeChannel?: ShopfrontRealtimeChannelSubscriber
+  readonly realtimeEnabled?: boolean
   readonly autoLoadOnMounted?: boolean
 }
 
@@ -74,6 +92,7 @@ export interface UseShopfrontCheckoutReturn {
   readonly checkoutStatus: ComputedRef<ShopCheckoutCommandStatus>
   readonly checkoutErrorMessage: ComputedRef<string | null>
   readonly checkoutUnavailableReason: ComputedRef<string | null>
+  readonly stockChangeNotice: Ref<string | null>
   readonly canCheckout: ComputedRef<boolean>
   readonly isCheckoutBusy: ComputedRef<boolean>
   readonly pendingOutboxEntries: ReturnType<typeof useShopCheckoutCommands>['pendingOutboxEntries']
@@ -88,6 +107,9 @@ export interface UseShopfrontCheckoutReturn {
   readonly retryOutboxEntry: ReturnType<typeof useShopCheckoutCommands>['retryOutboxEntry']
   readonly discardOutboxEntry: ReturnType<typeof useShopCheckoutCommands>['discardOutboxEntry']
   readonly clearCheckoutError: () => void
+  readonly clearStockChangeNotice: () => void
+  readonly handleGroupInventoryRealtimeEvent: (event: RealtimeEvent) => GroupInventoryRealtimeApplicationResult
+  readonly handleTrainerSheetRealtimeEvent: (event: RealtimeEvent) => TrainerSheetRealtimeApplicationResult
 }
 
 const MAX_SAFE_CART_QUANTITY = Number.MAX_SAFE_INTEGER
@@ -212,10 +234,60 @@ const preserveTrainerAccessAnnotations = (next: TrainerSheet, previous: TrainerS
     : {}),
 })
 
+interface TrainerSheetRealtimePayload {
+  readonly kind?: unknown
+  readonly slug?: unknown
+  readonly sheet?: unknown
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+)
+
+const safeRevision = (value: unknown): number | null => (
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null
+)
+
+const normalizeIncomingTrainerSheet = (
+  payload: TrainerSheetRealtimePayload | undefined,
+): TrainerSheet | null => {
+  if (payload?.kind !== 'trainer') return null
+  if (typeof payload.slug !== 'string' || payload.slug.trim().length === 0) return null
+  if (!isRecord(payload.sheet)) return null
+  if (payload.sheet.slug !== payload.slug) return null
+  if (safeRevision(payload.sheet.revision) === null) return null
+  return deepCloneJson(payload.sheet as unknown as TrainerSheet)
+}
+
+const sameTrainerSheet = (left: TrainerSheet | undefined, right: TrainerSheet): boolean => (
+  !!left && stableJsonStringify(left) === stableJsonStringify(right)
+)
+
+const cartQuantityCount = (quantities: Record<string, number>): number => (
+  Object.values(quantities).filter((quantity) => quantity > 0).length
+)
+
+const entryStockChanged = (
+  previousEntries: readonly ShopEntry[] | undefined,
+  nextEntries: readonly ShopEntry[],
+): boolean => {
+  if (!previousEntries) return false
+  const previousById = new Map(previousEntries.map((entry) => [entry.id, entry.stock] as const))
+  return nextEntries.some((entry) => previousById.has(entry.id) && previousById.get(entry.id) !== entry.stock)
+}
+
+const adjustedCartNotice = (adjustedNames: readonly string[]): string => {
+  if (adjustedNames.length === 0) return 'Shop stock changed. Review your cart before buying.'
+  const uniqueNames = [...new Set(adjustedNames)]
+  if (uniqueNames.length === 1) return `Shop stock changed; adjusted ${uniqueNames[0]} in your cart.`
+  return `Shop stock changed; adjusted ${uniqueNames.length} cart items.`
+}
+
 export const useShopfrontCheckout = (
   options: UseShopfrontCheckoutOptions,
 ): UseShopfrontCheckoutReturn => {
   const apiClient = options.apiClient ?? useApiClient()
+  const clientId = options.clientId ?? getClientId
   const cartQuantities = ref<Record<string, number>>({})
   const trainerSheets = ref<TrainerSheet[]>([])
   const groupInventoryDocument = ref<GroupInventoryDocument | null>(null)
@@ -224,6 +296,10 @@ export const useShopfrontCheckout = (
   const selectedPaymentOptionKey = ref('')
   const selectedDeliveryOptionKey = ref('')
   const localCheckoutError = ref<string | null>(null)
+  const stockChangeNotice = ref<string | null>(null)
+  let unsubscribeGroupInventoryRealtime: (() => void) | null = null
+  let subscribedGroupInventorySlug: string | null = null
+  const trainerRealtimeUnsubscribers = new Map<string, () => void>()
 
   const upsertTrainerSheet = (sheet: TrainerSheet): void => {
     const previous = trainerSheets.value.find((candidate) => candidate.slug === sheet.slug)
@@ -243,7 +319,7 @@ export const useShopfrontCheckout = (
     apiClient,
     ...(options.outbox === undefined ? {} : { outbox: options.outbox }),
     ...(options.leaseOwner === undefined ? {} : { leaseOwner: options.leaseOwner }),
-    clientId: options.clientId ?? getClientId,
+    clientId,
     adoptShop: (nextShop) => {
       options.shop.value = nextShop
     },
@@ -252,6 +328,101 @@ export const useShopfrontCheckout = (
     },
     adoptTrainerSheet: upsertTrainerSheet,
   })
+
+  const handleGroupInventoryRealtimeEvent = (event: RealtimeEvent): GroupInventoryRealtimeApplicationResult => {
+    const currentDocument = groupInventoryDocument.value
+    if (!currentDocument) return { status: 'ignored' }
+
+    const result = applyGroupInventoryRealtimeEvent(event, {
+      currentDocument,
+      clientId: clientId(),
+      expectedSlug: currentDocument.slug,
+    })
+    if (result.status === 'adopted') groupInventoryDocument.value = result.document
+    return result
+  }
+
+  const handleTrainerSheetRealtimeEvent = (event: RealtimeEvent): TrainerSheetRealtimeApplicationResult => {
+    if (event.type !== 'updated' && event.type !== 'created') return { status: 'ignored' }
+    if (isRealtimeEcho(event, clientId())) return { status: 'ignored-echo' }
+
+    const sheet = normalizeIncomingTrainerSheet(event.data as TrainerSheetRealtimePayload | undefined)
+    if (!sheet) return { status: 'invalid', message: 'Trainer sheet realtime update did not include a complete trainer sheet.' }
+    if (event.channel !== sheetChannel('trainer', sheet.slug)) return { status: 'ignored' }
+
+    const previous = trainerSheets.value.find((candidate) => candidate.slug === sheet.slug)
+    if (!previous) return { status: 'ignored' }
+
+    const eventRevision = safeRevision(event.revision)
+    const incomingRevision = safeRevision(sheet.revision)
+    if (eventRevision !== null && eventRevision !== incomingRevision) {
+      return { status: 'invalid', message: 'Trainer sheet realtime event revision did not match its document.' }
+    }
+
+    const currentRevision = safeRevision(previous.revision)
+    if (currentRevision !== null && incomingRevision !== null && incomingRevision < currentRevision) {
+      return { status: 'ignored-stale' }
+    }
+
+    const nextSheet = preserveTrainerAccessAnnotations(sheet, previous)
+    if (sameTrainerSheet(previous, nextSheet)) return { status: 'unchanged', sheet: nextSheet }
+    upsertTrainerSheet(nextSheet)
+    return { status: 'adopted', sheet: nextSheet }
+  }
+
+  const realtimeSubscriber = (): ShopfrontRealtimeChannelSubscriber | null => {
+    if (options.realtimeEnabled === false) return null
+    if (options.subscribeRealtimeChannel) return options.subscribeRealtimeChannel
+    if (typeof window === 'undefined') return null
+    return subscribeChannel
+  }
+
+  const syncGroupInventoryRealtimeSubscription = (): void => {
+    const slug = groupInventoryDocument.value?.slug ?? null
+    const subscriber = realtimeSubscriber()
+    if (!slug || !subscriber) {
+      unsubscribeGroupInventoryRealtime?.()
+      unsubscribeGroupInventoryRealtime = null
+      subscribedGroupInventorySlug = null
+      return
+    }
+
+    if (subscribedGroupInventorySlug === slug) return
+    unsubscribeGroupInventoryRealtime?.()
+    subscribedGroupInventorySlug = slug
+    unsubscribeGroupInventoryRealtime = subscriber(groupInventoryChannel(slug), handleGroupInventoryRealtimeEvent)
+  }
+
+  const syncTrainerSheetRealtimeSubscriptions = (): void => {
+    const subscriber = realtimeSubscriber()
+    const slugs = new Set(trainerSheets.value.map((sheet) => sheet.slug).filter((slug) => slug.trim().length > 0))
+
+    for (const [slug, unsubscribe] of [...trainerRealtimeUnsubscribers.entries()]) {
+      if (subscriber && slugs.has(slug)) continue
+      unsubscribe()
+      trainerRealtimeUnsubscribers.delete(slug)
+    }
+
+    if (!subscriber) return
+
+    for (const slug of slugs) {
+      if (trainerRealtimeUnsubscribers.has(slug)) continue
+      trainerRealtimeUnsubscribers.set(slug, subscriber(sheetChannel('trainer', slug), handleTrainerSheetRealtimeEvent))
+    }
+  }
+
+  const syncRealtimeSubscriptions = (): void => {
+    syncGroupInventoryRealtimeSubscription()
+    syncTrainerSheetRealtimeSubscriptions()
+  }
+
+  const unsubscribeRealtime = (): void => {
+    unsubscribeGroupInventoryRealtime?.()
+    unsubscribeGroupInventoryRealtime = null
+    subscribedGroupInventorySlug = null
+    for (const unsubscribe of trainerRealtimeUnsubscribers.values()) unsubscribe()
+    trainerRealtimeUnsubscribers.clear()
+  }
 
   const shopEntryById = computed(() => new Map(
     (options.shop.value?.entries ?? []).map((entry) => [entry.id, entry] as const),
@@ -342,6 +513,7 @@ export const useShopfrontCheckout = (
 
   const clearCart = (): void => {
     cartQuantities.value = {}
+    stockChangeNotice.value = null
   }
 
   const setCartQuantity = (entryId: string, quantity: unknown): void => {
@@ -353,6 +525,7 @@ export const useShopfrontCheckout = (
     if (normalizedQuantity > 0) next[entryId] = normalizedQuantity
     else delete next[entryId]
     cartQuantities.value = next
+    if (cartQuantityCount(next) === 0) stockChangeNotice.value = null
     if (localCheckoutError.value) localCheckoutError.value = null
   }
 
@@ -413,6 +586,7 @@ export const useShopfrontCheckout = (
       documentsStatus.value = 'idle'
       documentsErrorMessage.value = null
       syncSelectedOptions()
+      syncRealtimeSubscriptions()
       return
     }
 
@@ -435,6 +609,7 @@ export const useShopfrontCheckout = (
     }
 
     syncSelectedOptions()
+    syncRealtimeSubscriptions()
     await refreshPendingOutboxEntries()
 
     documentsStatus.value = errors.length === 0 ? 'ready' : 'error'
@@ -472,19 +647,39 @@ export const useShopfrontCheckout = (
     checkoutCommands.clearError()
   }
 
+  const clearStockChangeNotice = (): void => {
+    stockChangeNotice.value = null
+  }
+
   watch([paymentOptions, deliveryOptions], syncSelectedOptions, { immediate: true })
+  watch(() => groupInventoryDocument.value?.slug ?? null, syncGroupInventoryRealtimeSubscription)
+  watch(
+    () => trainerSheets.value.map((sheet) => sheet.slug).sort().join('\u0000'),
+    syncTrainerSheetRealtimeSubscriptions,
+  )
 
   watch(
     () => options.shop.value?.entries ?? [],
-    () => {
+    (nextEntries, previousEntries) => {
+      const hadCart = cartQuantityCount(cartQuantities.value) > 0
+      const adjustedNames: string[] = []
       const next: Record<string, number> = {}
       for (const [entryId, quantity] of Object.entries(cartQuantities.value)) {
         const entry = shopEntryById.value.get(entryId)
         if (!entry) continue
         const normalizedQuantity = sanitizeQuantityForEntry(entry, quantity)
         if (normalizedQuantity > 0) next[entryId] = normalizedQuantity
+        if (normalizedQuantity < quantity) adjustedNames.push(entry.itemName.trim() || entry.id)
       }
       cartQuantities.value = next
+
+      if (cartQuantityCount(next) === 0) {
+        stockChangeNotice.value = null
+        return
+      }
+      if (hadCart && (adjustedNames.length > 0 || entryStockChanged(previousEntries, nextEntries))) {
+        stockChangeNotice.value = adjustedCartNotice(adjustedNames)
+      }
     },
   )
 
@@ -510,6 +705,10 @@ export const useShopfrontCheckout = (
     })
   }
 
+  if (getCurrentScope()) {
+    onScopeDispose(unsubscribeRealtime)
+  }
+
   return {
     cartQuantities,
     cartLines,
@@ -526,6 +725,7 @@ export const useShopfrontCheckout = (
     checkoutStatus,
     checkoutErrorMessage,
     checkoutUnavailableReason,
+    stockChangeNotice,
     canCheckout,
     isCheckoutBusy,
     pendingOutboxEntries: checkoutCommands.pendingOutboxEntries,
@@ -540,5 +740,8 @@ export const useShopfrontCheckout = (
     retryOutboxEntry: checkoutCommands.retryOutboxEntry,
     discardOutboxEntry: checkoutCommands.discardOutboxEntry,
     clearCheckoutError,
+    clearStockChangeNotice,
+    handleGroupInventoryRealtimeEvent,
+    handleTrainerSheetRealtimeEvent,
   }
 }

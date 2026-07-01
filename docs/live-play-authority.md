@@ -59,6 +59,8 @@ Access boundaries:
 
 The server combines in-process wakeups with SQLite polling, so one process can commit a durable event and another process can deliver it after polling or restart. Wakeups and polling share the same sequence cursor and do not duplicate delivery.
 
+Shopfront and GM shop editor pages subscribe to `shop:<slug>` for the loaded shop document. Shopfront checkout state also subscribes to `group-inventory:<slug>` and `sheet:trainer:<slug>` only for payment/delivery documents already loaded on the page. Client handlers ignore local echo events by `clientId`, reject stale revisions, and apply only complete authoritative documents. When another client changes finite stock below a cart quantity, the cart clamps to the new limit and shows a non-blocking stock-change notice instead of sending an optimistic or stale checkout.
+
 ## Retention and gap reconciliation
 
 The durable realtime log is replay history, not permanent campaign state. Retention can prune old rows by age and row count while preserving cursor-state invariants. A pruned cursor produces a controlled `gap` response; a cursor beyond the latest sequence produces an `ahead` response. The client treats either as a single aggregate snapshot requirement, reloads authoritative SQLite map/sheet/mode state, advances the context cursor to the server tail, and never rewinds a stored cursor.
