@@ -11,10 +11,12 @@ import {
   GROUP_INVENTORY_SECTION_KEYS,
   type GroupInventoryDocument,
 } from '~/types/groupInventory'
+import type { TabletopMap } from '~/types/map'
 import type { ShopEntry, ShopTableDocument } from '~/types/shop'
 import type { TrainerInventory, TrainerSheet } from '~/types/trainerSheet'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteGroupInventoryRepository } from '~~/server/storage/groupInventoryRepository'
+import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteSheetRepository, type PersistedSheet } from '~~/server/storage/sheetRepository'
 import { createSqliteShopCheckoutOperationRepository } from '~~/server/storage/shopCheckoutOperationRepository'
 import { createSqliteShopTableRepository } from '~~/server/storage/shopTableRepository'
@@ -75,6 +77,29 @@ const groupInventoryDocument = (
   ...overrides,
 })
 
+const mapDocument = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
+  schemaVersion: 2,
+  slug: 'market-map',
+  name: 'Market Map',
+  dimensions: { x: 10, y: 3, z: 10 },
+  playerVisible: true,
+  voxels: [],
+  placements: [
+    { id: 'ash-token', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 1, y: 0, z: 1 } },
+  ],
+  shopInterfaces: [
+    {
+      id: 'counter-a',
+      shopSlug: 'viridian-mart',
+      label: 'Mart Counter',
+      playerVisible: true,
+      position: { x: 2, y: 0, z: 1 },
+      interactionRangeMeters: 2,
+    },
+  ],
+  ...overrides,
+})
+
 const seedShop = (
   database: RotomDatabase,
   document: ShopTableDocument = shopDocument(),
@@ -116,6 +141,15 @@ const seedGroupInventory = (
   updatedAt: document.updatedAt,
   document,
 }).document
+
+const seedMap = (
+  database: RotomDatabase,
+  document: TabletopMap = mapDocument(),
+): TabletopMap => createSqliteMapRepository(database).create({
+  slug: document.slug,
+  map: document,
+  now: document.updatedAt ?? 300,
+})
 
 const storedShop = (database: RotomDatabase, slug = 'viridian-mart'): ShopTableDocument => {
   const stored = createSqliteShopTableRepository(database).get(slug)
@@ -164,6 +198,25 @@ const trainerCommand = (
   },
   ...overrides,
 })
+
+const mapOriginTrainerCommand = (
+  overrides: Partial<ShopCheckoutLivePlayCommand> = {},
+): ShopCheckoutLivePlayCommand => {
+  const base = trainerCommand()
+  return trainerCommand({
+    opId: 'op_shopcheckout_map_origin',
+    payload: {
+      ...base.payload,
+      origin: {
+        kind: 'mapInterface',
+        mapSlug: 'market-map',
+        interfaceId: 'counter-a',
+        actorPlacementId: 'ash-token',
+      },
+    },
+    ...overrides,
+  })
+}
 
 const groupCommand = (
   overrides: Partial<ShopCheckoutLivePlayCommand> = {},
@@ -471,6 +524,163 @@ describe('executeShopCheckoutCommandUseCase', () => {
     expect(storedTrainer(database).money).toBe(600)
     expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
     expect(operationCount(database)).toBe(1)
+  })
+
+  it('allows player checkout from a valid map shop interface in range', () => {
+    const database = openMemoryDatabase()
+    seedShop(database)
+    seedTrainer(database)
+    seedMap(database)
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile(['ash']),
+      command: mapOriginTrainerCommand({ opId: 'op_shopcheckout_map_valid' }),
+    }, {
+      database,
+      now: () => 1_020,
+    })
+
+    expect(response.result).toMatchObject({
+      ok: true,
+      opId: 'op_shopcheckout_map_valid',
+      shopSlug: 'viridian-mart',
+      shopRevision: 1,
+      totalPrice: 400,
+    })
+    expect(storedShop(database).entries[0]?.stock).toBe(3)
+    expect(storedTrainer(database).money).toBe(600)
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
+  })
+
+  it('rejects map-origin checkout when the interface references a different shop', () => {
+    const database = openMemoryDatabase()
+    seedShop(database, shopDocument({ slug: 'pewter-mart', name: 'Pewter Mart' }))
+    seedTrainer(database)
+    seedMap(database)
+    const base = mapOriginTrainerCommand()
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile(['ash']),
+      command: mapOriginTrainerCommand({
+        opId: 'op_shopcheckout_map_wrong_shop',
+        scopes: [
+          { kind: 'shop', shopSlug: 'pewter-mart', field: 'purchase' },
+          { kind: 'shop', shopSlug: 'pewter-mart', field: 'stock' },
+          { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'money' },
+          { kind: 'sheet', sheetKind: 'trainer', sheetSlug: 'ash', field: 'inventory' },
+        ],
+        payload: {
+          ...base.payload,
+          shopSlug: 'pewter-mart',
+        },
+      }),
+    }, { database })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      opId: 'op_shopcheckout_map_wrong_shop',
+      shopSlug: 'pewter-mart',
+      reason: 'conflict',
+      message: expect.stringContaining('references shop viridian-mart, not pewter-mart'),
+    })
+    expect(storedShop(database, 'pewter-mart').entries[0]?.stock).toBe(5)
+    expect(storedTrainer(database).money).toBe(1_000)
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([])
+  })
+
+  it('rejects map-origin player checkout from an inaccessible map', () => {
+    const database = openMemoryDatabase()
+    seedShop(database)
+    seedTrainer(database)
+    seedMap(database, mapDocument({ playerVisible: false }))
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile(['ash']),
+      command: mapOriginTrainerCommand({ opId: 'op_shopcheckout_map_hidden' }),
+    }, { database })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      opId: 'op_shopcheckout_map_hidden',
+      shopSlug: 'viridian-mart',
+      reason: 'unauthorized',
+      message: expect.stringContaining('Map market-map is not player visible'),
+    })
+    expect(storedShop(database).entries[0]?.stock).toBe(5)
+    expect(storedTrainer(database).money).toBe(1_000)
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([])
+  })
+
+  it('rejects map-origin player checkout with an uncontrolled actor token', () => {
+    const database = openMemoryDatabase()
+    seedShop(database)
+    seedTrainer(database)
+    seedMap(database, mapDocument({
+      placements: [
+        { id: 'ash-token', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 1, y: 0, z: 1 } },
+        { id: 'misty-token', sheetKind: 'trainer', sheetSlug: 'misty', position: { x: 1, y: 0, z: 1 } },
+      ],
+    }))
+    const base = mapOriginTrainerCommand()
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile(['ash']),
+      command: mapOriginTrainerCommand({
+        opId: 'op_shopcheckout_map_uncontrolled',
+        payload: {
+          ...base.payload,
+          origin: {
+            kind: 'mapInterface',
+            mapSlug: 'market-map',
+            interfaceId: 'counter-a',
+            actorPlacementId: 'misty-token',
+          },
+        },
+      }),
+    }, { database })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      opId: 'op_shopcheckout_map_uncontrolled',
+      shopSlug: 'viridian-mart',
+      reason: 'unauthorized',
+      message: expect.stringContaining('not linked to the selected player profile'),
+    })
+    expect(storedShop(database).entries[0]?.stock).toBe(5)
+    expect(storedTrainer(database).money).toBe(1_000)
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([])
+  })
+
+  it('rejects map-origin player checkout when the controlled actor token is out of range', () => {
+    const database = openMemoryDatabase()
+    seedShop(database)
+    seedTrainer(database)
+    seedMap(database, mapDocument({
+      placements: [
+        { id: 'ash-token', sheetKind: 'trainer', sheetSlug: 'ash', position: { x: 8, y: 0, z: 1 } },
+      ],
+    }))
+
+    const response = executeShopCheckoutCommandUseCase({
+      role: 'player',
+      playerProfile: playerProfile(['ash']),
+      command: mapOriginTrainerCommand({ opId: 'op_shopcheckout_map_range' }),
+    }, { database })
+
+    expect(response.result).toMatchObject({
+      ok: false,
+      opId: 'op_shopcheckout_map_range',
+      shopSlug: 'viridian-mart',
+      reason: 'unauthorized',
+      message: expect.stringContaining('out of range'),
+    })
+    expect(storedShop(database).entries[0]?.stock).toBe(5)
+    expect(storedTrainer(database).money).toBe(1_000)
+    expect(storedTrainer(database).inventory?.medicalKit).toEqual([])
   })
 
   it('rejects profileless player checkout before changing money stock or inventory', () => {

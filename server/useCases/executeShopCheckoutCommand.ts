@@ -12,6 +12,7 @@ import type {
   ShopCheckoutPaymentSource,
 } from '#shared/livePlayCommands'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
+import type { MapShopInterface, SheetPlacement, TabletopMap } from '~/types/map'
 import type { ShopTableDocument } from '~/types/shop'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
@@ -42,6 +43,10 @@ import {
   type GroupInventoryRepository,
 } from '../storage/groupInventoryRepository'
 import {
+  createSqliteMapRepository,
+  type MapRepository,
+} from '../storage/mapRepository'
+import {
   createSqliteSheetRepository,
   type PersistedSheet,
   type SheetRepository,
@@ -58,7 +63,12 @@ import {
   createSqliteShopTableRepository,
   type ShopTableRepository,
 } from '../storage/shopTableRepository'
+import { canAccessMapForRole } from '../policies/mapPolicy'
 import { playerProfileCanAccessSheet } from '../policies/playerProfilePolicy'
+import {
+  actorCanControlMapPlacement,
+  playerProfileLinkedTrainerSheetsForTokenControl,
+} from '../policies/playerProfileTokenControlPolicy'
 import { shopCheckoutRealtimeAppendInputs } from '../realtime/shopCheckoutRealtime'
 import {
   defaultPersistedRealtimeEventPublisher,
@@ -87,6 +97,7 @@ export interface ExecuteShopCheckoutCommandDependencies {
   readonly shopTableRepository?: Pick<ShopTableRepository, 'get' | 'applyLivePlayUpdate'> & { readonly database?: RotomDatabase }
   readonly groupInventoryRepository?: Pick<GroupInventoryRepository, 'get' | 'applyLivePlayUpdate'> & { readonly database?: RotomDatabase }
   readonly sheetRepository?: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'> & { readonly database?: RotomDatabase }
+  readonly mapRepository?: Pick<MapRepository, 'getBySlug'> & { readonly database?: RotomDatabase }
   readonly operationRepository?: Pick<ShopCheckoutOperationRepository, 'getStoredOperation' | 'saveCommandResult'>
   readonly realtimeEventRepository?: Pick<RealtimeEventRepository, 'appendMany'> & { readonly database?: RotomDatabase }
   readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
@@ -100,6 +111,7 @@ interface ShopCheckoutCommandDependencySet {
   readonly shopTableRepository: Pick<ShopTableRepository, 'get' | 'applyLivePlayUpdate'>
   readonly groupInventoryRepository: Pick<GroupInventoryRepository, 'get' | 'applyLivePlayUpdate'>
   readonly sheetRepository: Pick<SheetRepository<Record<string, unknown>>, 'getByRef' | 'applyLivePlayUpdate'>
+  readonly mapRepository: Pick<MapRepository, 'getBySlug'>
   readonly operationRepository: Pick<ShopCheckoutOperationRepository, 'getStoredOperation' | 'saveCommandResult'>
   readonly realtimeEventRepository: Pick<RealtimeEventRepository, 'appendMany'>
   readonly publishPersistedRealtimeEvent: PersistedRealtimeEventPublisher
@@ -168,12 +180,14 @@ const actionDependencies = (
   const shopTableRepository = dependencies.shopTableRepository ?? createSqliteShopTableRepository(database)
   const groupInventoryRepository = dependencies.groupInventoryRepository ?? createSqliteGroupInventoryRepository(database)
   const sheetRepository = dependencies.sheetRepository ?? createSqliteSheetRepository<Record<string, unknown>>(database)
+  const mapRepository = dependencies.mapRepository ?? createSqliteMapRepository(database)
   const operationRepository = dependencies.operationRepository ?? createSqliteShopCheckoutOperationRepository({ database })
   const realtimeEventRepository = dependencies.realtimeEventRepository ?? createSqliteRealtimeEventRepository({ database })
 
   assertRepositoryDatabase(database, dependencies.shopTableRepository?.database, 'shop table repository')
   assertRepositoryDatabase(database, dependencies.groupInventoryRepository?.database, 'group inventory repository')
   assertRepositoryDatabase(database, dependencies.sheetRepository?.database, 'sheet repository')
+  assertRepositoryDatabase(database, dependencies.mapRepository?.database, 'map repository')
   assertRepositoryDatabase(database, dependencies.realtimeEventRepository?.database, 'realtime event repository')
 
   return {
@@ -181,6 +195,7 @@ const actionDependencies = (
     shopTableRepository,
     groupInventoryRepository,
     sheetRepository,
+    mapRepository,
     operationRepository,
     realtimeEventRepository,
     publishPersistedRealtimeEvent: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedRealtimeEventPublisher,
@@ -513,6 +528,153 @@ const authorizeCheckoutActorForShop = (
   assertPlayerCanUseTrainerParticipant(playerProfile, command.payload.deliveryTarget, 'delivery target')
 }
 
+const findMapShopInterface = (
+  map: TabletopMap,
+  interfaceId: string,
+): MapShopInterface | null => (map.shopInterfaces ?? []).find((shopInterface) => (
+  shopInterface.id === interfaceId
+)) ?? null
+
+const findMapPlacement = (
+  map: TabletopMap,
+  placementId: string,
+): SheetPlacement | null => map.placements.find((placement) => placement.id === placementId) ?? null
+
+const distanceMetersBetweenAnchors = (
+  left: SheetPlacement['position'],
+  right: NonNullable<MapShopInterface['position']>,
+): number => Math.hypot(left.x - right.x, left.y - right.y, left.z - right.z)
+
+const formatDistance = (value: number): string => (
+  Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
+)
+
+const linkedTrainerSheetsForMapTokenControl = (
+  playerProfile: PlayerProfile,
+  dependencies: ShopCheckoutCommandDependencySet,
+) => playerProfileLinkedTrainerSheetsForTokenControl(playerProfile, (slug) => {
+  const persisted = dependencies.sheetRepository.getByRef('trainer', slug)
+  return persisted ? trainerSheetFromPersisted(persisted) : null
+})
+
+const assertPlayerCanUseMapOriginInterface = (
+  shopInterface: MapShopInterface,
+  mapSlug: string,
+): void => {
+  if (shopInterface.playerVisible === true) return
+  rejectLivePlayCommand(
+    'unauthorized',
+    `Shop interface ${shopInterface.id} on map ${mapSlug} is not player visible.`,
+  )
+}
+
+const assertMapOriginInterfaceMatchesShop = (
+  shopInterface: MapShopInterface,
+  command: ShopCheckoutLivePlayCommand,
+  mapSlug: string,
+): void => {
+  if (shopInterface.shopSlug === command.payload.shopSlug) return
+  rejectLivePlayCommand(
+    'conflict',
+    `Shop interface ${shopInterface.id} on map ${mapSlug} references shop ${shopInterface.shopSlug}, not ${command.payload.shopSlug}.`,
+  )
+}
+
+const requirePlayerMapOriginActorPlacement = (
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+  dependencies: ShopCheckoutCommandDependencySet,
+  map: TabletopMap,
+  actorPlacementId: string | undefined,
+  reason: string,
+): SheetPlacement => {
+  if (!actorPlacementId) {
+    return rejectLivePlayCommand('unauthorized', reason)
+  }
+
+  const actorPlacement = findMapPlacement(map, actorPlacementId)
+  if (!actorPlacement) {
+    return rejectLivePlayCommand('not-found', `Placement ${actorPlacementId} was not found on map ${map.slug}.`)
+  }
+
+  const playerProfile = requireSelectedPlayerProfileForCheckout(input.playerProfile)
+  if (actorCanControlMapPlacement({
+    role: input.role,
+    profile: playerProfile,
+    placement: actorPlacement,
+    linkedTrainerSheets: linkedTrainerSheetsForMapTokenControl(playerProfile, dependencies),
+  })) {
+    return actorPlacement
+  }
+
+  return rejectLivePlayCommand(
+    'unauthorized',
+    `Placement ${actorPlacementId} is not linked to the selected player profile for map-origin shop checkout.`,
+  )
+}
+
+const assertPlayerMapOriginRange = (
+  map: TabletopMap,
+  shopInterface: MapShopInterface,
+  actorPlacement: SheetPlacement,
+): void => {
+  const range = shopInterface.interactionRangeMeters
+  if (range === undefined) return
+
+  const position = shopInterface.position
+  if (!position) {
+    return rejectLivePlayCommand(
+      'conflict',
+      `Shop interface ${shopInterface.id} on map ${map.slug} has an interaction range but no position.`,
+    )
+  }
+
+  const distance = distanceMetersBetweenAnchors(actorPlacement.position, position)
+  if (distance <= range) return
+
+  rejectLivePlayCommand(
+    'unauthorized',
+    `Placement ${actorPlacement.id} is out of range for shop interface ${shopInterface.id} on map ${map.slug}: ${formatDistance(distance)}m away, range ${formatDistance(range)}m.`,
+  )
+}
+
+const authorizeCheckoutMapOrigin = (
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+  command: ShopCheckoutLivePlayCommand,
+  dependencies: ShopCheckoutCommandDependencySet,
+): void => {
+  const origin = command.payload.origin
+  if (!origin || origin.kind !== 'mapInterface') return
+
+  const map = dependencies.mapRepository.getBySlug(origin.mapSlug)
+  if (!map) return rejectLivePlayCommand('not-found', `Map ${origin.mapSlug} was not found.`)
+
+  if (!canAccessMapForRole(input.role, map)) {
+    rejectLivePlayCommand('unauthorized', `Map ${origin.mapSlug} is not player visible.`)
+  }
+
+  const shopInterface = findMapShopInterface(map, origin.interfaceId)
+  if (!shopInterface) {
+    return rejectLivePlayCommand('not-found', `Shop interface ${origin.interfaceId} was not found on map ${origin.mapSlug}.`)
+  }
+
+  assertMapOriginInterfaceMatchesShop(shopInterface, command, origin.mapSlug)
+
+  if (input.role === 'gm') return
+  assertPlayerCanUseMapOriginInterface(shopInterface, origin.mapSlug)
+
+  const actorPlacementRequired = origin.actorPlacementId !== undefined || shopInterface.interactionRangeMeters !== undefined
+  if (!actorPlacementRequired) return
+
+  const actorPlacement = requirePlayerMapOriginActorPlacement(
+    input,
+    dependencies,
+    map,
+    origin.actorPlacementId,
+    `Select a controlled map token before checking out from shop interface ${shopInterface.id} on map ${origin.mapSlug}.`,
+  )
+  assertPlayerMapOriginRange(map, shopInterface, actorPlacement)
+}
+
 const loadCheckoutDocuments = (
   command: ShopCheckoutLivePlayCommand,
   input: ExecuteShopCheckoutCommandUseCaseInput,
@@ -531,6 +693,7 @@ const loadCheckoutDocuments = (
   }
 
   authorizeCheckoutActorForShop(input, command, shop)
+  authorizeCheckoutMapOrigin(input, command, dependencies)
 
   const participants: LoadedCheckoutParticipantMap = new Map()
   const paymentSource = loadParticipant(command.payload.paymentSource, dependencies, participants)

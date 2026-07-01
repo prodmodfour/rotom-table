@@ -922,7 +922,7 @@ Let players open a shopfront from a live map shop interface.
 
 ## 030 — SHOPS-030: Validate map-origin checkout server-side
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Ensure map-launched shop checkout is authorized against the live map context.

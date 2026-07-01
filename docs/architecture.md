@@ -59,7 +59,7 @@ The selected role is stored in a cookie and checked by client navigation and ser
 
 ## Normal live-play authority direction
 
-Normal multiplayer play stays on persistent profiles and regular `/maps/<slug>` routes. Live play uses server-authoritative commands with `opId` idempotency, `baseRevision` checks, map/sheet revisions, profile/token-control validation, authoritative SQLite persistence, and patch/result realtime broadcasts.
+Normal multiplayer play stays on persistent profiles and regular `/maps/<slug>` routes. Live play uses server-authoritative commands with `opId` idempotency, `baseRevision` checks, map/sheet revisions, profile/token-control validation, authoritative SQLite persistence, and patch/result realtime broadcasts. Shop checkout commands launched from map interfaces also reload the referenced map, verify the interface points at the checked-out shop, enforce player map access and profile token control, and check configured interface range before any money, stock, or inventory write.
 
 Setup/edit mode uses revision-checked whole-document SQLite saves and debounced autosave for GM preparation and maintenance. Live gameplay must not use browser-owned whole-map autosave or last-writer-wins document replacement as its concurrency strategy. Normal map-token, sheet-combat, move-usage, initiative, hazard, field-effect, terrain, token placement, maneuver, ability, and order mutations dispatch live-play commands instead of document replacement saves. Shared group inventory currently uses page-level revision-checked saves and trainer transfer APIs; future `groupInventory` live-play command scopes should be added only when in-map item consumption requires that command boundary.
 
