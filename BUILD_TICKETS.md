@@ -978,7 +978,7 @@ Let checkout commands participate in the same accepted/rejected/recovered-by-rea
 
 ## 032 — SHOPS-032: Add shop checkout audit log display for GMs
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Give GMs enough visibility to debug purchases without exposing noisy internals to players.

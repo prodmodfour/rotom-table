@@ -337,6 +337,26 @@ describe('executeShopCheckoutCommandUseCase', () => {
     expect(response.trainerSheets?.[0]).toMatchObject({ slug: 'ash', revision: 1, updatedAt: 900, money: 600 })
     expect(response.trainerSheets?.[0]?.inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
     expect(storedShop(database).entries[0]?.stock).toBe(3)
+    expect(storedShop(database).purchaseLog).toEqual([
+      {
+        opId: 'op_shopcheckout_success01',
+        purchasedAt: 900,
+        actor: { role: 'gm' },
+        paymentSource: { kind: 'trainer', slug: 'ash' },
+        deliveryTarget: { kind: 'trainer', slug: 'ash' },
+        lines: [
+          {
+            entryId: 'potion-row',
+            itemName: 'Potion',
+            section: 'medicalKit',
+            quantity: 2,
+            unitPrice: 200,
+            lineTotal: 400,
+          },
+        ],
+        total: 400,
+      },
+    ])
     expect(storedTrainer(database).money).toBe(600)
     expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
     expect(createSqliteShopCheckoutOperationRepository({ database }).getOperationResult('viridian-mart', 'op_shopcheckout_success01'))
@@ -552,6 +572,16 @@ describe('executeShopCheckoutCommandUseCase', () => {
     expect(response.shop?.entries[0]?.stock).toBe(3)
     expect(response.trainerSheets?.[0]).toMatchObject({ slug: 'ash', revision: 1, updatedAt: 990, money: 600 })
     expect(storedShop(database).entries[0]?.stock).toBe(3)
+    expect(storedShop(database).purchaseLog?.[0]).toMatchObject({
+      opId: 'op_shopcheckout_player_linked',
+      purchasedAt: 990,
+      actor: {
+        role: 'player',
+        profileId: 'profile_shoptest',
+        profileName: 'Shop Tester',
+      },
+      total: 400,
+    })
     expect(storedTrainer(database).money).toBe(600)
     expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
     expect(operationCount(database)).toBe(1)
@@ -1070,6 +1100,7 @@ describe('executeShopCheckoutCommandUseCase', () => {
     expect(published).toEqual([])
     expect(storedShop(database)).toMatchObject({ revision: 1, updatedAt: 1_000 })
     expect(storedShop(database).entries[0]?.stock).toBe(3)
+    expect(storedShop(database).purchaseLog?.map((entry) => entry.opId)).toEqual(['op_shopcheckout_duplicate'])
     expect(storedTrainer(database)).toMatchObject({ revision: 1, updatedAt: 1_000, money: 600 })
     expect(storedTrainer(database).inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
     expect(operationCount(database)).toBe(1)

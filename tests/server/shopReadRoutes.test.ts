@@ -80,7 +80,19 @@ const seedShops = (): void => {
       name: 'Open Shop',
       playerVisible: true,
       open: true,
-      entries: [{ id: 'potion', itemName: 'Potion', price: 300, stock: 5 }],
+      entries: [{ id: 'potion', itemName: 'Potion', price: 300, stock: 5, gmNotes: 'Wholesale margin' }],
+      gmNotes: 'Private shop note',
+      purchaseLog: [
+        {
+          opId: 'op_shopcheckout_secret',
+          purchasedAt: 1_700_000_000_000,
+          actor: { role: 'player', profileId: 'profile_secret', profileName: 'Secret Buyer' },
+          paymentSource: { kind: 'trainer', slug: 'ash' },
+          deliveryTarget: { kind: 'trainer', slug: 'ash' },
+          lines: [{ entryId: 'potion', itemName: 'Potion', section: 'medicalKit', quantity: 1, unitPrice: 300, lineTotal: 300 }],
+          total: 300,
+        },
+      ],
     },
   })
   repository.create({
@@ -128,6 +140,8 @@ describe('shop read API routes', () => {
       revision: 0,
       updatedAt: 100,
       name: 'Open Shop',
+      gmNotes: 'Private shop note',
+      purchaseLog: [expect.objectContaining({ opId: 'op_shopcheckout_secret' })],
     })
     expect(listResponse.shops.find((shop) => shop.slug === 'closed-shop')).toMatchObject({
       slug: 'closed-shop',
@@ -165,12 +179,18 @@ describe('shop read API routes', () => {
       playerVisible: true,
       open: true,
     })
+    expect(listResponse.shops[0]).not.toHaveProperty('gmNotes')
+    expect(listResponse.shops[0]).not.toHaveProperty('purchaseLog')
+    expect(listResponse.shops[0]!.entries[0]).not.toHaveProperty('gmNotes')
 
     const loadResponse = await invokeGetRoute(loadRoute, SHOP_API_PATHS.load, {
       role: 'player',
       query: { slug: 'open-shop' },
     }) as ShopLoadResponse
     expect(loadResponse.shop.slug).toBe('open-shop')
+    expect(loadResponse.shop).not.toHaveProperty('gmNotes')
+    expect(loadResponse.shop).not.toHaveProperty('purchaseLog')
+    expect(loadResponse.shop.entries[0]!).not.toHaveProperty('gmNotes')
     expect(loadResponse.revision).toBe(0)
     expect(loadResponse.updatedAt).toBe(100)
   })

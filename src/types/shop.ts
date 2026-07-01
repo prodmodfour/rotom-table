@@ -1,5 +1,6 @@
 import { isSlug } from '#shared/paths'
 import { normalizeRevision } from '#shared/sessionRevisions'
+import type { AuthRole } from '#shared/auth'
 import { TRAINER_INVENTORY_SECTIONS, type TrainerInventoryKey } from '~/utils/sheets/trainerInventorySections'
 
 export const SHOP_TABLE_ROW_ID_PREFIX = 'shop-entry'
@@ -9,6 +10,7 @@ export const SHOP_MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER
 
 export const SHOP_PAYMENT_SOURCE_KINDS = ['trainer', 'groupInventory'] as const
 export const SHOP_DELIVERY_TARGET_KINDS = ['trainer', 'groupInventory'] as const
+export const SHOP_PURCHASE_LOG_LIMIT = 25
 
 export type ShopPaymentSourceKind = (typeof SHOP_PAYMENT_SOURCE_KINDS)[number]
 export type ShopDeliveryTargetKind = (typeof SHOP_DELIVERY_TARGET_KINDS)[number]
@@ -32,6 +34,41 @@ export interface ShopEntry {
   tags?: string[]
 }
 
+export interface ShopPurchaseAuditActorSummary {
+  role: AuthRole
+  profileId?: string
+  profileName?: string
+}
+
+export interface ShopPurchaseAuditPaymentSource {
+  kind: ShopPaymentSourceKind
+  slug: string
+}
+
+export interface ShopPurchaseAuditDeliveryTarget {
+  kind: ShopDeliveryTargetKind
+  slug: string
+}
+
+export interface ShopPurchaseAuditLine {
+  entryId: string
+  itemName: string
+  section: ShopEntrySectionKey
+  quantity: number
+  unitPrice: number
+  lineTotal: number
+}
+
+export interface ShopPurchaseAuditEntry {
+  opId: string
+  purchasedAt: number
+  actor: ShopPurchaseAuditActorSummary
+  paymentSource: ShopPurchaseAuditPaymentSource
+  deliveryTarget: ShopPurchaseAuditDeliveryTarget
+  lines: ShopPurchaseAuditLine[]
+  total: number
+}
+
 export interface ShopTableDocument {
   slug: string
   revision: number
@@ -45,6 +82,7 @@ export interface ShopTableDocument {
   allowedDeliveryTargets: ShopDeliveryTargetKind[]
   entries: ShopEntry[]
   gmNotes?: string
+  purchaseLog?: ShopPurchaseAuditEntry[]
 }
 
 export interface ShopEntryRowIdContext {
@@ -270,6 +308,129 @@ const normalizeTags = (value: unknown): string[] | undefined => {
   return tags.length > 0 ? tags : undefined
 }
 
+const normalizePurchaseAuditActor = (value: unknown): ShopPurchaseAuditActorSummary | null => {
+  if (!isRecord(value)) return null
+  const role = value.role === 'gm' || value.role === 'player' ? value.role : null
+  if (!role) return null
+
+  const actor: ShopPurchaseAuditActorSummary = { role }
+  const profileId = normalizeOptionalString(value.profileId)
+  if (profileId !== undefined) actor.profileId = profileId
+
+  const profileName = normalizeOptionalString(value.profileName ?? value.displayName)
+  if (profileName !== undefined) actor.profileName = profileName
+
+  return actor
+}
+
+const normalizePurchaseAuditPaymentSource = (value: unknown): ShopPurchaseAuditPaymentSource | null => {
+  if (!isRecord(value)) return null
+  const kind = trimString(value.kind)
+  const slug = normalizeOptionalString(value.slug)
+  if (!kind || !isShopPaymentSourceKind(kind) || !slug || !isSlug(slug)) return null
+  return { kind, slug }
+}
+
+const normalizePurchaseAuditDeliveryTarget = (value: unknown): ShopPurchaseAuditDeliveryTarget | null => {
+  if (!isRecord(value)) return null
+  const kind = trimString(value.kind)
+  const slug = normalizeOptionalString(value.slug)
+  if (!kind || !isShopDeliveryTargetKind(kind) || !slug || !isSlug(slug)) return null
+  return { kind, slug }
+}
+
+const normalizePurchaseAuditLine = (value: unknown): ShopPurchaseAuditLine | null => {
+  if (!isRecord(value)) return null
+
+  const entryId = normalizeOptionalString(value.entryId)
+  const itemName = normalizeOptionalString(value.itemName)
+  const quantity = coerceSafeNonNegativeInteger(value.quantity)
+  if (!entryId || !itemName || quantity <= 0) return null
+
+  const unitPrice = coerceSafeNonNegativeInteger(value.unitPrice)
+  const fallbackLineTotal = Math.min(unitPrice * quantity, SHOP_MAX_SAFE_INTEGER)
+
+  return {
+    entryId,
+    itemName,
+    section: normalizeShopEntrySection(value.section),
+    quantity,
+    unitPrice,
+    lineTotal: coerceSafeNonNegativeInteger(value.lineTotal, fallbackLineTotal),
+  }
+}
+
+const normalizePurchaseAuditLines = (value: unknown): ShopPurchaseAuditLine[] => {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((line) => {
+    const normalized = normalizePurchaseAuditLine(line)
+    return normalized ? [normalized] : []
+  })
+}
+
+const normalizePurchaseAuditEntry = (value: unknown): ShopPurchaseAuditEntry | null => {
+  if (!isRecord(value)) return null
+
+  const opId = normalizeOptionalString(value.opId)
+  const actor = normalizePurchaseAuditActor(value.actor)
+  const paymentSource = normalizePurchaseAuditPaymentSource(value.paymentSource)
+  const deliveryTarget = normalizePurchaseAuditDeliveryTarget(value.deliveryTarget)
+  const lines = normalizePurchaseAuditLines(value.lines)
+
+  if (!opId || !actor || !paymentSource || !deliveryTarget || lines.length === 0) return null
+
+  const purchasedAt = coerceSafeNonNegativeInteger(value.purchasedAt ?? value.timestamp)
+  const fallbackTotal = Math.min(
+    lines.reduce((sum, line) => sum + line.lineTotal, 0),
+    SHOP_MAX_SAFE_INTEGER,
+  )
+
+  return {
+    opId,
+    purchasedAt,
+    actor,
+    paymentSource,
+    deliveryTarget,
+    lines,
+    total: coerceSafeNonNegativeInteger(value.total ?? value.totalPrice, fallbackTotal),
+  }
+}
+
+const normalizePurchaseAuditLogLimit = (limit: unknown): number => {
+  if (typeof limit !== 'number' || !Number.isSafeInteger(limit) || limit <= 0) return SHOP_PURCHASE_LOG_LIMIT
+  return Math.min(limit, SHOP_PURCHASE_LOG_LIMIT)
+}
+
+export const normalizeShopPurchaseAuditLog = (
+  value: unknown,
+  limit: number = SHOP_PURCHASE_LOG_LIMIT,
+): ShopPurchaseAuditEntry[] => {
+  if (!Array.isArray(value)) return []
+
+  const maxEntries = normalizePurchaseAuditLogLimit(limit)
+  const entries: ShopPurchaseAuditEntry[] = []
+  for (const rawEntry of value) {
+    const entry = normalizePurchaseAuditEntry(rawEntry)
+    if (!entry) continue
+    entries.push(entry)
+    if (entries.length >= maxEntries) break
+  }
+
+  return entries
+}
+
+export const appendShopPurchaseAuditEntry = (
+  shop: ShopTableDocument,
+  entry: ShopPurchaseAuditEntry,
+  limit: number = SHOP_PURCHASE_LOG_LIMIT,
+): ShopTableDocument => ({
+  ...shop,
+  purchaseLog: normalizeShopPurchaseAuditLog([
+    entry,
+    ...(shop.purchaseLog ?? []),
+  ], limit),
+})
+
 const setOptionalEntryStringField = (
   entry: ShopEntry,
   field: OptionalShopEntryStringField,
@@ -374,6 +535,9 @@ export const normalizeShopTableDocument = (
 
   const gmNotes = normalizeOptionalString(source.gmNotes)
   if (gmNotes !== undefined) document.gmNotes = gmNotes
+
+  const purchaseLog = normalizeShopPurchaseAuditLog(source.purchaseLog)
+  if (purchaseLog.length > 0) document.purchaseLog = purchaseLog
 
   return document
 }

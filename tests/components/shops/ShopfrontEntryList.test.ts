@@ -42,6 +42,17 @@ const makeShop = (overrides: Partial<ShopTableDocument> = {}): ShopTableDocument
     }),
   ],
   gmNotes: 'Private shop setup note.',
+  purchaseLog: [
+    {
+      opId: 'op_secret_audit',
+      purchasedAt: 1_700_000_000_000,
+      actor: { role: 'player', profileId: 'profile_secret', profileName: 'Secret Buyer' },
+      paymentSource: { kind: 'trainer', slug: 'secret-trainer' },
+      deliveryTarget: { kind: 'trainer', slug: 'secret-trainer' },
+      lines: [{ entryId: 'potion', itemName: 'Potion', section: 'medicalKit', quantity: 1, unitPrice: 300, lineTotal: 300 }],
+      total: 300,
+    },
+  ],
   ...overrides,
 })
 
@@ -91,6 +102,9 @@ describe('ShopfrontEntryList', () => {
     expect(text).not.toContain('Private shop setup note.')
     expect(text).not.toContain('Do not show this GM-only margin note.')
     expect(text).not.toContain('Hidden cave logistics note.')
+    expect(text).not.toContain('Secret Buyer')
+    expect(text).not.toContain('secret-trainer')
+    expect(text).not.toContain('op_secret_audit')
   })
 
   it('shows a read-only empty state when a shop has no entries', () => {

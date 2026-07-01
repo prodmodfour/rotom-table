@@ -18,6 +18,7 @@ import { openRotomDatabase, type RotomDatabase } from '../../server/storage/data
 import { createSqliteMapRepository } from '../../server/storage/mapRepository'
 import { createSqliteRealtimeEventRepository } from '../../server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository } from '../../server/storage/sheetRepository'
+import { createSqliteShopTableRepository } from '../../server/storage/shopTableRepository'
 import { createRealtimeHub } from '../../server/utils/realtime'
 import type { SseRequest, SseResponse } from '../../server/utils/sseStream'
 import { mapDoc, pokemonSheet, trainerSheet } from './helpers/durableLibraryHarness'
@@ -405,6 +406,65 @@ describe('repository-backed realtime SSE replay', () => {
       },
     })
     expect(connection.writes.join('')).not.toContain('secret GM hook')
+    await closeStream(connection)
+  })
+
+  it('redacts shop GM notes and purchase audit logs while delivering allowed shop events to players', async () => {
+    const harness = createHarness()
+    const shop = createSqliteShopTableRepository(harness.database).create({
+      slug: 'open-shop',
+      now: 1_000,
+      document: {
+        slug: 'open-shop',
+        name: 'Open Shop',
+        playerVisible: true,
+        open: true,
+        gmNotes: 'private setup note',
+        entries: [{ id: 'potion', itemName: 'Potion', price: 300, stock: 5, gmNotes: 'private margin' }],
+        purchaseLog: [
+          {
+            opId: 'op_shopcheckout_secret',
+            purchasedAt: 1_700_000_000_000,
+            actor: { role: 'player', profileId: 'profile_secret', profileName: 'Secret Buyer' },
+            paymentSource: { kind: 'trainer', slug: 'ash' },
+            deliveryTarget: { kind: 'trainer', slug: 'ash' },
+            lines: [{ entryId: 'potion', itemName: 'Potion', section: 'medicalKit', quantity: 1, unitPrice: 300, lineTotal: 300 }],
+            total: 300,
+          },
+        ],
+      },
+    }).document
+    harness.realtime.append({
+      event: {
+        channel: 'shop:open-shop',
+        type: 'updated',
+        data: { slug: 'open-shop', document: shop },
+      },
+      access: { kind: 'shop-access', shopSlug: 'open-shop' },
+      timestamp: 1_000,
+    })
+
+    const connection = startStream({
+      harness,
+      afterSequence: 0,
+      principal: { role: 'player', playerProfile: null, sessionAccess: null },
+    })
+    const frames = await waitForFrameCount(connection.writes, 2)
+
+    expect(frames[0]?.data).toMatchObject({
+      type: 'updated',
+      data: {
+        slug: 'open-shop',
+        document: expect.not.objectContaining({
+          gmNotes: expect.anything(),
+          purchaseLog: expect.anything(),
+        }),
+      },
+    })
+    expect(connection.writes.join('')).not.toContain('private setup note')
+    expect(connection.writes.join('')).not.toContain('private margin')
+    expect(connection.writes.join('')).not.toContain('Secret Buyer')
+    expect(connection.writes.join('')).not.toContain('op_shopcheckout_secret')
     await closeStream(connection)
   })
 

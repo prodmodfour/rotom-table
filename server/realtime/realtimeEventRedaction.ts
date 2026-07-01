@@ -1,27 +1,12 @@
 import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
 import { isSheetKind } from '#shared/sheets'
 import { redactSheetRecordForPlayer } from '../utils/sheetPrivacy'
+import { redactShopRecordForPlayer, redactUnknownShopRecordForPlayer } from '../utils/shopPrivacy'
 import type { RealtimeDeliveryPrincipal } from './realtimeEventAccessPolicy'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
 )
-
-const redactShopDocumentForPlayer = (document: Record<string, unknown>): Record<string, unknown> => {
-  const redacted = { ...document }
-  delete redacted.gmNotes
-
-  if (Array.isArray(document.entries)) {
-    redacted.entries = document.entries.map((entry) => {
-      if (!isRecord(entry)) return entry
-      const redactedEntry = { ...entry }
-      delete redactedEntry.gmNotes
-      return redactedEntry
-    })
-  }
-
-  return redacted
-}
 
 const redactedSheetRealtimeEvent = (
   event: Record<string, unknown>,
@@ -48,7 +33,7 @@ const redactedShopRealtimeEvent = (
     ...event,
     data: {
       ...data,
-      document: redactShopDocumentForPlayer(data.document),
+      document: redactShopRecordForPlayer(data.document),
     },
   }
 }
@@ -62,12 +47,12 @@ const redactedShopCheckoutResultRealtimeEvent = (
   const result = { ...data.result }
   if (result.ok === true && isRecord(result.documents)) {
     const documents = { ...result.documents }
-    if (isRecord(documents.shop)) documents.shop = redactShopDocumentForPlayer(documents.shop)
+    if (isRecord(documents.shop)) documents.shop = redactShopRecordForPlayer(documents.shop)
     delete documents.groupInventories
     delete documents.trainerSheets
     result.documents = documents
   } else if (result.ok === false && isRecord(result.currentState)) {
-    result.currentState = redactShopDocumentForPlayer(result.currentState)
+    result.currentState = redactUnknownShopRecordForPlayer(result.currentState)
   }
 
   return {

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import ShopEntryTable from '~/components/shops/ShopEntryTable.vue'
+import ShopPurchaseAuditLog from '~/components/shops/ShopPurchaseAuditLog.vue'
 import { useGmShopEditorPage } from '~/composables/shops/useGmShopEditorPage'
 import { routeSlugParam } from '~/utils/routeParams'
 import { shopfrontPath, shopLibraryPath } from '~/utils/shopRoutes'
@@ -270,6 +271,8 @@ useHead(() => ({
           ></textarea>
         </label>
       </section>
+
+      <ShopPurchaseAuditLog class="shop-edit-panel panel-card" :entries="draft.purchaseLog ?? []" />
 
       <section class="shop-edit-panel panel-card" aria-labelledby="shop-edit-save-title">
         <div>

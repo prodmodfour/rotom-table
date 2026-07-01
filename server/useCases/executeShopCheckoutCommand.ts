@@ -13,7 +13,11 @@ import type {
 } from '#shared/livePlayCommands'
 import type { GroupInventoryDocument } from '~/types/groupInventory'
 import type { MapShopInterface, SheetPlacement, TabletopMap } from '~/types/map'
-import type { ShopTableDocument } from '~/types/shop'
+import {
+  appendShopPurchaseAuditEntry,
+  type ShopPurchaseAuditEntry,
+  type ShopTableDocument,
+} from '~/types/shop'
 import type { TrainerSheet } from '~/types/trainerSheet'
 import {
   ShopCheckoutCalculationError,
@@ -893,6 +897,55 @@ const changedDocuments = (
   ...(documents.trainerSheets.length > 0 ? { trainerSheets: documents.trainerSheets } : {}),
 })
 
+const purchaseAuditActor = (
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+): ShopPurchaseAuditEntry['actor'] => ({
+  role: input.role,
+  ...(input.playerProfile?.id ? { profileId: input.playerProfile.id } : {}),
+  ...(input.playerProfile?.displayName ? { profileName: input.playerProfile.displayName } : {}),
+})
+
+const purchaseAuditEntry = (
+  command: ShopCheckoutLivePlayCommand,
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+  applied: AppliedShopCheckoutDocuments,
+  purchasedAt: number,
+): ShopPurchaseAuditEntry => ({
+  opId: command.opId,
+  purchasedAt,
+  actor: purchaseAuditActor(input),
+  paymentSource: {
+    kind: command.payload.paymentSource.kind,
+    slug: command.payload.paymentSource.slug,
+  },
+  deliveryTarget: {
+    kind: command.payload.deliveryTarget.kind,
+    slug: command.payload.deliveryTarget.slug,
+  },
+  lines: applied.lines.map((line) => ({
+    entryId: line.entryId,
+    itemName: line.itemName,
+    section: line.section,
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    lineTotal: line.lineTotal,
+  })),
+  total: applied.totalPrice,
+})
+
+const withPurchaseAuditEntry = (
+  command: ShopCheckoutLivePlayCommand,
+  input: ExecuteShopCheckoutCommandUseCaseInput,
+  applied: AppliedShopCheckoutDocuments,
+  purchasedAt: number,
+): AppliedShopCheckoutDocuments => ({
+  ...applied,
+  shop: appendShopPurchaseAuditEntry(
+    applied.shop,
+    purchaseAuditEntry(command, input, applied, purchasedAt),
+  ),
+})
+
 const acceptedResult = (
   command: ShopCheckoutLivePlayCommand,
   loaded: LoadedShopCheckoutDocuments,
@@ -1043,16 +1096,17 @@ const executeFreshCheckout = (
     loaded = loadCheckoutDocuments(command, input, dependencies)
     const applied = applyCheckout(command, loaded, dependencies)
     const updatedAt = dependencies.now()
+    const auditedApplied = withPurchaseAuditEntry(command, input, applied, updatedAt)
 
     return dependencies.database.withTransaction(() => {
-      const persistedShop = persistShopDocument(command, applied, dependencies, updatedAt)
-      const persistedParticipants = persistParticipantDocuments(applied, dependencies, updatedAt)
+      const persistedShop = persistShopDocument(command, auditedApplied, dependencies, updatedAt)
+      const persistedParticipants = persistParticipantDocuments(auditedApplied, dependencies, updatedAt)
       const persisted = {
         shop: persistedShop,
         groupInventories: persistedParticipants.groupInventories,
         trainerSheets: persistedParticipants.trainerSheets,
       }
-      const result = acceptedResult(command, loaded as LoadedShopCheckoutDocuments, applied, persisted)
+      const result = acceptedResult(command, loaded as LoadedShopCheckoutDocuments, auditedApplied, persisted)
       const storedResult = storeTerminalResult(command, commandHash, result, dependencies)
       if (storedResult.ok !== true || 'duplicate' in storedResult) return executedFreshResult(storedResult)
       return executedFreshResult(

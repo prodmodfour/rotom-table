@@ -244,10 +244,18 @@ describe('shop checkout API route', () => {
       shopRevision: 1,
       totalPrice: 400,
       documents: {
-        shop: { slug: 'viridian-mart', revision: 1 },
+        shop: {
+          slug: 'viridian-mart',
+          revision: 1,
+          purchaseLog: [expect.objectContaining({ opId: 'op_shopcheckout_route_gm', total: 400 })],
+        },
         trainerSheets: [{ slug: 'ash', revision: 1, money: 600 }],
       },
-      shop: { slug: 'viridian-mart', revision: 1 },
+      shop: {
+        slug: 'viridian-mart',
+        revision: 1,
+        purchaseLog: [expect.objectContaining({ opId: 'op_shopcheckout_route_gm', total: 400 })],
+      },
       trainerSheets: [{ slug: 'ash', revision: 1, money: 600 }],
     })
     expect(response.lines).toEqual([
@@ -289,6 +297,12 @@ describe('shop checkout API route', () => {
       shopRevision: 1,
       shop: { revision: 1, entries: [{ stock: 3 }] },
       trainerSheets: [{ slug: 'ash', revision: 1, money: 600 }],
+    })
+    expect(response.shop).not.toHaveProperty('purchaseLog')
+    expect(response.documents.shop).not.toHaveProperty('purchaseLog')
+    expect(storedShop().purchaseLog?.[0]).toMatchObject({
+      opId: 'op_shopcheckout_route_player',
+      actor: { role: 'player', profileName: 'Ash' },
     })
     expect(storedTrainer().inventory?.medicalKit).toEqual([{ name: 'Potion', qty: 2, cost: 200 }])
     expect(mocks.resolvePlayerProfileForPolicy).toHaveBeenCalledWith('profile_ash00000')

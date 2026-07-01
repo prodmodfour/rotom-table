@@ -88,6 +88,7 @@ describe('shop page shells', () => {
 
     expect(source).toContain("import AppNavigation from '~/components/AppNavigation.vue'")
     expect(source).toContain("import ShopEntryTable from '~/components/shops/ShopEntryTable.vue'")
+    expect(source).toContain("import ShopPurchaseAuditLog from '~/components/shops/ShopPurchaseAuditLog.vue'")
     expect(source).toContain("import { useGmShopEditorPage } from '~/composables/shops/useGmShopEditorPage'")
     expect(source).toContain("import { routeSlugParam } from '~/utils/routeParams'")
     expect(source).toContain("import { shopfrontPath, shopLibraryPath } from '~/utils/shopRoutes'")
@@ -113,6 +114,7 @@ describe('shop page shells', () => {
     expect(source).toContain('data-testid="shop-editor-delivery-target"')
     expect(source).toContain('<ShopEntryTable :entries="draft.entries" @update:entries="setEntries" />')
     expect(source).toContain('data-testid="shop-editor-gm-notes"')
+    expect(source).toContain('<ShopPurchaseAuditLog class="shop-edit-panel panel-card" :entries="draft.purchaseLog ?? []" />')
     expect(source).toContain('Saving sends the loaded revision as <code>expectedRevision</code>')
     expect(source).toContain('data-testid="shop-editor-save"')
     expect(source).toContain('data-testid="shop-editor-reload-conflict"')

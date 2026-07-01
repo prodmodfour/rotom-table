@@ -6,6 +6,7 @@ import {
   type ShopTableRepository,
   type StoredShopTableDocument,
 } from '../storage/shopTableRepository'
+import { redactShopForPlayer } from '../utils/shopPrivacy'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 
 export class LoadShopTableUseCaseError extends UseCaseHttpError<400 | 403 | 404> {}
@@ -64,7 +65,7 @@ export const listShopTablesUseCase = (
   const shops = shopTableRepository.list().map(storedShopTableToDocument)
 
   if (input.role === 'gm') return { shops }
-  return { shops: shops.filter(shopIsPlayerLoadable) }
+  return { shops: shops.filter(shopIsPlayerLoadable).map(redactShopForPlayer) }
 }
 
 export const loadShopTableUseCase = (
@@ -82,9 +83,11 @@ export const loadShopTableUseCase = (
     if (shop.open !== true) throw new LoadShopTableUseCaseError(403, 'Shop is closed')
   }
 
+  const responseShop = input.role === 'player' ? redactShopForPlayer(shop) : shop
+
   return {
-    shop,
-    revision: shop.revision,
-    updatedAt: shop.updatedAt,
+    shop: responseShop,
+    revision: responseShop.revision,
+    updatedAt: responseShop.updatedAt,
   }
 }
