@@ -41,16 +41,6 @@ useHead({
   <main class="shops-page">
     <AppNavigation />
 
-    <header class="shops-hero panel-card">
-      <div>
-        <p class="shops-eyebrow">Campaign shops</p>
-        <h1>Shops</h1>
-        <p>
-          Shop tables are campaign-level SQLite documents. GMs manage reusable shops here, while players browse open player-visible shopfronts.
-        </p>
-      </div>
-    </header>
-
     <section v-if="isGm" class="shops-state" aria-label="GM shop library">
       <article class="shops-panel shops-panel--toolbar panel-card">
         <div>
@@ -166,7 +156,6 @@ useHead({
   color: var(--ink);
 }
 
-.shops-hero,
 .shops-panel {
   display: grid;
   gap: 0.7rem;
@@ -177,7 +166,6 @@ useHead({
   align-items: center;
 }
 
-.shops-hero p,
 .shops-panel p,
 .shops-inline-error {
   max-width: 68ch;
@@ -194,20 +182,12 @@ useHead({
   text-transform: uppercase;
 }
 
-.shops-hero h1,
 .shops-panel h2 {
   margin: 0;
   color: var(--ink-bright);
   font-family: var(--font-book);
-  letter-spacing: 0.04em;
-}
-
-.shops-hero h1 {
-  font-size: clamp(2rem, 5vw, 3.4rem);
-}
-
-.shops-panel h2 {
   font-size: clamp(1.45rem, 3vw, 2.1rem);
+  letter-spacing: 0.04em;
 }
 
 .shops-state {
