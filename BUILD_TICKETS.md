@@ -869,7 +869,7 @@ interface MapShopInterface {
 
 ## 028 — SHOPS-028: Add GM map UI for shop interfaces
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Let GMs place or configure shop interfaces on a map.

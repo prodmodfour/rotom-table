@@ -269,6 +269,7 @@ export const useEditableMap = (
     else target.playerVisible = next.playerVisible
 
     assignIfChanged(target, 'voxels', next.voxels)
+    assignIfChanged(target, 'shopInterfaces', next.shopInterfaces)
     assignIfChanged(target, 'hazards', next.hazards)
     assignIfChanged(target, 'fieldEffects', next.fieldEffects)
     assignIfChanged(target, 'placements', next.placements)

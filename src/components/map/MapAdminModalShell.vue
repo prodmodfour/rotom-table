@@ -42,7 +42,9 @@ const emit = defineEmits<{
 }
 
 .admin-panel {
-  width: min(440px, 100%);
+  width: min(720px, 100%);
+  max-height: min(92vh, 980px);
+  overflow-y: auto;
   border: 1px solid var(--rule-soft);
   border-radius: 18px;
   background:

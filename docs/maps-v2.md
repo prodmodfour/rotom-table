@@ -37,7 +37,7 @@ The editor renders hazards as floor decals and persists them in `hazards[]`. The
 
 ## Shop interfaces
 
-`shopInterfaces[]` stores map-local access points for reusable campaign shop tables. Each interface has a stable map-local `id`, a `shopSlug` reference, a display `label`, optional map `position`, optional `interactionRangeMeters`, and optional `playerVisible` flag. The referenced shop document remains authoritative for item catalog, price, finite/unlimited stock, and open/closed state; maps must not copy that commerce state into metadata or interface rows.
+`shopInterfaces[]` stores map-local access points for reusable campaign shop tables. Each interface has a stable map-local `id`, a `shopSlug` reference, a display `label`, optional map `position`, optional `interactionRangeMeters`, and optional `playerVisible` flag. GMs manage these rows from the map admin panel while the map is in Prepare Map mode: the panel loads existing shop tables, adds/removes interfaces, changes the referenced shop, and edits label, position, range, and player visibility through the normal revision-checked setup/edit map save. Player users cannot edit shop interfaces. The referenced shop document remains authoritative for item catalog, price, finite/unlimited stock, and open/closed state; maps must not copy that commerce state into metadata or interface rows.
 
 ## Field effects
 

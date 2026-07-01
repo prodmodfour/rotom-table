@@ -40,6 +40,7 @@ import {
   useMapDimensionReconciliation,
 } from '~/composables/map-editor/useMapDimensions'
 import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
+import { useMapShopInterfaces } from '~/composables/map-editor/useMapShopInterfaces'
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
@@ -1822,6 +1823,25 @@ const sharedMapInteractionModeBusy = computed(() => (
   sharedMapInteractionModeStatus.value === 'loading' || sharedMapInteractionModeStatus.value === 'saving'
 ))
 const setupEditActiveForGm = computed(() => isSetupEditMode())
+const {
+  shopOptions: mapShopInterfaceShopOptions,
+  shopListStatus: mapShopInterfaceShopListStatus,
+  shopListErrorMessage: mapShopInterfaceShopListErrorMessage,
+  mapShopInterfaces,
+  loadShopOptions: loadMapShopInterfaceShopOptions,
+  addShopInterface: addMapShopInterface,
+  updateShopInterface: updateMapShopInterface,
+  removeShopInterface: removeMapShopInterface,
+} = useMapShopInterfaces({
+  map,
+  isGm,
+  setupEditActive: setupEditActiveForGm,
+})
+
+watch([adminPanelOpen, isGm], ([open, gm]) => {
+  if (!open || !gm) return
+  void loadMapShopInterfaceShopOptions()
+}, { immediate: true })
 
 const setGroundLevelYFromAdmin = (value: string) => {
   if (!isSetupEditMode()) return
@@ -2122,11 +2142,19 @@ useMapDimensionReconciliation({
         :interaction-mode-busy="sharedMapInteractionModeBusy"
         :interaction-mode-error="sharedMapInteractionModeError"
         :setup-edit-active="setupEditActiveForGm"
+        :shop-interfaces="mapShopInterfaces"
+        :shops="mapShopInterfaceShopOptions"
+        :shop-list-status="mapShopInterfaceShopListStatus"
+        :shop-list-error="mapShopInterfaceShopListErrorMessage"
         @close="adminPanelOpen = false"
         @set-ground-level-y="setGroundLevelYFromAdmin"
         @update-player-visible="setMapPlayerVisibleFromAdmin"
         @clear-combat-log="clearCombatLogFromAdmin"
         @set-interaction-mode="setMapInteractionModeFromAdmin"
+        @reload-shops="loadMapShopInterfaceShopOptions"
+        @add-shop-interface="addMapShopInterface"
+        @update-shop-interface="updateMapShopInterface"
+        @remove-shop-interface="removeMapShopInterface"
       />
     </template>
   </MapEditorLayout>

@@ -238,6 +238,28 @@ describe('useEditableMap autosave boundary', () => {
     })
   })
 
+  it('adopts authoritative setup/edit shop interface replacements', async () => {
+    const editable = useEditableMap('arena-map', { debounceMs: 10, interactionMode: setupEditMode() })
+    await flushPromises()
+
+    editable.applyPersistedMap(mapFixture({
+      revision: 2,
+      shopInterfaces: [{
+        id: 'counter-a',
+        shopSlug: 'viridian-mart',
+        label: 'Potion Counter',
+        playerVisible: true,
+      }],
+    }))
+
+    expect(editable.map.value?.shopInterfaces).toEqual([{
+      id: 'counter-a',
+      shopSlug: 'viridian-mart',
+      label: 'Potion Counter',
+      playerVisible: true,
+    }])
+  })
+
   it('increments a map data revision for full persisted replacements without treating autosave as a reload', async () => {
     const editable = useEditableMap('arena-map', { debounceMs: 10, interactionMode: setupEditMode() })
     await flushPromises()

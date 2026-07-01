@@ -4,9 +4,16 @@ import MapAdminGroundLevelControl from '~/components/map/MapAdminGroundLevelCont
 import MapAdminHeader from '~/components/map/MapAdminHeader.vue'
 import MapAdminModeControl from '~/components/map/MapAdminModeControl.vue'
 import MapAdminModalShell from '~/components/map/MapAdminModalShell.vue'
+import MapAdminShopInterfacesControl from '~/components/map/MapAdminShopInterfacesControl.vue'
 import MapAdminYSummary from '~/components/map/MapAdminYSummary.vue'
 import MapVisibilityToggle from '~/components/map/MapVisibilityToggle.vue'
 import type { MapInteractionMode } from '#shared/mapInteractionMode'
+import type { MapShopInterface } from '~/types/map'
+import type { ShopTableDocument } from '~/types/shop'
+import type {
+  MapShopInterfacePatch,
+  MapShopInterfaceShopListStatus,
+} from '~/composables/map-editor/useMapShopInterfaces'
 
 defineProps<{
   groundLevelYMax: number
@@ -19,6 +26,10 @@ defineProps<{
   interactionModeBusy?: boolean
   interactionModeError?: string | null
   setupEditActive?: boolean
+  shopInterfaces: readonly MapShopInterface[]
+  shops: readonly ShopTableDocument[]
+  shopListStatus?: MapShopInterfaceShopListStatus
+  shopListError?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -27,6 +38,10 @@ const emit = defineEmits<{
   (event: 'update-player-visible', value: boolean): void
   (event: 'clear-combat-log'): void
   (event: 'set-interaction-mode', value: MapInteractionMode): void
+  (event: 'reload-shops'): void
+  (event: 'add-shop-interface', shopSlug: string): void
+  (event: 'remove-shop-interface', id: string): void
+  (event: 'update-shop-interface', id: string, patch: MapShopInterfacePatch): void
 }>()
 
 </script>
@@ -53,6 +68,18 @@ const emit = defineEmits<{
       :entry-count="combatLogEntryCount"
       :disabled="!setupEditActive"
       @clear-combat-log="emit('clear-combat-log')"
+    />
+
+    <MapAdminShopInterfacesControl
+      :interfaces="shopInterfaces"
+      :shops="shops"
+      :shop-list-status="shopListStatus"
+      :shop-list-error="shopListError"
+      :disabled="!setupEditActive"
+      @reload-shops="emit('reload-shops')"
+      @add-shop-interface="emit('add-shop-interface', $event)"
+      @remove-shop-interface="emit('remove-shop-interface', $event)"
+      @update-shop-interface="(id, patch) => emit('update-shop-interface', id, patch)"
     />
 
     <MapAdminGroundLevelControl
