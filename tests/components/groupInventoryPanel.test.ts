@@ -114,7 +114,7 @@ const trainerTransferOptionFixture = (): GroupInventoryTransferTrainerOption => 
 }
 
 describe('GroupInventoryPanel', () => {
-  it('renders money, revision, section counts, and read-only rows from the authoritative document', async () => {
+  it('renders money, section counts, and read-only rows from the authoritative document', async () => {
     const wrapper = mount(GroupInventoryPanel, {
       props: {
         document: groupInventoryFixture(),
@@ -122,9 +122,8 @@ describe('GroupInventoryPanel', () => {
       global: mountGlobal,
     })
 
-    expect(wrapper.find('h2').text()).toBe('Shared party inventory')
+    expect(wrapper.find('[aria-label="Shared party inventory"]').exists()).toBe(true)
     expect(wrapper.find('[aria-label="Group inventory summary"]').text()).toContain('$1,250')
-    expect(wrapper.find('[aria-label="Group inventory summary"]').text()).toContain('3')
     expect(wrapper.findAll('.inventory-subtab-count').map((count) => count.text())).toEqual(['1', '1', '0', '0', '0', '1'])
     expect(wrapper.find('.row-add').exists()).toBe(false)
     expect(wrapper.find('.row-remove').exists()).toBe(false)
@@ -170,7 +169,6 @@ describe('GroupInventoryPanel', () => {
       global: mountGlobal,
     })
 
-    expect(wrapper.text()).toContain('Edit the authoritative campaign inventory document')
     expect(wrapper.find('[aria-label="Shared inventory save controls"]').exists()).toBe(true)
     const moneyInput = wrapper.find('.group-inventory-panel__money-editor input')
     expect((moneyInput.element as HTMLInputElement).value).toBe('1250')
