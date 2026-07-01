@@ -1,7 +1,7 @@
 import { computed, getCurrentScope, onMounted, onScopeDispose, ref, watch, type ComputedRef, type Ref } from 'vue'
 import type { AuthRole } from '#shared/auth'
 import { groupInventoryChannel, isRealtimeEcho, sheetChannel, type RealtimeEvent } from '#shared/realtime'
-import { type LivePlayRandomUuidProvider, type ShopCheckoutCommandResult } from '#shared/livePlayCommands'
+import { type LivePlayRandomUuidProvider, type ShopCheckoutCommandResult, type ShopCheckoutOrigin } from '#shared/livePlayCommands'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import { normalizeRevision } from '#shared/sessionRevisions'
 import { useShopCheckoutCommands, type ShopCheckoutCommandDispatchResult, type ShopCheckoutCommandStatus } from '~/composables/shops/useShopCheckoutCommands'
@@ -66,6 +66,7 @@ export interface UseShopfrontCheckoutOptions {
   readonly isGm: ReadonlyValueRef<boolean>
   readonly isPlayer: ReadonlyValueRef<boolean>
   readonly selectedProfileId: ReadonlyValueRef<PlayerProfileId | null | undefined>
+  readonly checkoutOrigin?: ReadonlyValueRef<ShopCheckoutOrigin | null | undefined>
   readonly apiClient?: Pick<ApiClient, 'getJson' | 'postJson'>
   readonly outbox?: LivePlayCommandOutbox
   readonly leaseOwner?: string
@@ -635,6 +636,7 @@ export const useShopfrontCheckout = (
       paymentSource: participantReference(paymentOption),
       deliveryTarget: participantReference(deliveryOption),
       lines: cartLines.value.map((line) => ({ entryId: line.entry.id, quantity: line.quantity })),
+      ...(options.checkoutOrigin?.value ? { origin: options.checkoutOrigin.value } : {}),
       ...(options.randomUuid === undefined ? {} : { randomUuid: options.randomUuid }),
     })
 

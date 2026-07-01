@@ -109,6 +109,35 @@ describe('shop checkout command builder', () => {
     expect(isValidShopCheckoutCommandEnvelope(command)).toBe(true)
   })
 
+  it('builds map-interface origin payloads for map-launched checkout', () => {
+    const command = buildShopCheckoutCommand(baseInput({
+      opId: 'op_maporigin01',
+      origin: {
+        kind: 'mapInterface',
+        mapSlug: 'market-map',
+        interfaceId: 'counter-a',
+        actorPlacementId: 'placement-1',
+      },
+    }))
+
+    expect(command.payload.origin).toEqual({
+      kind: 'mapInterface',
+      mapSlug: 'market-map',
+      interfaceId: 'counter-a',
+      actorPlacementId: 'placement-1',
+    })
+    expect(isValidShopCheckoutCommandEnvelope(command)).toBe(true)
+  })
+
+  it('rejects malformed map-interface checkout origins before dispatch', () => {
+    expectBuildError(() => buildShopCheckoutCommand(baseInput({
+      origin: { kind: 'mapInterface', mapSlug: 'not valid', interfaceId: 'counter-a' },
+    })), 'invalid-origin')
+    expectBuildError(() => buildShopCheckoutCommand(baseInput({
+      origin: { kind: 'mapInterface', mapSlug: 'market-map', interfaceId: '  ' },
+    })), 'invalid-origin')
+  })
+
   it('rejects an empty cart before dispatch', () => {
     expectBuildError(() => buildShopCheckoutCommand(baseInput({ lines: [] })), 'empty-cart')
   })

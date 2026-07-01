@@ -6,7 +6,8 @@ import ShopfrontEntryList from '~/components/shops/ShopfrontEntryList.vue'
 import { useShopfrontCheckout } from '~/composables/shops/useShopfrontCheckout'
 import { useShopfrontPage } from '~/composables/shops/useShopfrontPage'
 import { routeSlugParam } from '~/utils/routeParams'
-import { shopEditorPath, shopLibraryPath } from '~/utils/shopRoutes'
+import { mapEditorPath } from '~/utils/mapRoutes'
+import { shopCheckoutOriginFromRouteQuery, shopEditorPath, shopLibraryPath } from '~/utils/shopRoutes'
 
 const route = useRoute()
 const { role, isGm, isPlayer } = useAuth()
@@ -19,6 +20,10 @@ const {
 if (import.meta.client && isPlayer.value) loadRememberedProfile()
 
 const shopSlug = computed(() => routeSlugParam(route.params))
+const checkoutOrigin = computed(() => shopCheckoutOriginFromRouteQuery(route.query))
+const mapOriginBackLocation = computed(() => (
+  checkoutOrigin.value?.kind === 'mapInterface' ? mapEditorPath(checkoutOrigin.value.mapSlug) : null
+))
 const shopEditorLocation = computed(() => (
   shopSlug.value ? shopEditorPath(shopSlug.value) : shopLibraryPath()
 ))
@@ -63,6 +68,7 @@ const {
   isGm,
   isPlayer,
   selectedProfileId,
+  checkoutOrigin,
 })
 
 const pageTitle = computed(() => shop.value?.name || shopSlug.value || 'Shop')
@@ -123,6 +129,9 @@ useHead(() => ({
         </div>
       </div>
       <div class="shopfront-actions" aria-label="Shopfront navigation">
+        <NuxtLink v-if="mapOriginBackLocation" class="shopfront-action" :to="mapOriginBackLocation">
+          Back to map
+        </NuxtLink>
         <NuxtLink class="shopfront-action" :to="shopLibraryPath()">
           Back to shops
         </NuxtLink>

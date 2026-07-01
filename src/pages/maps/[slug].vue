@@ -7,6 +7,7 @@ import LivePlayCommandRecoveryPanel from '~/components/map/LivePlayCommandRecove
 import MapEditorLayout from '~/components/map/MapEditorLayout.vue'
 import MapNavigationRail from '~/components/map/MapNavigationRail.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
+import MapShopfrontLauncherPanel from '~/components/map/MapShopfrontLauncherPanel.vue'
 import PokeballCaptureResultModal from '~/components/map/PokeballCaptureResultModal.vue'
 import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
 import StartTurnModal from '~/components/map/StartTurnModal.vue'
@@ -41,6 +42,7 @@ import {
 } from '~/composables/map-editor/useMapDimensions'
 import { useMapEditorUiState } from '~/composables/map-editor/useMapEditorUiState'
 import { useMapShopInterfaces } from '~/composables/map-editor/useMapShopInterfaces'
+import { useMapShopfrontLauncher } from '~/composables/map-editor/useMapShopfrontLauncher'
 import { useMapTokenNavigation } from '~/composables/map-editor/useMapTokenNavigation'
 import { useAbilityAutomationPanel } from '~/composables/map-editor/useAbilityAutomationPanel'
 import { useMoveAnimationQueue } from '~/composables/map-editor/useMoveAnimationQueue'
@@ -1838,6 +1840,24 @@ const {
   setupEditActive: setupEditActiveForGm,
 })
 
+const mapShopfrontActorPlacementId = computed(() => {
+  const candidate = selectedId.value
+  if (!candidate) return null
+  return livePlayActionablePlacementIds.value.includes(candidate) ? candidate : null
+})
+const {
+  entries: mapShopfrontLauncherEntries,
+  status: mapShopfrontLauncherStatus,
+  errorMessage: mapShopfrontLauncherErrorMessage,
+  loadShopfrontOptions: loadMapShopfrontOptions,
+} = useMapShopfrontLauncher({
+  mapSlug: computed(() => slug),
+  shopInterfaces: mapShopInterfaces,
+  isGm,
+  isPlayer,
+  actorPlacementId: mapShopfrontActorPlacementId,
+})
+
 watch([adminPanelOpen, isGm], ([open, gm]) => {
   if (!open || !gm) return
   void loadMapShopInterfaceShopOptions()
@@ -2006,6 +2026,14 @@ useMapDimensionReconciliation({
         @apply-celebrate-trigger="applyCelebrateTriggerPromptFromScene"
         @use-attack-of-opportunity="useAttackOfOpportunity"
         @clear-attack-of-opportunity="removeAttackOfOpportunityPrompt"
+      />
+
+      <MapShopfrontLauncherPanel
+        v-if="map && canViewMap"
+        :entries="mapShopfrontLauncherEntries"
+        :status="mapShopfrontLauncherStatus"
+        :error-message="mapShopfrontLauncherErrorMessage"
+        @reload="loadMapShopfrontOptions"
       />
 
       <LivePlayCommandRecoveryPanel

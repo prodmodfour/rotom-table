@@ -2,7 +2,7 @@ import { nextTick, ref, type Ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { IDBFactory as FakeIDBFactory } from 'fake-indexeddb'
 import { groupInventoryChannel, sheetChannel, type RealtimeEvent } from '#shared/realtime'
-import { LIVE_PLAY_COMMAND_TYPES, type ShopCheckoutCommandResult } from '#shared/livePlayCommands'
+import { LIVE_PLAY_COMMAND_TYPES, type ShopCheckoutCommandResult, type ShopCheckoutOrigin } from '#shared/livePlayCommands'
 import type { AuthRole } from '#shared/auth'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import { useShopfrontCheckout, type UseShopfrontCheckoutReturn } from '~/composables/shops/useShopfrontCheckout'
@@ -183,6 +183,7 @@ const createHarness = (options: {
   readonly trainerSheets?: readonly TrainerSheet[]
   readonly groupInventory?: GroupInventoryDocument
   readonly postJson?: PostJsonMock
+  readonly checkoutOrigin?: Ref<ShopCheckoutOrigin | null>
   readonly subscribeRealtimeChannel?: (channel: string, handler: (event: RealtimeEvent) => void) => () => void
 } = {}): {
   readonly shop: Ref<ShopTableDocument | null>
@@ -203,6 +204,7 @@ const createHarness = (options: {
     isGm,
     isPlayer,
     selectedProfileId,
+    ...(options.checkoutOrigin === undefined ? {} : { checkoutOrigin: options.checkoutOrigin }),
     apiClient: {
       getJson: getJson as unknown as ApiClient['getJson'],
       postJson: postJson as unknown as ApiClient['postJson'],
@@ -282,6 +284,32 @@ describe('useShopfrontCheckout', () => {
       payload: expect.objectContaining({
         paymentSource: { kind: 'trainer', slug: 'gary', revision: 2 },
         deliveryTarget: { kind: 'trainer', slug: 'gary', revision: 2 },
+      }),
+    }))
+  })
+
+  it('includes map-interface origin when the shopfront was launched from a map', async () => {
+    const { postJson, checkout } = createHarness({
+      checkoutOrigin: ref({
+        kind: 'mapInterface',
+        mapSlug: 'market-map',
+        interfaceId: 'counter-a',
+        actorPlacementId: 'placement-1',
+      }),
+    })
+
+    await checkout.loadCheckoutDocuments()
+    checkout.setCartQuantity('potion', 1)
+    await expect(checkout.submitCheckout()).resolves.toMatchObject({ dispatched: true })
+
+    expect(postJson).toHaveBeenCalledWith(SHOP_API_PATHS.checkout, expect.objectContaining({
+      payload: expect.objectContaining({
+        origin: {
+          kind: 'mapInterface',
+          mapSlug: 'market-map',
+          interfaceId: 'counter-a',
+          actorPlacementId: 'placement-1',
+        },
       }),
     }))
   })

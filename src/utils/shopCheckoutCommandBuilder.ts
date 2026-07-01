@@ -11,6 +11,7 @@ import {
   type ShopCheckoutDeliveryTarget,
   type ShopCheckoutLineInput,
   type ShopCheckoutLivePlayCommand,
+  type ShopCheckoutOrigin,
   type ShopCheckoutParticipantReference,
   type ShopCheckoutPaymentSource,
 } from '#shared/livePlayCommands'
@@ -25,6 +26,7 @@ export type ShopCheckoutCommandBuildErrorCode =
   | 'invalid-revision'
   | 'invalid-participant-kind'
   | 'invalid-participant-slug'
+  | 'invalid-origin'
   | 'empty-cart'
   | 'invalid-entry-id'
   | 'invalid-quantity'
@@ -54,6 +56,7 @@ export interface BuildShopCheckoutCommandInput {
   readonly lines: readonly ShopCheckoutLineInput[]
   readonly clientId: string
   readonly profileId?: PlayerProfileId | string | null
+  readonly origin?: ShopCheckoutOrigin
   readonly opId?: LivePlayOpId | string
   readonly randomUuid?: LivePlayRandomUuidProvider
 }
@@ -149,6 +152,25 @@ const normalizeParticipant = (
   }
 }
 
+const normalizeShopCheckoutOrigin = (origin: ShopCheckoutOrigin | undefined): ShopCheckoutOrigin => {
+  if (origin === undefined || origin.kind === 'shopPage') return SHOP_CHECKOUT_ORIGIN_SHOP_PAGE
+
+  if (!isRecord(origin) || origin.kind !== 'mapInterface') {
+    return fail('invalid-origin', 'origin.kind', 'origin.kind must be shopPage or mapInterface.')
+  }
+
+  const actorPlacementId = origin.actorPlacementId === undefined
+    ? null
+    : nonEmptyString(origin.actorPlacementId, 'origin.actorPlacementId', 'invalid-origin')
+
+  return {
+    kind: 'mapInterface',
+    mapSlug: slugString(origin.mapSlug, 'origin.mapSlug', 'invalid-origin'),
+    interfaceId: nonEmptyString(origin.interfaceId, 'origin.interfaceId', 'invalid-origin'),
+    ...(actorPlacementId === null ? {} : { actorPlacementId }),
+  }
+}
+
 export const normalizeShopCheckoutCartLines = (
   lines: readonly ShopCheckoutLineInput[],
 ): readonly ShopCheckoutLineInput[] => {
@@ -187,7 +209,7 @@ export const buildShopCheckoutCommand = (
     paymentSource,
     deliveryTarget,
     lines: normalizeShopCheckoutCartLines(input.lines),
-    origin: SHOP_CHECKOUT_ORIGIN_SHOP_PAGE,
+    origin: normalizeShopCheckoutOrigin(input.origin),
   }
   const profileId = normalizeProfileId(input.profileId)
 

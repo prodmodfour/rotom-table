@@ -5,6 +5,8 @@ import {
   SHOP_LIBRARY_PATH,
   isShopEditorPath,
   isShopPath,
+  mapShopfrontPath,
+  shopCheckoutOriginFromRouteQuery,
   shopEditorPath,
   shopLibraryPath,
   shopfrontPath,
@@ -20,6 +22,29 @@ describe('shop route helpers', () => {
     expect(shopEditorPath('viridian-mart')).toBe('/shops/viridian-mart/edit')
     expect(shopfrontPath('space shop')).toBe('/shops/space%20shop')
     expect(shopEditorPath('space/shop')).toBe('/shops/space%2Fshop/edit')
+  })
+
+  it('builds and parses map-origin shopfront routes', () => {
+    expect(mapShopfrontPath({
+      shopSlug: 'viridian-mart',
+      mapSlug: 'market-map',
+      interfaceId: 'counter-a',
+      actorPlacementId: 'actor-1',
+    })).toBe('/shops/viridian-mart?origin=mapInterface&mapSlug=market-map&interfaceId=counter-a&actorPlacementId=actor-1')
+
+    expect(shopCheckoutOriginFromRouteQuery({
+      origin: 'mapInterface',
+      mapSlug: 'market-map',
+      interfaceId: 'counter-a',
+      actorPlacementId: 'actor-1',
+    })).toEqual({
+      kind: 'mapInterface',
+      mapSlug: 'market-map',
+      interfaceId: 'counter-a',
+      actorPlacementId: 'actor-1',
+    })
+    expect(shopCheckoutOriginFromRouteQuery({ origin: 'shopPage' })).toBeNull()
+    expect(shopCheckoutOriginFromRouteQuery({ origin: 'mapInterface', mapSlug: 'not valid', interfaceId: 'counter-a' })).toBeNull()
   })
 
   it('recognizes shop pages without matching similarly named routes', () => {

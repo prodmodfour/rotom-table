@@ -10,6 +10,7 @@ import {
   type ShopCheckoutCommandResult,
   type ShopCheckoutDeliveryTarget,
   type ShopCheckoutLineInput,
+  type ShopCheckoutOrigin,
   type ShopCheckoutPaymentSource,
   validateShopCheckoutCommandEnvelope,
 } from '#shared/livePlayCommands'
@@ -63,6 +64,7 @@ export interface ShopCheckoutCommandInput {
   readonly paymentSource: ShopCheckoutPaymentSource
   readonly deliveryTarget: ShopCheckoutDeliveryTarget
   readonly lines: readonly ShopCheckoutLineInput[]
+  readonly origin?: ShopCheckoutOrigin
   readonly opId?: string
   readonly randomUuid?: LivePlayRandomUuidProvider
 }
@@ -772,6 +774,7 @@ export const useShopCheckoutCommands = (
       lines: input.lines,
       clientId: clientId(),
       ...profileBody(authContext),
+      ...(input.origin === undefined ? {} : { origin: input.origin }),
       ...(input.opId === undefined ? {} : { opId: input.opId }),
       ...(input.randomUuid === undefined ? {} : { randomUuid: input.randomUuid }),
     })

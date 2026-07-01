@@ -894,7 +894,7 @@ Let GMs place or configure shop interfaces on a map.
 
 ## 029 — SHOPS-029: Add map-origin shopfront launcher for players
 
-Status: TODO
+Status: DONE
 
 ### Goal
 Let players open a shopfront from a live map shop interface.
