@@ -12,6 +12,7 @@ import {
   mapAbilityTargetCandidates,
   resolveMapAbilityAutomationTransaction,
 } from '~/utils/abilityAutomation'
+import { MUD_DWELLER_ABILITY_NAME } from '~/utils/sheetPassiveAbilityEffects'
 import {
   ILLUMINATE_ABILITY_NAME,
   KEEN_EYE_ABILITY_NAME,
@@ -72,6 +73,7 @@ describe('ability automation helpers', () => {
     expect(getAbilityAutomationCategory(KEEN_EYE_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory('Quick Feet')).toBe('passive')
     expect(getAbilityAutomationCategory(NO_GUARD_ABILITY_NAME)).toBe('passive')
+    expect(getAbilityAutomationCategory(MUD_DWELLER_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory(SHIELD_DUST_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory(SWEET_VEIL_ABILITY_NAME)).toBe('passive')
     expect(getAbilityAutomationCategory('Run Away')).toBeNull()

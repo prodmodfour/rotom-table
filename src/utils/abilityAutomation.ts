@@ -14,6 +14,7 @@ import {
   KEEN_EYE_ABILITY_NAME,
   NO_GUARD_ABILITY_NAME,
 } from '~/utils/sheetAbilityCombatModifiers'
+import { MUD_DWELLER_ABILITY_NAME } from '~/utils/sheetPassiveAbilityEffects'
 import type { AbilityAutomationCategory, AbilityAutomationTransaction } from '~/types/abilityAutomation'
 import type { MapFieldEffects } from '~/types/map'
 import type { SpawnedPokemon } from '~/types/pokemon'
@@ -169,6 +170,14 @@ const PASSIVE_ABILITY_AUTOMATIONS = new Map<string, PassiveAbilityAutomationDefi
     NO_GUARD_ABILITY_NAME,
     {
       name: NO_GUARD_ABILITY_NAME,
+      category: 'passive',
+      label: 'Auto',
+    },
+  ],
+  [
+    MUD_DWELLER_ABILITY_NAME,
+    {
+      name: MUD_DWELLER_ABILITY_NAME,
       category: 'passive',
       label: 'Auto',
     },

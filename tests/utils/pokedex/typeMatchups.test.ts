@@ -14,6 +14,7 @@ describe('pokedex type matchup helpers', () => {
     expect(computePtuTypeMultiplier('Ground', ['Flying'])).toBe(0.5)
     expect(computePtuTypeMultiplier('Ground', ['Fire', 'Flying'])).toBe(1)
     expect(computePtuTypeMultiplier('Fire', ['Water'], ['Tolerance'])).toBe(0.25)
+    expect(computePtuTypeMultiplier('Water', ['Fire'], ['Mud Dweller'])).toBe(1)
   })
 
   it('formats PTU multiplier labels', () => {

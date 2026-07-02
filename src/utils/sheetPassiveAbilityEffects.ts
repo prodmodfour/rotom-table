@@ -9,6 +9,7 @@ export const LEVITATE_ABILITY_NAME = 'Levitate'
 export const FLASH_FIRE_ABILITY_NAME = 'Flash Fire'
 export const TOLERANCE_ABILITY_NAME = 'Tolerance'
 export const SOUNDPROOF_ABILITY_NAME = 'Soundproof'
+export const MUD_DWELLER_ABILITY_NAME = 'Mud Dweller'
 export const GROUNDSOURCE_KEYWORD = 'Groundsource'
 export const SONIC_KEYWORD = 'Sonic'
 export const LEVITATE_GRANTED_SPEED = 4
@@ -48,6 +49,10 @@ export const hasSoundproofAbility = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
 ): boolean => sheetHasCanonicalAbility(abilities, SOUNDPROOF_ABILITY_NAME)
 
+export const hasMudDwellerAbility = (
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): boolean => sheetHasCanonicalAbility(abilities, MUD_DWELLER_ABILITY_NAME)
+
 const positiveCapabilitySpeed = (value: number | string | null | undefined): boolean => {
   if (typeof value === 'number') return Number.isFinite(value) && value > 0
   if (typeof value !== 'string') return false
@@ -73,13 +78,28 @@ export const hasGroundResistingCapability = (
   _capabilities: AirborneMovementCapabilities | null | undefined,
 ): boolean => false
 
+const passiveTypeResistanceSources = (
+  attackingType: string,
+  abilities: readonly SheetAbilityNameSource[] | null | undefined,
+): string[] => {
+  const sources: string[] = []
+  if (attackingType === 'Ground' && hasLevitateAbility(abilities)) sources.push(LEVITATE_ABILITY_NAME)
+  if ((attackingType === 'Ground' || attackingType === 'Water') && hasMudDwellerAbility(abilities)) {
+    sources.push(MUD_DWELLER_ABILITY_NAME)
+  }
+  return sources
+}
+
 export const hasPassiveGroundResistance = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
-): boolean => hasLevitateAbility(abilities)
+): boolean => passiveTypeResistanceSources('Ground', abilities).length > 0
 
 export const getPassiveGroundResistanceSource = (
   abilities: readonly SheetAbilityNameSource[] | null | undefined,
-): string | null => hasLevitateAbility(abilities) ? LEVITATE_ABILITY_NAME : null
+): string | null => {
+  const sources = passiveTypeResistanceSources('Ground', abilities)
+  return sources.length ? sources.join(', ') : null
+}
 
 export const moveHasGroundsourceKeyword = (
   moveKeywords: readonly string[] | null | undefined,
@@ -139,9 +159,10 @@ export const resolveSheetPassiveTypeEffectiveness = (
   let multiplier = baseMultiplier
   const sources: string[] = []
 
-  if (attackingType === 'Ground' && hasPassiveGroundResistance(abilities) && multiplier !== 0) {
+  for (const source of passiveTypeResistanceSources(attackingType, abilities)) {
+    if (multiplier === 0) break
     const nextMultiplier = resistMultiplierOneStepFurther(multiplier)
-    if (!Object.is(nextMultiplier, multiplier)) sources.push(LEVITATE_ABILITY_NAME)
+    if (!Object.is(nextMultiplier, multiplier)) sources.push(source)
     multiplier = nextMultiplier
   }
 
@@ -189,9 +210,10 @@ export const resolveLevitateAbilitySpeed = (
 
 /**
  * Passive type effects used by sheets and token automation. Flash Fire makes
- * Fire attacks immune. The Levitate ability makes Ground one effectiveness
- * step more resisted. Tolerance makes any currently resisted type one
- * additional step resisted. Soundproof makes Sonic moves immune. Sky and
+ * Fire attacks immune. Levitate makes Ground one effectiveness step more
+ * resisted. Mud Dweller makes Ground and Water one effectiveness step more
+ * resisted. Tolerance makes any currently resisted type one additional step
+ * resisted. Soundproof makes Sonic moves immune. Sky and
  * Levitate capabilities make moves with the Groundsource keyword immune.
  * Existing type immunities still win.
  */

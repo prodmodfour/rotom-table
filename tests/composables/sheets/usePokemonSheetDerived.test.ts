@@ -360,6 +360,27 @@ describe('usePokemonSheetDerived', () => {
     })
   })
 
+  it('applies Mud Dweller to Ground and Water type effectiveness', () => {
+    const sheet = ref<CharacterSheet | null>(makeSheet({
+      types: ['Fire'],
+      abilities: [{ name: 'Mud Dweller' }],
+    }))
+    const derived = usePokemonSheetDerived(sheet)
+
+    expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Ground')).toMatchObject({
+      mult: 1,
+      label: '1',
+      tone: 'neutral',
+      source: 'Mud Dweller',
+    })
+    expect(derived.typeEffectivenessRows.value.find((row) => row.type === 'Water')).toMatchObject({
+      mult: 1,
+      label: '1',
+      tone: 'neutral',
+      source: 'Mud Dweller',
+    })
+  })
+
   it('uses Flying type and Levitate ability for Ground effectiveness while ignoring airborne capabilities', () => {
     const sheet = ref<CharacterSheet | null>(makeSheet({
       types: ['Fire', 'Flying'],

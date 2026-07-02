@@ -10,6 +10,7 @@ import {
   hasFlashFireAbility,
   hasGroundsourceImmunityCapability,
   hasLevitateAbility,
+  hasMudDwellerAbility,
   hasSoundproofAbility,
   hasToleranceAbility,
   moveHasGroundsourceKeyword,
@@ -18,7 +19,7 @@ import {
 } from '~/utils/sheetPassiveAbilityEffects'
 
 describe('sheet passive ability effects', () => {
-  it('recognizes Levitate, Flash Fire, Tolerance, and Soundproof by canonical ability lookup', () => {
+  it('recognizes Levitate, Flash Fire, Tolerance, Soundproof, and Mud Dweller by canonical ability lookup', () => {
     expect(hasLevitateAbility([{ name: 'levitate' }])).toBe(true)
     expect(hasLevitateAbility(['Levitate'])).toBe(true)
     expect(hasLevitateAbility([{ name: 'Run Away' }])).toBe(false)
@@ -31,6 +32,9 @@ describe('sheet passive ability effects', () => {
     expect(hasSoundproofAbility([{ name: 'soundproof' }])).toBe(true)
     expect(hasSoundproofAbility(['Soundproof'])).toBe(true)
     expect(hasSoundproofAbility([{ name: 'Run Away' }])).toBe(false)
+    expect(hasMudDwellerAbility([{ name: 'mud-dweller' }])).toBe(true)
+    expect(hasMudDwellerAbility(['Mud Dweller'])).toBe(true)
+    expect(hasMudDwellerAbility([{ name: 'Run Away' }])).toBe(false)
   })
 
   it('grants Levitate speed 4 or +2 to an existing Levitate speed', () => {
@@ -48,6 +52,17 @@ describe('sheet passive ability effects', () => {
     expect(applySheetPassiveAbilityTypeEffectiveness('Ground', 0.25, [{ name: 'Levitate' }])).toBe(0.125)
     expect(applySheetPassiveAbilityTypeEffectiveness('Ground', 0, [{ name: 'Levitate' }])).toBe(0)
     expect(applySheetPassiveAbilityTypeEffectiveness('Fire', 1.5, [{ name: 'Levitate' }])).toBe(1.5)
+  })
+
+  it('moves Ground and Water effectiveness one resistance step for Mud Dweller while preserving immunities', () => {
+    expect(applySheetPassiveAbilityTypeEffectiveness('Ground', 1.5, [{ name: 'Mud Dweller' }])).toBe(1)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Ground', 1, [{ name: 'Mud Dweller' }])).toBe(0.5)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Water', 1.5, [{ name: 'Mud Dweller' }])).toBe(1)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Water', 0.5, [{ name: 'Mud Dweller' }])).toBe(0.25)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Fire', 1.5, [{ name: 'Mud Dweller' }])).toBe(1.5)
+    expect(applySheetPassiveAbilityTypeEffectiveness('Ground', 0, [{ name: 'Mud Dweller' }])).toBe(0)
+    expect(computeSheetAbilityAwareMultiplier('Water', ['Fire'], [{ name: 'mud-dweller' }])).toBe(1)
+    expect(getPassiveTypeEffectivenessSource('Water', [{ name: 'Mud Dweller' }], undefined, { baseMultiplier: 1 })).toBe('Mud Dweller')
   })
 
   it('makes Fire attacks immune with Flash Fire', () => {
@@ -120,6 +135,7 @@ describe('sheet passive ability effects', () => {
     expect(computeSheetAbilityAwareMultiplier('Ground', ['Fire', 'Flying'], undefined)).toBe(1)
     expect(computeSheetAbilityAwareMultiplier('Ground', ['Electric'], [{ name: 'Levitate' }])).toBe(1)
     expect(computeSheetAbilityAwareMultiplier('Ground', ['Flying'], [{ name: 'Levitate' }])).toBe(0.25)
+    expect(computeSheetAbilityAwareMultiplier('Water', ['Fire'], [{ name: 'Mud Dweller' }])).toBe(1)
   })
 
   it('keeps airborne capability immunity limited to Groundsource moves', () => {
@@ -129,6 +145,8 @@ describe('sheet passive ability effects', () => {
     expect(computeSheetAbilityAwareMultiplier('Electric', ['Water'], undefined, { sky: 8 }, { moveKeywords: ['Groundsource'] })).toBe(0)
     expect(getPassiveGroundResistanceSource(undefined)).toBeNull()
     expect(getPassiveGroundResistanceSource([{ name: 'Levitate' }])).toBe('Levitate')
+    expect(getPassiveGroundResistanceSource([{ name: 'Mud Dweller' }])).toBe('Mud Dweller')
+    expect(getPassiveGroundResistanceSource([{ name: 'Levitate' }, { name: 'Mud Dweller' }])).toBe('Levitate, Mud Dweller')
     expect(getPassiveTypeEffectivenessSource('Ground', undefined, { sky: 8 }, { moveKeywords: ['Groundsource'] })).toBe('Sky Capability')
   })
 })
