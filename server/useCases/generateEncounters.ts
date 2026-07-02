@@ -38,6 +38,25 @@ export interface GenerateEncountersResult {
 
 export type GenerateEncountersDependencies = GenerateEncountersRuntimeOverrides
 
+type EncounterGenerateRequest = ReturnType<typeof readEncounterGenerateRequest>
+
+const countForEncounterRequest = (
+  request: EncounterGenerateRequest,
+  random: () => number,
+): number => {
+  if (request.rolled === undefined) return randomEncounterGenerateCount(request.countRange, random)
+  if (request.countRange.min === request.countRange.max) return request.countRange.min
+  return Math.max(request.countRange.min, request.rolled.length)
+}
+
+const rolledEncountersForRequest = (
+  request: EncounterGenerateRequest,
+  count: number,
+  table: Parameters<typeof rollEncounterTable>[0],
+  random: () => number,
+): RolledEncounter[] => request.rolled ?? Array.from({ length: count }, () => rollEncounterTable(table, random))
+  .filter((encounter): encounter is RolledEncounter => Boolean(encounter))
+
 const isStatusLikeError = (error: unknown): error is {
   statusCode?: unknown
   statusMessage?: unknown
@@ -73,9 +92,8 @@ export const generateEncountersUseCase = async (
       pathExists: runtime.pathExists,
       readTextFile: runtime.readTextFile,
     })
-    const count = randomEncounterGenerateCount(request.countRange, runtime.random)
-    const rolled = Array.from({ length: count }, () => rollEncounterTable(table, runtime.random))
-      .filter((encounter): encounter is RolledEncounter => Boolean(encounter))
+    const count = countForEncounterRequest(request, runtime.random)
+    const rolled = rolledEncountersForRequest(request, count, table, runtime.random)
     const output = createEncounterOutputPlan({
       tableKey: request.tableKey,
       count,
