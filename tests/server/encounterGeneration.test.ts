@@ -61,7 +61,7 @@ describe('server encounter generation helpers', () => {
     expect(sanitizeEncounterFolderPath('', 'region', true)).toBe('')
     expect(statusMessageFor(() => sanitizeEncounterFolderPath('../bad', 'region'))).toBe('Invalid region segment')
 
-    expect(sanitizeEncounterOutRoot('data//sheets\wild/forest')).toBe('data/sheets/wild/forest')
+    expect(sanitizeEncounterOutRoot('data//sheets\\wild/forest')).toBe('data/sheets/wild/forest')
     expect(statusMessageFor(() => sanitizeEncounterOutRoot('../data'))).toBe('Invalid outRoot segment')
     expect(statusMessageFor(() => sanitizeEncounterOutRoot('data/sheets/bad name'))).toContain('outRoot segment')
   })

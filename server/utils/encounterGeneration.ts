@@ -126,12 +126,15 @@ const sanitizeRolledInteger = (value: unknown, label: string, max: number): numb
 
 export const sanitizeRolledEncounters = (value: unknown): RolledEncounter[] | undefined => {
   if (value === undefined) return undefined
-  if (!Array.isArray(value)) badEncounterInput('rolled must be an array')
-  if (value.length > MAX_ENCOUNTER_COUNT) {
+  const rolledEncounters: unknown[] = Array.isArray(value)
+    ? value
+    : badEncounterInput('rolled must be an array')
+
+  if (rolledEncounters.length > MAX_ENCOUNTER_COUNT) {
     badEncounterInput(`rolled must contain at most ${MAX_ENCOUNTER_COUNT} encounters`)
   }
 
-  return value.map((item, index) => {
+  return rolledEncounters.map((item, index): RolledEncounter => {
     const label = `rolled[${index}]`
     const record = rolledEncounterRecord(item, label)
     const species = String(record.species ?? '').trim()
