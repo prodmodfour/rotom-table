@@ -21,6 +21,7 @@ import {
 } from '~/utils/moveAutomationAccuracy'
 import { moveAutomationSecondaryEffectBlockSource } from '~/utils/moveAutomationAbilityProtection'
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
+import { moveAutomationScriptWithPoisonTouch } from '~/utils/moveAutomationPoisonTouch'
 import {
   moveAutomationConditionImmunitySource,
   type MoveAutomationConditionImmunityContext,
@@ -446,6 +447,8 @@ export const resolveInstantMoveAutomation = ({
   random,
   idFactory,
 }: ResolveInstantMoveAutomationInput): InstantMoveAutomationResult => {
+  script = moveAutomationScriptWithPoisonTouch(script, user)
+
   if (script.dynamicDamageBase?.kind === 'double-strike') {
     return resolveInstantDoubleStrikeMoveAutomation({
       script,
@@ -559,6 +562,8 @@ const buildNoRollTargetTransaction = ({
   conditionImmunityContext,
   random,
 }: ResolveInstantTargetMoveAutomationInput): MoveAutomationTransaction => {
+  script = moveAutomationScriptWithPoisonTouch(script, user)
+
   const state = defaultTargetResolutionState(script)
   const runtimeDamage = script.damaging && state.hit
     ? resolveMoveAutomationRuntimeDamageFormula({ script, user, fallbackFormula: damageFormula, random })
@@ -607,6 +612,8 @@ export const resolveInstantSelfMoveAutomation = ({
   fieldEffects,
   random,
 }: ResolveInstantSelfMoveAutomationInput): MoveAutomationTransaction => {
+  script = moveAutomationScriptWithPoisonTouch(script, user)
+
   const enabledSuggestions: Record<string, boolean> = {}
   enableDefaultSuggestions(script, enabledSuggestions)
   const randomStageNote = resolveMoveAutomationRandomStageSuggestion({ script, enabledSuggestions, random })
@@ -674,6 +681,8 @@ const resolveInstantTargetGroupMoveAutomation = ({
   conditionImmunityContext,
   random,
 }: ResolveInstantTargetGroupMoveAutomationInput): InstantTargetGroupMoveAutomationResolution => {
+  script = moveAutomationScriptWithPoisonTouch(script, user)
+
   const targetResolutions: Record<string, MoveAutomationTargetResolutionState> = {}
   const userAccuracy = moveAutomationUserAccuracy(user)
   for (const target of targets) {
