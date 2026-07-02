@@ -8,6 +8,7 @@ import {
   selectWeightedEncounterEntry,
 } from '#shared/encounterTables'
 import {
+  DEFAULT_ENCOUNTER_COUNT,
   DEFAULT_ENCOUNTER_OUT_ROOT,
   exactEncounterGenerateCountRange,
   MAX_ENCOUNTER_COUNT,
@@ -162,7 +163,7 @@ export const readEncounterGenerateRequest = (body: GenerateEncounterBody | null 
   const hasCountRange = body?.countMin !== undefined || body?.countMax !== undefined
   const countRange = hasCountRange
     ? sanitizeEncounterCountRange(body?.countMin, body?.countMax)
-    : exactEncounterGenerateCountRange(sanitizeEncounterCount(body?.count))
+    : exactEncounterGenerateCountRange(sanitizeEncounterCount(body?.count ?? DEFAULT_ENCOUNTER_COUNT))
 
   return {
     region: sanitizeEncounterFolderPath(String(body?.region ?? ''), 'region', true),

@@ -15,7 +15,7 @@ Autonomous cycle rules for every ticket: implement only the selected ticket, run
 
 ## 001 — Default missing encounter count on the server
 
-Status: TODO
+Status: DONE
 
 **Problem**
 

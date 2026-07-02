@@ -75,6 +75,17 @@ describe('server encounter generation helpers', () => {
     expect(statusMessageFor(() => sanitizeEncounterCountRange(5, 31))).toBe('countMax must be an integer between 1 and 30')
     expect(statusMessageFor(() => sanitizeEncounterCountRange(5, 2))).toBe('countMin must be less than or equal to countMax')
 
+    expect(readEncounterGenerateRequest({ region: 'r', table: 't' })).toEqual({
+      region: 'r',
+      tableKey: 't',
+      outRoot: 'data/sheets/wild',
+      countRange: { min: 3, max: 3 },
+      preview: false,
+    })
+    expect(statusMessageFor(() => readEncounterGenerateRequest({ region: 'r', table: 't', count: 0 }))).toBe(
+      'count must be an integer between 1 and 30',
+    )
+
     expect(readEncounterGenerateRequest({ region: 'r', table: 't', count: 2, preview: true })).toEqual({
       region: 'r',
       tableKey: 't',
