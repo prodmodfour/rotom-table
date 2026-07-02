@@ -184,7 +184,7 @@ npm run typecheck
 
 ## 005 — Keep spawn result file/placement display consistent after slug retargeting
 
-Status: TODO
+Status: DONE
 
 **Problem**
 

@@ -41,8 +41,15 @@ const generatedFileBadgeLabel = computed(() => `${props.fileCount} generated ${p
   </header>
 
   <p v-if="!preview" class="result-hint">
-    Files written to
-    <code>{{ relDir }}/</code>.
+    <template v-if="spawn">
+      Generated sheets persisted under
+      <code>{{ relDir }}/</code>; spawn mode does not write generated JSON files.
+      Generator file labels are diagnostic only.
+    </template>
+    <template v-else>
+      Files written to
+      <code>{{ relDir }}/</code>.
+    </template>
     The folder name auto-increments (<code>{{ tableKey }}_{{ count }}</code>,
     <code>{{ tableKey }}_{{ count }}-2</code>…) so repeat runs don't clobber.
     This result rolled {{ encounterSlotCountLabel }}; Nothing rolls do not write files, so generated files can be fewer than requested slots.

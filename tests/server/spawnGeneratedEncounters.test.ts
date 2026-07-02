@@ -181,13 +181,17 @@ describe('spawnGeneratedEncountersUseCase', () => {
     const resultPlacement = result.spawn.placements[0]
 
     expect(result.relDir).toBe('data/sheets/wild/pond_1-2')
+    expect(result.files[0]?.name).toBe(`${provisionalSlug}.json`)
     expect(persistedSheet?.sheet).toMatchObject({
       slug: finalSlug,
       folder: 'wild/pond_1-2',
     })
     expect(sheets.getByRef('pokemon', provisionalSlug)).toBeNull()
     expect(mapPlacement?.sheetSlug).toBe(finalSlug)
-    expect(resultPlacement?.slug).toBe(finalSlug)
+    expect(resultPlacement).toMatchObject({
+      file: `${provisionalSlug}.json`,
+      slug: finalSlug,
+    })
     expect(resultPlacement?.slug).toBe(mapPlacement?.sheetSlug)
   })
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EncounterGenerateResult } from '~/utils/encounterGeneration'
+import type { EncounterGenerateResult, EncounterSpawnedPlacement } from '~/utils/encounterGeneration'
 
 defineProps<{
   result: EncounterGenerateResult
@@ -15,6 +15,16 @@ const emit = defineEmits<{
 const positionLabel = (position: { x: number; y: number; z: number } | undefined): string => (
   position ? `(${position.x}, ${position.y}, ${position.z})` : '(unknown)'
 )
+
+const placementSlugLabel = (placement: EncounterSpawnedPlacement): string => (
+  placement.error ? 'Generated slug' : 'Persisted sheet'
+)
+
+const generatorFileLabel = (placement: EncounterSpawnedPlacement): string | null => {
+  const file = placement.file.trim()
+  if (!file || file === placement.slug || file === `${placement.slug}.json`) return null
+  return file
+}
 </script>
 
 <template>
@@ -44,7 +54,12 @@ const positionLabel = (position: { x: number; y: number; z: number } | undefined
           :key="placement.file"
           :class="['spawn-results__item', { 'has-error': placement.error }]"
         >
-          <span class="spawn-results__file">{{ placement.file }}</span>
+          <span class="spawn-results__slug">
+            {{ placementSlugLabel(placement) }}: {{ placement.slug }}
+          </span>
+          <span v-if="generatorFileLabel(placement)" class="spawn-results__generator-label">
+            generator label: {{ generatorFileLabel(placement) }}
+          </span>
           <span v-if="placement.error" class="spawn-results__error">{{ placement.error }}</span>
           <span v-else class="spawn-results__position">→ {{ positionLabel(placement.position) }}</span>
         </li>
@@ -100,10 +115,16 @@ const positionLabel = (position: { x: number; y: number; z: number } | undefined
   background: rgba(255, 31, 45, 0.08);
 }
 
-.spawn-results__file {
+.spawn-results__slug {
   color: var(--ink-bright);
   font-family: var(--font-mono);
   font-size: 0.82rem;
+}
+
+.spawn-results__generator-label {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
 }
 
 .spawn-results__position {
