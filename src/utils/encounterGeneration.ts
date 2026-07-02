@@ -46,6 +46,8 @@ export interface EncounterGenerateRequestBody {
   countMax?: number
   outRoot: string
   preview: boolean
+  /** Exact Pokémon already shown in the roll preview; omitted by older clients. */
+  rolled?: RolledEncounter[]
 }
 
 export interface EncounterSpawnRequestBody extends EncounterGenerateRequestBody {
@@ -119,6 +121,12 @@ export const coerceTableKeyForRegion = (
   return tables[0]?.key ?? ''
 }
 
+const cloneRolledEncounters = (rolled: readonly RolledEncounter[] | undefined): RolledEncounter[] | undefined => (
+  rolled === undefined
+    ? undefined
+    : rolled.map((encounter) => ({ ...encounter }))
+)
+
 export const buildEncounterGenerateRequestBody = (
   options: {
     region: string
@@ -127,9 +135,11 @@ export const buildEncounterGenerateRequestBody = (
     countMax: number
     outRoot: string
     preview: boolean
+    rolled?: readonly RolledEncounter[]
   },
 ): EncounterGenerateRequestBody => {
   const countRange = normalizeEncounterGenerateCountRange(options.countMin, options.countMax)
+  const rolled = cloneRolledEncounters(options.rolled)
   return {
     region: options.region,
     table: options.tableKey,
@@ -137,6 +147,7 @@ export const buildEncounterGenerateRequestBody = (
     countMax: countRange.max,
     outRoot: options.outRoot,
     preview: options.preview,
+    ...(rolled !== undefined ? { rolled } : {}),
   }
 }
 
@@ -149,6 +160,7 @@ export const buildEncounterSpawnRequestBody = (
     outRoot: string
     mapSlug: string
     clientId?: string
+    rolled?: readonly RolledEncounter[]
   },
 ): EncounterSpawnRequestBody => ({
   ...buildEncounterGenerateRequestBody({
@@ -158,6 +170,7 @@ export const buildEncounterSpawnRequestBody = (
     countMax: options.countMax,
     outRoot: options.outRoot,
     preview: false,
+    ...(options.rolled !== undefined ? { rolled: options.rolled } : {}),
   }),
   mapSlug: options.mapSlug,
   ...(options.clientId ? { clientId: options.clientId } : {}),
