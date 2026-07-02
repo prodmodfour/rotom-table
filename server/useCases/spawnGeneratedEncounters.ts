@@ -4,7 +4,7 @@ import { SETUP_MODE_REQUIRED_FOR_MAP_SAVE_MESSAGE, MAP_INTERACTION_MODES } from 
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import type { AppendRealtimeEventInput, RealtimeEventRepository } from '../storage/realtimeEventRepository'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
-import { placementsToSpawned, type SheetLookup } from '~/utils/placement'
+import { placementToSpawned, type SheetLookup } from '~/utils/placement'
 import { catalogEntryForPokemonSheet, pokemonHpSnapshot } from '~/utils/sheetSpawn'
 import { deepCloneJson } from '~/utils/serialization'
 import { DEFAULT_TOKEN_FACING_DIRECTION } from '~/utils/tokenFacing'
@@ -248,6 +248,32 @@ const allocateUniquePlacementId = (
   return null
 }
 
+const occupiedFootprintsForMapPlacements = (
+  map: TabletopMap,
+  lookup: SheetLookup,
+): PositionedGridFootprint[] => {
+  const footprints: PositionedGridFootprint[] = []
+  for (const placement of map.placements ?? []) {
+    const spawned = placementToSpawned(placement, lookup, map)
+    if (spawned) {
+      footprints.push({
+        id: spawned.id,
+        position: spawned.position,
+        base: spawned.base,
+        clearance: spawned.clearance,
+      })
+      continue
+    }
+    footprints.push({
+      id: placement.id,
+      position: placement.position,
+      base: 1,
+      clearance: 1,
+    })
+  }
+  return footprints
+}
+
 const appendPlacementsForGeneratedSheets = ({
   map,
   generatedSheets,
@@ -261,13 +287,7 @@ const appendPlacementsForGeneratedSheets = ({
   random: () => number
   createPlacementId: () => string
 }): SpawnGeneratedEncounterPlacement[] => {
-  const placed: PositionedGridFootprint[] = placementsToSpawned(map, lookup)
-    .map((pokemon) => ({
-      id: pokemon.id,
-      position: pokemon.position,
-      base: pokemon.base,
-      clearance: pokemon.clearance,
-    }))
+  const placed = occupiedFootprintsForMapPlacements(map, lookup)
   const placementIds = new Set((map.placements ?? []).map((placement) => placement.id))
   const results: SpawnGeneratedEncounterPlacement[] = []
   const groundLevelY = normalizeMapGroundLevelY(map.groundLevelY, map.dimensions.y)

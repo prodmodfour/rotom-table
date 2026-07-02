@@ -348,7 +348,7 @@ npm test -- tests/server/spawnGeneratedEncounters.test.ts
 
 ## 009 — Reserve conservative footprint space for unresolved existing placements
 
-Status: TODO
+Status: DONE
 
 **Problem**
 
