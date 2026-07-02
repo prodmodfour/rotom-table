@@ -132,7 +132,7 @@ npm test -- tests/server/spawnGeneratedEncounters.test.ts
 
 ## 004 — Retarget generated spawn slugs to the final allocated folder
 
-Status: TODO
+Status: DONE
 
 **Problem**
 

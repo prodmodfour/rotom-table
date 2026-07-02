@@ -19,6 +19,7 @@ import {
   readEncounterGenerateRequest,
   rollEncounterTable,
   sanitizeEncounterOutRoot,
+  slugifyEncounterOutputPath,
   uniqueEncounterOutputDir,
   type GenerateEncounterBody,
 } from '../utils/encounterGeneration'
@@ -129,6 +130,7 @@ interface GeneratedSheetRecord {
 }
 
 interface SpawnGenerationPlan extends GenerateEncountersResult {
+  readonly slugPrefix: string
   readonly generatedSheets: readonly GeneratedSheetRecord[]
 }
 
@@ -170,6 +172,23 @@ const fileSlug = (fileName: string): string => {
   const ext = extname(fileName)
   return basename(fileName, ext || undefined)
 }
+
+const slugPrefixFromSpawnRelDir = (relDir: string): string => {
+  const sheetRootPrefix = `${GENERATED_SHEET_ROOT}/`
+  const relPath = relDir.startsWith(sheetRootPrefix) ? relDir.slice(sheetRootPrefix.length) : relDir
+  return slugifyEncounterOutputPath(relPath)
+}
+
+const generatedSourceSlug = (generated: GeneratedSheetRecord): string =>
+  String(generated.sheet?.slug || generated.slug || fileSlug(generated.file))
+
+const retargetGeneratedSlugPrefix = (
+  sourceSlug: string,
+  provisionalPrefix: string,
+  finalPrefix: string,
+): string => sourceSlug.startsWith(`${provisionalPrefix}-`)
+  ? `${finalPrefix}${sourceSlug.slice(provisionalPrefix.length)}`
+  : sourceSlug
 
 const encounterLabel = (species: string, level: number): string => `${species} Lv ${level}`
 
@@ -403,6 +422,7 @@ const generateEncounterSheetsInMemory = async (
     preview: false,
     beforeCount: 0,
     count,
+    slugPrefix: output.slugPrefix,
     generatedSheets,
   }
 }
@@ -445,19 +465,24 @@ const prepareGeneratedSheets = ({
   generatedSheets,
   sheetRepository,
   folder,
+  provisionalSlugPrefix,
+  finalSlugPrefix,
   timestamp,
 }: {
   generatedSheets: readonly GeneratedSheetRecord[]
   sheetRepository: SpawnSheetRepository
   folder: string
+  provisionalSlugPrefix: string
+  finalSlugPrefix: string
   timestamp: number
 }): readonly PreparedGeneratedSheet[] => {
   const reserved = new Set<string>()
   const prepared: PreparedGeneratedSheet[] = []
   for (const generated of generatedSheets) {
     if (!generated.sheet) continue
-    const sourceSlug = String(generated.sheet.slug || generated.slug || fileSlug(generated.file))
-    const slug = allocatePokemonSlug(sheetRepository, reserved, sourceSlug)
+    const sourceSlug = generatedSourceSlug(generated)
+    const preferredSlug = retargetGeneratedSlugPrefix(sourceSlug, provisionalSlugPrefix, finalSlugPrefix)
+    const slug = allocatePokemonSlug(sheetRepository, reserved, preferredSlug)
     reserved.add(slug)
     prepared.push({
       file: generated.file,
@@ -488,7 +513,7 @@ const generatedRecordsForPlacement = (
 
   return generatedSheets.map((generated) => {
     if (!generated.sheet) return generated
-    const sourceSlug = String(generated.sheet.slug || generated.slug || fileSlug(generated.file))
+    const sourceSlug = generatedSourceSlug(generated)
     const entries = preparedBySource.get(sourceSlug) ?? []
     const prepared = entries.shift()
     if (!prepared) return generated
@@ -558,10 +583,13 @@ const persistEncounterSpawn = ({
   const dir = generation.dir.endsWith(generation.relDir)
     ? `${generation.dir.slice(0, -generation.relDir.length)}${relDir}`
     : generation.dir
+  const finalSlugPrefix = slugPrefixFromSpawnRelDir(relDir)
   const preparedSheets = prepareGeneratedSheets({
     generatedSheets: generation.generatedSheets,
     sheetRepository,
     folder,
+    provisionalSlugPrefix: generation.slugPrefix,
+    finalSlugPrefix,
     timestamp,
   })
   const lookup = buildAuthoritativeSheetLookup(sheetRepository)
@@ -689,7 +717,7 @@ export const spawnGeneratedEncountersUseCase = async (
 
     const spawned = persistence.placements.filter((placement) => !placement.error)
     const spawnFailures = persistence.placements.length - spawned.length
-    const { generatedSheets: _generatedSheets, ...generationResult } = generation
+    const { generatedSheets: _generatedSheets, slugPrefix: _slugPrefix, ...generationResult } = generation
 
     return {
       ...generationResult,

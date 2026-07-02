@@ -169,7 +169,7 @@ describe('spawnGeneratedEncountersUseCase', () => {
     expect(published).toEqual(result.realtimeEvents)
   })
 
-  it.fails('retargets generated sheet and placement slugs to the final allocated folder', async () => {
+  it('retargets generated sheet and placement slugs to the final allocated folder', async () => {
     const { dependencies, sheets, maps } = createHarness()
     sheets.createFolder('pokemon', 'wild/pond_1', 100)
 
