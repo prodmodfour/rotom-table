@@ -258,7 +258,7 @@ npm test -- tests/server/spawnGeneratedEncounters.test.ts
 
 ## 007 — Retry placement-id allocation before failing a spawn
 
-Status: TODO
+Status: DONE
 
 **Problem**
 

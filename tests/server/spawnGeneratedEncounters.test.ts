@@ -169,12 +169,13 @@ describe('spawnGeneratedEncountersUseCase', () => {
     expect(published).toEqual(result.realtimeEvents)
   })
 
-  it.fails('retries duplicate placement ids before failing a generated spawn', async () => {
+  it('retries duplicate placement ids before failing a generated spawn', async () => {
     let placementIndex = 0
     const placementIds = ['spawn-1', 'spawn-2']
-    const { dependencies, maps } = createHarness({
+    const { dependencies, maps, sheets } = createHarness({
       createPlacementId: () => placementIds[placementIndex++] ?? `spawn-${placementIndex}`,
     })
+    sheets.saveSetupSheet('pokemon', 'already-on-map', generatedSheet({ slug: 'already-on-map' }) as unknown as Record<string, unknown>)
     maps.saveSetupMap(mapFixture({
       placements: [{
         id: 'spawn-1',
@@ -201,6 +202,36 @@ describe('spawnGeneratedEncountersUseCase', () => {
     })
     expect(mapPlacementIds).toEqual(['spawn-1', 'spawn-2'])
     expect(placementIndex).toBe(2)
+  })
+
+  it('fails gracefully when placement id allocation only returns duplicates and empty ids', async () => {
+    let placementIndex = 0
+    const placementIds = ['spawn-1', '']
+    const createPlacementId = vi.fn(() => placementIds[placementIndex++ % placementIds.length]!)
+    const { dependencies, maps, sheets } = createHarness({ createPlacementId })
+    sheets.saveSetupSheet('pokemon', 'already-on-map', generatedSheet({ slug: 'already-on-map' }) as unknown as Record<string, unknown>)
+    const existingPlacement = {
+      id: 'spawn-1',
+      sheetKind: 'pokemon' as const,
+      sheetSlug: 'already-on-map',
+      position: { x: 0, y: 0, z: 0 },
+      facing: 'south-east' as const,
+      turned: false,
+    }
+    maps.saveSetupMap(mapFixture({ placements: [existingPlacement] }))
+
+    const result = await spawnGeneratedEncountersUseCase(spawnBody, dependencies)
+
+    expect(result.spawn).toMatchObject({
+      spawned: 0,
+      failures: 1,
+      placements: [{
+        slug: 'wild-pond-1-bulbasaur-lv5-1',
+        error: 'Could not allocate a unique placement id',
+      }],
+    })
+    expect(createPlacementId.mock.calls.length).toBeGreaterThan(1)
+    expect(maps.getBySlug('pond-map')?.placements).toEqual([existingPlacement])
   })
 
   it('retargets generated sheet and placement slugs to the final allocated folder', async () => {

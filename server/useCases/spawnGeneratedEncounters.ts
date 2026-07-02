@@ -234,6 +234,20 @@ const buildAuthoritativeSheetLookup = (sheetRepository: SpawnSheetRepository): S
   trainer: sheetMap(sheetRepository.list('trainer').map(storedTrainerSheet)),
 })
 
+const allocateUniquePlacementId = (
+  placementIds: Set<string>,
+  createPlacementId: () => string,
+): string | null => {
+  for (let attempt = 0; attempt < MAX_SLUG_ALLOCATION_ATTEMPTS; attempt += 1) {
+    const id = createPlacementId()
+    if (id && !placementIds.has(id)) {
+      placementIds.add(id)
+      return id
+    }
+  }
+  return null
+}
+
 const appendPlacementsForGeneratedSheets = ({
   map,
   generatedSheets,
@@ -290,12 +304,11 @@ const appendPlacementsForGeneratedSheets = ({
       continue
     }
 
-    const placementId = createPlacementId()
-    if (!placementId || placementIds.has(placementId)) {
-      results.push({ file: generated.file, slug: generated.slug, error: 'Duplicate placement id generated' })
+    const placementId = allocateUniquePlacementId(placementIds, createPlacementId)
+    if (!placementId) {
+      results.push({ file: generated.file, slug: generated.slug, error: 'Could not allocate a unique placement id' })
       continue
     }
-    placementIds.add(placementId)
 
     const placement: SheetPlacement = {
       id: placementId,
