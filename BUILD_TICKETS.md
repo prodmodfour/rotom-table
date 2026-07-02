@@ -222,7 +222,7 @@ npm run typecheck
 
 ## 006 — Add duplicate placement-id retry regression coverage
 
-Status: TODO
+Status: DONE
 
 **Problem**
 

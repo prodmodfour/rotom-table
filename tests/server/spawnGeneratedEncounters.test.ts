@@ -169,6 +169,40 @@ describe('spawnGeneratedEncountersUseCase', () => {
     expect(published).toEqual(result.realtimeEvents)
   })
 
+  it.fails('retries duplicate placement ids before failing a generated spawn', async () => {
+    let placementIndex = 0
+    const placementIds = ['spawn-1', 'spawn-2']
+    const { dependencies, maps } = createHarness({
+      createPlacementId: () => placementIds[placementIndex++] ?? `spawn-${placementIndex}`,
+    })
+    maps.saveSetupMap(mapFixture({
+      placements: [{
+        id: 'spawn-1',
+        sheetKind: 'pokemon',
+        sheetSlug: 'already-on-map',
+        position: { x: 0, y: 0, z: 0 },
+        facing: 'south-east',
+        turned: false,
+      }],
+    }))
+
+    const result = await spawnGeneratedEncountersUseCase(spawnBody, dependencies)
+    const mapPlacementIds = maps.getBySlug('pond-map')?.placements.map((placement) => placement.id) ?? []
+
+    expect(result.spawn.spawned).toBe(1)
+    expect(result.spawn.failures).toBe(0)
+    expect(result.spawn.placements).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ error: 'Duplicate placement id generated' }),
+    ]))
+    expect(result.spawn.placements[0]).toMatchObject({
+      slug: 'wild-pond-1-bulbasaur-lv5-1',
+      placementId: 'spawn-2',
+      position: { x: 2, y: 0, z: 2 },
+    })
+    expect(mapPlacementIds).toEqual(['spawn-1', 'spawn-2'])
+    expect(placementIndex).toBe(2)
+  })
+
   it('retargets generated sheet and placement slugs to the final allocated folder', async () => {
     const { dependencies, sheets, maps } = createHarness()
     sheets.createFolder('pokemon', 'wild/pond_1', 100)
