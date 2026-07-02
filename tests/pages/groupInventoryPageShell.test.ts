@@ -20,7 +20,7 @@ describe('group inventory page shell', () => {
     expect(source).toContain('const { isGm, isPlayer } = useAuth()')
     expect(source).toContain('selectedProfileId')
     expect(source).toContain('loadRememberedProfile')
-    expect(source).toContain("title: 'Inventory · Rotom Table'")
+    expect(source).toContain("title: 'Group Inventory · Rotom Table'")
     expect(source).toContain('<AppNavigation />')
     expect(source).toContain('await useFetch<GroupInventoryDocument | null>(GROUP_INVENTORY_API_PATHS.load')
     expect(source).toContain("key: 'group-inventory-main'")

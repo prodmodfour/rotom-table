@@ -28,7 +28,7 @@ export interface AppNavItem {
 export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: MAP_LIBRARY_PATH, label: 'Maps' },
   { path: CAMPAIGN_PATH, label: 'Campaign', gmOnly: true },
-  { path: GROUP_INVENTORY_PATH, label: 'Inventory' },
+  { path: GROUP_INVENTORY_PATH, label: 'Group Inventory' },
   { path: SHOP_LIBRARY_PATH, label: 'Shops' },
   { path: POKEDEX_PATH, label: 'Pokédex' },
   { path: PLAYER_TRAINER_PORTAL_PATH, label: 'Trainers', playerOnly: true },

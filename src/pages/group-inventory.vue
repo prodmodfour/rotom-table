@@ -77,7 +77,7 @@ const reloadGroupInventory = async () => {
 }
 
 useHead({
-  title: 'Inventory · Rotom Table',
+  title: 'Group Inventory · Rotom Table',
   meta: [
     {
       name: 'description',

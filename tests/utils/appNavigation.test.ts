@@ -38,8 +38,8 @@ describe('app navigation helpers', () => {
       '/generate',
     ])
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).some((item) => item.path === '/sessions')).toBe(false)
-    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).find((item) => item.path === GROUP_INVENTORY_PATH)?.label).toBe('Inventory')
-    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === GROUP_INVENTORY_PATH)?.label).toBe('Inventory')
+    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).find((item) => item.path === GROUP_INVENTORY_PATH)?.label).toBe('Group Inventory')
+    expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === GROUP_INVENTORY_PATH)?.label).toBe('Group Inventory')
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, false).find((item) => item.path === SHOP_LIBRARY_PATH)?.label).toBe('Shops')
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === SHOP_LIBRARY_PATH)?.label).toBe('Shops')
     expect(filterAppNavItems(PRIMARY_APP_NAV_ITEMS, true).find((item) => item.path === SETTINGS_PATH)?.label).toBe('Settings')
