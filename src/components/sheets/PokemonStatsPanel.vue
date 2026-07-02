@@ -2,7 +2,6 @@
 import { formatCombatStage } from '~/utils/combatStageStats'
 import { formatSignedModifier } from '~/utils/evasion'
 import type {
-  BaseRelationAddedStatPointBoundsByKey,
   BaseRelationViolation,
   ResolvedStat,
 } from '~/utils/sheets/pokemonDerived'
@@ -14,7 +13,6 @@ defineProps<{
   statPointsLeft: number
   statPointsSpent: number
   statPointsBudget: number
-  baseRelationAddedStatPointBounds: BaseRelationAddedStatPointBoundsByKey
   baseRelationViolations: readonly BaseRelationViolation[]
   visibleBaseRelationViolations: readonly BaseRelationViolation[]
   remainingBaseRelationViolationCount: number
@@ -57,9 +55,6 @@ const emit = defineEmits<{
               <StatAllocationSlider
                 :model-value="row.added"
                 :points-left="statPointsLeft"
-                :min="baseRelationAddedStatPointBounds[row.key]?.min"
-                :max="baseRelationAddedStatPointBounds[row.key]?.max"
-                constraint-label="BSR"
                 :label="`${row.label} Added Stat Points`"
                 @update:model-value="(v) => emit('setStat', row.key, 'added', v)"
               />

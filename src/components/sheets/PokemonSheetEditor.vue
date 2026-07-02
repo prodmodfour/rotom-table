@@ -49,7 +49,6 @@ const {
   statPointsSpent,
   statPointsBudget,
   statPointsLeft,
-  baseRelationAddedStatPointBounds,
   baseRelationViolations,
   visibleBaseRelationViolations,
   remainingBaseRelationViolationCount,
@@ -154,7 +153,6 @@ const healingModalSubtitle = computed(() => sheet.value.species ? `${sheet.value
           :stat-points-left="statPointsLeft"
           :stat-points-spent="statPointsSpent"
           :stat-points-budget="statPointsBudget"
-          :base-relation-added-stat-point-bounds="baseRelationAddedStatPointBounds"
           :base-relation-violations="baseRelationViolations"
           :visible-base-relation-violations="visibleBaseRelationViolations"
           :remaining-base-relation-violation-count="remainingBaseRelationViolationCount"

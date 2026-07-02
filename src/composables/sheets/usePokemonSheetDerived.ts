@@ -10,7 +10,6 @@ import { computePokemonLevelUpStatPointBudget } from '~/utils/statPointBudgets'
 import {
   computeFullMaxHp,
   computeMaxHp,
-  resolveBaseRelationAddedStatPointBounds,
   resolveCapabilities,
   resolveSkills,
   resolveStats,
@@ -181,7 +180,6 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
   )
   const statPointsBudget = computed(() => computePokemonLevelUpStatPointBudget(sheet.value?.level ?? 1))
   const statPointsLeft = computed(() => statPointsBudget.value - statPointsSpent.value)
-  const baseRelationAddedStatPointBounds = computed(() => resolveBaseRelationAddedStatPointBounds(stats.value))
   const baseRelationViolations = computed(() => validateBaseRelations(stats.value))
   const visibleBaseRelationViolations = computed(() =>
     baseRelationViolations.value.slice(0, BASE_RELATION_VISIBLE_LIMIT),
@@ -370,7 +368,6 @@ export function usePokemonSheetDerived(sheet: PokemonSheetRef) {
     statPointsSpent,
     statPointsBudget,
     statPointsLeft,
-    baseRelationAddedStatPointBounds,
     baseRelationViolations,
     visibleBaseRelationViolations,
     remainingBaseRelationViolationCount,
