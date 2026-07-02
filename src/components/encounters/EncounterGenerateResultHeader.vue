@@ -14,6 +14,9 @@ const props = defineProps<{
 }>()
 
 const spawnMapPath = computed(() => props.spawn ? mapEditorPath(props.spawn.mapSlug) : '')
+const encounterSlotCountLabel = computed(() => `${props.count} encounter ${props.count === 1 ? 'slot' : 'slots'}`)
+const requestedEncounterSlotBadgeLabel = computed(() => `${encounterSlotCountLabel.value} requested`)
+const generatedFileBadgeLabel = computed(() => `${props.fileCount} generated ${props.fileCount === 1 ? 'file' : 'files'}`)
 </script>
 
 <template>
@@ -29,7 +32,8 @@ const spawnMapPath = computed(() => props.spawn ? mapEditorPath(props.spawn.mapS
     </h2>
     <div class="result-pills">
       <span v-if="!preview" class="badge">{{ relDir }}</span>
-      <span class="badge">{{ fileCount }} file(s)</span>
+      <span class="badge">{{ requestedEncounterSlotBadgeLabel }}</span>
+      <span class="badge">{{ generatedFileBadgeLabel }}</span>
       <NuxtLink v-if="spawn" class="badge badge-link" :to="spawnMapPath">
         {{ spawn.spawned }} spawned · {{ spawn.mapName }}
       </NuxtLink>
@@ -41,6 +45,7 @@ const spawnMapPath = computed(() => props.spawn ? mapEditorPath(props.spawn.mapS
     <code>{{ relDir }}/</code>.
     The folder name auto-increments (<code>{{ tableKey }}_{{ count }}</code>,
     <code>{{ tableKey }}_{{ count }}-2</code>…) so repeat runs don't clobber.
+    This result rolled {{ encounterSlotCountLabel }}; Nothing rolls do not write files, so generated files can be fewer than requested slots.
     <template v-if="spawn">
       Spawned {{ spawn.spawned }} token(s) onto
       <NuxtLink :to="spawnMapPath" class="inline-link">{{ spawn.mapName }}</NuxtLink>.

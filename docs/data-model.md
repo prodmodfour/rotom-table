@@ -104,7 +104,7 @@ Use preview mode when you want to test an encounter roll without keeping generat
 just encounter <region> <table> <count> preview
 ```
 
-The browser `/generate` page can also preview or write generated results depending on the workflow.
+The browser `/generate` page can also preview or write generated results depending on the workflow. Requested counts are encounter slots: each slot rolls once, and `Nothing` rolls are skipped, so generated Pokémon/files can be fewer than the requested slot count.
 
 ## Local campaign data and `.gitignore`
 

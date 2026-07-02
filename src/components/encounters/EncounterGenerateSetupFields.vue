@@ -49,7 +49,7 @@ const mapOptionLabel = (map: MapSummary): string => map.folder ? `${map.folder} 
     </label>
 
     <fieldset class="field fieldset">
-      <legend class="field-label">Count range</legend>
+      <legend class="field-label">Encounter slot range</legend>
       <div class="range-row">
         <label class="subfield">
           <span class="subfield-label">Min</span>
@@ -72,6 +72,7 @@ const mapOptionLabel = (map: MapSummary): string => map.folder ? `${map.folder} 
           />
         </label>
       </div>
+      <span class="field-hint">Rolls this many encounter slots; Nothing results do not create files.</span>
     </fieldset>
 
     <label class="field">

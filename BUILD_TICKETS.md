@@ -58,7 +58,7 @@ npm test -- tests/server/encounterGeneration.test.ts
 
 ## 002 — Make encounter “count” semantics explicit as encounter slots
 
-Status: TODO
+Status: DONE
 
 **Problem**
 
