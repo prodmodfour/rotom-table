@@ -116,10 +116,10 @@ just move "Thunderbolt"
 just ability "Static"
 just encounter
 just encounter <region>
-just encounter <region> <table> <count> preview
+just encounter <region> <table> <slot-count> preview
 ```
 
-Encounter spawn flows persist generated Pokémon sheets into SQLite. Standalone encounter generation can still produce JSON output as explicit generation/interchange tooling, resolved under `ROTOM_CAMPAIGN_ROOT` when that variable is set. The requested encounter count is a slot count; `Nothing` rolls do not create Pokémon sheets, so output files may be fewer than requested slots.
+Encounter spawn flows persist generated Pokémon sheets into SQLite. Standalone encounter generation can still produce JSON output as explicit generation/interchange tooling, resolved under `ROTOM_CAMPAIGN_ROOT` when that variable is set. The requested encounter slot count rolls once per slot; `Nothing` rolls do not create Pokémon sheets, so output files may be fewer than requested slots.
 
 ## Local data behaviour
 

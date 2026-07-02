@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: TODO
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -393,7 +393,7 @@ npm run typecheck
 
 ## 010 — Final encounter/spawn verification pass
 
-Status: TODO
+Status: DONE
 
 **Problem**
 

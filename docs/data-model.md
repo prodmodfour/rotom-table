@@ -101,10 +101,10 @@ Encounter spawn flows persist generated Pokémon sheets into SQLite so they appe
 Use preview mode when you want to test an encounter roll without keeping generated files:
 
 ```bash
-just encounter <region> <table> <count> preview
+just encounter <region> <table> <slot-count> preview
 ```
 
-The browser `/generate` page can also preview or write generated results depending on the workflow. Requested counts are encounter slots: each slot rolls once, and `Nothing` rolls are skipped, so generated Pokémon/files can be fewer than the requested slot count.
+The browser `/generate` page can also preview or write generated results depending on the workflow. Requested slot counts roll once per encounter slot, and `Nothing` rolls are skipped, so generated Pokémon/files can be fewer than the requested slot count.
 
 ## Local campaign data and `.gitignore`
 

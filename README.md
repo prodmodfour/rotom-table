@@ -165,15 +165,15 @@ just move "Thunderbolt"      # lookup a move
 just ability "Static"        # lookup an ability
 just encounter               # list available encounter regions
 just encounter <region>      # list tables in a region
-just encounter <region> <table> <count>
+just encounter <region> <table> <slot-count>
 ```
 
-Generated encounters are written under `data/sheets/wild/<table>_<count>/` by default, which makes them appear automatically in the `/sheets` page.
+The `slot-count` argument is an encounter slot count: each slot rolls once, and `Nothing` rolls do not create Pokémon. When writing JSON output, generated Pokémon are written under `data/sheets/wild/<table>_<slot-count>/` by default, so the number of files can be fewer than the requested slots.
 
 Preview without writing files:
 
 ```bash
-just encounter <region> <table> <count> preview
+just encounter <region> <table> <slot-count> preview
 ```
 
 Clear generated encounter output:
@@ -186,7 +186,7 @@ just encounter --clear
 
 Encounter tables live in `encounter_tables/` and are exposed through the GM-only `/encounter-tables` route. A table has a name, level range, and weighted entries with species/level data. The app can create, rename, move, delete, and save encounter tables during development or private hosted play with hosted writes enabled.
 
-The `/generate` page rolls from those tables and can either preview generated sheets or write them into the sheet data tree.
+The `/generate` page rolls encounter slots from those tables and can either preview generated results, write generated sheets, or spawn generated Pokémon onto a map.
 
 ## Auth and access model
 
