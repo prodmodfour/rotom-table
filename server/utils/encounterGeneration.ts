@@ -28,11 +28,14 @@ export interface GenerateEncounterBody {
   countMax?: number
   outRoot?: string
   preview?: boolean
+  /** Exact non-Nothing rolls already displayed by the client preview. */
+  rolled?: unknown
 }
 
 export const DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT = DEFAULT_ENCOUNTER_OUT_ROOT
 
 const SAFE_NAME = /^[a-zA-Z0-9_-]+$/
+const MAX_ROLL_VALUE = Number.MAX_SAFE_INTEGER
 
 export class EncounterGenerationInputError extends UseCaseHttpError<number> {
   get statusMessage(): string {
@@ -106,6 +109,41 @@ export const sanitizeEncounterCountRange = (minValue: unknown, maxValue: unknown
   return { min, max }
 }
 
+const rolledEncounterRecord = (value: unknown, label: string): Record<string, unknown> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    badEncounterInput(`${label} must be an object`)
+  }
+  return value as Record<string, unknown>
+}
+
+const sanitizeRolledInteger = (value: unknown, label: string, max: number): number => {
+  const numberValue = Number(value)
+  if (!Number.isInteger(numberValue) || numberValue < 1 || numberValue > max) {
+    badEncounterInput(`${label} must be an integer between 1 and ${max}`)
+  }
+  return numberValue
+}
+
+export const sanitizeRolledEncounters = (value: unknown): RolledEncounter[] | undefined => {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) badEncounterInput('rolled must be an array')
+  if (value.length > MAX_ENCOUNTER_COUNT) {
+    badEncounterInput(`rolled must contain at most ${MAX_ENCOUNTER_COUNT} encounters`)
+  }
+
+  return value.map((item, index) => {
+    const label = `rolled[${index}]`
+    const record = rolledEncounterRecord(item, label)
+    const species = String(record.species ?? '').trim()
+    if (!species) badEncounterInput(`${label}.species required`)
+    return {
+      species,
+      level: sanitizeRolledInteger(record.level, `${label}.level`, 100),
+      roll: sanitizeRolledInteger(record.roll, `${label}.roll`, MAX_ROLL_VALUE),
+    }
+  })
+}
+
 export const slugifyEncounterOutputPath = (value: string): string =>
   value.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'sheet'
 
@@ -171,5 +209,6 @@ export const readEncounterGenerateRequest = (body: GenerateEncounterBody | null 
     outRoot: sanitizeEncounterOutRoot(String(body?.outRoot ?? DEFAULT_ENCOUNTER_GENERATE_OUT_ROOT)),
     countRange,
     preview: Boolean(body?.preview),
+    rolled: sanitizeRolledEncounters(body?.rolled),
   }
 }
