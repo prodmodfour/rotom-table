@@ -234,6 +234,32 @@ describe('spawnGeneratedEncountersUseCase', () => {
     expect(maps.getBySlug('pond-map')?.placements).toEqual([existingPlacement])
   })
 
+  it('does not place generated Pokémon on an existing unresolved placement anchor', async () => {
+    const unresolvedAnchor = { x: 2, y: 0, z: 2 }
+    const { dependencies, maps } = createHarness()
+    maps.saveSetupMap(mapFixture({
+      placements: [{
+        id: 'missing-token',
+        sheetKind: 'pokemon',
+        sheetSlug: 'missing-sheet',
+        position: unresolvedAnchor,
+        facing: 'south-east',
+        turned: false,
+      }],
+    }))
+
+    const result = await spawnGeneratedEncountersUseCase(spawnBody, dependencies)
+    const resultPlacement = result.spawn.placements.find((placement) => placement.placementId === 'spawn-1')
+    const mapPlacement = maps.getBySlug('pond-map')?.placements.find((placement) => placement.id === 'spawn-1')
+
+    expect(result.spawn.spawned).toBe(1)
+    expect(result.spawn.failures).toBe(0)
+    expect(resultPlacement?.position).toBeDefined()
+    expect(resultPlacement?.position).not.toEqual(unresolvedAnchor)
+    expect(mapPlacement?.position).toEqual(resultPlacement?.position)
+    expect(mapPlacement?.position).not.toEqual(unresolvedAnchor)
+  })
+
   it('retargets generated sheet and placement slugs to the final allocated folder', async () => {
     const { dependencies, sheets, maps } = createHarness()
     sheets.createFolder('pokemon', 'wild/pond_1', 100)

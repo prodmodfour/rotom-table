@@ -311,7 +311,7 @@ npm run typecheck
 
 ## 008 — Add unresolved-placement occupancy regression coverage
 
-Status: TODO
+Status: DONE
 
 **Problem**
 
