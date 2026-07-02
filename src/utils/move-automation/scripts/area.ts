@@ -116,6 +116,28 @@ const reviewedCoachingScript = (version = 1): MoveAutomationScript => reviewedAr
   ],
 })
 
+const HEAL_BELL_PERSISTENT_STATUS_CONDITIONS = [
+  'Burned',
+  'Paralysis',
+  'Frozen',
+  'Poisoned',
+  'Badly Poisoned',
+] as const
+
+const reviewedHealBellScript = (version = 1): MoveAutomationScript => reviewedAreaConfirmationScript('Heal Bell', version, {
+  requiresAccuracy: false,
+  damageBase: null,
+  conditionSuggestions: HEAL_BELL_PERSISTENT_STATUS_CONDITIONS.map((condition) => ({
+    recipient: 'target',
+    condition,
+    action: 'remove',
+    label: condition,
+  })),
+  automationNotes: [
+    'Heal Bell cures only Persistent Status ailments on selected Burst 3 targets; Volatile conditions such as Sleep or Confused are left unchanged.',
+  ],
+})
+
 const reviewedRagingFuryScript = (version = 1): MoveAutomationScript => reviewedAreaConfirmationScript('Raging Fury', version, {
   conditionSuggestions: [
     { recipient: 'user', condition: 'Rage', action: 'add', label: 'Enraged' },
@@ -219,6 +241,7 @@ export const REVIEWED_AREA_CONDITION_SCRIPTS: ReadonlyMap<string, MoveAutomation
     { condition: 'Flinch', label: 'Flinch on 15+', threshold: '15+' },
     { condition: 'Frozen', label: 'Frozen on 19+', threshold: '19+' },
   ])],
+  ['Heal Bell', reviewedHealBellScript()],
   ['Poison Gas', reviewedAreaConditionScript('Poison Gas', [{ condition: 'Poisoned', label: 'Poisoned' }])],
   ['Raging Fury', reviewedRagingFuryScript()],
   ['Rock Slide', reviewedAreaConditionScript('Rock Slide', [{ condition: 'Flinch', label: 'Flinch on 17+', threshold: '17+' }])],

@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(255)
-    expect(moveAutomationCoverage.missing).toHaveLength(521)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(256)
+    expect(moveAutomationCoverage.missing).toHaveLength(520)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -294,6 +294,7 @@ describe('explicit move automation scripts', () => {
     const poisonGas = explicitScriptForMove('Poison Gas')
     const sludgeWave = explicitScriptForMove('Sludge Wave')
     const sweetScent = explicitScriptForMove('Sweet Scent')
+    const healBell = explicitScriptForMove('Heal Bell')
 
     expect(tailWhip).toMatchObject({
       kind: 'explicit',
@@ -362,6 +363,29 @@ describe('explicit move automation scripts', () => {
     })
     expect(sweetScent?.areaTemplates).toMatchObject([{ kind: 'burst', size: 2 }])
     expect(isSeamlessAreaConfirmationScript(sweetScent)).toBe(true)
+
+    expect(healBell).toMatchObject({
+      kind: 'explicit',
+      moveName: 'Heal Bell',
+      targetMode: 'multi-target',
+      damaging: false,
+      requiresAccuracy: false,
+      ac: null,
+      damageBase: null,
+      damageClass: 'Status',
+      type: 'Normal',
+      range: 'Burst 3, Sonic',
+      conditionSuggestions: [
+        { recipient: 'target', condition: 'Burned', action: 'remove', label: 'Burned' },
+        { recipient: 'target', condition: 'Paralysis', action: 'remove', label: 'Paralysis' },
+        { recipient: 'target', condition: 'Frozen', action: 'remove', label: 'Frozen' },
+        { recipient: 'target', condition: 'Poisoned', action: 'remove', label: 'Poisoned' },
+        { recipient: 'target', condition: 'Badly Poisoned', action: 'remove', label: 'Badly Poisoned' },
+      ],
+    })
+    expect(healBell?.keywords).toEqual(expect.arrayContaining(['Sonic']))
+    expect(healBell?.areaTemplates).toMatchObject([{ kind: 'burst', size: 3 }])
+    expect(isSeamlessAreaConfirmationScript(healBell)).toBe(true)
   })
 
   it('implements Dragon Hammer as a reviewed mixed single-target-or-area attack', () => {

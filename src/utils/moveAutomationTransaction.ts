@@ -268,6 +268,21 @@ export const buildMoveAutomationTransaction = ({
       return block ? blockSuggestion(block.label, token, block.source, block.reason) : true
     })
   }
+  const conditionSuggestionCanChangeToken = (
+    suggestion: MoveAutomationScript['conditionSuggestions'][number],
+    token: SpawnedPokemon,
+  ): boolean => {
+    const action = suggestion.action ?? 'add'
+    if (action === 'add') return true
+
+    const current = normalizeConditionNames(token.conditions)
+    if (action === 'clear') return current.length > 0
+
+    const removals = normalizeConditionNames([suggestion.condition])
+    if (!removals.length) return false
+    const currentSet = new Set(current)
+    return removals.some((condition) => currentSet.has(condition))
+  }
 
   script.hpSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'hp', index)) return
@@ -294,6 +309,7 @@ export const buildMoveAutomationTransaction = ({
   script.conditionSuggestions.forEach((item, index) => {
     if (!suggestionIsEnabled(script, enabledSuggestions, 'condition', index)) return
     const recipients = suggestionRecipients('condition', index, item.recipient, item.threshold)
+      .filter((token) => conditionSuggestionCanChangeToken(item, token))
     for (const token of recipients) conditionAccumulator.applySuggestion(token, item)
     const logLine = formatMoveAutomationConditionSuggestionLogLine(item, recipients)
     if (logLine) logLines.push(logLine)

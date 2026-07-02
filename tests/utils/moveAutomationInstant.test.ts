@@ -331,6 +331,35 @@ describe('instant move automation', () => {
     ]))
   })
 
+  it('resolves Heal Bell as a Burst persistent-status cure without clearing Volatile conditions', () => {
+    const script = explicitScriptForMove('Heal Bell')!
+    const transaction = resolveInstantAreaMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Cleric' }),
+      targets: [
+        token({ id: 'burned', species: 'Burnmon', conditions: ['Burned', 'Poisoned', 'Confused'] }),
+        token({ id: 'toxic', species: 'Toxicmon', conditions: ['Badly Poisoned', 'Sleep'] }),
+        token({ id: 'sleepy', species: 'Sleepmon', conditions: ['Sleep'] }),
+      ],
+    })
+
+    expect(transaction.hpUpdates).toEqual([])
+    expect(transaction.conditionUpdates).toEqual([
+      { id: 'burned', conditions: ['Confused'] },
+      { id: 'toxic', conditions: ['Sleep'] },
+    ])
+    expect(transaction.logLines).toEqual(expect.arrayContaining([
+      'Burned removed from Burnmon.',
+      'Poisoned removed from Burnmon.',
+      'Badly Poisoned removed from Toxicmon.',
+    ]))
+    expect(transaction.logLines.some((line) => (
+      line.includes('Sleep removed')
+      || line.includes('Confused removed')
+      || line.includes('removed from Sleepmon')
+    ))).toBe(false)
+  })
+
   it('resolves explicit multi-target-count moves against selected targets with independent accuracy rolls', () => {
     const transaction = resolveInstantMultiTargetMoveAutomation({
       script: fakeExplicitMultiTargetScript(),
