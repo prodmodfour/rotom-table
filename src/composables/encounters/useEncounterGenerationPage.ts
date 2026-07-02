@@ -101,9 +101,11 @@ export const useEncounterGenerationPage = ({
   })
 
   const rolledPreview = ref<RolledEncounter[]>([])
+  const rolledPreviewCount = ref<number>(DEFAULT_ENCOUNTER_COUNT_RANGE.min)
   const rollPreview = () => {
     if (!selectedTable.value) return
     const encounterCount = randomEncounterGenerateCount({ min: countMin.value, max: countMax.value }, random)
+    rolledPreviewCount.value = encounterCount
     rolledPreview.value = rollEncounters(selectedTable.value.table, encounterCount, random)
   }
 
@@ -123,6 +125,7 @@ export const useEncounterGenerationPage = ({
 
   const applyGenerationResult = (nextResult: EncounterGenerateResult) => {
     result.value = nextResult
+    rolledPreviewCount.value = nextResult.count ?? nextResult.rolled.length
     rolledPreview.value = cloneRolledEncounters(nextResult.rolled)
   }
 
@@ -135,8 +138,8 @@ export const useEncounterGenerationPage = ({
       applyGenerationResult(await fetchGenerate(buildEncounterGenerateRequestBody({
         region: region.value,
         tableKey: tableKey.value,
-        countMin: countMin.value,
-        countMax: countMax.value,
+        countMin: rolledPreviewCount.value,
+        countMax: rolledPreviewCount.value,
         outRoot: outRoot.value,
         preview: preview.value,
         rolled: rolledPreview.value,
@@ -157,8 +160,8 @@ export const useEncounterGenerationPage = ({
       applyGenerationResult(await fetchSpawn(buildEncounterSpawnRequestBody({
         region: region.value,
         tableKey: tableKey.value,
-        countMin: countMin.value,
-        countMax: countMax.value,
+        countMin: rolledPreviewCount.value,
+        countMax: rolledPreviewCount.value,
         outRoot: outRoot.value,
         mapSlug: spawnMapSlug.value,
         clientId: clientId(),
