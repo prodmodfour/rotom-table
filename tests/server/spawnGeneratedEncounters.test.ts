@@ -169,6 +169,28 @@ describe('spawnGeneratedEncountersUseCase', () => {
     expect(published).toEqual(result.realtimeEvents)
   })
 
+  it.fails('retargets generated sheet and placement slugs to the final allocated folder', async () => {
+    const { dependencies, sheets, maps } = createHarness()
+    sheets.createFolder('pokemon', 'wild/pond_1', 100)
+
+    const result = await spawnGeneratedEncountersUseCase(spawnBody, dependencies)
+    const finalSlug = 'wild-pond-1-2-bulbasaur-lv5-1'
+    const provisionalSlug = 'wild-pond-1-bulbasaur-lv5-1'
+    const persistedSheet = sheets.getByRef('pokemon', finalSlug)
+    const mapPlacement = maps.getBySlug('pond-map')?.placements[0]
+    const resultPlacement = result.spawn.placements[0]
+
+    expect(result.relDir).toBe('data/sheets/wild/pond_1-2')
+    expect(persistedSheet?.sheet).toMatchObject({
+      slug: finalSlug,
+      folder: 'wild/pond_1-2',
+    })
+    expect(sheets.getByRef('pokemon', provisionalSlug)).toBeNull()
+    expect(mapPlacement?.sheetSlug).toBe(finalSlug)
+    expect(resultPlacement?.slug).toBe(finalSlug)
+    expect(resultPlacement?.slug).toBe(mapPlacement?.sheetSlug)
+  })
+
   it('allocates final slugs safely when generated slugs collide and uses final slugs in placements', async () => {
     const { dependencies, sheets, maps } = createHarness()
     sheets.saveSetupSheet('pokemon', 'wild-pond-1-bulbasaur-lv5-1', generatedSheet({ slug: 'wild-pond-1-bulbasaur-lv5-1', revision: 5 }) as unknown as Record<string, unknown>)

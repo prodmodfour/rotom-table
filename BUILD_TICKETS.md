@@ -95,7 +95,7 @@ npm run typecheck
 
 ## 003 — Add spawn folder collision regression coverage
 
-Status: TODO
+Status: DONE
 
 **Problem**
 
