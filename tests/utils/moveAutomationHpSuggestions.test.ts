@@ -28,7 +28,7 @@ describe('move automation HP suggestion parsing', () => {
     }))
 
     expect(suggestions).toEqual([
-      { recipient: 'user', mode: 'lose-percent-max', percent: 25, label: 'Recoil Recoil 1/4', optional: true },
+      { recipient: 'user', mode: 'recoil-percent-damage-dealt', percent: 25, rounding: 'floor', label: 'Recoil 1/4' },
       { recipient: 'target', mode: 'lose-percent-current', percent: 50, label: 'Target loses half current HP' },
       { recipient: 'target', mode: 'fixed-loss', amount: 15, label: 'Target loses 15 HP' },
     ])

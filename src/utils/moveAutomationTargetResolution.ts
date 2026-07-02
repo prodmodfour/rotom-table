@@ -277,7 +277,7 @@ export const resolveHpSuggestionAmount = (
     .find((percent): percent is number => typeof percent === 'number')
   const percent = weatherOverride ?? item.percent
   if (!percent) return 0
-  const base = item.mode === 'heal-percent-damage-dealt'
+  const base = item.mode === 'heal-percent-damage-dealt' || item.mode === 'recoil-percent-damage-dealt'
     ? options.damageDealt ?? 0
     : item.mode === 'lose-percent-current'
       ? token.currentHp

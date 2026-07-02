@@ -25,7 +25,15 @@ export const parseMoveAutomationHpSuggestions = (move: MoveAutomationMoveLike): 
   const recoil = range.match(/Recoil\s+1\/(\d+)/i)
   if (recoil) {
     const denominator = Number(recoil[1])
-    if (denominator > 0) add({ recipient: 'user', mode: 'lose-percent-max', percent: 100 / denominator, label: `Recoil ${recoil[0]}`, optional: true })
+    if (denominator > 0) {
+      add({
+        recipient: 'user',
+        mode: 'recoil-percent-damage-dealt',
+        percent: 100 / denominator,
+        rounding: 'floor',
+        label: recoil[0],
+      })
+    }
   }
 
   if (/target loses 1\/2 of their current Hit Points/i.test(effect)) {

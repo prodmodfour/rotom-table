@@ -241,7 +241,7 @@ export interface MoveAutomationConditionSuggestion {
 
 export interface MoveAutomationHpSuggestion {
   recipient: MoveAutomationRecipient
-  mode: 'heal-percent-max' | 'heal-percent-damage-dealt' | 'lose-percent-max' | 'lose-percent-current' | 'fixed-loss' | 'set-zero'
+  mode: 'heal-percent-max' | 'heal-percent-damage-dealt' | 'recoil-percent-damage-dealt' | 'lose-percent-max' | 'lose-percent-current' | 'fixed-loss' | 'set-zero'
   percent?: number
   amount?: number
   /** Optional weather-specific percentages for moves such as Synthesis. */

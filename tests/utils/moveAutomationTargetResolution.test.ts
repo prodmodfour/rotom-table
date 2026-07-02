@@ -184,6 +184,7 @@ describe('move automation target resolution helpers', () => {
         { recipient: 'target', mode: 'lose-percent-current', percent: 50, label: 'Lose half' },
         { recipient: 'target', mode: 'set-zero', label: 'Faint' },
         { recipient: 'target', mode: 'fixed-loss', amount: 6, label: 'Fixed' },
+        { recipient: 'user', mode: 'recoil-percent-damage-dealt', percent: 100 / 3, rounding: 'floor', label: 'Recoil' },
       ],
     })
     const target = token({ id: 't', species: 'Target', currentHp: 22, maxHp: 50, defenderTypes: ['Grass'] })
@@ -192,6 +193,7 @@ describe('move automation target resolution helpers', () => {
     expect(resolveHpSuggestionAmount(s, { [moveAutomationSuggestionKey(s, 'hp', 0)]: '7' }, 0, target)).toBe(7)
     expect(resolveHpSuggestionAmount(s, {}, 1, target)).toBe(22)
     expect(resolveHpSuggestionAmount(s, {}, 2, target)).toBe(6)
+    expect(resolveHpSuggestionAmount(s, {}, 3, target, { damageDealt: 20 })).toBe(6)
     expect(resolveHpSuggestionAmount(s, {}, 99, target)).toBe(0)
     expect(moveAutomationMultiplierLabel(s, target)).toBe('1.5')
     expect(moveAutomationMultiplierLabel(

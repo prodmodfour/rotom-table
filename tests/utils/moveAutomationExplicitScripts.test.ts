@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(256)
-    expect(moveAutomationCoverage.missing).toHaveLength(520)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(257)
+    expect(moveAutomationCoverage.missing).toHaveLength(519)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -763,6 +763,16 @@ describe('explicit move automation scripts', () => {
     expect(tackle).toMatchObject({ moveName: 'Tackle', targetMode: 'one-target', damaging: true, requiresAccuracy: true })
     expect(tackle?.automationNotes).toEqual(expect.arrayContaining([expect.stringContaining('pushes the target 2 meters')]))
     expect(isSeamlessSingleTargetMoveScript(tackle)).toBe(true)
+
+    const takeDown = explicitScriptForMove('Take Down')
+    expect(takeDown).toMatchObject({ moveName: 'Take Down', targetMode: 'one-target', damaging: true, requiresAccuracy: true, damageBase: 9, ac: 5 })
+    expect(takeDown?.hpSuggestions).toEqual([
+      { recipient: 'user', mode: 'recoil-percent-damage-dealt', percent: 100 / 3, rounding: 'floor', label: 'Recoil 1/3' },
+    ])
+    expect(takeDown?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Tripped', action: 'add', label: 'Trip Maneuver succeeds', optional: true },
+    ])
+    expect(isSeamlessSingleTargetMoveScript(takeDown)).toBe(true)
 
     const absorb = explicitScriptForMove('Absorb')
     expect(absorb).toMatchObject({ moveName: 'Absorb', targetMode: 'one-target', damaging: true })

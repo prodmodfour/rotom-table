@@ -160,6 +160,8 @@ const buildConditionFeedback = (options: {
     if (!targetThresholdMatches(suggestion.threshold, options.naturalRoll)) return
     if (!targetConditionSuggestionApplies(suggestion, options.hit, options.script.requiresAccuracy)) return
 
+    if (suggestion.optional && !suggestion.threshold) return
+
     const condition = normalizeConditionName(suggestion.condition) ?? suggestion.condition
     const blockedBy = moveAutomationMoveImmunitySource(options.script, options.target)
       ?? moveAutomationConditionImmunitySource(
@@ -210,7 +212,8 @@ const resolveTargetGroupConditionApplications = (
   const blockedNotes: string[] = []
 
   script.conditionSuggestions.forEach((suggestion, index) => {
-    if (isTargetConditionAddition(suggestion)) filteredSuggestionIndexes.add(index)
+    const canAutoEnable = !suggestion.optional || Boolean(suggestion.threshold)
+    if (isTargetConditionAddition(suggestion) && canAutoEnable) filteredSuggestionIndexes.add(index)
   })
   if (!filteredSuggestionIndexes.size) return { filteredSuggestionIndexes, targetIdsBySuggestion, blockedNotes }
 

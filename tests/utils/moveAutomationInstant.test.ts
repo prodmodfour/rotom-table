@@ -246,6 +246,25 @@ describe('instant move automation', () => {
     expect(result.transaction.logLines).toContain('Target: 15 HP lost (Dragon Rage fixed HP loss).')
   })
 
+  it('resolves Take Down recoil without applying the unresolved optional Trip Maneuver', () => {
+    const script = explicitScriptForMove('Take Down')!
+    const result = resolveInstantMoveAutomation({
+      script,
+      user: token({ id: 'u', species: 'Rhyhorn', currentHp: 30, maxHp: 40, atk: 10 }),
+      target: token({ id: 't', species: 'Target', currentHp: 50, maxHp: 50, def: 0, defenderTypes: [] }),
+      damageFormula: '2d10+10',
+      random: sequenceRandom([0.5, 0, 0]),
+    })
+
+    expect(result.feedback).toMatchObject({ naturalRoll: 11, hit: true, damageLoss: 22, conditions: [] })
+    expect(result.transaction.hpUpdates).toEqual([
+      { id: 't', currentHp: 28 },
+      { id: 'u', currentHp: 23 },
+    ])
+    expect(result.transaction.conditionUpdates).toEqual([])
+    expect(result.transaction.logLines).toContain('Rhyhorn: Recoil 1/3 (7 HP).')
+  })
+
   it('heals Synthesis from current weather without opening a target flow', () => {
     const script = explicitScriptForMove('Synthesis')!
     const transaction = resolveInstantSelfMoveAutomation({

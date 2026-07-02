@@ -200,6 +200,57 @@ describe('move automation transaction helpers', () => {
     expect(transaction.logLines).toContain('Oddish: Absorb heals user for half damage dealt (19 HP).')
   })
 
+  it('applies Take Down recoil from dealt damage and respects recoil immunity', () => {
+    const s = explicitScriptForMove('Take Down')
+    expect(s).not.toBeNull()
+    const user = token({ id: 'u', species: 'Rhyhorn', currentHp: 30, maxHp: 40, atk: 10 })
+    const target = token({ id: 't', species: 'Target', currentHp: 50, maxHp: 50, def: 0, defenderTypes: [] })
+    const hitResolution = {
+      ...defaultTargetResolutionState(s!),
+      hit: true,
+      damageRoll: { formula: 'flat', count: 0, sides: 0, total: 20, rolls: [], mod: 20 },
+    }
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s!,
+      user,
+      selectedTargets: [target],
+      targetResolutions: { t: hitResolution },
+      enabledSuggestions: { [moveAutomationSuggestionKey(s!, 'hp', 0)]: true },
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.hpUpdates).toEqual([
+      { id: 't', currentHp: 20 },
+      { id: 'u', currentHp: 20 },
+    ])
+    expect(transaction.logLines).toContain('Rhyhorn: Recoil 1/3 (10 HP).')
+
+    const immuneTransaction = buildMoveAutomationTransaction({
+      script: s!,
+      user: { ...user, abilityNames: ['Rock Head'] },
+      selectedTargets: [target],
+      targetResolutions: { t: hitResolution },
+      enabledSuggestions: { [moveAutomationSuggestionKey(s!, 'hp', 0)]: true },
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(immuneTransaction.hpUpdates).toEqual([{ id: 't', currentHp: 20 }])
+    expect(immuneTransaction.logLines).toContain('Rhyhorn: Recoil 1/3 did not apply: immune (Rock Head).')
+  })
+
   it('resists Electric damage with Mud Sport Coat and removes the coat after damage', () => {
     const s = explicitScriptForMove('Thunder Shock')
     expect(s).not.toBeNull()

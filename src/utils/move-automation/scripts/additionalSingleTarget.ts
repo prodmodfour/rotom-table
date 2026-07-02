@@ -53,6 +53,30 @@ const reviewedAbsorbScript = (version = 1): MoveAutomationScript => reviewedMove
   }],
 })
 
+const reviewedTakeDownScript = (version = 1): MoveAutomationScript => reviewedMoveScriptFromCanonical('Take Down', version, {
+  targetMode: 'one-target',
+  targetCount: 1,
+  hpSuggestions: [{
+    recipient: 'user',
+    mode: 'recoil-percent-damage-dealt',
+    percent: 100 / 3,
+    rounding: 'floor',
+    label: 'Recoil 1/3',
+  }],
+  conditionSuggestions: [{
+    recipient: 'target',
+    condition: 'Tripped',
+    action: 'add',
+    label: 'Trip Maneuver succeeds',
+    optional: true,
+  }],
+  automationNotes: [
+    'Take Down grants an optional Free Action Trip Maneuver after the hit; automation applies Tripped only if that opposed maneuver succeeds.',
+    'Recoil is calculated from damage dealt after defenses, weakness/resistance, and other mitigation; Rock Head and Magic Guard prevent this recoil HP loss.',
+    'Reckless Damage Base bonuses are not inferred; adjust the move DB before use if that Ability applies.',
+  ],
+})
+
 export const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Absorb', reviewedAbsorbScript()],
   ['Acupressure', reviewedAcupressureScript()],
@@ -96,6 +120,7 @@ export const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, Move
     targetCount: 1,
     automationNotes: ['Tackle pushes the target 2 meters after damage; move the target token manually after the automated hit resolves.'],
   })],
+  ['Take Down', reviewedTakeDownScript()],
   ['Torment', reviewedSingleTargetConditionScript('Torment', [{ condition: 'Suppressed', label: 'Suppressed' }])],
   ['U-Turn', reviewedMoveScriptFromCanonical('U-Turn', 1, {
     targetMode: 'one-target',

@@ -42,6 +42,7 @@ import { accuracyRollMeetsMoveThreshold } from '~/utils/moveAutomationThresholds
 import { conditionBaseName, normalizeConditionNames } from '~/utils/statusConditions'
 import { ELECTRIC_RESISTANT_COAT_CONDITION } from '~/utils/moveAutomationSpecialConditions'
 import { moveAutomationMoveImmunitySource } from '~/utils/moveAutomationMoveImmunity'
+import { moveAutomationRecoilImmunitySource } from '~/utils/moveAutomationRecoil'
 import type { CombatStageKey } from '~/types/combatStages'
 import type { MapFieldEffects } from '~/types/map'
 import type {
@@ -295,6 +296,13 @@ export const buildMoveAutomationTransaction = ({
         fieldEffects,
       })
       if (amount <= 0 && item.mode !== 'set-zero') continue
+      if (item.mode === 'recoil-percent-damage-dealt') {
+        const recoilImmunity = moveAutomationRecoilImmunitySource(token.abilityNames)
+        if (recoilImmunity) {
+          logLines.push(`${token.species}: ${item.label} did not apply: immune (${recoilImmunity}).`)
+          continue
+        }
+      }
       const beforeHp = hpAccumulator.get(token)
       const next = applyHpSuggestion(beforeHp, hpAccumulator.getMaxHp(token), amount, item.mode)
       const injuryResult = next < beforeHp
