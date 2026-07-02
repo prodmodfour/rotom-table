@@ -9,6 +9,7 @@ import {
 import {
   HELPING_HAND_CONDITION,
   SUPERSONIC_ACCURACY_PENALTY_CONDITION,
+  YAWN_CONDITION,
 } from '~/utils/moveAutomationSpecialConditions'
 import type { MoveAutomationScript } from '~/types/moveAutomation'
 import type { ReviewedTargetStageDefinition } from '~/utils/move-automation/scriptFactories'
@@ -77,6 +78,16 @@ const reviewedTakeDownScript = (version = 1): MoveAutomationScript => reviewedMo
   ],
 })
 
+const reviewedYawnScript = (version = 1): MoveAutomationScript => reviewedSingleTargetConditionScript('Yawn', [
+  { condition: YAWN_CONDITION, label: 'Yawn drowsy marker' },
+], version, {
+  requiresAccuracy: false,
+  automationNotes: [
+    'Yawn cannot miss; automation applies a removable Yawn marker instead of immediate Sleep.',
+    'At the end of the target’s next turn, replace the Yawn marker with Sleep unless an immunity or other rule prevents Sleep.',
+  ],
+})
+
 export const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, MoveAutomationScript> = new Map([
   ['Absorb', reviewedAbsorbScript()],
   ['Acupressure', reviewedAcupressureScript()],
@@ -131,4 +142,5 @@ export const REVIEWED_ADDITIONAL_SINGLE_TARGET_SCRIPTS: ReadonlyMap<string, Move
       'U-Turn explicitly allows a Trapped user to be recalled.',
     ],
   })],
+  ['Yawn', reviewedYawnScript()],
 ])

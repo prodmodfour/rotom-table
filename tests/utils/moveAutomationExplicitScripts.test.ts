@@ -11,8 +11,8 @@ import {
 describe('explicit move automation scripts', () => {
   it('preserves the reviewed explicit coverage counts', () => {
     expect(moveAutomationCoverage.canonicalMoveCount).toBe(776)
-    expect(moveAutomationCoverage.explicitScriptCount).toBe(257)
-    expect(moveAutomationCoverage.missing).toHaveLength(519)
+    expect(moveAutomationCoverage.explicitScriptCount).toBe(258)
+    expect(moveAutomationCoverage.missing).toHaveLength(518)
   })
 
   it('keeps representative pre-refactor scripts resolvable', () => {
@@ -828,6 +828,14 @@ describe('explicit move automation scripts', () => {
       { recipient: 'target', condition: 'Helping Hand', action: 'add', label: 'Helping Hand bonus' },
     ])
     expect(isSeamlessSingleTargetMoveScript(helpingHand)).toBe(true)
+
+    const yawn = explicitScriptForMove('Yawn')
+    expect(yawn).toMatchObject({ moveName: 'Yawn', targetMode: 'one-target', damaging: false, requiresAccuracy: false })
+    expect(yawn?.conditionSuggestions).toEqual([
+      { recipient: 'target', condition: 'Yawn', action: 'add', label: 'Yawn drowsy marker' },
+    ])
+    expect(yawn?.automationNotes).toEqual(expect.arrayContaining([expect.stringContaining('replace the Yawn marker with Sleep')]))
+    expect(isSeamlessSingleTargetMoveScript(yawn)).toBe(true)
 
     const howl = explicitScriptForMove('Howl')
     expect(howl).toMatchObject({ moveName: 'Howl', targetMode: 'multi-target', requiresAccuracy: false, damaging: false })

@@ -20,6 +20,7 @@ import {
   HELPING_HAND_CONDITION,
   SUPERSONIC_ACCURACY_PENALTY_CONDITION,
   SWEET_SCENT_EVASION_PENALTY_CONDITION,
+  YAWN_CONDITION,
 } from '~/utils/moveAutomationSpecialConditions'
 import type { CombatStageKey, CombatStageMap, CombatStatStageKey } from '~/types/combatStages'
 
@@ -490,6 +491,14 @@ export const describeSheetConditionEffects = (
       id: 'helping-hand-bonus',
       label: HELPING_HAND_CONDITION,
       description: 'Next Accuracy Roll this round gains +2 and next Damage Roll this round gains +10; remove after the bonus is consumed or the round ends.',
+    })
+  }
+
+  if (set.has(YAWN_CONDITION)) {
+    effects.push({
+      id: 'yawn-drowsy-marker',
+      label: YAWN_CONDITION,
+      description: 'At the end of the target’s next turn, replace this marker with Sleep unless an immunity or other rule prevents Sleep.',
     })
   }
 

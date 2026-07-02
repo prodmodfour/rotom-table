@@ -1,6 +1,7 @@
 import { conditionLookupKey, normalizeConditionName } from '~/utils/statusConditions'
 
 export const HELPING_HAND_CONDITION = 'Helping Hand'
+export const YAWN_CONDITION = 'Yawn'
 export const SUPERSONIC_ACCURACY_PENALTY_CONDITION = 'Supersonic Accuracy Penalty'
 export const ELECTRIC_RESISTANT_COAT_CONDITION = 'Electric-Resistant Coat'
 export const REFLECT_BLESSING_CONDITION = 'Reflect Blessing'
@@ -18,6 +19,7 @@ export const GROUNDSOURCE_IMMUNITY_SUPPRESSION_CONDITIONS = [
 
 const MOVE_AUTOMATION_SPECIAL_CONDITIONS = [
   HELPING_HAND_CONDITION,
+  YAWN_CONDITION,
   SUPERSONIC_ACCURACY_PENALTY_CONDITION,
   ELECTRIC_RESISTANT_COAT_CONDITION,
   REFLECT_BLESSING_CONDITION,

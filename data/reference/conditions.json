@@ -54,6 +54,16 @@
     ],
     "source": "move automation"
   },
+  "Yawn": {
+    "name": "Yawn",
+    "category": "Other Affliction",
+    "effect": "The target is drowsy from Yawn. At the end of its next turn, replace this marker with Sleep unless an immunity or other rule prevents Sleep.",
+    "aliases": [
+      "Drowsy",
+      "Yawn Drowsy Marker"
+    ],
+    "source": "move automation"
+  },
   "Supersonic Accuracy Penalty": {
     "name": "Supersonic Accuracy Penalty",
     "category": "Other Affliction",

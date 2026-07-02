@@ -363,6 +363,31 @@ describe('move automation transaction helpers', () => {
     expect(transaction.logLines).toContain('Sleep applied to Munchlax.')
   })
 
+  it('applies Yawn as a delayed drowsy marker instead of immediate Sleep', () => {
+    const s = explicitScriptForMove('Yawn')
+    expect(s).not.toBeNull()
+    const user = token({ id: 'u', species: 'Slowpoke' })
+    const target = token({ id: 't', species: 'Munchlax', defenderTypes: ['Normal'] })
+
+    const transaction = buildMoveAutomationTransaction({
+      script: s!,
+      user,
+      selectedTargets: [target],
+      targetResolutions: {},
+      enabledSuggestions: { [moveAutomationSuggestionKey(s!, 'condition', 0)]: true },
+      hpSuggestionAmounts: {},
+      manualUserConditions: [],
+      manualTargetConditions: [],
+      manualUserStageDeltas: stages,
+      manualTargetStageDeltas: stages,
+      hazardCells: [],
+      manualNote: '',
+    })
+
+    expect(transaction.conditionUpdates).toEqual([{ id: 't', conditions: ['Yawn'] }])
+    expect(transaction.logLines).toContain('Yawn drowsy marker applied to Munchlax.')
+  })
+
   it('blocks Earth Power damage and Special Defense drops against airborne Sky/Levitate Groundsource immunity', () => {
     const s = explicitScriptForMove('Earth Power')
     expect(s).not.toBeNull()

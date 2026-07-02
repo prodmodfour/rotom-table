@@ -56,6 +56,7 @@ describe('condition tag art helpers', () => {
     expect(normalizeConditionName('slow condition')).toBe('Slowed')
     expect(normalizeConditionName('Trips')).toBe('Tripped')
     expect(normalizeConditionName('enraged')).toBe('Rage')
+    expect(normalizeConditionName('drowsy')).toBe('Yawn')
     expect(conditionDisplayName('Rage')).toBe('Enraged')
     expect(conditionTagDefinition('burnt')).toEqual(CONDITION_TAGS.Burned)
     expect(conditionTagSvg('Badly Poisoned', 'sm')).toContain('TOX')
