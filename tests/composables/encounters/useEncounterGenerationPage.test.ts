@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { encounterTables, tablesInRegion } from '~/utils/encounterTables'
 import { useEncounterGenerationPage } from '~/composables/encounters/useEncounterGenerationPage'
 import type { EncounterGenerateRequestBody, EncounterGenerateResult, EncounterSpawnRequestBody } from '~/utils/encounterGeneration'
-import type { EncounterTableEntry } from '~/types/encounterTable'
+import type { EncounterTableEntry, RolledEncounter } from '~/types/encounterTable'
 import type { MapSummary } from '~/types/map'
 
 const firstEntry = encounterTables[0]
@@ -20,16 +20,17 @@ const maps: MapSummary[] = [
 ]
 
 const avoidNothing = () => 0
+const cloneRolled = (rolled: readonly RolledEncounter[]): RolledEncounter[] => rolled.map((encounter) => ({ ...encounter }))
 
 const result = (body: EncounterGenerateRequestBody): EncounterGenerateResult => ({
   ok: true,
   dir: '/tmp/out',
   relDir: 'data/sheets/wild/generated',
-  rolled: [],
+  rolled: cloneRolled(body.rolled ?? []),
   files: [{ name: `${body.table}.json`, content: '{}' }],
   failures: 0,
   preview: body.preview,
-  count: body.countMax ?? body.count ?? 0,
+  count: body.countMax ?? body.count ?? body.rolled?.length ?? 0,
 })
 
 describe('useEncounterGenerationPage', () => {
@@ -88,34 +89,35 @@ describe('useEncounterGenerationPage', () => {
     expect(page.rolledPreview.value).toHaveLength(2)
   })
 
-  it('generates with clamped request body and stores successful results', async () => {
+  it('generates with the displayed roll preview and stores successful results', async () => {
     const fetchGenerate = vi.fn(async (body: EncounterGenerateRequestBody) => result(body))
     const page = useEncounterGenerationPage({
       query: { region: firstEntry!.region, table: firstEntry!.key },
       fetchGenerate,
       random: avoidNothing,
     })
-    page.countMin.value = 0
-    page.countMax.value = 999
     page.outRoot.value = 'data/sheets/test'
     page.preview.value = true
+    const previewRolls = cloneRolled(page.rolledPreview.value)
 
     await page.generate()
 
     expect(fetchGenerate).toHaveBeenCalledWith({
       region: firstEntry!.region,
       table: firstEntry!.key,
-      countMin: 1,
-      countMax: 30,
+      countMin: 3,
+      countMax: 3,
       outRoot: 'data/sheets/test',
       preview: true,
+      rolled: previewRolls,
     })
     expect(page.result.value?.preview).toBe(true)
+    expect(page.rolledPreview.value).toEqual(previewRolls)
     expect(page.error.value).toBeNull()
     expect(page.generating.value).toBe(false)
   })
 
-  it('generates and spawns onto the selected map with persistent output', async () => {
+  it('generates and spawns the displayed preview onto the selected map with persistent output', async () => {
     const fetchSpawn = vi.fn(async (body: EncounterSpawnRequestBody): Promise<EncounterGenerateResult> => ({
       ...result(body),
       preview: false,
@@ -136,6 +138,7 @@ describe('useEncounterGenerationPage', () => {
       random: avoidNothing,
     })
     page.outRoot.value = 'data/sheets/test'
+    const previewRolls = cloneRolled(page.rolledPreview.value)
 
     await page.spawn()
 
@@ -149,8 +152,10 @@ describe('useEncounterGenerationPage', () => {
       preview: false,
       mapSlug: 'forest-map',
       clientId: 'client-1',
+      rolled: previewRolls,
     })
     expect(page.result.value?.spawn?.spawned).toBe(1)
+    expect(page.rolledPreview.value).toEqual(previewRolls)
     expect(page.spawning.value).toBe(false)
   })
 

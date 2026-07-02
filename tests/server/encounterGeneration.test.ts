@@ -11,6 +11,7 @@ import {
   sanitizeEncounterFolderPath,
   sanitizeEncounterNameComponent,
   sanitizeEncounterOutRoot,
+  sanitizeRolledEncounters,
   slugifyEncounterOutputPath,
   uniqueEncounterOutputDir,
 } from '~~/server/utils/encounterGeneration'
@@ -60,7 +61,7 @@ describe('server encounter generation helpers', () => {
     expect(sanitizeEncounterFolderPath('', 'region', true)).toBe('')
     expect(statusMessageFor(() => sanitizeEncounterFolderPath('../bad', 'region'))).toBe('Invalid region segment')
 
-    expect(sanitizeEncounterOutRoot('data//sheets\\wild/forest')).toBe('data/sheets/wild/forest')
+    expect(sanitizeEncounterOutRoot('data//sheets\wild/forest')).toBe('data/sheets/wild/forest')
     expect(statusMessageFor(() => sanitizeEncounterOutRoot('../data'))).toBe('Invalid outRoot segment')
     expect(statusMessageFor(() => sanitizeEncounterOutRoot('data/sheets/bad name'))).toContain('outRoot segment')
   })
@@ -81,6 +82,7 @@ describe('server encounter generation helpers', () => {
       outRoot: 'data/sheets/wild',
       countRange: { min: 3, max: 3 },
       preview: false,
+      rolled: undefined,
     })
     expect(statusMessageFor(() => readEncounterGenerateRequest({ region: 'r', table: 't', count: 0 }))).toBe(
       'count must be an integer between 1 and 30',
@@ -92,6 +94,7 @@ describe('server encounter generation helpers', () => {
       outRoot: 'data/sheets/wild',
       countRange: { min: 2, max: 2 },
       preview: true,
+      rolled: undefined,
     })
     expect(readEncounterGenerateRequest({ region: 'r', table: 't', countMin: 2, countMax: 5, preview: true })).toEqual({
       region: 'r',
@@ -99,7 +102,24 @@ describe('server encounter generation helpers', () => {
       outRoot: 'data/sheets/wild',
       countRange: { min: 2, max: 5 },
       preview: true,
+      rolled: undefined,
     })
+  })
+
+  it('sanitizes supplied rolled previews', () => {
+    expect(sanitizeRolledEncounters([{ species: ' Oddish ', level: '7', roll: '12' }])).toEqual([
+      { species: 'Oddish', level: 7, roll: 12 },
+    ])
+    expect(readEncounterGenerateRequest({
+      region: 'r',
+      table: 't',
+      countMin: 3,
+      countMax: 3,
+      rolled: [{ species: 'Oddish', level: 7, roll: 12 }],
+    }).rolled).toEqual([{ species: 'Oddish', level: 7, roll: 12 }])
+    expect(statusMessageFor(() => sanitizeRolledEncounters('bad'))).toBe('rolled must be an array')
+    expect(statusMessageFor(() => sanitizeRolledEncounters([{ species: '', level: 7, roll: 12 }]))).toBe('rolled[0].species required')
+    expect(statusMessageFor(() => sanitizeRolledEncounters([{ species: 'Oddish', level: 0, roll: 12 }]))).toBe('rolled[0].level must be an integer between 1 and 100')
   })
 
   it('formats slug prefixes and safe paths', () => {

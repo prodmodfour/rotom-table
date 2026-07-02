@@ -28,6 +28,7 @@ import type { EncounterTableEntry, RolledEncounter } from '~/types/encounterTabl
 import type { MapSummary } from '~/types/map'
 
 const queryString = (value: unknown, fallback = ''): string => String(value ?? fallback)
+const cloneRolledEncounters = (rolled: readonly RolledEncounter[]): RolledEncounter[] => rolled.map((encounter) => ({ ...encounter }))
 
 export interface UseEncounterGenerationPageOptions {
   query: Record<string, unknown>
@@ -100,9 +101,11 @@ export const useEncounterGenerationPage = ({
   })
 
   const rolledPreview = ref<RolledEncounter[]>([])
+  const rolledPreviewCount = ref<number>(DEFAULT_ENCOUNTER_COUNT_RANGE.min)
   const rollPreview = () => {
     if (!selectedTable.value) return
     const encounterCount = randomEncounterGenerateCount({ min: countMin.value, max: countMax.value }, random)
+    rolledPreviewCount.value = encounterCount
     rolledPreview.value = rollEncounters(selectedTable.value.table, encounterCount, random)
   }
 
@@ -120,20 +123,27 @@ export const useEncounterGenerationPage = ({
   const error = ref<string | null>(null)
   const result = ref<EncounterGenerateResult | null>(null)
 
+  const applyGenerationResult = (nextResult: EncounterGenerateResult) => {
+    result.value = nextResult
+    rolledPreviewCount.value = nextResult.count ?? nextResult.rolled.length
+    rolledPreview.value = cloneRolledEncounters(nextResult.rolled)
+  }
+
   const generate = async () => {
     if (!selectedTable.value || busy.value) return
     generating.value = true
     error.value = null
     result.value = null
     try {
-      result.value = await fetchGenerate(buildEncounterGenerateRequestBody({
+      applyGenerationResult(await fetchGenerate(buildEncounterGenerateRequestBody({
         region: region.value,
         tableKey: tableKey.value,
-        countMin: countMin.value,
-        countMax: countMax.value,
+        countMin: rolledPreviewCount.value,
+        countMax: rolledPreviewCount.value,
         outRoot: outRoot.value,
         preview: preview.value,
-      }))
+        rolled: rolledPreview.value,
+      })))
     } catch (err: unknown) {
       error.value = errorMessageForEncounterGenerate(err)
     } finally {
@@ -147,15 +157,16 @@ export const useEncounterGenerationPage = ({
     error.value = null
     result.value = null
     try {
-      result.value = await fetchSpawn(buildEncounterSpawnRequestBody({
+      applyGenerationResult(await fetchSpawn(buildEncounterSpawnRequestBody({
         region: region.value,
         tableKey: tableKey.value,
-        countMin: countMin.value,
-        countMax: countMax.value,
+        countMin: rolledPreviewCount.value,
+        countMax: rolledPreviewCount.value,
         outRoot: outRoot.value,
         mapSlug: spawnMapSlug.value,
         clientId: clientId(),
-      }))
+        rolled: rolledPreview.value,
+      })))
     } catch (err: unknown) {
       error.value = errorMessageForEncounterGenerate(err)
     } finally {
