@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { IDBFactory as FakeIDBFactory } from 'fake-indexeddb'
 import {
@@ -982,41 +982,139 @@ describe('useLivePlayCommands', () => {
     expect(actions.pendingCommandCount.value).toBe(0)
   })
 
-  it('blocks same-token move commands with a targeted pending-scope message', async () => {
-    const postGate = deferred<void>()
-    const onCommandBlocked = vi.fn()
+  it('coalesces same-token queued move commands before any obsolete destination is sent', async () => {
+    const map = ref(mapFixture())
+    const postedBodies: Record<string, unknown>[] = []
     apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
-      await postGate.promise
       const command = commandRecord(body)
+      const payload = commandRecord(command.payload)
+      postedBodies.push(cloneJson(command))
       return {
         ok: true,
         opId: command.opId,
         mapSlug: command.mapSlug,
-        previousRevision: 4,
-        revision: 5,
-        patches: [],
+        previousRevision: command.baseRevision,
+        revision: (command.baseRevision as number) + 1,
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+          mapSlug: command.mapSlug,
+          revision: (command.baseRevision as number) + 1,
+          scopes: [{ kind: 'token', placementId: payload.placementId, field: 'position' }],
+          payload: {
+            placementId: payload.placementId,
+            position: payload.position,
+          },
+        }],
       }
     })
 
     const actions = useTestLivePlayCommands({
       slug: 'arena-map',
-      mapRevision: ref(4),
-      onCommandBlocked,
+      map,
+      mapRevision: computed(() => map.value.revision),
     })
     const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
     expect(actions.pendingCommandCount.value).toBe(1)
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
 
-    await expect(actions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 1 } })).resolves.toEqual({
+    const latest = actions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 1 } })
+    await expect(first).resolves.toMatchObject({
       dispatched: false,
-      message: 'Another pending command is already changing this token position.',
+      message: 'This token move was superseded by a newer destination before it was sent.',
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
     })
-    expect(onCommandBlocked).toHaveBeenCalledWith('Another pending command is already changing this token position.')
     expect(actions.pendingCommandCount.value).toBe(1)
+    expect(tokenPosition(map.value)).toEqual({ x: 4, y: 0, z: 1 })
 
-    postGate.resolve()
-    await expect(first).resolves.toMatchObject({ dispatched: true })
+    await expect(latest).resolves.toMatchObject({ dispatched: true })
     expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(postedBodies).toHaveLength(1)
+    expect(postedBodies[0]).toMatchObject({
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      payload: {
+        placementId: 'token-pikachu',
+        position: { x: 4, y: 0, z: 1 },
+      },
+    })
     expect(actions.pendingCommandCount.value).toBe(0)
+    expect(tokenPosition(map.value)).toEqual({ x: 4, y: 0, z: 1 })
+  })
+
+  it('keeps only the latest same-token queued move while preserving already-sent body data', async () => {
+    const map = ref(mapFixture())
+    const firstPostGate = deferred<void>()
+    const secondPostGate = deferred<void>()
+    const postedBodies: Record<string, unknown>[] = []
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = cloneJson(commandRecord(body))
+      const payload = commandRecord(command.payload)
+      postedBodies.push(command)
+      if (postedBodies.length === 1) await firstPostGate.promise
+      else await secondPostGate.promise
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: command.baseRevision,
+        revision: (command.baseRevision as number) + 1,
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+          mapSlug: command.mapSlug,
+          revision: (command.baseRevision as number) + 1,
+          scopes: [{ kind: 'token', placementId: payload.placementId, field: 'position' }],
+          payload: {
+            placementId: payload.placementId,
+            position: payload.position,
+          },
+        }],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+    })
+    const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(1))
+    const firstSentBody = cloneJson(postedBodies[0])
+
+    const obsoleteQueued = actions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 1 } })
+    const latestQueued = actions.moveToken({ placementId: 'token-pikachu', position: { x: 5, y: 0, z: 1 } })
+
+    await expect(obsoleteQueued).resolves.toMatchObject({
+      dispatched: false,
+      message: 'This token move was superseded by a newer destination before it was sent.',
+    })
+    expect(actions.pendingCommandCount.value).toBe(2)
+    expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 1 })
+    expect(postedBodies).toHaveLength(1)
+
+    firstPostGate.resolve()
+    await expect(first).resolves.toMatchObject({ dispatched: true })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    expect(postedBodies[0]).toEqual(firstSentBody)
+    expect(postedBodies[0]).toMatchObject({
+      payload: {
+        placementId: 'token-pikachu',
+        position: { x: 2, y: 0, z: 1 },
+      },
+    })
+    expect(postedBodies[1]).toMatchObject({
+      baseRevision: 5,
+      payload: {
+        placementId: 'token-pikachu',
+        position: { x: 5, y: 0, z: 1 },
+      },
+    })
+
+    secondPostGate.resolve()
+    await expect(latestQueued).resolves.toMatchObject({ dispatched: true })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(2)
+    expect(actions.pendingCommandCount.value).toBe(0)
+    expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 1 })
   })
 
   it('allows same-token move and turn commands to overlap because their token fields differ', async () => {

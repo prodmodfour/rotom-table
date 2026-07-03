@@ -121,6 +121,26 @@ export interface LivePlayCommandDispatchResult {
 
 export type LivePlayPendingCommandState = 'queued' | 'sending'
 
+type LivePlayCommandDispatchResolver = (result: LivePlayCommandDispatchResult) => void
+
+interface QueuedMoveTokenCommand {
+  readonly opId: string
+  readonly placementId: string
+  readonly requestPath: typeof MAP_API_PATHS.moveToken
+  readonly authContext: LivePlayCommandOutboxAuthContext
+  readonly payload: MoveTokenPayload
+  body: Record<string, unknown>
+  started: boolean
+  readonly promise: Promise<LivePlayCommandDispatchResult>
+  readonly resolve: LivePlayCommandDispatchResolver
+}
+
+interface MoveTokenCoalescingQueue {
+  queued: QueuedMoveTokenCommand | null
+  sending: QueuedMoveTokenCommand | null
+  drainScheduled: boolean
+}
+
 export interface LivePlayPendingCommand {
   readonly opId: string
   readonly requestPath: string
@@ -458,6 +478,10 @@ const LIVE_PLAY_COMMAND_REQUEST_PATHS = new Set<string>([
 const REALTIME_ACKNOWLEDGEMENT_SYNC_MESSAGE =
   'Synchronizing accepted command with the authoritative live table snapshot.'
 
+const SUPERSEDED_MOVE_TOKEN_MESSAGE = 'This token move was superseded by a newer destination before it was sent.'
+const CANCELLED_SUPERSEDING_MOVE_TOKEN_MESSAGE =
+  'The queued token move was not sent because the previous move did not receive an authoritative acceptance.'
+
 const NON_CONCURRENT_LIVE_PLAY_COMMAND_TYPES = new Set<LivePlayMapCommandType>([
   LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
 ])
@@ -610,6 +634,16 @@ export const useLivePlayCommands = (
     if (activeSavingOpId === opId) activeSavingOpId = null
   }
 
+  const settleSavingStatusIfIdle = (): void => {
+    if (
+      status.value === 'saving'
+      && activeSavingOpId === null
+      && Object.keys(pendingCommandRecords.value).length === 0
+    ) {
+      status.value = 'idle'
+    }
+  }
+
   const commandCompletionBelongsToCurrentOperation = (opId: string): boolean => (
     activeSavingOpId === null || activeSavingOpId === opId
   )
@@ -632,6 +666,39 @@ export const useLivePlayCommands = (
     const prediction = localPredictionRecords.value[opId]
     if (!prediction) return
     rollbackLivePlayPredictionFromMap(options.map?.value, prediction)
+    removeLocalPrediction(opId)
+  }
+
+  const sameGridAnchor = (left: GridAnchor, right: GridAnchor): boolean => (
+    left.x === right.x && left.y === right.y && left.z === right.z
+  )
+
+  const placementHasOwnField = (placement: SheetPlacement, field: 'facing' | 'turned'): boolean => (
+    Object.prototype.hasOwnProperty.call(placement, field)
+  )
+
+  const localPredictionCurrentlyApplied = (prediction: LivePlayLocalPrediction): boolean => {
+    const placement = options.map?.value?.placements.find((candidate) => candidate.id === prediction.placementId)
+    if (!placement) return false
+
+    for (const field of prediction.changedFields) {
+      if (field === 'position') {
+        if (!sameGridAnchor(placement.position, prediction.predictedPlacement.position)) return false
+      } else if (
+        placementHasOwnField(placement, field) !== placementHasOwnField(prediction.predictedPlacement, field)
+        || placement[field] !== prediction.predictedPlacement[field]
+      ) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  const rollbackLocalPredictionIfCurrentlyApplied = (opId: string): void => {
+    const prediction = localPredictionRecords.value[opId]
+    if (!prediction) return
+    if (localPredictionCurrentlyApplied(prediction)) rollbackLivePlayPredictionFromMap(options.map?.value, prediction)
     removeLocalPrediction(opId)
   }
 
@@ -726,16 +793,22 @@ export const useLivePlayCommands = (
     field: string,
   ): LivePlaySheetScope | null => sheetScopeForPlacementId(payload.placementId, field)
 
+  const currentCommandBaseRevision = (): number => Math.max(
+    normalizeRevision(options.mapRevision?.value),
+    normalizeRevision(options.map?.value?.revision),
+  )
+
   const commandBody = (
     authContext: LivePlayCommandOutboxAuthContext,
     type: LivePlayClientCommandType,
     payload: LivePlayClientCommandPayload,
     scopes: readonly LivePlayScope[],
+    commandOptions: { readonly opId?: string; readonly baseRevision?: number } = {},
   ): Record<string, unknown> => ({
     schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
-    opId: createLivePlayOpId(),
+    opId: commandOptions.opId ?? createLivePlayOpId(),
     mapSlug: options.slug,
-    baseRevision: normalizeRevision(options.mapRevision?.value),
+    baseRevision: commandOptions.baseRevision ?? currentCommandBaseRevision(),
     type,
     scopes,
     payload,
@@ -748,7 +821,20 @@ export const useLivePlayCommands = (
     type: typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
     payload: MoveTokenPayload | TurnTokenPayload,
     field: LivePlayTokenScope['field'],
-  ): Record<string, unknown> => commandBody(authContext, type, payload, [tokenScope(payload, field)])
+    commandOptions: { readonly opId?: string; readonly baseRevision?: number } = {},
+  ): Record<string, unknown> => commandBody(authContext, type, payload, [tokenScope(payload, field)], commandOptions)
+
+  const moveTokenCommandBody = (
+    authContext: LivePlayCommandOutboxAuthContext,
+    payload: MoveTokenPayload,
+    commandOptions: { readonly opId?: string; readonly baseRevision?: number } = {},
+  ): Record<string, unknown> => tokenCommandBody(
+    authContext,
+    LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    payload,
+    'position',
+    commandOptions,
+  )
 
   const sheetCommandBody = (
     authContext: LivePlayCommandOutboxAuthContext,
@@ -901,8 +987,13 @@ export const useLivePlayCommands = (
     isLivePlayMapCommandType(body.type) ? body.type : null
   )
 
-  const localPendingCommandBlockedMessage = (body: Record<string, unknown>): string | null => {
-    const pendingCommands = Object.values(pendingCommandRecords.value)
+  const localPendingCommandBlockedMessage = (
+    body: Record<string, unknown>,
+    options: { readonly ignoredOpIds?: ReadonlySet<string> } = {},
+  ): string | null => {
+    const pendingCommands = Object.values(pendingCommandRecords.value).filter((command) => (
+      !options.ignoredOpIds?.has(command.opId)
+    ))
     if (pendingCommands.length === 0) return null
 
     const commandType = bodyCommandType(body)
@@ -1364,10 +1455,7 @@ export const useLivePlayCommands = (
     )
   }
 
-  const runLivePlayCommand = async (
-    request: string,
-    buildBody: LivePlayCommandBodyFactory,
-  ): Promise<LivePlayCommandDispatchResult> => {
+  const preliminaryCommandBlockedResult = (): LivePlayCommandDispatchResult | null => {
     const localInFlightMessage = localInFlightCommandBlockedMessage()
     if (localInFlightMessage) {
       options.onCommandBlocked?.(localInFlightMessage)
@@ -1383,34 +1471,50 @@ export const useLivePlayCommands = (
     const pendingCommandMessage = newCommandBlockedMessage()
     if (pendingCommandMessage) return localCommandBlockedResult(pendingCommandMessage)
 
+    return null
+  }
+
+  const buildAuthenticatedCommandBody = (
+    buildBody: LivePlayCommandBodyFactory,
+  ): { readonly ok: true; readonly authContext: LivePlayCommandOutboxAuthContext; readonly body: Record<string, unknown>; readonly opId: string | null }
+    | { readonly ok: false; readonly result: LivePlayCommandDispatchResult } => {
     const authContext = currentAuthContext()
     if (!authContext) {
-      return localCommandBlockedResult('A valid GM or player auth role is required before sending live-play commands.')
+      return {
+        ok: false,
+        result: localCommandBlockedResult('A valid GM or player auth role is required before sending live-play commands.'),
+      }
     }
 
     let body: Record<string, unknown>
     try {
       body = buildBody(authContext)
     } catch (buildError) {
-      return localCommandFailedResult(getErrorMessage(buildError, { fallback: 'Live-play command body could not be built' }))
+      return {
+        ok: false,
+        result: localCommandFailedResult(getErrorMessage(buildError, { fallback: 'Live-play command body could not be built' })),
+      }
     }
 
     const opId = commandEnvelopeOpId(body)
     const authBodyIssue = validateCommandBodyAuthContext(body, authContext)
     if (authBodyIssue) {
-      return localCommandFailedResult(authBodyIssue, opId ? { opId } : {})
+      return {
+        ok: false,
+        result: localCommandFailedResult(authBodyIssue, opId ? { opId } : {}),
+      }
     }
 
-    const pendingBlockedMessage = localPendingCommandBlockedMessage(body)
-    if (pendingBlockedMessage) {
-      options.onCommandBlocked?.(pendingBlockedMessage)
-      return { dispatched: false, message: pendingBlockedMessage }
-    }
+    return { ok: true, authContext, body, opId }
+  }
 
-    beginSavingOperation(opId)
-    trackPendingCommandBody(request, body, 'queued')
-    options.onCommandStarted?.()
-
+  const dispatchPreparedLivePlayCommand = async (input: {
+    readonly request: string
+    readonly body: Record<string, unknown>
+    readonly authContext: LivePlayCommandOutboxAuthContext
+  }): Promise<LivePlayCommandDispatchResult> => {
+    const { request, body, authContext } = input
+    const opId = commandEnvelopeOpId(body)
     let enqueuedEntry: LivePlayCommandOutboxEntry
     try {
       enqueuedEntry = await outbox.enqueue({ requestPath: request, body, authContext })
@@ -1458,6 +1562,259 @@ export const useLivePlayCommands = (
       await sendClaimedOutboxEntry({ entry: claimResult.entry, origin: 'immediate' }),
       outboxSyncWarning,
     )
+  }
+
+  const runLivePlayCommand = async (
+    request: string,
+    buildBody: LivePlayCommandBodyFactory,
+  ): Promise<LivePlayCommandDispatchResult> => {
+    const preliminaryBlock = preliminaryCommandBlockedResult()
+    if (preliminaryBlock) return preliminaryBlock
+
+    const prepared = buildAuthenticatedCommandBody(buildBody)
+    if (!prepared.ok) return prepared.result
+
+    const pendingBlockedMessage = localPendingCommandBlockedMessage(prepared.body)
+    if (pendingBlockedMessage) {
+      options.onCommandBlocked?.(pendingBlockedMessage)
+      return { dispatched: false, message: pendingBlockedMessage }
+    }
+
+    beginSavingOperation(prepared.opId)
+    trackPendingCommandBody(request, prepared.body, 'queued')
+    options.onCommandStarted?.()
+
+    return dispatchPreparedLivePlayCommand({
+      request,
+      body: prepared.body,
+      authContext: prepared.authContext,
+    })
+  }
+
+  const moveTokenCoalescingQueues = new Map<string, MoveTokenCoalescingQueue>()
+
+  const moveTokenQueueForPlacement = (placementId: string): MoveTokenCoalescingQueue => {
+    const existing = moveTokenCoalescingQueues.get(placementId)
+    if (existing) return existing
+    const queue: MoveTokenCoalescingQueue = { queued: null, sending: null, drainScheduled: false }
+    moveTokenCoalescingQueues.set(placementId, queue)
+    return queue
+  }
+
+  const cleanupMoveTokenQueueIfIdle = (placementId: string, queue: MoveTokenCoalescingQueue): void => {
+    if (!queue.queued && !queue.sending && !queue.drainScheduled) moveTokenCoalescingQueues.delete(placementId)
+  }
+
+  const coalescedMoveOpIdsForPlacement = (placementId: string): ReadonlySet<string> => {
+    const queue = moveTokenCoalescingQueues.get(placementId)
+    const opIds = new Set<string>()
+    if (queue?.queued) opIds.add(queue.queued.opId)
+    if (queue?.sending) opIds.add(queue.sending.opId)
+    return opIds
+  }
+
+  const normalizeMoveTokenPayload = (payload: Parameters<UseLivePlayCommandsReturn['moveToken']>[0]): MoveTokenPayload => ({
+    placementId: payload.placementId,
+    position: { ...payload.position },
+    ...(payload.pathLength === undefined || payload.pathLength === null ? {} : { pathLength: payload.pathLength }),
+  })
+
+  const createQueuedMoveTokenCommand = (input: {
+    readonly authContext: LivePlayCommandOutboxAuthContext
+    readonly body: Record<string, unknown>
+    readonly payload: MoveTokenPayload
+  }): QueuedMoveTokenCommand | null => {
+    const opId = commandEnvelopeOpId(input.body)
+    if (!opId) return null
+
+    let resolveCommand!: LivePlayCommandDispatchResolver
+    const promise = new Promise<LivePlayCommandDispatchResult>((resolve) => {
+      resolveCommand = resolve
+    })
+
+    return {
+      opId,
+      placementId: input.payload.placementId,
+      requestPath: MAP_API_PATHS.moveToken,
+      authContext: input.authContext,
+      payload: input.payload,
+      body: input.body,
+      started: false,
+      promise,
+      resolve: resolveCommand,
+    }
+  }
+
+  const trackQueuedMoveTokenCommand = (
+    command: QueuedMoveTokenCommand,
+    trackOptions: { readonly activateTransport: boolean },
+  ): void => {
+    if (trackOptions.activateTransport) {
+      beginSavingOperation(command.opId)
+      options.onCommandStarted?.()
+      command.started = true
+    }
+    trackPendingCommandBody(command.requestPath, command.body, 'queued')
+  }
+
+  const resolveQueuedMoveTokenCommand = (
+    command: QueuedMoveTokenCommand,
+    result: LivePlayCommandDispatchResult,
+  ): void => {
+    command.resolve(result)
+  }
+
+  const supersedeQueuedMoveTokenCommand = (command: QueuedMoveTokenCommand): void => {
+    rollbackLocalPredictionIfCurrentlyApplied(command.opId)
+    removePendingCommand(command.opId)
+    clearSavingOperation(command.opId)
+    settleSavingStatusIfIdle()
+    resolveQueuedMoveTokenCommand(command, {
+      dispatched: false,
+      message: SUPERSEDED_MOVE_TOKEN_MESSAGE,
+      opId: command.opId,
+    })
+  }
+
+  const cancelQueuedMoveTokenCommand = (
+    command: QueuedMoveTokenCommand,
+    message = CANCELLED_SUPERSEDING_MOVE_TOKEN_MESSAGE,
+  ): void => {
+    rollbackLocalPredictionIfCurrentlyApplied(command.opId)
+    removePendingCommand(command.opId)
+    clearSavingOperation(command.opId)
+    settleSavingStatusIfIdle()
+    resolveQueuedMoveTokenCommand(command, {
+      dispatched: false,
+      message,
+      opId: command.opId,
+    })
+  }
+
+  const refreshMoveTokenCommandBeforeSend = (command: QueuedMoveTokenCommand): void => {
+    rollbackLocalPrediction(command.opId)
+    command.body = moveTokenCommandBody(command.authContext, command.payload, { opId: command.opId })
+    trackPendingCommandBody(command.requestPath, command.body, 'queued')
+  }
+
+  const coalescedMoveCanDrainAfter = (result: LivePlayCommandDispatchResult): boolean => (
+    result.dispatched
+    && result.response !== undefined
+    && acceptedLivePlayResponse(result.response)
+    && status.value !== 'error'
+  )
+
+  const drainMoveTokenQueue = async (placementId: string): Promise<void> => {
+    const queue = moveTokenCoalescingQueues.get(placementId)
+    if (!queue) return
+
+    queue.drainScheduled = false
+    if (queue.sending || !queue.queued) {
+      cleanupMoveTokenQueueIfIdle(placementId, queue)
+      return
+    }
+
+    const command = queue.queued
+    queue.queued = null
+    queue.sending = command
+
+    refreshMoveTokenCommandBeforeSend(command)
+    beginSavingOperation(command.opId)
+    if (!command.started) {
+      options.onCommandStarted?.()
+      command.started = true
+    }
+    trackPendingCommandBody(command.requestPath, command.body, 'sending')
+
+    let result: LivePlayCommandDispatchResult
+    try {
+      result = await dispatchPreparedLivePlayCommand({
+        request: command.requestPath,
+        body: command.body,
+        authContext: command.authContext,
+      })
+    } catch (error) {
+      const message = getErrorMessage(error, { fallback: 'Live-play move command failed before it could be sent.' })
+      markOperationFailed(command.opId, message)
+      options.onCommandFailed?.(message)
+      result = { dispatched: false, message, opId: command.opId }
+    }
+
+    resolveQueuedMoveTokenCommand(command, result)
+    if (queue.sending?.opId === command.opId) queue.sending = null
+
+    if (coalescedMoveCanDrainAfter(result)) {
+      if (queue.queued) scheduleMoveTokenQueueDrain(placementId)
+    } else if (queue.queued) {
+      cancelQueuedMoveTokenCommand(queue.queued)
+      queue.queued = null
+    }
+
+    cleanupMoveTokenQueueIfIdle(placementId, queue)
+  }
+
+  const scheduleMoveTokenQueueDrain = (placementId: string): void => {
+    const queue = moveTokenQueueForPlacement(placementId)
+    if (queue.drainScheduled || queue.sending || !queue.queued) return
+    queue.drainScheduled = true
+    void Promise.resolve()
+      .then(() => drainMoveTokenQueue(placementId))
+      .catch((error) => {
+        const failedQueue = moveTokenCoalescingQueues.get(placementId)
+        const queued = failedQueue?.queued ?? null
+        if (queued) {
+          cancelQueuedMoveTokenCommand(
+            queued,
+            getErrorMessage(error, { fallback: 'Live-play move queue processing failed.' }),
+          )
+          if (failedQueue) failedQueue.queued = null
+        }
+        if (failedQueue) {
+          failedQueue.drainScheduled = false
+          cleanupMoveTokenQueueIfIdle(placementId, failedQueue)
+        }
+      })
+  }
+
+  const enqueueCoalescedMoveTokenCommand = (command: QueuedMoveTokenCommand): Promise<LivePlayCommandDispatchResult> => {
+    const queue = moveTokenQueueForPlacement(command.placementId)
+    const activateTransport = queue.sending === null
+
+    if (queue.queued) supersedeQueuedMoveTokenCommand(queue.queued)
+    queue.queued = command
+    trackQueuedMoveTokenCommand(command, { activateTransport })
+    if (!queue.sending) scheduleMoveTokenQueueDrain(command.placementId)
+    return command.promise
+  }
+
+  const runCoalescedMoveTokenCommand = (
+    payload: Parameters<UseLivePlayCommandsReturn['moveToken']>[0],
+  ): Promise<LivePlayCommandDispatchResult> => {
+    const preliminaryBlock = preliminaryCommandBlockedResult()
+    if (preliminaryBlock) return Promise.resolve(preliminaryBlock)
+
+    const commandPayload = normalizeMoveTokenPayload(payload)
+    const prepared = buildAuthenticatedCommandBody((authContext) => moveTokenCommandBody(authContext, commandPayload))
+    if (!prepared.ok) return Promise.resolve(prepared.result)
+
+    const pendingBlockedMessage = localPendingCommandBlockedMessage(prepared.body, {
+      ignoredOpIds: coalescedMoveOpIdsForPlacement(commandPayload.placementId),
+    })
+    if (pendingBlockedMessage) {
+      options.onCommandBlocked?.(pendingBlockedMessage)
+      return Promise.resolve({ dispatched: false, message: pendingBlockedMessage })
+    }
+
+    const queuedCommand = createQueuedMoveTokenCommand({
+      authContext: prepared.authContext,
+      body: prepared.body,
+      payload: commandPayload,
+    })
+    if (!queuedCommand) {
+      return Promise.resolve(localCommandFailedResult('Live-play move command body did not include an operation ID.'))
+    }
+
+    return enqueueCoalescedMoveTokenCommand(queuedCommand)
   }
 
   const spawnToken: UseLivePlayCommandsReturn['spawnToken'] = (payload) => runLivePlayCommand(
@@ -1530,19 +1887,7 @@ export const useLivePlayCommands = (
     },
   )
 
-  const moveToken: UseLivePlayCommandsReturn['moveToken'] = (payload) => runLivePlayCommand(
-    MAP_API_PATHS.moveToken,
-    (authContext) => tokenCommandBody(
-      authContext,
-      LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
-      {
-        placementId: payload.placementId,
-        position: payload.position,
-        ...(payload.pathLength === undefined || payload.pathLength === null ? {} : { pathLength: payload.pathLength }),
-      },
-      'position',
-    ),
-  )
+  const moveToken: UseLivePlayCommandsReturn['moveToken'] = (payload) => runCoalescedMoveTokenCommand(payload)
 
   const turnToken: UseLivePlayCommandsReturn['turnToken'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.turnToken,

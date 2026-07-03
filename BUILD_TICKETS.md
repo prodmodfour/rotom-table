@@ -307,7 +307,7 @@ Status: DONE
 
 ## 011 — LP-S1-011 — Add same-token movement coalescing before send
 
-Status: TODO
+Status: DONE
 
 **Goal:** Prevent rapid repeated moves for the same token from creating a sluggish queue of obsolete destinations.
 
