@@ -34,7 +34,7 @@ Each ticket should fit in one reviewable commit. If a ticket needs both a refact
 
 ## 001 — LP-S1-001 — Add client-side live-play scope conflict utilities
 
-Status: TODO
+Status: DONE
 
 **Goal:** Give the client the same basic vocabulary as the server for deciding whether two pending commands can safely overlap.
 
