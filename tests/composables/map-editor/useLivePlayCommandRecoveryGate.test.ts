@@ -338,6 +338,28 @@ describe('useLivePlayCommandRecoveryGate', () => {
     expect(gate.blocksNewLiveCommands.value).toBe(false)
   })
 
+  it('does not treat ordinary immediate-send entries as recovery blockers', async () => {
+    const commandStatus = ref<LivePlayCommandStatus>('saving')
+    const entries = ref<readonly LivePlayCommandOutboxEntry[]>([createEntry({ state: 'queued' })])
+    const { gate } = createHarness({ commandStatus, entries })
+
+    await vi.waitFor(() => expect(gate.readyForCurrentContext.value).toBe(true))
+    expect(gate.blocksNewLiveCommands.value).toBe(false)
+    expect(gate.blockMessage.value).toBeNull()
+    expect(gate.panelVisible.value).toBe(false)
+
+    entries.value = [createEntry({ state: 'queued' }), createEntry({ state: 'sending' })]
+    await flushMicrotasks()
+    expect(gate.blocksNewLiveCommands.value).toBe(false)
+    expect(gate.blockMessage.value).toBeNull()
+    expect(gate.panelVisible.value).toBe(false)
+
+    commandStatus.value = 'idle'
+    expect(gate.blocksNewLiveCommands.value).toBe(true)
+    expect(gate.blockMessage.value).toContain('pending live-play command')
+    expect(gate.panelVisible.value).toBe(true)
+  })
+
   it('does not block Prepare Map local actions with pending live commands', async () => {
     const entries = ref<readonly LivePlayCommandOutboxEntry[]>([createEntry({ state: 'uncertain' })])
     const { gate } = createHarness({

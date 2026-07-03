@@ -91,7 +91,7 @@ Status: DONE
 
 ## 003 — LP-S1-003 — Split command transport status from command availability
 
-Status: TODO
+Status: DONE
 
 **Goal:** Stop using one `status === 'saving'` flag as both network state and table input lock.
 

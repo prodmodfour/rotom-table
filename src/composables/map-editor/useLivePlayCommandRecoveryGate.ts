@@ -584,6 +584,20 @@ export const useLivePlayCommandRecoveryGate = (
     options.recoveryStatus.value === 'error' || options.recoveryError.value !== null
   ))
 
+  const ordinaryImmediatePendingOnly = computed(() => (
+    options.commandStatus.value === 'saving'
+    && options.recoveryStatus.value !== 'retrying'
+    && options.recoveryStatus.value !== 'checking'
+    && options.recoveryStatus.value !== 'abandoning'
+    && options.recoveryStatus.value !== 'synchronizing'
+    && readyForCurrentContext.value
+    && options.entries.value.length > 0
+    && options.entries.value.every((entry) => entry.state === 'queued' || entry.state === 'sending')
+    && retryingOpId.value === null
+    && checkingOpId.value === null
+    && abandoningOpId.value === null
+  ))
+
   const blocksNewLiveCommands = computed(() => {
     if (options.interactionMode.value !== MAP_INTERACTION_MODES.LIVE_PLAY) return false
     return !readyForCurrentContext.value
@@ -592,7 +606,7 @@ export const useLivePlayCommandRecoveryGate = (
       || options.recoveryStatus.value === 'abandoning'
       || options.recoveryStatus.value === 'synchronizing'
       || hasRecoveryError.value
-      || options.entries.value.length > 0
+      || (!ordinaryImmediatePendingOnly.value && options.entries.value.length > 0)
       || retryingOpId.value !== null
       || checkingOpId.value !== null
       || abandoningOpId.value !== null
@@ -606,26 +620,13 @@ export const useLivePlayCommandRecoveryGate = (
     if (options.recoveryStatus.value === 'synchronizing') return REALTIME_SYNCHRONIZING_MESSAGE
     if (hasRecoveryError.value) return options.recoveryError.value ?? RECOVERY_ERROR_MESSAGE
     if (!readyForCurrentContext.value || options.recoveryStatus.value === 'loading') return RECOVERY_INSPECTION_MESSAGE
-    if (options.entries.value.length > 0) return pendingCommandMessage(options.entries.value.length)
+    if (!ordinaryImmediatePendingOnly.value && options.entries.value.length > 0) return pendingCommandMessage(options.entries.value.length)
     return null
   })
 
-  const ordinaryImmediateSendingOnly = computed(() => (
-    options.commandStatus.value === 'saving'
-    && options.recoveryStatus.value !== 'retrying'
-    && options.recoveryStatus.value !== 'checking'
-    && options.recoveryStatus.value !== 'abandoning'
-    && readyForCurrentContext.value
-    && options.entries.value.length === 1
-    && options.entries.value[0]?.state === 'sending'
-    && retryingOpId.value === null
-    && checkingOpId.value === null
-    && abandoningOpId.value === null
-  ))
-
   const panelVisible = computed(() => {
     if (!isClient) return false
-    if (ordinaryImmediateSendingOnly.value) return false
+    if (ordinaryImmediatePendingOnly.value) return false
     const hasActiveContext = currentContextKey() !== null
     return options.recoveryStatus.value === 'loading'
       || options.recoveryStatus.value === 'retrying'

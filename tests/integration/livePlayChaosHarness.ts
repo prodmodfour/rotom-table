@@ -968,14 +968,19 @@ export class ClientTab {
       realtimeNotice: this.map.livePlayRealtimeNotice,
     })
 
+    const livePlayStateBlocksCommands = computed(() => {
+      const state = stateMachine.state.value
+      return state !== 'ready' && state !== 'saving-command'
+    })
+
     this.commands = useLivePlayCommands({
       slug: 'chaos-arena',
       authRole: this.role,
       playerProfileId: computed(() => (this.role.value === 'player' ? this.selectedProfileId.value : null)),
       map: this.map.map,
       mapRevision: this.map.mapRevision,
-      livePlayCommandBlocked: computed(() => this.mode.interactionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT || !stateMachine.commandsAllowed.value),
-      livePlayCommandBlockedMessage: computed(() => stateMachine.commandBlockMessage.value),
+      livePlayCommandBlocked: computed(() => this.mode.interactionMode.value === MAP_INTERACTION_MODES.SETUP_EDIT || livePlayStateBlocksCommands.value),
+      livePlayCommandBlockedMessage: computed(() => (livePlayStateBlocksCommands.value ? stateMachine.commandBlockMessage.value : null)),
       newCommandBlocked: computed(() => this.recoveryGate?.blocksNewLiveCommands.value ?? true),
       newCommandBlockedMessage: computed(() => this.recoveryGate?.blockMessage.value ?? 'Checking recovery.'),
       applyPersistedMap: this.map.applyPersistedMap,
@@ -1024,7 +1029,7 @@ export class ClientTab {
       && this.map.realtimeReconciliationStatus.value !== 'reconnecting'
       && this.map.realtimeReconciliationStatus.value !== 'reconciling'
       && this.map.realtimeReconciliationStatus.value !== 'error'
-      && this.commands.status.value !== 'saving'
+      && !livePlayStateBlocksCommands.value
       && !this.recoveryGate.blocksNewLiveCommands.value
       && this.mode.interactionMode.value === MAP_INTERACTION_MODES.LIVE_PLAY
     ))

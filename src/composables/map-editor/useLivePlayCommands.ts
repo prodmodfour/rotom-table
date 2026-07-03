@@ -80,6 +80,7 @@ interface ReadonlyValueRef<TValue> {
 }
 
 export type LivePlayCommandStatus = 'idle' | 'saving' | 'error'
+export type LivePlayCommandTransportStatus = 'idle' | 'sending'
 export type LivePlayCommandOutboxRecoveryStatus = 'idle' | 'loading' | 'retrying' | 'checking' | 'abandoning' | 'synchronizing' | 'error'
 
 export interface LivePlayCommandSheetUpdate {
@@ -234,6 +235,7 @@ export interface LivePlayCommandReconciliationRequest {
 
 export interface UseLivePlayCommandsReturn {
   status: Ref<LivePlayCommandStatus>
+  transportStatus: ComputedRef<LivePlayCommandTransportStatus>
   lastError: Ref<string | null>
   outboxEntries: ComputedRef<readonly LivePlayCommandOutboxEntry[]>
   outboxRecoveryStatus: Ref<LivePlayCommandOutboxRecoveryStatus>
@@ -537,6 +539,9 @@ export const useLivePlayCommands = (
   const pendingCommandRecords = ref<Record<string, LivePlayPendingCommand>>({})
   const pendingCommands = computed<Readonly<Record<string, LivePlayPendingCommand>>>(() => pendingCommandRecords.value)
   const pendingCommandCount = computed(() => Object.keys(pendingCommandRecords.value).length)
+  const transportStatus = computed<LivePlayCommandTransportStatus>(() => (
+    status.value === 'saving' || pendingCommandCount.value > 0 ? 'sending' : 'idle'
+  ))
   let recoveryRetryActive = false
   let activeSavingOpId: string | null = null
   let activeStatusCheck: Promise<LivePlayOperationStatusCheckResult> | null = null
@@ -547,7 +552,7 @@ export const useLivePlayCommands = (
   const realtimeAcknowledgementFailures = new Map<string, string>()
 
   if (getCurrentScope()) {
-    const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => status.value === 'saving')
+    const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => transportStatus.value === 'sending')
     onScopeDispose(() => {
       removePendingCommandUnloadWarning?.()
     })
@@ -617,6 +622,14 @@ export const useLivePlayCommands = (
       ? REALTIME_ACKNOWLEDGEMENT_SYNC_MESSAGE
       : null
   )
+
+  const localInFlightCommandBlockedMessage = (): string | null => {
+    if (activeAbandonment !== null) {
+      return 'A live-play command abandonment is already active. Wait for it to finish before sending another command.'
+    }
+    if (recoveryRetryActive || transportStatus.value === 'sending') return 'A live-play command is already in flight.'
+    return null
+  }
 
   const profileBody = (authContext: LivePlayCommandOutboxAuthContext): { profileId?: PlayerProfileId } => {
     if (authContext.role !== 'player') return {}
@@ -1232,12 +1245,10 @@ export const useLivePlayCommands = (
     request: string,
     buildBody: LivePlayCommandBodyFactory,
   ): Promise<LivePlayCommandDispatchResult> => {
-    if (status.value === 'saving' || recoveryRetryActive || activeAbandonment !== null) {
-      const message = activeAbandonment !== null
-        ? 'A live-play command abandonment is already active. Wait for it to finish before sending another command.'
-        : 'A live-play command is already in flight.'
-      options.onCommandBlocked?.(message)
-      return { dispatched: false, message }
+    const localInFlightMessage = localInFlightCommandBlockedMessage()
+    if (localInFlightMessage) {
+      options.onCommandBlocked?.(localInFlightMessage)
+      return { dispatched: false, message: localInFlightMessage }
     }
 
     const blockedMessage = blockedCommandMessage()
@@ -1497,12 +1508,10 @@ export const useLivePlayCommands = (
   )
 
   const resolveMove: UseLivePlayCommandsReturn['resolveMove'] = async (input) => {
-    if (status.value === 'saving' || recoveryRetryActive || activeAbandonment !== null) {
-      const message = activeAbandonment !== null
-        ? 'A live-play command abandonment is already active. Wait for it to finish before sending another command.'
-        : 'A live-play command is already in flight.'
-      options.onCommandBlocked?.(message)
-      return { dispatched: false, move: null, message }
+    const localInFlightMessage = localInFlightCommandBlockedMessage()
+    if (localInFlightMessage) {
+      options.onCommandBlocked?.(localInFlightMessage)
+      return { dispatched: false, move: null, message: localInFlightMessage }
     }
 
     const blockedMessage = blockedCommandMessage()
@@ -1904,7 +1913,7 @@ export const useLivePlayCommands = (
       return { dispatched: false, message, opId }
     }
 
-    if (status.value === 'saving' || recoveryRetryActive) {
+    if (transportStatus.value === 'sending' || recoveryRetryActive) {
       const message = 'A live-play command is already in flight.'
       setOutboxRecoveryFailure(message)
       options.onCommandBlocked?.(message)
@@ -2214,7 +2223,7 @@ export const useLivePlayCommands = (
       ))
     }
 
-    if (status.value === 'saving' || recoveryRetryActive) {
+    if (transportStatus.value === 'sending' || recoveryRetryActive) {
       return Promise.resolve(operationStatusBlocked(opId, 'A live-play command is already in flight.'))
     }
 
@@ -2667,6 +2676,7 @@ export const useLivePlayCommands = (
 
   return {
     status,
+    transportStatus,
     lastError,
     outboxEntries,
     outboxRecoveryStatus,

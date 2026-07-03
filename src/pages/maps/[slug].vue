@@ -252,14 +252,18 @@ const livePlayStateMachine = useLivePlayStateMachine({
   realtimeStatus: realtimeReconciliationStatus,
   realtimeNotice: livePlayRealtimeNotice,
 })
+const livePlayStateBlocksCommands = computed(() => {
+  const state = livePlayStateMachine.state.value
+  return state !== 'ready' && state !== 'saving-command'
+})
 const fundamentalLivePlayCommandBlocked = computed(() => (
-  mapInPrepareMode.value || !livePlayStateMachine.commandsAllowed.value
+  mapInPrepareMode.value || livePlayStateBlocksCommands.value
 ))
-const livePlayCommandBlockedMessage = computed(() => (
-  mapInPrepareMode.value
-    ? 'Map is in Prepare Map mode. Switch to Run Live Play before live-play commands.'
-    : livePlayStateMachine.commandBlockMessage.value
-))
+const livePlayCommandBlockedMessage = computed(() => {
+  if (mapInPrepareMode.value) return 'Map is in Prepare Map mode. Switch to Run Live Play before live-play commands.'
+  if (livePlayStateBlocksCommands.value) return livePlayStateMachine.commandBlockMessage.value
+  return null
+})
 const livePlayRecoveryNewCommandBlocked = ref(true)
 const livePlayRecoveryNewCommandBlockedMessage = ref<string | null>(
   'Checking for interrupted live-play commands before actions resume.',
@@ -319,8 +323,7 @@ watchEffect(() => {
 })
 const livePlayCommandsAllowed = computed(() => (
   !mapInPrepareMode.value
-  && livePlayStateMachine.commandsAllowed.value
-  && livePlayCommands.status.value !== 'saving'
+  && !livePlayStateBlocksCommands.value
   && !livePlayCommandRecoveryGate.blocksNewLiveCommands.value
 ))
 const livePlayConnectionState = computed<LivePlayConnectionState>(() => {
@@ -328,7 +331,7 @@ const livePlayConnectionState = computed<LivePlayConnectionState>(() => {
   if (livePlayCommandRecoveryGate.retryingOpId.value) return 'saving-command'
   if (livePlayCommandRecoveryGate.abandoningOpId.value) return 'saving-command'
   if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.state.value
-  if (livePlayCommands.status.value === 'saving') return 'saving-command'
+  if (livePlayCommands.transportStatus.value === 'sending') return 'saving-command'
   if (livePlayCommands.outboxRecoveryStatus.value === 'error' || livePlayCommands.outboxRecoveryError.value) return 'error'
   if (livePlayCommands.outboxRecoveryStatus.value === 'abandoning') return 'saving-command'
   if (livePlayCommands.outboxRecoveryStatus.value === 'synchronizing') return 'reconciling'
@@ -344,19 +347,19 @@ const livePlayStatusMessage = computed(() => {
     return livePlayCommandRecoveryGate.blockMessage.value
   }
   if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.notice.value
-  if (livePlayCommands.status.value === 'saving') return 'Sending live-play command to the server.'
+  if (livePlayCommands.transportStatus.value === 'sending') return 'Sending live-play command to the server.'
   return livePlayCommandRecoveryGate.blockMessage.value ?? livePlayStateMachine.notice.value
 })
 const livePlayRetryDisabledMessage = computed(() => {
   if (isSetupEditMode()) return 'Switch to Run Live Play to retry pending live-play commands.'
-  if (!livePlayStateMachine.commandsAllowed.value) return livePlayStateMachine.commandBlockMessage.value
+  if (livePlayStateBlocksCommands.value) return livePlayStateMachine.commandBlockMessage.value
   if (livePlayCommands.outboxRecoveryStatus.value === 'synchronizing') {
     return 'Synchronizing accepted command with the authoritative live table snapshot.'
   }
   if (livePlayCommands.outboxRecoveryStatus.value === 'abandoning') {
     return 'Abandoning the pending live-play operation safely on the server.'
   }
-  if (livePlayCommands.status.value === 'saving') return 'A live-play command is already in flight.'
+  if (livePlayCommands.transportStatus.value === 'sending') return 'A live-play command is already in flight.'
   if (livePlayCommandRecoveryGate.retryingOpId.value) {
     return 'Retrying the pending live-play command with its original operation ID.'
   }
@@ -1013,7 +1016,7 @@ const initiativeControlsEnabled = computed(() => (
   canManageInitiative.value
   && (
     mapInteractionMode.value !== MAP_INTERACTION_MODES.LIVE_PLAY
-    || livePlayConnectionState.value === 'ready'
+    || livePlayCommandsAllowed.value
   )
 ))
 
@@ -1032,7 +1035,7 @@ const {
   placementById,
   isGm,
   livePlayReady: computed(() => livePlayConnectionState.value === 'ready'),
-  commandSaving: computed(() => livePlayCommands.status.value === 'saving'),
+  commandSaving: computed(() => livePlayCommands.transportStatus.value === 'sending'),
   updateTurn: (payload) => livePlayCommands.updateStartTurnModal(payload),
   replaceConditions: (payload) => modifyConditionsFromScene({
     id: payload.id,
@@ -1045,10 +1048,7 @@ const canManageScene = computed(() => (
   && canViewMap.value
   && mapInteractionMode.value === MAP_INTERACTION_MODES.LIVE_PLAY
 ))
-const sceneControlsDisabled = computed(() => (
-  livePlayConnectionState.value !== 'ready'
-  || livePlayCommands.status.value === 'saving'
-))
+const sceneControlsDisabled = computed(() => !livePlayCommandsAllowed.value)
 const startSceneFromPanel = () => {
   if (!import.meta.client) return
   const enteredName = window.prompt(`Scene name (max ${MAP_SCENE_NAME_MAX_LENGTH} characters)`)

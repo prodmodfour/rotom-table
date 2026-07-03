@@ -576,6 +576,7 @@ describe('useLivePlayCommands', () => {
     })
 
     expect(actions.pendingCommandCount.value).toBe(1)
+    expect(actions.transportStatus.value).toBe('sending')
     const pending = Object.values(actions.pendingCommands.value)[0]
     if (!pending) throw new Error('Expected a pending command before the HTTP send completes')
     expect(pending).toMatchObject({
@@ -602,6 +603,7 @@ describe('useLivePlayCommands', () => {
     await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId: pending.opId })
     expect(actions.pendingCommandCount.value).toBe(0)
     expect(actions.pendingCommands.value).toEqual({})
+    expect(actions.transportStatus.value).toBe('idle')
   })
 
   it('clears pending command state after rejected and uncertain terminal handling', async () => {
