@@ -118,7 +118,7 @@ Status: DONE
 
 ## 004 — LP-S1-004 — Replace global in-flight blocking with scope-aware blocking
 
-Status: TODO
+Status: DONE
 
 **Goal:** Allow unrelated live-play commands to be sent while another command is in flight.
 

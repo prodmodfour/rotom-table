@@ -606,6 +606,116 @@ describe('useLivePlayCommands', () => {
     expect(actions.transportStatus.value).toBe('idle')
   })
 
+  it('allows different token move commands to remain in flight together', async () => {
+    const firstPostGate = deferred<void>()
+    const secondPostGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      const payload = commandRecord(command.payload)
+      await (payload.placementId === 'target-token' ? secondPostGate : firstPostGate).promise
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', mapRevision: ref(4) })
+    const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    expect(actions.pendingCommandCount.value).toBe(1)
+
+    const second = actions.moveToken({ placementId: 'target-token', position: { x: 3, y: 0, z: 1 } })
+    expect(actions.pendingCommandCount.value).toBe(2)
+    expect(actions.transportStatus.value).toBe('sending')
+
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    firstPostGate.resolve()
+    secondPostGate.resolve()
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      expect.objectContaining({ dispatched: true }),
+      expect.objectContaining({ dispatched: true }),
+    ])
+    expect(actions.pendingCommandCount.value).toBe(0)
+  })
+
+  it('blocks same-token move commands with a targeted pending-scope message', async () => {
+    const postGate = deferred<void>()
+    const onCommandBlocked = vi.fn()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      onCommandBlocked,
+    })
+    const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    expect(actions.pendingCommandCount.value).toBe(1)
+
+    await expect(actions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 1 } })).resolves.toEqual({
+      dispatched: false,
+      message: 'Another pending command is already changing this token position.',
+    })
+    expect(onCommandBlocked).toHaveBeenCalledWith('Another pending command is already changing this token position.')
+    expect(actions.pendingCommandCount.value).toBe(1)
+
+    postGate.resolve()
+    await expect(first).resolves.toMatchObject({ dispatched: true })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(actions.pendingCommandCount.value).toBe(0)
+  })
+
+  it('allows same-token move and turn commands to overlap because their token fields differ', async () => {
+    const movePostGate = deferred<void>()
+    const turnPostGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      const command = commandRecord(body)
+      await (request === MAP_API_PATHS.turnToken ? turnPostGate : movePostGate).promise
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', mapRevision: ref(4) })
+    const move = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    const turn = actions.turnToken({ placementId: 'token-pikachu', facing: 'north-east' })
+
+    expect(actions.pendingCommandCount.value).toBe(2)
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.moveToken, expect.objectContaining({
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+    }))
+    expect(apiMocks.postJson).toHaveBeenCalledWith(MAP_API_PATHS.turnToken, expect.objectContaining({
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'facing' }],
+    }))
+
+    movePostGate.resolve()
+    turnPostGate.resolve()
+    await expect(Promise.all([move, turn])).resolves.toEqual([
+      expect.objectContaining({ dispatched: true }),
+      expect.objectContaining({ dispatched: true }),
+    ])
+    expect(actions.pendingCommandCount.value).toBe(0)
+  })
+
   it('clears pending command state after rejected and uncertain terminal handling', async () => {
     for (const terminalCase of ['rejected', 'uncertain'] as const) {
       apiMocks.postJson.mockReset()
@@ -1959,7 +2069,7 @@ describe('useLivePlayCommands', () => {
 
     expect(second).toEqual({
       dispatched: false,
-      message: 'A live-play command is already in flight.',
+      message: 'Another pending command is already changing this map initiative lane.',
     })
     for (let attempts = 0; attempts < 20 && apiMocks.postJson.mock.calls.length === 0; attempts += 1) {
       await new Promise((resolve) => setTimeout(resolve, 0))

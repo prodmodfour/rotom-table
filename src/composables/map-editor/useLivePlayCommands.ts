@@ -58,6 +58,10 @@ import { getClientId } from '~/utils/clientId'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import { bindPendingLivePlayCommandUnloadWarning } from '~/utils/livePlayCommandUnloadWarning'
 import {
+  findLivePlayScopeConflict,
+  type LivePlayScopeConflictDescriptor,
+} from '~/utils/livePlayScopeConflicts'
+import {
   createLivePlayCommandOutboxFingerprint,
   getLivePlayCommandOutbox,
   type LivePlayCommandOutbox,
@@ -446,6 +450,26 @@ const LIVE_PLAY_COMMAND_REQUEST_PATHS = new Set<string>([
 const REALTIME_ACKNOWLEDGEMENT_SYNC_MESSAGE =
   'Synchronizing accepted command with the authoritative live table snapshot.'
 
+const NON_CONCURRENT_LIVE_PLAY_COMMAND_TYPES = new Set<LivePlayMapCommandType>([
+  LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
+])
+
+const isNonConcurrentLivePlayCommandType = (commandType: unknown): commandType is LivePlayMapCommandType => (
+  isLivePlayMapCommandType(commandType) && NON_CONCURRENT_LIVE_PLAY_COMMAND_TYPES.has(commandType)
+)
+
+const pendingConflictResourceLabel = (descriptor: LivePlayScopeConflictDescriptor): string => {
+  if (descriptor.kind === 'token-field') return `this token ${descriptor.field}`
+  if (descriptor.kind === 'sheet-field') return `this ${descriptor.sheetKind} sheet ${descriptor.field}`
+  if (descriptor.kind === 'map-lane') return `this map ${descriptor.lane} lane`
+  if (descriptor.kind === 'terrain-cell') return `terrain cell ${descriptor.x},${descriptor.y},${descriptor.z}`
+  return 'this live-play resource'
+}
+
+const pendingScopeConflictMessage = (descriptor: LivePlayScopeConflictDescriptor): string => (
+  `Another pending command is already changing ${pendingConflictResourceLabel(descriptor)}.`
+)
+
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
 )
@@ -627,7 +651,7 @@ export const useLivePlayCommands = (
     if (activeAbandonment !== null) {
       return 'A live-play command abandonment is already active. Wait for it to finish before sending another command.'
     }
-    if (recoveryRetryActive || transportStatus.value === 'sending') return 'A live-play command is already in flight.'
+    if (recoveryRetryActive) return 'A live-play command is already in flight.'
     return null
   }
 
@@ -840,6 +864,38 @@ export const useLivePlayCommands = (
     state,
     isLivePlayMapCommandType(entry.commandType) ? entry.commandType : undefined,
   )
+
+  const bodyCommandType = (body: Record<string, unknown>): LivePlayMapCommandType | null => (
+    isLivePlayMapCommandType(body.type) ? body.type : null
+  )
+
+  const localPendingCommandBlockedMessage = (body: Record<string, unknown>): string | null => {
+    const pendingCommands = Object.values(pendingCommandRecords.value)
+    if (pendingCommands.length === 0) return null
+
+    const commandType = bodyCommandType(body)
+    if (isNonConcurrentLivePlayCommandType(commandType)) {
+      return `${commandType} waits for all pending live-play commands to finish before it can be sent.`
+    }
+
+    const nonConcurrentPendingCommand = pendingCommands.find((command) => (
+      isNonConcurrentLivePlayCommandType(command.commandType)
+    ))
+    if (nonConcurrentPendingCommand) {
+      return `Pending ${nonConcurrentPendingCommand.commandType} must finish before another live-play command can be sent.`
+    }
+
+    const scopes = Array.isArray(body.scopes) ? body.scopes as LivePlayScope[] : []
+    for (const pendingCommand of pendingCommands) {
+      const conflict = findLivePlayScopeConflict(
+        { scopes, command: body },
+        { scopes: pendingCommand.scopes, command: pendingCommand.body },
+      )
+      if (conflict) return pendingScopeConflictMessage(conflict.left)
+    }
+
+    return null
+  }
 
   const trackPendingCommand = (command: LivePlayPendingCommand | null): void => {
     if (!command) return
@@ -1276,6 +1332,12 @@ export const useLivePlayCommands = (
     const authBodyIssue = validateCommandBodyAuthContext(body, authContext)
     if (authBodyIssue) {
       return localCommandFailedResult(authBodyIssue, opId ? { opId } : {})
+    }
+
+    const pendingBlockedMessage = localPendingCommandBlockedMessage(body)
+    if (pendingBlockedMessage) {
+      options.onCommandBlocked?.(pendingBlockedMessage)
+      return { dispatched: false, message: pendingBlockedMessage }
     }
 
     beginSavingOperation(opId)
