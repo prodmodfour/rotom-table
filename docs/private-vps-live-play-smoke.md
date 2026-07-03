@@ -29,6 +29,16 @@ Use three separate browser profiles, private windows, or devices so cookies and 
 
 Confirm both player browsers can see only player-visible content and can control only their linked tokens.
 
+## Live Play Sprint 1 feel smoke
+
+Use the three browsers above and separate what the acting browser shows immediately from what every browser shows after authoritative server acceptance or rejection.
+
+- [ ] From Player A and Player B, rapidly move two different controlled tokens. Each acting browser shows its own token move immediately as a local prediction with only token-level pending feedback, the other token remains interactive, and all browsers converge on the accepted server positions after HTTP/SSE confirmation.
+- [ ] While one client moves a token, have another client turn a different token. The turn appears immediately on the acting browser, does not block the unrelated move, and reaches the other browsers only after authoritative acceptance.
+- [ ] Force a disposable movement rejection, such as a stale same-token conflict from another browser. The acting browser may predict first, then visibly rolls back only that token and shows the concise correction notice; unrelated accepted token updates stay in place.
+- [ ] Trigger reconnect/reconciliation by disconnecting one browser, changing token state elsewhere, then reconnecting it. Command controls pause until the browser catches up or reconciles; do not treat this pause as failed local prediction.
+- [ ] Interrupt a disposable command after it is journaled or sent so the recovery panel shows an uncertain command. Use retry/status or abandonment to resolve the exact `opId` and body, and confirm recovery does not replay presentation-only predictions as authoritative state.
+
 ## Live-play command and revision checks
 
 - [ ] Move Player A's token in Player A's browser. The GM and Player B browsers receive the accepted movement without refreshing, and the moving browser does not rely on whole-map autosave.

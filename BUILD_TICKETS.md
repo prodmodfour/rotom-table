@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: NOT_DONE
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -384,7 +384,7 @@ Status: DONE
 
 ## 014 — LP-S1-014 — Add a short live-play feel smoke note
 
-Status: TODO
+Status: DONE
 
 **Goal:** Give maintainers a manual checklist for validating the new feel.
 
