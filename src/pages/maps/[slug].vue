@@ -98,6 +98,7 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
+import type { LivePlayTokenCorrectionNotice } from '~/types/livePlayUi'
 
 definePageMeta({
   hasPageSpecificGmAdminPanel: true,
@@ -275,44 +276,71 @@ const livePlayRecoveryNewCommandBlockedMessage = ref<string | null>(
 
 type LivePlayCommandRejectionNotification = Parameters<NonNullable<UseLivePlayCommandsOptions['onCommandRejected']>>[0]
 
-const livePlayPredictedMoveOpIds = ref<ReadonlySet<string>>(new Set())
-const livePlayMoveCorrectionNotice = ref<string | null>(null)
-
-const rememberPredictedMoveOpId = (opId: string) => {
-  livePlayMoveCorrectionNotice.value = null
-  livePlayPredictedMoveOpIds.value = new Set([...livePlayPredictedMoveOpIds.value, opId])
+interface TrackedLivePlayTokenPrediction {
+  readonly opId: string
+  readonly placementId: string
+  readonly commandType: LivePlayLocalPrediction['commandType']
+  readonly tokenLabel: string
 }
 
-const forgetPredictedMoveOpId = (opId: string) => {
-  if (!livePlayPredictedMoveOpIds.value.has(opId)) return
-  const nextOpIds = new Set(livePlayPredictedMoveOpIds.value)
-  nextOpIds.delete(opId)
-  livePlayPredictedMoveOpIds.value = nextOpIds
+const livePlayTrackedTokenPredictions = ref<Readonly<Record<string, TrackedLivePlayTokenPrediction>>>({})
+const livePlayTokenCorrectionNotice = ref<LivePlayTokenCorrectionNotice | null>(null)
+
+const livePlayTokenCorrectionMessage = (prediction: TrackedLivePlayTokenPrediction): string => {
+  if (prediction.commandType === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {
+    return `Facing corrected by the server; ${prediction.tokenLabel} returned to its last confirmed facing.`
+  }
+  return `Move corrected by the server; ${prediction.tokenLabel} returned to its last confirmed position.`
 }
 
-const trackedPredictedMoveOpId = (response: LivePlayCommandResponse): string | null => (
-  livePlayPredictedMoveOpIds.value.has(response.opId) ? response.opId : null
-)
+const rememberLivePlayPredictedToken = (prediction: LivePlayLocalPrediction, tokenLabel: string) => {
+  livePlayTokenCorrectionNotice.value = null
+  livePlayTrackedTokenPredictions.value = {
+    ...livePlayTrackedTokenPredictions.value,
+    [prediction.opId]: {
+      opId: prediction.opId,
+      placementId: prediction.placementId,
+      commandType: prediction.commandType,
+      tokenLabel,
+    },
+  }
+}
+
+const forgetLivePlayPredictedToken = (opId: string): TrackedLivePlayTokenPrediction | null => {
+  const prediction = livePlayTrackedTokenPredictions.value[opId]
+  if (!prediction) return null
+  const nextPredictions = { ...livePlayTrackedTokenPredictions.value }
+  delete nextPredictions[opId]
+  livePlayTrackedTokenPredictions.value = nextPredictions
+  return prediction
+}
+
+const trackedLivePlayTokenPredictionForResponse = (
+  response: LivePlayCommandResponse,
+): TrackedLivePlayTokenPrediction | null => livePlayTrackedTokenPredictions.value[response.opId] ?? null
 
 const handleLivePlayCommandAccepted = (response: LivePlayCommandResponse) => {
-  forgetPredictedMoveOpId(response.opId)
+  forgetLivePlayPredictedToken(response.opId)
   livePlayStateMachine.commandAccepted()
 }
 
 const handleLivePlayCommandRejected = (transition: LivePlayCommandRejectionNotification) => {
-  const predictedMoveOpId = trackedPredictedMoveOpId(transition.response)
-  if (!predictedMoveOpId) {
+  const predictedToken = trackedLivePlayTokenPredictionForResponse(transition.response)
+  if (!predictedToken) {
     livePlayStateMachine.commandRejected(transition)
     return
   }
 
-  forgetPredictedMoveOpId(predictedMoveOpId)
+  forgetLivePlayPredictedToken(predictedToken.opId)
   if (transition.reason === 'stale-revision') {
     livePlayStateMachine.commandRejected(transition)
     return
   }
 
-  livePlayMoveCorrectionNotice.value = 'Move corrected by the server; the token returned to its last confirmed position.'
+  livePlayTokenCorrectionNotice.value = {
+    placementId: predictedToken.placementId,
+    message: livePlayTokenCorrectionMessage(predictedToken),
+  }
   livePlayStateMachine.clearCommandError()
 }
 
@@ -374,12 +402,29 @@ const livePlayCommandsAllowed = computed(() => (
   && !livePlayStateBlocksCommands.value
   && !livePlayCommandRecoveryGate.blocksNewLiveCommands.value
 ))
+const livePlayPendingPredictionTokenIds = computed(() => Array.from(new Set(
+  Object.values(livePlayCommands.pendingPredictions.value).map((prediction) => prediction.placementId),
+)))
+const livePlayCorrectionTokenIds = computed(() => (
+  livePlayTokenCorrectionNotice.value ? [livePlayTokenCorrectionNotice.value.placementId] : []
+))
+const livePlayUnpredictedPendingCommandCount = computed(() => Object.values(livePlayCommands.pendingCommands.value).filter(
+  (command) => livePlayCommands.pendingPredictions.value[command.opId] === undefined,
+).length)
+const livePlayGlobalTransportPending = computed(() => (
+  livePlayCommands.transportStatus.value === 'sending'
+  && livePlayUnpredictedPendingCommandCount.value > 0
+))
 const livePlayConnectionState = computed<LivePlayConnectionState>(() => {
-  if (mapInPrepareMode.value) return livePlayStateMachine.state.value
+  const visibleState = livePlayStateMachine.state.value === 'saving-command' && !livePlayGlobalTransportPending.value
+    ? 'ready'
+    : livePlayStateMachine.state.value
+
+  if (mapInPrepareMode.value) return visibleState
   if (livePlayCommandRecoveryGate.retryingOpId.value) return 'saving-command'
   if (livePlayCommandRecoveryGate.abandoningOpId.value) return 'saving-command'
-  if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.state.value
-  if (livePlayCommands.transportStatus.value === 'sending') return 'saving-command'
+  if (visibleState !== 'ready') return visibleState
+  if (livePlayGlobalTransportPending.value) return 'saving-command'
   if (livePlayCommands.outboxRecoveryStatus.value === 'error' || livePlayCommands.outboxRecoveryError.value) return 'error'
   if (livePlayCommands.outboxRecoveryStatus.value === 'abandoning') return 'saving-command'
   if (livePlayCommands.outboxRecoveryStatus.value === 'synchronizing') return 'reconciling'
@@ -394,8 +439,12 @@ const livePlayStatusMessage = computed(() => {
   if (livePlayCommandRecoveryGate.retryingOpId.value || livePlayCommandRecoveryGate.abandoningOpId.value) {
     return livePlayCommandRecoveryGate.blockMessage.value
   }
-  if (livePlayStateMachine.state.value !== 'ready') return livePlayStateMachine.notice.value
-  if (livePlayCommands.transportStatus.value === 'sending') return 'Sending live-play command to the server.'
+  if (livePlayStateMachine.state.value !== 'ready') {
+    return livePlayStateMachine.state.value === 'saving-command' && !livePlayGlobalTransportPending.value
+      ? livePlayCommandRecoveryGate.blockMessage.value
+      : livePlayStateMachine.notice.value
+  }
+  if (livePlayGlobalTransportPending.value) return 'Sending live-play command to the server.'
   return livePlayCommandRecoveryGate.blockMessage.value ?? livePlayStateMachine.notice.value
 })
 const livePlayRetryDisabledMessage = computed(() => {
@@ -470,7 +519,7 @@ const tokenControlNotice = computed(() => {
   if (isPlayer.value && playerProfileError.value) {
     return `Player profile unavailable: ${playerProfileError.value}`
   }
-  return livePlayMoveCorrectionNotice.value ?? playerProfileTokenControlModel.value.notice
+  return playerProfileTokenControlModel.value.notice
 })
 
 useHead(() => ({
@@ -664,6 +713,13 @@ const {
   },
 })
 
+const livePlayTokenLabel = (placementId: string): string => {
+  const spawned = spawnedPokemon.value.find((pokemon) => pokemon.id === placementId)
+  if (spawned?.species) return spawned.species
+  const placement = placementById(placementId)
+  return placement?.sheetSlug ?? 'This token'
+}
+
 const {
   spawnSheetPending,
   spawnSheetFromMenu,
@@ -732,10 +788,17 @@ const turnPokemon = (id: string) => {
   const pendingPredictionOpIdsBeforeTurn = new Set(Object.keys(livePlayCommands.pendingPredictions.value))
   const dispatch = livePlayCommands.turnToken({ placementId: id, facing })
   const predictedTurn = newPendingTurnPredictionForPlacement(pendingPredictionOpIdsBeforeTurn, id)
-  if (predictedTurn) clearSelection()
+  if (predictedTurn) {
+    rememberLivePlayPredictedToken(predictedTurn, livePlayTokenLabel(id))
+    clearSelection()
+  }
 
   void dispatch.then((result) => {
-    if (!result.dispatched) return
+    if (!result.dispatched) {
+      if (result.opId) forgetLivePlayPredictedToken(result.opId)
+      return
+    }
+    if (result.opId) forgetLivePlayPredictedToken(result.opId)
     const turnWasPredicted = predictedTurn !== null
     if (!turnWasPredicted) clearSelection()
   })
@@ -791,16 +854,16 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
   })
   const predictedMove = newPendingMovePredictionForPlacement(pendingPredictionOpIdsBeforeMove, payload.id)
   if (predictedMove) {
-    rememberPredictedMoveOpId(predictedMove.opId)
+    rememberLivePlayPredictedToken(predictedMove, livePlayTokenLabel(payload.id))
     clearSelection()
   }
 
   void dispatch.then(async (result) => {
     if (!result.dispatched) {
-      if (result.opId) forgetPredictedMoveOpId(result.opId)
+      if (result.opId) forgetLivePlayPredictedToken(result.opId)
       return
     }
-    if (result.opId) forgetPredictedMoveOpId(result.opId)
+    if (result.opId) forgetLivePlayPredictedToken(result.opId)
     const moveWasPredicted = predictedMove !== null
     if (!moveWasPredicted) clearSelection()
     const currentPosition = placementById(payload.id)?.position
@@ -2035,6 +2098,9 @@ useMapDimensionReconciliation({
         :token-control-notice="tokenControlNotice"
         :live-play-state="livePlayConnectionState"
         :live-play-status-message="livePlayStatusMessage"
+        :live-play-pending-token-ids="livePlayPendingPredictionTokenIds"
+        :live-play-correction-token-ids="livePlayCorrectionTokenIds"
+        :live-play-token-correction-notice="livePlayTokenCorrectionNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
         :move-automation-feedback="actionAutomationFeedback"

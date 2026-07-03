@@ -504,19 +504,29 @@ export const applyPokemonRenderObjectPosition = (
 export const paintPokemonRenderObjectStyle = (
   renderObject: PokemonRenderObject,
   selected: boolean,
-  options: { hovered?: boolean } = {},
+  options: { hovered?: boolean; pending?: boolean; corrected?: boolean } = {},
 ) => {
   const hovered = options.hovered === true
+  const pending = options.pending === true
+  const corrected = options.corrected === true
 
   // Re-tint the per-face material array with the appropriate tactical
   // theme ramp instead of a single solid color. Hover uses the token's
   // trainer/app accent so the cage identifies ownership without changing
-  // the persistent selected-token lift state.
-  if (hovered) {
+  // the persistent selected-token lift state. Pending local predictions keep
+  // that same token-scoped accent visible even when the pointer has moved on;
+  // corrections temporarily reserve the red invalid ramp for rollback feedback.
+  if (corrected) {
+    paintVolumeMaterials(
+      renderObject.volume.material,
+      'unreachable',
+      selected ? 0.38 : 0.34,
+    )
+  } else if (hovered || pending) {
     paintVolumeFacePalette(
       renderObject.volume.material,
       accentVolumeFacePalette(renderObject.accentColor),
-      selected ? 0.38 : 0.34,
+      selected ? 0.38 : pending ? 0.32 : 0.34,
     )
   } else {
     paintVolumeMaterials(
@@ -527,12 +537,16 @@ export const paintPokemonRenderObjectStyle = (
   }
 
   const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
-  const edgeColor = hovered
-    ? resolveVolumeAccentColor(renderObject.accentColor)
-    : selected ? 0xf7f7f2 : 0xaeb5bd
-  const edgeOpacity = hovered
-    ? selected ? 1 : 0.9
-    : selected ? 0.95 : 0.35
+  const edgeColor = corrected
+    ? 0xff4a55
+    : (hovered || pending)
+        ? resolveVolumeAccentColor(renderObject.accentColor)
+        : selected ? 0xf7f7f2 : 0xaeb5bd
+  const edgeOpacity = corrected
+    ? 1
+    : (hovered || pending)
+        ? selected ? 1 : pending ? 0.82 : 0.9
+        : selected ? 0.95 : 0.35
 
   edgeMaterial.color.set(edgeColor)
   // Idle edges fade so the cage reads via faces; selection/hover sharpens

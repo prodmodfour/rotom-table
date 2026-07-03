@@ -214,6 +214,8 @@ const props = defineProps<{
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
+  livePlayPendingTokenIds?: string[]
+  livePlayCorrectionTokenIds?: string[]
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -291,6 +293,8 @@ const emitPokemonSelection = (id: string | null) => {
 }
 
 const controllableIdSet = computed(() => new Set(props.controllableIds ?? props.pokemons.map((pokemon) => pokemon.id)))
+const livePlayPendingTokenIdSet = computed(() => new Set(props.livePlayPendingTokenIds ?? []))
+const livePlayCorrectionTokenIdSet = computed(() => new Set(props.livePlayCorrectionTokenIds ?? []))
 const canControlPokemon = (id: string | null | undefined): id is string =>
   Boolean(id && controllableIdSet.value.has(id))
 
@@ -856,8 +860,10 @@ const refreshPokemonStyles = () => {
     renderObjects,
     pokemons: props.pokemons,
     selectedId: props.selectedId,
-    paintRenderObjectStyle: (renderObject, selected) => paintPokemonRenderObjectStyle(renderObject, selected, {
+    paintRenderObjectStyle: (renderObject, selected, pokemon) => paintPokemonRenderObjectStyle(renderObject, selected, {
       hovered: hoverController.id() === renderObject.id,
+      pending: livePlayPendingTokenIdSet.value.has(pokemon.id),
+      corrected: livePlayCorrectionTokenIdSet.value.has(pokemon.id),
     }),
   })
   applyLayerVisibility({ force: true })
@@ -1739,6 +1745,16 @@ watch(
     syncMoveVfxRendererState()
     if (!renderer) return
     requestMoveVfxRenderFrame()
+  },
+  { deep: true },
+)
+
+watch(
+  [() => props.livePlayPendingTokenIds, () => props.livePlayCorrectionTokenIds],
+  () => {
+    if (!renderer) return
+    refreshPokemonStyles()
+    requestScheduledSceneFrame('token-style')
   },
   { deep: true },
 )

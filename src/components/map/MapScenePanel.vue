@@ -45,6 +45,7 @@ import type { MapSaveStatus } from '~/composables/useEditableMap'
 import type { MoveAutomationTargetBranchSelectionState } from '~/composables/map-editor/useMoveAutomationPanel'
 import type { InitiativeRow } from '~/composables/map-editor/useInitiativeTracker'
 import type { LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
+import type { LivePlayTokenCorrectionNotice } from '~/types/livePlayUi'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 import type { PreviewState } from '~/utils/gridPreview'
 
@@ -109,6 +110,9 @@ const props = defineProps<{
   tokenControlNotice?: string | null
   livePlayState?: LivePlayConnectionState
   livePlayStatusMessage?: string | null
+  livePlayPendingTokenIds?: string[]
+  livePlayCorrectionTokenIds?: string[]
+  livePlayTokenCorrectionNotice?: LivePlayTokenCorrectionNotice | null
 }>()
 
 const emit = defineEmits<{
@@ -255,6 +259,8 @@ defineExpose({ focusPokemon })
         :token-order-options-by-id="tokenOrderOptionsById"
         :token-send-out-options-by-id="tokenSendOutOptionsById"
         :token-pokeball-options-by-id="tokenPokeballOptionsById"
+        :live-play-pending-token-ids="livePlayPendingTokenIds ?? []"
+        :live-play-correction-token-ids="livePlayCorrectionTokenIds ?? []"
         :move-automation-targeting="moveAutomationTargeting"
         :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
         :move-automation-feedback="moveAutomationFeedback"
@@ -356,6 +362,16 @@ defineExpose({ focusPokemon })
         aria-live="polite"
       >
         {{ props.tokenControlNotice }}
+      </div>
+
+      <div
+        v-if="props.map && canViewMap && props.livePlayTokenCorrectionNotice"
+        class="live-play-token-correction-notice"
+        role="status"
+        aria-live="polite"
+      >
+        <strong>Correction applied</strong>
+        <span>{{ props.livePlayTokenCorrectionNotice.message }}</span>
       </div>
 
       <MapCombatLog
@@ -627,6 +643,34 @@ defineExpose({ focusPokemon })
   pointer-events: none;
 }
 
+.live-play-token-correction-notice {
+  position: absolute;
+  z-index: 7;
+  right: var(--map-overlay-gutter, 0.75rem);
+  bottom: calc(var(--map-overlay-gutter, 0.75rem) + 1rem);
+  display: grid;
+  max-width: min(24rem, calc(100vw - var(--map-nav-rail-width, 0px) - 2rem));
+  gap: 0.2rem;
+  padding: 0.62rem 0.78rem;
+  border: 1px solid color-mix(in srgb, var(--bad) 58%, var(--rule-soft));
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--paper-soft) 91%, transparent);
+  color: color-mix(in srgb, var(--ink-bright) 90%, transparent);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--pokemon-black) 22%, transparent);
+  font-size: 0.78rem;
+  font-weight: 850;
+  line-height: 1.32;
+  pointer-events: none;
+}
+
+.live-play-token-correction-notice strong {
+  color: var(--bad);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .move-usage-error {
   position: absolute;
   top: var(--map-top-info-top, calc(var(--map-overlay-gutter, 0.75rem) + var(--map-initiative-info-bar-height, 4rem) + 0.6rem));
@@ -658,6 +702,12 @@ defineExpose({ focusPokemon })
   .token-control-notice {
     left: var(--map-overlay-gutter, 0.75rem);
     width: min(30rem, calc(100vw - 1.5rem));
+  }
+
+  .live-play-token-correction-notice {
+    right: var(--map-overlay-gutter, 0.75rem);
+    left: var(--map-overlay-gutter, 0.75rem);
+    max-width: none;
   }
 }
 </style>

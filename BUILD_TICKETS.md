@@ -332,7 +332,7 @@ Status: DONE
 
 ## 012 — LP-S1-012 — Add token-level pending/correction UI affordances
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make prediction honest without making the whole table feel blocked.
 

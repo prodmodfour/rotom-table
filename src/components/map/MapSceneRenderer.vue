@@ -65,6 +65,8 @@ defineProps<{
   tokenOrderOptionsById?: Record<string, TokenOrderMenuOption[]>
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
+  livePlayPendingTokenIds?: string[]
+  livePlayCorrectionTokenIds?: string[]
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -146,6 +148,8 @@ defineExpose({ focusPokemon })
     :token-order-options-by-id="tokenOrderOptionsById"
     :token-send-out-options-by-id="tokenSendOutOptionsById"
     :token-pokeball-options-by-id="tokenPokeballOptionsById"
+    :live-play-pending-token-ids="livePlayPendingTokenIds ?? []"
+    :live-play-correction-token-ids="livePlayCorrectionTokenIds ?? []"
     :move-automation-targeting="moveAutomationTargeting"
     :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
     :move-automation-feedback="moveAutomationFeedback"
