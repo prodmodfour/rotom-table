@@ -4,6 +4,7 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   createLivePlayOpId,
+  isLivePlayMapCommandType,
   type AdvanceInitiativePayload,
   type BuildTerrainVoxelPayload,
   type DeleteTokenPayload,
@@ -12,6 +13,7 @@ import {
   type LivePlayCommandDuplicate,
   type LivePlayCommandRejectionReason,
   type LivePlayCommandResult,
+  type LivePlayMapCommandType,
   type LivePlayMapScope,
   type LivePlayScope,
   type LivePlaySheetScope,
@@ -104,6 +106,18 @@ export interface LivePlayCommandDispatchResult {
   readonly uncertain?: boolean
   readonly recoveredByRealtime?: boolean
   readonly outboxError?: string
+}
+
+export type LivePlayPendingCommandState = 'queued' | 'sending'
+
+export interface LivePlayPendingCommand {
+  readonly opId: string
+  readonly requestPath: string
+  readonly commandType: LivePlayMapCommandType
+  readonly baseRevision: number
+  readonly scopes: readonly LivePlayScope[]
+  readonly body: Readonly<Record<string, unknown>>
+  readonly state: LivePlayPendingCommandState
 }
 
 export interface LivePlayResolveMoveDispatchResult extends LivePlayCommandDispatchResult {
@@ -224,6 +238,8 @@ export interface UseLivePlayCommandsReturn {
   outboxEntries: ComputedRef<readonly LivePlayCommandOutboxEntry[]>
   outboxRecoveryStatus: Ref<LivePlayCommandOutboxRecoveryStatus>
   outboxRecoveryError: Ref<string | null>
+  pendingCommands: ComputedRef<Readonly<Record<string, LivePlayPendingCommand>>>
+  pendingCommandCount: ComputedRef<number>
   hasPendingOutboxCommands: ComputedRef<boolean>
   clearError: () => void
   refreshOutboxEntries: () => Promise<readonly LivePlayCommandOutboxEntry[]>
@@ -518,6 +534,9 @@ export const useLivePlayCommands = (
   const outboxEntrySnapshot = ref<readonly LivePlayCommandOutboxEntry[]>([])
   const outboxRecoveryStatus = ref<LivePlayCommandOutboxRecoveryStatus>('idle')
   const outboxRecoveryError = ref<string | null>(null)
+  const pendingCommandRecords = ref<Record<string, LivePlayPendingCommand>>({})
+  const pendingCommands = computed<Readonly<Record<string, LivePlayPendingCommand>>>(() => pendingCommandRecords.value)
+  const pendingCommandCount = computed(() => Object.keys(pendingCommandRecords.value).length)
   let recoveryRetryActive = false
   let activeSavingOpId: string | null = null
   let activeStatusCheck: Promise<LivePlayOperationStatusCheckResult> | null = null
@@ -554,11 +573,19 @@ export const useLivePlayCommands = (
     activeSavingOpId === null || activeSavingOpId === opId
   )
 
+  const removePendingCommand = (opId: string): void => {
+    if (!pendingCommandRecords.value[opId]) return
+    const next = { ...pendingCommandRecords.value }
+    delete next[opId]
+    pendingCommandRecords.value = next
+  }
+
   const markOperationAccepted = (opId: string): void => {
     if (commandCompletionBelongsToCurrentOperation(opId)) {
       status.value = 'idle'
       lastError.value = null
     }
+    removePendingCommand(opId)
     clearSavingOperation(opId)
   }
 
@@ -567,7 +594,10 @@ export const useLivePlayCommands = (
       status.value = 'error'
       lastError.value = message
     }
-    if (opId !== null) clearSavingOperation(opId)
+    if (opId !== null) {
+      removePendingCommand(opId)
+      clearSavingOperation(opId)
+    }
   }
 
   const blockedCommandMessage = (): string | null => {
@@ -767,6 +797,59 @@ export const useLivePlayCommands = (
   const commandEnvelopeOpId = (body: Record<string, unknown>): string | null => (
     typeof body.opId === 'string' ? body.opId : null
   )
+
+  const pendingCommandFromBody = (
+    requestPath: string,
+    body: Record<string, unknown>,
+    state: LivePlayPendingCommandState,
+    fallbackCommandType?: LivePlayMapCommandType,
+  ): LivePlayPendingCommand | null => {
+    const opId = commandEnvelopeOpId(body)
+    const commandType = isLivePlayMapCommandType(body.type) ? body.type : fallbackCommandType
+    if (!opId || !commandType) return null
+    return {
+      opId,
+      requestPath,
+      commandType,
+      baseRevision: normalizeRevision(body.baseRevision),
+      scopes: Array.isArray(body.scopes) ? [...body.scopes] as LivePlayScope[] : [],
+      body,
+      state,
+    }
+  }
+
+  const pendingCommandFromEntry = (
+    entry: LivePlayCommandOutboxEntry,
+    state: LivePlayPendingCommandState,
+  ): LivePlayPendingCommand | null => pendingCommandFromBody(
+    entry.requestPath,
+    entry.body,
+    state,
+    isLivePlayMapCommandType(entry.commandType) ? entry.commandType : undefined,
+  )
+
+  const trackPendingCommand = (command: LivePlayPendingCommand | null): void => {
+    if (!command) return
+    pendingCommandRecords.value = {
+      ...pendingCommandRecords.value,
+      [command.opId]: command,
+    }
+  }
+
+  const trackPendingCommandBody = (
+    requestPath: string,
+    body: Record<string, unknown>,
+    state: LivePlayPendingCommandState,
+  ): void => {
+    trackPendingCommand(pendingCommandFromBody(requestPath, body, state))
+  }
+
+  const trackPendingCommandEntry = (
+    entry: LivePlayCommandOutboxEntry,
+    state: LivePlayPendingCommandState,
+  ): void => {
+    trackPendingCommand(pendingCommandFromEntry(entry, state))
+  }
 
   const outboxErrorMessage = (error: unknown): string => (
     getErrorMessage(error, { fallback: 'Durable live-play command storage failed' })
@@ -1185,11 +1268,13 @@ export const useLivePlayCommands = (
     }
 
     beginSavingOperation(opId)
+    trackPendingCommandBody(request, body, 'queued')
     options.onCommandStarted?.()
 
     let enqueuedEntry: LivePlayCommandOutboxEntry
     try {
       enqueuedEntry = await outbox.enqueue({ requestPath: request, body, authContext })
+      trackPendingCommandEntry(enqueuedEntry, 'queued')
     } catch (enqueueError) {
       const outboxError = outboxErrorMessage(enqueueError)
       const message = `Live-play command ${opId ?? '(unknown operation)'} was not sent because durable command storage was unavailable: ${outboxError}`
@@ -1226,6 +1311,8 @@ export const useLivePlayCommands = (
         { opId: enqueuedEntry.opId, ...(outboxSyncWarning === undefined ? {} : { outboxError: outboxSyncWarning }) },
       )
     }
+
+    trackPendingCommandEntry(claimResult.entry, 'sending')
 
     return withOutboxWarning(
       await sendClaimedOutboxEntry({ entry: claimResult.entry, origin: 'immediate' }),
@@ -1884,6 +1971,7 @@ export const useLivePlayCommands = (
       }
 
       beginSavingOperation(entry.opId)
+      trackPendingCommandEntry(entry, 'queued')
       options.onCommandStarted?.()
 
       let claimResult: Awaited<ReturnType<LivePlayCommandOutbox['claimForSend']>>
@@ -1912,6 +2000,8 @@ export const useLivePlayCommands = (
           { opId: entry.opId, ...(claimRefreshWarning === undefined ? {} : { outboxError: claimRefreshWarning }) },
         )
       }
+
+      trackPendingCommandEntry(claimResult.entry, 'sending')
 
       const result = withOutboxWarning(
         await sendClaimedOutboxEntry({ entry: claimResult.entry, origin: 'recovery' }),
@@ -2581,6 +2671,8 @@ export const useLivePlayCommands = (
     outboxEntries,
     outboxRecoveryStatus,
     outboxRecoveryError,
+    pendingCommands,
+    pendingCommandCount,
     hasPendingOutboxCommands,
     clearError,
     refreshOutboxEntries,

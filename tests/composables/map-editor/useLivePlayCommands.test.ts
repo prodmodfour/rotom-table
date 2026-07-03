@@ -553,6 +553,85 @@ describe('useLivePlayCommands', () => {
     await expect(delegate.get(result.opId!)).resolves.toBeNull()
   })
 
+  it('tracks pending command details by operation while a dispatch is in flight', async () => {
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+      }
+    })
+
+    const { actions } = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4) })
+    const dispatch = actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 3, y: 0, z: 2 },
+      pathLength: 2,
+    })
+
+    expect(actions.pendingCommandCount.value).toBe(1)
+    const pending = Object.values(actions.pendingCommands.value)[0]
+    if (!pending) throw new Error('Expected a pending command before the HTTP send completes')
+    expect(pending).toMatchObject({
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      requestPath: MAP_API_PATHS.moveToken,
+      commandType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      baseRevision: 4,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+      state: 'queued',
+    })
+    expect(pending.body).toMatchObject({
+      opId: pending.opId,
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      payload: {
+        placementId: 'token-pikachu',
+        position: { x: 3, y: 0, z: 2 },
+        pathLength: 2,
+      },
+    })
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId: pending.opId })
+    expect(actions.pendingCommandCount.value).toBe(0)
+    expect(actions.pendingCommands.value).toEqual({})
+  })
+
+  it('clears pending command state after rejected and uncertain terminal handling', async () => {
+    for (const terminalCase of ['rejected', 'uncertain'] as const) {
+      apiMocks.postJson.mockReset()
+      if (terminalCase === 'rejected') {
+        apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+          const command = commandRecord(body)
+          return {
+            ok: false,
+            opId: command.opId,
+            mapSlug: command.mapSlug,
+            reason: 'conflict',
+            message: 'Conflict',
+            currentRevision: 5,
+          }
+        })
+      } else {
+        apiMocks.postJson.mockRejectedValue(new Error('Network down'))
+      }
+
+      const { actions } = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4) })
+      const result = await actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+
+      expect(result.opId, terminalCase).toEqual(expect.stringMatching(LIVE_PLAY_OP_ID_RE))
+      expect(actions.pendingCommandCount.value, terminalCase).toBe(0)
+      expect(actions.pendingCommands.value, terminalCase).toEqual({})
+    }
+  })
+
   it('removes outbox entries for accepted, rejected, duplicate-accepted, and duplicate-rejected terminal responses', async () => {
     const cases = [
       {

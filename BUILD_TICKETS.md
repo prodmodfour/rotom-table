@@ -65,7 +65,7 @@ Status: DONE
 
 ## 002 — LP-S1-002 — Add a pending live-play command model
 
-Status: TODO
+Status: DONE
 
 **Goal:** Track multiple local live-play operations by `opId` instead of one global `saving` operation.
 
