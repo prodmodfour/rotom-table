@@ -585,6 +585,7 @@ export const useLivePlayCommands = (
   let activeAbandonmentOpId: string | null = null
   const realtimeAcknowledgedResponses = new Map<string, LivePlayCommandResponse>()
   const realtimeAcknowledgementFailures = new Map<string, string>()
+  const realtimeAcknowledgementAdoptions = new Map<string, Promise<string | undefined>>()
 
   if (getCurrentScope()) {
     const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => transportStatus.value === 'sending')
@@ -1084,15 +1085,21 @@ export const useLivePlayCommands = (
     return combineOutboxWarnings(markWarning, refreshWarning)
   }
 
-  const consumeRealtimeAcknowledgedResponse = (opId: string): {
+  const consumeRealtimeAcknowledgedResponse = async (opId: string): Promise<{
     readonly response: LivePlayCommandResponse
     readonly acknowledgementFailure?: string
-  } | null => {
+  } | null> => {
     const response = realtimeAcknowledgedResponses.get(opId)
     if (!response) return null
+
+    const adoption = realtimeAcknowledgementAdoptions.get(opId)
+    const adoptionFailure = adoption ? await adoption : undefined
+    if (adoptionFailure) realtimeAcknowledgementFailures.set(opId, adoptionFailure)
+
     const acknowledgementFailure = realtimeAcknowledgementFailures.get(opId)
     realtimeAcknowledgedResponses.delete(opId)
     realtimeAcknowledgementFailures.delete(opId)
+    realtimeAcknowledgementAdoptions.delete(opId)
     return {
       response,
       ...(acknowledgementFailure === undefined ? {} : { acknowledgementFailure }),
@@ -1103,7 +1110,7 @@ export const useLivePlayCommands = (
     entry: LivePlayCommandOutboxEntry,
     detail: string,
   ): Promise<LivePlayCommandDispatchResult | null> => {
-    const recovered = consumeRealtimeAcknowledgedResponse(entry.opId)
+    const recovered = await consumeRealtimeAcknowledgedResponse(entry.opId)
     if (!recovered) return null
 
     const refreshWarning = await refreshOutboxEntriesQuiet({
@@ -1255,7 +1262,7 @@ export const useLivePlayCommands = (
     outboxWarning: string | undefined,
     origin: 'immediate' | 'recovery',
   ): Promise<LivePlayCommandDispatchResult> => {
-    const recovered = consumeRealtimeAcknowledgedResponse(opId)
+    const recovered = await consumeRealtimeAcknowledgedResponse(opId)
     if (recovered) {
       if (!recovered.acknowledgementFailure) markOperationAccepted(opId)
       return withOutboxWarning({
@@ -2698,20 +2705,13 @@ export const useLivePlayCommands = (
     return null
   }
 
-  const startRealtimeAcknowledgementReconciliation = (
+  const adoptAcceptedRealtimeEvent = (
     entry: LivePlayCommandOutboxEntry,
     event: LivePlayAcceptedRealtimeEvent,
-  ): Promise<void> => {
-    if (!options.requestReconciliation) return Promise.resolve()
-    try {
-      return Promise.resolve(options.requestReconciliation({
-        request: entry.requestPath,
-        response: acceptedRealtimeResponse(event),
-      }))
-    } catch (error) {
-      return Promise.reject(error)
-    }
-  }
+  ): Promise<void> => adoptAcceptedLivePlayResponse(
+    entry.requestPath,
+    acceptedRealtimeResponse(event),
+  )
 
   const acknowledgeAcceptedRealtimeEvent: UseLivePlayCommandsReturn['acknowledgeAcceptedRealtimeEvent'] = async (event) => {
     if (event.mapSlug !== options.slug) {
@@ -2741,7 +2741,7 @@ export const useLivePlayCommands = (
     outboxRecoveryError.value = null
 
     const response = acceptedRealtimeResponse(event)
-    const wasActiveImmediateSend = activeSavingOpId === event.opId
+    const wasLocalPendingCommand = pendingCommandRecords.value[event.opId] !== undefined
 
     try {
       await outbox.acknowledgeTerminal(event.opId)
@@ -2753,33 +2753,41 @@ export const useLivePlayCommands = (
       return { status: 'error', opId: event.opId, message }
     }
 
-    if (wasActiveImmediateSend) realtimeAcknowledgedResponses.set(event.opId, response)
+    if (wasLocalPendingCommand) realtimeAcknowledgedResponses.set(event.opId, response)
     else realtimeAcknowledgedResponses.delete(event.opId)
     realtimeAcknowledgementFailures.delete(event.opId)
+    realtimeAcknowledgementAdoptions.delete(event.opId)
 
-    const reconciliation = startRealtimeAcknowledgementReconciliation(entry, event)
+    const adoptionProcessing = adoptAcceptedRealtimeEvent(entry, event).then(
+      () => undefined,
+      (error) => `Accepted live-play operation ${event.opId} was acknowledged, but authoritative synchronization failed: ${getErrorMessage(error, { fallback: 'Live-play realtime acknowledgement reconciliation failed' })}`,
+    )
+
+    if (wasLocalPendingCommand) realtimeAcknowledgementAdoptions.set(event.opId, adoptionProcessing)
+
     const refreshWarning = await refreshOutboxEntriesQuiet()
-
-    try {
-      await reconciliation
-    } catch (error) {
-      const message = `Accepted live-play operation ${event.opId} was acknowledged, but authoritative synchronization failed: ${getErrorMessage(error, { fallback: 'Live-play realtime acknowledgement reconciliation failed' })}`
-      if (realtimeAcknowledgedResponses.has(event.opId)) realtimeAcknowledgementFailures.set(event.opId, message)
-      markOperationFailed(event.opId, message)
-      setOutboxRecoveryFailure(message)
-      return { status: 'error', opId: event.opId, message }
+    const adoptionFailureMessage = await adoptionProcessing
+    if (realtimeAcknowledgementAdoptions.get(event.opId) === adoptionProcessing) {
+      realtimeAcknowledgementAdoptions.delete(event.opId)
     }
+
+    if (adoptionFailureMessage) {
+      if (realtimeAcknowledgedResponses.has(event.opId)) realtimeAcknowledgementFailures.set(event.opId, adoptionFailureMessage)
+      markOperationFailed(event.opId, adoptionFailureMessage)
+      setOutboxRecoveryFailure(adoptionFailureMessage)
+      return { status: 'error', opId: event.opId, message: adoptionFailureMessage }
+    }
+
+    markOperationAccepted(event.opId)
+    if (wasLocalPendingCommand) options.onCommandAccepted?.(response)
 
     if (refreshWarning) {
       const message = `Accepted live-play operation ${event.opId} was acknowledged, but durable command recovery state could not be refreshed: ${refreshWarning}`
       if (realtimeAcknowledgedResponses.has(event.opId)) realtimeAcknowledgementFailures.set(event.opId, message)
-      markOperationFailed(event.opId, message)
       setOutboxRecoveryFailure(message)
       return { status: 'error', opId: event.opId, message }
     }
 
-    markOperationAccepted(event.opId)
-    if (wasActiveImmediateSend) options.onCommandAccepted?.(response)
     outboxRecoveryStatus.value = 'idle'
     outboxRecoveryError.value = null
     return { status: 'acknowledged', opId: event.opId }

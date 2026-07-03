@@ -720,16 +720,7 @@ describe('useLivePlayCommands', () => {
   it('cleans up local predictions idempotently when accepted SSE wins the HTTP race', async () => {
     const outbox = createTestOutbox()
     const map = ref(mapFixture())
-    const requestReconciliation = vi.fn((input: Parameters<NonNullable<UseLivePlayCommandsOptions['requestReconciliation']>>[0]) => {
-      const current = placementById(map.value)
-      map.value.placements.splice(0, 1, {
-        ...current,
-        position: { x: 2, y: 0, z: 1 },
-        facing: 'south-east',
-        turned: false,
-      })
-      map.value.revision = input.response.ok && 'revision' in input.response ? input.response.revision : 5
-    })
+    const requestReconciliation = vi.fn()
     let releaseHttp!: () => void
     let sentBody: Record<string, unknown> | null = null
     apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
@@ -764,9 +755,11 @@ describe('useLivePlayCommands', () => {
       status: 'acknowledged',
       opId: entry!.opId,
     })
-    expect(requestReconciliation).toHaveBeenCalledTimes(1)
+    expect(requestReconciliation).not.toHaveBeenCalled()
+    expect(actions.pendingCommandCount.value).toBe(0)
     expect(actions.pendingPredictionCount.value).toBe(0)
     expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+    expect(map.value.revision).toBe(5)
 
     releaseHttp()
     await expect(httpResult).resolves.toMatchObject({
@@ -777,6 +770,101 @@ describe('useLivePlayCommands', () => {
     expect(actions.pendingPredictionCount.value).toBe(0)
     expect(actions.pendingPredictions.value).toEqual({})
     expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+  })
+
+  it('acknowledges accepted SSE for any local pending opId, not only the latest active send', async () => {
+    const outbox = createTestOutbox()
+    const map = ref(mapFixture())
+    const firstPostGate = deferred<void>()
+    const secondPostGate = deferred<void>()
+    const requestReconciliation = vi.fn()
+    const onCommandAccepted = vi.fn()
+    const sentBodies: Record<string, unknown>[] = []
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      const payload = commandRecord(command.payload)
+      sentBodies.push(command)
+      if (payload.placementId === 'target-token') {
+        await secondPostGate.promise
+        return {
+          ok: true,
+          opId: command.opId,
+          mapSlug: command.mapSlug,
+          previousRevision: 5,
+          revision: 6,
+          patches: [{
+            schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+            type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+            mapSlug: command.mapSlug,
+            revision: 6,
+            scopes: [{ kind: 'token', placementId: 'target-token', field: 'position' }],
+            payload: { placementId: 'target-token', position: { x: 3, y: 0, z: 1 } },
+          }],
+        }
+      }
+
+      await firstPostGate.promise
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+          mapSlug: command.mapSlug,
+          revision: 5,
+          scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+          payload: { placementId: 'token-pikachu', position: { x: 9, y: 0, z: 9 } },
+        }],
+      }
+    })
+
+    const actions = createCommandHarness({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      outbox,
+      requestReconciliation,
+      onCommandAccepted,
+    }).actions
+
+    const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    const second = actions.moveToken({ placementId: 'target-token', position: { x: 3, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(sentBodies).toHaveLength(2))
+
+    const firstBody = sentBodies.find((body) => commandRecord(body.payload).placementId === 'token-pikachu')
+    expect(firstBody).toBeDefined()
+    const firstEntry = await outbox.get(firstBody!.opId as string)
+    expect(firstEntry).not.toBeNull()
+
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(firstEntry!))).resolves.toEqual({
+      status: 'acknowledged',
+      opId: firstEntry!.opId,
+    })
+    expect(actions.pendingCommands.value[firstEntry!.opId]).toBeUndefined()
+    expect(actions.pendingCommandCount.value).toBe(1)
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+    expect(map.value.revision).toBe(5)
+
+    firstPostGate.resolve()
+    await expect(first).resolves.toMatchObject({
+      dispatched: true,
+      recoveredByRealtime: true,
+      opId: firstEntry!.opId,
+    })
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+
+    secondPostGate.resolve()
+    await expect(second).resolves.toMatchObject({ dispatched: true })
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 3, y: 0, z: 1 })
+    expect(map.value.revision).toBe(6)
+    expect(actions.pendingCommandCount.value).toBe(0)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(requestReconciliation).not.toHaveBeenCalled()
+    expect(onCommandAccepted).toHaveBeenCalledTimes(2)
   })
 
   it('allows different token move commands to remain in flight together', async () => {

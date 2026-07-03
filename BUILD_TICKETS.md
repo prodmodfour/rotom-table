@@ -201,7 +201,7 @@ Status: DONE
 
 ## 007 — LP-S1-009 — Treat accepted SSE as first-class local command acknowledgement
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let realtime confirmation resolve local pending commands even if the matching HTTP response is still in flight.
 

@@ -608,10 +608,16 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.postJson).not.toHaveBeenCalled()
   })
 
-  it('does not suppress same-client accepted command events before acknowledgement or patching', async () => {
+  it('does not suppress same-client accepted command events and notifies after patching', async () => {
     apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
-    const onAccepted = vi.fn()
-    const editable = useEditableMap('arena-map', {
+    let callbackRevision: number | null = null
+    let callbackPosition: unknown = null
+    let editable: ReturnType<typeof useEditableMap> | null = null
+    const onAccepted = vi.fn(() => {
+      callbackRevision = editable?.mapRevision.value ?? null
+      callbackPosition = editable?.map.value?.placements[0]?.position
+    })
+    editable = useEditableMap('arena-map', {
       debounceMs: 10,
       onLivePlayCommandAcceptedEvent: onAccepted,
     })
@@ -628,6 +634,8 @@ describe('useEditableMap autosave boundary', () => {
       opId: 'op_realtime001',
       clientId: 'map-client',
     }))
+    expect(callbackRevision).toBe(2)
+    expect(callbackPosition).toEqual({ x: 4, y: 0, z: 2 })
     expect(editable.map.value?.placements[0]).toMatchObject({
       position: { x: 4, y: 0, z: 2 },
       facing: 'north-west',

@@ -521,13 +521,16 @@ export const useEditableMap = (
     }
 
     const acceptedEvent = parsed.event
-    notifyLivePlayCommandAcceptedEvent(acceptedEvent)
 
     const incomingRevision = acceptedEvent.revision
     const currentRevision = documentRevision(map.value)
-    if (currentRevision !== null && incomingRevision <= currentRevision) return
+    if (currentRevision !== null && incomingRevision <= currentRevision) {
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+      return
+    }
     if (revisionGapRequiresReconcile(acceptedEvent)) {
       requestRealtimeReconciliation('Live-play command revision gap detected. Reloading the live table snapshot.')
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
       return
     }
 
@@ -541,6 +544,7 @@ export const useEditableMap = (
     if (!patchResult.ok) {
       console.warn('[useEditableMap] live-play patch reconcile required', patchResult.message)
       requestRealtimeReconciliation(patchResult.message)
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
       return
     }
     if (patchResult.applied && map.value) {
@@ -549,6 +553,7 @@ export const useEditableMap = (
       status.value = 'idle'
       error.value = null
     }
+    notifyLivePlayCommandAcceptedEvent(acceptedEvent)
   }
 
   const handleRealtimeMapEvent = (event: RealtimeEvent) => {
