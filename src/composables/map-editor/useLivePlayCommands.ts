@@ -1171,24 +1171,35 @@ export const useLivePlayCommands = (
     return combinedWarning === undefined ? result : { ...result, outboxError: combinedWarning }
   }
 
+  const tryApplyAcceptedResponsePatches = (response: LivePlayCommandResponse): boolean => {
+    const patchResult = acceptedPatchResult(response)
+    if (!patchResult || patchResult.patches.length === 0 || !options.map?.value) return false
+
+    const applied = applyLivePlayPatchesToMap({
+      map: options.map.value,
+      mapSlug: patchResult.mapSlug,
+      previousRevision: patchResult.previousRevision,
+      revision: patchResult.revision,
+      patches: patchResult.patches,
+    })
+    return applied.ok
+  }
+
+  const applyAcceptedResponseMapFallback = (response: LivePlayCommandResponse): boolean => {
+    if (!response.map || !options.applyPersistedMap) return false
+    options.applyPersistedMap(response.map)
+    return true
+  }
+
   const adoptAcceptedLivePlayResponse = async (
     request: string,
     response: LivePlayCommandResponse,
     adoptOptions: { readonly reconcileOnPatchFailure?: boolean } = {},
   ): Promise<void> => {
     const reconcileOnPatchFailure = adoptOptions.reconcileOnPatchFailure ?? true
-    const patchResult = acceptedPatchResult(response)
-    if (response.map) options.applyPersistedMap?.(response.map)
-    else if (patchResult && options.map?.value) {
-      const applied = applyLivePlayPatchesToMap({
-        map: options.map.value,
-        mapSlug: patchResult.mapSlug,
-        previousRevision: patchResult.previousRevision,
-        revision: patchResult.revision,
-        patches: patchResult.patches,
-      })
-      if (!applied.ok && reconcileOnPatchFailure) await options.requestReconciliation?.({ request, response })
-    } else if (acceptedResultRequiresReconciliation(response) && reconcileOnPatchFailure) {
+    const patchesHandled = tryApplyAcceptedResponsePatches(response)
+    const mapFallbackApplied = patchesHandled ? false : applyAcceptedResponseMapFallback(response)
+    if (!patchesHandled && !mapFallbackApplied && acceptedResultRequiresReconciliation(response) && reconcileOnPatchFailure) {
       await options.requestReconciliation?.({ request, response })
     }
     for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)

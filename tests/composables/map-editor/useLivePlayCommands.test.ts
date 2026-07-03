@@ -2629,6 +2629,162 @@ describe('useLivePlayCommands', () => {
     expect(requestReconciliation).not.toHaveBeenCalled()
   })
 
+  it('prefers accepted moveToken patches over a returned full map fallback', async () => {
+    const map = ref(mapFixture())
+    const originalMap = map.value
+    const fallbackMap = cloneJson(map.value)
+    fallbackMap.revision = 5
+    fallbackMap.name = 'Fallback map should not replace patch-applied state'
+    fallbackMap.placements[0]!.position = { x: 5, y: 0, z: 5 }
+    const requestReconciliation = vi.fn()
+    const applyPersistedMap = vi.fn((incoming: TabletopMap) => {
+      map.value = incoming
+    })
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applyPersistedMap,
+      requestReconciliation,
+    })
+    mockTerminalResponse({
+      ok: true,
+      opId: 'op_patchmapmv',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: 'arena-map',
+        revision: 5,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+        payload: {
+          placementId: 'token-pikachu',
+          position: { x: 3, y: 0, z: 2 },
+          facing: 'north-east',
+          turned: false,
+        },
+      }],
+      map: fallbackMap,
+    })
+
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 3, y: 0, z: 2 },
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(map.value).toBe(originalMap)
+    expect(map.value.revision).toBe(5)
+    expect(map.value.name).toBe('Arena Map')
+    expect(map.value.placements[0]).toMatchObject({ position: { x: 3, y: 0, z: 2 }, facing: 'north-east' })
+    expect(applyPersistedMap).not.toHaveBeenCalled()
+    expect(requestReconciliation).not.toHaveBeenCalled()
+  })
+
+  it('prefers accepted turnToken patches over a returned full map fallback', async () => {
+    const map = ref(mapFixture())
+    const originalMap = map.value
+    const fallbackMap = cloneJson(map.value)
+    fallbackMap.revision = 5
+    fallbackMap.name = 'Fallback turn map should not replace patch-applied state'
+    fallbackMap.placements[0]!.facing = 'south-west'
+    const requestReconciliation = vi.fn()
+    const applyPersistedMap = vi.fn((incoming: TabletopMap) => {
+      map.value = incoming
+    })
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applyPersistedMap,
+      requestReconciliation,
+    })
+    mockTerminalResponse({
+      ok: true,
+      opId: 'op_patchmaptr',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_FACING,
+        mapSlug: 'arena-map',
+        revision: 5,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'facing' }],
+        payload: {
+          placementId: 'token-pikachu',
+          facing: 'north-east',
+          turned: false,
+        },
+      }],
+      map: fallbackMap,
+    })
+
+    const result = await actions.turnToken({
+      placementId: 'token-pikachu',
+      facing: 'north-east',
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(map.value).toBe(originalMap)
+    expect(map.value.revision).toBe(5)
+    expect(map.value.name).toBe('Arena Map')
+    expect(map.value.placements[0]).toMatchObject({ facing: 'north-east', turned: false })
+    expect(applyPersistedMap).not.toHaveBeenCalled()
+    expect(requestReconciliation).not.toHaveBeenCalled()
+  })
+
+  it('falls back to the accepted response map when patches cannot be applied safely', async () => {
+    const map = ref(mapFixture())
+    const fallbackMap = cloneJson(map.value)
+    fallbackMap.revision = 5
+    fallbackMap.name = 'Accepted fallback map'
+    fallbackMap.placements[0]!.position = { x: 4, y: 0, z: 4 }
+    const requestReconciliation = vi.fn()
+    const applyPersistedMap = vi.fn((incoming: TabletopMap) => {
+      map.value = incoming
+    })
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applyPersistedMap,
+      requestReconciliation,
+    })
+    mockTerminalResponse({
+      ok: true,
+      opId: 'op_patchfallback',
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: 'arena-map',
+        revision: 5,
+        scopes: [{ kind: 'token', placementId: 'missing-token', field: 'position' }],
+        payload: {
+          placementId: 'missing-token',
+          position: { x: 3, y: 0, z: 2 },
+        },
+      }],
+      map: fallbackMap,
+    })
+
+    const result = await actions.moveToken({
+      placementId: 'token-pikachu',
+      position: { x: 3, y: 0, z: 2 },
+    })
+
+    expect(result.dispatched).toBe(true)
+    expect(applyPersistedMap).toHaveBeenCalledWith(fallbackMap)
+    expect(map.value.name).toBe('Accepted fallback map')
+    expect(map.value.placements[0]).toMatchObject({ position: { x: 4, y: 0, z: 4 } })
+    expect(requestReconciliation).not.toHaveBeenCalled()
+  })
+
   it('requests reconciliation when an accepted command returns a reconciliation patch instead of a map', async () => {
     const requestReconciliation = vi.fn()
     const actions = useTestLivePlayCommands({

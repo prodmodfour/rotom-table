@@ -228,7 +228,7 @@ Status: DONE
 
 ## 008 — LP-S1-010 — Prefer accepted patches over full-map adoption for hot-path command responses
 
-Status: TODO
+Status: DONE
 
 **Goal:** Avoid making successful token commands feel like whole-document replacements.
 
