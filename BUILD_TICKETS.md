@@ -254,7 +254,7 @@ Status: DONE
 
 ## 009 — LP-S1-007 — Wire immediate visual prediction for token movement
 
-Status: TODO
+Status: DONE
 
 **Goal:** A clicked token move should appear on the map immediately in Run Live Play.
 

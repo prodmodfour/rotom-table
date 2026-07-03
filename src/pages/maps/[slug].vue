@@ -15,6 +15,8 @@ import { useLiveSheets } from '~/composables/useLiveSheets'
 import {
   pokeballCaptureFromAcceptedRealtimeEvent,
   useLivePlayCommands,
+  type LivePlayCommandResponse,
+  type UseLivePlayCommandsOptions,
 } from '~/composables/map-editor/useLivePlayCommands'
 import { useLivePlayCommandRecoveryGate } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
 import { useLivePlayStateMachine, type LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
@@ -58,6 +60,7 @@ import {
 import { useManeuverActionPanel } from '~/composables/map-editor/useManeuverActionPanel'
 import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPanel'
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
+import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
 import { isRealtimeEcho } from '#shared/realtime'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
@@ -89,6 +92,7 @@ import { buildLiveSheetAccessScopeKey } from '~/utils/liveSheetCache'
 import { getClientId } from '~/utils/clientId'
 import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
+import type { LivePlayLocalPrediction } from '~/utils/livePlayPredictions'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
@@ -268,6 +272,50 @@ const livePlayRecoveryNewCommandBlocked = ref(true)
 const livePlayRecoveryNewCommandBlockedMessage = ref<string | null>(
   'Checking for interrupted live-play commands before actions resume.',
 )
+
+type LivePlayCommandRejectionNotification = Parameters<NonNullable<UseLivePlayCommandsOptions['onCommandRejected']>>[0]
+
+const livePlayPredictedMoveOpIds = ref<ReadonlySet<string>>(new Set())
+const livePlayMoveCorrectionNotice = ref<string | null>(null)
+
+const rememberPredictedMoveOpId = (opId: string) => {
+  livePlayMoveCorrectionNotice.value = null
+  livePlayPredictedMoveOpIds.value = new Set([...livePlayPredictedMoveOpIds.value, opId])
+}
+
+const forgetPredictedMoveOpId = (opId: string) => {
+  if (!livePlayPredictedMoveOpIds.value.has(opId)) return
+  const nextOpIds = new Set(livePlayPredictedMoveOpIds.value)
+  nextOpIds.delete(opId)
+  livePlayPredictedMoveOpIds.value = nextOpIds
+}
+
+const trackedPredictedMoveOpId = (response: LivePlayCommandResponse): string | null => (
+  livePlayPredictedMoveOpIds.value.has(response.opId) ? response.opId : null
+)
+
+const handleLivePlayCommandAccepted = (response: LivePlayCommandResponse) => {
+  forgetPredictedMoveOpId(response.opId)
+  livePlayStateMachine.commandAccepted()
+}
+
+const handleLivePlayCommandRejected = (transition: LivePlayCommandRejectionNotification) => {
+  const predictedMoveOpId = trackedPredictedMoveOpId(transition.response)
+  if (!predictedMoveOpId) {
+    livePlayStateMachine.commandRejected(transition)
+    return
+  }
+
+  forgetPredictedMoveOpId(predictedMoveOpId)
+  if (transition.reason === 'stale-revision') {
+    livePlayStateMachine.commandRejected(transition)
+    return
+  }
+
+  livePlayMoveCorrectionNotice.value = 'Move corrected by the server; the token returned to its last confirmed position.'
+  livePlayStateMachine.clearCommandError()
+}
+
 const livePlayCommands = useLivePlayCommands({
   slug,
   authRole: role,
@@ -282,8 +330,8 @@ const livePlayCommands = useLivePlayCommands({
   applySheetUpdate: applyLivePlaySheetUpdate,
   requestReconciliation: () => livePlayStateMachine.reconcile(reconcileLivePlayState),
   onCommandStarted: livePlayStateMachine.commandStarted,
-  onCommandAccepted: livePlayStateMachine.commandAccepted,
-  onCommandRejected: livePlayStateMachine.commandRejected,
+  onCommandAccepted: handleLivePlayCommandAccepted,
+  onCommandRejected: handleLivePlayCommandRejected,
   onCommandFailed: livePlayStateMachine.commandFailed,
   onCommandBlocked: livePlayStateMachine.commandBlocked,
   onCommandErrorCleared: livePlayStateMachine.clearCommandError,
@@ -422,7 +470,7 @@ const tokenControlNotice = computed(() => {
   if (isPlayer.value && playerProfileError.value) {
     return `Player profile unavailable: ${playerProfileError.value}`
   }
-  return playerProfileTokenControlModel.value.notice
+  return livePlayMoveCorrectionNotice.value ?? playerProfileTokenControlModel.value.notice
 })
 
 useHead(() => ({
@@ -687,6 +735,18 @@ const turnPokemon = (id: string) => {
 }
 
 let attackOfOpportunityPanel: ReturnType<typeof useAttackOfOpportunityPanel> | null = null
+
+const newPendingMovePredictionForPlacement = (
+  previousOpIds: ReadonlySet<string>,
+  placementId: string,
+): LivePlayLocalPrediction | null => (
+  Object.values(livePlayCommands.pendingPredictions.value).find((prediction) => (
+    !previousOpIds.has(prediction.opId)
+    && prediction.commandType === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+    && prediction.placementId === placementId
+  )) ?? null
+)
+
 const movePokemon = (payload: { id: string; position: GridAnchor }) => {
   const from = spawnedPokemon.value.find((pokemon) => pokemon.id === payload.id)?.position
     ?? placementById(payload.id)?.position
@@ -697,13 +757,26 @@ const movePokemon = (payload: { id: string; position: GridAnchor }) => {
     movePlacementForSetupEdit(payload)
     return
   }
-  void livePlayCommands.moveToken({
+  const pendingPredictionOpIdsBeforeMove = new Set(Object.keys(livePlayCommands.pendingPredictions.value))
+  const dispatch = livePlayCommands.moveToken({
     placementId: payload.id,
     position: payload.position,
     pathLength: previewState.value.pathLength,
-  }).then(async (result) => {
-    if (!result.dispatched) return
+  })
+  const predictedMove = newPendingMovePredictionForPlacement(pendingPredictionOpIdsBeforeMove, payload.id)
+  if (predictedMove) {
+    rememberPredictedMoveOpId(predictedMove.opId)
     clearSelection()
+  }
+
+  void dispatch.then(async (result) => {
+    if (!result.dispatched) {
+      if (result.opId) forgetPredictedMoveOpId(result.opId)
+      return
+    }
+    if (result.opId) forgetPredictedMoveOpId(result.opId)
+    const moveWasPredicted = predictedMove !== null
+    if (!moveWasPredicted) clearSelection()
     const currentPosition = placementById(payload.id)?.position
     if (!previousPosition || !currentPosition || isSameAnchor(previousPosition, currentPosition)) return
     await Promise.resolve(attackOfOpportunityPanel?.clearAttackOfOpportunityPromptsForNonImmediateAction(payload.id))

@@ -10,6 +10,24 @@ const repoRoot = resolve(testDir, '../..')
 const readSource = (relativePath: string): string => readFileSync(resolve(repoRoot, relativePath), 'utf8')
 
 describe('map page route authority', () => {
+  it('wires clicked live-play movement through local prediction feedback', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+
+    expect(mapPage).toContain('const livePlayPredictedMoveOpIds = ref<ReadonlySet<string>>(new Set())')
+    expect(mapPage).toContain('const livePlayMoveCorrectionNotice = ref<string | null>(null)')
+    expect(mapPage).toContain('onCommandAccepted: handleLivePlayCommandAccepted')
+    expect(mapPage).toContain('onCommandRejected: handleLivePlayCommandRejected')
+    expect(mapPage).toContain('livePlayMoveCorrectionNotice.value = \'Move corrected by the server; the token returned to its last confirmed position.\'')
+    expect(mapPage).toContain('livePlayStateMachine.clearCommandError()')
+    expect(mapPage).toContain('return livePlayMoveCorrectionNotice.value ?? playerProfileTokenControlModel.value.notice')
+    expect(mapPage).toContain('const pendingPredictionOpIdsBeforeMove = new Set(Object.keys(livePlayCommands.pendingPredictions.value))')
+    expect(mapPage).toContain('const predictedMove = newPendingMovePredictionForPlacement(pendingPredictionOpIdsBeforeMove, payload.id)')
+    expect(mapPage).toContain('if (predictedMove) {\n    rememberPredictedMoveOpId(predictedMove.opId)\n    clearSelection()\n  }')
+    expect(mapPage).toContain('const moveWasPredicted = predictedMove !== null\n    if (!moveWasPredicted) clearSelection()')
+    expect(mapPage).toContain('if (!result.dispatched) {\n      if (result.opId) forgetPredictedMoveOpId(result.opId)\n      return\n    }')
+    expect(mapPage).toContain('await Promise.resolve(attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({')
+  })
+
   it('uses the saved map route regardless of the session query parameter', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
 
