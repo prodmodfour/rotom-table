@@ -358,7 +358,7 @@ Status: DONE
 
 ## 013 — LP-S1-013 — Add regression tests for scoped concurrency
 
-Status: TODO
+Status: DONE
 
 **Goal:** Lock in the UX contract that unrelated token actions do not block each other.
 

@@ -389,6 +389,31 @@ const tokenPosition = (map: TabletopMap, placementId = 'token-pikachu') => (
   placementById(map, placementId).position
 )
 
+const acceptedMoveTokenResponse = (
+  command: Record<string, unknown>,
+  options: { readonly previousRevision: number; readonly revision: number },
+): Record<string, unknown> => {
+  const payload = commandRecord(command.payload)
+  return {
+    ok: true,
+    opId: command.opId,
+    mapSlug: command.mapSlug,
+    previousRevision: options.previousRevision,
+    revision: options.revision,
+    patches: [{
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+      mapSlug: command.mapSlug,
+      revision: options.revision,
+      scopes: [{ kind: 'token', placementId: payload.placementId, field: 'position' }],
+      payload: {
+        placementId: payload.placementId,
+        position: payload.position,
+      },
+    }],
+  }
+}
+
 const resolvedMoveFixture = (overrides: Partial<LivePlayResolvedMoveResult> = {}): LivePlayResolvedMoveResult => ({
   schemaVersion: LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
   actorPlacementId: 'token-pikachu',
@@ -980,6 +1005,115 @@ describe('useLivePlayCommands', () => {
       expect.objectContaining({ dispatched: true }),
     ])
     expect(actions.pendingCommandCount.value).toBe(0)
+  })
+
+  it('accepts a token move after an unrelated token move advances the authoritative revision', async () => {
+    const map = ref(mapFixture())
+    const firstPostGate = deferred<void>()
+    const secondPostGate = deferred<void>()
+    const postedBodies: Record<string, unknown>[] = []
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = cloneJson(commandRecord(body))
+      const payload = commandRecord(command.payload)
+      postedBodies.push(command)
+      if (payload.placementId === 'target-token') {
+        await secondPostGate.promise
+        return acceptedMoveTokenResponse(command, { previousRevision: 4, revision: 5 })
+      }
+
+      await firstPostGate.promise
+      return acceptedMoveTokenResponse(command, { previousRevision: 5, revision: 6 })
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+    })
+    const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 2 } })
+    const second = actions.moveToken({ placementId: 'target-token', position: { x: 3, y: 0, z: 1 } })
+
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    expect(postedBodies).toHaveLength(2)
+    expect(postedBodies).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        baseRevision: 4,
+        payload: expect.objectContaining({ placementId: 'token-pikachu' }),
+      }),
+      expect.objectContaining({
+        baseRevision: 4,
+        payload: expect.objectContaining({ placementId: 'target-token' }),
+      }),
+    ]))
+
+    secondPostGate.resolve()
+    await expect(second).resolves.toMatchObject({ dispatched: true })
+    expect(map.value.revision).toBe(5)
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 3, y: 0, z: 1 })
+    expect(tokenPosition(map.value, 'token-pikachu')).toEqual({ x: 4, y: 0, z: 2 })
+    expect(actions.pendingCommandCount.value).toBe(1)
+
+    firstPostGate.resolve()
+    await expect(first).resolves.toMatchObject({ dispatched: true })
+    expect(map.value.revision).toBe(6)
+    expect(tokenPosition(map.value, 'token-pikachu')).toEqual({ x: 4, y: 0, z: 2 })
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 3, y: 0, z: 1 })
+    expect(actions.pendingCommandCount.value).toBe(0)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+  })
+
+  it('does not roll back an unrelated authoritative token update when a local prediction is rejected', async () => {
+    const map = ref(mapFixture())
+    const originalPikachuPosition = cloneJson(tokenPosition(map.value, 'token-pikachu'))
+    const targetAuthoritativePosition = { x: 3, y: 0, z: 1 }
+    const firstPostGate = deferred<void>()
+    const secondPostGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = cloneJson(commandRecord(body))
+      const payload = commandRecord(command.payload)
+      if (payload.placementId === 'target-token') {
+        await secondPostGate.promise
+        return acceptedMoveTokenResponse(command, { previousRevision: 4, revision: 5 })
+      }
+
+      await firstPostGate.promise
+      return {
+        ok: false,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        reason: 'conflict',
+        message: 'Token A was rejected',
+        currentRevision: 5,
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+    })
+    const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 2 } })
+    const second = actions.moveToken({ placementId: 'target-token', position: targetAuthoritativePosition })
+
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    expect(tokenPosition(map.value, 'token-pikachu')).toEqual({ x: 4, y: 0, z: 2 })
+    expect(tokenPosition(map.value, 'target-token')).toEqual(targetAuthoritativePosition)
+
+    secondPostGate.resolve()
+    await expect(second).resolves.toMatchObject({ dispatched: true })
+    expect(map.value.revision).toBe(5)
+    expect(tokenPosition(map.value, 'target-token')).toEqual(targetAuthoritativePosition)
+
+    firstPostGate.resolve()
+    await expect(first).resolves.toMatchObject({
+      dispatched: false,
+      message: 'Token A was rejected',
+    })
+    expect(tokenPosition(map.value, 'token-pikachu')).toEqual(originalPikachuPosition)
+    expect(tokenPosition(map.value, 'target-token')).toEqual(targetAuthoritativePosition)
+    expect(map.value.revision).toBe(5)
+    expect(actions.pendingCommandCount.value).toBe(0)
+    expect(actions.pendingPredictionCount.value).toBe(0)
   })
 
   it('coalesces same-token queued move commands before any obsolete destination is sent', async () => {
