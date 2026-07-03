@@ -145,7 +145,7 @@ Status: DONE
 
 ## 005 — LP-S1-005 — Add local prediction patch builders for `moveToken` and `turnToken`
 
-Status: TODO
+Status: DONE
 
 **Goal:** Build local visual patches for the two fastest token interactions without waiting for the server.
 
