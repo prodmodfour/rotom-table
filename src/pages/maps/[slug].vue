@@ -729,22 +729,48 @@ const turnPokemon = (id: string) => {
     return
   }
   const facing = nextTokenFacingForPlacement(placement)
-  void livePlayCommands.turnToken({ placementId: id, facing }).then((result) => {
-    if (result.dispatched) clearSelection()
+  const pendingPredictionOpIdsBeforeTurn = new Set(Object.keys(livePlayCommands.pendingPredictions.value))
+  const dispatch = livePlayCommands.turnToken({ placementId: id, facing })
+  const predictedTurn = newPendingTurnPredictionForPlacement(pendingPredictionOpIdsBeforeTurn, id)
+  if (predictedTurn) clearSelection()
+
+  void dispatch.then((result) => {
+    if (!result.dispatched) return
+    const turnWasPredicted = predictedTurn !== null
+    if (!turnWasPredicted) clearSelection()
   })
 }
 
 let attackOfOpportunityPanel: ReturnType<typeof useAttackOfOpportunityPanel> | null = null
 
-const newPendingMovePredictionForPlacement = (
+const newPendingTokenPredictionForPlacement = (
   previousOpIds: ReadonlySet<string>,
   placementId: string,
+  commandType: LivePlayLocalPrediction['commandType'],
 ): LivePlayLocalPrediction | null => (
   Object.values(livePlayCommands.pendingPredictions.value).find((prediction) => (
     !previousOpIds.has(prediction.opId)
-    && prediction.commandType === LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
+    && prediction.commandType === commandType
     && prediction.placementId === placementId
   )) ?? null
+)
+
+const newPendingMovePredictionForPlacement = (
+  previousOpIds: ReadonlySet<string>,
+  placementId: string,
+): LivePlayLocalPrediction | null => newPendingTokenPredictionForPlacement(
+  previousOpIds,
+  placementId,
+  LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+)
+
+const newPendingTurnPredictionForPlacement = (
+  previousOpIds: ReadonlySet<string>,
+  placementId: string,
+): LivePlayLocalPrediction | null => newPendingTokenPredictionForPlacement(
+  previousOpIds,
+  placementId,
+  LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
 )
 
 const movePokemon = (payload: { id: string; position: GridAnchor }) => {

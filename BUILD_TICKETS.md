@@ -281,7 +281,7 @@ Status: DONE
 
 ## 010 — LP-S1-008 — Wire immediate visual prediction for token facing
 
-Status: TODO
+Status: DONE
 
 **Goal:** Turning a token should feel instant in Run Live Play.
 

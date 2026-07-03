@@ -667,6 +667,86 @@ describe('useLivePlayCommands', () => {
     expect(actions.pendingPredictions.value).toEqual({})
   })
 
+  it('adds and confirms local turn predictions around accepted authoritative patches', async () => {
+    const map = ref(mapFixture())
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_FACING,
+          mapSlug: 'arena-map',
+          revision: 5,
+          scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'facing' }],
+          payload: {
+            placementId: 'token-pikachu',
+            facing: 'north-west',
+            turned: true,
+          },
+        }],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', map, mapRevision: ref(4) })
+    const dispatch = actions.turnToken({ placementId: 'token-pikachu', facing: 'north-west' })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    const prediction = Object.values(actions.pendingPredictions.value)[0]
+    expect(prediction).toMatchObject({
+      localOnly: true,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      commandType: LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
+      placementId: 'token-pikachu',
+      changedFields: ['facing', 'turned'],
+      patches: [expect.objectContaining({ localOnly: true, predictionOpId: prediction?.opId })],
+    })
+    expect(map.value.revision).toBe(4)
+    expect(placementById(map.value)).toMatchObject({ facing: 'north-west', turned: true })
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId: prediction?.opId })
+    expect(map.value.revision).toBe(5)
+    expect(placementById(map.value)).toMatchObject({ facing: 'north-west', turned: true })
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+  })
+
+  it('rolls back local turn predictions after terminal rejection', async () => {
+    const map = ref(mapFixture())
+    const originalPlacement = cloneJson(placementById(map.value))
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: false,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        reason: 'conflict',
+        message: 'Conflict',
+        currentRevision: 4,
+      }
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', map, mapRevision: ref(4) })
+    const dispatch = actions.turnToken({ placementId: 'token-pikachu', facing: 'north-west' })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    expect(placementById(map.value)).toMatchObject({ facing: 'north-west', turned: true })
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: false, message: 'Conflict' })
+    expect(placementById(map.value)).toMatchObject(originalPlacement)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+  })
+
   it('rolls back local move predictions after terminal rejection', async () => {
     const map = ref(mapFixture())
     const originalPlacement = cloneJson(placementById(map.value))

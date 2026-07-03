@@ -28,6 +28,18 @@ describe('map page route authority', () => {
     expect(mapPage).toContain('await Promise.resolve(attackOfOpportunityPanel?.provokeMovementAttackOfOpportunity({')
   })
 
+  it('wires clicked live-play facing through local prediction feedback', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+
+    expect(mapPage).toContain('const pendingPredictionOpIdsBeforeTurn = new Set(Object.keys(livePlayCommands.pendingPredictions.value))')
+    expect(mapPage).toContain('const dispatch = livePlayCommands.turnToken({ placementId: id, facing })')
+    expect(mapPage).toContain('const predictedTurn = newPendingTurnPredictionForPlacement(pendingPredictionOpIdsBeforeTurn, id)')
+    expect(mapPage).toContain('if (predictedTurn) clearSelection()')
+    expect(mapPage).toContain('const turnWasPredicted = predictedTurn !== null\n    if (!turnWasPredicted) clearSelection()')
+    expect(mapPage).toContain('LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,')
+    expect(mapPage).toContain('turnPlacementForSetupEdit(id)\n    clearSelection()\n    return')
+  })
+
   it('uses the saved map route regardless of the session query parameter', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
 
