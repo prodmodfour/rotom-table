@@ -379,6 +379,16 @@ const mapFixture = (): TabletopMap => ({
   updatedAt: 100,
 })
 
+const placementById = (map: TabletopMap, placementId = 'token-pikachu') => {
+  const placement = map.placements.find((candidate) => candidate.id === placementId)
+  if (!placement) throw new Error(`Missing placement ${placementId}`)
+  return placement
+}
+
+const tokenPosition = (map: TabletopMap, placementId = 'token-pikachu') => (
+  placementById(map, placementId).position
+)
+
 const resolvedMoveFixture = (overrides: Partial<LivePlayResolvedMoveResult> = {}): LivePlayResolvedMoveResult => ({
   schemaVersion: LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
   actorPlacementId: 'token-pikachu',
@@ -604,6 +614,169 @@ describe('useLivePlayCommands', () => {
     expect(actions.pendingCommandCount.value).toBe(0)
     expect(actions.pendingCommands.value).toEqual({})
     expect(actions.transportStatus.value).toBe('idle')
+  })
+
+  it('adds and confirms local move predictions around accepted authoritative patches', async () => {
+    const map = ref(mapFixture())
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+          mapSlug: 'arena-map',
+          revision: 5,
+          scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+          payload: {
+            placementId: 'token-pikachu',
+            position: { x: 3, y: 0, z: 2 },
+            facing: 'south-east',
+            turned: false,
+          },
+        }],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', map, mapRevision: ref(4) })
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 2 } })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    const prediction = Object.values(actions.pendingPredictions.value)[0]
+    expect(prediction).toMatchObject({
+      localOnly: true,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      commandType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      placementId: 'token-pikachu',
+      patches: [expect.objectContaining({ localOnly: true, predictionOpId: prediction?.opId })],
+    })
+    expect(map.value.revision).toBe(4)
+    expect(tokenPosition(map.value)).toEqual({ x: 3, y: 0, z: 2 })
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId: prediction?.opId })
+    expect(map.value.revision).toBe(5)
+    expect(tokenPosition(map.value)).toEqual({ x: 3, y: 0, z: 2 })
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+  })
+
+  it('rolls back local move predictions after terminal rejection', async () => {
+    const map = ref(mapFixture())
+    const originalPlacement = cloneJson(placementById(map.value))
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: false,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        reason: 'conflict',
+        message: 'Conflict',
+        currentRevision: 4,
+      }
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', map, mapRevision: ref(4) })
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 2 } })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    expect(tokenPosition(map.value)).toEqual({ x: 4, y: 0, z: 2 })
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: false, message: 'Conflict' })
+    expect(placementById(map.value)).toMatchObject(originalPlacement)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+  })
+
+  it('rolls back local move predictions when the local send becomes uncertain', async () => {
+    const map = ref(mapFixture())
+    const originalPlacement = cloneJson(placementById(map.value))
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async () => {
+      await postGate.promise
+      throw new Error('Network down')
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', map, mapRevision: ref(4) })
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 5, y: 0, z: 1 } })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 1 })
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: false, uncertain: true })
+    expect(placementById(map.value)).toMatchObject(originalPlacement)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+  })
+
+  it('cleans up local predictions idempotently when accepted SSE wins the HTTP race', async () => {
+    const outbox = createTestOutbox()
+    const map = ref(mapFixture())
+    const requestReconciliation = vi.fn((input: Parameters<NonNullable<UseLivePlayCommandsOptions['requestReconciliation']>>[0]) => {
+      const current = placementById(map.value)
+      map.value.placements.splice(0, 1, {
+        ...current,
+        position: { x: 2, y: 0, z: 1 },
+        facing: 'south-east',
+        turned: false,
+      })
+      map.value.revision = input.response.ok && 'revision' in input.response ? input.response.revision : 5
+    })
+    let releaseHttp!: () => void
+    let sentBody: Record<string, unknown> | null = null
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      sentBody = commandRecord(body)
+      await new Promise<void>((resolve) => { releaseHttp = resolve })
+      return {
+        ok: true,
+        opId: sentBody.opId,
+        mapSlug: sentBody.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+      }
+    })
+
+    const actions = createCommandHarness({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      outbox,
+      requestReconciliation,
+    }).actions
+    const httpResult = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+    await vi.waitFor(() => expect(sentBody).not.toBeNull())
+    const entry = await outbox.get(sentBody!.opId as string)
+    expect(entry).not.toBeNull()
+
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry!))).resolves.toEqual({
+      status: 'acknowledged',
+      opId: entry!.opId,
+    })
+    expect(requestReconciliation).toHaveBeenCalledTimes(1)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+
+    releaseHttp()
+    await expect(httpResult).resolves.toMatchObject({
+      dispatched: true,
+      recoveredByRealtime: true,
+      opId: entry!.opId,
+    })
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
   })
 
   it('allows different token move commands to remain in flight together', async () => {

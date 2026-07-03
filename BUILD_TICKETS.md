@@ -173,7 +173,7 @@ Status: DONE
 
 ## 006 — LP-S1-006 — Add a local prediction overlay store
 
-Status: TODO
+Status: DONE
 
 **Goal:** Separate authoritative map state from local pending visual state.
 

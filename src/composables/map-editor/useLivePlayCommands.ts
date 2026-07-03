@@ -56,6 +56,12 @@ import { normalizeRevision } from '#shared/sessionRevisions'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { getClientId } from '~/utils/clientId'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
+import {
+  applyLivePlayPredictionToMap,
+  buildLivePlayPrediction,
+  rollbackLivePlayPredictionFromMap,
+  type LivePlayLocalPrediction,
+} from '~/utils/livePlayPredictions'
 import { bindPendingLivePlayCommandUnloadWarning } from '~/utils/livePlayCommandUnloadWarning'
 import {
   findLivePlayScopeConflict,
@@ -246,6 +252,8 @@ export interface UseLivePlayCommandsReturn {
   outboxRecoveryError: Ref<string | null>
   pendingCommands: ComputedRef<Readonly<Record<string, LivePlayPendingCommand>>>
   pendingCommandCount: ComputedRef<number>
+  pendingPredictions: ComputedRef<Readonly<Record<string, LivePlayLocalPrediction>>>
+  pendingPredictionCount: ComputedRef<number>
   hasPendingOutboxCommands: ComputedRef<boolean>
   clearError: () => void
   refreshOutboxEntries: () => Promise<readonly LivePlayCommandOutboxEntry[]>
@@ -561,8 +569,11 @@ export const useLivePlayCommands = (
   const outboxRecoveryStatus = ref<LivePlayCommandOutboxRecoveryStatus>('idle')
   const outboxRecoveryError = ref<string | null>(null)
   const pendingCommandRecords = ref<Record<string, LivePlayPendingCommand>>({})
+  const localPredictionRecords = ref<Record<string, LivePlayLocalPrediction>>({})
   const pendingCommands = computed<Readonly<Record<string, LivePlayPendingCommand>>>(() => pendingCommandRecords.value)
   const pendingCommandCount = computed(() => Object.keys(pendingCommandRecords.value).length)
+  const pendingPredictions = computed<Readonly<Record<string, LivePlayLocalPrediction>>>(() => localPredictionRecords.value)
+  const pendingPredictionCount = computed(() => Object.keys(localPredictionRecords.value).length)
   const transportStatus = computed<LivePlayCommandTransportStatus>(() => (
     status.value === 'saving' || pendingCommandCount.value > 0 ? 'sending' : 'idle'
   ))
@@ -609,11 +620,30 @@ export const useLivePlayCommands = (
     pendingCommandRecords.value = next
   }
 
+  const removeLocalPrediction = (opId: string): void => {
+    if (!localPredictionRecords.value[opId]) return
+    const next = { ...localPredictionRecords.value }
+    delete next[opId]
+    localPredictionRecords.value = next
+  }
+
+  const rollbackLocalPrediction = (opId: string): void => {
+    const prediction = localPredictionRecords.value[opId]
+    if (!prediction) return
+    rollbackLivePlayPredictionFromMap(options.map?.value, prediction)
+    removeLocalPrediction(opId)
+  }
+
+  const confirmLocalPrediction = (opId: string): void => {
+    removeLocalPrediction(opId)
+  }
+
   const markOperationAccepted = (opId: string): void => {
     if (commandCompletionBelongsToCurrentOperation(opId)) {
       status.value = 'idle'
       lastError.value = null
     }
+    confirmLocalPrediction(opId)
     removePendingCommand(opId)
     clearSavingOperation(opId)
   }
@@ -624,6 +654,7 @@ export const useLivePlayCommands = (
       lastError.value = message
     }
     if (opId !== null) {
+      rollbackLocalPrediction(opId)
       removePendingCommand(opId)
       clearSavingOperation(opId)
     }
@@ -897,12 +928,30 @@ export const useLivePlayCommands = (
     return null
   }
 
+  const trackLocalPrediction = (command: LivePlayPendingCommand): void => {
+    if (localPredictionRecords.value[command.opId]) return
+    const prediction = buildLivePlayPrediction({
+      map: options.map?.value,
+      command: command.body,
+    })
+    if (!prediction) return
+
+    const result = applyLivePlayPredictionToMap(options.map?.value, prediction)
+    if (!result.ok) return
+
+    localPredictionRecords.value = {
+      ...localPredictionRecords.value,
+      [command.opId]: prediction,
+    }
+  }
+
   const trackPendingCommand = (command: LivePlayPendingCommand | null): void => {
     if (!command) return
     pendingCommandRecords.value = {
       ...pendingCommandRecords.value,
       [command.opId]: command,
     }
+    trackLocalPrediction(command)
   }
 
   const trackPendingCommandBody = (
@@ -2745,6 +2794,8 @@ export const useLivePlayCommands = (
     outboxRecoveryError,
     pendingCommands,
     pendingCommandCount,
+    pendingPredictions,
+    pendingPredictionCount,
     hasPendingOutboxCommands,
     clearError,
     refreshOutboxEntries,
