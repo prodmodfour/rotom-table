@@ -4,48 +4,54 @@ TEMPLATE_CUSTOMISED: true
 
 ## Project name
 
-Rotom Table — encounter generation and spawn reliability autonomous build wave.
+Rotom Table — Live Play Sprint 1 local prediction and scoped concurrency wave.
 
 ## Project type
 
-Full-stack Nuxt 3 application with server-side SQLite persistence, Vue UI, TypeScript shared models, three.js map/spawn placement behavior, and Vitest coverage.
+Full-stack Nuxt 3 application with server-side SQLite persistence, Vue UI, TypeScript shared models, durable HTTP/SSE live-play command flow, IndexedDB outbox recovery, three.js map/token rendering, and Vitest coverage.
 
 ## Project goal
 
-Implement the encounter generation/spawn bug-fix work described by `BUILD_TICKETS.md` (`001` through `010`). The finished wave should make server-side encounter count defaults match the UI, clarify that encounter counts are roll slots rather than guaranteed generated Pokémon, and harden spawn persistence/placement against folder collisions, provisional slug leakage, duplicate placement IDs, and unresolved existing map placements.
+Implement the Live Play Sprint 1 work described by `BUILD_TICKETS.md` (`001` through `014`), refreshed from `tickets.md`. The finished wave should make high-frequency live-play token movement and facing feel immediate while preserving the existing server-authoritative model, durable replay/recovery behavior, profile validation, revision checks, and idempotency guarantees.
 
 ## Audience
 
 - Rotom Table maintainers and operators.
-- GMs generating encounters and spawning them directly onto maps during live play.
-- Players who see generated/spawned Pokémon results during live sessions.
-- Future autonomous or human contributors maintaining encounter generation and spawn placement code.
+- GMs running live-play maps with multiple clients.
+- Players moving or turning controlled tokens during live sessions.
+- Future autonomous or human contributors maintaining live-play command, prediction, reconciliation, and map rendering code.
 
 ## Success criteria
 
 The work is successful when:
 
-- Every ticket in `BUILD_TICKETS.md` for `001` through `010` is marked `DONE`.
+- Every ticket in `BUILD_TICKETS.md` for `001` through `014` is marked `DONE`.
 - `scripts/quality-gate.sh` passes on the final branch.
-- Raw encounter generation/spawn API calls that omit `count`, `countMin`, and `countMax` default to three encounter slots, while explicit invalid counts still fail.
-- Encounter generation UI/copy consistently describes requested values as encounter slots, not guaranteed generated Pokémon/files.
-- Spawn folder collisions persist sheets, result placements, and map placements with slugs derived from the final allocated folder.
-- Spawn results expose enough final slug/folder identity to avoid confusing provisional generator labels with persisted records.
-- Spawn placement ID allocation retries recoverable duplicate IDs before failing a generated Pokémon.
-- Existing unresolved map placements reserve conservative occupied space so new spawns do not overlap broken or temporarily missing tokens.
-- Tests cover the server defaults, slot wording, folder/slug collision behavior, duplicate placement ID retry behavior, and unresolved-placement occupancy behavior.
+- Client-side scope conflict utilities conservatively classify independent and conflicting live-play scopes.
+- Live-play command state tracks multiple pending operations by `opId` instead of relying on one global saving lock.
+- Transport/pending status remains visible without blocking unrelated safe commands.
+- Scope-aware blocking allows unrelated token commands to overlap while preserving stricter recovery, reconciliation, abandonment, and non-concurrent command gates.
+- Local prediction builders and overlay state make `moveToken` and `turnToken` render immediately on the originating client.
+- Authoritative HTTP/SSE acceptances are idempotent, remove matching predictions, and prefer accepted patches over whole-map replacement on hot-path commands.
+- Rejected predicted token actions roll back only the affected scope and surface a concise, non-modal correction notice.
+- Same-token rapid movement avoids sending obsolete unsent destinations while preserving stable `opId` and body data once sent.
+- Token-level pending/correction affordances communicate prediction state without making the whole table feel blocked.
+- Regression coverage locks in scoped concurrency behavior and prediction rollback behavior.
+- A concise manual live-play feel smoke checklist documents instant local prediction versus authoritative acceptance.
 - The top-level `AUTOMATION_STATUS` in `BUILD_TICKETS.md` is set to `DONE` when the final ticket is complete.
 
 ## Non-goals
 
 The autonomous build must not spend time on:
 
-- Rewriting the encounter table format, random encounter math, Pokémon sheet generation pipeline, or map renderer beyond the ticketed fixes.
-- Changing API contracts beyond the explicit default-count behavior and result copy/identity improvements requested in the tickets.
-- Adding new spawn UI features unrelated to the documented result clarity fix.
+- Replacing the existing HTTP/SSE live-play transport with WebSockets.
+- Weakening server authority, profile validation, revision checks, idempotency, durable realtime replay, or outbox recovery.
+- Optimistically executing complex or hidden-information rule outcomes such as `resolveMove`, capture, shop checkout, inventory transfers, encounter spawn, random effects, movement logs, or attack-of-opportunity side effects.
+- Removing the durable IndexedDB outbox; the goal is to reduce its perceived latency impact, not bypass it.
+- Rewriting map storage, campaign data formats, token rendering, or command APIs beyond the ticketed live-play prediction/concurrency changes.
 - Public authentication or hardening Rotom Table into a public multi-tenant service.
 - Production runtime edits, direct server rebuilds, direct deployment, or production data mutation.
-- Unrelated UI redesigns, unrelated trainer-sheet behavior changes, unrelated inventory behavior changes, or speculative encounter/spawn features.
+- Unrelated UI redesigns, unrelated encounter/spawn behavior changes, unrelated trainer-sheet behavior changes, unrelated inventory behavior changes, or speculative live-play features.
 - Closing, commenting on, or editing GitHub issues unless the user explicitly requests it.
 
 ## Technology preferences
@@ -54,9 +60,9 @@ Preferred stack:
 
 - language: TypeScript, with existing Python/Bash helpers only where already appropriate;
 - framework: Nuxt 3 and Vue 3;
-- rendering: existing three.js map rendering where relevant;
-- persistence: existing SQLite live-play storage and map placement patterns;
-- testing: Vitest, Vue Test Utils/happy-dom where applicable, targeted server/use-case tests, and existing test helpers;
+- rendering: existing three.js map/token rendering and Vue map page components;
+- persistence/realtime: existing SQLite live-play storage, HTTP command endpoints, SSE realtime events, and durable IndexedDB outbox patterns;
+- testing: Vitest, Vue Test Utils/happy-dom where applicable, targeted composable/page/server tests, and existing test helpers;
 - package manager: npm with Node.js 24 from `.nvmrc`;
 - CI: existing GitHub Actions CI plus local `scripts/quality-gate.sh`.
 
@@ -65,27 +71,32 @@ Hard constraints:
 - Follow the repository `AGENTS.md` production deployment boundaries and live-play-only instruction.
 - Keep campaign/private data, `.env` files, databases, generated runtime files, and secrets out of commits.
 - Keep ticket scope narrow: implement only the lowest-numbered `TODO` ticket in each autonomous cycle.
-- Preserve existing map/spawn data ownership boundaries; fixes should align generated sheets, persisted sheets, result placements, and map placements rather than creating parallel state.
+- Preserve the server-authoritative command model: predictions are local visual overlays only and must not be treated as durable authoritative state.
+- Preserve recovery and reconciliation blockers when command safety is uncertain.
+- Keep prediction patches local-only; do not persist them or send them as authoritative patches.
 
 Flexible choices:
 
-- File names, helper names, and exact component test locations may differ from ticket suggestions when they fit existing architecture better.
+- File names, helper names, and exact component/composable test locations may differ from ticket suggestions when they fit existing architecture better.
 - Tests can be targeted when a full end-to-end browser workflow is impractical, as long as the ticket acceptance criteria are meaningfully covered.
+- `moveToken` and `turnToken` same-token interaction rules may follow the conservative scope helper behavior as long as the behavior is explicit and tested.
 
 ## Architecture expectations
 
 Use existing Rotom Table boundaries:
 
 ```text
-shared/client utility constants -> server request/use-case helpers -> storage/map placement persistence -> Vue composables/components/pages -> docs/tests
+shared live-play scope/prediction utilities -> map-editor live-play command composable -> editable-map authoritative patch/reconciliation handling -> Vue map page/token rendering -> docs/tests
 ```
 
 Expected patterns:
 
-- Shared encounter defaults and pure helpers should live where both client and server code can import them without cyclic dependencies.
-- Spawn persistence should keep repository/storage authority over final folder allocation, revisions, timestamps, and persisted sheet slugs.
-- Map placement helpers should keep renderer and server collision behavior aligned, including conservative handling for unresolved existing placements.
-- UI copy changes should be small, focused, and backed by tests where practical.
+- Scope conflict helpers should be pure, side-effect free, and conservative for unknown or broad scopes.
+- Pending command state should be keyed by stable `opId` and include request path, command type, base revision, scopes, body, and lifecycle state.
+- Local predictions should be layered over authoritative map state and cleaned up idempotently when HTTP and SSE terminal results arrive in either order.
+- Accepted hot-path command responses should apply authoritative patches where safe, falling back to full-map adoption or reconciliation only when needed.
+- Recovery, reconnect/replay-gap reconciliation, Prepare Map gates, and explicitly non-concurrent commands should remain stricter than ordinary scoped token movement/facing commands.
+- UI changes should make prediction status honest and token-scoped without reintroducing a global page-level input lock for unrelated commands.
 
 ## Quality expectations
 
@@ -99,11 +110,11 @@ Expected quality gates:
 - `npm test --if-present`;
 - `npm run build --if-present`.
 
-Each ticket should also run the targeted verification commands listed in `BUILD_TICKETS.md` when practical before the full quality gate.
+Each ticket should also run targeted verification commands from `BUILD_TICKETS.md` when practical before the full quality gate.
 
 ## Documentation expectations
 
-Update existing README/docs/copy only when a ticket changes or exposes user-facing behavior, setup, architecture, operations, limitations, or terminology. The final verification ticket should clean up any remaining encounter generation documentation that conflicts with slots-vs-generated-Pokémon behavior.
+Update existing README/docs/copy only when a ticket changes or exposes user-facing behavior, setup, architecture, operations, limitations, or terminology. The final smoke-note ticket should add a concise live-play feel checklist that distinguishes instant local prediction from authoritative server acceptance.
 
 ## Safety and security constraints
 
@@ -118,8 +129,8 @@ Do not include:
 
 ## Agent behaviour notes
 
-- `BUILD_TICKETS.md` is the authoritative local autonomous queue for this encounter generation/spawn wave.
-- Work one ticket per autonomous cycle, in numeric order.
+- `BUILD_TICKETS.md` is the authoritative local autonomous queue for this Live Play Sprint 1 wave.
+- Work one ticket per autonomous cycle, in numeric order; build ticket numbers follow the suggested sprint order from `tickets.md`.
 - Keep each commit focused on the selected ticket and use a conventional commit message.
-- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket #010, which may set `AUTOMATION_STATUS: DONE` after all encounter generation/spawn tickets are complete and the final quality gate passes.
+- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket #014, which may set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 1 tickets are complete and the final quality gate passes.
 - Do not create, close, merge, or comment on pull requests/issues from inside an autonomous ticket run unless a future ticket explicitly asks for it.

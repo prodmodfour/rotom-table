@@ -1,425 +1,434 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: DONE
+AUTOMATION_STATUS: NOT_DONE
 
 Ticket statuses:
 
 * TODO — not done
 * DONE — done
 
-The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one encounter generation/spawn bug-fix ticket.
+The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one Live Play Sprint 1 ticket from `tickets.md`; build ticket numbers follow the suggested sprint order.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#010) may also set `AUTOMATION_STATUS: DONE` after all encounter generation/spawn tickets are complete.
-
----
-
-## 001 — Default missing encounter count on the server
-
-Status: DONE
-
-**Problem**
-
-Raw API calls to encounter generation/spawn can omit `count`, `countMin`, and `countMax`, even though the UI has a default count of 3. The server currently sanitizes missing legacy `count` as `0`, which returns a 400 instead of using the default.
-
-**Files**
-
-- `server/utils/encounterGeneration.ts`
-- `tests/server/encounterGeneration.test.ts`
-
-**Implementation**
-
-- Import or otherwise share `DEFAULT_ENCOUNTER_COUNT` from the client/shared encounter generation utility.
-- In `readEncounterGenerateRequest`, change the non-range branch so missing `body?.count` falls back to the default before calling `sanitizeEncounterCount`.
-- Keep explicit invalid counts rejected. For example, `count: 0` should still fail.
-
-Suggested shape:
-
-```ts
-const countRange = hasCountRange
-  ? sanitizeEncounterCountRange(body?.countMin, body?.countMax)
-  : exactEncounterGenerateCountRange(
-      sanitizeEncounterCount(body?.count ?? DEFAULT_ENCOUNTER_COUNT),
-    )
-```
-
-**Acceptance criteria**
-
-- `readEncounterGenerateRequest({ region: 'r', table: 't' })` returns `countRange: { min: 3, max: 3 }`.
-- `readEncounterGenerateRequest({ region: 'r', table: 't', count: 0 })` still rejects with the existing minimum-count error.
-- Existing count and count-range tests continue to pass.
-
-**Verification**
-
-```bash
-npm test -- tests/server/encounterGeneration.test.ts
-```
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#014) may also set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 1 tickets are complete.
 
 ---
 
-## 002 — Make encounter “count” semantics explicit as encounter slots
+# Live Play Sprint 1 Tickets
 
-Status: DONE
+## Sprint goal
 
-**Problem**
+Make common live-play table actions feel immediate while preserving the existing server-authoritative model. The first sprint focuses on token movement and facing because those are the highest-frequency LAN-feel interactions and the safest commands to predict locally.
 
-The current roller treats count as the number of encounter slots. `Nothing` rolls are filtered out, so the number of generated Pokémon can be lower than the requested count. This behavior is internally consistent, but the UI label “Count range” makes it easy to read the value as “exact Pokémon count.”
+## Non-goals for sprint 1
 
-**Files**
+- Do not replace HTTP/SSE with WebSockets yet.
+- Do not weaken server authority, profile validation, revision checks, idempotency, or durable realtime replay.
+- Do not optimistically execute complex rule outcomes such as `resolveMove`, capture, shop checkout, inventory transfers, encounter spawn, or random/hidden-information effects.
+- Do not remove the durable IndexedDB outbox; reduce its impact on perceived input latency.
 
-- `src/components/encounters/EncounterGenerateSetupFields.vue`
-- `src/components/encounters/EncounterGenerateResultHeader.vue`
-- `src/components/encounters/EncounterGenerateResultCard.vue` if result text needs more room
-- Any existing or new component/composable tests around encounter generation UI
+## Commit sizing rule
 
-**Implementation**
-
-- Rename the setup field label from `Count range` to `Encounter slots` or `Encounter slot range`.
-- Update result copy so it distinguishes requested slots from generated files/Pokémon.
-- Keep API behavior unchanged in this ticket: slots can still produce fewer Pokémon when `Nothing` is rolled.
-- Add or update a focused test that documents this behavior in UI/composable wording.
-
-**Acceptance criteria**
-
-- The `/generate` page no longer implies an exact Pokémon count.
-- Result text shows enough context that a user understands why `3` slots might generate fewer than `3` files.
-- No server behavior changes in this ticket.
-
-**Verification**
-
-```bash
-npm test
-npm run typecheck
-```
+Each ticket should fit in one reviewable commit. If a ticket needs both a refactor and a behavior change, split the refactor into its own follow-up ticket before implementation.
 
 ---
 
-## 003 — Add spawn folder collision regression coverage
+## 001 — LP-S1-001 — Add client-side live-play scope conflict utilities
 
-Status: DONE
+Status: TODO
 
-**Problem**
+**Goal:** Give the client the same basic vocabulary as the server for deciding whether two pending commands can safely overlap.
 
-Spawn generation currently creates in-memory sheets using a slug prefix derived before the final SQLite folder is allocated. If the desired folder already exists in SQLite, the final folder auto-increments but generated slugs can still use the old prefix.
+**Primary files:**
 
-**Files**
+- `src/utils/livePlayScopeConflicts.ts` (new)
+- `tests/utils/livePlayScopeConflicts.test.ts` (new)
 
-- `tests/server/spawnGeneratedEncounters.test.ts`
+**Work:**
 
-**Implementation**
+- Add a small client utility that compares `LivePlayScope[]` values.
+- Support map lanes, token fields, sheet fields, and terrain cells when the cell can be derived from command payload.
+- Keep the implementation conservative: unknown or broad scopes should conflict rather than silently overlap.
+- Add unit tests for:
+  - different token position scopes do not conflict;
+  - same token position scopes conflict;
+  - token position and token facing do not conflict;
+  - same map lane conflicts;
+  - different sheet fields do not conflict;
+  - terrain broad scope conflicts with terrain cell scope.
 
-Add a failing regression test before changing production code:
+**Acceptance:**
 
-- Use `createHarness()`.
-- Pre-create or otherwise occupy the folder `wild/pond_1` for Pokémon sheets.
-- Call `spawnGeneratedEncountersUseCase(spawnBody, dependencies)`.
-- Assert the final result uses `data/sheets/wild/pond_1-2`.
-- Assert the persisted sheet slug and map placement slug are based on the final folder prefix, e.g. `wild-pond-1-2-...`, not `wild-pond-1-...`.
-- Assert the result placement slug matches the persisted sheet and map placement.
-
-**Acceptance criteria**
-
-- The new test fails against the current code for the folder/slug mismatch.
-- The test is narrowly scoped to folder collision behavior.
-- No production code changes in this ticket.
-
-**Verification**
-
-```bash
-npm test -- tests/server/spawnGeneratedEncounters.test.ts
-```
+- Tests prove unrelated token commands can be classified as independent.
+- The helper has no side effects and does not mutate command bodies.
 
 ---
 
-## 004 — Retarget generated spawn slugs to the final allocated folder
+## 002 — LP-S1-002 — Add a pending live-play command model
 
-Status: DONE
+Status: TODO
 
-**Problem**
+**Goal:** Track multiple local live-play operations by `opId` instead of one global `saving` operation.
 
-The final spawn folder is chosen in `persistEncounterSpawn`, after in-memory pokegen has already produced sheets using a provisional slug prefix. When `allocateEncounterFolder` changes the folder, persisted sheets and placements should use slugs derived from the final folder.
+**Primary files:**
 
-**Files**
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
 
-- `server/useCases/spawnGeneratedEncounters.ts`
-- `tests/server/spawnGeneratedEncounters.test.ts`
+**Work:**
 
-**Implementation**
+- Add an internal `pendingCommands` ref keyed by `opId`.
+- Store `opId`, request path, command type, base revision, scopes, body, and lifecycle state.
+- Expose a readonly `pendingCommands` or `pendingCommandCount` from `useLivePlayCommands`.
+- Keep existing behavior unchanged for dispatch blocking in this ticket.
 
-- Extend the spawn generation plan so it records the provisional `slugPrefix` used for pokegen.
-- After final folder allocation inside `persistEncounterSpawn`, compute the final slug prefix from the final `dir`/`relDir`.
-- Update `prepareGeneratedSheets` so slug allocation uses the final preferred slug while preserving the original generated source slug for mapping generated records back to prepared sheets.
-- Keep the generated sheet document override behavior: persisted sheets must still have the final slug, final folder, revision `0`, and current timestamp.
-- Ensure `generatedRecordsForPlacement` still maps each original generated sheet to the correct prepared sheet, including duplicate species/source slug cases.
+**Acceptance:**
 
-Suggested helper shape:
-
-```ts
-const generatedSourceSlug = (generated: GeneratedSheetRecord): string =>
-  String(generated.sheet?.slug || generated.slug || fileSlug(generated.file))
-
-const retargetGeneratedSlugPrefix = (
-  sourceSlug: string,
-  provisionalPrefix: string,
-  finalPrefix: string,
-): string => sourceSlug.startsWith(`${provisionalPrefix}-`)
-  ? `${finalPrefix}${sourceSlug.slice(provisionalPrefix.length)}`
-  : sourceSlug
-```
-
-**Acceptance criteria**
-
-- The regression test from Ticket 03 passes.
-- Existing slug collision tests still pass.
-- Map placements point at persisted sheet slugs, not provisional slugs.
-- `result.spawn.placements[*].slug` matches the persisted sheet slug used by the map placement.
-
-**Verification**
-
-```bash
-npm test -- tests/server/spawnGeneratedEncounters.test.ts
-npm run typecheck
-```
+- Existing tests continue to pass.
+- A dispatched command appears in pending state before send and is removed or terminally marked after accepted/rejected/uncertain handling.
+- No UI behavior changes yet.
 
 ---
 
-## 005 — Keep spawn result file/placement display consistent after slug retargeting
+## 003 — LP-S1-003 — Split command transport status from command availability
 
-Status: DONE
+Status: TODO
 
-**Problem**
+**Goal:** Stop using one `status === 'saving'` flag as both network state and table input lock.
 
-Spawn mode does not write generated JSON files, but it still returns `files` and `spawn.placements` to the UI. After Ticket 04, persisted slugs may be retargeted to the final folder while `files[*].name` can still reflect the provisional slug/name. This can confuse users reviewing the spawn result.
+**Primary files:**
 
-**Files**
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/pages/maps/[slug].vue`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
 
-- `server/useCases/spawnGeneratedEncounters.ts`
-- `src/components/encounters/EncounterGenerateResultCard.vue` if display should prefer slug over file name
-- `tests/server/spawnGeneratedEncounters.test.ts`
+**Work:**
 
-**Implementation**
+- Introduce a derived transport/pending status that can show activity without implying all commands are blocked.
+- Preserve recovery and reconciliation blockers.
+- Leave same-scope commands blocked for now.
+- Update map page computed values so `livePlayCommandsAllowed` no longer depends directly on a global `saving` state.
 
-Choose one clear behavior and test it:
+**Acceptance:**
 
-- Preferred: leave `files[*].name` as the generator output label, but show final `placement.slug` in the spawn results UI.
-- Alternatively: return a normalized spawn-specific file label when no file is actually written.
-
-Server-side, ensure every successful placement result includes the final `slug`. UI-side, render that slug next to or instead of the provisional file name when `result.spawn` exists.
-
-**Acceptance criteria**
-
-- In a folder-collision spawn, the result UI has a visible final slug/folder identity.
-- The result does not imply that a JSON file with the provisional name was written to the final folder.
-- Existing non-spawn generation result display remains unchanged.
-
-**Verification**
-
-```bash
-npm test -- tests/server/spawnGeneratedEncounters.test.ts
-npm run typecheck
-```
+- The page can remain in a command-ready state while at least one unrelated command is pending.
+- Recovery gate, reconnect/reconcile gate, and Prepare Map gate still block new commands.
+- Status messaging still shows when commands are being sent.
 
 ---
 
-## 006 — Add duplicate placement-id retry regression coverage
+## 004 — LP-S1-004 — Replace global in-flight blocking with scope-aware blocking
 
-Status: DONE
+Status: TODO
 
-**Problem**
+**Goal:** Allow unrelated live-play commands to be sent while another command is in flight.
 
-Spawn placement currently calls `createPlacementId()` once. If that ID is already present on the map, that Pokémon fails to spawn instead of retrying for a fresh ID.
+**Primary files:**
 
-**Files**
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/utils/livePlayScopeConflicts.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
 
-- `tests/server/spawnGeneratedEncounters.test.ts`
+**Work:**
 
-**Implementation**
+- In `runLivePlayCommand`, build the command body before checking same-page pending conflicts.
+- Use the new scope conflict helper to reject only commands that overlap with pending local commands.
+- Keep stricter blocking for recovery, abandonment, realtime reconciliation, and commands explicitly marked non-concurrent.
+- Return a targeted blocked message such as `Another pending command is already changing this token position.`
 
-Add a failing test that:
+**Acceptance:**
 
-- Creates a map with an existing placement ID, for example `spawn-1`.
-- Provides `createPlacementId` that returns `spawn-1` first and `spawn-2` second.
-- Runs spawn generation.
-- Expects the new Pokémon to spawn with `spawn-2`.
-- Expects no duplicate-ID failure.
-
-**Acceptance criteria**
-
-- The test fails against current one-shot ID allocation.
-- The test proves the retry behavior needed in Ticket 07.
-- No production code changes in this ticket.
-
-**Verification**
-
-```bash
-npm test -- tests/server/spawnGeneratedEncounters.test.ts
-```
+- Two `moveToken` commands for different placement IDs can be in flight at once.
+- Two `moveToken` commands for the same placement ID still conflict.
+- `moveToken` and `turnToken` for the same placement may be allowed or blocked according to the helper’s token-field rules, but the behavior is covered by tests.
 
 ---
 
-## 007 — Retry placement-id allocation before failing a spawn
+## 005 — LP-S1-005 — Add local prediction patch builders for `moveToken` and `turnToken`
 
-Status: DONE
+Status: TODO
 
-**Problem**
+**Goal:** Build local visual patches for the two fastest token interactions without waiting for the server.
 
-A duplicate placement ID is recoverable. The spawn logic should retry before marking that generated Pokémon as failed.
+**Primary files:**
 
-**Files**
+- `src/utils/livePlayPredictions.ts` (new)
+- `tests/utils/livePlayPredictions.test.ts` (new)
 
-- `server/useCases/spawnGeneratedEncounters.ts`
-- `tests/server/spawnGeneratedEncounters.test.ts`
+**Work:**
 
-**Implementation**
+- Add prediction builders for:
+  - `moveToken` → token position/facing visual update;
+  - `turnToken` → token facing visual update.
+- Predictions should be marked as local-only metadata and must not be persisted or sent as authoritative patches.
+- Use existing map patch shape where practical so application logic can be reused.
+- Keep movement-log, attack-of-opportunity, and other rule side effects out of the prediction.
 
-- Add a helper near `appendPlacementsForGeneratedSheets` that tries to allocate a non-empty, unused placement ID up to `MAX_SLUG_ALLOCATION_ATTEMPTS`.
-- Replace the current one-shot duplicate check with the helper.
-- Keep the failure path if all attempts fail.
-- Ensure the ID is added to the `placementIds` set exactly once, when accepted.
+**Acceptance:**
 
-Suggested helper shape:
-
-```ts
-const allocateUniquePlacementId = (
-  placementIds: Set<string>,
-  createPlacementId: () => string,
-): string | null => {
-  for (let attempt = 0; attempt < MAX_SLUG_ALLOCATION_ATTEMPTS; attempt += 1) {
-    const id = createPlacementId()
-    if (id && !placementIds.has(id)) {
-      placementIds.add(id)
-      return id
-    }
-  }
-  return null
-}
-```
-
-**Acceptance criteria**
-
-- The regression test from Ticket 06 passes.
-- Existing successful spawn tests still pass.
-- If the injected ID generator only returns duplicates/empty strings, the spawn fails gracefully with a clear placement error.
-
-**Verification**
-
-```bash
-npm test -- tests/server/spawnGeneratedEncounters.test.ts
-npm run typecheck
-```
+- Prediction output can be applied to a loaded map and rolled back.
+- The helper returns no prediction for unsupported command types.
+- Unit tests cover missing placement, stale map, and valid move/turn predictions.
 
 ---
 
-## 008 — Add unresolved-placement occupancy regression coverage
+## 006 — LP-S1-006 — Add a local prediction overlay store
 
-Status: DONE
+Status: TODO
 
-**Problem**
+**Goal:** Separate authoritative map state from local pending visual state.
 
-Spawn position selection builds occupied footprints from resolved placements only. If a map already has a placement whose sheet is missing or whose catalog entry cannot be resolved, that occupied anchor can be ignored and a generated Pokémon can spawn on top of it.
+**Primary files:**
 
-**Files**
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/utils/livePlayPredictions.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
 
-- `tests/server/spawnGeneratedEncounters.test.ts`
-- Optionally `tests/utils/encounterSpawnPlacement.test.ts` if placement utility tests already exist or are easy to add
+**Work:**
 
-**Implementation**
+- Store predicted patches per pending `opId`.
+- Apply predictions immediately after the command is accepted into the local pending list.
+- On local terminal accept, remove the matching prediction after authoritative patches are applied.
+- On terminal reject or local failure, remove the prediction and restore the authoritative state for that scope.
+- Keep this ticket internal to the composable; UI wiring can follow separately.
 
-Add a failing server-level test:
+**Acceptance:**
 
-- Put an existing unresolved placement at the only first-choice spawn anchor.
-- Make randomness deterministic so the current code would pick the occupied anchor when unresolved placements are ignored.
-- Ensure at least one alternate anchor exists.
-- Run spawn generation.
-- Assert the new placement is not placed on the unresolved placement’s anchor.
-
-**Acceptance criteria**
-
-- The test fails against current occupancy building.
-- The test proves unresolved existing placements reserve space.
-- No production code changes in this ticket.
-
-**Verification**
-
-```bash
-npm test -- tests/server/spawnGeneratedEncounters.test.ts
-```
+- Prediction lifecycle is covered by tests: add, confirm, reject, uncertain.
+- A rejected predicted move returns the token to the authoritative position.
+- Prediction cleanup is idempotent when SSE and HTTP both report the same operation.
 
 ---
 
-## 009 — Reserve conservative footprint space for unresolved existing placements
+## 007 — LP-S1-009 — Treat accepted SSE as first-class local command acknowledgement
 
-Status: DONE
+Status: TODO
 
-**Problem**
+**Goal:** Let realtime confirmation resolve local pending commands even if the matching HTTP response is still in flight.
 
-Existing map placements should still reserve their occupied anchor even when their sheet cannot be resolved. Otherwise, spawn can overlap broken/temporarily missing tokens.
+**Primary files:**
 
-**Files**
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/composables/useEditableMap.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
 
-- `server/useCases/spawnGeneratedEncounters.ts`
-- `tests/server/spawnGeneratedEncounters.test.ts`
+**Work:**
 
-**Implementation**
+- When an accepted realtime event has a local `opId`, mark the pending command accepted.
+- Remove its prediction after the authoritative patch is applied.
+- Ensure later HTTP terminal responses for the same `opId` do not apply the result twice.
+- Keep current outbox acknowledgement behavior intact.
 
-- Replace the `placementsToSpawned(map, lookup).map(...)` occupancy construction with a helper that iterates raw `map.placements`.
-- For resolved placements, keep using the catalog footprint and clearance.
-- For unresolved placements, add a conservative fallback footprint:
+**Acceptance:**
 
-```ts
-{
-  id: placement.id,
-  position: placement.position,
-  base: 1,
-  clearance: 1,
-}
-```
-
-- Prefer importing/using `placementToSpawned` so the resolved-placement behavior stays aligned with renderer logic.
-
-**Acceptance criteria**
-
-- The regression test from Ticket 08 passes.
-- Spawn still respects resolved Pokémon/trainer footprints as before.
-- Unresolved placements no longer get silently ignored for collision checks.
-
-**Verification**
-
-```bash
-npm test -- tests/server/spawnGeneratedEncounters.test.ts
-npm run typecheck
-```
+- SSE-first acceptance resolves the visible pending state.
+- Duplicate HTTP/SSE terminal results are idempotent.
+- Remote accepted events still apply normally when `opId` is not local.
 
 ---
 
-## 010 — Final encounter/spawn verification pass
+## 008 — LP-S1-010 — Prefer accepted patches over full-map adoption for hot-path command responses
 
-Status: DONE
+Status: TODO
 
-**Problem**
+**Goal:** Avoid making successful token commands feel like whole-document replacements.
 
-The fixes touch shared rolling helpers, spawn persistence, and result display. A final commit should only contain verification/documentation cleanup discovered while running the full suite.
+**Primary files:**
 
-**Files**
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/composables/useEditableMap.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
 
-- `README.md` or nearby encounter docs, only if wording needs to match the final behavior
-- Test snapshots or fixtures, only if required by the previous tickets
+**Work:**
 
-**Implementation**
+- In accepted terminal response handling, try authoritative patches before `response.map`.
+- Use `response.map` only as a fallback when patches are absent or cannot be applied safely.
+- Keep snapshot/reconciliation flows unchanged.
 
-- Run the full verification commands.
-- Update docs/copy only where they now conflict with behavior.
-- Do not add unrelated refactors.
+**Acceptance:**
 
-**Acceptance criteria**
+- Accepted `moveToken` and `turnToken` responses apply patches without replacing the whole map object.
+- Patch application failure still triggers reconciliation or full-map fallback.
+- Tests cover responses containing both `patches` and `map`.
 
-- Full suite passes.
-- The encounter generation docs/copy consistently describe slots vs generated Pokémon.
-- Spawn folder collision, slug collision, duplicate placement IDs, and unresolved-placement occupancy are covered by tests.
+---
 
-**Verification**
+## 009 — LP-S1-007 — Wire immediate visual prediction for token movement
 
-```bash
-npm run typecheck
-npm test
-npm run build
-```
+Status: TODO
+
+**Goal:** A clicked token move should appear on the map immediately in Run Live Play.
+
+**Primary files:**
+
+- `src/pages/maps/[slug].vue`
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `tests/pages/mapPageRouteAuthority.test.ts` or a new focused page/composable test
+
+**Work:**
+
+- Enable the `moveToken` prediction path from the map page.
+- Clear selection immediately after a valid local predicted move.
+- Keep attack-of-opportunity prompt clearing/provocation gated behind authoritative acceptance.
+- Show a non-blocking correction notice if the move is later rejected.
+
+**Acceptance:**
+
+- In live play, moving a controlled token updates its rendered position before HTTP completion.
+- If the server rejects the command, the token rolls back and the user sees a concise notice.
+- Attack-of-opportunity side effects do not run for rejected predicted movement.
+
+---
+
+## 010 — LP-S1-008 — Wire immediate visual prediction for token facing
+
+Status: TODO
+
+**Goal:** Turning a token should feel instant in Run Live Play.
+
+**Primary files:**
+
+- `src/pages/maps/[slug].vue`
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+
+**Work:**
+
+- Enable the `turnToken` prediction path from the map page.
+- Clear selection immediately after a valid local predicted turn.
+- Roll back facing if the command is rejected.
+
+**Acceptance:**
+
+- Turning a controlled token updates facing before HTTP completion.
+- Rejected turns restore the previous authoritative facing.
+- Existing setup-edit turn behavior is unchanged.
+
+---
+
+## 011 — LP-S1-011 — Add same-token movement coalescing before send
+
+Status: TODO
+
+**Goal:** Prevent rapid repeated moves for the same token from creating a sluggish queue of obsolete destinations.
+
+**Primary files:**
+
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+
+**Work:**
+
+- If a same-token `moveToken` command has not been sent yet, replace it with the latest destination instead of sending both.
+- If a same-token move is already sending, keep at most one superseding queued move.
+- Ensure each sent command still has a stable `opId` and exact body after it leaves the local queue.
+
+**Acceptance:**
+
+- Rapid clicks on the same token visually follow the latest destination.
+- The client does not send obsolete unsent destinations.
+- Already-sent commands are not mutated after durable outbox claim.
+
+---
+
+## 012 — LP-S1-012 — Add token-level pending/correction UI affordances
+
+Status: TODO
+
+**Goal:** Make prediction honest without making the whole table feel blocked.
+
+**Primary files:**
+
+- `src/pages/maps/[slug].vue`
+- relevant map/token presentation component(s)
+- `tests/pages/mapPageRouteAuthority.test.ts` or component tests
+
+**Work:**
+
+- Surface a subtle pending state for tokens with local predictions.
+- Surface a small correction/rejection notice when a predicted token action rolls back.
+- Remove or soften global “Sending live-play command to the server” messaging for ordinary predicted token actions.
+
+**Acceptance:**
+
+- The table remains interactive while one token is pending.
+- Users can tell which token is waiting for server confirmation.
+- Rejection/correction messaging is visible but non-modal.
+
+---
+
+## 013 — LP-S1-013 — Add regression tests for scoped concurrency
+
+Status: TODO
+
+**Goal:** Lock in the UX contract that unrelated token actions do not block each other.
+
+**Primary files:**
+
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+- `tests/server/livePlayConcurrentIntegration.test.ts` if needed
+
+**Work:**
+
+- Add composable tests for:
+  - token A move and token B move can both dispatch;
+  - token A move and token A move conflict or coalesce;
+  - token A move can be accepted after token B move advances the map revision;
+  - rejection of token A prediction does not revert token B authoritative update.
+
+**Acceptance:**
+
+- Tests fail against the old global `saving` lock.
+- Tests pass with scope-aware pending behavior.
+
+---
+
+## 014 — LP-S1-014 — Add a short live-play feel smoke note
+
+Status: TODO
+
+**Goal:** Give maintainers a manual checklist for validating the new feel.
+
+**Primary files:**
+
+- `docs/private-vps-live-play-smoke.md` or `docs/live-play-authority.md`
+
+**Work:**
+
+- Add a short manual test section for the sprint:
+  - two clients move different tokens rapidly;
+  - one client turns while another moves;
+  - rejected movement rolls back visibly;
+  - reconnect/reconciliation still pauses commands;
+  - recovery panel still handles uncertain commands.
+
+**Acceptance:**
+
+- The checklist is concise and runnable during manual smoke testing.
+- It distinguishes “instant local prediction” from “authoritative acceptance.”
+
+---
+
+## Suggested sprint order
+
+1. `LP-S1-001`
+2. `LP-S1-002`
+3. `LP-S1-003`
+4. `LP-S1-004`
+5. `LP-S1-005`
+6. `LP-S1-006`
+7. `LP-S1-009`
+8. `LP-S1-010`
+9. `LP-S1-007`
+10. `LP-S1-008`
+11. `LP-S1-011`
+12. `LP-S1-012`
+13. `LP-S1-013`
+14. `LP-S1-014`
+
+## Sprint exit criteria
+
+- Moving and turning controlled tokens in Run Live Play renders immediately on the originating client.
+- Independent token commands can overlap without a global page-level input lock.
+- Server accepted events remain authoritative and idempotent.
+- Rejected predicted token actions roll back only the affected predicted scope.
+- Reconnect, replay gap, and durable recovery states still block new commands until safe.
