@@ -89,6 +89,7 @@ import {
 import { isSameAnchor } from '~/utils/gridGeometry'
 import { normalizeMapSceneName, MAP_SCENE_NAME_MAX_LENGTH } from '~/utils/mapSceneState'
 import { setTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
+import { createLivePlayTokenCorrectionNoticeController } from '~/utils/livePlayTokenCorrectionNotice'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { buildLiveSheetAccessScopeKey } from '~/utils/liveSheetCache'
 import { getClientId } from '~/utils/clientId'
@@ -101,7 +102,6 @@ import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
-import type { LivePlayTokenCorrectionNotice } from '~/types/livePlayUi'
 
 definePageMeta({
   hasPageSpecificGmAdminPanel: true,
@@ -184,11 +184,16 @@ interface TrackedLivePlayTokenPrediction {
 }
 
 const livePlayTrackedTokenPredictions = ref<Readonly<Record<string, TrackedLivePlayTokenPrediction>>>({})
-const livePlayTokenCorrectionNotice = ref<LivePlayTokenCorrectionNotice | null>(null)
+const livePlayTokenCorrectionNoticeController = createLivePlayTokenCorrectionNoticeController()
+const livePlayTokenCorrectionNotice = livePlayTokenCorrectionNoticeController.notice
+
+onBeforeUnmount(() => {
+  livePlayTokenCorrectionNoticeController.dispose()
+})
 
 const clearLivePlayTrackedPredictionsForReconciliation = (): void => {
   livePlayTrackedTokenPredictions.value = {}
-  livePlayTokenCorrectionNotice.value = null
+  livePlayTokenCorrectionNoticeController.clear()
 }
 
 const livePlayCommandsForPatchAdoption = shallowRef<Pick<
@@ -325,7 +330,6 @@ const livePlayTokenCorrectionMessage = (prediction: TrackedLivePlayTokenPredicti
 }
 
 const rememberLivePlayPredictedToken = (prediction: LivePlayLocalPrediction, tokenLabel: string) => {
-  livePlayTokenCorrectionNotice.value = null
   livePlayTrackedTokenPredictions.value = {
     ...livePlayTrackedTokenPredictions.value,
     [prediction.opId]: {
@@ -350,12 +354,38 @@ const trackedLivePlayTokenPredictionForResponse = (
   response: LivePlayCommandResponse,
 ): TrackedLivePlayTokenPrediction | null => livePlayTrackedTokenPredictions.value[response.opId] ?? null
 
+const livePlayPatchPayloadPlacementId = (payload: unknown): string | null => {
+  if (!payload || typeof payload !== 'object' || !('placementId' in payload)) return null
+  const placementId = (payload as { readonly placementId?: unknown }).placementId
+  return typeof placementId === 'string' ? placementId : null
+}
+
+const livePlayAcceptedResponsePlacementId = (response: LivePlayCommandResponse): string | null => {
+  if (typeof response.placement?.id === 'string') return response.placement.id
+  if (!response.ok || 'duplicate' in response) return null
+  for (const patch of response.patches) {
+    const placementId = livePlayPatchPayloadPlacementId(patch.payload)
+    if (placementId) return placementId
+  }
+  return null
+}
+
 const handleLivePlayCommandAccepted = (response: LivePlayCommandResponse) => {
-  forgetLivePlayPredictedToken(response.opId)
+  const predictedToken = forgetLivePlayPredictedToken(response.opId)
+  const acceptedPlacementId = predictedToken?.placementId ?? livePlayAcceptedResponsePlacementId(response)
+  if (acceptedPlacementId) livePlayTokenCorrectionNoticeController.clearForPlacement(acceptedPlacementId)
   livePlayStateMachine.commandAccepted()
 }
 
 const handleLivePlayCommandRejected = (transition: LivePlayCommandRejectionNotification) => {
+  if (
+    transition.reason !== 'stale-revision'
+    && livePlayTokenCorrectionNoticeController.hasCorrectedOpId(transition.response.opId)
+  ) {
+    livePlayStateMachine.clearCommandError()
+    return
+  }
+
   const predictedToken = trackedLivePlayTokenPredictionForResponse(transition.response)
   if (!predictedToken) {
     livePlayStateMachine.commandRejected(transition)
@@ -368,10 +398,11 @@ const handleLivePlayCommandRejected = (transition: LivePlayCommandRejectionNotif
     return
   }
 
-  livePlayTokenCorrectionNotice.value = {
+  livePlayTokenCorrectionNoticeController.show({
+    opId: predictedToken.opId,
     placementId: predictedToken.placementId,
     message: livePlayTokenCorrectionMessage(predictedToken),
-  }
+  })
   livePlayStateMachine.clearCommandError()
 }
 

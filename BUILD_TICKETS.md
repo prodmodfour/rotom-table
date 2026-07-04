@@ -303,7 +303,7 @@ Status: DONE
 
 ## 011 — LP-S2-013 — Add prediction-aware correction notice lifetime and deduping
 
-Status: TODO
+Status: DONE
 
 **Goal:** Keep correction feedback helpful without creating noisy repeated banners.
 
