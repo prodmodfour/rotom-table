@@ -7,6 +7,7 @@ import LivePlayCommandRecoveryPanel from '~/components/map/LivePlayCommandRecove
 import LivePlayLatencyDebugPanel from '~/components/map/LivePlayLatencyDebugPanel.vue'
 import MapEditorLayout from '~/components/map/MapEditorLayout.vue'
 import MapNavigationRail from '~/components/map/MapNavigationRail.vue'
+import MapPresencePanel from '~/components/map/MapPresencePanel.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
 import PokeballCaptureResultModal from '~/components/map/PokeballCaptureResultModal.vue'
 import SheetsMenuModal from '~/components/map/SheetsMenuModal.vue'
@@ -24,6 +25,7 @@ import { useLivePlayCommandRecoveryGate } from '~/composables/map-editor/useLive
 import { useLivePlayStateMachine, type LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
 import { useMapPageTableActionDispatchers } from '~/composables/map-editor/useMapPageTableActionDispatchers'
 import { useMapPageTokenSpawning } from '~/composables/map-editor/useMapPageTokenSpawning'
+import { useMapPresence } from '~/composables/map-editor/useMapPresence'
 import { useLiveTableSnapshotSync } from '~/composables/map-editor/useLiveTableSnapshotSync'
 import { useSharedMapInteractionMode } from '~/composables/map-editor/useSharedMapInteractionMode'
 import { parseRoundInputValue, useFieldEffectsEditor } from '~/composables/map-editor/useFieldEffectsEditor'
@@ -737,6 +739,42 @@ const {
 const mapActionEditingEnabled = computed(() => (
   canEditMap.value && (isSetupEditMode() || livePlayCommandsAllowed.value)
 ))
+
+const mapPresenceEnabled = computed(() => (
+  canViewMap.value
+  && (isGm.value || (isPlayer.value && Boolean(selectedProfileId.value)))
+))
+const mapPresence = useMapPresence({
+  slug,
+  profileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
+  enabled: mapPresenceEnabled,
+  autoStart: false,
+})
+const mapPresenceEntries = mapPresence.entries
+const mapPresenceStatus = mapPresence.status
+const mapPresenceServerTimeOffsetMs = computed(() => mapPresence.transportFreshness.value.serverTimeOffsetMs)
+
+if (import.meta.client) {
+  let mapPresenceStarted = false
+  watch(
+    [mapPresenceEnabled, selectedProfileId],
+    ([enabled]) => {
+      if (!enabled) {
+        mapPresence.stop()
+        mapPresenceStarted = false
+        return
+      }
+      if (!mapPresenceStarted) {
+        mapPresence.start()
+        mapPresenceStarted = true
+        return
+      }
+      void mapPresence.loadSnapshot()
+      void mapPresence.sendHeartbeat()
+    },
+    { immediate: true },
+  )
+}
 
 const {
   mapVoxels,
@@ -2277,6 +2315,13 @@ useMapDimensionReconciliation({
         @apply-celebrate-trigger="applyCelebrateTriggerPromptFromScene"
         @use-attack-of-opportunity="useAttackOfOpportunity"
         @clear-attack-of-opportunity="removeAttackOfOpportunityPrompt"
+      />
+
+      <MapPresencePanel
+        v-if="map && canViewMap"
+        :entries="mapPresenceEntries"
+        :status="mapPresenceStatus"
+        :server-time-offset-ms="mapPresenceServerTimeOffsetMs"
       />
 
       <LivePlayCommandRecoveryPanel

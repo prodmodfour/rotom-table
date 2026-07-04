@@ -218,7 +218,7 @@ Status: DONE
 
 ## 007 — LP-S3-007 — Render connected table participants
 
-Status: TODO
+Status: DONE
 
 **Goal:** Show who is currently around the map without crowding gameplay controls.
 
