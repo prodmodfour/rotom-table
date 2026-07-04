@@ -189,7 +189,7 @@ Status: DONE
 
 ## 006 — LP-S3-006 — Add client composable for map presence
 
-Status: TODO
+Status: DONE
 
 **Goal:** Give map pages a single client-side presence API for heartbeat, snapshots, transient updates, TTL expiry, and graceful failure.
 
