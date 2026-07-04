@@ -43,7 +43,7 @@ Each ticket should fit in one focused commit. If a ticket needs both server tran
 
 ## 001 — LP-S3-001 — Add shared live-presence contract
 
-Status: TODO
+Status: DONE
 
 **Goal:** Define a safe, minimal, ephemeral presence vocabulary shared by server, client, and tests.
 
