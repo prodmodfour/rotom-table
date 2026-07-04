@@ -75,7 +75,7 @@ Status: DONE
 
 ## 002 — LP-S3-002 — Add server-side ephemeral map presence registry
 
-Status: TODO
+Status: DONE
 
 **Goal:** Track short-lived map presence in memory without writing to SQLite or campaign files.
 
