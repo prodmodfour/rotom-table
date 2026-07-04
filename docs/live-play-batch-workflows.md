@@ -25,7 +25,7 @@ Batch contracts use shared, side-effect-free validators from `shared/livePlayBat
 
 Unique grid-cell helpers reject duplicate cells by default so mixed add/remove contracts cannot hide contradictory operations. Idempotent clear-style contracts may opt into duplicate normalization, which preserves the first occurrence and drops later repeats. Strict object parsing rejects unknown durable-state fields instead of carrying private/profile/debug data through batch payloads.
 
-The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` payload modes. `all` and `kind` use the conservative map `hazards` lane scope; `cells` uses bounded, normalized explicit hazard-cell scopes so unrelated cell batches can remain independent while still conflicting with broad hazard-lane clears.
+The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` payload modes. `all` and `kind` use the conservative map `hazards` lane scope; `cells` uses bounded, normalized explicit hazard-cell scopes so unrelated cell batches can remain independent while still conflicting with broad hazard-lane clears. The batch is exposed through `POST /api/maps/hazards/clear` and must return a terminal live-play command result whose operation ID, map slug, command type, patch type, and patch scopes validate against the submitted command body.
 
 ## Summary classification
 
@@ -47,7 +47,7 @@ The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` pa
 ### 1. Clear all hazards
 
 - **Current UI path:** `src/pages/maps/[slug].vue` `clearAllHazardsFromMenu` confirms once, then iterates `mapHazards.value` and awaits `livePlayCommands.removeHazard(...)` for each hazard.
-- **Current command route(s):** `POST /api/maps/hazards/remove` via `MAP_API_PATHS.removeHazard`.
+- **Current command route(s):** legacy UI cleanup still calls `POST /api/maps/hazards/remove` via `MAP_API_PATHS.removeHazard`; the Sprint 4 batch endpoint is `POST /api/maps/hazards/clear` via `MAP_API_PATHS.clearHazards`.
 - **Current command type:** `removeHazard`.
 - **Current payload:** `{ cell: { x, y, z, kind } }` for each hazard snapshot entry.
 - **Current command scopes:** `[{ kind: 'map', lane: 'hazards' }]`.

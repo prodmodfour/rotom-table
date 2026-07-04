@@ -64,6 +64,7 @@ export const MAP_API_PATHS = {
   previousInitiative: '/api/maps/initiative/previous',
   placeHazard: '/api/maps/hazards/place',
   removeHazard: '/api/maps/hazards/remove',
+  clearHazards: '/api/maps/hazards/clear',
   buildTerrainVoxel: '/api/maps/terrain/build',
   removeTerrainVoxel: '/api/maps/terrain/remove',
   setFieldEffect: '/api/maps/field-effects/set',

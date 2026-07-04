@@ -162,7 +162,7 @@ Status: DONE
 
 ## 005 — LP-S4-005 — Add API route and client result validation for `clearHazards`
 
-Status: TODO
+Status: DONE
 
 **Goal:** Expose the clear-hazards batch through the same durable command pipeline as other live-play map commands.
 

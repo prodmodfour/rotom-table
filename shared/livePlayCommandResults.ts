@@ -1,5 +1,7 @@
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  LIVE_PLAY_COMMAND_TYPES,
+  LIVE_PLAY_PATCH_TYPES,
   LIVE_PLAY_PATCH_TYPE_VALUES,
   isLivePlayCommandRejectionReason,
   isLivePlayMapScopeLane,
@@ -12,6 +14,8 @@ import {
   type LivePlayCommandEnvelope,
   type LivePlayCommandRejected,
   type LivePlayCommandResult,
+  type LivePlayPatch,
+  type LivePlayScope,
 } from './livePlayCommands'
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
 import { isSheetKind } from './sheets'
@@ -359,6 +363,153 @@ const acceptedOrRejectedMapSlug = (
   response: LivePlayCommandAccepted | LivePlayCommandRejected,
 ): string => response.mapSlug
 
+const acceptedResultExpectedPatchTypesForCommand = (
+  command: LivePlayCommandEnvelope,
+): readonly string[] => {
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS) return [LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS]
+  return []
+}
+
+const scopeCell = (scope: UnknownRecord): UnknownRecord | null => {
+  if (!hasOwn(scope, 'cell')) return null
+  return isRecord(scope.cell) ? scope.cell : null
+}
+
+const scopeCellsEqual = (left: UnknownRecord, right: UnknownRecord): boolean => (
+  left.x === right.x && left.y === right.y && left.z === right.z
+)
+
+const mapScopesCompatible = (
+  commandScope: UnknownRecord,
+  patchScope: UnknownRecord,
+): boolean => {
+  if (commandScope.lane !== patchScope.lane) return false
+
+  const commandCell = scopeCell(commandScope)
+  const patchCell = scopeCell(patchScope)
+  if (!commandCell || !patchCell) return true
+  return scopeCellsEqual(commandCell, patchCell)
+}
+
+const tokenScopesCompatible = (
+  commandScope: UnknownRecord,
+  patchScope: UnknownRecord,
+): boolean => (
+  commandScope.placementId === patchScope.placementId
+  && commandScope.field === patchScope.field
+)
+
+const sheetScopesCompatible = (
+  commandScope: UnknownRecord,
+  patchScope: UnknownRecord,
+): boolean => (
+  commandScope.sheetKind === patchScope.sheetKind
+  && commandScope.sheetSlug === patchScope.sheetSlug
+  && commandScope.field === patchScope.field
+)
+
+const scopesCompatible = (
+  commandScope: LivePlayScope,
+  patchScope: LivePlayScope,
+): boolean => {
+  const commandRecord = commandScope as unknown as UnknownRecord
+  const patchRecord = patchScope as unknown as UnknownRecord
+  if (commandRecord.kind !== patchRecord.kind) return false
+  if (commandRecord.kind === 'map') return mapScopesCompatible(commandRecord, patchRecord)
+  if (commandRecord.kind === 'token') return tokenScopesCompatible(commandRecord, patchRecord)
+  if (commandRecord.kind === 'sheet') return sheetScopesCompatible(commandRecord, patchRecord)
+  return false
+}
+
+const patchScopeMatchesCommand = (
+  command: LivePlayCommandEnvelope,
+  patchScope: LivePlayScope,
+): boolean => command.scopes.some((commandScope) => scopesCompatible(commandScope, patchScope))
+
+const patchPayloadCommand = (patch: LivePlayPatch): unknown => (
+  isRecord(patch.payload) && hasOwn(patch.payload, 'command') ? patch.payload.command : undefined
+)
+
+const validatePatchPayloadCommandForCommand = (
+  command: LivePlayCommandEnvelope,
+  patch: LivePlayPatch,
+  path: string,
+  issues: MutableIssueList,
+): void => {
+  const payloadCommand = patchPayloadCommand(patch)
+  if (payloadCommand === undefined) return
+  if (payloadCommand === command.type) return
+
+  addIssue(
+    issues,
+    `${path}.payload.command`,
+    `${path}.payload.command must match the submitted command type ${command.type}.`,
+  )
+}
+
+const validatePatchScopesForCommand = (
+  command: LivePlayCommandEnvelope,
+  patch: LivePlayPatch,
+  path: string,
+  issues: MutableIssueList,
+): void => {
+  if (patch.scopes.length === 0) {
+    addIssue(issues, `${path}.scopes`, `${path}.scopes must include at least one command-compatible scope.`)
+    return
+  }
+
+  patch.scopes.forEach((scope, index) => {
+    if (patchScopeMatchesCommand(command, scope)) return
+    addIssue(
+      issues,
+      `${path}.scopes[${index}]`,
+      `${path}.scopes[${index}] must match or conservatively cover a submitted command scope.`,
+    )
+  })
+}
+
+const validateAcceptedResultForCommand = (
+  command: LivePlayCommandEnvelope,
+  result: LivePlayCommandAccepted,
+  path: string,
+  issues: MutableIssueList,
+): void => {
+  if (result.patches.length === 0) return
+
+  const expectedPatchTypes = acceptedResultExpectedPatchTypesForCommand(command)
+  let expectedPatchTypeFound = expectedPatchTypes.length === 0
+
+  result.patches.forEach((patch, index) => {
+    const patchPath = `${path}.patches[${index}]`
+    validatePatchPayloadCommandForCommand(command, patch, patchPath, issues)
+
+    const payloadCommand = patchPayloadCommand(patch)
+    const patchMatchesExpectedType = expectedPatchTypes.includes(patch.type)
+    if (expectedPatchTypes.length > 0) {
+      if (patchMatchesExpectedType) expectedPatchTypeFound = true
+      else {
+        addIssue(
+          issues,
+          `${patchPath}.type`,
+          `${patchPath}.type must be ${expectedPatchTypes.join(' or ')} for ${command.type} responses.`,
+        )
+      }
+    }
+
+    if (payloadCommand === command.type || patchMatchesExpectedType) {
+      validatePatchScopesForCommand(command, patch, patchPath, issues)
+    }
+  })
+
+  if (!expectedPatchTypeFound) {
+    addIssue(
+      issues,
+      `${path}.patches`,
+      `${path}.patches must include ${expectedPatchTypes.join(' or ')} for ${command.type} responses.`,
+    )
+  }
+}
+
 export const validateTerminalResponseForCommand = (
   input: ValidateTerminalResponseForCommandInput,
 ): LivePlayTerminalResponseForCommandValidationResult => {
@@ -404,10 +555,16 @@ export const validateTerminalResponseForCommand = (
         'Duplicate original mapSlug does not match the sent command mapSlug.',
       )
     }
+    if (response.original.ok) {
+      validateAcceptedResultForCommand(command, response.original, 'response.original', issues)
+    }
   } else {
     const terminalResponse = response as LivePlayCommandAccepted | LivePlayCommandRejected
     if (terminalResponse.mapSlug !== command.mapSlug) {
       addIssue(issues, 'response.mapSlug', 'Response mapSlug does not match the sent command mapSlug.')
+    }
+    if (terminalResponse.ok) {
+      validateAcceptedResultForCommand(command, terminalResponse, 'response', issues)
     }
   }
 
