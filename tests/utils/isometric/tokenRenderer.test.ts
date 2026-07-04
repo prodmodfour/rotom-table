@@ -11,6 +11,7 @@ import { createTokenRenderGeometryCache } from '~/utils/isometric/tokenGeometryC
 import {
   accentVolumeFacePalette,
   resolveVolumeAccentColor,
+  TERRAIN_PALETTE,
 } from '~/utils/isometric/materials'
 
 const spawnedPokemon = (overrides: Partial<SpawnedPokemon> = {}): SpawnedPokemon => ({
@@ -168,6 +169,83 @@ describe('token renderer', () => {
     expect(edgeMaterial.opacity).toBe(1)
     expect(edgeMaterial.transparent).toBe(false)
     expect(renderObject.liftTarget).toBe(1)
+  })
+
+  it('paints remote presence attention as a lower-priority token cage accent', () => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+
+    paintPokemonRenderObjectStyle(renderObject, false, {
+      remoteAttention: {
+        selectedCount: 1,
+        hoveredCount: 0,
+        totalCount: 2,
+        primaryColor: '#a78bfa',
+      },
+    })
+
+    expect(volumeMaterialColorHexes(renderObject)).toEqual(
+      volumePaletteColorHexes(accentVolumeFacePalette('#a78bfa')),
+    )
+    for (const material of renderObject.volume.material) {
+      expect(material.opacity).toBeCloseTo(0.325)
+    }
+    const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
+    expect(edgeMaterial.color.getHex()).toBe(resolveVolumeAccentColor('#a78bfa'))
+    expect(edgeMaterial.opacity).toBeCloseTo(0.785)
+    expect(renderObject.liftTarget).toBe(0)
+  })
+
+  it('keeps local selected, pending, and correction styling above remote presence attention', () => {
+    const selectedRenderObject = makeRenderObject(spawnedPokemon())
+    const pendingRenderObject = makeRenderObject(spawnedPokemon({ accentColor: '#f97316' }))
+    const correctedRenderObject = makeRenderObject(spawnedPokemon())
+    const remoteAttention = {
+      selectedCount: 1,
+      hoveredCount: 0,
+      totalCount: 1,
+      primaryColor: '#22d3ee',
+    }
+
+    paintPokemonRenderObjectStyle(selectedRenderObject, true, { remoteAttention })
+    paintPokemonRenderObjectStyle(pendingRenderObject, false, { pending: true, remoteAttention })
+    paintPokemonRenderObjectStyle(correctedRenderObject, false, { corrected: true, remoteAttention })
+
+    expect(volumeMaterialColorHexes(selectedRenderObject)).toEqual(
+      volumePaletteColorHexes(TERRAIN_PALETTE.selected),
+    )
+    expect((selectedRenderObject.edges.material as THREE.LineBasicMaterial).color.getHex()).toBe(0xf7f7f2)
+    expect(selectedRenderObject.liftTarget).toBe(1)
+    expect(volumeMaterialColorHexes(pendingRenderObject)).toEqual(
+      volumePaletteColorHexes(accentVolumeFacePalette('#f97316')),
+    )
+    expect((pendingRenderObject.edges.material as THREE.LineBasicMaterial).color.getHex()).toBe(
+      resolveVolumeAccentColor('#f97316'),
+    )
+    expect(volumeMaterialColorHexes(correctedRenderObject)).toEqual(
+      volumePaletteColorHexes(TERRAIN_PALETTE.unreachable),
+    )
+    expect((correctedRenderObject.edges.material as THREE.LineBasicMaterial).color.getHex()).toBe(0xff4a55)
+  })
+
+  it('removes remote presence affordances when remote attention clears', () => {
+    const renderObject = makeRenderObject(spawnedPokemon())
+
+    paintPokemonRenderObjectStyle(renderObject, false, {
+      remoteAttention: {
+        selectedCount: 0,
+        hoveredCount: 1,
+        totalCount: 1,
+        primaryColor: '#22d3ee',
+      },
+    })
+    paintPokemonRenderObjectStyle(renderObject, false)
+
+    expect(volumeMaterialColorHexes(renderObject)).toEqual(
+      volumePaletteColorHexes(TERRAIN_PALETTE.idle),
+    )
+    const edgeMaterial = renderObject.edges.material as THREE.LineBasicMaterial
+    expect(edgeMaterial.color.getHex()).toBe(0xaeb5bd)
+    expect(edgeMaterial.opacity).toBeCloseTo(0.35)
   })
 
   it('resizes live token render objects when spawned dimensions change', () => {

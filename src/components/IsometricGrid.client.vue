@@ -126,6 +126,7 @@ import {
   setPokemonRenderObjectLayerVisibility,
   updatePokemonRenderObjectFromSpawn,
 } from '~/utils/isometric/tokenRenderer'
+import type { MapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
 import { buildVoxelColumnsByXZ, getVoxelShadowSurfaceY } from '~/utils/isometric/shadows'
 import {
   bindIsometricDocumentVisibilityChange,
@@ -217,6 +218,7 @@ const props = defineProps<{
   livePlayPendingTokenIds?: string[]
   livePlayPendingConditionsByTokenId?: Readonly<Record<string, readonly string[]>>
   livePlayCorrectionTokenIds?: string[]
+  remoteTokenAttention?: readonly MapTokenRemoteAttention[]
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -297,6 +299,9 @@ const emitPokemonSelection = (id: string | null) => {
 const controllableIdSet = computed(() => new Set(props.controllableIds ?? props.pokemons.map((pokemon) => pokemon.id)))
 const livePlayPendingTokenIdSet = computed(() => new Set(props.livePlayPendingTokenIds ?? []))
 const livePlayCorrectionTokenIdSet = computed(() => new Set(props.livePlayCorrectionTokenIds ?? []))
+const remoteTokenAttentionByTokenId = computed(() => new Map(
+  (props.remoteTokenAttention ?? []).map((attention) => [attention.tokenId, attention]),
+))
 const renderedPokemons = computed<SpawnedPokemon[]>(() => props.pokemons.map((pokemon) => {
   const pendingConditions = props.livePlayPendingConditionsByTokenId?.[pokemon.id]
   return pendingConditions ? { ...pokemon, conditions: [...pendingConditions] } : pokemon
@@ -873,6 +878,7 @@ const refreshPokemonStyles = () => {
       hovered: hoverController.id() === renderObject.id,
       pending: livePlayPendingTokenIdSet.value.has(pokemon.id),
       corrected: livePlayCorrectionTokenIdSet.value.has(pokemon.id),
+      remoteAttention: remoteTokenAttentionByTokenId.value.get(pokemon.id),
     }),
   })
   applyLayerVisibility({ force: true })
@@ -1759,7 +1765,11 @@ watch(
 )
 
 watch(
-  [() => props.livePlayPendingTokenIds, () => props.livePlayCorrectionTokenIds],
+  [
+    () => props.livePlayPendingTokenIds,
+    () => props.livePlayCorrectionTokenIds,
+    () => props.remoteTokenAttention,
+  ],
   () => {
     if (!renderer) return
     refreshPokemonStyles()

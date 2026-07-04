@@ -69,7 +69,7 @@ describe('map page route authority', () => {
     expect(isometricGrid).toContain('const pendingConditions = props.livePlayPendingConditionsByTokenId?.[pokemon.id]')
     expect(isometricGrid).toContain('pending: livePlayPendingTokenIdSet.value.has(pokemon.id)')
     expect(isometricGrid).toContain('corrected: livePlayCorrectionTokenIdSet.value.has(pokemon.id)')
-    expect(tokenRenderer).toContain('options: { hovered?: boolean; pending?: boolean; corrected?: boolean } = {}')
+    expect(tokenRenderer).toContain('corrected?: boolean')
     expect(tokenRenderer).toContain('corrections temporarily reserve the red invalid ramp for rollback feedback')
   })
 
@@ -93,6 +93,28 @@ describe('map page route authority', () => {
     expect(isometricGrid).toContain("(event: 'hover-pokemon', id: string | null): void")
     expect(isometricGrid).toContain("emit('hover-pokemon', nextId)")
     expect(mapPage).toContain('selectPlacement(id)')
+    expect(mapPage).not.toContain('remoteTokenLock')
+  })
+
+  it('wires remote presence token attention into the isometric renderer without token locks', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+    const scenePanel = readSource('src/components/map/MapScenePanel.vue')
+    const sceneRenderer = readSource('src/components/map/MapSceneRenderer.vue')
+    const isometricGrid = readSource('src/components/IsometricGrid.client.vue')
+    const tokenRenderer = readSource('src/utils/isometric/tokenRenderer.ts')
+
+    expect(mapPage).toContain("import { buildMapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'")
+    expect(mapPage).toContain('const remoteTokenAttention = computed(() => buildMapTokenRemoteAttention(')
+    expect(mapPage).toContain(':remote-token-attention="remoteTokenAttention"')
+    expect(scenePanel).toContain('remoteTokenAttention?: readonly MapTokenRemoteAttention[]')
+    expect(scenePanel).toContain(':remote-token-attention="remoteTokenAttention ?? []"')
+    expect(sceneRenderer).toContain('remoteTokenAttention?: readonly MapTokenRemoteAttention[]')
+    expect(sceneRenderer).toContain(':remote-token-attention="remoteTokenAttention ?? []"')
+    expect(isometricGrid).toContain('remoteTokenAttention?: readonly MapTokenRemoteAttention[]')
+    expect(isometricGrid).toContain('const remoteTokenAttentionByTokenId = computed(() => new Map(')
+    expect(isometricGrid).toContain('remoteAttention: remoteTokenAttentionByTokenId.value.get(pokemon.id)')
+    expect(tokenRenderer).toContain('remoteAttention?: PokemonRenderObjectRemoteAttention')
+    expect(tokenRenderer).toContain('Remote presence uses a lower-priority accent cage')
     expect(mapPage).not.toContain('remoteTokenLock')
   })
 

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type {
-  LivePlayPresenceAccent,
   LivePlayPresenceEntry,
   LivePlayPresenceIntentKind,
   LivePlayPresenceRole,
 } from '#shared/livePlayPresence'
+import { livePlayPresenceAccentColor } from '~/utils/livePlayPresenceVisuals'
 
 type MapPresencePanelStatus = 'idle' | 'loading' | 'ready' | 'error'
 type PresenceFreshness = 'fresh' | 'stale'
@@ -38,21 +38,6 @@ const props = withDefaults(defineProps<{
 const PRESENCE_REFRESH_INTERVAL_MS = 2_000
 const localNowMs = ref(Date.now())
 let refreshTimer: ReturnType<typeof setInterval> | null = null
-
-const accentColors: Readonly<Record<LivePlayPresenceAccent, string>> = {
-  rose: '#fb7185',
-  orange: '#fb923c',
-  amber: '#f59e0b',
-  lime: '#a3e635',
-  green: '#22c55e',
-  teal: '#14b8a6',
-  cyan: '#22d3ee',
-  blue: '#60a5fa',
-  indigo: '#818cf8',
-  violet: '#a78bfa',
-  fuchsia: '#e879f9',
-  slate: '#94a3b8',
-}
 
 const roleLabel = (role: LivePlayPresenceRole): string => (role === 'gm' ? 'GM' : 'Player')
 
@@ -95,8 +80,8 @@ const freshnessLabel = (entry: LivePlayPresenceEntry, serverNow: number, freshne
   return freshness === 'stale' ? label.replace('Fresh', 'Stale') : label
 }
 
-const presenceAccentStyle = (accent: LivePlayPresenceAccent): Record<string, string> => ({
-  '--presence-accent': accentColors[accent],
+const presenceAccentStyle = (accent: LivePlayPresenceEntry['participant']['accent']): Record<string, string> => ({
+  '--presence-accent': livePlayPresenceAccentColor(accent),
 })
 
 const rowKey = (entry: LivePlayPresenceEntry): string => [

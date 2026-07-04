@@ -94,6 +94,7 @@ import { setTemporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import { createLivePlayTokenCorrectionNoticeController } from '~/utils/livePlayTokenCorrectionNotice'
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { buildLiveSheetAccessScopeKey } from '~/utils/liveSheetCache'
+import { buildMapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
 import { getClientId } from '~/utils/clientId'
 import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
@@ -805,6 +806,10 @@ const mapPresence = useMapPresence({
 const mapPresenceEntries = mapPresence.entries
 const mapPresenceStatus = mapPresence.status
 const mapPresenceServerTimeOffsetMs = computed(() => mapPresence.transportFreshness.value.serverTimeOffsetMs)
+const remoteTokenAttention = computed(() => buildMapTokenRemoteAttention(
+  mapPresenceEntries.value,
+  visiblePresenceTokenIdSet.value,
+))
 
 const updateOwnTokenPresence = (selectedTokenId: string | null, hoveredTokenId: string | null, publish = true): void => {
   if (
@@ -2297,6 +2302,7 @@ useMapDimensionReconciliation({
         :live-play-pending-token-ids="livePlayPendingPredictionTokenIds"
         :live-play-pending-conditions-by-token-id="livePlayPendingConditionsByTokenId"
         :live-play-correction-token-ids="livePlayCorrectionTokenIds"
+        :remote-token-attention="remoteTokenAttention"
         :live-play-token-correction-notice="livePlayTokenCorrectionNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"

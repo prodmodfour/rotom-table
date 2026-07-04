@@ -274,7 +274,7 @@ Status: DONE
 
 ## 009 — LP-S3-009 — Render remote token attention affordances
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make remote selection/hover visible on tokens in the isometric scene.
 

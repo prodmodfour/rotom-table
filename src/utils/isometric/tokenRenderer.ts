@@ -59,6 +59,13 @@ export interface PokemonRenderObjectUpdateOptions {
   geometryCache?: TokenRenderGeometryCache
 }
 
+export interface PokemonRenderObjectRemoteAttention {
+  readonly selectedCount: number
+  readonly hoveredCount: number
+  readonly totalCount: number
+  readonly primaryColor: string
+}
+
 type TokenRenderDimensions = Pick<
   ReturnType<typeof pokemonRenderSpawnState>,
   'width' | 'height' | 'base' | 'clearance'
@@ -501,14 +508,35 @@ export const applyPokemonRenderObjectPosition = (
   return cssHudChanged
 }
 
+const hasRemoteAttention = (attention: PokemonRenderObjectRemoteAttention | undefined): attention is PokemonRenderObjectRemoteAttention => (
+  attention !== undefined && attention.totalCount > 0
+)
+
+const remoteAttentionVolumeOpacity = (attention: PokemonRenderObjectRemoteAttention): number => {
+  const countBoost = Math.min(0.1, Math.max(0, attention.totalCount - 1) * 0.035)
+  return (attention.selectedCount > 0 ? 0.29 : 0.22) + countBoost
+}
+
+const remoteAttentionEdgeOpacity = (attention: PokemonRenderObjectRemoteAttention): number => {
+  const countBoost = Math.min(0.14, Math.max(0, attention.totalCount - 1) * 0.045)
+  return (attention.selectedCount > 0 ? 0.74 : 0.54) + countBoost
+}
+
 export const paintPokemonRenderObjectStyle = (
   renderObject: PokemonRenderObject,
   selected: boolean,
-  options: { hovered?: boolean; pending?: boolean; corrected?: boolean } = {},
+  options: {
+    hovered?: boolean
+    pending?: boolean
+    corrected?: boolean
+    remoteAttention?: PokemonRenderObjectRemoteAttention
+  } = {},
 ) => {
   const hovered = options.hovered === true
   const pending = options.pending === true
   const corrected = options.corrected === true
+  const remoteAttention = hasRemoteAttention(options.remoteAttention) ? options.remoteAttention : undefined
+  const remoteAttentionColor = remoteAttention ? resolveVolumeAccentColor(remoteAttention.primaryColor) : null
 
   // Re-tint the per-face material array with the appropriate tactical
   // theme ramp instead of a single solid color. Hover uses the token's
@@ -516,6 +544,9 @@ export const paintPokemonRenderObjectStyle = (
   // the persistent selected-token lift state. Pending local predictions keep
   // that same token-scoped accent visible even when the pointer has moved on;
   // corrections temporarily reserve the red invalid ramp for rollback feedback.
+  // Remote presence uses a lower-priority accent cage: it aggregates other
+  // participants on the token without overriding local selected, pending, or
+  // correction affordances.
   if (corrected) {
     paintVolumeMaterials(
       renderObject.volume.material,
@@ -528,11 +559,23 @@ export const paintPokemonRenderObjectStyle = (
       accentVolumeFacePalette(renderObject.accentColor),
       selected ? 0.38 : pending ? 0.32 : 0.34,
     )
+  } else if (selected) {
+    paintVolumeMaterials(
+      renderObject.volume.material,
+      'selected',
+      0.32,
+    )
+  } else if (remoteAttention) {
+    paintVolumeFacePalette(
+      renderObject.volume.material,
+      accentVolumeFacePalette(remoteAttention.primaryColor),
+      remoteAttentionVolumeOpacity(remoteAttention),
+    )
   } else {
     paintVolumeMaterials(
       renderObject.volume.material,
-      selected ? 'selected' : 'idle',
-      selected ? 0.32 : 0.28,
+      'idle',
+      0.28,
     )
   }
 
@@ -541,12 +584,12 @@ export const paintPokemonRenderObjectStyle = (
     ? 0xff4a55
     : (hovered || pending)
         ? resolveVolumeAccentColor(renderObject.accentColor)
-        : selected ? 0xf7f7f2 : 0xaeb5bd
+        : selected ? 0xf7f7f2 : remoteAttentionColor ?? 0xaeb5bd
   const edgeOpacity = corrected
     ? 1
     : (hovered || pending)
         ? selected ? 1 : pending ? 0.82 : 0.9
-        : selected ? 0.95 : 0.35
+        : selected ? 0.95 : remoteAttention ? remoteAttentionEdgeOpacity(remoteAttention) : 0.35
 
   edgeMaterial.color.set(edgeColor)
   // Idle edges fade so the cage reads via faces; selection/hover sharpens
