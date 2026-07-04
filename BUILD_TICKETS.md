@@ -49,7 +49,7 @@ Each ticket should fit in one focused commit. Avoid mixing command-contract, ser
 
 ## 001 — LP-S4-001 — Audit current sequential live-play workflows
 
-Status: TODO
+Status: DONE
 
 **Goal:** Identify the live-play UI flows that still dispatch many individual commands for one user intention.
 
