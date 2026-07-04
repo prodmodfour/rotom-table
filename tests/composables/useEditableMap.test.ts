@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAP_API_PATHS } from '~/utils/apiRoutes'
 import { useEditableMap } from '~/composables/useEditableMap'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
-import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
+import { LIVE_PLAY_COMMAND_SCHEMA_VERSION, LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
 import { LIVE_PLAY_REALTIME_EVENT_TYPES, type RealtimeEvent } from '#shared/realtime'
+import type { LivePlayLocalPrediction } from '~/utils/livePlayPredictions'
 import type { TabletopMap } from '~/types/map'
 
 const apiMocks = vi.hoisted(() => ({
@@ -99,6 +100,40 @@ const acceptedCommandEvent = (overrides: Partial<RealtimeEvent & { mapSlug: stri
   }],
   ...overrides,
 })
+
+const pendingPredictionFixture = (
+  overrides: Partial<LivePlayLocalPrediction> = {},
+): LivePlayLocalPrediction => {
+  const previousPlacement = {
+    id: 'token-eevee',
+    sheetKind: 'pokemon' as const,
+    sheetSlug: 'eevee',
+    position: { x: 2, y: 0, z: 2 },
+    facing: 'south-east' as const,
+    turned: false,
+  }
+  const predictedPlacement = {
+    ...previousPlacement,
+    position: { x: 3, y: 0, z: 2 },
+  }
+
+  return {
+    kind: 'live-play-local-prediction',
+    localOnly: true,
+    opId: 'op_localprediction001',
+    commandType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    mapSlug: 'arena-map',
+    baseRevision: 1,
+    placementId: previousPlacement.id,
+    scopes: [{ kind: 'token', placementId: previousPlacement.id, field: 'position' }],
+    changedFields: ['position'],
+    previousPlacement,
+    predictedPlacement,
+    patches: [],
+    rollbackPatches: [],
+    ...overrides,
+  }
+}
 
 const flushPromises = async () => {
   await Promise.resolve()
@@ -554,6 +589,136 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.mapRevision.value).toBe(2)
     expect(editable.mapDataRevision.value).toBe(1)
     expect(apiMocks.postJson).not.toHaveBeenCalled()
+  })
+
+  it('runs live-play patch adoption hooks around accepted patch application with pending predictions', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+    const prediction = pendingPredictionFixture()
+    const pendingLivePlayPredictions = ref<Readonly<Record<string, LivePlayLocalPrediction>>>({
+      [prediction.opId]: prediction,
+    })
+    const hookSnapshots: Array<{
+      phase: 'before' | 'after'
+      revision: number | null
+      position: unknown
+      pendingPredictionOpIds: readonly string[]
+    }> = []
+    let editable: ReturnType<typeof useEditableMap> | null = null
+
+    editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      pendingLivePlayPredictions,
+      beforeLivePlayPatchesApply: (context) => {
+        hookSnapshots.push({
+          phase: 'before',
+          revision: editable?.mapRevision.value ?? null,
+          position: editable?.map.value?.placements[0]?.position,
+          pendingPredictionOpIds: Object.keys(context.pendingPredictions),
+        })
+        expect(context).toMatchObject({
+          mapSlug: 'arena-map',
+          previousRevision: 1,
+          nextRevision: 2,
+        })
+        expect(context.patches).toHaveLength(1)
+        expect(context.patches[0]).toMatchObject({ type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION })
+        expect(context.pendingPredictions[prediction.opId]).toMatchObject({
+          opId: prediction.opId,
+          placementId: prediction.placementId,
+        })
+      },
+      afterLivePlayPatchesApply: (context) => {
+        hookSnapshots.push({
+          phase: 'after',
+          revision: editable?.mapRevision.value ?? null,
+          position: editable?.map.value?.placements[0]?.position,
+          pendingPredictionOpIds: Object.keys(context.pendingPredictions),
+        })
+      },
+    })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.(acceptedCommandEvent())
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(hookSnapshots).toEqual([
+      {
+        phase: 'before',
+        revision: 1,
+        position: { x: 1, y: 0, z: 1 },
+        pendingPredictionOpIds: [prediction.opId],
+      },
+      {
+        phase: 'after',
+        revision: 2,
+        position: { x: 4, y: 0, z: 2 },
+        pendingPredictionOpIds: [prediction.opId],
+      },
+    ])
+    expect(editable.map.value?.placements[0]?.position).toEqual({ x: 4, y: 0, z: 2 })
+  })
+
+  it('requests reconciliation and skips patch application when a live-play patch adoption hook fails', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const requestAuthoritativeReconciliation = vi.fn(async () => undefined)
+    const afterLivePlayPatchesApply = vi.fn()
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      requestAuthoritativeReconciliation,
+      beforeLivePlayPatchesApply: () => {
+        throw new Error('prediction adoption setup failed')
+      },
+      afterLivePlayPatchesApply,
+    })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.(acceptedCommandEvent())
+    await flushPromises()
+
+    expect(requestAuthoritativeReconciliation).toHaveBeenCalledTimes(1)
+    expect(requestAuthoritativeReconciliation).toHaveBeenCalledWith(
+      'Live-play patch adoption before hook failed. Reloading the live table snapshot.',
+    )
+    expect(consoleWarn).toHaveBeenCalledWith(
+      '[useEditableMap] live-play patch adoption hook failed',
+      expect.any(Error),
+    )
+    expect(afterLivePlayPatchesApply).not.toHaveBeenCalled()
+    expect(editable.mapRevision.value).toBe(1)
+    expect(editable.map.value?.placements[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
+    consoleWarn.mockRestore()
+  })
+
+  it('does not invoke live-play patch adoption hooks for whole-map realtime updates', async () => {
+    const beforeLivePlayPatchesApply = vi.fn()
+    const afterLivePlayPatchesApply = vi.fn()
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      interactionMode: setupEditMode(),
+      beforeLivePlayPatchesApply,
+      afterLivePlayPatchesApply,
+    })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.({
+      channel: 'map:arena-map',
+      type: 'updated',
+      revision: 2,
+      clientId: 'other-tab',
+      timestamp: 380,
+      data: mapFixture({ revision: 2, name: 'Setup Edit Whole Map Update' }),
+    })
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(beforeLivePlayPatchesApply).not.toHaveBeenCalled()
+    expect(afterLivePlayPatchesApply).not.toHaveBeenCalled()
+    expect(editable.map.value?.name).toBe('Setup Edit Whole Map Update')
+    expect(editable.mapRevision.value).toBe(2)
   })
 
   it('reloads when an accepted live-play command patch is unknown', async () => {

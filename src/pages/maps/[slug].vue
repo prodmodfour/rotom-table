@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
@@ -18,6 +18,7 @@ import {
   useLivePlayCommands,
   type LivePlayCommandResponse,
   type UseLivePlayCommandsOptions,
+  type UseLivePlayCommandsReturn,
 } from '~/composables/map-editor/useLivePlayCommands'
 import { useLivePlayCommandRecoveryGate } from '~/composables/map-editor/useLivePlayCommandRecoveryGate'
 import { useLivePlayStateMachine, type LivePlayConnectionState } from '~/composables/map-editor/useLivePlayStateMachine'
@@ -173,6 +174,12 @@ let acknowledgeAcceptedRealtimeEvent = async (event: LivePlayAcceptedRealtimeEve
   queuedAcceptedRealtimeEvents.push(event)
 }
 
+const emptyLivePlayPendingPredictions: Readonly<Record<string, LivePlayLocalPrediction>> = Object.freeze({})
+const livePlayCommandsForPatchAdoption = shallowRef<Pick<UseLivePlayCommandsReturn, 'pendingPredictions'> | null>(null)
+const livePlayPatchAdoptionPendingPredictions = computed<Readonly<Record<string, LivePlayLocalPrediction>>>(() => (
+  livePlayCommandsForPatchAdoption.value?.pendingPredictions.value ?? emptyLivePlayPendingPredictions
+))
+
 const {
   map,
   status,
@@ -191,6 +198,7 @@ const {
   playerProfileId: computed(() => (isPlayer.value ? selectedProfileId.value : null)),
   requestAuthoritativeReconciliation: (reason) => requestLiveTableSnapshot(reason),
   authoritativeReconciliationKey: liveSheetAccessScopeKey,
+  pendingLivePlayPredictions: livePlayPatchAdoptionPendingPredictions,
   onLivePlayCommandAcceptedEvent: (event) => acknowledgeAcceptedRealtimeEvent(event),
 })
 
@@ -365,6 +373,7 @@ const livePlayCommands = useLivePlayCommands({
   onCommandBlocked: livePlayStateMachine.commandBlocked,
   onCommandErrorCleared: livePlayStateMachine.clearCommandError,
 })
+livePlayCommandsForPatchAdoption.value = livePlayCommands
 acceptedRealtimeAcknowledgementHandler = livePlayCommands.acknowledgeAcceptedRealtimeEvent
 acknowledgeAcceptedRealtimeEvent = async (event: LivePlayAcceptedRealtimeEvent): Promise<void> => {
   scheduleAcceptedRealtimePokeballCaptureResult(event)

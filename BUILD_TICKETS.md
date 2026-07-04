@@ -117,7 +117,7 @@ Status: DONE
 
 ## 004 — LP-S2-004 — Add an authoritative patch adoption hook around local predictions
 
-Status: TODO
+Status: DONE
 
 **Goal:** Give the map page a safe place to roll back/reapply predictions when authoritative patches arrive.
 

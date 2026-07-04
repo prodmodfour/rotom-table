@@ -46,6 +46,12 @@ import { getErrorMessage } from '~/utils/errorMessages'
 import { deepCloneJson, sameJsonValue } from '~/utils/serialization'
 import { clonePersistableMapPayload, stablePersistableMapJson } from '~/utils/maps/persistence'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
+import {
+  createLivePlayPatchAdoptionContext,
+  type LivePlayPatchAdoptionContext,
+  type LivePlayPatchAdoptionHook,
+  type LivePlayPendingPredictionSnapshot,
+} from '~/utils/livePlayPatchAdoption'
 import { useApiClient } from './useApiClient'
 import { subscribeRealtimeConnection, useRealtimeChannel, type RealtimeConnectionChange } from './useRealtime'
 import type { PlayerProfileId } from '#shared/playerProfiles'
@@ -93,6 +99,9 @@ export interface UseEditableMapOptions {
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   readonly requestAuthoritativeReconciliation?: (reason: string) => Promise<void> | void
   readonly authoritativeReconciliationKey?: ReadonlyValueRef<string | null | undefined>
+  readonly pendingLivePlayPredictions?: ReadonlyValueRef<LivePlayPendingPredictionSnapshot>
+  readonly beforeLivePlayPatchesApply?: LivePlayPatchAdoptionHook
+  readonly afterLivePlayPatchesApply?: LivePlayPatchAdoptionHook
   readonly onLivePlayCommandAcceptedEvent?: (
     event: LivePlayAcceptedRealtimeEvent,
   ) => void | Promise<void>
@@ -124,16 +133,21 @@ export interface UseEditableMapReturn {
   applyPersistedMap: (incoming: TabletopMap) => void
 }
 
-const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pick<UseEditableMapOptions, 'debounceMs' | 'autoLoad'>> & {
+interface NormalizedUseEditableMapOptions extends Required<Pick<UseEditableMapOptions, 'debounceMs' | 'autoLoad'>> {
   readonly interactionMode?: ReadonlyValueRef<MapInteractionMode>
   readonly autosaveEnabled?: BooleanRef
   readonly playerProfileId?: ReadonlyValueRef<PlayerProfileId | null | undefined>
   readonly requestAuthoritativeReconciliation?: (reason: string) => Promise<void> | void
   readonly authoritativeReconciliationKey?: ReadonlyValueRef<string | null | undefined>
+  readonly pendingLivePlayPredictions?: ReadonlyValueRef<LivePlayPendingPredictionSnapshot>
+  readonly beforeLivePlayPatchesApply?: LivePlayPatchAdoptionHook
+  readonly afterLivePlayPatchesApply?: LivePlayPatchAdoptionHook
   readonly onLivePlayCommandAcceptedEvent?: (
     event: LivePlayAcceptedRealtimeEvent,
   ) => void | Promise<void>
-} => (
+}
+
+const normalizeOptions = (options: number | UseEditableMapOptions): NormalizedUseEditableMapOptions => (
   typeof options === 'number'
     ? { debounceMs: options, autoLoad: true }
     : {
@@ -144,6 +158,9 @@ const normalizeOptions = (options: number | UseEditableMapOptions): Required<Pic
         playerProfileId: options.playerProfileId,
         requestAuthoritativeReconciliation: options.requestAuthoritativeReconciliation,
         authoritativeReconciliationKey: options.authoritativeReconciliationKey,
+        pendingLivePlayPredictions: options.pendingLivePlayPredictions,
+        beforeLivePlayPatchesApply: options.beforeLivePlayPatchesApply,
+        afterLivePlayPatchesApply: options.afterLivePlayPatchesApply,
         onLivePlayCommandAcceptedEvent: options.onLivePlayCommandAcceptedEvent,
       }
 )
@@ -160,6 +177,9 @@ export const useEditableMap = (
     playerProfileId: playerProfileIdRef,
     requestAuthoritativeReconciliation,
     authoritativeReconciliationKey: authoritativeReconciliationKeyRef,
+    pendingLivePlayPredictions: pendingLivePlayPredictionsRef,
+    beforeLivePlayPatchesApply,
+    afterLivePlayPatchesApply,
     onLivePlayCommandAcceptedEvent,
   } = normalizeOptions(options)
   const currentInteractionMode = (): MapInteractionMode => interactionModeRef?.value ?? MAP_INTERACTION_MODES.LIVE_PLAY
@@ -512,6 +532,36 @@ export const useEditableMap = (
     }
   }
 
+  const livePlayPatchAdoptionFailureReason = (phase: 'before' | 'after'): string => (
+    `Live-play patch adoption ${phase} hook failed. Reloading the live table snapshot.`
+  )
+
+  const runLivePlayPatchAdoptionHook = (
+    hook: LivePlayPatchAdoptionHook | undefined,
+    context: LivePlayPatchAdoptionContext,
+    phase: 'before' | 'after',
+  ): boolean => {
+    if (!hook) return true
+    try {
+      hook(context)
+      return true
+    } catch (err) {
+      console.warn('[useEditableMap] live-play patch adoption hook failed', err)
+      requestRealtimeReconciliation(livePlayPatchAdoptionFailureReason(phase))
+      return false
+    }
+  }
+
+  const buildLivePlayPatchAdoptionContext = (
+    event: LivePlayAcceptedRealtimeEvent,
+  ): LivePlayPatchAdoptionContext => createLivePlayPatchAdoptionContext({
+    mapSlug: event.mapSlug,
+    previousRevision: event.previousRevision,
+    nextRevision: event.revision,
+    patches: event.patches,
+    pendingPredictions: pendingLivePlayPredictionsRef?.value,
+  })
+
   const handleAcceptedLivePlayCommandEvent = (event: RealtimeEvent): void => {
     const parsed = parseAcceptedLivePlayRealtimeEvent(event)
     if (!parsed.valid) {
@@ -534,6 +584,21 @@ export const useEditableMap = (
       return
     }
 
+    const livePlayPatchAdoptionHooksEnabled = (
+      beforeLivePlayPatchesApply !== undefined
+      || afterLivePlayPatchesApply !== undefined
+    )
+    const patchAdoptionContext = livePlayPatchAdoptionHooksEnabled
+      ? buildLivePlayPatchAdoptionContext(acceptedEvent)
+      : null
+    if (
+      patchAdoptionContext
+      && !runLivePlayPatchAdoptionHook(beforeLivePlayPatchesApply, patchAdoptionContext, 'before')
+    ) {
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+      return
+    }
+
     const patchResult = applyLivePlayPatchesToMap({
       map: map.value,
       mapSlug: acceptedEvent.mapSlug,
@@ -552,6 +617,13 @@ export const useEditableMap = (
       autosave.snapshot.markClean(map.value)
       status.value = 'idle'
       error.value = null
+    }
+    if (
+      patchAdoptionContext
+      && !runLivePlayPatchAdoptionHook(afterLivePlayPatchesApply, patchAdoptionContext, 'after')
+    ) {
+      notifyLivePlayCommandAcceptedEvent(acceptedEvent)
+      return
     }
     notifyLivePlayCommandAcceptedEvent(acceptedEvent)
   }
