@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { LIVE_PLAY_COMMAND_TYPES, LIVE_PLAY_PATCH_TYPES } from '#shared/livePlayCommands'
 import { LivePlayIntegrationHarness, assertAccepted } from './livePlayIntegrationHarness'
 
 const harnesses: LivePlayIntegrationHarness[] = []
@@ -87,6 +88,110 @@ describe('live-play concurrent player integration harness', () => {
     })
     expect((await harness.readMap())?.hazards).toEqual([{ kind: 'fire', x: 2, y: 0, z: 2 }])
     expect(harness.acceptedOperationRevisions()).toEqual([1])
+  })
+
+  it('edits terrain voxel batches as one durable SQLite operation with atomic rejection and retry reuse', async () => {
+    const harness = createHarness()
+    const seededMap = await harness.readMap()
+    if (!seededMap) throw new Error('expected seeded integration map')
+    const existing = { x: 3, y: 0, z: 3, materialId: 'shallow_water' }
+    await harness.createMap({
+      ...seededMap,
+      voxels: [existing],
+      revision: 0,
+    })
+    const gm = { role: 'gm' as const, clientId: 'gm-terrain-client' }
+    const gmClient = await harness.loadClient(gm.clientId)
+    const command = harness.editTerrainVoxelsCommand({
+      opId: 'op_integration_edit_terrain',
+      baseRevision: gmClient.map?.revision ?? 0,
+      payload: {
+        operations: [
+          { action: 'remove', cell: { x: 3, y: 0, z: 3 } },
+          { action: 'upsert', voxel: { x: 4, y: 0, z: 3, materialId: 'meadow_grass' } },
+        ],
+      },
+    })
+
+    const response = await harness.editTerrainVoxels({ actor: gm, command })
+    const accepted = assertAccepted(response.result)
+
+    expect(accepted).toMatchObject({ previousRevision: 0, revision: 1 })
+    expect(accepted.patches).toEqual([
+      expect.objectContaining({
+        type: LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN,
+        revision: 1,
+        payload: {
+          command: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+          changes: [
+            {
+              cell: { x: 3, y: 0, z: 3 },
+              previous: existing,
+              current: null,
+              removed: existing,
+            },
+            {
+              cell: { x: 4, y: 0, z: 3 },
+              previous: null,
+              current: { x: 4, y: 0, z: 3, materialId: 'meadow_grass' },
+              built: { x: 4, y: 0, z: 3, materialId: 'meadow_grass' },
+            },
+          ],
+          rendererInvalidation: ['terrain', 'movement-preview', 'build-preview', 'hazard-preview'],
+        },
+      }),
+    ])
+    expect((await harness.readMap())?.voxels).toEqual([{ x: 4, y: 0, z: 3, materialId: 'meadow_grass' }])
+    expect(gmClient.map?.voxels).toEqual([{ x: 4, y: 0, z: 3, materialId: 'meadow_grass' }])
+    const operationRecordsAfterAccept = harness.operationRecordCount()
+    const publishedEventsAfterAccept = harness.publishedEvents.length
+
+    const retry = await harness.editTerrainVoxels({ actor: gm, command })
+
+    expect(retry.result).toEqual(response.result)
+    expect(harness.operationRecordCount()).toBe(operationRecordsAfterAccept)
+    expect(harness.publishedEvents).toHaveLength(publishedEventsAfterAccept)
+
+    const invalid = harness.editTerrainVoxelsCommand({
+      opId: 'op_integration_invalid_terrain',
+      baseRevision: 1,
+      payload: {
+        operations: [
+          { action: 'remove', cell: { x: 4, y: 0, z: 3 } },
+          { action: 'upsert', voxel: { x: 99, y: 0, z: 3, materialId: 'meadow_grass' } },
+        ],
+      },
+    })
+    const invalidResponse = await harness.editTerrainVoxels({ actor: gm, command: invalid })
+
+    expect(invalidResponse.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 1 })
+    expect(invalidResponse.result.ok ? '' : invalidResponse.result.message).toContain('outside map integration-arena')
+    expect((await harness.readMap())?.voxels).toEqual([{ x: 4, y: 0, z: 3, materialId: 'meadow_grass' }])
+
+    const update = harness.editTerrainVoxelsCommand({
+      opId: 'op_integration_update_terrain',
+      baseRevision: 1,
+      payload: {
+        operations: [{ action: 'upsert', voxel: { x: 4, y: 0, z: 3, materialId: 'shallow_water' } }],
+      },
+    })
+    const updateResponse = await harness.editTerrainVoxels({ actor: gm, command: update })
+    expect(assertAccepted(updateResponse.result)).toMatchObject({ previousRevision: 1, revision: 2 })
+
+    const stale = harness.editTerrainVoxelsCommand({
+      opId: 'op_integration_stale_terrain',
+      baseRevision: 1,
+      payload: {
+        operations: [{ action: 'remove', cell: { x: 4, y: 0, z: 3 } }],
+      },
+    })
+    const staleResponse = await harness.editTerrainVoxels({ actor: gm, command: stale })
+
+    expect(staleResponse.result).toMatchObject({ ok: false, reason: 'conflict', currentRevision: 2 })
+    const finalVoxels = (await harness.readMap())?.voxels ?? []
+    expect(finalVoxels).toHaveLength(1)
+    expect(finalVoxels[0]).toMatchObject({ x: 4, y: 0, z: 3, materialId: 'shallow_water' })
+    expect(harness.acceptedOperationRevisions()).toEqual([1, 2])
   })
 
   it('preserves concurrent player commands, idempotent retries, stale rejection, and reconnect reloads', async () => {

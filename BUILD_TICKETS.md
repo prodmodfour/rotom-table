@@ -353,7 +353,7 @@ Status: DONE
 
 ## 012A — LP-S4-012A — Implement server/API flow for terrain voxel batches
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let terrain voxel batch command requests reach the authoritative server executor and route as one atomic live-play operation.
 

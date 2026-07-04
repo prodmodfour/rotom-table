@@ -5,8 +5,11 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   createClearHazardsCommandScopes,
+  createEditTerrainVoxelsCommandScopes,
   type ClearHazardsLivePlayCommand,
   type ClearHazardsPayload,
+  type EditTerrainVoxelsLivePlayCommand,
+  type EditTerrainVoxelsPayload,
   type LivePlayCommandAccepted,
   type LivePlayCommandResult,
   type ModifyCombatStagesLivePlayCommand,
@@ -36,6 +39,7 @@ import { createSqliteSheetRepository, type PersistedSheet, type SheetRepository 
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
 import { executeLivePlayMapEffectsCommandUseCase } from '~~/server/useCases/applyLivePlayMapEffectsCommand'
 import { executeLivePlaySheetCommandUseCase } from '~~/server/useCases/applyLivePlaySheetCommand'
+import { executeLivePlayTerrainCommandUseCase } from '~~/server/useCases/applyLivePlayTerrainCommand'
 import { executeLivePlayUseMoveCommandUseCase } from '~~/server/useCases/applyLivePlayUseMoveCommand'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
 import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
@@ -322,6 +326,15 @@ export class LivePlayIntegrationHarness {
     }, this.commandDependencies())
   }
 
+  async editTerrainVoxels({ actor, command }: LivePlayCommandDispatchOptions<EditTerrainVoxelsLivePlayCommand>) {
+    return await executeLivePlayTerrainCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+    }, this.commandDependencies())
+  }
+
   async modifyHp({ actor, command }: LivePlayCommandDispatchOptions<ModifyHpLivePlayCommand>) {
     return await executeLivePlaySheetCommandUseCase({
       role: actor.role,
@@ -438,6 +451,22 @@ export class LivePlayIntegrationHarness {
       baseRevision: input.baseRevision,
       type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
       scopes: createClearHazardsCommandScopes(input.payload),
+      payload: input.payload,
+    }
+  }
+
+  editTerrainVoxelsCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly payload: EditTerrainVoxelsPayload
+  }): EditTerrainVoxelsLivePlayCommand {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId,
+      mapSlug: 'integration-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      scopes: createEditTerrainVoxelsCommandScopes(input.payload),
       payload: input.payload,
     }
   }
