@@ -35,6 +35,10 @@ The shared `editTerrainVoxels` contract is the terrain-brush batch shape now ava
 
 Sprint 4 client pending and recovery UI summarizes batch operations by command kind and bounded counts only, for example “Clearing 12 hazards…” or “Applying terrain brush (8 cells)…”. It does not list payload coordinates, owner labels, client IDs, profile IDs, sheet data, or other private fields. Active batch commands still use scope conflict checks in `useLivePlayCommands`, so unrelated scoped token actions can remain interactive while the batch is in flight.
 
+Batch commands are authoritative transactions, not client-side macros. One normal clear-all or brush intention should map to one bounded batch request when it fits within the shared limit; the server then validates and commits the whole operation or rejects it without partial writes. Oversized terrain strokes split into ordered `editTerrainVoxels` chunks of at most 256 operations, and oversized hazard strokes split into ordered `editHazards` chunks of at most 128 operations. Chunking is a fallback for payload bounds rather than a return to unbounded browser authority: each chunk has its own `opId`, durable outbox row, conflict scopes, terminal result, and accepted patch, and later chunks stop after a rejected or uncertain chunk.
+
+Manual operator smoke coverage lives in [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md#live-play-sprint-4-batch-workflow-smoke). The smoke path uses one GM browser plus two player browsers to verify one-request clear hazards, one-request clear field effects, terrain brush batching, hazard brush batching, bounded oversized-stroke fallback, rejection/access boundaries, retry/status recovery, and reconnect convergence.
+
 ## Summary classification
 
 | Workflow | Current live-play behavior | Classification | Why |

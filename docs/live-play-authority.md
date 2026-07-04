@@ -42,6 +42,18 @@ This applies to:
 
 Map live-play idempotency records are keyed by map and `opId`; shop checkout idempotency records are keyed by shop and `opId`. A retry with the same command body returns the stored result without applying effects twice. Reusing an `opId` with different material is rejected.
 
+### Live-play batch commands are not client-side macros
+
+Sprint 4 batch commands (`clearHazards`, `clearFieldEffects`, `editTerrainVoxels`, and `editHazards`) are explicit live-play command types, not browser-side loops over primitive commands. When the UI presents one cleanup or brush intention, the client sends one bounded command body and one `opId` whenever the stroke fits within the shared batch limit. The server validates the whole payload, role/profile authority, map visibility, bounds, base revision, conflict scopes, and operation identity before mutating anything.
+
+Accepted batch commands commit all effects, the terminal operation result, and durable realtime rows in one SQLite transaction. A rejected stale, conflicting, hidden, unauthorized, invalid, oversized, or contradictory batch applies none of its requested changes. Retry/status recovery must reuse the exact same command body and `opId`; duplicate HTTP/SSE/status terminals may acknowledge recovery state but must not apply accepted patches twice.
+
+Shared payload bounds keep batch authority narrow: explicit hazard-cell batches are capped at 128 operations, explicit terrain voxel/cell batches at 256 operations, explicit field-effect kind operations at 16, and affected-token summary lists at 64 IDs. Strict parsing rejects unknown durable-state fields, private/profile data, arbitrary records, and over-large strings before executor code runs. Duplicate or contradictory terrain/hazard cell operations reject, except idempotent clear-by-cell payloads may normalize repeated cells.
+
+If a live-play brush stroke exceeds its command limit, the client may split it into ordered bounded batch commands. Each chunk is still a separate authoritative transaction with its own command body and recovery state; later chunks stop after a rejected or uncertain chunk. The client must not keep terrain or hazard edits as authoritative local state without accepted patches or reconciliation.
+
+Batch pending and recovery UI may summarize command kind and counts, for example “Clearing 12 hazards…” or “Applying terrain brush (8 cells)”, but it must not display full payload coordinates, raw command bodies, profile IDs, sheet data, access-gate data, hostnames, or secrets. Presence, pings, targeting intent, and GM attention remain presentation-only and never transport batch commands.
+
 ## Durable realtime events and authorised SSE replay
 
 Persistent map, sheet, shop, group inventory, library, folder, and mode mutations append durable realtime events in the same SQLite transaction as their authoritative writes. Each row carries an explicit server-internal access descriptor: `gm-only`, `map-access`, `sheet-access`, `group-inventory-access`, or `shop-access`. Delivery evaluates that descriptor against current SQLite state and the connection principal; it does not trust channel names or payload fields.

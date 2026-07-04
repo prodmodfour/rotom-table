@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: TODO
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -575,7 +575,7 @@ Status: DONE
 
 ## 019 — LP-S4-019 — Add operator smoke notes for live-play batch workflows
 
-Status: TODO
+Status: DONE
 
 **Goal:** Give maintainers a manual checklist for verifying batch workflow UX and authority.
 
