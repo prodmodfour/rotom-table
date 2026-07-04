@@ -472,7 +472,7 @@ Status: DONE
 
 ## 016 — LP-S3-016 — Add presence failure and degradation tests
 
-Status: TODO
+Status: DONE
 
 **Goal:** Ensure presence improves feel but never becomes a gameplay dependency.
 

@@ -124,6 +124,29 @@ describe('map page route authority', () => {
     expect(mapPage).not.toContain('mapRevision: mapPresence')
   })
 
+  it('keeps presence transport outside authoritative command blockers and dispatch routes', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+    const commandOptions = mapPage.slice(
+      mapPage.indexOf('const livePlayCommands = useLivePlayCommands({'),
+      mapPage.indexOf('livePlayCommandsForPatchAdoption.value = livePlayCommands'),
+    )
+    const commandBlockerSection = mapPage.slice(
+      mapPage.indexOf('const livePlayStateBlocksCommands = computed(() => {'),
+      mapPage.indexOf('type LivePlayCommandRejectionNotification'),
+    )
+
+    expect(commandOptions).toContain('livePlayCommandBlocked: fundamentalLivePlayCommandBlocked')
+    expect(commandOptions).toContain('newCommandBlocked: livePlayRecoveryNewCommandBlocked')
+    expect(commandOptions).not.toContain('mapPresence')
+    expect(commandBlockerSection).toContain('mapInPrepareMode.value || livePlayStateBlocksCommands.value')
+    expect(commandBlockerSection).not.toContain('mapPresence')
+    expect(mapPage).toContain('const dispatch = livePlayCommands.turnToken({ placementId: id, facing })')
+    expect(mapPage).toContain('const dispatch = livePlayCommands.moveToken({')
+    expect(mapPage).toContain('await livePlayCommands.modifyHp({')
+    expect(mapPage).toContain('const dispatch = livePlayCommands.modifyConditions({')
+    expect(mapPage).not.toContain('presenceCommandBlocked')
+  })
+
   it('publishes compact movement and targeting intent through ephemeral presence', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
     const targetingIntentHelper = mapPage.slice(

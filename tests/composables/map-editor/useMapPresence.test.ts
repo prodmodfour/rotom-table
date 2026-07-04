@@ -147,6 +147,44 @@ describe('useMapPresence', () => {
     presence.dispose()
   })
 
+  it('keeps snapshot failures non-blocking and recovers on a later snapshot without reloading the map page', async () => {
+    let now = 1_000
+    const gameplayDispatch = vi.fn(() => ({ dispatched: true }))
+    mocks.getJson.mockRejectedValueOnce(new Error('presence snapshot offline'))
+
+    const presence = useMapPresence({
+      slug: 'arena',
+      autoStart: false,
+      now: () => now,
+    })
+
+    await expect(presence.loadSnapshot()).resolves.toBeUndefined()
+
+    expect(presence.status.value).toBe('error')
+    expect(presence.error.value).toContain('presence snapshot offline')
+    expect(presence.entries.value).toEqual([])
+    expect(gameplayDispatch()).toEqual({ dispatched: true })
+
+    now = 1_250
+    mocks.getJson.mockResolvedValueOnce(presenceSnapshot([
+      presenceEntry({
+        selectedTokenId: 'token-pikachu',
+        lastSeenAt: 1_240,
+        expiresAt: 16_240,
+      }),
+    ], { serverTime: 1_250 }))
+
+    await expect(presence.loadSnapshot()).resolves.toBeUndefined()
+
+    expect(presence.status.value).toBe('ready')
+    expect(presence.error.value).toBeNull()
+    expect(presence.entries.value).toEqual([
+      expect.objectContaining({ selectedTokenId: 'token-pikachu' }),
+    ])
+    expect(presence.transportFreshness.value.lastSnapshotAt).toBe(1_250)
+    presence.dispose()
+  })
+
   it('publishes heartbeat updates from the local own-presence state', async () => {
     let now = 2_000
     const heartbeatSnapshot = presenceSnapshot([
@@ -196,6 +234,45 @@ describe('useMapPresence', () => {
     expect(presence.transportFreshness.value.lastHeartbeatAt).toBe(2_000)
 
     now = 2_500
+    presence.dispose()
+  })
+
+  it('recovers heartbeat transport after a failure without requiring a new presence instance', async () => {
+    let now = 2_000
+    const gameplayDispatch = vi.fn(() => ({ dispatched: true }))
+    mocks.postJson.mockRejectedValueOnce(new Error('presence heartbeat offline'))
+
+    const presence = useMapPresence({
+      slug: 'arena',
+      autoStart: false,
+      now: () => now,
+    })
+
+    await expect(presence.updateOwnPresence({ selectedTokenId: 'token-pikachu' })).resolves.toBe(true)
+
+    expect(presence.status.value).toBe('error')
+    expect(presence.error.value).toContain('presence heartbeat offline')
+    expect(presence.ownPresence.value.selectedTokenId).toBe('token-pikachu')
+    expect(gameplayDispatch()).toEqual({ dispatched: true })
+
+    now = 2_300
+    mocks.postJson.mockResolvedValueOnce(presenceSnapshot([
+      presenceEntry({
+        clientSequence: presence.ownPresence.value.clientSequence,
+        selectedTokenId: 'token-pikachu',
+        lastSeenAt: 2_300,
+        expiresAt: 17_300,
+      }),
+    ], { serverTime: 2_300 }))
+
+    await expect(presence.sendHeartbeat()).resolves.toBeUndefined()
+
+    expect(presence.status.value).toBe('ready')
+    expect(presence.error.value).toBeNull()
+    expect(presence.entries.value).toEqual([
+      expect.objectContaining({ selectedTokenId: 'token-pikachu' }),
+    ])
+    expect(presence.transportFreshness.value.lastHeartbeatAt).toBe(2_300)
     presence.dispose()
   })
 
@@ -364,6 +441,44 @@ describe('useMapPresence', () => {
     })
     expect(presence.entries.value).toHaveLength(1)
 
+    presence.dispose()
+  })
+
+  it('uses heartbeat snapshots as fallback when transient presence updates are missed', async () => {
+    let now = 4_000
+    mocks.postJson.mockResolvedValueOnce(presenceSnapshot([
+      presenceEntry({
+        participant: {
+          role: 'player',
+          profileDisplayName: 'Brock',
+          clientIdSuffix: 'remote42',
+          accent: 'amber',
+        },
+        intent: { kind: 'measuring', candidateCount: 3 },
+        lastSeenAt: 3_950,
+        expiresAt: 18_950,
+      }),
+    ], { serverTime: 4_000 }))
+
+    const presence = useMapPresence({
+      slug: 'arena',
+      autoStart: false,
+      now: () => now,
+    })
+
+    await expect(presence.sendHeartbeat()).resolves.toBeUndefined()
+
+    expect(mocks.realtimeSubscriptions).toHaveLength(0)
+    expect(presence.transportFreshness.value.lastTransientAt).toBeNull()
+    expect(presence.transportFreshness.value.lastHeartbeatAt).toBe(4_000)
+    expect(presence.entries.value).toEqual([
+      expect.objectContaining({
+        intent: { kind: 'measuring', candidateCount: 3 },
+        participant: expect.objectContaining({ profileDisplayName: 'Brock' }),
+      }),
+    ])
+
+    now = 4_500
     presence.dispose()
   })
 
@@ -579,7 +694,7 @@ describe('useMapPresence', () => {
     presence.dispose()
   })
 
-  it('uses a slower heartbeat interval while the tab is hidden', async () => {
+  it('uses a slower heartbeat interval while the tab is hidden and resumes the active interval when visible', async () => {
     vi.useFakeTimers()
     let now = 5_000
     const visibilityDocument = createVisibilityDocument()
@@ -613,6 +728,21 @@ describe('useMapPresence', () => {
     expect(mocks.postJson).not.toHaveBeenCalled()
 
     now = 5_600
+    await vi.advanceTimersByTimeAsync(1)
+    await flushPromises()
+    expect(mocks.postJson).toHaveBeenCalledTimes(1)
+
+    mocks.postJson.mockClear()
+    visibilityDocument.setHidden(false)
+    expect(presence.transportFreshness.value.hidden).toBe(false)
+    expect(presence.transportFreshness.value.heartbeatIntervalMs).toBe(100)
+
+    now = 5_699
+    await vi.advanceTimersByTimeAsync(99)
+    await flushPromises()
+    expect(mocks.postJson).not.toHaveBeenCalled()
+
+    now = 5_700
     await vi.advanceTimersByTimeAsync(1)
     await flushPromises()
     expect(mocks.postJson).toHaveBeenCalledTimes(1)
