@@ -4,6 +4,7 @@ import FieldEffectsMenuModal from '~/components/map/FieldEffectsMenuModal.vue'
 import InitiativeMenuModal from '~/components/map/InitiativeMenuModal.vue'
 import MapAdminPanel from '~/components/map/MapAdminPanel.vue'
 import LivePlayCommandRecoveryPanel from '~/components/map/LivePlayCommandRecoveryPanel.vue'
+import LivePlayLatencyDebugPanel from '~/components/map/LivePlayLatencyDebugPanel.vue'
 import MapEditorLayout from '~/components/map/MapEditorLayout.vue'
 import MapNavigationRail from '~/components/map/MapNavigationRail.vue'
 import MapScenePanel from '~/components/map/MapScenePanel.vue'
@@ -415,6 +416,7 @@ const livePlayGlobalTransportPending = computed(() => (
   livePlayCommands.transportStatus.value === 'sending'
   && livePlayUnpredictedPendingCommandCount.value > 0
 ))
+const livePlayLatencyDebugEnabled = computed(() => route.query.debugLivePlayLatency === '1')
 const livePlayConnectionState = computed<LivePlayConnectionState>(() => {
   const visibleState = livePlayStateMachine.state.value === 'saving-command' && !livePlayGlobalTransportPending.value
     ? 'ready'
@@ -2194,6 +2196,11 @@ useMapDimensionReconciliation({
         @cancel-abandon-confirmation="cancelLivePlayCommandAbandonConfirmation"
         @confirm-abandon="confirmLivePlayCommandAbandonment"
         @clear-resolution-notice="clearLivePlayCommandRecoveryResolutionNotice"
+      />
+
+      <LivePlayLatencyDebugPanel
+        v-if="livePlayLatencyDebugEnabled"
+        :traces="livePlayCommands.commandTraces.value"
       />
     </template>
 

@@ -26,6 +26,7 @@ export interface LivePlayCommandTraceMetadata {
   readonly requestPath?: string
   readonly commandType?: string
   readonly baseRevision?: number
+  readonly resourceSummary?: string
 }
 
 export interface LivePlayCommandTraceEvent {
@@ -54,6 +55,7 @@ interface MutableLivePlayCommandTrace {
   requestPath?: string
   commandType?: string
   baseRevision?: number
+  resourceSummary?: string
   events: LivePlayCommandTraceEvent[]
 }
 
@@ -116,6 +118,7 @@ const snapshotTrace = (trace: MutableLivePlayCommandTrace): LivePlayCommandTrace
     ...(trace.requestPath === undefined ? {} : { requestPath: trace.requestPath }),
     ...(trace.commandType === undefined ? {} : { commandType: trace.commandType }),
     ...(trace.baseRevision === undefined ? {} : { baseRevision: trace.baseRevision }),
+    ...(trace.resourceSummary === undefined ? {} : { resourceSummary: trace.resourceSummary }),
     status: traceStatus(events),
     firstSequence: first?.sequence ?? 0,
     lastSequence: last?.sequence ?? 0,
@@ -155,6 +158,9 @@ export const createLivePlayCommandTracer = (options: {
     if (input.requestPath !== undefined) trace.requestPath = input.requestPath
     if (input.commandType !== undefined) trace.commandType = input.commandType
     if (input.baseRevision !== undefined) trace.baseRevision = input.baseRevision
+    if (input.resourceSummary !== undefined && isNonEmptyString(input.resourceSummary)) {
+      trace.resourceSummary = input.resourceSummary.slice(0, 160)
+    }
   }
 
   const record = (input: LivePlayCommandTraceRecordInput): LivePlayCommandTraceSnapshot | null => {

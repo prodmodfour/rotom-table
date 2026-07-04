@@ -62,7 +62,7 @@ Status: DONE
 
 ## 002 — LP-S2-002 — Add a focused live-play latency debug panel behind a query flag
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let maintainers see whether live play feels slow because of client prediction, outbox, HTTP, SSE, patch adoption, or reconciliation.
 

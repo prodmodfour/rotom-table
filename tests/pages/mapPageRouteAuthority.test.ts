@@ -63,6 +63,23 @@ describe('map page route authority', () => {
     expect(tokenRenderer).toContain('corrections temporarily reserve the red invalid ramp for rollback feedback')
   })
 
+  it('wires the live-play latency debug panel behind an explicit query flag', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+    const panel = readSource('src/components/map/LivePlayLatencyDebugPanel.vue')
+
+    expect(mapPage).toContain("import LivePlayLatencyDebugPanel from '~/components/map/LivePlayLatencyDebugPanel.vue'")
+    expect(mapPage).toContain("const livePlayLatencyDebugEnabled = computed(() => route.query.debugLivePlayLatency === '1')")
+    expect(mapPage).toContain('<LivePlayLatencyDebugPanel\n        v-if="livePlayLatencyDebugEnabled"\n        :traces="livePlayCommands.commandTraces.value"\n      />')
+    expect(panel).toContain('Pred → SSE')
+    expect(panel).toContain('Pred → HTTP')
+    expect(panel).toContain('HTTP → adopt')
+    expect(panel).toContain('SSE → adopt')
+    expect(panel).toContain("trace.resourceSummary ?? 'resource scope unavailable'")
+    expect(panel).toContain("opId.slice(-8)")
+    expect(panel).not.toContain('profileId')
+    expect(panel).not.toContain('payload.')
+  })
+
   it('uses the saved map route regardless of the session query parameter', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
 

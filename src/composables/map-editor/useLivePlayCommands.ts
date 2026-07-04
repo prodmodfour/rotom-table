@@ -974,6 +974,40 @@ export const useLivePlayCommands = (
     typeof body.opId === 'string' ? body.opId : null
   )
 
+  const resourceIdentifierSuffix = (value: string): string => {
+    const normalized = value.trim()
+    if (!normalized) return 'unknown'
+    const suffix = normalized.slice(-6)
+    return `…${suffix}`
+  }
+
+  const scopeResourceSummary = (scope: Record<string, unknown>): string | null => {
+    if (scope.kind === 'token' && typeof scope.placementId === 'string' && typeof scope.field === 'string') {
+      return `token ${resourceIdentifierSuffix(scope.placementId)} ${scope.field}`
+    }
+    if (scope.kind === 'map' && typeof scope.lane === 'string') return `map ${scope.lane}`
+    if (scope.kind === 'sheet' && typeof scope.sheetKind === 'string' && typeof scope.field === 'string') {
+      return `${scope.sheetKind} sheet ${scope.field}`
+    }
+    return null
+  }
+
+  const livePlayCommandResourceSummary = (body: Record<string, unknown>): string | undefined => {
+    if (!Array.isArray(body.scopes)) return undefined
+    const summaries = body.scopes
+      .filter(isRecord)
+      .map(scopeResourceSummary)
+      .filter((summary): summary is string => summary !== null)
+    if (summaries.length === 0) return undefined
+
+    const uniqueSummaries = [...new Set(summaries)]
+    const visibleSummaries = uniqueSummaries.slice(0, 3)
+    const remaining = uniqueSummaries.length - visibleSummaries.length
+    return remaining > 0
+      ? `${visibleSummaries.join(', ')} +${remaining} more`
+      : visibleSummaries.join(', ')
+  }
+
   const pendingCommandFromBody = (
     requestPath: string,
     body: Record<string, unknown>,
@@ -1016,31 +1050,41 @@ export const useLivePlayCommands = (
     if (!opId) return null
     const commandType = bodyCommandType(body) ?? undefined
     const baseRevision = typeof body.baseRevision === 'number' ? normalizeRevision(body.baseRevision) : undefined
+    const resourceSummary = livePlayCommandResourceSummary(body)
     return {
       opId,
       ...(requestPath === undefined ? {} : { requestPath }),
       ...(commandType === undefined ? {} : { commandType }),
       ...(baseRevision === undefined ? {} : { baseRevision }),
+      ...(resourceSummary === undefined ? {} : { resourceSummary }),
     }
   }
 
   const commandTraceMetadataFromPendingCommand = (
     command: LivePlayPendingCommand,
-  ): LivePlayCommandTraceMetadata => ({
-    opId: command.opId,
-    requestPath: command.requestPath,
-    commandType: command.commandType,
-    baseRevision: command.baseRevision,
-  })
+  ): LivePlayCommandTraceMetadata => {
+    const resourceSummary = livePlayCommandResourceSummary(command.body)
+    return {
+      opId: command.opId,
+      requestPath: command.requestPath,
+      commandType: command.commandType,
+      baseRevision: command.baseRevision,
+      ...(resourceSummary === undefined ? {} : { resourceSummary }),
+    }
+  }
 
   const commandTraceMetadataFromEntry = (
     entry: LivePlayCommandOutboxEntry,
-  ): LivePlayCommandTraceMetadata => ({
-    opId: entry.opId,
-    requestPath: entry.requestPath,
-    ...(isLivePlayMapCommandType(entry.commandType) ? { commandType: entry.commandType } : {}),
-    ...(typeof entry.body.baseRevision === 'number' ? { baseRevision: normalizeRevision(entry.body.baseRevision) } : {}),
-  })
+  ): LivePlayCommandTraceMetadata => {
+    const resourceSummary = livePlayCommandResourceSummary(entry.body)
+    return {
+      opId: entry.opId,
+      requestPath: entry.requestPath,
+      ...(isLivePlayMapCommandType(entry.commandType) ? { commandType: entry.commandType } : {}),
+      ...(typeof entry.body.baseRevision === 'number' ? { baseRevision: normalizeRevision(entry.body.baseRevision) } : {}),
+      ...(resourceSummary === undefined ? {} : { resourceSummary }),
+    }
+  }
 
   const commandTraceMetadataFromResponse = (
     response: LivePlayCommandResponse,

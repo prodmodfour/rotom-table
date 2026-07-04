@@ -785,6 +785,7 @@ describe('useLivePlayCommands', () => {
       requestPath: MAP_API_PATHS.turnToken,
       commandType: LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
       baseRevision: 4,
+      resourceSummary: 'token …ikachu facing',
       status: 'confirmed',
     })
     expect(trace?.events.map((event) => event.type)).toEqual([
