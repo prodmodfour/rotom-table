@@ -132,7 +132,7 @@ Status: DONE
 
 ## 004 — LP-S4-004 — Implement server executor for `clearHazards`
 
-Status: TODO
+Status: DONE
 
 **Goal:** Clear many hazards in one SQLite transaction with one idempotent live-play operation result.
 

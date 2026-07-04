@@ -692,6 +692,7 @@ export type LivePlayInitiativeCommand =
 export type LivePlayMapEffectCommand =
   | PlaceHazardLivePlayCommand
   | RemoveHazardLivePlayCommand
+  | ClearHazardsLivePlayCommand
   | SetFieldEffectLivePlayCommand
   | RemoveFieldEffectLivePlayCommand
   | TickFieldEffectDurationsLivePlayCommand

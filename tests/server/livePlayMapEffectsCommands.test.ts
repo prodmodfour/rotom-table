@@ -3,6 +3,9 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  createClearHazardsCommandScopes,
+  type ClearHazardsLivePlayCommand,
+  type ClearHazardsPayload,
   type LivePlayMapEffectCommand,
   type PlaceHazardLivePlayCommand,
   type RemoveFieldEffectLivePlayCommand,
@@ -61,6 +64,20 @@ const removeHazardCommand = (
   type: LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
   scopes: [{ kind: 'map', lane: 'hazards' }],
   payload: { cell: { x: 1, y: 0, z: 2, kind: 'spikes' } },
+  ...overrides,
+})
+
+const clearHazardsCommand = (
+  payload: ClearHazardsPayload = { mode: 'all' },
+  overrides: Partial<ClearHazardsLivePlayCommand> = {},
+): ClearHazardsLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_clearhaz1',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  scopes: createClearHazardsCommandScopes(payload),
+  payload,
   ...overrides,
 })
 
@@ -203,6 +220,84 @@ describe('live-play hazard and field-effect commands', () => {
     })
   })
 
+  it('clears all hazards through one authoritative batch result and reuses it on retry', async () => {
+    const initialHazards = [
+      { kind: 'spikes' as const, x: 1, y: 0, z: 2 },
+      { kind: 'fire' as const, x: 2, y: 0, z: 2, owner: 'GM' },
+      { kind: 'toxic-spikes' as const, x: 3, y: 0, z: 2, layer: 2 },
+    ]
+    const harness = createHarness(baseMap({ hazards: initialHazards }))
+    const command = clearHazardsCommand({ mode: 'all' })
+
+    const response = await execute(harness, command)
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.storedMap.hazards).toEqual([])
+    expect(response.hazards).toEqual([])
+    expect(acceptedPatches(response)).toEqual([
+      expect.objectContaining({
+        type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS,
+        revision: 5,
+        scopes: [{ kind: 'map', lane: 'hazards' }],
+        payload: {
+          command: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+          mode: 'all',
+          previous: initialHazards,
+          current: [],
+          removed: initialHazards,
+        },
+      }),
+    ])
+    expect(harness.published).toHaveLength(1)
+
+    const retry = await execute(harness, command)
+
+    expect(retry.result).toEqual(response.result)
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.published).toHaveLength(1)
+  })
+
+  it('clears explicit hazard cells and optional kind without touching unrelated hazards', async () => {
+    const harness = createHarness(baseMap({
+      hazards: [
+        { kind: 'spikes', x: 1, y: 0, z: 2 },
+        { kind: 'fire', x: 1, y: 0, z: 2 },
+        { kind: 'fire', x: 2, y: 0, z: 2 },
+        { kind: 'sticky-web', x: 3, y: 0, z: 2 },
+      ],
+    }))
+    const payload = {
+      mode: 'cells',
+      cells: [{ x: 1, y: 0, z: 2 }, { x: 3, y: 0, z: 2 }],
+      kind: 'fire',
+    } as const satisfies ClearHazardsPayload
+
+    const response = await execute(harness, clearHazardsCommand(payload, { opId: 'op_clearcell' }))
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.hazards).toEqual([
+      { kind: 'spikes', x: 1, y: 0, z: 2 },
+      { kind: 'fire', x: 2, y: 0, z: 2 },
+      { kind: 'sticky-web', x: 3, y: 0, z: 2 },
+    ])
+    expect(acceptedPatches(response)[0]).toMatchObject({
+      type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS,
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+        mode: 'cells',
+        kind: 'fire',
+        cells: [{ x: 1, y: 0, z: 2 }, { x: 3, y: 0, z: 2 }],
+        current: [
+          { kind: 'spikes', x: 1, y: 0, z: 2 },
+          { kind: 'fire', x: 2, y: 0, z: 2 },
+          { kind: 'sticky-web', x: 3, y: 0, z: 2 },
+        ],
+        removed: [{ kind: 'fire', x: 1, y: 0, z: 2 }],
+      },
+    })
+  })
+
   it('sets field effects through the authoritative executor', async () => {
     const harness = createHarness()
 
@@ -314,10 +409,17 @@ describe('live-play hazard and field-effect commands', () => {
       opId: 'op_badfield01',
       payload: { category: 'weather', kind: 'sunny', rounds: -1 },
     }))
+    const clearNoOp = await execute(harness, clearHazardsCommand({ mode: 'all' }, { opId: 'op_nohazclear' }))
+    const invalidClear = await execute(harness, clearHazardsCommand(
+      { mode: 'cells', cells: [{ x: 99, y: 0, z: 0 }] },
+      { opId: 'op_badclear1' },
+    ))
 
     expect(noOp.result).toMatchObject({ ok: false, reason: 'no-op', currentRevision: 4 })
     expect(invalidHazard.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 4 })
     expect(invalidField.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 4 })
+    expect(clearNoOp.result).toMatchObject({ ok: false, reason: 'no-op', currentRevision: 4 })
+    expect(invalidClear.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 4 })
     expect(harness.writes).toEqual([])
   })
 
@@ -330,8 +432,17 @@ describe('live-play hazard and field-effect commands', () => {
       baseRevision: 4,
       payload: { hazard: { kind: 'sticky-web', x: 2, y: 0, z: 2 } },
     }))
+    const staleClear = await execute(harness, clearHazardsCommand({ mode: 'all' }, {
+      opId: 'op_clearstale',
+      baseRevision: 4,
+    }))
 
     expect(stale.result).toMatchObject({
+      ok: false,
+      reason: 'stale-revision',
+      currentRevision: 5,
+    })
+    expect(staleClear.result).toMatchObject({
       ok: false,
       reason: 'stale-revision',
       currentRevision: 5,

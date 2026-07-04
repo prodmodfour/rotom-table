@@ -4,6 +4,9 @@ import { join } from 'node:path'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
+  createClearHazardsCommandScopes,
+  type ClearHazardsLivePlayCommand,
+  type ClearHazardsPayload,
   type LivePlayCommandAccepted,
   type LivePlayCommandResult,
   type ModifyCombatStagesLivePlayCommand,
@@ -31,6 +34,7 @@ import { createSqliteMapRepository, type MapRepository } from '~~/server/storage
 import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteSheetRepository, type PersistedSheet, type SheetRepository } from '~~/server/storage/sheetRepository'
 import { executeLivePlayInitiativeCommandUseCase } from '~~/server/useCases/applyLivePlayInitiativeCommand'
+import { executeLivePlayMapEffectsCommandUseCase } from '~~/server/useCases/applyLivePlayMapEffectsCommand'
 import { executeLivePlaySheetCommandUseCase } from '~~/server/useCases/applyLivePlaySheetCommand'
 import { executeLivePlayUseMoveCommandUseCase } from '~~/server/useCases/applyLivePlayUseMoveCommand'
 import { executeMapTokenLivePlayCommandUseCase } from '~~/server/useCases/applyMapTokenAction'
@@ -309,6 +313,15 @@ export class LivePlayIntegrationHarness {
     }, this.commandDependencies())
   }
 
+  async clearHazards({ actor, command }: LivePlayCommandDispatchOptions<ClearHazardsLivePlayCommand>) {
+    return await executeLivePlayMapEffectsCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+    }, this.commandDependencies())
+  }
+
   async modifyHp({ actor, command }: LivePlayCommandDispatchOptions<ModifyHpLivePlayCommand>) {
     return await executeLivePlaySheetCommandUseCase({
       role: actor.role,
@@ -410,6 +423,22 @@ export class LivePlayIntegrationHarness {
         activeId: input.activeId === undefined ? 'token-a' : input.activeId,
         round: input.round ?? 1,
       },
+    }
+  }
+
+  clearHazardsCommand(input: {
+    readonly opId: string
+    readonly baseRevision: number
+    readonly payload: ClearHazardsPayload
+  }): ClearHazardsLivePlayCommand {
+    return {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: input.opId,
+      mapSlug: 'integration-arena',
+      baseRevision: input.baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+      scopes: createClearHazardsCommandScopes(input.payload),
+      payload: input.payload,
     }
   }
 

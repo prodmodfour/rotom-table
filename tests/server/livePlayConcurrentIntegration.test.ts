@@ -14,6 +14,81 @@ afterEach(() => {
 })
 
 describe('live-play concurrent player integration harness', () => {
+  it('clears hazards as one durable SQLite batch and reuses the accepted result on retry', async () => {
+    const harness = createHarness()
+    const seededMap = await harness.readMap()
+    if (!seededMap) throw new Error('expected seeded integration map')
+    await harness.createMap({
+      ...seededMap,
+      hazards: [
+        { kind: 'spikes', x: 1, y: 0, z: 2 },
+        { kind: 'fire', x: 2, y: 0, z: 2 },
+      ],
+      revision: 0,
+    })
+    const gm = { role: 'gm' as const, clientId: 'gm-clear-client' }
+    const gmClient = await harness.loadClient(gm.clientId)
+    const command = harness.clearHazardsCommand({
+      opId: 'op_integration_clear_hazards',
+      baseRevision: gmClient.map?.revision ?? 0,
+      payload: { mode: 'all' },
+    })
+
+    const response = await harness.clearHazards({ actor: gm, command })
+
+    expect(assertAccepted(response.result)).toMatchObject({ previousRevision: 0, revision: 1 })
+    expect((await harness.readMap())?.hazards).toEqual([])
+    expect(gmClient.map?.hazards).toEqual([])
+    expect(gmClient.map?.revision).toBe(1)
+    const operationRecordsAfterAccept = harness.operationRecordCount()
+    const publishedEventsAfterAccept = harness.publishedEvents.length
+
+    const retry = await harness.clearHazards({ actor: gm, command })
+
+    expect(retry.result).toEqual(response.result)
+    expect(harness.operationRecordCount()).toBe(operationRecordsAfterAccept)
+    expect(harness.publishedEvents).toHaveLength(publishedEventsAfterAccept)
+    expect(harness.acceptedOperationRevisions()).toEqual([1])
+  })
+
+  it('rejects stale broad clearHazards conflicts without partially clearing remaining hazards', async () => {
+    const harness = createHarness()
+    const seededMap = await harness.readMap()
+    if (!seededMap) throw new Error('expected seeded integration map')
+    await harness.createMap({
+      ...seededMap,
+      hazards: [
+        { kind: 'spikes', x: 1, y: 0, z: 2 },
+        { kind: 'fire', x: 2, y: 0, z: 2 },
+      ],
+      revision: 0,
+    })
+    const gm = { role: 'gm' as const, clientId: 'gm-conflict-client' }
+    const precise = harness.clearHazardsCommand({
+      opId: 'op_integration_clear_cell',
+      baseRevision: 0,
+      payload: { mode: 'cells', cells: [{ x: 1, y: 0, z: 2 }] },
+    })
+
+    const accepted = await harness.clearHazards({ actor: gm, command: precise })
+    expect(assertAccepted(accepted.result)).toMatchObject({ previousRevision: 0, revision: 1 })
+
+    const staleBroad = harness.clearHazardsCommand({
+      opId: 'op_integration_clear_conflict',
+      baseRevision: 0,
+      payload: { mode: 'all' },
+    })
+    const rejected = await harness.clearHazards({ actor: gm, command: staleBroad })
+
+    expect(rejected.result).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      currentRevision: 1,
+    })
+    expect((await harness.readMap())?.hazards).toEqual([{ kind: 'fire', x: 2, y: 0, z: 2 }])
+    expect(harness.acceptedOperationRevisions()).toEqual([1])
+  })
+
   it('preserves concurrent player commands, idempotent retries, stale rejection, and reconnect reloads', async () => {
     const harness = createHarness()
     const playerAProfile = harness.createPlayerProfile({
