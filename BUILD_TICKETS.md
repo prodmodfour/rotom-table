@@ -174,7 +174,7 @@ Status: DONE
 
 ## 006 — LP-S2-006 — Harden stale HTTP terminal responses after SSE-first adoption
 
-Status: TODO
+Status: DONE
 
 **Goal:** Prevent a later HTTP response from overwriting or rolling back state already confirmed by realtime.
 

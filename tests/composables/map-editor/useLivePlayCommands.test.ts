@@ -1029,6 +1029,117 @@ describe('useLivePlayCommands', () => {
     expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
   })
 
+  it('ignores a late HTTP rejection after accepted SSE confirms the same operation', async () => {
+    const outbox = createTestOutbox()
+    const map = ref(mapFixture())
+    const requestReconciliation = vi.fn()
+    const onCommandRejected = vi.fn()
+    let releaseHttp!: () => void
+    let sentBody: Record<string, unknown> | null = null
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      sentBody = commandRecord(body)
+      await new Promise<void>((resolve) => { releaseHttp = resolve })
+      return {
+        ok: false,
+        opId: sentBody.opId,
+        mapSlug: sentBody.mapSlug,
+        reason: 'conflict',
+        message: 'Late HTTP rejection should be stale',
+        currentRevision: 5,
+      }
+    })
+
+    const actions = createCommandHarness({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+      outbox,
+      requestReconciliation,
+      onCommandRejected,
+    }).actions
+    const httpResult = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+
+    await vi.waitFor(() => expect(sentBody).not.toBeNull())
+    const entry = await outbox.get(sentBody!.opId as string)
+    expect(entry).not.toBeNull()
+
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(entry!))).resolves.toEqual({
+      status: 'acknowledged',
+      opId: entry!.opId,
+    })
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+    expect(map.value.revision).toBe(5)
+
+    releaseHttp()
+    await expect(httpResult).resolves.toMatchObject({
+      dispatched: true,
+      recoveredByRealtime: true,
+      opId: entry!.opId,
+    })
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+    expect(map.value.revision).toBe(5)
+    expect(onCommandRejected).not.toHaveBeenCalled()
+    expect(requestReconciliation).not.toHaveBeenCalled()
+    await expect(outbox.get(entry!.opId)).resolves.toBeNull()
+    expect(actions.commandTraces.value[entry!.opId]?.events.find((event) => event.type === 'http-terminal')?.detail).toEqual({
+      outcome: 'ignored-after-realtime',
+    })
+  })
+
+  it('ignores stale accepted HTTP map fallbacks when local presentation has advanced', async () => {
+    const map = ref(mapFixture())
+    const fallbackMap = cloneJson(map.value)
+    fallbackMap.revision = 5
+    fallbackMap.name = 'Stale HTTP fallback'
+    fallbackMap.placements[0]!.position = { x: 9, y: 0, z: 9 }
+    const applyPersistedMap = vi.fn((incoming: TabletopMap) => {
+      map.value = incoming
+    })
+    const requestReconciliation = vi.fn()
+    let releaseHttp!: () => void
+    let sentBody: Record<string, unknown> | null = null
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      sentBody = commandRecord(body)
+      await new Promise<void>((resolve) => { releaseHttp = resolve })
+      return {
+        ok: true,
+        opId: sentBody.opId,
+        mapSlug: sentBody.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [],
+        map: fallbackMap,
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+      applyPersistedMap,
+      requestReconciliation,
+    })
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 2 } })
+    await vi.waitFor(() => expect(sentBody).not.toBeNull())
+
+    map.value.revision = 6
+    map.value.name = 'Authoritative revision 6'
+    placementById(map.value, 'target-token').position = { x: 4, y: 0, z: 4 }
+
+    releaseHttp()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId: sentBody!.opId })
+    expect(applyPersistedMap).not.toHaveBeenCalled()
+    expect(requestReconciliation).not.toHaveBeenCalled()
+    expect(map.value.revision).toBe(6)
+    expect(map.value.name).toBe('Authoritative revision 6')
+    expect(tokenPosition(map.value)).toEqual({ x: 3, y: 0, z: 2 })
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 4, y: 0, z: 4 })
+    expect(actions.commandTraces.value[sentBody!.opId as string]?.events.find((event) => event.type === 'http-terminal')?.detail).toEqual({
+      outcome: 'accepted-stale',
+      revision: 5,
+    })
+  })
+
   it('rebases non-conflicting local predictions around remote accepted patches', async () => {
     const map = ref(mapFixture())
     const postGate = deferred<void>()

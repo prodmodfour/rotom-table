@@ -512,6 +512,12 @@ interface LivePlayPredictionPatchAdoptionSession {
   readonly reapplyPredictions: readonly LivePlayLocalPrediction[]
 }
 
+interface LivePlayAcceptedResponsePatchHandling {
+  readonly handled: boolean
+  readonly applied: boolean
+  readonly revision?: number
+}
+
 const pendingConflictResourceLabel = (descriptor: LivePlayScopeConflictDescriptor): string => {
   if (descriptor.kind === 'token-field') return `this token ${descriptor.field}`
   if (descriptor.kind === 'sheet-field') return `this ${descriptor.sheetKind} sheet ${descriptor.field}`
@@ -1572,9 +1578,38 @@ export const useLivePlayCommands = (
     return combinedWarning === undefined ? result : { ...result, outboxError: combinedWarning }
   }
 
-  const tryApplyAcceptedResponsePatches = (response: LivePlayCommandResponse): boolean => {
+  const acceptedResponseRevision = (response: LivePlayCommandResponse): number | null => {
     const patchResult = acceptedPatchResult(response)
-    if (!patchResult || patchResult.patches.length === 0 || !options.map?.value) return false
+    return patchResult === null ? null : normalizeRevision(patchResult.revision)
+  }
+
+  const currentPresentationRevision = (): number | null => {
+    const revisions: number[] = []
+    if (options.map?.value) revisions.push(normalizeRevision(options.map.value.revision))
+    if (typeof options.mapRevision?.value === 'number') revisions.push(normalizeRevision(options.mapRevision.value))
+    return revisions.length === 0 ? null : Math.max(...revisions)
+  }
+
+  const acceptedResponseIsStaleForPresentation = (response: LivePlayCommandResponse): boolean => {
+    const responseRevision = acceptedResponseRevision(response)
+    const presentationRevision = currentPresentationRevision()
+    return responseRevision !== null && presentationRevision !== null && presentationRevision > responseRevision
+  }
+
+  const acceptedHttpTerminalTraceDetail = (response: LivePlayCommandResponse): LivePlayCommandTraceEventDetail => {
+    if (!acceptedLivePlayResponse(response)) return { outcome: 'rejected' }
+    const responseRevision = acceptedResponseRevision(response)
+    if (!acceptedResponseIsStaleForPresentation(response)) return { outcome: 'accepted' }
+    return responseRevision === null
+      ? { outcome: 'accepted-stale' }
+      : { outcome: 'accepted-stale', revision: responseRevision }
+  }
+
+  const tryApplyAcceptedResponsePatches = (response: LivePlayCommandResponse): LivePlayAcceptedResponsePatchHandling => {
+    const patchResult = acceptedPatchResult(response)
+    if (!patchResult || patchResult.patches.length === 0 || !options.map?.value) {
+      return { handled: false, applied: false }
+    }
 
     const applied = applyLivePlayPatchesToMap({
       map: options.map.value,
@@ -1583,11 +1618,17 @@ export const useLivePlayCommands = (
       revision: patchResult.revision,
       patches: patchResult.patches,
     })
-    return applied.ok
+    if (!applied.ok) return { handled: false, applied: false }
+    return {
+      handled: true,
+      applied: applied.applied,
+      revision: applied.applied ? applied.revision : normalizeRevision(patchResult.revision),
+    }
   }
 
   const applyAcceptedResponseMapFallback = (response: LivePlayCommandResponse): boolean => {
     if (!response.map || !options.applyPersistedMap) return false
+    if (acceptedResponseIsStaleForPresentation(response)) return false
     options.applyPersistedMap(response.map)
     return true
   }
@@ -1599,18 +1640,20 @@ export const useLivePlayCommands = (
   ): Promise<void> => {
     const reconcileOnPatchFailure = adoptOptions.reconcileOnPatchFailure ?? true
     const patchResult = acceptedPatchResult(response)
-    const patchesHandled = tryApplyAcceptedResponsePatches(response)
-    const mapFallbackApplied = patchesHandled ? false : applyAcceptedResponseMapFallback(response)
-    if (!patchesHandled && !mapFallbackApplied && acceptedResultRequiresReconciliation(response) && reconcileOnPatchFailure) {
+    const patchHandling = tryApplyAcceptedResponsePatches(response)
+    const mapFallbackApplied = patchHandling.handled ? false : applyAcceptedResponseMapFallback(response)
+    if (!patchHandling.handled && !mapFallbackApplied && acceptedResultRequiresReconciliation(response) && reconcileOnPatchFailure) {
       await options.requestReconciliation?.({ request, response })
     }
     for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
     const sheetUpdatesApplied = (response.sheetUpdates?.length ?? 0) > 0
-    if (patchesHandled || mapFallbackApplied || sheetUpdatesApplied) {
+    if (patchHandling.applied || mapFallbackApplied || sheetUpdatesApplied) {
       recordCommandTraceEvent(
         commandTraceMetadataFromResponse(response),
         LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.PATCH_ADOPTED,
-        patchResult === null ? undefined : { revision: patchResult.revision },
+        patchHandling.revision === undefined && patchResult === null
+          ? undefined
+          : { revision: patchHandling.revision ?? normalizeRevision(patchResult!.revision) },
       )
     }
   }
@@ -1779,9 +1822,11 @@ export const useLivePlayCommands = (
     }
 
     const response = rawResponse as LivePlayCommandResponse
-    recordCommandTraceEvent(traceMetadata, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.HTTP_TERMINAL, {
-      outcome: acceptedLivePlayResponse(response) ? 'accepted' : 'rejected',
-    })
+    recordCommandTraceEvent(
+      traceMetadata,
+      LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.HTTP_TERMINAL,
+      acceptedHttpTerminalTraceDetail(response),
+    )
     const acknowledgeWarning = await acknowledgeTerminalResponse(entry.opId)
     const refreshWarning = await refreshOutboxEntriesQuiet()
     return processTerminalResponse(
