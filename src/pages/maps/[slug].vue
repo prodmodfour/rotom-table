@@ -95,7 +95,10 @@ import { buildLiveSheetAccessScopeKey } from '~/utils/liveSheetCache'
 import { getClientId } from '~/utils/clientId'
 import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
-import type { LivePlayLocalPrediction } from '~/utils/livePlayPredictions'
+import {
+  livePlayConditionsForPrediction,
+  type LivePlayLocalPrediction,
+} from '~/utils/livePlayPredictions'
 import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
@@ -325,6 +328,9 @@ type LivePlayCommandRejectionNotification = Parameters<NonNullable<UseLivePlayCo
 const livePlayTokenCorrectionMessage = (prediction: TrackedLivePlayTokenPrediction): string => {
   if (prediction.commandType === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {
     return `Facing corrected by the server; ${prediction.tokenLabel} returned to its last confirmed facing.`
+  }
+  if (prediction.commandType === LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS) {
+    return `Conditions corrected by the server; ${prediction.tokenLabel} returned to its last confirmed conditions.`
   }
   return `Move corrected by the server; ${prediction.tokenLabel} returned to its last confirmed position.`
 }
@@ -784,6 +790,26 @@ const livePlayTokenLabel = (placementId: string): string => {
   return placement?.sheetSlug ?? 'This token'
 }
 
+const livePlayPendingConditionsByTokenId = computed<Readonly<Record<string, readonly string[]>>>(() => {
+  const conditionPredictions = Object.values(livePlayCommands.pendingPredictions.value).filter((prediction) => (
+    prediction.pendingConditionChange !== undefined
+  ))
+  if (conditionPredictions.length === 0) return {}
+
+  const pendingConditionsByTokenId: Record<string, readonly string[]> = {}
+  for (const pokemon of spawnedPokemon.value) {
+    let conditions: readonly string[] = pokemon.conditions
+    let hasPendingConditionPrediction = false
+    for (const prediction of conditionPredictions) {
+      if (prediction.placementId !== pokemon.id) continue
+      conditions = livePlayConditionsForPrediction(conditions, prediction)
+      hasPendingConditionPrediction = true
+    }
+    if (hasPendingConditionPrediction) pendingConditionsByTokenId[pokemon.id] = [...conditions]
+  }
+  return pendingConditionsByTokenId
+})
+
 const {
   spawnSheetPending,
   spawnSheetFromMenu,
@@ -898,6 +924,15 @@ const newPendingTurnPredictionForPlacement = (
   previousOpIds,
   placementId,
   LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
+)
+
+const newPendingConditionsPredictionForPlacement = (
+  previousOpIds: ReadonlySet<string>,
+  placementId: string,
+): LivePlayLocalPrediction | null => newPendingTokenPredictionForPlacement(
+  previousOpIds,
+  placementId,
+  LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
 )
 
 const movePokemon = (payload: { id: string; position: GridAnchor }) => {
@@ -1477,11 +1512,17 @@ const modifyConditionsFromScene: typeof modifyConditionsViaSetupSheetSave = asyn
     await modifyConditionsViaSetupSheetSave(payload, options)
     return
   }
-  await livePlayCommands.modifyConditions({
+  const pendingPredictionOpIdsBeforeConditions = new Set(Object.keys(livePlayCommands.pendingPredictions.value))
+  const dispatch = livePlayCommands.modifyConditions({
     placementId: payload.id,
     action: 'replace',
     conditions: payload.conditions,
   })
+  const predictedConditions = newPendingConditionsPredictionForPlacement(pendingPredictionOpIdsBeforeConditions, payload.id)
+  if (predictedConditions) rememberLivePlayPredictedToken(predictedConditions, livePlayTokenLabel(payload.id))
+
+  const result = await dispatch
+  if (result.opId) forgetLivePlayPredictedToken(result.opId)
 }
 
 const grantExperienceFromScene: typeof grantExperienceViaSetupSheetSave = async (payload, options) => {
@@ -2163,6 +2204,7 @@ useMapDimensionReconciliation({
         :live-play-state="livePlayConnectionState"
         :live-play-status-message="livePlayStatusMessage"
         :live-play-pending-token-ids="livePlayPendingPredictionTokenIds"
+        :live-play-pending-conditions-by-token-id="livePlayPendingConditionsByTokenId"
         :live-play-correction-token-ids="livePlayCorrectionTokenIds"
         :live-play-token-correction-notice="livePlayTokenCorrectionNotice"
         :move-automation-targeting="actionAutomationTargeting"

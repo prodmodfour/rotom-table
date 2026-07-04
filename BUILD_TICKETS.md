@@ -357,7 +357,7 @@ Status: DONE
 
 ## 013 — LP-S2-012 — Predict simple condition edits as token-level pending feedback
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make condition changes feel responsive without inventing authoritative sheet state locally.
 

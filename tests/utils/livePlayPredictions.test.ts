@@ -8,9 +8,11 @@ import {
 import {
   applyLivePlayPredictionToMap,
   buildLivePlayPrediction,
+  buildModifyConditionsPrediction,
   buildModifyHpPrediction,
   buildMoveTokenPrediction,
   buildTurnTokenPrediction,
+  livePlayConditionsForPrediction,
   rollbackLivePlayPredictionFromMap,
 } from '~/utils/livePlayPredictions'
 import type { GridAnchor, MapSceneState, TabletopMap } from '~/types/map'
@@ -54,7 +56,7 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   ...overrides,
 })
 
-const tokenScope = (placementId: string, field: 'position' | 'facing' | 'hp'): LivePlayScope => ({
+const tokenScope = (placementId: string, field: 'position' | 'facing' | 'hp' | 'conditions'): LivePlayScope => ({
   kind: 'token',
   placementId,
   field,
@@ -99,6 +101,20 @@ const hpCommand = (overrides: Partial<Record<string, unknown>> = {}): Record<str
     placementId: 'token-a',
     currentHp: 12,
     temporaryHp: 6,
+  },
+  ...overrides,
+})
+
+const conditionsCommand = (overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> => commandBase({
+  type: LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+  scopes: [
+    tokenScope('token-a', 'conditions'),
+    { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'conditions' },
+  ],
+  payload: {
+    placementId: 'token-a',
+    action: 'replace',
+    conditions: ['Burned'],
   },
   ...overrides,
 })
@@ -246,6 +262,67 @@ describe('live-play local prediction builders', () => {
     expect(temporaryHpForPlacement(map, 'token-a')).toBe(2)
   })
 
+  it('builds local-only modifyConditions metadata without mutating map or sheet state', () => {
+    const map = baseMap()
+    const originalMap = JSON.stringify(map)
+    const prediction = buildModifyConditionsPrediction({
+      map,
+      command: conditionsCommand({
+        payload: { placementId: 'token-a', action: 'replace', conditions: [' poisoned ', 'Burned'] },
+      }),
+    })
+
+    expect(prediction).toMatchObject({
+      localOnly: true,
+      commandType: LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+      changedFields: ['conditions'],
+      pendingConditionChange: {
+        action: 'replace',
+        conditions: ['Burned', 'Poisoned'],
+      },
+      previousPlacement: expect.objectContaining({ sheetSlug: 'pikachu' }),
+      predictedPlacement: expect.objectContaining({ sheetSlug: 'pikachu' }),
+      patches: [{
+        localOnly: true,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_CONDITIONS,
+        payload: {
+          placementId: 'token-a',
+          sheetKind: 'pokemon',
+          sheetSlug: 'pikachu',
+          action: 'replace',
+          conditions: ['Burned', 'Poisoned'],
+        },
+      }],
+      rollbackPatches: [],
+    })
+
+    expect(applyLivePlayPredictionToMap(map, prediction!)).toEqual({ ok: true, applied: true })
+    expect(JSON.stringify(map)).toBe(originalMap)
+    expect(livePlayConditionsForPrediction(['Sleep'], prediction!)).toEqual(['Burned', 'Poisoned'])
+
+    expect(rollbackLivePlayPredictionFromMap(map, prediction!)).toEqual({ ok: true, applied: true })
+    expect(JSON.stringify(map)).toBe(originalMap)
+  })
+
+  it('applies pending condition add and remove metadata to display conditions only', () => {
+    const map = baseMap()
+    const addPrediction = buildModifyConditionsPrediction({
+      map,
+      command: conditionsCommand({
+        payload: { placementId: 'token-a', action: 'add', conditions: ['Poisoned'] },
+      }),
+    })
+    const removePrediction = buildModifyConditionsPrediction({
+      map,
+      command: conditionsCommand({
+        payload: { placementId: 'token-a', action: 'remove', conditions: ['Burned'] },
+      }),
+    })
+
+    expect(livePlayConditionsForPrediction(['Burned'], addPrediction!)).toEqual(['Burned', 'Poisoned'])
+    expect(livePlayConditionsForPrediction(['Burned', 'Poisoned'], removePrediction!)).toEqual(['Poisoned'])
+  })
+
   it('returns no modifyHp prediction for sheet-only HP changes', () => {
     const prediction = buildLivePlayPrediction({
       map: mapWithTemporaryHp(2),
@@ -270,9 +347,12 @@ describe('live-play local prediction builders', () => {
     const prediction = buildLivePlayPrediction({
       map: baseMap(),
       command: commandBase({
-        type: LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
-        scopes: [{ kind: 'token', placementId: 'token-a', field: 'conditions' }],
-        payload: { placementId: 'token-a', conditions: ['Burned'], action: 'replace' },
+        type: LIVE_PLAY_COMMAND_TYPES.MODIFY_COMBAT_STAGES,
+        scopes: [{ kind: 'token', placementId: 'token-a', field: 'combatStages' }],
+        payload: {
+          placementId: 'token-a',
+          stages: { atk: 1, def: 0, satk: 0, sdef: 0, spd: 0, acc: 0 },
+        },
       }),
     })
 

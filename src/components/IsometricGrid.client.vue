@@ -215,6 +215,7 @@ const props = defineProps<{
   tokenSendOutOptionsById?: Record<string, TokenSendOutOption[]>
   tokenPokeballOptionsById?: Record<string, TokenPokeballOption[]>
   livePlayPendingTokenIds?: string[]
+  livePlayPendingConditionsByTokenId?: Readonly<Record<string, readonly string[]>>
   livePlayCorrectionTokenIds?: string[]
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
@@ -295,6 +296,10 @@ const emitPokemonSelection = (id: string | null) => {
 const controllableIdSet = computed(() => new Set(props.controllableIds ?? props.pokemons.map((pokemon) => pokemon.id)))
 const livePlayPendingTokenIdSet = computed(() => new Set(props.livePlayPendingTokenIds ?? []))
 const livePlayCorrectionTokenIdSet = computed(() => new Set(props.livePlayCorrectionTokenIds ?? []))
+const renderedPokemons = computed<SpawnedPokemon[]>(() => props.pokemons.map((pokemon) => {
+  const pendingConditions = props.livePlayPendingConditionsByTokenId?.[pokemon.id]
+  return pendingConditions ? { ...pokemon, conditions: [...pendingConditions] } : pokemon
+}))
 const canControlPokemon = (id: string | null | undefined): id is string =>
   Boolean(id && controllableIdSet.value.has(id))
 
@@ -858,7 +863,7 @@ const applyRenderObjectPosition = (renderObject: PokemonRenderObject): boolean =
 const refreshPokemonStyles = () => {
   syncPokemonRenderObjectSelectionStyles({
     renderObjects,
-    pokemons: props.pokemons,
+    pokemons: renderedPokemons.value,
     selectedId: props.selectedId,
     paintRenderObjectStyle: (renderObject, selected, pokemon) => paintPokemonRenderObjectStyle(renderObject, selected, {
       hovered: hoverController.id() === renderObject.id,
@@ -891,7 +896,7 @@ const disposeRenderObject = (renderObject: PokemonRenderObject) => {
 const syncPokemonObjects = () => {
   syncPokemonRenderObjects({
     renderObjects,
-    pokemons: props.pokemons,
+    pokemons: renderedPokemons.value,
     createRenderObject: buildRenderObject,
     onCreateRenderObject,
     updateRenderObject: (renderObject, pokemon) => updatePokemonRenderObjectFromSpawn(renderObject, pokemon, {
@@ -2165,7 +2170,7 @@ watch(appThemeMode, applySceneTheme)
 
 useIsometricSceneWatchers({
   sources: {
-    pokemons: () => props.pokemons,
+    pokemons: () => renderedPokemons.value,
     terrainVoxelRevision,
     hazardRevision,
     fieldEffectsRevision,

@@ -725,6 +725,8 @@ export const useLivePlayCommands = (
       } else if (field === 'temporaryHp') {
         if (prediction.predictedTemporaryHp === undefined) return false
         if (temporaryHpForPlacement(options.map?.value, prediction.placementId) !== prediction.predictedTemporaryHp) return false
+      } else if (field === 'conditions') {
+        if (!prediction.pendingConditionChange) return false
       } else if (
         placementHasOwnField(placement, field) !== placementHasOwnField(prediction.predictedPlacement, field)
         || placement[field] !== prediction.predictedPlacement[field]
@@ -1267,10 +1269,19 @@ export const useLivePlayCommands = (
     scopes.push({ kind: 'token', placementId: prediction.placementId, field })
   }
 
+  const predictionRebaseConflictField = (
+    field: LivePlayLocalPrediction['changedFields'][number],
+  ): LivePlayTokenScope['field'] => {
+    if (field === 'position') return 'position'
+    if (field === 'temporaryHp') return 'hp'
+    if (field === 'conditions') return 'conditions'
+    return 'facing'
+  }
+
   const predictionRebaseConflictScopes = (prediction: LivePlayLocalPrediction): readonly LivePlayScope[] => {
     const scopes = [...prediction.scopes]
     for (const field of prediction.changedFields) {
-      addPredictionTokenScopeIfMissing(scopes, prediction, field === 'position' ? 'position' : field === 'temporaryHp' ? 'hp' : 'facing')
+      addPredictionTokenScopeIfMissing(scopes, prediction, predictionRebaseConflictField(field))
     }
     return scopes
   }

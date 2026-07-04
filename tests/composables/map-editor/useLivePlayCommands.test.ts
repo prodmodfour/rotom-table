@@ -932,6 +932,115 @@ describe('useLivePlayCommands', () => {
     expect(applySheetUpdate).not.toHaveBeenCalled()
   })
 
+  it('adds and confirms local condition HUD metadata without mutating sheet cache first', async () => {
+    const map = ref(mapFixture())
+    const applySheetUpdate = vi.fn()
+    const postGate = deferred<void>()
+    const sheetUpdate = {
+      kind: 'pokemon' as const,
+      slug: 'pikachu',
+      sheet: { slug: 'pikachu', combat: { conditions: ['Burned'] }, revision: 3 },
+    }
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_CONDITIONS,
+          mapSlug: 'arena-map',
+          revision: 5,
+          scopes: [
+            { kind: 'token', placementId: 'token-pikachu', field: 'conditions' },
+            { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'conditions' },
+          ],
+          payload: {
+            placementId: 'token-pikachu',
+            sheetKind: 'pokemon',
+            sheetSlug: 'pikachu',
+            previous: [],
+            current: ['Burned'],
+            sheetRevision: 3,
+          },
+        }],
+        sheetUpdates: [sheetUpdate],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applySheetUpdate,
+    })
+    const dispatch = actions.modifyConditions({ placementId: 'token-pikachu', action: 'replace', conditions: ['Burned'] })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    const prediction = Object.values(actions.pendingPredictions.value)[0]
+    expect(prediction).toMatchObject({
+      commandType: LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+      changedFields: ['conditions'],
+      pendingConditionChange: { action: 'replace', conditions: ['Burned'] },
+    })
+    expect(map.value.revision).toBe(4)
+    expect(applySheetUpdate).not.toHaveBeenCalled()
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId: prediction?.opId })
+    expect(map.value.revision).toBe(5)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
+  })
+
+  it('clears local condition HUD metadata after terminal rejection without sheet updates', async () => {
+    const map = ref(mapFixture())
+    const applySheetUpdate = vi.fn()
+    const onCommandRejected = vi.fn()
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: false,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        reason: 'conflict',
+        message: 'Conflict',
+        currentRevision: 4,
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applySheetUpdate,
+      onCommandRejected,
+    })
+    const dispatch = actions.modifyConditions({ placementId: 'token-pikachu', action: 'replace', conditions: ['Burned'] })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    const prediction = Object.values(actions.pendingPredictions.value)[0]
+    expect(prediction?.pendingConditionChange).toEqual({ action: 'replace', conditions: ['Burned'] })
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: false, message: 'Conflict' })
+    expect(map.value.revision).toBe(4)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(applySheetUpdate).not.toHaveBeenCalled()
+    expect(onCommandRejected).toHaveBeenCalledWith(expect.objectContaining({
+      reason: 'conflict',
+      message: 'Conflict',
+    }))
+  })
+
   it('records safe in-memory lifecycle traces through HTTP prediction confirmation', async () => {
     const map = ref(mapFixture())
     const profileId = ref(parsePlayerProfileId('profile_ash00000'))
