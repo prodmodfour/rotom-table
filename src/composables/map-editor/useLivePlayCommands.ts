@@ -59,6 +59,7 @@ import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
 import {
   applyLivePlayPredictionToMap,
   buildLivePlayPrediction,
+  reapplyLivePlayPredictionToMap,
   rollbackLivePlayPredictionFromMap,
   type LivePlayLocalPrediction,
 } from '~/utils/livePlayPredictions'
@@ -75,6 +76,8 @@ import {
   findLivePlayScopeConflict,
   type LivePlayScopeConflictDescriptor,
 } from '~/utils/livePlayScopeConflicts'
+import { findLivePlayPredictionConflicts } from '~/utils/livePlayPredictionConflicts'
+import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption'
 import {
   createLivePlayCommandOutboxFingerprint,
   getLivePlayCommandOutbox,
@@ -293,6 +296,8 @@ export interface UseLivePlayCommandsReturn {
   acknowledgeAcceptedRealtimeEvent: (
     event: LivePlayAcceptedRealtimeEvent,
   ) => Promise<LivePlayRealtimeAcknowledgementResult>
+  beforeLivePlayPatchesApply: (context: LivePlayPatchAdoptionContext) => void
+  afterLivePlayPatchesApply: (context: LivePlayPatchAdoptionContext) => void
   spawnToken: (payload: {
     placement: SheetPlacement
   }) => Promise<LivePlayCommandDispatchResult>
@@ -499,6 +504,14 @@ const isNonConcurrentLivePlayCommandType = (commandType: unknown): commandType i
   isLivePlayMapCommandType(commandType) && NON_CONCURRENT_LIVE_PLAY_COMMAND_TYPES.has(commandType)
 )
 
+interface LivePlayPredictionPatchAdoptionSession {
+  readonly key: string
+  readonly rolledBackOpIds: ReadonlySet<string>
+  readonly acceptedPrediction: LivePlayLocalPrediction | null
+  readonly conflictingPredictions: readonly LivePlayLocalPrediction[]
+  readonly reapplyPredictions: readonly LivePlayLocalPrediction[]
+}
+
 const pendingConflictResourceLabel = (descriptor: LivePlayScopeConflictDescriptor): string => {
   if (descriptor.kind === 'token-field') return `this token ${descriptor.field}`
   if (descriptor.kind === 'sheet-field') return `this ${descriptor.sheetKind} sheet ${descriptor.field}`
@@ -622,6 +635,7 @@ export const useLivePlayCommands = (
   const realtimeAcknowledgedResponses = new Map<string, LivePlayCommandResponse>()
   const realtimeAcknowledgementFailures = new Map<string, string>()
   const realtimeAcknowledgementAdoptions = new Map<string, Promise<string | undefined>>()
+  let activePredictionPatchAdoptionSession: LivePlayPredictionPatchAdoptionSession | null = null
 
   if (getCurrentScope()) {
     const removePendingCommandUnloadWarning = bindPendingLivePlayCommandUnloadWarning(() => transportStatus.value === 'sending')
@@ -1209,6 +1223,146 @@ export const useLivePlayCommands = (
     state: LivePlayPendingCommandState,
   ): void => {
     trackPendingCommand(pendingCommandFromEntry(entry, state))
+  }
+
+  const predictionPatchAdoptionSessionKey = (context: LivePlayPatchAdoptionContext): string => (
+    `${context.mapSlug}:${context.opId ?? 'remote'}:${context.previousRevision}->${context.nextRevision}:${context.patches.length}`
+  )
+
+  const addPredictionTokenScopeIfMissing = (
+    scopes: LivePlayScope[],
+    prediction: LivePlayLocalPrediction,
+    field: LivePlayTokenScope['field'],
+  ): void => {
+    if (scopes.some((scope) => (
+      scope.kind === 'token'
+      && scope.placementId === prediction.placementId
+      && scope.field === field
+    ))) return
+    scopes.push({ kind: 'token', placementId: prediction.placementId, field })
+  }
+
+  const predictionRebaseConflictScopes = (prediction: LivePlayLocalPrediction): readonly LivePlayScope[] => {
+    const scopes = [...prediction.scopes]
+    for (const field of prediction.changedFields) {
+      addPredictionTokenScopeIfMissing(scopes, prediction, field === 'position' ? 'position' : 'facing')
+    }
+    return scopes
+  }
+
+  const pendingPredictionsForPatchAdoption = (
+    context: LivePlayPatchAdoptionContext,
+  ): readonly LivePlayLocalPrediction[] => Object.values(localPredictionRecords.value).filter((prediction) => (
+    prediction.mapSlug === context.mapSlug
+  ))
+
+  const rollbackPredictionForPatchAdoption = (prediction: LivePlayLocalPrediction): boolean => {
+    if (!localPredictionCurrentlyApplied(prediction)) return false
+    const result = rollbackLivePlayPredictionFromMap(options.map?.value, prediction)
+    if (!result.ok) throw new Error(result.message)
+    return true
+  }
+
+  const conflictOpIdsForPatchAdoption = (
+    context: LivePlayPatchAdoptionContext,
+    predictions: readonly LivePlayLocalPrediction[],
+  ): ReadonlySet<string> => {
+    const conflictCandidates = predictions
+      .filter((prediction) => prediction.opId !== context.opId)
+      .map((prediction) => ({
+        ...prediction,
+        scopes: predictionRebaseConflictScopes(prediction),
+        command: prediction,
+      }))
+    const summary = findLivePlayPredictionConflicts({
+      pendingPredictions: conflictCandidates,
+      patches: context.patches,
+    })
+    return new Set(summary.conflicts.map((conflict) => conflict.opId))
+  }
+
+  const predictionConflictResponse = (
+    prediction: LivePlayLocalPrediction,
+    context: LivePlayPatchAdoptionContext,
+    message: string,
+  ): LivePlayCommandResponse => ({
+    ok: false,
+    opId: prediction.opId,
+    mapSlug: context.mapSlug,
+    reason: 'conflict',
+    message,
+    currentRevision: context.nextRevision,
+  })
+
+  const notifyPredictionCorrectedByAuthoritativePatch = (
+    prediction: LivePlayLocalPrediction,
+    context: LivePlayPatchAdoptionContext,
+  ): void => {
+    const message = 'A newer authoritative live-play update corrected a local prediction before this command finished.'
+    options.onCommandRejected?.({
+      reason: 'conflict',
+      message,
+      response: predictionConflictResponse(prediction, context, message),
+    })
+  }
+
+  const beforeLivePlayPatchesApply: UseLivePlayCommandsReturn['beforeLivePlayPatchesApply'] = (context) => {
+    activePredictionPatchAdoptionSession = null
+    const predictions = pendingPredictionsForPatchAdoption(context)
+    if (predictions.length === 0) return
+
+    const acceptedPrediction = context.opId === undefined
+      ? null
+      : predictions.find((prediction) => prediction.opId === context.opId) ?? null
+    const conflictOpIds = conflictOpIdsForPatchAdoption(context, predictions)
+    const rolledBackOpIds = new Set<string>()
+    for (const prediction of predictions) {
+      if (rollbackPredictionForPatchAdoption(prediction)) rolledBackOpIds.add(prediction.opId)
+    }
+
+    activePredictionPatchAdoptionSession = {
+      key: predictionPatchAdoptionSessionKey(context),
+      rolledBackOpIds,
+      acceptedPrediction,
+      conflictingPredictions: predictions.filter((prediction) => conflictOpIds.has(prediction.opId)),
+      reapplyPredictions: predictions.filter((prediction) => (
+        rolledBackOpIds.has(prediction.opId)
+        && prediction.opId !== acceptedPrediction?.opId
+        && !conflictOpIds.has(prediction.opId)
+      )),
+    }
+  }
+
+  const afterLivePlayPatchesApply: UseLivePlayCommandsReturn['afterLivePlayPatchesApply'] = (context) => {
+    const session = activePredictionPatchAdoptionSession
+    activePredictionPatchAdoptionSession = null
+    if (!session || session.key !== predictionPatchAdoptionSessionKey(context)) return
+
+    if (session.acceptedPrediction) removeLocalPrediction(session.acceptedPrediction.opId)
+
+    for (const prediction of session.conflictingPredictions) {
+      removeLocalPrediction(prediction.opId)
+      recordCommandRollbackTrace(prediction, {
+        applied: session.rolledBackOpIds.has(prediction.opId),
+        reason: 'authoritative-conflict',
+        revision: context.nextRevision,
+      })
+      notifyPredictionCorrectedByAuthoritativePatch(prediction, context)
+    }
+
+    for (const prediction of session.reapplyPredictions) {
+      if (!localPredictionRecords.value[prediction.opId]) continue
+      const result = reapplyLivePlayPredictionToMap(options.map?.value, prediction)
+      if (!result.ok) {
+        removeLocalPrediction(prediction.opId)
+        recordCommandRollbackTrace(prediction, {
+          applied: false,
+          reason: `reapply-${result.reason}`,
+          revision: context.nextRevision,
+        })
+        throw new Error(result.message)
+      }
+    }
   }
 
   const outboxErrorMessage = (error: unknown): string => (
@@ -3373,6 +3527,8 @@ export const useLivePlayCommands = (
     checkOutboxCommandStatus,
     abandonOutboxCommand,
     acknowledgeAcceptedRealtimeEvent,
+    beforeLivePlayPatchesApply,
+    afterLivePlayPatchesApply,
     spawnToken,
     sendOutPokemon,
     deleteToken,

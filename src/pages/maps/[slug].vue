@@ -95,6 +95,7 @@ import { getClientId } from '~/utils/clientId'
 import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
 import type { LivePlayLocalPrediction } from '~/utils/livePlayPredictions'
+import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption'
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
@@ -175,10 +176,19 @@ let acknowledgeAcceptedRealtimeEvent = async (event: LivePlayAcceptedRealtimeEve
 }
 
 const emptyLivePlayPendingPredictions: Readonly<Record<string, LivePlayLocalPrediction>> = Object.freeze({})
-const livePlayCommandsForPatchAdoption = shallowRef<Pick<UseLivePlayCommandsReturn, 'pendingPredictions'> | null>(null)
+const livePlayCommandsForPatchAdoption = shallowRef<Pick<
+  UseLivePlayCommandsReturn,
+  'pendingPredictions' | 'beforeLivePlayPatchesApply' | 'afterLivePlayPatchesApply'
+> | null>(null)
 const livePlayPatchAdoptionPendingPredictions = computed<Readonly<Record<string, LivePlayLocalPrediction>>>(() => (
   livePlayCommandsForPatchAdoption.value?.pendingPredictions.value ?? emptyLivePlayPendingPredictions
 ))
+const beforeLivePlayPatchesApply = (context: LivePlayPatchAdoptionContext): void => {
+  livePlayCommandsForPatchAdoption.value?.beforeLivePlayPatchesApply(context)
+}
+const afterLivePlayPatchesApply = (context: LivePlayPatchAdoptionContext): void => {
+  livePlayCommandsForPatchAdoption.value?.afterLivePlayPatchesApply(context)
+}
 
 const {
   map,
@@ -199,6 +209,8 @@ const {
   requestAuthoritativeReconciliation: (reason) => requestLiveTableSnapshot(reason),
   authoritativeReconciliationKey: liveSheetAccessScopeKey,
   pendingLivePlayPredictions: livePlayPatchAdoptionPendingPredictions,
+  beforeLivePlayPatchesApply,
+  afterLivePlayPatchesApply,
   onLivePlayCommandAcceptedEvent: (event) => acknowledgeAcceptedRealtimeEvent(event),
 })
 

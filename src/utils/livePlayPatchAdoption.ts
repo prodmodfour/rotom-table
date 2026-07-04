@@ -5,6 +5,7 @@ export type LivePlayPendingPredictionSnapshot = Readonly<Record<string, LivePlay
 
 export interface LivePlayPatchAdoptionContext {
   readonly mapSlug: string
+  readonly opId?: string
   readonly previousRevision: number
   readonly nextRevision: number
   readonly patches: readonly LivePlayPatch[]
@@ -20,6 +21,7 @@ export interface LivePlayPatchAdoptionHooks {
 
 export interface CreateLivePlayPatchAdoptionContextInput {
   readonly mapSlug: string
+  readonly opId?: string
   readonly previousRevision: number
   readonly nextRevision: number
   readonly patches: readonly LivePlayPatch[]
@@ -28,12 +30,14 @@ export interface CreateLivePlayPatchAdoptionContextInput {
 
 export const createLivePlayPatchAdoptionContext = ({
   mapSlug,
+  opId,
   previousRevision,
   nextRevision,
   patches,
   pendingPredictions,
 }: CreateLivePlayPatchAdoptionContextInput): LivePlayPatchAdoptionContext => ({
   mapSlug,
+  ...(opId === undefined ? {} : { opId }),
   previousRevision,
   nextRevision,
   patches: Object.freeze([...patches]),

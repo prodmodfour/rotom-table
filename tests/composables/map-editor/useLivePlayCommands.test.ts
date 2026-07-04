@@ -35,6 +35,8 @@ import {
   type LivePlayCommandOutboxEntry as AnyLivePlayCommandOutboxEntry,
   type LivePlayMapCommandOutboxEntry,
 } from '~/utils/livePlayCommandOutbox'
+import { applyLivePlayPatchesToMap } from '~/utils/livePlayPatches'
+import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption'
 
 type LivePlayCommandOutboxEntry = LivePlayMapCommandOutboxEntry
 
@@ -465,6 +467,40 @@ const resolvedMoveFixture = (overrides: Partial<LivePlayResolvedMoveResult> = {}
 })
 
 type TestLivePlayPatch = LivePlayAcceptedRealtimeEvent['patches'][number]
+
+type TestPatchAdoptionContextInput = {
+  readonly opId?: string
+  readonly previousRevision?: number
+  readonly revision?: number
+  readonly patches: readonly TestLivePlayPatch[]
+}
+
+const patchAdoptionContext = ({
+  opId = 'op_remote_patch',
+  previousRevision = 4,
+  revision = 5,
+  patches,
+}: TestPatchAdoptionContextInput): LivePlayPatchAdoptionContext => ({
+  mapSlug: 'arena-map',
+  opId,
+  previousRevision,
+  nextRevision: revision,
+  patches,
+  pendingPredictions: {},
+})
+
+const tokenPositionPatch = (
+  placementId: string,
+  position: { readonly x: number; readonly y: number; readonly z: number },
+  revision = 5,
+): TestLivePlayPatch => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+  mapSlug: 'arena-map',
+  revision,
+  scopes: [{ kind: 'token', placementId, field: 'position' }],
+  payload: { placementId, position },
+})
 
 const moveStatePatchForMove = (
   move: LivePlayResolvedMoveResult,
@@ -991,6 +1027,114 @@ describe('useLivePlayCommands', () => {
     expect(actions.pendingPredictionCount.value).toBe(0)
     expect(actions.pendingPredictions.value).toEqual({})
     expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+  })
+
+  it('rebases non-conflicting local predictions around remote accepted patches', async () => {
+    const map = ref(mapFixture())
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      await postGate.promise
+      return acceptedMoveTokenResponse(command, { previousRevision: 5, revision: 6 })
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+    })
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 2 } })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    const prediction = Object.values(actions.pendingPredictions.value)[0]
+    expect(tokenPosition(map.value)).toEqual({ x: 4, y: 0, z: 2 })
+
+    const remotePatch = tokenPositionPatch('target-token', { x: 3, y: 0, z: 1 }, 5)
+    const context = patchAdoptionContext({ opId: 'op_remote_moveb', patches: [remotePatch] })
+    actions.beforeLivePlayPatchesApply(context)
+    expect(tokenPosition(map.value)).toEqual({ x: 1, y: 0, z: 1 })
+
+    expect(applyLivePlayPatchesToMap({
+      map: map.value,
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [remotePatch],
+    })).toMatchObject({ ok: true, applied: true, revision: 5 })
+    actions.afterLivePlayPatchesApply(context)
+    actions.afterLivePlayPatchesApply(context)
+
+    expect(map.value.revision).toBe(5)
+    expect(tokenPosition(map.value)).toEqual({ x: 4, y: 0, z: 2 })
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 3, y: 0, z: 1 })
+    expect(actions.pendingPredictions.value[prediction!.opId]).toBeDefined()
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId: prediction!.opId })
+    expect(map.value.revision).toBe(6)
+    expect(tokenPosition(map.value)).toEqual({ x: 4, y: 0, z: 2 })
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 3, y: 0, z: 1 })
+    expect(actions.pendingPredictions.value).toEqual({})
+  })
+
+  it('cancels conflicting local predictions before applying same-token remote patches', async () => {
+    const map = ref(mapFixture())
+    const onCommandRejected = vi.fn()
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      await postGate.promise
+      return {
+        ok: false,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        reason: 'conflict',
+        message: 'Conflict',
+        currentRevision: 5,
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+      onCommandRejected,
+    })
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 2 } })
+
+    const prediction = Object.values(actions.pendingPredictions.value)[0]
+    expect(prediction).toBeDefined()
+    expect(tokenPosition(map.value)).toEqual({ x: 4, y: 0, z: 2 })
+
+    const remotePatch = tokenPositionPatch('token-pikachu', { x: 2, y: 0, z: 1 }, 5)
+    const context = patchAdoptionContext({ opId: 'op_remote_movea', patches: [remotePatch] })
+    actions.beforeLivePlayPatchesApply(context)
+    expect(tokenPosition(map.value)).toEqual({ x: 1, y: 0, z: 1 })
+    expect(applyLivePlayPatchesToMap({
+      map: map.value,
+      mapSlug: 'arena-map',
+      previousRevision: 4,
+      revision: 5,
+      patches: [remotePatch],
+    })).toMatchObject({ ok: true, applied: true, revision: 5 })
+    actions.afterLivePlayPatchesApply(context)
+
+    expect(map.value.revision).toBe(5)
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(onCommandRejected).toHaveBeenCalledTimes(1)
+    expect(onCommandRejected).toHaveBeenCalledWith(expect.objectContaining({
+      reason: 'conflict',
+      response: expect.objectContaining({
+        opId: prediction!.opId,
+        currentRevision: 5,
+      }),
+    }))
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: false, message: 'Conflict', opId: prediction!.opId })
+    expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })
+    expect(map.value.revision).toBe(5)
   })
 
   it('acknowledges accepted SSE for any local pending opId, not only the latest active send', async () => {

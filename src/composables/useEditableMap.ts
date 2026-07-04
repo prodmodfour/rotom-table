@@ -556,6 +556,7 @@ export const useEditableMap = (
     event: LivePlayAcceptedRealtimeEvent,
   ): LivePlayPatchAdoptionContext => createLivePlayPatchAdoptionContext({
     mapSlug: event.mapSlug,
+    opId: event.opId,
     previousRevision: event.previousRevision,
     nextRevision: event.revision,
     patches: event.patches,

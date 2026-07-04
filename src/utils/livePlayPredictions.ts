@@ -460,6 +460,16 @@ export const applyLivePlayPredictionToMap = (
   { requireBaseRevision: true },
 )
 
+export const reapplyLivePlayPredictionToMap = (
+  map: TabletopMap | null | undefined,
+  prediction: LivePlayLocalPrediction,
+): LivePlayPredictionApplyResult => applyPredictionPlacement(
+  map,
+  prediction,
+  prediction.predictedPlacement,
+  { requireBaseRevision: false },
+)
+
 export const rollbackLivePlayPredictionFromMap = (
   map: TabletopMap | null | undefined,
   prediction: LivePlayLocalPrediction,

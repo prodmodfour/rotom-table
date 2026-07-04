@@ -145,7 +145,7 @@ Status: DONE
 
 ## 005 — LP-S2-005 — Rebase non-conflicting predictions after remote accepted patches
 
-Status: TODO
+Status: DONE
 
 **Goal:** Preserve the immediate local feel while still applying other clients’ authoritative updates in order.
 
