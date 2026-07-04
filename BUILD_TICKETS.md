@@ -351,31 +351,60 @@ Status: DONE
 
 ---
 
-## 012 — LP-S4-012 — Implement server/API/client flow for terrain voxel batches
+## 012A — LP-S4-012A — Implement server/API flow for terrain voxel batches
 
 Status: TODO
 
-**Goal:** Let terrain brush-like live-play edits commit in one authoritative operation.
+**Goal:** Let terrain voxel batch command requests reach the authoritative server executor and route as one atomic live-play operation.
 
 **Primary files:**
 
 - server executor and route files
-- `src/composables/map-editor/useLivePlayCommands.ts`
 - `src/utils/apiRoutes.ts`
-- server/composable tests
+- shared result validation files if needed
+- server/route tests
 
 **Work:**
 
-- Validate every voxel/cell against map bounds and permission rules.
-- Commit the batch atomically.
-- Return patches that let clients update terrain without full-map adoption when possible.
-- Ensure idempotent retry and conflict rejection work.
+- Validate every voxel/cell against map bounds and permission rules in the server executor.
+- Commit the batch atomically and append durable realtime rows before commit.
+- Add the terrain voxel batch route, route constant, and terminal result validation/status support needed for exact command bodies.
+- Return patches that describe terrain changes without full-map adoption when practical.
+- Add targeted server/route tests for accepted, invalid-cell, stale/conflict, and idempotent retry paths.
 
 **Acceptance:**
 
-- Valid terrain batches apply atomically.
-- Invalid cell or stale revision rejects the whole batch.
-- Retry with same `opId` returns the same terminal result.
+- Valid terrain batch route requests apply atomically and return an accepted terminal result with terrain patches.
+- Invalid cell, stale revision, or conflicting requests reject the whole batch without partial terrain writes.
+- Retrying the same `opId` and command body returns the stored terminal result without duplicate effects or realtime events.
+
+---
+
+## 012B — LP-S4-012B — Wire client terrain voxel batch dispatcher
+
+Status: TODO
+
+**Goal:** Let the map client enqueue, send, recover, and reconcile terrain voxel batches through the durable outbox.
+
+**Primary files:**
+
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/utils/apiRoutes.ts`
+- composable tests
+
+**Work:**
+
+- Add an `editTerrainVoxels` dispatcher that builds command bodies with stable `opId`, base revision, scopes, and bounded payloads.
+- Reuse patch-first accepted-response handling and existing recovery/status behavior.
+- Ensure rejected, uncertain, abandoned, duplicate-terminal, and retry/status paths use the exact command body and `opId`.
+- Keep complex terrain side effects unpredicted locally beyond existing pending/correction affordances.
+- Add focused composable tests for accepted, rejected, uncertain, duplicate terminal, retry/status, and scope-aware blocking behavior.
+
+**Acceptance:**
+
+- `editTerrainVoxels` enqueues, claims, sends, accepts, rejects, retries, and status-checks like existing live-play commands.
+- Accepted terrain patches reconcile client state without full-map adoption when practical.
+- Scope-aware blocking prevents conflicting terrain edits while allowing unrelated token actions.
 
 ---
 
@@ -582,14 +611,15 @@ Status: TODO
 9. `LP-S4-009`
 10. `LP-S4-010`
 11. `LP-S4-011`
-12. `LP-S4-012`
-13. `LP-S4-013`
-14. `LP-S4-014`
-15. `LP-S4-015`
-16. `LP-S4-016`
-17. `LP-S4-017`
-18. `LP-S4-018`
-19. `LP-S4-019`
+12. `LP-S4-012A`
+13. `LP-S4-012B`
+14. `LP-S4-013`
+15. `LP-S4-014`
+16. `LP-S4-015`
+17. `LP-S4-016`
+18. `LP-S4-017`
+19. `LP-S4-018`
+20. `LP-S4-019`
 
 ## Sprint exit criteria
 
