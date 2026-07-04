@@ -184,6 +184,7 @@ const roomDefinitionForSection = (kind: string) => props.roomDefinition(kind as 
           :active-hazard-def="activeHazardDef"
           :hazard-palette="hazardPalette"
           :hazard-count="hazardCount"
+          :hazard-clear-pending="hazardClearPending"
           @set-hazard-tool="emit('set-hazard-tool', $event)"
           @select-hazard-kind="emit('select-hazard-kind', $event)"
           @clear-all-hazards="emit('clear-all-hazards')"

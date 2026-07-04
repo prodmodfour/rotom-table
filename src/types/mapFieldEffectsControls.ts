@@ -16,6 +16,7 @@ export interface FieldEffectsControlsProps {
   fieldEffectCount: number
   hazardMode: boolean
   hazardCount: number
+  hazardClearPending: boolean
   hazardTool: BuildTool
   hazardKind: MapHazardKind
   activeHazardDef: MapHazardDefinition

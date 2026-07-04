@@ -217,7 +217,7 @@ Status: DONE
 
 ## 007 — LP-S4-007 — Replace clear-all hazards UI loop with `clearHazards`
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make the existing “clear all hazards” user action send one command instead of many.
 

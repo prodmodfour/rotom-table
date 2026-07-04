@@ -497,6 +497,12 @@ const livePlayGlobalTransportPending = computed(() => (
   livePlayCommands.transportStatus.value === 'sending'
   && livePlayUnpredictedPendingCommandCount.value > 0
 ))
+const livePlayClearHazardsPending = computed(() => (
+  !isSetupEditMode()
+  && Object.values(livePlayCommands.pendingCommands.value).some(
+    (command) => command.commandType === LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  )
+))
 const livePlayLatencyDebugEnabled = computed(() => route.query.debugLivePlayLatency === '1')
 const livePlayConnectionState = computed<LivePlayConnectionState>(() => {
   const visibleState = livePlayStateMachine.state.value === 'saving-command' && !livePlayGlobalTransportPending.value
@@ -1258,12 +1264,7 @@ const clearAllHazardsFromMenu = async () => {
   )
   if (!ok) return
 
-  for (const hazard of mapHazards.value.map((item) => ({ ...item }))) {
-    const result = await livePlayCommands.removeHazard({
-      cell: { x: hazard.x, y: hazard.y, z: hazard.z, kind: hazard.kind },
-    })
-    if (!result.dispatched) break
-  }
+  await livePlayCommands.clearHazards({ mode: 'all' })
 }
 
 const setWeatherFromMenu = async (kind: MapWeatherKind) => {
@@ -2646,6 +2647,7 @@ useMapDimensionReconciliation({
         :field-effect-count="fieldEffectCount"
         :hazard-mode="hazardMode"
         :hazard-count="hazardCount"
+        :hazard-clear-pending="livePlayClearHazardsPending"
         :hazard-tool="hazardTool"
         :hazard-kind="hazardKind"
         :active-hazard-def="activeHazardDef"

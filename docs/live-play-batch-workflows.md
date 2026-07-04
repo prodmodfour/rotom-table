@@ -1,6 +1,6 @@
 # Live-play batch workflow audit
 
-This audit records the live-play workflows that still make multiple authoritative requests for one table intention, plus the adjacent multi-resource actions that should share Sprint 4 batch semantics. It is intentionally descriptive: no behavior changes were made for this ticket.
+This audit records the live-play workflows that still make multiple authoritative requests for one table intention, plus the adjacent multi-resource actions that should share Sprint 4 batch semantics. It began as a descriptive audit; implementation notes are kept current as Sprint 4 tickets land.
 
 ## Batch selection rules
 
@@ -31,7 +31,7 @@ The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` pa
 
 | Workflow | Current live-play behavior | Classification | Why |
 | --- | --- | --- | --- |
-| Clear all hazards from the map menu | Loops over every current hazard and sends one `removeHazard` command per hazard cell. | **Sprint 4** | High-friction GM cleanup, deterministic map-lane mutation, no hidden/random state, and currently N requests for one confirmed action. |
+| Clear all hazards from the map menu | Since LP-S4-007, live play confirms once and sends one `clearHazards` batch command; setup/edit still clears local setup state. | **Sprint 4** | High-friction GM cleanup, deterministic map-lane mutation, no hidden/random state, and previously N requests for one confirmed action. |
 | Clear all/weather/terrain/room field effects | Already sends one `removeFieldEffect` command for category/all clears. | **Sprint 4** | Not currently an N-request loop, but it is a multi-resource clear action that should use an explicit clear batch contract, bounded summaries, and batch recovery labels. |
 | Repeated terrain voxel edits | Each live-play terrain click sends one `buildTerrainVoxel` or `removeTerrainVoxel` command. | **Sprint 4** | Brush-like terrain edits are common, bounded by cells, deterministic, and already have precise terrain-cell patches. |
 | Repeated hazard cell edits | Each live-play hazard click sends one `placeHazard` or `removeHazard` command. | **Sprint 4** | Hazard brush strokes map cleanly to bounded add/remove cell operations and should conflict with clear-hazards/single-hazard edits. |
@@ -46,18 +46,18 @@ The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` pa
 
 ### 1. Clear all hazards
 
-- **Current UI path:** `src/pages/maps/[slug].vue` `clearAllHazardsFromMenu` confirms once, then iterates `mapHazards.value` and awaits `livePlayCommands.removeHazard(...)` for each hazard.
-- **Current command route(s):** legacy UI cleanup still calls `POST /api/maps/hazards/remove` via `MAP_API_PATHS.removeHazard`; the Sprint 4 batch endpoint is `POST /api/maps/hazards/clear` via `MAP_API_PATHS.clearHazards`.
-- **Current command type:** `removeHazard`.
-- **Current payload:** `{ cell: { x, y, z, kind } }` for each hazard snapshot entry.
+- **Current UI path:** `src/pages/maps/[slug].vue` `clearAllHazardsFromMenu` confirms once, keeps setup/edit mode on the local `clearAllHazards()` path, and dispatches one live-play `livePlayCommands.clearHazards({ mode: 'all' })` request.
+- **Current command route(s):** menu cleanup calls `POST /api/maps/hazards/clear` via `MAP_API_PATHS.clearHazards`; single-cell hazard erasing still uses `POST /api/maps/hazards/remove` via `MAP_API_PATHS.removeHazard`.
+- **Current command type:** `clearHazards` for clear-all menu cleanup.
+- **Current payload:** `{ mode: 'all' }`.
 - **Current command scopes:** `[{ kind: 'map', lane: 'hazards' }]`.
 - **Authority scope:** GM-only map-effect authority. Setup/edit mode uses local map mutation and must remain unchanged. Server validation checks command shape, hazard kind, map revision/conflict state, and map bounds.
 - **Likely batch conflict scopes:**
   - clear-all and clear-by-kind modes conflict with the broad map `hazards` lane;
   - explicit-cell mode uses precise hazard-cell descriptors for each bounded cell;
   - explicit-cell descriptors still conflict with broad hazard clears and with single/batch hazard edits that use the broad map `hazards` lane.
-- **Current accepted patch shape:** one `map.hazards` patch per removed cell with `cell`, `previous`, `current`, and `removed` hazards for that cell. The route response may also include the full authoritative hazards list/map.
-- **Expected batch patch shape:** one accepted terminal result. Prefer a `map.hazards` patch that describes removed cells/kinds and the final authoritative hazards list or per-cell final states, precise enough for clients to reconcile without whole-map replacement.
+- **Current accepted patch shape:** one accepted terminal result with a `map.hazards` patch describing the clear mode, previous hazards, removed hazards, and final authoritative hazards list. The route response may also include the full authoritative hazards list/map.
+- **Expected batch patch shape:** continue using a `map.hazards` patch that describes removed cells/kinds and the final authoritative hazards list or per-cell final states, precise enough for clients to reconcile without whole-map replacement.
 - **Local prediction safety:** not currently predicted. Keep batch hazard cleanup authoritative/pending-only; do not clear local hazards until accepted patches/reconciliation arrive.
 - **Sprint 4 decision:** first batch command. It is the clearest N-command user action and exercises idempotency, conflict scopes, accepted patches, and recovery UI without random or hidden state.
 

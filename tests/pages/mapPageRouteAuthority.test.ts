@@ -239,6 +239,29 @@ describe('map page route authority', () => {
     expect(panel).not.toContain('payload.')
   })
 
+  it('wires clear-all hazards through one live-play batch command while setup edit remains local', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+    const fieldEffectsPanel = readSource('src/components/map/FieldEffectsPanel.vue')
+    const hazardControls = readSource('src/components/map/HazardBuilderControls.vue')
+    const handlerStart = mapPage.indexOf('const clearAllHazardsFromMenu = async () => {')
+    const handlerEnd = mapPage.indexOf('const setWeatherFromMenu = async', handlerStart)
+
+    expect(handlerStart).toBeGreaterThan(-1)
+    expect(handlerEnd).toBeGreaterThan(handlerStart)
+
+    const handler = mapPage.slice(handlerStart, handlerEnd)
+    expect(handler).toContain('if (isSetupEditMode()) {\n    clearAllHazards()\n    return\n  }')
+    expect(handler).toContain("await livePlayCommands.clearHazards({ mode: 'all' })")
+    expect(handler).not.toContain('for (const hazard')
+    expect(handler).not.toContain('livePlayCommands.removeHazard')
+    expect(mapPage).toContain('const livePlayClearHazardsPending = computed(() => (')
+    expect(mapPage).toContain('command.commandType === LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS')
+    expect(mapPage).toContain(':hazard-clear-pending="livePlayClearHazardsPending"')
+    expect(fieldEffectsPanel).toContain(':hazard-clear-pending="hazardClearPending"')
+    expect(hazardControls).toContain('hazardClearPending: boolean')
+    expect(hazardControls).toContain("{{ hazardClearPending ? 'Clearing hazards…' : 'Clear hazards' }}")
+  })
+
   it('uses the saved map route regardless of the session query parameter', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
 

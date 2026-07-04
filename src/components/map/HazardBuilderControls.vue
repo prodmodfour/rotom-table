@@ -14,6 +14,7 @@ defineProps<{
   activeHazardDef: MapHazardDefinition
   hazardPalette: MapHazardDefinition[]
   hazardCount: number
+  hazardClearPending: boolean
 }>()
 
 const emit = defineEmits<{
@@ -44,8 +45,8 @@ const emit = defineEmits<{
   </BuilderHintText>
 
   <BuilderBulkActionRow>
-    <BuilderBulkButton variant="danger" :disabled="!hazardCount" @click="emit('clear-all-hazards')">
-      Clear hazards
+    <BuilderBulkButton variant="danger" :disabled="!hazardCount || hazardClearPending" @click="emit('clear-all-hazards')">
+      {{ hazardClearPending ? 'Clearing hazards…' : 'Clear hazards' }}
     </BuilderBulkButton>
   </BuilderBulkActionRow>
 </template>
