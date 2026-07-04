@@ -25,6 +25,8 @@ Batch contracts use shared, side-effect-free validators from `shared/livePlayBat
 
 Unique grid-cell helpers reject duplicate cells by default so mixed add/remove contracts cannot hide contradictory operations. Idempotent clear-style contracts may opt into duplicate normalization, which preserves the first occurrence and drops later repeats. Strict object parsing rejects unknown durable-state fields instead of carrying private/profile/debug data through batch payloads.
 
+The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` payload modes. `all` and `kind` use the conservative map `hazards` lane scope; `cells` uses bounded, normalized explicit hazard-cell scopes so unrelated cell batches can remain independent while still conflicting with broad hazard-lane clears.
+
 ## Summary classification
 
 | Workflow | Current live-play behavior | Classification | Why |
@@ -51,9 +53,9 @@ Unique grid-cell helpers reject duplicate cells by default so mixed add/remove c
 - **Current command scopes:** `[{ kind: 'map', lane: 'hazards' }]`.
 - **Authority scope:** GM-only map-effect authority. Setup/edit mode uses local map mutation and must remain unchanged. Server validation checks command shape, hazard kind, map revision/conflict state, and map bounds.
 - **Likely batch conflict scopes:**
-  - clear-all mode should conflict with the broad map hazard lane;
-  - explicit-cell mode should still conflict with broad hazard clears and with any single/batch hazard edit touching the same cell/kind;
-  - until a hazard-cell descriptor exists, use the conservative map `hazards` lane rather than under-scoping.
+  - clear-all and clear-by-kind modes conflict with the broad map `hazards` lane;
+  - explicit-cell mode uses precise hazard-cell descriptors for each bounded cell;
+  - explicit-cell descriptors still conflict with broad hazard clears and with single/batch hazard edits that use the broad map `hazards` lane.
 - **Current accepted patch shape:** one `map.hazards` patch per removed cell with `cell`, `previous`, `current`, and `removed` hazards for that cell. The route response may also include the full authoritative hazards list/map.
 - **Expected batch patch shape:** one accepted terminal result. Prefer a `map.hazards` patch that describes removed cells/kinds and the final authoritative hazards list or per-cell final states, precise enough for clients to reconcile without whole-map replacement.
 - **Local prediction safety:** not currently predicted. Keep batch hazard cleanup authoritative/pending-only; do not clear local hazards until accepted patches/reconciliation arrive.

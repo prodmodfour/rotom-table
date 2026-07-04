@@ -1,6 +1,7 @@
 export * from './livePlayBatchCommands'
 
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
+import type { ClearHazardsPayload } from './livePlayBatchCommands'
 import { isSheetKind, type SheetKind } from './sheets'
 import type {
   GridAnchor,
@@ -53,6 +54,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   PREVIOUS_INITIATIVE: 'previousInitiative',
   PLACE_HAZARD: 'placeHazard',
   REMOVE_HAZARD: 'removeHazard',
+  CLEAR_HAZARDS: 'clearHazards',
   SET_FIELD_EFFECT: 'setFieldEffect',
   REMOVE_FIELD_EFFECT: 'removeFieldEffect',
   TICK_FIELD_EFFECT_DURATIONS: 'tickFieldEffectDurations',
@@ -89,6 +91,7 @@ export const LIVE_PLAY_MAP_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
   LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
+  LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
   LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
@@ -223,6 +226,11 @@ export type ShopCheckoutTrainerSheetScope = LivePlaySheetScope & {
 }
 
 export type LivePlayScope = LivePlayMapScope | LivePlayTokenScope | LivePlaySheetScope
+
+export type LivePlayHazardsScope = LivePlayMapScope & { readonly lane: 'hazards' }
+export type LivePlayHazardCellScope = LivePlayHazardsScope & { readonly cell: GridAnchor }
+export type ClearHazardsLivePlayScope = LivePlayHazardsScope | LivePlayHazardCellScope
+
 export type ShopCheckoutLivePlayScope =
   | LivePlayShopScope
   | LivePlayGroupInventoryScope
@@ -478,6 +486,30 @@ export const createShopCheckoutCommandScopes = (
   createShopCheckoutDeliveryTargetScope(payload.deliveryTarget),
 ]
 
+const cloneScopeCell = (cell: GridAnchor): GridAnchor => ({
+  x: cell.x,
+  y: cell.y,
+  z: cell.z,
+})
+
+export const createLivePlayHazardsScope = (): LivePlayHazardsScope => ({
+  kind: 'map',
+  lane: 'hazards',
+})
+
+export const createLivePlayHazardCellScope = (cell: GridAnchor): LivePlayHazardCellScope => ({
+  ...createLivePlayHazardsScope(),
+  cell: cloneScopeCell(cell),
+})
+
+export const createClearHazardsCommandScopes = (
+  payload: ClearHazardsPayload,
+): readonly ClearHazardsLivePlayScope[] => (
+  payload.mode === 'cells'
+    ? payload.cells.map((cell) => createLivePlayHazardCellScope(cell))
+    : [createLivePlayHazardsScope()]
+)
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -602,6 +634,12 @@ export type RemoveHazardLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
   RemoveHazardPayload,
   LivePlayMapScope
+>
+
+export type ClearHazardsLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  ClearHazardsPayload,
+  ClearHazardsLivePlayScope
 >
 
 export type SetFieldEffectLivePlayCommand = LivePlayCommandEnvelope<
@@ -785,7 +823,7 @@ export interface MapMetadataUpdatedPatchPayload {
   readonly progressedOrderEffectIds?: readonly string[]
 }
 
-export interface HazardsUpdatedPatchPayload {
+export interface HazardCellUpdatedPatchPayload {
   readonly command:
     | typeof LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD
     | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD
@@ -795,6 +833,20 @@ export interface HazardsUpdatedPatchPayload {
   readonly placed?: MapHazardV2
   readonly removed: readonly MapHazardV2[]
 }
+
+export interface HazardsClearedPatchPayload {
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS
+  readonly mode: ClearHazardsPayload['mode']
+  readonly kind?: MapHazardKind
+  readonly cells?: readonly GridAnchor[]
+  /** Authoritative hazard lane before the transaction. */
+  readonly previous: readonly MapHazardV2[]
+  /** Authoritative hazard lane after the transaction. */
+  readonly current: readonly MapHazardV2[]
+  readonly removed: readonly MapHazardV2[]
+}
+
+export type HazardsUpdatedPatchPayload = HazardCellUpdatedPatchPayload | HazardsClearedPatchPayload
 
 export interface FieldEffectsUpdatedPatchPayload {
   readonly command:
@@ -1212,6 +1264,8 @@ type MutableIssueList = LivePlayCommandValidationIssue[]
 
 const EXPECTED_OBJECT = 'object'
 const EXPECTED_NON_EMPTY_STRING = 'non-empty string'
+const EXPECTED_GRID_COORDINATE = 'safe non-negative integer grid coordinate'
+const MAP_SCOPE_CELL_FIELDS = ['x', 'y', 'z'] as const
 
 const hasOwn = (record: UnknownRecord, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
@@ -1221,6 +1275,9 @@ const isRecord = (value: unknown): value is UnknownRecord =>
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0
+
+const isGridCoordinate = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 
 const describeReceived = (value: unknown): string => {
   if (value === null) return 'null'
@@ -1262,6 +1319,64 @@ const validateRequiredFields = (
   }
 }
 
+const validateMapScopeCell = (
+  scope: UnknownRecord,
+  path: string,
+  issues: MutableIssueList,
+): void => {
+  if (!hasOwn(scope, 'cell')) return
+
+  if (scope.lane !== 'hazards') {
+    addIssue(
+      issues,
+      `${path}.cell`,
+      'invalid-map-scope',
+      `${path}.cell is only supported for map hazards scopes.`,
+      'hazards map scope cell',
+      scope.cell,
+    )
+    return
+  }
+
+  if (!isRecord(scope.cell)) {
+    addIssue(
+      issues,
+      `${path}.cell`,
+      'invalid-map-scope',
+      `${path}.cell must be a grid cell object when provided.`,
+      EXPECTED_OBJECT,
+      scope.cell,
+    )
+    return
+  }
+
+  for (const coordinate of MAP_SCOPE_CELL_FIELDS) {
+    if (!isGridCoordinate(scope.cell[coordinate])) {
+      addIssue(
+        issues,
+        `${path}.cell.${coordinate}`,
+        'invalid-map-scope',
+        `${path}.cell.${coordinate} must be a safe non-negative integer grid coordinate.`,
+        EXPECTED_GRID_COORDINATE,
+        scope.cell[coordinate],
+      )
+    }
+  }
+
+  for (const field of Object.keys(scope.cell)) {
+    if (!(MAP_SCOPE_CELL_FIELDS as readonly string[]).includes(field)) {
+      addIssue(
+        issues,
+        `${path}.cell.${field}`,
+        'invalid-map-scope',
+        `${path}.cell.${field} is not supported on live-play map hazard cell scopes.`,
+        MAP_SCOPE_CELL_FIELDS.join(' | '),
+        scope.cell[field],
+      )
+    }
+  }
+}
+
 const validateMapScope = (
   scope: UnknownRecord,
   path: string,
@@ -1277,6 +1392,8 @@ const validateMapScope = (
       scope.lane,
     )
   }
+
+  validateMapScopeCell(scope, path, issues)
 }
 
 const validateTokenScope = (

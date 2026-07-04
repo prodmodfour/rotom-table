@@ -47,6 +47,13 @@ export type LivePlayScopeConflictDescriptor =
       readonly label: string
     }
   | {
+      readonly kind: 'hazard-cell'
+      readonly x: number
+      readonly y: number
+      readonly z: number
+      readonly label: string
+    }
+  | {
       readonly kind: 'unknown'
       readonly label: string
     }
@@ -135,6 +142,14 @@ const terrainCellDescriptor = (cell: GridCell): LivePlayScopeConflictDescriptor 
   label: `terrain cell ${cell.x},${cell.y},${cell.z}`,
 })
 
+const hazardCellDescriptor = (cell: GridCell): LivePlayScopeConflictDescriptor => ({
+  kind: 'hazard-cell',
+  x: cell.x,
+  y: cell.y,
+  z: cell.z,
+  label: `hazard cell ${cell.x},${cell.y},${cell.z}`,
+})
+
 const descriptorForScope = (
   scope: unknown,
   terrainCell: GridCell | null,
@@ -168,7 +183,12 @@ const descriptorForScope = (
 
   if (scope.kind === 'map') {
     if (!MAP_SCOPE_LANES.has(scope.lane)) return unknownDescriptor('unknown map scope')
-    if (scope.lane === 'terrain' && terrainCell) return terrainCellDescriptor(terrainCell)
+    const scopedCell = parseGridCell(scope.cell)
+    if (scope.lane === 'hazards' && scopedCell) return hazardCellDescriptor(scopedCell)
+    if (scope.lane === 'terrain' && (scopedCell ?? terrainCell)) {
+      const resolvedTerrainCell = scopedCell ?? terrainCell
+      return resolvedTerrainCell ? terrainCellDescriptor(resolvedTerrainCell) : unknownDescriptor('unknown terrain cell scope')
+    }
     return {
       kind: 'map-lane',
       lane: scope.lane as LivePlayMapScopeLane,
@@ -183,6 +203,7 @@ const descriptorKey = (descriptor: LivePlayScopeConflictDescriptor): string => {
   if (descriptor.kind === 'token-field') return `${descriptor.kind}:${descriptor.placementId}:${descriptor.field}`
   if (descriptor.kind === 'sheet-field') return `${descriptor.kind}:${descriptor.sheetKind}:${descriptor.sheetSlug}:${descriptor.field}`
   if (descriptor.kind === 'terrain-cell') return `${descriptor.kind}:${descriptor.x}:${descriptor.y}:${descriptor.z}`
+  if (descriptor.kind === 'hazard-cell') return `${descriptor.kind}:${descriptor.x}:${descriptor.y}:${descriptor.z}`
   if (descriptor.kind === 'map-lane') return `${descriptor.kind}:${descriptor.lane}`
   return `${descriptor.kind}:${descriptor.label}`
 }
@@ -211,6 +232,10 @@ const broadTerrainScopeConflictsWith = (descriptor: LivePlayScopeConflictDescrip
   (descriptor.kind === 'map-lane' && descriptor.lane === 'terrain') || descriptor.kind === 'terrain-cell'
 )
 
+const broadHazardsScopeConflictsWith = (descriptor: LivePlayScopeConflictDescriptor): boolean => (
+  (descriptor.kind === 'map-lane' && descriptor.lane === 'hazards') || descriptor.kind === 'hazard-cell'
+)
+
 const descriptorsConflict = (
   left: LivePlayScopeConflictDescriptor,
   right: LivePlayScopeConflictDescriptor,
@@ -219,11 +244,16 @@ const descriptorsConflict = (
 
   if (left.kind === 'map-lane' && left.lane === 'terrain') return broadTerrainScopeConflictsWith(right)
   if (right.kind === 'map-lane' && right.lane === 'terrain') return broadTerrainScopeConflictsWith(left)
+  if (left.kind === 'map-lane' && left.lane === 'hazards') return broadHazardsScopeConflictsWith(right)
+  if (right.kind === 'map-lane' && right.lane === 'hazards') return broadHazardsScopeConflictsWith(left)
 
   if (left.kind !== right.kind) return false
 
   if (left.kind === 'map-lane' && right.kind === 'map-lane') return left.lane === right.lane
   if (left.kind === 'terrain-cell' && right.kind === 'terrain-cell') {
+    return left.x === right.x && left.y === right.y && left.z === right.z
+  }
+  if (left.kind === 'hazard-cell' && right.kind === 'hazard-cell') {
     return left.x === right.x && left.y === right.y && left.z === right.z
   }
   if (left.kind === 'token-field' && right.kind === 'token-field') {

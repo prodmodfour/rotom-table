@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   LIVE_PLAY_COMMAND_TYPES,
+  createClearHazardsCommandScopes,
+  type ClearHazardsPayload,
   type LivePlayMapScope,
   type LivePlayScope,
   type LivePlaySheetScope,
@@ -36,6 +38,12 @@ const terrainCommand = (x: number, y: number, z: number) => ({
   payload: {
     voxel: { x, y, z, materialId: 'stone' },
   },
+})
+
+const clearHazardsCommand = (payload: ClearHazardsPayload) => ({
+  type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  scopes: createClearHazardsCommandScopes(payload),
+  payload,
 })
 
 describe('live-play scope conflict utilities', () => {
@@ -98,6 +106,26 @@ describe('live-play scope conflict utilities', () => {
       terrainCommand(2, 0, 3),
       terrainCommand(4, 0, 3),
     )).toBe(false)
+  })
+
+  it('classifies clearHazards cells precisely while broad hazard scopes stay conservative', () => {
+    const cellCommand = clearHazardsCommand({ mode: 'cells', cells: [{ x: 2, y: 0, z: 3 }] })
+
+    expect(livePlayScopeConflictDescriptors(cellCommand)).toEqual([
+      { kind: 'hazard-cell', x: 2, y: 0, z: 3, label: 'hazard cell 2,0,3' },
+    ])
+    expect(livePlayScopesConflict(
+      clearHazardsCommand({ mode: 'cells', cells: [{ x: 2, y: 0, z: 3 }] }),
+      clearHazardsCommand({ mode: 'cells', cells: [{ x: 4, y: 0, z: 3 }] }),
+    )).toBe(false)
+    expect(findLivePlayScopeConflict(
+      [mapScope('hazards')],
+      cellCommand,
+    )).toMatchObject({
+      left: { kind: 'map-lane', lane: 'hazards' },
+      right: { kind: 'hazard-cell', x: 2, y: 0, z: 3 },
+      label: 'map lane hazards / hazard cell 2,0,3',
+    })
   })
 
   it('treats unknown scopes conservatively as conflicts', () => {

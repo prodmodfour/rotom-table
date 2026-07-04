@@ -527,6 +527,7 @@ const pendingConflictResourceLabel = (descriptor: LivePlayScopeConflictDescripto
   if (descriptor.kind === 'sheet-field') return `this ${descriptor.sheetKind} sheet ${descriptor.field}`
   if (descriptor.kind === 'map-lane') return `this map ${descriptor.lane} lane`
   if (descriptor.kind === 'terrain-cell') return `terrain cell ${descriptor.x},${descriptor.y},${descriptor.z}`
+  if (descriptor.kind === 'hazard-cell') return `hazard cell ${descriptor.x},${descriptor.y},${descriptor.z}`
   return 'this live-play resource'
 }
 

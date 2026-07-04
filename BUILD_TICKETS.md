@@ -102,7 +102,7 @@ Status: DONE
 
 ## 003 — LP-S4-003 — Add `clearHazards` live-play command contract
 
-Status: TODO
+Status: DONE
 
 **Goal:** Define a first real batch command for clearing hazards in one authoritative operation.
 

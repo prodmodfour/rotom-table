@@ -1,3 +1,5 @@
+import type { MapHazardKind } from '~/types/map'
+
 export const LIVE_PLAY_BATCH_MAX_HAZARD_CELLS = 128 as const
 export const LIVE_PLAY_BATCH_MAX_TERRAIN_VOXELS = 256 as const
 export const LIVE_PLAY_BATCH_MAX_FIELD_EFFECT_OPERATIONS = 16 as const
@@ -16,6 +18,8 @@ export const LIVE_PLAY_BATCH_VALIDATION_CODES = [
   'not-object',
   'missing-field',
   'unknown-field',
+  'invalid-mode',
+  'invalid-kind',
   'invalid-array',
   'empty-array',
   'too-many-items',
@@ -55,6 +59,38 @@ export interface LivePlayBatchGridCell {
   readonly y: number
   readonly z: number
 }
+
+export const LIVE_PLAY_HAZARD_KIND_VALUES = [
+  'spikes',
+  'toxic-spikes',
+  'sticky-web',
+  'stealth-rock',
+  'fire',
+] as const satisfies readonly MapHazardKind[]
+export type LivePlayHazardKind = (typeof LIVE_PLAY_HAZARD_KIND_VALUES)[number]
+
+export const LIVE_PLAY_CLEAR_HAZARDS_MODES = ['all', 'cells', 'kind'] as const
+export type ClearHazardsMode = (typeof LIVE_PLAY_CLEAR_HAZARDS_MODES)[number]
+
+export interface ClearHazardsAllPayload {
+  readonly mode: 'all'
+}
+
+export interface ClearHazardsCellsPayload {
+  readonly mode: 'cells'
+  readonly cells: readonly LivePlayBatchGridCell[]
+  readonly kind?: MapHazardKind
+}
+
+export interface ClearHazardsKindPayload {
+  readonly mode: 'kind'
+  readonly kind: MapHazardKind
+}
+
+export type ClearHazardsPayload =
+  | ClearHazardsAllPayload
+  | ClearHazardsCellsPayload
+  | ClearHazardsKindPayload
 
 /**
  * Duplicate cells reject by default. Use `normalize` only for idempotent batch modes
@@ -139,7 +175,10 @@ const EXPECTED_NON_EMPTY_STRING = 'non-empty string'
 const EXPECTED_GRID_COORDINATE = 'safe non-negative integer grid coordinate'
 
 const BATCH_VALIDATION_CODE_SET = new Set<unknown>(LIVE_PLAY_BATCH_VALIDATION_CODES)
+const LIVE_PLAY_CLEAR_HAZARDS_MODE_SET = new Set<unknown>(LIVE_PLAY_CLEAR_HAZARDS_MODES)
+const LIVE_PLAY_HAZARD_KIND_SET = new Set<unknown>(LIVE_PLAY_HAZARD_KIND_VALUES)
 const GRID_CELL_FIELDS = ['x', 'y', 'z'] as const
+const CLEAR_HAZARDS_PAYLOAD_FIELDS = ['mode', 'cells', 'kind'] as const
 
 const hasOwn = (record: UnknownRecord, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
@@ -200,6 +239,12 @@ const isNonEmptyString = (value: unknown): value is string =>
 export const isLivePlayBatchValidationCode = (
   value: unknown,
 ): value is LivePlayBatchValidationCode => BATCH_VALIDATION_CODE_SET.has(value)
+
+export const isClearHazardsMode = (value: unknown): value is ClearHazardsMode =>
+  LIVE_PLAY_CLEAR_HAZARDS_MODE_SET.has(value)
+
+export const isLivePlayHazardKind = (value: unknown): value is MapHazardKind =>
+  LIVE_PLAY_HAZARD_KIND_SET.has(value)
 
 export const isLivePlayBatchRecord = (value: unknown): value is UnknownRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -436,6 +481,131 @@ export const parseLivePlayBatchHazardCells = (
   duplicatePolicy: options.duplicatePolicy ?? 'reject',
   itemName: options.itemName ?? 'hazard cells',
 })
+
+const unexpectedClearHazardsModeFieldIssue = (
+  path: string,
+  field: string,
+  mode: ClearHazardsMode,
+  received: unknown,
+): LivePlayBatchValidationIssue => ({
+  path: appendPath(path, field),
+  code: 'unknown-field',
+  message: `${appendPath(path, field)} is not supported for clearHazards ${mode} mode.`,
+  expected: mode === 'cells'
+    ? CLEAR_HAZARDS_PAYLOAD_FIELDS.join(' | ')
+    : mode === 'kind'
+      ? 'mode | kind'
+      : 'mode',
+  received: describeReceived(received),
+})
+
+const parseClearHazardsKind = (
+  value: unknown,
+  path: string,
+): LivePlayBatchValidationResult<MapHazardKind> => {
+  if (isLivePlayHazardKind(value)) return success(value)
+  return failure([{
+    path,
+    code: 'invalid-kind',
+    message: `${path} must be a supported hazard kind.`,
+    expected: LIVE_PLAY_HAZARD_KIND_VALUES.join(' | '),
+    received: describeReceived(value),
+  }])
+}
+
+const parseOptionalClearHazardsKind = (
+  record: Readonly<Record<string, unknown>>,
+  path: string,
+): LivePlayBatchValidationResult<MapHazardKind | undefined> => {
+  if (!hasOwn(record, 'kind')) return success(undefined)
+  return parseClearHazardsKind(record.kind, appendPath(path, 'kind'))
+}
+
+export const parseClearHazardsPayload = (
+  value: unknown,
+  path = 'payload',
+): LivePlayBatchValidationResult<ClearHazardsPayload> => {
+  const recordResult = parseLivePlayBatchStrictObject(value, {
+    path,
+    allowedFields: CLEAR_HAZARDS_PAYLOAD_FIELDS,
+    requiredFields: ['mode'],
+    description: 'clearHazards payload',
+  })
+  if (!recordResult.valid) return failure(recordResult.issues)
+
+  const record = recordResult.value
+  const mode = record.mode
+  if (!isClearHazardsMode(mode)) {
+    return failure([{
+      path: appendPath(path, 'mode'),
+      code: 'invalid-mode',
+      message: `${appendPath(path, 'mode')} must be a supported clearHazards mode.`,
+      expected: LIVE_PLAY_CLEAR_HAZARDS_MODES.join(' | '),
+      received: describeReceived(mode),
+    }])
+  }
+
+  if (mode === 'all') {
+    const issues: MutableIssueList = []
+    if (hasOwn(record, 'cells')) {
+      issues.push(unexpectedClearHazardsModeFieldIssue(path, 'cells', mode, record.cells))
+    }
+    if (hasOwn(record, 'kind')) {
+      issues.push(unexpectedClearHazardsModeFieldIssue(path, 'kind', mode, record.kind))
+    }
+    if (issues.length > 0) return failure(issues)
+    return success({ mode })
+  }
+
+  if (mode === 'kind') {
+    const issues: MutableIssueList = []
+    if (hasOwn(record, 'cells')) {
+      issues.push(unexpectedClearHazardsModeFieldIssue(path, 'cells', mode, record.cells))
+    }
+    if (!hasOwn(record, 'kind')) {
+      addIssue(
+        issues,
+        appendPath(path, 'kind'),
+        'missing-field',
+        'clearHazards kind mode must include kind.',
+      )
+    }
+    if (issues.length > 0) return failure(issues)
+
+    const kindResult = parseClearHazardsKind(record.kind, appendPath(path, 'kind'))
+    if (!kindResult.valid) return failure(kindResult.issues)
+    return success({ mode, kind: kindResult.value })
+  }
+
+  const issues: MutableIssueList = []
+  if (!hasOwn(record, 'cells')) {
+    addIssue(
+      issues,
+      appendPath(path, 'cells'),
+      'missing-field',
+      'clearHazards cells mode must include cells.',
+    )
+  }
+  if (issues.length > 0) return failure(issues)
+
+  const cellsResult = parseLivePlayBatchHazardCells(record.cells, {
+    path: appendPath(path, 'cells'),
+    duplicatePolicy: 'normalize',
+  })
+  const kindResult = parseOptionalClearHazardsKind(record, path)
+  if (!cellsResult.valid || !kindResult.valid) {
+    return failure([
+      ...(cellsResult.valid ? [] : cellsResult.issues),
+      ...(kindResult.valid ? [] : kindResult.issues),
+    ])
+  }
+
+  return success({
+    mode,
+    cells: cellsResult.value,
+    ...(kindResult.value === undefined ? {} : { kind: kindResult.value }),
+  })
+}
 
 export const parseLivePlayBatchTerrainVoxelCells = (
   value: unknown,

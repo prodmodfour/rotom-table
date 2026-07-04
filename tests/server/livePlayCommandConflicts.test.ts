@@ -3,8 +3,11 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  createClearHazardsCommandScopes,
   createLivePlayAcceptedResult,
   type BuildTerrainVoxelLivePlayCommand,
+  type ClearHazardsLivePlayCommand,
+  type ClearHazardsPayload,
   type LivePlayCommandAccepted,
   type LivePlayCommandEnvelope,
   type LivePlayMapScope,
@@ -67,6 +70,20 @@ const terrainCommand = (
   type: LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
   scopes: [terrainScope()],
   payload: { voxel: { x, y: 0, z, materialId: 'stone' } },
+  ...overrides,
+})
+
+const clearHazardsCommand = (
+  payload: ClearHazardsPayload,
+  overrides: Partial<ClearHazardsLivePlayCommand> = {},
+): ClearHazardsLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_clearhaz001',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  scopes: createClearHazardsCommandScopes(payload),
+  payload,
   ...overrides,
 })
 
@@ -176,6 +193,48 @@ describe('live-play command conflict detection', () => {
       currentRevision: 5,
       recentAcceptedOps: [prior],
     })).toEqual({ ok: true })
+  })
+
+  it('rejects same hazard cell conflicts while allowing different explicit clearHazards cells', () => {
+    const prior = acceptedOp(clearHazardsCommand(
+      { mode: 'cells', cells: [{ x: 2, y: 0, z: 3 }] },
+      { opId: 'op_clearprior1' },
+    ), 5)
+
+    expect(evaluateLivePlayCommandConflicts({
+      command: clearHazardsCommand(
+        { mode: 'cells', cells: [{ x: 2, y: 0, z: 3 }] },
+        { opId: 'op_clearsame01' },
+      ),
+      baseRevision: 4,
+      currentRevision: 5,
+      recentAcceptedOps: [prior],
+    })).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      message: expect.stringContaining('hazard cell 2,0,3'),
+    })
+
+    expect(evaluateLivePlayCommandConflicts({
+      command: clearHazardsCommand(
+        { mode: 'cells', cells: [{ x: 4, y: 0, z: 3 }] },
+        { opId: 'op_cleardiff01' },
+      ),
+      baseRevision: 4,
+      currentRevision: 5,
+      recentAcceptedOps: [prior],
+    })).toEqual({ ok: true })
+
+    expect(evaluateLivePlayCommandConflicts({
+      command: clearHazardsCommand({ mode: 'all' }, { opId: 'op_clearall001' }),
+      baseRevision: 4,
+      currentRevision: 5,
+      recentAcceptedOps: [prior],
+    })).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      message: expect.stringContaining('hazard cell 2,0,3'),
+    })
   })
 
   it('rejects stale commands safely when accepted operation history is unavailable or incomplete', () => {

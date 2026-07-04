@@ -85,6 +85,13 @@ type ConflictScopeDescriptor =
       readonly z: number
       readonly label: string
     }
+  | {
+      readonly kind: 'hazard-cell'
+      readonly x: number
+      readonly y: number
+      readonly z: number
+      readonly label: string
+    }
 
 interface GridCell {
   readonly x: number
@@ -140,6 +147,10 @@ const terrainCellFromResult = (result: LivePlayCommandAccepted | undefined): Gri
   return payload ? parseGridCell(payload.cell) : null
 }
 
+const cellFromScope = (scope: LivePlayScope): GridCell | null => (
+  isRecord(scope) ? parseGridCell(scope.cell) : null
+)
+
 const tokenScopeFromSheetPatch = (
   result: LivePlayCommandAccepted | undefined,
   patchType: string,
@@ -179,6 +190,14 @@ const terrainCellDescriptor = (cell: GridCell): ConflictScopeDescriptor => ({
   label: `terrain cell ${cell.x},${cell.y},${cell.z}`,
 })
 
+const hazardCellDescriptor = (cell: GridCell): ConflictScopeDescriptor => ({
+  kind: 'hazard-cell',
+  x: cell.x,
+  y: cell.y,
+  z: cell.z,
+  label: `hazard cell ${cell.x},${cell.y},${cell.z}`,
+})
+
 const mapLaneDescriptor = (lane: LivePlayMapScopeLane): ConflictScopeDescriptor => ({
   kind: 'map-lane',
   lane,
@@ -211,6 +230,7 @@ const descriptorKey = (descriptor: ConflictScopeDescriptor): string => {
   if (descriptor.kind === 'token-field') return `${descriptor.kind}:${descriptor.placementId}:${descriptor.field}`
   if (descriptor.kind === 'sheet-field') return `${descriptor.kind}:${descriptor.sheetKind}:${descriptor.sheetSlug}:${descriptor.field}`
   if (descriptor.kind === 'terrain-cell') return `${descriptor.kind}:${descriptor.x}:${descriptor.y}:${descriptor.z}`
+  if (descriptor.kind === 'hazard-cell') return `${descriptor.kind}:${descriptor.x}:${descriptor.y}:${descriptor.z}`
   return `${descriptor.kind}:${descriptor.lane}`
 }
 
@@ -293,8 +313,15 @@ const descriptorsForScopes = (
       continue
     }
 
-    if (scope.lane === 'terrain' && terrainCell) {
-      descriptors.push(terrainCellDescriptor(terrainCell))
+    const scopedCell = cellFromScope(scope)
+    if (scope.lane === 'hazards' && scopedCell) {
+      descriptors.push(hazardCellDescriptor(scopedCell))
+      continue
+    }
+
+    const resolvedTerrainCell = scopedCell ?? terrainCell
+    if (scope.lane === 'terrain' && resolvedTerrainCell) {
+      descriptors.push(terrainCellDescriptor(resolvedTerrainCell))
       continue
     }
 
@@ -309,17 +336,26 @@ const broadTerrainScopeConflictsWith = (descriptor: ConflictScopeDescriptor): bo
   (descriptor.kind === 'map-lane' && descriptor.lane === 'terrain') || descriptor.kind === 'terrain-cell'
 )
 
+const broadHazardsScopeConflictsWith = (descriptor: ConflictScopeDescriptor): boolean => (
+  (descriptor.kind === 'map-lane' && descriptor.lane === 'hazards') || descriptor.kind === 'hazard-cell'
+)
+
 const descriptorsConflict = (
   left: ConflictScopeDescriptor,
   right: ConflictScopeDescriptor,
 ): boolean => {
   if (left.kind === 'map-lane' && left.lane === 'terrain') return broadTerrainScopeConflictsWith(right)
   if (right.kind === 'map-lane' && right.lane === 'terrain') return broadTerrainScopeConflictsWith(left)
+  if (left.kind === 'map-lane' && left.lane === 'hazards') return broadHazardsScopeConflictsWith(right)
+  if (right.kind === 'map-lane' && right.lane === 'hazards') return broadHazardsScopeConflictsWith(left)
 
   if (left.kind !== right.kind) return false
 
   if (left.kind === 'map-lane' && right.kind === 'map-lane') return left.lane === right.lane
   if (left.kind === 'terrain-cell' && right.kind === 'terrain-cell') {
+    return left.x === right.x && left.y === right.y && left.z === right.z
+  }
+  if (left.kind === 'hazard-cell' && right.kind === 'hazard-cell') {
     return left.x === right.x && left.y === right.y && left.z === right.z
   }
   if (left.kind === 'token-field' && right.kind === 'token-field') {

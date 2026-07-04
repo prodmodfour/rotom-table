@@ -174,6 +174,10 @@ const fieldEffectCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
 ])
 
+const pendingMapEffectsBatchCommandTypes = new Set<string>([
+  LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+])
+
 const actionDependencies = (dependencies: LivePlayMapEffectsCommandDependencies) => ({
   commandExecutor: dependencies.commandExecutor ?? livePlayMapEffectsCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
@@ -217,6 +221,9 @@ const assertMapEffectsCommandType = (
 ): void => {
   if (expectedType && command.type !== expectedType) {
     rejectLivePlayCommand('invalid', `This route only accepts ${expectedType} commands`)
+  }
+  if (pendingMapEffectsBatchCommandTypes.has(command.type)) {
+    rejectLivePlayCommand('invalid', `${command.type} is a shared batch contract, but its server executor route is not enabled yet`)
   }
   if (!mapEffectsCommandTypes.has(command.type)) {
     rejectLivePlayCommand(
