@@ -4,7 +4,6 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
   type BuildTerrainVoxelLivePlayCommand,
-  type LivePlayTerrainCommand,
   type RemoveTerrainVoxelLivePlayCommand,
 } from '#shared/livePlayCommands'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
@@ -111,7 +110,9 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   }
 }
 
-const execute = (harness: ReturnType<typeof createHarness>, command: LivePlayTerrainCommand, role: 'gm' | 'player' = 'gm') =>
+type SingleLivePlayTerrainCommand = BuildTerrainVoxelLivePlayCommand | RemoveTerrainVoxelLivePlayCommand
+
+const execute = (harness: ReturnType<typeof createHarness>, command: SingleLivePlayTerrainCommand, role: 'gm' | 'player' = 'gm') =>
   executeLivePlayTerrainCommandUseCase({
     role,
     command,

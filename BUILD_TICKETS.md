@@ -325,7 +325,7 @@ Status: DONE
 
 ## 011 — LP-S4-011 — Add `editTerrainVoxels` batch command contract
 
-Status: TODO
+Status: DONE
 
 **Goal:** Define a bounded batch command for adding/removing many terrain voxels in one operation.
 

@@ -1,7 +1,7 @@
 export * from './livePlayBatchCommands'
 
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
-import type { ClearFieldEffectsPayload, ClearHazardsPayload } from './livePlayBatchCommands'
+import type { ClearFieldEffectsPayload, ClearHazardsPayload, EditTerrainVoxelsPayload } from './livePlayBatchCommands'
 import { isSheetKind, type SheetKind } from './sheets'
 import type {
   GridAnchor,
@@ -61,6 +61,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   TICK_FIELD_EFFECT_DURATIONS: 'tickFieldEffectDurations',
   BUILD_TERRAIN_VOXEL: 'buildTerrainVoxel',
   REMOVE_TERRAIN_VOXEL: 'removeTerrainVoxel',
+  EDIT_TERRAIN_VOXELS: 'editTerrainVoxels',
   SPAWN_TOKEN: 'spawnToken',
   SEND_OUT_POKEMON: 'sendOutPokemon',
   DELETE_TOKEN: 'deleteToken',
@@ -99,6 +100,7 @@ export const LIVE_PLAY_MAP_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
   LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
+  LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
   LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN,
   LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
   LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
@@ -234,6 +236,9 @@ export type LivePlayHazardCellScope = LivePlayHazardsScope & { readonly cell: Gr
 export type ClearHazardsLivePlayScope = LivePlayHazardsScope | LivePlayHazardCellScope
 export type LivePlayFieldEffectsScope = LivePlayMapScope & { readonly lane: 'fieldEffects' }
 export type ClearFieldEffectsLivePlayScope = LivePlayFieldEffectsScope
+export type LivePlayTerrainScope = LivePlayMapScope & { readonly lane: 'terrain' }
+export type LivePlayTerrainCellScope = LivePlayTerrainScope & { readonly cell: GridAnchor }
+export type EditTerrainVoxelsLivePlayScope = LivePlayTerrainScope | LivePlayTerrainCellScope
 
 export type ShopCheckoutLivePlayScope =
   | LivePlayShopScope
@@ -523,6 +528,39 @@ export const createClearFieldEffectsCommandScopes = (
   _payload: ClearFieldEffectsPayload,
 ): readonly ClearFieldEffectsLivePlayScope[] => [createLivePlayFieldEffectsScope()]
 
+export const LIVE_PLAY_EDIT_TERRAIN_VOXELS_EXPLICIT_SCOPE_LIMIT = 32 as const
+
+export const createLivePlayTerrainScope = (): LivePlayTerrainScope => ({
+  kind: 'map',
+  lane: 'terrain',
+})
+
+export const createLivePlayTerrainCellScope = (cell: GridAnchor): LivePlayTerrainCellScope => ({
+  ...createLivePlayTerrainScope(),
+  cell: cloneScopeCell(cell),
+})
+
+const editTerrainVoxelOperationCell = (
+  operation: EditTerrainVoxelsPayload['operations'][number],
+): GridAnchor => (operation.action === 'upsert' ? operation.voxel : operation.cell)
+
+export const createEditTerrainVoxelsCommandScopes = (
+  payload: EditTerrainVoxelsPayload,
+): readonly EditTerrainVoxelsLivePlayScope[] => {
+  const cellsByKey = new Map<string, GridAnchor>()
+  for (const operation of payload.operations) {
+    const cell = editTerrainVoxelOperationCell(operation)
+    const key = `${cell.x},${cell.y},${cell.z}`
+    if (!cellsByKey.has(key)) cellsByKey.set(key, cloneScopeCell(cell))
+  }
+
+  const cells = [...cellsByKey.values()]
+  if (cells.length === 0 || cells.length > LIVE_PLAY_EDIT_TERRAIN_VOXELS_EXPLICIT_SCOPE_LIMIT) {
+    return [createLivePlayTerrainScope()]
+  }
+  return cells.map((cell) => createLivePlayTerrainCellScope(cell))
+}
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -691,6 +729,12 @@ export type RemoveTerrainVoxelLivePlayCommand = LivePlayCommandEnvelope<
   LivePlayMapScope
 >
 
+export type EditTerrainVoxelsLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+  EditTerrainVoxelsPayload,
+  EditTerrainVoxelsLivePlayScope
+>
+
 export type UpdateAttackOfOpportunityLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.UPDATE_ATTACK_OF_OPPORTUNITY,
   AttackOfOpportunityStateUpdatePayload,
@@ -720,6 +764,7 @@ export type LivePlayMapEffectCommand =
 export type LivePlayTerrainCommand =
   | BuildTerrainVoxelLivePlayCommand
   | RemoveTerrainVoxelLivePlayCommand
+  | EditTerrainVoxelsLivePlayCommand
 
 export type LivePlaySheetCommand =
   | ModifyHpLivePlayCommand
@@ -883,7 +928,7 @@ export interface FieldEffectsUpdatedPatchPayload {
   readonly tickAmount?: number
 }
 
-export interface TerrainVoxelsUpdatedPatchPayload {
+export interface TerrainVoxelUpdatedPatchPayload {
   readonly command:
     | typeof LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL
     | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL
@@ -894,6 +939,28 @@ export interface TerrainVoxelsUpdatedPatchPayload {
   readonly removed?: MapVoxelV2
   readonly rendererInvalidation?: readonly string[]
 }
+
+export interface TerrainVoxelBatchChangePatchPayload {
+  readonly cell: GridAnchor
+  readonly previous: MapVoxelV2 | null
+  readonly current: MapVoxelV2 | null
+  readonly built?: MapVoxelV2
+  readonly removed?: MapVoxelV2
+}
+
+export interface TerrainVoxelsEditedPatchPayload {
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS
+  readonly changes: readonly TerrainVoxelBatchChangePatchPayload[]
+  /** Optional authoritative terrain lane before the transaction when a final-set patch is safer. */
+  readonly previous?: readonly MapVoxelV2[]
+  /** Optional authoritative terrain lane after the transaction when a final-set patch is safer. */
+  readonly current?: readonly MapVoxelV2[]
+  readonly rendererInvalidation?: readonly string[]
+}
+
+export type TerrainVoxelsUpdatedPatchPayload =
+  | TerrainVoxelUpdatedPatchPayload
+  | TerrainVoxelsEditedPatchPayload
 
 export type MoveStatePatchPayload = LivePlayMoveStatePatchPayload
 
@@ -1349,13 +1416,13 @@ const validateMapScopeCell = (
 ): void => {
   if (!hasOwn(scope, 'cell')) return
 
-  if (scope.lane !== 'hazards') {
+  if (scope.lane !== 'hazards' && scope.lane !== 'terrain') {
     addIssue(
       issues,
       `${path}.cell`,
       'invalid-map-scope',
-      `${path}.cell is only supported for map hazards scopes.`,
-      'hazards map scope cell',
+      `${path}.cell is only supported for map hazards or terrain scopes.`,
+      'hazards or terrain map scope cell',
       scope.cell,
     )
     return
@@ -1392,7 +1459,7 @@ const validateMapScopeCell = (
         issues,
         `${path}.cell.${field}`,
         'invalid-map-scope',
-        `${path}.cell.${field} is not supported on live-play map hazard cell scopes.`,
+        `${path}.cell.${field} is not supported on live-play map ${scope.lane} cell scopes.`,
         MAP_SCOPE_CELL_FIELDS.join(' | '),
         scope.cell[field],
       )

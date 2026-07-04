@@ -4,10 +4,13 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
   createClearHazardsCommandScopes,
+  createEditTerrainVoxelsCommandScopes,
   createLivePlayAcceptedResult,
   type BuildTerrainVoxelLivePlayCommand,
   type ClearHazardsLivePlayCommand,
   type ClearHazardsPayload,
+  type EditTerrainVoxelsLivePlayCommand,
+  type EditTerrainVoxelsPayload,
   type LivePlayCommandAccepted,
   type LivePlayCommandEnvelope,
   type LivePlayMapScope,
@@ -73,6 +76,20 @@ const terrainCommand = (
   ...overrides,
 })
 
+const editTerrainCommand = (
+  payload: EditTerrainVoxelsPayload,
+  overrides: Partial<EditTerrainVoxelsLivePlayCommand> = {},
+): EditTerrainVoxelsLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_editterrain1',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+  scopes: createEditTerrainVoxelsCommandScopes(payload),
+  payload,
+  ...overrides,
+})
+
 const clearHazardsCommand = (
   payload: ClearHazardsPayload,
   overrides: Partial<ClearHazardsLivePlayCommand> = {},
@@ -94,7 +111,7 @@ const acceptedResult = (
 ): LivePlayCommandAccepted => {
   const patch: LivePlayPatch = {
     schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
-    type: command.type === LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL
+    type: command.type === LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL || command.type === LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS
       ? LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN
       : command.type === LIVE_PLAY_COMMAND_TYPES.SET_INITIATIVE
         ? LIVE_PLAY_PATCH_TYPES.MAP_INITIATIVE
@@ -104,7 +121,9 @@ const acceptedResult = (
     scopes,
     payload: command.type === LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL
       ? { command: command.type, cell: (command.payload as { readonly voxel: unknown }).voxel, previous: null, current: (command.payload as { readonly voxel: unknown }).voxel }
-      : command.payload,
+      : command.type === LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS
+        ? { command: command.type, changes: [] }
+        : command.payload,
   }
   return createLivePlayAcceptedResult({
     opId: command.opId,
@@ -193,6 +212,56 @@ describe('live-play command conflict detection', () => {
       currentRevision: 5,
       recentAcceptedOps: [prior],
     })).toEqual({ ok: true })
+  })
+
+  it('applies editTerrainVoxels explicit and broad terrain conflict scopes conservatively', () => {
+    const prior = acceptedOp(editTerrainCommand(
+      { operations: [{ action: 'remove', cell: { x: 2, y: 0, z: 3 } }] },
+      { opId: 'op_editprior1' },
+    ), 5)
+
+    expect(evaluateLivePlayCommandConflicts({
+      command: editTerrainCommand(
+        { operations: [{ action: 'upsert', voxel: { x: 2, y: 0, z: 3, materialId: 'stone' } }] },
+        { opId: 'op_editsame01' },
+      ),
+      baseRevision: 4,
+      currentRevision: 5,
+      recentAcceptedOps: [prior],
+    })).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      message: expect.stringContaining('terrain cell 2,0,3'),
+    })
+
+    expect(evaluateLivePlayCommandConflicts({
+      command: editTerrainCommand(
+        { operations: [{ action: 'remove', cell: { x: 4, y: 0, z: 3 } }] },
+        { opId: 'op_editdiff01' },
+      ),
+      baseRevision: 4,
+      currentRevision: 5,
+      recentAcceptedOps: [prior],
+    })).toEqual({ ok: true })
+
+    expect(evaluateLivePlayCommandConflicts({
+      command: editTerrainCommand(
+        {
+          operations: Array.from(
+            { length: 33 },
+            (_, index) => ({ action: 'remove' as const, cell: { x: index, y: 0, z: 1 } }),
+          ),
+        },
+        { opId: 'op_editbroad1' },
+      ),
+      baseRevision: 4,
+      currentRevision: 5,
+      recentAcceptedOps: [prior],
+    })).toMatchObject({
+      ok: false,
+      reason: 'conflict',
+      message: expect.stringContaining('terrain cell 2,0,3'),
+    })
   })
 
   it('rejects same hazard cell conflicts while allowing different explicit clearHazards cells', () => {

@@ -2,6 +2,7 @@ import type {
   MapHazardKind,
   MapRoomKind,
   MapTerrainKind,
+  MapVoxelV2,
   MapWeatherKind,
 } from '~/types/map'
 
@@ -24,13 +25,20 @@ export const LIVE_PLAY_BATCH_VALIDATION_CODES = [
   'missing-field',
   'unknown-field',
   'invalid-mode',
+  'invalid-action',
   'invalid-kind',
   'duplicate-kind',
   'invalid-array',
   'empty-array',
   'too-many-items',
   'invalid-cell',
+  'invalid-voxel',
+  'invalid-material-id',
+  'invalid-color',
+  'invalid-boolean',
+  'invalid-tags',
   'duplicate-cell',
+  'contradictory-cell-operation',
   'invalid-token-id',
   'duplicate-token-id',
 ] as const
@@ -160,6 +168,27 @@ export type ClearFieldEffectsPayload =
   | ClearTerrainEffectsPayload
   | ClearRoomEffectsPayload
 
+export const LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTIONS = ['upsert', 'remove'] as const
+export type EditTerrainVoxelAction = (typeof LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTIONS)[number]
+
+export interface EditTerrainVoxelUpsertOperation {
+  readonly action: 'upsert'
+  readonly voxel: MapVoxelV2
+}
+
+export interface EditTerrainVoxelRemoveOperation {
+  readonly action: 'remove'
+  readonly cell: LivePlayBatchGridCell
+}
+
+export type EditTerrainVoxelOperation =
+  | EditTerrainVoxelUpsertOperation
+  | EditTerrainVoxelRemoveOperation
+
+export interface EditTerrainVoxelsPayload {
+  readonly operations: readonly EditTerrainVoxelOperation[]
+}
+
 /**
  * Duplicate cells reject by default. Use `normalize` only for idempotent batch modes
  * such as clear-by-cell, where repeated cells can safely collapse to the first one.
@@ -241,6 +270,8 @@ const EXPECTED_ARRAY = 'array'
 const EXPECTED_NON_EMPTY_ARRAY = 'non-empty array'
 const EXPECTED_NON_EMPTY_STRING = 'non-empty string'
 const EXPECTED_GRID_COORDINATE = 'safe non-negative integer grid coordinate'
+const EXPECTED_BOOLEAN = 'boolean'
+const EXPECTED_TAGS = 'array of non-empty strings'
 
 const BATCH_VALIDATION_CODE_SET = new Set<unknown>(LIVE_PLAY_BATCH_VALIDATION_CODES)
 const LIVE_PLAY_CLEAR_HAZARDS_MODE_SET = new Set<unknown>(LIVE_PLAY_CLEAR_HAZARDS_MODES)
@@ -248,12 +279,26 @@ const LIVE_PLAY_HAZARD_KIND_SET = new Set<unknown>(LIVE_PLAY_HAZARD_KIND_VALUES)
 const LIVE_PLAY_FIELD_EFFECT_CATEGORY_SET = new Set<unknown>(LIVE_PLAY_FIELD_EFFECT_CATEGORIES)
 const LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORY_SET = new Set<unknown>(LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES)
 const LIVE_PLAY_FIELD_EFFECT_KIND_SET = new Set<unknown>(LIVE_PLAY_FIELD_EFFECT_KIND_VALUES)
+const LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTION_SET = new Set<unknown>(LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTIONS)
 const LIVE_PLAY_WEATHER_KIND_SET = new Set<unknown>(LIVE_PLAY_WEATHER_KIND_VALUES)
 const LIVE_PLAY_TERRAIN_KIND_SET = new Set<unknown>(LIVE_PLAY_TERRAIN_KIND_VALUES)
 const LIVE_PLAY_ROOM_KIND_SET = new Set<unknown>(LIVE_PLAY_ROOM_KIND_VALUES)
 const GRID_CELL_FIELDS = ['x', 'y', 'z'] as const
+const TERRAIN_VOXEL_FIELDS = [
+  'x',
+  'y',
+  'z',
+  'materialId',
+  'color',
+  'ghost',
+  'blocksMovement',
+  'blocksSight',
+  'tags',
+] as const
 const CLEAR_HAZARDS_PAYLOAD_FIELDS = ['mode', 'cells', 'kind'] as const
 const CLEAR_FIELD_EFFECTS_PAYLOAD_FIELDS = ['category', 'kinds'] as const
+const EDIT_TERRAIN_VOXELS_PAYLOAD_FIELDS = ['operations'] as const
+const EDIT_TERRAIN_VOXEL_OPERATION_FIELDS = ['action', 'voxel', 'cell'] as const
 
 const hasOwn = (record: UnknownRecord, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
@@ -332,6 +377,9 @@ export const isClearFieldEffectsCategory = (
 export const isLivePlayFieldEffectKind = (
   value: unknown,
 ): value is LivePlayFieldEffectKind => LIVE_PLAY_FIELD_EFFECT_KIND_SET.has(value)
+
+export const isEditTerrainVoxelAction = (value: unknown): value is EditTerrainVoxelAction =>
+  LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTION_SET.has(value)
 
 export const isLivePlayFieldEffectKindForCategory = (
   category: LivePlayFieldEffectCategory,
@@ -821,6 +869,298 @@ export const parseClearFieldEffectsPayload = (
   if (!kindsResult.valid) return failure(kindsResult.issues)
 
   return success({ category, kinds: kindsResult.value } as ClearFieldEffectsPayload)
+}
+
+const cloneBatchGridCell = (cell: LivePlayBatchGridCell): LivePlayBatchGridCell => ({
+  x: cell.x,
+  y: cell.y,
+  z: cell.z,
+})
+
+const parseTerrainVoxelMaterialId = (
+  value: unknown,
+  path: string,
+): LivePlayBatchValidationResult<string> => {
+  if (isNonEmptyString(value)) return success(value.trim())
+  return failure([{
+    path,
+    code: 'invalid-material-id',
+    message: `${path} must be a non-empty terrain material id string.`,
+    expected: EXPECTED_NON_EMPTY_STRING,
+    received: describeReceived(value),
+  }])
+}
+
+const parseOptionalTerrainVoxelColor = (
+  record: Readonly<Record<string, unknown>>,
+  path: string,
+): LivePlayBatchValidationResult<string | undefined> => {
+  if (!hasOwn(record, 'color') || record.color === undefined) return success(undefined)
+  if (isNonEmptyString(record.color)) return success(record.color.trim())
+  return failure([{
+    path,
+    code: 'invalid-color',
+    message: `${path} must be a non-empty color string when provided.`,
+    expected: EXPECTED_NON_EMPTY_STRING,
+    received: describeReceived(record.color),
+  }])
+}
+
+const parseOptionalTerrainVoxelBoolean = (
+  record: Readonly<Record<string, unknown>>,
+  field: 'ghost' | 'blocksMovement' | 'blocksSight',
+  path: string,
+): LivePlayBatchValidationResult<boolean | undefined> => {
+  if (!hasOwn(record, field) || record[field] === undefined) return success(undefined)
+  if (typeof record[field] === 'boolean') return success(record[field])
+  return failure([{
+    path,
+    code: 'invalid-boolean',
+    message: `${path} must be a boolean when provided.`,
+    expected: EXPECTED_BOOLEAN,
+    received: describeReceived(record[field]),
+  }])
+}
+
+const parseOptionalTerrainVoxelTags = (
+  record: Readonly<Record<string, unknown>>,
+  path: string,
+): LivePlayBatchValidationResult<readonly string[] | undefined> => {
+  if (!hasOwn(record, 'tags') || record.tags === undefined) return success(undefined)
+  if (!Array.isArray(record.tags)) {
+    return failure([{
+      path,
+      code: 'invalid-tags',
+      message: `${path} must be an array of non-empty strings when provided.`,
+      expected: EXPECTED_TAGS,
+      received: describeReceived(record.tags),
+    }])
+  }
+
+  const issues: MutableIssueList = []
+  const tags: string[] = []
+  record.tags.forEach((tag, index) => {
+    if (!isNonEmptyString(tag)) {
+      addIssue(
+        issues,
+        `${path}[${index}]`,
+        'invalid-tags',
+        `${path}[${index}] must be a non-empty string.`,
+        EXPECTED_NON_EMPTY_STRING,
+        tag,
+      )
+      return
+    }
+    tags.push(tag.trim())
+  })
+
+  if (issues.length > 0) return failure(issues)
+  return success(tags)
+}
+
+export const parseLivePlayBatchTerrainVoxel = (
+  value: unknown,
+  path = 'payload.voxel',
+): LivePlayBatchValidationResult<MapVoxelV2> => {
+  const recordResult = parseLivePlayBatchStrictObject(value, {
+    path,
+    allowedFields: TERRAIN_VOXEL_FIELDS,
+    requiredFields: ['x', 'y', 'z', 'materialId'],
+    description: 'terrain voxel',
+  })
+  if (!recordResult.valid) return failure(recordResult.issues)
+
+  const record = recordResult.value
+  const cellResult = parseLivePlayBatchGridCell({
+    x: record.x,
+    y: record.y,
+    z: record.z,
+  }, path)
+  const materialIdResult = parseTerrainVoxelMaterialId(record.materialId, appendPath(path, 'materialId'))
+  const colorResult = parseOptionalTerrainVoxelColor(record, appendPath(path, 'color'))
+  const ghostResult = parseOptionalTerrainVoxelBoolean(record, 'ghost', appendPath(path, 'ghost'))
+  const blocksMovementResult = parseOptionalTerrainVoxelBoolean(
+    record,
+    'blocksMovement',
+    appendPath(path, 'blocksMovement'),
+  )
+  const blocksSightResult = parseOptionalTerrainVoxelBoolean(
+    record,
+    'blocksSight',
+    appendPath(path, 'blocksSight'),
+  )
+  const tagsResult = parseOptionalTerrainVoxelTags(record, appendPath(path, 'tags'))
+
+  if (
+    !cellResult.valid ||
+    !materialIdResult.valid ||
+    !colorResult.valid ||
+    !ghostResult.valid ||
+    !blocksMovementResult.valid ||
+    !blocksSightResult.valid ||
+    !tagsResult.valid
+  ) {
+    return failure([
+      ...(cellResult.valid ? [] : cellResult.issues),
+      ...(materialIdResult.valid ? [] : materialIdResult.issues),
+      ...(colorResult.valid ? [] : colorResult.issues),
+      ...(ghostResult.valid ? [] : ghostResult.issues),
+      ...(blocksMovementResult.valid ? [] : blocksMovementResult.issues),
+      ...(blocksSightResult.valid ? [] : blocksSightResult.issues),
+      ...(tagsResult.valid ? [] : tagsResult.issues),
+    ])
+  }
+
+  return success({
+    ...cloneBatchGridCell(cellResult.value),
+    materialId: materialIdResult.value,
+    ...(colorResult.value === undefined ? {} : { color: colorResult.value }),
+    ...(ghostResult.value === undefined ? {} : { ghost: ghostResult.value }),
+    ...(blocksMovementResult.value === undefined ? {} : { blocksMovement: blocksMovementResult.value }),
+    ...(blocksSightResult.value === undefined ? {} : { blocksSight: blocksSightResult.value }),
+    ...(tagsResult.value === undefined ? {} : { tags: [...tagsResult.value] }),
+  })
+}
+
+const unexpectedEditTerrainOperationFieldIssue = (
+  path: string,
+  field: 'voxel' | 'cell',
+  action: EditTerrainVoxelAction,
+  received: unknown,
+): LivePlayBatchValidationIssue => ({
+  path: appendPath(path, field),
+  code: 'unknown-field',
+  message: `${appendPath(path, field)} is not supported for editTerrainVoxels ${action} operations.`,
+  expected: action === 'upsert' ? 'action | voxel' : 'action | cell',
+  received: describeReceived(received),
+})
+
+const parseEditTerrainVoxelOperation = (
+  value: unknown,
+  path: string,
+): LivePlayBatchValidationResult<EditTerrainVoxelOperation> => {
+  const recordResult = parseLivePlayBatchStrictObject(value, {
+    path,
+    allowedFields: EDIT_TERRAIN_VOXEL_OPERATION_FIELDS,
+    requiredFields: ['action'],
+    description: 'editTerrainVoxels operation',
+  })
+  if (!recordResult.valid) return failure(recordResult.issues)
+
+  const record = recordResult.value
+  if (!isEditTerrainVoxelAction(record.action)) {
+    return failure([{
+      path: appendPath(path, 'action'),
+      code: 'invalid-action',
+      message: `${appendPath(path, 'action')} must be a supported editTerrainVoxels action.`,
+      expected: LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTIONS.join(' | '),
+      received: describeReceived(record.action),
+    }])
+  }
+
+  if (record.action === 'upsert') {
+    const issues: MutableIssueList = []
+    if (!hasOwn(record, 'voxel')) {
+      addIssue(
+        issues,
+        appendPath(path, 'voxel'),
+        'missing-field',
+        'editTerrainVoxels upsert operations must include voxel.',
+      )
+    }
+    if (hasOwn(record, 'cell')) {
+      issues.push(unexpectedEditTerrainOperationFieldIssue(path, 'cell', record.action, record.cell))
+    }
+    if (issues.length > 0) return failure(issues)
+
+    const voxelResult = parseLivePlayBatchTerrainVoxel(record.voxel, appendPath(path, 'voxel'))
+    if (!voxelResult.valid) return failure(voxelResult.issues)
+    return success({ action: record.action, voxel: voxelResult.value })
+  }
+
+  const issues: MutableIssueList = []
+  if (!hasOwn(record, 'cell')) {
+    addIssue(
+      issues,
+      appendPath(path, 'cell'),
+      'missing-field',
+      'editTerrainVoxels remove operations must include cell.',
+    )
+  }
+  if (hasOwn(record, 'voxel')) {
+    issues.push(unexpectedEditTerrainOperationFieldIssue(path, 'voxel', record.action, record.voxel))
+  }
+  if (issues.length > 0) return failure(issues)
+
+  const cellResult = parseLivePlayBatchGridCell(record.cell, appendPath(path, 'cell'))
+  if (!cellResult.valid) return failure(cellResult.issues)
+  return success({ action: record.action, cell: cloneBatchGridCell(cellResult.value) })
+}
+
+const editTerrainOperationCell = (operation: EditTerrainVoxelOperation): LivePlayBatchGridCell => (
+  operation.action === 'upsert' ? operation.voxel : operation.cell
+)
+
+const enforceNonContradictoryTerrainOperations = (
+  operations: readonly EditTerrainVoxelOperation[],
+  path: string,
+): LivePlayBatchValidationResult<readonly EditTerrainVoxelOperation[]> => {
+  const issues: MutableIssueList = []
+  const seen = new Map<string, { readonly index: number; readonly action: EditTerrainVoxelAction }>()
+
+  operations.forEach((operation, index) => {
+    const key = formatLivePlayBatchGridCellKey(editTerrainOperationCell(operation))
+    const first = seen.get(key)
+    if (first === undefined) {
+      seen.set(key, { index, action: operation.action })
+      return
+    }
+
+    const sameAction = first.action === operation.action
+    addIssue(
+      issues,
+      `${path}[${index}]`,
+      sameAction ? 'duplicate-cell' : 'contradictory-cell-operation',
+      sameAction
+        ? `${path}[${index}] duplicates ${path}[${first.index}] at terrain cell ${key}.`
+        : `${path}[${index}] contradicts ${path}[${first.index}] at terrain cell ${key}.`,
+      sameAction ? 'unique terrain operation cell' : 'only one terrain action per cell',
+      operation,
+    )
+  })
+
+  if (issues.length > 0) return failure(issues)
+  return success([...operations])
+}
+
+export const parseEditTerrainVoxelsPayload = (
+  value: unknown,
+  path = 'payload',
+): LivePlayBatchValidationResult<EditTerrainVoxelsPayload> => {
+  const recordResult = parseLivePlayBatchStrictObject(value, {
+    path,
+    allowedFields: EDIT_TERRAIN_VOXELS_PAYLOAD_FIELDS,
+    requiredFields: ['operations'],
+    description: 'editTerrainVoxels payload',
+  })
+  if (!recordResult.valid) return failure(recordResult.issues)
+
+  const operationsPath = appendPath(path, 'operations')
+  const operationsResult = parseLivePlayBatchBoundedArray<EditTerrainVoxelOperation>(
+    recordResult.value.operations,
+    {
+      path: operationsPath,
+      minItems: 1,
+      maxItems: LIVE_PLAY_BATCH_MAX_TERRAIN_VOXELS,
+      itemName: 'terrain voxel operations',
+      parseItem: (item, itemPath) => parseEditTerrainVoxelOperation(item, itemPath),
+    },
+  )
+  if (!operationsResult.valid) return failure(operationsResult.issues)
+
+  const uniqueResult = enforceNonContradictoryTerrainOperations(operationsResult.value, operationsPath)
+  if (!uniqueResult.valid) return failure(uniqueResult.issues)
+  return success({ operations: uniqueResult.value })
 }
 
 export const parseLivePlayBatchTerrainVoxelCells = (

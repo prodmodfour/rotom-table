@@ -3,8 +3,10 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  createEditTerrainVoxelsCommandScopes,
   type ClearFieldEffectsPayload,
   type ClearHazardsPayload,
+  type EditTerrainVoxelsPayload,
   type LivePlayMapScope,
   type LivePlayScope,
   type LivePlaySheetScope,
@@ -40,6 +42,12 @@ const terrainCommand = (x: number, y: number, z: number) => ({
   payload: {
     voxel: { x, y, z, materialId: 'stone' },
   },
+})
+
+const editTerrainCommand = (payload: EditTerrainVoxelsPayload) => ({
+  type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+  scopes: createEditTerrainVoxelsCommandScopes(payload),
+  payload,
 })
 
 const clearHazardsCommand = (payload: ClearHazardsPayload) => ({
@@ -114,6 +122,32 @@ describe('live-play scope conflict utilities', () => {
       terrainCommand(2, 0, 3),
       terrainCommand(4, 0, 3),
     )).toBe(false)
+  })
+
+  it('classifies editTerrainVoxels scopes precisely while broad terrain scopes stay conservative', () => {
+    const edit = editTerrainCommand({
+      operations: [
+        { action: 'upsert', voxel: { x: 2, y: 0, z: 3, materialId: 'stone' } },
+        { action: 'remove', cell: { x: 4, y: 0, z: 3 } },
+      ],
+    })
+
+    expect(livePlayScopeConflictDescriptors(edit)).toEqual([
+      { kind: 'terrain-cell', x: 2, y: 0, z: 3, label: 'terrain cell 2,0,3' },
+      { kind: 'terrain-cell', x: 4, y: 0, z: 3, label: 'terrain cell 4,0,3' },
+    ])
+    expect(livePlayScopesConflict(
+      editTerrainCommand({ operations: [{ action: 'remove', cell: { x: 2, y: 0, z: 3 } }] }),
+      editTerrainCommand({ operations: [{ action: 'remove', cell: { x: 5, y: 0, z: 3 } }] }),
+    )).toBe(false)
+    expect(findLivePlayScopeConflict(
+      [mapScope('terrain')],
+      edit,
+    )).toMatchObject({
+      left: { kind: 'map-lane', lane: 'terrain' },
+      right: { kind: 'terrain-cell', x: 2, y: 0, z: 3 },
+      label: 'map lane terrain / terrain cell 2,0,3',
+    })
   })
 
   it('classifies clearHazards cells precisely while broad hazard scopes stay conservative', () => {

@@ -5,6 +5,7 @@ import {
   LIVE_PLAY_PATCH_TYPES,
   createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  createEditTerrainVoxelsCommandScopes,
 } from '#shared/livePlayCommands'
 import {
   validateTerminalLivePlayCommandResponse,
@@ -252,6 +253,67 @@ describe('live-play terminal command response validation', () => {
     })).toMatchObject({
       valid: false,
       issues: expect.arrayContaining([expect.objectContaining({ path: 'response.patches[0].scopes[0]' })]),
+    })
+  })
+
+  it('verifies accepted editTerrainVoxels patches match the submitted command type and scopes', () => {
+    const payload = {
+      operations: [
+        { action: 'upsert' as const, voxel: { x: 1, y: 0, z: 2, materialId: 'stone' } },
+        { action: 'remove' as const, cell: { x: 3, y: 0, z: 4 } },
+      ],
+    }
+    const editCommand = command({
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      scopes: createEditTerrainVoxelsCommandScopes(payload),
+      payload,
+    })
+    const terrainPatch = (overrides: Record<string, unknown> = {}) => patch({
+      type: LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN,
+      scopes: [{ kind: 'map', lane: 'terrain' }],
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+        changes: [
+          {
+            cell: { x: 1, y: 0, z: 2 },
+            previous: null,
+            current: { x: 1, y: 0, z: 2, materialId: 'stone' },
+            built: { x: 1, y: 0, z: 2, materialId: 'stone' },
+          },
+          {
+            cell: { x: 3, y: 0, z: 4 },
+            previous: { x: 3, y: 0, z: 4, materialId: 'meadow_grass' },
+            current: null,
+            removed: { x: 3, y: 0, z: 4, materialId: 'meadow_grass' },
+          },
+        ],
+      },
+      ...overrides,
+    })
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({ patches: [terrainPatch()] }),
+      command: editCommand,
+    }).valid).toBe(true)
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({ patches: [terrainPatch({ type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS })] }),
+      command: editCommand,
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({ path: 'response.patches[0].type' })]),
+    })
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({
+        patches: [terrainPatch({
+          payload: { command: LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL, changes: [] },
+        })],
+      }),
+      command: editCommand,
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({ path: 'response.patches[0].payload.command' })]),
     })
   })
 })

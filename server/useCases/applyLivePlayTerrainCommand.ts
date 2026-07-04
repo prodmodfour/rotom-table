@@ -78,6 +78,10 @@ const terrainCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
 ])
 
+const pendingBatchTerrainCommandTypes = new Set<string>([
+  LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+])
+
 const actionDependencies = (dependencies: LivePlayTerrainCommandDependencies) => ({
   commandExecutor: dependencies.commandExecutor ?? livePlayTerrainCommandExecutor,
   mapRepository: dependencies.mapRepository ?? sqliteMapRepository,
@@ -96,6 +100,12 @@ const assertLivePlayTerrainCommandType = (
 ): void => {
   if (expectedType && command.type !== expectedType) {
     rejectLivePlayCommand('invalid', `This route only accepts ${expectedType} commands`)
+  }
+  if (pendingBatchTerrainCommandTypes.has(command.type)) {
+    rejectLivePlayCommand(
+      'invalid',
+      'editTerrainVoxels is a batch contract; its terrain batch executor route is not available yet',
+    )
   }
   if (!terrainCommandTypes.has(command.type)) {
     rejectLivePlayCommand(

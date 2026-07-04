@@ -2,10 +2,13 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
   LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES,
   LIVE_PLAY_CLEAR_HAZARDS_MODES,
+  LIVE_PLAY_BATCH_MAX_TERRAIN_VOXELS,
   LIVE_PLAY_COMMAND_REJECTION_REASONS,
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_COMMAND_TYPE_VALUES,
+  LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTIONS,
+  LIVE_PLAY_EDIT_TERRAIN_VOXELS_EXPLICIT_SCOPE_LIMIT,
   LIVE_PLAY_FIELD_EFFECT_KIND_VALUES,
   LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS,
   LIVE_PLAY_HAZARD_KIND_VALUES,
@@ -24,12 +27,14 @@ import {
   collectShopCheckoutCommandEnvelopeIssues,
   createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  createEditTerrainVoxelsCommandScopes,
   createLivePlayAcceptedResult,
   createLivePlayDuplicateResult,
   createLivePlayOpId,
   createLivePlayRejectedResult,
   isClearFieldEffectsCategory,
   isClearHazardsMode,
+  isEditTerrainVoxelAction,
   isLivePlayBaseRevision,
   isLivePlayCommandRejectionReason,
   isLivePlayCommandType,
@@ -48,6 +53,7 @@ import {
   isValidShopCheckoutCommandEnvelope,
   parseClearFieldEffectsPayload,
   parseClearHazardsPayload,
+  parseEditTerrainVoxelsPayload,
   parseLivePlayBaseRevision,
   parseLivePlayCommandType,
   parseLivePlayMapCommandType,
@@ -63,6 +69,8 @@ import {
   type ClearHazardsPayload,
   type DeleteTokenLivePlayCommand,
   type DeleteTokenPayload,
+  type EditTerrainVoxelsLivePlayCommand,
+  type EditTerrainVoxelsPayload,
   type GrantExperienceLivePlayCommand,
   type GrantExperiencePayload,
   type FieldEffectsUpdatedPatchPayload,
@@ -98,6 +106,7 @@ import {
   type ShopCheckoutLivePlayCommand,
   type ShopCheckoutPayload,
   type ShopCheckoutTrainerSheetScope,
+  type TerrainVoxelsEditedPatchPayload,
   type UseAbilityLivePlayCommand,
   type UseAbilityPayload,
   type UseMoveLivePlayCommand,
@@ -201,6 +210,7 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setFieldEffect')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('buildTerrainVoxel')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('removeTerrainVoxel')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('editTerrainVoxels')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('spawnToken')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('sendOutPokemon')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('deleteToken')
@@ -212,6 +222,7 @@ describe('live-play command contract', () => {
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS)).toBe(true)
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS)).toBe(true)
+    expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS)).toBe(true)
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT)).toBe(true)
     expect(isLivePlayMapCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayMapCommandType(LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT)).toBe(false)
@@ -219,10 +230,12 @@ describe('live-play command contract', () => {
     expect(parseLivePlayCommandType('useMove')).toBe('useMove')
     expect(parseLivePlayCommandType('clearHazards')).toBe('clearHazards')
     expect(parseLivePlayCommandType('clearFieldEffects')).toBe('clearFieldEffects')
+    expect(parseLivePlayCommandType('editTerrainVoxels')).toBe('editTerrainVoxels')
     expect(parseLivePlayCommandType('shopCheckout')).toBe('shopCheckout')
     expect(parseLivePlayMapCommandType('useMove')).toBe('useMove')
     expect(parseLivePlayMapCommandType('clearHazards')).toBe('clearHazards')
     expect(parseLivePlayMapCommandType('clearFieldEffects')).toBe('clearFieldEffects')
+    expect(parseLivePlayMapCommandType('editTerrainVoxels')).toBe('editTerrainVoxels')
     expect(() => parseLivePlayCommandType('teleportToken')).toThrow(
       'supported live-play command type',
     )
@@ -285,6 +298,8 @@ describe('live-play command contract', () => {
       'trick',
       'wonder',
     ])
+    expect(LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTIONS).toEqual(['upsert', 'remove'])
+    expect(LIVE_PLAY_EDIT_TERRAIN_VOXELS_EXPLICIT_SCOPE_LIMIT).toBe(32)
     expect(isClearHazardsMode('cells')).toBe(true)
     expect(isClearHazardsMode('explicit')).toBe(false)
     expect(isLivePlayHazardKind('stealth-rock')).toBe(true)
@@ -293,6 +308,8 @@ describe('live-play command contract', () => {
     expect(isClearFieldEffectsCategory('screen')).toBe(false)
     expect(isLivePlayFieldEffectKind('sunny')).toBe(true)
     expect(isLivePlayFieldEffectKind('fog')).toBe(false)
+    expect(isEditTerrainVoxelAction('upsert')).toBe(true)
+    expect(isEditTerrainVoxelAction('paint')).toBe(false)
     expect(isLivePlayMapScopeLane('initiative')).toBe(true)
     expect(isLivePlayMapScopeLane('wholeMap')).toBe(false)
     expect(isLivePlayTokenScopeField('position')).toBe(true)
@@ -496,10 +513,32 @@ describe('live-play command contract', () => {
       payload: { cell: { x: 1, y: 0, z: 2 } },
     } as const satisfies RemoveTerrainVoxelLivePlayCommand
 
+    const editTerrainPayload = {
+      operations: [
+        { action: 'upsert', voxel: { x: 1, y: 0, z: 2, materialId: 'meadow_grass' } },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4 } },
+      ],
+    } as const satisfies EditTerrainVoxelsPayload
+    const editTerrainCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      scopes: createEditTerrainVoxelsCommandScopes(editTerrainPayload),
+      payload: editTerrainPayload,
+    } as const satisfies EditTerrainVoxelsLivePlayCommand
+
     expect(buildTerrainCommand.type).toBe('buildTerrainVoxel')
     expect(buildTerrainCommand.payload.voxel).toEqual({ x: 1, y: 0, z: 2, materialId: 'meadow_grass' })
     expect(removeTerrainCommand.type).toBe('removeTerrainVoxel')
     expect(removeTerrainCommand.payload.cell).toEqual({ x: 1, y: 0, z: 2 })
+    expect(editTerrainCommand.type).toBe('editTerrainVoxels')
+    expect(editTerrainCommand.scopes).toEqual([
+      { kind: 'map', lane: 'terrain', cell: { x: 1, y: 0, z: 2 } },
+      { kind: 'map', lane: 'terrain', cell: { x: 3, y: 0, z: 4 } },
+    ])
+    expect(editTerrainCommand.payload).toEqual(editTerrainPayload)
 
     const spawnTokenCommand = {
       schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
@@ -569,6 +608,7 @@ describe('live-play command contract', () => {
     expectTypeOf(fieldEffectCommand.payload).toMatchTypeOf<SetFieldEffectPayload>()
     expectTypeOf(buildTerrainCommand.payload).toMatchTypeOf<BuildTerrainVoxelPayload>()
     expectTypeOf(removeTerrainCommand.payload).toMatchTypeOf<RemoveTerrainVoxelPayload>()
+    expectTypeOf(editTerrainCommand.payload).toMatchTypeOf<EditTerrainVoxelsPayload>()
     expectTypeOf(spawnTokenCommand.payload).toMatchTypeOf<SpawnTokenPayload>()
     expectTypeOf(sendOutPokemonCommand.payload).toMatchTypeOf<SendOutPokemonPayload>()
     expectTypeOf(deleteTokenCommand.payload).toMatchTypeOf<DeleteTokenPayload>()
@@ -688,6 +728,105 @@ describe('live-play command contract', () => {
       .toBe('unknown-field')
   })
 
+  it('validates editTerrainVoxels operations and rejects ambiguous terrain cells', () => {
+    const payload = {
+      operations: [
+        {
+          action: 'upsert',
+          voxel: {
+            x: 1,
+            y: 0,
+            z: 2,
+            materialId: ' meadow_grass ',
+            color: ' #33aa44 ',
+            ghost: false,
+            blocksMovement: true,
+            tags: [' grass ', 'brush'],
+          },
+        },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4 } },
+      ],
+    }
+    const before = structuredClone(payload)
+    const parsed = parseEditTerrainVoxelsPayload(payload)
+
+    expect(parsed.valid).toBe(true)
+    if (!parsed.valid) throw new Error('expected valid editTerrainVoxels payload')
+    expect(parsed.value).toEqual({
+      operations: [
+        {
+          action: 'upsert',
+          voxel: {
+            x: 1,
+            y: 0,
+            z: 2,
+            materialId: 'meadow_grass',
+            color: '#33aa44',
+            ghost: false,
+            blocksMovement: true,
+            tags: ['grass', 'brush'],
+          },
+        },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4 } },
+      ],
+    })
+    expect(parsed.value.operations[0]).not.toBe(payload.operations[0])
+    expect(payload).toEqual(before)
+
+    const oversized = parseEditTerrainVoxelsPayload({
+      operations: Array.from(
+        { length: LIVE_PLAY_BATCH_MAX_TERRAIN_VOXELS + 1 },
+        (_, index) => ({ action: 'remove', cell: { x: index, y: 0, z: 1 } }),
+      ),
+    })
+    expect(oversized.valid).toBe(false)
+    if (oversized.valid) throw new Error('expected oversized editTerrainVoxels payload to reject')
+    expect(new Map(oversized.issues.map((issue) => [issue.path, issue])).get('payload.operations')?.code)
+      .toBe('too-many-items')
+
+    const contradictory = parseEditTerrainVoxelsPayload({
+      operations: [
+        { action: 'upsert', voxel: { x: 1, y: 0, z: 2, materialId: 'stone' } },
+        { action: 'remove', cell: { x: 1, y: 0, z: 2 } },
+      ],
+    })
+    expect(contradictory.valid).toBe(false)
+    if (contradictory.valid) throw new Error('expected contradictory terrain operations to reject')
+    expect(new Map(contradictory.issues.map((issue) => [issue.path, issue])).get('payload.operations[1]')?.code)
+      .toBe('contradictory-cell-operation')
+
+    const duplicate = parseEditTerrainVoxelsPayload({
+      operations: [
+        { action: 'remove', cell: { x: 2, y: 0, z: 3 } },
+        { action: 'remove', cell: { x: 2, y: 0, z: 3 } },
+      ],
+    })
+    expect(duplicate.valid).toBe(false)
+    if (duplicate.valid) throw new Error('expected duplicate terrain operations to reject')
+    expect(new Map(duplicate.issues.map((issue) => [issue.path, issue])).get('payload.operations[1]')?.code)
+      .toBe('duplicate-cell')
+
+    const empty = parseEditTerrainVoxelsPayload({ operations: [] })
+    expect(empty.valid).toBe(false)
+    if (empty.valid) throw new Error('expected empty terrain operation payload to reject')
+    expect(new Map(empty.issues.map((issue) => [issue.path, issue])).get('payload.operations')?.code)
+      .toBe('empty-array')
+
+    const unknownPayloadField = parseEditTerrainVoxelsPayload({ operations: [{ action: 'remove', cell: { x: 1, y: 0, z: 2 } }], profileId: 'private' })
+    expect(unknownPayloadField.valid).toBe(false)
+    if (unknownPayloadField.valid) throw new Error('expected unknown payload field to reject')
+    expect(new Map(unknownPayloadField.issues.map((issue) => [issue.path, issue])).get('payload.profileId')?.code)
+      .toBe('unknown-field')
+
+    const unknownOperationField = parseEditTerrainVoxelsPayload({
+      operations: [{ action: 'upsert', voxel: { x: 1, y: 0, z: 2, materialId: 'stone' }, privateNote: 'secret' }],
+    })
+    expect(unknownOperationField.valid).toBe(false)
+    if (unknownOperationField.valid) throw new Error('expected unknown operation field to reject')
+    expect(new Map(unknownOperationField.issues.map((issue) => [issue.path, issue])).get('payload.operations[0].privateNote')?.code)
+      .toBe('unknown-field')
+  })
+
   it('constructs conservative and precise clearHazards conflict scopes', () => {
     expect(createClearHazardsCommandScopes({ mode: 'all' })).toEqual([
       { kind: 'map', lane: 'hazards' },
@@ -710,6 +849,42 @@ describe('live-play command contract', () => {
       { kind: 'map', lane: 'hazards', cell: { x: 3, y: 0, z: 4 } },
     ])
     expect('cell' in scopes[0] ? scopes[0].cell : null).not.toBe(payload.cells[0])
+  })
+
+  it('constructs explicit and broad editTerrainVoxels conflict scopes', () => {
+    const smallPayload = {
+      operations: [
+        { action: 'upsert', voxel: { x: 1, y: 0, z: 2, materialId: 'stone' } },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4 } },
+      ],
+    } as const satisfies EditTerrainVoxelsPayload
+    const smallScopes = createEditTerrainVoxelsCommandScopes(smallPayload)
+
+    expect(smallScopes).toEqual([
+      { kind: 'map', lane: 'terrain', cell: { x: 1, y: 0, z: 2 } },
+      { kind: 'map', lane: 'terrain', cell: { x: 3, y: 0, z: 4 } },
+    ])
+    expect('cell' in smallScopes[0] ? smallScopes[0].cell : null).not.toBe(smallPayload.operations[0].voxel)
+
+    const broadPayload = {
+      operations: Array.from(
+        { length: LIVE_PLAY_EDIT_TERRAIN_VOXELS_EXPLICIT_SCOPE_LIMIT + 1 },
+        (_, index) => ({ action: 'remove' as const, cell: { x: index, y: 0, z: 1 } }),
+      ),
+    } satisfies EditTerrainVoxelsPayload
+    expect(createEditTerrainVoxelsCommandScopes(broadPayload)).toEqual([
+      { kind: 'map', lane: 'terrain' },
+    ])
+
+    expect(validateLivePlayCommandEnvelope({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      scopes: smallScopes,
+      payload: smallPayload,
+    }).valid).toBe(true)
   })
 
   it('constructs conservative clearFieldEffects conflict scopes', () => {
@@ -780,6 +955,42 @@ describe('live-play command contract', () => {
       terrains: [{ kind: 'electric', rounds: 3 }],
       rooms: [],
     })
+  })
+
+  it('models editTerrainVoxels map-terrain accepted patches with changed cells', () => {
+    const built = { x: 1, y: 0, z: 2, materialId: 'meadow_grass' }
+    const removed = { x: 3, y: 0, z: 4, materialId: 'stone' }
+    const payload = {
+      command: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      changes: [
+        {
+          cell: { x: 1, y: 0, z: 2 },
+          previous: null,
+          current: built,
+          built,
+        },
+        {
+          cell: { x: 3, y: 0, z: 4 },
+          previous: removed,
+          current: null,
+          removed,
+        },
+      ],
+      rendererInvalidation: ['terrain', 'movement-preview'],
+    } as const satisfies TerrainVoxelsEditedPatchPayload
+
+    const patch = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      type: LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN,
+      mapSlug,
+      revision: 8,
+      scopes: [{ kind: 'map', lane: 'terrain' }],
+      payload,
+    } as const satisfies LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN, TerrainVoxelsEditedPatchPayload>
+
+    expect(patch.payload.changes).toHaveLength(2)
+    expect(patch.payload.changes[0].current).toEqual(built)
+    expect(patch.payload.changes[1].current).toBeNull()
   })
 
   it('models shop checkout command envelopes without map persistence fields', () => {

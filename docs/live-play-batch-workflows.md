@@ -29,6 +29,8 @@ The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` pa
 
 The shared `clearFieldEffects` contract supports category-only clears for `weather`, `terrain`, `room`, and `all`, plus bounded explicit `kinds` lists for one non-`all` category. Empty, duplicate, unknown, cross-category, or over-limit kind lists reject before server mutation. All `clearFieldEffects` modes intentionally use the conservative map `fieldEffects` lane scope so they conflict with set/remove/tick field-effect commands but not unrelated token movement. The batch is exposed through `POST /api/maps/field-effects/clear`, validates terminal responses against the submitted body, and uses the durable outbox/status/abandonment flow like other live-play commands.
 
+The shared `editTerrainVoxels` contract is the terrain-brush batch shape for later server/client wiring. Its payload is one bounded `operations` list with `upsert` voxel operations and `remove` cell operations; unknown fields, empty lists, oversized lists, duplicate cells, and upsert/remove contradictions in the same cell reject before any authoritative mutation path can run. Small batches construct explicit terrain-cell scopes, while larger batches fall back to the conservative map `terrain` lane scope so they still conflict safely with single-cell terrain edits.
+
 ## Summary classification
 
 | Workflow | Current live-play behavior | Classification | Why |
