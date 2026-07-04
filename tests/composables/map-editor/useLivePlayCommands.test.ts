@@ -743,6 +743,116 @@ describe('useLivePlayCommands', () => {
     expect(actions.pendingPredictions.value).toEqual({})
   })
 
+  it('records safe in-memory lifecycle traces through HTTP prediction confirmation', async () => {
+    const map = ref(mapFixture())
+    const profileId = ref(parsePlayerProfileId('profile_ash00000'))
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_FACING,
+          mapSlug: 'arena-map',
+          revision: 5,
+          scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'facing' }],
+          payload: {
+            placementId: 'token-pikachu',
+            facing: 'north-west',
+            turned: true,
+          },
+        }],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      authRole: ref<AuthRole>('player'),
+      playerProfileId: profileId,
+      map,
+      mapRevision: ref(4),
+    })
+
+    const result = await actions.turnToken({ placementId: 'token-pikachu', facing: 'north-west' })
+
+    const trace = actions.commandTraces.value[result.opId!]
+    expect(trace).toMatchObject({
+      opId: result.opId,
+      requestPath: MAP_API_PATHS.turnToken,
+      commandType: LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN,
+      baseRevision: 4,
+      status: 'confirmed',
+    })
+    expect(trace?.events.map((event) => event.type)).toEqual([
+      'built',
+      'predicted',
+      'enqueued',
+      'claimed',
+      'sent',
+      'http-terminal',
+      'patch-adopted',
+      'confirmed',
+    ])
+    expect(trace?.events.map((event) => event.sequence)).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+    const serializedTrace = JSON.stringify(trace)
+    expect(serializedTrace).not.toContain('profile_ash00000')
+    expect(serializedTrace).not.toContain('payload')
+    expect(serializedTrace).not.toContain('north-west')
+  })
+
+  it('records prediction-to-rollback lifecycle traces for rejection and uncertainty', async () => {
+    const rejectedMap = ref(mapFixture())
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      const command = commandRecord(body)
+      return {
+        ok: false,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        reason: 'conflict',
+        message: 'Conflict',
+        currentRevision: 4,
+      }
+    })
+    const rejectedActions = useTestLivePlayCommands({ slug: 'arena-map', map: rejectedMap, mapRevision: ref(4) })
+    const rejected = await rejectedActions.turnToken({ placementId: 'token-pikachu', facing: 'north-west' })
+    const rejectedTrace = rejectedActions.commandTraces.value[rejected.opId!]
+    expect(rejectedTrace?.status).toBe('rejected')
+    expect(rejectedTrace?.events.map((event) => event.type)).toEqual([
+      'built',
+      'predicted',
+      'enqueued',
+      'claimed',
+      'sent',
+      'http-terminal',
+      'rolled-back',
+      'rejected',
+    ])
+    expect(rejectedTrace?.events.find((event) => event.type === 'http-terminal')?.detail).toEqual({ outcome: 'rejected' })
+    expect(rejectedTrace?.events.find((event) => event.type === 'rejected')?.detail).toEqual({ reason: 'conflict' })
+
+    apiMocks.postJson.mockReset()
+    const uncertainMap = ref(mapFixture())
+    apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
+    const uncertainActions = useTestLivePlayCommands({ slug: 'arena-map', map: uncertainMap, mapRevision: ref(4) })
+    const uncertain = await uncertainActions.turnToken({ placementId: 'token-pikachu', facing: 'north-east' })
+    const uncertainTrace = uncertainActions.commandTraces.value[uncertain.opId!]
+    expect(uncertainTrace?.status).toBe('uncertain')
+    expect(uncertainTrace?.events.map((event) => event.type)).toEqual([
+      'built',
+      'predicted',
+      'enqueued',
+      'claimed',
+      'sent',
+      'rolled-back',
+      'uncertain',
+    ])
+    expect(uncertainTrace?.events.find((event) => event.type === 'uncertain')?.detail).toEqual({ origin: 'immediate' })
+  })
+
   it('rolls back local turn predictions after terminal rejection', async () => {
     const map = ref(mapFixture())
     const originalPlacement = cloneJson(placementById(map.value))
@@ -872,6 +982,11 @@ describe('useLivePlayCommands', () => {
       recoveredByRealtime: true,
       opId: entry!.opId,
     })
+    const terminalTraceEvents = actions.commandTraces.value[entry!.opId]?.events
+      .filter((event) => event.type === 'http-terminal' || event.type === 'sse-terminal')
+      .map((event) => event.type)
+    expect(terminalTraceEvents).toEqual(['sse-terminal', 'http-terminal'])
+    expect(actions.commandTraces.value[entry!.opId]?.status).toBe('confirmed')
     expect(actions.pendingPredictionCount.value).toBe(0)
     expect(actions.pendingPredictions.value).toEqual({})
     expect(tokenPosition(map.value)).toEqual({ x: 2, y: 0, z: 1 })

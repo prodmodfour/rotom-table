@@ -64,6 +64,14 @@ import {
 } from '~/utils/livePlayPredictions'
 import { bindPendingLivePlayCommandUnloadWarning } from '~/utils/livePlayCommandUnloadWarning'
 import {
+  createLivePlayCommandTracer,
+  LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES,
+  type LivePlayCommandTraceEventDetail,
+  type LivePlayCommandTraceEventType,
+  type LivePlayCommandTraceMetadata,
+  type LivePlayCommandTraceSnapshot,
+} from '~/utils/livePlayCommandTrace'
+import {
   findLivePlayScopeConflict,
   type LivePlayScopeConflictDescriptor,
 } from '~/utils/livePlayScopeConflicts'
@@ -273,6 +281,7 @@ export interface UseLivePlayCommandsReturn {
   pendingCommands: ComputedRef<Readonly<Record<string, LivePlayPendingCommand>>>
   pendingCommandCount: ComputedRef<number>
   pendingPredictions: ComputedRef<Readonly<Record<string, LivePlayLocalPrediction>>>
+  commandTraces: ComputedRef<Readonly<Record<string, LivePlayCommandTraceSnapshot>>>
   pendingPredictionCount: ComputedRef<number>
   hasPendingOutboxCommands: ComputedRef<boolean>
   clearError: () => void
@@ -594,10 +603,13 @@ export const useLivePlayCommands = (
   const outboxRecoveryError = ref<string | null>(null)
   const pendingCommandRecords = ref<Record<string, LivePlayPendingCommand>>({})
   const localPredictionRecords = ref<Record<string, LivePlayLocalPrediction>>({})
+  const commandTraceRecorder = createLivePlayCommandTracer()
+  const commandTraceRecords = ref<Readonly<Record<string, LivePlayCommandTraceSnapshot>>>({})
   const pendingCommands = computed<Readonly<Record<string, LivePlayPendingCommand>>>(() => pendingCommandRecords.value)
   const pendingCommandCount = computed(() => Object.keys(pendingCommandRecords.value).length)
   const pendingPredictions = computed<Readonly<Record<string, LivePlayLocalPrediction>>>(() => localPredictionRecords.value)
   const pendingPredictionCount = computed(() => Object.keys(localPredictionRecords.value).length)
+  const commandTraces = computed<Readonly<Record<string, LivePlayCommandTraceSnapshot>>>(() => commandTraceRecords.value)
   const transportStatus = computed<LivePlayCommandTransportStatus>(() => (
     status.value === 'saving' || pendingCommandCount.value > 0 ? 'sending' : 'idle'
   ))
@@ -667,6 +679,7 @@ export const useLivePlayCommands = (
     if (!prediction) return
     rollbackLivePlayPredictionFromMap(options.map?.value, prediction)
     removeLocalPrediction(opId)
+    recordCommandRollbackTrace(prediction)
   }
 
   const sameGridAnchor = (left: GridAnchor, right: GridAnchor): boolean => (
@@ -698,8 +711,10 @@ export const useLivePlayCommands = (
   const rollbackLocalPredictionIfCurrentlyApplied = (opId: string): void => {
     const prediction = localPredictionRecords.value[opId]
     if (!prediction) return
-    if (localPredictionCurrentlyApplied(prediction)) rollbackLivePlayPredictionFromMap(options.map?.value, prediction)
+    const applied = localPredictionCurrentlyApplied(prediction)
+    if (applied) rollbackLivePlayPredictionFromMap(options.map?.value, prediction)
     removeLocalPrediction(opId)
+    recordCommandRollbackTrace(prediction, { applied })
   }
 
   const confirmLocalPrediction = (opId: string): void => {
@@ -714,6 +729,12 @@ export const useLivePlayCommands = (
     confirmLocalPrediction(opId)
     removePendingCommand(opId)
     clearSavingOperation(opId)
+    recordCommandTraceEvent(
+      { opId },
+      LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.CONFIRMED,
+      undefined,
+      { once: true },
+    )
   }
 
   const markOperationFailed = (opId: string | null, message: string): void => {
@@ -987,6 +1008,90 @@ export const useLivePlayCommands = (
     isLivePlayMapCommandType(body.type) ? body.type : null
   )
 
+  const commandTraceMetadataFromBody = (
+    requestPath: string | undefined,
+    body: Record<string, unknown>,
+  ): LivePlayCommandTraceMetadata | null => {
+    const opId = commandEnvelopeOpId(body)
+    if (!opId) return null
+    const commandType = bodyCommandType(body) ?? undefined
+    const baseRevision = typeof body.baseRevision === 'number' ? normalizeRevision(body.baseRevision) : undefined
+    return {
+      opId,
+      ...(requestPath === undefined ? {} : { requestPath }),
+      ...(commandType === undefined ? {} : { commandType }),
+      ...(baseRevision === undefined ? {} : { baseRevision }),
+    }
+  }
+
+  const commandTraceMetadataFromPendingCommand = (
+    command: LivePlayPendingCommand,
+  ): LivePlayCommandTraceMetadata => ({
+    opId: command.opId,
+    requestPath: command.requestPath,
+    commandType: command.commandType,
+    baseRevision: command.baseRevision,
+  })
+
+  const commandTraceMetadataFromEntry = (
+    entry: LivePlayCommandOutboxEntry,
+  ): LivePlayCommandTraceMetadata => ({
+    opId: entry.opId,
+    requestPath: entry.requestPath,
+    ...(isLivePlayMapCommandType(entry.commandType) ? { commandType: entry.commandType } : {}),
+    ...(typeof entry.body.baseRevision === 'number' ? { baseRevision: normalizeRevision(entry.body.baseRevision) } : {}),
+  })
+
+  const commandTraceMetadataFromResponse = (
+    response: LivePlayCommandResponse,
+  ): LivePlayCommandTraceMetadata | null => (
+    typeof response.opId === 'string' ? { opId: response.opId } : null
+  )
+
+  const recordCommandTraceEvent = (
+    metadata: LivePlayCommandTraceMetadata | null,
+    event: LivePlayCommandTraceEventType,
+    detail?: LivePlayCommandTraceEventDetail,
+    traceOptions: { readonly once?: boolean } = {},
+  ): void => {
+    if (!metadata) return
+    if (traceOptions.once && commandTraceRecorder.hasEvent(metadata.opId, event)) return
+    commandTraceRecorder.record({ ...metadata, event, ...(detail === undefined ? {} : { detail }) })
+    commandTraceRecords.value = commandTraceRecorder.snapshot()
+  }
+
+  const recordCommandBuiltTrace = (
+    requestPath: string,
+    body: Record<string, unknown>,
+  ): void => {
+    recordCommandTraceEvent(
+      commandTraceMetadataFromBody(requestPath, body),
+      LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.BUILT,
+    )
+  }
+
+  const recordCommandPredictionTrace = (command: LivePlayPendingCommand): void => {
+    recordCommandTraceEvent(
+      commandTraceMetadataFromPendingCommand(command),
+      LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.PREDICTED,
+    )
+  }
+
+  const recordCommandRollbackTrace = (
+    prediction: LivePlayLocalPrediction,
+    detail?: LivePlayCommandTraceEventDetail,
+  ): void => {
+    recordCommandTraceEvent(
+      {
+        opId: prediction.opId,
+        commandType: prediction.commandType,
+        baseRevision: prediction.baseRevision,
+      },
+      LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.ROLLED_BACK,
+      detail,
+    )
+  }
+
   const localPendingCommandBlockedMessage = (
     body: Record<string, unknown>,
     options: { readonly ignoredOpIds?: ReadonlySet<string> } = {},
@@ -1035,6 +1140,7 @@ export const useLivePlayCommands = (
       ...localPredictionRecords.value,
       [command.opId]: prediction,
     }
+    recordCommandPredictionTrace(command)
   }
 
   const trackPendingCommand = (command: LivePlayPendingCommand | null): void => {
@@ -1234,6 +1340,12 @@ export const useLivePlayCommands = (
     const message = `The server outcome for live-play operation ${entry.opId} is unknown. Retrying the same operation ID will be safe later. ${detail}`
     const outboxWarning = await markClaimedEntryUncertain(entry, message)
     markOperationFailed(entry.opId, message)
+    recordCommandTraceEvent(
+      commandTraceMetadataFromEntry(entry),
+      LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.UNCERTAIN,
+      { origin },
+      { once: true },
+    )
     if (origin === 'recovery') setOutboxRecoveryFailure(message)
     options.onCommandFailed?.(message)
     return {
@@ -1288,12 +1400,21 @@ export const useLivePlayCommands = (
     adoptOptions: { readonly reconcileOnPatchFailure?: boolean } = {},
   ): Promise<void> => {
     const reconcileOnPatchFailure = adoptOptions.reconcileOnPatchFailure ?? true
+    const patchResult = acceptedPatchResult(response)
     const patchesHandled = tryApplyAcceptedResponsePatches(response)
     const mapFallbackApplied = patchesHandled ? false : applyAcceptedResponseMapFallback(response)
     if (!patchesHandled && !mapFallbackApplied && acceptedResultRequiresReconciliation(response) && reconcileOnPatchFailure) {
       await options.requestReconciliation?.({ request, response })
     }
     for (const update of response.sheetUpdates ?? []) options.applySheetUpdate?.(update)
+    const sheetUpdatesApplied = (response.sheetUpdates?.length ?? 0) > 0
+    if (patchesHandled || mapFallbackApplied || sheetUpdatesApplied) {
+      recordCommandTraceEvent(
+        commandTraceMetadataFromResponse(response),
+        LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.PATCH_ADOPTED,
+        patchResult === null ? undefined : { revision: patchResult.revision },
+      )
+    }
   }
 
   const requestPresentationReconciliation = async (
@@ -1331,6 +1452,12 @@ export const useLivePlayCommands = (
 
     try {
       markOperationFailed(opId, message)
+      recordCommandTraceEvent(
+        { opId },
+        LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.REJECTED,
+        reason === null ? undefined : { reason },
+        { once: true },
+      )
       options.onCommandRejected?.({ reason, message, response })
       const needsReconciliation = rejectionNeedsReconciliation(
         reason,
@@ -1418,6 +1545,8 @@ export const useLivePlayCommands = (
   }): Promise<LivePlayCommandDispatchResult> => {
     const { entry, origin } = input
     let rawResponse: unknown
+    const traceMetadata = commandTraceMetadataFromEntry(entry)
+    recordCommandTraceEvent(traceMetadata, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.SENT)
     try {
       rawResponse = await postJson<unknown>(entry.requestPath, entry.body)
     } catch (postError) {
@@ -1425,6 +1554,11 @@ export const useLivePlayCommands = (
       return uncertaintyResult(entry, detail, origin)
     }
 
+    if (realtimeAcknowledgedResponses.has(entry.opId)) {
+      recordCommandTraceEvent(traceMetadata, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.HTTP_TERMINAL, {
+        outcome: 'ignored-after-realtime',
+      })
+    }
     const recoveredBeforeValidation = await realtimeRecoveredResult(
       entry,
       'The later HTTP response was ignored because realtime already supplied the terminal accepted result.',
@@ -1436,6 +1570,9 @@ export const useLivePlayCommands = (
       command: entry.body,
     })
     if (!validation.valid) {
+      recordCommandTraceEvent(traceMetadata, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.HTTP_TERMINAL, {
+        outcome: 'invalid',
+      })
       return uncertaintyResult(
         entry,
         `The command response was not trustworthy: ${validationIssueSummary(validation.issues)}`,
@@ -1444,6 +1581,9 @@ export const useLivePlayCommands = (
     }
 
     const response = rawResponse as LivePlayCommandResponse
+    recordCommandTraceEvent(traceMetadata, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.HTTP_TERMINAL, {
+      outcome: acceptedLivePlayResponse(response) ? 'accepted' : 'rejected',
+    })
     const acknowledgeWarning = await acknowledgeTerminalResponse(entry.opId)
     const refreshWarning = await refreshOutboxEntriesQuiet()
     return processTerminalResponse(
@@ -1518,6 +1658,10 @@ export const useLivePlayCommands = (
     let enqueuedEntry: LivePlayCommandOutboxEntry
     try {
       enqueuedEntry = await outbox.enqueue({ requestPath: request, body, authContext })
+      recordCommandTraceEvent(
+        commandTraceMetadataFromEntry(enqueuedEntry),
+        LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.ENQUEUED,
+      )
       trackPendingCommandEntry(enqueuedEntry, 'queued')
     } catch (enqueueError) {
       const outboxError = outboxErrorMessage(enqueueError)
@@ -1556,6 +1700,10 @@ export const useLivePlayCommands = (
       )
     }
 
+    recordCommandTraceEvent(
+      commandTraceMetadataFromEntry(claimResult.entry),
+      LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.CLAIMED,
+    )
     trackPendingCommandEntry(claimResult.entry, 'sending')
 
     return withOutboxWarning(
@@ -1573,6 +1721,7 @@ export const useLivePlayCommands = (
 
     const prepared = buildAuthenticatedCommandBody(buildBody)
     if (!prepared.ok) return prepared.result
+    recordCommandBuiltTrace(request, prepared.body)
 
     const pendingBlockedMessage = localPendingCommandBlockedMessage(prepared.body)
     if (pendingBlockedMessage) {
@@ -1694,6 +1843,7 @@ export const useLivePlayCommands = (
   const refreshMoveTokenCommandBeforeSend = (command: QueuedMoveTokenCommand): void => {
     rollbackLocalPrediction(command.opId)
     command.body = moveTokenCommandBody(command.authContext, command.payload, { opId: command.opId })
+    recordCommandBuiltTrace(command.requestPath, command.body)
     trackPendingCommandBody(command.requestPath, command.body, 'queued')
   }
 
@@ -1796,6 +1946,7 @@ export const useLivePlayCommands = (
     const commandPayload = normalizeMoveTokenPayload(payload)
     const prepared = buildAuthenticatedCommandBody((authContext) => moveTokenCommandBody(authContext, commandPayload))
     if (!prepared.ok) return Promise.resolve(prepared.result)
+    recordCommandBuiltTrace(MAP_API_PATHS.moveToken, prepared.body)
 
     const pendingBlockedMessage = localPendingCommandBlockedMessage(prepared.body, {
       ignoredOpIds: coalescedMoveOpIdsForPlacement(commandPayload.placementId),
@@ -2484,6 +2635,10 @@ export const useLivePlayCommands = (
         )
       }
 
+      recordCommandTraceEvent(
+        commandTraceMetadataFromEntry(claimResult.entry),
+        LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.CLAIMED,
+      )
       trackPendingCommandEntry(claimResult.entry, 'sending')
 
       const result = withOutboxWarning(
@@ -3093,6 +3248,11 @@ export const useLivePlayCommands = (
     const validationIssue = validateEntryForRealtimeAcknowledgement(entry, event)
     if (validationIssue) return { status: 'invalid', message: validationIssue }
 
+    recordCommandTraceEvent(commandTraceMetadataFromEntry(entry), LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.SSE_TERMINAL, {
+      outcome: 'accepted',
+      revision: event.revision,
+    })
+
     outboxRecoveryStatus.value = 'synchronizing'
     outboxRecoveryError.value = null
 
@@ -3160,6 +3320,7 @@ export const useLivePlayCommands = (
     pendingCommandCount,
     pendingPredictions,
     pendingPredictionCount,
+    commandTraces,
     hasPendingOutboxCommands,
     clearError,
     refreshOutboxEntries,

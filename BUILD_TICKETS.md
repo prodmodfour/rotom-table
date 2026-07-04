@@ -35,7 +35,7 @@ Each ticket should fit in one reviewable commit. Prefer a small helper plus test
 
 ## 001 — LP-S2-001 — Add command lifecycle tracing for live-play dispatch
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make live-play latency and ordering visible in tests and debug builds without changing user-facing behaviour.
 
