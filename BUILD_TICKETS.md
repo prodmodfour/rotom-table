@@ -329,7 +329,7 @@ Status: DONE
 
 ## 012 — LP-S2-011 — Predict simple HP edits for local token HUD only
 
-Status: TODO
+Status: DONE
 
 **Goal:** Extend prediction coverage to one common low-risk sheet-backed action without pretending sheet state is authoritative.
 

@@ -8,12 +8,14 @@ import {
 import {
   applyLivePlayPredictionToMap,
   buildLivePlayPrediction,
+  buildModifyHpPrediction,
   buildMoveTokenPrediction,
   buildTurnTokenPrediction,
   rollbackLivePlayPredictionFromMap,
 } from '~/utils/livePlayPredictions'
-import type { GridAnchor, TabletopMap } from '~/types/map'
+import type { GridAnchor, MapSceneState, TabletopMap } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
+import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 
 const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
@@ -52,7 +54,7 @@ const baseMap = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   ...overrides,
 })
 
-const tokenScope = (placementId: string, field: 'position' | 'facing'): LivePlayScope => ({
+const tokenScope = (placementId: string, field: 'position' | 'facing' | 'hp'): LivePlayScope => ({
   kind: 'token',
   placementId,
   field,
@@ -85,6 +87,30 @@ const turnCommand = (facing: TokenFacingDirection = 'north-west', overrides: Par
     facing,
   },
   ...overrides,
+})
+
+const hpCommand = (overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> => commandBase({
+  type: LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+  scopes: [
+    tokenScope('token-a', 'hp'),
+    { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'hp' },
+  ],
+  payload: {
+    placementId: 'token-a',
+    currentHp: 12,
+    temporaryHp: 6,
+  },
+  ...overrides,
+})
+
+const mapScene: MapSceneState = { name: 'Test scene', startedAt: 10 }
+
+const mapWithTemporaryHp = (temporaryHp = 2): TabletopMap => baseMap({
+  activeScene: mapScene,
+  temporaryHitPoints: {
+    scene: mapScene,
+    byPlacementId: { 'token-a': temporaryHp },
+  },
 })
 
 const tokenPosition = (map: TabletopMap, placementId = 'token-a'): GridAnchor | null => (
@@ -174,13 +200,79 @@ describe('live-play local prediction builders', () => {
     expect(map.placements[0]).toMatchObject({ facing: 'south-west', turned: false })
   })
 
+  it('builds a local-only modifyHp prediction for temporary HP map HUD metadata', () => {
+    const map = mapWithTemporaryHp(2)
+    const prediction = buildModifyHpPrediction({ map, command: hpCommand() })
+
+    expect(prediction).toMatchObject({
+      localOnly: true,
+      commandType: LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+      changedFields: ['temporaryHp'],
+      previousTemporaryHp: 2,
+      predictedTemporaryHp: 6,
+      previousPlacement: expect.objectContaining({ sheetSlug: 'pikachu' }),
+      predictedPlacement: expect.objectContaining({ sheetSlug: 'pikachu' }),
+      patches: [{
+        localOnly: true,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+        payload: {
+          placementId: 'token-a',
+          sheetKind: 'pokemon',
+          sheetSlug: 'pikachu',
+          previous: {},
+          current: {},
+          previousTemporaryHp: 2,
+          currentTemporaryHp: 6,
+        },
+      }],
+      rollbackPatches: [{
+        localOnly: true,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+        payload: {
+          placementId: 'token-a',
+          previousTemporaryHp: 6,
+          currentTemporaryHp: 2,
+        },
+      }],
+    })
+
+    expect(applyLivePlayPredictionToMap(map, prediction!)).toEqual({ ok: true, applied: true })
+    expect(map.revision).toBe(7)
+    expect(temporaryHpForPlacement(map, 'token-a')).toBe(6)
+    expect(map.placements[0]).toMatchObject({ sheetSlug: 'pikachu', initiative: 12 })
+
+    expect(rollbackLivePlayPredictionFromMap(map, prediction!)).toEqual({ ok: true, applied: true })
+    expect(map.revision).toBe(7)
+    expect(temporaryHpForPlacement(map, 'token-a')).toBe(2)
+  })
+
+  it('returns no modifyHp prediction for sheet-only HP changes', () => {
+    const prediction = buildLivePlayPrediction({
+      map: mapWithTemporaryHp(2),
+      command: hpCommand({
+        payload: { placementId: 'token-a', currentHp: 12, injuries: 1 },
+      }),
+    })
+
+    expect(prediction).toBeNull()
+  })
+
+  it('returns no modifyHp prediction when temporary HP cannot be represented on the map', () => {
+    const prediction = buildLivePlayPrediction({
+      map: baseMap(),
+      command: hpCommand(),
+    })
+
+    expect(prediction).toBeNull()
+  })
+
   it('returns no prediction for unsupported command types', () => {
     const prediction = buildLivePlayPrediction({
       map: baseMap(),
       command: commandBase({
-        type: LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
-        scopes: [{ kind: 'token', placementId: 'token-a', field: 'hp' }],
-        payload: { placementId: 'token-a', currentHp: 12 },
+        type: LIVE_PLAY_COMMAND_TYPES.MODIFY_CONDITIONS,
+        scopes: [{ kind: 'token', placementId: 'token-a', field: 'conditions' }],
+        payload: { placementId: 'token-a', conditions: ['Burned'], action: 'replace' },
       }),
     })
 

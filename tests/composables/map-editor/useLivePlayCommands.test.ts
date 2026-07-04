@@ -9,6 +9,7 @@ import {
 } from '~/composables/map-editor/useLivePlayCommands'
 import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlayStateMachine'
 import { MAP_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
+import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -402,6 +403,17 @@ const mapFixture = (): TabletopMap => ({
   initiative: { activeId: null, round: 1 },
   updatedAt: 100,
 })
+
+const mapWithTemporaryHpFixture = (temporaryHp = 2): TabletopMap => {
+  const map = mapFixture()
+  const scene = { name: 'Debug battle', startedAt: 100 }
+  map.activeScene = scene
+  map.temporaryHitPoints = {
+    scene,
+    byPlacementId: { 'token-pikachu': temporaryHp },
+  }
+  return map
+}
 
 const placementById = (map: TabletopMap, placementId = 'token-pikachu') => {
   const placement = map.placements.find((candidate) => candidate.id === placementId)
@@ -812,6 +824,112 @@ describe('useLivePlayCommands', () => {
     expect(placementById(map.value)).toMatchObject({ facing: 'north-west', turned: true })
     expect(actions.pendingPredictionCount.value).toBe(0)
     expect(actions.pendingPredictions.value).toEqual({})
+  })
+
+  it('adds and confirms local temporary HP HUD predictions without mutating sheet cache first', async () => {
+    const map = ref(mapWithTemporaryHpFixture(2))
+    const applySheetUpdate = vi.fn()
+    const postGate = deferred<void>()
+    const sheetUpdate = {
+      kind: 'pokemon' as const,
+      slug: 'pikachu',
+      sheet: { slug: 'pikachu', combat: { currentHp: 8 }, revision: 3 },
+    }
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: true,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        previousRevision: 4,
+        revision: 5,
+        patches: [{
+          schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+          type: LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+          mapSlug: 'arena-map',
+          revision: 5,
+          scopes: [
+            { kind: 'token', placementId: 'token-pikachu', field: 'hp' },
+            { kind: 'sheet', sheetKind: 'pokemon', sheetSlug: 'pikachu', field: 'hp' },
+          ],
+          payload: {
+            placementId: 'token-pikachu',
+            sheetKind: 'pokemon',
+            sheetSlug: 'pikachu',
+            previous: { currentHp: 10 },
+            current: { currentHp: 8 },
+            previousTemporaryHp: 2,
+            currentTemporaryHp: 7,
+            sheetRevision: 3,
+          },
+        }],
+        sheetUpdates: [sheetUpdate],
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applySheetUpdate,
+    })
+    const dispatch = actions.modifyHp({ placementId: 'token-pikachu', currentHp: 8, temporaryHp: 7 })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    const prediction = Object.values(actions.pendingPredictions.value)[0]
+    expect(prediction).toMatchObject({
+      commandType: LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+      changedFields: ['temporaryHp'],
+      previousTemporaryHp: 2,
+      predictedTemporaryHp: 7,
+    })
+    expect(temporaryHpForPlacement(map.value, 'token-pikachu')).toBe(7)
+    expect(applySheetUpdate).not.toHaveBeenCalled()
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId: prediction?.opId })
+    expect(map.value.revision).toBe(5)
+    expect(temporaryHpForPlacement(map.value, 'token-pikachu')).toBe(7)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(applySheetUpdate).toHaveBeenCalledWith(sheetUpdate)
+  })
+
+  it('rolls back local temporary HP HUD predictions after terminal rejection without sheet updates', async () => {
+    const map = ref(mapWithTemporaryHpFixture(2))
+    const applySheetUpdate = vi.fn()
+    const postGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      await postGate.promise
+      const command = commandRecord(body)
+      return {
+        ok: false,
+        opId: command.opId,
+        mapSlug: command.mapSlug,
+        reason: 'conflict',
+        message: 'Conflict',
+        currentRevision: 4,
+      }
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applySheetUpdate,
+    })
+    const dispatch = actions.modifyHp({ placementId: 'token-pikachu', currentHp: 8, temporaryHp: 7 })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    expect(temporaryHpForPlacement(map.value, 'token-pikachu')).toBe(7)
+
+    postGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: false, message: 'Conflict' })
+    expect(temporaryHpForPlacement(map.value, 'token-pikachu')).toBe(2)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(applySheetUpdate).not.toHaveBeenCalled()
   })
 
   it('records safe in-memory lifecycle traces through HTTP prediction confirmation', async () => {

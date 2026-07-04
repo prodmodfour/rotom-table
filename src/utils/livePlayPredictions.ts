@@ -4,7 +4,9 @@ import {
   LIVE_PLAY_PATCH_TYPES,
   type LivePlayPatch,
   type LivePlayScope,
+  type ModifyHpPayload,
   type MoveTokenPayload,
+  type SheetHpModifiedPatchPayload,
   type TokenMovedPatchPayload,
   type TokenTurnedPatchPayload,
   type TurnTokenPayload,
@@ -19,16 +21,32 @@ import {
   tokenFacingStoresLegacyTurned,
   tokenFacingTowardPoint,
 } from '~/utils/tokenFacing'
+import {
+  normalizeTemporaryHpAmount,
+  setTemporaryHpForPlacement,
+  temporaryHpForPlacement,
+} from '~/utils/mapTemporaryHitPoints'
+import { normalizeMapSceneState } from '~/utils/mapSceneState'
 
 export type LivePlayPredictionCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN
   | typeof LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN
+  | typeof LIVE_PLAY_COMMAND_TYPES.MODIFY_HP
 
 export type LivePlayPredictionPatchType =
   | typeof LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION
   | typeof LIVE_PLAY_PATCH_TYPES.TOKEN_FACING
+  | typeof LIVE_PLAY_PATCH_TYPES.TOKEN_HP
 
-export type LivePlayPredictionPatchPayload = TokenMovedPatchPayload | TokenTurnedPatchPayload
+export type LivePlayPredictionHpPatchPayload = SheetHpModifiedPatchPayload & {
+  readonly previousTemporaryHp: number
+  readonly currentTemporaryHp: number
+}
+
+export type LivePlayPredictionPatchPayload =
+  | TokenMovedPatchPayload
+  | TokenTurnedPatchPayload
+  | LivePlayPredictionHpPatchPayload
 
 /**
  * Runtime-only visual patch. These patches intentionally carry local-only
@@ -44,6 +62,8 @@ export type LivePlayPredictionPatch = LivePlayPatch<
 }
 
 export type LivePlayPredictionPlacementField = 'position' | 'facing' | 'turned'
+export type LivePlayPredictionMapField = 'temporaryHp'
+export type LivePlayPredictionChangedField = LivePlayPredictionPlacementField | LivePlayPredictionMapField
 
 export interface LivePlayLocalPrediction {
   readonly kind: 'live-play-local-prediction'
@@ -54,9 +74,11 @@ export interface LivePlayLocalPrediction {
   readonly baseRevision: number
   readonly placementId: string
   readonly scopes: readonly LivePlayScope[]
-  readonly changedFields: readonly LivePlayPredictionPlacementField[]
+  readonly changedFields: readonly LivePlayPredictionChangedField[]
   readonly previousPlacement: SheetPlacement
   readonly predictedPlacement: SheetPlacement
+  readonly previousTemporaryHp?: number
+  readonly predictedTemporaryHp?: number
   readonly patches: readonly LivePlayPredictionPatch[]
   readonly rollbackPatches: readonly LivePlayPredictionPatch[]
 }
@@ -71,6 +93,7 @@ export type LivePlayPredictionApplyFailureReason =
   | 'map-slug-mismatch'
   | 'stale-map'
   | 'missing-placement'
+  | 'invalid-prediction'
 
 export interface LivePlayPredictionApplied {
   readonly ok: true
@@ -189,6 +212,19 @@ const parseTurnTokenPayload = (payload: unknown): TurnTokenPayload | null => {
   }
 }
 
+const parseModifyHpPayload = (payload: unknown): ModifyHpPayload | null => {
+  if (!isRecord(payload) || !nonEmptyString(payload.placementId) || !finiteNumber(payload.currentHp)) return null
+  if (payload.temporaryHp !== undefined && !finiteNumber(payload.temporaryHp)) return null
+  if (payload.injuries !== undefined && !finiteNumber(payload.injuries)) return null
+
+  return {
+    placementId: payload.placementId,
+    currentHp: payload.currentHp,
+    ...(payload.temporaryHp === undefined ? {} : { temporaryHp: normalizeTemporaryHpAmount(payload.temporaryHp) }),
+    ...(payload.injuries === undefined ? {} : { injuries: payload.injuries }),
+  }
+}
+
 const clampAxis = (value: number, fallback: number, max: number): number => {
   const upper = Math.max(0, Math.floor(Number.isFinite(max) ? max : 1) - 1)
   if (!Number.isFinite(value)) return fallback
@@ -266,6 +302,25 @@ const rollbackTurnPatchPayload = (placement: SheetPlacement): TokenTurnedPatchPa
   ...(placement.turned === undefined ? {} : { turned: placement.turned }),
 })
 
+const hpPatchPayload = (
+  placement: SheetPlacement,
+  previousTemporaryHp: number,
+  currentTemporaryHp: number,
+  sheetRevision: number,
+): LivePlayPredictionHpPatchPayload => ({
+  placementId: placement.id,
+  sheetKind: placement.sheetKind,
+  sheetSlug: placement.sheetSlug,
+  // HP prediction is map-HUD metadata only. The sheet documents stay empty in
+  // local-only patches so callers cannot mistake this for authoritative sheet
+  // state.
+  previous: {},
+  current: {},
+  previousTemporaryHp,
+  currentTemporaryHp,
+  sheetRevision,
+})
+
 const createPrediction = (
   command: ParsedPredictionCommand,
   input: {
@@ -273,11 +328,14 @@ const createPrediction = (
     readonly placementId: string
     readonly previousPlacement: SheetPlacement
     readonly predictedPlacement: SheetPlacement
+    readonly changedFields?: readonly LivePlayPredictionChangedField[]
+    readonly previousTemporaryHp?: number
+    readonly predictedTemporaryHp?: number
     readonly patches: readonly LivePlayPredictionPatch[]
     readonly rollbackPatches: readonly LivePlayPredictionPatch[]
   },
 ): LivePlayLocalPrediction | null => {
-  const changedFields = placementFieldsChanged(input.previousPlacement, input.predictedPlacement)
+  const changedFields = input.changedFields ?? placementFieldsChanged(input.previousPlacement, input.predictedPlacement)
   if (changedFields.length === 0) return null
 
   return {
@@ -292,6 +350,8 @@ const createPrediction = (
     changedFields,
     previousPlacement: clonePlacement(input.previousPlacement),
     predictedPlacement: clonePlacement(input.predictedPlacement),
+    ...(input.previousTemporaryHp === undefined ? {} : { previousTemporaryHp: input.previousTemporaryHp }),
+    ...(input.predictedTemporaryHp === undefined ? {} : { predictedTemporaryHp: input.predictedTemporaryHp }),
     patches: deepCloneJson(input.patches),
     rollbackPatches: deepCloneJson(input.rollbackPatches),
   }
@@ -376,6 +436,45 @@ const buildTurnTokenPredictionFromCommand = (
   })
 }
 
+const buildModifyHpPredictionFromCommand = (
+  map: TabletopMap | null | undefined,
+  command: ParsedPredictionCommand,
+): LivePlayLocalPrediction | null => {
+  const payload = parseModifyHpPayload(command.payload)
+  if (!payload || payload.temporaryHp === undefined || !mapCanAcceptPrediction(map, command)) return null
+
+  const placement = placementForPayload(map, payload.placementId)
+  if (!placement) return null
+
+  const previousTemporaryHp = temporaryHpForPlacement(map, payload.placementId)
+  const predictedTemporaryHp = normalizeTemporaryHpAmount(payload.temporaryHp)
+  if (previousTemporaryHp === predictedTemporaryHp) return null
+  if (predictedTemporaryHp > 0 && !normalizeMapSceneState(map.activeScene)) return null
+
+  const previousPlacement = clonePlacement(placement)
+  const predictedPlacement = clonePlacement(placement)
+
+  return createPrediction(command, {
+    commandType: LIVE_PLAY_COMMAND_TYPES.MODIFY_HP,
+    placementId: payload.placementId,
+    previousPlacement,
+    predictedPlacement,
+    changedFields: ['temporaryHp'],
+    previousTemporaryHp,
+    predictedTemporaryHp,
+    patches: [localPatch(
+      command,
+      LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+      hpPatchPayload(previousPlacement, previousTemporaryHp, predictedTemporaryHp, command.baseRevision),
+    )],
+    rollbackPatches: [localPatch(
+      command,
+      LIVE_PLAY_PATCH_TYPES.TOKEN_HP,
+      hpPatchPayload(previousPlacement, predictedTemporaryHp, previousTemporaryHp, command.baseRevision),
+    )],
+  })
+}
+
 export const buildMoveTokenPrediction = (input: BuildLivePlayPredictionInput): LivePlayLocalPrediction | null => {
   const command = parsePredictionCommand(input.command)
   if (!command || command.type !== LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN) return null
@@ -388,6 +487,12 @@ export const buildTurnTokenPrediction = (input: BuildLivePlayPredictionInput): L
   return buildTurnTokenPredictionFromCommand(input.map, command)
 }
 
+export const buildModifyHpPrediction = (input: BuildLivePlayPredictionInput): LivePlayLocalPrediction | null => {
+  const command = parsePredictionCommand(input.command)
+  if (!command || command.type !== LIVE_PLAY_COMMAND_TYPES.MODIFY_HP) return null
+  return buildModifyHpPredictionFromCommand(input.map, command)
+}
+
 export const buildLivePlayPrediction = (input: BuildLivePlayPredictionInput): LivePlayLocalPrediction | null => {
   const command = parsePredictionCommand(input.command)
   if (!command) return null
@@ -397,6 +502,9 @@ export const buildLivePlayPrediction = (input: BuildLivePlayPredictionInput): Li
   }
   if (command.type === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {
     return buildTurnTokenPredictionFromCommand(input.map, command)
+  }
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.MODIFY_HP) {
+    return buildModifyHpPredictionFromCommand(input.map, command)
   }
   return null
 }
@@ -418,10 +526,19 @@ const setOptionalPlacementField = <TKey extends 'facing' | 'turned'>(
   }
 }
 
-const applyPredictionPlacement = (
+interface LivePlayPredictionStateSource {
+  readonly placement: SheetPlacement
+  readonly temporaryHp?: number
+}
+
+const predictionChangesPlacement = (prediction: LivePlayLocalPrediction): boolean => (
+  prediction.changedFields.some((field) => field === 'position' || field === 'facing' || field === 'turned')
+)
+
+const applyPredictionState = (
   map: TabletopMap | null | undefined,
   prediction: LivePlayLocalPrediction,
-  source: SheetPlacement,
+  source: LivePlayPredictionStateSource,
   options: { readonly requireBaseRevision: boolean },
 ): LivePlayPredictionApplyResult => {
   if (!map) return failedApply('missing-map', 'Cannot apply a live-play prediction before the map has loaded')
@@ -441,41 +558,64 @@ const applyPredictionPlacement = (
     return failedApply('missing-placement', `Prediction references missing placement ${prediction.placementId}`)
   }
 
-  const next = clonePlacement(current)
-  for (const field of prediction.changedFields) {
-    if (field === 'position') next.position = cloneAnchor(source.position)
-    else setOptionalPlacementField(next, source, field)
+  const applyTemporaryHp = prediction.changedFields.includes('temporaryHp')
+  if (applyTemporaryHp && source.temporaryHp === undefined) {
+    return failedApply('invalid-prediction', `Prediction ${prediction.opId} is missing temporary HP state`)
   }
-  map.placements.splice(index, 1, next)
+  if (applyTemporaryHp && source.temporaryHp !== undefined && source.temporaryHp > 0 && !normalizeMapSceneState(map.activeScene)) {
+    return failedApply('invalid-prediction', 'Temporary HP predictions require an active scene')
+  }
+
+  if (predictionChangesPlacement(prediction)) {
+    const next = clonePlacement(current)
+    for (const field of prediction.changedFields) {
+      if (field === 'position') next.position = cloneAnchor(source.placement.position)
+      else if (field === 'facing' || field === 'turned') setOptionalPlacementField(next, source.placement, field)
+    }
+    map.placements.splice(index, 1, next)
+  }
+
+  if (applyTemporaryHp && source.temporaryHp !== undefined) {
+    setTemporaryHpForPlacement(map, prediction.placementId, source.temporaryHp)
+  }
   return { ok: true, applied: true }
 }
 
 export const applyLivePlayPredictionToMap = (
   map: TabletopMap | null | undefined,
   prediction: LivePlayLocalPrediction,
-): LivePlayPredictionApplyResult => applyPredictionPlacement(
+): LivePlayPredictionApplyResult => applyPredictionState(
   map,
   prediction,
-  prediction.predictedPlacement,
+  {
+    placement: prediction.predictedPlacement,
+    ...(prediction.predictedTemporaryHp === undefined ? {} : { temporaryHp: prediction.predictedTemporaryHp }),
+  },
   { requireBaseRevision: true },
 )
 
 export const reapplyLivePlayPredictionToMap = (
   map: TabletopMap | null | undefined,
   prediction: LivePlayLocalPrediction,
-): LivePlayPredictionApplyResult => applyPredictionPlacement(
+): LivePlayPredictionApplyResult => applyPredictionState(
   map,
   prediction,
-  prediction.predictedPlacement,
+  {
+    placement: prediction.predictedPlacement,
+    ...(prediction.predictedTemporaryHp === undefined ? {} : { temporaryHp: prediction.predictedTemporaryHp }),
+  },
   { requireBaseRevision: false },
 )
 
 export const rollbackLivePlayPredictionFromMap = (
   map: TabletopMap | null | undefined,
   prediction: LivePlayLocalPrediction,
-): LivePlayPredictionApplyResult => applyPredictionPlacement(
+): LivePlayPredictionApplyResult => applyPredictionState(
   map,
   prediction,
-  prediction.previousPlacement,
+  {
+    placement: prediction.previousPlacement,
+    ...(prediction.previousTemporaryHp === undefined ? {} : { temporaryHp: prediction.previousTemporaryHp }),
+  },
   { requireBaseRevision: false },
 )

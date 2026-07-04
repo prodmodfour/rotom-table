@@ -92,6 +92,7 @@ import { useApiClient } from '~/composables/useApiClient'
 import type { AttackOfOpportunityStateUpdatePayload } from '#shared/attackOfOpportunityState'
 import type { PlayerProfileId } from '#shared/playerProfiles'
 import type { StartTurnModalStateUpdatePayload } from '#shared/startTurnModalState'
+import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import type { GridAnchor, MapHazardV2, SheetPlacement, TabletopMap } from '~/types/map'
 import type { TokenFacingDirection } from '~/types/tokenFacing'
 import type { PokeballCaptureOutcomeEvent } from '~/utils/pokeballCapture'
@@ -721,6 +722,9 @@ export const useLivePlayCommands = (
     for (const field of prediction.changedFields) {
       if (field === 'position') {
         if (!sameGridAnchor(placement.position, prediction.predictedPlacement.position)) return false
+      } else if (field === 'temporaryHp') {
+        if (prediction.predictedTemporaryHp === undefined) return false
+        if (temporaryHpForPlacement(options.map?.value, prediction.placementId) !== prediction.predictedTemporaryHp) return false
       } else if (
         placementHasOwnField(placement, field) !== placementHasOwnField(prediction.predictedPlacement, field)
         || placement[field] !== prediction.predictedPlacement[field]
@@ -1266,7 +1270,7 @@ export const useLivePlayCommands = (
   const predictionRebaseConflictScopes = (prediction: LivePlayLocalPrediction): readonly LivePlayScope[] => {
     const scopes = [...prediction.scopes]
     for (const field of prediction.changedFields) {
-      addPredictionTokenScopeIfMissing(scopes, prediction, field === 'position' ? 'position' : 'facing')
+      addPredictionTokenScopeIfMissing(scopes, prediction, field === 'position' ? 'position' : field === 'temporaryHp' ? 'hp' : 'facing')
     }
     return scopes
   }
