@@ -204,6 +204,10 @@ const mapEffectsCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
 ])
 
+const reservedMapEffectsCommandTypes = new Set<string>([
+  LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+])
+
 const hazardCellCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
@@ -265,6 +269,12 @@ const assertMapEffectsCommandType = (
 ): void => {
   if (expectedType && command.type !== expectedType) {
     rejectLivePlayCommand('invalid', `This route only accepts ${expectedType} commands`)
+  }
+  if (reservedMapEffectsCommandTypes.has(command.type)) {
+    rejectLivePlayCommand(
+      'invalid',
+      'editHazards is a reserved live-play batch contract; hazard batch execution is not available until the hazard batch server route is implemented.',
+    )
   }
   if (!mapEffectsCommandTypes.has(command.type)) {
     rejectLivePlayCommand(

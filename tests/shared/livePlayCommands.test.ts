@@ -2,11 +2,14 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
   LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES,
   LIVE_PLAY_CLEAR_HAZARDS_MODES,
+  LIVE_PLAY_BATCH_MAX_HAZARD_CELLS,
   LIVE_PLAY_BATCH_MAX_TERRAIN_VOXELS,
   LIVE_PLAY_COMMAND_REJECTION_REASONS,
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_COMMAND_TYPE_VALUES,
+  LIVE_PLAY_EDIT_HAZARD_ACTIONS,
+  LIVE_PLAY_EDIT_HAZARDS_EXPLICIT_SCOPE_LIMIT,
   LIVE_PLAY_EDIT_TERRAIN_VOXEL_ACTIONS,
   LIVE_PLAY_EDIT_TERRAIN_VOXELS_EXPLICIT_SCOPE_LIMIT,
   LIVE_PLAY_FIELD_EFFECT_KIND_VALUES,
@@ -27,6 +30,7 @@ import {
   collectShopCheckoutCommandEnvelopeIssues,
   createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  createEditHazardsCommandScopes,
   createEditTerrainVoxelsCommandScopes,
   createLivePlayAcceptedResult,
   createLivePlayDuplicateResult,
@@ -34,6 +38,7 @@ import {
   createLivePlayRejectedResult,
   isClearFieldEffectsCategory,
   isClearHazardsMode,
+  isEditHazardAction,
   isEditTerrainVoxelAction,
   isLivePlayBaseRevision,
   isLivePlayCommandRejectionReason,
@@ -53,6 +58,7 @@ import {
   isValidShopCheckoutCommandEnvelope,
   parseClearFieldEffectsPayload,
   parseClearHazardsPayload,
+  parseEditHazardsPayload,
   parseEditTerrainVoxelsPayload,
   parseLivePlayBaseRevision,
   parseLivePlayCommandType,
@@ -68,6 +74,8 @@ import {
   type ClearHazardsLivePlayCommand,
   type ClearHazardsPayload,
   type DeleteTokenLivePlayCommand,
+  type EditHazardsLivePlayCommand,
+  type EditHazardsPayload,
   type DeleteTokenPayload,
   type EditTerrainVoxelsLivePlayCommand,
   type EditTerrainVoxelsPayload,
@@ -75,6 +83,7 @@ import {
   type GrantExperiencePayload,
   type FieldEffectsUpdatedPatchPayload,
   type HazardsClearedPatchPayload,
+  type HazardsEditedPatchPayload,
   type LivePlayBaseRevision,
   type LivePlayCommandEnvelope,
   type LivePlayCommandResult,
@@ -206,6 +215,7 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setInitiative')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('placeHazard')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('clearHazards')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('editHazards')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('clearFieldEffects')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setFieldEffect')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('buildTerrainVoxel')
@@ -221,19 +231,23 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_MAP_COMMAND_TYPE_VALUES).not.toContain('shopCheckout')
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS)).toBe(true)
+    expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS)).toBe(true)
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS)).toBe(true)
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS)).toBe(true)
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT)).toBe(true)
     expect(isLivePlayMapCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
+    expect(isLivePlayMapCommandType(LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS)).toBe(true)
     expect(isLivePlayMapCommandType(LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT)).toBe(false)
     expect(isLivePlayCommandType('teleportToken')).toBe(false)
     expect(parseLivePlayCommandType('useMove')).toBe('useMove')
     expect(parseLivePlayCommandType('clearHazards')).toBe('clearHazards')
+    expect(parseLivePlayCommandType('editHazards')).toBe('editHazards')
     expect(parseLivePlayCommandType('clearFieldEffects')).toBe('clearFieldEffects')
     expect(parseLivePlayCommandType('editTerrainVoxels')).toBe('editTerrainVoxels')
     expect(parseLivePlayCommandType('shopCheckout')).toBe('shopCheckout')
     expect(parseLivePlayMapCommandType('useMove')).toBe('useMove')
     expect(parseLivePlayMapCommandType('clearHazards')).toBe('clearHazards')
+    expect(parseLivePlayMapCommandType('editHazards')).toBe('editHazards')
     expect(parseLivePlayMapCommandType('clearFieldEffects')).toBe('clearFieldEffects')
     expect(parseLivePlayMapCommandType('editTerrainVoxels')).toBe('editTerrainVoxels')
     expect(() => parseLivePlayCommandType('teleportToken')).toThrow(
@@ -284,6 +298,8 @@ describe('live-play command contract', () => {
     ])
     expect(LIVE_PLAY_CLEAR_HAZARDS_MODES).toEqual(['all', 'cells', 'kind'])
     expect(LIVE_PLAY_HAZARD_KIND_VALUES).toEqual(['spikes', 'toxic-spikes', 'sticky-web', 'stealth-rock', 'fire'])
+    expect(LIVE_PLAY_EDIT_HAZARD_ACTIONS).toEqual(['upsert', 'remove'])
+    expect(LIVE_PLAY_EDIT_HAZARDS_EXPLICIT_SCOPE_LIMIT).toBe(32)
     expect(LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES).toEqual(['weather', 'terrain', 'room', 'all'])
     expect(LIVE_PLAY_FIELD_EFFECT_KIND_VALUES).toEqual([
       'sunny',
@@ -303,6 +319,8 @@ describe('live-play command contract', () => {
     expect(isClearHazardsMode('cells')).toBe(true)
     expect(isClearHazardsMode('explicit')).toBe(false)
     expect(isLivePlayHazardKind('stealth-rock')).toBe(true)
+    expect(isEditHazardAction('upsert')).toBe(true)
+    expect(isEditHazardAction('paint')).toBe(false)
     expect(isLivePlayHazardKind('bad-hazard')).toBe(false)
     expect(isClearFieldEffectsCategory('weather')).toBe(true)
     expect(isClearFieldEffectsCategory('screen')).toBe(false)
@@ -459,6 +477,29 @@ describe('live-play command contract', () => {
       kind: 'spikes',
     })
 
+    const editHazardsPayload = {
+      operations: [
+        { action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4, kind: 'fire' } },
+      ],
+    } as const satisfies EditHazardsPayload
+    const editHazardsCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+      scopes: createEditHazardsCommandScopes(editHazardsPayload),
+      payload: editHazardsPayload,
+    } as const satisfies EditHazardsLivePlayCommand
+
+    expect(editHazardsCommand.type).toBe('editHazards')
+    expect(editHazardsCommand.scopes).toEqual([
+      { kind: 'map', lane: 'hazards', cell: { x: 1, y: 0, z: 2 } },
+      { kind: 'map', lane: 'hazards', cell: { x: 3, y: 0, z: 4 } },
+    ])
+    expect(editHazardsCommand.payload).toEqual(editHazardsPayload)
+
     const fieldEffectCommand = {
       schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
       opId,
@@ -604,6 +645,7 @@ describe('live-play command contract', () => {
     expectTypeOf(initiativeCommand.payload).toMatchTypeOf<SetInitiativePayload>()
     expectTypeOf(hazardCommand.payload).toMatchTypeOf<PlaceHazardPayload>()
     expectTypeOf(clearHazardsCommand.payload).toMatchTypeOf<ClearHazardsPayload>()
+    expectTypeOf(editHazardsCommand.payload).toMatchTypeOf<EditHazardsPayload>()
     expectTypeOf(clearFieldEffectsCommand.payload).toMatchTypeOf<ClearFieldEffectsPayload>()
     expectTypeOf(fieldEffectCommand.payload).toMatchTypeOf<SetFieldEffectPayload>()
     expectTypeOf(buildTerrainCommand.payload).toMatchTypeOf<BuildTerrainVoxelPayload>()
@@ -668,6 +710,132 @@ describe('live-play command contract', () => {
     expect(unknownField.valid).toBe(false)
     if (unknownField.valid) throw new Error('expected unknown fields to reject')
     expect(new Map(unknownField.issues.map((issue) => [issue.path, issue])).get('payload.profileId')?.code)
+      .toBe('unknown-field')
+  })
+
+  it('validates editHazards operations and rejects contradictory hazard cells', () => {
+    const payload = {
+      operations: [
+        {
+          action: 'upsert',
+          hazard: {
+            kind: 'toxic-spikes',
+            x: 1,
+            y: 0,
+            z: 2,
+            layer: 2,
+            owner: ' north side ',
+          },
+        },
+        { action: 'upsert', hazard: { kind: 'stealth-rock', x: 1, y: 0, z: 2 } },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4, kind: 'fire' } },
+      ],
+    }
+    const before = structuredClone(payload)
+    const parsed = parseEditHazardsPayload(payload)
+
+    expect(parsed.valid).toBe(true)
+    if (!parsed.valid) throw new Error('expected valid editHazards payload')
+    expect(parsed.value).toEqual({
+      operations: [
+        {
+          action: 'upsert',
+          hazard: {
+            kind: 'toxic-spikes',
+            x: 1,
+            y: 0,
+            z: 2,
+            layer: 2,
+            owner: 'north side',
+          },
+        },
+        { action: 'upsert', hazard: { kind: 'stealth-rock', x: 1, y: 0, z: 2 } },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4, kind: 'fire' } },
+      ],
+    })
+    expect(parsed.value.operations[0]).not.toBe(payload.operations[0])
+    expect(payload).toEqual(before)
+
+    const defaultLayer = parseEditHazardsPayload({
+      operations: [{ action: 'upsert', hazard: { kind: 'toxic-spikes', x: 5, y: 0, z: 6 } }],
+    })
+    expect(defaultLayer.valid).toBe(true)
+    if (!defaultLayer.valid) throw new Error('expected default toxic-spikes layer')
+    expect(defaultLayer.value.operations[0]).toEqual({
+      action: 'upsert',
+      hazard: { kind: 'toxic-spikes', x: 5, y: 0, z: 6, layer: 1 },
+    })
+
+    const oversized = parseEditHazardsPayload({
+      operations: Array.from(
+        { length: LIVE_PLAY_BATCH_MAX_HAZARD_CELLS + 1 },
+        (_, index) => ({ action: 'remove', cell: { x: index, y: 0, z: 1 } }),
+      ),
+    })
+    expect(oversized.valid).toBe(false)
+    if (oversized.valid) throw new Error('expected oversized editHazards payload to reject')
+    expect(new Map(oversized.issues.map((issue) => [issue.path, issue])).get('payload.operations')?.code)
+      .toBe('too-many-items')
+
+    const contradictoryKind = parseEditHazardsPayload({
+      operations: [
+        { action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
+        { action: 'remove', cell: { x: 1, y: 0, z: 2, kind: 'spikes' } },
+      ],
+    })
+    expect(contradictoryKind.valid).toBe(false)
+    if (contradictoryKind.valid) throw new Error('expected contradictory hazard operations to reject')
+    expect(new Map(contradictoryKind.issues.map((issue) => [issue.path, issue])).get('payload.operations[1]')?.code)
+      .toBe('contradictory-cell-operation')
+
+    const contradictoryCell = parseEditHazardsPayload({
+      operations: [
+        { action: 'upsert', hazard: { kind: 'sticky-web', x: 1, y: 0, z: 2 } },
+        { action: 'remove', cell: { x: 1, y: 0, z: 2 } },
+      ],
+    })
+    expect(contradictoryCell.valid).toBe(false)
+    if (contradictoryCell.valid) throw new Error('expected whole-cell remove contradiction to reject')
+    expect(new Map(contradictoryCell.issues.map((issue) => [issue.path, issue])).get('payload.operations[1]')?.code)
+      .toBe('contradictory-cell-operation')
+
+    const duplicate = parseEditHazardsPayload({
+      operations: [
+        { action: 'remove', cell: { x: 2, y: 0, z: 3, kind: 'fire' } },
+        { action: 'remove', cell: { x: 2, y: 0, z: 3, kind: 'fire' } },
+      ],
+    })
+    expect(duplicate.valid).toBe(false)
+    if (duplicate.valid) throw new Error('expected duplicate hazard operations to reject')
+    expect(new Map(duplicate.issues.map((issue) => [issue.path, issue])).get('payload.operations[1]')?.code)
+      .toBe('duplicate-cell')
+
+    const empty = parseEditHazardsPayload({ operations: [] })
+    expect(empty.valid).toBe(false)
+    if (empty.valid) throw new Error('expected empty hazard operation payload to reject')
+    expect(new Map(empty.issues.map((issue) => [issue.path, issue])).get('payload.operations')?.code)
+      .toBe('empty-array')
+
+    const invalidKind = parseEditHazardsPayload({
+      operations: [{ action: 'upsert', hazard: { kind: 'fog', x: 1, y: 0, z: 2 } }],
+    })
+    expect(invalidKind.valid).toBe(false)
+    if (invalidKind.valid) throw new Error('expected invalid hazard kind to reject')
+    expect(new Map(invalidKind.issues.map((issue) => [issue.path, issue])).get('payload.operations[0].hazard.kind')?.code)
+      .toBe('invalid-kind')
+
+    const unknownPayloadField = parseEditHazardsPayload({ operations: [{ action: 'remove', cell: { x: 1, y: 0, z: 2 } }], profileId: 'private' })
+    expect(unknownPayloadField.valid).toBe(false)
+    if (unknownPayloadField.valid) throw new Error('expected unknown payload field to reject')
+    expect(new Map(unknownPayloadField.issues.map((issue) => [issue.path, issue])).get('payload.profileId')?.code)
+      .toBe('unknown-field')
+
+    const unknownHazardField = parseEditHazardsPayload({
+      operations: [{ action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 2, hiddenState: 'secret' } }],
+    })
+    expect(unknownHazardField.valid).toBe(false)
+    if (unknownHazardField.valid) throw new Error('expected unknown hazard field to reject')
+    expect(new Map(unknownHazardField.issues.map((issue) => [issue.path, issue])).get('payload.operations[0].hazard.hiddenState')?.code)
       .toBe('unknown-field')
   })
 
@@ -851,6 +1019,42 @@ describe('live-play command contract', () => {
     expect('cell' in scopes[0] ? scopes[0].cell : null).not.toBe(payload.cells[0])
   })
 
+  it('constructs explicit and broad editHazards conflict scopes', () => {
+    const smallPayload = {
+      operations: [
+        { action: 'upsert', hazard: { kind: 'spikes', x: 1, y: 0, z: 2 } },
+        { action: 'remove', cell: { x: 3, y: 0, z: 4, kind: 'fire' } },
+      ],
+    } as const satisfies EditHazardsPayload
+    const smallScopes = createEditHazardsCommandScopes(smallPayload)
+
+    expect(smallScopes).toEqual([
+      { kind: 'map', lane: 'hazards', cell: { x: 1, y: 0, z: 2 } },
+      { kind: 'map', lane: 'hazards', cell: { x: 3, y: 0, z: 4 } },
+    ])
+    expect('cell' in smallScopes[0] ? smallScopes[0].cell : null).not.toBe(smallPayload.operations[0].hazard)
+
+    const broadPayload = {
+      operations: Array.from(
+        { length: LIVE_PLAY_EDIT_HAZARDS_EXPLICIT_SCOPE_LIMIT + 1 },
+        (_, index) => ({ action: 'remove' as const, cell: { x: index, y: 0, z: 1 } }),
+      ),
+    } satisfies EditHazardsPayload
+    expect(createEditHazardsCommandScopes(broadPayload)).toEqual([
+      { kind: 'map', lane: 'hazards' },
+    ])
+
+    expect(validateLivePlayCommandEnvelope({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+      scopes: smallScopes,
+      payload: smallPayload,
+    }).valid).toBe(true)
+  })
+
   it('constructs explicit and broad editTerrainVoxels conflict scopes', () => {
     const smallPayload = {
       operations: [
@@ -922,6 +1126,43 @@ describe('live-play command contract', () => {
     } as const satisfies LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS, HazardsClearedPatchPayload>
 
     expect(patch.payload.current).toEqual([{ kind: 'fire', x: 3, y: 0, z: 4 }])
+  })
+
+  it('models editHazards map-hazard accepted patches with changed cells and final hazards', () => {
+    const placed = { kind: 'spikes', x: 1, y: 0, z: 2 } as const
+    const removed = { kind: 'fire', x: 3, y: 0, z: 4 } as const
+    const payload = {
+      command: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+      changes: [
+        {
+          cell: { x: 1, y: 0, z: 2 },
+          previous: [],
+          current: [placed],
+          placed: [placed],
+        },
+        {
+          cell: { x: 3, y: 0, z: 4 },
+          previous: [removed],
+          current: [],
+          removed: [removed],
+        },
+      ],
+      previous: [removed],
+      current: [placed],
+    } as const satisfies HazardsEditedPatchPayload
+
+    const patch = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS,
+      mapSlug,
+      revision: 8,
+      scopes: [{ kind: 'map', lane: 'hazards' }],
+      payload,
+    } as const satisfies LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS, HazardsEditedPatchPayload>
+
+    expect(patch.payload.changes).toHaveLength(2)
+    expect(patch.payload.current).toEqual([placed])
+    expect(patch.payload.changes[1].removed).toEqual([removed])
   })
 
   it('models clearFieldEffects map-field-effect accepted patches with final authoritative effects', () => {

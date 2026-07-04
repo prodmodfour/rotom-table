@@ -9,6 +9,7 @@ import {
   type ClearFieldEffectsPayload,
   type ClearHazardsLivePlayCommand,
   type ClearHazardsPayload,
+  type EditHazardsLivePlayCommand,
   type LivePlayMapEffectCommand,
   type PlaceHazardLivePlayCommand,
   type RemoveFieldEffectLivePlayCommand,
@@ -176,7 +177,9 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   }
 }
 
-const execute = (harness: ReturnType<typeof createHarness>, command: LivePlayMapEffectCommand, role: 'gm' | 'player' = 'gm') =>
+type SupportedLivePlayMapEffectsCommand = Exclude<LivePlayMapEffectCommand, EditHazardsLivePlayCommand>
+
+const execute = (harness: ReturnType<typeof createHarness>, command: SupportedLivePlayMapEffectsCommand, role: 'gm' | 'player' = 'gm') =>
   executeLivePlayMapEffectsCommandUseCase({
     role,
     command,

@@ -310,7 +310,8 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     await vi.waitFor(() => expect(capturedHttpBody).not.toBeNull())
     await vi.waitFor(() => expect(tab.currentMap?.revision).toBe(1))
     rejectHttp(new Error('response lost'))
-    await expect(lostHttp).resolves.toMatchObject({ dispatched: true, recoveredByRealtime: true })
+    const lostHttpResult = await lostHttp
+    expect(lostHttpResult).toMatchObject({ dispatched: true, recoveredByRealtime: true })
     await waitForReady(tab)
     expect(tab.commands.outboxEntries.value).toEqual([])
     expect(moveTokenPosition(tab.currentMap)).toEqual({ x: 3, y: 0, z: 3 })

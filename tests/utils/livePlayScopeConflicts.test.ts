@@ -3,9 +3,11 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  createEditHazardsCommandScopes,
   createEditTerrainVoxelsCommandScopes,
   type ClearFieldEffectsPayload,
   type ClearHazardsPayload,
+  type EditHazardsPayload,
   type EditTerrainVoxelsPayload,
   type LivePlayMapScope,
   type LivePlayScope,
@@ -53,6 +55,12 @@ const editTerrainCommand = (payload: EditTerrainVoxelsPayload) => ({
 const clearHazardsCommand = (payload: ClearHazardsPayload) => ({
   type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
   scopes: createClearHazardsCommandScopes(payload),
+  payload,
+})
+
+const editHazardsCommand = (payload: EditHazardsPayload) => ({
+  type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+  scopes: createEditHazardsCommandScopes(payload),
   payload,
 })
 
@@ -167,6 +175,48 @@ describe('live-play scope conflict utilities', () => {
       left: { kind: 'map-lane', lane: 'hazards' },
       right: { kind: 'hazard-cell', x: 2, y: 0, z: 3 },
       label: 'map lane hazards / hazard cell 2,0,3',
+    })
+  })
+
+  it('classifies editHazards scopes against clear-hazards and single hazard commands', () => {
+    const edit = editHazardsCommand({
+      operations: [
+        { action: 'upsert', hazard: { kind: 'spikes', x: 2, y: 0, z: 3 } },
+        { action: 'remove', cell: { x: 4, y: 0, z: 3 } },
+      ],
+    })
+
+    expect(livePlayScopeConflictDescriptors(edit)).toEqual([
+      { kind: 'hazard-cell', x: 2, y: 0, z: 3, label: 'hazard cell 2,0,3' },
+      { kind: 'hazard-cell', x: 4, y: 0, z: 3, label: 'hazard cell 4,0,3' },
+    ])
+    expect(livePlayScopesConflict(
+      edit,
+      clearHazardsCommand({ mode: 'cells', cells: [{ x: 2, y: 0, z: 3 }] }),
+    )).toBe(true)
+    expect(livePlayScopesConflict(
+      edit,
+      clearHazardsCommand({ mode: 'cells', cells: [{ x: 5, y: 0, z: 3 }] }),
+    )).toBe(false)
+
+    const placeHazard = {
+      type: LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
+      scopes: [mapScope('hazards')],
+      payload: { hazard: { kind: 'spikes', x: 9, y: 0, z: 9 } },
+    }
+    const removeHazard = {
+      type: LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
+      scopes: [mapScope('hazards')],
+      payload: { cell: { x: 9, y: 0, z: 9 } },
+    }
+
+    expect(findLivePlayScopeConflict(placeHazard, edit)).toMatchObject({
+      left: { kind: 'map-lane', lane: 'hazards' },
+      right: { kind: 'hazard-cell', x: 2, y: 0, z: 3 },
+    })
+    expect(findLivePlayScopeConflict(removeHazard, edit)).toMatchObject({
+      left: { kind: 'map-lane', lane: 'hazards' },
+      right: { kind: 'hazard-cell', x: 2, y: 0, z: 3 },
     })
   })
 

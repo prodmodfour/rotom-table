@@ -438,7 +438,7 @@ Status: DONE
 
 ## 014 — LP-S4-014 — Add `editHazards` batch command contract
 
-Status: TODO
+Status: DONE
 
 **Goal:** Define a bounded batch command for placing/removing multiple hazard cells.
 

@@ -1,5 +1,6 @@
 import type {
   MapHazardKind,
+  MapHazardV2,
   MapRoomKind,
   MapTerrainKind,
   MapVoxelV2,
@@ -35,6 +36,8 @@ export const LIVE_PLAY_BATCH_VALIDATION_CODES = [
   'invalid-voxel',
   'invalid-material-id',
   'invalid-color',
+  'invalid-layer',
+  'invalid-owner',
   'invalid-boolean',
   'invalid-tags',
   'duplicate-cell',
@@ -105,6 +108,29 @@ export type ClearHazardsPayload =
   | ClearHazardsAllPayload
   | ClearHazardsCellsPayload
   | ClearHazardsKindPayload
+
+export const LIVE_PLAY_EDIT_HAZARD_ACTIONS = ['upsert', 'remove'] as const
+export type EditHazardAction = (typeof LIVE_PLAY_EDIT_HAZARD_ACTIONS)[number]
+
+export interface EditHazardUpsertOperation {
+  readonly action: 'upsert'
+  readonly hazard: MapHazardV2
+}
+
+export interface EditHazardRemoveCell extends LivePlayBatchGridCell {
+  readonly kind?: MapHazardKind
+}
+
+export interface EditHazardRemoveOperation {
+  readonly action: 'remove'
+  readonly cell: EditHazardRemoveCell
+}
+
+export type EditHazardOperation = EditHazardUpsertOperation | EditHazardRemoveOperation
+
+export interface EditHazardsPayload {
+  readonly operations: readonly EditHazardOperation[]
+}
 
 export const LIVE_PLAY_FIELD_EFFECT_CATEGORIES = ['weather', 'terrain', 'room'] as const
 export type LivePlayFieldEffectCategory = (typeof LIVE_PLAY_FIELD_EFFECT_CATEGORIES)[number]
@@ -276,6 +302,7 @@ const EXPECTED_TAGS = 'array of non-empty strings'
 const BATCH_VALIDATION_CODE_SET = new Set<unknown>(LIVE_PLAY_BATCH_VALIDATION_CODES)
 const LIVE_PLAY_CLEAR_HAZARDS_MODE_SET = new Set<unknown>(LIVE_PLAY_CLEAR_HAZARDS_MODES)
 const LIVE_PLAY_HAZARD_KIND_SET = new Set<unknown>(LIVE_PLAY_HAZARD_KIND_VALUES)
+const LIVE_PLAY_EDIT_HAZARD_ACTION_SET = new Set<unknown>(LIVE_PLAY_EDIT_HAZARD_ACTIONS)
 const LIVE_PLAY_FIELD_EFFECT_CATEGORY_SET = new Set<unknown>(LIVE_PLAY_FIELD_EFFECT_CATEGORIES)
 const LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORY_SET = new Set<unknown>(LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES)
 const LIVE_PLAY_FIELD_EFFECT_KIND_SET = new Set<unknown>(LIVE_PLAY_FIELD_EFFECT_KIND_VALUES)
@@ -284,6 +311,8 @@ const LIVE_PLAY_WEATHER_KIND_SET = new Set<unknown>(LIVE_PLAY_WEATHER_KIND_VALUE
 const LIVE_PLAY_TERRAIN_KIND_SET = new Set<unknown>(LIVE_PLAY_TERRAIN_KIND_VALUES)
 const LIVE_PLAY_ROOM_KIND_SET = new Set<unknown>(LIVE_PLAY_ROOM_KIND_VALUES)
 const GRID_CELL_FIELDS = ['x', 'y', 'z'] as const
+const HAZARD_FIELDS = ['kind', 'x', 'y', 'z', 'layer', 'owner'] as const
+const HAZARD_REMOVE_CELL_FIELDS = ['x', 'y', 'z', 'kind'] as const
 const TERRAIN_VOXEL_FIELDS = [
   'x',
   'y',
@@ -296,6 +325,8 @@ const TERRAIN_VOXEL_FIELDS = [
   'tags',
 ] as const
 const CLEAR_HAZARDS_PAYLOAD_FIELDS = ['mode', 'cells', 'kind'] as const
+const EDIT_HAZARDS_PAYLOAD_FIELDS = ['operations'] as const
+const EDIT_HAZARD_OPERATION_FIELDS = ['action', 'hazard', 'cell'] as const
 const CLEAR_FIELD_EFFECTS_PAYLOAD_FIELDS = ['category', 'kinds'] as const
 const EDIT_TERRAIN_VOXELS_PAYLOAD_FIELDS = ['operations'] as const
 const EDIT_TERRAIN_VOXEL_OPERATION_FIELDS = ['action', 'voxel', 'cell'] as const
@@ -365,6 +396,9 @@ export const isClearHazardsMode = (value: unknown): value is ClearHazardsMode =>
 
 export const isLivePlayHazardKind = (value: unknown): value is MapHazardKind =>
   LIVE_PLAY_HAZARD_KIND_SET.has(value)
+
+export const isEditHazardAction = (value: unknown): value is EditHazardAction =>
+  LIVE_PLAY_EDIT_HAZARD_ACTION_SET.has(value)
 
 export const isLivePlayFieldEffectCategory = (
   value: unknown,
@@ -749,6 +783,275 @@ export const parseClearHazardsPayload = (
     cells: cellsResult.value,
     ...(kindResult.value === undefined ? {} : { kind: kindResult.value }),
   })
+}
+
+const parseOptionalHazardLayer = (
+  kind: MapHazardKind,
+  record: Readonly<Record<string, unknown>>,
+  path: string,
+): LivePlayBatchValidationResult<number | undefined> => {
+  if (kind !== 'toxic-spikes') return success(undefined)
+  if (!hasOwn(record, 'layer') || record.layer === undefined) return success(1)
+  if (typeof record.layer === 'number' && Number.isSafeInteger(record.layer) && record.layer >= 1 && record.layer <= 2) {
+    return success(record.layer)
+  }
+  return failure([{
+    path,
+    code: 'invalid-layer',
+    message: `${path} must be 1 or 2 for toxic-spikes hazards.`,
+    expected: '1 | 2',
+    received: describeReceived(record.layer),
+  }])
+}
+
+const parseOptionalHazardOwner = (
+  record: Readonly<Record<string, unknown>>,
+  path: string,
+): LivePlayBatchValidationResult<string | undefined> => {
+  if (!hasOwn(record, 'owner') || record.owner === undefined) return success(undefined)
+  if (isNonEmptyString(record.owner)) return success(record.owner.trim())
+  return failure([{
+    path,
+    code: 'invalid-owner',
+    message: `${path} must be a non-empty hazard owner string when provided.`,
+    expected: EXPECTED_NON_EMPTY_STRING,
+    received: describeReceived(record.owner),
+  }])
+}
+
+export const parseLivePlayBatchHazard = (
+  value: unknown,
+  path = 'payload.hazard',
+): LivePlayBatchValidationResult<MapHazardV2> => {
+  const recordResult = parseLivePlayBatchStrictObject(value, {
+    path,
+    allowedFields: HAZARD_FIELDS,
+    requiredFields: ['kind', 'x', 'y', 'z'],
+    description: 'hazard cell',
+  })
+  if (!recordResult.valid) return failure(recordResult.issues)
+
+  const record = recordResult.value
+  const kindResult = parseClearHazardsKind(record.kind, appendPath(path, 'kind'))
+  const cellResult = parseLivePlayBatchGridCell({ x: record.x, y: record.y, z: record.z }, path)
+  if (!kindResult.valid || !cellResult.valid) {
+    return failure([
+      ...(kindResult.valid ? [] : kindResult.issues),
+      ...(cellResult.valid ? [] : cellResult.issues),
+    ])
+  }
+
+  const layerResult = parseOptionalHazardLayer(kindResult.value, record, appendPath(path, 'layer'))
+  const ownerResult = parseOptionalHazardOwner(record, appendPath(path, 'owner'))
+  if (!layerResult.valid || !ownerResult.valid) {
+    return failure([
+      ...(layerResult.valid ? [] : layerResult.issues),
+      ...(ownerResult.valid ? [] : ownerResult.issues),
+    ])
+  }
+
+  return success({
+    kind: kindResult.value,
+    ...cloneBatchGridCell(cellResult.value),
+    ...(layerResult.value === undefined ? {} : { layer: layerResult.value }),
+    ...(ownerResult.value === undefined ? {} : { owner: ownerResult.value }),
+  })
+}
+
+const parseEditHazardRemoveCell = (
+  value: unknown,
+  path: string,
+): LivePlayBatchValidationResult<EditHazardRemoveCell> => {
+  const recordResult = parseLivePlayBatchStrictObject(value, {
+    path,
+    allowedFields: HAZARD_REMOVE_CELL_FIELDS,
+    requiredFields: ['x', 'y', 'z'],
+    description: 'editHazards remove cell',
+  })
+  if (!recordResult.valid) return failure(recordResult.issues)
+
+  const record = recordResult.value
+  const cellResult = parseLivePlayBatchGridCell({ x: record.x, y: record.y, z: record.z }, path)
+  const kindResult = parseOptionalClearHazardsKind(record, path)
+  if (!cellResult.valid || !kindResult.valid) {
+    return failure([
+      ...(cellResult.valid ? [] : cellResult.issues),
+      ...(kindResult.valid ? [] : kindResult.issues),
+    ])
+  }
+
+  return success({
+    ...cloneBatchGridCell(cellResult.value),
+    ...(kindResult.value === undefined ? {} : { kind: kindResult.value }),
+  })
+}
+
+const unexpectedEditHazardOperationFieldIssue = (
+  path: string,
+  field: 'hazard' | 'cell',
+  action: EditHazardAction,
+  received: unknown,
+): LivePlayBatchValidationIssue => ({
+  path: appendPath(path, field),
+  code: 'unknown-field',
+  message: `${appendPath(path, field)} is not supported for editHazards ${action} operations.`,
+  expected: action === 'upsert' ? 'action | hazard' : 'action | cell',
+  received: describeReceived(received),
+})
+
+const parseEditHazardOperation = (
+  value: unknown,
+  path: string,
+): LivePlayBatchValidationResult<EditHazardOperation> => {
+  const recordResult = parseLivePlayBatchStrictObject(value, {
+    path,
+    allowedFields: EDIT_HAZARD_OPERATION_FIELDS,
+    requiredFields: ['action'],
+    description: 'editHazards operation',
+  })
+  if (!recordResult.valid) return failure(recordResult.issues)
+
+  const record = recordResult.value
+  if (!isEditHazardAction(record.action)) {
+    return failure([{
+      path: appendPath(path, 'action'),
+      code: 'invalid-action',
+      message: `${appendPath(path, 'action')} must be a supported editHazards action.`,
+      expected: LIVE_PLAY_EDIT_HAZARD_ACTIONS.join(' | '),
+      received: describeReceived(record.action),
+    }])
+  }
+
+  if (record.action === 'upsert') {
+    const issues: MutableIssueList = []
+    if (!hasOwn(record, 'hazard')) {
+      addIssue(
+        issues,
+        appendPath(path, 'hazard'),
+        'missing-field',
+        'editHazards upsert operations must include hazard.',
+      )
+    }
+    if (hasOwn(record, 'cell')) {
+      issues.push(unexpectedEditHazardOperationFieldIssue(path, 'cell', record.action, record.cell))
+    }
+    if (issues.length > 0) return failure(issues)
+
+    const hazardResult = parseLivePlayBatchHazard(record.hazard, appendPath(path, 'hazard'))
+    if (!hazardResult.valid) return failure(hazardResult.issues)
+    return success({ action: record.action, hazard: hazardResult.value })
+  }
+
+  const issues: MutableIssueList = []
+  if (!hasOwn(record, 'cell')) {
+    addIssue(
+      issues,
+      appendPath(path, 'cell'),
+      'missing-field',
+      'editHazards remove operations must include cell.',
+    )
+  }
+  if (hasOwn(record, 'hazard')) {
+    issues.push(unexpectedEditHazardOperationFieldIssue(path, 'hazard', record.action, record.hazard))
+  }
+  if (issues.length > 0) return failure(issues)
+
+  const cellResult = parseEditHazardRemoveCell(record.cell, appendPath(path, 'cell'))
+  if (!cellResult.valid) return failure(cellResult.issues)
+  return success({ action: record.action, cell: cellResult.value })
+}
+
+const editHazardOperationCell = (operation: EditHazardOperation): LivePlayBatchGridCell => (
+  operation.action === 'upsert' ? operation.hazard : operation.cell
+)
+
+const editHazardOperationKind = (operation: EditHazardOperation): MapHazardKind | undefined => (
+  operation.action === 'upsert' ? operation.hazard.kind : operation.cell.kind
+)
+
+const editHazardOperationRemovesWholeCell = (operation: EditHazardOperation): boolean => (
+  operation.action === 'remove' && operation.cell.kind === undefined
+)
+
+const hazardOperationConflictCode = (
+  left: EditHazardOperation,
+  right: EditHazardOperation,
+): 'duplicate-cell' | 'contradictory-cell-operation' => {
+  const leftWholeCell = editHazardOperationRemovesWholeCell(left)
+  const rightWholeCell = editHazardOperationRemovesWholeCell(right)
+  if (leftWholeCell && rightWholeCell) return 'duplicate-cell'
+  if (leftWholeCell || rightWholeCell) return 'contradictory-cell-operation'
+  return left.action === right.action ? 'duplicate-cell' : 'contradictory-cell-operation'
+}
+
+const enforceNonContradictoryHazardOperations = (
+  operations: readonly EditHazardOperation[],
+  path: string,
+): LivePlayBatchValidationResult<readonly EditHazardOperation[]> => {
+  const issues: MutableIssueList = []
+  const seenByCell = new Map<string, { readonly index: number; readonly operation: EditHazardOperation }[]>()
+
+  operations.forEach((operation, index) => {
+    const cell = editHazardOperationCell(operation)
+    const key = formatLivePlayBatchGridCellKey(cell)
+    const seenAtCell = seenByCell.get(key) ?? []
+    const operationKind = editHazardOperationKind(operation)
+    const wholeCellRemove = editHazardOperationRemovesWholeCell(operation)
+    const conflicting = seenAtCell.find((seen) => {
+      if (wholeCellRemove || editHazardOperationRemovesWholeCell(seen.operation)) return true
+      return operationKind !== undefined && operationKind === editHazardOperationKind(seen.operation)
+    })
+
+    if (conflicting !== undefined) {
+      const code = hazardOperationConflictCode(conflicting.operation, operation)
+      addIssue(
+        issues,
+        `${path}[${index}]`,
+        code,
+        code === 'duplicate-cell'
+          ? `${path}[${index}] duplicates ${path}[${conflicting.index}] at hazard cell ${key}.`
+          : `${path}[${index}] contradicts ${path}[${conflicting.index}] at hazard cell ${key}.`,
+        code === 'duplicate-cell' ? 'unique hazard operation target' : 'only non-contradictory hazard actions per cell',
+        operation,
+      )
+      return
+    }
+
+    seenByCell.set(key, [...seenAtCell, { index, operation }])
+  })
+
+  if (issues.length > 0) return failure(issues)
+  return success([...operations])
+}
+
+export const parseEditHazardsPayload = (
+  value: unknown,
+  path = 'payload',
+): LivePlayBatchValidationResult<EditHazardsPayload> => {
+  const recordResult = parseLivePlayBatchStrictObject(value, {
+    path,
+    allowedFields: EDIT_HAZARDS_PAYLOAD_FIELDS,
+    requiredFields: ['operations'],
+    description: 'editHazards payload',
+  })
+  if (!recordResult.valid) return failure(recordResult.issues)
+
+  const operationsPath = appendPath(path, 'operations')
+  const operationsResult = parseLivePlayBatchBoundedArray<EditHazardOperation>(
+    recordResult.value.operations,
+    {
+      path: operationsPath,
+      minItems: 1,
+      maxItems: LIVE_PLAY_BATCH_MAX_HAZARD_CELLS,
+      itemName: 'hazard cell operations',
+      parseItem: (item, itemPath) => parseEditHazardOperation(item, itemPath),
+    },
+  )
+  if (!operationsResult.valid) return failure(operationsResult.issues)
+
+  const uniqueResult = enforceNonContradictoryHazardOperations(operationsResult.value, operationsPath)
+  if (!uniqueResult.valid) return failure(uniqueResult.issues)
+  return success({ operations: uniqueResult.value })
 }
 
 const fieldEffectKindLabel = (category: LivePlayFieldEffectCategory): string => {

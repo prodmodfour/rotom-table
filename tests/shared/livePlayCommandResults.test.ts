@@ -5,6 +5,7 @@ import {
   LIVE_PLAY_PATCH_TYPES,
   createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  createEditHazardsCommandScopes,
   createEditTerrainVoxelsCommandScopes,
 } from '#shared/livePlayCommands'
 import {
@@ -253,6 +254,68 @@ describe('live-play terminal command response validation', () => {
     })).toMatchObject({
       valid: false,
       issues: expect.arrayContaining([expect.objectContaining({ path: 'response.patches[0].scopes[0]' })]),
+    })
+  })
+
+  it('verifies accepted editHazards patches match the submitted command type and scopes', () => {
+    const payload = {
+      operations: [
+        { action: 'upsert' as const, hazard: { kind: 'spikes' as const, x: 1, y: 0, z: 2 } },
+        { action: 'remove' as const, cell: { x: 3, y: 0, z: 4, kind: 'fire' as const } },
+      ],
+    }
+    const editCommand = command({
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+      scopes: createEditHazardsCommandScopes(payload),
+      payload,
+    })
+    const hazardsPatch = (overrides: Record<string, unknown> = {}) => patch({
+      type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS,
+      scopes: [{ kind: 'map', lane: 'hazards' }],
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+        changes: [
+          {
+            cell: { x: 1, y: 0, z: 2 },
+            previous: [],
+            current: [{ kind: 'spikes', x: 1, y: 0, z: 2 }],
+            placed: [{ kind: 'spikes', x: 1, y: 0, z: 2 }],
+          },
+          {
+            cell: { x: 3, y: 0, z: 4 },
+            previous: [{ kind: 'fire', x: 3, y: 0, z: 4 }],
+            current: [],
+            removed: [{ kind: 'fire', x: 3, y: 0, z: 4 }],
+          },
+        ],
+        current: [{ kind: 'spikes', x: 1, y: 0, z: 2 }],
+      },
+      ...overrides,
+    })
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({ patches: [hazardsPatch()] }),
+      command: editCommand,
+    }).valid).toBe(true)
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({ patches: [hazardsPatch({ type: LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS })] }),
+      command: editCommand,
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({ path: 'response.patches[0].type' })]),
+    })
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({
+        patches: [hazardsPatch({
+          payload: { command: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS, changes: [], current: [] },
+        })],
+      }),
+      command: editCommand,
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({ path: 'response.patches[0].payload.command' })]),
     })
   })
 

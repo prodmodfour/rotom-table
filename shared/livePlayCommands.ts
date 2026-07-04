@@ -1,7 +1,7 @@
 export * from './livePlayBatchCommands'
 
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
-import type { ClearFieldEffectsPayload, ClearHazardsPayload, EditTerrainVoxelsPayload } from './livePlayBatchCommands'
+import type { ClearFieldEffectsPayload, ClearHazardsPayload, EditHazardsPayload, EditTerrainVoxelsPayload } from './livePlayBatchCommands'
 import { isSheetKind, type SheetKind } from './sheets'
 import type {
   GridAnchor,
@@ -55,6 +55,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   PLACE_HAZARD: 'placeHazard',
   REMOVE_HAZARD: 'removeHazard',
   CLEAR_HAZARDS: 'clearHazards',
+  EDIT_HAZARDS: 'editHazards',
   CLEAR_FIELD_EFFECTS: 'clearFieldEffects',
   SET_FIELD_EFFECT: 'setFieldEffect',
   REMOVE_FIELD_EFFECT: 'removeFieldEffect',
@@ -94,6 +95,7 @@ export const LIVE_PLAY_MAP_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
   LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
   LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
@@ -234,6 +236,7 @@ export type LivePlayScope = LivePlayMapScope | LivePlayTokenScope | LivePlayShee
 export type LivePlayHazardsScope = LivePlayMapScope & { readonly lane: 'hazards' }
 export type LivePlayHazardCellScope = LivePlayHazardsScope & { readonly cell: GridAnchor }
 export type ClearHazardsLivePlayScope = LivePlayHazardsScope | LivePlayHazardCellScope
+export type EditHazardsLivePlayScope = LivePlayHazardsScope | LivePlayHazardCellScope
 export type LivePlayFieldEffectsScope = LivePlayMapScope & { readonly lane: 'fieldEffects' }
 export type ClearFieldEffectsLivePlayScope = LivePlayFieldEffectsScope
 export type LivePlayTerrainScope = LivePlayMapScope & { readonly lane: 'terrain' }
@@ -519,6 +522,29 @@ export const createClearHazardsCommandScopes = (
     : [createLivePlayHazardsScope()]
 )
 
+export const LIVE_PLAY_EDIT_HAZARDS_EXPLICIT_SCOPE_LIMIT = 32 as const
+
+const editHazardOperationCell = (
+  operation: EditHazardsPayload['operations'][number],
+): GridAnchor => (operation.action === 'upsert' ? operation.hazard : operation.cell)
+
+export const createEditHazardsCommandScopes = (
+  payload: EditHazardsPayload,
+): readonly EditHazardsLivePlayScope[] => {
+  const cellsByKey = new Map<string, GridAnchor>()
+  for (const operation of payload.operations) {
+    const cell = editHazardOperationCell(operation)
+    const key = `${cell.x},${cell.y},${cell.z}`
+    if (!cellsByKey.has(key)) cellsByKey.set(key, cloneScopeCell(cell))
+  }
+
+  const cells = [...cellsByKey.values()]
+  if (cells.length === 0 || cells.length > LIVE_PLAY_EDIT_HAZARDS_EXPLICIT_SCOPE_LIMIT) {
+    return [createLivePlayHazardsScope()]
+  }
+  return cells.map((cell) => createLivePlayHazardCellScope(cell))
+}
+
 export const createLivePlayFieldEffectsScope = (): LivePlayFieldEffectsScope => ({
   kind: 'map',
   lane: 'fieldEffects',
@@ -693,6 +719,12 @@ export type ClearHazardsLivePlayCommand = LivePlayCommandEnvelope<
   ClearHazardsLivePlayScope
 >
 
+export type EditHazardsLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS,
+  EditHazardsPayload,
+  EditHazardsLivePlayScope
+>
+
 export type ClearFieldEffectsLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
   ClearFieldEffectsPayload,
@@ -756,6 +788,7 @@ export type LivePlayMapEffectCommand =
   | PlaceHazardLivePlayCommand
   | RemoveHazardLivePlayCommand
   | ClearHazardsLivePlayCommand
+  | EditHazardsLivePlayCommand
   | ClearFieldEffectsLivePlayCommand
   | SetFieldEffectLivePlayCommand
   | RemoveFieldEffectLivePlayCommand
@@ -912,7 +945,27 @@ export interface HazardsClearedPatchPayload {
   readonly removed: readonly MapHazardV2[]
 }
 
-export type HazardsUpdatedPatchPayload = HazardCellUpdatedPatchPayload | HazardsClearedPatchPayload
+export interface HazardCellBatchChangePatchPayload {
+  readonly cell: GridAnchor
+  readonly previous: readonly MapHazardV2[]
+  readonly current: readonly MapHazardV2[]
+  readonly placed?: readonly MapHazardV2[]
+  readonly removed?: readonly MapHazardV2[]
+}
+
+export interface HazardsEditedPatchPayload {
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.EDIT_HAZARDS
+  readonly changes: readonly HazardCellBatchChangePatchPayload[]
+  /** Optional authoritative hazard lane before the transaction. */
+  readonly previous?: readonly MapHazardV2[]
+  /** Authoritative hazard lane after the transaction for fallback reconciliation. */
+  readonly current: readonly MapHazardV2[]
+}
+
+export type HazardsUpdatedPatchPayload =
+  | HazardCellUpdatedPatchPayload
+  | HazardsClearedPatchPayload
+  | HazardsEditedPatchPayload
 
 export interface FieldEffectsUpdatedPatchPayload {
   readonly command:
