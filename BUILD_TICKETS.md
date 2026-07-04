@@ -499,7 +499,7 @@ Status: DONE
 
 ## 017 — LP-S3-017 — Add presence metrics to the latency debug panel
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let maintainers diagnose table-feel issues separately from command latency.
 
