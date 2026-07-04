@@ -445,7 +445,7 @@ Status: DONE
 
 ## 015 — LP-S3-015 — Add presence privacy and access regression tests
 
-Status: TODO
+Status: DONE
 
 **Goal:** Prove presence cannot leak hidden-map or profile-restricted information.
 

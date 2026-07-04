@@ -260,6 +260,60 @@ describe('useMapPresence', () => {
     presence.dispose()
   })
 
+  it('uses the current profile id and drops inaccessible token references before outgoing heartbeats', async () => {
+    let now = 3_000
+    const profileId = ref('profile_ash00000')
+    const visibleTokenIds = ref<readonly string[]>(['token-pikachu'])
+    mocks.postJson.mockResolvedValue(presenceSnapshot([], { serverTime: 3_000 }))
+
+    const presence = useMapPresence({
+      slug: 'arena',
+      autoStart: false,
+      profileId,
+      visibleTokenIds,
+      now: () => now,
+    })
+
+    await expect(presence.updateOwnPresence({
+      selectedTokenId: 'token-pikachu',
+      attention: {
+        id: 'attn1',
+        target: { kind: 'token', tokenId: 'token-hidden' },
+        createdAt: 3_000,
+        expiresAt: 11_000,
+      },
+    }, { publish: false })).resolves.toBe(true)
+    expect(presence.ownPresence.value).toMatchObject({
+      clientSequence: 1,
+      selectedTokenId: 'token-pikachu',
+      attention: null,
+    })
+
+    profileId.value = 'profile_brock000'
+    visibleTokenIds.value = []
+    now = 3_500
+    mocks.postJson.mockResolvedValue(presenceSnapshot([], { serverTime: 3_500 }))
+
+    await presence.sendHeartbeat()
+
+    expect(presence.ownPresence.value).toMatchObject({
+      clientSequence: 2,
+      selectedTokenId: null,
+      attention: null,
+    })
+    expect(mocks.postJson).toHaveBeenCalledWith('/api/maps/arena/presence', {
+      presence: expect.objectContaining({
+        clientSequence: 2,
+        selectedTokenId: null,
+        attention: null,
+      }),
+      clientId: 'client_c-local-tab',
+      profileId: 'profile_brock000',
+    })
+
+    presence.dispose()
+  })
+
   it('applies transient realtime snapshots for the current map', async () => {
     let now = 3_000
     mocks.getJson.mockResolvedValue(presenceSnapshot([], { serverTime: 3_000 }))

@@ -287,7 +287,7 @@ describe('live-play presence transient realtime publication', () => {
   it('delivers transient snapshots only to currently authorised map viewers and never replays them to late streams', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(60_000)
     const visibleMap = mapFixture({ slug: 'visible-arena', playerVisible: true })
-    const hiddenMap = mapFixture({ slug: 'hidden-arena', playerVisible: false })
+    const hiddenMap = mapFixture({ slug: 'hidden-arena', playerVisible: false, name: 'Hidden Realtime Secret Vault' })
     const maps = new Map<string, TabletopMap>([
       [visibleMap.slug, visibleMap],
       [hiddenMap.slug, hiddenMap],
@@ -310,6 +310,22 @@ describe('live-play presence transient realtime publication', () => {
         realtimeEventRepository,
         connectionId: 'presence-player',
       }),
+      startSseStream({
+        principal: {
+          role: 'player',
+          playerProfile: {
+            schemaVersion: 1,
+            id: 'profile_ash00000',
+            displayName: 'Ash',
+            linkedCharacters: [],
+          },
+          sessionAccess: null,
+        } as unknown as RealtimeDeliveryPrincipal,
+        accessDependencies,
+        realtimeHub,
+        realtimeEventRepository,
+        connectionId: 'presence-profiled-player',
+      }),
     ]
 
     try {
@@ -323,6 +339,7 @@ describe('live-play presence transient realtime publication', () => {
       await vi.waitFor(() => {
         expect(presenceFrames(streams[0]!.writes).map((frame) => frame.data.mapSlug)).toContain('visible-arena')
         expect(presenceFrames(streams[1]!.writes).map((frame) => frame.data.mapSlug)).toContain('visible-arena')
+        expect(presenceFrames(streams[2]!.writes).map((frame) => frame.data.mapSlug)).toContain('visible-arena')
       })
 
       const latePlayerStream = startSseStream({
@@ -345,14 +362,24 @@ describe('live-play presence transient realtime publication', () => {
         expect(presenceFrames(streams[0]!.writes).map((frame) => frame.data.mapSlug)).toContain('hidden-arena')
       })
       expect(presenceFrames(streams[1]!.writes).map((frame) => frame.data.mapSlug)).not.toContain('hidden-arena')
+      expect(presenceFrames(streams[2]!.writes).map((frame) => frame.data.mapSlug)).not.toContain('hidden-arena')
       expect(presenceFrames(latePlayerStream.writes).map((frame) => frame.data.mapSlug)).not.toContain('hidden-arena')
 
-      for (const frame of [...presenceFrames(streams[0]!.writes), ...presenceFrames(streams[1]!.writes)]) {
+      for (const frame of [
+        ...presenceFrames(streams[0]!.writes),
+        ...presenceFrames(streams[1]!.writes),
+        ...presenceFrames(streams[2]!.writes),
+      ]) {
         expect(frame.chunk.startsWith('id:')).toBe(false)
         expect(frame.data).not.toHaveProperty('sequence')
         expect(frame.data).not.toHaveProperty('revision')
         expect(frame.data).not.toHaveProperty('access')
         expect(frame.data).not.toHaveProperty('clientId')
+        const serialized = JSON.stringify(frame.data)
+        expect(serialized).not.toContain('Hidden Realtime Secret Vault')
+        expect(serialized).not.toContain('profile_')
+        expect(serialized).not.toContain('sheetPayload')
+        expect(serialized).not.toContain('commandBody')
         expect(parseLivePlayPresenceRealtimeEvent(frame.data).valid).toBe(true)
       }
     } finally {

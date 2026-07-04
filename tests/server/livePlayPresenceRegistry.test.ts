@@ -112,6 +112,37 @@ describe('live-play presence registry', () => {
     expect(registry.list({ mapSlug: 'arena-map', now: 1_100 })[0]?.clientSequence).toBe(2)
   })
 
+  it('replaces an old same-client profile context when a player switches profiles', () => {
+    const registry = createLivePlayPresenceRegistry({ ttlMs: 5_000 })
+    const ash = playerPrincipal({
+      clientId: 'client_switch0001',
+      profileContextKey: 'profile_private_ash',
+      profileDisplayName: 'Ash',
+    })
+    const brock = playerPrincipal({
+      clientId: 'client_switch0001',
+      profileContextKey: 'profile_private_brock',
+      profileDisplayName: 'Brock',
+    })
+
+    registry.update({ mapSlug: 'arena-map', principal: ash, update: update({ clientSequence: 1 }), now: 1_000 })
+    registry.update({ mapSlug: 'side-map', principal: ash, update: update({ clientSequence: 2 }), now: 1_000 })
+    registry.update({ mapSlug: 'arena-map', principal: brock, update: update({ clientSequence: 3 }), now: 1_500 })
+
+    expect(registry.list({ mapSlug: 'arena-map', now: 1_501 })).toEqual([
+      expect.objectContaining({
+        clientSequence: 3,
+        participant: expect.objectContaining({ profileDisplayName: 'Brock' }),
+      }),
+    ])
+    expect(registry.list({ mapSlug: 'side-map', now: 1_501 })).toEqual([
+      expect.objectContaining({
+        clientSequence: 2,
+        participant: expect.objectContaining({ profileDisplayName: 'Ash' }),
+      }),
+    ])
+  })
+
   it('expires entries after TTL and prunes expired maps on list or explicit prune', () => {
     const registry = createLivePlayPresenceRegistry({ ttlMs: 100 })
 

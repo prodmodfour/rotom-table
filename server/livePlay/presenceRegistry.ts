@@ -101,6 +101,7 @@ interface NormalizedPrincipalContext {
 
 interface StoredPresenceEntry {
   readonly principalKey: string
+  readonly principalClientKey: string
   readonly entry: LivePlayPresenceEntry
 }
 
@@ -193,6 +194,25 @@ const principalKeyForContext = (principal: NormalizedPrincipalContext): string =
     profileContextKey: principal.profileContextKey,
   }))
   .digest('hex')
+
+const principalClientKeyForContext = (principal: NormalizedPrincipalContext): string => createHash('sha256')
+  .update(JSON.stringify({
+    role: principal.role,
+    clientId: principal.clientId,
+  }))
+  .digest('hex')
+
+const removeSupersededClientPresence = (
+  presenceMap: PresenceMap,
+  principalKey: string,
+  principalClientKey: string,
+): void => {
+  for (const [storedPrincipalKey, stored] of presenceMap.entries()) {
+    if (storedPrincipalKey === principalKey) continue
+    if (stored.principalClientKey !== principalClientKey) continue
+    presenceMap.delete(storedPrincipalKey)
+  }
+}
 
 const participantForContext = (principal: NormalizedPrincipalContext): LivePlayPresenceParticipantSummary => (
   buildLivePlayPresenceParticipantSummary({
@@ -323,16 +343,18 @@ export const createLivePlayPresenceRegistry = (
       const update = parseUpdateOrThrow(input.update)
       const now = currentTime(input.now)
       const principalKey = principalKeyForContext(principal)
+      const principalClientKey = principalClientKeyForContext(principal)
       const presenceMap = getPresenceMap(mapSlug)
 
       prunePresenceMap(presenceMap, now)
+      removeSupersededClientPresence(presenceMap, principalKey, principalClientKey)
       const entry: LivePlayPresenceEntry = {
         ...update,
         participant: participantForContext(principal),
         lastSeenAt: now,
         expiresAt: now + ttlMs,
       }
-      presenceMap.set(principalKey, { principalKey, entry })
+      presenceMap.set(principalKey, { principalKey, principalClientKey, entry })
       enforceMaxPresenceMapEntries(presenceMap, maxEntriesPerMap)
       return cloneEntry(entry)
     },

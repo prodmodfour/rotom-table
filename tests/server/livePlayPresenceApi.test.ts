@@ -190,7 +190,7 @@ afterEach(() => {
 describe('map live-play presence snapshot API', () => {
   it('returns a display-safe, non-cacheable presence snapshot for an authorised GM', async () => {
     const now = vi.spyOn(Date, 'now').mockReturnValue(20_000)
-    seedMap(mapFixture({ slug: 'hidden-arena', playerVisible: false }))
+    seedMap(mapFixture({ slug: 'hidden-arena', playerVisible: false, name: 'GM Secret Lava Vault' }))
     seedPresence('hidden-arena', 19_900)
 
     try {
@@ -219,6 +219,7 @@ describe('map live-play presence snapshot API', () => {
       expect(parseLivePlayPresenceSnapshot(response).valid).toBe(true)
 
       const serialized = JSON.stringify(response)
+      expect(serialized).not.toContain('GM Secret Lava Vault')
       expect(serialized).not.toContain('client_secretabcdef01')
       expect(serialized).not.toContain('profile_secret_ash')
       expect(serialized).not.toContain('voxels')
@@ -259,6 +260,14 @@ describe('map live-play presence snapshot API', () => {
         role: 'player',
         slug: 'hidden-arena',
         query: { profileId: 'profile_ash00000' },
+      })).rejects.toMatchObject({
+        statusCode: 403,
+        statusMessage: 'Map is not player visible',
+      })
+
+      await expect(invokePresenceRoute(presenceRoute, {
+        role: 'player',
+        slug: 'hidden-arena',
       })).rejects.toMatchObject({
         statusCode: 403,
         statusMessage: 'Map is not player visible',
@@ -379,6 +388,70 @@ describe('map live-play presence heartbeat API', () => {
 
       expect(createSqliteMapRepository<TabletopMap>(getRotomDatabase()).getBySlug('arena')?.revision).toBe(4)
       expect(createSqliteRealtimeEventRepository({ database: getRotomDatabase() }).cursorState().latestSequence).toBe(0)
+    } finally {
+      now.mockRestore()
+    }
+  })
+
+  it('removes old same-client player profile presence when a heartbeat switches profile context', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(44_000)
+    const profiles = new Map([
+      ['profile_ash00000', { id: 'profile_ash00000', displayName: 'Ash', linkedCharacters: [] }],
+      ['profile_brock000', { id: 'profile_brock000', displayName: 'Brock', linkedCharacters: [] }],
+    ])
+    mocks.resolvePlayerProfileForPolicy.mockImplementation((profileId: unknown) => (
+      typeof profileId === 'string' ? profiles.get(profileId) ?? null : null
+    ))
+    seedMap(mapFixture({ slug: 'arena' }))
+
+    try {
+      const first = await invokePresenceRoute(presencePostRoute, {
+        method: 'POST',
+        role: 'player',
+        slug: 'arena',
+        body: {
+          presence: presenceUpdate({ clientSequence: 1 }),
+          profileId: 'profile_ash00000',
+          clientId: 'client_switch0001',
+        },
+      })
+      expect(first.response).toMatchObject({
+        entries: [expect.objectContaining({
+          participant: expect.objectContaining({ profileDisplayName: 'Ash', clientIdSuffix: 'itch0001' }),
+        })],
+      })
+
+      now.mockReturnValue(44_500)
+      const second = await invokePresenceRoute(presencePostRoute, {
+        method: 'POST',
+        role: 'player',
+        slug: 'arena',
+        body: {
+          presence: presenceUpdate({ clientSequence: 2, hoveredTokenId: 'token-pikachu' }),
+          profileId: 'profile_brock000',
+          clientId: 'client_switch0001',
+        },
+      })
+
+      expect(second.response).toMatchObject({
+        mapSlug: 'arena',
+        entries: [expect.objectContaining({
+          clientSequence: 2,
+          hoveredTokenId: 'token-pikachu',
+          participant: expect.objectContaining({ profileDisplayName: 'Brock', clientIdSuffix: 'itch0001' }),
+        })],
+      })
+      expect((second.response as { entries: readonly unknown[] }).entries).toHaveLength(1)
+      expect(livePlayPresenceRegistry.list({ mapSlug: 'arena', now: 44_500 })).toEqual([
+        expect.objectContaining({
+          participant: expect.objectContaining({ profileDisplayName: 'Brock' }),
+        }),
+      ])
+
+      const serialized = JSON.stringify(second.response)
+      expect(serialized).not.toContain('profile_ash00000')
+      expect(serialized).not.toContain('profile_brock000')
+      expect(serialized).not.toContain('Ash')
     } finally {
       now.mockRestore()
     }
