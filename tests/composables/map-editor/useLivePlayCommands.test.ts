@@ -969,6 +969,89 @@ describe('useLivePlayCommands', () => {
     expect(actions.pendingPredictionCount.value).toBe(0)
   })
 
+  it('clears local predictions before authoritative reconciliation without rolling back the reloaded snapshot', async () => {
+    const outbox = createTestOutbox()
+    const map = ref(mapFixture())
+    let releaseHttp!: () => void
+    let sentBody: Record<string, unknown> | null = null
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      sentBody = commandRecord(body)
+      await new Promise<void>((resolve) => { releaseHttp = resolve })
+      throw new Error('Network down')
+    })
+
+    const actions = createCommandHarness({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+      outbox,
+    }).actions
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 5, y: 0, z: 1 } })
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 1 })
+    await vi.waitFor(() => expect(sentBody).not.toBeNull())
+    const opId = sentBody!.opId as string
+
+    actions.clearPendingPredictionsForReconciliation('Live-play command revision gap detected.')
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(tokenPosition(map.value)).toEqual({ x: 1, y: 0, z: 1 })
+
+    const authoritativeSnapshot = mapFixture()
+    authoritativeSnapshot.revision = 7
+    placementById(authoritativeSnapshot).position = { x: 4, y: 0, z: 4 }
+    map.value = authoritativeSnapshot
+
+    releaseHttp()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: false, uncertain: true, opId })
+    expect(tokenPosition(map.value)).toEqual({ x: 4, y: 0, z: 4 })
+    expect(map.value.revision).toBe(7)
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(actions.outboxEntries.value).toEqual([expect.objectContaining({ opId, state: 'uncertain' })])
+  })
+
+  it('cancels non-durable queued move predictions during reconciliation while preserving durable sends for recovery', async () => {
+    const outbox = createTestOutbox()
+    const map = ref(mapFixture())
+    const postGate = deferred<void>()
+    const sentBodies: Record<string, unknown>[] = []
+    apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => {
+      sentBodies.push(commandRecord(body))
+      await postGate.promise
+      throw new Error('Network down')
+    })
+
+    const actions = createCommandHarness({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+      outbox,
+    }).actions
+    const first = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(sentBodies).toHaveLength(1))
+    const firstOpId = sentBodies[0]!.opId as string
+
+    const second = actions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 1 } })
+    expect(actions.pendingCommandCount.value).toBe(2)
+    expect(actions.pendingPredictionCount.value).toBe(2)
+    expect(tokenPosition(map.value)).toEqual({ x: 3, y: 0, z: 1 })
+
+    actions.clearPendingPredictionsForReconciliation('Realtime replay history has a gap.')
+
+    await expect(second).resolves.toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining('reloading the authoritative live table snapshot'),
+    })
+    expect(Object.keys(actions.pendingCommands.value)).toEqual([firstOpId])
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(tokenPosition(map.value)).toEqual({ x: 1, y: 0, z: 1 })
+    expect(sentBodies).toHaveLength(1)
+
+    postGate.resolve()
+    await expect(first).resolves.toMatchObject({ dispatched: false, uncertain: true, opId: firstOpId })
+    expect(actions.outboxEntries.value).toEqual([expect.objectContaining({ opId: firstOpId, state: 'uncertain' })])
+  })
+
   it('cleans up local predictions idempotently when accepted SSE wins the HTTP race', async () => {
     const outbox = createTestOutbox()
     const map = ref(mapFixture())

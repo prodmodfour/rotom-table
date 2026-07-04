@@ -1042,6 +1042,57 @@ describe('useEditableMap autosave boundary', () => {
     expect(editable.livePlayRealtimeNotice.value).toContain('map revision 1')
   })
 
+  it('notifies prediction cleanup before reconnect and gap reconciliation reloads', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })
+    const order: string[] = []
+    const requestAuthoritativeReconciliation = vi.fn(async (reason: string) => {
+      order.push(`request:${reason}`)
+    })
+    const onBeforeAuthoritativeReconciliation = vi.fn((reason: string) => {
+      order.push(`clear:${reason}`)
+    })
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      requestAuthoritativeReconciliation,
+      onBeforeAuthoritativeReconciliation,
+    })
+    await flushPromises()
+
+    apiMocks.connectionHandlers[0]?.({
+      state: 'reconnecting',
+      previousState: 'connected',
+      reconnected: false,
+      reason: 'transport-loss',
+    })
+
+    expect(onBeforeAuthoritativeReconciliation).toHaveBeenCalledWith(
+      'Realtime stream is synchronizing before live play resumes.',
+    )
+    expect(editable.realtimeReconciliationStatus.value).toBe('reconnecting')
+
+    apiMocks.connectionHandlers[0]?.({
+      state: 'replaying',
+      previousState: 'replaying',
+      reconnected: true,
+      reason: 'reconcile-required',
+      reconciliation: {
+        reason: 'gap',
+        requestedAfterSequence: 1,
+        earliestAvailableSequence: 3,
+        latestSequence: 6,
+      },
+    })
+    await flushPromises()
+
+    const gapReason = 'Realtime replay history has a gap. Reloading the live table snapshot.'
+    expect(requestAuthoritativeReconciliation).toHaveBeenCalledWith(gapReason)
+    expect(order.slice(-2)).toEqual([
+      `clear:${gapReason}`,
+      `request:${gapReason}`,
+    ])
+    expect(editable.realtimeReconciliationStatus.value).toBe('reconciled')
+  })
+
   it('reloads instead of applying a revision-gap realtime event directly', async () => {
     apiMocks.getJson
       .mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })

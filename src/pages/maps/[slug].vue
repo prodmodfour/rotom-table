@@ -176,9 +176,24 @@ let acknowledgeAcceptedRealtimeEvent = async (event: LivePlayAcceptedRealtimeEve
 }
 
 const emptyLivePlayPendingPredictions: Readonly<Record<string, LivePlayLocalPrediction>> = Object.freeze({})
+interface TrackedLivePlayTokenPrediction {
+  readonly opId: string
+  readonly placementId: string
+  readonly commandType: LivePlayLocalPrediction['commandType']
+  readonly tokenLabel: string
+}
+
+const livePlayTrackedTokenPredictions = ref<Readonly<Record<string, TrackedLivePlayTokenPrediction>>>({})
+const livePlayTokenCorrectionNotice = ref<LivePlayTokenCorrectionNotice | null>(null)
+
+const clearLivePlayTrackedPredictionsForReconciliation = (): void => {
+  livePlayTrackedTokenPredictions.value = {}
+  livePlayTokenCorrectionNotice.value = null
+}
+
 const livePlayCommandsForPatchAdoption = shallowRef<Pick<
   UseLivePlayCommandsReturn,
-  'pendingPredictions' | 'beforeLivePlayPatchesApply' | 'afterLivePlayPatchesApply'
+  'pendingPredictions' | 'beforeLivePlayPatchesApply' | 'afterLivePlayPatchesApply' | 'clearPendingPredictionsForReconciliation'
 > | null>(null)
 const livePlayPatchAdoptionPendingPredictions = computed<Readonly<Record<string, LivePlayLocalPrediction>>>(() => (
   livePlayCommandsForPatchAdoption.value?.pendingPredictions.value ?? emptyLivePlayPendingPredictions
@@ -188,6 +203,10 @@ const beforeLivePlayPatchesApply = (context: LivePlayPatchAdoptionContext): void
 }
 const afterLivePlayPatchesApply = (context: LivePlayPatchAdoptionContext): void => {
   livePlayCommandsForPatchAdoption.value?.afterLivePlayPatchesApply(context)
+}
+const clearLivePlayPredictionsForReconciliation = (reason: string): void => {
+  livePlayCommandsForPatchAdoption.value?.clearPendingPredictionsForReconciliation(reason)
+  clearLivePlayTrackedPredictionsForReconciliation()
 }
 
 const {
@@ -211,6 +230,7 @@ const {
   pendingLivePlayPredictions: livePlayPatchAdoptionPendingPredictions,
   beforeLivePlayPatchesApply,
   afterLivePlayPatchesApply,
+  onBeforeAuthoritativeReconciliation: clearLivePlayPredictionsForReconciliation,
   onLivePlayCommandAcceptedEvent: (event) => acknowledgeAcceptedRealtimeEvent(event),
 })
 
@@ -296,16 +316,6 @@ const livePlayRecoveryNewCommandBlockedMessage = ref<string | null>(
 )
 
 type LivePlayCommandRejectionNotification = Parameters<NonNullable<UseLivePlayCommandsOptions['onCommandRejected']>>[0]
-
-interface TrackedLivePlayTokenPrediction {
-  readonly opId: string
-  readonly placementId: string
-  readonly commandType: LivePlayLocalPrediction['commandType']
-  readonly tokenLabel: string
-}
-
-const livePlayTrackedTokenPredictions = ref<Readonly<Record<string, TrackedLivePlayTokenPrediction>>>({})
-const livePlayTokenCorrectionNotice = ref<LivePlayTokenCorrectionNotice | null>(null)
 
 const livePlayTokenCorrectionMessage = (prediction: TrackedLivePlayTokenPrediction): string => {
   if (prediction.commandType === LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN) {

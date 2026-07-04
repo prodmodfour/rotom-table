@@ -102,6 +102,8 @@ export interface UseEditableMapOptions {
   readonly pendingLivePlayPredictions?: ReadonlyValueRef<LivePlayPendingPredictionSnapshot>
   readonly beforeLivePlayPatchesApply?: LivePlayPatchAdoptionHook
   readonly afterLivePlayPatchesApply?: LivePlayPatchAdoptionHook
+  /** Clears/suspends presentation-only live-play state before reconnect or snapshot reconciliation resumes play. */
+  readonly onBeforeAuthoritativeReconciliation?: (reason: string) => void
   readonly onLivePlayCommandAcceptedEvent?: (
     event: LivePlayAcceptedRealtimeEvent,
   ) => void | Promise<void>
@@ -142,6 +144,7 @@ interface NormalizedUseEditableMapOptions extends Required<Pick<UseEditableMapOp
   readonly pendingLivePlayPredictions?: ReadonlyValueRef<LivePlayPendingPredictionSnapshot>
   readonly beforeLivePlayPatchesApply?: LivePlayPatchAdoptionHook
   readonly afterLivePlayPatchesApply?: LivePlayPatchAdoptionHook
+  readonly onBeforeAuthoritativeReconciliation?: (reason: string) => void
   readonly onLivePlayCommandAcceptedEvent?: (
     event: LivePlayAcceptedRealtimeEvent,
   ) => void | Promise<void>
@@ -161,6 +164,7 @@ const normalizeOptions = (options: number | UseEditableMapOptions): NormalizedUs
         pendingLivePlayPredictions: options.pendingLivePlayPredictions,
         beforeLivePlayPatchesApply: options.beforeLivePlayPatchesApply,
         afterLivePlayPatchesApply: options.afterLivePlayPatchesApply,
+        onBeforeAuthoritativeReconciliation: options.onBeforeAuthoritativeReconciliation,
         onLivePlayCommandAcceptedEvent: options.onLivePlayCommandAcceptedEvent,
       }
 )
@@ -180,6 +184,7 @@ export const useEditableMap = (
     pendingLivePlayPredictions: pendingLivePlayPredictionsRef,
     beforeLivePlayPatchesApply,
     afterLivePlayPatchesApply,
+    onBeforeAuthoritativeReconciliation,
     onLivePlayCommandAcceptedEvent,
   } = normalizeOptions(options)
   const currentInteractionMode = (): MapInteractionMode => interactionModeRef?.value ?? MAP_INTERACTION_MODES.LIVE_PLAY
@@ -403,6 +408,14 @@ export const useEditableMap = (
   let activeReconciliationPromise: Promise<void> | null = null
   let activeReconciliationKey: string | null = null
   let reconciliationSequence = 0
+  const notifyBeforeAuthoritativeReconciliation = (reason: string): void => {
+    if (!onBeforeAuthoritativeReconciliation) return
+    try {
+      onBeforeAuthoritativeReconciliation(reason)
+    } catch (err) {
+      console.warn('[useEditableMap] authoritative reconciliation preparation failed', err)
+    }
+  }
   const currentAuthoritativeReconciliationKey = (): string => (
     requestAuthoritativeReconciliation
       ? authoritativeReconciliationKeyRef?.value ?? 'external-authoritative-reconciliation'
@@ -415,6 +428,7 @@ export const useEditableMap = (
     if (activeReconciliationPromise && activeReconciliationKey === reconciliationKey) return activeReconciliationPromise
 
     const sequence = ++reconciliationSequence
+    notifyBeforeAuthoritativeReconciliation(reason)
     realtimeReconciliationStatus.value = 'reconciling'
     let reconciliationPromise!: Promise<void>
     const runReconciliation = async () => {
@@ -696,6 +710,7 @@ export const useEditableMap = (
 
     if (change.state === 'connecting' || change.state === 'reconnecting' || change.state === 'replaying') {
       if (realtimeReconciliationStatus.value !== 'reconciling') {
+        notifyBeforeAuthoritativeReconciliation('Realtime stream is synchronizing before live play resumes.')
         realtimeReconciliationStatus.value = 'reconnecting'
       }
       return

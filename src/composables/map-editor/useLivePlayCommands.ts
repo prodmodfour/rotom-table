@@ -288,6 +288,7 @@ export interface UseLivePlayCommandsReturn {
   pendingPredictionCount: ComputedRef<number>
   hasPendingOutboxCommands: ComputedRef<boolean>
   clearError: () => void
+  clearPendingPredictionsForReconciliation: (reason?: string) => void
   refreshOutboxEntries: () => Promise<readonly LivePlayCommandOutboxEntry[]>
   recoverInterruptedOutboxCommands: () => Promise<readonly LivePlayCommandOutboxEntry[]>
   retryOutboxCommand: (opId: string) => Promise<LivePlayCommandDispatchResult>
@@ -495,6 +496,8 @@ const REALTIME_ACKNOWLEDGEMENT_SYNC_MESSAGE =
 const SUPERSEDED_MOVE_TOKEN_MESSAGE = 'This token move was superseded by a newer destination before it was sent.'
 const CANCELLED_SUPERSEDING_MOVE_TOKEN_MESSAGE =
   'The queued token move was not sent because the previous move did not receive an authoritative acceptance.'
+const RECONCILIATION_CANCELLED_MOVE_TOKEN_MESSAGE =
+  'The queued token move was not sent because the client is reloading the authoritative live table snapshot.'
 
 const NON_CONCURRENT_LIVE_PLAY_COMMAND_TYPES = new Set<LivePlayMapCommandType>([
   LIVE_PLAY_COMMAND_TYPES.RESOLVE_MOVE,
@@ -2180,6 +2183,42 @@ export const useLivePlayCommands = (
     return command.promise
   }
 
+  const cancelQueuedMoveTokenCommandsForReconciliation = (): void => {
+    for (const [placementId, queue] of moveTokenCoalescingQueues) {
+      const queued = queue.queued
+      if (!queued) continue
+      queue.queued = null
+      queue.drainScheduled = false
+      cancelQueuedMoveTokenCommand(queued, RECONCILIATION_CANCELLED_MOVE_TOKEN_MESSAGE)
+      cleanupMoveTokenQueueIfIdle(placementId, queue)
+    }
+  }
+
+  const clearPredictionForReconciliation = (
+    prediction: LivePlayLocalPrediction,
+  ): void => {
+    const applied = localPredictionCurrentlyApplied(prediction)
+    let rollbackFailure: string | undefined
+    if (applied) {
+      const result = rollbackLivePlayPredictionFromMap(options.map?.value, prediction)
+      if (!result.ok) rollbackFailure = result.reason
+    }
+    removeLocalPrediction(prediction.opId)
+    recordCommandRollbackTrace(prediction, {
+      applied: applied && rollbackFailure === undefined,
+      reason: rollbackFailure === undefined ? 'authoritative-reconciliation' : `authoritative-reconciliation-${rollbackFailure}`,
+    })
+  }
+
+  const clearPendingPredictionsForReconciliation: UseLivePlayCommandsReturn['clearPendingPredictionsForReconciliation'] = () => {
+    activePredictionPatchAdoptionSession = null
+    cancelQueuedMoveTokenCommandsForReconciliation()
+
+    const predictions = Object.values(localPredictionRecords.value).reverse()
+    for (const prediction of predictions) clearPredictionForReconciliation(prediction)
+    settleSavingStatusIfIdle()
+  }
+
   const runCoalescedMoveTokenCommand = (
     payload: Parameters<UseLivePlayCommandsReturn['moveToken']>[0],
   ): Promise<LivePlayCommandDispatchResult> => {
@@ -3566,6 +3605,7 @@ export const useLivePlayCommands = (
     commandTraces,
     hasPendingOutboxCommands,
     clearError,
+    clearPendingPredictionsForReconciliation,
     refreshOutboxEntries,
     recoverInterruptedOutboxCommands,
     retryOutboxCommand,

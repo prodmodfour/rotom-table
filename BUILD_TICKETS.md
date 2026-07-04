@@ -227,7 +227,7 @@ Status: DONE
 
 ## 008 — LP-S2-008 — Add pending prediction reconciliation on reconnect/gap recovery
 
-Status: TODO
+Status: DONE
 
 **Goal:** Avoid replaying presentation-only predictions after the client has to reload the authoritative live table snapshot.
 
