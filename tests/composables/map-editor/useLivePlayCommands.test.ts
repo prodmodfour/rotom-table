@@ -13,6 +13,7 @@ import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import {
   LIVE_PLAY_BATCH_MAX_FIELD_EFFECT_OPERATIONS,
   LIVE_PLAY_BATCH_MAX_HAZARD_CELLS,
+  LIVE_PLAY_BATCH_MAX_TERRAIN_VOXELS,
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_OP_ID_RE,
@@ -156,6 +157,26 @@ const storedClearFieldEffectsCommandBody = (overrides: Partial<Record<string, un
   type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
   scopes: [{ kind: 'map', lane: 'fieldEffects' }],
   payload: { category: 'all' },
+  clientId: 'stored-client',
+  ...overrides,
+})
+
+const storedEditTerrainCommandBody = (overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: nextStoredOpId('terrain'),
+  mapSlug: 'arena-map',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+  scopes: [
+    { kind: 'map', lane: 'terrain', cell: { x: 0, y: 0, z: 0 } },
+    { kind: 'map', lane: 'terrain', cell: { x: 2, y: 0, z: 2 } },
+  ],
+  payload: {
+    operations: [
+      { action: 'remove', cell: { x: 0, y: 0, z: 0 } },
+      { action: 'upsert', voxel: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' } },
+    ],
+  },
   clientId: 'stored-client',
   ...overrides,
 })
@@ -565,6 +586,51 @@ const acceptedClearFieldEffectsResponse = (
         ...(Array.isArray(payload.kinds) ? { kinds: payload.kinds } : {}),
         previous,
         current,
+      },
+    }],
+  }
+}
+
+const acceptedEditTerrainResponse = (
+  command: Record<string, unknown>,
+  options: {
+    readonly previousRevision?: number
+    readonly revision?: number
+    readonly removed?: Record<string, unknown>
+    readonly built?: Record<string, unknown>
+  } = {},
+): Record<string, unknown> => {
+  const removed = options.removed ?? { x: 0, y: 0, z: 0, materialId: 'meadow_grass' }
+  const built = options.built ?? { x: 2, y: 0, z: 2, materialId: 'shallow_water' }
+  return {
+    ok: true,
+    opId: command.opId,
+    mapSlug: command.mapSlug,
+    previousRevision: options.previousRevision ?? 4,
+    revision: options.revision ?? 5,
+    patches: [{
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      type: LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN,
+      mapSlug: command.mapSlug,
+      revision: options.revision ?? 5,
+      scopes: [{ kind: 'map', lane: 'terrain' }],
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+        changes: [
+          {
+            cell: { x: removed.x, y: removed.y, z: removed.z },
+            previous: removed,
+            current: null,
+            removed,
+          },
+          {
+            cell: { x: built.x, y: built.y, z: built.z },
+            previous: null,
+            current: built,
+            built,
+          },
+        ],
+        rendererInvalidation: ['terrain', 'movement-preview', 'build-preview', 'hazard-preview'],
       },
     }],
   }
@@ -3722,6 +3788,26 @@ describe('useLivePlayCommands', () => {
       payload: { cell: { x: 2, y: 0, z: 2 } },
     }))
 
+    await actions.editTerrainVoxels({
+      operations: [
+        { action: 'remove', cell: { x: 2, y: 0, z: 2 } },
+        { action: 'upsert', voxel: { x: 3, y: 0, z: 2, materialId: 'meadow_grass' } },
+      ],
+    })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.editTerrainVoxels, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      scopes: [
+        { kind: 'map', lane: 'terrain', cell: { x: 2, y: 0, z: 2 } },
+        { kind: 'map', lane: 'terrain', cell: { x: 3, y: 0, z: 2 } },
+      ],
+      payload: {
+        operations: [
+          { action: 'remove', cell: { x: 2, y: 0, z: 2 } },
+          { action: 'upsert', voxel: { x: 3, y: 0, z: 2, materialId: 'meadow_grass' } },
+        ],
+      },
+    }))
+
     await actions.setFieldEffect({ category: 'weather', kind: 'sunny', rounds: 5, weatherMode: 'replace' })
     expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.setFieldEffect, expect.objectContaining({
       type: LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
@@ -4168,6 +4254,177 @@ describe('useLivePlayCommands', () => {
       opId: abandonEntry.opId,
     })
     await expect(abandonOutbox.get(abandonEntry.opId)).resolves.toBeNull()
+  })
+
+  it('posts editTerrainVoxels batches with normalized payload scopes and patch-first adoption', async () => {
+    const map = ref(mapFixture())
+    map.value.voxels = [{ x: 0, y: 0, z: 0, materialId: 'meadow_grass' }]
+    const applyPersistedMap = vi.fn()
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      const command = commandRecord(body)
+      expect(request).toBe(MAP_API_PATHS.editTerrainVoxels)
+      return acceptedEditTerrainResponse(command, {
+        removed: cloneJson(map.value.voxels[0]!),
+        built: { x: 2, y: 0, z: 2, materialId: 'shallow_water' },
+      })
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applyPersistedMap,
+    })
+
+    const result = await actions.editTerrainVoxels({
+      operations: [
+        { action: 'remove', cell: { x: 0, y: 0, z: 0 } },
+        { action: 'upsert', voxel: { x: 2, y: 0, z: 2, materialId: 'shallow_water' } },
+      ],
+    })
+
+    expect(result).toMatchObject({ dispatched: true, opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE) })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.editTerrainVoxels, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: result.opId,
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      scopes: [
+        { kind: 'map', lane: 'terrain', cell: { x: 0, y: 0, z: 0 } },
+        { kind: 'map', lane: 'terrain', cell: { x: 2, y: 0, z: 2 } },
+      ],
+      payload: {
+        operations: [
+          { action: 'remove', cell: { x: 0, y: 0, z: 0 } },
+          { action: 'upsert', voxel: { x: 2, y: 0, z: 2, materialId: 'shallow_water' } },
+        ],
+      },
+      clientId: 'ssr',
+    }))
+    expect(map.value.revision).toBe(5)
+    expect(map.value.voxels).toEqual([{ x: 2, y: 0, z: 2, materialId: 'shallow_water' }])
+    expect(applyPersistedMap).not.toHaveBeenCalled()
+    expect(actions.pendingPredictionCount.value).toBe(0)
+  })
+
+  it('rejects oversized editTerrainVoxels batches before durable storage or HTTP send', async () => {
+    const delegate = createTestOutbox()
+    const enqueue = vi.fn(delegate.enqueue.bind(delegate))
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox: wrapOutbox(delegate, { enqueue }),
+    })
+
+    const result = await actions.editTerrainVoxels({
+      operations: Array.from({ length: LIVE_PLAY_BATCH_MAX_TERRAIN_VOXELS + 1 }, (_, index) => ({
+        action: 'upsert' as const,
+        voxel: { x: index, y: 0, z: 1, materialId: 'meadow_grass' },
+      })),
+    })
+
+    expect(result).toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining(`payload.operations must contain at most ${LIVE_PLAY_BATCH_MAX_TERRAIN_VOXELS} terrain voxel operations`),
+    })
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    await expect(delegate.list()).resolves.toEqual([])
+  })
+
+  it('blocks conflicting terrain commands while editTerrainVoxels is pending but allows unrelated token actions', async () => {
+    const terrainGate = deferred<void>()
+    const moveGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      const command = commandRecord(body)
+      if (request === MAP_API_PATHS.editTerrainVoxels) {
+        await terrainGate.promise
+        return acceptedEditTerrainResponse(command)
+      }
+      if (request === MAP_API_PATHS.moveToken) {
+        await moveGate.promise
+        return acceptedMoveTokenResponse(command, { previousRevision: 4, revision: 5 })
+      }
+      throw new Error(`Unexpected request ${request}`)
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', mapRevision: ref(4) })
+    const edit = actions.editTerrainVoxels({
+      operations: [{ action: 'upsert', voxel: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' } }],
+    })
+
+    expect(actions.pendingCommandCount.value).toBe(1)
+    const blocked = await actions.removeTerrainVoxel({ cell: { x: 2, y: 0, z: 2 } })
+    expect(blocked).toEqual({
+      dispatched: false,
+      message: 'Another pending command is already changing terrain cell 2,0,2.',
+    })
+
+    const move = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(1, MAP_API_PATHS.editTerrainVoxels, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+      scopes: [{ kind: 'map', lane: 'terrain', cell: { x: 2, y: 0, z: 2 } }],
+    }))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(2, MAP_API_PATHS.moveToken, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+    }))
+
+    terrainGate.resolve()
+    moveGate.resolve()
+    await expect(Promise.all([edit, move])).resolves.toEqual([
+      expect.objectContaining({ dispatched: true }),
+      expect.objectContaining({ dispatched: true }),
+    ])
+    expect(actions.pendingCommandCount.value).toBe(0)
+  })
+
+  it('retries and status-checks editTerrainVoxels outbox entries with the exact stored command body', async () => {
+    const retryOutbox = createTestOutbox()
+    apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
+    const retryActions = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox: retryOutbox }).actions
+    const uncertain = await retryActions.editTerrainVoxels({
+      operations: [{ action: 'upsert', voxel: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' } }],
+    })
+    const retryEntry = await retryOutbox.get(uncertain.opId!)
+    expect(retryEntry).toMatchObject({ state: 'uncertain', requestPath: MAP_API_PATHS.editTerrainVoxels })
+
+    apiMocks.postJson.mockReset()
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.editTerrainVoxels)
+      expect(body).toEqual(retryEntry!.body)
+      return acceptedEditTerrainResponse(commandRecord(body), {
+        removed: { x: 0, y: 0, z: 0, materialId: 'meadow_grass' },
+        built: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' },
+      })
+    })
+    await expect(retryActions.retryOutboxCommand(retryEntry!.opId)).resolves.toMatchObject({
+      dispatched: true,
+      opId: retryEntry!.opId,
+    })
+    await expect(retryOutbox.get(retryEntry!.opId)).resolves.toBeNull()
+
+    const statusOutbox = createTestOutbox()
+    const statusQueued = await enqueueStoredCommand(statusOutbox, {
+      requestPath: MAP_API_PATHS.editTerrainVoxels,
+      body: storedEditTerrainCommandBody(),
+    })
+    const statusEntry = await makeStoredCommandUncertain(statusOutbox, statusQueued)
+    const statusActions = createCommandHarness({ slug: 'arena-map', outbox: statusOutbox }).actions
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.operationStatus)
+      expect(statusCommandRecord(body)).toEqual(statusEntry.body)
+      return operationStatusTerminalResponse(statusEntry, acceptedEditTerrainResponse(statusEntry.body))
+    })
+
+    await expect(statusActions.checkOutboxCommandStatus(statusEntry.opId)).resolves.toMatchObject({
+      status: 'accepted',
+      opId: statusEntry.opId,
+    })
+    await expect(statusOutbox.get(statusEntry.opId)).resolves.toBeNull()
   })
 
   it('posts live-play scene commands through the command dispatcher', async () => {

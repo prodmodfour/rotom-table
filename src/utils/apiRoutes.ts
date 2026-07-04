@@ -67,6 +67,7 @@ export const MAP_API_PATHS = {
   clearHazards: '/api/maps/hazards/clear',
   buildTerrainVoxel: '/api/maps/terrain/build',
   removeTerrainVoxel: '/api/maps/terrain/remove',
+  editTerrainVoxels: '/api/maps/terrain/edit',
   setFieldEffect: '/api/maps/field-effects/set',
   removeFieldEffect: '/api/maps/field-effects/remove',
   clearFieldEffects: '/api/maps/field-effects/clear',

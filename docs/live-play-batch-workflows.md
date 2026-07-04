@@ -29,7 +29,7 @@ The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` pa
 
 The shared `clearFieldEffects` contract supports category-only clears for `weather`, `terrain`, `room`, and `all`, plus bounded explicit `kinds` lists for one non-`all` category. Empty, duplicate, unknown, cross-category, or over-limit kind lists reject before server mutation. All `clearFieldEffects` modes intentionally use the conservative map `fieldEffects` lane scope so they conflict with set/remove/tick field-effect commands but not unrelated token movement. The batch is exposed through `POST /api/maps/field-effects/clear`, validates terminal responses against the submitted body, and uses the durable outbox/status/abandonment flow like other live-play commands.
 
-The shared `editTerrainVoxels` contract is the terrain-brush batch shape for later server/client wiring. Its payload is one bounded `operations` list with `upsert` voxel operations and `remove` cell operations; unknown fields, empty lists, oversized lists, duplicate cells, and upsert/remove contradictions in the same cell reject before any authoritative mutation path can run. Small batches construct explicit terrain-cell scopes, while larger batches fall back to the conservative map `terrain` lane scope so they still conflict safely with single-cell terrain edits.
+The shared `editTerrainVoxels` contract is the terrain-brush batch shape now available to the durable live-play command pipeline. Its payload is one bounded `operations` list with `upsert` voxel operations and `remove` cell operations; unknown fields, empty lists, oversized lists, duplicate cells, and upsert/remove contradictions in the same cell reject before any authoritative mutation path can run. Small batches construct explicit terrain-cell scopes, while larger batches fall back to the conservative map `terrain` lane scope so they still conflict safely with single-cell terrain edits. The batch is exposed through `POST /api/maps/terrain/edit`, validates bounds/materials/occupancy before mutation, commits all changed cells in one terrain transaction, and returns a `map.terrain` patch with changed cells for patch-first client adoption.
 
 ## Summary classification
 
@@ -86,14 +86,15 @@ The shared `editTerrainVoxels` contract is the terrain-brush batch shape for lat
 - **Current UI path:** `IsometricGrid.client.vue` click handling calls build interaction `performAction`; page handlers `placeVoxelFromScene` and `removeVoxelFromScene` dispatch one live-play command per clicked voxel when not in setup/edit.
 - **Current command route(s):**
   - `POST /api/maps/terrain/build` via `MAP_API_PATHS.buildTerrainVoxel`;
-  - `POST /api/maps/terrain/remove` via `MAP_API_PATHS.removeTerrainVoxel`.
-- **Current command types:** `buildTerrainVoxel`, `removeTerrainVoxel`.
-- **Current payloads:** `{ voxel }` for add/update and `{ cell }` for removal.
-- **Current command scopes:** `[{ kind: 'map', lane: 'terrain' }]` in the envelope. The client/server conflict helpers derive a terrain-cell descriptor from the payload for single-voxel commands, while broad terrain-lane scopes still conflict with all terrain cells.
-- **Authority scope:** GM-only terrain authority. Server validates payload shape, material palette, bounds, no-op updates/removals, map revision, and conflict history.
+  - `POST /api/maps/terrain/remove` via `MAP_API_PATHS.removeTerrainVoxel`;
+  - `POST /api/maps/terrain/edit` via `MAP_API_PATHS.editTerrainVoxels` for bounded add/remove batches.
+- **Current command types:** `buildTerrainVoxel`, `removeTerrainVoxel`, and `editTerrainVoxels`.
+- **Current payloads:** `{ voxel }` for single add/update, `{ cell }` for single removal, and `{ operations: [...] }` for batch upsert/remove terrain cells.
+- **Current command scopes:** single-cell commands still use the broad `[{ kind: 'map', lane: 'terrain' }]` envelope while conflict helpers derive the payload cell; `editTerrainVoxels` uses explicit terrain-cell scopes up to the shared explicit-scope limit and the broad terrain lane for larger batches.
+- **Authority scope:** GM-only terrain authority. Server validates payload shape, material palette, every cell's map bounds, token occupancy for upserts, no-op updates/removals, map revision, and conflict history before applying the batch atomically.
 - **Likely batch conflict scopes:** explicit terrain-cell descriptors for bounded cell batches when possible; broad `terrain` lane for oversized/ambiguous operations. Mixed add/remove payloads must reject duplicate or contradictory operations in the same cell.
 - **Current accepted patch shape:** one `map.terrain` patch with `cell`, `previous`, `current`, optional `built`, optional `removed`, and `rendererInvalidation` reasons.
-- **Expected batch patch shape:** one accepted terminal result containing changed terrain cells and final cell states, or a conservative final terrain set when precise patches become too large. Avoid whole-map adoption when practical.
+- **Current batch patch shape:** one accepted terminal result with a `map.terrain` patch whose `changes` array lists each changed cell, previous voxel/null, current voxel/null, and optional built/removed voxel. Clients can apply the patch without whole-map adoption for normal bounded batches.
 - **Local prediction safety:** no authoritative terrain prediction today. The existing ghost/preview is presentation-only; batch terrain edits should remain pending-only until accepted.
 - **Sprint 4 decision:** add `editTerrainVoxels` plus client stroke coalescing. This turns repeated terrain clicks/brush strokes into bounded authoritative transactions without making clients authoritative.
 

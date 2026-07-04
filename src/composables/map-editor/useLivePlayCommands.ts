@@ -5,15 +5,18 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  createEditTerrainVoxelsCommandScopes,
   createLivePlayOpId,
   isLivePlayMapCommandType,
   parseClearFieldEffectsPayload,
   parseClearHazardsPayload,
+  parseEditTerrainVoxelsPayload,
   type AdvanceInitiativePayload,
   type BuildTerrainVoxelPayload,
   type ClearFieldEffectsPayload,
   type ClearHazardsPayload,
   type DeleteTokenPayload,
+  type EditTerrainVoxelsPayload,
   type GrantExperiencePayload,
   type LivePlayCommandAccepted,
   type LivePlayCommandDuplicate,
@@ -373,6 +376,7 @@ export interface UseLivePlayCommandsReturn {
   clearFieldEffects: (payload: ClearFieldEffectsPayload) => Promise<LivePlayCommandDispatchResult>
   buildTerrainVoxel: (payload: BuildTerrainVoxelPayload) => Promise<LivePlayCommandDispatchResult>
   removeTerrainVoxel: (payload: RemoveTerrainVoxelPayload) => Promise<LivePlayCommandDispatchResult>
+  editTerrainVoxels: (payload: EditTerrainVoxelsPayload) => Promise<LivePlayCommandDispatchResult>
   setFieldEffect: (payload: SetFieldEffectPayload) => Promise<LivePlayCommandDispatchResult>
   removeFieldEffect: (payload: RemoveFieldEffectPayload) => Promise<LivePlayCommandDispatchResult>
   tickFieldEffectDurations: (payload?: TickFieldEffectDurationsPayload) => Promise<LivePlayCommandDispatchResult>
@@ -421,6 +425,7 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS
   | typeof LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL
+  | typeof LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
@@ -448,6 +453,7 @@ type LivePlayMapEffectsCommandPayload =
   | ClearFieldEffectsPayload
   | BuildTerrainVoxelPayload
   | RemoveTerrainVoxelPayload
+  | EditTerrainVoxelsPayload
   | SetFieldEffectPayload
   | RemoveFieldEffectPayload
   | TickFieldEffectDurationsPayload
@@ -494,6 +500,7 @@ const LIVE_PLAY_COMMAND_REQUEST_PATHS = new Set<string>([
   MAP_API_PATHS.clearFieldEffects,
   MAP_API_PATHS.buildTerrainVoxel,
   MAP_API_PATHS.removeTerrainVoxel,
+  MAP_API_PATHS.editTerrainVoxels,
   MAP_API_PATHS.setFieldEffect,
   MAP_API_PATHS.removeFieldEffect,
   MAP_API_PATHS.tickFieldEffectDurations,
@@ -2669,6 +2676,22 @@ export const useLivePlayCommands = (
     ),
   )
 
+  const editTerrainVoxels: UseLivePlayCommandsReturn['editTerrainVoxels'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.editTerrainVoxels,
+    (authContext) => {
+      const parsed = parseEditTerrainVoxelsPayload(payload)
+      if (!parsed.valid) {
+        throw new Error(`editTerrainVoxels payload is invalid: ${validationIssueSummary(parsed.issues)}`)
+      }
+      return commandBody(
+        authContext,
+        LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+        parsed.value,
+        createEditTerrainVoxelsCommandScopes(parsed.value),
+      )
+    },
+  )
+
   const setFieldEffect: UseLivePlayCommandsReturn['setFieldEffect'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.setFieldEffect,
     (authContext) => commandBody(
@@ -3750,6 +3773,7 @@ export const useLivePlayCommands = (
     clearFieldEffects,
     buildTerrainVoxel,
     removeTerrainVoxel,
+    editTerrainVoxels,
     setFieldEffect,
     removeFieldEffect,
     tickFieldEffectDurations,

@@ -4,6 +4,7 @@ import {
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
   type BuildTerrainVoxelLivePlayCommand,
+  type EditTerrainVoxelsLivePlayCommand,
   type RemoveTerrainVoxelLivePlayCommand,
 } from '#shared/livePlayCommands'
 import { createAuthoritativeLivePlayCommandExecutor } from '~~/server/livePlay/commandExecutor'
@@ -71,6 +72,27 @@ const removeTerrainCommand = (
   ...overrides,
 })
 
+const editTerrainCommand = (
+  overrides: Partial<EditTerrainVoxelsLivePlayCommand> = {},
+): EditTerrainVoxelsLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_editterrn1',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+  scopes: [
+    { kind: 'map', lane: 'terrain', cell: baseCell },
+    { kind: 'map', lane: 'terrain', cell: { x: 2, y: 0, z: 2 } },
+  ],
+  payload: {
+    operations: [
+      { action: 'remove', cell: baseCell },
+      { action: 'upsert', voxel: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' } },
+    ],
+  },
+  ...overrides,
+})
+
 const createHarness = (initialMap: TabletopMap = baseMap()) => {
   let storedMap = initialMap
   const writes: TabletopMap[] = []
@@ -110,7 +132,10 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   }
 }
 
-type SingleLivePlayTerrainCommand = BuildTerrainVoxelLivePlayCommand | RemoveTerrainVoxelLivePlayCommand
+type SingleLivePlayTerrainCommand =
+  | BuildTerrainVoxelLivePlayCommand
+  | RemoveTerrainVoxelLivePlayCommand
+  | EditTerrainVoxelsLivePlayCommand
 
 const execute = (harness: ReturnType<typeof createHarness>, command: SingleLivePlayTerrainCommand, role: 'gm' | 'player' = 'gm') =>
   executeLivePlayTerrainCommandUseCase({
@@ -180,6 +205,71 @@ describe('live-play terrain commands', () => {
         rendererInvalidation: LIVE_PLAY_TERRAIN_RENDER_INVALIDATION_REASONS,
       },
     })
+  })
+
+  it('edits terrain voxel batches atomically and reuses the stored terminal result on retry', async () => {
+    const existing: MapVoxelV2 = { ...baseCell, materialId: 'shallow_water' }
+    const harness = createHarness(baseMap({ voxels: [existing] }))
+    const command = editTerrainCommand()
+
+    const response = await execute(harness, command)
+    const retry = await execute(harness, command)
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(retry.result).toEqual(response.result)
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.published).toHaveLength(1)
+    expect(harness.storedMap.voxels).toEqual([
+      { x: 2, y: 0, z: 2, materialId: 'meadow_grass' },
+    ])
+    expect(response.voxels).toEqual(harness.storedMap.voxels)
+    expect(acceptedPatches(response)).toEqual([
+      expect.objectContaining({
+        type: LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN,
+        revision: 5,
+        scopes: [{ kind: 'map', lane: 'terrain' }],
+        payload: {
+          command: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+          changes: [
+            {
+              cell: baseCell,
+              previous: existing,
+              current: null,
+              removed: existing,
+            },
+            {
+              cell: { x: 2, y: 0, z: 2 },
+              previous: null,
+              current: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' },
+              built: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' },
+            },
+          ],
+          rendererInvalidation: LIVE_PLAY_TERRAIN_RENDER_INVALIDATION_REASONS,
+        },
+      }),
+    ])
+  })
+
+  it('rejects invalid terrain voxel batches without partial writes', async () => {
+    const existing: MapVoxelV2 = { ...baseCell, materialId: 'shallow_water' }
+    const harness = createHarness(baseMap({ voxels: [existing] }))
+
+    const response = await execute(harness, editTerrainCommand({
+      opId: 'op_badbatchtrn',
+      scopes: [{ kind: 'map', lane: 'terrain' }],
+      payload: {
+        operations: [
+          { action: 'remove', cell: baseCell },
+          { action: 'upsert', voxel: { x: 99, y: 0, z: 2, materialId: 'meadow_grass' } },
+        ],
+      },
+    }))
+
+    expect(response.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 4 })
+    expect(response.result.ok ? '' : response.result.message).toContain('outside map arena')
+    expect(harness.writes).toEqual([])
+    expect(harness.published).toEqual([])
+    expect(harness.storedMap.voxels).toEqual([existing])
   })
 
   it('rejects player commands, occupied cells, invalid materials, and no-op requests without writing', async () => {

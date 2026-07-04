@@ -253,8 +253,8 @@ const cellMatches = (left: Pick<GridAnchor, 'x' | 'y' | 'z'>, right: Pick<GridAn
   left.x === right.x && left.y === right.y && left.z === right.z
 )
 
-const applyTerrainPatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
-  if (!isRecord(payload) || !isGridAnchor(payload.cell)) {
+const applyTerrainCellPatch = (map: TabletopMap, payload: UnknownRecord): LivePlayPatchesRejected | null => {
+  if (!isGridAnchor(payload.cell)) {
     return failed('invalid-patch', 'map.terrain patches require a terrain cell')
   }
   const index = map.voxels.findIndex((voxel) => cellMatches(voxel, payload.cell as GridAnchor))
@@ -269,6 +269,40 @@ const applyTerrainPatch = (map: TabletopMap, payload: unknown): LivePlayPatchesR
     return null
   }
   return failed('invalid-patch', 'map.terrain patches require current to be a voxel or null')
+}
+
+const applyTerrainBatchPatch = (map: TabletopMap, payload: UnknownRecord): LivePlayPatchesRejected | null => {
+  if (!Array.isArray(payload.changes)) {
+    return failed('invalid-patch', 'map.terrain editTerrainVoxels patches require a changes array')
+  }
+
+  const changes: UnknownRecord[] = []
+  for (const [index, change] of payload.changes.entries()) {
+    if (!isRecord(change)) {
+      return failed('invalid-patch', `map.terrain changes[${index}] must be an object`)
+    }
+    if (!isGridAnchor(change.cell)) {
+      return failed('invalid-patch', `map.terrain changes[${index}] requires a terrain cell`)
+    }
+    if (!isRecord(change.current) && change.current !== null) {
+      return failed('invalid-patch', `map.terrain changes[${index}] requires current to be a voxel or null`)
+    }
+    changes.push(change)
+  }
+
+  for (const change of changes) {
+    const result = applyTerrainCellPatch(map, change)
+    if (result) return result
+  }
+  return null
+}
+
+const applyTerrainPatch = (map: TabletopMap, payload: unknown): LivePlayPatchesRejected | null => {
+  if (!isRecord(payload)) return failed('invalid-patch', 'map.terrain patches require an object payload')
+  if (payload.command === LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS || Array.isArray(payload.changes)) {
+    return applyTerrainBatchPatch(map, payload)
+  }
+  return applyTerrainCellPatch(map, payload)
 }
 
 const mapTrackedFrequency = (value: unknown): MapTrackedMoveFrequency | null => {

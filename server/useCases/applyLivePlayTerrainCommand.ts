@@ -13,9 +13,12 @@ import type { MapVoxelV2, TabletopMap } from '~/types/map'
 import {
   applyLivePlayTerrainChange,
   cloneTerrainVoxel,
+  createLivePlayTerrainBatchPatchPayload,
   createLivePlayTerrainPatchPayload,
   validateLivePlayTerrainCommandPayloadAndScopes,
   type AppliedLivePlayTerrainChange,
+  type AppliedLivePlayTerrainCommandChange,
+  type LivePlayTerrainBatchPatchPayload,
   type LivePlayTerrainPatchPayload,
 } from '../livePlay/terrainDomain'
 import {
@@ -35,6 +38,7 @@ export class LivePlayTerrainCommandUseCaseError extends UseCaseHttpError<400 | 4
 export type LivePlayTerrainCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL
+  | typeof LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS
 
 export interface LivePlayTerrainCommandActor {
   readonly role: AuthRole
@@ -76,9 +80,6 @@ const livePlayTerrainCommandExecutor = createSqliteAuthoritativeLivePlayCommandE
 const terrainCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL,
-])
-
-const pendingBatchTerrainCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
 ])
 
@@ -101,31 +102,51 @@ const assertLivePlayTerrainCommandType = (
   if (expectedType && command.type !== expectedType) {
     rejectLivePlayCommand('invalid', `This route only accepts ${expectedType} commands`)
   }
-  if (pendingBatchTerrainCommandTypes.has(command.type)) {
-    rejectLivePlayCommand(
-      'invalid',
-      'editTerrainVoxels is a batch contract; its terrain batch executor route is not available yet',
-    )
-  }
   if (!terrainCommandTypes.has(command.type)) {
     rejectLivePlayCommand(
       'invalid',
-      'Terrain live-play routes support buildTerrainVoxel and removeTerrainVoxel commands only',
+      'Terrain live-play routes support buildTerrainVoxel, removeTerrainVoxel, and editTerrainVoxels commands only',
     )
   }
 }
 
+const singleTerrainPatchPayload = (
+  command: LivePlayTerrainCommand,
+  change: AppliedLivePlayTerrainChange,
+): LivePlayTerrainPatchPayload => {
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL) {
+    return createLivePlayTerrainPatchPayload(command.type, change)
+  }
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL) {
+    return createLivePlayTerrainPatchPayload(command.type, change)
+  }
+  return rejectLivePlayCommand('invalid', 'Single terrain patches require a single-cell terrain command')
+}
+
+const terrainPatchPayload = (
+  command: LivePlayTerrainCommand,
+  change: AppliedLivePlayTerrainCommandChange,
+): LivePlayTerrainPatchPayload | LivePlayTerrainBatchPatchPayload => (
+  change.changeKind === 'batch'
+    ? createLivePlayTerrainBatchPatchPayload(change)
+    : singleTerrainPatchPayload(command, change)
+)
+
 const terrainPatch = (
   command: LivePlayTerrainCommand,
   revision: number,
-  change: AppliedLivePlayTerrainChange,
-): LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN, LivePlayTerrainPatchPayload, LivePlayMapScope> => ({
+  change: AppliedLivePlayTerrainCommandChange,
+): LivePlayPatch<
+  typeof LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN,
+  LivePlayTerrainPatchPayload | LivePlayTerrainBatchPatchPayload,
+  LivePlayMapScope
+> => ({
   schemaVersion: command.schemaVersion,
   type: LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN,
   mapSlug: command.mapSlug,
   revision,
   scopes: [terrainScope()],
-  payload: createLivePlayTerrainPatchPayload(command.type as LivePlayTerrainCommandType, change),
+  payload: terrainPatchPayload(command, change),
 })
 
 const resolveContext = async (

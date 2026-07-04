@@ -1,9 +1,15 @@
 import {
   LIVE_PLAY_COMMAND_TYPES,
   type BuildTerrainVoxelPayload,
+  type EditTerrainVoxelsPayload,
   type LivePlayTerrainCommand,
   type RemoveTerrainVoxelPayload,
+  type TerrainVoxelBatchChangePatchPayload,
 } from '#shared/livePlayCommands'
+import {
+  parseEditTerrainVoxelsPayload,
+  type EditTerrainVoxelOperation,
+} from '#shared/livePlayBatchCommands'
 import type { GridAnchor, MapVoxelV2, SheetPlacement, TabletopMap } from '~/types/map'
 import { MATERIAL_BY_ID, getMaterialDefinition, normalizeMaterialId } from '~/utils/mapMaterials'
 import { withDefaultBuilderVoxelColor } from '~/utils/voxelColors'
@@ -34,7 +40,14 @@ export interface LivePlayTerrainPatchPayload {
   readonly rendererInvalidation: typeof LIVE_PLAY_TERRAIN_RENDER_INVALIDATION_REASONS
 }
 
+export interface LivePlayTerrainBatchPatchPayload {
+  readonly command: typeof LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS
+  readonly changes: readonly TerrainVoxelBatchChangePatchPayload[]
+  readonly rendererInvalidation: typeof LIVE_PLAY_TERRAIN_RENDER_INVALIDATION_REASONS
+}
+
 export interface AppliedLivePlayTerrainChange {
+  readonly changeKind: 'single'
   readonly nextMap: TabletopMap
   readonly cell: GridAnchor
   readonly previous: MapVoxelV2 | null
@@ -43,11 +56,22 @@ export interface AppliedLivePlayTerrainChange {
   readonly removed?: MapVoxelV2
 }
 
+export interface AppliedLivePlayTerrainBatchChange {
+  readonly changeKind: 'batch'
+  readonly nextMap: TabletopMap
+  readonly changes: readonly TerrainVoxelBatchChangePatchPayload[]
+}
+
+export type AppliedLivePlayTerrainCommandChange =
+  | AppliedLivePlayTerrainChange
+  | AppliedLivePlayTerrainBatchChange
+
 type UnknownRecord = Record<string, unknown>
 
 type TerrainCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL
+  | typeof LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS
 
 const isRecord = (value: unknown): value is UnknownRecord => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -169,16 +193,75 @@ export const expectRemoveTerrainVoxelPayload = (payload: unknown): RemoveTerrain
   return { cell: expectTerrainCell(record.cell, 'removeTerrainVoxel payload.cell') }
 }
 
+const batchIssueSummary = (issues: readonly { readonly path: string; readonly message: string }[]): string => (
+  issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
+)
+
+export const expectEditTerrainVoxelsPayload = (payload: unknown): EditTerrainVoxelsPayload => {
+  const result = parseEditTerrainVoxelsPayload(payload)
+  if (result.valid) return result.value
+  return rejectLivePlayCommand('invalid', `editTerrainVoxels payload is invalid: ${batchIssueSummary(result.issues)}`)
+}
+
+const terrainCellForOperation = (operation: EditTerrainVoxelOperation): GridAnchor => (
+  operation.action === 'upsert' ? cloneTerrainCell(operation.voxel) : cloneTerrainCell(operation.cell)
+)
+
 export const terrainCellForCommand = (command: LivePlayTerrainCommand): GridAnchor => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL) {
     return cloneTerrainCell(expectBuildTerrainVoxelPayload(command.payload).voxel)
   }
-  return cloneTerrainCell(expectRemoveTerrainVoxelPayload(command.payload).cell)
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL) {
+    return cloneTerrainCell(expectRemoveTerrainVoxelPayload(command.payload).cell)
+  }
+  const firstOperation = expectEditTerrainVoxelsPayload(command.payload).operations[0]
+  if (firstOperation) return terrainCellForOperation(firstOperation)
+  return rejectLivePlayCommand('invalid', 'editTerrainVoxels payload must include at least one terrain operation')
 }
 
 const commandHasTerrainScope = (command: LivePlayTerrainCommand): boolean => command.scopes.some((scope) => (
   scope.kind === 'map' && scope.lane === 'terrain'
 ))
+
+const sameTerrainCell = (
+  left: Pick<GridAnchor, 'x' | 'y' | 'z'>,
+  right: Pick<GridAnchor, 'x' | 'y' | 'z'>,
+): boolean => left.x === right.x && left.y === right.y && left.z === right.z
+
+const scopeHasTerrainCell = (
+  scope: LivePlayTerrainCommand['scopes'][number],
+): scope is LivePlayTerrainCommand['scopes'][number] & { readonly cell: GridAnchor } => {
+  const record = scope as unknown as UnknownRecord
+  return isRecord(record.cell)
+}
+
+const hasBroadTerrainScope = (command: LivePlayTerrainCommand): boolean => command.scopes.some((scope) => (
+  scope.kind === 'map' && scope.lane === 'terrain' && !scopeHasTerrainCell(scope)
+))
+
+const hasTerrainCellScope = (command: LivePlayTerrainCommand, cell: GridAnchor): boolean => command.scopes.some((scope) => (
+  scope.kind === 'map'
+  && scope.lane === 'terrain'
+  && scopeHasTerrainCell(scope)
+  && sameTerrainCell(scope.cell, cell)
+))
+
+const expectEditTerrainVoxelsScopes = (
+  command: LivePlayTerrainCommand,
+  payload: EditTerrainVoxelsPayload,
+): void => {
+  if (hasBroadTerrainScope(command)) return
+
+  const missingCell = payload.operations
+    .map(terrainCellForOperation)
+    .find((cell) => !hasTerrainCellScope(command, cell))
+  if (!missingCell) return
+
+  rejectLivePlayCommand(
+    'invalid',
+    `editTerrainVoxels scopes must include every requested terrain cell or the broad map terrain scope; missing ${missingCell.x},${missingCell.y},${missingCell.z}`,
+  )
+}
 
 export const validateLivePlayTerrainCommandPayloadAndScopes = (command: LivePlayTerrainCommand): void => {
   if (!commandHasTerrainScope(command)) {
@@ -195,7 +278,12 @@ export const validateLivePlayTerrainCommandPayloadAndScopes = (command: LivePlay
     return
   }
 
-  rejectLivePlayCommand('invalid', 'Terrain live-play routes support buildTerrainVoxel and removeTerrainVoxel commands only')
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS) {
+    expectEditTerrainVoxelsScopes(command, expectEditTerrainVoxelsPayload(command.payload))
+    return
+  }
+
+  rejectLivePlayCommand('invalid', 'Terrain live-play routes support buildTerrainVoxel, removeTerrainVoxel, and editTerrainVoxels commands only')
 }
 
 const timestampedMap = (map: TabletopMap, timestamp: number): TabletopMap => ({
@@ -264,12 +352,26 @@ const placementOccupiesCell = (placement: SheetPlacement, cell: GridAnchor): boo
   placement.position.x === cell.x && placement.position.y === cell.y && placement.position.z === cell.z
 )
 
-const applyBuildTerrainVoxel = (
+const terrainBatchPatchChange = (
+  change: Omit<TerrainVoxelBatchChangePatchPayload, 'cell' | 'previous' | 'current'> & {
+    readonly cell: GridAnchor
+    readonly previous: MapVoxelV2 | null
+    readonly current: MapVoxelV2 | null
+  },
+): TerrainVoxelBatchChangePatchPayload => ({
+  cell: cloneTerrainCell(change.cell),
+  previous: change.previous === null ? null : cloneTerrainVoxel(change.previous),
+  current: change.current === null ? null : cloneTerrainVoxel(change.current),
+  ...(change.built === undefined ? {} : { built: cloneTerrainVoxel(change.built) }),
+  ...(change.removed === undefined ? {} : { removed: cloneTerrainVoxel(change.removed) }),
+})
+
+const planBuildTerrainVoxelChange = (
   map: TabletopMap,
-  payload: BuildTerrainVoxelPayload,
-  timestamp: number,
-): AppliedLivePlayTerrainChange => {
-  const voxel = normalizeTerrainVoxel(payload.voxel)
+  voxelInput: MapVoxelV2,
+  noOpMessage: (cell: GridAnchor) => string,
+): TerrainVoxelBatchChangePatchPayload => {
+  const voxel = normalizeTerrainVoxel(voxelInput)
   const cell = cloneTerrainCell(voxel)
   const previous = voxelAtCell(map, cell)
   const previousClone = previous === undefined ? null : cloneTerrainVoxel(previous)
@@ -291,36 +393,23 @@ const applyBuildTerrainVoxel = (
   }
 
   if (previous !== undefined && voxelEquals(previous, voxel)) {
-    rejectLivePlayCommand(
-      'no-op',
-      `Terrain voxel at ${cell.x},${cell.y},${cell.z} already matches the requested build payload.`,
-      { currentState: currentTerrainState(map, cell) },
-    )
+    rejectLivePlayCommand('no-op', noOpMessage(cell), { currentState: currentTerrainState(map, cell) })
   }
 
-  const nextVoxels = map.voxels
-    .filter((existing) => !terrainCellsEqual(existing, cell))
-    .map(cloneTerrainVoxel)
-  nextVoxels.push(cloneTerrainVoxel(voxel))
-
-  return {
-    nextMap: timestampedMap({
-      ...map,
-      voxels: nextVoxels,
-    }, timestamp),
+  return terrainBatchPatchChange({
     cell,
     previous: previousClone,
     current: cloneTerrainVoxel(voxel),
     built: cloneTerrainVoxel(voxel),
-  }
+  })
 }
 
-const applyRemoveTerrainVoxel = (
+const planRemoveTerrainVoxelChange = (
   map: TabletopMap,
-  payload: RemoveTerrainVoxelPayload,
-  timestamp: number,
-): AppliedLivePlayTerrainChange => {
-  const cell = cloneTerrainCell(payload.cell)
+  cellInput: GridAnchor,
+  noOpMessage: (cell: GridAnchor) => string,
+): TerrainVoxelBatchChangePatchPayload => {
+  const cell = cloneTerrainCell(cellInput)
   const previous = voxelAtCell(map, cell)
 
   if (!voxelInBounds(cell, map.dimensions)) {
@@ -332,25 +421,118 @@ const applyRemoveTerrainVoxel = (
   }
 
   if (previous === undefined) {
-    return rejectLivePlayCommand(
-      'no-op',
-      `No terrain voxel is present at ${cell.x},${cell.y},${cell.z}.`,
-      { currentState: currentTerrainState(map, cell) },
-    )
+    return rejectLivePlayCommand('no-op', noOpMessage(cell), { currentState: currentTerrainState(map, cell) })
   }
 
   const removed = cloneTerrainVoxel(previous)
-  return {
-    nextMap: timestampedMap({
-      ...map,
-      voxels: map.voxels
-        .filter((existing) => !terrainCellsEqual(existing, cell))
-        .map(cloneTerrainVoxel),
-    }, timestamp),
+  return terrainBatchPatchChange({
     cell,
     previous: removed,
     current: null,
     removed,
+  })
+}
+
+const mapWithTerrainChanges = (
+  map: TabletopMap,
+  changes: readonly TerrainVoxelBatchChangePatchPayload[],
+  timestamp: number,
+): TabletopMap => {
+  const changedCellKeys = new Set(changes.map((change) => terrainCellKey(change.cell)))
+  const nextVoxels = map.voxels
+    .filter((voxel) => !changedCellKeys.has(terrainCellKey(voxel)))
+    .map(cloneTerrainVoxel)
+
+  for (const change of changes) {
+    if (change.current !== null) nextVoxels.push(cloneTerrainVoxel(change.current))
+  }
+
+  return timestampedMap({
+    ...map,
+    voxels: nextVoxels,
+  }, timestamp)
+}
+
+const singleTerrainChange = (
+  change: TerrainVoxelBatchChangePatchPayload,
+  nextMap: TabletopMap,
+): AppliedLivePlayTerrainChange => ({
+  changeKind: 'single',
+  nextMap,
+  cell: cloneTerrainCell(change.cell),
+  previous: change.previous === null ? null : cloneTerrainVoxel(change.previous),
+  current: change.current === null ? null : cloneTerrainVoxel(change.current),
+  ...(change.built === undefined ? {} : { built: cloneTerrainVoxel(change.built) }),
+  ...(change.removed === undefined ? {} : { removed: cloneTerrainVoxel(change.removed) }),
+})
+
+const applyBuildTerrainVoxel = (
+  map: TabletopMap,
+  payload: BuildTerrainVoxelPayload,
+  timestamp: number,
+): AppliedLivePlayTerrainChange => {
+  const change = planBuildTerrainVoxelChange(
+    map,
+    payload.voxel,
+    (cell) => `Terrain voxel at ${cell.x},${cell.y},${cell.z} already matches the requested build payload.`,
+  )
+  return singleTerrainChange(change, mapWithTerrainChanges(map, [change], timestamp))
+}
+
+const applyRemoveTerrainVoxel = (
+  map: TabletopMap,
+  payload: RemoveTerrainVoxelPayload,
+  timestamp: number,
+): AppliedLivePlayTerrainChange => {
+  const change = planRemoveTerrainVoxelChange(
+    map,
+    payload.cell,
+    (cell) => `No terrain voxel is present at ${cell.x},${cell.y},${cell.z}.`,
+  )
+  return singleTerrainChange(change, mapWithTerrainChanges(map, [change], timestamp))
+}
+
+const batchUpsertChange = (
+  map: TabletopMap,
+  operation: Extract<EditTerrainVoxelOperation, { readonly action: 'upsert' }>,
+): TerrainVoxelBatchChangePatchPayload => planBuildTerrainVoxelChange(
+  map,
+  operation.voxel,
+  (cell) => `Terrain voxel at ${cell.x},${cell.y},${cell.z} already matches the requested batch build payload.`,
+)
+
+const batchRemoveChange = (
+  map: TabletopMap,
+  operation: Extract<EditTerrainVoxelOperation, { readonly action: 'remove' }>,
+): TerrainVoxelBatchChangePatchPayload => planRemoveTerrainVoxelChange(
+  map,
+  operation.cell,
+  (cell) => `No terrain voxel is present at ${cell.x},${cell.y},${cell.z} for the requested batch removal.`,
+)
+
+const batchChangeForOperation = (
+  map: TabletopMap,
+  operation: EditTerrainVoxelOperation,
+): TerrainVoxelBatchChangePatchPayload => (
+  operation.action === 'upsert'
+    ? batchUpsertChange(map, operation)
+    : batchRemoveChange(map, operation)
+)
+
+const applyEditTerrainVoxels = (
+  map: TabletopMap,
+  payload: EditTerrainVoxelsPayload,
+  timestamp: number,
+): AppliedLivePlayTerrainBatchChange => {
+  const changes = payload.operations.map((operation) => batchChangeForOperation(map, operation))
+  if (changes.length === 0) {
+    rejectLivePlayCommand('invalid', 'editTerrainVoxels payload must include at least one terrain operation')
+  }
+
+  return {
+    changeKind: 'batch',
+    nextMap: mapWithTerrainChanges(map, changes, timestamp),
+    changes,
   }
 }
 
@@ -358,18 +540,21 @@ export const applyLivePlayTerrainChange = (
   command: LivePlayTerrainCommand,
   map: TabletopMap,
   timestamp: number,
-): AppliedLivePlayTerrainChange => {
+): AppliedLivePlayTerrainCommandChange => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL) {
     return applyBuildTerrainVoxel(map, expectBuildTerrainVoxelPayload(command.payload), timestamp)
   }
   if (command.type === LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL) {
     return applyRemoveTerrainVoxel(map, expectRemoveTerrainVoxelPayload(command.payload), timestamp)
   }
-  return rejectLivePlayCommand('invalid', 'Terrain live-play routes support buildTerrainVoxel and removeTerrainVoxel commands only')
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS) {
+    return applyEditTerrainVoxels(map, expectEditTerrainVoxelsPayload(command.payload), timestamp)
+  }
+  return rejectLivePlayCommand('invalid', 'Terrain live-play routes support buildTerrainVoxel, removeTerrainVoxel, and editTerrainVoxels commands only')
 }
 
 export const createLivePlayTerrainPatchPayload = (
-  command: TerrainCommandType,
+  command: Exclude<TerrainCommandType, typeof LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS>,
   change: AppliedLivePlayTerrainChange,
 ): LivePlayTerrainPatchPayload => ({
   command,
@@ -378,5 +563,13 @@ export const createLivePlayTerrainPatchPayload = (
   current: change.current === null ? null : cloneTerrainVoxel(change.current),
   ...(change.built === undefined ? {} : { built: cloneTerrainVoxel(change.built) }),
   ...(change.removed === undefined ? {} : { removed: cloneTerrainVoxel(change.removed) }),
+  rendererInvalidation: LIVE_PLAY_TERRAIN_RENDER_INVALIDATION_REASONS,
+})
+
+export const createLivePlayTerrainBatchPatchPayload = (
+  change: AppliedLivePlayTerrainBatchChange,
+): LivePlayTerrainBatchPatchPayload => ({
+  command: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+  changes: change.changes.map(terrainBatchPatchChange),
   rendererInvalidation: LIVE_PLAY_TERRAIN_RENDER_INVALIDATION_REASONS,
 })

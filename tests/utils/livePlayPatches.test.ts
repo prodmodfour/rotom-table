@@ -269,6 +269,37 @@ describe('live-play patch application', () => {
     ])
   })
 
+  it('applies terrain batch patches to changed voxel cells', () => {
+    const map = baseMap()
+
+    const result = applyLivePlayPatchesToMap({
+      map,
+      mapSlug: 'arena',
+      previousRevision: 4,
+      revision: 5,
+      patches: [patchBase(LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN, {
+        command: 'editTerrainVoxels',
+        changes: [
+          {
+            cell: { x: 0, y: 0, z: 0 },
+            previous: { x: 0, y: 0, z: 0, materialId: 'meadow_grass' },
+            current: null,
+            removed: { x: 0, y: 0, z: 0, materialId: 'meadow_grass' },
+          },
+          {
+            cell: { x: 2, y: 0, z: 2 },
+            previous: null,
+            current: { x: 2, y: 0, z: 2, materialId: 'shallow_water' },
+            built: { x: 2, y: 0, z: 2, materialId: 'shallow_water' },
+          },
+        ],
+      })],
+    })
+
+    expect(result).toMatchObject({ ok: true, applied: true, terrainChanged: true })
+    expect(map.voxels).toEqual([{ x: 2, y: 0, z: 2, materialId: 'shallow_water' }])
+  })
+
   it('applies sent-out Pokémon placement patches', () => {
     const map = baseMap()
 

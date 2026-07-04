@@ -114,6 +114,7 @@ const removeHazardRoute = (await import('../../server/api/maps/hazards/remove.po
 const clearHazardsRoute = (await import('../../server/api/maps/hazards/clear.post')).default
 const buildTerrainRoute = (await import('../../server/api/maps/terrain/build.post')).default
 const removeTerrainRoute = (await import('../../server/api/maps/terrain/remove.post')).default
+const editTerrainRoute = (await import('../../server/api/maps/terrain/edit.post')).default
 const setFieldEffectRoute = (await import('../../server/api/maps/field-effects/set.post')).default
 const removeFieldEffectRoute = (await import('../../server/api/maps/field-effects/remove.post')).default
 const clearFieldEffectsRoute = (await import('../../server/api/maps/field-effects/clear.post')).default
@@ -304,6 +305,19 @@ describe('map hosted-write API routes', () => {
           type: 'removeTerrainVoxel',
           scopes: [{ kind: 'map', lane: 'terrain' }],
           payload: { cell: { x: 1, y: 0, z: 1 } },
+        },
+        mock: mocks.executeLivePlayTerrainCommandUseCase,
+      },
+      {
+        route: editTerrainRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedetvn',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'editTerrainVoxels',
+          scopes: [{ kind: 'map', lane: 'terrain', cell: { x: 1, y: 0, z: 1 } }],
+          payload: { operations: [{ action: 'upsert', voxel: { x: 1, y: 0, z: 1, materialId: 'meadow_grass' } }] },
         },
         mock: mocks.executeLivePlayTerrainCommandUseCase,
       },
