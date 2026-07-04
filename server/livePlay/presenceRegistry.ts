@@ -6,6 +6,8 @@ import {
   buildLivePlayPresenceParticipantSummary,
   isLivePlayPresenceRole,
   parseLivePlayPresenceUpdate,
+  type LivePlayPresenceAttentionRequest,
+  type LivePlayPresenceAttentionTarget,
   type LivePlayPresenceEntry,
   type LivePlayPresenceIntentState,
   type LivePlayPresenceParticipantSummary,
@@ -224,6 +226,23 @@ const clonePing = (ping: LivePlayPresencePingPayload | null): LivePlayPresencePi
   }
 }
 
+const cloneAttentionTarget = (target: LivePlayPresenceAttentionTarget): LivePlayPresenceAttentionTarget => (
+  target.kind === 'token'
+    ? { kind: 'token', tokenId: target.tokenId }
+    : { kind: 'cell', cell: { ...target.cell } }
+)
+
+const cloneAttention = (attention: LivePlayPresenceAttentionRequest | null): LivePlayPresenceAttentionRequest | null => {
+  if (attention === null) return null
+  return {
+    id: attention.id,
+    target: cloneAttentionTarget(attention.target),
+    ...(attention.label === undefined ? {} : { label: attention.label }),
+    createdAt: attention.createdAt,
+    expiresAt: attention.expiresAt,
+  }
+}
+
 const cloneIntent = (intent: LivePlayPresenceIntentState): LivePlayPresenceIntentState => ({
   kind: intent.kind,
   ...(intent.sourceTokenId === undefined ? {} : { sourceTokenId: intent.sourceTokenId }),
@@ -241,6 +260,7 @@ const cloneEntry = (entry: LivePlayPresenceEntry): LivePlayPresenceEntry => ({
   hoveredTokenId: entry.hoveredTokenId,
   intent: cloneIntent(entry.intent),
   ping: clonePing(entry.ping),
+  attention: cloneAttention(entry.attention),
   participant: { ...entry.participant },
   lastSeenAt: entry.lastSeenAt,
   expiresAt: entry.expiresAt,

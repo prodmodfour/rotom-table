@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import IsometricGrid from '~/components/IsometricGrid.client.vue'
 import type { BuildTool } from '#shared/mapEditor'
-import type { LivePlayPresenceGridCell } from '#shared/livePlayPresence'
+import type { LivePlayPresenceAttentionTarget, LivePlayPresenceGridCell } from '#shared/livePlayPresence'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   MoveAutomationAreaDirection,
@@ -37,6 +37,7 @@ import type { IsometricPresencePing } from '~/utils/isometric/pingRenderer'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
+  focusCell: (cell: LivePlayPresenceGridCell) => boolean
 }
 
 defineProps<{
@@ -76,6 +77,7 @@ defineProps<{
   presencePings?: readonly IsometricPresencePing[]
   presenceIntentOverlays?: readonly MapPresenceIntentOverlay[]
   presenceServerTimeOffsetMs?: number
+  canRequestGmAttention?: boolean
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -88,6 +90,7 @@ const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
   (event: 'hover-pokemon', id: string | null): void
   (event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void
+  (event: 'request-gm-attention', payload: { target: LivePlayPresenceAttentionTarget }): void
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
@@ -123,8 +126,9 @@ const emit = defineEmits<{
 const gridRef = ref<IsometricGridHandle | null>(null)
 
 const focusPokemon = (id: string): boolean => gridRef.value?.focusPokemon(id) ?? false
+const focusCell = (cell: LivePlayPresenceGridCell): boolean => gridRef.value?.focusCell(cell) ?? false
 
-defineExpose({ focusPokemon })
+defineExpose({ focusPokemon, focusCell })
 </script>
 
 <template>
@@ -166,6 +170,7 @@ defineExpose({ focusPokemon })
     :presence-pings="presencePings ?? []"
     :presence-intent-overlays="presenceIntentOverlays ?? []"
     :presence-server-time-offset-ms="presenceServerTimeOffsetMs ?? 0"
+    :can-request-gm-attention="canRequestGmAttention === true"
     :move-automation-targeting="moveAutomationTargeting"
     :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
     :move-automation-feedback="moveAutomationFeedback"
@@ -175,6 +180,7 @@ defineExpose({ focusPokemon })
     @select-pokemon="emit('select-pokemon', $event)"
     @hover-pokemon="emit('hover-pokemon', $event)"
     @place-presence-ping="emit('place-presence-ping', $event)"
+    @request-gm-attention="emit('request-gm-attention', $event)"
     @move-pokemon="emit('move-pokemon', $event)"
     @turn-pokemon="emit('turn-pokemon', $event)"
     @delete-pokemon="emit('delete-pokemon', $event)"

@@ -70,6 +70,7 @@ import {
   LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS,
   LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT,
   livePlayPresenceClientIdSuffix,
+  type LivePlayPresenceAttentionTarget,
   type LivePlayPresenceGridCell,
   type LivePlayPresenceIntentState,
 } from '#shared/livePlayPresence'
@@ -610,6 +611,7 @@ useHead(() => ({
 
 interface MapScenePanelHandle {
   focusPokemon: (id: string) => boolean
+  focusCell: (cell: LivePlayPresenceGridCell) => boolean
 }
 
 const gridRef = ref<MapScenePanelHandle | null>(null)
@@ -824,6 +826,7 @@ const mapPresenceEntries = mapPresence.entries
 const mapPresencePings = mapPresence.pings
 const mapPresenceStatus = mapPresence.status
 const mapPresenceServerTimeOffsetMs = computed(() => mapPresence.transportFreshness.value.serverTimeOffsetMs)
+const canRequestGmAttention = computed(() => mapPresenceEnabled.value && isGm.value)
 const ownPresenceClientIdSuffix = computed(() => (
   import.meta.client ? livePlayPresenceClientIdSuffix(getClientId()) : null
 ))
@@ -856,6 +859,7 @@ const clearOwnPresenceForContextChange = (): void => {
     ownPresence.selectedTokenId === null
     && ownPresence.hoveredTokenId === null
     && ownPresence.ping === null
+    && ownPresence.attention === null
     && ownPresence.intent.kind === 'idle'
   ) return
 
@@ -863,6 +867,7 @@ const clearOwnPresenceForContextChange = (): void => {
     selectedTokenId: null,
     hoveredTokenId: null,
     ping: null,
+    attention: null,
     intent: { kind: 'idle' },
   }, { publish: false })
 }
@@ -872,6 +877,41 @@ const placePresencePingFromScene = (payload: { cell: LivePlayPresenceGridCell; l
   const cell = presencePingCellIfVisible(payload.cell)
   if (!cell) return
   void mapPresence.placePing(cell, { label: payload.label })
+}
+
+const requestGmAttention = (target: LivePlayPresenceAttentionTarget, label?: unknown): void => {
+  if (!canRequestGmAttention.value) return
+  if (target.kind === 'token') {
+    const tokenId = presenceTokenIdIfVisible(target.tokenId)
+    if (!tokenId) return
+    void mapPresence.requestAttention({ kind: 'token', tokenId }, { label })
+    return
+  }
+
+  const cell = presencePingCellIfVisible(target.cell)
+  if (!cell) return
+  void mapPresence.requestAttention({ kind: 'cell', cell }, { label })
+}
+
+const requestGmAttentionForSelectedToken = (): void => {
+  const tokenId = presenceTokenIdIfVisible(selectedId.value)
+  if (!tokenId) return
+  requestGmAttention({ kind: 'token', tokenId })
+}
+
+const requestGmAttentionFromScene = (payload: { target: LivePlayPresenceAttentionTarget; label?: unknown }): void => {
+  requestGmAttention(payload.target, payload.label)
+}
+
+const focusPresenceAttentionTarget = (target: LivePlayPresenceAttentionTarget): void => {
+  if (target.kind === 'token') {
+    const tokenId = presenceTokenIdIfVisible(target.tokenId)
+    if (tokenId) gridRef.value?.focusPokemon(tokenId)
+    return
+  }
+
+  const cell = presencePingCellIfVisible(target.cell)
+  if (cell) gridRef.value?.focusCell(cell)
 }
 
 const syncOwnTokenPresence = (publish = true): void => {
@@ -2456,6 +2496,7 @@ useMapDimensionReconciliation({
         :presence-pings="mapPresencePings"
         :presence-intent-overlays="remotePresenceIntentOverlays"
         :presence-server-time-offset-ms="mapPresenceServerTimeOffsetMs"
+        :can-request-gm-attention="canRequestGmAttention"
         :live-play-token-correction-notice="livePlayTokenCorrectionNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
@@ -2481,6 +2522,7 @@ useMapDimensionReconciliation({
         @select-pokemon="selectPokemon"
         @hover-pokemon="setHoveredPresenceToken"
         @place-presence-ping="placePresencePingFromScene"
+        @request-gm-attention="requestGmAttentionFromScene"
         @focus-initiative-entry="focusInitiativeEntry"
         @previous-initiative="previousInitiativeFromControls"
         @next-initiative="nextInitiativeFromControls"
@@ -2536,6 +2578,10 @@ useMapDimensionReconciliation({
         :entries="mapPresenceEntries"
         :status="mapPresenceStatus"
         :server-time-offset-ms="mapPresenceServerTimeOffsetMs"
+        :can-request-gm-attention="canRequestGmAttention"
+        :selected-token-label="selectedId ? livePlayTokenLabel(selectedId) : null"
+        @request-selected-token-attention="requestGmAttentionForSelectedToken"
+        @focus-attention="focusPresenceAttentionTarget"
       />
 
       <LivePlayCommandRecoveryPanel

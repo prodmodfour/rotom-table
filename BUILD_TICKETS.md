@@ -416,7 +416,7 @@ Status: DONE
 
 ## 014 — LP-S3-014 — Add optional GM attention request
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let the GM ask everyone to look at a token or map cell without forcing disruptive camera movement by default.
 

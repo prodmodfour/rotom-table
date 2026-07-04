@@ -87,6 +87,7 @@ const presenceUpdate = (overrides: Record<string, unknown> = {}) => ({
   hoveredTokenId: null,
   intent: { kind: 'idle' },
   ping: null,
+  attention: null,
   ...overrides,
 })
 
@@ -103,6 +104,7 @@ const presenceSnapshot = (mapSlug: string, overrides: Partial<LivePlayPresenceSn
     hoveredTokenId: null,
     intent: { kind: 'idle' },
     ping: null,
+    attention: null,
     participant: {
       role: 'player',
       profileDisplayName: 'Ash',

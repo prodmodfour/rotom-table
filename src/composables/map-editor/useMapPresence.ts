@@ -1,7 +1,10 @@
 import { computed, getCurrentScope, onScopeDispose, readonly, ref, type ComputedRef, type DeepReadonly, type Ref } from 'vue'
 import {
   LIVE_PLAY_PRESENCE_AUTHORITY,
+  LIVE_PLAY_PRESENCE_DEFAULT_ATTENTION_TTL_MS,
   LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS,
+  LIVE_PLAY_PRESENCE_MAX_ATTENTION_ID_CHARS,
+  LIVE_PLAY_PRESENCE_MAX_ATTENTION_TTL_MS,
   LIVE_PLAY_PRESENCE_MAX_PING_ID_CHARS,
   LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS,
   LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE,
@@ -9,7 +12,10 @@ import {
   parseLivePlayPresenceRealtimeEvent,
   parseLivePlayPresenceSnapshot,
   parseLivePlayPresenceUpdate,
+  sanitizeLivePlayPresenceAttentionLabel,
   sanitizeLivePlayPresencePingLabel,
+  type LivePlayPresenceAttentionRequest,
+  type LivePlayPresenceAttentionTarget,
   type LivePlayPresenceEntry,
   type LivePlayPresenceGridCell,
   type LivePlayPresenceIntentState,
@@ -46,9 +52,16 @@ export interface MapPresenceOwnStatePatch {
   readonly hoveredTokenId?: string | null
   readonly intent?: LivePlayPresenceIntentState
   readonly ping?: LivePlayPresencePingPayload | null
+  readonly attention?: LivePlayPresenceAttentionRequest | null
 }
 
 export interface MapPresencePlacePingOptions {
+  readonly label?: unknown
+  readonly ttlMs?: number
+  readonly publish?: boolean
+}
+
+export interface MapPresenceRequestAttentionOptions {
   readonly label?: unknown
   readonly ttlMs?: number
   readonly publish?: boolean
@@ -75,7 +88,9 @@ export interface UseMapPresenceOptions {
   readonly hiddenHeartbeatIntervalMs?: number
   readonly expirySweepIntervalMs?: number
   readonly pingTtlMs?: number
+  readonly attentionTtlMs?: number
   readonly pingIdFactory?: () => string
+  readonly attentionIdFactory?: () => string
   readonly now?: () => number
   readonly document?: MapPresenceDocumentLike | null
 }
@@ -91,6 +106,7 @@ export interface UseMapPresenceReturn {
   readonly sendHeartbeat: () => Promise<void>
   readonly updateOwnPresence: (patch: MapPresenceOwnStatePatch, options?: { readonly publish?: boolean }) => Promise<boolean>
   readonly placePing: (cell: LivePlayPresenceGridCell, options?: MapPresencePlacePingOptions) => Promise<boolean>
+  readonly requestAttention: (target: LivePlayPresenceAttentionTarget, options?: MapPresenceRequestAttentionOptions) => Promise<boolean>
   readonly start: () => void
   readonly stop: () => void
   readonly dispose: () => void
@@ -121,6 +137,7 @@ const defaultPresenceUpdate = (): LivePlayPresenceUpdate => ({
   hoveredTokenId: null,
   intent: { kind: 'idle' },
   ping: null,
+  attention: null,
 })
 
 const mapPresenceRoute = (slug: string): string => `/api/maps/${encodeURIComponent(slug)}/presence`
@@ -135,6 +152,14 @@ const safePingTtlMs = (
 ): number => {
   const ttlMs = typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : fallback
   return Math.min(ttlMs, LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS)
+}
+
+const safeAttentionTtlMs = (
+  value: number | undefined,
+  fallback: number = LIVE_PLAY_PRESENCE_DEFAULT_ATTENTION_TTL_MS,
+): number => {
+  const ttlMs = typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : fallback
+  return Math.min(ttlMs, LIVE_PLAY_PRESENCE_MAX_ATTENTION_TTL_MS)
 }
 
 const randomPingIdSegment = (): string => {
@@ -154,6 +179,13 @@ const createPresencePingId = (timestamp: number): string => (
   )
 )
 
+const createPresenceAttentionId = (timestamp: number): string => (
+  `a${Math.max(0, Math.floor(timestamp)).toString(36)}_${randomPingIdSegment()}`.slice(
+    0,
+    LIVE_PLAY_PRESENCE_MAX_ATTENTION_ID_CHARS,
+  )
+)
+
 const resolveProfileId = (profileId: ReadonlyValueRef<string | null | undefined> | undefined): string | undefined => {
   const value = profileId?.value
   return typeof value === 'string' && value.length > 0 ? value : undefined
@@ -168,6 +200,21 @@ const normalizePresenceHttpClientId = (clientId: string): string => {
 const clonePresencePingPayload = (ping: LivePlayPresencePingPayload): LivePlayPresencePingPayload => ({
   ...ping,
   cell: { ...ping.cell },
+})
+
+const clonePresenceAttentionTarget = (
+  target: LivePlayPresenceAttentionTarget,
+): LivePlayPresenceAttentionTarget => (
+  target.kind === 'token'
+    ? { kind: 'token', tokenId: target.tokenId }
+    : { kind: 'cell', cell: { ...target.cell } }
+)
+
+const clonePresenceAttentionRequest = (
+  attention: LivePlayPresenceAttentionRequest,
+): LivePlayPresenceAttentionRequest => ({
+  ...attention,
+  target: clonePresenceAttentionTarget(attention.target),
 })
 
 const clonePresenceIntentState = (intent: LivePlayPresenceIntentState): LivePlayPresenceIntentState => ({
@@ -187,6 +234,7 @@ const clonePresenceEntry = (entry: LivePlayPresenceEntry): LivePlayPresenceEntry
   hoveredTokenId: entry.hoveredTokenId,
   intent: clonePresenceIntentState(entry.intent),
   ping: entry.ping === null ? null : clonePresencePingPayload(entry.ping),
+  attention: entry.attention === null ? null : clonePresenceAttentionRequest(entry.attention),
   participant: { ...entry.participant },
   lastSeenAt: entry.lastSeenAt,
   expiresAt: entry.expiresAt,
@@ -230,6 +278,7 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
   const hiddenHeartbeatIntervalMs = safeInterval(options.hiddenHeartbeatIntervalMs, DEFAULT_HIDDEN_HEARTBEAT_INTERVAL_MS)
   const expirySweepIntervalMs = safeInterval(options.expirySweepIntervalMs, DEFAULT_EXPIRY_SWEEP_INTERVAL_MS)
   const defaultPingTtlMs = safePingTtlMs(options.pingTtlMs)
+  const defaultAttentionTtlMs = safeAttentionTtlMs(options.attentionTtlMs)
   const now = options.now ?? Date.now
   const apiClient = useApiClient()
   const presencePath = mapPresenceRoute(options.slug)
@@ -277,6 +326,12 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
       ...(intent.area === undefined ? {} : { area: { ...intent.area } }),
     }
   }
+  const sanitizeOwnPresenceAttention = (
+    attention: LivePlayPresenceAttentionRequest | null,
+  ): LivePlayPresenceAttentionRequest | null => {
+    if (attention === null || attention.target.kind === 'cell') return attention
+    return sanitizeOwnPresenceTokenId(attention.target.tokenId) === attention.target.tokenId ? attention : null
+  }
   const sanitizeOwnPresenceTokens = (
     presence: LivePlayPresenceUpdate,
     sanitizeOptions: { readonly incrementSequenceOnChange: boolean },
@@ -284,16 +339,19 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     const selectedTokenId = sanitizeOwnPresenceTokenId(presence.selectedTokenId)
     const hoveredTokenId = sanitizeOwnPresenceTokenId(presence.hoveredTokenId)
     const intent = sanitizeOwnPresenceIntent(presence.intent)
+    const attention = sanitizeOwnPresenceAttention(presence.attention)
     if (
       selectedTokenId === presence.selectedTokenId
       && hoveredTokenId === presence.hoveredTokenId
       && intent === presence.intent
+      && attention === presence.attention
     ) return presence
     return {
       ...presence,
       selectedTokenId,
       hoveredTokenId,
       intent,
+      attention,
       clientSequence: presence.clientSequence + (sanitizeOptions.incrementSequenceOnChange ? 1 : 0),
     }
   }
@@ -332,10 +390,12 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     expiryTimer = null
   }
 
-  const expireEntryPing = (entry: LivePlayPresenceEntry, serverNow: number): LivePlayPresenceEntry | null => {
+  const expireEntryTransientState = (entry: LivePlayPresenceEntry, serverNow: number): LivePlayPresenceEntry | null => {
     if (entry.expiresAt <= serverNow) return null
-    if (entry.ping === null || entry.ping.expiresAt > serverNow) return entry
-    return { ...entry, ping: null }
+    const ping = entry.ping !== null && entry.ping.expiresAt <= serverNow ? null : entry.ping
+    const attention = entry.attention !== null && entry.attention.expiresAt <= serverNow ? null : entry.attention
+    if (ping === entry.ping && attention === entry.attention) return entry
+    return { ...entry, ping, attention }
   }
 
   const clearExpiredOwnPing = (serverNow: number): void => {
@@ -351,15 +411,26 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     }
   }
 
+  const clearExpiredOwnAttention = (serverNow: number): void => {
+    const ownAttention = ownPresenceState.value.attention
+    if (ownAttention === null || ownAttention.expiresAt > serverNow) return
+    ownPresenceState.value = {
+      ...ownPresenceState.value,
+      attention: null,
+      clientSequence: ownPresenceState.value.clientSequence + 1,
+    }
+  }
+
   const pruneExpiredEntries = (): void => {
     const serverNow = localServerNow()
     clearExpiredOwnPing(serverNow)
+    clearExpiredOwnAttention(serverNow)
     expiryClockTick.value += 1
 
     const nextEntries: LivePlayPresenceEntry[] = []
     let changed = false
     for (const entry of storedEntries.value) {
-      const nextEntry = expireEntryPing(entry, serverNow)
+      const nextEntry = expireEntryTransientState(entry, serverNow)
       if (nextEntry === null) {
         changed = true
         continue
@@ -580,6 +651,22 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     }
   }
 
+  const buildPresenceAttentionPayload = (
+    target: LivePlayPresenceAttentionTarget,
+    attentionOptions: MapPresenceRequestAttentionOptions,
+  ): LivePlayPresenceAttentionRequest => {
+    const createdAt = Math.max(0, Math.floor(localServerNow()))
+    const ttlMs = safeAttentionTtlMs(attentionOptions.ttlMs, defaultAttentionTtlMs)
+    const label = sanitizeLivePlayPresenceAttentionLabel(attentionOptions.label)
+    return {
+      id: options.attentionIdFactory?.() ?? createPresenceAttentionId(createdAt),
+      target: clonePresenceAttentionTarget(target),
+      ...(label === undefined ? {} : { label }),
+      createdAt,
+      expiresAt: createdAt + ttlMs,
+    }
+  }
+
   const updateOwnPresence = async (
     patch: MapPresenceOwnStatePatch,
     updateOptions: { readonly publish?: boolean } = {},
@@ -589,8 +676,9 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
       ...ownPresenceState.value,
       ...(Object.prototype.hasOwnProperty.call(patch, 'selectedTokenId') ? { selectedTokenId: patch.selectedTokenId ?? null } : {}),
       ...(Object.prototype.hasOwnProperty.call(patch, 'hoveredTokenId') ? { hoveredTokenId: patch.hoveredTokenId ?? null } : {}),
-      ...(Object.prototype.hasOwnProperty.call(patch, 'intent') && patch.intent ? { intent: { ...patch.intent } } : {}),
-      ...(Object.prototype.hasOwnProperty.call(patch, 'ping') ? { ping: patch.ping ?? null } : {}),
+      ...(Object.prototype.hasOwnProperty.call(patch, 'intent') && patch.intent ? { intent: clonePresenceIntentState(patch.intent) } : {}),
+      ...(Object.prototype.hasOwnProperty.call(patch, 'ping') ? { ping: patch.ping === null || patch.ping === undefined ? null : clonePresencePingPayload(patch.ping) } : {}),
+      ...(Object.prototype.hasOwnProperty.call(patch, 'attention') ? { attention: patch.attention === null || patch.attention === undefined ? null : clonePresenceAttentionRequest(patch.attention) } : {}),
       clientSequence: ownPresenceState.value.clientSequence + 1,
     }, { incrementSequenceOnChange: false })
     const parsed = parseLivePlayPresenceUpdate(candidate)
@@ -621,6 +709,17 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     )
   }
 
+  const requestAttention = async (
+    target: LivePlayPresenceAttentionTarget,
+    attentionOptions: MapPresenceRequestAttentionOptions = {},
+  ): Promise<boolean> => {
+    if (!enabled()) return false
+    return updateOwnPresence(
+      { attention: buildPresenceAttentionPayload(target, attentionOptions) },
+      { publish: attentionOptions.publish },
+    )
+  }
+
   if (options.autoStart !== false && documentRef !== null) start()
   if (getCurrentScope()) onScopeDispose(dispose)
 
@@ -635,6 +734,7 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     sendHeartbeat,
     updateOwnPresence,
     placePing,
+    requestAttention,
     start,
     stop,
     dispose,

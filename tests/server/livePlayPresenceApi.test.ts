@@ -99,6 +99,7 @@ const presenceUpdate = (overrides: Record<string, unknown> = {}) => ({
   hoveredTokenId: null,
   intent: { kind: 'idle' },
   ping: null,
+  attention: null,
   ...overrides,
 })
 
@@ -383,6 +384,70 @@ describe('map live-play presence heartbeat API', () => {
     }
   })
 
+  it('allows GMs to publish attention requests but rejects player-authored requests', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(45_000)
+    mocks.resolvePlayerProfileForPolicy.mockReturnValue({ id: 'profile_ash00000', displayName: 'Ash', linkedCharacters: [] })
+    seedMap(mapFixture({ slug: 'arena' }))
+
+    try {
+      const { response } = await invokePresenceRoute(presencePostRoute, {
+        method: 'POST',
+        role: 'gm',
+        slug: 'arena',
+        body: {
+          presence: presenceUpdate({
+            selectedTokenId: null,
+            attention: {
+              id: 'attn1',
+              target: { kind: 'token', tokenId: 'token-pikachu' },
+              label: 'Focus token',
+              createdAt: 45_000,
+              expiresAt: 53_000,
+            },
+          }),
+        },
+      })
+
+      expect(response).toMatchObject({
+        mapSlug: 'arena',
+        entries: [expect.objectContaining({
+          participant: expect.objectContaining({ role: 'gm' }),
+          attention: {
+            id: 'attn1',
+            target: { kind: 'token', tokenId: 'token-pikachu' },
+            label: 'Focus token',
+            createdAt: 45_000,
+            expiresAt: 53_000,
+          },
+        })],
+      })
+      expect(parseLivePlayPresenceSnapshot(response).valid).toBe(true)
+
+      await expect(invokePresenceRoute(presencePostRoute, {
+        method: 'POST',
+        role: 'player',
+        slug: 'arena',
+        body: {
+          presence: presenceUpdate({
+            selectedTokenId: null,
+            attention: {
+              id: 'attn2',
+              target: { kind: 'cell', cell: { x: 1, y: 0, z: 1 } },
+              createdAt: 45_100,
+              expiresAt: 53_100,
+            },
+          }),
+          profileId: 'profile_ash00000',
+        },
+      })).rejects.toMatchObject({
+        statusCode: 400,
+        statusMessage: 'attention requests can only be published by the GM.',
+      })
+    } finally {
+      now.mockRestore()
+    }
+  })
+
   it('rejects malformed heartbeat updates without mutating presence', async () => {
     seedMap(mapFixture({ slug: 'arena' }))
 
@@ -434,6 +499,26 @@ describe('map live-play presence heartbeat API', () => {
     })).rejects.toMatchObject({
       statusCode: 400,
       statusMessage: 'intent.cell must be inside the requested map dimensions.',
+    })
+
+    await expect(invokePresenceRoute(presencePostRoute, {
+      method: 'POST',
+      role: 'gm',
+      slug: 'arena',
+      body: {
+        presence: presenceUpdate({
+          selectedTokenId: null,
+          attention: {
+            id: 'attn1',
+            target: { kind: 'cell', cell: { x: 99, y: 0, z: 0 } },
+            createdAt: 1,
+            expiresAt: 2,
+          },
+        }),
+      },
+    })).rejects.toMatchObject({
+      statusCode: 400,
+      statusMessage: 'attention.target.cell must be inside the requested map dimensions.',
     })
 
     expect(livePlayPresenceRegistry.list({ mapSlug: 'arena', now: 50_000 })).toEqual([])

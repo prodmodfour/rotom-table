@@ -3,6 +3,8 @@ import {
   LIVE_PLAY_PRESENCE_AUTHORITY,
   LIVE_PLAY_PRESENCE_SCHEMA_VERSION,
   parseLivePlayPresenceUpdate,
+  type LivePlayPresenceAttentionRequest,
+  type LivePlayPresenceAttentionTarget,
   type LivePlayPresenceEntry,
   type LivePlayPresenceGridCell,
   type LivePlayPresenceIntentState,
@@ -84,6 +86,20 @@ const cloneIntent = (intent: LivePlayPresenceIntentState): LivePlayPresenceInten
   ...(intent.area === undefined ? {} : { area: { ...intent.area } }),
 })
 
+const cloneAttentionTarget = (target: LivePlayPresenceAttentionTarget): LivePlayPresenceAttentionTarget => (
+  target.kind === 'token'
+    ? { kind: 'token', tokenId: target.tokenId }
+    : { kind: 'cell', cell: { ...target.cell } }
+)
+
+const cloneAttention = (attention: LivePlayPresenceAttentionRequest | null): LivePlayPresenceAttentionRequest | null => {
+  if (attention === null) return null
+  return {
+    ...attention,
+    target: cloneAttentionTarget(attention.target),
+  }
+}
+
 const cloneEntries = (entries: readonly LivePlayPresenceEntry[]): readonly LivePlayPresenceEntry[] => (
   entries.map((entry) => ({
     ...entry,
@@ -94,6 +110,7 @@ const cloneEntries = (entries: readonly LivePlayPresenceEntry[]): readonly LiveP
           ...entry.ping,
           cell: { ...entry.ping.cell },
         },
+    attention: cloneAttention(entry.attention),
     participant: { ...entry.participant },
   }))
 )
@@ -147,7 +164,7 @@ const placementIdsForMap = (map: TabletopMap): ReadonlySet<string> => (
 
 const assertTokenReferenceExists = (
   tokenId: string | null | undefined,
-  field: 'selectedTokenId' | 'hoveredTokenId' | 'intent.sourceTokenId',
+  field: 'selectedTokenId' | 'hoveredTokenId' | 'intent.sourceTokenId' | 'attention.target.tokenId',
   placementIds: ReadonlySet<string>,
 ): void => {
   if (tokenId === undefined || tokenId === null || placementIds.has(tokenId)) return
@@ -168,6 +185,20 @@ const assertPingCellIsInsideMap = (update: LivePlayPresenceUpdate, map: Tabletop
   throw new LivePlayPresenceAccessError(400, 'ping.cell must be inside the requested map dimensions.')
 }
 
+const assertAttentionTargetReferencesMap = (
+  update: LivePlayPresenceUpdate,
+  map: TabletopMap,
+  placementIds: ReadonlySet<string>,
+): void => {
+  if (update.attention === null) return
+  if (update.attention.target.kind === 'token') {
+    assertTokenReferenceExists(update.attention.target.tokenId, 'attention.target.tokenId', placementIds)
+    return
+  }
+  if (cellIsInsideMap(update.attention.target.cell, map)) return
+  throw new LivePlayPresenceAccessError(400, 'attention.target.cell must be inside the requested map dimensions.')
+}
+
 const assertIntentCellIsInsideMap = (update: LivePlayPresenceUpdate, map: TabletopMap): void => {
   if (update.intent.cell === undefined || cellIsInsideMap(update.intent.cell, map)) return
   throw new LivePlayPresenceAccessError(400, 'intent.cell must be inside the requested map dimensions.')
@@ -179,7 +210,13 @@ const assertPresenceUpdateReferencesMap = (update: LivePlayPresenceUpdate, map: 
   assertTokenReferenceExists(update.hoveredTokenId, 'hoveredTokenId', placementIds)
   assertTokenReferenceExists(update.intent.sourceTokenId, 'intent.sourceTokenId', placementIds)
   assertPingCellIsInsideMap(update, map)
+  assertAttentionTargetReferencesMap(update, map, placementIds)
   assertIntentCellIsInsideMap(update, map)
+}
+
+const assertGmOnlyPresenceFields = (update: LivePlayPresenceUpdate, access: LivePlayPresenceMapAccessGrant): void => {
+  if (update.attention === null || access.role === 'gm') return
+  throw new LivePlayPresenceAccessError(400, 'attention requests can only be published by the GM.')
 }
 
 const presencePrincipalForAccess = (
@@ -237,6 +274,7 @@ export const publishLivePlayPresenceHeartbeat = (
 ): LivePlayPresenceSnapshot => {
   const access = resolveLoadedLivePlayPresenceMapAccess(input, dependencies)
   const update = parseHeartbeatUpdate(input.update)
+  assertGmOnlyPresenceFields(update, access)
   assertPresenceUpdateReferencesMap(update, access.map)
 
   const now = serverTime(input.now, dependencies.now)

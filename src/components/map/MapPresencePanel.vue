@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type {
+  LivePlayPresenceAttentionRequest,
+  LivePlayPresenceAttentionTarget,
   LivePlayPresenceEntry,
   LivePlayPresenceIntentKind,
   LivePlayPresenceRole,
@@ -21,6 +23,21 @@ interface PresencePanelRow {
   readonly accentStyle: Record<string, string>
 }
 
+interface AttentionPanelRow {
+  readonly key: string
+  readonly request: LivePlayPresenceAttentionRequest
+  readonly target: LivePlayPresenceAttentionTarget
+  readonly requesterLabel: string
+  readonly targetLabel: string
+  readonly detailLabel: string
+  readonly accentStyle: Record<string, string>
+}
+
+const emit = defineEmits<{
+  (event: 'request-selected-token-attention'): void
+  (event: 'focus-attention', target: LivePlayPresenceAttentionTarget): void
+}>()
+
 const props = withDefaults(defineProps<{
   entries: readonly LivePlayPresenceEntry[]
   status?: MapPresencePanelStatus
@@ -28,11 +45,15 @@ const props = withDefaults(defineProps<{
   nowMs?: number
   staleAfterMs?: number
   staleBeforeExpiryMs?: number
+  canRequestGmAttention?: boolean
+  selectedTokenLabel?: string | null
 }>(), {
   status: 'idle',
   serverTimeOffsetMs: 0,
   staleAfterMs: 10_000,
   staleBeforeExpiryMs: 5_000,
+  canRequestGmAttention: false,
+  selectedTokenLabel: null,
 })
 
 const PRESENCE_REFRESH_INTERVAL_MS = 2_000
@@ -110,6 +131,50 @@ const rows = computed<readonly PresencePanelRow[]>(() => {
     })
 })
 
+const cloneAttentionTarget = (target: LivePlayPresenceAttentionTarget): LivePlayPresenceAttentionTarget => (
+  target.kind === 'token'
+    ? { kind: 'token', tokenId: target.tokenId }
+    : { kind: 'cell', cell: { ...target.cell } }
+)
+
+const attentionTargetLabel = (target: LivePlayPresenceAttentionTarget): string => {
+  if (target.kind === 'token') return 'a token'
+  return `cell ${target.cell.x}, ${target.cell.y}, ${target.cell.z}`
+}
+
+const attentionDetailLabel = (request: LivePlayPresenceAttentionRequest): string => (
+  request.label?.trim() || 'Focus request'
+)
+
+const attentionRows = computed<readonly AttentionPanelRow[]>(() => {
+  const serverNow = currentServerNowMs.value
+  return props.entries
+    .filter((entry) => entry.participant.role === 'gm' && entry.attention !== null && entry.attention.expiresAt > serverNow)
+    .map((entry) => {
+      const request = entry.attention!
+      return {
+        key: `${rowKey(entry)}:attention:${request.id}`,
+        request,
+        target: cloneAttentionTarget(request.target),
+        requesterLabel: participantLabel(entry),
+        targetLabel: attentionTargetLabel(request.target),
+        detailLabel: attentionDetailLabel(request),
+        accentStyle: presenceAccentStyle(entry.participant.accent),
+      }
+    })
+})
+
+const selectedTokenAttentionButtonLabel = computed(() => (
+  props.selectedTokenLabel
+    ? `Ask table to focus ${props.selectedTokenLabel}`
+    : 'Select a token to call focus'
+))
+
+const requestSelectedTokenAttention = (): void => {
+  if (!props.canRequestGmAttention || !props.selectedTokenLabel) return
+  emit('request-selected-token-attention')
+}
+
 const participantCountLabel = computed(() => {
   const count = rows.value.length
   return count === 1 ? '1 here' : `${count} here`
@@ -179,6 +244,52 @@ onBeforeUnmount(() => {
           </span>
         </li>
       </ol>
+
+      <section
+        v-if="attentionRows.length > 0"
+        class="map-presence-panel__attention"
+        aria-label="GM focus requests"
+      >
+        <h3 class="map-presence-panel__section-title">GM attention</h3>
+        <ul class="map-presence-panel__attention-list">
+          <li
+            v-for="row in attentionRows"
+            :key="row.key"
+            class="map-presence-panel__attention-item"
+            :style="row.accentStyle"
+          >
+            <span class="map-presence-panel__attention-copy">
+              <strong>{{ row.detailLabel }}</strong>
+              <span>{{ row.requesterLabel }} asks everyone to look at {{ row.targetLabel }}.</span>
+            </span>
+            <button
+              type="button"
+              class="map-presence-panel__attention-focus"
+              @click.stop="emit('focus-attention', row.target)"
+            >
+              Focus
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <section
+        v-if="canRequestGmAttention"
+        class="map-presence-panel__gm-tools"
+        aria-label="GM attention tools"
+      >
+        <button
+          type="button"
+          class="map-presence-panel__gm-focus-button"
+          :disabled="!selectedTokenLabel"
+          @click.stop="requestSelectedTokenAttention"
+        >
+          {{ selectedTokenAttentionButtonLabel }}
+        </button>
+        <span class="map-presence-panel__gm-hint">
+          Shift+Alt-click a visible map cell to request focus there.
+        </span>
+      </section>
 
       <p v-if="statusNotice" class="map-presence-panel__status" role="status">
         {{ statusNotice }}
@@ -398,6 +509,90 @@ onBeforeUnmount(() => {
   border: 1px solid color-mix(in srgb, var(--accent, #7dd3fc) 24%, var(--rule-soft, rgba(255, 255, 255, 0.16)));
   border-radius: 0.68rem;
   background: color-mix(in srgb, var(--accent, #7dd3fc) 8%, transparent);
+}
+
+.map-presence-panel__attention,
+.map-presence-panel__gm-tools {
+  display: grid;
+  gap: 0.36rem;
+  padding: 0.44rem;
+  border: 1px solid color-mix(in srgb, var(--accent, #7dd3fc) 22%, var(--rule-soft, rgba(255, 255, 255, 0.16)));
+  border-radius: 0.72rem;
+  background: color-mix(in srgb, var(--accent, #7dd3fc) 7%, transparent);
+}
+
+.map-presence-panel__section-title {
+  margin: 0;
+  color: color-mix(in srgb, var(--accent, #7dd3fc) 82%, white 8%);
+  font-size: 0.64rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.map-presence-panel__attention-list {
+  display: grid;
+  gap: 0.32rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.map-presence-panel__attention-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.48rem;
+  padding: 0.44rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--presence-accent) 34%, var(--map-glass-border, rgba(255, 255, 255, 0.18)));
+  border-radius: 0.62rem;
+  background: color-mix(in srgb, var(--presence-accent) 11%, transparent);
+}
+
+.map-presence-panel__attention-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+  color: color-mix(in srgb, var(--ink-bright, #fff) 72%, transparent);
+  font-size: 0.68rem;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.map-presence-panel__attention-copy strong {
+  overflow: hidden;
+  color: var(--ink-bright, #fff);
+  font-size: 0.76rem;
+  font-weight: 920;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-presence-panel__attention-focus,
+.map-presence-panel__gm-focus-button {
+  border: 1px solid color-mix(in srgb, var(--presence-accent, var(--accent, #7dd3fc)) 42%, var(--rule-soft, rgba(255, 255, 255, 0.18)));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--presence-accent, var(--accent, #7dd3fc)) 18%, transparent);
+  color: var(--ink-bright, #fff);
+  cursor: pointer;
+  font-size: 0.64rem;
+  font-weight: 920;
+  letter-spacing: 0.04em;
+  padding: 0.28rem 0.48rem;
+  text-transform: uppercase;
+}
+
+.map-presence-panel__gm-focus-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.map-presence-panel__gm-hint {
+  color: color-mix(in srgb, var(--ink-bright, #fff) 58%, transparent);
+  font-size: 0.64rem;
+  font-weight: 760;
+  line-height: 1.25;
 }
 
 @media (max-width: 760px) {

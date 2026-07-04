@@ -18,6 +18,7 @@ const presenceEntry = (overrides: Partial<LivePlayPresenceEntry> = {}): LivePlay
   hoveredTokenId: null,
   intent: { kind: 'idle' },
   ping: null,
+  attention: null,
   participant: {
     role: 'player',
     profileDisplayName: 'Ash',
@@ -96,6 +97,59 @@ describe('MapPresencePanel', () => {
     expect(wrapper.find('[data-presence-freshness="fresh"]').exists()).toBe(true)
     expect(wrapper.find('[data-presence-freshness="stale"]').exists()).toBe(true)
     expect(wrapper.find('[data-presence-freshness="stale"]').text()).toContain('Stale')
+  })
+
+  it('renders GM attention focus affordances without forcing camera movement', async () => {
+    const wrapper = mount(MapPresencePanel, {
+      props: {
+        nowMs: 12_000,
+        entries: [presenceEntry({
+          participant: {
+            role: 'gm',
+            clientIdSuffix: 'gmfocus1',
+            accent: 'violet',
+          },
+          attention: {
+            id: 'attn1',
+            target: { kind: 'cell', cell: { x: 2, y: 0, z: 3 } },
+            label: 'Look here',
+            createdAt: 11_000,
+            expiresAt: 19_000,
+          },
+        })],
+      },
+    })
+
+    expect(wrapper.text()).toContain('GM attention')
+    expect(wrapper.text()).toContain('Look here')
+    expect(wrapper.text()).toContain('GM asks everyone to look at cell 2, 0, 3.')
+    expect(wrapper.text()).toContain('Focus')
+    expect(wrapper.emitted('focus-attention')).toBeUndefined()
+
+    await wrapper.find('.map-presence-panel__attention-focus').trigger('click')
+
+    expect(wrapper.emitted('focus-attention')).toEqual([
+      [{ kind: 'cell', cell: { x: 2, y: 0, z: 3 } }],
+    ])
+  })
+
+  it('lets GMs request attention for the selected token without showing raw token ids', async () => {
+    const wrapper = mount(MapPresencePanel, {
+      props: {
+        entries: [],
+        nowMs: 12_000,
+        canRequestGmAttention: true,
+        selectedTokenLabel: 'Pikachu',
+      },
+    })
+
+    expect(wrapper.text()).toContain('Ask table to focus Pikachu')
+    expect(wrapper.text()).toContain('Shift+Alt-click a visible map cell')
+    expect(wrapper.text()).not.toContain('token-pikachu')
+
+    await wrapper.find('.map-presence-panel__gm-focus-button').trigger('click')
+
+    expect(wrapper.emitted('request-selected-token-attention')).toEqual([[]])
   })
 
   it('does not render raw profile ids, command bodies, sheet payloads, or token ids', () => {

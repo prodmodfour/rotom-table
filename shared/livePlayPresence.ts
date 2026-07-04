@@ -45,10 +45,14 @@ export const LIVE_PLAY_PRESENCE_MAX_TOKEN_ID_CHARS = 96 as const
 export const LIVE_PLAY_PRESENCE_MAX_DISPLAY_NAME_CHARS = 64 as const
 export const LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS = 32 as const
 export const LIVE_PLAY_PRESENCE_MAX_PING_ID_CHARS = 64 as const
+export const LIVE_PLAY_PRESENCE_MAX_ATTENTION_LABEL_CHARS = 40 as const
+export const LIVE_PLAY_PRESENCE_MAX_ATTENTION_ID_CHARS = 64 as const
 export const LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT = 256 as const
 export const LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS = 512 as const
 export const LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS = 4_000 as const
 export const LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS = 8_000 as const
+export const LIVE_PLAY_PRESENCE_DEFAULT_ATTENTION_TTL_MS = 8_000 as const
+export const LIVE_PLAY_PRESENCE_MAX_ATTENTION_TTL_MS = 12_000 as const
 export const LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_MIN_CHARS = 4 as const
 export const LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_MAX_CHARS = 12 as const
 export const LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_DEFAULT_CHARS = 8 as const
@@ -61,6 +65,9 @@ export const LIVE_PLAY_PRESENCE_TOKEN_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}
 export const LIVE_PLAY_PRESENCE_PING_ID_PATTERN_DESCRIPTION =
   '/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/' as const
 export const LIVE_PLAY_PRESENCE_PING_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
+export const LIVE_PLAY_PRESENCE_ATTENTION_ID_PATTERN_DESCRIPTION =
+  '/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/' as const
+export const LIVE_PLAY_PRESENCE_ATTENTION_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
 export const LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_PATTERN_DESCRIPTION =
   '/^[A-Za-z0-9_-]{4,12}$/ without the raw client_ prefix' as const
 export const LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_RE = /^[A-Za-z0-9_-]{4,12}$/
@@ -80,6 +87,7 @@ export const LIVE_PLAY_PRESENCE_VALIDATION_CODES = [
   'invalid-token-id',
   'invalid-intent',
   'invalid-ping',
+  'invalid-attention',
   'invalid-grid-cell',
   'invalid-sequence',
   'invalid-timestamp',
@@ -138,6 +146,19 @@ export interface LivePlayPresencePingPayload {
   readonly expiresAt: number
 }
 
+export type LivePlayPresenceAttentionTarget =
+  | { readonly kind: 'token'; readonly tokenId: string }
+  | { readonly kind: 'cell'; readonly cell: LivePlayPresenceGridCell }
+
+export interface LivePlayPresenceAttentionRequest {
+  /** Transient GM attention id for local duplicate suppression only. */
+  readonly id: string
+  readonly target: LivePlayPresenceAttentionTarget
+  readonly label?: string
+  readonly createdAt: number
+  readonly expiresAt: number
+}
+
 export interface LivePlayPresenceUpdate {
   readonly schemaVersion: typeof LIVE_PLAY_PRESENCE_SCHEMA_VERSION
   readonly authority: typeof LIVE_PLAY_PRESENCE_AUTHORITY
@@ -146,6 +167,8 @@ export interface LivePlayPresenceUpdate {
   readonly hoveredTokenId: string | null
   readonly intent: LivePlayPresenceIntentState
   readonly ping: LivePlayPresencePingPayload | null
+  /** GM-only focus request. Server access checks reject player-authored attention requests. */
+  readonly attention: LivePlayPresenceAttentionRequest | null
 }
 
 export interface LivePlayPresenceEntry extends LivePlayPresenceUpdate {
@@ -203,12 +226,15 @@ const UPDATE_FIELDS = new Set([
   'hoveredTokenId',
   'intent',
   'ping',
+  'attention',
 ])
 const PARTICIPANT_FIELDS = new Set(['role', 'profileDisplayName', 'clientIdSuffix', 'accent'])
 const INTENT_FIELDS = new Set(['kind', 'sourceTokenId', 'candidateCount', 'targetCount', 'cell', 'area'])
 const INTENT_AREA_FIELDS = new Set(['cellCount'])
 const CELL_FIELDS = new Set(['x', 'y', 'z'])
 const PING_FIELDS = new Set(['id', 'cell', 'label', 'createdAt', 'expiresAt'])
+const ATTENTION_FIELDS = new Set(['id', 'target', 'label', 'createdAt', 'expiresAt'])
+const ATTENTION_TARGET_FIELDS = new Set(['kind', 'tokenId', 'cell'])
 const ENTRY_FIELDS = new Set([...UPDATE_FIELDS, 'participant', 'lastSeenAt', 'expiresAt'])
 const SNAPSHOT_FIELDS = new Set(['schemaVersion', 'authority', 'mapSlug', 'serverTime', 'entries'])
 const REALTIME_EVENT_DRAFT_FIELDS = new Set(['channel', 'type', 'mapSlug', 'data'])
@@ -630,6 +656,109 @@ const parsePingInternal = (
   }
 }
 
+const parseAttentionTargetInternal = (
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+): LivePlayPresenceAttentionTarget | null => {
+  if (!isRecord(value)) {
+    addIssue(issues, path, 'invalid-attention', `${path} must be an attention target object.`)
+    return null
+  }
+  rejectUnknownFields(value, ATTENTION_TARGET_FIELDS, path, issues)
+  requireField(value, 'kind', `${path}.kind`, issues)
+
+  if (value.kind === 'token') {
+    requireField(value, 'tokenId', `${path}.tokenId`, issues)
+    if (hasOwn(value, 'cell')) {
+      addIssue(issues, `${path}.cell`, 'invalid-attention', `${path}.cell is only allowed for cell attention targets.`)
+    }
+    const tokenId = parseTokenId(value.tokenId, `${path}.tokenId`, issues)
+    if (tokenId === null || hasOwn(value, 'cell')) return null
+    return { kind: 'token', tokenId }
+  }
+
+  if (value.kind === 'cell') {
+    requireField(value, 'cell', `${path}.cell`, issues)
+    if (hasOwn(value, 'tokenId')) {
+      addIssue(issues, `${path}.tokenId`, 'invalid-attention', `${path}.tokenId is only allowed for token attention targets.`)
+    }
+    const cell = parseGridCellInternal(value.cell, `${path}.cell`, issues)
+    if (cell === null || hasOwn(value, 'tokenId')) return null
+    return { kind: 'cell', cell }
+  }
+
+  addIssue(issues, `${path}.kind`, 'invalid-attention', `${path}.kind must be token or cell.`)
+  return null
+}
+
+const parseAttentionInternal = (
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+): LivePlayPresenceAttentionRequest | null => {
+  if (value === undefined || value === null) return null
+  if (!isRecord(value)) {
+    addIssue(issues, path, 'invalid-attention', `${path} must be an attention request object or null.`)
+    return null
+  }
+  rejectUnknownFields(value, ATTENTION_FIELDS, path, issues)
+  for (const field of ['id', 'target', 'createdAt', 'expiresAt']) requireField(value, field, `${path}.${field}`, issues)
+
+  const id = typeof value.id === 'string' && LIVE_PLAY_PRESENCE_ATTENTION_ID_RE.test(value.id)
+    ? value.id
+    : null
+  if (id === null) {
+    addIssue(
+      issues,
+      `${path}.id`,
+      'invalid-attention',
+      `${path}.id must match ${LIVE_PLAY_PRESENCE_ATTENTION_ID_PATTERN_DESCRIPTION}.`,
+    )
+  }
+
+  const target = parseAttentionTargetInternal(value.target, `${path}.target`, issues)
+  const label = parseOptionalDisplayText(
+    value.label,
+    `${path}.label`,
+    LIVE_PLAY_PRESENCE_MAX_ATTENTION_LABEL_CHARS,
+    'invalid-attention',
+    issues,
+  )
+  const createdAt = parseTimestamp(value.createdAt, `${path}.createdAt`, issues)
+  const expiresAt = parseTimestamp(value.expiresAt, `${path}.expiresAt`, issues)
+  const durationMs = createdAt !== null && expiresAt !== null ? expiresAt - createdAt : null
+  if (durationMs !== null && durationMs <= 0) {
+    addIssue(issues, `${path}.expiresAt`, 'invalid-attention', `${path}.expiresAt must be newer than ${path}.createdAt.`)
+  }
+  if (durationMs !== null && durationMs > LIVE_PLAY_PRESENCE_MAX_ATTENTION_TTL_MS) {
+    addIssue(
+      issues,
+      `${path}.expiresAt`,
+      'invalid-attention',
+      `${path} must expire within ${LIVE_PLAY_PRESENCE_MAX_ATTENTION_TTL_MS}ms of ${path}.createdAt.`,
+    )
+  }
+
+  if (
+    id === null
+    || target === null
+    || createdAt === null
+    || expiresAt === null
+    || durationMs === null
+    || durationMs <= 0
+    || durationMs > LIVE_PLAY_PRESENCE_MAX_ATTENTION_TTL_MS
+  ) return null
+
+  return {
+    id,
+    target,
+    ...(label === undefined ? {} : { label }),
+    createdAt,
+    expiresAt,
+  }
+}
+
 const parseUpdateInternal = (
   value: unknown,
   path: string,
@@ -662,6 +791,7 @@ const parseUpdateInternal = (
   )
   const intent = parseIntentInternal(value.intent, path ? `${path}.intent` : 'intent', issues)
   const ping = parsePingInternal(value.ping, path ? `${path}.ping` : 'ping', issues)
+  const attention = parseAttentionInternal(value.attention, path ? `${path}.attention` : 'attention', issues)
 
   if (clientSequence === null || intent === null) return null
   return {
@@ -672,6 +802,7 @@ const parseUpdateInternal = (
     hoveredTokenId,
     intent,
     ping,
+    attention,
   }
 }
 
@@ -948,6 +1079,11 @@ export const sanitizeLivePlayPresencePingLabel = (value: unknown): string | unde
   return sanitizeDisplayTextString(value, LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS) || undefined
 }
 
+export const sanitizeLivePlayPresenceAttentionLabel = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined
+  return sanitizeDisplayTextString(value, LIVE_PLAY_PRESENCE_MAX_ATTENTION_LABEL_CHARS) || undefined
+}
+
 export const livePlayPresenceClientIdSuffix = (
   clientId: unknown,
   length: number = LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_DEFAULT_CHARS,
@@ -1012,6 +1148,13 @@ export const parseLivePlayPresencePingPayload = (
 ): ParseLivePlayPresenceResult<LivePlayPresencePingPayload> => {
   const issues: MutableIssueList = []
   return toParseResult(parsePingInternal(value, '$', issues), issues)
+}
+
+export const parseLivePlayPresenceAttentionRequest = (
+  value: unknown,
+): ParseLivePlayPresenceResult<LivePlayPresenceAttentionRequest> => {
+  const issues: MutableIssueList = []
+  return toParseResult(parseAttentionInternal(value, '$', issues), issues)
 }
 
 export const parseLivePlayPresenceUpdate = (

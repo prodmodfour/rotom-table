@@ -36,7 +36,7 @@ import type {
 } from '~/types/moveAutomation'
 import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { BuildTool } from '#shared/mapEditor'
-import type { LivePlayPresenceGridCell } from '#shared/livePlayPresence'
+import type { LivePlayPresenceAttentionTarget, LivePlayPresenceGridCell } from '#shared/livePlayPresence'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type {
   MoveAutomationTargetBranchSelectionOption,
@@ -226,6 +226,7 @@ const props = defineProps<{
   presencePings?: readonly IsometricPresencePing[]
   presenceIntentOverlays?: readonly MapPresenceIntentOverlay[]
   presenceServerTimeOffsetMs?: number
+  canRequestGmAttention?: boolean
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -238,6 +239,7 @@ const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
   (event: 'hover-pokemon', id: string | null): void
   (event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void
+  (event: 'request-gm-attention', payload: { target: LivePlayPresenceAttentionTarget }): void
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
@@ -826,6 +828,21 @@ const focusPokemon = (id: string, options: { focusYawMode?: FocusCameraYawMode }
   return true
 }
 
+const focusCell = (cell: LivePlayPresenceGridCell): boolean => {
+  if (!camera || !controls || !cellIsInsideDimensions(cell)) return false
+
+  const nextTarget = new THREE.Vector3(cell.x + 0.5, cell.y + 0.5, cell.z + 0.5)
+  const offset = camera.position.clone().sub(controls.target)
+  const nextOffset = offset.lengthSq() > 0.0001 ? offset : new THREE.Vector3(10, 10, 10)
+  controls.target.copy(nextTarget)
+  camera.position.copy(nextTarget.clone().add(nextOffset))
+  camera.updateProjectionMatrix()
+  controls.update()
+  refreshSmartTerrainCutaway({ requestRender: false })
+  requestScheduledSceneFrame('camera')
+  return true
+}
+
 const focusActiveTurnPokemon = (id: string): boolean => {
   const focused = focusPokemon(id, { focusYawMode: 'initiative' })
   if (focused) refreshSmartTerrainCutaway({ requestRender: false })
@@ -853,7 +870,7 @@ const rotateCameraYaw = (direction: IsometricYawStepDirection): boolean => {
 const rotateCameraLeft = () => rotateCameraYaw('left')
 const rotateCameraRight = () => rotateCameraYaw('right')
 
-defineExpose({ focusPokemon })
+defineExpose({ focusPokemon, focusCell })
 
 const updateGridVisibility = () => {
   setIsometricGridVisibility({
@@ -1346,6 +1363,17 @@ const presencePingCellFromPointer = (event: MouseEvent | PointerEvent): LivePlay
 const isPresencePingGesture = (event: PointerEvent): boolean => (
   event.button === 0
   && event.altKey
+  && !event.shiftKey
+  && !event.ctrlKey
+  && !event.metaKey
+  && pointerTracker.isClick()
+)
+
+const isGmAttentionGesture = (event: PointerEvent): boolean => (
+  props.canRequestGmAttention === true
+  && event.button === 0
+  && event.altKey
+  && event.shiftKey
   && !event.ctrlKey
   && !event.metaKey
   && pointerTracker.isClick()
@@ -1359,6 +1387,17 @@ const placePresencePingFromPointer = (event: PointerEvent): boolean => {
   cancelPointerMoveRaw()
   const cell = presencePingCellFromPointer(event)
   if (cell) emit('place-presence-ping', { cell })
+  return true
+}
+
+const requestGmAttentionFromPointer = (event: PointerEvent): boolean => {
+  if (!isGmAttentionGesture(event)) return false
+
+  event.preventDefault()
+  event.stopPropagation()
+  cancelPointerMoveRaw()
+  const cell = presencePingCellFromPointer(event)
+  if (cell) emit('request-gm-attention', { target: { kind: 'cell', cell } })
   return true
 }
 
@@ -1675,7 +1714,11 @@ const handleWheel = (event: WheelEvent) => {
   requestRenderAfterPointerInteraction()
 }
 const handlePointerUp = (event: PointerEvent) => {
-  if (!freeCameraRotation.handlePointerUp(event) && !placePresencePingFromPointer(event)) {
+  if (
+    !freeCameraRotation.handlePointerUp(event)
+    && !requestGmAttentionFromPointer(event)
+    && !placePresencePingFromPointer(event)
+  ) {
     handlePointerUpRaw(event)
   }
   requestRenderAfterPointerInteraction()

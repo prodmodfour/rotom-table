@@ -15,6 +15,7 @@ const presenceEntry = (overrides: Partial<LivePlayPresenceEntry> = {}): LivePlay
   hoveredTokenId: null,
   intent: { kind: 'idle' },
   ping: null,
+  attention: null,
   participant: {
     role: 'player',
     profileDisplayName: 'Misty',
@@ -34,6 +35,7 @@ const ownPresence = (overrides: Partial<LivePlayPresenceUpdate> = {}): LivePlayP
   hoveredTokenId: null,
   intent: { kind: 'idle' },
   ping: null,
+  attention: null,
   ...overrides,
 })
 

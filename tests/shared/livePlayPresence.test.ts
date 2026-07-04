@@ -3,13 +3,16 @@ import {
   LIVE_PLAY_PRESENCE_ACCENTS,
   LIVE_PLAY_PRESENCE_AUTHORITY,
   LIVE_PLAY_PRESENCE_AUTHORITY_DESCRIPTION,
+  LIVE_PLAY_PRESENCE_DEFAULT_ATTENTION_TTL_MS,
   LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS,
   LIVE_PLAY_PRESENCE_INTENT_KINDS,
+  LIVE_PLAY_PRESENCE_MAX_ATTENTION_LABEL_CHARS,
   LIVE_PLAY_PRESENCE_MAX_DISPLAY_NAME_CHARS,
   LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS,
   LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT,
   LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS,
   LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS,
+  LIVE_PLAY_PRESENCE_MAX_ATTENTION_TTL_MS,
   LIVE_PLAY_PRESENCE_MAX_SNAPSHOT_ENTRIES,
   LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE,
   LIVE_PLAY_PRESENCE_SCHEMA_VERSION,
@@ -24,11 +27,13 @@ import {
   livePlayPresenceAccentForKey,
   livePlayPresenceClientIdSuffix,
   parseLivePlayPresenceEntry,
+  parseLivePlayPresenceAttentionRequest,
   parseLivePlayPresenceParticipantSummary,
   parseLivePlayPresenceRealtimeEvent,
   parseLivePlayPresenceRealtimeEventDraft,
   parseLivePlayPresenceSnapshot,
   parseLivePlayPresenceUpdate,
+  sanitizeLivePlayPresenceAttentionLabel,
   sanitizeLivePlayPresenceDisplayName,
   sanitizeLivePlayPresencePingLabel,
 } from '#shared/livePlayPresence'
@@ -53,6 +58,13 @@ const validUpdate = (overrides: Record<string, unknown> = {}) => ({
     label: 'Look here',
     createdAt: 1_700_000_000_000,
     expiresAt: 1_700_000_004_000,
+  },
+  attention: {
+    id: 'attn_abc123',
+    target: { kind: 'cell', cell: { x: 2, y: 0, z: 3 } },
+    label: 'Focus here',
+    createdAt: 1_700_000_000_000,
+    expiresAt: 1_700_000_008_000,
   },
   ...overrides,
 })
@@ -90,6 +102,8 @@ describe('live-play presence contract', () => {
     expect(LIVE_PLAY_PRESENCE_AUTHORITY_DESCRIPTION).toContain('must not mutate')
     expect(LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS).toBe(4_000)
     expect(LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS).toBe(8_000)
+    expect(LIVE_PLAY_PRESENCE_DEFAULT_ATTENTION_TTL_MS).toBe(8_000)
+    expect(LIVE_PLAY_PRESENCE_MAX_ATTENTION_TTL_MS).toBe(12_000)
     expect(LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT).toBe(256)
     expect(LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS).toBe(512)
     expect(LIVE_PLAY_PRESENCE_INTENT_KINDS).toEqual([
@@ -130,6 +144,7 @@ describe('live-play presence contract', () => {
       area: { cellCount: 6 },
     })
     expect(result.payload.ping?.cell).toEqual({ x: 4, y: 0, z: -2 })
+    expect(result.payload.attention?.target).toEqual({ kind: 'cell', cell: { x: 2, y: 0, z: 3 } })
     expect(parseLivePlayPresenceUpdate(JSON.parse(JSON.stringify(result.payload)))).toEqual(result)
     expect(isLivePlayPresenceUpdate(result.payload)).toBe(true)
   })
@@ -163,6 +178,7 @@ describe('live-play presence contract', () => {
 
     expect(sanitizeLivePlayPresenceDisplayName(' <Brock\n Slate> ')).toBe('Brock Slate')
     expect(sanitizeLivePlayPresencePingLabel(' <here\u0007 now> ')).toBe('here now')
+    expect(sanitizeLivePlayPresenceAttentionLabel(' <focus\u0007 here> ')).toBe('focus here')
     expect(livePlayPresenceClientIdSuffix('client_abcdef012345')).toBe('ef012345')
     expect(livePlayPresenceClientIdSuffix('bad')).toBe('anon')
     expect(livePlayPresenceAccentForKey('client_abcdef012345')).toBe(
@@ -341,6 +357,30 @@ describe('live-play presence contract', () => {
     }))).toMatchObject({
       valid: false,
       issues: [expect.objectContaining({ path: 'ping.expiresAt', code: 'invalid-ping' })],
+    })
+    expect(parseLivePlayPresenceAttentionRequest({
+      id: 'attn_abc123',
+      target: { kind: 'token', tokenId: 'token-pikachu' },
+      label: 'A'.repeat(LIVE_PLAY_PRESENCE_MAX_ATTENTION_LABEL_CHARS + 1),
+      createdAt: 20,
+      expiresAt: 20 + LIVE_PLAY_PRESENCE_MAX_ATTENTION_TTL_MS + 1,
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([
+        expect.objectContaining({ path: '$.label', code: 'invalid-attention' }),
+        expect.objectContaining({ path: '$.expiresAt', code: 'invalid-attention' }),
+      ]),
+    })
+    expect(parseLivePlayPresenceUpdate(validUpdate({
+      attention: {
+        id: 'attn_abc123',
+        target: { kind: 'token', tokenId: 'token-pikachu', targetIds: ['token-hidden'] },
+        createdAt: 20,
+        expiresAt: 40,
+      },
+    }))).toMatchObject({
+      valid: false,
+      issues: [expect.objectContaining({ path: 'attention.target.targetIds', code: 'forbidden-authority-field' })],
     })
     expect(parseLivePlayPresenceUpdate(validUpdate({
       intent: {

@@ -19,6 +19,7 @@ const update = (overrides: Record<string, unknown> = {}) => ({
   hoveredTokenId: null,
   intent: { kind: 'idle' },
   ping: null,
+  attention: null,
   ...overrides,
 })
 

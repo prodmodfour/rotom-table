@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import {
   LIVE_PLAY_PRESENCE_AUTHORITY,
+  LIVE_PLAY_PRESENCE_MAX_ATTENTION_LABEL_CHARS,
   LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS,
   LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE,
   LIVE_PLAY_PRESENCE_SCHEMA_VERSION,
@@ -77,6 +78,7 @@ const presenceEntry = (overrides: Partial<LivePlayPresenceEntry> = {}): LivePlay
   hoveredTokenId: null,
   intent: { kind: 'idle' },
   ping: null,
+  attention: null,
   participant: {
     role: 'player',
     profileDisplayName: 'Ash',
@@ -406,6 +408,68 @@ describe('useMapPresence', () => {
         cell: { x: 2, y: 0, z: 3 },
         label: expectedLabel,
         creator: expect.objectContaining({ profileDisplayName: 'Brock', clientIdSuffix: 'creator1' }),
+      }),
+    ])
+
+    presence.dispose()
+  })
+
+  it('publishes sanitized GM attention requests through own presence state', async () => {
+    const createdAt = 6_000
+    const expectedLabel = 'F'.repeat(LIVE_PLAY_PRESENCE_MAX_ATTENTION_LABEL_CHARS)
+    mocks.postJson.mockImplementation(async (_path, body) => {
+      const request = body as { presence: LivePlayPresenceUpdate }
+      return presenceSnapshot([
+        presenceEntry({
+          clientSequence: request.presence.clientSequence,
+          attention: request.presence.attention,
+          participant: {
+            role: 'gm',
+            clientIdSuffix: 'gmfocus1',
+            accent: 'violet',
+          },
+          lastSeenAt: createdAt,
+          expiresAt: 21_000,
+        }),
+      ], { serverTime: createdAt })
+    })
+
+    const presence = useMapPresence({
+      slug: 'arena',
+      autoStart: false,
+      now: () => createdAt,
+      attentionIdFactory: () => 'amanual1',
+    })
+
+    await expect(presence.requestAttention(
+      { kind: 'cell', cell: { x: 2, y: 0, z: 3 } },
+      { label: ` <${'F'.repeat(LIVE_PLAY_PRESENCE_MAX_ATTENTION_LABEL_CHARS + 8)}\n> ` },
+    )).resolves.toBe(true)
+
+    expect(presence.ownPresence.value).toMatchObject({
+      clientSequence: 1,
+      attention: {
+        id: 'amanual1',
+        target: { kind: 'cell', cell: { x: 2, y: 0, z: 3 } },
+        label: expectedLabel,
+        createdAt,
+        expiresAt: createdAt + 8_000,
+      },
+    })
+    expect(mocks.postJson).toHaveBeenCalledWith('/api/maps/arena/presence', {
+      presence: expect.objectContaining({
+        clientSequence: 1,
+        attention: expect.objectContaining({
+          id: 'amanual1',
+          label: expectedLabel,
+        }),
+      }),
+      clientId: 'client_c-local-tab',
+    })
+    expect(presence.entries.value).toEqual([
+      expect.objectContaining({
+        attention: expect.objectContaining({ id: 'amanual1', label: expectedLabel }),
+        participant: expect.objectContaining({ role: 'gm', clientIdSuffix: 'gmfocus1' }),
       }),
     ])
 
