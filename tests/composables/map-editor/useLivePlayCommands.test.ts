@@ -263,6 +263,28 @@ const operationStatusTerminalResponse = (
   },
 })
 
+const operationStatusUnknownResponseForCommand = (command: Record<string, unknown>) => ({
+  schemaVersion: LIVE_PLAY_OPERATION_STATUS_SCHEMA_VERSION,
+  status: 'unknown' as const,
+  mapSlug: command.mapSlug,
+  opId: command.opId,
+})
+
+const operationStatusTerminalResponseForCommand = (
+  command: Record<string, unknown>,
+  result: Record<string, unknown>,
+) => ({
+  schemaVersion: LIVE_PLAY_OPERATION_STATUS_SCHEMA_VERSION,
+  status: 'terminal' as const,
+  mapSlug: command.mapSlug,
+  opId: command.opId,
+  result: {
+    ...result,
+    opId: command.opId,
+    mapSlug: command.mapSlug,
+  },
+})
+
 const operationAbandonmentResponse = (
   entry: LivePlayCommandOutboxEntry,
   disposition: 'abandoned' | 'already-terminal',
@@ -415,6 +437,19 @@ const acceptedMoveTokenResponse = (
     }],
   }
 }
+
+const rejectedMoveTokenResponse = (
+  command: Record<string, unknown>,
+  overrides: Partial<Record<string, unknown>> = {},
+): Record<string, unknown> => ({
+  ok: false,
+  opId: command.opId,
+  mapSlug: command.mapSlug,
+  reason: 'conflict',
+  message: 'Conflict',
+  currentRevision: 4,
+  ...overrides,
+})
 
 const resolvedMoveFixture = (overrides: Partial<LivePlayResolvedMoveResult> = {}): LivePlayResolvedMoveResult => ({
   schemaVersion: LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
@@ -4643,6 +4678,174 @@ describe('useLivePlayCommands', () => {
     })
     expect(onCommandRejected).toHaveBeenCalledTimes(1)
     expect(actions.outboxRecoveryStatus.value).toBe('idle')
+  })
+
+  it('confirms a pending predicted move from an accepted status check without resending it', async () => {
+    const map = ref(mapFixture())
+    const mutationGate = deferred<void>()
+    const mutationStarted = deferred<Record<string, unknown>>()
+    const postedRequests: string[] = []
+    let mutationStartRecorded = false
+
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      postedRequests.push(request)
+      if (request === MAP_API_PATHS.moveToken) {
+        const command = commandRecord(body)
+        if (!mutationStartRecorded) {
+          mutationStartRecorded = true
+          mutationStarted.resolve(command)
+        }
+        await mutationGate.promise
+        return acceptedMoveTokenResponse(command, { previousRevision: 4, revision: 5 })
+      }
+
+      if (request === MAP_API_PATHS.operationStatus) {
+        const command = statusCommandRecord(body)
+        return operationStatusTerminalResponseForCommand(
+          command,
+          acceptedMoveTokenResponse(command, { previousRevision: 4, revision: 5 }),
+        )
+      }
+
+      throw new Error(`Unexpected request ${request}`)
+    })
+
+    const { actions, outbox } = createCommandHarness({ slug: 'arena-map', map, mapRevision: ref(4) })
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 2 } })
+    const command = await mutationStarted.promise
+    const opId = String(command.opId)
+
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    expect(actions.pendingCommandCount.value).toBe(1)
+    expect(tokenPosition(map.value)).toEqual({ x: 3, y: 0, z: 2 })
+    expect(map.value.revision).toBe(4)
+
+    await expect(actions.checkOutboxCommandStatus(opId)).resolves.toMatchObject({
+      status: 'accepted',
+      opId,
+      response: expect.objectContaining({ ok: true, opId }),
+    })
+
+    expect(postedRequests.filter((request) => request === MAP_API_PATHS.moveToken)).toHaveLength(1)
+    expect(postedRequests.filter((request) => request === MAP_API_PATHS.operationStatus)).toHaveLength(1)
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(actions.pendingCommandCount.value).toBe(0)
+    await expect(outbox.get(opId)).resolves.toBeNull()
+    expect(map.value.revision).toBe(5)
+    expect(tokenPosition(map.value)).toEqual({ x: 3, y: 0, z: 2 })
+
+    mutationGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId })
+    expect(postedRequests.filter((request) => request === MAP_API_PATHS.moveToken)).toHaveLength(1)
+  })
+
+  it('rolls back only the matching pending prediction from a rejected status check', async () => {
+    const map = ref(mapFixture())
+    const mutationGate = deferred<void>()
+    const mutationStarted = deferred<Record<string, unknown>>()
+    const onCommandRejected = vi.fn()
+    let mutationStartRecorded = false
+
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      if (request === MAP_API_PATHS.moveToken) {
+        const command = commandRecord(body)
+        if (!mutationStartRecorded) {
+          mutationStartRecorded = true
+          mutationStarted.resolve(command)
+        }
+        await mutationGate.promise
+        return rejectedMoveTokenResponse(command)
+      }
+
+      if (request === MAP_API_PATHS.operationStatus) {
+        const command = statusCommandRecord(body)
+        return operationStatusTerminalResponseForCommand(command, rejectedMoveTokenResponse(command))
+      }
+
+      throw new Error(`Unexpected request ${request}`)
+    })
+
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      onCommandRejected,
+    })
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 4, y: 0, z: 3 } })
+    const command = await mutationStarted.promise
+    const opId = String(command.opId)
+
+    expect(tokenPosition(map.value, 'token-pikachu')).toEqual({ x: 4, y: 0, z: 3 })
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 2, y: 0, z: 1 })
+
+    await expect(actions.checkOutboxCommandStatus(opId)).resolves.toMatchObject({
+      status: 'rejected',
+      opId,
+      response: expect.objectContaining({ ok: false, reason: 'conflict' }),
+    })
+
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(actions.pendingPredictions.value).toEqual({})
+    expect(actions.pendingCommandCount.value).toBe(0)
+    expect(tokenPosition(map.value, 'token-pikachu')).toEqual({ x: 1, y: 0, z: 1 })
+    expect(tokenPosition(map.value, 'target-token')).toEqual({ x: 2, y: 0, z: 1 })
+    expect(onCommandRejected).toHaveBeenCalledTimes(1)
+
+    mutationGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: false, opId, message: 'Conflict' })
+    expect(onCommandRejected).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves pending predictions unchanged when a status check is still unknown', async () => {
+    const map = ref(mapFixture())
+    const mutationGate = deferred<void>()
+    const mutationStarted = deferred<Record<string, unknown>>()
+    const postedRequests: string[] = []
+    let mutationStartRecorded = false
+
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      postedRequests.push(request)
+      if (request === MAP_API_PATHS.moveToken) {
+        const command = commandRecord(body)
+        if (!mutationStartRecorded) {
+          mutationStartRecorded = true
+          mutationStarted.resolve(command)
+        }
+        await mutationGate.promise
+        return acceptedMoveTokenResponse(command, { previousRevision: 4, revision: 5 })
+      }
+
+      if (request === MAP_API_PATHS.operationStatus) {
+        return operationStatusUnknownResponseForCommand(statusCommandRecord(body))
+      }
+
+      throw new Error(`Unexpected request ${request}`)
+    })
+
+    const { actions } = createCommandHarness({ slug: 'arena-map', map, mapRevision: ref(4) })
+    const dispatch = actions.moveToken({ placementId: 'token-pikachu', position: { x: 5, y: 0, z: 4 } })
+    const command = await mutationStarted.promise
+    const opId = String(command.opId)
+    const prediction = actions.pendingPredictions.value[opId]
+
+    await expect(actions.checkOutboxCommandStatus(opId)).resolves.toMatchObject({
+      status: 'unknown',
+      opId,
+    })
+
+    expect(postedRequests.filter((request) => request === MAP_API_PATHS.moveToken)).toHaveLength(1)
+    expect(postedRequests.filter((request) => request === MAP_API_PATHS.operationStatus)).toHaveLength(1)
+    expect(actions.pendingPredictions.value[opId]).toBe(prediction)
+    expect(actions.pendingPredictionCount.value).toBe(1)
+    expect(actions.pendingCommandCount.value).toBe(1)
+    expect(map.value.revision).toBe(4)
+    expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 4 })
+
+    mutationGate.resolve()
+    await expect(dispatch).resolves.toMatchObject({ dispatched: true, opId })
+    expect(actions.pendingPredictionCount.value).toBe(0)
+    expect(tokenPosition(map.value)).toEqual({ x: 5, y: 0, z: 4 })
   })
 
   it('does not check status over HTTP for auth/profile, map, path, or body-identity mismatches', async () => {

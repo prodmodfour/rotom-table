@@ -644,6 +644,7 @@ export const useLivePlayCommands = (
   const realtimeAcknowledgedResponses = new Map<string, LivePlayCommandResponse>()
   const realtimeAcknowledgementFailures = new Map<string, string>()
   const realtimeAcknowledgementAdoptions = new Map<string, Promise<string | undefined>>()
+  const statusResolvedResponses = new Map<string, LivePlayCommandResponse>()
   let activePredictionPatchAdoptionSession: LivePlayPredictionPatchAdoptionSession | null = null
 
   if (getCurrentScope()) {
@@ -758,6 +759,17 @@ export const useLivePlayCommands = (
       undefined,
       { once: true },
     )
+  }
+
+  const rememberStatusResolvedResponseForPendingCommand = (
+    opId: string,
+    response: LivePlayCommandResponse,
+  ): void => {
+    if (pendingCommandRecords.value[opId] === undefined) {
+      statusResolvedResponses.delete(opId)
+      return
+    }
+    statusResolvedResponses.set(opId, response)
   }
 
   const markOperationFailed = (opId: string | null, message: string): void => {
@@ -1536,6 +1548,26 @@ export const useLivePlayCommands = (
     }
   }
 
+  const statusResolvedResult = async (
+    entry: LivePlayCommandOutboxEntry,
+  ): Promise<LivePlayCommandDispatchResult | null> => {
+    const response = statusResolvedResponses.get(entry.opId)
+    if (!response) return null
+    statusResolvedResponses.delete(entry.opId)
+
+    const refreshWarning = await refreshOutboxEntriesQuiet()
+    const accepted = acceptedLivePlayResponse(response)
+    const rejectionMessage = accepted ? undefined : livePlayResponseMessage(response) ?? 'Token action was rejected'
+    const message = combineOutboxWarnings(rejectionMessage, refreshWarning)
+    return {
+      dispatched: accepted,
+      opId: entry.opId,
+      response,
+      ...(message === undefined ? {} : { message }),
+      ...(refreshWarning === undefined ? {} : { outboxError: refreshWarning }),
+    }
+  }
+
   const uncertaintyResult = async (
     entry: LivePlayCommandOutboxEntry,
     detail: string,
@@ -1543,6 +1575,9 @@ export const useLivePlayCommands = (
   ): Promise<LivePlayCommandDispatchResult> => {
     const recovered = await realtimeRecoveredResult(entry, detail)
     if (recovered) return recovered
+
+    const statusResolved = await statusResolvedResult(entry)
+    if (statusResolved) return statusResolved
 
     const message = `The server outcome for live-play operation ${entry.opId} is unknown. Retrying the same operation ID will be safe later. ${detail}`
     const outboxWarning = await markClaimedEntryUncertain(entry, message)
@@ -1808,6 +1843,14 @@ export const useLivePlayCommands = (
       'The later HTTP response was ignored because realtime already supplied the terminal accepted result.',
     )
     if (recoveredBeforeValidation) return recoveredBeforeValidation
+
+    if (statusResolvedResponses.has(entry.opId)) {
+      recordCommandTraceEvent(traceMetadata, LIVE_PLAY_COMMAND_TRACE_EVENT_TYPES.HTTP_TERMINAL, {
+        outcome: 'ignored-after-status',
+      })
+    }
+    const statusResolvedBeforeValidation = await statusResolvedResult(entry)
+    if (statusResolvedBeforeValidation) return statusResolvedBeforeValidation
 
     const validation = validateTerminalResponseForCommand({
       response: rawResponse,
@@ -2958,23 +3001,27 @@ export const useLivePlayCommands = (
     response: LivePlayCommandResponse,
     opId: string,
   ): Promise<LivePlayOperationStatusCheckResult> => {
+    rememberStatusResolvedResponseForPendingCommand(opId, response)
     let message: string | undefined
+    let processingMessage: string | undefined
 
     try {
       await adoptAcceptedLivePlayResponse(MAP_API_PATHS.operationStatus, response, {
         reconcileOnPatchFailure: false,
       })
     } catch (processingError) {
-      message = getErrorMessage(processingError, {
+      processingMessage = getErrorMessage(processingError, {
         fallback: 'Live-play command status was accepted, but local response processing failed. Requesting authoritative reconciliation.',
       })
+      message = processingMessage
       status.value = 'error'
-      lastError.value = message
-      options.onCommandFailed?.(message)
+      lastError.value = processingMessage
+      options.onCommandFailed?.(processingMessage)
     }
 
     const reconciliationWarning = await requestRecoveryReconciliation(MAP_API_PATHS.operationStatus, response)
     message = combineOutboxWarnings(message, reconciliationWarning)
+    markOperationAccepted(opId)
 
     if (message === undefined) {
       status.value = 'idle'
@@ -2982,6 +3029,10 @@ export const useLivePlayCommands = (
       outboxRecoveryStatus.value = 'idle'
       outboxRecoveryError.value = null
     } else {
+      if (processingMessage !== undefined) {
+        status.value = 'error'
+        lastError.value = processingMessage
+      }
       setOutboxRecoveryFailure(message)
     }
 
@@ -2997,6 +3048,7 @@ export const useLivePlayCommands = (
     entry: LivePlayCommandOutboxEntry,
     response: LivePlayCommandResponse,
   ): Promise<LivePlayOperationStatusCheckResult> => {
+    rememberStatusResolvedResponseForPendingCommand(entry.opId, response)
     const result = await processRejectedTerminalResponse(entry.requestPath, response, entry.opId, undefined)
     outboxRecoveryStatus.value = 'idle'
     outboxRecoveryError.value = null
@@ -3134,7 +3186,8 @@ export const useLivePlayCommands = (
       ))
     }
 
-    if (transportStatus.value === 'sending' || recoveryRetryActive) {
+    const statusCheckTargetsLocalPendingCommand = pendingCommandRecords.value[opId] !== undefined
+    if ((transportStatus.value === 'sending' || recoveryRetryActive) && !statusCheckTargetsLocalPendingCommand) {
       return Promise.resolve(operationStatusBlocked(opId, 'A live-play command is already in flight.'))
     }
 

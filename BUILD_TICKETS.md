@@ -254,7 +254,7 @@ Status: DONE
 
 ## 009 — LP-S2-009 — Add command-status awareness for pending predictions
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let status checks resolve pending predictions without resending commands.
 
