@@ -49,6 +49,7 @@ const COMMAND_LABELS: Record<LivePlayMapCommandType, string> = {
   [LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD]: 'Place hazard',
   [LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD]: 'Remove hazard',
   [LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS]: 'Clear hazards',
+  [LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS]: 'Clear field effects',
   [LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT]: 'Set field effect',
   [LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT]: 'Remove field effect',
   [LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS]: 'Tick field effect durations',

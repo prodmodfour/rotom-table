@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   LIVE_PLAY_COMMAND_TYPES,
+  createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  type ClearFieldEffectsPayload,
   type ClearHazardsPayload,
   type LivePlayMapScope,
   type LivePlayScope,
@@ -43,6 +45,12 @@ const terrainCommand = (x: number, y: number, z: number) => ({
 const clearHazardsCommand = (payload: ClearHazardsPayload) => ({
   type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
   scopes: createClearHazardsCommandScopes(payload),
+  payload,
+})
+
+const clearFieldEffectsCommand = (payload: ClearFieldEffectsPayload) => ({
+  type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+  scopes: createClearFieldEffectsCommandScopes(payload),
   payload,
 })
 
@@ -126,6 +134,30 @@ describe('live-play scope conflict utilities', () => {
       right: { kind: 'hazard-cell', x: 2, y: 0, z: 3 },
       label: 'map lane hazards / hazard cell 2,0,3',
     })
+  })
+
+  it('classifies clearFieldEffects as a conservative field-effects lane command only', () => {
+    const clear = clearFieldEffectsCommand({ category: 'weather', kinds: ['sunny'] })
+
+    expect(livePlayScopeConflictDescriptors(clear)).toEqual([
+      { kind: 'map-lane', lane: 'fieldEffects', label: 'map lane fieldEffects' },
+    ])
+    expect(livePlayScopesConflict(
+      clear,
+      {
+        type: LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
+        scopes: [mapScope('fieldEffects')],
+        payload: { category: 'weather', kind: 'rainy' },
+      },
+    )).toBe(true)
+    expect(livePlayScopesConflict(
+      clear,
+      {
+        type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+        scopes: [tokenScope('token-a', 'position')],
+        payload: { placementId: 'token-a', position: { x: 1, y: 0, z: 2 } },
+      },
+    )).toBe(false)
   })
 
   it('treats unknown scopes conservatively as conflicts', () => {

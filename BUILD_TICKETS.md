@@ -244,7 +244,7 @@ Status: DONE
 
 ## 008 — LP-S4-008 — Add `clearFieldEffects` live-play command contract
 
-Status: TODO
+Status: DONE
 
 **Goal:** Define a batch command for clearing weather, terrain, room, or all field effects in one operation.
 

@@ -159,7 +159,12 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   }
 }
 
-const execute = (harness: ReturnType<typeof createHarness>, command: LivePlayMapEffectCommand, role: 'gm' | 'player' = 'gm') =>
+type RoutedLivePlayMapEffectCommand = Exclude<
+  LivePlayMapEffectCommand,
+  { readonly type: typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS }
+>
+
+const execute = (harness: ReturnType<typeof createHarness>, command: RoutedLivePlayMapEffectCommand, role: 'gm' | 'player' = 'gm') =>
   executeLivePlayMapEffectsCommandUseCase({
     role,
     command,

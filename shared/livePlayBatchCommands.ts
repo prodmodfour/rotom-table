@@ -1,4 +1,9 @@
-import type { MapHazardKind } from '~/types/map'
+import type {
+  MapHazardKind,
+  MapRoomKind,
+  MapTerrainKind,
+  MapWeatherKind,
+} from '~/types/map'
 
 export const LIVE_PLAY_BATCH_MAX_HAZARD_CELLS = 128 as const
 export const LIVE_PLAY_BATCH_MAX_TERRAIN_VOXELS = 256 as const
@@ -20,6 +25,7 @@ export const LIVE_PLAY_BATCH_VALIDATION_CODES = [
   'unknown-field',
   'invalid-mode',
   'invalid-kind',
+  'duplicate-kind',
   'invalid-array',
   'empty-array',
   'too-many-items',
@@ -91,6 +97,68 @@ export type ClearHazardsPayload =
   | ClearHazardsAllPayload
   | ClearHazardsCellsPayload
   | ClearHazardsKindPayload
+
+export const LIVE_PLAY_FIELD_EFFECT_CATEGORIES = ['weather', 'terrain', 'room'] as const
+export type LivePlayFieldEffectCategory = (typeof LIVE_PLAY_FIELD_EFFECT_CATEGORIES)[number]
+
+export const LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES = [
+  ...LIVE_PLAY_FIELD_EFFECT_CATEGORIES,
+  'all',
+] as const
+export type ClearFieldEffectsCategory = (typeof LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES)[number]
+
+export type LivePlayFieldEffectKind = MapWeatherKind | MapTerrainKind | MapRoomKind
+
+export const LIVE_PLAY_WEATHER_KIND_VALUES = [
+  'sunny',
+  'rainy',
+  'hail',
+  'sandstorm',
+] as const satisfies readonly MapWeatherKind[]
+
+export const LIVE_PLAY_TERRAIN_KIND_VALUES = [
+  'electric',
+  'grassy',
+  'misty',
+  'psychic',
+] as const satisfies readonly MapTerrainKind[]
+
+export const LIVE_PLAY_ROOM_KIND_VALUES = [
+  'magic',
+  'trick',
+  'wonder',
+] as const satisfies readonly MapRoomKind[]
+
+export const LIVE_PLAY_FIELD_EFFECT_KIND_VALUES = [
+  ...LIVE_PLAY_WEATHER_KIND_VALUES,
+  ...LIVE_PLAY_TERRAIN_KIND_VALUES,
+  ...LIVE_PLAY_ROOM_KIND_VALUES,
+] as const satisfies readonly LivePlayFieldEffectKind[]
+
+export interface ClearFieldEffectsAllPayload {
+  readonly category: 'all'
+}
+
+export interface ClearWeatherEffectsPayload {
+  readonly category: 'weather'
+  readonly kinds?: readonly MapWeatherKind[]
+}
+
+export interface ClearTerrainEffectsPayload {
+  readonly category: 'terrain'
+  readonly kinds?: readonly MapTerrainKind[]
+}
+
+export interface ClearRoomEffectsPayload {
+  readonly category: 'room'
+  readonly kinds?: readonly MapRoomKind[]
+}
+
+export type ClearFieldEffectsPayload =
+  | ClearFieldEffectsAllPayload
+  | ClearWeatherEffectsPayload
+  | ClearTerrainEffectsPayload
+  | ClearRoomEffectsPayload
 
 /**
  * Duplicate cells reject by default. Use `normalize` only for idempotent batch modes
@@ -177,8 +245,15 @@ const EXPECTED_GRID_COORDINATE = 'safe non-negative integer grid coordinate'
 const BATCH_VALIDATION_CODE_SET = new Set<unknown>(LIVE_PLAY_BATCH_VALIDATION_CODES)
 const LIVE_PLAY_CLEAR_HAZARDS_MODE_SET = new Set<unknown>(LIVE_PLAY_CLEAR_HAZARDS_MODES)
 const LIVE_PLAY_HAZARD_KIND_SET = new Set<unknown>(LIVE_PLAY_HAZARD_KIND_VALUES)
+const LIVE_PLAY_FIELD_EFFECT_CATEGORY_SET = new Set<unknown>(LIVE_PLAY_FIELD_EFFECT_CATEGORIES)
+const LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORY_SET = new Set<unknown>(LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES)
+const LIVE_PLAY_FIELD_EFFECT_KIND_SET = new Set<unknown>(LIVE_PLAY_FIELD_EFFECT_KIND_VALUES)
+const LIVE_PLAY_WEATHER_KIND_SET = new Set<unknown>(LIVE_PLAY_WEATHER_KIND_VALUES)
+const LIVE_PLAY_TERRAIN_KIND_SET = new Set<unknown>(LIVE_PLAY_TERRAIN_KIND_VALUES)
+const LIVE_PLAY_ROOM_KIND_SET = new Set<unknown>(LIVE_PLAY_ROOM_KIND_VALUES)
 const GRID_CELL_FIELDS = ['x', 'y', 'z'] as const
 const CLEAR_HAZARDS_PAYLOAD_FIELDS = ['mode', 'cells', 'kind'] as const
+const CLEAR_FIELD_EFFECTS_PAYLOAD_FIELDS = ['category', 'kinds'] as const
 
 const hasOwn = (record: UnknownRecord, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(record, key)
@@ -245,6 +320,27 @@ export const isClearHazardsMode = (value: unknown): value is ClearHazardsMode =>
 
 export const isLivePlayHazardKind = (value: unknown): value is MapHazardKind =>
   LIVE_PLAY_HAZARD_KIND_SET.has(value)
+
+export const isLivePlayFieldEffectCategory = (
+  value: unknown,
+): value is LivePlayFieldEffectCategory => LIVE_PLAY_FIELD_EFFECT_CATEGORY_SET.has(value)
+
+export const isClearFieldEffectsCategory = (
+  value: unknown,
+): value is ClearFieldEffectsCategory => LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORY_SET.has(value)
+
+export const isLivePlayFieldEffectKind = (
+  value: unknown,
+): value is LivePlayFieldEffectKind => LIVE_PLAY_FIELD_EFFECT_KIND_SET.has(value)
+
+export const isLivePlayFieldEffectKindForCategory = (
+  category: LivePlayFieldEffectCategory,
+  value: unknown,
+): value is LivePlayFieldEffectKind => {
+  if (category === 'weather') return LIVE_PLAY_WEATHER_KIND_SET.has(value)
+  if (category === 'terrain') return LIVE_PLAY_TERRAIN_KIND_SET.has(value)
+  return LIVE_PLAY_ROOM_KIND_SET.has(value)
+}
 
 export const isLivePlayBatchRecord = (value: unknown): value is UnknownRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -605,6 +701,126 @@ export const parseClearHazardsPayload = (
     cells: cellsResult.value,
     ...(kindResult.value === undefined ? {} : { kind: kindResult.value }),
   })
+}
+
+const fieldEffectKindLabel = (category: LivePlayFieldEffectCategory): string => {
+  if (category === 'weather') return 'weather'
+  if (category === 'terrain') return 'terrain'
+  return 'room'
+}
+
+const fieldEffectKindValuesForCategory = (
+  category: LivePlayFieldEffectCategory,
+): readonly LivePlayFieldEffectKind[] => {
+  if (category === 'weather') return LIVE_PLAY_WEATHER_KIND_VALUES
+  if (category === 'terrain') return LIVE_PLAY_TERRAIN_KIND_VALUES
+  return LIVE_PLAY_ROOM_KIND_VALUES
+}
+
+const unexpectedClearFieldEffectsCategoryFieldIssue = (
+  path: string,
+  field: string,
+  category: ClearFieldEffectsCategory,
+  received: unknown,
+): LivePlayBatchValidationIssue => ({
+  path: appendPath(path, field),
+  code: 'unknown-field',
+  message: `${appendPath(path, field)} is not supported for clearFieldEffects ${category} category.`,
+  expected: 'category',
+  received: describeReceived(received),
+})
+
+const parseClearFieldEffectsKind = (
+  category: LivePlayFieldEffectCategory,
+  value: unknown,
+  path: string,
+): LivePlayBatchValidationResult<LivePlayFieldEffectKind> => {
+  if (isLivePlayFieldEffectKindForCategory(category, value)) return success(value)
+  return failure([{
+    path,
+    code: 'invalid-kind',
+    message: `${path} must be a supported ${fieldEffectKindLabel(category)} effect kind.`,
+    expected: fieldEffectKindValuesForCategory(category).join(' | '),
+    received: describeReceived(value),
+  }])
+}
+
+const parseClearFieldEffectsKinds = (
+  category: LivePlayFieldEffectCategory,
+  value: unknown,
+  path: string,
+): LivePlayBatchValidationResult<readonly LivePlayFieldEffectKind[]> => {
+  const kindsResult = parseLivePlayBatchBoundedArray<LivePlayFieldEffectKind>(value, {
+    path,
+    minItems: 1,
+    maxItems: LIVE_PLAY_BATCH_MAX_FIELD_EFFECT_OPERATIONS,
+    itemName: `${fieldEffectKindLabel(category)} effect kinds`,
+    parseItem: (item, itemPath) => parseClearFieldEffectsKind(category, item, itemPath),
+  })
+  if (!kindsResult.valid) return failure(kindsResult.issues)
+
+  const issues: MutableIssueList = []
+  const seen = new Map<string, number>()
+  const uniqueKinds: LivePlayFieldEffectKind[] = []
+
+  kindsResult.value.forEach((kind, index) => {
+    const firstIndex = seen.get(kind)
+    if (firstIndex !== undefined) {
+      addIssue(
+        issues,
+        `${path}[${index}]`,
+        'duplicate-kind',
+        `${path}[${index}] duplicates ${path}[${firstIndex}] for ${fieldEffectKindLabel(category)} effect kind ${kind}.`,
+        'unique field-effect kind',
+        kind,
+      )
+      return
+    }
+    seen.set(kind, index)
+    uniqueKinds.push(kind)
+  })
+
+  if (issues.length > 0) return failure(issues)
+  return success(uniqueKinds)
+}
+
+export const parseClearFieldEffectsPayload = (
+  value: unknown,
+  path = 'payload',
+): LivePlayBatchValidationResult<ClearFieldEffectsPayload> => {
+  const recordResult = parseLivePlayBatchStrictObject(value, {
+    path,
+    allowedFields: CLEAR_FIELD_EFFECTS_PAYLOAD_FIELDS,
+    requiredFields: ['category'],
+    description: 'clearFieldEffects payload',
+  })
+  if (!recordResult.valid) return failure(recordResult.issues)
+
+  const record = recordResult.value
+  const category = record.category
+  if (!isClearFieldEffectsCategory(category)) {
+    return failure([{
+      path: appendPath(path, 'category'),
+      code: 'invalid-mode',
+      message: `${appendPath(path, 'category')} must be a supported clearFieldEffects category.`,
+      expected: LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES.join(' | '),
+      received: describeReceived(category),
+    }])
+  }
+
+  if (category === 'all') {
+    if (hasOwn(record, 'kinds')) {
+      return failure([unexpectedClearFieldEffectsCategoryFieldIssue(path, 'kinds', category, record.kinds)])
+    }
+    return success({ category })
+  }
+
+  if (!hasOwn(record, 'kinds')) return success({ category }) as LivePlayBatchValidationResult<ClearFieldEffectsPayload>
+
+  const kindsResult = parseClearFieldEffectsKinds(category, record.kinds, appendPath(path, 'kinds'))
+  if (!kindsResult.valid) return failure(kindsResult.issues)
+
+  return success({ category, kinds: kindsResult.value } as ClearFieldEffectsPayload)
 }
 
 export const parseLivePlayBatchTerrainVoxelCells = (

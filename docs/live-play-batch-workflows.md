@@ -27,6 +27,8 @@ Unique grid-cell helpers reject duplicate cells by default so mixed add/remove c
 
 The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` payload modes. `all` and `kind` use the conservative map `hazards` lane scope; `cells` uses bounded, normalized explicit hazard-cell scopes so unrelated cell batches can remain independent while still conflicting with broad hazard-lane clears. The batch is exposed through `POST /api/maps/hazards/clear` and must return a terminal live-play command result whose operation ID, map slug, command type, patch type, and patch scopes validate against the submitted command body.
 
+The shared `clearFieldEffects` contract supports category-only clears for `weather`, `terrain`, `room`, and `all`, plus bounded explicit `kinds` lists for one non-`all` category. Empty, duplicate, unknown, cross-category, or over-limit kind lists reject before server mutation. All `clearFieldEffects` modes intentionally use the conservative map `fieldEffects` lane scope so they conflict with set/remove/tick field-effect commands but not unrelated token movement.
+
 ## Summary classification
 
 | Workflow | Current live-play behavior | Classification | Why |
@@ -68,8 +70,8 @@ The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` pa
   - `removeTerrainFromMenu` / `removeRoomFromMenu` -> `removeFieldEffect` for one category/kind;
   - `clearAllFieldEffectsFromMenu` -> `livePlayCommands.removeFieldEffect({ category: 'all' })` after one confirmation.
 - **Current command route(s):** `POST /api/maps/field-effects/remove` via `MAP_API_PATHS.removeFieldEffect`; related single-effect routes are `/api/maps/field-effects/set` and `/api/maps/field-effects/tick`.
-- **Current command type:** `removeFieldEffect` for clears, `setFieldEffect` for setting/round updates, and `tickFieldEffectDurations` for duration cleanup.
-- **Current payload:** category-only clear (`weather`, `terrain`, `room`, or `all`) or category plus explicit `kind`.
+- **Current command type:** `removeFieldEffect` for routed clears, `setFieldEffect` for setting/round updates, and `tickFieldEffectDurations` for duration cleanup. The shared `clearFieldEffects` batch command contract is defined for the next routing/wiring step.
+- **Current payload:** routed clears use category-only clear (`weather`, `terrain`, `room`, or `all`) or category plus explicit `kind`; the batch contract uses `{ category }` or `{ category, kinds }` with a bounded explicit kind list.
 - **Current command scopes:** `[{ kind: 'map', lane: 'fieldEffects' }]`.
 - **Authority scope:** GM-only map-effect authority. Server validates category/kind combinations, payload shape, stale/conflicting revisions, and no-op clears.
 - **Likely batch conflict scopes:** conservative map `fieldEffects` lane for all category/kind modes. This should conflict with set/remove/tick field-effect commands but not unrelated token movement.

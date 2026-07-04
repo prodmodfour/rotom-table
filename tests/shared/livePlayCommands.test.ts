@@ -1,10 +1,12 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
+  LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES,
   LIVE_PLAY_CLEAR_HAZARDS_MODES,
   LIVE_PLAY_COMMAND_REJECTION_REASONS,
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_COMMAND_TYPE_VALUES,
+  LIVE_PLAY_FIELD_EFFECT_KIND_VALUES,
   LIVE_PLAY_GROUP_INVENTORY_SCOPE_FIELDS,
   LIVE_PLAY_HAZARD_KIND_VALUES,
   LIVE_PLAY_MAP_COMMAND_TYPE_VALUES,
@@ -20,15 +22,18 @@ import {
   assertValidShopCheckoutCommandEnvelope,
   collectLivePlayCommandEnvelopeIssues,
   collectShopCheckoutCommandEnvelopeIssues,
+  createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
   createLivePlayAcceptedResult,
   createLivePlayDuplicateResult,
   createLivePlayOpId,
   createLivePlayRejectedResult,
+  isClearFieldEffectsCategory,
   isClearHazardsMode,
   isLivePlayBaseRevision,
   isLivePlayCommandRejectionReason,
   isLivePlayCommandType,
+  isLivePlayFieldEffectKind,
   isLivePlayGroupInventoryScopeField,
   isLivePlayHazardKind,
   isLivePlayMapCommandType,
@@ -41,6 +46,7 @@ import {
   isShopCheckoutTrainerSheetScopeField,
   isValidLivePlayCommandEnvelope,
   isValidShopCheckoutCommandEnvelope,
+  parseClearFieldEffectsPayload,
   parseClearHazardsPayload,
   parseLivePlayBaseRevision,
   parseLivePlayCommandType,
@@ -51,12 +57,15 @@ import {
   validateShopCheckoutCommandEnvelope,
   type BuildTerrainVoxelLivePlayCommand,
   type BuildTerrainVoxelPayload,
+  type ClearFieldEffectsLivePlayCommand,
+  type ClearFieldEffectsPayload,
   type ClearHazardsLivePlayCommand,
   type ClearHazardsPayload,
   type DeleteTokenLivePlayCommand,
   type DeleteTokenPayload,
   type GrantExperienceLivePlayCommand,
   type GrantExperiencePayload,
+  type FieldEffectsUpdatedPatchPayload,
   type HazardsClearedPatchPayload,
   type LivePlayBaseRevision,
   type LivePlayCommandEnvelope,
@@ -188,6 +197,7 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setInitiative')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('placeHazard')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('clearHazards')
+    expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('clearFieldEffects')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('setFieldEffect')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('buildTerrainVoxel')
     expect(LIVE_PLAY_COMMAND_TYPE_VALUES).toContain('removeTerrainVoxel')
@@ -201,15 +211,18 @@ describe('live-play command contract', () => {
     expect(LIVE_PLAY_MAP_COMMAND_TYPE_VALUES).not.toContain('shopCheckout')
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS)).toBe(true)
+    expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS)).toBe(true)
     expect(isLivePlayCommandType(LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT)).toBe(true)
     expect(isLivePlayMapCommandType(LIVE_PLAY_COMMAND_TYPES.TURN_TOKEN)).toBe(true)
     expect(isLivePlayMapCommandType(LIVE_PLAY_COMMAND_TYPES.SHOP_CHECKOUT)).toBe(false)
     expect(isLivePlayCommandType('teleportToken')).toBe(false)
     expect(parseLivePlayCommandType('useMove')).toBe('useMove')
     expect(parseLivePlayCommandType('clearHazards')).toBe('clearHazards')
+    expect(parseLivePlayCommandType('clearFieldEffects')).toBe('clearFieldEffects')
     expect(parseLivePlayCommandType('shopCheckout')).toBe('shopCheckout')
     expect(parseLivePlayMapCommandType('useMove')).toBe('useMove')
     expect(parseLivePlayMapCommandType('clearHazards')).toBe('clearHazards')
+    expect(parseLivePlayMapCommandType('clearFieldEffects')).toBe('clearFieldEffects')
     expect(() => parseLivePlayCommandType('teleportToken')).toThrow(
       'supported live-play command type',
     )
@@ -258,10 +271,28 @@ describe('live-play command contract', () => {
     ])
     expect(LIVE_PLAY_CLEAR_HAZARDS_MODES).toEqual(['all', 'cells', 'kind'])
     expect(LIVE_PLAY_HAZARD_KIND_VALUES).toEqual(['spikes', 'toxic-spikes', 'sticky-web', 'stealth-rock', 'fire'])
+    expect(LIVE_PLAY_CLEAR_FIELD_EFFECT_CATEGORIES).toEqual(['weather', 'terrain', 'room', 'all'])
+    expect(LIVE_PLAY_FIELD_EFFECT_KIND_VALUES).toEqual([
+      'sunny',
+      'rainy',
+      'hail',
+      'sandstorm',
+      'electric',
+      'grassy',
+      'misty',
+      'psychic',
+      'magic',
+      'trick',
+      'wonder',
+    ])
     expect(isClearHazardsMode('cells')).toBe(true)
     expect(isClearHazardsMode('explicit')).toBe(false)
     expect(isLivePlayHazardKind('stealth-rock')).toBe(true)
     expect(isLivePlayHazardKind('bad-hazard')).toBe(false)
+    expect(isClearFieldEffectsCategory('weather')).toBe(true)
+    expect(isClearFieldEffectsCategory('screen')).toBe(false)
+    expect(isLivePlayFieldEffectKind('sunny')).toBe(true)
+    expect(isLivePlayFieldEffectKind('fog')).toBe(false)
     expect(isLivePlayMapScopeLane('initiative')).toBe(true)
     expect(isLivePlayMapScopeLane('wholeMap')).toBe(false)
     expect(isLivePlayTokenScopeField('position')).toBe(true)
@@ -424,6 +455,27 @@ describe('live-play command contract', () => {
     expect(fieldEffectCommand.type).toBe('setFieldEffect')
     expect(fieldEffectCommand.payload).toEqual({ category: 'weather', kind: 'sunny', rounds: 5, weatherMode: 'replace' })
 
+    const clearFieldEffectsPayload = {
+      category: 'terrain',
+      kinds: ['electric', 'grassy'],
+    } as const satisfies ClearFieldEffectsPayload
+    const clearFieldEffectsCommand = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId,
+      mapSlug,
+      baseRevision,
+      type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+      scopes: createClearFieldEffectsCommandScopes(clearFieldEffectsPayload),
+      payload: clearFieldEffectsPayload,
+    } as const satisfies ClearFieldEffectsLivePlayCommand
+
+    expect(clearFieldEffectsCommand.type).toBe('clearFieldEffects')
+    expect(clearFieldEffectsCommand.scopes).toEqual([{ kind: 'map', lane: 'fieldEffects' }])
+    expect(clearFieldEffectsCommand.payload).toEqual({
+      category: 'terrain',
+      kinds: ['electric', 'grassy'],
+    })
+
     const buildTerrainCommand = {
       schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
       opId,
@@ -513,6 +565,7 @@ describe('live-play command contract', () => {
     expectTypeOf(initiativeCommand.payload).toMatchTypeOf<SetInitiativePayload>()
     expectTypeOf(hazardCommand.payload).toMatchTypeOf<PlaceHazardPayload>()
     expectTypeOf(clearHazardsCommand.payload).toMatchTypeOf<ClearHazardsPayload>()
+    expectTypeOf(clearFieldEffectsCommand.payload).toMatchTypeOf<ClearFieldEffectsPayload>()
     expectTypeOf(fieldEffectCommand.payload).toMatchTypeOf<SetFieldEffectPayload>()
     expectTypeOf(buildTerrainCommand.payload).toMatchTypeOf<BuildTerrainVoxelPayload>()
     expectTypeOf(removeTerrainCommand.payload).toMatchTypeOf<RemoveTerrainVoxelPayload>()
@@ -578,6 +631,63 @@ describe('live-play command contract', () => {
       .toBe('unknown-field')
   })
 
+  it('validates clearFieldEffects category and explicit-kind payloads', () => {
+    const all = parseClearFieldEffectsPayload({ category: 'all' })
+    expect(all).toEqual({ valid: true, value: { category: 'all' }, issues: [] })
+
+    const categoryOnly = parseClearFieldEffectsPayload({ category: 'weather' })
+    expect(categoryOnly).toEqual({ valid: true, value: { category: 'weather' }, issues: [] })
+
+    const explicitKindsInput = {
+      category: 'room',
+      kinds: ['magic', 'trick'],
+    }
+    const explicitKindsBefore = structuredClone(explicitKindsInput)
+    const explicitKinds = parseClearFieldEffectsPayload(explicitKindsInput)
+    expect(explicitKinds.valid).toBe(true)
+    if (!explicitKinds.valid) throw new Error('expected explicit clearFieldEffects kinds payload')
+    expect(explicitKinds.value).toEqual({ category: 'room', kinds: ['magic', 'trick'] })
+    expect(explicitKindsInput).toEqual(explicitKindsBefore)
+
+    const emptyKinds = parseClearFieldEffectsPayload({ category: 'terrain', kinds: [] })
+    expect(emptyKinds.valid).toBe(false)
+    if (emptyKinds.valid) throw new Error('expected empty clearFieldEffects kinds payload to reject')
+    expect(new Map(emptyKinds.issues.map((issue) => [issue.path, issue])).get('payload.kinds')).toMatchObject({
+      code: 'empty-array',
+      message: expect.stringContaining('at least 1'),
+    })
+
+    const invalidCategory = parseClearFieldEffectsPayload({ category: 'screen' })
+    expect(invalidCategory.valid).toBe(false)
+    if (invalidCategory.valid) throw new Error('expected invalid category to reject')
+    expect(new Map(invalidCategory.issues.map((issue) => [issue.path, issue])).get('payload.category')?.code)
+      .toBe('invalid-mode')
+
+    const invalidKindForCategory = parseClearFieldEffectsPayload({ category: 'weather', kinds: ['electric'] })
+    expect(invalidKindForCategory.valid).toBe(false)
+    if (invalidKindForCategory.valid) throw new Error('expected mismatched kind to reject')
+    expect(new Map(invalidKindForCategory.issues.map((issue) => [issue.path, issue])).get('payload.kinds[0]')?.code)
+      .toBe('invalid-kind')
+
+    const duplicateKinds = parseClearFieldEffectsPayload({ category: 'weather', kinds: ['sunny', 'sunny'] })
+    expect(duplicateKinds.valid).toBe(false)
+    if (duplicateKinds.valid) throw new Error('expected duplicate kinds to reject')
+    expect(new Map(duplicateKinds.issues.map((issue) => [issue.path, issue])).get('payload.kinds[1]')?.code)
+      .toBe('duplicate-kind')
+
+    const unsupportedAllKinds = parseClearFieldEffectsPayload({ category: 'all', kinds: ['sunny'] })
+    expect(unsupportedAllKinds.valid).toBe(false)
+    if (unsupportedAllKinds.valid) throw new Error('expected all+kinds payload to reject')
+    expect(new Map(unsupportedAllKinds.issues.map((issue) => [issue.path, issue])).get('payload.kinds')?.code)
+      .toBe('unknown-field')
+
+    const unknownField = parseClearFieldEffectsPayload({ category: 'weather', profileId: 'private-profile' })
+    expect(unknownField.valid).toBe(false)
+    if (unknownField.valid) throw new Error('expected unknown fields to reject')
+    expect(new Map(unknownField.issues.map((issue) => [issue.path, issue])).get('payload.profileId')?.code)
+      .toBe('unknown-field')
+  })
+
   it('constructs conservative and precise clearHazards conflict scopes', () => {
     expect(createClearHazardsCommandScopes({ mode: 'all' })).toEqual([
       { kind: 'map', lane: 'hazards' },
@@ -600,6 +710,18 @@ describe('live-play command contract', () => {
       { kind: 'map', lane: 'hazards', cell: { x: 3, y: 0, z: 4 } },
     ])
     expect('cell' in scopes[0] ? scopes[0].cell : null).not.toBe(payload.cells[0])
+  })
+
+  it('constructs conservative clearFieldEffects conflict scopes', () => {
+    expect(createClearFieldEffectsCommandScopes({ category: 'all' })).toEqual([
+      { kind: 'map', lane: 'fieldEffects' },
+    ])
+    expect(createClearFieldEffectsCommandScopes({ category: 'weather' })).toEqual([
+      { kind: 'map', lane: 'fieldEffects' },
+    ])
+    expect(createClearFieldEffectsCommandScopes({ category: 'room', kinds: ['magic'] })).toEqual([
+      { kind: 'map', lane: 'fieldEffects' },
+    ])
   })
 
   it('models clearHazards map-hazard accepted patches with final authoritative hazards', () => {
@@ -625,6 +747,39 @@ describe('live-play command contract', () => {
     } as const satisfies LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS, HazardsClearedPatchPayload>
 
     expect(patch.payload.current).toEqual([{ kind: 'fire', x: 3, y: 0, z: 4 }])
+  })
+
+  it('models clearFieldEffects map-field-effect accepted patches with final authoritative effects', () => {
+    const payload = {
+      command: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+      category: 'weather',
+      kinds: ['sunny'],
+      previous: {
+        weather: [{ kind: 'sunny', rounds: 2 }],
+        terrains: [{ kind: 'electric', rounds: 3 }],
+        rooms: [],
+      },
+      current: {
+        weather: [],
+        terrains: [{ kind: 'electric', rounds: 3 }],
+        rooms: [],
+      },
+    } as const satisfies FieldEffectsUpdatedPatchPayload
+
+    const patch = {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      type: LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS,
+      mapSlug,
+      revision: 8,
+      scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+      payload,
+    } as const satisfies LivePlayPatch<typeof LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS, FieldEffectsUpdatedPatchPayload>
+
+    expect(patch.payload.current).toEqual({
+      weather: [],
+      terrains: [{ kind: 'electric', rounds: 3 }],
+      rooms: [],
+    })
   })
 
   it('models shop checkout command envelopes without map persistence fields', () => {

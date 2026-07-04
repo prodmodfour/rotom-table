@@ -255,6 +255,12 @@ const assertMapEffectsCommandType = (
   if (expectedType && command.type !== expectedType) {
     rejectLivePlayCommand('invalid', `This route only accepts ${expectedType} commands`)
   }
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS) {
+    rejectLivePlayCommand(
+      'invalid',
+      'This route does not accept clearFieldEffects commands yet',
+    )
+  }
   if (!mapEffectsCommandTypes.has(command.type)) {
     rejectLivePlayCommand(
       'invalid',

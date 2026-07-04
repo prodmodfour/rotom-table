@@ -1,7 +1,7 @@
 export * from './livePlayBatchCommands'
 
 import { isSlug, SLUG_PATTERN_DESCRIPTION } from './paths'
-import type { ClearHazardsPayload } from './livePlayBatchCommands'
+import type { ClearFieldEffectsPayload, ClearHazardsPayload } from './livePlayBatchCommands'
 import { isSheetKind, type SheetKind } from './sheets'
 import type {
   GridAnchor,
@@ -55,6 +55,7 @@ export const LIVE_PLAY_COMMAND_TYPES = {
   PLACE_HAZARD: 'placeHazard',
   REMOVE_HAZARD: 'removeHazard',
   CLEAR_HAZARDS: 'clearHazards',
+  CLEAR_FIELD_EFFECTS: 'clearFieldEffects',
   SET_FIELD_EFFECT: 'setFieldEffect',
   REMOVE_FIELD_EFFECT: 'removeFieldEffect',
   TICK_FIELD_EFFECT_DURATIONS: 'tickFieldEffectDurations',
@@ -92,6 +93,7 @@ export const LIVE_PLAY_MAP_COMMAND_TYPE_VALUES = [
   LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
   LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
@@ -230,6 +232,8 @@ export type LivePlayScope = LivePlayMapScope | LivePlayTokenScope | LivePlayShee
 export type LivePlayHazardsScope = LivePlayMapScope & { readonly lane: 'hazards' }
 export type LivePlayHazardCellScope = LivePlayHazardsScope & { readonly cell: GridAnchor }
 export type ClearHazardsLivePlayScope = LivePlayHazardsScope | LivePlayHazardCellScope
+export type LivePlayFieldEffectsScope = LivePlayMapScope & { readonly lane: 'fieldEffects' }
+export type ClearFieldEffectsLivePlayScope = LivePlayFieldEffectsScope
 
 export type ShopCheckoutLivePlayScope =
   | LivePlayShopScope
@@ -510,6 +514,15 @@ export const createClearHazardsCommandScopes = (
     : [createLivePlayHazardsScope()]
 )
 
+export const createLivePlayFieldEffectsScope = (): LivePlayFieldEffectsScope => ({
+  kind: 'map',
+  lane: 'fieldEffects',
+})
+
+export const createClearFieldEffectsCommandScopes = (
+  _payload: ClearFieldEffectsPayload,
+): readonly ClearFieldEffectsLivePlayScope[] => [createLivePlayFieldEffectsScope()]
+
 export type MoveTokenLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   MoveTokenPayload,
@@ -642,6 +655,12 @@ export type ClearHazardsLivePlayCommand = LivePlayCommandEnvelope<
   ClearHazardsLivePlayScope
 >
 
+export type ClearFieldEffectsLivePlayCommand = LivePlayCommandEnvelope<
+  typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+  ClearFieldEffectsPayload,
+  ClearFieldEffectsLivePlayScope
+>
+
 export type SetFieldEffectLivePlayCommand = LivePlayCommandEnvelope<
   typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
   SetFieldEffectPayload,
@@ -693,6 +712,7 @@ export type LivePlayMapEffectCommand =
   | PlaceHazardLivePlayCommand
   | RemoveHazardLivePlayCommand
   | ClearHazardsLivePlayCommand
+  | ClearFieldEffectsLivePlayCommand
   | SetFieldEffectLivePlayCommand
   | RemoveFieldEffectLivePlayCommand
   | TickFieldEffectDurationsLivePlayCommand
@@ -851,6 +871,7 @@ export type HazardsUpdatedPatchPayload = HazardCellUpdatedPatchPayload | Hazards
 
 export interface FieldEffectsUpdatedPatchPayload {
   readonly command:
+    | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS
     | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
     | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
     | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
@@ -858,6 +879,7 @@ export interface FieldEffectsUpdatedPatchPayload {
   readonly current: MapFieldEffects
   readonly category?: FieldEffectRemoveCategory
   readonly kind?: FieldEffectKind
+  readonly kinds?: readonly FieldEffectKind[]
   readonly tickAmount?: number
 }
 
