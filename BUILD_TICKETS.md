@@ -1,6 +1,6 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: NOT_DONE
+AUTOMATION_STATUS: DONE
 
 Ticket statuses:
 
@@ -525,7 +525,7 @@ Status: DONE
 
 ## 018 — LP-S3-018 — Update live-play authority docs for ephemeral presence
 
-Status: TODO
+Status: DONE
 
 **Goal:** Document the boundary between authoritative commands and ephemeral table-feel state.
 
