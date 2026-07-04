@@ -132,7 +132,7 @@ Status: DONE
 
 ## 004 — LP-S3-004 — Add presence heartbeat/update route
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let clients publish their current ephemeral presence state without creating authoritative game mutations.
 
