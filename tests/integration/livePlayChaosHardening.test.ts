@@ -8,6 +8,7 @@ import type { ApiGetOptions } from '../../src/utils/apiClient'
 import {
   ClientTab,
   FullSystemChaosHarness,
+  deferred,
   flushAsync,
   moveTokenPosition,
   type ClientTabApiHandler,
@@ -62,6 +63,58 @@ const waitForCaughtUp = async (tab: ClientTab) => {
 const waitForReady = async (tab: ClientTab) => {
   await vi.waitFor(() => expect(tab.readiness.value).toBe(true))
 }
+
+type MoveInterceptionMode = 'hold-before-server' | 'hold-after-server' | 'fail-before-server'
+
+interface MoveInterception {
+  readonly mode: MoveInterceptionMode
+  readonly gate: ReturnType<typeof deferred<void>>
+  readonly bodies: Record<string, unknown>[]
+}
+
+const createMoveInterception = (mode: MoveInterceptionMode): MoveInterception => ({
+  mode,
+  gate: deferred<void>(),
+  bodies: [],
+})
+
+const interceptedOpId = (interception: MoveInterception): string => {
+  const opId = interception.bodies[0]?.opId
+  if (typeof opId !== 'string') throw new Error('Expected intercepted live-play command body to include an opId')
+  return opId
+}
+
+const createInterceptableMoveApi = (
+  harness: FullSystemChaosHarness,
+  getTab: () => ClientTab,
+  nextInterception: { current: MoveInterception | null },
+): ClientTabApiHandler => ({
+  getJson: (path, options) => {
+    const tab = getTab()
+    return harness.apiGet(path, options, tab.role.value, tab.selectedProfileId.value)
+  },
+  postJson: async (path, body) => {
+    const tab = getTab()
+    const interception = path === MAP_API_PATHS.moveToken ? nextInterception.current : null
+    if (interception) {
+      nextInterception.current = null
+      interception.bodies.push(body as Record<string, unknown>)
+      if (interception.mode === 'hold-before-server' || interception.mode === 'fail-before-server') {
+        await interception.gate.promise
+        if (interception.mode === 'fail-before-server') {
+          throw new Error('simulated network loss before command reached server')
+        }
+        return harness.apiPost(path, body, tab.role.value, tab.selectedProfileId.value)
+      }
+
+      const response = await harness.apiPost(path, body, tab.role.value, tab.selectedProfileId.value)
+      await interception.gate.promise
+      return response
+    }
+
+    return harness.apiPost(path, body, tab.role.value, tab.selectedProfileId.value)
+  },
+})
 
 beforeEach(() => {
   vi.stubGlobal('window', {
@@ -286,6 +339,160 @@ describe('Final Wave C full-system live-play chaos hardening', () => {
     expect(tab.currentMap?.revision).toBe(3)
     expect(moveTokenPosition(tab.currentMap)).toEqual({ x: 5, y: 0, z: 5 })
     expect(tab.presentationEvents).toHaveLength(presentationCount)
+  })
+
+  it('keeps predicted multi-client moves convergent through scoped concurrency and same-token conflicts', async () => {
+    const harness = createHarness()
+    const nextInterception: { current: MoveInterception | null } = { current: null }
+    const tabA = await createTab(harness, {
+      label: 'prediction-client-a',
+      api: (getTab) => createInterceptableMoveApi(harness, getTab, nextInterception),
+    })
+    await waitForCaughtUp(tabA)
+    await tabA.hydrate()
+    await waitForReady(tabA)
+
+    const tabB = await createTab(harness, { label: 'prediction-client-b' })
+    await waitForCaughtUp(tabB)
+    await tabB.hydrate()
+    await waitForReady(tabB)
+
+    const heldAlpha = createMoveInterception('hold-before-server')
+    nextInterception.current = heldAlpha
+    const alphaMove = tabA.commands.moveToken({ placementId: 'token-alpha', position: { x: 3, y: 0, z: 3 } })
+    await vi.waitFor(() => expect(heldAlpha.bodies).toHaveLength(1))
+    expect(tabA.pendingPredictionOpIds).toEqual([interceptedOpId(heldAlpha)])
+    expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+    expect(harness.readMap().revision).toBe(0)
+
+    await expect(tabB.commands.moveToken({ placementId: 'token-beta', position: { x: 5, y: 0, z: 1 } }))
+      .resolves.toMatchObject({ dispatched: true })
+    await vi.waitFor(() => expect(tabA.currentMap?.revision).toBe(1))
+    expect(tabA.pendingPredictionOpIds).toEqual([interceptedOpId(heldAlpha)])
+    expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+    expect(moveTokenPosition(tabA.currentMap, 'token-beta')).toEqual({ x: 5, y: 0, z: 1 })
+
+    heldAlpha.gate.resolve()
+    await expect(alphaMove).resolves.toMatchObject({ dispatched: true, opId: interceptedOpId(heldAlpha) })
+    await vi.waitFor(() => expect(tabB.currentMap?.revision).toBe(2))
+    expect(harness.readMap().revision).toBe(2)
+    expect(moveTokenPosition(harness.readMap(), 'token-alpha')).toEqual({ x: 3, y: 0, z: 3 })
+    expect(moveTokenPosition(harness.readMap(), 'token-beta')).toEqual({ x: 5, y: 0, z: 1 })
+    await waitForReady(tabA)
+    await waitForReady(tabB)
+
+    const heldStaleAlpha = createMoveInterception('hold-before-server')
+    nextInterception.current = heldStaleAlpha
+    const staleAlphaMove = tabA.commands.moveToken({ placementId: 'token-alpha', position: { x: 7, y: 0, z: 7 } })
+    await vi.waitFor(() => expect(heldStaleAlpha.bodies).toHaveLength(1))
+    expect(tabA.pendingPredictionOpIds).toEqual([interceptedOpId(heldStaleAlpha)])
+    expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 7, y: 0, z: 7 })
+
+    await expect(tabB.commands.moveToken({ placementId: 'token-alpha', position: { x: 1, y: 0, z: 6 } }))
+      .resolves.toMatchObject({ dispatched: true })
+    await vi.waitFor(() => expect(tabA.pendingPredictionOpIds).toEqual([]))
+    expect(moveTokenPosition(tabA.currentMap, 'token-alpha')).toEqual({ x: 1, y: 0, z: 6 })
+    expect(moveTokenPosition(tabA.currentMap, 'token-beta')).toEqual({ x: 5, y: 0, z: 1 })
+
+    heldStaleAlpha.gate.resolve()
+    await expect(staleAlphaMove).resolves.toMatchObject({ dispatched: false, opId: interceptedOpId(heldStaleAlpha) })
+    expect(harness.readMap().revision).toBe(3)
+    expect(moveTokenPosition(harness.readMap(), 'token-alpha')).toEqual({ x: 1, y: 0, z: 6 })
+    expect(moveTokenPosition(harness.readMap(), 'token-beta')).toEqual({ x: 5, y: 0, z: 1 })
+  })
+
+  it('keeps prediction state idempotent across SSE-first and HTTP-first terminal delivery', async () => {
+    const harness = createHarness()
+    const nextInterception: { current: MoveInterception | null } = { current: null }
+    const tab = await createTab(harness, {
+      label: 'prediction-ordering-tab',
+      api: (getTab) => createInterceptableMoveApi(harness, getTab, nextInterception),
+    })
+    await waitForCaughtUp(tab)
+    await tab.hydrate()
+    await waitForReady(tab)
+
+    const heldSseFirst = createMoveInterception('hold-after-server')
+    nextInterception.current = heldSseFirst
+    const sseFirst = tab.commands.moveToken({ placementId: 'token-alpha', position: { x: 4, y: 0, z: 4 } })
+    await vi.waitFor(() => expect(heldSseFirst.bodies).toHaveLength(1))
+    await vi.waitFor(() => expect(tab.currentMap?.revision).toBe(1))
+    expect(tab.pendingPredictionOpIds).toEqual([])
+    expect(tab.pendingOutboxOpIds).toEqual([])
+    expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 4, y: 0, z: 4 })
+
+    heldSseFirst.gate.resolve()
+    await expect(sseFirst).resolves.toMatchObject({ dispatched: true, opId: interceptedOpId(heldSseFirst) })
+    expect(tab.currentMap?.revision).toBe(1)
+    expect(moveTokenPosition(harness.readMap(), 'token-alpha')).toEqual({ x: 4, y: 0, z: 4 })
+
+    harness.serverA.publishLocalWakeups = false
+    const httpFirst = await tab.commands.moveToken({ placementId: 'token-beta', position: { x: 6, y: 0, z: 2 } })
+    expect(httpFirst).toMatchObject({ dispatched: true })
+    expect(tab.currentMap?.revision).toBe(2)
+    expect(moveTokenPosition(tab.currentMap, 'token-beta')).toEqual({ x: 6, y: 0, z: 2 })
+    const presentationCount = tab.presentationEvents.length
+    const duplicateEvent = harness.realtime.getBySequence(harness.realtime.cursorState().latestSequence)?.event
+
+    harness.serverA.publishLocalWakeups = true
+    if (duplicateEvent) harness.serverA.hub.publishSequencedRealtime(duplicateEvent)
+    await flushAsync()
+    expect(tab.currentMap?.revision).toBe(2)
+    expect(tab.presentationEvents).toHaveLength(presentationCount)
+    expect(moveTokenPosition(harness.readMap(), 'token-alpha')).toEqual({ x: 4, y: 0, z: 4 })
+    expect(moveTokenPosition(harness.readMap(), 'token-beta')).toEqual({ x: 6, y: 0, z: 2 })
+  })
+
+  it('clears predictions on replay-gap snapshot recovery while preserving uncertain outbox recovery', async () => {
+    const harness = createHarness()
+    const nextInterception: { current: MoveInterception | null } = { current: null }
+    const tab = await createTab(harness, {
+      label: 'prediction-gap-tab',
+      api: (getTab) => createInterceptableMoveApi(harness, getTab, nextInterception),
+    })
+    await waitForCaughtUp(tab)
+    await tab.hydrate()
+    await waitForReady(tab)
+
+    const heldUncertain = createMoveInterception('fail-before-server')
+    nextInterception.current = heldUncertain
+    const uncertainMove = tab.commands.moveToken({ placementId: 'token-alpha', position: { x: 7, y: 0, z: 7 } })
+    await vi.waitFor(() => expect(heldUncertain.bodies).toHaveLength(1))
+    const uncertainOpId = interceptedOpId(heldUncertain)
+    expect(tab.pendingPredictionOpIds).toEqual([uncertainOpId])
+    expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 7, y: 0, z: 7 })
+
+    tab.latestSource?.emitTransportError()
+    await flushAsync()
+    await harness.executeCommandPath(
+      MAP_API_PATHS.moveToken,
+      harness.moveTokenCommand({ baseRevision: 0, placementId: 'token-beta', position: { x: 2, y: 0, z: 6 }, clientId: 'remote-gap' }),
+      'gm',
+      null,
+    )
+    const latest = harness.realtime.cursorState().latestSequence
+    harness.pruneRealtimeThrough(latest)
+    tab.sessionStorage.setItem('rotom:realtime-cursor:v1:gm', JSON.stringify({
+      schema: 'rotom.realtime.cursor',
+      version: 1,
+      sequence: 0,
+    }))
+    tab.timers.runAll()
+    await flushAsync()
+    await vi.waitFor(() => expect(tab.currentMap?.revision).toBe(1))
+    expect(tab.pendingPredictionOpIds).toEqual([])
+    expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 1, y: 0, z: 1 })
+    expect(moveTokenPosition(tab.currentMap, 'token-beta')).toEqual({ x: 2, y: 0, z: 6 })
+
+    heldUncertain.gate.resolve()
+    await expect(uncertainMove).resolves.toMatchObject({ dispatched: false, uncertain: true, opId: uncertainOpId })
+    await tab.commands.refreshOutboxEntries()
+    expect(tab.pendingOutboxOpIds).toEqual([uncertainOpId])
+    expect(tab.pendingPredictionOpIds).toEqual([])
+    await expect(tab.commands.checkOutboxCommandStatus(uncertainOpId)).resolves.toMatchObject({ status: 'unknown', opId: uncertainOpId })
+    expect(tab.pendingPredictionOpIds).toEqual([])
+    expect(moveTokenPosition(tab.currentMap, 'token-alpha')).toEqual({ x: 1, y: 0, z: 1 })
+    expect(moveTokenPosition(harness.readMap(), 'token-beta')).toEqual({ x: 2, y: 0, z: 6 })
   })
 
   it('keeps profile scopes, stale profile events, and logout transport isolated', async () => {

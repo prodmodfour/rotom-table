@@ -50,6 +50,7 @@ import { saveMapUseCase } from '../../server/useCases/saveMap'
 import { createRealtimeCursorStorage, type RealtimeCursorStorage } from '../../src/utils/realtimeCursorStorage'
 import { createLivePlayCommandOutbox, type LivePlayCommandOutbox } from '../../src/utils/livePlayCommandOutbox'
 import type { LivePlayCommandSheetUpdate } from '../../src/composables/map-editor/useLivePlayCommands'
+import type { LivePlayPatchAdoptionContext } from '../../src/utils/livePlayPatchAdoption'
 import type { LiveSheetAccessScopeKey } from '../../src/utils/liveSheetCache'
 import type { ApiGetOptions } from '../../src/utils/apiClient'
 import { MAP_API_PATHS, SHEET_API_PATHS } from '../../src/utils/apiRoutes'
@@ -781,6 +782,14 @@ export interface ClientTabOptions {
   readonly databaseName?: string
 }
 
+type ClientPredictionCoordinator = Pick<
+  ReturnType<ClientRuntimeModules['commandsModule']['useLivePlayCommands']>,
+  | 'pendingPredictions'
+  | 'beforeLivePlayPatchesApply'
+  | 'afterLivePlayPatchesApply'
+  | 'clearPendingPredictionsForReconciliation'
+>
+
 export class ClientTab {
   readonly label: string
   readonly harness: FullSystemChaosHarness
@@ -872,6 +881,14 @@ export class ClientTab {
     return this.map.map.value
   }
 
+  get pendingPredictionOpIds(): readonly string[] {
+    return Object.keys(this.commands.pendingPredictions.value).sort()
+  }
+
+  get pendingOutboxOpIds(): readonly string[] {
+    return this.commands.outboxEntries.value.map((entry) => entry.opId).sort()
+  }
+
   get pokemonSheets(): Map<string, CharacterSheet> {
     return this.liveSheets.pokemonBySlug.value
   }
@@ -921,12 +938,27 @@ export class ClientTab {
     this.mode = useSharedMapInteractionMode('chaos-arena', { autoLoad: false })
 
     let acknowledgeAcceptedRealtimeEvent: (event: LivePlayAcceptedRealtimeEvent) => Promise<void> = async () => undefined
+    let predictionCoordinator: ClientPredictionCoordinator | null = null
+    const beforeLivePlayPatchesApply = (context: LivePlayPatchAdoptionContext): void => {
+      predictionCoordinator?.beforeLivePlayPatchesApply(context)
+    }
+    const afterLivePlayPatchesApply = (context: LivePlayPatchAdoptionContext): void => {
+      predictionCoordinator?.afterLivePlayPatchesApply(context)
+    }
+    const clearPendingPredictionsForReconciliation = (reason: string): void => {
+      predictionCoordinator?.clearPendingPredictionsForReconciliation(reason)
+    }
+
     this.map = useEditableMap('chaos-arena', {
       autoLoad: false,
       interactionMode: this.mode.interactionMode,
       playerProfileId: computed(() => (this.role.value === 'player' ? this.selectedProfileId.value : null)),
       requestAuthoritativeReconciliation: (reason) => this.snapshot.requestSnapshot(reason),
       authoritativeReconciliationKey: computed(() => this.snapshot.currentAccessScopeKey.value),
+      pendingLivePlayPredictions: computed(() => predictionCoordinator?.pendingPredictions.value ?? {}),
+      beforeLivePlayPatchesApply,
+      afterLivePlayPatchesApply,
+      onBeforeAuthoritativeReconciliation: clearPendingPredictionsForReconciliation,
       onLivePlayCommandAcceptedEvent: (event) => acknowledgeAcceptedRealtimeEvent(event),
     })
 
@@ -998,6 +1030,7 @@ export class ClientTab {
       outbox: this.outbox,
       leaseOwner: `${this.label}:lease`,
     })
+    predictionCoordinator = this.commands
     acknowledgeAcceptedRealtimeEvent = async (event) => {
       await this.commands.acknowledgeAcceptedRealtimeEvent(event)
     }

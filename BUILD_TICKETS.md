@@ -385,7 +385,7 @@ Status: DONE
 
 ## 014 — LP-S2-014 — Add live-play prediction chaos tests
 
-Status: TODO
+Status: DONE
 
 **Goal:** Exercise prediction, scoped concurrency, and recovery under realistic out-of-order conditions.
 
