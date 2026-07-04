@@ -493,7 +493,7 @@ Status: DONE
 
 ## 016 — LP-S4-016 — Add hazard brush batching on the client
 
-Status: TODO
+Status: DONE
 
 **Goal:** Coalesce rapid hazard drawing/removal into bounded batch commands.
 

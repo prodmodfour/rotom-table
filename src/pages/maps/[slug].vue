@@ -78,6 +78,7 @@ import { isRealtimeEcho } from '#shared/realtime'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
+import { useLivePlayHazardBrushBatcher } from '~/composables/map-editor/useLivePlayHazardBrushBatcher'
 import { useLivePlayTerrainBrushBatcher } from '~/composables/map-editor/useLivePlayTerrainBrushBatcher'
 import {
   useAttackOfOpportunityPanel,
@@ -479,6 +480,11 @@ const livePlayCommandRecoveryGate = useLivePlayCommandRecoveryGate({
 watchEffect(() => {
   livePlayRecoveryNewCommandBlocked.value = livePlayCommandRecoveryGate.blocksNewLiveCommands.value
   livePlayRecoveryNewCommandBlockedMessage.value = livePlayCommandRecoveryGate.blockMessage.value
+})
+const livePlayHazardBrushBatcher = useLivePlayHazardBrushBatcher({
+  dispatchEditHazards: (payload) => livePlayCommands.editHazards(payload),
+  dispatchPlaceHazard: (payload) => livePlayCommands.placeHazard(payload),
+  dispatchRemoveHazard: (payload) => livePlayCommands.removeHazard(payload),
 })
 const livePlayTerrainBrushBatcher = useLivePlayTerrainBrushBatcher({
   dispatchEditTerrainVoxels: (payload) => livePlayCommands.editTerrainVoxels(payload),
@@ -1797,7 +1803,7 @@ const applyMoveFieldEffectFromScene = async (effect: Parameters<typeof applyMove
   }
 }
 
-const placeHazardFromScene = async (hazard: Parameters<typeof placeHazard>[0]) => {
+const placeHazardDirect = async (hazard: Parameters<typeof placeHazard>[0]) => {
   if (isSetupEditMode()) {
     placeHazard(hazard)
     return
@@ -1806,13 +1812,31 @@ const placeHazardFromScene = async (hazard: Parameters<typeof placeHazard>[0]) =
   await livePlayCommands.placeHazard({ hazard })
 }
 
-const removeHazardFromScene = async (cell: Parameters<typeof removeHazard>[0]) => {
+const removeHazardDirect = async (cell: Parameters<typeof removeHazard>[0]) => {
   if (isSetupEditMode()) {
     removeHazard(cell)
     return
   }
   if (!canEditMap.value) return
   await livePlayCommands.removeHazard({ cell })
+}
+
+const placeHazardFromScene = (hazard: Parameters<typeof placeHazard>[0]) => {
+  if (isSetupEditMode()) {
+    placeHazard(hazard)
+    return
+  }
+  if (!canEditMap.value) return
+  livePlayHazardBrushBatcher.queueUpsert(hazard)
+}
+
+const removeHazardFromScene = (cell: Parameters<typeof removeHazard>[0]) => {
+  if (isSetupEditMode()) {
+    removeHazard(cell)
+    return
+  }
+  if (!canEditMap.value) return
+  livePlayHazardBrushBatcher.queueRemove(cell)
 }
 
 const placeVoxelFromScene: typeof placeVoxel = (voxel) => {
@@ -1893,7 +1917,7 @@ const {
   modifyCombatStages: modifyCombatStagesFromScene,
   modifyConditions: modifyConditionsFromScene,
   applyMoveFieldEffect: applyMoveFieldEffectFromScene,
-  placeHazard: placeHazardFromScene,
+  placeHazard: placeHazardDirect,
   moveToken: moveTokenFromMoveAutomation,
   dispatchAuthoritativeMove: dispatchMoveAutomationAuthoritatively,
   enqueueMoveAnimations: enqueueAndBroadcastMoveAnimations,

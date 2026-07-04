@@ -40,7 +40,7 @@ The shared `editTerrainVoxels` contract is the terrain-brush batch shape now ava
 | Clear all hazards from the map menu | Since LP-S4-007, live play confirms once and sends one `clearHazards` batch command; setup/edit still clears local setup state. | **Sprint 4** | High-friction GM cleanup, deterministic map-lane mutation, no hidden/random state, and previously N requests for one confirmed action. |
 | Clear all/weather/terrain/room field effects | Since LP-S4-010, live-play clear-weather and clear-all menu actions send one `clearFieldEffects` batch command; setup/edit stays local and single-effect set/remove commands stay unchanged. | **Sprint 4** | Not currently an N-request loop, but it is a multi-resource clear action that now uses an explicit clear batch contract, bounded summaries, and batch recovery labels. |
 | Repeated terrain voxel edits | Since LP-S4-013, live-play terrain clicks within a short brush window coalesce into bounded `editTerrainVoxels` commands; oversized strokes split into chunks of at most 256 operations. | **Sprint 4** | Brush-like terrain edits are common, bounded by cells, deterministic, and already have precise terrain-cell patches. |
-| Repeated hazard cell edits | The `editHazards` server/API/client flow is available for bounded add/remove cell batches; direct live-play clicks still use single `placeHazard` or `removeHazard` commands until hazard brush coalescing is wired. | **Sprint 4** | Hazard brush strokes map cleanly to bounded add/remove cell operations and should conflict with clear-hazards/single-hazard edits. |
+| Repeated hazard cell edits | Since LP-S4-016, live-play hazard edits within a short brush window coalesce into bounded `editHazards` commands; solitary direct clicks still use existing single `placeHazard` or `removeHazard` commands. | **Sprint 4** | Hazard brush strokes map cleanly to bounded add/remove cell operations and should conflict with clear-hazards/single-hazard edits. |
 | Fill initiative from Speed / clear initiative values | Loops over placements and sends `setInitiative` repeatedly, then may reset active/round. | **Later** | It is a real N-request cleanup, but it touches token initiative, active turn, round, and initiative log/metadata rules; this sprint is focused on map effects/brushes first. |
 | Advance/previous initiative | Already one `nextInitiative` or `previousInitiative` command. | **Not worth batching** | The server already treats one click as one authoritative transaction with initiative and metadata scopes. |
 | Start/end scene | Already one `setScene` command. | **Not worth batching** | Scene start/end has a single map-scene mutation and no repeated command loop. |
@@ -102,19 +102,19 @@ The shared `editTerrainVoxels` contract is the terrain-brush batch shape now ava
 
 ### 4. Repeated hazard cell edits
 
-- **Current UI path:** `IsometricGrid.client.vue` hazard interaction calls page handlers `placeHazardFromScene` and `removeHazardFromScene`; each live-play click dispatches one command.
+- **Current UI path:** `IsometricGrid.client.vue` hazard interaction calls page handlers `placeHazardFromScene` and `removeHazardFromScene`; setup/edit still mutates local setup state immediately, while live play queues scene brush edits through `useLivePlayHazardBrushBatcher`.
 - **Current command route(s):**
-  - `POST /api/maps/hazards/place` via `MAP_API_PATHS.placeHazard`;
-  - `POST /api/maps/hazards/remove` via `MAP_API_PATHS.removeHazard`;
-  - `POST /api/maps/hazards/edit` via `MAP_API_PATHS.editHazards` for bounded add/remove batches.
+  - `POST /api/maps/hazards/place` via `MAP_API_PATHS.placeHazard` for solitary direct hazard placements and compatibility paths;
+  - `POST /api/maps/hazards/remove` via `MAP_API_PATHS.removeHazard` for solitary direct hazard removals and compatibility paths;
+  - `POST /api/maps/hazards/edit` via `MAP_API_PATHS.editHazards` for bounded add/remove brush batches.
 - **Current command types:** `placeHazard`, `removeHazard`, and `editHazards`.
-- **Current payloads:** `{ hazard }` for placement/update, `{ cell }` for removal, and `{ operations: [...] }` for batch upsert/remove hazard cells.
+- **Current payloads:** `{ hazard }` for a solitary placement/update, `{ cell }` for a solitary removal, and `{ operations: [...] }` for brush upsert/remove hazard cells. Rapid edits keep the last operation per cell before dispatch so contradictory brush gestures resolve to one final operation.
 - **Current command scopes:** single-cell commands still use `[{ kind: 'map', lane: 'hazards' }]`; `editHazards` uses explicit hazard-cell scopes up to the shared explicit-scope limit and the broad hazards lane for larger batches.
 - **Authority scope:** GM-only map-effect authority. Server validates hazard kind/layer/owner, every batch cell's bounds, no-op results, stale revisions, and conflicts before any batch write is committed.
 - **Likely batch conflict scopes:** `editHazards` uses explicit hazard-cell scopes for small bounded batches and the broad map `hazards` lane for larger batches. Explicit cells remain independent from unrelated hazard cells while still conflicting with broad clear-hazards and existing single-hazard commands.
 - **Current accepted patch shape:** single-cell commands return one `map.hazards` patch with the affected `cell`, `previous`, `current`, optional `placed`, and `removed` hazards. `editHazards` returns one `map.hazards` patch listing changed cells, per-cell previous/current hazards, optional placed/removed hazards, and the final authoritative hazard lane for fallback reconciliation.
 - **Local prediction safety:** no local authoritative prediction. Keep hazard brush results pending-only.
-- **Sprint 4 decision:** server/API/client flow is implemented after terrain batching. Hazard brush coalescing can now reuse shared guardrails for duplicate/contradictory cells and the durable outbox retry/status/abandonment path.
+- **Sprint 4 decision:** server/API/client flow and client hazard brush coalescing are in place. Solitary direct clicks keep the single-cell command primitives, while multi-cell brush windows send bounded authoritative `editHazards` batches and strokes larger than the shared 128-operation limit split into sequential bounded chunks without mutating local authoritative hazards before accepted patches arrive.
 
 ### 5. Initiative cleanup
 
