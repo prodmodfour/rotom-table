@@ -11,6 +11,7 @@ import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlaySta
 import { MAP_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import {
+  LIVE_PLAY_BATCH_MAX_HAZARD_CELLS,
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_OP_ID_RE,
@@ -130,6 +131,18 @@ const storedMoveCommandBody = (overrides: Partial<Record<string, unknown>> = {})
   type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
   scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
   payload: { placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } },
+  clientId: 'stored-client',
+  ...overrides,
+})
+
+const storedClearHazardsCommandBody = (overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: nextStoredOpId('clear'),
+  mapSlug: 'arena-map',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  scopes: [{ kind: 'map', lane: 'hazards' }],
+  payload: { mode: 'all' },
   clientId: 'stored-client',
   ...overrides,
 })
@@ -462,6 +475,48 @@ const rejectedMoveTokenResponse = (
   currentRevision: 4,
   ...overrides,
 })
+
+const acceptedClearHazardsResponse = (
+  command: Record<string, unknown>,
+  options: {
+    readonly previousRevision?: number
+    readonly revision?: number
+    readonly previous?: readonly Record<string, unknown>[]
+    readonly current?: readonly Record<string, unknown>[]
+  } = {},
+): Record<string, unknown> => {
+  const payload = commandRecord(command.payload)
+  const previous = options.previous ?? [{ kind: 'spikes', x: 1, y: 0, z: 2 }]
+  const current = options.current ?? []
+  return {
+    ok: true,
+    opId: command.opId,
+    mapSlug: command.mapSlug,
+    previousRevision: options.previousRevision ?? 4,
+    revision: options.revision ?? 5,
+    patches: [{
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS,
+      mapSlug: command.mapSlug,
+      revision: options.revision ?? 5,
+      scopes: Array.isArray(command.scopes) ? command.scopes : [{ kind: 'map', lane: 'hazards' }],
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+        mode: payload.mode ?? 'all',
+        ...(typeof payload.kind === 'string' ? { kind: payload.kind } : {}),
+        ...(Array.isArray(payload.cells) ? { cells: payload.cells } : {}),
+        previous,
+        current,
+        removed: previous.filter((hazard) => !current.some((candidate) => (
+          candidate.kind === hazard.kind
+          && candidate.x === hazard.x
+          && candidate.y === hazard.y
+          && candidate.z === hazard.z
+        ))),
+      },
+    }],
+  }
+}
 
 const resolvedMoveFixture = (overrides: Partial<LivePlayResolvedMoveResult> = {}): LivePlayResolvedMoveResult => ({
   schemaVersion: LIVE_PLAY_RESOLVED_MOVE_RESULT_SCHEMA_VERSION,
@@ -3637,6 +3692,246 @@ describe('useLivePlayCommands', () => {
     }))
 
     expect(applyPersistedMap).toHaveBeenCalledWith(map)
+  })
+
+  it('posts clearHazards batches with normalized payload scopes and patch-first adoption', async () => {
+    const map = ref(mapFixture())
+    map.value.hazards = [
+      { kind: 'spikes', x: 1, y: 0, z: 2 },
+      { kind: 'fire', x: 3, y: 0, z: 4 },
+    ]
+    const remainingHazards = [{ kind: 'fire', x: 3, y: 0, z: 4 }]
+    const applyPersistedMap = vi.fn()
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      const command = commandRecord(body)
+      expect(request).toBe(MAP_API_PATHS.clearHazards)
+      return acceptedClearHazardsResponse(command, {
+        previous: cloneJson(map.value.hazards),
+        current: remainingHazards,
+      })
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applyPersistedMap,
+    })
+
+    const result = await actions.clearHazards({
+      mode: 'cells',
+      cells: [
+        { x: 1, y: 0, z: 2 },
+        { x: 1, y: 0, z: 2 },
+      ],
+      kind: 'spikes',
+    })
+
+    expect(result).toMatchObject({ dispatched: true, opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE) })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.clearHazards, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: result.opId,
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+      scopes: [{ kind: 'map', lane: 'hazards', cell: { x: 1, y: 0, z: 2 } }],
+      payload: {
+        mode: 'cells',
+        cells: [{ x: 1, y: 0, z: 2 }],
+        kind: 'spikes',
+      },
+      clientId: 'ssr',
+    }))
+    expect(map.value.revision).toBe(5)
+    expect(map.value.hazards).toEqual(remainingHazards)
+    expect(applyPersistedMap).not.toHaveBeenCalled()
+    expect(actions.pendingPredictionCount.value).toBe(0)
+  })
+
+  it('rejects oversized clearHazards batches before durable storage or HTTP send', async () => {
+    const delegate = createTestOutbox()
+    const enqueue = vi.fn(delegate.enqueue.bind(delegate))
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox: wrapOutbox(delegate, { enqueue }),
+    })
+
+    const result = await actions.clearHazards({
+      mode: 'cells',
+      cells: Array.from({ length: LIVE_PLAY_BATCH_MAX_HAZARD_CELLS + 1 }, (_, index) => ({
+        x: index,
+        y: 0,
+        z: 1,
+      })),
+    })
+
+    expect(result).toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining(`payload.cells must contain at most ${LIVE_PLAY_BATCH_MAX_HAZARD_CELLS} hazard cells`),
+    })
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    await expect(delegate.list()).resolves.toEqual([])
+  })
+
+  it('blocks conflicting hazard commands while a clearHazards batch is pending but allows unrelated token actions', async () => {
+    const clearGate = deferred<void>()
+    const moveGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      const command = commandRecord(body)
+      if (request === MAP_API_PATHS.clearHazards) {
+        await clearGate.promise
+        return acceptedClearHazardsResponse(command)
+      }
+      if (request === MAP_API_PATHS.moveToken) {
+        await moveGate.promise
+        return acceptedMoveTokenResponse(command, { previousRevision: 4, revision: 5 })
+      }
+      throw new Error(`Unexpected request ${request}`)
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', mapRevision: ref(4) })
+    const clear = actions.clearHazards({ mode: 'all' })
+
+    expect(actions.pendingCommandCount.value).toBe(1)
+    const blocked = await actions.removeHazard({ cell: { x: 1, y: 0, z: 2 } })
+    expect(blocked).toEqual({
+      dispatched: false,
+      message: 'Another pending command is already changing this map hazards lane.',
+    })
+
+    const move = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(1, MAP_API_PATHS.clearHazards, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+      scopes: [{ kind: 'map', lane: 'hazards' }],
+    }))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(2, MAP_API_PATHS.moveToken, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+    }))
+
+    clearGate.resolve()
+    moveGate.resolve()
+    await expect(Promise.all([clear, move])).resolves.toEqual([
+      expect.objectContaining({ dispatched: true }),
+      expect.objectContaining({ dispatched: true }),
+    ])
+    expect(actions.pendingCommandCount.value).toBe(0)
+  })
+
+  it('handles clearHazards rejected, uncertain, and duplicate terminal responses through the outbox', async () => {
+    const cases = [
+      {
+        name: 'rejected',
+        response: (body: Record<string, unknown>) => ({
+          ok: false,
+          opId: body.opId,
+          mapSlug: body.mapSlug,
+          reason: 'conflict',
+          message: 'Hazards changed first',
+          currentRevision: 5,
+        }),
+        expected: { dispatched: false, message: 'Hazards changed first' },
+      },
+      {
+        name: 'uncertain',
+        response: () => { throw new Error('Network down') },
+        expected: { dispatched: false, uncertain: true },
+      },
+      {
+        name: 'duplicate accepted',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: acceptedClearHazardsResponse(body),
+        }),
+        expected: { dispatched: true },
+      },
+      {
+        name: 'duplicate rejected',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: {
+            ok: false,
+            opId: body.opId,
+            mapSlug: body.mapSlug,
+            reason: 'stale-revision',
+            message: 'Stale hazards',
+            currentRevision: 5,
+          },
+        }),
+        expected: { dispatched: false, message: 'Stale hazards' },
+      },
+    ] as const
+
+    for (const terminalCase of cases) {
+      apiMocks.postJson.mockReset()
+      const outbox = createTestOutbox()
+      apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => terminalCase.response(commandRecord(body)))
+      const { actions } = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox })
+
+      const result = await actions.clearHazards({ mode: 'kind', kind: 'spikes' })
+
+      expect(result, terminalCase.name).toMatchObject({
+        ...terminalCase.expected,
+        opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      })
+      if (terminalCase.name === 'uncertain') {
+        await expect(outbox.get(result.opId!), terminalCase.name).resolves.toMatchObject({
+          state: 'uncertain',
+          requestPath: MAP_API_PATHS.clearHazards,
+          body: expect.objectContaining({ type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS }),
+        })
+      } else {
+        await expect(outbox.get(result.opId!), terminalCase.name).resolves.toBeNull()
+      }
+    }
+  })
+
+  it('retries and status-checks clearHazards outbox entries with the exact stored command body', async () => {
+    const retryOutbox = createTestOutbox()
+    apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
+    const retryActions = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox: retryOutbox }).actions
+    const uncertain = await retryActions.clearHazards({ mode: 'all' })
+    const retryEntry = await retryOutbox.get(uncertain.opId!)
+    expect(retryEntry).toMatchObject({ state: 'uncertain', requestPath: MAP_API_PATHS.clearHazards })
+
+    apiMocks.postJson.mockReset()
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.clearHazards)
+      expect(body).toEqual(retryEntry!.body)
+      return acceptedClearHazardsResponse(commandRecord(body))
+    })
+    await expect(retryActions.retryOutboxCommand(retryEntry!.opId)).resolves.toMatchObject({
+      dispatched: true,
+      opId: retryEntry!.opId,
+    })
+    await expect(retryOutbox.get(retryEntry!.opId)).resolves.toBeNull()
+
+    const statusOutbox = createTestOutbox()
+    const statusQueued = await enqueueStoredCommand(statusOutbox, {
+      requestPath: MAP_API_PATHS.clearHazards,
+      body: storedClearHazardsCommandBody(),
+    })
+    const statusEntry = await makeStoredCommandUncertain(statusOutbox, statusQueued)
+    const statusActions = createCommandHarness({ slug: 'arena-map', outbox: statusOutbox }).actions
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.operationStatus)
+      expect(statusCommandRecord(body)).toEqual(statusEntry.body)
+      return operationStatusTerminalResponse(statusEntry, acceptedClearHazardsResponse(statusEntry.body))
+    })
+
+    await expect(statusActions.checkOutboxCommandStatus(statusEntry.opId)).resolves.toMatchObject({
+      status: 'accepted',
+      opId: statusEntry.opId,
+    })
+    await expect(statusOutbox.get(statusEntry.opId)).resolves.toBeNull()
   })
 
   it('posts live-play scene commands through the command dispatcher', async () => {

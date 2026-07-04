@@ -190,7 +190,7 @@ Status: DONE
 
 ## 006 — LP-S4-006 — Wire `clearHazards` into `useLivePlayCommands`
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let the map page dispatch clear-hazard batches through the durable outbox.
 
