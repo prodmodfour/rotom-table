@@ -103,7 +103,7 @@ Status: DONE
 
 ## 003 — LP-S3-003 — Add presence access checks and snapshot route
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let clients fetch a safe current presence snapshot only for maps they can view.
 
