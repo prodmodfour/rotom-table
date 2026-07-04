@@ -128,6 +128,7 @@ import {
   updatePokemonRenderObjectFromSpawn,
 } from '~/utils/isometric/tokenRenderer'
 import type { MapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
+import { createPresencePingRenderer, type IsometricPresencePing } from '~/utils/isometric/pingRenderer'
 import { buildVoxelColumnsByXZ, getVoxelShadowSurfaceY } from '~/utils/isometric/shadows'
 import {
   bindIsometricDocumentVisibilityChange,
@@ -220,6 +221,8 @@ const props = defineProps<{
   livePlayPendingConditionsByTokenId?: Readonly<Record<string, readonly string[]>>
   livePlayCorrectionTokenIds?: string[]
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
+  presencePings?: readonly IsometricPresencePing[]
+  presenceServerTimeOffsetMs?: number
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -561,6 +564,7 @@ const tokenMovePreviewRenderer = createTokenMovePreviewRenderer({
 const moveTargetingReticleRenderer = createMoveTargetingReticleRenderer(scene)
 const moveAreaTemplateRenderer = createMoveAreaTemplateRenderer(scene)
 const moveAutomationFeedbackRenderer = createMoveAutomationFeedbackRenderer(scene)
+const presencePingRenderer = createPresencePingRenderer(scene)
 const moveVfxRenderer: MoveVfxRenderer = createMoveVfxRenderer(scene)
 let moveVfxAnimationWasActive = false
 let renderer: THREE.WebGLRenderer | null = null
@@ -641,6 +645,17 @@ const syncMoveVfxMetricsForMetricsOverlay = () => {
     readRenderMetricsNowMs(),
   )
 }
+
+const presencePingNowMs = (): number => Date.now() + (props.presenceServerTimeOffsetMs ?? 0)
+
+const syncPresencePings = (): boolean => presencePingRenderer.sync(props.presencePings ?? [], {
+  nowMs: presencePingNowMs(),
+})
+
+const requestPresencePingRenderFrame = () => requestScheduledSceneFrame({
+  reasons: 'scene-state',
+  dirtyLayers: 'css3d',
+})
 
 const syncMoveVfxCompletionSignal = (nowMs = readRenderMetricsNowMs()) => {
   const moveVfxAnimationIsActive = moveVfxRenderer.needsAnimationFrame()
@@ -1822,6 +1837,15 @@ watch(
 )
 
 watch(
+  [() => props.presencePings, () => props.presenceServerTimeOffsetMs],
+  () => {
+    if (!renderer) return
+    if (syncPresencePings()) requestPresencePingRenderFrame()
+  },
+  { deep: true },
+)
+
+watch(
   () => props.attackOfOpportunityPrompts,
   () => {
     if (!renderer) return
@@ -2148,6 +2172,7 @@ onMounted(() => {
   syncVoxelMeshes()
   syncFieldEffectMeshes()
   syncHazardMeshes()
+  syncPresencePings()
   ensurePreviewObjects()
   if (props.buildMode) ensureBuildGhost()
   if (props.hazardMode) ensureHazardGhost()
@@ -2195,6 +2220,7 @@ onBeforeUnmount(() => {
   moveTargetingReticleRenderer.dispose()
   moveAreaTemplateRenderer.dispose()
   moveAutomationFeedbackRenderer.dispose()
+  presencePingRenderer.dispose()
 
   disposeIsometricRendererResources({
     clearPreviewVisuals,

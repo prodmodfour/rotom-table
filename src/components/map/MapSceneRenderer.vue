@@ -32,6 +32,7 @@ import type { TokenSendOutOption } from '~/utils/mapTokenSendOut'
 import type { TokenPokeballOption } from '~/utils/pokeballCapture'
 import type { MoveAutomationTargetBranchSelectionState } from '~/composables/map-editor/useMoveAutomationPanel'
 import type { MapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
+import type { IsometricPresencePing } from '~/utils/isometric/pingRenderer'
 
 interface IsometricGridHandle {
   focusPokemon: (id: string) => boolean
@@ -71,6 +72,8 @@ defineProps<{
   livePlayPendingConditionsByTokenId?: Readonly<Record<string, readonly string[]>>
   livePlayCorrectionTokenIds?: string[]
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
+  presencePings?: readonly IsometricPresencePing[]
+  presenceServerTimeOffsetMs?: number
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
   moveAutomationFeedback?: MoveAutomationFeedbackState | null
@@ -158,6 +161,8 @@ defineExpose({ focusPokemon })
     :live-play-pending-conditions-by-token-id="livePlayPendingConditionsByTokenId ?? {}"
     :live-play-correction-token-ids="livePlayCorrectionTokenIds ?? []"
     :remote-token-attention="remoteTokenAttention ?? []"
+    :presence-pings="presencePings ?? []"
+    :presence-server-time-offset-ms="presenceServerTimeOffsetMs ?? 0"
     :move-automation-targeting="moveAutomationTargeting"
     :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
     :move-automation-feedback="moveAutomationFeedback"

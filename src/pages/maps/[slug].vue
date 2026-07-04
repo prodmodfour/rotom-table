@@ -813,6 +813,7 @@ const mapPresence = useMapPresence({
   autoStart: false,
 })
 const mapPresenceEntries = mapPresence.entries
+const mapPresencePings = mapPresence.pings
 const mapPresenceStatus = mapPresence.status
 const mapPresenceServerTimeOffsetMs = computed(() => mapPresence.transportFreshness.value.serverTimeOffsetMs)
 const remoteTokenAttention = computed(() => buildMapTokenRemoteAttention(
@@ -2336,6 +2337,8 @@ useMapDimensionReconciliation({
         :live-play-pending-conditions-by-token-id="livePlayPendingConditionsByTokenId"
         :live-play-correction-token-ids="livePlayCorrectionTokenIds"
         :remote-token-attention="remoteTokenAttention"
+        :presence-pings="mapPresencePings"
+        :presence-server-time-offset-ms="mapPresenceServerTimeOffsetMs"
         :live-play-token-correction-notice="livePlayTokenCorrectionNotice"
         :move-automation-targeting="actionAutomationTargeting"
         :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"

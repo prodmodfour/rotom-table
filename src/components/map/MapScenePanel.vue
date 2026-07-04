@@ -50,6 +50,7 @@ import type { LivePlayTokenCorrectionNotice } from '~/types/livePlayUi'
 import { buildCombatLogMessages } from '~/utils/combatLog'
 import type { PreviewState } from '~/utils/gridPreview'
 import type { MapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
+import type { IsometricPresencePing } from '~/utils/isometric/pingRenderer'
 
 interface MapSceneRendererHandle {
   focusPokemon: (id: string) => boolean
@@ -116,6 +117,8 @@ const props = defineProps<{
   livePlayPendingConditionsByTokenId?: Readonly<Record<string, readonly string[]>>
   livePlayCorrectionTokenIds?: string[]
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
+  presencePings?: readonly IsometricPresencePing[]
+  presenceServerTimeOffsetMs?: number
   livePlayTokenCorrectionNotice?: LivePlayTokenCorrectionNotice | null
 }>()
 
@@ -269,6 +272,8 @@ defineExpose({ focusPokemon })
         :live-play-pending-conditions-by-token-id="livePlayPendingConditionsByTokenId ?? {}"
         :live-play-correction-token-ids="livePlayCorrectionTokenIds ?? []"
         :remote-token-attention="remoteTokenAttention ?? []"
+        :presence-pings="presencePings ?? []"
+        :presence-server-time-offset-ms="presenceServerTimeOffsetMs ?? 0"
         :move-automation-targeting="moveAutomationTargeting"
         :move-automation-target-branch-selection="moveAutomationTargetBranchSelection"
         :move-automation-feedback="moveAutomationFeedback"

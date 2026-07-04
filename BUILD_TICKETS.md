@@ -331,7 +331,7 @@ Status: DONE
 
 ## 011 — LP-S3-011 — Render pings in the isometric scene
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make pings obvious, short-lived, and non-disruptive.
 
