@@ -3,12 +3,15 @@ import { isAuthRole, type AuthRole } from '#shared/auth'
 import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
+  createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
   createLivePlayOpId,
   isLivePlayMapCommandType,
+  parseClearFieldEffectsPayload,
   parseClearHazardsPayload,
   type AdvanceInitiativePayload,
   type BuildTerrainVoxelPayload,
+  type ClearFieldEffectsPayload,
   type ClearHazardsPayload,
   type DeleteTokenPayload,
   type GrantExperiencePayload,
@@ -367,6 +370,7 @@ export interface UseLivePlayCommandsReturn {
     cell: RemoveHazardPayload['cell']
   }) => Promise<LivePlayCommandDispatchResult>
   clearHazards: (payload: ClearHazardsPayload) => Promise<LivePlayCommandDispatchResult>
+  clearFieldEffects: (payload: ClearFieldEffectsPayload) => Promise<LivePlayCommandDispatchResult>
   buildTerrainVoxel: (payload: BuildTerrainVoxelPayload) => Promise<LivePlayCommandDispatchResult>
   removeTerrainVoxel: (payload: RemoveTerrainVoxelPayload) => Promise<LivePlayCommandDispatchResult>
   setFieldEffect: (payload: SetFieldEffectPayload) => Promise<LivePlayCommandDispatchResult>
@@ -414,6 +418,7 @@ type LivePlayClientCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD
   | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS
+  | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS
   | typeof LIVE_PLAY_COMMAND_TYPES.BUILD_TERRAIN_VOXEL
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
@@ -440,6 +445,7 @@ type LivePlayMapEffectsCommandPayload =
   | PlaceHazardPayload
   | RemoveHazardPayload
   | ClearHazardsPayload
+  | ClearFieldEffectsPayload
   | BuildTerrainVoxelPayload
   | RemoveTerrainVoxelPayload
   | SetFieldEffectPayload
@@ -485,6 +491,7 @@ const LIVE_PLAY_COMMAND_REQUEST_PATHS = new Set<string>([
   MAP_API_PATHS.placeHazard,
   MAP_API_PATHS.removeHazard,
   MAP_API_PATHS.clearHazards,
+  MAP_API_PATHS.clearFieldEffects,
   MAP_API_PATHS.buildTerrainVoxel,
   MAP_API_PATHS.removeTerrainVoxel,
   MAP_API_PATHS.setFieldEffect,
@@ -2626,6 +2633,22 @@ export const useLivePlayCommands = (
     },
   )
 
+  const clearFieldEffects: UseLivePlayCommandsReturn['clearFieldEffects'] = (payload) => runLivePlayCommand(
+    MAP_API_PATHS.clearFieldEffects,
+    (authContext) => {
+      const parsed = parseClearFieldEffectsPayload(payload)
+      if (!parsed.valid) {
+        throw new Error(`clearFieldEffects payload is invalid: ${validationIssueSummary(parsed.issues)}`)
+      }
+      return commandBody(
+        authContext,
+        LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+        parsed.value,
+        createClearFieldEffectsCommandScopes(parsed.value),
+      )
+    },
+  )
+
   const buildTerrainVoxel: UseLivePlayCommandsReturn['buildTerrainVoxel'] = (payload) => runLivePlayCommand(
     MAP_API_PATHS.buildTerrainVoxel,
     (authContext) => commandBody(
@@ -3724,6 +3747,7 @@ export const useLivePlayCommands = (
     placeHazard,
     removeHazard,
     clearHazards,
+    clearFieldEffects,
     buildTerrainVoxel,
     removeTerrainVoxel,
     setFieldEffect,

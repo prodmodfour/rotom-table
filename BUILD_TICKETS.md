@@ -272,7 +272,7 @@ Status: DONE
 
 ## 009 — LP-S4-009 — Implement server/API/client flow for `clearFieldEffects`
 
-Status: TODO
+Status: DONE
 
 **Goal:** Add end-to-end authoritative support for clearing field effects as a batch command.
 

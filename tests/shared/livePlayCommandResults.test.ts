@@ -3,6 +3,7 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
 } from '#shared/livePlayCommands'
 import {
@@ -129,6 +130,63 @@ describe('live-play terminal command response validation', () => {
       },
       command: command(),
     })).toMatchObject({ valid: false })
+  })
+
+  it('verifies accepted clearFieldEffects patches match the submitted command type and scopes', () => {
+    const clearCommand = command({
+      type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+      scopes: createClearFieldEffectsCommandScopes({ category: 'weather' }),
+      payload: { category: 'weather' },
+    })
+    const clearPatch = (overrides: Record<string, unknown> = {}) => patch({
+      type: LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS,
+      scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+        category: 'weather',
+        previous: { weather: [{ kind: 'sunny', rounds: 2 }], terrains: [], rooms: [] },
+        current: { weather: [], terrains: [], rooms: [] },
+      },
+      ...overrides,
+    })
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({ patches: [clearPatch()] }),
+      command: clearCommand,
+    }).valid).toBe(true)
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({
+        patches: [clearPatch({
+          payload: {
+            command: LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
+            category: 'weather',
+            previous: { weather: [], terrains: [], rooms: [] },
+            current: { weather: [], terrains: [], rooms: [] },
+          },
+        })],
+      }),
+      command: clearCommand,
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({ path: 'response.patches[0].payload.command' })]),
+    })
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({ patches: [clearPatch({ type: LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS })] }),
+      command: clearCommand,
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({ path: 'response.patches[0].type' })]),
+    })
+
+    expect(validateTerminalResponseForCommand({
+      response: accepted({ patches: [clearPatch({ scopes: [{ kind: 'map', lane: 'hazards' }] })] }),
+      command: clearCommand,
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([expect.objectContaining({ path: 'response.patches[0].scopes[0]' })]),
+    })
   })
 
   it('verifies accepted clearHazards patches match the submitted command type and scopes', () => {

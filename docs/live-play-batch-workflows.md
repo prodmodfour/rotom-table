@@ -27,14 +27,14 @@ Unique grid-cell helpers reject duplicate cells by default so mixed add/remove c
 
 The first batch contract, `clearHazards`, supports `all`, `cells`, and `kind` payload modes. `all` and `kind` use the conservative map `hazards` lane scope; `cells` uses bounded, normalized explicit hazard-cell scopes so unrelated cell batches can remain independent while still conflicting with broad hazard-lane clears. The batch is exposed through `POST /api/maps/hazards/clear` and must return a terminal live-play command result whose operation ID, map slug, command type, patch type, and patch scopes validate against the submitted command body.
 
-The shared `clearFieldEffects` contract supports category-only clears for `weather`, `terrain`, `room`, and `all`, plus bounded explicit `kinds` lists for one non-`all` category. Empty, duplicate, unknown, cross-category, or over-limit kind lists reject before server mutation. All `clearFieldEffects` modes intentionally use the conservative map `fieldEffects` lane scope so they conflict with set/remove/tick field-effect commands but not unrelated token movement.
+The shared `clearFieldEffects` contract supports category-only clears for `weather`, `terrain`, `room`, and `all`, plus bounded explicit `kinds` lists for one non-`all` category. Empty, duplicate, unknown, cross-category, or over-limit kind lists reject before server mutation. All `clearFieldEffects` modes intentionally use the conservative map `fieldEffects` lane scope so they conflict with set/remove/tick field-effect commands but not unrelated token movement. The batch is exposed through `POST /api/maps/field-effects/clear`, validates terminal responses against the submitted body, and uses the durable outbox/status/abandonment flow like other live-play commands.
 
 ## Summary classification
 
 | Workflow | Current live-play behavior | Classification | Why |
 | --- | --- | --- | --- |
 | Clear all hazards from the map menu | Since LP-S4-007, live play confirms once and sends one `clearHazards` batch command; setup/edit still clears local setup state. | **Sprint 4** | High-friction GM cleanup, deterministic map-lane mutation, no hidden/random state, and previously N requests for one confirmed action. |
-| Clear all/weather/terrain/room field effects | Already sends one `removeFieldEffect` command for category/all clears. | **Sprint 4** | Not currently an N-request loop, but it is a multi-resource clear action that should use an explicit clear batch contract, bounded summaries, and batch recovery labels. |
+| Clear all/weather/terrain/room field effects | The `clearFieldEffects` command now has server/API/client support; UI menu actions still use `removeFieldEffect` until the dedicated UI wiring ticket. | **Sprint 4** | Not currently an N-request loop, but it is a multi-resource clear action that should use an explicit clear batch contract, bounded summaries, and batch recovery labels. |
 | Repeated terrain voxel edits | Each live-play terrain click sends one `buildTerrainVoxel` or `removeTerrainVoxel` command. | **Sprint 4** | Brush-like terrain edits are common, bounded by cells, deterministic, and already have precise terrain-cell patches. |
 | Repeated hazard cell edits | Each live-play hazard click sends one `placeHazard` or `removeHazard` command. | **Sprint 4** | Hazard brush strokes map cleanly to bounded add/remove cell operations and should conflict with clear-hazards/single-hazard edits. |
 | Fill initiative from Speed / clear initiative values | Loops over placements and sends `setInitiative` repeatedly, then may reset active/round. | **Later** | It is a real N-request cleanup, but it touches token initiative, active turn, round, and initiative log/metadata rules; this sprint is focused on map effects/brushes first. |
@@ -69,16 +69,15 @@ The shared `clearFieldEffects` contract supports category-only clears for `weath
   - `clearWeatherFromMenu` -> `livePlayCommands.removeFieldEffect({ category: 'weather' })`;
   - `removeTerrainFromMenu` / `removeRoomFromMenu` -> `removeFieldEffect` for one category/kind;
   - `clearAllFieldEffectsFromMenu` -> `livePlayCommands.removeFieldEffect({ category: 'all' })` after one confirmation.
-- **Current command route(s):** `POST /api/maps/field-effects/remove` via `MAP_API_PATHS.removeFieldEffect`; related single-effect routes are `/api/maps/field-effects/set` and `/api/maps/field-effects/tick`.
-- **Current command type:** `removeFieldEffect` for routed clears, `setFieldEffect` for setting/round updates, and `tickFieldEffectDurations` for duration cleanup. The shared `clearFieldEffects` batch command contract is defined for the next routing/wiring step.
+- **Current command route(s):** `POST /api/maps/field-effects/clear` via `MAP_API_PATHS.clearFieldEffects` is available for batch clears. Existing menu UI still calls `POST /api/maps/field-effects/remove` via `MAP_API_PATHS.removeFieldEffect` until LP-S4-010 wires it over; related single-effect routes are `/api/maps/field-effects/set` and `/api/maps/field-effects/tick`.
+- **Current command type:** `clearFieldEffects` is implemented end to end for explicit batch clears. The existing clear menu still dispatches `removeFieldEffect` until LP-S4-010; `setFieldEffect` handles setting/round updates and `tickFieldEffectDurations` handles duration cleanup.
 - **Current payload:** routed clears use category-only clear (`weather`, `terrain`, `room`, or `all`) or category plus explicit `kind`; the batch contract uses `{ category }` or `{ category, kinds }` with a bounded explicit kind list.
 - **Current command scopes:** `[{ kind: 'map', lane: 'fieldEffects' }]`.
 - **Authority scope:** GM-only map-effect authority. Server validates category/kind combinations, payload shape, stale/conflicting revisions, and no-op clears.
 - **Likely batch conflict scopes:** conservative map `fieldEffects` lane for all category/kind modes. This should conflict with set/remove/tick field-effect commands but not unrelated token movement.
-- **Current accepted patch shape:** one `map.fieldEffects` patch with `previous`, `current`, optional `category`, optional `kind`, and optional `tickAmount`.
-- **Expected batch patch shape:** can reuse a `map.fieldEffects` patch carrying previous/current field-effect state plus category/kind summary. No whole-map replacement is required.
+- **Current accepted patch shape:** one accepted terminal result with a `map.fieldEffects` patch carrying `previous`, `current`, `category`, optional single `kind` for legacy removes, optional bounded `kinds` for `clearFieldEffects`, and optional `tickAmount` for duration ticks. No whole-map replacement is required.
 - **Local prediction safety:** not currently predicted. Keep as pending-only and reconcile from accepted patches.
-- **Sprint 4 decision:** implement after hazards. Although clear-all is already one request, an explicit `clearFieldEffects` contract makes category/all clears visible as batch operations in validation, outbox summaries, and operator smoke tests.
+- **Sprint 4 decision:** server/API/client flow is implemented after hazards. Although clear-all is already one request, the explicit `clearFieldEffects` contract makes category/all clears visible as batch operations in validation, outbox summaries, and operator smoke tests.
 
 ### 3. Repeated terrain voxel edits
 

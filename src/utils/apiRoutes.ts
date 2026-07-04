@@ -69,6 +69,7 @@ export const MAP_API_PATHS = {
   removeTerrainVoxel: '/api/maps/terrain/remove',
   setFieldEffect: '/api/maps/field-effects/set',
   removeFieldEffect: '/api/maps/field-effects/remove',
+  clearFieldEffects: '/api/maps/field-effects/clear',
   tickFieldEffectDurations: '/api/maps/field-effects/tick',
   setScene: '/api/maps/scene/set',
   updateAttackOfOpportunity: '/api/maps/attack-of-opportunity/update',

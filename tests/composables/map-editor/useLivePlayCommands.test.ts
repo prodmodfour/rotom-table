@@ -11,6 +11,7 @@ import { useLivePlayStateMachine } from '~/composables/map-editor/useLivePlaySta
 import { MAP_API_PATHS, SHEET_API_PATHS } from '~/utils/apiRoutes'
 import { temporaryHpForPlacement } from '~/utils/mapTemporaryHitPoints'
 import {
+  LIVE_PLAY_BATCH_MAX_FIELD_EFFECT_OPERATIONS,
   LIVE_PLAY_BATCH_MAX_HAZARD_CELLS,
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
@@ -143,6 +144,18 @@ const storedClearHazardsCommandBody = (overrides: Partial<Record<string, unknown
   type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
   scopes: [{ kind: 'map', lane: 'hazards' }],
   payload: { mode: 'all' },
+  clientId: 'stored-client',
+  ...overrides,
+})
+
+const storedClearFieldEffectsCommandBody = (overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: nextStoredOpId('field'),
+  mapSlug: 'arena-map',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+  scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+  payload: { category: 'all' },
   clientId: 'stored-client',
   ...overrides,
 })
@@ -513,6 +526,45 @@ const acceptedClearHazardsResponse = (
           && candidate.y === hazard.y
           && candidate.z === hazard.z
         ))),
+      },
+    }],
+  }
+}
+
+const acceptedClearFieldEffectsResponse = (
+  command: Record<string, unknown>,
+  options: {
+    readonly previousRevision?: number
+    readonly revision?: number
+    readonly previous?: Record<string, unknown>
+    readonly current?: Record<string, unknown>
+  } = {},
+): Record<string, unknown> => {
+  const payload = commandRecord(command.payload)
+  const previous = options.previous ?? {
+    weather: [{ kind: 'sunny', rounds: 3 }],
+    terrains: [{ kind: 'electric', rounds: 4 }],
+    rooms: [],
+  }
+  const current = options.current ?? { weather: [], terrains: [], rooms: [] }
+  return {
+    ok: true,
+    opId: command.opId,
+    mapSlug: command.mapSlug,
+    previousRevision: options.previousRevision ?? 4,
+    revision: options.revision ?? 5,
+    patches: [{
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      type: LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS,
+      mapSlug: command.mapSlug,
+      revision: options.revision ?? 5,
+      scopes: Array.isArray(command.scopes) ? command.scopes : [{ kind: 'map', lane: 'fieldEffects' }],
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+        category: payload.category ?? 'all',
+        ...(Array.isArray(payload.kinds) ? { kinds: payload.kinds } : {}),
+        previous,
+        current,
       },
     }],
   }
@@ -3684,6 +3736,13 @@ describe('useLivePlayCommands', () => {
       payload: { category: 'weather', kind: 'sunny' },
     }))
 
+    await actions.clearFieldEffects({ category: 'weather', kinds: ['sunny'] })
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.clearFieldEffects, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+      scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+      payload: { category: 'weather', kinds: ['sunny'] },
+    }))
+
     await actions.tickFieldEffectDurations()
     expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.tickFieldEffectDurations, expect.objectContaining({
       type: LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
@@ -3932,6 +3991,183 @@ describe('useLivePlayCommands', () => {
       opId: statusEntry.opId,
     })
     await expect(statusOutbox.get(statusEntry.opId)).resolves.toBeNull()
+  })
+
+  it('posts clearFieldEffects batches with normalized payload scopes and patch-first adoption', async () => {
+    const map = ref(mapFixture())
+    map.value.fieldEffects = {
+      weather: [{ kind: 'sunny', rounds: 3 }, { kind: 'rainy', rounds: 2 }],
+      terrains: [{ kind: 'electric', rounds: 4 }],
+      rooms: [],
+    }
+    const currentFieldEffects = {
+      weather: [{ kind: 'rainy', rounds: 2 }],
+      terrains: [{ kind: 'electric', rounds: 4 }],
+      rooms: [],
+    }
+    const applyPersistedMap = vi.fn()
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      const command = commandRecord(body)
+      expect(request).toBe(MAP_API_PATHS.clearFieldEffects)
+      return acceptedClearFieldEffectsResponse(command, {
+        previous: cloneJson(map.value.fieldEffects),
+        current: currentFieldEffects,
+      })
+    })
+
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      map,
+      mapRevision: ref(4),
+      applyPersistedMap,
+    })
+
+    const result = await actions.clearFieldEffects({ category: 'weather', kinds: ['sunny'] })
+
+    expect(result).toMatchObject({ dispatched: true, opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE) })
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson).toHaveBeenLastCalledWith(MAP_API_PATHS.clearFieldEffects, expect.objectContaining({
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: result.opId,
+      mapSlug: 'arena-map',
+      baseRevision: 4,
+      type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+      scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+      payload: { category: 'weather', kinds: ['sunny'] },
+      clientId: 'ssr',
+    }))
+    expect(map.value.revision).toBe(5)
+    expect(map.value.fieldEffects).toEqual(currentFieldEffects)
+    expect(applyPersistedMap).not.toHaveBeenCalled()
+    expect(actions.pendingPredictionCount.value).toBe(0)
+  })
+
+  it('rejects oversized clearFieldEffects batches before durable storage or HTTP send', async () => {
+    const delegate = createTestOutbox()
+    const enqueue = vi.fn(delegate.enqueue.bind(delegate))
+    const actions = useTestLivePlayCommands({
+      slug: 'arena-map',
+      mapRevision: ref(4),
+      outbox: wrapOutbox(delegate, { enqueue }),
+    })
+
+    const result = await actions.clearFieldEffects({
+      category: 'weather',
+      kinds: Array.from({ length: LIVE_PLAY_BATCH_MAX_FIELD_EFFECT_OPERATIONS + 1 }, () => 'sunny' as const),
+    })
+
+    expect(result).toMatchObject({
+      dispatched: false,
+      message: expect.stringContaining(`payload.kinds must contain at most ${LIVE_PLAY_BATCH_MAX_FIELD_EFFECT_OPERATIONS} weather effect kinds`),
+    })
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(apiMocks.postJson).not.toHaveBeenCalled()
+    await expect(delegate.list()).resolves.toEqual([])
+  })
+
+  it('blocks conflicting field-effect commands while clearFieldEffects is pending but allows unrelated token actions', async () => {
+    const clearGate = deferred<void>()
+    const moveGate = deferred<void>()
+    apiMocks.postJson.mockImplementation(async (request: string, body: unknown) => {
+      const command = commandRecord(body)
+      if (request === MAP_API_PATHS.clearFieldEffects) {
+        await clearGate.promise
+        return acceptedClearFieldEffectsResponse(command)
+      }
+      if (request === MAP_API_PATHS.moveToken) {
+        await moveGate.promise
+        return acceptedMoveTokenResponse(command, { previousRevision: 4, revision: 5 })
+      }
+      throw new Error(`Unexpected request ${request}`)
+    })
+
+    const actions = useTestLivePlayCommands({ slug: 'arena-map', mapRevision: ref(4) })
+    const clear = actions.clearFieldEffects({ category: 'all' })
+
+    expect(actions.pendingCommandCount.value).toBe(1)
+    const blocked = await actions.setFieldEffect({ category: 'weather', kind: 'sunny' })
+    expect(blocked).toEqual({
+      dispatched: false,
+      message: 'Another pending command is already changing this map fieldEffects lane.',
+    })
+
+    const move = actions.moveToken({ placementId: 'token-pikachu', position: { x: 2, y: 0, z: 1 } })
+    await vi.waitFor(() => expect(apiMocks.postJson).toHaveBeenCalledTimes(2))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(1, MAP_API_PATHS.clearFieldEffects, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+      scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+    }))
+    expect(apiMocks.postJson).toHaveBeenNthCalledWith(2, MAP_API_PATHS.moveToken, expect.objectContaining({
+      type: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+      scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+    }))
+
+    clearGate.resolve()
+    moveGate.resolve()
+    await expect(Promise.all([clear, move])).resolves.toEqual([
+      expect.objectContaining({ dispatched: true }),
+      expect.objectContaining({ dispatched: true }),
+    ])
+    expect(actions.pendingCommandCount.value).toBe(0)
+  })
+
+  it('retries, status-checks, and abandons clearFieldEffects outbox entries with the exact stored command body', async () => {
+    const retryOutbox = createTestOutbox()
+    apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
+    const retryActions = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox: retryOutbox }).actions
+    const uncertain = await retryActions.clearFieldEffects({ category: 'all' })
+    const retryEntry = await retryOutbox.get(uncertain.opId!)
+    expect(retryEntry).toMatchObject({ state: 'uncertain', requestPath: MAP_API_PATHS.clearFieldEffects })
+
+    apiMocks.postJson.mockReset()
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.clearFieldEffects)
+      expect(body).toEqual(retryEntry!.body)
+      return acceptedClearFieldEffectsResponse(commandRecord(body))
+    })
+    await expect(retryActions.retryOutboxCommand(retryEntry!.opId)).resolves.toMatchObject({
+      dispatched: true,
+      opId: retryEntry!.opId,
+    })
+    await expect(retryOutbox.get(retryEntry!.opId)).resolves.toBeNull()
+
+    const statusOutbox = createTestOutbox()
+    const statusQueued = await enqueueStoredCommand(statusOutbox, {
+      requestPath: MAP_API_PATHS.clearFieldEffects,
+      body: storedClearFieldEffectsCommandBody(),
+    })
+    const statusEntry = await makeStoredCommandUncertain(statusOutbox, statusQueued)
+    const statusActions = createCommandHarness({ slug: 'arena-map', outbox: statusOutbox }).actions
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.operationStatus)
+      expect(statusCommandRecord(body)).toEqual(statusEntry.body)
+      return operationStatusTerminalResponse(statusEntry, acceptedClearFieldEffectsResponse(statusEntry.body))
+    })
+
+    await expect(statusActions.checkOutboxCommandStatus(statusEntry.opId)).resolves.toMatchObject({
+      status: 'accepted',
+      opId: statusEntry.opId,
+    })
+    await expect(statusOutbox.get(statusEntry.opId)).resolves.toBeNull()
+
+    const abandonOutbox = createTestOutbox()
+    const abandonQueued = await enqueueStoredCommand(abandonOutbox, {
+      requestPath: MAP_API_PATHS.clearFieldEffects,
+      body: storedClearFieldEffectsCommandBody(),
+    })
+    const abandonEntry = await makeStoredCommandUncertain(abandonOutbox, abandonQueued)
+    const abandonActions = createCommandHarness({ slug: 'arena-map', outbox: abandonOutbox }).actions
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.operationAbandon)
+      expect(statusCommandRecord(body)).toEqual(abandonEntry.body)
+      return operationAbandonmentResponse(abandonEntry, 'abandoned', abandonedAbandonmentResult(abandonEntry))
+    })
+
+    await expect(abandonActions.abandonOutboxCommand(abandonEntry.opId)).resolves.toMatchObject({
+      status: 'abandoned',
+      opId: abandonEntry.opId,
+    })
+    await expect(abandonOutbox.get(abandonEntry.opId)).resolves.toBeNull()
   })
 
   it('posts live-play scene commands through the command dispatcher', async () => {

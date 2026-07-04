@@ -367,6 +367,7 @@ const acceptedResultExpectedPatchTypesForCommand = (
   command: LivePlayCommandEnvelope,
 ): readonly string[] => {
   if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS) return [LIVE_PLAY_PATCH_TYPES.MAP_HAZARDS]
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS) return [LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS]
   return []
 }
 

@@ -116,6 +116,7 @@ const buildTerrainRoute = (await import('../../server/api/maps/terrain/build.pos
 const removeTerrainRoute = (await import('../../server/api/maps/terrain/remove.post')).default
 const setFieldEffectRoute = (await import('../../server/api/maps/field-effects/set.post')).default
 const removeFieldEffectRoute = (await import('../../server/api/maps/field-effects/remove.post')).default
+const clearFieldEffectsRoute = (await import('../../server/api/maps/field-effects/clear.post')).default
 const tickFieldEffectDurationsRoute = (await import('../../server/api/maps/field-effects/tick.post')).default
 const attackOfOpportunityRoute = (await import('../../server/api/maps/attack-of-opportunity/update.post')).default
 const operationAbandonRoute = (await import('../../server/api/maps/operations/abandon.post')).default
@@ -329,6 +330,19 @@ describe('map hosted-write API routes', () => {
           type: 'removeFieldEffect',
           scopes: [{ kind: 'map', lane: 'fieldEffects' }],
           payload: { category: 'weather', kind: 'sunny' },
+        },
+        mock: mocks.executeLivePlayMapEffectsCommandUseCase,
+      },
+      {
+        route: clearFieldEffectsRoute,
+        body: {
+          schemaVersion: 1,
+          opId: 'op_hostedcfld',
+          mapSlug: 'arena',
+          baseRevision: 0,
+          type: 'clearFieldEffects',
+          scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+          payload: { category: 'all' },
         },
         mock: mocks.executeLivePlayMapEffectsCommandUseCase,
       },

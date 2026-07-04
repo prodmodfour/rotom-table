@@ -15,7 +15,12 @@ import {
   type SetFieldEffectPayload,
   type TickFieldEffectDurationsPayload,
 } from '#shared/livePlayCommands'
-import { parseClearHazardsPayload, type ClearHazardsPayload } from '#shared/livePlayBatchCommands'
+import {
+  parseClearFieldEffectsPayload,
+  parseClearHazardsPayload,
+  type ClearFieldEffectsPayload,
+  type ClearHazardsPayload,
+} from '#shared/livePlayBatchCommands'
 import type { AuthRole } from '#shared/auth'
 import { nextRevision, normalizeRevision } from '#shared/sessionRevisions'
 import type {
@@ -66,6 +71,7 @@ export type LivePlayMapEffectsCommandType =
   | typeof LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD
   | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS
+  | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS
   | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
   | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
@@ -99,6 +105,7 @@ export type HazardPatchPayload = HazardCellPatchPayload | ClearHazardsPatchPaylo
 
 export interface FieldEffectsPatchPayload {
   readonly command:
+    | typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS
     | typeof LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT
     | typeof LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT
     | typeof LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS
@@ -106,6 +113,7 @@ export interface FieldEffectsPatchPayload {
   readonly current: MapFieldEffects
   readonly category?: FieldEffectRemoveCategory
   readonly kind?: FieldEffectKind
+  readonly kinds?: readonly FieldEffectKind[]
   readonly tickAmount?: number
 }
 
@@ -175,6 +183,7 @@ interface AppliedFieldEffectsChange {
   readonly current: MapFieldEffects
   readonly category?: FieldEffectRemoveCategory
   readonly kind?: FieldEffectKind
+  readonly kinds?: readonly FieldEffectKind[]
   readonly tickAmount?: number
 }
 
@@ -189,6 +198,7 @@ const mapEffectsCommandTypes = new Set<string>([
   LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD,
   LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
+  LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
   LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
@@ -206,6 +216,7 @@ const hazardCommandTypes = new Set<string>([
 ])
 
 const fieldEffectCommandTypes = new Set<string>([
+  LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
   LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT,
   LIVE_PLAY_COMMAND_TYPES.TICK_FIELD_EFFECT_DURATIONS,
@@ -255,16 +266,10 @@ const assertMapEffectsCommandType = (
   if (expectedType && command.type !== expectedType) {
     rejectLivePlayCommand('invalid', `This route only accepts ${expectedType} commands`)
   }
-  if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS) {
-    rejectLivePlayCommand(
-      'invalid',
-      'This route does not accept clearFieldEffects commands yet',
-    )
-  }
   if (!mapEffectsCommandTypes.has(command.type)) {
     rejectLivePlayCommand(
       'invalid',
-      'Map effects live-play routes support placeHazard, removeHazard, clearHazards, setFieldEffect, removeFieldEffect, and tickFieldEffectDurations commands only',
+      'Map effects live-play routes support placeHazard, removeHazard, clearHazards, clearFieldEffects, setFieldEffect, removeFieldEffect, and tickFieldEffectDurations commands only',
     )
   }
 }
@@ -365,14 +370,20 @@ const expectRemoveHazardPayload = (payload: unknown): RemoveHazardPayload => {
   return { cell: expectHazardCell(record.cell, 'removeHazard payload.cell') }
 }
 
-const clearHazardsIssueSummary = (issues: ReturnType<typeof parseClearHazardsPayload>['issues']): string => (
+const batchIssueSummary = (issues: readonly { readonly path: string; readonly message: string }[]): string => (
   issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')
 )
 
 const expectClearHazardsPayload = (payload: unknown): ClearHazardsPayload => {
   const result = parseClearHazardsPayload(payload)
   if (result.valid) return result.value
-  return rejectLivePlayCommand('invalid', `clearHazards payload is invalid: ${clearHazardsIssueSummary(result.issues)}`)
+  return rejectLivePlayCommand('invalid', `clearHazards payload is invalid: ${batchIssueSummary(result.issues)}`)
+}
+
+const expectClearFieldEffectsPayload = (payload: unknown): ClearFieldEffectsPayload => {
+  const result = parseClearFieldEffectsPayload(payload)
+  if (result.valid) return result.value
+  return rejectLivePlayCommand('invalid', `clearFieldEffects payload is invalid: ${batchIssueSummary(result.issues)}`)
 }
 
 const sameCell = (
@@ -564,6 +575,8 @@ const validateCommandPayloadAndScopes = (command: LivePlayMapEffectCommand): voi
     expectRemoveHazardPayload(command.payload)
   } else if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS) {
     expectClearHazardsScopes(command, expectClearHazardsPayload(command.payload))
+  } else if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS) {
+    expectClearFieldEffectsPayload(command.payload)
   } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT) {
     expectSetFieldEffectPayload(command.payload)
   } else if (command.type === LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT) {
@@ -826,6 +839,65 @@ const withFieldEffects = (
   fieldEffects: cloneFieldEffects(fieldEffects),
 }, timestamp)
 
+const clearFieldEffectsKinds = (payload: ClearFieldEffectsPayload): readonly FieldEffectKind[] | undefined => (
+  'kinds' in payload && payload.kinds !== undefined ? [...payload.kinds] as readonly FieldEffectKind[] : undefined
+)
+
+const clearFieldEffectsNoOpMessage = (payload: ClearFieldEffectsPayload, mapSlug: string): string => {
+  if (payload.category === 'all') return `No field effects are active on map ${mapSlug}.`
+  const kinds = clearFieldEffectsKinds(payload)
+  if (kinds === undefined) return `No ${payload.category} field effects are active on map ${mapSlug}.`
+  if (kinds.length === 1) return `${payload.category} effect ${kinds[0]} is not active on map ${mapSlug}.`
+  return `None of the requested ${payload.category} field effects are active on map ${mapSlug}.`
+}
+
+const applyClearFieldEffects = (
+  command: LivePlayMapEffectCommand,
+  context: ResolvedMapEffectsContext,
+  timestamp: number,
+): AppliedFieldEffectsChange => {
+  if (command.type !== LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS) {
+    rejectLivePlayCommand('invalid', 'applyClearFieldEffects only handles clearFieldEffects commands')
+  }
+
+  const payload = expectClearFieldEffectsPayload(command.payload)
+  const previous = cloneFieldEffects(context.map.fieldEffects)
+  const current = cloneFieldEffects(previous)
+  const kinds = clearFieldEffectsKinds(payload)
+  const kindSet = new Set(kinds ?? [])
+
+  if (payload.category === 'all') {
+    current.weather = []
+    current.terrains = []
+    current.rooms = []
+  } else if (payload.category === 'weather') {
+    current.weather = kinds === undefined
+      ? []
+      : current.weather.filter((effect) => !kindSet.has(effect.kind))
+  } else if (payload.category === 'terrain') {
+    current.terrains = kinds === undefined
+      ? []
+      : current.terrains.filter((effect) => !kindSet.has(effect.kind))
+  } else {
+    current.rooms = kinds === undefined
+      ? []
+      : current.rooms.filter((effect) => !kindSet.has(effect.kind))
+  }
+
+  if (fieldEffectsEqual(previous, current)) {
+    rejectLivePlayCommand('no-op', clearFieldEffectsNoOpMessage(payload, command.mapSlug), { currentState: previous })
+  }
+
+  return {
+    lane: 'fieldEffects',
+    nextMap: withFieldEffects(context.map, current, timestamp),
+    previous,
+    current,
+    category: payload.category,
+    ...(kinds === undefined ? {} : { kinds }),
+  }
+}
+
 const applySetFieldEffect = (
   command: LivePlayMapEffectCommand,
   context: ResolvedMapEffectsContext,
@@ -986,6 +1058,7 @@ const applyMapEffectsChange = (
   if (command.type === LIVE_PLAY_COMMAND_TYPES.PLACE_HAZARD) return applyPlaceHazard(command, context, timestamp)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.REMOVE_HAZARD) return applyRemoveHazard(command, context, timestamp)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS) return applyClearHazards(command, context, timestamp)
+  if (command.type === LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS) return applyClearFieldEffects(command, context, timestamp)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.SET_FIELD_EFFECT) return applySetFieldEffect(command, context, timestamp)
   if (command.type === LIVE_PLAY_COMMAND_TYPES.REMOVE_FIELD_EFFECT) return applyRemoveFieldEffect(command, context, timestamp)
   return applyTickFieldEffectDurations(command, context, timestamp)
@@ -1060,6 +1133,7 @@ const fieldEffectsPatch = (
       current: cloneFieldEffects(change.current),
       ...(change.category === undefined ? {} : { category: change.category }),
       ...(change.kind === undefined ? {} : { kind: change.kind }),
+      ...(change.kinds === undefined ? {} : { kinds: [...change.kinds] }),
       ...(change.tickAmount === undefined ? {} : { tickAmount: change.tickAmount }),
     },
   }

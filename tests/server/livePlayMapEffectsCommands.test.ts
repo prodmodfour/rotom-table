@@ -3,7 +3,10 @@ import {
   LIVE_PLAY_COMMAND_SCHEMA_VERSION,
   LIVE_PLAY_COMMAND_TYPES,
   LIVE_PLAY_PATCH_TYPES,
+  createClearFieldEffectsCommandScopes,
   createClearHazardsCommandScopes,
+  type ClearFieldEffectsLivePlayCommand,
+  type ClearFieldEffectsPayload,
   type ClearHazardsLivePlayCommand,
   type ClearHazardsPayload,
   type LivePlayMapEffectCommand,
@@ -77,6 +80,20 @@ const clearHazardsCommand = (
   baseRevision: 4,
   type: LIVE_PLAY_COMMAND_TYPES.CLEAR_HAZARDS,
   scopes: createClearHazardsCommandScopes(payload),
+  payload,
+  ...overrides,
+})
+
+const clearFieldEffectsCommand = (
+  payload: ClearFieldEffectsPayload = { category: 'all' },
+  overrides: Partial<ClearFieldEffectsLivePlayCommand> = {},
+): ClearFieldEffectsLivePlayCommand => ({
+  schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+  opId: 'op_clearfld1',
+  mapSlug: 'arena',
+  baseRevision: 4,
+  type: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+  scopes: createClearFieldEffectsCommandScopes(payload),
   payload,
   ...overrides,
 })
@@ -159,12 +176,7 @@ const createHarness = (initialMap: TabletopMap = baseMap()) => {
   }
 }
 
-type RoutedLivePlayMapEffectCommand = Exclude<
-  LivePlayMapEffectCommand,
-  { readonly type: typeof LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS }
->
-
-const execute = (harness: ReturnType<typeof createHarness>, command: RoutedLivePlayMapEffectCommand, role: 'gm' | 'player' = 'gm') =>
+const execute = (harness: ReturnType<typeof createHarness>, command: LivePlayMapEffectCommand, role: 'gm' | 'player' = 'gm') =>
   executeLivePlayMapEffectsCommandUseCase({
     role,
     command,
@@ -303,6 +315,99 @@ describe('live-play hazard and field-effect commands', () => {
     })
   })
 
+  it('clears all field effects through one authoritative batch result and reuses it on retry', async () => {
+    const initialFieldEffects = {
+      weather: [{ kind: 'sunny' as const, rounds: 3 }],
+      terrains: [{ kind: 'electric' as const, rounds: 4, scope: 'field' as const }],
+      rooms: [{ kind: 'trick' as const, rounds: 2, startsNextRound: true }],
+    }
+    const harness = createHarness(baseMap({ fieldEffects: initialFieldEffects }))
+    const command = clearFieldEffectsCommand({ category: 'all' })
+
+    const response = await execute(harness, command)
+
+    expect(response.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.storedMap.fieldEffects).toEqual({ weather: [], terrains: [], rooms: [] })
+    expect(response.fieldEffects).toEqual({ weather: [], terrains: [], rooms: [] })
+    expect(acceptedPatches(response)).toEqual([
+      expect.objectContaining({
+        type: LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS,
+        revision: 5,
+        scopes: [{ kind: 'map', lane: 'fieldEffects' }],
+        payload: {
+          command: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+          category: 'all',
+          previous: initialFieldEffects,
+          current: { weather: [], terrains: [], rooms: [] },
+        },
+      }),
+    ])
+    expect(harness.published).toHaveLength(1)
+
+    const retry = await execute(harness, command)
+
+    expect(retry.result).toEqual(response.result)
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.published).toHaveLength(1)
+  })
+
+  it('clears one field-effect category and explicit kinds without touching unrelated effects', async () => {
+    const harness = createHarness(baseMap({
+      fieldEffects: {
+        weather: [{ kind: 'sunny', rounds: 3 }, { kind: 'rainy', rounds: 2 }],
+        terrains: [{ kind: 'electric', rounds: 4, scope: 'field' }, { kind: 'grassy', rounds: 1, scope: 'field' }],
+        rooms: [{ kind: 'magic', rounds: 5 }],
+      },
+    }))
+
+    const categoryResponse = await execute(harness, clearFieldEffectsCommand(
+      { category: 'weather' },
+      { opId: 'op_clearwthr' },
+    ))
+    expect(categoryResponse.result).toMatchObject({ ok: true, previousRevision: 4, revision: 5 })
+    expect(harness.storedMap.fieldEffects).toEqual({
+      weather: [],
+      terrains: [{ kind: 'electric', rounds: 4, scope: 'field' }, { kind: 'grassy', rounds: 1, scope: 'field' }],
+      rooms: [{ kind: 'magic', rounds: 5 }],
+    })
+    expect(acceptedPatches(categoryResponse)[0]).toMatchObject({
+      type: LIVE_PLAY_PATCH_TYPES.MAP_FIELD_EFFECTS,
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+        category: 'weather',
+        current: {
+          weather: [],
+          terrains: [{ kind: 'electric', rounds: 4, scope: 'field' }, { kind: 'grassy', rounds: 1, scope: 'field' }],
+          rooms: [{ kind: 'magic', rounds: 5 }],
+        },
+      },
+    })
+
+    const explicitResponse = await execute(harness, clearFieldEffectsCommand(
+      { category: 'terrain', kinds: ['electric'] },
+      { opId: 'op_cleartrnk', baseRevision: 5 },
+    ))
+    expect(explicitResponse.result).toMatchObject({ ok: true, previousRevision: 5, revision: 6 })
+    expect(harness.storedMap.fieldEffects).toEqual({
+      weather: [],
+      terrains: [{ kind: 'grassy', rounds: 1, scope: 'field' }],
+      rooms: [{ kind: 'magic', rounds: 5 }],
+    })
+    expect(acceptedPatches(explicitResponse)[0]).toMatchObject({
+      payload: {
+        command: LIVE_PLAY_COMMAND_TYPES.CLEAR_FIELD_EFFECTS,
+        category: 'terrain',
+        kinds: ['electric'],
+        current: {
+          weather: [],
+          terrains: [{ kind: 'grassy', rounds: 1, scope: 'field' }],
+          rooms: [{ kind: 'magic', rounds: 5 }],
+        },
+      },
+    })
+  })
+
   it('sets field effects through the authoritative executor', async () => {
     const harness = createHarness()
 
@@ -419,12 +524,19 @@ describe('live-play hazard and field-effect commands', () => {
       { mode: 'cells', cells: [{ x: 99, y: 0, z: 0 }] },
       { opId: 'op_badclear1' },
     ))
+    const fieldClearNoOp = await execute(harness, clearFieldEffectsCommand({ category: 'all' }, { opId: 'op_nofldclr1' }))
+    const invalidFieldClear = await execute(harness, clearFieldEffectsCommand(
+      { category: 'weather', kinds: ['electric'] } as unknown as ClearFieldEffectsPayload,
+      { opId: 'op_badfldclr' },
+    ))
 
     expect(noOp.result).toMatchObject({ ok: false, reason: 'no-op', currentRevision: 4 })
     expect(invalidHazard.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 4 })
     expect(invalidField.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 4 })
     expect(clearNoOp.result).toMatchObject({ ok: false, reason: 'no-op', currentRevision: 4 })
     expect(invalidClear.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 4 })
+    expect(fieldClearNoOp.result).toMatchObject({ ok: false, reason: 'no-op', currentRevision: 4 })
+    expect(invalidFieldClear.result).toMatchObject({ ok: false, reason: 'invalid', currentRevision: 4 })
     expect(harness.writes).toEqual([])
   })
 
@@ -454,5 +566,36 @@ describe('live-play hazard and field-effect commands', () => {
     })
     expect(harness.writes).toHaveLength(1)
     expect(harness.storedMap.hazards).toEqual([{ kind: 'spikes', x: 1, y: 0, z: 2 }])
+  })
+
+  it('rejects stale field-effect clear conflicts without partially clearing effects', async () => {
+    const harness = createHarness(baseMap({
+      fieldEffects: {
+        weather: [{ kind: 'sunny', rounds: 3 }],
+        terrains: [{ kind: 'electric', rounds: 4, scope: 'field' }],
+        rooms: [],
+      },
+    }))
+    await execute(harness, setFieldEffectCommand({
+      opId: 'op_fldfirst1',
+      payload: { category: 'weather', kind: 'rainy', rounds: 2 },
+    }))
+
+    const staleClear = await execute(harness, clearFieldEffectsCommand({ category: 'all' }, {
+      opId: 'op_fldstale1',
+      baseRevision: 4,
+    }))
+
+    expect(staleClear.result).toMatchObject({
+      ok: false,
+      reason: 'stale-revision',
+      currentRevision: 5,
+    })
+    expect(harness.writes).toHaveLength(1)
+    expect(harness.storedMap.fieldEffects).toEqual({
+      weather: [{ kind: 'rainy', rounds: 2 }],
+      terrains: [{ kind: 'electric', rounds: 4, scope: 'field' }],
+      rooms: [],
+    })
   })
 })
