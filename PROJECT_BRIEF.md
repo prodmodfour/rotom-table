@@ -4,7 +4,7 @@ TEMPLATE_CUSTOMISED: true
 
 ## Project name
 
-Rotom Table — Live Play Sprint 3 ephemeral presence and table-feel wave.
+Rotom Table — Live Play Sprint 4 authoritative batch workflow wave.
 
 ## Project type
 
@@ -12,51 +12,52 @@ Full-stack Nuxt 3 application with server-side SQLite persistence, Vue UI, TypeS
 
 ## Project goal
 
-Implement the Live Play Sprint 3 work described by `BUILD_TICKETS.md` (`001` through `018`), refreshed from `sprint-3.md`. The finished wave should make live play feel more like a shared LAN tabletop by adding ephemeral presence, connected-participant display, token attention, map pings, shared targeting/measurement intent, GM attention requests, and debug/ops coverage while preserving the Sprint 1–2 server-authoritative command model.
+Implement the Live Play Sprint 4 work described by `BUILD_TICKETS.md` (`001` through `019`), refreshed from `sprint-4.md`. The finished wave should turn common multi-click live-play workflows into single server-authoritative batch commands: clearing hazards, clearing field effects, editing terrain voxels, editing hazard cells, showing honest batch pending/recovery state, proving chaos/retry behavior, and documenting operator smoke paths.
 
-Presence and intent state is presentation-only. It must be short-lived, display-safe, non-durable, and unable to grant token control, mutate campaign state, bypass profile/map visibility checks, replace command routes, or block normal gameplay commands when presence transport fails.
+The core rule for this sprint is: one user intention should become one authoritative transaction whenever the UI presents it as one action. Batch commands must preserve the Sprint 1–3 live-play authority model: explicit validation, `opId` idempotency, revision checks, conflict scopes, authorised realtime replay, durable outbox recovery, accepted patches, and graceful presentation-only presence behavior.
 
 ## Audience
 
 - Rotom Table maintainers and operators.
 - GMs running live-play maps with multiple clients.
-- Players coordinating movement, target selection, pings, and attention during live sessions.
-- Future autonomous or human contributors maintaining live-play command authority, ephemeral presence, realtime delivery, map rendering, and privacy boundaries.
+- Players using live-play hazard, terrain, field-effect, targeting, and movement tools during sessions.
+- Future autonomous or human contributors maintaining live-play command authority, batching, realtime delivery, map rendering, and privacy boundaries.
 
 ## Success criteria
 
 The work is successful when:
 
-- Every ticket in `BUILD_TICKETS.md` for `001` through `018` is marked `DONE`.
+- Every ticket in `BUILD_TICKETS.md` for `001` through `019` is marked `DONE`.
 - `scripts/quality-gate.sh` passes on the final branch.
-- Shared presence contracts strictly parse and sanitize display-safe participant summaries, selected/hovered token IDs, intent state, pings, and client timestamps/sequences.
-- Server-side presence is kept in process-local memory with TTL expiry and without SQLite writes, campaign file writes, durable realtime rows, or map/sheet document mutation.
-- Presence snapshot and heartbeat/update routes reuse existing role/profile/map visibility checks and never leak hidden-map, raw profile, sheet, command-body, access-gate, hostname, or secret data.
-- Transient presence updates can be broadcast over the existing realtime surface without advancing durable sequence numbers, while HTTP snapshot/heartbeat remains a fallback.
-- The map page has a single client presence composable for snapshots, heartbeats, transient updates, local expiry, tab-visibility throttling, own-state updates, error state, and transport freshness.
-- Connected participants render compactly with display-safe labels, accents, freshness, and high-level intent.
-- Local token selection and hover publish presence only for visible tokens, and remote token attention renders without changing token-control permissions or obscuring local pending/correction state.
-- Players and GMs can place short-lived map pings that expire locally and never change map revision or durable realtime history.
-- Targeting, measurement, and movement intent can be published and rendered without exposing hidden move details, sheet payloads, or unsafe target lists.
-- GM attention requests are GM-only, player-safe, and never force disruptive camera movement unless an explicit preference allows it.
-- Presence privacy, access, failure, degradation, profile-switch, stale-expiry, and transport-loss tests prove presence improves feel but never becomes a gameplay dependency.
-- The latency debug panel can optionally show presence freshness metrics in debug mode without weakening command trace redaction.
-- Operator docs explain the non-authoritative presence boundary and include smoke steps for three-client presence, pings, intent, hidden-map access, reconnect, and presence failure.
+- Current sequential live-play workflows are audited in `docs/live-play-batch-workflows.md`, with command routes, authority scopes, conflict scopes, expected patches, local-prediction safety, and Sprint 4/later/not-worth-batching classification.
+- Shared batch guardrails define tested maximum payload sizes and pure validation helpers for bounded arrays, unique cells, field-effect operations, terrain voxels, hazard cells, and token IDs.
+- `clearHazards`, `clearFieldEffects`, `editTerrainVoxels`, and `editHazards` command contracts strictly validate payload modes, reject unknown durable-state fields, and construct conservative conflict scopes.
+- Every accepted batch command commits all authoritative effects in one SQLite transaction, appends durable realtime rows before commit, publishes only after commit, and returns/stores one terminal result keyed by `opId`.
+- Retrying the exact same batch command body and `opId` returns the stored terminal result without duplicating effects or realtime events.
+- Stale, conflicting, hidden, unauthorised, invalid, oversized, or contradictory batch payloads reject clearly and without partial authoritative writes.
+- Accepted patches update changed hazards, field effects, terrain, or hazard cells precisely enough for clients to reconcile without whole-map replacement when practical.
+- API routes, result validation, operation status, and `useLivePlayCommands` dispatchers support batch command enqueue/send/accept/reject/retry/recovery through the durable outbox.
+- Existing live-play clear-all hazards and clear-all field-effects UI actions send exactly one authoritative command request while setup/edit behavior remains unchanged.
+- Live-play terrain and hazard brush workflows coalesce strokes into bounded batch commands or split/reject safely when limits are exceeded.
+- Batch pending and recovery UI gives safe summaries such as “Clearing 12 hazards…” without exposing full payloads or private data, and unrelated scoped commands remain interactive.
+- Chaos tests cover conflicts, stale revisions, duplicate terminals, lost HTTP responses, status/retry recovery, HTTP/SSE ordering, and final authoritative convergence.
+- Operator docs explain that batch commands are authoritative transactions, not client-side macros, and include GM/two-player smoke steps for clear hazards, clear field effects, terrain brush, hazard brush, rejection, retry/status, and reconnect.
 - The top-level `AUTOMATION_STATUS` in `BUILD_TICKETS.md` is set to `DONE` when the final ticket is complete.
 
 ## Non-goals
 
 The autonomous build must not spend time on:
 
-- Replacing authoritative HTTP live-play command routes with WebSockets.
-- Sending authoritative gameplay commands through the presence transport.
-- Making presence, pings, hover, selection, target previews, camera focus, or intent durable campaign state.
-- Letting presence state grant token control, bypass profile validation, bypass map visibility checks, or alter command authorisation.
-- Storing private profile payloads, sheet data, command bodies, access-gate data, internal/private hostnames, credentials, tokens, or secrets in presence events.
-- Making local presence failure block normal gameplay commands.
-- Building broad voice, video, or chat features.
-- Implementing batch workflows; that belongs in a later sprint after presence/table-feel work lands.
-- Weakening Sprint 1–2 server authority, revision checks, idempotency, durable outbox recovery, authorised realtime replay, or prediction reconciliation.
+- Replacing HTTP/SSE command transport or presence transport.
+- Sending authoritative gameplay commands through presence transport.
+- Making clients authoritative for batched changes.
+- Using whole-map saves for live-play batch workflows.
+- Introducing broad CRDT/document merging.
+- Building a general-purpose scripting engine for arbitrary command lists.
+- Batching hidden-information or random-result workflows unless the server already resolves the authoritative result deterministically.
+- Making local prediction cover complex batch side effects in this sprint.
+- Removing existing single-item commands; keep them as primitives and compatibility paths.
+- Weakening Sprint 1–3 server authority, revision checks, idempotency, durable outbox recovery, authorised realtime replay, prediction reconciliation, or ephemeral presence privacy boundaries.
 - Public authentication or hardening Rotom Table into a public multi-tenant service.
 - Production runtime edits, direct server rebuilds, direct deployment, or production data mutation.
 - Unrelated UI redesigns, unrelated encounter/spawn behavior changes, unrelated trainer-sheet behavior changes, unrelated inventory behavior changes, or speculative live-play features.
@@ -69,8 +70,9 @@ Preferred stack:
 - language: TypeScript, with existing Python/Bash helpers only where already appropriate;
 - framework: Nuxt 3 and Vue 3;
 - rendering: existing three.js map/token rendering and Vue map page components;
-- persistence/realtime: existing SQLite live-play storage, HTTP command endpoints, SSE realtime events, durable IndexedDB outbox patterns, plus transient non-durable presence delivery where practical;
-- testing: Vitest, Vue Test Utils/happy-dom where applicable, targeted composable/page/server tests, and existing test helpers;
+- persistence/realtime: existing SQLite live-play storage, HTTP command endpoints, SSE realtime events, durable IndexedDB outbox patterns, and transient non-durable presence delivery from Sprint 3 where relevant;
+- batching: narrow, explicit, server-authoritative command types rather than generic arbitrary command lists;
+- testing: Vitest, Vue Test Utils/happy-dom where applicable, targeted shared/composable/page/server/integration tests, and existing test helpers;
 - package manager: npm with Node.js 24 from `.nvmrc`;
 - CI: existing GitHub Actions CI plus local `scripts/quality-gate.sh`.
 
@@ -79,37 +81,44 @@ Hard constraints:
 - Follow the repository `AGENTS.md` production deployment boundaries and live-play-only instruction.
 - Keep campaign/private data, `.env` files, databases, generated runtime files, and secrets out of commits.
 - Keep ticket scope narrow: implement only the lowest-numbered `TODO` ticket in each autonomous cycle.
-- Preserve the server-authoritative command model: presence is local/ephemeral presentation state only and must not be treated as durable authoritative state.
-- Presence transport must degrade gracefully; command dispatch remains governed by existing command/reconciliation blockers, not by presence freshness.
-- Preserve role/profile/map visibility checks for all presence snapshots, heartbeats, pings, intent, and transient events.
-- Redact or reject command bodies, private profile IDs, sheet payloads, arbitrary records, over-large strings, unknown durable-state fields, access-gate data, and sensitive resource details from presence contracts, debug UI, and logs.
+- Preserve the server-authoritative command model: clients may request bounded batches, but the server validates authority, revisions, scopes, permissions, map bounds, and payload shape before mutating state.
+- Every batch command must have a bounded payload size.
+- Every accepted batch command must commit all effects in one SQLite transaction or reject without partial authoritative writes.
+- Every accepted batch command must append durable realtime rows before commit and publish only after commit.
+- Every batch result must be idempotent by `opId`; retrying the exact same body returns the stored terminal result without duplicating effects.
+- Batch patches should describe changed resources precisely enough for clients to reconcile without full-map replacement when practical.
+- If a batch would touch hidden, unauthorised, stale, invalid, or conflicting resources, prefer rejecting the batch with a clear reason over applying a partial subset.
+- Preserve role/profile/map visibility checks for all command routes, presence snapshots, heartbeats, pings, intent, and transient events.
+- Redact or reject command bodies, private profile IDs, sheet payloads, arbitrary records, over-large strings, unknown durable-state fields, access-gate data, and sensitive resource details from batch contracts, presence contracts, debug UI, recovery UI, and logs.
 
 Flexible choices:
 
 - File names, helper names, hook names, and exact component/composable test locations may differ from ticket suggestions when they fit existing architecture better.
 - Tests can be targeted when a full end-to-end browser workflow is impractical, as long as the ticket acceptance criteria are meaningfully covered.
-- Transient presence may be snapshot- or delta-shaped as long as reconnecting clients rebuild from snapshot/heartbeat rather than durable replay.
-- Multi-process presence delivery may degrade gracefully in this sprint if the in-memory registry remains safe and process-local.
-- Visual treatments for participants, token attention, pings, targeting, and GM attention may be subtle, low-noise alternatives to the suggested rings, badges, reticles, text, or focus affordances.
+- Accepted patches may reuse existing patch shapes where they safely describe final authoritative state.
+- Large brush strokes may split into bounded chunks or reject with clear UI copy, according to the safest fit for existing command/outbox behavior.
+- Visual treatments for batch pending/recovery state may be subtle, low-noise alternatives to the suggested labels if users can still understand operation progress.
 
 ## Architecture expectations
 
 Use existing Rotom Table boundaries:
 
 ```text
-shared presence contract/parsers -> server access + process-local presence registry -> HTTP snapshot/heartbeat routes + transient realtime delivery -> map-editor presence composable -> Vue map page/presence panel/isometric renderers -> docs/tests
+shared batch command contracts/parsers -> scope/revision/idempotency helpers -> server command executor SQLite transaction + durable realtime rows -> API routes/result validation/status -> map-editor live-play command composable + IndexedDB outbox -> Vue map page/menu/brush UI -> docs/tests
 ```
 
 Expected patterns:
 
-- Presence schema helpers should be pure, strict, framework-free where practical, and shared by server, client, and tests.
-- Server identity should come from authenticated role/profile/map context; client-supplied identity fields should be ignored, rejected, or overwritten.
-- Presence registry state should be keyed by map slug plus realtime principal/client context, sanitized on write, TTL-pruned on list/update, and removable on disconnect/profile context change when possible.
-- Snapshot and heartbeat routes should be read/presentation APIs with no cacheable private responses and no authoritative command result semantics.
-- Transient realtime presence events should be unsequenced/non-durable, delivered only to currently authorised viewers, and never appended to the durable live-play event log.
-- Client presence should maintain readonly entries, own presence state, pings, freshness metrics, non-blocking error state, local TTL expiry, hidden-tab throttling, and clear boundaries from live-play command dispatch.
-- UI components should render display-safe participant labels, token attention, pings, and intent while preserving local interaction priority and existing pending/correction affordances.
-- Privacy/access tests should be added before or alongside visual polish whenever a ticket expands what presence can carry or render.
+- Batch schema helpers should be pure, strict, framework-free where practical, and shared by server, client, and tests.
+- Server identity and authority should come from authenticated role/profile/map context; client-supplied authority fields should be ignored, rejected, or overwritten.
+- Command bodies should carry stable `opId`, map slug, command type, base revision, conservative conflict scopes, and bounded payloads.
+- Server executors should validate every affected resource before mutation, then apply the accepted batch atomically.
+- Terminal command results should be stored/reused by `opId` and validated against the submitted command body for type, map slug, scopes, and operation identity.
+- Durable realtime events should remain authoritative replay data; transient presence remains non-durable table-feel state and must not become a command transport.
+- Client dispatchers should reuse patch-first accepted-response handling, existing recovery/status behavior, and scope-aware blockers.
+- Complex batch side effects should not be locally predicted in this sprint beyond existing preview/pending/correction affordances.
+- UI loops that previously sent many individual live-play commands for one user intention should be replaced only after the corresponding command contract, server executor, route, client dispatcher, and tests are in place.
+- Privacy/access tests should be added before or alongside any ticket that expands what batch or recovery payloads can carry or render.
 
 ## Quality expectations
 
@@ -127,7 +136,7 @@ Each ticket should also run targeted verification commands from `BUILD_TICKETS.m
 
 ## Documentation expectations
 
-Update existing README/docs/copy only when a ticket changes or exposes user-facing behavior, setup, architecture, operations, limitations, or terminology. The final documentation ticket should add or refresh concise live-play authority and private VPS smoke notes covering ephemeral presence, pings, token attention, intent, GM attention, hidden-map/profile privacy, reconnect, degradation, and the non-authoritative boundary.
+Update existing README/docs/copy when a ticket changes or exposes user-facing behavior, setup, architecture, operations, limitations, or terminology. Sprint 4 documentation should keep `docs/live-play-batch-workflows.md`, `docs/live-play-authority.md`, and `docs/private-vps-live-play-smoke.md` aligned with authoritative batch transactions, payload bounds, fallback behavior for oversized strokes, retry/status recovery, reconnect behavior, and the distinction between server-side batch commands and client-side macros.
 
 ## Safety and security constraints
 
@@ -142,8 +151,8 @@ Do not include:
 
 ## Agent behaviour notes
 
-- `BUILD_TICKETS.md` is the authoritative local autonomous queue for this Live Play Sprint 3 wave.
-- Work one ticket per autonomous cycle, in numeric order; build ticket numbers follow the suggested sprint order from `sprint-3.md`.
+- `BUILD_TICKETS.md` is the authoritative local autonomous queue for this Live Play Sprint 4 wave.
+- Work one ticket per autonomous cycle, in numeric order; build ticket numbers follow the suggested sprint order from `sprint-4.md`.
 - Keep each commit focused on the selected ticket and use a conventional commit message.
-- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket #018, which may set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 3 tickets are complete and the final quality gate passes.
+- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket #019, which may set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 4 tickets are complete and the final quality gate passes.
 - Do not create, close, merge, or comment on pull requests/issues from inside an autonomous ticket run unless a future ticket explicitly asks for it.

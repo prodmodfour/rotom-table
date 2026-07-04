@@ -1,580 +1,604 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: DONE
+AUTOMATION_STATUS: TODO
 
 Ticket statuses:
 
 * TODO — not done
 * DONE — done
 
-The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one Live Play Sprint 3 ticket from `sprint-3.md`; build ticket numbers follow the suggested sprint order.
+The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one Live Play Sprint 4 ticket from `sprint-4.md`; build ticket numbers follow the suggested sprint order.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#018) may also set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 3 tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#019) may also set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 4 tickets are complete.
 
 ---
 
-# Live Play Sprint 3 Tickets
+# Live Play Sprint 4 Tickets
 
 ## Sprint goal
 
-Make live play feel like people are sharing a LAN tabletop, not just sending fast commands. Sprint 3 adds ephemeral presence, token attention, map pings, and shared intent cues while preserving the Sprint 1–2 server-authoritative command model.
+Turn common multi-click live-play workflows into single server-authoritative batch commands. Sprint 1 made hot actions immediate, Sprint 2 made prediction safe, and Sprint 3 made the table feel inhabited. Sprint 4 should reduce the remaining “do the same command 12 times” friction: clearing hazards, clearing field effects, placing/removing terrain or hazards in small groups, applying area-cleanup actions, and presenting batch progress honestly.
 
-Presence and intent state is **not** gameplay authority. It is short-lived presentation state used to show who is here, what token they are looking at, what they are targeting, and where they want attention. Authoritative gameplay mutations continue to use explicit live-play commands, durable outbox recovery, revision checks, authorised realtime replay, and server-side validation.
+The rule for this sprint is: **one user intention should become one authoritative transaction whenever the UI presents it as one action.** Batch commands still use explicit server-authoritative validation, `opId` idempotency, revision checks, conflict scopes, authorised realtime replay, durable outbox recovery, and accepted patches.
 
-## Non-goals for sprint 3
+## Non-goals for sprint 4
 
-- Do not replace authoritative HTTP live-play command routes with WebSockets.
-- Do not make presence, pings, hover, selection, target previews, or camera focus durable campaign state.
-- Do not let presence state grant token control, bypass profile validation, or alter command authorisation.
-- Do not store private profile payloads, sheet data, command bodies, access-gate data, hostnames, or secrets in presence events.
-- Do not make local presence failure block normal gameplay commands.
-- Do not build broad voice/video/chat features.
-- Do not implement batch workflows yet; that should be a later sprint after presence/table-feel work lands.
+- Do not replace HTTP/SSE command transport or presence transport.
+- Do not make clients authoritative for batched changes.
+- Do not use whole-map saves for live-play batch workflows.
+- Do not introduce broad CRDT/document merging.
+- Do not batch hidden-information or random-result workflows unless the server already resolves the authoritative result deterministically.
+- Do not make local prediction cover complex batch side effects in this sprint.
+- Do not remove existing single-item commands; keep them as primitives and compatibility paths.
+- Do not build a general-purpose scripting engine for arbitrary command lists.
 
-## Transport choice for sprint 3
+## Batch design constraints
 
-Use the existing authenticated app/API boundary and the existing `/api/events` realtime surface where practical. Presence events may be transient, unsequenced, and non-durable, with an HTTP snapshot/heartbeat fallback so gameplay still works when presence delivery drops. Do not send authoritative gameplay commands through the presence transport.
+- Every batch command must have a bounded payload size.
+- Every accepted batch command must commit all effects in one SQLite transaction or reject without partial authoritative writes.
+- Every accepted batch command must append durable realtime rows before commit and publish only after commit.
+- Every batch result must be idempotent by `opId`; retrying the exact same body returns the stored terminal result without duplicating effects.
+- Batch patches should describe changed resources precisely enough for clients to reconcile without full-map replacement when practical.
+- If a batch would touch hidden, unauthorised, stale, invalid, or conflicting resources, prefer rejecting the batch with a clear reason over applying a partial subset.
 
 ## Commit sizing rule
 
-Each ticket should fit in one focused commit. If a ticket needs both server transport and UI rendering, split the transport first and wire UI in the next ticket. Tests should prove privacy/access and non-authoritative behaviour before visual polish expands.
+Each ticket should fit in one focused commit. Avoid mixing command-contract, server executor, client dispatch, UI wiring, and docs in one ticket unless the change is tiny. Prefer narrow batch commands over a generic arbitrary-command batch.
 
 ---
 
-## 001 — LP-S3-001 — Add shared live-presence contract
+## 001 — LP-S4-001 — Audit current sequential live-play workflows
 
-Status: DONE
+Status: TODO
 
-**Goal:** Define a safe, minimal, ephemeral presence vocabulary shared by server, client, and tests.
-
-**Primary files:**
-
-- `shared/livePlayPresence.ts` (new)
-- `tests/shared/livePlayPresence.test.ts` (new)
-
-**Work:**
-
-- Add schema constants and parsers for map presence payloads.
-- Model these concepts:
-  - connected user summary;
-  - selected token ID;
-  - hovered token ID;
-  - active intent kind, such as `idle`, `moving-token`, `targeting`, `measuring`, `placing-ping`, or `viewing-sheet`;
-  - optional map ping payload;
-  - monotonic client presence timestamp or sequence.
-- Redact identity to display-safe fields only: role, optional selected profile display name if already safe to show, client ID suffix, and stable visual accent.
-- Make the parser reject command bodies, sheet payloads, arbitrary records, excessive strings, and unknown durable-state fields.
-
-**Acceptance:**
-
-- Presence payloads round-trip through strict parsers.
-- Unknown or over-large fields are rejected or dropped according to parser rules.
-- The contract explicitly distinguishes ephemeral presence from authoritative live-play commands.
-
----
-
-## 002 — LP-S3-002 — Add server-side ephemeral map presence registry
-
-Status: DONE
-
-**Goal:** Track short-lived map presence in memory without writing to SQLite or campaign files.
+**Goal:** Identify the live-play UI flows that still dispatch many individual commands for one user intention.
 
 **Primary files:**
 
-- `server/livePlay/presenceRegistry.ts` (new)
-- `tests/server/livePlayPresenceRegistry.test.ts` (new)
-
-**Work:**
-
-- Add an in-memory registry keyed by map slug and realtime principal context.
-- Store sanitized presence state with TTL expiry.
-- Add update, list, remove, and prune operations.
-- Ensure registry entries never include full command bodies, sheet documents, private profile data, or secrets.
-- Keep the registry process-local; multi-process delivery can degrade gracefully in this sprint.
-
-**Acceptance:**
-
-- Presence entries expire after TTL.
-- Updating presence refreshes the TTL.
-- Listing a map returns only non-expired sanitized entries.
-- No SQLite writes occur in registry tests.
-
----
-
-## 003 — LP-S3-003 — Add presence access checks and snapshot route
-
-Status: DONE
-
-**Goal:** Let clients fetch a safe current presence snapshot only for maps they can view.
-
-**Primary files:**
-
-- `server/api/maps/[slug]/presence.get.ts` (new or equivalent route)
-- `server/livePlay/presenceAccess.ts` (new)
-- `tests/server/livePlayPresenceApi.test.ts` (new)
-
-**Work:**
-
-- Add a read-only presence snapshot endpoint for a map.
-- Reuse existing role/profile/map visibility checks where possible.
-- Return only presence entries visible to the caller.
-- Reject hidden map access for players.
-- Include cache-control headers that prevent browser/proxy caching.
-
-**Acceptance:**
-
-- GM can read presence for visible maps they can access.
-- Profiled player can read presence only for player-visible maps.
-- Hidden maps do not leak presence to players.
-- Response contains no durable map/sheet data beyond safe presence summaries.
-
----
-
-## 004 — LP-S3-004 — Add presence heartbeat/update route
-
-Status: DONE
-
-**Goal:** Let clients publish their current ephemeral presence state without creating authoritative game mutations.
-
-**Primary files:**
-
-- `server/api/maps/[slug]/presence.post.ts` (new or equivalent route)
-- `server/livePlay/presenceRegistry.ts`
-- `tests/server/livePlayPresenceApi.test.ts`
-
-**Work:**
-
-- Accept sanitized presence updates from authorised map viewers.
-- Attach server-observed role/profile context rather than trusting client identity fields.
-- Clamp or reject invalid token IDs, pings, intent strings, and timestamps.
-- Return the current sanitized snapshot after update.
-- Do not append durable realtime rows and do not mutate map/sheet documents.
-
-**Acceptance:**
-
-- A heartbeat creates or refreshes an ephemeral entry.
-- A malformed heartbeat is rejected without mutating presence.
-- Client-supplied role/profile identity is ignored or rejected.
-- No live-play command result or map revision changes are produced.
-
----
-
-## 005 — LP-S3-005 — Broadcast transient presence updates over realtime
-
-Status: DONE
-
-**Goal:** Make presence feel live without making it durable replay history.
-
-**Primary files:**
-
-- existing `/api/events` server implementation or realtime broadcaster utilities
-- `shared/livePlayPresence.ts`
-- `tests/server/livePlayPresenceRealtime.test.ts` (new)
-
-**Work:**
-
-- Add a transient, unsequenced realtime event for map presence snapshots or deltas.
-- Deliver it only to currently connected principals authorised for that map.
-- Do not store transient presence in the durable realtime event log.
-- Keep HTTP snapshot polling as a fallback for missed transient events.
-
-**Acceptance:**
-
-- Connected authorised clients receive presence updates without waiting for durable replay.
-- Reconnecting clients rebuild presence from snapshot/heartbeat, not replay history.
-- Durable realtime sequence numbers are not advanced by presence updates.
-- Hidden maps do not leak transient presence to unauthorised players.
-
----
-
-## 006 — LP-S3-006 — Add client composable for map presence
-
-Status: DONE
-
-**Goal:** Give map pages a single client-side presence API for heartbeat, snapshots, transient updates, TTL expiry, and graceful failure.
-
-**Primary files:**
-
-- `src/composables/map-editor/useMapPresence.ts` (new)
-- `tests/composables/map-editor/useMapPresence.test.ts` (new)
-
-**Work:**
-
-- Load the initial snapshot from the presence snapshot route.
-- Send periodic heartbeat/update requests while the map page is active.
-- Subscribe to transient presence events from the realtime channel.
-- Locally expire stale entries when heartbeats stop.
-- Expose readonly presence entries, own presence state, error state, and transport freshness.
-- Pause or reduce heartbeats when the tab is hidden.
-
-**Acceptance:**
-
-- Presence snapshot loads on mount.
-- Heartbeats update local own-presence state.
-- Transient updates refresh remote entries.
-- Presence errors do not block live-play command dispatch.
-
----
-
-## 007 — LP-S3-007 — Render connected table participants
-
-Status: DONE
-
-**Goal:** Show who is currently around the map without crowding gameplay controls.
-
-**Primary files:**
-
-- `src/components/map/MapPresencePanel.vue` (new)
+- `docs/live-play-batch-workflows.md` (new)
 - `src/pages/maps/[slug].vue`
-- `tests/components/mapPresencePanel.test.ts` (new)
+- relevant map-editor composables
 
 **Work:**
 
-- Render a compact list of active participants.
-- Show display-safe label, role/profile hint, accent, freshness state, and current high-level intent.
-- Collapse gracefully on narrow screens.
-- Hide or soften stale entries before expiry.
+- Document current sequential workflows, including clear hazards, clear field effects, repeated terrain edits, repeated hazard edits, initiative/scene cleanup, and any action automation loops.
+- For each workflow, record current command route(s), authority scope, likely conflict scopes, expected patch shape, and whether local prediction is safe.
+- Classify each candidate as Sprint 4, later, or not worth batching.
 
 **Acceptance:**
 
-- The panel renders zero, one, and multiple participants.
-- It never displays raw profile IDs, command bodies, or sheet data.
-- Stale/fresh state is visually distinguishable but non-blocking.
+- The doc lists the highest-value batch candidates and explains why the first batch commands were chosen.
+- No behavior changes are made in this ticket.
+- Future tickets can reference this document for scope and non-goal decisions.
 
 ---
 
-## 008 — LP-S3-008 — Publish local token selection and hover presence
+## 002 — LP-S4-002 — Add shared batch command guardrails
 
-Status: DONE
+Status: TODO
 
-**Goal:** Let other clients see which token someone is looking at or controlling without changing authority rules.
+**Goal:** Add reusable shared constants and validation helpers for bounded live-play batch payloads.
+
+**Primary files:**
+
+- `shared/livePlayBatchCommands.ts` (new)
+- `shared/livePlayCommands.ts`
+- `tests/shared/livePlayBatchCommands.test.ts` (new)
+
+**Work:**
+
+- Add shared maximums for batch payload sizes, such as max hazard cells, max terrain voxels, max field-effect operations, and max affected token IDs.
+- Add helper validators for non-empty unique grid cells and bounded arrays.
+- Add parser helpers that produce clear validation issues without accepting unknown durable-state fields.
+- Keep helpers framework-free and side-effect free.
+
+**Acceptance:**
+
+- Invalid oversized batch payloads are rejected by shared validation tests.
+- Duplicate cells are normalized or rejected according to documented rules.
+- Validators do not mutate input payloads.
+
+---
+
+## 003 — LP-S4-003 — Add `clearHazards` live-play command contract
+
+Status: TODO
+
+**Goal:** Define a first real batch command for clearing hazards in one authoritative operation.
+
+**Primary files:**
+
+- `shared/livePlayCommands.ts`
+- `shared/livePlayBatchCommands.ts`
+- `tests/shared/livePlayCommands.test.ts` or existing shared command tests
+
+**Work:**
+
+- Add `CLEAR_HAZARDS` command type and payload.
+- Support modes such as:
+  - clear all hazards visible in the active map;
+  - clear hazards by explicit cells;
+  - optionally clear by hazard kind.
+- Add conflict scopes for the map hazard lane and, where useful, explicit hazard cells.
+- Add accepted patch type or reuse existing map-hazard patch shape if it can describe the final authoritative hazards list safely.
+
+**Acceptance:**
+
+- Command payload validation covers all/explicit/kind modes.
+- Empty explicit-cell batches reject with a clear validation issue.
+- Scope construction is conservative for all-hazard mode and precise for explicit-cell mode.
+
+---
+
+## 004 — LP-S4-004 — Implement server executor for `clearHazards`
+
+Status: TODO
+
+**Goal:** Clear many hazards in one SQLite transaction with one idempotent live-play operation result.
+
+**Primary files:**
+
+- `server/livePlay/commandExecutor.ts`
+- `server/livePlay/sqliteCommandExecutor.ts`
+- `server/useCases/applyMapTokenAction.ts` or relevant map mutation use case
+- `tests/server/livePlayIntegrationHarness.ts`
+- `tests/server/livePlayConcurrentIntegration.test.ts`
+
+**Work:**
+
+- Validate GM/profile permissions using the same authority rules as existing hazard commands.
+- Apply the clear operation atomically.
+- Reject stale or conflicting base revisions using existing live-play conflict logic.
+- Return accepted patches that update hazards without whole-map replacement when possible.
+- Store/reuse terminal result by `opId`.
+
+**Acceptance:**
+
+- Clearing all hazards removes every matching hazard in one accepted command.
+- Retrying the same `opId` does not remove anything twice or append duplicate events.
+- Stale/conflicting commands reject without partial writes.
+
+---
+
+## 005 — LP-S4-005 — Add API route and client result validation for `clearHazards`
+
+Status: TODO
+
+**Goal:** Expose the clear-hazards batch through the same durable command pipeline as other live-play map commands.
+
+**Primary files:**
+
+- `server/api/maps/[slug]/hazards/clear.post.ts` or equivalent route
+- `src/utils/apiRoutes.ts`
+- `shared/livePlayCommandResults.ts`
+- route tests
+
+**Work:**
+
+- Add a route constant and server endpoint.
+- Validate request body using the shared command contract.
+- Ensure terminal responses validate against the submitted command body.
+- Add operation-status support if needed by existing generic status route.
+
+**Acceptance:**
+
+- Route rejects invalid or oversized clear-hazard payloads.
+- Route accepts valid command bodies and returns terminal live-play command results.
+- Result validation catches mismatched `opId`, map slug, command type, or scopes.
+
+---
+
+## 006 — LP-S4-006 — Wire `clearHazards` into `useLivePlayCommands`
+
+Status: TODO
+
+**Goal:** Let the map page dispatch clear-hazard batches through the durable outbox.
+
+**Primary files:**
+
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/utils/apiRoutes.ts`
+- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+
+**Work:**
+
+- Add a `clearHazards` dispatcher.
+- Build command bodies with stable `opId`, base revision, scopes, and bounded payload.
+- Reuse patch-first accepted-response handling and existing recovery/status behavior.
+- Do not add local prediction yet beyond existing pending/correction affordances.
+
+**Acceptance:**
+
+- `clearHazards` enqueues, claims, sends, accepts, rejects, retries, and status-checks like existing commands.
+- Scope-aware blocking prevents conflicting hazard commands while allowing unrelated token actions.
+- Tests cover accepted, rejected, uncertain, and duplicate terminal responses.
+
+---
+
+## 007 — LP-S4-007 — Replace clear-all hazards UI loop with `clearHazards`
+
+Status: TODO
+
+**Goal:** Make the existing “clear all hazards” user action send one command instead of many.
 
 **Primary files:**
 
 - `src/pages/maps/[slug].vue`
-- `src/components/IsometricGrid.client.vue`
-- `src/composables/map-editor/useMapPresence.ts`
-- tests for page/composable wiring
-
-**Work:**
-
-- Publish selected token ID and hovered token ID as presence state.
-- Clear token-specific presence when selection/hover leaves, map changes, or profile access changes.
-- Only publish token IDs that exist on the currently loaded map and are visible to the current user.
-- Do not block another user from selecting the same token unless existing command/control rules already do.
-
-**Acceptance:**
-
-- Selecting or hovering a token updates own presence.
-- Clearing selection clears own selected-token presence.
-- Invalid or no-longer-visible token IDs are not published.
-- Existing token-control permissions are unchanged.
-
----
-
-## 009 — LP-S3-009 — Render remote token attention affordances
-
-Status: DONE
-
-**Goal:** Make remote selection/hover visible on tokens in the isometric scene.
-
-**Primary files:**
-
-- `src/components/map/MapSceneRenderer.vue`
-- `src/components/IsometricGrid.client.vue`
-- `src/utils/isometric/tokenRenderer.ts`
-- `tests/pages/mapPageRouteAuthority.test.ts` or focused component tests
-
-**Work:**
-
-- Pass remote selected/hovered token IDs plus display-safe accents into the renderer.
-- Add subtle token ring, outline, badge, or hover cage style for remote attention.
-- Support multiple users on the same token without excessive visual noise.
-- Keep local selected/pending/correction styling higher priority where needed.
-
-**Acceptance:**
-
-- Remote attention renders for selected/hovered tokens.
-- Local pending/correction indicators remain legible.
-- Removing remote presence removes the visual affordance.
-
----
-
-## 010 — LP-S3-010 — Add ephemeral map pings
-
-Status: DONE
-
-**Goal:** Let players and GMs quickly point at a map location without creating campaign state.
-
-**Primary files:**
-
-- `shared/livePlayPresence.ts`
-- `src/composables/map-editor/useMapPresence.ts`
-- `src/components/IsometricGrid.client.vue`
-- `tests/composables/map-editor/useMapPresence.test.ts`
-
-**Work:**
-
-- Add a ping action to presence state with map cell, optional short label, creator summary, and expiry.
-- Add a keyboard/mouse gesture or simple UI hook to place a ping on a visible map cell.
-- Broadcast ping through the presence update path.
-- Locally expire pings without requiring server acknowledgement after expiry.
-
-**Acceptance:**
-
-- A ping appears on the acting client and remote clients.
-- Pings expire automatically.
-- Ping payloads cannot contain arbitrary text beyond a short sanitized label.
-- Pings do not change map revision or durable realtime history.
-
----
-
-## 011 — LP-S3-011 — Render pings in the isometric scene
-
-Status: DONE
-
-**Goal:** Make pings obvious, short-lived, and non-disruptive.
-
-**Primary files:**
-
-- `src/utils/isometric/pingRenderer.ts` (new)
-- `src/components/IsometricGrid.client.vue`
-- `tests/components` or utility tests where practical
-
-**Work:**
-
-- Add a lightweight ping renderer for grid-cell pings.
-- Animate or fade pings based on local expiry time.
-- Keep pings independent from token selection, movement preview, move VFX, and build/hazard previews.
-- Dispose ping rendering resources cleanly.
-
-**Acceptance:**
-
-- Pings render at the expected grid cell.
-- Expired pings are removed and resources are disposed.
-- Pings do not interfere with token picking or build/hazard targeting.
-
----
-
-## 012 — LP-S3-012 — Publish targeting and measurement intent
-
-Status: DONE
-
-**Goal:** Help other players understand what someone is doing before an authoritative command exists.
-
-**Primary files:**
-
-- `src/pages/maps/[slug].vue`
-- `src/composables/map-editor/useMapPresence.ts`
-- move automation / movement preview wiring tests
-
-**Work:**
-
-- Publish high-level intent when a user is:
-  - previewing token movement;
-  - targeting a move, ability, order, maneuver, or pokéball;
-  - aiming an area template;
-  - placing terrain/hazards in live play if controls allow it.
-- Keep payloads descriptive but small: intent kind, source token ID when visible, candidate/target count when safe, and optional map cell/area summary.
-- Do not publish hidden move details or sheet payloads that the viewer should not know.
-
-**Acceptance:**
-
-- Starting targeting updates presence intent.
-- Cancelling or completing targeting clears intent.
-- Hidden/private sheet details are not exposed through presence.
-
----
-
-## 013 — LP-S3-013 — Render shared intent overlays
-
-Status: DONE
-
-**Goal:** Show remote movement/targeting/area intent in a low-noise way.
-
-**Primary files:**
-
-- `src/components/map/MapScenePanel.vue`
-- `src/components/IsometricGrid.client.vue`
-- relevant isometric overlay utilities
-- focused component/page tests
-
-**Work:**
-
-- Display remote movement or targeting intent as text badges, reticles, or soft overlays.
-- Avoid rendering exact hidden target lists when not safe.
-- Prioritize current user interaction over remote intent overlays.
-- Hide remote intent when stale, cancelled, or superseded.
-
-**Acceptance:**
-
-- Remote targeting intent is visible enough for table coordination.
-- Local targeting remains usable and visually dominant.
-- Hidden/private details are not rendered.
-
----
-
-## 014 — LP-S3-014 — Add optional GM attention request
-
-Status: DONE
-
-**Goal:** Let the GM ask everyone to look at a token or map cell without forcing disruptive camera movement by default.
-
-**Primary files:**
-
-- `shared/livePlayPresence.ts`
-- `src/pages/maps/[slug].vue`
-- `src/components/map/MapPresencePanel.vue`
-- `src/components/IsometricGrid.client.vue`
-- tests for access and UI behavior
-
-**Work:**
-
-- Add a GM-only attention ping/focus request presence payload.
-- Render an affordance for clients to focus the referenced token/cell.
-- Do not automatically move a player camera unless a user preference explicitly allows it.
-- Reject player attempts to publish GM-only attention requests.
-
-**Acceptance:**
-
-- GM can publish an attention request.
-- Players see a focus affordance but are not forced by default.
-- Player-authored GM attention payloads are rejected or downgraded to ordinary pings.
-
----
-
-## 015 — LP-S3-015 — Add presence privacy and access regression tests
-
-Status: DONE
-
-**Goal:** Prove presence cannot leak hidden-map or profile-restricted information.
-
-**Primary files:**
-
-- `tests/server/livePlayPresenceApi.test.ts`
-- `tests/composables/map-editor/useMapPresence.test.ts`
-- any realtime/presence transport tests added earlier
-
-**Work:**
-
-- Test hidden map presence access for GM, profiled player, and unprofiled player.
-- Test that profile changes stop old-context presence and start new-context presence.
-- Test that inaccessible token IDs are dropped from outgoing presence.
-- Test that presence snapshots/transient events do not include sheet payloads, command bodies, raw profile IDs, or private map data.
-
-**Acceptance:**
-
-- Hidden-map presence never reaches unauthorised players.
-- Profile switches do not leave stale old-profile presence visible forever.
-- Presence snapshots are safe to display to authorised map viewers.
-
----
-
-## 016 — LP-S3-016 — Add presence failure and degradation tests
-
-Status: DONE
-
-**Goal:** Ensure presence improves feel but never becomes a gameplay dependency.
-
-**Primary files:**
-
-- `tests/composables/map-editor/useMapPresence.test.ts`
+- relevant hazard/menu components
 - `tests/pages/mapPageRouteAuthority.test.ts`
-- `tests/integration/livePlayChaosHardening.test.ts` if useful
 
 **Work:**
 
-- Simulate snapshot failure, heartbeat failure, transient event loss, and tab visibility changes.
-- Verify live-play command dispatch remains governed by existing command/reconciliation blockers, not presence transport.
-- Show a small non-blocking presence status only if useful.
-- Confirm stale presence expires locally.
+- Replace the live-play loop that dispatches one `removeHazard` per hazard with one `clearHazards` command.
+- Keep setup/edit behavior unchanged.
+- Preserve confirmation copy and cancellation behavior.
+- Show a single pending/sending state for the batch action.
 
 **Acceptance:**
 
-- Presence failure does not block move/turn/HP/condition commands.
-- Stale remote presence disappears after TTL.
-- Recovered presence resumes without requiring a full map reload.
+- Clearing all hazards in live play makes exactly one command request.
+- Setup/edit still mutates local setup state as before.
+- Rejection leaves hazards unchanged or reconciled authoritatively.
 
 ---
 
-## 017 — LP-S3-017 — Add presence metrics to the latency debug panel
+## 008 — LP-S4-008 — Add `clearFieldEffects` live-play command contract
 
-Status: DONE
+Status: TODO
 
-**Goal:** Let maintainers diagnose table-feel issues separately from command latency.
+**Goal:** Define a batch command for clearing weather, terrain, room, or all field effects in one operation.
 
 **Primary files:**
 
-- `src/components/map/LivePlayLatencyDebugPanel.vue`
-- `src/composables/map-editor/useMapPresence.ts`
-- `tests/components/livePlayLatencyDebugPanel.test.ts`
+- `shared/livePlayCommands.ts`
+- `shared/livePlayBatchCommands.ts`
+- shared command tests
 
 **Work:**
 
-- Add optional presence freshness metrics to the debug panel when presence data is available.
-- Show heartbeat age, last snapshot age, last transient update age, and active participant count.
-- Keep command trace payload redaction unchanged.
+- Add `CLEAR_FIELD_EFFECTS` command type and payload.
+- Support category modes: weather, terrain, room, and all.
+- Support optional explicit effect kinds when safe.
+- Add conservative map field-effect scopes.
+- Define accepted patch expectations.
 
 **Acceptance:**
 
-- Debug panel still hides by default.
-- Presence metrics appear only in debug mode.
-- Metrics do not expose private profile IDs or presence payload internals.
+- Category-only and explicit-kind payloads validate.
+- Empty explicit-kind lists reject.
+- Scope construction conflicts with other field-effect mutations but not unrelated token movement.
 
 ---
 
-## 018 — LP-S3-018 — Update live-play authority docs for ephemeral presence
+## 009 — LP-S4-009 — Implement server/API/client flow for `clearFieldEffects`
 
-Status: DONE
+Status: TODO
 
-**Goal:** Document the boundary between authoritative commands and ephemeral table-feel state.
+**Goal:** Add end-to-end authoritative support for clearing field effects as a batch command.
 
 **Primary files:**
 
-- `docs/live-play-authority.md`
+- server command executor files
+- route file and `src/utils/apiRoutes.ts`
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- tests across server and composable layers
+
+**Work:**
+
+- Implement server validation and atomic mutation.
+- Add route and result validation.
+- Add client dispatcher and outbox support.
+- Prefer accepted patches over full-map fallback.
+
+**Acceptance:**
+
+- Clearing all or one category of field effects is one accepted command.
+- Retry/status/abandonment works using the exact command body and `opId`.
+- Rejected stale/conflicting commands do not partially clear effects.
+
+---
+
+## 010 — LP-S4-010 — Replace clear-all field effects UI with `clearFieldEffects`
+
+Status: TODO
+
+**Goal:** Make clear-all field effects feel like one authoritative action.
+
+**Primary files:**
+
+- `src/pages/maps/[slug].vue`
+- `tests/pages/mapPageRouteAuthority.test.ts`
+
+**Work:**
+
+- Wire existing clear-all weather/terrain/room menu action to the new batch command.
+- Keep existing single-effect set/remove commands unchanged.
+- Reset local coexist UI flags only after accepted dispatch where appropriate.
+
+**Acceptance:**
+
+- Live-play clear-all field effects sends one command request.
+- Setup/edit behavior remains local and unchanged.
+- Rejection preserves or reconciles the authoritative field-effect state.
+
+---
+
+## 011 — LP-S4-011 — Add `editTerrainVoxels` batch command contract
+
+Status: TODO
+
+**Goal:** Define a bounded batch command for adding/removing many terrain voxels in one operation.
+
+**Primary files:**
+
+- `shared/livePlayCommands.ts`
+- `shared/livePlayBatchCommands.ts`
+- shared command tests
+
+**Work:**
+
+- Add a command type such as `EDIT_TERRAIN_VOXELS`.
+- Support operations for add/update voxels and remove cells.
+- Bound payload size and reject duplicate contradictory operations in the same payload.
+- Define terrain scopes: explicit cells when small, broad terrain lane when required.
+- Define patch payload for changed terrain or final terrain set.
+
+**Acceptance:**
+
+- Mixed add/remove payloads validate only when non-contradictory.
+- Oversized terrain batches reject.
+- Scope conflict behavior is conservative and tested.
+
+---
+
+## 012 — LP-S4-012 — Implement server/API/client flow for terrain voxel batches
+
+Status: TODO
+
+**Goal:** Let terrain brush-like live-play edits commit in one authoritative operation.
+
+**Primary files:**
+
+- server executor and route files
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/utils/apiRoutes.ts`
+- server/composable tests
+
+**Work:**
+
+- Validate every voxel/cell against map bounds and permission rules.
+- Commit the batch atomically.
+- Return patches that let clients update terrain without full-map adoption when possible.
+- Ensure idempotent retry and conflict rejection work.
+
+**Acceptance:**
+
+- Valid terrain batches apply atomically.
+- Invalid cell or stale revision rejects the whole batch.
+- Retry with same `opId` returns the same terminal result.
+
+---
+
+## 013 — LP-S4-013 — Add terrain brush batching on the client
+
+Status: TODO
+
+**Goal:** Coalesce rapid terrain brush edits into bounded batch commands without losing authority safety.
+
+**Primary files:**
+
+- terrain builder composables
+- `src/pages/maps/[slug].vue`
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- focused tests
+
+**Work:**
+
+- Collect rapid live-play terrain edits for a short debounce window or until pointer release.
+- Send one `editTerrainVoxels` command per brush stroke.
+- Keep setup/edit terrain behavior unchanged.
+- Do not locally predict complex terrain changes unless existing UI already has a safe preview-only layer.
+
+**Acceptance:**
+
+- A brush stroke sends one bounded command rather than one command per voxel.
+- Very large strokes split into bounded chunks or reject with clear UI copy.
+- Rejection does not leave local authoritative terrain mutated.
+
+---
+
+## 014 — LP-S4-014 — Add `editHazards` batch command contract
+
+Status: TODO
+
+**Goal:** Define a bounded batch command for placing/removing multiple hazard cells.
+
+**Primary files:**
+
+- `shared/livePlayCommands.ts`
+- `shared/livePlayBatchCommands.ts`
+- shared command tests
+
+**Work:**
+
+- Add a command type such as `EDIT_HAZARDS`.
+- Support add/update hazard cells and remove hazard cells.
+- Bound payload size and reject contradictory operations.
+- Define hazard scopes and accepted patch behavior.
+
+**Acceptance:**
+
+- Mixed hazard add/remove payloads validate only when non-contradictory.
+- Oversized hazard batches reject.
+- Scope conflicts with clear-hazards and single hazard commands are tested.
+
+---
+
+## 015 — LP-S4-015 — Implement server/API/client flow for hazard cell batches
+
+Status: TODO
+
+**Goal:** Let hazard brush-like live-play edits commit in one authoritative operation.
+
+**Primary files:**
+
+- server executor and route files
+- `src/composables/map-editor/useLivePlayCommands.ts`
+- `src/utils/apiRoutes.ts`
+- server/composable tests
+
+**Work:**
+
+- Validate hazard kind, bounds, permissions, and stale revisions.
+- Commit the batch atomically.
+- Return patches that update hazards without full-map adoption when practical.
+- Reuse idempotency and conflict logic.
+
+**Acceptance:**
+
+- Valid hazard batches apply atomically.
+- Invalid hazard cell rejects the whole batch.
+- Retry/status/abandonment works with exact `opId` body.
+
+---
+
+## 016 — LP-S4-016 — Add hazard brush batching on the client
+
+Status: TODO
+
+**Goal:** Coalesce rapid hazard drawing/removal into bounded batch commands.
+
+**Primary files:**
+
+- hazard builder composables
+- `src/pages/maps/[slug].vue`
+- focused tests
+
+**Work:**
+
+- Collect live-play hazard brush edits for a short debounce window or pointer stroke.
+- Send one `editHazards` command per stroke.
+- Keep setup/edit hazard behavior unchanged.
+- Preserve existing single-cell hazard commands for direct clicks when batching is not active.
+
+**Acceptance:**
+
+- A live-play hazard brush stroke sends one bounded command.
+- Large strokes split or reject safely.
+- Presence/intent overlays remain independent from authoritative hazard batching.
+
+---
+
+## 017 — LP-S4-017 — Add batch operation pending/recovery UI affordances
+
+Status: TODO
+
+**Goal:** Make batch commands honest to users without reintroducing a global table lock.
+
+**Primary files:**
+
+- `src/pages/maps/[slug].vue`
+- map panel/menu components
+- `src/components/map/LivePlayCommandRecoveryPanel.vue` if needed
+- tests/pages or component tests
+
+**Work:**
+
+- Show a concise pending label for active batch commands, such as “Clearing 12 hazards…” or “Applying terrain brush…”.
+- Keep unrelated token actions interactive when scopes allow them.
+- Ensure uncertain batch commands appear in the recovery panel with clear summaries.
+- Avoid listing full payloads or private data.
+
+**Acceptance:**
+
+- Users can tell a batch command is pending.
+- Recovery entries identify batch kind and resource summary safely.
+- Unrelated commands remain available when conflict scopes allow.
+
+---
+
+## 018 — LP-S4-018 — Add batch command chaos tests
+
+Status: TODO
+
+**Goal:** Exercise batch workflows against concurrency, stale revisions, duplicate terminals, and recovery.
+
+**Primary files:**
+
+- `tests/integration/livePlayChaosHardening.test.ts`
+- `tests/integration/livePlayChaosHarness.ts`
+
+**Work:**
+
+- Simulate clear hazards racing with single hazard edit.
+- Simulate terrain batch racing with token movement on unrelated scopes.
+- Simulate HTTP/SSE terminal ordering for an accepted batch.
+- Simulate lost HTTP response and status/retry recovery for a batch command.
+- Assert final authoritative map state and durable realtime convergence.
+
+**Acceptance:**
+
+- Batch commands do not partially apply under conflicts.
+- Duplicate accepted terminals do not apply effects twice.
+- Recovered uncertain batch commands converge to the same final state as direct acceptance.
+
+---
+
+## 019 — LP-S4-019 — Add operator smoke notes for live-play batch workflows
+
+Status: TODO
+
+**Goal:** Give maintainers a manual checklist for verifying batch workflow UX and authority.
+
+**Primary files:**
+
 - `docs/private-vps-live-play-smoke.md`
+- `docs/live-play-authority.md`
+- `docs/live-play-batch-workflows.md`
 
 **Work:**
 
-- Add a short authority section for presence, pings, remote hover/selection, intent, and GM attention.
-- State that presence is process-local or short-lived, non-durable, and never gameplay authority.
-- Add smoke checklist items for three-client presence, pings, intent, hidden-map access, reconnect, and presence transport failure.
+- Add smoke steps for clear hazards, clear field effects, terrain brush, hazard brush, rejection, retry/status, and reconnect.
+- Document that batch commands are authoritative transactions, not client-side macros.
+- Document payload bounds and expected fallback behavior for oversized brush strokes.
 
 **Acceptance:**
 
-- Docs clearly distinguish authoritative live-play commands from ephemeral presence.
-- Operators have manual smoke steps for Sprint 3 table-feel features.
+- Operators can smoke test batch workflows with GM and two player browsers.
+- Docs explain why one UI action should map to one authoritative batch command.
 
 ---
 
 ## Suggested sprint order
 
-1. `LP-S3-001`
-2. `LP-S3-002`
-3. `LP-S3-003`
-4. `LP-S3-004`
-5. `LP-S3-005`
-6. `LP-S3-006`
-7. `LP-S3-007`
-8. `LP-S3-008`
-9. `LP-S3-009`
-10. `LP-S3-010`
-11. `LP-S3-011`
-12. `LP-S3-012`
-13. `LP-S3-013`
-14. `LP-S3-014`
-15. `LP-S3-015`
-16. `LP-S3-016`
-17. `LP-S3-017`
-18. `LP-S3-018`
+1. `LP-S4-001`
+2. `LP-S4-002`
+3. `LP-S4-003`
+4. `LP-S4-004`
+5. `LP-S4-005`
+6. `LP-S4-006`
+7. `LP-S4-007`
+8. `LP-S4-008`
+9. `LP-S4-009`
+10. `LP-S4-010`
+11. `LP-S4-011`
+12. `LP-S4-012`
+13. `LP-S4-013`
+14. `LP-S4-014`
+15. `LP-S4-015`
+16. `LP-S4-016`
+17. `LP-S4-017`
+18. `LP-S4-018`
+19. `LP-S4-019`
 
 ## Sprint exit criteria
 
-- Multiple clients on the same map can see display-safe active participant presence.
-- Remote token selection/hover/attention is visible without changing token-control authority.
-- Players and GMs can place short-lived map pings that never mutate authoritative map state.
-- Targeting and movement intent is visible enough to coordinate turns but does not expose hidden/private sheet information.
-- GM attention requests are available without forcing disruptive camera motion by default.
-- Presence failure degrades gracefully and never blocks authoritative live-play commands.
-- Hidden maps and profile-restricted contexts do not leak presence, pings, or intent to unauthorised players.
-- Operator docs cover presence, pings, intent, reconnect, failure, and the non-authoritative boundary.
+- Clear-all hazards uses one authoritative live-play batch command.
+- Clear-all field effects uses one authoritative live-play batch command.
+- Terrain brush edits can be committed as bounded authoritative batches.
+- Hazard brush edits can be committed as bounded authoritative batches.
+- Batch commands are idempotent by `opId`, recoverable through the durable outbox, and safe under HTTP/SSE terminal reordering.
+- Batch payloads have documented and tested bounds.
+- Batch commands reject stale/conflicting/invalid payloads without partial authoritative writes.
+- UI shows batch pending/recovery state without blocking unrelated scoped commands.
+- Operator docs cover manual smoke testing and the authority boundary for batch workflows.
