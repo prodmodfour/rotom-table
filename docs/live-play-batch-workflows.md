@@ -14,6 +14,17 @@ Sprint 4 should batch only explicit, bounded, server-authoritative operations. A
 - rejected/stale/conflicting/invalid payloads can fail the whole operation without partial writes;
 - local prediction is either already safe and narrow, or the UI can show pending/recovery state without pretending the client is authoritative.
 
+## Shared Sprint 4 guardrails
+
+Batch contracts use shared, side-effect-free validators from `shared/livePlayBatchCommands.ts` before any server mutation path can run. The initial guardrail limits are:
+
+- hazard cell batches: at most 128 cells;
+- terrain voxel batches: at most 256 voxels/cells;
+- field-effect operation batches: at most 16 operations;
+- affected-token summaries/scopes: at most 64 token ids.
+
+Unique grid-cell helpers reject duplicate cells by default so mixed add/remove contracts cannot hide contradictory operations. Idempotent clear-style contracts may opt into duplicate normalization, which preserves the first occurrence and drops later repeats. Strict object parsing rejects unknown durable-state fields instead of carrying private/profile/debug data through batch payloads.
+
 ## Summary classification
 
 | Workflow | Current live-play behavior | Classification | Why |

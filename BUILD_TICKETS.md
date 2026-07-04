@@ -75,7 +75,7 @@ Status: DONE
 
 ## 002 — LP-S4-002 — Add shared batch command guardrails
 
-Status: TODO
+Status: DONE
 
 **Goal:** Add reusable shared constants and validation helpers for bounded live-play batch payloads.
 
