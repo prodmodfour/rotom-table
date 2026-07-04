@@ -4382,7 +4382,86 @@ describe('useLivePlayCommands', () => {
     expect(actions.pendingCommandCount.value).toBe(0)
   })
 
-  it('retries and status-checks editTerrainVoxels outbox entries with the exact stored command body', async () => {
+  it('handles editTerrainVoxels rejected, uncertain, and duplicate terminal responses through the outbox', async () => {
+    const payload = {
+      operations: [{ action: 'upsert' as const, voxel: { x: 2, y: 0, z: 2, materialId: 'meadow_grass' } }],
+    }
+    const cases = [
+      {
+        name: 'rejected',
+        response: (body: Record<string, unknown>) => ({
+          ok: false,
+          opId: body.opId,
+          mapSlug: body.mapSlug,
+          reason: 'conflict',
+          message: 'Terrain changed first',
+          currentRevision: 5,
+        }),
+        expected: { dispatched: false, message: 'Terrain changed first' },
+      },
+      {
+        name: 'uncertain',
+        response: () => { throw new Error('Network down') },
+        expected: { dispatched: false, uncertain: true },
+      },
+      {
+        name: 'duplicate accepted',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: acceptedEditTerrainResponse(body),
+        }),
+        expected: { dispatched: true },
+      },
+      {
+        name: 'duplicate rejected',
+        response: (body: Record<string, unknown>) => ({
+          ok: true,
+          duplicate: true,
+          opId: body.opId,
+          original: {
+            ok: false,
+            opId: body.opId,
+            mapSlug: body.mapSlug,
+            reason: 'stale-revision',
+            message: 'Stale terrain',
+            currentRevision: 5,
+          },
+        }),
+        expected: { dispatched: false, message: 'Stale terrain' },
+      },
+    ] as const
+
+    for (const terminalCase of cases) {
+      apiMocks.postJson.mockReset()
+      const outbox = createTestOutbox()
+      apiMocks.postJson.mockImplementation(async (_request: string, body: unknown) => terminalCase.response(commandRecord(body)))
+      const { actions } = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox })
+
+      const result = await actions.editTerrainVoxels(payload)
+
+      expect(result, terminalCase.name).toMatchObject({
+        ...terminalCase.expected,
+        opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      })
+      if (terminalCase.name === 'uncertain') {
+        await expect(outbox.get(result.opId!), terminalCase.name).resolves.toMatchObject({
+          state: 'uncertain',
+          requestPath: MAP_API_PATHS.editTerrainVoxels,
+          body: expect.objectContaining({
+            opId: result.opId,
+            type: LIVE_PLAY_COMMAND_TYPES.EDIT_TERRAIN_VOXELS,
+            payload,
+          }),
+        })
+      } else {
+        await expect(outbox.get(result.opId!), terminalCase.name).resolves.toBeNull()
+      }
+    }
+  })
+
+  it('retries, status-checks, and abandons editTerrainVoxels outbox entries with the exact stored command body', async () => {
     const retryOutbox = createTestOutbox()
     apiMocks.postJson.mockRejectedValueOnce(new Error('Network down'))
     const retryActions = createCommandHarness({ slug: 'arena-map', mapRevision: ref(4), outbox: retryOutbox }).actions
@@ -4425,6 +4504,25 @@ describe('useLivePlayCommands', () => {
       opId: statusEntry.opId,
     })
     await expect(statusOutbox.get(statusEntry.opId)).resolves.toBeNull()
+
+    const abandonOutbox = createTestOutbox()
+    const abandonQueued = await enqueueStoredCommand(abandonOutbox, {
+      requestPath: MAP_API_PATHS.editTerrainVoxels,
+      body: storedEditTerrainCommandBody(),
+    })
+    const abandonEntry = await makeStoredCommandUncertain(abandonOutbox, abandonQueued)
+    const abandonActions = createCommandHarness({ slug: 'arena-map', outbox: abandonOutbox }).actions
+    apiMocks.postJson.mockImplementationOnce(async (request: string, body: unknown) => {
+      expect(request).toBe(MAP_API_PATHS.operationAbandon)
+      expect(statusCommandRecord(body)).toEqual(abandonEntry.body)
+      return operationAbandonmentResponse(abandonEntry, 'abandoned', abandonedAbandonmentResult(abandonEntry))
+    })
+
+    await expect(abandonActions.abandonOutboxCommand(abandonEntry.opId)).resolves.toMatchObject({
+      status: 'abandoned',
+      opId: abandonEntry.opId,
+    })
+    await expect(abandonOutbox.get(abandonEntry.opId)).resolves.toBeNull()
   })
 
   it('posts live-play scene commands through the command dispatcher', async () => {

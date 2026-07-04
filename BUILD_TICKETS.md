@@ -382,7 +382,7 @@ Status: DONE
 
 ## 012B — LP-S4-012B — Wire client terrain voxel batch dispatcher
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let the map client enqueue, send, recover, and reconcile terrain voxel batches through the durable outbox.
 
