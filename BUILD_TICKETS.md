@@ -89,7 +89,7 @@ Status: DONE
 
 ## 003 — LP-S2-003 — Add prediction conflict detection for incoming authoritative patches
 
-Status: TODO
+Status: DONE
 
 **Goal:** Detect when a remote authoritative patch touches a resource currently covered by a local prediction.
 

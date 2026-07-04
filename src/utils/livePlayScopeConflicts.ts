@@ -1,5 +1,6 @@
 import {
   LIVE_PLAY_COMMAND_TYPES,
+  LIVE_PLAY_PATCH_TYPES,
   LIVE_PLAY_MAP_SCOPE_LANES,
   LIVE_PLAY_TOKEN_SCOPE_FIELDS,
   type LivePlayMapScopeLane,
@@ -102,6 +103,10 @@ const terrainCellFromCommand = (command: unknown): GridCell | null => {
   }
 
   if (type === LIVE_PLAY_COMMAND_TYPES.REMOVE_TERRAIN_VOXEL) {
+    return parseGridCell(payload.cell)
+  }
+
+  if (type === LIVE_PLAY_PATCH_TYPES.MAP_TERRAIN) {
     return parseGridCell(payload.cell)
   }
 
