@@ -37,7 +37,7 @@ The shared `editTerrainVoxels` contract is the terrain-brush batch shape now ava
 | --- | --- | --- | --- |
 | Clear all hazards from the map menu | Since LP-S4-007, live play confirms once and sends one `clearHazards` batch command; setup/edit still clears local setup state. | **Sprint 4** | High-friction GM cleanup, deterministic map-lane mutation, no hidden/random state, and previously N requests for one confirmed action. |
 | Clear all/weather/terrain/room field effects | Since LP-S4-010, live-play clear-weather and clear-all menu actions send one `clearFieldEffects` batch command; setup/edit stays local and single-effect set/remove commands stay unchanged. | **Sprint 4** | Not currently an N-request loop, but it is a multi-resource clear action that now uses an explicit clear batch contract, bounded summaries, and batch recovery labels. |
-| Repeated terrain voxel edits | Each live-play terrain click sends one `buildTerrainVoxel` or `removeTerrainVoxel` command. | **Sprint 4** | Brush-like terrain edits are common, bounded by cells, deterministic, and already have precise terrain-cell patches. |
+| Repeated terrain voxel edits | Since LP-S4-013, live-play terrain clicks within a short brush window coalesce into bounded `editTerrainVoxels` commands; oversized strokes split into chunks of at most 256 operations. | **Sprint 4** | Brush-like terrain edits are common, bounded by cells, deterministic, and already have precise terrain-cell patches. |
 | Repeated hazard cell edits | Each live-play hazard click sends one `placeHazard` or `removeHazard` command. | **Sprint 4** | Hazard brush strokes map cleanly to bounded add/remove cell operations and should conflict with clear-hazards/single-hazard edits. |
 | Fill initiative from Speed / clear initiative values | Loops over placements and sends `setInitiative` repeatedly, then may reset active/round. | **Later** | It is a real N-request cleanup, but it touches token initiative, active turn, round, and initiative log/metadata rules; this sprint is focused on map effects/brushes first. |
 | Advance/previous initiative | Already one `nextInitiative` or `previousInitiative` command. | **Not worth batching** | The server already treats one click as one authoritative transaction with initiative and metadata scopes. |
@@ -83,7 +83,7 @@ The shared `editTerrainVoxels` contract is the terrain-brush batch shape now ava
 
 ### 3. Repeated terrain voxel edits
 
-- **Current UI path:** `IsometricGrid.client.vue` click handling calls build interaction `performAction`; page handlers `placeVoxelFromScene` and `removeVoxelFromScene` dispatch one live-play command per clicked voxel when not in setup/edit.
+- **Current UI path:** `IsometricGrid.client.vue` click handling calls build interaction `performAction`; page handlers `placeVoxelFromScene` and `removeVoxelFromScene` keep setup/edit as direct local mutation, but live play queues cells through `useLivePlayTerrainBrushBatcher` so rapid edits in one short brush window dispatch `editTerrainVoxels` instead of one command per voxel.
 - **Current command route(s):**
   - `POST /api/maps/terrain/build` via `MAP_API_PATHS.buildTerrainVoxel`;
   - `POST /api/maps/terrain/remove` via `MAP_API_PATHS.removeTerrainVoxel`;
@@ -96,7 +96,7 @@ The shared `editTerrainVoxels` contract is the terrain-brush batch shape now ava
 - **Current accepted patch shape:** one `map.terrain` patch with `cell`, `previous`, `current`, optional `built`, optional `removed`, and `rendererInvalidation` reasons.
 - **Current batch patch shape:** one accepted terminal result with a `map.terrain` patch whose `changes` array lists each changed cell, previous voxel/null, current voxel/null, and optional built/removed voxel. Clients can apply the patch without whole-map adoption for normal bounded batches.
 - **Local prediction safety:** no authoritative terrain prediction today. The existing ghost/preview is presentation-only; batch terrain edits should remain pending-only until accepted.
-- **Sprint 4 decision:** add `editTerrainVoxels` plus client stroke coalescing. This turns repeated terrain clicks/brush strokes into bounded authoritative transactions without making clients authoritative.
+- **Sprint 4 decision:** `editTerrainVoxels` and client stroke coalescing are in place. Normal brush windows send one bounded authoritative batch, and strokes larger than the shared 256-operation limit split into sequential bounded chunks without mutating local authoritative terrain before accepted patches arrive.
 
 ### 4. Repeated hazard cell edits
 

@@ -78,6 +78,7 @@ import { isRealtimeEcho } from '#shared/realtime'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
 import { useTerrainBuilder } from '~/composables/map-editor/useTerrainBuilder'
+import { useLivePlayTerrainBrushBatcher } from '~/composables/map-editor/useLivePlayTerrainBrushBatcher'
 import {
   useAttackOfOpportunityPanel,
   type AttackOfOpportunitySuppressionContext,
@@ -478,6 +479,9 @@ const livePlayCommandRecoveryGate = useLivePlayCommandRecoveryGate({
 watchEffect(() => {
   livePlayRecoveryNewCommandBlocked.value = livePlayCommandRecoveryGate.blocksNewLiveCommands.value
   livePlayRecoveryNewCommandBlockedMessage.value = livePlayCommandRecoveryGate.blockMessage.value
+})
+const livePlayTerrainBrushBatcher = useLivePlayTerrainBrushBatcher({
+  dispatchEditTerrainVoxels: (payload) => livePlayCommands.editTerrainVoxels(payload),
 })
 const livePlayCommandsAllowed = computed(() => (
   !mapInPrepareMode.value
@@ -1817,7 +1821,7 @@ const placeVoxelFromScene: typeof placeVoxel = (voxel) => {
     return
   }
   if (!canEditMap.value) return
-  void livePlayCommands.buildTerrainVoxel({ voxel })
+  livePlayTerrainBrushBatcher.queueUpsert(voxel)
 }
 
 const removeVoxelFromScene: typeof removeVoxel = (cell) => {
@@ -1826,7 +1830,7 @@ const removeVoxelFromScene: typeof removeVoxel = (cell) => {
     return
   }
   if (!canEditMap.value) return
-  void livePlayCommands.removeTerrainVoxel({ cell })
+  livePlayTerrainBrushBatcher.queueRemove(cell)
 }
 
 const sendOutPokemonFromScene: typeof sendOutPokemon = (payload) => {

@@ -410,7 +410,7 @@ Status: DONE
 
 ## 013 — LP-S4-013 — Add terrain brush batching on the client
 
-Status: TODO
+Status: DONE
 
 **Goal:** Coalesce rapid terrain brush edits into bounded batch commands without losing authority safety.
 
