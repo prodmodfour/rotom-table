@@ -855,6 +855,50 @@ describe('useEditableMap autosave boundary', () => {
     expect(apiMocks.getJson).toHaveBeenCalledTimes(1)
   })
 
+  it('ignores stale non-local accepted command replays without patching or reconciliation', async () => {
+    apiMocks.getJson.mockResolvedValueOnce({ map: mapFixture({ revision: 3 }) })
+    const requestAuthoritativeReconciliation = vi.fn(async () => undefined)
+    const beforeLivePlayPatchesApply = vi.fn()
+    const afterLivePlayPatchesApply = vi.fn()
+    const onAccepted = vi.fn()
+    const editable = useEditableMap('arena-map', {
+      debounceMs: 10,
+      requestAuthoritativeReconciliation,
+      beforeLivePlayPatchesApply,
+      afterLivePlayPatchesApply,
+      onLivePlayCommandAcceptedEvent: onAccepted,
+    })
+    await flushPromises()
+
+    apiMocks.realtimeHandlers[0]?.(acceptedCommandEvent({
+      opId: 'op_stalereplay1',
+      previousRevision: 1,
+      revision: 2,
+      patches: [{
+        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+        type: LIVE_PLAY_PATCH_TYPES.TOKEN_POSITION,
+        mapSlug: 'arena-map',
+        revision: 2,
+        scopes: [{ kind: 'token', placementId: 'token-pikachu', field: 'position' }],
+        payload: {
+          placementId: 'token-pikachu',
+          position: { x: 5, y: 0, z: 5 },
+        },
+      }],
+    }))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(10)
+    await flushPromises()
+
+    expect(onAccepted).toHaveBeenCalledTimes(1)
+    expect(beforeLivePlayPatchesApply).not.toHaveBeenCalled()
+    expect(afterLivePlayPatchesApply).not.toHaveBeenCalled()
+    expect(requestAuthoritativeReconciliation).not.toHaveBeenCalled()
+    expect(apiMocks.getJson).toHaveBeenCalledTimes(1)
+    expect(editable.mapRevision.value).toBe(3)
+    expect(editable.map.value?.placements[0]?.position).toEqual({ x: 1, y: 0, z: 1 })
+  })
+
   it('requests reconciliation for valid accepted events whose map patch cannot apply after acknowledgement', async () => {
     apiMocks.getJson
       .mockResolvedValueOnce({ map: mapFixture({ revision: 1 }) })

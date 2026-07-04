@@ -200,7 +200,7 @@ Status: DONE
 
 ## 007 — LP-S2-007 — Harden HTTP-first then SSE replay ordering
 
-Status: TODO
+Status: DONE
 
 **Goal:** Ensure replayed or delayed SSE events do not disturb state already adopted from a trusted HTTP terminal response.
 

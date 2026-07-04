@@ -2202,6 +2202,63 @@ describe('useLivePlayCommands', () => {
     expect(httpFirstAccepted).toHaveBeenCalledTimes(1)
   })
 
+  it('acknowledges a matching stale SSE after HTTP acceptance without reapplying patches', async () => {
+    const map = ref(mapFixture())
+    const delegate = createTestOutbox()
+    let acknowledgeAttempts = 0
+    const outbox = wrapOutbox(delegate, {
+      acknowledgeTerminal: async (opId) => {
+        acknowledgeAttempts += 1
+        if (acknowledgeAttempts === 1) throw new Error('delete failed')
+        return delegate.acknowledgeTerminal(opId)
+      },
+    })
+    const requestReconciliation = vi.fn()
+    const onCommandAccepted = vi.fn()
+    let sentBody: Record<string, unknown> | null = null
+    apiMocks.postJson.mockImplementationOnce(async (_request: string, body: unknown) => {
+      sentBody = commandRecord(body)
+      return acceptedMoveTokenResponse(sentBody, { previousRevision: 4, revision: 5 })
+    })
+    const { actions } = createCommandHarness({
+      slug: 'arena-map',
+      map,
+      mapRevision: computed(() => map.value.revision),
+      outbox,
+      requestReconciliation,
+      onCommandAccepted,
+    })
+
+    await expect(actions.moveToken({ placementId: 'token-pikachu', position: { x: 3, y: 0, z: 1 } })).resolves.toMatchObject({
+      dispatched: true,
+      opId: expect.stringMatching(LIVE_PLAY_OP_ID_RE),
+      outboxError: expect.stringContaining('delete failed'),
+    })
+    const opId = sentBody!.opId as string
+    expect(map.value.revision).toBe(5)
+    expect(tokenPosition(map.value)).toEqual({ x: 3, y: 0, z: 1 })
+    await expect(delegate.get(opId)).resolves.toMatchObject({ opId, state: 'sending' })
+    expect(actions.outboxEntries.value).toHaveLength(1)
+
+    const staleEntry = await delegate.get(opId)
+    if (!staleEntry) throw new Error('Expected the failed HTTP cleanup entry to remain for SSE acknowledgement')
+    await expect(actions.acknowledgeAcceptedRealtimeEvent(acceptedRealtimeEventForEntry(staleEntry, {
+      previousRevision: 4,
+      revision: 5,
+      patches: [tokenPositionPatch('token-pikachu', { x: 9, y: 0, z: 9 }, 5)],
+    }))).resolves.toEqual({ status: 'acknowledged', opId })
+
+    expect(acknowledgeAttempts).toBe(2)
+    await expect(delegate.get(opId)).resolves.toBeNull()
+    expect(actions.outboxEntries.value).toEqual([])
+    expect(actions.outboxRecoveryStatus.value).toBe('idle')
+    expect(map.value.revision).toBe(5)
+    expect(tokenPosition(map.value)).toEqual({ x: 3, y: 0, z: 1 })
+    expect(requestReconciliation).not.toHaveBeenCalled()
+    expect(onCommandAccepted).toHaveBeenCalledTimes(1)
+    expect(apiMocks.postJson).toHaveBeenCalledTimes(1)
+  })
+
   it('treats a lost HTTP response as recovered when accepted SSE already acknowledged the operation', async () => {
     const outbox = createTestOutbox()
     const requestReconciliation = vi.fn()
