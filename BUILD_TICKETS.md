@@ -358,7 +358,7 @@ Status: DONE
 
 ## 012 — LP-S3-012 — Publish targeting and measurement intent
 
-Status: TODO
+Status: DONE
 
 **Goal:** Help other players understand what someone is doing before an authoritative command exists.
 

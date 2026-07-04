@@ -42,7 +42,14 @@ describe('live-play presence registry', () => {
       update: update({
         selectedTokenId: 'token-pikachu',
         hoveredTokenId: 'token-eevee',
-        intent: { kind: 'targeting' },
+        intent: {
+          kind: 'targeting',
+          sourceTokenId: 'token-pikachu',
+          candidateCount: 2,
+          targetCount: 1,
+          cell: { x: 1, y: 0, z: 1 },
+          area: { cellCount: 4 },
+        },
       }),
       now: 1_000,
     })
@@ -51,7 +58,14 @@ describe('live-play presence registry', () => {
       clientSequence: 1,
       selectedTokenId: 'token-pikachu',
       hoveredTokenId: 'token-eevee',
-      intent: { kind: 'targeting' },
+      intent: {
+        kind: 'targeting',
+        sourceTokenId: 'token-pikachu',
+        candidateCount: 2,
+        targetCount: 1,
+        cell: { x: 1, y: 0, z: 1 },
+        area: { cellCount: 4 },
+      },
       lastSeenAt: 1_000,
       expiresAt: 6_000,
       participant: {

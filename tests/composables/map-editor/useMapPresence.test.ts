@@ -212,18 +212,22 @@ describe('useMapPresence', () => {
     await expect(presence.updateOwnPresence({
       selectedTokenId: 'token-pikachu',
       hoveredTokenId: 'token-hidden',
+      intent: { kind: 'targeting', sourceTokenId: 'token-hidden', candidateCount: 2 },
     })).resolves.toBe(true)
 
     expect(presence.ownPresence.value).toMatchObject({
       clientSequence: 1,
       selectedTokenId: 'token-pikachu',
       hoveredTokenId: null,
+      intent: { kind: 'targeting', candidateCount: 2 },
     })
+    expect(presence.ownPresence.value.intent).not.toHaveProperty('sourceTokenId')
     expect(mocks.postJson).toHaveBeenCalledWith('/api/maps/arena/presence', {
       presence: expect.objectContaining({
         clientSequence: 1,
         selectedTokenId: 'token-pikachu',
         hoveredTokenId: null,
+        intent: { kind: 'targeting', candidateCount: 2 },
       }),
       clientId: 'client_c-local-tab',
     })
@@ -239,12 +243,14 @@ describe('useMapPresence', () => {
       clientSequence: 2,
       selectedTokenId: null,
       hoveredTokenId: null,
+      intent: { kind: 'targeting', candidateCount: 2 },
     })
     expect(mocks.postJson).toHaveBeenCalledWith('/api/maps/arena/presence', {
       presence: expect.objectContaining({
         clientSequence: 2,
         selectedTokenId: null,
         hoveredTokenId: null,
+        intent: { kind: 'targeting', candidateCount: 2 },
       }),
       clientId: 'client_c-local-tab',
     })

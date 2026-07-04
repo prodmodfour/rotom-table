@@ -124,6 +124,28 @@ describe('map page route authority', () => {
     expect(mapPage).not.toContain('mapRevision: mapPresence')
   })
 
+  it('publishes compact movement and targeting intent through ephemeral presence', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+    const targetingIntentHelper = mapPage.slice(
+      mapPage.indexOf('const presenceIntentForTargetingOverlay'),
+      mapPage.indexOf('const presenceIntentForTargetBranchSelection'),
+    )
+
+    expect(mapPage).toContain('const activeOwnPresenceIntent = computed<LivePlayPresenceIntentState>(() => (')
+    expect(mapPage).toContain('presenceIntentForTargetingOverlay(actionAutomationTargeting.value)')
+    expect(mapPage).toContain('?? presenceIntentForMovementPreview()')
+    expect(mapPage).toContain("?? (mapPresence.ownPresence.value.ping ? { kind: 'placing-ping' } : { kind: 'idle' })")
+    expect(mapPage).toContain("kind: 'moving-token'")
+    expect(mapPage).toContain("kind: 'targeting'")
+    expect(mapPage).toContain('sourceTokenId')
+    expect(mapPage).toContain('candidateCount')
+    expect(mapPage).toContain('targetCount')
+    expect(mapPage).toContain('void mapPresence.updateOwnPresence({ intent }, { publish })')
+    expect(targetingIntentHelper).not.toContain('moveName')
+    expect(targetingIntentHelper).not.toContain('sheet')
+    expect(targetingIntentHelper).not.toContain('command')
+  })
+
   it('wires remote presence token attention into the isometric renderer without token locks', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
     const scenePanel = readSource('src/components/map/MapScenePanel.vue')

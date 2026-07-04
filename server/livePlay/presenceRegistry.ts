@@ -7,6 +7,7 @@ import {
   isLivePlayPresenceRole,
   parseLivePlayPresenceUpdate,
   type LivePlayPresenceEntry,
+  type LivePlayPresenceIntentState,
   type LivePlayPresenceParticipantSummary,
   type LivePlayPresencePingPayload,
   type LivePlayPresenceRole,
@@ -223,13 +224,22 @@ const clonePing = (ping: LivePlayPresencePingPayload | null): LivePlayPresencePi
   }
 }
 
+const cloneIntent = (intent: LivePlayPresenceIntentState): LivePlayPresenceIntentState => ({
+  kind: intent.kind,
+  ...(intent.sourceTokenId === undefined ? {} : { sourceTokenId: intent.sourceTokenId }),
+  ...(intent.candidateCount === undefined ? {} : { candidateCount: intent.candidateCount }),
+  ...(intent.targetCount === undefined ? {} : { targetCount: intent.targetCount }),
+  ...(intent.cell === undefined ? {} : { cell: { ...intent.cell } }),
+  ...(intent.area === undefined ? {} : { area: { ...intent.area } }),
+})
+
 const cloneEntry = (entry: LivePlayPresenceEntry): LivePlayPresenceEntry => ({
   schemaVersion: LIVE_PLAY_PRESENCE_SCHEMA_VERSION,
   authority: LIVE_PLAY_PRESENCE_AUTHORITY,
   clientSequence: entry.clientSequence,
   selectedTokenId: entry.selectedTokenId,
   hoveredTokenId: entry.hoveredTokenId,
-  intent: { kind: entry.intent.kind },
+  intent: cloneIntent(entry.intent),
   ping: clonePing(entry.ping),
   participant: { ...entry.participant },
   lastSeenAt: entry.lastSeenAt,

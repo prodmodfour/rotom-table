@@ -66,7 +66,12 @@ import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPane
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
 import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
-import type { LivePlayPresenceGridCell } from '#shared/livePlayPresence'
+import {
+  LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS,
+  LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT,
+  type LivePlayPresenceGridCell,
+  type LivePlayPresenceIntentState,
+} from '#shared/livePlayPresence'
 import { isRealtimeEcho } from '#shared/realtime'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
@@ -107,6 +112,7 @@ import type { LivePlayPatchAdoptionContext } from '~/utils/livePlayPatchAdoption
 import { routeSlugParam } from '~/utils/routeParams'
 import type { CharacterSheet } from '~/types/characterSheet'
 import type { GridAnchor, MapRoomKind, MapTerrainKind, MapWeatherKind } from '~/types/map'
+import type { MoveAutomationTargetingOverlayState } from '~/types/moveAutomation'
 import type { MoveVfxKind } from '~/types/moveAnimation'
 import type { TrainerSheet } from '~/types/trainerSheet'
 
@@ -2052,6 +2058,102 @@ const actionAutomationFeedback = computed(() => (
   ?? remotePokeballCaptureFeedback.value
   ?? remoteMoveAutomationFeedback.value
 ))
+
+const boundedPresenceCount = (count: number, max: number = LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT): number => (
+  Math.min(Math.max(0, Math.floor(count)), max)
+)
+
+const visiblePresenceTokenCount = (tokenIds: readonly string[] | undefined): number | undefined => {
+  if (tokenIds === undefined) return undefined
+  const visibleIds = new Set(tokenIds.filter((tokenId) => visiblePresenceTokenIdSet.value.has(tokenId)))
+  return boundedPresenceCount(visibleIds.size)
+}
+
+const gridCellsEqual = (a: LivePlayPresenceGridCell | undefined, b: LivePlayPresenceGridCell | undefined): boolean => (
+  a === b || (a !== undefined && b !== undefined && a.x === b.x && a.y === b.y && a.z === b.z)
+)
+
+const presenceIntentsEqual = (a: LivePlayPresenceIntentState, b: LivePlayPresenceIntentState): boolean => (
+  a.kind === b.kind
+  && a.sourceTokenId === b.sourceTokenId
+  && a.candidateCount === b.candidateCount
+  && a.targetCount === b.targetCount
+  && gridCellsEqual(a.cell, b.cell)
+  && a.area?.cellCount === b.area?.cellCount
+)
+
+const presenceIntentForTargetingOverlay = (
+  targeting: MoveAutomationTargetingOverlayState | null | undefined,
+): LivePlayPresenceIntentState | null => {
+  if (!targeting) return null
+  const sourceTokenId = presenceTokenIdIfVisible(targeting.userId)
+  if (!sourceTokenId) return null
+  const candidateCount = visiblePresenceTokenCount(targeting.candidateIds)
+  const targetCount = visiblePresenceTokenCount(targeting.selectedTargetIds ?? targeting.affectedIds)
+  const cell = presencePingCellIfVisible(targeting.areaAimCenter)
+  const areaCellCount = targeting.areaCells?.length
+  return {
+    kind: 'targeting',
+    sourceTokenId,
+    ...(candidateCount === undefined ? {} : { candidateCount }),
+    ...(targetCount === undefined ? {} : { targetCount }),
+    ...(cell === null ? {} : { cell }),
+    ...(areaCellCount ? { area: { cellCount: boundedPresenceCount(areaCellCount, LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS) } } : {}),
+  }
+}
+
+const presenceIntentForTargetBranchSelection = (): LivePlayPresenceIntentState | null => {
+  const selection = moveAutomationTargetBranchSelection.value
+  const sourceTokenId = presenceTokenIdIfVisible(selection?.userId)
+  if (!selection || !sourceTokenId) return null
+  return {
+    kind: 'targeting',
+    sourceTokenId,
+    candidateCount: boundedPresenceCount(selection.options.length),
+  }
+}
+
+const presenceIntentForMovementPreview = (): LivePlayPresenceIntentState | null => {
+  const preview = previewState.value
+  const sourceTokenId = presenceTokenIdIfVisible(selectedId.value)
+  const cell = presencePingCellIfVisible(preview.position)
+  if (!sourceTokenId || !preview.position || preview.pathLength <= 0) return null
+  return {
+    kind: 'moving-token',
+    sourceTokenId,
+    ...(cell === null ? {} : { cell }),
+  }
+}
+
+const presenceIntentForLiveMapEditing = (): LivePlayPresenceIntentState | null => {
+  if (isSetupEditMode() || !mapActionEditingEnabled.value) return null
+  return buildMode.value || hazardMode.value ? { kind: 'targeting' } : null
+}
+
+const activeOwnPresenceIntent = computed<LivePlayPresenceIntentState>(() => (
+  presenceIntentForTargetingOverlay(actionAutomationTargeting.value)
+  ?? presenceIntentForTargetBranchSelection()
+  ?? presenceIntentForMovementPreview()
+  ?? presenceIntentForLiveMapEditing()
+  ?? (mapPresence.ownPresence.value.ping ? { kind: 'placing-ping' } : { kind: 'idle' })
+))
+
+const syncOwnPresenceIntent = (publish = true): void => {
+  if (!mapPresenceEnabled.value) {
+    clearOwnPresenceForContextChange()
+    return
+  }
+
+  const intent = activeOwnPresenceIntent.value
+  if (presenceIntentsEqual(mapPresence.ownPresence.value.intent, intent)) return
+  void mapPresence.updateOwnPresence({ intent }, { publish })
+}
+
+watch(
+  [activeOwnPresenceIntent, mapPresenceEnabled],
+  () => syncOwnPresenceIntent(),
+  { immediate: true },
+)
 
 const moveAutomationDispatchInFlight = () => moveDispatchPending.value
 

@@ -400,6 +400,16 @@ describe('map live-play presence heartbeat API', () => {
       method: 'POST',
       role: 'gm',
       slug: 'arena',
+      body: { presence: presenceUpdate({ intent: { kind: 'targeting', sourceTokenId: 'token-missing' } }) },
+    })).rejects.toMatchObject({
+      statusCode: 400,
+      statusMessage: 'intent.sourceTokenId must reference a token on the requested map.',
+    })
+
+    await expect(invokePresenceRoute(presencePostRoute, {
+      method: 'POST',
+      role: 'gm',
+      slug: 'arena',
       body: {
         presence: presenceUpdate({
           selectedTokenId: null,
@@ -414,6 +424,16 @@ describe('map live-play presence heartbeat API', () => {
     })).rejects.toMatchObject({
       statusCode: 400,
       statusMessage: 'ping.cell must be inside the requested map dimensions.',
+    })
+
+    await expect(invokePresenceRoute(presencePostRoute, {
+      method: 'POST',
+      role: 'gm',
+      slug: 'arena',
+      body: { presence: presenceUpdate({ intent: { kind: 'targeting', cell: { x: 99, y: 0, z: 0 } } }) },
+    })).rejects.toMatchObject({
+      statusCode: 400,
+      statusMessage: 'intent.cell must be inside the requested map dimensions.',
     })
 
     expect(livePlayPresenceRegistry.list({ mapSlug: 'arena', now: 50_000 })).toEqual([])

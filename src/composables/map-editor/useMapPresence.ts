@@ -170,13 +170,22 @@ const clonePresencePingPayload = (ping: LivePlayPresencePingPayload): LivePlayPr
   cell: { ...ping.cell },
 })
 
+const clonePresenceIntentState = (intent: LivePlayPresenceIntentState): LivePlayPresenceIntentState => ({
+  kind: intent.kind,
+  ...(intent.sourceTokenId === undefined ? {} : { sourceTokenId: intent.sourceTokenId }),
+  ...(intent.candidateCount === undefined ? {} : { candidateCount: intent.candidateCount }),
+  ...(intent.targetCount === undefined ? {} : { targetCount: intent.targetCount }),
+  ...(intent.cell === undefined ? {} : { cell: { ...intent.cell } }),
+  ...(intent.area === undefined ? {} : { area: { ...intent.area } }),
+})
+
 const clonePresenceEntry = (entry: LivePlayPresenceEntry): LivePlayPresenceEntry => ({
   schemaVersion: entry.schemaVersion,
   authority: entry.authority,
   clientSequence: entry.clientSequence,
   selectedTokenId: entry.selectedTokenId,
   hoveredTokenId: entry.hoveredTokenId,
-  intent: { ...entry.intent },
+  intent: clonePresenceIntentState(entry.intent),
   ping: entry.ping === null ? null : clonePresencePingPayload(entry.ping),
   participant: { ...entry.participant },
   lastSeenAt: entry.lastSeenAt,
@@ -256,17 +265,35 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     const visibleIds = visibleTokenIds()
     return visibleIds === null || visibleIds.has(tokenId) ? tokenId : null
   }
+  const sanitizeOwnPresenceIntent = (intent: LivePlayPresenceIntentState): LivePlayPresenceIntentState => {
+    if (intent.sourceTokenId === undefined) return intent
+    const sourceTokenId = sanitizeOwnPresenceTokenId(intent.sourceTokenId)
+    if (sourceTokenId === intent.sourceTokenId) return intent
+    return {
+      kind: intent.kind,
+      ...(intent.candidateCount === undefined ? {} : { candidateCount: intent.candidateCount }),
+      ...(intent.targetCount === undefined ? {} : { targetCount: intent.targetCount }),
+      ...(intent.cell === undefined ? {} : { cell: { ...intent.cell } }),
+      ...(intent.area === undefined ? {} : { area: { ...intent.area } }),
+    }
+  }
   const sanitizeOwnPresenceTokens = (
     presence: LivePlayPresenceUpdate,
     sanitizeOptions: { readonly incrementSequenceOnChange: boolean },
   ): LivePlayPresenceUpdate => {
     const selectedTokenId = sanitizeOwnPresenceTokenId(presence.selectedTokenId)
     const hoveredTokenId = sanitizeOwnPresenceTokenId(presence.hoveredTokenId)
-    if (selectedTokenId === presence.selectedTokenId && hoveredTokenId === presence.hoveredTokenId) return presence
+    const intent = sanitizeOwnPresenceIntent(presence.intent)
+    if (
+      selectedTokenId === presence.selectedTokenId
+      && hoveredTokenId === presence.hoveredTokenId
+      && intent === presence.intent
+    ) return presence
     return {
       ...presence,
       selectedTokenId,
       hoveredTokenId,
+      intent,
       clientSequence: presence.clientSequence + (sanitizeOptions.incrementSequenceOnChange ? 1 : 0),
     }
   }

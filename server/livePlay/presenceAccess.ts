@@ -5,6 +5,7 @@ import {
   parseLivePlayPresenceUpdate,
   type LivePlayPresenceEntry,
   type LivePlayPresenceGridCell,
+  type LivePlayPresenceIntentState,
   type LivePlayPresenceSnapshot,
   type LivePlayPresenceUpdate,
   type LivePlayPresenceValidationIssue,
@@ -77,10 +78,16 @@ const serverTime = (
   clock: (() => number) | undefined,
 ): number => inputNow ?? (clock ?? Date.now)()
 
+const cloneIntent = (intent: LivePlayPresenceIntentState): LivePlayPresenceIntentState => ({
+  ...intent,
+  ...(intent.cell === undefined ? {} : { cell: { ...intent.cell } }),
+  ...(intent.area === undefined ? {} : { area: { ...intent.area } }),
+})
+
 const cloneEntries = (entries: readonly LivePlayPresenceEntry[]): readonly LivePlayPresenceEntry[] => (
   entries.map((entry) => ({
     ...entry,
-    intent: { ...entry.intent },
+    intent: cloneIntent(entry.intent),
     ping: entry.ping === null
       ? null
       : {
@@ -139,11 +146,11 @@ const placementIdsForMap = (map: TabletopMap): ReadonlySet<string> => (
 )
 
 const assertTokenReferenceExists = (
-  tokenId: string | null,
-  field: 'selectedTokenId' | 'hoveredTokenId',
+  tokenId: string | null | undefined,
+  field: 'selectedTokenId' | 'hoveredTokenId' | 'intent.sourceTokenId',
   placementIds: ReadonlySet<string>,
 ): void => {
-  if (tokenId === null || placementIds.has(tokenId)) return
+  if (tokenId === undefined || tokenId === null || placementIds.has(tokenId)) return
   throw new LivePlayPresenceAccessError(400, `${field} must reference a token on the requested map.`)
 }
 
@@ -161,11 +168,18 @@ const assertPingCellIsInsideMap = (update: LivePlayPresenceUpdate, map: Tabletop
   throw new LivePlayPresenceAccessError(400, 'ping.cell must be inside the requested map dimensions.')
 }
 
+const assertIntentCellIsInsideMap = (update: LivePlayPresenceUpdate, map: TabletopMap): void => {
+  if (update.intent.cell === undefined || cellIsInsideMap(update.intent.cell, map)) return
+  throw new LivePlayPresenceAccessError(400, 'intent.cell must be inside the requested map dimensions.')
+}
+
 const assertPresenceUpdateReferencesMap = (update: LivePlayPresenceUpdate, map: TabletopMap): void => {
   const placementIds = placementIdsForMap(map)
   assertTokenReferenceExists(update.selectedTokenId, 'selectedTokenId', placementIds)
   assertTokenReferenceExists(update.hoveredTokenId, 'hoveredTokenId', placementIds)
+  assertTokenReferenceExists(update.intent.sourceTokenId, 'intent.sourceTokenId', placementIds)
   assertPingCellIsInsideMap(update, map)
+  assertIntentCellIsInsideMap(update, map)
 }
 
 const presencePrincipalForAccess = (

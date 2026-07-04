@@ -6,6 +6,8 @@ import {
   LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS,
   LIVE_PLAY_PRESENCE_INTENT_KINDS,
   LIVE_PLAY_PRESENCE_MAX_DISPLAY_NAME_CHARS,
+  LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS,
+  LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT,
   LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS,
   LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS,
   LIVE_PLAY_PRESENCE_MAX_SNAPSHOT_ENTRIES,
@@ -37,7 +39,14 @@ const validUpdate = (overrides: Record<string, unknown> = {}) => ({
   clientSequence: 42,
   selectedTokenId: 'token-pikachu',
   hoveredTokenId: null,
-  intent: { kind: 'targeting' },
+  intent: {
+    kind: 'targeting',
+    sourceTokenId: 'token-pikachu',
+    candidateCount: 3,
+    targetCount: 1,
+    cell: { x: 4, y: 0, z: -2 },
+    area: { cellCount: 6 },
+  },
   ping: {
     id: 'ping_abc123',
     cell: { x: 4, y: 0, z: -2 },
@@ -81,6 +90,8 @@ describe('live-play presence contract', () => {
     expect(LIVE_PLAY_PRESENCE_AUTHORITY_DESCRIPTION).toContain('must not mutate')
     expect(LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS).toBe(4_000)
     expect(LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS).toBe(8_000)
+    expect(LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT).toBe(256)
+    expect(LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS).toBe(512)
     expect(LIVE_PLAY_PRESENCE_INTENT_KINDS).toEqual([
       'idle',
       'moving-token',
@@ -110,7 +121,14 @@ describe('live-play presence contract', () => {
     expect(result.payload.clientSequence).toBe(42)
     expect(result.payload.selectedTokenId).toBe('token-pikachu')
     expect(result.payload.hoveredTokenId).toBeNull()
-    expect(result.payload.intent.kind).toBe('targeting')
+    expect(result.payload.intent).toMatchObject({
+      kind: 'targeting',
+      sourceTokenId: 'token-pikachu',
+      candidateCount: 3,
+      targetCount: 1,
+      cell: { x: 4, y: 0, z: -2 },
+      area: { cellCount: 6 },
+    })
     expect(result.payload.ping?.cell).toEqual({ x: 4, y: 0, z: -2 })
     expect(parseLivePlayPresenceUpdate(JSON.parse(JSON.stringify(result.payload)))).toEqual(result)
     expect(isLivePlayPresenceUpdate(result.payload)).toBe(true)
@@ -234,7 +252,13 @@ describe('live-play presence contract', () => {
       sheetPayload: { hp: 1 },
       profileId: 'profile_secret000',
       arbitrary: { nested: 'record' },
-      intent: { kind: 'targeting', hiddenMove: { name: 'Secret Move' } },
+      intent: {
+        kind: 'targeting',
+        sourceTokenId: 'token-pikachu',
+        moveName: 'Secret Move',
+        targetIds: ['token-hidden'],
+        hiddenMove: { name: 'Secret Move' },
+      },
     })
 
     expect(result.valid).toBe(false)
@@ -249,6 +273,8 @@ describe('live-play presence contract', () => {
       expect.objectContaining({ path: 'sheetPayload', code: 'forbidden-authority-field' }),
       expect.objectContaining({ path: 'profileId', code: 'forbidden-authority-field' }),
       expect.objectContaining({ path: 'arbitrary', code: 'unknown-field' }),
+      expect.objectContaining({ path: 'intent.moveName', code: 'forbidden-authority-field' }),
+      expect.objectContaining({ path: 'intent.targetIds', code: 'forbidden-authority-field' }),
       expect.objectContaining({ path: 'intent.hiddenMove', code: 'unknown-field' }),
     ]))
   })
@@ -315,6 +341,21 @@ describe('live-play presence contract', () => {
     }))).toMatchObject({
       valid: false,
       issues: [expect.objectContaining({ path: 'ping.expiresAt', code: 'invalid-ping' })],
+    })
+    expect(parseLivePlayPresenceUpdate(validUpdate({
+      intent: {
+        kind: 'targeting',
+        sourceTokenId: { id: 'token-pikachu' },
+        candidateCount: LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT + 1,
+        area: { cellCount: LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS + 1 },
+      },
+    }))).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([
+        expect.objectContaining({ path: 'intent.sourceTokenId', code: 'invalid-token-id' }),
+        expect.objectContaining({ path: 'intent.candidateCount', code: 'invalid-intent' }),
+        expect.objectContaining({ path: 'intent.area.cellCount', code: 'invalid-intent' }),
+      ]),
     })
   })
 

@@ -45,6 +45,8 @@ export const LIVE_PLAY_PRESENCE_MAX_TOKEN_ID_CHARS = 96 as const
 export const LIVE_PLAY_PRESENCE_MAX_DISPLAY_NAME_CHARS = 64 as const
 export const LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS = 32 as const
 export const LIVE_PLAY_PRESENCE_MAX_PING_ID_CHARS = 64 as const
+export const LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT = 256 as const
+export const LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS = 512 as const
 export const LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS = 4_000 as const
 export const LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS = 8_000 as const
 export const LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_MIN_CHARS = 4 as const
@@ -103,14 +105,28 @@ export interface LivePlayPresenceParticipantSummary {
   readonly accent: LivePlayPresenceAccent
 }
 
-export interface LivePlayPresenceIntentState {
-  readonly kind: LivePlayPresenceIntentKind
-}
-
 export interface LivePlayPresenceGridCell {
   readonly x: number
   readonly y: number
   readonly z: number
+}
+
+export interface LivePlayPresenceIntentAreaSummary {
+  /** Rounded count of public map cells affected by an area preview. */
+  readonly cellCount: number
+}
+
+export interface LivePlayPresenceIntentState {
+  readonly kind: LivePlayPresenceIntentKind
+  /** Visible source token only; never a raw profile, sheet, move, or command id. */
+  readonly sourceTokenId?: string
+  /** Safe count of public candidate tokens/cells, without exposing target ids. */
+  readonly candidateCount?: number
+  /** Safe count of selected or affected public targets, without exposing target ids. */
+  readonly targetCount?: number
+  /** Optional public map cell summary for movement, measuring, or area aim. */
+  readonly cell?: LivePlayPresenceGridCell
+  readonly area?: LivePlayPresenceIntentAreaSummary
 }
 
 export interface LivePlayPresencePingPayload {
@@ -189,7 +205,8 @@ const UPDATE_FIELDS = new Set([
   'ping',
 ])
 const PARTICIPANT_FIELDS = new Set(['role', 'profileDisplayName', 'clientIdSuffix', 'accent'])
-const INTENT_FIELDS = new Set(['kind'])
+const INTENT_FIELDS = new Set(['kind', 'sourceTokenId', 'candidateCount', 'targetCount', 'cell', 'area'])
+const INTENT_AREA_FIELDS = new Set(['cellCount'])
 const CELL_FIELDS = new Set(['x', 'y', 'z'])
 const PING_FIELDS = new Set(['id', 'cell', 'label', 'createdAt', 'expiresAt'])
 const ENTRY_FIELDS = new Set([...UPDATE_FIELDS, 'participant', 'lastSeenAt', 'expiresAt'])
@@ -212,6 +229,18 @@ const FORBIDDEN_AUTHORITY_FIELDS = new Set([
   'commandBody',
   'commandPayload',
   'commandResult',
+  'moveName',
+  'moveSlug',
+  'abilityName',
+  'orderName',
+  'maneuverName',
+  'pokeballName',
+  'candidateIds',
+  'selectedTargetIds',
+  'affectedIds',
+  'targetIds',
+  'targetId',
+  'hitChances',
   'map',
   'mapDocument',
   'mapRevision',
@@ -432,6 +461,74 @@ const parseGridCellInternal = (
   return { x: value.x, y: value.y, z: value.z }
 }
 
+const parseIntentCount = (
+  value: unknown,
+  path: string,
+  maxValue: number,
+  issues: MutableIssueList,
+): number | null => {
+  if (!isSafeNonNegativeInteger(value) || value > maxValue) {
+    addIssue(issues, path, 'invalid-intent', `${path} must be a safe integer between 0 and ${maxValue}.`)
+    return null
+  }
+  return value
+}
+
+const parseOptionalIntentCount = (
+  value: unknown,
+  path: string,
+  maxValue: number,
+  issues: MutableIssueList,
+): number | undefined => {
+  if (value === undefined || value === null) return undefined
+  return parseIntentCount(value, path, maxValue, issues) ?? undefined
+}
+
+const parseIntentAreaInternal = (
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+): LivePlayPresenceIntentAreaSummary | null => {
+  if (value === undefined || value === null) return null
+  if (!isRecord(value)) {
+    addIssue(issues, path, 'invalid-intent', `${path} must be an object with a safe cellCount.`)
+    return null
+  }
+  rejectUnknownFields(value, INTENT_AREA_FIELDS, path, issues)
+  requireField(value, 'cellCount', `${path}.cellCount`, issues)
+
+  const cellCount = parseIntentCount(value.cellCount, `${path}.cellCount`, LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS, issues)
+  if (cellCount === null) return null
+  return { cellCount }
+}
+
+const parseOptionalIntentTokenId = (
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+): string | undefined => {
+  if (value === undefined || value === null) return undefined
+  return parseTokenId(value, path, issues) ?? undefined
+}
+
+const parseOptionalIntentCell = (
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+): LivePlayPresenceGridCell | undefined => {
+  if (value === undefined || value === null) return undefined
+  return parseGridCellInternal(value, path, issues) ?? undefined
+}
+
+const parseOptionalIntentArea = (
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+): LivePlayPresenceIntentAreaSummary | undefined => {
+  if (value === undefined || value === null) return undefined
+  return parseIntentAreaInternal(value, path, issues) ?? undefined
+}
+
 const parseIntentInternal = (
   value: unknown,
   path: string,
@@ -453,7 +550,31 @@ const parseIntentInternal = (
     )
     return null
   }
-  return { kind: value.kind as LivePlayPresenceIntentKind }
+
+  const sourceTokenId = parseOptionalIntentTokenId(value.sourceTokenId, `${path}.sourceTokenId`, issues)
+  const candidateCount = parseOptionalIntentCount(
+    value.candidateCount,
+    `${path}.candidateCount`,
+    LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT,
+    issues,
+  )
+  const targetCount = parseOptionalIntentCount(
+    value.targetCount,
+    `${path}.targetCount`,
+    LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT,
+    issues,
+  )
+  const cell = parseOptionalIntentCell(value.cell, `${path}.cell`, issues)
+  const area = parseOptionalIntentArea(value.area, `${path}.area`, issues)
+
+  return {
+    kind: value.kind as LivePlayPresenceIntentKind,
+    ...(sourceTokenId === undefined ? {} : { sourceTokenId }),
+    ...(candidateCount === undefined ? {} : { candidateCount }),
+    ...(targetCount === undefined ? {} : { targetCount }),
+    ...(cell === undefined ? {} : { cell }),
+    ...(area === undefined ? {} : { area }),
+  }
 }
 
 const parsePingInternal = (
