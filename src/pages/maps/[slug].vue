@@ -66,6 +66,7 @@ import { useOrderActionPanel } from '~/composables/map-editor/useOrderActionPane
 import { usePokeballCapturePanel } from '~/composables/map-editor/usePokeballCapturePanel'
 import { LIVE_PLAY_COMMAND_TYPES } from '#shared/livePlayCommands'
 import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInteractionMode'
+import type { LivePlayPresenceGridCell } from '#shared/livePlayPresence'
 import { isRealtimeEcho } from '#shared/realtime'
 import type { LivePlayAcceptedRealtimeEvent } from '#shared/livePlayRealtimeEvents'
 import { useStartTurnModal } from '~/composables/map-editor/useStartTurnModal'
@@ -792,6 +793,14 @@ const visiblePresenceTokenIdSet = computed(() => new Set(visiblePresenceTokenIds
 const presenceTokenIdIfVisible = (tokenId: string | null | undefined): string | null => (
   tokenId && visiblePresenceTokenIdSet.value.has(tokenId) ? tokenId : null
 )
+const presencePingCellIfVisible = (cell: LivePlayPresenceGridCell | null | undefined): LivePlayPresenceGridCell | null => {
+  const dimensions = map.value?.dimensions
+  if (!cell || !dimensions) return null
+  if (!Number.isSafeInteger(cell.x) || !Number.isSafeInteger(cell.y) || !Number.isSafeInteger(cell.z)) return null
+  if (cell.x < 0 || cell.y < 0 || cell.z < 0) return null
+  if (cell.x >= dimensions.x || cell.y >= dimensions.y || cell.z >= dimensions.z) return null
+  return { x: cell.x, y: cell.y, z: cell.z }
+}
 const mapPresenceEnabled = computed(() => (
   canViewMap.value
   && (isGm.value || (isPlayer.value && Boolean(selectedProfileId.value)))
@@ -820,9 +829,33 @@ const updateOwnTokenPresence = (selectedTokenId: string | null, hoveredTokenId: 
   void mapPresence.updateOwnPresence({ selectedTokenId, hoveredTokenId }, { publish })
 }
 
+const clearOwnPresenceForContextChange = (): void => {
+  const ownPresence = mapPresence.ownPresence.value
+  if (
+    ownPresence.selectedTokenId === null
+    && ownPresence.hoveredTokenId === null
+    && ownPresence.ping === null
+    && ownPresence.intent.kind === 'idle'
+  ) return
+
+  void mapPresence.updateOwnPresence({
+    selectedTokenId: null,
+    hoveredTokenId: null,
+    ping: null,
+    intent: { kind: 'idle' },
+  }, { publish: false })
+}
+
+const placePresencePingFromScene = (payload: { cell: LivePlayPresenceGridCell; label?: unknown }): void => {
+  if (!mapPresenceEnabled.value) return
+  const cell = presencePingCellIfVisible(payload.cell)
+  if (!cell) return
+  void mapPresence.placePing(cell, { label: payload.label })
+}
+
 const syncOwnTokenPresence = (publish = true): void => {
   if (!mapPresenceEnabled.value) {
-    updateOwnTokenPresence(null, null, false)
+    clearOwnPresenceForContextChange()
     return
   }
 
@@ -849,7 +882,7 @@ watch(
     if (nextProfileId === previousProfileId) return
     hoveredPresenceTokenId.value = null
     if (isPlayer.value) clearSelection()
-    updateOwnTokenPresence(null, null, false)
+    clearOwnPresenceForContextChange()
   },
   { flush: 'sync' },
 )
@@ -2327,6 +2360,7 @@ useMapDimensionReconciliation({
         :token-pokeball-options-by-id="tokenPokeballOptionsById"
         @select-pokemon="selectPokemon"
         @hover-pokemon="setHoveredPresenceToken"
+        @place-presence-ping="placePresencePingFromScene"
         @focus-initiative-entry="focusInitiativeEntry"
         @previous-initiative="previousInitiativeFromControls"
         @next-initiative="nextInitiativeFromControls"

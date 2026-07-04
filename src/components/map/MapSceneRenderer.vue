@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import IsometricGrid from '~/components/IsometricGrid.client.vue'
 import type { BuildTool } from '#shared/mapEditor'
+import type { LivePlayPresenceGridCell } from '#shared/livePlayPresence'
 import type { CombatStageMap } from '~/types/combatStages'
 import type {
   MoveAutomationAreaDirection,
@@ -81,6 +82,7 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
   (event: 'hover-pokemon', id: string | null): void
+  (event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
@@ -164,6 +166,7 @@ defineExpose({ focusPokemon })
     :attack-of-opportunity-prompts="attackOfOpportunityPrompts ?? []"
     @select-pokemon="emit('select-pokemon', $event)"
     @hover-pokemon="emit('hover-pokemon', $event)"
+    @place-presence-ping="emit('place-presence-ping', $event)"
     @move-pokemon="emit('move-pokemon', $event)"
     @turn-pokemon="emit('turn-pokemon', $event)"
     @delete-pokemon="emit('delete-pokemon', $event)"

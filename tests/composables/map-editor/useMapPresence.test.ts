@@ -2,10 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import {
   LIVE_PLAY_PRESENCE_AUTHORITY,
+  LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS,
   LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE,
   LIVE_PLAY_PRESENCE_SCHEMA_VERSION,
   type LivePlayPresenceEntry,
   type LivePlayPresenceSnapshot,
+  type LivePlayPresenceUpdate,
 } from '#shared/livePlayPresence'
 import { useMapPresence } from '~/composables/map-editor/useMapPresence'
 
@@ -333,6 +335,123 @@ describe('useMapPresence', () => {
     await vi.advanceTimersByTimeAsync(100)
 
     expect(presence.entries.value).toEqual([])
+    presence.dispose()
+  })
+
+  it('publishes sanitized map pings and exposes creator summaries from heartbeat snapshots', async () => {
+    const createdAt = 4_000
+    const expectedLabel = 'L'.repeat(LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS)
+    mocks.postJson.mockImplementation(async (_path, body) => {
+      const request = body as { presence: LivePlayPresenceUpdate }
+      return presenceSnapshot([
+        presenceEntry({
+          clientSequence: request.presence.clientSequence,
+          intent: request.presence.intent,
+          ping: request.presence.ping,
+          participant: {
+            role: 'player',
+            profileDisplayName: 'Brock',
+            clientIdSuffix: 'creator1',
+            accent: 'amber',
+          },
+          lastSeenAt: createdAt,
+          expiresAt: 19_000,
+        }),
+      ], { serverTime: createdAt })
+    })
+
+    const presence = useMapPresence({
+      slug: 'arena',
+      autoStart: false,
+      now: () => createdAt,
+      pingIdFactory: () => 'pmanual1',
+    })
+
+    await expect(presence.placePing(
+      { x: 2, y: 0, z: 3 },
+      { label: ` <${'L'.repeat(LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS + 8)}\n> ` },
+    )).resolves.toBe(true)
+
+    expect(presence.ownPresence.value).toMatchObject({
+      clientSequence: 1,
+      intent: { kind: 'placing-ping' },
+      ping: {
+        id: 'pmanual1',
+        cell: { x: 2, y: 0, z: 3 },
+        label: expectedLabel,
+        createdAt,
+        expiresAt: createdAt + 4_000,
+      },
+    })
+    expect(mocks.postJson).toHaveBeenCalledWith('/api/maps/arena/presence', {
+      presence: expect.objectContaining({
+        clientSequence: 1,
+        intent: { kind: 'placing-ping' },
+        ping: expect.objectContaining({
+          id: 'pmanual1',
+          label: expectedLabel,
+        }),
+      }),
+      clientId: 'client_c-local-tab',
+    })
+    expect(presence.pings.value).toEqual([
+      expect.objectContaining({
+        id: 'pmanual1',
+        cell: { x: 2, y: 0, z: 3 },
+        label: expectedLabel,
+        creator: expect.objectContaining({ profileDisplayName: 'Brock', clientIdSuffix: 'creator1' }),
+      }),
+    ])
+
+    presence.dispose()
+  })
+
+  it('locally expires presence pings before their participant entry expires', async () => {
+    vi.useFakeTimers()
+    let now = 10_000
+    mocks.getJson.mockResolvedValue(presenceSnapshot([], { serverTime: 10_000 }))
+    mocks.postJson.mockResolvedValue(presenceSnapshot([], { serverTime: 10_000 }))
+
+    const presence = useMapPresence({
+      slug: 'arena',
+      document: createVisibilityDocument(),
+      heartbeatIntervalMs: 10_000,
+      expirySweepIntervalMs: 100,
+      now: () => now,
+    })
+    await flushPromises()
+
+    mocks.realtimeSubscriptions[0]?.handler({
+      channel: 'map:arena',
+      type: LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE,
+      mapSlug: 'arena',
+      timestamp: 10_000,
+      data: presenceSnapshot([
+        presenceEntry({
+          ping: {
+            id: 'premote1',
+            cell: { x: 1, y: 0, z: 2 },
+            label: 'Here',
+            createdAt: 10_000,
+            expiresAt: 10_400,
+          },
+          lastSeenAt: 10_000,
+          expiresAt: 25_000,
+        }),
+      ], { serverTime: 10_000 }),
+    })
+    expect(presence.pings.value).toEqual([
+      expect.objectContaining({ id: 'premote1', label: 'Here' }),
+    ])
+    expect(presence.entries.value[0]?.ping).toEqual(expect.objectContaining({ id: 'premote1' }))
+
+    now = 10_401
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(presence.pings.value).toEqual([])
+    expect(presence.entries.value).toEqual([
+      expect.objectContaining({ ping: null, expiresAt: 25_000 }),
+    ])
     presence.dispose()
   })
 

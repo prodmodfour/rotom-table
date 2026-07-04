@@ -96,6 +96,26 @@ describe('map page route authority', () => {
     expect(mapPage).not.toContain('remoteTokenLock')
   })
 
+  it('wires ephemeral map pings through presence without map command routes', () => {
+    const mapPage = readSource('src/pages/maps/[slug].vue')
+    const scenePanel = readSource('src/components/map/MapScenePanel.vue')
+    const sceneRenderer = readSource('src/components/map/MapSceneRenderer.vue')
+    const isometricGrid = readSource('src/components/IsometricGrid.client.vue')
+
+    expect(mapPage).toContain('const placePresencePingFromScene = (payload: { cell: LivePlayPresenceGridCell; label?: unknown }): void => {')
+    expect(mapPage).toContain('void mapPresence.placePing(cell, { label: payload.label })')
+    expect(mapPage).toContain('@place-presence-ping="placePresencePingFromScene"')
+    expect(scenePanel).toContain("(event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void")
+    expect(scenePanel).toContain('@place-presence-ping="emit(\'place-presence-ping\', $event)"')
+    expect(sceneRenderer).toContain("(event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void")
+    expect(sceneRenderer).toContain('@place-presence-ping="emit(\'place-presence-ping\', $event)"')
+    expect(isometricGrid).toContain('const isPresencePingGesture = (event: PointerEvent): boolean => (')
+    expect(isometricGrid).toContain("emit('place-presence-ping', { cell })")
+    expect(isometricGrid).toContain('!placePresencePingFromPointer(event)')
+    expect(mapPage).not.toContain('livePlayCommands.placePing')
+    expect(mapPage).not.toContain('mapRevision: mapPresence')
+  })
+
   it('wires remote presence token attention into the isometric renderer without token locks', () => {
     const mapPage = readSource('src/pages/maps/[slug].vue')
     const scenePanel = readSource('src/components/map/MapScenePanel.vue')

@@ -3,9 +3,11 @@ import {
   LIVE_PLAY_PRESENCE_ACCENTS,
   LIVE_PLAY_PRESENCE_AUTHORITY,
   LIVE_PLAY_PRESENCE_AUTHORITY_DESCRIPTION,
+  LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS,
   LIVE_PLAY_PRESENCE_INTENT_KINDS,
   LIVE_PLAY_PRESENCE_MAX_DISPLAY_NAME_CHARS,
   LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS,
+  LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS,
   LIVE_PLAY_PRESENCE_MAX_SNAPSHOT_ENTRIES,
   LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE,
   LIVE_PLAY_PRESENCE_SCHEMA_VERSION,
@@ -77,6 +79,8 @@ describe('live-play presence contract', () => {
     expect(LIVE_PLAY_PRESENCE_AUTHORITY).toBe('ephemeral-presentation')
     expect(LIVE_PLAY_PRESENCE_AUTHORITY_DESCRIPTION).toContain('not an authoritative live-play command')
     expect(LIVE_PLAY_PRESENCE_AUTHORITY_DESCRIPTION).toContain('must not mutate')
+    expect(LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS).toBe(4_000)
+    expect(LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS).toBe(8_000)
     expect(LIVE_PLAY_PRESENCE_INTENT_KINDS).toEqual([
       'idle',
       'moving-token',
@@ -300,6 +304,17 @@ describe('live-play presence contract', () => {
         expect.objectContaining({ path: 'ping.cell.sheet', code: 'forbidden-authority-field' }),
         expect.objectContaining({ path: 'ping.expiresAt', code: 'invalid-ping' }),
       ]),
+    })
+    expect(parseLivePlayPresenceUpdate(validUpdate({
+      ping: {
+        id: 'ping_abc123',
+        cell: { x: 1, y: 0, z: 2 },
+        createdAt: 20,
+        expiresAt: 20 + LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS + 1,
+      },
+    }))).toMatchObject({
+      valid: false,
+      issues: [expect.objectContaining({ path: 'ping.expiresAt', code: 'invalid-ping' })],
     })
   })
 

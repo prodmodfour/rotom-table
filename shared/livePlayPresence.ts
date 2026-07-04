@@ -45,6 +45,8 @@ export const LIVE_PLAY_PRESENCE_MAX_TOKEN_ID_CHARS = 96 as const
 export const LIVE_PLAY_PRESENCE_MAX_DISPLAY_NAME_CHARS = 64 as const
 export const LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS = 32 as const
 export const LIVE_PLAY_PRESENCE_MAX_PING_ID_CHARS = 64 as const
+export const LIVE_PLAY_PRESENCE_DEFAULT_PING_TTL_MS = 4_000 as const
+export const LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS = 8_000 as const
 export const LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_MIN_CHARS = 4 as const
 export const LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_MAX_CHARS = 12 as const
 export const LIVE_PLAY_PRESENCE_CLIENT_ID_SUFFIX_DEFAULT_CHARS = 8 as const
@@ -484,11 +486,20 @@ const parsePingInternal = (
   )
   const createdAt = parseTimestamp(value.createdAt, `${path}.createdAt`, issues)
   const expiresAt = parseTimestamp(value.expiresAt, `${path}.expiresAt`, issues)
-  if (createdAt !== null && expiresAt !== null && expiresAt <= createdAt) {
+  const durationMs = createdAt !== null && expiresAt !== null ? expiresAt - createdAt : null
+  if (durationMs !== null && durationMs <= 0) {
     addIssue(issues, `${path}.expiresAt`, 'invalid-ping', `${path}.expiresAt must be newer than ${path}.createdAt.`)
   }
+  if (durationMs !== null && durationMs > LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS) {
+    addIssue(
+      issues,
+      `${path}.expiresAt`,
+      'invalid-ping',
+      `${path} must expire within ${LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS}ms of ${path}.createdAt.`,
+    )
+  }
 
-  if (id === null || cell === null || createdAt === null || expiresAt === null || expiresAt <= createdAt) return null
+  if (id === null || cell === null || createdAt === null || expiresAt === null || durationMs === null || durationMs <= 0 || durationMs > LIVE_PLAY_PRESENCE_MAX_PING_TTL_MS) return null
   return {
     id,
     cell,

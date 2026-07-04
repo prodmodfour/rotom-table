@@ -302,7 +302,7 @@ Status: DONE
 
 ## 010 — LP-S3-010 — Add ephemeral map pings
 
-Status: TODO
+Status: DONE
 
 **Goal:** Let players and GMs quickly point at a map location without creating campaign state.
 

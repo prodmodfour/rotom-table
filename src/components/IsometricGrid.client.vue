@@ -36,6 +36,7 @@ import type {
 } from '~/types/moveAutomation'
 import type { MoveAnimationEvent } from '~/types/moveAnimation'
 import type { BuildTool } from '#shared/mapEditor'
+import type { LivePlayPresenceGridCell } from '#shared/livePlayPresence'
 import type { AttackOfOpportunityPrompt } from '~/utils/attackOfOpportunity'
 import type {
   MoveAutomationTargetBranchSelectionOption,
@@ -230,6 +231,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'select-pokemon', id: string | null): void
   (event: 'hover-pokemon', id: string | null): void
+  (event: 'place-presence-ping', payload: { cell: LivePlayPresenceGridCell }): void
   (event: 'move-pokemon', payload: { id: string; position: GridAnchor }): void
   (event: 'turn-pokemon', id: string): void
   (event: 'delete-pokemon', id: string): void
@@ -1282,6 +1284,47 @@ const getMoveGridIntersection = (event: MouseEvent | PointerEvent, yLevel: numbe
     recordRaycast: recordPointerRaycastForMetricsOverlay,
   })
 
+const cellIsInsideDimensions = (cell: LivePlayPresenceGridCell): boolean => (
+  cell.x >= 0
+  && cell.y >= 0
+  && cell.z >= 0
+  && cell.x < props.dimensions.x
+  && cell.y < props.dimensions.y
+  && cell.z < props.dimensions.z
+)
+
+const presencePingCellFromPointer = (event: MouseEvent | PointerEvent): LivePlayPresenceGridCell | null => {
+  const yLevel = Math.floor(normalizedGroundLevelY())
+  const point = getMoveGridIntersection(event, yLevel)
+  if (!point) return null
+
+  const cell: LivePlayPresenceGridCell = {
+    x: Math.floor(point.x),
+    y: yLevel,
+    z: Math.floor(point.z),
+  }
+  return cellIsInsideDimensions(cell) ? cell : null
+}
+
+const isPresencePingGesture = (event: PointerEvent): boolean => (
+  event.button === 0
+  && event.altKey
+  && !event.ctrlKey
+  && !event.metaKey
+  && pointerTracker.isClick()
+)
+
+const placePresencePingFromPointer = (event: PointerEvent): boolean => {
+  if (!isPresencePingGesture(event)) return false
+
+  event.preventDefault()
+  event.stopPropagation()
+  cancelPointerMoveRaw()
+  const cell = presencePingCellFromPointer(event)
+  if (cell) emit('place-presence-ping', { cell })
+  return true
+}
+
 const moveAreaAimCenterFromPointer = (event: MouseEvent | PointerEvent): GridAnchor | null => {
   const targeting = props.moveAutomationTargeting
   if (targeting?.mode !== 'area-confirmation' || targeting.areaAimMode !== 'free') return null
@@ -1595,7 +1638,7 @@ const handleWheel = (event: WheelEvent) => {
   requestRenderAfterPointerInteraction()
 }
 const handlePointerUp = (event: PointerEvent) => {
-  if (!freeCameraRotation.handlePointerUp(event)) {
+  if (!freeCameraRotation.handlePointerUp(event) && !placePresencePingFromPointer(event)) {
     handlePointerUpRaw(event)
   }
   requestRenderAfterPointerInteraction()
