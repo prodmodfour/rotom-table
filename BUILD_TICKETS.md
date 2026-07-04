@@ -161,7 +161,7 @@ Status: DONE
 
 ## 005 — LP-S3-005 — Broadcast transient presence updates over realtime
 
-Status: TODO
+Status: DONE
 
 **Goal:** Make presence feel live without making it durable replay history.
 

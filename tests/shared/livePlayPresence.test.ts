@@ -7,6 +7,7 @@ import {
   LIVE_PLAY_PRESENCE_MAX_DISPLAY_NAME_CHARS,
   LIVE_PLAY_PRESENCE_MAX_PING_LABEL_CHARS,
   LIVE_PLAY_PRESENCE_MAX_SNAPSHOT_ENTRIES,
+  LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE,
   LIVE_PLAY_PRESENCE_SCHEMA_VERSION,
   buildLivePlayPresenceParticipantSummary,
   isLivePlayPresenceAccent,
@@ -20,6 +21,8 @@ import {
   livePlayPresenceClientIdSuffix,
   parseLivePlayPresenceEntry,
   parseLivePlayPresenceParticipantSummary,
+  parseLivePlayPresenceRealtimeEvent,
+  parseLivePlayPresenceRealtimeEventDraft,
   parseLivePlayPresenceSnapshot,
   parseLivePlayPresenceUpdate,
   sanitizeLivePlayPresenceDisplayName,
@@ -175,6 +178,44 @@ describe('live-play presence contract', () => {
     expect(JSON.stringify(snapshotResult.payload)).not.toContain('profile_')
     expect(JSON.stringify(snapshotResult.payload)).not.toContain('sheetPayload')
     expect(JSON.stringify(snapshotResult.payload)).not.toContain('payload')
+  })
+
+  it('round-trips unsequenced realtime presence snapshots without durable replay fields', () => {
+    const draft = {
+      channel: 'map:arena-map',
+      type: LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE,
+      mapSlug: 'arena-map',
+      data: validSnapshot(),
+    }
+
+    const draftResult = parseLivePlayPresenceRealtimeEventDraft(draft)
+    expect(draftResult.valid).toBe(true)
+    if (!draftResult.valid) throw new Error('expected valid realtime draft')
+    expect(draftResult.payload).toEqual(draft)
+    expect(JSON.stringify(draftResult.payload)).not.toContain('sequence')
+    expect(JSON.stringify(draftResult.payload)).not.toContain('previousRevision')
+
+    const eventResult = parseLivePlayPresenceRealtimeEvent({ ...draft, timestamp: 1_700_000_002_000 })
+    expect(eventResult.valid).toBe(true)
+    if (!eventResult.valid) throw new Error('expected valid realtime event')
+    expect(eventResult.payload.timestamp).toBe(1_700_000_002_000)
+
+    expect(parseLivePlayPresenceRealtimeEvent({
+      ...draft,
+      channel: 'map:other-map',
+      sequence: 12,
+      revision: 8,
+      commandBody: { type: 'moveToken' },
+      timestamp: 1_700_000_002_000,
+    })).toMatchObject({
+      valid: false,
+      issues: expect.arrayContaining([
+        expect.objectContaining({ path: 'sequence', code: 'forbidden-authority-field' }),
+        expect.objectContaining({ path: 'revision', code: 'forbidden-authority-field' }),
+        expect.objectContaining({ path: 'commandBody', code: 'forbidden-authority-field' }),
+        expect.objectContaining({ path: 'channel', code: 'invalid-realtime-event' }),
+      ]),
+    })
   })
 
   it('rejects command bodies, sheet payloads, profile identifiers, durable state, and unknown records', () => {

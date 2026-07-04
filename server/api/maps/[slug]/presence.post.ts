@@ -12,6 +12,7 @@ import {
 import type { AuthRole } from '#shared/auth'
 import { resolvePlayerProfileForPolicy } from '../../../policies/playerProfilePolicy'
 import { publishLivePlayPresenceHeartbeat } from '../../../livePlay/presenceAccess'
+import { publishLivePlayPresenceSnapshotRealtime } from '../../../livePlay/presenceRealtime'
 import { requireAuthRole } from '../../../utils/auth'
 import { badRequest, readObjectBody } from '../../../utils/http'
 import { getPlayerSessionAccessGrant } from '../../../utils/sessionPlayerAccess'
@@ -114,7 +115,7 @@ export default defineEventHandler(async (event) => {
       : null
     const clientContext = resolvePresenceClientContext(event, role, heartbeat.clientId)
 
-    return publishLivePlayPresenceHeartbeat({
+    const snapshot = publishLivePlayPresenceHeartbeat({
       slug: getRouterParam(event, 'slug'),
       viewer: {
         role,
@@ -125,6 +126,17 @@ export default defineEventHandler(async (event) => {
       clientId: clientContext.clientId,
       sessionContextKey: clientContext.sessionContextKey,
     })
+
+    try {
+      publishLivePlayPresenceSnapshotRealtime(snapshot)
+    } catch (publishError) {
+      console.warn('[presence] transient realtime publication failed', {
+        mapSlug: snapshot.mapSlug,
+        error: publishError,
+      })
+    }
+
+    return snapshot
   } catch (error) {
     throwUseCaseHttpError(error)
   }

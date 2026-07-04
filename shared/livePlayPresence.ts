@@ -10,6 +10,8 @@ export const LIVE_PLAY_PRESENCE_AUTHORITY = 'ephemeral-presentation' as const
 export const LIVE_PLAY_PRESENCE_AUTHORITY_DESCRIPTION =
   'Live-play presence is ephemeral presentation state only; it is not an authoritative live-play command and must not mutate campaign, map, sheet, inventory, revision, or durable realtime state.' as const
 
+export const LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE = 'live-play-presence-updated' as const
+
 export const LIVE_PLAY_PRESENCE_ROLES = ['gm', 'player'] as const
 export type LivePlayPresenceRole = (typeof LIVE_PLAY_PRESENCE_ROLES)[number]
 
@@ -78,6 +80,7 @@ export const LIVE_PLAY_PRESENCE_VALIDATION_CODES = [
   'invalid-sequence',
   'invalid-timestamp',
   'invalid-map-slug',
+  'invalid-realtime-event',
   'too-many-entries',
 ] as const
 export type LivePlayPresenceValidationCode = (typeof LIVE_PLAY_PRESENCE_VALIDATION_CODES)[number]
@@ -141,6 +144,17 @@ export interface LivePlayPresenceSnapshot {
   readonly entries: readonly LivePlayPresenceEntry[]
 }
 
+export interface LivePlayPresenceRealtimeEventDraft {
+  readonly channel: `map:${string}`
+  readonly type: typeof LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE
+  readonly mapSlug: string
+  readonly data: LivePlayPresenceSnapshot
+}
+
+export interface LivePlayPresenceRealtimeEvent extends LivePlayPresenceRealtimeEventDraft {
+  readonly timestamp: number
+}
+
 export interface ParseLivePlayPresenceSuccess<TPayload> {
   readonly valid: true
   readonly payload: TPayload
@@ -178,13 +192,17 @@ const CELL_FIELDS = new Set(['x', 'y', 'z'])
 const PING_FIELDS = new Set(['id', 'cell', 'label', 'createdAt', 'expiresAt'])
 const ENTRY_FIELDS = new Set([...UPDATE_FIELDS, 'participant', 'lastSeenAt', 'expiresAt'])
 const SNAPSHOT_FIELDS = new Set(['schemaVersion', 'authority', 'mapSlug', 'serverTime', 'entries'])
+const REALTIME_EVENT_DRAFT_FIELDS = new Set(['channel', 'type', 'mapSlug', 'data'])
+const REALTIME_EVENT_FIELDS = new Set([...REALTIME_EVENT_DRAFT_FIELDS, 'timestamp'])
 
 const FORBIDDEN_AUTHORITY_FIELDS = new Set([
+  'sequence',
   'opId',
   'type',
   'baseRevision',
   'revision',
   'previousRevision',
+  'timestamp',
   'scopes',
   'payload',
   'patches',
@@ -668,6 +686,103 @@ const parseSnapshotInternal = (
   }
 }
 
+const realtimeEventPath = (path: string, key: string): string => (path ? `${path}.${key}` : key)
+
+function parsePresenceRealtimeEventInternal(
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+  options: { readonly requireTimestamp: true },
+): LivePlayPresenceRealtimeEvent | null
+function parsePresenceRealtimeEventInternal(
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+  options: { readonly requireTimestamp: false },
+): LivePlayPresenceRealtimeEventDraft | null
+function parsePresenceRealtimeEventInternal(
+  value: unknown,
+  path: string,
+  issues: MutableIssueList,
+  options: { readonly requireTimestamp: boolean },
+): LivePlayPresenceRealtimeEvent | LivePlayPresenceRealtimeEventDraft | null {
+  if (!isRecord(value)) {
+    addIssue(issues, path || '$', 'not-object', `${path || 'Live-play presence realtime event'} must be an object.`)
+    return null
+  }
+
+  rejectUnknownFields(value, options.requireTimestamp ? REALTIME_EVENT_FIELDS : REALTIME_EVENT_DRAFT_FIELDS, path, issues)
+  for (const field of ['channel', 'type', 'mapSlug', 'data']) {
+    requireField(value, field, realtimeEventPath(path, field), issues)
+  }
+  if (options.requireTimestamp) requireField(value, 'timestamp', realtimeEventPath(path, 'timestamp'), issues)
+
+  const type = hasOwn(value, 'type') && value.type === LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE
+    ? LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE
+    : null
+  if (hasOwn(value, 'type') && type === null) {
+    addIssue(
+      issues,
+      realtimeEventPath(path, 'type'),
+      'invalid-realtime-event',
+      `${realtimeEventPath(path, 'type')} must be ${LIVE_PLAY_PRESENCE_REALTIME_EVENT_TYPE}.`,
+    )
+  }
+
+  const mapSlug = hasOwn(value, 'mapSlug') && isSlug(value.mapSlug) ? value.mapSlug : null
+  if (hasOwn(value, 'mapSlug') && mapSlug === null) {
+    addIssue(
+      issues,
+      realtimeEventPath(path, 'mapSlug'),
+      'invalid-map-slug',
+      `${realtimeEventPath(path, 'mapSlug')} must match ${SLUG_PATTERN_DESCRIPTION}.`,
+    )
+  }
+
+  const expectedChannel = mapSlug === null ? null : `map:${mapSlug}`
+  const channel = hasOwn(value, 'channel') && typeof value.channel === 'string' && value.channel === expectedChannel
+    ? value.channel as `map:${string}`
+    : null
+  if (hasOwn(value, 'channel') && channel === null) {
+    addIssue(
+      issues,
+      realtimeEventPath(path, 'channel'),
+      'invalid-realtime-event',
+      expectedChannel === null
+        ? `${realtimeEventPath(path, 'channel')} must be a map presence channel.`
+        : `${realtimeEventPath(path, 'channel')} must be ${expectedChannel}.`,
+    )
+  }
+
+  const data = hasOwn(value, 'data')
+    ? parseSnapshotInternal(value.data, realtimeEventPath(path, 'data'), issues)
+    : null
+  if (data !== null && mapSlug !== null && data.mapSlug !== mapSlug) {
+    addIssue(
+      issues,
+      realtimeEventPath(path, 'data.mapSlug'),
+      'invalid-map-slug',
+      `${realtimeEventPath(path, 'data.mapSlug')} must match ${realtimeEventPath(path, 'mapSlug')}.`,
+    )
+  }
+
+  const timestamp = options.requireTimestamp && hasOwn(value, 'timestamp')
+    ? parseTimestamp(value.timestamp, realtimeEventPath(path, 'timestamp'), issues)
+    : null
+
+  if (type === null || mapSlug === null || channel === null || data === null || data.mapSlug !== mapSlug) return null
+
+  const event: LivePlayPresenceRealtimeEventDraft = {
+    channel,
+    type,
+    mapSlug,
+    data,
+  }
+  if (!options.requireTimestamp) return event
+  if (timestamp === null) return null
+  return { ...event, timestamp }
+}
+
 const toParseResult = <TPayload>(payload: TPayload | null, issues: MutableIssueList): ParseLivePlayPresenceResult<TPayload> => {
   if (payload === null || issues.length > 0) return { valid: false, issues }
   return { valid: true, payload, issues: [] }
@@ -788,6 +903,20 @@ export const parseLivePlayPresenceSnapshot = (
   return toParseResult(parseSnapshotInternal(value, '', issues), issues)
 }
 
+export const parseLivePlayPresenceRealtimeEventDraft = (
+  value: unknown,
+): ParseLivePlayPresenceResult<LivePlayPresenceRealtimeEventDraft> => {
+  const issues: MutableIssueList = []
+  return toParseResult(parsePresenceRealtimeEventInternal(value, '', issues, { requireTimestamp: false }), issues)
+}
+
+export const parseLivePlayPresenceRealtimeEvent = (
+  value: unknown,
+): ParseLivePlayPresenceResult<LivePlayPresenceRealtimeEvent> => {
+  const issues: MutableIssueList = []
+  return toParseResult(parsePresenceRealtimeEventInternal(value, '', issues, { requireTimestamp: true }), issues)
+}
+
 export const isLivePlayPresenceUpdate = (value: unknown): value is LivePlayPresenceUpdate => (
   parseLivePlayPresenceUpdate(value).valid
 )
@@ -798,4 +927,12 @@ export const isLivePlayPresenceEntry = (value: unknown): value is LivePlayPresen
 
 export const isLivePlayPresenceSnapshot = (value: unknown): value is LivePlayPresenceSnapshot => (
   parseLivePlayPresenceSnapshot(value).valid
+)
+
+export const isLivePlayPresenceRealtimeEventDraft = (value: unknown): value is LivePlayPresenceRealtimeEventDraft => (
+  parseLivePlayPresenceRealtimeEventDraft(value).valid
+)
+
+export const isLivePlayPresenceRealtimeEvent = (value: unknown): value is LivePlayPresenceRealtimeEvent => (
+  parseLivePlayPresenceRealtimeEvent(value).valid
 )
