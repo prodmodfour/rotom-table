@@ -1,460 +1,580 @@
 # BUILD_TICKETS.md
 
-AUTOMATION_STATUS: DONE
+AUTOMATION_STATUS: NOT_DONE
 
 Ticket statuses:
 
 * TODO — not done
 * DONE — done
 
-The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one Live Play Sprint 2 ticket from `sprint-2.md`; build ticket numbers follow the suggested sprint order.
+The build loop must select the lowest-numbered TODO ticket. Each ticket below maps to one Live Play Sprint 3 ticket from `sprint-3.md`; build ticket numbers follow the suggested sprint order.
 
-Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#015) may also set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 2 tickets are complete.
+Autonomous cycle rules for every ticket: implement only the selected ticket, run `scripts/quality-gate.sh`, update only the selected ticket status, commit with a conventional commit message, and leave the working tree clean. The final ticket (#018) may also set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 3 tickets are complete.
 
 ---
 
-# Live Play Sprint 2 Tickets
+# Live Play Sprint 3 Tickets
 
 ## Sprint goal
 
-Harden the Sprint 1 local-prediction model so it remains correct under real table pressure: out-of-order HTTP/SSE results, reconnects, remote accepted patches while local predictions are pending, repeated same-token input, and user-visible correction/recovery paths. After that foundation is stable, add narrowly scoped prediction coverage for one more common low-risk action family.
+Make live play feel like people are sharing a LAN tabletop, not just sending fast commands. Sprint 3 adds ephemeral presence, token attention, map pings, and shared intent cues while preserving the Sprint 1–2 server-authoritative command model.
 
-## Non-goals for sprint 2
+Presence and intent state is **not** gameplay authority. It is short-lived presentation state used to show who is here, what token they are looking at, what they are targeting, and where they want attention. Authoritative gameplay mutations continue to use explicit live-play commands, durable outbox recovery, revision checks, authorised realtime replay, and server-side validation.
 
-- Do not replace HTTP/SSE with WebSockets yet.
-- Do not weaken server authority, profile validation, revision checks, idempotency, durable outbox recovery, or authorised realtime replay.
-- Do not predict complex rule outcomes such as `resolveMove`, capture, shop checkout, encounter spawn, random/hidden-information effects, or move automation side effects.
-- Do not make local predictions durable authoritative state. Prediction state remains presentation-only and must be discarded or rebuilt from authoritative state.
-- Do not implement broad CRDT/document merging. Conflicts remain tabletop-domain scoped.
+## Non-goals for sprint 3
+
+- Do not replace authoritative HTTP live-play command routes with WebSockets.
+- Do not make presence, pings, hover, selection, target previews, or camera focus durable campaign state.
+- Do not let presence state grant token control, bypass profile validation, or alter command authorisation.
+- Do not store private profile payloads, sheet data, command bodies, access-gate data, hostnames, or secrets in presence events.
+- Do not make local presence failure block normal gameplay commands.
+- Do not build broad voice/video/chat features.
+- Do not implement batch workflows yet; that should be a later sprint after presence/table-feel work lands.
+
+## Transport choice for sprint 3
+
+Use the existing authenticated app/API boundary and the existing `/api/events` realtime surface where practical. Presence events may be transient, unsequenced, and non-durable, with an HTTP snapshot/heartbeat fallback so gameplay still works when presence delivery drops. Do not send authoritative gameplay commands through the presence transport.
 
 ## Commit sizing rule
 
-Each ticket should fit in one reviewable commit. Prefer a small helper plus tests over a large cross-cutting behaviour change. If a ticket needs both an API shape change and UI wiring, implement the API shape first and UI wiring in the next ticket.
+Each ticket should fit in one focused commit. If a ticket needs both server transport and UI rendering, split the transport first and wire UI in the next ticket. Tests should prove privacy/access and non-authoritative behaviour before visual polish expands.
 
 ---
 
-## 001 — LP-S2-001 — Add command lifecycle tracing for live-play dispatch
+## 001 — LP-S3-001 — Add shared live-presence contract
 
-Status: DONE
+Status: TODO
 
-**Goal:** Make live-play latency and ordering visible in tests and debug builds without changing user-facing behaviour.
+**Goal:** Define a safe, minimal, ephemeral presence vocabulary shared by server, client, and tests.
 
 **Primary files:**
 
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `src/utils/livePlayCommandTrace.ts` (new)
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+- `shared/livePlayPresence.ts` (new)
+- `tests/shared/livePlayPresence.test.ts` (new)
 
 **Work:**
 
-- Add a small trace model keyed by `opId` with timestamps or sequence counters for: built, predicted, enqueued, claimed, sent, HTTP terminal, SSE terminal, patch adopted, confirmed, rejected, rolled back, uncertain.
-- Keep the trace in memory only.
-- Expose a readonly debug snapshot from `useLivePlayCommands` for tests and optional dev tooling.
-- Avoid logging command bodies or profile-sensitive payloads to the console by default.
+- Add schema constants and parsers for map presence payloads.
+- Model these concepts:
+  - connected user summary;
+  - selected token ID;
+  - hovered token ID;
+  - active intent kind, such as `idle`, `moving-token`, `targeting`, `measuring`, `placing-ping`, or `viewing-sheet`;
+  - optional map ping payload;
+  - monotonic client presence timestamp or sequence.
+- Redact identity to display-safe fields only: role, optional selected profile display name if already safe to show, client ID suffix, and stable visual accent.
+- Make the parser reject command bodies, sheet payloads, arbitrary records, excessive strings, and unknown durable-state fields.
 
 **Acceptance:**
 
-- Tests can assert whether HTTP or SSE resolved a command first.
-- Tracing records prediction-to-confirm and prediction-to-rollback lifecycle events.
-- No production UI changes are required for this ticket.
+- Presence payloads round-trip through strict parsers.
+- Unknown or over-large fields are rejected or dropped according to parser rules.
+- The contract explicitly distinguishes ephemeral presence from authoritative live-play commands.
 
 ---
 
-## 002 — LP-S2-002 — Add a focused live-play latency debug panel behind a query flag
+## 002 — LP-S3-002 — Add server-side ephemeral map presence registry
 
-Status: DONE
+Status: TODO
 
-**Goal:** Let maintainers see whether live play feels slow because of client prediction, outbox, HTTP, SSE, patch adoption, or reconciliation.
+**Goal:** Track short-lived map presence in memory without writing to SQLite or campaign files.
 
 **Primary files:**
 
-- `src/components/map/LivePlayLatencyDebugPanel.vue` (new)
+- `server/livePlay/presenceRegistry.ts` (new)
+- `tests/server/livePlayPresenceRegistry.test.ts` (new)
+
+**Work:**
+
+- Add an in-memory registry keyed by map slug and realtime principal context.
+- Store sanitized presence state with TTL expiry.
+- Add update, list, remove, and prune operations.
+- Ensure registry entries never include full command bodies, sheet documents, private profile data, or secrets.
+- Keep the registry process-local; multi-process delivery can degrade gracefully in this sprint.
+
+**Acceptance:**
+
+- Presence entries expire after TTL.
+- Updating presence refreshes the TTL.
+- Listing a map returns only non-expired sanitized entries.
+- No SQLite writes occur in registry tests.
+
+---
+
+## 003 — LP-S3-003 — Add presence access checks and snapshot route
+
+Status: TODO
+
+**Goal:** Let clients fetch a safe current presence snapshot only for maps they can view.
+
+**Primary files:**
+
+- `server/api/maps/[slug]/presence.get.ts` (new or equivalent route)
+- `server/livePlay/presenceAccess.ts` (new)
+- `tests/server/livePlayPresenceApi.test.ts` (new)
+
+**Work:**
+
+- Add a read-only presence snapshot endpoint for a map.
+- Reuse existing role/profile/map visibility checks where possible.
+- Return only presence entries visible to the caller.
+- Reject hidden map access for players.
+- Include cache-control headers that prevent browser/proxy caching.
+
+**Acceptance:**
+
+- GM can read presence for visible maps they can access.
+- Profiled player can read presence only for player-visible maps.
+- Hidden maps do not leak presence to players.
+- Response contains no durable map/sheet data beyond safe presence summaries.
+
+---
+
+## 004 — LP-S3-004 — Add presence heartbeat/update route
+
+Status: TODO
+
+**Goal:** Let clients publish their current ephemeral presence state without creating authoritative game mutations.
+
+**Primary files:**
+
+- `server/api/maps/[slug]/presence.post.ts` (new or equivalent route)
+- `server/livePlay/presenceRegistry.ts`
+- `tests/server/livePlayPresenceApi.test.ts`
+
+**Work:**
+
+- Accept sanitized presence updates from authorised map viewers.
+- Attach server-observed role/profile context rather than trusting client identity fields.
+- Clamp or reject invalid token IDs, pings, intent strings, and timestamps.
+- Return the current sanitized snapshot after update.
+- Do not append durable realtime rows and do not mutate map/sheet documents.
+
+**Acceptance:**
+
+- A heartbeat creates or refreshes an ephemeral entry.
+- A malformed heartbeat is rejected without mutating presence.
+- Client-supplied role/profile identity is ignored or rejected.
+- No live-play command result or map revision changes are produced.
+
+---
+
+## 005 — LP-S3-005 — Broadcast transient presence updates over realtime
+
+Status: TODO
+
+**Goal:** Make presence feel live without making it durable replay history.
+
+**Primary files:**
+
+- existing `/api/events` server implementation or realtime broadcaster utilities
+- `shared/livePlayPresence.ts`
+- `tests/server/livePlayPresenceRealtime.test.ts` (new)
+
+**Work:**
+
+- Add a transient, unsequenced realtime event for map presence snapshots or deltas.
+- Deliver it only to currently connected principals authorised for that map.
+- Do not store transient presence in the durable realtime event log.
+- Keep HTTP snapshot polling as a fallback for missed transient events.
+
+**Acceptance:**
+
+- Connected authorised clients receive presence updates without waiting for durable replay.
+- Reconnecting clients rebuild presence from snapshot/heartbeat, not replay history.
+- Durable realtime sequence numbers are not advanced by presence updates.
+- Hidden maps do not leak transient presence to unauthorised players.
+
+---
+
+## 006 — LP-S3-006 — Add client composable for map presence
+
+Status: TODO
+
+**Goal:** Give map pages a single client-side presence API for heartbeat, snapshots, transient updates, TTL expiry, and graceful failure.
+
+**Primary files:**
+
+- `src/composables/map-editor/useMapPresence.ts` (new)
+- `tests/composables/map-editor/useMapPresence.test.ts` (new)
+
+**Work:**
+
+- Load the initial snapshot from the presence snapshot route.
+- Send periodic heartbeat/update requests while the map page is active.
+- Subscribe to transient presence events from the realtime channel.
+- Locally expire stale entries when heartbeats stop.
+- Expose readonly presence entries, own presence state, error state, and transport freshness.
+- Pause or reduce heartbeats when the tab is hidden.
+
+**Acceptance:**
+
+- Presence snapshot loads on mount.
+- Heartbeats update local own-presence state.
+- Transient updates refresh remote entries.
+- Presence errors do not block live-play command dispatch.
+
+---
+
+## 007 — LP-S3-007 — Render connected table participants
+
+Status: TODO
+
+**Goal:** Show who is currently around the map without crowding gameplay controls.
+
+**Primary files:**
+
+- `src/components/map/MapPresencePanel.vue` (new)
 - `src/pages/maps/[slug].vue`
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `tests/pages/mapPageRouteAuthority.test.ts`
+- `tests/components/mapPresencePanel.test.ts` (new)
 
 **Work:**
 
-- Show the latest small set of command traces only when a debug query flag is present, for example `?debugLivePlayLatency=1`.
-- Display durations such as predicted-to-SSE, predicted-to-HTTP, HTTP-to-adopt, SSE-to-adopt, and total pending time.
-- Redact command payloads; show only command type, opId suffix, status, and resource summary.
+- Render a compact list of active participants.
+- Show display-safe label, role/profile hint, accent, freshness state, and current high-level intent.
+- Collapse gracefully on narrow screens.
+- Hide or soften stale entries before expiry.
 
 **Acceptance:**
 
-- The panel is hidden by default.
-- The panel renders useful timing fields in debug mode.
-- No private profile IDs, sheet payloads, or full command bodies are displayed.
+- The panel renders zero, one, and multiple participants.
+- It never displays raw profile IDs, command bodies, or sheet data.
+- Stale/fresh state is visually distinguishable but non-blocking.
 
 ---
 
-## 003 — LP-S2-003 — Add prediction conflict detection for incoming authoritative patches
+## 008 — LP-S3-008 — Publish local token selection and hover presence
 
-Status: DONE
+Status: TODO
 
-**Goal:** Detect when a remote authoritative patch touches a resource currently covered by a local prediction.
-
-**Primary files:**
-
-- `src/utils/livePlayPredictionConflicts.ts` (new)
-- `src/utils/livePlayScopeConflicts.ts`
-- `tests/utils/livePlayPredictionConflicts.test.ts` (new)
-
-**Work:**
-
-- Convert accepted live-play patches into conflict descriptors compatible with the existing client scope conflict helper.
-- Compare pending local predictions against incoming accepted patches.
-- Return a conflict summary that identifies the local predicted `opId`, placement ID, command type, and conflicting patch type.
-- Keep this helper pure and framework-free.
-
-**Acceptance:**
-
-- Remote token-B movement does not conflict with local token-A movement.
-- Remote token-A movement conflicts with local token-A movement.
-- Remote token-A facing conflicts with local token-A facing but not token-A position when fields differ.
-- Broad map-lane or unknown patch conflicts conservatively.
-
----
-
-## 004 — LP-S2-004 — Add an authoritative patch adoption hook around local predictions
-
-Status: DONE
-
-**Goal:** Give the map page a safe place to roll back/reapply predictions when authoritative patches arrive.
-
-**Primary files:**
-
-- `src/composables/useEditableMap.ts`
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `tests/composables/useEditableMap.test.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-
-**Work:**
-
-- Add optional hooks around accepted patch application, for example `beforeLivePlayPatchesApply` and `afterLivePlayPatchesApply`, or an equivalent single adoption coordinator.
-- Pass enough information to inspect map slug, previous revision, next revision, patches, and local pending predictions.
-- Do not change default behaviour when hooks are absent.
-- Ensure hooks are not called for setup/edit whole-map events.
-
-**Acceptance:**
-
-- Existing realtime patch tests still pass without hooks.
-- Tests can observe the hook call order around patch application.
-- Hook failures request authoritative reconciliation rather than leaving mixed prediction/authoritative state.
-
----
-
-## 005 — LP-S2-005 — Rebase non-conflicting predictions after remote accepted patches
-
-Status: DONE
-
-**Goal:** Preserve the immediate local feel while still applying other clients’ authoritative updates in order.
-
-**Primary files:**
-
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `src/composables/useEditableMap.ts`
-- `src/utils/livePlayPredictionConflicts.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-
-**Work:**
-
-- Before applying a remote accepted patch, temporarily roll back local predictions that are currently applied.
-- Apply the authoritative patch to the clean authoritative map state.
-- Reapply non-conflicting pending predictions over the new map revision when safe.
-- For conflicting predictions, roll back and show the existing correction/rejection path or request reconciliation.
-
-**Acceptance:**
-
-- Local predicted token A remains visually predicted after remote accepted token B movement applies.
-- Remote accepted token A movement cancels or corrects the local token A prediction instead of merging two positions.
-- The final map revision remains the authoritative server revision, not a prediction revision.
-- Reapplying predictions is idempotent when duplicate SSE/HTTP terminal results arrive.
-
----
-
-## 006 — LP-S2-006 — Harden stale HTTP terminal responses after SSE-first adoption
-
-Status: DONE
-
-**Goal:** Prevent a later HTTP response from overwriting or rolling back state already confirmed by realtime.
-
-**Primary files:**
-
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-
-**Work:**
-
-- When SSE has already acknowledged an `opId`, classify the later HTTP response as duplicate presentation data.
-- Ignore older accepted HTTP response maps/patches if the local map revision has already advanced beyond them.
-- Preserve outbox cleanup and user-facing accepted state.
-- Ensure a late HTTP rejection cannot roll back a command already accepted by SSE for the same `opId`.
-
-**Acceptance:**
-
-- SSE accepted then HTTP accepted does not apply patches twice.
-- SSE accepted then HTTP rejected keeps the accepted state and records the HTTP response as ignored/stale.
-- SSE accepted then lost HTTP response still resolves as recovered, not uncertain.
-
----
-
-## 007 — LP-S2-007 — Harden HTTP-first then SSE replay ordering
-
-Status: DONE
-
-**Goal:** Ensure replayed or delayed SSE events do not disturb state already adopted from a trusted HTTP terminal response.
-
-**Primary files:**
-
-- `src/composables/useEditableMap.ts`
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `tests/composables/useEditableMap.test.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-
-**Work:**
-
-- Confirm that already-current or older accepted SSE revisions still acknowledge local outbox entries when appropriate.
-- Do not reapply patches when map revision is already at or beyond the event revision.
-- Keep `opId` acknowledgement and recovery cleanup working even when patch application is skipped as stale.
-
-**Acceptance:**
-
-- HTTP accepted first, then matching SSE, leaves map state unchanged and outbox empty.
-- Replayed stale SSE for a non-local command is ignored without entering reconciliation.
-- A matching local stale SSE can still clear pending recovery state for the same `opId`.
-
----
-
-## 008 — LP-S2-008 — Add pending prediction reconciliation on reconnect/gap recovery
-
-Status: DONE
-
-**Goal:** Avoid replaying presentation-only predictions after the client has to reload the authoritative live table snapshot.
-
-**Primary files:**
-
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `src/composables/useEditableMap.ts`
-- `src/pages/maps/[slug].vue`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-
-**Work:**
-
-- When realtime enters reconnecting/reconciling/gap recovery, clear or suspend local predictions.
-- After authoritative snapshot reload completes, keep only pending commands that are still durable outbox entries and require explicit retry/status resolution.
-- Ensure cleared predictions do not roll back the freshly loaded authoritative snapshot.
-
-**Acceptance:**
-
-- A predicted token move disappears or resolves cleanly when a gap forces snapshot reload.
-- Recovery panel still shows uncertain durable commands by `opId`.
-- Fresh authoritative snapshot state is not overwritten by old rollback patches.
-
----
-
-## 009 — LP-S2-009 — Add command-status awareness for pending predictions
-
-Status: DONE
-
-**Goal:** Let status checks resolve pending predictions without resending commands.
-
-**Primary files:**
-
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-
-**Work:**
-
-- When a status check returns accepted, adopt the authoritative result and clear the matching prediction.
-- When a status check returns rejected, roll back the matching prediction and show the correction path.
-- When a status check returns unknown, leave the durable outbox entry intact but avoid duplicating local predictions.
-
-**Acceptance:**
-
-- Accepted status response confirms a pending predicted token move.
-- Rejected status response rolls back only that token’s predicted fields.
-- Unknown status response does not apply, duplicate, or roll back prediction state unexpectedly.
-
----
-
-## 010 — LP-S2-010 — Add prediction-safe same-token movement queue tests for revision changes
-
-Status: DONE
-
-**Goal:** Lock down same-token coalescing when remote operations advance the map revision between the first move and the queued superseding move.
-
-**Primary files:**
-
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
-
-**Work:**
-
-- Add tests where the first same-token move is accepted at revision N+1, then the queued superseding move is rebuilt from the latest map revision before send.
-- Add tests where a remote non-conflicting patch advances the map revision while a superseding move is queued.
-- Add tests where the first move rejects and the queued superseding move is cancelled without mutating the authoritative map.
-
-**Acceptance:**
-
-- Queued superseding move uses the current map revision when it is actually sent.
-- Obsolete unsent move bodies are never sent.
-- A rejected first move does not leak the queued prediction.
-
----
-
-## 011 — LP-S2-013 — Add prediction-aware correction notice lifetime and deduping
-
-Status: DONE
-
-**Goal:** Keep correction feedback helpful without creating noisy repeated banners.
+**Goal:** Let other clients see which token someone is looking at or controlling without changing authority rules.
 
 **Primary files:**
 
 - `src/pages/maps/[slug].vue`
+- `src/components/IsometricGrid.client.vue`
+- `src/composables/map-editor/useMapPresence.ts`
+- tests for page/composable wiring
+
+**Work:**
+
+- Publish selected token ID and hovered token ID as presence state.
+- Clear token-specific presence when selection/hover leaves, map changes, or profile access changes.
+- Only publish token IDs that exist on the currently loaded map and are visible to the current user.
+- Do not block another user from selecting the same token unless existing command/control rules already do.
+
+**Acceptance:**
+
+- Selecting or hovering a token updates own presence.
+- Clearing selection clears own selected-token presence.
+- Invalid or no-longer-visible token IDs are not published.
+- Existing token-control permissions are unchanged.
+
+---
+
+## 009 — LP-S3-009 — Render remote token attention affordances
+
+Status: TODO
+
+**Goal:** Make remote selection/hover visible on tokens in the isometric scene.
+
+**Primary files:**
+
+- `src/components/map/MapSceneRenderer.vue`
+- `src/components/IsometricGrid.client.vue`
+- `src/utils/isometric/tokenRenderer.ts`
+- `tests/pages/mapPageRouteAuthority.test.ts` or focused component tests
+
+**Work:**
+
+- Pass remote selected/hovered token IDs plus display-safe accents into the renderer.
+- Add subtle token ring, outline, badge, or hover cage style for remote attention.
+- Support multiple users on the same token without excessive visual noise.
+- Keep local selected/pending/correction styling higher priority where needed.
+
+**Acceptance:**
+
+- Remote attention renders for selected/hovered tokens.
+- Local pending/correction indicators remain legible.
+- Removing remote presence removes the visual affordance.
+
+---
+
+## 010 — LP-S3-010 — Add ephemeral map pings
+
+Status: TODO
+
+**Goal:** Let players and GMs quickly point at a map location without creating campaign state.
+
+**Primary files:**
+
+- `shared/livePlayPresence.ts`
+- `src/composables/map-editor/useMapPresence.ts`
+- `src/components/IsometricGrid.client.vue`
+- `tests/composables/map-editor/useMapPresence.test.ts`
+
+**Work:**
+
+- Add a ping action to presence state with map cell, optional short label, creator summary, and expiry.
+- Add a keyboard/mouse gesture or simple UI hook to place a ping on a visible map cell.
+- Broadcast ping through the presence update path.
+- Locally expire pings without requiring server acknowledgement after expiry.
+
+**Acceptance:**
+
+- A ping appears on the acting client and remote clients.
+- Pings expire automatically.
+- Ping payloads cannot contain arbitrary text beyond a short sanitized label.
+- Pings do not change map revision or durable realtime history.
+
+---
+
+## 011 — LP-S3-011 — Render pings in the isometric scene
+
+Status: TODO
+
+**Goal:** Make pings obvious, short-lived, and non-disruptive.
+
+**Primary files:**
+
+- `src/utils/isometric/pingRenderer.ts` (new)
+- `src/components/IsometricGrid.client.vue`
+- `tests/components` or utility tests where practical
+
+**Work:**
+
+- Add a lightweight ping renderer for grid-cell pings.
+- Animate or fade pings based on local expiry time.
+- Keep pings independent from token selection, movement preview, move VFX, and build/hazard previews.
+- Dispose ping rendering resources cleanly.
+
+**Acceptance:**
+
+- Pings render at the expected grid cell.
+- Expired pings are removed and resources are disposed.
+- Pings do not interfere with token picking or build/hazard targeting.
+
+---
+
+## 012 — LP-S3-012 — Publish targeting and measurement intent
+
+Status: TODO
+
+**Goal:** Help other players understand what someone is doing before an authoritative command exists.
+
+**Primary files:**
+
+- `src/pages/maps/[slug].vue`
+- `src/composables/map-editor/useMapPresence.ts`
+- move automation / movement preview wiring tests
+
+**Work:**
+
+- Publish high-level intent when a user is:
+  - previewing token movement;
+  - targeting a move, ability, order, maneuver, or pokéball;
+  - aiming an area template;
+  - placing terrain/hazards in live play if controls allow it.
+- Keep payloads descriptive but small: intent kind, source token ID when visible, candidate/target count when safe, and optional map cell/area summary.
+- Do not publish hidden move details or sheet payloads that the viewer should not know.
+
+**Acceptance:**
+
+- Starting targeting updates presence intent.
+- Cancelling or completing targeting clears intent.
+- Hidden/private sheet details are not exposed through presence.
+
+---
+
+## 013 — LP-S3-013 — Render shared intent overlays
+
+Status: TODO
+
+**Goal:** Show remote movement/targeting/area intent in a low-noise way.
+
+**Primary files:**
+
 - `src/components/map/MapScenePanel.vue`
+- `src/components/IsometricGrid.client.vue`
+- relevant isometric overlay utilities
+- focused component/page tests
+
+**Work:**
+
+- Display remote movement or targeting intent as text badges, reticles, or soft overlays.
+- Avoid rendering exact hidden target lists when not safe.
+- Prioritize current user interaction over remote intent overlays.
+- Hide remote intent when stale, cancelled, or superseded.
+
+**Acceptance:**
+
+- Remote targeting intent is visible enough for table coordination.
+- Local targeting remains usable and visually dominant.
+- Hidden/private details are not rendered.
+
+---
+
+## 014 — LP-S3-014 — Add optional GM attention request
+
+Status: TODO
+
+**Goal:** Let the GM ask everyone to look at a token or map cell without forcing disruptive camera movement by default.
+
+**Primary files:**
+
+- `shared/livePlayPresence.ts`
+- `src/pages/maps/[slug].vue`
+- `src/components/map/MapPresencePanel.vue`
+- `src/components/IsometricGrid.client.vue`
+- tests for access and UI behavior
+
+**Work:**
+
+- Add a GM-only attention ping/focus request presence payload.
+- Render an affordance for clients to focus the referenced token/cell.
+- Do not automatically move a player camera unless a user preference explicitly allows it.
+- Reject player attempts to publish GM-only attention requests.
+
+**Acceptance:**
+
+- GM can publish an attention request.
+- Players see a focus affordance but are not forced by default.
+- Player-authored GM attention payloads are rejected or downgraded to ordinary pings.
+
+---
+
+## 015 — LP-S3-015 — Add presence privacy and access regression tests
+
+Status: TODO
+
+**Goal:** Prove presence cannot leak hidden-map or profile-restricted information.
+
+**Primary files:**
+
+- `tests/server/livePlayPresenceApi.test.ts`
+- `tests/composables/map-editor/useMapPresence.test.ts`
+- any realtime/presence transport tests added earlier
+
+**Work:**
+
+- Test hidden map presence access for GM, profiled player, and unprofiled player.
+- Test that profile changes stop old-context presence and start new-context presence.
+- Test that inaccessible token IDs are dropped from outgoing presence.
+- Test that presence snapshots/transient events do not include sheet payloads, command bodies, raw profile IDs, or private map data.
+
+**Acceptance:**
+
+- Hidden-map presence never reaches unauthorised players.
+- Profile switches do not leave stale old-profile presence visible forever.
+- Presence snapshots are safe to display to authorised map viewers.
+
+---
+
+## 016 — LP-S3-016 — Add presence failure and degradation tests
+
+Status: TODO
+
+**Goal:** Ensure presence improves feel but never becomes a gameplay dependency.
+
+**Primary files:**
+
+- `tests/composables/map-editor/useMapPresence.test.ts`
 - `tests/pages/mapPageRouteAuthority.test.ts`
+- `tests/integration/livePlayChaosHardening.test.ts` if useful
 
 **Work:**
 
-- Auto-dismiss correction notices after a short duration or when the same token receives a new accepted command.
-- Deduplicate repeated correction notices for the same `opId`.
-- Keep stale-revision rejections on the existing stronger reconciliation/error path.
+- Simulate snapshot failure, heartbeat failure, transient event loss, and tab visibility changes.
+- Verify live-play command dispatch remains governed by existing command/reconciliation blockers, not presence transport.
+- Show a small non-blocking presence status only if useful.
+- Confirm stale presence expires locally.
 
 **Acceptance:**
 
-- A predicted move rejection shows one non-modal correction notice.
-- Duplicate HTTP/SSE rejection handling does not show duplicate notices.
-- The notice clears after timeout or next accepted action for that token.
+- Presence failure does not block move/turn/HP/condition commands.
+- Stale remote presence disappears after TTL.
+- Recovered presence resumes without requiring a full map reload.
 
 ---
 
-## 012 — LP-S2-011 — Predict simple HP edits for local token HUD only
+## 017 — LP-S3-017 — Add presence metrics to the latency debug panel
 
-Status: DONE
+Status: TODO
 
-**Goal:** Extend prediction coverage to one common low-risk sheet-backed action without pretending sheet state is authoritative.
+**Goal:** Let maintainers diagnose table-feel issues separately from command latency.
 
 **Primary files:**
 
-- `src/utils/livePlayPredictions.ts`
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- `tests/utils/livePlayPredictions.test.ts`
-- `tests/composables/map-editor/useLivePlayCommands.test.ts`
+- `src/components/map/LivePlayLatencyDebugPanel.vue`
+- `src/composables/map-editor/useMapPresence.ts`
+- `tests/components/livePlayLatencyDebugPanel.test.ts`
 
 **Work:**
 
-- Add prediction support for `modifyHp` limited to token HUD-facing map state, such as temporary HP overlays if already represented on the map.
-- Do not mutate cached Pokémon/trainer sheet documents as prediction.
-- Roll back on rejection and confirm on authoritative sheet/map update.
-- Keep this behind a narrow helper path so unsupported sheet fields are ignored.
+- Add optional presence freshness metrics to the debug panel when presence data is available.
+- Show heartbeat age, last snapshot age, last transient update age, and active participant count.
+- Keep command trace payload redaction unchanged.
 
 **Acceptance:**
 
-- A local HP edit can show immediate pending token HUD feedback when the current UI supports it.
-- Authoritative sheet updates remain the source of truth.
-- Rejection clears the pending HUD prediction without changing sheet cache.
+- Debug panel still hides by default.
+- Presence metrics appear only in debug mode.
+- Metrics do not expose private profile IDs or presence payload internals.
 
 ---
 
-## 013 — LP-S2-012 — Predict simple condition edits as token-level pending feedback
+## 018 — LP-S3-018 — Update live-play authority docs for ephemeral presence
 
-Status: DONE
+Status: TODO
 
-**Goal:** Make condition changes feel responsive without inventing authoritative sheet state locally.
-
-**Primary files:**
-
-- `src/utils/livePlayPredictions.ts`
-- `src/composables/map-editor/useLivePlayCommands.ts`
-- relevant token HUD/presentation components
-- `tests/utils/livePlayPredictions.test.ts`
-
-**Work:**
-
-- Add local pending-condition metadata for `modifyConditions` commands.
-- Display pending feedback on the affected token while the authoritative sheet update is in flight.
-- Do not write predicted conditions into the live sheet cache.
-- Roll back or clear pending metadata on terminal response.
-
-**Acceptance:**
-
-- Condition dialog actions provide immediate visible pending feedback on the token.
-- Accepted authoritative updates replace the pending state.
-- Rejected condition commands clear pending feedback and show a correction/rejection notice.
-
----
-
-## 014 — LP-S2-014 — Add live-play prediction chaos tests
-
-Status: DONE
-
-**Goal:** Exercise prediction, scoped concurrency, and recovery under realistic out-of-order conditions.
+**Goal:** Document the boundary between authoritative commands and ephemeral table-feel state.
 
 **Primary files:**
 
-- `tests/integration/livePlayChaosHarness.ts`
-- `tests/integration/livePlayChaosHardening.test.ts` or a new focused prediction chaos test
-
-**Work:**
-
-- Extend the chaos harness with client prediction states where possible.
-- Simulate two clients moving different tokens, same-token stale conflicts, SSE-before-HTTP, HTTP-before-SSE, reconnect/gap reconciliation, and uncertain outbox recovery.
-- Assert final authoritative map state, not just individual command responses.
-
-**Acceptance:**
-
-- The chaos test fails if local prediction rollback overwrites unrelated accepted remote state.
-- The chaos test fails if duplicate terminal delivery applies state twice.
-- The chaos test passes with deterministic final map revisions and token positions.
-
----
-
-## 015 — LP-S2-015 — Add operator smoke notes for prediction hardening
-
-Status: DONE
-
-**Goal:** Update the manual smoke checklist for the new Sprint 2 edge cases.
-
-**Primary files:**
-
+- `docs/live-play-authority.md`
 - `docs/private-vps-live-play-smoke.md`
-- `docs/live-play-authority.md` if the authority notes need a short prediction-hardening paragraph
 
 **Work:**
 
-- Add a Sprint 2 section covering remote patch rebase, out-of-order terminal responses, reconnect prediction clearing, status-check resolution, and correction-notice deduping.
-- Keep the checklist runnable by one GM and two player browsers.
-- Avoid implementation details that would become stale quickly.
+- Add a short authority section for presence, pings, remote hover/selection, intent, and GM attention.
+- State that presence is process-local or short-lived, non-durable, and never gameplay authority.
+- Add smoke checklist items for three-client presence, pings, intent, hidden-map access, reconnect, and presence transport failure.
 
 **Acceptance:**
 
-- The smoke checklist explicitly distinguishes local prediction, authoritative acceptance, reconciliation, and recovery.
-- Operators have concrete steps for SSE-before-HTTP and reconnect/gap scenarios.
+- Docs clearly distinguish authoritative live-play commands from ephemeral presence.
+- Operators have manual smoke steps for Sprint 3 table-feel features.
 
 ---
 
 ## Suggested sprint order
 
-1. `LP-S2-001`
-2. `LP-S2-002`
-3. `LP-S2-003`
-4. `LP-S2-004`
-5. `LP-S2-005`
-6. `LP-S2-006`
-7. `LP-S2-007`
-8. `LP-S2-008`
-9. `LP-S2-009`
-10. `LP-S2-010`
-11. `LP-S2-013`
-12. `LP-S2-011`
-13. `LP-S2-012`
-14. `LP-S2-014`
-15. `LP-S2-015`
+1. `LP-S3-001`
+2. `LP-S3-002`
+3. `LP-S3-003`
+4. `LP-S3-004`
+5. `LP-S3-005`
+6. `LP-S3-006`
+7. `LP-S3-007`
+8. `LP-S3-008`
+9. `LP-S3-009`
+10. `LP-S3-010`
+11. `LP-S3-011`
+12. `LP-S3-012`
+13. `LP-S3-013`
+14. `LP-S3-014`
+15. `LP-S3-015`
+16. `LP-S3-016`
+17. `LP-S3-017`
+18. `LP-S3-018`
 
 ## Sprint exit criteria
 
-- Remote accepted patches can arrive while local predictions are pending without corrupting either resource.
-- SSE-first and HTTP-first terminal delivery are both idempotent.
-- Reconnect/gap recovery clears presentation-only predictions and preserves durable outbox recovery.
-- Same-token coalesced moves rebuild from current authoritative revision before send.
-- At least one additional low-risk action family has safe local pending feedback beyond move/turn.
-- Maintainers can inspect command lifecycle timings in debug mode without exposing private command payloads.
+- Multiple clients on the same map can see display-safe active participant presence.
+- Remote token selection/hover/attention is visible without changing token-control authority.
+- Players and GMs can place short-lived map pings that never mutate authoritative map state.
+- Targeting and movement intent is visible enough to coordinate turns but does not expose hidden/private sheet information.
+- GM attention requests are available without forcing disruptive camera motion by default.
+- Presence failure degrades gracefully and never blocks authoritative live-play commands.
+- Hidden maps and profile-restricted contexts do not leak presence, pings, or intent to unauthorised players.
+- Operator docs cover presence, pings, intent, reconnect, failure, and the non-authoritative boundary.

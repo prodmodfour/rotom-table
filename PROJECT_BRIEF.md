@@ -4,7 +4,7 @@ TEMPLATE_CUSTOMISED: true
 
 ## Project name
 
-Rotom Table — Live Play Sprint 2 prediction hardening and debug wave.
+Rotom Table — Live Play Sprint 3 ephemeral presence and table-feel wave.
 
 ## Project type
 
@@ -12,47 +12,51 @@ Full-stack Nuxt 3 application with server-side SQLite persistence, Vue UI, TypeS
 
 ## Project goal
 
-Implement the Live Play Sprint 2 work described by `BUILD_TICKETS.md` (`001` through `015`), refreshed from `sprint-2.md`. The finished wave should harden the Sprint 1 local-prediction model under real table pressure: out-of-order HTTP/SSE terminal results, reconnects and replay gaps, remote accepted patches while local predictions are pending, repeated same-token input, status-check recovery, user-visible correction paths, and narrowly scoped prediction coverage for additional low-risk token feedback.
+Implement the Live Play Sprint 3 work described by `BUILD_TICKETS.md` (`001` through `018`), refreshed from `sprint-3.md`. The finished wave should make live play feel more like a shared LAN tabletop by adding ephemeral presence, connected-participant display, token attention, map pings, shared targeting/measurement intent, GM attention requests, and debug/ops coverage while preserving the Sprint 1–2 server-authoritative command model.
+
+Presence and intent state is presentation-only. It must be short-lived, display-safe, non-durable, and unable to grant token control, mutate campaign state, bypass profile/map visibility checks, replace command routes, or block normal gameplay commands when presence transport fails.
 
 ## Audience
 
 - Rotom Table maintainers and operators.
 - GMs running live-play maps with multiple clients.
-- Players moving, turning, or making simple token-facing edits during live sessions.
-- Future autonomous or human contributors maintaining live-play command, prediction, reconciliation, recovery, and map rendering code.
+- Players coordinating movement, target selection, pings, and attention during live sessions.
+- Future autonomous or human contributors maintaining live-play command authority, ephemeral presence, realtime delivery, map rendering, and privacy boundaries.
 
 ## Success criteria
 
 The work is successful when:
 
-- Every ticket in `BUILD_TICKETS.md` for `001` through `015` is marked `DONE`.
+- Every ticket in `BUILD_TICKETS.md` for `001` through `018` is marked `DONE`.
 - `scripts/quality-gate.sh` passes on the final branch.
-- Command lifecycle tracing records built, predicted, enqueued, sent, HTTP/SSE terminal, patch adoption, confirmation, rejection, rollback, and uncertainty events without logging private command payloads by default.
-- A query-flagged latency debug panel helps maintainers distinguish client prediction, outbox, HTTP, SSE, patch adoption, and reconciliation timing while staying hidden in normal play.
-- Incoming authoritative patches are compared against pending local predictions with conservative conflict detection.
-- Accepted remote patches can be adopted while local predictions are pending by temporarily rolling back predictions, applying authoritative state, and reapplying only safe non-conflicting predictions.
-- SSE-first and HTTP-first terminal delivery are both idempotent, including stale replay and conflicting late rejection cases for the same `opId`.
-- Reconnect, replay-gap, and snapshot recovery clear or suspend presentation-only predictions without overwriting the freshly loaded authoritative snapshot.
-- Command-status checks can resolve accepted, rejected, and unknown pending predictions without resending or duplicating local predictions.
-- Same-token coalesced movement rebuilds queued superseding moves from the latest authoritative map revision before send.
-- Additional low-risk token feedback, such as simple HP HUD state and condition pending indicators, remains local presentation metadata and never mutates cached sheet documents as authoritative state.
-- Correction notices for predicted actions are deduplicated and have a bounded lifetime.
-- Chaos/integration coverage exercises multi-client prediction, scoped concurrency, out-of-order terminals, reconnect recovery, and deterministic final authoritative map state.
-- Operator smoke notes cover the Sprint 2 hardening scenarios and clearly distinguish local prediction from authoritative acceptance, reconciliation, and recovery.
+- Shared presence contracts strictly parse and sanitize display-safe participant summaries, selected/hovered token IDs, intent state, pings, and client timestamps/sequences.
+- Server-side presence is kept in process-local memory with TTL expiry and without SQLite writes, campaign file writes, durable realtime rows, or map/sheet document mutation.
+- Presence snapshot and heartbeat/update routes reuse existing role/profile/map visibility checks and never leak hidden-map, raw profile, sheet, command-body, access-gate, hostname, or secret data.
+- Transient presence updates can be broadcast over the existing realtime surface without advancing durable sequence numbers, while HTTP snapshot/heartbeat remains a fallback.
+- The map page has a single client presence composable for snapshots, heartbeats, transient updates, local expiry, tab-visibility throttling, own-state updates, error state, and transport freshness.
+- Connected participants render compactly with display-safe labels, accents, freshness, and high-level intent.
+- Local token selection and hover publish presence only for visible tokens, and remote token attention renders without changing token-control permissions or obscuring local pending/correction state.
+- Players and GMs can place short-lived map pings that expire locally and never change map revision or durable realtime history.
+- Targeting, measurement, and movement intent can be published and rendered without exposing hidden move details, sheet payloads, or unsafe target lists.
+- GM attention requests are GM-only, player-safe, and never force disruptive camera movement unless an explicit preference allows it.
+- Presence privacy, access, failure, degradation, profile-switch, stale-expiry, and transport-loss tests prove presence improves feel but never becomes a gameplay dependency.
+- The latency debug panel can optionally show presence freshness metrics in debug mode without weakening command trace redaction.
+- Operator docs explain the non-authoritative presence boundary and include smoke steps for three-client presence, pings, intent, hidden-map access, reconnect, and presence failure.
 - The top-level `AUTOMATION_STATUS` in `BUILD_TICKETS.md` is set to `DONE` when the final ticket is complete.
 
 ## Non-goals
 
 The autonomous build must not spend time on:
 
-- Replacing the existing HTTP/SSE live-play transport with WebSockets.
-- Weakening server authority, profile validation, revision checks, idempotency, authorised realtime replay, or durable outbox recovery.
-- Predicting complex or hidden-information rule outcomes such as `resolveMove`, capture, shop checkout, encounter spawn, random effects, movement logs, attack-of-opportunity side effects, broad sheet edits, or move automation side effects.
-- Making local predictions durable authoritative state. Prediction state remains presentation-only and must be discarded or rebuilt from authoritative state.
-- Implementing broad CRDT/document merging. Conflicts remain tabletop-domain scoped.
-- Mutating cached Pokémon/trainer sheet documents as prediction for HP or condition feedback.
-- Removing the durable IndexedDB outbox; the goal is to reduce perceived latency and improve recovery, not bypass durable delivery.
-- Rewriting map storage, campaign data formats, token rendering, or command APIs beyond the ticketed live-play prediction hardening changes.
+- Replacing authoritative HTTP live-play command routes with WebSockets.
+- Sending authoritative gameplay commands through the presence transport.
+- Making presence, pings, hover, selection, target previews, camera focus, or intent durable campaign state.
+- Letting presence state grant token control, bypass profile validation, bypass map visibility checks, or alter command authorisation.
+- Storing private profile payloads, sheet data, command bodies, access-gate data, internal/private hostnames, credentials, tokens, or secrets in presence events.
+- Making local presence failure block normal gameplay commands.
+- Building broad voice, video, or chat features.
+- Implementing batch workflows; that belongs in a later sprint after presence/table-feel work lands.
+- Weakening Sprint 1–2 server authority, revision checks, idempotency, durable outbox recovery, authorised realtime replay, or prediction reconciliation.
 - Public authentication or hardening Rotom Table into a public multi-tenant service.
 - Production runtime edits, direct server rebuilds, direct deployment, or production data mutation.
 - Unrelated UI redesigns, unrelated encounter/spawn behavior changes, unrelated trainer-sheet behavior changes, unrelated inventory behavior changes, or speculative live-play features.
@@ -65,7 +69,7 @@ Preferred stack:
 - language: TypeScript, with existing Python/Bash helpers only where already appropriate;
 - framework: Nuxt 3 and Vue 3;
 - rendering: existing three.js map/token rendering and Vue map page components;
-- persistence/realtime: existing SQLite live-play storage, HTTP command endpoints, SSE realtime events, and durable IndexedDB outbox patterns;
+- persistence/realtime: existing SQLite live-play storage, HTTP command endpoints, SSE realtime events, durable IndexedDB outbox patterns, plus transient non-durable presence delivery where practical;
 - testing: Vitest, Vue Test Utils/happy-dom where applicable, targeted composable/page/server tests, and existing test helpers;
 - package manager: npm with Node.js 24 from `.nvmrc`;
 - CI: existing GitHub Actions CI plus local `scripts/quality-gate.sh`.
@@ -75,37 +79,37 @@ Hard constraints:
 - Follow the repository `AGENTS.md` production deployment boundaries and live-play-only instruction.
 - Keep campaign/private data, `.env` files, databases, generated runtime files, and secrets out of commits.
 - Keep ticket scope narrow: implement only the lowest-numbered `TODO` ticket in each autonomous cycle.
-- Preserve the server-authoritative command model: predictions are local visual/presentation overlays only and must not be treated as durable authoritative state.
-- Preserve recovery, reconnect/replay-gap reconciliation, abandonment, and Prepare Map blockers when command safety is uncertain.
-- Keep prediction patches local-only; do not persist them or send them as authoritative patches.
-- Redact command bodies, private profile IDs, sheet payloads, and sensitive resource details from debug tracing and latency UI.
+- Preserve the server-authoritative command model: presence is local/ephemeral presentation state only and must not be treated as durable authoritative state.
+- Presence transport must degrade gracefully; command dispatch remains governed by existing command/reconciliation blockers, not by presence freshness.
+- Preserve role/profile/map visibility checks for all presence snapshots, heartbeats, pings, intent, and transient events.
+- Redact or reject command bodies, private profile IDs, sheet payloads, arbitrary records, over-large strings, unknown durable-state fields, access-gate data, and sensitive resource details from presence contracts, debug UI, and logs.
 
 Flexible choices:
 
 - File names, helper names, hook names, and exact component/composable test locations may differ from ticket suggestions when they fit existing architecture better.
 - Tests can be targeted when a full end-to-end browser workflow is impractical, as long as the ticket acceptance criteria are meaningfully covered.
-- Adoption hooks may be implemented as paired before/after callbacks or as an equivalent focused coordinator if the call order and failure behavior are testable.
-- Additional HP or condition prediction paths may be limited to existing token HUD/presentation affordances and should no-op when the current UI has no safe local representation.
+- Transient presence may be snapshot- or delta-shaped as long as reconnecting clients rebuild from snapshot/heartbeat rather than durable replay.
+- Multi-process presence delivery may degrade gracefully in this sprint if the in-memory registry remains safe and process-local.
+- Visual treatments for participants, token attention, pings, targeting, and GM attention may be subtle, low-noise alternatives to the suggested rings, badges, reticles, text, or focus affordances.
 
 ## Architecture expectations
 
 Use existing Rotom Table boundaries:
 
 ```text
-shared live-play scope/conflict/prediction utilities -> map-editor live-play command composable -> editable-map authoritative patch/adoption/reconciliation handling -> Vue map page/token presentation/debug panels -> docs/tests
+shared presence contract/parsers -> server access + process-local presence registry -> HTTP snapshot/heartbeat routes + transient realtime delivery -> map-editor presence composable -> Vue map page/presence panel/isometric renderers -> docs/tests
 ```
 
 Expected patterns:
 
-- Command lifecycle tracing should be in-memory, keyed by `opId`, readonly to callers, and safe for tests and optional debug UI without logging command bodies by default.
-- Scope and prediction-conflict helpers should be pure, side-effect free, framework-free, and conservative for unknown or broad scopes.
-- Pending command state should stay keyed by stable `opId` and include request path, command type, base revision, scopes, body metadata, prediction state, and lifecycle state.
-- Local predictions should be layered over authoritative map state and cleaned up idempotently when HTTP, SSE, or status-check terminal results arrive in any order.
-- Authoritative patch adoption should apply accepted server patches to clean authoritative state, then reapply only safe non-conflicting pending predictions.
-- Conflicting predictions should roll back through the existing correction/rejection or reconciliation path rather than merging divergent local and remote state.
-- Accepted hot-path command responses and realtime events should prefer authoritative patches where safe, falling back to full-map adoption or reconciliation only when needed.
-- Reconnect/replay-gap recovery and authoritative snapshot reloads should discard presentation-only predictions and preserve only durable outbox/status-resolution needs.
-- UI changes should make prediction, correction, latency, and token-scoped pending state honest without reintroducing a global page-level input lock for unrelated commands.
+- Presence schema helpers should be pure, strict, framework-free where practical, and shared by server, client, and tests.
+- Server identity should come from authenticated role/profile/map context; client-supplied identity fields should be ignored, rejected, or overwritten.
+- Presence registry state should be keyed by map slug plus realtime principal/client context, sanitized on write, TTL-pruned on list/update, and removable on disconnect/profile context change when possible.
+- Snapshot and heartbeat routes should be read/presentation APIs with no cacheable private responses and no authoritative command result semantics.
+- Transient realtime presence events should be unsequenced/non-durable, delivered only to currently authorised viewers, and never appended to the durable live-play event log.
+- Client presence should maintain readonly entries, own presence state, pings, freshness metrics, non-blocking error state, local TTL expiry, hidden-tab throttling, and clear boundaries from live-play command dispatch.
+- UI components should render display-safe participant labels, token attention, pings, and intent while preserving local interaction priority and existing pending/correction affordances.
+- Privacy/access tests should be added before or alongside visual polish whenever a ticket expands what presence can carry or render.
 
 ## Quality expectations
 
@@ -123,7 +127,7 @@ Each ticket should also run targeted verification commands from `BUILD_TICKETS.m
 
 ## Documentation expectations
 
-Update existing README/docs/copy only when a ticket changes or exposes user-facing behavior, setup, architecture, operations, limitations, or terminology. The final smoke-note ticket should add or refresh a concise live-play prediction-hardening checklist covering remote patch rebase, out-of-order terminal responses, reconnect/gap prediction clearing, status-check resolution, and correction-notice deduping.
+Update existing README/docs/copy only when a ticket changes or exposes user-facing behavior, setup, architecture, operations, limitations, or terminology. The final documentation ticket should add or refresh concise live-play authority and private VPS smoke notes covering ephemeral presence, pings, token attention, intent, GM attention, hidden-map/profile privacy, reconnect, degradation, and the non-authoritative boundary.
 
 ## Safety and security constraints
 
@@ -138,8 +142,8 @@ Do not include:
 
 ## Agent behaviour notes
 
-- `BUILD_TICKETS.md` is the authoritative local autonomous queue for this Live Play Sprint 2 wave.
-- Work one ticket per autonomous cycle, in numeric order; build ticket numbers follow the suggested sprint order from `sprint-2.md`.
+- `BUILD_TICKETS.md` is the authoritative local autonomous queue for this Live Play Sprint 3 wave.
+- Work one ticket per autonomous cycle, in numeric order; build ticket numbers follow the suggested sprint order from `sprint-3.md`.
 - Keep each commit focused on the selected ticket and use a conventional commit message.
-- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket #015, which may set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 2 tickets are complete and the final quality gate passes.
+- Do not update ticket statuses beyond the selected ticket. The only exception is the final ticket #018, which may set `AUTOMATION_STATUS: DONE` after all Live Play Sprint 3 tickets are complete and the final quality gate passes.
 - Do not create, close, merge, or comment on pull requests/issues from inside an autonomous ticket run unless a future ticket explicitly asks for it.
