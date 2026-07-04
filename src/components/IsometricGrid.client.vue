@@ -128,7 +128,9 @@ import {
   updatePokemonRenderObjectFromSpawn,
 } from '~/utils/isometric/tokenRenderer'
 import type { MapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
+import type { MapPresenceIntentOverlay } from '~/utils/mapPresenceIntentOverlays'
 import { createPresencePingRenderer, type IsometricPresencePing } from '~/utils/isometric/pingRenderer'
+import { createPresenceIntentOverlayRenderer } from '~/utils/isometric/presenceIntentRenderer'
 import { buildVoxelColumnsByXZ, getVoxelShadowSurfaceY } from '~/utils/isometric/shadows'
 import {
   bindIsometricDocumentVisibilityChange,
@@ -222,6 +224,7 @@ const props = defineProps<{
   livePlayCorrectionTokenIds?: string[]
   remoteTokenAttention?: readonly MapTokenRemoteAttention[]
   presencePings?: readonly IsometricPresencePing[]
+  presenceIntentOverlays?: readonly MapPresenceIntentOverlay[]
   presenceServerTimeOffsetMs?: number
   moveAutomationTargeting?: MoveAutomationTargetingOverlayState | null
   moveAutomationTargetBranchSelection?: MoveAutomationTargetBranchSelectionState | null
@@ -565,6 +568,7 @@ const moveTargetingReticleRenderer = createMoveTargetingReticleRenderer(scene)
 const moveAreaTemplateRenderer = createMoveAreaTemplateRenderer(scene)
 const moveAutomationFeedbackRenderer = createMoveAutomationFeedbackRenderer(scene)
 const presencePingRenderer = createPresencePingRenderer(scene)
+const presenceIntentOverlayRenderer = createPresenceIntentOverlayRenderer(scene)
 const moveVfxRenderer: MoveVfxRenderer = createMoveVfxRenderer(scene)
 let moveVfxAnimationWasActive = false
 let renderer: THREE.WebGLRenderer | null = null
@@ -652,7 +656,25 @@ const syncPresencePings = (): boolean => presencePingRenderer.sync(props.presenc
   nowMs: presencePingNowMs(),
 })
 
-const requestPresencePingRenderFrame = () => requestScheduledSceneFrame({
+const localInteractionSoftensRemoteIntent = (): boolean => Boolean(
+  props.moveAutomationTargeting
+  || props.moveAutomationTargetBranchSelection
+  || activeSendOutRequest.value
+  || movementPreviewState.value.position
+  || props.buildMode
+  || props.hazardMode,
+)
+
+const syncPresenceIntentOverlays = (): boolean => presenceIntentOverlayRenderer.sync(
+  props.presenceIntentOverlays ?? [],
+  {
+    renderObjects,
+    show: visibleLayers().tokens,
+    softened: localInteractionSoftensRemoteIntent(),
+  },
+)
+
+const requestPresenceCssRenderFrame = () => requestScheduledSceneFrame({
   reasons: 'scene-state',
   dirtyLayers: 'css3d',
 })
@@ -1840,7 +1862,16 @@ watch(
   [() => props.presencePings, () => props.presenceServerTimeOffsetMs],
   () => {
     if (!renderer) return
-    if (syncPresencePings()) requestPresencePingRenderFrame()
+    if (syncPresencePings()) requestPresenceCssRenderFrame()
+  },
+  { deep: true },
+)
+
+watch(
+  () => props.presenceIntentOverlays,
+  () => {
+    if (!renderer) return
+    if (syncPresenceIntentOverlays()) requestPresenceCssRenderFrame()
   },
   { deep: true },
 )
@@ -2035,6 +2066,7 @@ const updateMoveAutomationOverlays = (): boolean => {
     renderObjects,
     show: layers.tokens,
   }) || cssUiChanged
+  cssUiChanged = syncPresenceIntentOverlays() || cssUiChanged
   cssUiChanged = syncAttackOfOpportunityButtons() || cssUiChanged
   return cssUiChanged
 }
@@ -2173,6 +2205,7 @@ onMounted(() => {
   syncFieldEffectMeshes()
   syncHazardMeshes()
   syncPresencePings()
+  syncPresenceIntentOverlays()
   ensurePreviewObjects()
   if (props.buildMode) ensureBuildGhost()
   if (props.hazardMode) ensureHazardGhost()
@@ -2221,6 +2254,7 @@ onBeforeUnmount(() => {
   moveAreaTemplateRenderer.dispose()
   moveAutomationFeedbackRenderer.dispose()
   presencePingRenderer.dispose()
+  presenceIntentOverlayRenderer.dispose()
 
   disposeIsometricRendererResources({
     clearPreviewVisuals,

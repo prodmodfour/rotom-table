@@ -594,6 +594,126 @@ samp {
   }
 }
 
+/* Shared remote movement/targeting intent overlays. They stay underneath local
+   targeting reticles and have pointer events disabled so live commands, token
+   picking, build previews, and hazard targeting keep priority. */
+.map-presence-intent-anchor {
+  position: relative;
+  display: inline-flex;
+  width: 124px;
+  min-height: 70px;
+  align-items: center;
+  justify-content: center;
+  color: var(--map-presence-intent-accent, #60a5fa);
+  font-family: var(--font-ui);
+  opacity: 0.86;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.48));
+  transition: opacity 0.16s ease;
+}
+
+.map-presence-intent-anchor.is-softened {
+  opacity: 0.36;
+}
+
+.map-presence-intent__reticle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  border: 3px solid currentColor;
+  border-radius: 999px !important;
+  opacity: 0.34;
+  background: radial-gradient(circle, rgba(var(--map-presence-intent-accent-rgb, 96, 165, 250), 0.18) 0 32%, transparent 64%);
+  box-shadow:
+    0 0 0 1px rgba(5, 6, 8, 0.64),
+    0 0 18px rgba(var(--map-presence-intent-accent-rgb, 96, 165, 250), 0.42),
+    inset 0 0 16px rgba(var(--map-presence-intent-accent-rgb, 96, 165, 250), 0.18);
+  transform: translate(-50%, -50%);
+  animation: map-presence-intent-soft-pulse 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.map-presence-intent-anchor.is-token .map-presence-intent__reticle {
+  opacity: 0.16;
+  transform: translate(-50%, -50%) scale(0.72);
+  animation: none;
+}
+
+.map-presence-intent-anchor.is-measuring .map-presence-intent__reticle {
+  border-style: dashed;
+}
+
+.map-presence-intent__badge {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  max-width: 124px;
+  min-width: 82px;
+  gap: 1px;
+  padding: 5px 8px;
+  border: 1px solid rgba(var(--map-presence-intent-accent-rgb, 96, 165, 250), 0.68);
+  border-radius: 0.78rem !important;
+  background:
+    linear-gradient(135deg, rgba(var(--map-presence-intent-accent-rgb, 96, 165, 250), 0.18), rgba(5, 6, 8, 0.84) 54%),
+    rgba(5, 6, 8, 0.88);
+  color: #f7f7f2;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.92);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.48);
+  pointer-events: none;
+}
+
+.map-presence-intent__participant,
+.map-presence-intent__detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-presence-intent__participant {
+  color: color-mix(in srgb, currentColor 82%, white 18%);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.map-presence-intent__label {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.map-presence-intent__detail {
+  color: rgba(247, 247, 242, 0.82);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.map-presence-intent__detail[hidden] {
+  display: none;
+}
+
+@keyframes map-presence-intent-soft-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-presence-intent__reticle {
+    animation: none;
+  }
+}
+
 .move-automation-roll-anchor {
   display: inline-flex;
   align-items: center;

@@ -69,6 +69,7 @@ import { MAP_INTERACTION_MODES, type MapInteractionMode } from '#shared/mapInter
 import {
   LIVE_PLAY_PRESENCE_MAX_INTENT_AREA_CELLS,
   LIVE_PLAY_PRESENCE_MAX_INTENT_COUNT,
+  livePlayPresenceClientIdSuffix,
   type LivePlayPresenceGridCell,
   type LivePlayPresenceIntentState,
 } from '#shared/livePlayPresence'
@@ -101,6 +102,7 @@ import { createLivePlayTokenCorrectionNoticeController } from '~/utils/livePlayT
 import { mapEditorPath, mapLibraryPath } from '~/utils/mapRoutes'
 import { buildLiveSheetAccessScopeKey } from '~/utils/liveSheetCache'
 import { buildMapTokenRemoteAttention } from '~/utils/mapPresenceTokenAttention'
+import { buildMapPresenceIntentOverlays } from '~/utils/mapPresenceIntentOverlays'
 import { getClientId } from '~/utils/clientId'
 import { deepCloneJson } from '~/utils/serialization'
 import { nextTokenFacingForPlacement } from '~/utils/tokenFacing'
@@ -822,9 +824,21 @@ const mapPresenceEntries = mapPresence.entries
 const mapPresencePings = mapPresence.pings
 const mapPresenceStatus = mapPresence.status
 const mapPresenceServerTimeOffsetMs = computed(() => mapPresence.transportFreshness.value.serverTimeOffsetMs)
+const ownPresenceClientIdSuffix = computed(() => (
+  import.meta.client ? livePlayPresenceClientIdSuffix(getClientId()) : null
+))
 const remoteTokenAttention = computed(() => buildMapTokenRemoteAttention(
   mapPresenceEntries.value,
   visiblePresenceTokenIdSet.value,
+))
+const remotePresenceIntentOverlays = computed(() => buildMapPresenceIntentOverlays(
+  mapPresenceEntries.value,
+  {
+    visibleTokenIds: visiblePresenceTokenIdSet.value,
+    ownPresence: mapPresence.ownPresence.value,
+    ownClientIdSuffix: ownPresenceClientIdSuffix.value,
+    serverNowMs: Date.now() + mapPresenceServerTimeOffsetMs.value,
+  },
 ))
 
 const updateOwnTokenPresence = (selectedTokenId: string | null, hoveredTokenId: string | null, publish = true): void => {
@@ -2440,6 +2454,7 @@ useMapDimensionReconciliation({
         :live-play-correction-token-ids="livePlayCorrectionTokenIds"
         :remote-token-attention="remoteTokenAttention"
         :presence-pings="mapPresencePings"
+        :presence-intent-overlays="remotePresenceIntentOverlays"
         :presence-server-time-offset-ms="mapPresenceServerTimeOffsetMs"
         :live-play-token-correction-notice="livePlayTokenCorrectionNotice"
         :move-automation-targeting="actionAutomationTargeting"

@@ -388,7 +388,7 @@ Status: DONE
 
 ## 013 — LP-S3-013 — Render shared intent overlays
 
-Status: TODO
+Status: DONE
 
 **Goal:** Show remote movement/targeting/area intent in a low-noise way.
 

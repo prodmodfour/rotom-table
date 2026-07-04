@@ -298,7 +298,10 @@ export const useMapPresence = (options: UseMapPresenceOptions): UseMapPresenceRe
     }
   }
 
-  const visibleEntries = computed<readonly LivePlayPresenceEntry[]>(() => clonePresenceEntries(storedEntries.value))
+  const visibleEntries = computed<readonly LivePlayPresenceEntry[]>(() => {
+    expiryClockTick.value
+    return clonePresenceEntries(storedEntries.value)
+  })
   const activePings = computed<readonly MapPresencePing[]>(() => {
     expiryClockTick.value
     const serverNow = localServerNow()
